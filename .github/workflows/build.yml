@@ -8,27 +8,27 @@ jobs:
     name: build-prep
     runs-on: 'ubuntu-latest'
     outputs:
-      params: ${{ steps.set-build-param.outputs.matrix }}
+      matrix: ${{ steps.set-build-param.outputs.matrix }}
     steps:
       # Required as the JSON input file needs to be read
       - uses: actions/checkout@v3
       - id: set-build-param
         uses: JoshuaTheMiller/conditional-build-matrix@77cdf28e0eb41dd691280520b0bddddbc4654318
         with:
-          inputFile: '.github/workflows/build-params.json'
+          inputFile: '.github/workflows/build-matrix.json'
           # we run build-node on every workflow but build-runtime only on pushes to branches
           filter: '[?run_on_event==`any` || run_on_event==`${{ github.event_name }}`]'
   build:
     needs: build_prep
     strategy:
-      params: ${{fromJson(needs.build_prep.outputs.matrix)}}
-    name: ${{ params.target }}
-    runs-on: ${{ params.os }}
+      matrix: ${{fromJson(needs.build_prep.outputs.matrix)}}
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
     env:
       RUST_TOOLCHAIN: "nightly-2021-09-28"
     steps:
       - name: Free space on Ubuntu
-        if: ${{ params.os }} == 'ubuntu-latest'
+        if: ${{ matrix.os }} == 'ubuntu-latest'
         run: |
           echo "Pre cleanup"
           df -h
@@ -43,18 +43,18 @@ jobs:
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           default: true
-      - if: params.target == 'build-runtime'
+      - if: matrix.target == 'build-runtime'
         uses: Swatinem/rust-cache@842ef286fff290e445b90b4002cc9807c3669641
         with: # cache the runtime target instead of root target for build-runtime
           working-directory: './runtime'
           target-dir: './target/mrc'
-      - if: params.target == 'build-node'
+      - if: matrix.target == 'build-node'
         uses: Swatinem/rust-cache@842ef286fff290e445b90b4002cc9807c3669641
-      - name: ${{ params.target }}
+      - name: ${{ matrix.target }}
         run: ./ci/build.sh
         env:
-          TARGET: ${{ params.target }}
-          RUST_TOOLCHAIN: ${{ params.rust_toolchain }}
-          PACKAGE: ${{params.package}}
+          TARGET: ${{ matrix.target }}
+          RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
+          PACKAGE: ${{matrix.package}}
 
  

@@ -5,17 +5,17 @@ on:
 name: Tests
 jobs:
   tests:
-    name: ${{ params.target }}
+    name: ${{ matrix.target }}
     strategy:
-      params:
+      matrix:
         os: [ubuntu-latest]
         target: [tests, lint]
-    runs-on: ${{ params.os }}
+    runs-on: ${{ matrix.os }}
     env:
       RUST_TOOLCHAIN: "nightly-2021-11-07"
     steps:
       - name: Free space on Ubuntu
-        if: ${{ params.os }} == 'ubuntu-latest'
+        if: ${{ matrix.os }} == 'ubuntu-latest'
         run: |
           echo "Pre cleanup"
           df -h
@@ -34,5 +34,5 @@ jobs:
       - name: Run tests
         run: ./ci/build.sh
         env:
-          TARGET: ${{ params.target }}
+          TARGET: ${{ matrix.target }}
 
