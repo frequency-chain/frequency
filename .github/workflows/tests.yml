@@ -1,0 +1,38 @@
+on:
+  push:
+    branches: [main]
+  pull_request:
+name: Tests
+jobs:
+  tests:
+    name: ${{ params.target }}
+    strategy:
+      params:
+        os: [ubuntu-latest]
+        target: [tests, lint]
+    runs-on: ${{ params.os }}
+    env:
+      RUST_TOOLCHAIN: "nightly-2021-11-07"
+    steps:
+      - name: Free space on Ubuntu
+        if: ${{ params.os }} == 'ubuntu-latest'
+        run: |
+          echo "Pre cleanup"
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Post cleanup"
+          df -h
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@88dc2356392166efad76775c878094f4e83ff746
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          default: true
+      - uses: Swatinem/rust-cache@842ef286fff290e445b90b4002cc9807c3669641
+      - name: Run tests
+        run: ./ci/build.sh
+        env:
+          TARGET: ${{ params.target }}
+

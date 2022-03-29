@@ -1,0 +1,60 @@
+on:
+  push:
+    branches: [main]
+  pull_request:
+name: Build
+jobs:
+  build_prep:
+    name: build-prep
+    runs-on: 'ubuntu-latest'
+    outputs:
+      params: ${{ steps.set-build-param.outputs.matrix }}
+    steps:
+      # Required as the JSON input file needs to be read
+      - uses: actions/checkout@v3
+      - id: set-build-param
+        uses: JoshuaTheMiller/conditional-build-matrix@77cdf28e0eb41dd691280520b0bddddbc4654318
+        with:
+          inputFile: '.github/workflows/build-params.json'
+          # we run build-node on every workflow but build-runtime only on pushes to branches
+          filter: '[?run_on_event==`any` || run_on_event==`${{ github.event_name }}`]'
+  build:
+    needs: build_prep
+    strategy:
+      params: ${{fromJson(needs.build_prep.outputs.matrix)}}
+    name: ${{ params.target }}
+    runs-on: ${{ params.os }}
+    env:
+      RUST_TOOLCHAIN: "nightly-2021-09-28"
+    steps:
+      - name: Free space on Ubuntu
+        if: ${{ params.os }} == 'ubuntu-latest'
+        run: |
+          echo "Pre cleanup"
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Post cleanup"
+          df -h
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@88dc2356392166efad76775c878094f4e83ff746
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          default: true
+      - if: params.target == 'build-runtime'
+        uses: Swatinem/rust-cache@842ef286fff290e445b90b4002cc9807c3669641
+        with: # cache the runtime target instead of root target for build-runtime
+          working-directory: './runtime'
+          target-dir: './target/mrc'
+      - if: params.target == 'build-node'
+        uses: Swatinem/rust-cache@842ef286fff290e445b90b4002cc9807c3669641
+      - name: ${{ params.target }}
+        run: ./ci/build.sh
+        env:
+          TARGET: ${{ params.target }}
+          RUST_TOOLCHAIN: ${{ params.rust_toolchain }}
+          PACKAGE: ${{params.package}}
+
+ 

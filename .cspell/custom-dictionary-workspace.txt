@@ -1,0 +1,7 @@
+# Custom Dictionary Words
+betanet
+bootnode
+parachain
+paritytech
+polkadot
+rustfmt
