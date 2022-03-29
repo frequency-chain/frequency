@@ -15,7 +15,7 @@ jobs:
       - id: set-build-param
         uses: JoshuaTheMiller/conditional-build-matrix@77cdf28e0eb41dd691280520b0bddddbc4654318
         with:
-          inputFile: '.github/workflows/build-matrix.json'
+          inputFile: '.github/workflows/build-params.json'
           # we run build-node on every workflow but build-runtime only on pushes to branches
           filter: '[?run_on_event==`any` || run_on_event==`${{ github.event_name }}`]'
   build:
