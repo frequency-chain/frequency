@@ -44,7 +44,8 @@ Start relay chain
 ./scripts/init.sh start-relay-chain
 ```
 
-Start mrc as parachain
+Start mrc as parachain: This step will generate genesis/wasm and onboards the parachain.
+Note: assumption is the relay chain is running from step one above and para id 2000 is registered.
 
 ```bash
 ./scripts/init.sh start-parachain
