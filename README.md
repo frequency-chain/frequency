@@ -68,8 +68,9 @@ Onboarding mrc to Relay chain
 ### Generating a new genesis file
 
 1. Update `node/chain_spec.rs` with required spec config, defaults to `para_id:2000` and relay chain to be `rococo_local.json` with `protocol_id:mrc-local`
-2. Run `cargo run --release build-spec --disable-default-bootnode [--chain [name]]> res/genesis/mrc-spec-rococo.json` to export the chain spec
-3. Commit
+2. Run `cargo run --release build-spec --disable-default-bootnode [--chain [name]]> .res/genesis/mrc-spec-rococo.json` to export the chain spec
+3. Run `cargo run --release build-spec --disable-default-bootnode .res/genesis/mrc-spec-rococo.json> ./res/genesis/rococo-local-mrc-2000-raw.json` to export the raw chain spec
+4. Commit
 Note: To build spec against specific chain config; specify chain name in the command above.
 
 ### TODO: Refractor chain spec to add genesis config for dev, betanet and polkadot
