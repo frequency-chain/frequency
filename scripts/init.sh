@@ -68,7 +68,7 @@ start-parachain)
   ;;
 
 onboard-parachain)
-  echo "NOTE: This command onboards the parachain; Block production will start in a few minutes"
+  echo "Onboarding parachain with runtime '$parachain' and id '$para_id'..."
 
    onboard_dir="$base_dir/onboard"
    mkdir -p $onboard_dir
@@ -82,15 +82,9 @@ onboard-parachain)
       ./target/release/mrc-collator export-genesis-wasm --chain="${chain_spec}" > $wasm_location
     fi
 
-  echo "Parachain Id:" $para_id
-  echo "Genesis state:" $genesis
   echo "WASM path:" "${parachain}-${para_id}.wasm"
 
   cd scripts/js/onboard
   yarn && yarn onboard "ws://0.0.0.0:9944" "//Alice" ${para_id} "${genesis}" $wasm_location
-  ;;
-
-benchmark)
-  ./scripts/run_benchmark.sh "${parachain}" "$2" "$3"
   ;;
 esac
