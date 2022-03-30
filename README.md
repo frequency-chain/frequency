@@ -55,7 +55,7 @@ Start mrc as parachain: This step will generate genesis/wasm and onboard the par
 Note: assumption is that relay chain is running from step one above and para id 2000 is registered.
 
 ```bash
-./scripts/init.sh start-parachain
+./scripts/init.sh start-mrc
 ```
 
 Note: set `RUST_LOG=debug RUST_BACKTRACE=1` as the environment variable to enable detailed logs.
@@ -63,7 +63,7 @@ Note: set `RUST_LOG=debug RUST_BACKTRACE=1` as the environment variable to enabl
 Onboarding mrc to Relay chain
 
 ```bash
-./scripts/init.sh onboard-parachain
+./scripts/init.sh onboard-mrc
 ```
 
 ### Generating a new genesis file

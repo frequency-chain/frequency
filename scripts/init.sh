@@ -29,18 +29,18 @@ stop-relay-chain)
   docker-compose -f ./docker-compose-local-relay.yml down
   ;;
 
-start-parachain-docker)
+start-mrc-docker)
   echo "Starting local parachain with Alice..."
   docker-compose -f ./docker-compose-local-chain.yml up -d
   ;;
 
-stop-parachain-docker)
+stop-mrc-docker)
   echo "Stopping local parachain with Alice..."
   docker-compose -f ./docker-compose-local-chain.yml down
   ;;
 
-start-parachain)
-  printf "\nBuilding parachain with runtime '$parachain' and id '$para_id'...\n"
+start-mrc)
+  printf "\nBuilding mrc with runtime '$parachain' and id '$para_id'...\n"
   cargo build --release
 
   parachain_dir=$base_dir/parachain/${para_id}
@@ -67,7 +67,7 @@ start-parachain)
     --log="main,debug" \
   ;;
 
-onboard-parachain)
+onboard-mrc)
   echo "Onboarding parachain with runtime '$parachain' and id '$para_id'..."
 
    onboard_dir="$base_dir/onboard"
