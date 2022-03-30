@@ -84,4 +84,4 @@ Note: To build spec against specific chain config; specify chain name in the com
 ## Verifying Runtime
 
 1. Check out the commit at which the runtime was built.
-2. Run `TARGET=build-runtime RUST_TOOLCHAIN=nightly ./ci/build.sh` to build a docker image.
+2. Run `TARGET=build-runtime RUST_TOOLCHAIN=nightly ./ci/build.sh` to use srtool to verify the runtime.
