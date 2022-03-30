@@ -1,7 +1,6 @@
 on:
   push:
     branches: [main]
-  pull_request:
 name: Build
 jobs:
   build_prep:
