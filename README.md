@@ -23,7 +23,7 @@ cargo build --release
 Alternatively run
 
 ```bash
-TARGET=build-node ./ci/script.sh
+TARGET=build-node ./ci/build.sh
 ```
 
 ## Run
