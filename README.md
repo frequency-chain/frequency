@@ -36,6 +36,12 @@ cargo test
 
 Alternatively Run `TARGET=tests ./ci/build.sh` to run cargo tests.
 
+### Configure the environment
+
+```bash
+source .env
+```
+
 ### Start local Relay chain(alice and bob) and Parachain(alice)  
 
 Start relay chain

@@ -3,16 +3,16 @@
 set -e
 
 cmd=$1
-chain_spec="./res/genesis/rococo-local-mrc-2000-raw.json"
+chain_spec="${RAW_PARACHAIN_CHAIN_SPEC:-./res/genesis/rococo-local-mrc-2000-raw.json}"
 # The runtime we want to use
-parachain="${PARA_CHAIN_SPEC:-mrc-local}"
+parachain="${PARA_CHAIN_CONFIG:-mrc-local}"
 # The parachain Id we want to use
 para_id="${PARA_ID:-2000}"
 # The tmp base directory
 base_dir=/tmp/mrc
 # Option to use the Docker image to export state & wasm
 docker_onboard="${DOCKER_ONBOARD:-false}"
-mrc_docker_image_tag="${PARA_DOCKER_IMAGE_TAG:-parachain-latest}"
+mrc_docker_image_tag="${PARA_DOCKER_IMAGE_TAG:-mrc-latest}"
 
 case $cmd in
 install-toolchain)
