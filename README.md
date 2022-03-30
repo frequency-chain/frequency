@@ -50,7 +50,7 @@ Start relay chain
 ./scripts/init.sh start-relay-chain
 ```
 
-Start mrc as parachain: This step will generate genesis/wasm and onboards the parachain.
+Start mrc as parachain: This step will generate genesis/wasm and onboard the parachain.
 
 Note: assumption is that relay chain is running from step one above and para id 2000 is registered.
 
@@ -72,6 +72,7 @@ Onboarding mrc to Relay chain
 2. Run `cargo run --release build-spec --disable-default-bootnode [--chain [name]]> .res/genesis/mrc-spec-rococo.json` to export the chain spec
 3. Run `cargo run --release build-spec --disable-default-bootnode .res/genesis/mrc-spec-rococo.json> ./res/genesis/rococo-local-mrc-2000-raw.json` to export the raw chain spec
 4. Commit
+
 Note: To build spec against specific chain config; specify chain name in the command above.
 
 ### TODO: Refractor chain spec to add genesis config for dev, betanet and polkadot
