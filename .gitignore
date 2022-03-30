@@ -10,6 +10,7 @@
 
 # General
 .DS_Store
+.env
 .AppleDouble
 .LSOverride
 
