@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "execute": "node index.js"
+    "onboard": "node onboard.js"
   },
   "keywords": [],
   "author": "",

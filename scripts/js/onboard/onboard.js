@@ -33,6 +33,7 @@ const run = async () => {
       validation_code: wasm,
       parachain: true,
     };
+    
     let genesis = api.createType("ParaGenesisArgs", paraGenesisArgs);
 
     const nonce = Number((await api.query.system.account(alice.address)).nonce);
@@ -40,7 +41,7 @@ const run = async () => {
     console.log(
         `--- Submitting extrinsic to register parachain ${id}. (nonce: ${nonce}) ---`
     );
-    const unsub = await api.tx.sudo
+    const sudoCall = await api.tx.sudo
         .sudo(api.tx.parasSudoWrapper.sudoScheduleParaInitialize(id, genesis))
         .signAndSend(alice, { nonce: nonce, era: 0 }, (result) => {
           console.log(`Current status is ${result.status}`);
@@ -53,7 +54,7 @@ const run = async () => {
             console.log(
                 `Transaction finalized at blockHash ${result.status.asFinalized}`
             );
-            unsub();
+            sudoCall();
             process.exit()
           } else if (result.isError) {
             console.log(`Transaction Error`);
