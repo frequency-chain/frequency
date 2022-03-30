@@ -30,12 +30,12 @@ stop-relay-chain)
   ;;
 
 start-mrc-docker)
-  echo "Starting local parachain with Alice..."
+  echo "Starting mrc container with Alice..."
   docker-compose -f ./docker-compose-local-chain.yml up -d
   ;;
 
 stop-mrc-docker)
-  echo "Stopping local parachain with Alice..."
+  echo "Stopping mrc container with Alice..."
   docker-compose -f ./docker-compose-local-chain.yml down
   ;;
 
