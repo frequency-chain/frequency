@@ -15,9 +15,8 @@ services:
         target: /chainspec.json
         read_only: true
     command: >
-      --chain="${PARA_CHAIN_SPEC:-mrc-local}" 
+      --chain="${RAW_PARACHAIN_CHAIN_SPEC:-./res/genesis/rococo-local-mrc-2000-raw.json}" 
       --alice
-      --parachain-id="2000"
       --wasm-execution=compiled
       --execution=wasm
       --rpc-external
