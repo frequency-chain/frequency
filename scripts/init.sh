@@ -52,7 +52,7 @@ start-parachain)
   fi
 
   ./scripts/run_collator.sh \
-    --chain="${parachain}" --alice \
+    --chain="${chain_spec}" --alice \
     --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
     --execution=wasm \
