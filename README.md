@@ -2,6 +2,12 @@
 
 ## Build
 
+Install Docker and Docker Compose:
+    1. Follow the instructions on [Docker](https://docs.docker.com/engine/install/)
+    2. Follow instructions on [Docker Compose](https://docs.docker.com/compose/install/)
+
+Note: For mac users, [Docker Desktop](https://docs.docker.com/desktop/mac/install/) also install docker compose environment.
+
 Install Rust:
 
 ```bash
