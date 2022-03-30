@@ -3,6 +3,7 @@
 set -e
 
 cmd=$1
+chain_spec="./res/genesis/rococo-local-mrc-2000-raw.json"
 # The runtime we want to use
 parachain="${PARA_CHAIN_SPEC:-mrc-local}"
 # The parachain Id we want to use
@@ -52,7 +53,6 @@ start-parachain)
 
   ./scripts/run_collator.sh \
     --chain="${parachain}" --alice \
-    --parachain-id="${para_id}" \
     --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
     --execution=wasm \
@@ -75,11 +75,11 @@ onboard-parachain)
 
    wasm_location="$onboard_dir/${parachain}-${para_id}.wasm"
     if [ "$docker_onboard" == "true" ]; then
-      genesis=$(docker run -it {REPO_NAME}/mrc:${mrc_docker_image_tag} export-genesis-state --chain="${parachain}" --parachain-id="${para_id}")
-      docker run -it {REPO_NAME}/mrc:${mrc_docker_image_tag} export-genesis-wasm --chain="${parachain}" > $wasm_location
+      genesis=$(docker run -it {REPO_NAME}/mrc:${mrc_docker_image_tag} export-genesis-state --chain="${chain_spec}")
+      docker run -it {REPO_NAME}/mrc:${mrc_docker_image_tag} export-genesis-wasm --chain="${chain_spec}" > $wasm_location
     else
-      genesis=$(./target/release/mrc export-genesis-state --chain="${parachain}" --parachain-id="${para_id}")
-      ./target/release/mrc export-genesis-wasm --chain="${parachain}" > $wasm_location
+      genesis=$(./target/release/mrc-collator export-genesis-state --chain="${chain_spec}")
+      ./target/release/mrc-collator export-genesis-wasm --chain="${chain_spec}" > $wasm_location
     fi
 
   echo "Parachain Id:" $para_id

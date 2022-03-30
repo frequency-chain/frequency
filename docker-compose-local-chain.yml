@@ -2,7 +2,9 @@ version: '3'
 services:
   mrc_alice:
     container_name: mrc-alice
-    image: "mrc:${MRC_DOCKER_TAG:-parachain-latest}"
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "30355:30333"
       - "9936:9933"

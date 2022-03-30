@@ -5,7 +5,7 @@
 
 set -e -o pipefail
 
-ctpc="./target/release/mrc"
+ctpc="./target/release/mrc-collator"
 
 if [ ! -x "$ctpc" ]; then
     echo "FATAL: $ctpc does not exist or is not executable"
