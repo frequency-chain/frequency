@@ -2,7 +2,7 @@
 
 set -eux
 
-RUST_TOOLCHAIN="${RUST_TOOLCHAIN:-nightly-2021-09-28}"
+SRT_TOOL_VERSION="${SRT_TOOL_VERSION:-1.57.0}"
 PACKAGE="${PACKAGE:-mrc-runtime}" #Need to replicate job for all runtimes
 
 # Enable warnings about unused extern crates
@@ -20,7 +20,8 @@ case $TARGET in
 		;;
 
   build-runtime)
-    export RUSTC_VERSION=$RUST_TOOLCHAIN
+    export RUSTC_VERSION=$SRT_TOOL_VERSION
+    echo "Building runtime with rustc version $RUSTC_VERSION"
     docker run --rm -e PACKAGE=$PACKAGE -v $PWD:/build -v /tmp/cargo:/cargo-home paritytech/srtool:$RUSTC_VERSION build
     ;;
 
