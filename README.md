@@ -42,7 +42,7 @@ Alternatively Run `TARGET=tests ./ci/build.sh` to run cargo tests.
 source .env
 ```
 
-### Start local Relay chain(alice and bob) and Parachain(alice)  
+### Start local Relay chain(alice and bob) and MRC(alice)  
 
 Start relay chain
 
