@@ -1,9 +1,9 @@
 [package]
 name = "mrc-node"
 version = "0.1.0"
-authors = ["Anonymous"]
-description = "A new Cumulus FRAME-based Substrate Node, ready for hacking together a parachain."
-license = "Unlicense"
+authors = ["MRC Team"]
+description = "Substrate node for mrc"
+license = "Apache-2.0"
 homepage = "https://substrate.io"
 repository = "https://github.com/paritytech/cumulus/"
 edition = "2021"
