@@ -4,8 +4,8 @@ version = "0.1.0"
 authors = ["MRC Team"]
 description = "Runtime for MRC parachain"
 license = "Apache-2.0"
-homepage = "https://substrate.io"
-repository = "https://github.com/paritytech/cumulus/"
+homepage = "https://unfinishedlabs.io/"
+repository = "https://github.com/liberty30/mrc/"
 edition = "2021"
 
 [package.metadata.docs.rs]
