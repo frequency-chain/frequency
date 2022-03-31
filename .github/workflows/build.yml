@@ -1,0 +1,57 @@
+on:
+  push:
+    branches: [main]
+name: Build
+jobs:
+  build_prep:
+    name: build-prep
+    runs-on: 'ubuntu-latest'
+    outputs:
+      matrix: ${{ steps.set-build-param.outputs.matrix }}
+    steps:
+      # Required as the JSON input file needs to be read
+      - uses: actions/checkout@v3
+      - id: set-build-param
+        uses: JoshuaTheMiller/conditional-build-matrix@6462c4568a159216deb872a3eda1dd4d5cc0c3d2
+        with:
+          inputFile: '.github/workflows/build-params.json'
+          # we run build-node on every workflow but build-runtime only on pushes to branches
+          filter: '[?run_on_event==`any` || run_on_event==`${{ github.event_name }}`]'
+  build:
+    needs: build_prep
+    strategy:
+      matrix: ${{fromJson(needs.build_prep.outputs.matrix)}}
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    env:
+      RUST_TOOLCHAIN: "nightly-2021-11-07"
+    steps:
+      - name: Free space on Ubuntu
+        if: ${{ matrix.os }} == 'ubuntu-latest'
+        run: |
+          echo "Pre cleanup"
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Post cleanup"
+          df -h
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          default: true
+      - if: matrix.target == 'build-runtime'
+        uses: Swatinem/rust-cache@v1
+        with: # cache the runtime target instead of root target for build-runtime
+          working-directory: './runtime'
+          target-dir: './target/mrc'
+      - if: matrix.target == 'build-node'
+        uses: Swatinem/rust-cache@v1
+      - name: ${{ matrix.target }}
+        run: ./ci/build.sh
+        env:
+          TARGET: ${{ matrix.target }}
+          RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
+          PACKAGE: ${{matrix.package}}
