@@ -23,7 +23,7 @@ hex-literal = "0.3.4"
 jsonrpc-core = "18.0.0"
 
 # Local
-mrc-runtime = { path = "../runtime" }
+mrc-runtime = { path = "../runtime/mrc" }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
