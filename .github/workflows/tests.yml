@@ -30,7 +30,13 @@ jobs:
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           default: true
-      - uses: Swatinem/rust-cache@v1
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ matrix.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Run tests
         run: ./ci/build.sh
         env:
