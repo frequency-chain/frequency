@@ -3,7 +3,9 @@ To create a new design document, Please see the [Design Doc README](https://gith
 
 ## Accepted Design Documents
 
-* [design doc title](doc link)
-  * [link to merged PR](pr link)
-  * applicable versions:...
+* [On Chain Message Storage](MESSAGE_STORAGE.md)
+  * [Merged Pull Request](https://github.com/Liberty30/mrc/pull/15)
 
+* [design doc title](doc link)
+    * [link to merged PR](pr link)
+    * applicable versions:...
