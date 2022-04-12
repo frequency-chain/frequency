@@ -36,4 +36,3 @@ jobs:
         run: ./ci/build.sh
         env:
           TARGET: ${{ matrix.target }}
-
