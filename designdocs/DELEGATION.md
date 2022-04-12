@@ -35,33 +35,23 @@ Put another way, delegation must have the following properties:
 * **Revocable** - a Delegate's permissions must be able to be revoked by the Delegator to give Account holders the ability to withdraw permissions completely from the Delegate.
 
 ### Non-Goals
-* This does not cover retiring a StaticId, which is a possible future feature.
-* Permissions have not been specified and neither has the data type.
+* This doesn't cover retiring a StaticId, which is a possible future feature.
+* Although this does specify a direct removal of one's own StaticId, it doesn't specify a delegated version of that.
+This would mean one delegate would be able to remove another delegate, not just replacing the delegate with itself.
+This presents serious enough issues that it should be discussed and designed separately if it's to be implemented at all.
+* We're not specifying here what the permissions are nor the permissions data type.
 
 ## Proposal
-The proposed solution is to give End Users the ability to create an on-chain StaticId through an authorized delegate, and to transparently authorize and manage their own Delegates and permissions. Additionally, we allow StaticIds to be directly purchased through a native token.
+The proposed solution is to give End Users the ability to create an on-chain StaticId through an authorized delegate, and to transparently authorize and manage their own Delegates and permissions, either directly using a native token or through another delegate that they authorize explicitly. Additionally, we allow StaticIds to be directly purchased using a native token.
 
 ### API (extrinsics)
-**Notes**
- - all names are placeholders and may be changed.
- - all extrinsics must emit an appropriate event with all parameters for the call, unless otherwise specified
- - errors in the extrinsics must have different, reasonably-named error enums for each type of error.
- - if no restrictions are listed, anyone may call this extrinsic.
+* all names are placeholders and may be changed.
+* all extrinsics must emit an appropriate event with all parameters for the call, unless otherwise specified
+* errors in the extrinsics must have different, reasonably-named error enums for each type of error.
+* Read-only extrinsics can be called by anyone; otherwise, restrictions are as noted.
+* Events are not emitted for read-only extrinsic calls.
 
-1. **add_delegate(delegator, delegate, permissions)*** - adds a new delegate for an *existing* StaticId.  This is a signed call directly from the delegator's Account.  The *delegator* account pays the fees.
-   * Parameters:
-     1. `delegator` - the StaticId to add the delegate to
-     2. `delegate` - the StaticId of the new delegate
-     3. `permissions` - a value indicating the permissions for the new delegate
-   * Restrictions:  Owner only.
-2. **update_delegate(delegator, delegate, permissions)** - changes the permissions for an existing delegator-delegate relationship. This is a signed call directly from the delegator's Account.  The *delegator* account pays the fees.  The parameters are the same as `add_delegate`.
-    * Restrictions:  Owner only.
-3. **remove_delegate(delegator,delegate)** - deletes a delegate's entry from the list of delegates for the provided StaticId. This is a signed call directly from the delegator's Account. The *delegator* account pays the fees, if any.
-   * **Parameters**:
-       1. `delegator` - the StaticId removing the delegate
-       2. `delegate` - the StaticId of the delegate to be removed
-   * Restrictions:  Owner only.
-4. **create_account_with_delegate**(payload) - creates a new StaticId on behalf of an Account, by the caller, and adds the caller as the Account's delegate.  This call is from the delegate account.  The delegate, *not the owner of the new StaticId*, pays the fees.
+1. **create_account_with_delegate**(payload) - creates a new StaticId on behalf of an Account, by the caller, and adds the caller as the Account's delegate.  This call is from the delegate account.  The delegate, *not the owner of the new StaticId*, pays the fees.
     * Parameters:
       1. `payload`: authorization data signed by the delegating account.
          1. `data` - this is what the Account owner must sign and provide to the delegate beforehand.
@@ -71,20 +61,60 @@ The proposed solution is to give End Users the ability to create an on-chain Sta
          3. `signature` - The signature of the hash of `data`
     * Event Emitted:  `IdentityCreated`, with the delegator AccountId, the new StaticId, and the delegate StaticId
     * Restrictions:  The origin account MUST control the static ID that is provided in the payload.
-5. **create_static_id()** - directly creates a StaticId for the origin (caller) Account, with no delegates. This is a signed call directly from the caller, so the owner of the new StaticId pays the fees for StaticId creation.
-    * Event Emitted: `IdentityCreated`, with the caller's AccountId, the new StaticId, and an empty delegate StaticId.
-6. **validate_delegate(delegate, delegator, permissions)** - verify that the provided delegate StaticId is a delegate of the delegator, and has the given permissions.
+2. **add_self_as_delegate(payload)** - adds the StaticId in the payload as a delegate, to an Account owning `delegator_static_id`
+    * Parameters:
+      1. `payload`: authorization data signed by the delegating account
+          1. `data` - this is what the Account owner must sign and provide to the delegate beforehand.
+              * `delegate_static_id` - the delegate's StaticId, i.e. the caller's StaticId
+              * `permissions` a value indicating the permission(s) to be given to the delegate
+          2. `signing_key` - The authorizing AccountId, the key used to create `signature`
+          3. `signature` - The signature of the hash of `data`
+    * Event emitted: `DelegateAdded` with the `signing_key`, `static_id`, and `delegate_static_id`
+    * Restrictions:  Caller/origin MUST control `delegate_static_id`, and the `signing_key` Account MUST control `static_id`.
+3. **replace_delegate_with_self(payload)** - by signed authorization of owner of `delegator`, `delegate` is removed as a delegate of `delegator` and replaced with `new_delegate_static_id`
+    * Parameters:
+        1. `payload`: authorization data signed by the delegating account
+            1. `data` - this is what the Account owner must sign and provide to the delegate beforehand.
+                * `new_delegate` - the new delegate's StaticId, i.e. the caller's StaticId
+                * `old_delegate` - the StaticId of the delegate to be replaced.
+                * `static_id` - the StaticId of the authorizing Account.
+                * `permissions` a value indicating the permission(s) to be given to the *new* delegate
+            2. `signing_key` - The authorizing AccountId, the key used to create `signature`
+            3. `signature` - The signature of the hash of `data`
+    * Event emitted: `DelegateReplaced` with the `signing_key`, `static_id`, and `old_delegate` and `new_delegate`
+    * Restrictions:  Caller/origin MUST control `new_delegate`, and the `signing_key` Account MUST control `static_id`. Also, `old_delegate` MUST also be a delegate of `static_id`.  Caller may use `add_self_as_delegate` if the last condition fails, but this will cost transaction fees, so it behooves them to call `validate_delegate` with no permissions, if unsure.
+5. **validate_delegate(delegate, delegator, permissions)** - verify that the provided delegate StaticId is a delegate of the delegator, and has the given permissions. DispatchResult contains true if the validation passes. Errors if delegate or delegator do not exist.
     * Parameters:
      1. `delegate`: the StaticId of the delegate to verify
      2. `delegator`: the StaticId of the delegator
-     3. `permissions`: the permissions to check against what is stored for this delegate.
-7. **get_static_id(static_id)** - retrieve the AccountId for the provided StaticId, or error if it does not exist.
-8. **remove_static_id(static_id)** deletes the StaticId from the registry entirely.
-   * Restrictions:  Owner or sudoer
+     3. `permissions`: the permissions to check against what is stored for this delegate.  If `permissions` is the `Zero()` value, DispatchResult contains true if they are a delegate, false if not.
+6. **get_static_id(static_id)** - retrieve the AccountId for the provided StaticId, or error if it does not exist.
+7. **create_static_id()** - directly creates a StaticId for the origin (caller) Account, with no delegates. This is a signed call directly from the caller, so the owner of the new StaticId pays the fees for StaticId creation.
+    * Event Emitted: `IdentityCreated`, with the caller's AccountId, the new StaticId, and an empty delegate StaticId.
+8. **add_delegate(delegator, delegate, permissions)** - adds a new delegate for an *existing* StaticId.  This is a signed call directly from the delegator's Account.  The *delegator* account pays the fees.
+    * Parameters:
+        1. `delegator` - the StaticId to add the delegate to
+        2. `delegate` - the StaticId of the new delegate
+        3. `permissions` - a value indicating the permissions for the new delegate
+    * Restrictions:  **Owner only**.
+9. **update_delegate(delegator, delegate, permissions)** - changes the permissions for an existing delegator-delegate relationship. This is a signed call directly from the delegator's Account.  The *delegator* account pays the fees.
+    * Parameters: the same as `add_delegate`.
+    * Restrictions:  **Owner only**.
+10. **remove_delegate(delegator,delegate)** - deletes a delegate's entry from the list of delegates for the provided StaticId. This is a signed call directly from the delegator's Account. The *delegator* account pays the fees, if any.
+     * **Parameters**:
+         1. `delegator` - the StaticId removing the delegate
+         2. `delegate` - the StaticId of the delegate to be removed
+     * Restrictions:  **Owner only**.
+11. **remove_static_id(static_id)** deletes the StaticId from the registry entirely.
+    * Restrictions:  Owner or sudoer
 
 
 ## Benefits and Risks
 As stated earlier, one of the primary intended benefits of delegation is to allow feeless account creation and announcing.
+
+There is a risk of abuse with delegation of announcements, since this makes it possible for a delegate to, for example, modify the End User's messages before batching them. The announcer would have to be caught and the End User must react after the fact, instead of the announcer being technologically prevented from this type of dishonesty.
+
+There is another risk of abuse if there is a wallet that does not make very clear what the End User is signing.
 
 ## Alternatives and Rationale
 ### End User pays for existential deposit
