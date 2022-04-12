@@ -13,7 +13,7 @@ This document describes the permissioned delegation of actions, largely, but not
 
 ## Context and Scope
 This document describes how a delegation is created and validated on chain.
-Delegations can be used to perform tasks on behalf of another AccountId.
+Delegations can be used to perform tasks on behalf of another StaticId.
 Some examples of delegated actions and delegated permissions are given.
 It's expected that the actions and permissions that are implemented for delegation will evolve as needed.
 
@@ -34,8 +34,54 @@ Put another way, delegation must have the following properties:
 * **Changeable** - a Delegate's permissions must be able to be changed by the Delegator to give Account holders control over what tasks are permitted to the Delegate.
 * **Revocable** - a Delegate's permissions must be able to be revoked by the Delegator to give Account holders the ability to withdraw permissions completely from the Delegate.
 
+### Non-Goals
+* This does not cover retiring a StaticId, which is a possible future feature.
+* Permissions have not been specified and neither has the data type.
+
 ## Proposal
-The proposed solution is to give End Users the ability to transparently authorize Delegates on chain and control what activities are delegated.
+The proposed solution is to give End Users the ability to create an on-chain StaticId through an authorized delegate, and to transparently authorize and manage their own Delegates and permissions. Additionally, we allow StaticIds to be directly purchased through a native token.
+
+### API (extrinsics)
+**Notes**
+ - all names are placeholders and may be changed.
+ - all extrinsics must emit an appropriate event with all parameters for the call, unless otherwise specified
+ - errors in the extrinsics must have different, reasonably-named error enums for each type of error.
+ - if no restrictions are listed, anyone may call this extrinsic.
+
+1. **add_delegate(delegator, delegate, permissions)*** - adds a new delegate for an *existing* StaticId.  This is a signed call directly from the delegator's Account.  The *delegator* account pays the fees.
+   * Parameters:
+     1. `delegator` - the StaticId to add the delegate to
+     2. `delegate` - the StaticId of the new delegate
+     3. `permissions` - a value indicating the permissions for the new delegate
+   * Restrictions:  Owner only.
+2. **update_delegate(delegator, delegate, permissions)** - changes the permissions for an existing delegator-delegate relationship. This is a signed call directly from the delegator's Account.  The *delegator* account pays the fees.  The parameters are the same as `add_delegate`.
+    * Restrictions:  Owner only.
+3. **remove_delegate(delegator,delegate)** - deletes a delegate's entry from the list of delegates for the provided StaticId. This is a signed call directly from the delegator's Account. The *delegator* account pays the fees, if any.
+   * **Parameters**:
+       1. `delegator` - the StaticId removing the delegate
+       2. `delegate` - the StaticId of the delegate to be removed
+   * Restrictions:  Owner only.
+4. **create_account_with_delegate**(payload) - creates a new StaticId on behalf of an Account, by the caller, and adds the caller as the Account's delegate.  This call is from the delegate account.  The delegate, *not the owner of the new StaticId*, pays the fees.
+    * Parameters:
+      1. `payload`: authorization data signed by the delegating account.
+         1. `data` - this is what the Account owner must sign and provide to the delegate beforehand.
+             * `static_id` - the delegate's StaticId, i.e. the caller's StaticId
+             * `permissions` a value indicating the permission(s) to be given to the delegate
+         2. `signing_key` - The authorizing AccountId, the key used to create `signature`
+         3. `signature` - The signature of the hash of `data`
+    * Event Emitted:  `IdentityCreated`, with the delegator AccountId, the new StaticId, and the delegate StaticId
+    * Restrictions:  The origin account MUST control the static ID that is provided in the payload.
+5. **create_static_id()** - directly creates a StaticId for the origin (caller) Account, with no delegates. This is a signed call directly from the caller, so the owner of the new StaticId pays the fees for StaticId creation.
+    * Event Emitted: `IdentityCreated`, with the caller's AccountId, the new StaticId, and an empty delegate StaticId.
+6. **validate_delegate(delegate, delegator, permissions)** - verify that the provided delegate StaticId is a delegate of the delegator, and has the given permissions.
+    * Parameters:
+     1. `delegate`: the StaticId of the delegate to verify
+     2. `delegator`: the StaticId of the delegator
+     3. `permissions`: the permissions to check against what is stored for this delegate.
+7. **get_static_id(static_id)** - retrieve the AccountId for the provided StaticId, or error if it does not exist.
+8. **remove_static_id(static_id)** deletes the StaticId from the registry entirely.
+   * Restrictions:  Owner or sudoer
+
 
 ## Benefits and Risks
 As stated earlier, one of the primary intended benefits of delegation is to allow feeless account creation and announcing.
@@ -69,10 +115,11 @@ Furthermore, permissioned delegation via verifiable strong cryptographic signatu
 
 
 ## Glossary
-* **Delegate**: An AccountId that has been granted specific permissions by its Delegator.
-* **Delegator**: An AccountId that has granted specific permissions to a Delegate.
+* **Delegate**: An StaticId that has been granted specific permissions by its Delegator.
+* **Delegator**: An StaticId that has granted specific permissions to a Delegate.
 * **Account**: a collection of key pairs which can have a specific token balance.
 * **AccountId**: A 32-byte number that is used to refer to an on-chain Account.
+* **StaticId**: A 32-byte number used as a lookup and storage key for delegations, among other things
 * **Provider**: A company or individual operating an on-chain Delegate Account in order to post MRC transactions on behalf of other Accounts.  Provider Accounts will have one or more token balances.
 * **End User**: Groups or individuals that own an Account that is not a Provider Account.
 
