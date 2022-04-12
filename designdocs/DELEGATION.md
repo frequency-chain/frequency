@@ -47,12 +47,14 @@ The proposed solution is to give End Users the ability to create an on-chain Sta
 ### API (extrinsics)
 * all names are placeholders and may be changed.
 * all extrinsics must emit an appropriate event with all parameters for the call, unless otherwise specified.
+* extrinsics return `Ok(())` on success unless otherwise specified.
 * errors in the extrinsics must have different, reasonably-named error enums for each type of error for ease of debugging.
 * Read-only extrinsics can be called by anyone; otherwise, restrictions are as noted.  "Owner only" means the caller must own the `delegator` StaticId.
 * Events are not deposited for read-only extrinsic calls.
 * It is intentionally _not_ a feature this design to allow permissions and delegates to be queried generally; we do not allow the retrieval of the entire delegation data store, nor all the delegates of a given StaticId, nor the specific permissions of a Delegator-Delegate pair.
 
-1. **create_account_with_delegate**(payload) - creates a new StaticId on behalf of an Account, by the caller, and adds the caller as the Account's delegate.  This call is from the delegate account.  The delegate, *not the owner of the new StaticId*, pays the fees. DispatchResult contains the new StaticId on success.
+1. **create_account_with_delegate**(payload) - creates a new StaticId on behalf of an Account and adds the caller as the Account's delegate. The delegate, *not the owner of the new StaticId*, pays the fees.
+    * Returns: `Ok((static_id)`) on success.
     * Parameters:
       1. `payload`: authorization data signed by the delegating account.
          1. `data` - this is what the Account owner must sign and provide to the delegate beforehand.
@@ -94,30 +96,34 @@ The proposed solution is to give End Users the ability to create an on-chain Sta
             2. `signing_key` - The authorizing AccountId, the key used to create `signature`
             3. `signature` - The signature of the hash of `data`
     * Event: `DelegateUpdatedSelf` with `delegate`, `static_id`, `new_permissions`
-5. **validate_delegate(delegate, delegator, permissions)** - verify that the provided delegate StaticId is a delegate of the delegator, and has the given permissions. DispatchResult contains true if the validation passes. Errors if delegate or delegator do not exist.
+5. **validate_delegate(delegate, delegator, permissions)** - verify that the provided delegate StaticId is a delegate of the delegator, and has the given permissions. Errors if delegate or delegator do not exist.
+    * Returns: `Ok((bool)`) on success, `bool` is true if delegate exists for delegator with the given permissions, or false. If `permissions` is the `Zero()` value, true if they are a delegate, false if not.
     * Parameters:
      1. `delegate`: the StaticId of the delegate to verify
      2. `delegator`: the StaticId of the delegator
-     3. `permissions`: the permissions to check against what is stored for this delegate.  If `permissions` is the `Zero()` value, DispatchResult contains true if they are a delegate, false if not.
-6. **get_static_id(static_id)** - retrieve the AccountId for the provided StaticId, or error if it does not exist.
-7. **create_static_id()** - directly creates a StaticId for the origin (caller) Account, with no delegates. This is a signed call directly from the caller, so the owner of the new StaticId pays the fees for StaticId creation. DispatchResult contains the new StaticId on success.
+     3. `permissions`: the permissions to check against what is stored for this delegate.
+6. **get_account_id(static_id)** - retrieve the AccountId for the provided StaticId, or error if it does not exist.
+    * Returns: `Ok((account_id)`) on success.
+7. **get_static_id(account_id)** - retrieve the StaticId for the provided AccountId, or error if it does not exist.
+    * Returns: `Ok((static_id)`) on success.
+8. **create_static_id()** - directly creates a StaticId for the origin (caller) Account, with no delegates. This is a signed call directly from the caller, so the owner of the new StaticId pays the fees for StaticId creation. DispatchResult contains the new StaticId on success.
     * Event: `IdentityCreated`, with the caller's AccountId, the new StaticId, and an empty delegate StaticId.
-8. **add_delegate(delegator, delegate, permissions)** - adds a new delegate for an *existing* StaticId.  This is a signed call directly from the delegator's Account.  The *delegator* account pays the fees.
+9. **add_delegate(delegator, delegate, permissions)** - adds a new delegate for an *existing* StaticId.  This is a signed call directly from the delegator's Account.  The *delegator* account pays the fees.
     * Parameters:
         1. `delegator` - the StaticId to add the delegate to
         2. `delegate` - the StaticId of the new delegate
         3. `permissions` - a value indicating the permissions for the new delegate
     * Restrictions:  **Owner only**.
-9. **update_delegate(delegator, delegate, permissions)** - changes the permissions for an existing delegator-delegate relationship. This is a signed call directly from the delegator's Account.  The *delegator* account pays the fees.
-    * Parameters: the same as `add_delegate`.
-    * Restrictions:  **Owner only**.
-   * Event: `DelegateUpdated` with `delegator`, `delegate`, `new_permissions`
-10. **remove_delegate(delegator,delegate)** - deletes a delegate's entry from the list of delegates for the provided StaticId. This is a signed call directly from the delegator's Account. The *delegator* account pays the fees, if any.
+10. **update_delegate(delegator, delegate, permissions)** - changes the permissions for an existing delegator-delegate relationship. This is a signed call directly from the delegator's Account.  The *delegator* account pays the fees.
+     * Parameters: the same as `add_delegate`.
+     * Restrictions:  **Owner only**.
+    * Event: `DelegateUpdated` with `delegator`, `delegate`, `new_permissions`
+11. **remove_delegate(delegator,delegate)** - deletes a delegate's entry from the list of delegates for the provided StaticId. This is a signed call directly from the delegator's Account. The *delegator* account pays the fees, if any.
      * **Parameters**:
          1. `delegator` - the StaticId removing the delegate
          2. `delegate` - the StaticId of the delegate to be removed
      * Restrictions:  **Owner only**.
-11. **remove_static_id(static_id)** deletes the StaticId from the registry entirely.
+12. **remove_static_id(static_id)** deletes the StaticId from the registry entirely.
     * Restrictions:  Owner [and/or sudoer?]
 
 ## Benefits and Risks
