@@ -26,7 +26,7 @@ case $TARGET in
     ;;
 
   tests)
-    cargo test --workspace --release
+    cargo test --workspace
     ;;
 
   lint)
