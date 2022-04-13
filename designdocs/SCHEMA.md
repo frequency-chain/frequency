@@ -29,3 +29,5 @@ Schema registry provides an on chain repository for schemas, thereby allowing pa
 
 Using schema registry, message producers no longer need to include full schema with the message payload, instead only include ID of that schema, resulting in efficient serialization.
 
+![registry](https://user-images.githubusercontent.com/61435908/163263866-adf36d23-0968-42cd-8d50-6025bb7c455b.png)
+
