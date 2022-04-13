@@ -14,7 +14,9 @@ Message passing is a core functionality to social networks. The way to enforce a
 At a minimum, MRC should implement procedures to register, validate, store and access variety of messaging schemas dynamically. Schemas on chain must have the following salient features:
 
 - **Registry** : Implement a schema registry, enabling participants to register and store validated schemas on chain.
-- **Validation** : Implement procedural calls enabling consumers to validate messages against stored schema. Due to serialization concerns schema and message validation will be done off chain.
+- **Validation** : Implement procedural calls enabling consumers to validate messages against stored schema. Due to serialization concerns schema and message validation will be done off chain. Some basic on chain validation required by MRC are as follows:
+  - Total count of schema does not exists a pre-defined maximum count.
+  - Schema being registered should have a minimum number of fields defined by MRC and should not exists a pre-defined maximum size.
 - **Interfaces** : Implement appropriate procedural calls to perform CRUD operations on schema registry.
 - **Retention** : Implement some sort of schema(s) retention logic  for optimal on-chain storage. Retention periods per schema can be modified via super user permissions.
 - **Evolution** : TODO
@@ -23,7 +25,7 @@ At a minimum, MRC should implement procedures to register, validate, store and a
 
 This document outlines various components of MRC schemas, including, but not limited to, ability of network participants to register, validate and access message schemas dynamically via on chain semantics.
 
-### Schema Registry
+## Schema Registry
 
 Schema registry provides an on chain repository for schemas, thereby allowing participants of the network to flexibly interact and exchange messages with each other without facing the challenge of sharing, managing and validating messages as well as schemas between them.
 
@@ -31,3 +33,6 @@ Using schema registry, message producers no longer need to include full schema w
 
 ![registry](https://user-images.githubusercontent.com/61435908/163263866-adf36d23-0968-42cd-8d50-6025bb7c455b.png)
 
+### Schema Storage
+
+- 
