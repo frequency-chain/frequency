@@ -1,5 +1,5 @@
 # Delegations
-This document describes the permissioned delegation of actions, largely, but not limited to, account creation and announcing messages by the owner of an AccountID on chain on behalf of the owner of another AccountID.
+This document describes the permissioned delegation of actions, largely, but not limited to, account creation and announcing messages by the owner of an `AccountId` on chain on behalf of the owner of another `AccountId`.
 
 ## Table of Contents
 * [Context and Scope](https://github.com/LibertyDSNP/meta#installation)
@@ -10,6 +10,7 @@ This document describes the permissioned delegation of actions, largely, but not
 * [Alternatives and Rationale](https://github.com/LibertyDSNP/meta#support)
 * [Additional Resources](https://github.com/LibertyDSNP/meta#contributing)
 * [Glossary](https://github.com/LibertyDSNP/meta#overview)
+
 
 ## Context and Scope
 This document describes how a delegation is created and validated on chain.
@@ -35,96 +36,129 @@ Put another way, delegation must have the following properties:
 * **Revocable** - a Delegate's permissions must be able to be revoked by the Delegator to give Account holders the ability to withdraw permissions completely from the Delegate.
 
 ### Non-Goals
-* This doesn't cover retiring a StaticId, which is a possible future feature.
-* Although this does specify a direct removal of one's own StaticId, it doesn't specify a delegated version of that.
+* This doesn't cover retiring a `MsaId`, which is a possible future feature.
+* Although this does specify a direct removal of one's own `MsaId`, it doesn't specify a delegated version of that.
 This would mean one delegate would be able to remove another delegate, not just replacing the delegate with itself.
 This presents serious enough issues that it should be discussed and designed separately if it's to be implemented at all.
 * We're not specifying here what the permissions are nor the permissions data type.
+* This does not specify a specific value for certain constants, only when there should be one. These values should be determined by such factors as storage costs and performance.
 
 ## Proposal
-The proposed solution is to give End Users the ability to create an on-chain StaticId through an authorized delegate, and to transparently authorize and manage their own Delegates and permissions, either directly using a native token or through another delegate that they authorize explicitly. Additionally, we allow StaticIds to be directly purchased using a native token.
+The proposed solution is to give End Users the ability to create an on-chain `MsaId` through an authorized delegate, and to transparently authorize and manage their own Delegates and permissions, either directly using a native token or through another delegate that they authorize explicitly. Additionally, we allow `MsaIds` to be directly purchased using a native token.
 
 ### API (extrinsics)
 * all names are placeholders and may be changed.
 * all extrinsics must emit an appropriate event with all parameters for the call, unless otherwise specified.
-* extrinsics return `Ok(())` on success unless otherwise specified.
 * errors in the extrinsics must have different, reasonably-named error enums for each type of error for ease of debugging.
-* Read-only extrinsics can be called by anyone; otherwise, restrictions are as noted.  "Owner only" means the caller must own the `delegator` StaticId.
+* Read-only extrinsics can be called by anyone; otherwise, restrictions are as noted.
+  "Owner only" means the caller must own the `delegator` `MsaId`.
 * Events are not deposited for read-only extrinsic calls.
-* It is intentionally _not_ a feature this design to allow permissions and delegates to be queried generally; we do not allow the retrieval of the entire delegation data store, nor all the delegates of a given StaticId, nor the specific permissions of a Delegator-Delegate pair.
 
-1. **create_account_with_delegate**(payload) - creates a new StaticId on behalf of an Account and adds the caller as the Account's delegate. The delegate, *not the owner of the new StaticId*, pays the fees.
-    * Returns: `Ok((static_id)`) on success.
+1. **create_account_with_delegate**(payload) - creates a new `MsaId` on behalf of an Account and adds the caller as the Account's delegate. The delegate, *not the owner of the new `MsaId`*, pays the fees.
     * Parameters:
       1. `payload`: authorization data signed by the delegating account.
          1. `data` - this is what the Account owner must sign and provide to the delegate beforehand.
-             * `static_id` - the delegate's StaticId, i.e. the caller's StaticId
-             * `permissions` a value indicating the permission(s) to be given to the delegate
-         2. `signing_key` - The authorizing AccountId, the key used to create `signature`
+             * `msa_id` - the delegate's `MsaId`, i.e. the caller's `MsaId`
+             * `permission` a value indicating the permission to be given to the delegate
+         2. `signing_key` - The authorizing `AccountId`, the key used to create `signature`
          3. `signature` - The signature of the hash of `data`
-    * Event:  `IdentityCreated`, with the delegator AccountId, the new StaticId, and the delegate StaticId
+    * Event:  `IdentityCreated`, with the delegator `AccountId`, the new `MsaId`, and the delegate `MsaId`
     * Restrictions:  The origin account MUST control the static ID that is provided in the payload.
-2. **add_self_as_delegate(payload)** - adds the StaticId in the payload as a delegate, to an Account owning `delegator_static_id`
+2. **add_self_as_delegate(payload)** - adds the `MsaId` in the payload as a delegate, to an Account owning `delegator_msa_id`
     * Parameters:
       1. `payload`: authorization data signed by the delegating account
           1. `data` - this is what the Account owner must sign and provide to the delegate beforehand.
-              * `delegate_static_id` - the delegate's StaticId, i.e. the caller's StaticId
-              * `permissions` a value indicating the permission(s) to be given to the delegate
-          2. `signing_key` - The authorizing AccountId, the key used to create `signature`
+              * `delegate_msa_id` - the delegate's `MsaId`, i.e. the caller's `MsaId`
+              * `permission` a value indicating the permission to be given to the delegate
+          2. `signing_key` - The authorizing `AccountId`, the key used to create `signature`
           3. `signature` - The signature of the hash of `data`
-    * Event: `DelegateAddedSelf` with the `signing_key`, `static_id`, and `delegate_static_id`
-    * Restrictions:  Caller/origin MUST control `delegate_static_id`, and the `signing_key` Account MUST control `static_id`.
-3. **replace_delegate_with_self(payload)** - by signed authorization of owner of `delegator`, `delegate` is removed as a delegate of `delegator` and replaced with `new_delegate_static_id`
+    * Event: `DelegateAddedSelf` with the `signing_key`, `msa_id`, and `delegate_msa_id`
+    * Restrictions:  Caller/origin MUST control `delegate_msa_id`, and the `signing_key` Account MUST control `msa_id`.
+3. **replace_delegate_with_self(payload)** - by signed authorization of owner of `delegator`, `delegate` is removed as a delegate of `delegator` and replaced with `new_delegate_msa_id`
     * Parameters:
         1. `payload`: authorization data signed by the delegating account
             1. `data` - this is what the Account owner must sign and provide to the delegate beforehand.
-                * `new_delegate` - the new delegate's StaticId, i.e. the caller's StaticId
-                * `old_delegate` - the StaticId of the delegate to be replaced.
-                * `static_id` - the StaticId of the authorizing Account.
-                * `permissions` a value indicating the permission(s) to be given to the *new* delegate
-            2. `signing_key` - The authorizing AccountId, the key used to create `signature`
+                * `new_delegate` - the new delegate's `MsaId`, i.e. the caller's `MsaId`
+                * `old_delegate` - the `MsaId` of the delegate to be replaced.
+                * `msa_id` - the `MsaId` of the authorizing Account.
+                * `permission` a value indicating the permission to be given to the *new* delegate
+            2. `signing_key` - The authorizing `AccountId`, the key used to create `signature`
             3. `signature` - The signature of the hash of `data`
-    * Event: `DelegateReplacedWithSelf` with the `signing_key`, `static_id`, and `old_delegate` and `new_delegate`
-    * Restrictions:  Caller/origin MUST control `new_delegate`, and the `signing_key` Account MUST control `static_id`. Also, `old_delegate` MUST be a delegate of `static_id`.
+    * Event: `DelegateReplacedWithSelf` with the `signing_key`, `msa_id`, and `old_delegate` and `new_delegate`
+    * Restrictions:  Caller/origin MUST control `new_delegate`, and the `signing_key` Account MUST control `msa_id`.
+      Also, `old_delegate` MUST be a delegate of `msa_id`.
 4. **update_delegate_self(payload)** - by signed authorization of owner of `delegator`, `delegate`'s own permissions are updated to `new_permissions`
     * Parameters:
         1. `payload`: authorization data signed by the delegating account
             1. `data` - this is what the Account owner must sign and provide to the delegate beforehand.
-                * `delegate` - the delegate's StaticId, i.e. the caller's StaticId
-                * `static_id` - the StaticId of the authorizing Account.
-                * `new_permissions` a value indicating the new permission(s) to be given to this delegate
-            2. `signing_key` - The authorizing AccountId, the key used to create `signature`
+                * `delegate` - the delegate's `MsaId`, i.e. the caller's `MsaId`
+                * `msa_id` - the `MsaId` of the authorizing Account.
+                * `new_permission` a value indicating the new permission to be given to this delegate
+            2. `signing_key` - The authorizing `AccountId`, the key used to create `signature`
             3. `signature` - The signature of the hash of `data`
-    * Event: `DelegateUpdatedSelf` with `delegate`, `static_id`, `new_permissions`
-5. **validate_delegate(delegate, delegator, permissions)** - verify that the provided delegate StaticId is a delegate of the delegator, and has the given permissions. Errors if delegate or delegator do not exist.
-    * Returns: `Ok((bool)`) on success, `bool` is true if delegate exists for delegator with the given permissions, or false. If `permissions` is the `Zero()` value, true if they are a delegate, false if not.
+    * Event: `DelegateUpdatedSelf` with `delegate`, `msa_id`, `new_permissions`
+8. **create_msa_id()** - directly creates a `MsaId` for the origin (caller) Account, with no delegates. This is a signed call directly from the caller, so the owner of the new `MsaId` pays the fees for `MsaId` creation. DispatchResult contains the new `MsaId` on success.
+    * Event: `IdentityCreated`, with the caller's `AccountId`, the new `MsaId`, and an empty delegate `MsaId`.
+9. **add_delegate(delegator, delegate, permissions)** - adds a new delegate for an *existing* `MsaId`.  This is a signed call directly from the delegator's Account.  The *delegator* account pays the fees.
     * Parameters:
-     1. `delegate`: the StaticId of the delegate to verify
-     2. `delegator`: the StaticId of the delegator
-     3. `permissions`: the permissions to check against what is stored for this delegate.
-6. **get_account_id(static_id)** - retrieve the AccountId for the provided StaticId, or error if it does not exist.
-    * Returns: `Ok((account_id)`) on success.
-7. **get_static_id(account_id)** - retrieve the StaticId for the provided AccountId, or error if it does not exist.
-    * Returns: `Ok((static_id)`) on success.
-8. **create_static_id()** - directly creates a StaticId for the origin (caller) Account, with no delegates. This is a signed call directly from the caller, so the owner of the new StaticId pays the fees for StaticId creation. DispatchResult contains the new StaticId on success.
-    * Event: `IdentityCreated`, with the caller's AccountId, the new StaticId, and an empty delegate StaticId.
-9. **add_delegate(delegator, delegate, permissions)** - adds a new delegate for an *existing* StaticId.  This is a signed call directly from the delegator's Account.  The *delegator* account pays the fees.
-    * Parameters:
-        1. `delegator` - the StaticId to add the delegate to
-        2. `delegate` - the StaticId of the new delegate
+        1. `delegator` - the `MsaId` to add the delegate to
+        2. `delegate` - the `MsaId` of the new delegate
         3. `permissions` - a value indicating the permissions for the new delegate
     * Restrictions:  **Owner only**.
 10. **update_delegate(delegator, delegate, permissions)** - changes the permissions for an existing delegator-delegate relationship. This is a signed call directly from the delegator's Account.  The *delegator* account pays the fees.
      * Parameters: the same as `add_delegate`.
      * Restrictions:  **Owner only**.
     * Event: `DelegateUpdated` with `delegator`, `delegate`, `new_permissions`
-11. **remove_delegate(delegator,delegate)** - deletes a delegate's entry from the list of delegates for the provided StaticId. This is a signed call directly from the delegator's Account. The *delegator* account pays the fees, if any.
-     * **Parameters**:
-         1. `delegator` - the StaticId removing the delegate
-         2. `delegate` - the StaticId of the delegate to be removed
-     * Restrictions:  **Owner only**.
-12. **remove_static_id(static_id)** deletes the StaticId from the registry entirely.
+11. **remove_delegate(delegator,delegate)** - deletes a delegate's entry from the list of delegates for the provided `MsaId`.
+     This is a signed call directly from the delegator's Account.
+     The *delegator* account pays the fees, if any.
+        * **Parameters**:
+            1. `delegator` - the `MsaId` removing the delegate
+            2. `delegate` - the `MsaId` of the delegate to be removed
+        * Restrictions:  **Owner only**.
+12. **remove_msa_id(msa_id)** deletes the `MsaId` from the registry entirely.
     * Restrictions:  Owner [and/or sudoer?]
+
+### Custom RPC endpoints
+1. **get_account_ids(msa_id)** - retrieve a list of `AccountIds` for the provided `MsaId`, or `None()` if the `MsaId` does not exist.
+2. **get_msa_id(account_id)** - retrieve the `MsaId` for the provided `AccountId`, or `None()` if the `AccountId` does not exist.
+3. **validate_delegate(delegator, delegate, permission)** - verify that the provided delegate `MsaId` is a delegate of the delegator, and has the given permission value. Returns `Ok(true)` if delegate is valid, `Ok(false)` if not, Error if either delegate or delegator do not exist.
+    * Parameters:
+        1. `delegator`: the `MsaId` of the delegator
+        2. `delegate`: the `MsaId` of the delegate to verify.
+        3. `permission`: the `Permission` value to check against what is stored for these delegates.
+           If this is the `Zero()` value, it checks only that this is a delegate for this delegator `MsaId`.
+4. **validate_delegate_for_ids(delegate_msa_id, msa_ids, permission): <Result<bool>>** -
+   validate a delegate for a bunch of `MsaIds` against the provided `permission`.
+   This is intended for validating messages in a batch, so this function would be an all-or-nothing check.
+   If the permission stored for a given `MsaId` exceeds the parameter, the check for that `MsaId` passes.
+   For example, if a delegate has *all* permissions set, then querying for a subset of permissions will pass.
+    * Returns: `Ok(true)` if delegate is valid for all ids *and* the delegate exists *and* all of the ids exist, `Ok(false)` otherwise.
+      It's up to the caller to decide if they want to figure out why validation failed and how.
+    * Parameters:
+        1. `delegate_msa_id`: the `MsaId` of the delegate to verify.
+        2. `msa_ids`: the list of `MsaIds` to check. This should have a sensible maximum length.
+        3. `permission`: the `Permission` value to check against.
+           Since this is intended for validating a batch, this is just one value.
+
+### Related Pallet configuration, constants and enumerations
+* `MaxDelegates` - maximum number of delegates a given ID is allowed to have. Pallet configuration.
+* `Permissions` type should be explicitly set in `types.rs` for the pallet
+* `Permissions` definitions to be discussed.  Possibilities:  Owner, Announcer, Expiring
+
+### Storage
+* Double-key map of Delegator `MsaId` --> Delegate `MsaId` that contains the permissions for that relationship:
+```rust
+pub(super) type Delegates<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		MsaId,
+		Blake2_128Concat,
+		MsaId,
+		Permission,
+		OptionQuery,
+	>;
+```
 
 ## Benefits and Risks
 As stated earlier, one of the primary intended benefits of delegation is to allow feeless account creation and announcing.
@@ -144,7 +178,7 @@ This was discarded because:
 ### dApp Developer pays for existential deposit
 One alternative to allow for account creation at no cost to the End User was to have the dApp developer Account to send an existential deposit to the account to create it.
 We decided against this option for a number of reasons.
-1. It could create a potential for abuse and token loss by those creating numerous fake accounts and then removing the dApp AccountID as a delegate.
+1. It could create a potential for abuse and token loss by those creating numerous fake accounts and then removing the dApp `AccountId` as a delegate.
 2. We have the ability not to require an existential deposit, and felt this to be a better option in this particular case.
 
 ### End user pays to announce
@@ -162,11 +196,11 @@ Furthermore, permissioned delegation via verifiable strong cryptographic signatu
 
 
 ## Glossary
-* **Delegate**: An StaticId that has been granted specific permissions by its Delegator.
-* **Delegator**: An StaticId that has granted specific permissions to a Delegate.
+* **Delegate**: An `MsaId` that has been granted specific permissions by its Delegator.
+* **Delegator**: An `MsaId` that has granted specific permissions to a Delegate.
 * **Account**: a collection of key pairs which can have a specific token balance.
-* **AccountId**: A 32-byte number that is used to refer to an on-chain Account.
-* **StaticId**: A 32-byte number used as a lookup and storage key for delegations, among other things
+* **AccountId**: A 32-byte (u256) number that is used to refer to an on-chain Account.
+* **MsaId**: A 8-byte (u64) number used as a lookup and storage key for delegations, among other things
 * **Provider**: A company or individual operating an on-chain Delegate Account in order to post MRC transactions on behalf of other Accounts.  Provider Accounts will have one or more token balances.
 * **End User**: Groups or individuals that own an Account that is not a Provider Account.
 
