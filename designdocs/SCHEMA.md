@@ -13,13 +13,13 @@ Message passing is a core functionality to social networks. The way to enforce a
 
 At a minimum, MRC should implement procedures to register, validate, store and access variety of messaging schemas dynamically. Schemas on chain must have the following salient features:
 
-- **Registry** : Implement a schema registry, enabling participants to register and store validated schemas on chain.
-- **Validation** : Implement procedural calls enabling consumers to validate messages against stored schema. Due to serialization concerns schema and message validation will be done off chain. Some basic on chain validation required by MRC are as follows:
-  - Total count of schema does not exists a pre-defined maximum count.
-  - Schema being registered should have a minimum number of fields defined by MRC and should not exists a pre-defined maximum size.
-- **Interfaces** : Implement appropriate procedural calls to perform CRUD operations on schema registry.
-- **Retention** : Implement some sort of schema(s) retention logic  for optimal on-chain storage. Retention periods per schema can be modified via super user permissions.
-- **Evolution** : TODO
+- **Registry**: Implement a schema registry, enabling participants to register and store validated schemas on chain.
+- **Validation**: Implement procedural calls enabling consumers to validate messages against stored schema. Due to serialization concerns message validation will be done off chain, while schema validation can be done on chain. Some basics of on chain validation required by MRC are as follows:
+  - Total count of schemas does not exceed a pre-defined maximum count that can be stored on chain.
+  - Schema being registered should have a minimum size as defined by MRC and should not exceed a pre-defined maximum size.
+- **Interfaces**: Implement appropriate procedural calls to perform CRUD operations on schema registry.
+- **Retention**: Implement some sort of schema(s) retention logic  for optimal on-chain storage. Retention periods per schema can be modified via super user permissions.
+- **Evolution**: TODO
 
 ## Proposal
 
@@ -35,4 +35,12 @@ Using schema registry, message producers no longer need to include full schema w
 
 ### Schema Storage
 
-- 
+- **Type definition**: ```StorageMap<_, Twox64Concat, SchemaId, BoundedVec<u8,T::MaxSchemaSize>>```
+- **Description**: Schemas are stored as key-value pair of SchemaId vs Serialized schema payload allowed to a maximum size.
+- **Implementation**: MRC will expose a substrate extrinsic ``` register_schema ``` to allow participants store a schema on chain.
+
+### Schema Validation
+
+Schema registry performs following checks before onboarding a schema on MRC:
+    - Ensure payload is signed by an authorizing AccountId
+    - Ensure MRC  
