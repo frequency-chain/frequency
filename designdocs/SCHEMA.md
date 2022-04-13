@@ -15,4 +15,7 @@ At a minimum, MRC should implement procedures to register, validate, store and a
 
 - Implement a schema registry, enabling participants to register and store validated schemas.
 - Implement appropriate procedural calls to perform CRUD operations on schema registry.
-- Implement some retention logic for schemas for optimal on-chain storage.
+- Implement some schema(s) retention logic  for optimal on-chain storage. Retention periods per schema can be modified via super user permissions.
+- Implement procedural calls enabling consumers to validate messages against stored schema.
+
+## Proposal
