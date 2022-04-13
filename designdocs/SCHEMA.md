@@ -17,6 +17,7 @@ At a minimum, MRC should implement procedures to register, validate, store and a
 - **Validation** : Implement procedural calls enabling consumers to validate messages against stored schema. Due to serialization concerns schema and message validation will be done off chain.
 - **Interfaces** : Implement appropriate procedural calls to perform CRUD operations on schema registry.
 - **Retention** : Implement some sort of schema(s) retention logic  for optimal on-chain storage. Retention periods per schema can be modified via super user permissions.
+- **Evolution** : TODO
 
 ## Proposal
 
@@ -28,10 +29,3 @@ Schema registry provides an on chain repository for schemas, thereby allowing pa
 
 Using schema registry, message producers no longer need to include full schema with the message payload, instead only include ID of that schema, resulting in efficient serialization.
 
-```mermaid
-  graph TD;
-      A-->B;
-      A-->C;
-      B-->D;
-      C-->D;
-```
