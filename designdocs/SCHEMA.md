@@ -17,7 +17,7 @@ At a minimum, MRC should implement procedures to register, validate, store and a
 - **Validation**: Message store will implement procedural calls enabling validation of  messages against stored schema. Due to serialization concerns [message validation](./OnChainMessageStorage.md) will be done off chain, while schema validation can be done on chain. Some basics of on chain validation required by MRC are as follows:
   - Total count of schemas does not exceed a pre-defined maximum count that can be stored on chain.
   - Schema being registered should have a minimum size as defined by MRC and should not exceed a pre-defined maximum size.
-  - Schema should not malformed.
+  - Schema should not be malformed.
 - **Interfaces**: Implement appropriate procedural calls to perform read operations on schema registry.
 - **Retention**: Implement some sort of schema(s) retention logic  for optimal on-chain message(s) storage. Retention periods per schema can be modified via super user permissions.
 - **Evolution**: An important aspect of message passing is  schema evolution. After initial schema is defined, network participants may need to evolve it over time depending of their respective use cases, this will be critical to messaging system to handle data encoded with both old and new schema seamlessly. This is a topic of research, if MRC would support schema evolution per se.
