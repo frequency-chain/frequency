@@ -208,13 +208,13 @@ We decided against this option for a number of reasons.
 1. It could create a potential for abuse and token loss by those creating numerous fake accounts and then removing the dApp `AccountId` as a delegate.
 2. We have the ability not to require an existential deposit, and felt this to be a better option in this particular case.
 
-### End user pays to announce
+### End user pays to announce, with no possibility of delegating
 An alternative for delegating announcement capabilities was to have each End User pay for their own announcing.
-This was ruled out because:
-1. It's hard to persuade the average person to spend money to use social media.
-2. Making End Users pay to announce would require people to sign transactions every time they make any updates — all posts, all reactions, all replies, all profile changes, all follows/unfollows, etc. Having to do this is burdensome, creates a lot of friction and is annoying.
+This was ruled out as the sole solution because:
+1. The average person can't or won't pay to use social media.
+2. Making End Users pay to announce would require people to sign transactions every time they make any updates — all posts, all reactions, all replies, all profile changes, all follows/unfollows, etc. Having to do this would be too annoying for the End User.
 
-Even if an End User did not want to trust a delegate, they could still pay for all of their announcing if they want to assume the cost of running a node and pay directly.
+This design still include some direct pay endpoints, so even if an End User did not want to trust a delegate, they could still pay for all of their announcing if they want to assume the cost of running a node and pay directly.
 
 ### Permissioned delegation is an industry standard
 Furthermore, permissioned delegation via verifiable strong cryptographic signature is a well-known and tested feature in smart contracts of distributed blockchain-based applications.
