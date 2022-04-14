@@ -91,3 +91,10 @@ With Schema Registry, different consumers of MRC can evolve a given schema at di
 - Schema evolution is critical to any message passing system, how does MRC intend to handle it or is it required , is still a question that needs to be ironed out.
 - Another factor to consider is who is permissioned to modify retention periods per schema and what are the defaults if any.
 
+## Additional Resources
+
+- [On chain message storage](./OnChainMessageStorage.md)
+- [Substrate storage](https://docs.substrate.io/v3/runtime/storage/)
+- [Substrate extrinsic](https://docs.substrate.io/v3/concepts/extrinsics/)
+- [Substrate custom rpc](https://docs.substrate.io/v3/runtime/custom-rpcs/)
+- [Substrate sudo](https://www.shawntabrizi.com/substrate/the-sudo-story-in-substrate/)
