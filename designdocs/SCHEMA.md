@@ -17,9 +17,9 @@ At a minimum, MRC should implement procedures to register, validate, store and a
 - **Validation**: Implement procedural calls enabling consumers to validate messages against stored schema. Due to serialization concerns message validation will be done off chain, while schema validation can be done on chain. Some basics of on chain validation required by MRC are as follows:
   - Total count of schemas does not exceed a pre-defined maximum count that can be stored on chain.
   - Schema being registered should have a minimum size as defined by MRC and should not exceed a pre-defined maximum size.
-- **Interfaces**: Implement appropriate procedural calls to perform CRUD operations on schema registry.
+- **Interfaces**: Implement appropriate procedural calls to perform read operations on schema registry.
 - **Retention**: Implement some sort of schema(s) retention logic  for optimal on-chain storage. Retention periods per schema can be modified via super user permissions.
-- **Evolution**: TODO
+- **Evolution**: An important aspect of message passing is  schema evolution. After initial schema is defined, network participants may need to evolve it over time depending of their respective use cases, this will be critical to messaging system to be able to handle data encoded with both old and new schema seamlessly. This is a topic of research, if MRC would support schema evolution per se.
 
 ## Proposal
 
@@ -33,14 +33,45 @@ Using schema registry, message producers no longer need to include full schema w
 
 ![registry](https://user-images.githubusercontent.com/61435908/163263866-adf36d23-0968-42cd-8d50-6025bb7c455b.png)
 
+### Schema Primitives
+
+    - **Schema**: Serialized schema of type ```Vec<u8>```.
+    - **SchemaId**: A unique identifier of type u32 for schemas successfully stored on chain.
+
 ### Schema Storage
 
-- **Type definition**: ```StorageMap<_, Twox64Concat, SchemaId, BoundedVec<u8,T::MaxSchemaSize>>```
+- **Type definition**: ```StorageMap<_, Twox64Concat, SchemaId, BoundedVec<Schema,T::MaxSchemaSize>>```
 - **Description**: Schemas are stored as key-value pair of SchemaId vs Serialized schema payload allowed to a maximum size.
-- **Implementation**: MRC will expose a substrate extrinsic ``` register_schema ``` to allow participants store a schema on chain.
+- **Implementation**: MRC will expose a substrate extrinsic ``` register_schema ``` to allow participants store a schema on chain. On successful registration raise SchemaRegistered event with schema_id and schema payload.
 
 ### Schema Validation
 
 Schema registry performs following checks before onboarding a schema on MRC:
-    - Ensure payload is signed by an authorizing AccountId
-    - Ensure MRC  
+    - Ensure, payload is signed by an authorizing AccountId.
+    - Ensure, MRC did not exceed maximum count of schemas that can be hosted on chain.
+    - Ensure, a given schema adheres to minimum and maximum size limits on chain.
+
+### Schema Access
+
+Schema registry should expose, at minimum, following procedural calls (as RPC and/or public trait for internal to MRC) for network participants and off chain message validator.
+
+    - get_schema : given a schema_id, return serialized schema payload of type ```Vec<Schema>``` stored on chain.
+
+### Schema Retention
+
+Retention periods on a schema is designed to message(s) store to retain messages per schema to a specific block number. Retention periods can be updated via super user (sudo on substrate) access.
+
+- **Type Definition**: ```StorageMap<SchemaId, BlockNumber>```.
+- **Description**: Retention period are stored as a map of ```SchemaId``` and ```BlockNumber```. By default schemas have no retention policy and ```BlockNumber``` is set to 1 signaling message store to retain messages on chain database indefinitely.
+- **Implementation**: MRC will expose a substrate  sudo call ```update_schema_retention``` to updated ```BlockNumber``` for a given ```schema_id``.
+- **Read**: Schema registry should expose ```get_retention_period``` procedural call to return current state of retention period for a given ```schema_id```.
+
+### Schema Starting Blocks
+
+- **Type Definition**: ```StorageMap<SchemaId, BlockNumber>```.
+- **Description**: On chain storage of starting block number for each schema. Required by message store. Default to block number 1.
+- **Implementation**: Schema registry should provide some sort of procedural call (internal to MRC) to read and write starting block number for a given ```schema_id```. This will be utilized by message store for further processing.
+
+### Schema Evolution
+
+With Schema Registry, different consumers of MRC can evolve a given schema at different rates, changing the shape of data and entrusting schema registry to handle translations from one schema to another. Currently schema evolution is not directly supported on chain and can be achieved by different consumers via unique ```schema_id``` for evolved schemas. An illustration of this is presented in following schematic:
