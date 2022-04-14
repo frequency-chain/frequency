@@ -18,7 +18,7 @@ At a minimum, MRC should implement procedures to register, validate, store and a
   - Total count of schemas does not exceed a pre-defined maximum count that can be stored on chain.
   - Schema being registered should have a minimum size as defined by MRC and should not exceed a pre-defined maximum size.
 - **Interfaces**: Implement appropriate procedural calls to perform read operations on schema registry.
-- **Retention**: Implement some sort of schema(s) retention logic  for optimal on-chain storage. Retention periods per schema can be modified via super user permissions.
+- **Retention**: Implement some sort of schema(s) retention logic  for optimal on-chain message(s) storage. Retention periods per schema can be modified via super user permissions.
 - **Evolution**: An important aspect of message passing is  schema evolution. After initial schema is defined, network participants may need to evolve it over time depending of their respective use cases, this will be critical to messaging system to handle data encoded with both old and new schema seamlessly. This is a topic of research, if MRC would support schema evolution per se.
 
 ## Proposal
@@ -56,7 +56,7 @@ Schema registry performs following checks before onboarding a schema on MRC:
 
 Schema registry should expose, at minimum, following procedural calls (as RPC and/or public trait for internal use) for network participants and off chain message validator.
 
-- get_schema : given a schema_id, return serialized schema payload of type ```Vec<Schema>``` stored on chain.
+- get_schema : given a ```schema_id```, return serialized schema payload of type ```Vec<Schema>``` stored on chain.
 
 ### Schema Retention
 
@@ -67,7 +67,7 @@ Retention periods on a schema is designed for message(s) store to retain message
 - **Implementation**: MRC will expose a substrate  sudo call ```update_schema_retention``` to updated ```BlockNumber``` for a given ```schema_id```.
 - **Read**: Schema registry should expose ```get_retention_period``` procedural call to return current state of retention period for a given ```schema_id```.
 
-### Schema Starting Blocks
+### Starting Blocks Storage and Access
 
 - **Type Definition**: ```StorageMap<SchemaId, BlockNumber>```.
 - **Description**: On chain storage of starting block number for each schema. Required by message store. Defaults to block number 1.
