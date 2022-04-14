@@ -64,7 +64,7 @@ Retention periods on a schema is designed to message(s) store to retain messages
 
 - **Type Definition**: ```StorageMap<SchemaId, BlockNumber>```.
 - **Description**: Retention period are stored as a map of ```SchemaId``` and ```BlockNumber```. By default schemas have no retention policy and ```BlockNumber``` is set to 1 signaling message store to retain messages on chain database indefinitely.
-- **Implementation**: MRC will expose a substrate  sudo call ```update_schema_retention``` to updated ```BlockNumber``` for a given ```schema_id``.
+- **Implementation**: MRC will expose a substrate  sudo call ```update_schema_retention``` to updated ```BlockNumber``` for a given ```schema_id``
 - **Read**: Schema registry should expose ```get_retention_period``` procedural call to return current state of retention period for a given ```schema_id```.
 
 ### Schema Starting Blocks
