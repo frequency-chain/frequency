@@ -51,6 +51,7 @@ Schema registry performs following checks before onboarding a schema on MRC:
 - Ensure, payload is signed by an authorizing AccountId.
 - Ensure, MRC did not exceed maximum count of schemas that can be hosted on chain.
 - Ensure, a given schema adheres to minimum and maximum size limits allowed per schema.
+- Ensure, schema itself is not broken or malformed.
 
 ### Schema Access
 
