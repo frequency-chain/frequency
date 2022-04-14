@@ -47,9 +47,10 @@ Using schema registry, message producers no longer need to include full schema w
 ### Schema Validation
 
 Schema registry performs following checks before onboarding a schema on MRC:
-    - Ensure, payload is signed by an authorizing AccountId.
-    - Ensure, MRC did not exceed maximum count of schemas that can be hosted on chain.
-    - Ensure, a given schema adheres to minimum and maximum size limits on chain.
+
+- Ensure, payload is signed by an authorizing AccountId.
+- Ensure, MRC did not exceed maximum count of schemas that can be hosted on chain.
+- Ensure, a given schema adheres to minimum and maximum size limits on chain.
 
 ### Schema Access
 
