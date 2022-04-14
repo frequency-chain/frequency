@@ -55,7 +55,7 @@ Schema registry performs following checks before onboarding a schema on MRC:
 
 Schema registry should expose, at minimum, following procedural calls (as RPC and/or public trait for internal to MRC) for network participants and off chain message validator.
 
-    - get_schema : given a schema_id, return serialized schema payload of type ```Vec<Schema>``` stored on chain.
+- get_schema : given a schema_id, return serialized schema payload of type ```Vec<Schema>``` stored on chain.
 
 ### Schema Retention
 
