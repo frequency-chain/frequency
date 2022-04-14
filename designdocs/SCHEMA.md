@@ -36,7 +36,7 @@ Using schema registry, message producers no longer need to include full schema w
 ### Schema Primitives
 
 - **Schema**: Serialized schema of type ```Vec<u8>```.
-- **SchemaId**: A unique identifier of type u32 for schemas successfully stored on chain.
+- **SchemaId**: A unique identifier of type ```u32``` for schemas that are successfully stored on chain.
 
 ### Schema Storage
 
@@ -70,8 +70,23 @@ Retention periods on a schema is designed to message(s) store to retain messages
 
 - **Type Definition**: ```StorageMap<SchemaId, BlockNumber>```.
 - **Description**: On chain storage of starting block number for each schema. Required by message store. Default to block number 1.
-- **Implementation**: Schema registry should provide some sort of procedural call (internal to MRC) to read and write starting block number for a given ```schema_id```. This will be utilized by message store for further processing.
+- **Implementation**: Schema registry should provide some sort of procedural call (internal to MRC) to read (```get_schema_starting_block```) and write (```set_schema_starting_block```) starting block number for a given ```schema_id```. This will be utilized by message store for further processing.
 
 ### Schema Evolution
 
-With Schema Registry, different consumers of MRC can evolve a given schema at different rates, changing the shape of data and entrusting schema registry to handle translations from one schema to another. Currently schema evolution is not directly supported on chain and can be achieved by different consumers via unique ```schema_id``` for evolved schemas. An illustration of this is presented in following schematic:
+With Schema Registry, different consumers of MRC can evolve a given schema at different rates, changing the shape of data and entrusting schema registry to handle translations from one schema to another. Currently schema evolution is not directly supported on chain and can be achieved by different consumers via unique ```schema_id``` for evolved schemas.
+
+## Benefits and Risks
+
+### Benefits
+
+- Schema registry allows message producers and consumers to efficiently share messages without having to store or manage schema text themselves.
+- It allows message store to serialize, deserialize as well as optimize storage pattern of messages much more effectively.
+- It also enable schema evolution and act as an interface to ensure contracts between consumers and producers is not broken, while promoting reusability of schemas.
+
+### Risks
+
+- In general MRC can handle badly designed schemas via validation steps and punish participants registering bad schemas with the chain.
+- Schema evolution is critical to any message passing system, how does MRC intend to handle it or is it required , is still a question that needs to be ironed out.
+- Another factor to consider is who is permissioned to modify retention periods per schema and what are the defaults if any.
+
