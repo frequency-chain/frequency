@@ -60,7 +60,7 @@ Schema registry should expose, at minimum, following procedural calls (as RPC an
 
 ### Schema Retention
 
-Retention periods on a schema is designed for message(s) store to retain messages per schema to a specific block number. Retention periods can be updated via super user (sudo on substrate) access.
+Retention periods on a schema is designed for message(s) store to retain messages per schema to a specific block number. Retention periods can be updated via super user (sudo extrinsic on substrate) access.
 
 - **Type Definition**: ```StorageMap<SchemaId, BlockNumber>```.
 - **Description**: Retention period are stored as a map of ```SchemaId``` and ```BlockNumber```. By default schemas have no retention policy and ```BlockNumber``` is set to 1 signaling message store to retain messages on chain database indefinitely.
@@ -89,7 +89,7 @@ With Schema Registry, different consumers of MRC can evolve a given schema at di
 
 - In general MRC can handle badly designed schemas via validation steps and punish participants registering bad schemas with the chain.
 - Schema evolution is critical to any message passing system, how does MRC intend to handle it or is it required , is still a question that needs to be ironed out.
-- Another factor to consider is who is permissioned to modify retention periods per schema and what are the defaults, if any.
+- Another factor to consider is who is permissioned to modify retention periods per schema, who will pay for such an update and what are the defaults, if any.
 
 ## Additional Resources
 
