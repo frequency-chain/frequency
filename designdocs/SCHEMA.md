@@ -37,7 +37,7 @@ Using schema registry, message producers no longer need to include full schema w
 ### Schema Primitives
 
 - **Schema**: Serialized schema of type ```Vec<u8>```.
-- **SchemaId**: A unique identifier of type ```u32``` for schemas that are successfully stored on chain.
+- **SchemaId**: A unique identifier of type ```u16``` for schemas that are successfully stored on chain.
 
 ### Schema Storage
 
