@@ -14,7 +14,7 @@ Message passing is a core functionality to social networks. The way to enforce a
 At a minimum, MRC should implement procedures to register, validate, store and access variety of messaging schemas dynamically. Schemas on chain must have the following salient features:
 
 - **Registry**: Implement a schema registry, enabling participants to register and store validated schemas on chain.
-- **Validation**: Message store will implement procedural calls enabling validation of  messages against stored schema. Due to serialization concerns [message validation](./OnChainMessageStorage.md) will be done off chain, while schema validation can be done on chain. Some basics of on chain validation required by MRC are as follows:
+- **Validation**: Schema validation enables message consumers and producers to entrust MRC with correctness of schema prior to storage and a valid ```schema_id``` is produced. Schema validation can be done on chain with following basic steps:
   - Total count of schemas does not exceed a pre-defined maximum count that can be stored on chain.
   - Schema being registered should have a minimum size as defined by MRC and should not exceed a pre-defined maximum size.
   - Schema should not be malformed.
