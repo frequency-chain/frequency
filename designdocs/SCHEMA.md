@@ -20,7 +20,7 @@ At a minimum, MRC should implement procedures to register, validate, store and a
   - Schema should not be malformed. Note due to the [serialization concerns](./OnChainMessageStorage.md#serialization-concerns) pertaining to processing restrictions on chain as well as lack of better serialization rust libraries, schema integrity may be required to be validated off chain.
 - **Interfaces**: Implement appropriate procedural calls to perform read operations on schema registry.
 - **Retention**: Implement some sort of schema(s) retention logic  for optimal on-chain message(s) storage. Retention periods per schema can be modified via super user permissions.
-- **Schema Retirement***: TODO
+- **Schema Retirement**: TODO
 - **Evolution**: An important aspect of message passing is  schema evolution. After initial schema is defined, network participants may need to evolve it over time depending on their respective use cases, it is critical to messaging system to handle data encoded with both old and new schema seamlessly. This is a topic of research, if MRC would support schema evolution per se.
 
 ## Proposal
