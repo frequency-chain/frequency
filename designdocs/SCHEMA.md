@@ -7,7 +7,7 @@ This document describes how schemas are handled on chain in the following sectio
 
 ## Problem Statement
 
-Message passing is a core functionality to social networks. The way to enforce a communication protocol between participants of social network via services is done by messaging schema. Analogous to interfaces, schemas provide a strongly typed description for messages ensuring their correctness, validity, extensibility and interoperability between services interacting with MRC.
+Message passing is a core functionality to networking protocols. The way to enforce a communication protocol between participants of network via services is done by messaging schema. Analogous to interfaces, schemas provide a strongly typed description for messages ensuring their correctness, validity, extensibility and interoperability between services interacting with MRC.
 
 ## Goals
 
@@ -17,9 +17,10 @@ At a minimum, MRC should implement procedures to register, validate, store and a
 - **Validation**: Schema validation enables message consumers and producers to entrust MRC with correctness of schema prior to storage and a valid ```schema_id``` is produced. Schema validation can be done on chain with following basic steps:
   - Total count of schemas does not exceed a pre-defined maximum count that can be stored on chain.
   - Schema being registered should have a minimum size as defined by MRC and should not exceed a pre-defined maximum size.
-  - Schema should not be malformed.
+  - Schema should not be malformed. Note due to the [serialization concerns](./OnChainMessageStorage.md#serialization-concerns) pertaining to processing restrictions on chain as well as lack of better serialization rust libraries, schema integrity may be required to be validated off chain.
 - **Interfaces**: Implement appropriate procedural calls to perform read operations on schema registry.
 - **Retention**: Implement some sort of schema(s) retention logic  for optimal on-chain message(s) storage. Retention periods per schema can be modified via super user permissions.
+- **Schema Retirement***: TODO
 - **Evolution**: An important aspect of message passing is  schema evolution. After initial schema is defined, network participants may need to evolve it over time depending on their respective use cases, it is critical to messaging system to handle data encoded with both old and new schema seamlessly. This is a topic of research, if MRC would support schema evolution per se.
 
 ## Proposal
@@ -36,8 +37,19 @@ Using schema registry, message producers no longer need to include full schema w
 
 ### Schema Primitives
 
+- **BlockNumber**: Chain specific primitive type for block number. Typically a 32-bit quantity.
 - **Schema**: Serialized schema of type ```Vec<u8>```.
 - **SchemaId**: A unique identifier of type ```u16``` for schemas that are successfully stored on chain.
+- **BlockCount**: A primitive of type ```u32``` that represents count of blocks per schema. This is used to define
+- **SchemaPolicy** : Defines a contract that encapsulate ```retention``` which is of type ```BlockCount``` and ```starting_block``` which of type ```BlockNumber```.
+
+  ```rust
+
+  pub struct SchemaPolicy<BlockNumber> {
+      pub retention: BlockCount,
+      pub starting_block: BlockNumber,
+  }
+  ```
 
 ### Schema Storage
 
@@ -60,20 +72,25 @@ Schema registry should expose, at minimum, following procedural calls (as RPC an
 
 - get_schema : given a ```schema_id```, return serialized schema payload of type ```Vec<Schema>``` stored on chain.
 
-### Schema Retention
+### Schema Retention and Starting Block Storage
 
 Retention periods on a schema is designed for message(s) store to retain messages per schema to a specific block number. Retention periods can be updated via super user (sudo extrinsic on substrate) access.
 
-- **Type Definition**: ```StorageMap<SchemaId, BlockNumber>```.
-- **Description**: Retention period are stored as a map of ```SchemaId``` and ```BlockNumber```. By default schemas have no retention policy and ```BlockNumber``` is set to 1 signaling message store to retain messages on chain database indefinitely.
-- **Implementation**: MRC will expose a substrate  sudo call ```update_schema_retention``` to updated ```BlockNumber``` for a given ```schema_id```.
+- **Type Definition**: ```StorageMap<SchemaId, SchemaPolicy>```.
+- **Description**: Retention period are stored as a map of ```SchemaId``` and ```SchemaPolicy```. By default schemas have no retention policy and by default ```retention``` and ```starting_block``` is set to 1 signaling message store to retain messages on chain database indefinitely.
+- **Implementation**: MRC will expose a substrate  sudo call ```update_schema_retention``` to updated ```retention``` period for a given ```schema_id```.
 - **Read**: Schema registry should expose ```get_retention_period``` procedural call to return current state of retention period for a given ```schema_id```.
+
+Note: ```starting_block``` should only be modifiable via internal calls, for example, via message store and should not be exposed to consumers. Check out the following section for more details.
 
 ### Starting Blocks Storage and Access
 
-- **Type Definition**: ```StorageMap<SchemaId, BlockNumber>```.
 - **Description**: On chain storage of starting block number for each schema. Required by message store. Defaults to block number 1.
 - **Implementation**: Schema registry should provide some sort of procedural call (internal to MRC) to read (```get_schema_starting_block```) and write (```set_schema_starting_block```) starting block number for a given ```schema_id```. This will be utilized by message store for further processing.
+
+### Schema Retirement
+
+TODO
 
 ### Schema Evolution
 
@@ -89,7 +106,7 @@ With Schema Registry, different consumers of MRC can evolve a given schema at di
 
 ### Risks
 
-- In general MRC can handle badly designed schemas via validation steps and punish participants registering bad schemas with the chain.
+- Schema registration on MRC should prevent DoS attempts given schema registration will be open to anyone with enough balance to pay for the same. Should schema registration be costly, or restricting it specific accounts would be worth considering.
 - Schema evolution is critical to any message passing system, how does MRC intend to handle it or is it required , is still a question that needs to be ironed out.
 - Another factor to consider is who is permissioned to modify retention periods per schema, who will pay for such an update and what are the defaults, if any.
 
