@@ -40,8 +40,7 @@ Put another way, delegation must have the following properties:
 * Delegated removal would allow removing any other delegate without substituting itself as the new delegate. Such an endpoint presents serious enough issues that it should be discussed and designed separately, if it's to be implemented at all.
 * Does not specify what the permissions are nor the permissions data type.
 * Does not specify a value for pallet constants, only when there should be one. These values should be determined by such factors as storage costs and performance.
-* Does not include a "block/ban" feature for delegation
-* Does not outline
+* Does not include a "block/ban" feature for delegation, which is under discussion; the belief is that a Delegate also ought to be able to permanently refuse service to a given `MsaId`, which further supports the idea of a mutually agreed upon relationship.
 
 ## Proposal
 The proposed solution is to give End Users the ability to create an on-chain `MsaId` through an authorized delegate. End Users can also transparently authorize and manage their own Delegates and permissions, either directly using a native token or through an explicitly authorized Delegate. Additionally, we allow `MsaIds` to be directly purchased using a native token.
@@ -58,11 +57,11 @@ Creates a new `MsaId` on behalf of an Account and adds the origin as the Account
   * Parameters:
       1. `payload`:
          1. `data` - this is what the Account owner must sign and provide to the delegate beforehand.
-             * `msa_id` - the delegate `MsaId`
+             * `msa_id` - the delegate, of type `MsaId`
              * `permission` a value indicating the permission to be given to the delegate
          2. `signing_key` - The authorizing `AccountId`, the key used to create `signature`
          3. `signature` - The signature of the hash of `data`
-    * Event:  `IdentityCreated`, with the delegator `AccountId`, the new `MsaId`, and the delegate `MsaId`
+    * Event:  `IdentityCreated`, with the `signing_key`, the newly created `MsaId`, and `msa_id`
     * Restrictions:  origin must own `msa_id` in the payload.
 
 #### add_self_as_delegate(payload)
@@ -74,7 +73,7 @@ Adds the `MsaId` in the payload as a delegate, to an Account owning `delegator_m
               * `permission` a value indicating the permission to be given to the delegate
           2. `signing_key` - The authorizing `AccountId`, the key used to create `signature`
           3. `signature` - The signature of the hash of `data`
-    * Event: `DelegateAddedSelf` with the `signing_key`, `msa_id`, and `delegate_msa_id`
+    * Event: `DelegateAddedSelf` with `signing_key`, `msa_id`, and `delegate_msa_id`
     * Restrictions:  Caller/origin must own `delegate_msa_id`. The `signing_key` Account must own `msa_id`.
 
 #### replace_delegate_with_self(payload)
@@ -113,7 +112,7 @@ Delegate removes themselves from the specified `msa_id` in the payload.  This fu
 Directly creates a `MsaId` for the origin (caller) Account with no delegates.
 This is a signed call directly from the caller, so the owner of the new `MsaId` pays the fees for `MsaId` creation.
 
-* Event: `IdentityCreated`, with the caller's `AccountId`, the new `MsaId`, and an empty delegate `MsaId`.
+* Event: `IdentityCreated`, with the caller's `AccountId`, the newly created `MsaId`, and an empty delegate `MsaId`.
 
 #### update_delegate(delegator, delegate, permissions)
 Changes the permissions for an existing `delegator`-->`delegate` relationship.
