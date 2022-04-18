@@ -25,6 +25,15 @@ We have realized that MsaIds, Message Schemas, and Delegations need the ability 
 This proposal aims to:
 * specify a common data structure for validity state storage
 * suggest how to incorporate this validity state into validation for three types of data in MRC.
+* specify an API for registering and updating schema
+* suggest a migration path
+
+This proposal does not aim to specify:
+* what the states are
+* what the validity state structure is
+* how they are stored on chain (what Storage type to use)
+
+There may be some storage types and choices of keys that are better than others and these should be determined by experiments.
 
 ## Proposal
 
@@ -51,24 +60,27 @@ More particularly:
     1. Schema 124 is registered with 1000, 0 and given the default, "active"
     2. Schema 124 is updated with "deprecated", 4999, 0
     3. When queried, the validity state returns
-
-        ```["active", 1000,4998], ["deprecated", 4999,0] }```
+        ```rust
+        { "active": [1000,4998], "deprecated": [4999,0] }
+       ```
 11. To wipe out the validity range for an ID's previous state, the state is overwritten with the new validity and range.  Only one previous state may be overwritten.  The state may be overwritten only with a higher value state.
 
     **Example 1**
      1. Schema 345 is registered with start of 1000 and end of 0, state "active".
      2. The registrar for Schema 345 submits a new state update, "retracted", with a start of 1000 and an end of 0.
      3. When queried, the validity state returns
-
-       ```["retracted", 1000,0] }```
+       ```rust
+          { "retracted": [1000,0] }
+       ```
      4. The registrar tries to submit a new state of "active" with block 1000, 0.  This fails.
 
     **Example 2**
     1. Schema 456 is registered with start of 1000 and end of 0, state "active"
     2. Schema 456 is upated to "deprecated", 4999,0
     3. When queried, the validity state returns
-
-    ```["active", 1000,4998], ["deprecated", 4999, 0] }```
+    ```rust
+        { "active": [1000,4998], "deprecated": [4999, 0] }
+    ```
     3. Registrar tries to submit a new state, "retracted", 1000, 0.  This fails.
 
 ### Delegation states
@@ -76,9 +88,45 @@ Delegation states would be different. A delegator may wish to reinstate a delega
 "active", "retracted", "reinstated", "terminated".  If we decided that Delegates need a couple of chances then the states could always be set as "active", "retracted", "reinstated", "retracted2", "reinstated2", "terminated", etc.
 
 ### Storage
+Since querying will largely be to determine validity, it may bethat validity state is best stored in the main storage for MsaIds, Schemas, and Delegations, however, the goal here is not to specify how these will be stored or even what pallet they belong in.
+
+With that said, validity states for each type of data should probably be kept separate from each other.
+
+### API (extrinsics)
+#### register_schema(`schema`, `msa_id`)
+The schema registration API does not change, however, in storage it should now set the validity state to be the default (active and lowest possible in value) state, the start block = 'now' and the end block = 0.
+
+#### update_schema(`schema_id`, `new_state`, `start_block`)
+Adds a new validity state to the schema registry entry for `schema_id` with a block range of `start_block` to 0.  The current state end_block is set to `start_block - 1`.
+
+**Parameters**
+
+   1. `schema_id`: the `SchemaId` to update.
+   2. `new_state`: the new state of the schema.
+   3. `start_block`: when this state should go into effect.
+
+### API (Custom RPC)
+#### schema_state(`schema_id`)
+Returns the validity states for the given `schema_id`. Returns `None()` if `schema_id` does not exist.  Example format:
+```rust
+    Some({
+            SchemaState::Active: [1000,4998],
+            SchemaState::Deprecated: [4999, 0]
+    })
+```
+
+#### delegation_state(`delegate_id`, `delegator_id`)
+Returns the validity states for the given `delegate_id` and `delegator_id`. Returns `None()` if `schema_id` does not exist. Example format:
+```rust
+    Some({
+            DelegationState::Active: [1000,4998],
+            DelegationState::Retired: [4999, 0]
+    })
+```
+
 
 ### State Validity Migration
-A serious issue to address is Validity State migration. The above rules are extremely strict. Permanently locking in the allowable states could pose serious risks for supporting future needs.
+An important issue to address is Validity State migration. The above rules are extremely strict. Permanently locking in the allowable states could pose serious risks for supporting future needs.
 
 One potential solution to this is to add the new states to the set of possible states while keeping the old ones, setting a new default to be the start of the set of new states. Example:
 1. Let's say that allowed `MsaId` states are currently `["active","deleted"]`, with `"active"` being the default.
