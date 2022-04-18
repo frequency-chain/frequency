@@ -40,7 +40,7 @@ Using schema registry, message producers no longer need to include full schema w
 - **BlockNumber**: Chain specific primitive type for block number. Typically a 32-bit quantity.
 - **Schema**: Serialized schema of type ```Vec<u8>```.
 - **SchemaId**: A unique identifier of type ```u16``` for schemas that are successfully stored on chain.
-- **BlockCount**: A primitive of type ```u32``` that represents count of blocks per schema. This is used to define
+- **BlockCount**: A primitive of type ```u32``` that represents count of blocks per schema. This is used to define for how many blocks messages per schema are stored on chain.
 - **SchemaPolicy** : Defines a contract that encapsulate ```retention``` which is of type ```BlockCount``` and ```starting_block``` which of type ```BlockNumber```.
 
   ```rust
