@@ -30,28 +30,31 @@ This proposal aims to:
 
 This proposal does not aim to specify:
 * what the states are
-* what the validity state structure is
-* how they are stored on chain (what Storage type to use)
+* what the _stored_ validity state structure is
+* what storage type to use for storing validity states
+* We attempt to limit the ability of the developers to mess up badly, however, it's not possible to predict every mistake and we don't try to.
 
-There may be some storage types and choices of keys that are better than others and these should be determined by experiments.
+There may be some storage types and choices of keys that are better than others and these can be determined by the implementers.
 
 ## Proposal
+Validity states are separated by message type.
+Allowable validity states are specific to each type.
 
 ### State Rules
 For maximum efficiency, lowest churn and least conflict, there must be restrictions on the state transitions.
 
-The rules are summarized by saying:
-* there's no going backward,
-* there's one and only one possible state for a given block number,
-* the highest state value is invalid and final and can't ever be changed,
-* ...except in a migration, in which case it must be migrated to be the final state of the new migration.
-
+The rules can be summarized by saying:
+* Terminal is terminal.
+* You can overwrite only the current state block range, and only with terminal state.
+* There's one and only one possible state for a given block number,
+* The highest state value is a terminal one, and it's invalid.
+* A terminal validity state for an ID can't ever be changed...except in a migration, in which case it must be migrated to be the terminal state of the new migration.
 
 1. The number of states and state transitions must be strictly limited to something humanly small, e.g. less than 100 or 1000.
 100 or 1000 states may seem like a lot, however, it may not be when considering state type migrations as described later on.
-2. Validity state type is an enumeration, starting with Active. The state Active is the default and has the lowest state value of all the states in use.
+2. Validity state type is an enumeration, starting with Active (or something that means the same thing). The state Active is the default and has the lowest state value of all the states in use (see notes on migrations).
 3. Successive states should be in a sensible order of expected progression, with a final state being an invalid state.
-4. Final states must be set with their end block = 0.
+4. Any new state for a given index (MsaId, Delegate, Schema) must be set with its end block = 0. Even in the case where it's actually known how long the state should be active, there's no way for the system to know what the next state should be -- or at least, implementing that kind of planning would be more burdensome for the chain than necessary. Callers must instead plan to update state in a timely way.
 5. States may not change from a higher value to a lower value.
 6. Validity states have a block range where the state applies, a start and an end.
 7. The block range end default value is 0, which means the state validity is indefinite. The reason for this (rather than it being -1 which is often used to indicate the last index) is `Blocknumber` has a type of u128.
@@ -64,12 +67,14 @@ The rules are summarized by saying:
         ```rust
         [ (SchemaState::Active: 1000,4998), (SchemaState::Deprecated, 4999,0) ]
        ```
-11. To wipe out the validity range for an ID's previous state, the state is overwritten with the new validity and range.  Only one previous state may be overwritten.  The state may be overwritten only with a higher value state.
+11. Message states should be chosen to reflect only what would cause a difference in on-chain behavior.
+12. To wipe out the validity range for an ID's previous state, the state is overwritten with the new validity and range.  Only one previous state may be overwritten.  The state may be overwritten only with the terminal state.
 
     **Example 1**
-     1. Schema 345 is registered with start of 1000 and end of 0, state Active.
-     2. The registrar for Schema 345 submits a new state update, "retracted", with a start of 1000 and an end of 0.
-     3. When queried, the validity state returns
+     1. Schemas have available states Active, Deprecated, Retracted.
+     2. Schema 345 is registered with start of 1000 and end of 0, state Active.
+     3. The registrar for Schema 345 submits a new state update, Retracted, with a start of 1000 and an end of 0.
+     4. When queried, the validity state returns
        ```rust
           [ (Retracted, 1000,0) ]
        ```
@@ -83,6 +88,7 @@ The rules are summarized by saying:
         [ (Active, 1000,4998), (Deprecated, 4999, 0) ] }
     ```
     3. Registrar tries to submit a new state, Retracted, 1000, 0.  This fails.
+    4. Registrar submits a new state, Retracted, 4999,0. This succeeds.
 
 ### Structure
 Enums can automatically derive Debug, PartialEq, and PartialOrd traits for ease of state comparison, and for serialization, which would let us keep storage size to a minimum.  Similarly for deserialization
@@ -117,9 +123,14 @@ Deprecated
 ```
 
 ### Delegation states
-Delegation states would be different. A delegator may wish to reinstate a delegate. Deprecation doesn't make sense for a delegation relationship. So the states might be:
-Active, Retracted, "reinstated", "terminated".  If we decided that Delegates need a couple of chances then the states could always be set as Active, Retracted, "reinstated", "retracted2", "reinstated2", "terminated", etc.
-
+Delegation states might be different. Delegation relationships may change repeatedly for a number of reasons, and deprecation doesn't make sense for a delegation relationship. So the states might be:
+```rust
+enum {
+    Active,  // messages during the specified block range are valid
+    Inactive, // messages for the specified block range are invalid
+    Terminated, // Relationship has ceased completely; no messages will ever again be valid after the start block
+}
+```
 
 ### Storage
 Since querying will largely be to determine validity, it may bethat validity state is best stored in the main storage for MsaIds, Schemas, and Delegations, however, the goal here is not to specify how these will be stored or even what pallet they belong in.
