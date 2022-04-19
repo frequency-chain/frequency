@@ -55,40 +55,37 @@ The rules can be summarized by saying:
 2. Validity state type is an enumeration, starting with Active (or something that means the same thing). The state Active is the default and has the lowest state value of all the states in use (see notes on migrations).
 3. Successive states should be in a sensible order of expected progression, with a final state being an invalid state.
 4. Any new state for a given index (MsaId, Delegate, Schema) must be set with its end block = 0. Even in the case where it's actually known how long the state should be active, there's no way for the system to know what the next state should be -- or at least, implementing that kind of planning would be more burdensome for the chain than necessary. Callers must instead plan to update state in a timely way.
-5. States may not change from a higher value to a lower value.
-6. Validity states have a block range where the state applies, a start and an end.
-7. The block range end default value is 0, which means the state validity is indefinite. The reason for this (rather than it being -1 which is often used to indicate the last index) is `Blocknumber` has a type of u128.
-8. The validity end block _must_ be 0 for the current state.
-9. When a new state is applied for block N, the previous state's block end MUST be set to N-1.
-10. State block ranges may not overlap.  Example:
-    1. Schema 124 is registered with 1000, 0 and given the default, Active
-    2. Schema 124 is updated with Deprecated,, 4999, 0
-    3. When queried, the validity state returns
-        ```rust
-        [ (SchemaState::Active: 1000,4998), (SchemaState::Deprecated, 4999,0) ]
-       ```
-11. Message states should be chosen to reflect only what would cause a difference in on-chain behavior.
-12. To wipe out the validity range for an ID's previous state, the state is overwritten with the new validity and range.  Only one previous state may be overwritten.  The state may be overwritten only with the terminal state.
-
-    **Example 1**
-     1. Schemas have available states Active, Deprecated, Retracted.
-     2. Schema 345 is registered with start of 1000 and end of 0, state Active.
-     3. The registrar for Schema 345 submits a new state update, Retracted, with a start of 1000 and an end of 0.
-     4. When queried, the validity state returns
+5. Validity states have a block range where the state applies, a start and an end.
+6. The block range end for a current state is 0, which means the state validity is indefinite. The reason for this (rather than it being -1 which is often used to indicate the last index) is `Blocknumber` has a type of u128.
+7. State block ranges may not overlap.  When a new state is applied for block N, the previous state's block end MUST be set to N-1. Example:
+   1. Schema 124 is registered with 1000, 0 and given the default, Active
+   2. Schema 124 is updated with Deprecated,, 4999, 0
+   3. When queried, the validity state returns
        ```rust
-          [ (Retracted, 1000,0) ]
-       ```
-     4. The registrar tries to submit a new state of `Active` with block 1000, 0.  This fails.
+       [ (SchemaState::Active: 1000,4998), (SchemaState::Deprecated, 4999,0) ]
+      ```
+8. Message states should be chosen to reflect only what would cause a difference in on-chain behavior.
+9. To wipe out the validity range for an ID's previous state, the state is overwritten with the new validity and range.  Only one previous state may be overwritten.  The state may be overwritten only with the terminal state.
 
-    **Example 2**
-    1. Schema 456 is registered with start of 1000 and end of 0, state `Active`
-    2. Schema 456 is updated to Deprecated,, 4999,0
-    3. When queried, the validity state returns
-    ```rust
-        [ (Active, 1000,4998), (Deprecated, 4999, 0) ] }
-    ```
-    3. Registrar tries to submit a new state, Retracted, 1000, 0.  This fails.
-    4. Registrar submits a new state, Retracted, 4999,0. This succeeds.
+   **Example 1**
+    1. Schemas have available states Active, Deprecated, Retracted.
+    2. Schema 345 is registered with start of 1000 and end of 0, state Active.
+    3. The registrar for Schema 345 submits a new state update, Retracted, with a start of 1000 and an end of 0.
+    4. When queried, the validity state returns
+      ```rust
+         [ (Retracted, 1000,0) ]
+      ```
+    4. The registrar tries to submit a new state of `Active` with block 1000, 0.  This fails.
+
+   **Example 2**
+   1. Schema 456 is registered with start of 1000 and end of 0, state `Active`
+   2. Schema 456 is updated to Deprecated,, 4999,0
+   3. When queried, the validity state returns
+   ```rust
+       [ (Active, 1000,4998), (Deprecated, 4999, 0) ] }
+   ```
+   3. Registrar tries to submit a new state, Retracted, 1000, 0.  This fails.
+   4. Registrar submits a new state, Retracted, 4999,0. This succeeds.
 
 ### Structure
 Enums can automatically derive Debug, PartialEq, and PartialOrd traits for ease of state comparison, and for serialization, which would let us keep storage size to a minimum.  Similarly for deserialization
