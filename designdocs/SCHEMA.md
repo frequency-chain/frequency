@@ -17,11 +17,12 @@ At a minimum, MRC should implement procedures to register, validate, store and a
 - **Validation**: Schema validation enables message consumers and producers to entrust MRC with correctness of schema prior to storage and a valid ```schema_id``` is produced. Schema validation can be done on chain with following basic steps:
   - Total count of schemas does not exceed a pre-defined maximum count that can be stored on chain.
   - Schema being registered should have a minimum size as defined by MRC and should not exceed a pre-defined maximum size.
-  - Schema should not be malformed. Note due to the [serialization concerns](./OnChainMessageStorage.md#serialization-concerns) pertaining to processing restrictions on chain as well as lack of better serialization rust libraries, schema integrity may be required to be validated off chain.
+  - Schema should not be malformed.
+    Note: due to the [serialization concerns](./OnChainMessageStorage.    md#serialization-concerns) pertaining to processing restrictions on chain as well as lack of better serialization rust libraries, schema integrity may be required to be   validated off chain.
 - **Interfaces**: Implement appropriate procedural calls to perform read operations on schema registry.
 - **Retention**: Implement some sort of schema(s) retention logic  for optimal on-chain message(s) storage. Retention periods per schema can be modified via super user permissions.
 - **Schema Retirement**: TODO
-- **Evolution**: An important aspect of message passing is  schema evolution. After initial schema is defined, network participants may need to evolve it over time depending on their respective use cases, it is critical to messaging system to handle data encoded with both old and new schema seamlessly. This is a topic of research, if MRC would support schema evolution per se.
+- **Evolution**: An important aspect of message passing is  schema evolution. After initial schema is defined, network participants may need to evolve it over time depending on their respective use cases, it is critical to messaging system to handle data encoded with both old and new schema seamlessly.
 
 ## Proposal
 
@@ -40,7 +41,7 @@ Using schema registry, message producers no longer need to include full schema w
 - **BlockNumber**: Chain specific primitive type for block number. Typically a 32-bit quantity.
 - **Schema**: Serialized schema of type ```Vec<u8>```.
 - **SchemaId**: A unique identifier of type ```u16``` for schemas that are successfully stored on chain.
-- **BlockCount**: A primitive of type ```u32``` that represents count of blocks per schema. This is used to define for how many blocks messages per schema are stored on chain.
+- **BlockCount**: A primitive of type ```u16``` that represents count of blocks per schema. This is used to define for how many blocks; messages per schema are stored on chain.
 - **SchemaPolicy** : Defines a contract that encapsulate ```retention``` which is of type ```BlockCount``` and ```starting_block``` which of type ```BlockNumber```.
 
   ```rust
@@ -78,7 +79,7 @@ Retention periods on a schema is designed for message(s) store to retain message
 
 - **Type Definition**: ```StorageMap<SchemaId, SchemaPolicy>```.
 - **Description**: Retention period are stored as a map of ```SchemaId``` and ```SchemaPolicy```. By default schemas have no retention policy and by default ```retention``` and ```starting_block``` is set to 1 signaling message store to retain messages on chain database indefinitely.
-- **Implementation**: MRC will expose a substrate  sudo call ```update_schema_retention``` to updated ```retention``` period for a given ```schema_id```.
+- **Implementation**: MRC will expose a substrate  sudo call ```update_schema_retention``` to updated ```retention``` period for a given ```schema_id```. On successful execution, retention block count will be updated.
 - **Read**: Schema registry should expose ```get_retention_period``` procedural call to return current state of retention period for a given ```schema_id```.
 
 Note: ```starting_block``` should only be modifiable via internal calls, for example, via message store and should not be exposed to consumers. Check out the following section for more details.
