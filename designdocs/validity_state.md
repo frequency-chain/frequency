@@ -46,7 +46,7 @@ For maximum efficiency, lowest churn and least conflict, there must be restricti
 The rules can be summarized by saying:
 * Terminal is terminal.
 * You can overwrite only the current state block range, and only with terminal state.
-* There's one and only one possible state for a given block number,
+* There's one and only one possible state for a given block number.
 * The highest state value is a terminal one, and it's invalid.
 * A terminal validity state for an ID can't ever be changed...except in a migration, in which case it must be migrated to be the terminal state of the new migration.
 
@@ -54,10 +54,13 @@ The rules can be summarized by saying:
 100 or 1000 states may seem like a lot, however, it may not be when considering state type migrations as described later on.
 2. Validity state type is an enumeration, starting with Active (or something that means the same thing). The state Active is the default and has the lowest state value of all the states in use (see notes on migrations).
 3. Successive states should be in a sensible order of expected progression, with a final state being an invalid state.
-4. Any new state for a given index (MsaId, Delegate, Schema) must be set with its end block = 0. Even in the case where it's actually known how long the state should be active, there's no way for the system to know what the next state should be -- or at least, implementing that kind of planning would be more burdensome for the chain than necessary. Callers must instead plan to update state in a timely way.
 5. Validity states have a block range where the state applies, a start and an end.
-6. The block range end for a current state is 0, which means the state validity is indefinite. The reason for this (rather than it being -1 which is often used to indicate the last index) is `Blocknumber` has a type of u128.
-7. State block ranges may not overlap.  When a new state is applied for block N, the previous state's block end MUST be set to N-1. Example:
+6. New state for a given index (MsaId, Delegate, Schema) must be set with its end block = 0. Even in the case where it's actually known how long the state should be active, there's no way for the system to know what the next state should be -- or at least, implementing that kind of planning would be more burdensome for the chain than necessary. Callers must instead plan to update state in a timely way.
+7. The value of 0 for a block range end means the state validity is indefinite. The reason for this (rather than it being -1 which is often used to indicate the last index) is `Blocknumber` has a type of u128.
+8. 0 is valid only for a block range end.
+9. New state for non-terminal states must be at least the current block
+10. Terminal state may overwrite only the current state block range.
+11. There's one and only one possible state for a given block number. State block ranges may not overlap.  When a new state is applied for block N, the previous state's block end MUST be set to N-1. Example:
    1. Schema 124 is registered with 1000, 0 and given the default, Active
    2. Schema 124 is updated with Deprecated,, 4999, 0
    3. When queried, the validity state returns
