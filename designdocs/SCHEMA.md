@@ -22,7 +22,7 @@ At a minimum, MRC should implement procedures to register, validate, store and a
 - **Interfaces**: Implement appropriate procedural calls to perform read operations on schema registry.
 - **Retention**: Implement some sort of schema(s) retention logic  for optimal on-chain message(s) storage. Retention periods per schema can be modified via super user permissions.
 - **Schema Retirement**: TODO
-- **Evolution**: An important aspect of message passing is  schema evolution. After initial schema is defined, network participants may need to evolve it over time depending on their respective use cases, it is critical to messaging system to handle data encoded with both old and new schema seamlessly.
+- **Evolution**: An important aspect of message passing is  schema evolution. After initial schema is defined, network participants may need to evolve it over time depending on their respective use cases, it is critical to messaging system to handle data encoded with both old and new schema seamlessly. Schema evolution on MRC require additional discussion which is outside the scope of this document. See [additional notes](#additional-notes) for more details.
 
 ## Proposal
 
@@ -95,7 +95,7 @@ TODO
 
 ### Schema Evolution
 
-With Schema Registry, different consumers of MRC can evolve a given schema at different rates, changing the shape of data and entrusting schema registry to handle translations from one schema to another. Currently schema evolution is not directly supported on chain and can be achieved by different consumers via unique ```schema_id``` for evolved schemas.
+With Schema Registry, different consumers of MRC can evolve a given schema at different rates, changing the shape of data and entrusting schema registry to handle translations from one schema to another. Currently schema evolution is not directly supported on chain and can be achieved by different consumers via unique ```schema_id``` for evolved schemas. This is work in progress and various suggestions for future reference and development are listed in [additional notes](#additional-notes).
 
 ## Benefits and Risks
 
@@ -118,3 +118,36 @@ With Schema Registry, different consumers of MRC can evolve a given schema at di
 - [Substrate extrinsic](https://docs.substrate.io/v3/concepts/extrinsics/)
 - [Substrate custom rpc](https://docs.substrate.io/v3/runtime/custom-rpcs/)
 - [Substrate sudo](https://www.shawntabrizi.com/substrate/the-sudo-story-in-substrate/)
+
+## Additional Notes
+
+### Schema Evolution Discussion
+
+#### Suggestion 1
+
+1. If we use a format that support schema evolution like Thrift or protobuf then we can basically replace existing schema with newer version which is backwards compatible with older one. here are risks and benefits
+   - **risk**: we need to have a way preferably (on-chain) to validate if a new version is compatible with older version. I think we should look into this to see if it's possible or not.
+   - **benefit**: if we are able to do this then then total number of existing schemas will get reduced and based on how the message retention policy works, with less schemas we will have more block capacity to handle more messages.
+2. We just allow adding new schema for a new version of an old one.
+   - **risk**: then number of schemas can get larger and would have more overhead on each block calculations due to retention policies of each schema.  
+   - **risk**: since read caching is also directly dependent on schema Id then more schemas will cause more overhead on cache calculations and storage
+   - **benefit**: simpler process and no need to check for backwards compatibility
+
+#### Suggestion 2
+
+- Schemas should be immutable
+  - Why? Just because the schema creator wants to change something, doesn't mean the users do. Think of this as a limited version of smart contracts.
+- Schemas should communicate replacement
+  - This is a different path than that of evolution, but I think we have three things we need to know:
+  - 1. If the schema is replaced by a newer one.
+  - 2. Which schema (or schemas?) replaced the old one.
+  - 3. If the new schema is backward compatible with the old one.
+  - Should `#3` is needed to be communicated by the chain. Instead that feels like a library issue as to if the library can use the same code path or not for both.
+  - Should other items be communicated? If so by whom? The creator of the original schema or the replacement schema? I think that it is better to communicate on the fork than the original schema. It also allows it to be immutable.
+
+#### Suggestion 3
+
+- Schema(s) are immutable.
+- Schema(s) can retire at different rates.
+- Updated schemas can be added as long they have some sort of reference to previous/older schema(s).
+- If a schema is retired, it should be propagated to referring schemas and removed from references.
