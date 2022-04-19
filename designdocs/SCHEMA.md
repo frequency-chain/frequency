@@ -151,3 +151,4 @@ With Schema Registry, different consumers of MRC can evolve a given schema at di
 - Schema(s) can retire at different rates.
 - Updated schemas can be added as long they have some sort of reference to previous/older schema(s).
 - If a schema is retired, it should be propagated to referring schemas and removed from references.
+- Provide some rpc calls for consumers to get replacement schemaId(s)/schema(s) for given schemaId etc.
