@@ -110,7 +110,7 @@ Schema registry should expose, at minimum, following procedural calls (as RPC an
 
 - **get_schema** : given a ```schema_id```, return serialized schema payload of type ```Schema``` stored on chain.
 
-- **get_schema_state**: given a ```schema_id```, return the state and/or range of blocks between which the schema is valid, of the schema if it still exists on chain.
+- **get_schema_state**: given a ```schema_id```, return the state and/or range of blocks between which the schema is valid, if it still exists on chain.
 
 ### Schema Retention and Starting Block Storage
 
