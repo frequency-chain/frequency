@@ -28,7 +28,7 @@ Note: due to the [serialization concerns](./OnChainMessageStorage.md#serializati
 
 - **Retention**: Implement some sort of schema(s) retention logic for optimal on-chain message(s) storage. Retention periods per schema can be modified via super user permissions.
 
-- **Schema Retirement**: Schema retirement is a mechanism to enable deprecate/retire or invalidate a given schema from use. This can be achieved via defined schema states such as Active, Deprecated or Retracted. Rationale behind such a mechanism is as follows:
+- **Schema Retirement**: Schema retirement is a mechanism to enable deprecation/retirement or invalidating a given schema from use. This can be achieved via defined schema states such as Active, Deprecated or Retracted. Rationale behind such a mechanism is as follows:
 
   - Author of a given schema would want to retire or deprecate a schema.
   - Schema itself has bug which was overlooked during registration.
