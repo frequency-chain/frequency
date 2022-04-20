@@ -21,6 +21,7 @@ At a minimum, MRC should implement procedures to register, validate, store and a
   - Total count of schemas does not exceed a pre-defined maximum count that can be stored on chain.
   - Schema being registered should have a minimum size as defined by MRC and should not exceed a pre-defined maximum size.
   - Schema should not be malformed.
+
 Note: due to the [serialization concerns](./OnChainMessageStorage. md#serialization-concerns) pertaining to processing restrictions on chain as well as lack of better serialization rust libraries, schema integrity may be required to be validated off chain.
 
 - **Interfaces**: Implement appropriate procedural calls to perform read operations on schema registry.
