@@ -21,7 +21,7 @@ At a minimum, MRC should implement procedures to register, validate, store and a
     Note: due to the [serialization concerns](./OnChainMessageStorage.    md#serialization-concerns) pertaining to processing restrictions on chain as well as lack of better serialization rust libraries, schema integrity may be required to be   validated off chain.
 - **Interfaces**: Implement appropriate procedural calls to perform read operations on schema registry.
 - **Retention**: Implement some sort of schema(s) retention logic  for optimal on-chain message(s) storage. Retention periods per schema can be modified via super user permissions.
-- **Schema Retirement**: TODO
+- **Schema Retirement**: Schema retirement is a mechanism to enable deprecate/retire or invalidate a given schema from use. This can be achieved via defined  schema states such as Active, Deprecated or Retracted.
 - **Evolution**: An important aspect of message passing is  schema evolution. After initial schema is defined, network participants may need to evolve it over time depending on their respective use cases, it is critical to messaging system to handle data encoded with both old and new schema seamlessly. Schema evolution on MRC require additional discussion which is outside the scope of this document. See [additional notes](#additional-notes) for more details.
 
 ## Proposal
@@ -42,6 +42,28 @@ Using schema registry, message producers no longer need to include full schema w
 - **Schema**: Serialized schema of type ```Vec<u8>```.
 - **SchemaId**: A unique identifier of type ```u16``` for schemas that are successfully stored on chain.
 - **BlockCount**: A primitive of type ```u16``` that represents count of blocks per schema. This is used to define for how many blocks; messages per schema are stored on chain.
+- **SchemaState**: A type enumeration listing various state of a given schema.
+  
+  ```rust
+
+  pub enum SchemaState {
+    Active,
+    Deprecated,
+    Retracted,
+  }
+  ```
+
+- **SchemaValidity**: Defines a contract enabling definition of state of current ```schema_id``` and its validity range in terms of block number.
+
+  ```rust
+
+  pub struct SchemaValidity<BlockNumber> {
+      pub state: SchemaState,
+      pub valid_from: BlockNumber,
+      pub valid_to: BlockNumber,
+  }
+  ```
+
 - **SchemaPolicy** : Defines a contract that encapsulate ```retention``` which is of type ```BlockCount``` and ```starting_block``` which of type ```BlockNumber```.
 
   ```rust
@@ -49,6 +71,7 @@ Using schema registry, message producers no longer need to include full schema w
   pub struct SchemaPolicy<BlockNumber> {
       pub retention: BlockCount,
       pub starting_block: BlockNumber,
+      pub validity: SchemaValidity 
   }
   ```
 
