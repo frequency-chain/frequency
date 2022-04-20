@@ -225,4 +225,4 @@ subject to change at implementation level, use it as a reference point.
 
 #### Suggestion 4
 
-Simple use retirement mechanism to have simpler less complicated evolution mechanism and make evolution synonym with schema retirement/deprecation.
+Simple: Use retirement mechanism to have simpler less complicated evolution mechanism and make evolution synonym with schema retirement/deprecation.
