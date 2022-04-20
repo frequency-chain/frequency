@@ -137,7 +137,7 @@ Schema(s) being immutable on MRC, would generally follow a cycle of deprecation/
   2. Schema(s) that are intended to be retired based on their usage or vulnerabilities can be proposed to be deprecated in bulk via some sort of off chain governance.
   3. Same process proposed above can be used for bulk schema deletion for old/outdated schema(s) which are deemed to be not active anymore for example.
 
-**Implementation**: ```SchemaValidity``` defines a generic structure of what encompass particular schema validity. Where ```SchemaState``` defines various stages of existence of a schema on chain. Schemas when registered should default to Active state. Some of possible extrinsic calls that are required to realize this mechanism of schema retirement could be as follows:
+**Implementation**: ```SchemaValidity``` defines a generic structure of what encompasses a particular schema validity. Where ```SchemaState``` defines various stages of existence of a schema on chain. Schemas when registered should default to Active state. Some of possible extrinsic calls that are required to realize this mechanism of schema retirement could be as follows:
 
   1. ***Update*** ```update_schema_state```: Given a ```schema_id```. A valid account with sufficient balance can mark a schema deprecated or retracted (terms may change for how we want to word these). Such an update should be an outcome of curation via governance mechanism and hence can be implemented as a substrate sudo extrinsic.
   2. ***Delete***:```delete_schema```: Given a ```schema_id```. A valid account with sufficient balance can delete a schema from chain. Such an update should be an outcome of curation via governance mechanism and hence can be implemented as a substrate sudo extrinsic.
