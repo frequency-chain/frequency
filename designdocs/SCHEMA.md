@@ -15,13 +15,17 @@ At a minimum, MRC should implement procedures to register, validate, store and a
 
 - **Registry**: Implement a schema registry, enabling participants to register and store validated schemas on chain.
 - **Validation**: Schema validation enables message consumers and producers to entrust MRC with correctness of schema prior to storage and a valid ```schema_id``` is produced. Schema validation can be done on chain with following basic steps:
+  - Some sort of duplication checks to be put in place ensuring uniqueness of schemas.
   - Total count of schemas does not exceed a pre-defined maximum count that can be stored on chain.
   - Schema being registered should have a minimum size as defined by MRC and should not exceed a pre-defined maximum size.
   - Schema should not be malformed.
     Note: due to the [serialization concerns](./OnChainMessageStorage.    md#serialization-concerns) pertaining to processing restrictions on chain as well as lack of better serialization rust libraries, schema integrity may be required to be   validated off chain.
 - **Interfaces**: Implement appropriate procedural calls to perform read operations on schema registry.
 - **Retention**: Implement some sort of schema(s) retention logic  for optimal on-chain message(s) storage. Retention periods per schema can be modified via super user permissions.
-- **Schema Retirement**: Schema retirement is a mechanism to enable deprecate/retire or invalidate a given schema from use. This can be achieved via defined  schema states such as Active, Deprecated or Retracted.
+- **Schema Retirement**: Schema retirement is a mechanism to enable deprecate/retire or invalidate a given schema from use. This can be achieved via defined  schema states such as Active, Deprecated or Retracted. Rationale behind such a mechanism is as follows:
+  - Author of a given schema would want to retire or deprecate a schema.
+  - Schema itself has bug which was overlooked during registration.
+  - Cost of garbage collecting data would eventually be a factor.
 - **Evolution**: An important aspect of message passing is  schema evolution. After initial schema is defined, network participants may need to evolve it over time depending on their respective use cases, it is critical to messaging system to handle data encoded with both old and new schema seamlessly. Schema evolution on MRC require additional discussion which is outside the scope of this document. See [additional notes](#additional-notes) for more details.
 
 ## Proposal
@@ -42,7 +46,7 @@ Using schema registry, message producers no longer need to include full schema w
 - **Schema**: Serialized schema of type ```Vec<u8>```.
 - **SchemaId**: A unique identifier of type ```u16``` for schemas that are successfully stored on chain.
 - **BlockCount**: A primitive of type ```u16``` that represents count of blocks per schema. This is used to define for how many blocks; messages per schema are stored on chain.
-- **SchemaState**: A type enumeration listing various state of a given schema.
+- **SchemaState**: A type enumeration listing various state of a given schema[*](#disclaimer).
   
   ```rust
 
@@ -83,18 +87,20 @@ Using schema registry, message producers no longer need to include full schema w
 
 ### Schema Validation
 
-Schema registry performs following checks before onboarding a schema on MRC:
+Schema registry, at least, performs following checks before onboarding a schema on MRC:
 
 - Payload is signed by an authorizing AccountId.
 - MRC did not exceed maximum count of schemas that can be hosted on chain.
 - A given schema adheres to minimum and maximum size limits allowed per schema.
 - Schema itself is not broken or malformed.
+- No duplicate schema(s) ever get registered.
 
 ### Schema Access
 
-Schema registry should expose, at minimum, following procedural calls (as RPC and/or public trait for internal use) for network participants and off chain message validator.
+Schema registry should expose, at minimum, following procedural calls (as RPC and/or public trait for internal use) for network participants and off chain message validator. Depending on use case we might need to add more and modify these basic calls.
 
-- get_schema : given a ```schema_id```, return serialized schema payload of type ```Vec<Schema>``` stored on chain.
+- **get_schema** : given a ```schema_id```, return serialized schema payload of type ```Schema``` stored on chain.
+- **get_schema_state**: given a ```schema_id```, return the state and/or range of blocks between which the schema is valid, of the schema if it still exists on chain.
 
 ### Schema Retention and Starting Block Storage
 
@@ -112,13 +118,17 @@ Note: ```starting_block``` should only be modifiable via internal calls, for exa
 - **Description**: On chain storage of starting block number for each schema. Required by message store. Defaults to block number 1.
 - **Implementation**: Schema registry should provide some sort of procedural call (internal to MRC) to read (```get_schema_starting_block```) and write (```set_schema_starting_block```) starting block number for a given ```schema_id```. This will be utilized by message store for further processing.
 
-### Schema Retirement
+### Schema Retirement/Deprecation
 
-TODO
+Schema(s) being immutable on MRC, would generally follow a cycle of deprecation/retirement for various reasons, such as, but not limited to, schema being buggy or missing key fields that author intend to have, author would want to retire or deprecate a schema or from chain perspective and a cost of garbage collection adding to processing fee. In general, following salient features have been proposed to address schema retirement/deprecation:
+
+- Schema(s) are immutable.
+- Schema(s) that are intended to be retired based on their usage or vulnerabilities can be proposed to be deprecated in bulk via some sort of off chain governance.
+- Same process proposed above can be used for bulk schema deletion for old/outdated schema(s) which are deemed to be not active anymore for example.
 
 ### Schema Evolution
 
-With Schema Registry, different consumers of MRC can evolve a given schema at different rates, changing the shape of data and entrusting schema registry to handle translations from one schema to another. Currently schema evolution is not directly supported on chain and can be achieved by different consumers via unique ```schema_id``` for evolved schemas. This is work in progress and various suggestions for future reference and development are listed in [additional notes](#additional-notes).
+With Schema Registry, different consumers of MRC can evolve a given schema at different rates, changing the shape of data and entrusting schema registry to handle translations from one schema to another. Currently schema evolution is not directly supported on chain and can be achieved by different consumers via unique [schema retirement procedure](#schema-retirementdeprecation) for evolved schemas. This is work in progress and various suggestions for future reference and development are listed in [additional notes](#additional-notes), preferably [suggestion 4](#suggestion-4).
 
 ## Benefits and Risks
 
@@ -143,6 +153,10 @@ With Schema Registry, different consumers of MRC can evolve a given schema at di
 - [Substrate sudo](https://www.shawntabrizi.com/substrate/the-sudo-story-in-substrate/)
 
 ## Additional Notes
+
+### Disclaimer
+
+subject to change at implementation level, use it as a reference point.
 
 ### Schema Evolution Discussion
 
@@ -175,3 +189,7 @@ With Schema Registry, different consumers of MRC can evolve a given schema at di
 - Updated schemas can be added as long they have some sort of reference to previous/older schema(s).
 - If a schema is retired, it should be propagated to referring schemas and removed from references.
 - Provide some rpc calls for consumers to get replacement schemaId(s)/schema(s) for given schemaId etc.
+
+#### Suggestion 4
+
+Simple use retirement mechanism to have simpler less complicated evolution mechanism and make evolution synonym with schema retirement/deprecation.
