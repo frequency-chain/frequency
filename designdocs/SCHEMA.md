@@ -17,12 +17,10 @@ At a minimum, MRC should implement procedures to register, validate, store and a
 - **Registry**: Implement a schema registry, enabling participants to register and store validated schemas on chain.
 
 - **Validation**: Schema validation enables message consumers and producers to entrust MRC with correctness of schema prior to storage and a valid ```schema_id``` is produced. Schema validation can be done on chain with following basic steps:
-
-- Some sort of duplication checks to be put in place ensuring uniqueness of schemas.
-- Total count of schemas does not exceed a pre-defined maximum count that can be stored on chain.
-- Schema being registered should have a minimum size as defined by MRC and should not exceed a pre-defined maximum size.
-- Schema should not be malformed.
-
+  - Some sort of duplication checks to be put in place ensuring uniqueness of schemas.
+  - Total count of schemas does not exceed a pre-defined maximum count that can be stored on chain.
+  - Schema being registered should have a minimum size as defined by MRC and should not exceed a pre-defined maximum size.
+  - Schema should not be malformed.
 Note: due to the [serialization concerns](./OnChainMessageStorage. md#serialization-concerns) pertaining to processing restrictions on chain as well as lack of better serialization rust libraries, schema integrity may be required to be validated off chain.
 
 - **Interfaces**: Implement appropriate procedural calls to perform read operations on schema registry.
