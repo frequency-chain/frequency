@@ -158,6 +158,8 @@ With Schema Registry, different consumers of MRC can evolve a given schema at di
 
 - It also enable schema evolution and act as an interface to ensure contracts between consumers and producers is not broken, while promoting reusability of schemas.
 
+- Schema immutability prevents overly complicated implementation and evolution while schema retirement via governance mechanism simplifies the process.
+
 ### Risks
 
 - Schema registration on MRC should prevent DoS attempts given schema registration will be open to anyone with enough balance to pay for the same. Should schema registration be costly, or restricting it specific accounts would be worth considering.
@@ -165,6 +167,10 @@ With Schema Registry, different consumers of MRC can evolve a given schema at di
 - Schema evolution is critical to any message passing system, how does MRC intend to handle it or is it required , is still a question that needs to be ironed out.
 
 - Another factor to consider is who is permissioned to modify retention periods per schema, who will pay for such an update and what are the defaults, if any.
+
+- Is removing schema completely (deletion) a good idea? May be yes, for it is done via proper governance. No? ensuring right procedures to follow before deleting a schema.
+
+- How we will handle duplicates, simple approach on chain or off chain. Not a risk but more of an implementation concern.
 
 ## Additional Resources
 
