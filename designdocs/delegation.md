@@ -60,9 +60,9 @@ Creates a new `MsaId` on behalf of an MSA and adds the origin as the MSA's deleg
          1. `data` - this is what the MSA owner must sign and provide to the delegate beforehand.
              * `msa_id` - the delegate, of type `MsaId`
              * `permission` a value indicating the permission to be given to the delegate
-         2. `signing_key` - The authorizing key used to create `signature`
+         2. `public_key` - The authorizing key used to create `signature`
          3. `signature` - The signature of the hash of `data`
-    * Event:  `IdentityCreated`, with the `signing_key`, the newly created `MsaId`, and `msa_id`
+    * Event:  `IdentityCreated`, with the `public_key`, the newly created `MsaId`, and `msa_id`
     * Restrictions:  origin must own `msa_id` in the payload.
 
 #### add_self_as_delegate(payload)
@@ -72,10 +72,10 @@ Adds the `MsaId` in the payload as a delegate, to an MSA owning `delegator_msa_i
           1. `data` - this is what the MSA owner must sign and provide to the delegate beforehand.
               * `delegate_msa_id` - the delegate's `MsaId`, i.e. the caller's `MsaId`
               * `permission` a value indicating the permission to be given to the delegate
-          2. `signing_key` - The authorizing key used to create `signature`
+          2. `public_key` - The authorizing key used to create `signature`
           3. `signature` - The signature of the hash of `data`
-    * Event: `DelegateAddedSelf` with `signing_key`, `msa_id`, and `delegate_msa_id`
-    * Restrictions:  Caller/origin must own `delegate_msa_id`. The `signing_key` MSA must own `msa_id`.
+    * Event: `DelegateAddedSelf` with `public_key`, `msa_id`, and `delegate_msa_id`
+    * Restrictions:  Caller/origin must own `delegate_msa_id`. The `public_key` MSA must own `msa_id`.
 
 #### replace_delegate_with_self(payload)
 By signed authorization of owner of `delegator`, the `delegator`-->`old_delegate` relationship is removed and replaced with a`delegator`-->`new_delegate` relationship. The purpose of this extrinsic is to allow an End User to change delegates, for example, if they want to switch to a different DSNP dApp.
@@ -86,12 +86,12 @@ By signed authorization of owner of `delegator`, the `delegator`-->`old_delegate
        * `old_delegate` - the `MsaId` of the delegate to be replaced
        * `msa_id` - the `MsaId` of the authorizing MSA
        * `permission` a value indicating the permission to be given to the *new* delegate
-  2. `signing_key` - The authorizing key used to create `signature`
+  2. `public_key` - The authorizing key used to create `signature`
   3. `signature` - The signature of the hash of `data`
-* **Event**: `DelegateReplacedWithSelf` with the `signing_key`, `msa_id`,`old_delegate` and `new_delegat
+* **Event**: `DelegateReplacedWithSelf` with the `public_key`, `msa_id`,`old_delegate` and `new_delegat
 * **Restrictions**:
   * Caller/origin must own `new_delegate`.
-  * `signing_key` MSA must own `msa_id`.
+  * `public_key` MSA must own `msa_id`.
   * `old_delegate` must be a delegate of `msa_id`.
 
 #### update_delegate_self(payload)
@@ -102,7 +102,7 @@ By signed authorization of owner of `delegator`, `delegate`'s own permissions ar
                * `delegate` - the delegate's `MsaId`, i.e. the caller's `MsaId`
                * `msa_id` - the `MsaId` of the authorizing MSA.
                * `new_permission` a value indicating the new permission to be given to this delegate
-     2. `signing_key` - The authorizing key used to create `signature`
+     2. `public_key` - The authorizing key used to create `signature`
      3. `signature` - The signature of the hash of `data`
 * Event: `DelegateUpdatedSelf` with `delegate`, `msa_id`, `new_permissions`
 
@@ -113,7 +113,7 @@ Delegate removes themselves from the specified `msa_id` in the payload.  This fu
 Directly creates a `MsaId` for the origin (caller) MSA with no delegates.
 This is a signed call directly from the caller, so the owner of the new `MsaId` pays the fees for `MsaId` creation.
 
-* Event: `IdentityCreated`, with the caller's Signing Key, the newly created `MsaId`, and an empty delegate `MsaId`.
+* Event: `IdentityCreated`, with the caller's Public Key, the newly created `MsaId`, and an empty delegate `MsaId`.
 
 #### update_delegate(delegator, delegate, permissions)
 Changes the permissions for an existing `delegator`-->`delegate` relationship.
@@ -140,10 +140,10 @@ Deletes the `MsaId` from the registry entirely.
 
 ### Custom RPC endpoints
 #### get_account_ids(msa_id)
-Retrieve a list of signing keys of up to `MaxKeys` size for the provided `MsaId`, or `None()` if the `MsaId` does not exist.
+Retrieve a list of public keys of up to `MaxKeys` size for the provided `MsaId`, or `None()` if the `MsaId` does not exist.
 
-#### get_msa_id(signing_key)
-Retrieve the `MsaId` for the provided `signing_key`, or `None()` if`signing_key` does not exist.
+#### get_msa_id(public_key)
+Retrieve the `MsaId` for the provided `public_key`, or `None()` if`public_key` does not exist.
 
 #### validate_delegate(delegator, delegate, permission)
 Verify that the provided delegate `MsaId` is a delegate of the delegator, and has the given permission value.
@@ -205,7 +205,7 @@ We briefly discussed the possibility of requiring a small token deposit to creat
 ### dApp Developer pays for existential deposit
 One alternative to allow for account creation at no cost to the End User was the dApp developer MSA sends an existential deposit to the account to create it.
 We decided against this option for a number of reasons.
-1. It could create a potential for abuse and token loss by those creating numerous fake accounts and then removing the dApp Signing Key as a delegate.
+1. It could create a potential for abuse and token loss by those creating numerous fake accounts and then removing the dApp Public Key as a delegate.
 2. We have the ability not to require an existential deposit, and felt this to be a better option in this particular case.
 
 ### End user pays to announce, with no possibility of delegating
@@ -230,7 +230,7 @@ Directly adding a delegate, with or without a delegate's permission, is not to b
 * **Delegate**: An `MsaId` that has been granted specific permissions by its Delegator.
 * **Delegator**: An `MsaId` that has granted specific permissions to a Delegate.
 * **MSA**: Message Sourcing Account. A collection of key pairs which can have a specific token balance.
-* **Signing Key**: A 32-byte (u256) number that is used to refer to an on-chain MSA and verify signatures. This is the public key of an MSA.
+* **Public Key**: A 32-byte (u256) number that is used to refer to an on-chain MSA and verify signatures. It is one of the keys of an MSA key pair
 * **MsaId**: An 8-byte (u64) number used as a lookup and storage key for delegations, among other things
 * **Provider**: A company or individual operating an on-chain Delegate MSA in order to post MRC transactions on behalf of other MSAs.  Provider MSAs will have one or more token balances.
 * **End User**: Groups or individuals that own an MSA that is not a Provider MSA.
