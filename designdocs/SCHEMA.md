@@ -53,22 +53,22 @@ Using schema registry, message producers no longer need to include full schema w
   }
   ```
 
-- **SchemaValidity**: Defines a contract enabling definition of state of current ```schema_id``` and its validity range in terms of block number.
+- **SchemaValidity**: Defines a contract enabling definition of state of current ```schema_id``` and its validity range in terms of block number. Typically, a generic schema validity can be defined as follow:
 
   ```rust
 
-  pub struct SchemaValidity<BlockNumber> {
+  pub struct SchemaValidity {
       pub state: SchemaState,
       pub valid_from: BlockNumber,
       pub valid_to: BlockNumber,
   }
   ```
 
-- **SchemaPolicy** : Defines a contract that encapsulate ```retention``` which is of type ```BlockCount``` and ```starting_block``` which of type ```BlockNumber```.
+- **SchemaPolicy** : Defines a contract that encapsulate ```retention``` which is of type ```BlockCount``` and ```starting_block``` which of type ```BlockNumber```. A typical generic structure for schema policy is defined as follows:
 
   ```rust
 
-  pub struct SchemaPolicy<BlockNumber> {
+  pub struct SchemaPolicy {
       pub retention: BlockCount,
       pub starting_block: BlockNumber,
       pub validity: SchemaValidity 
