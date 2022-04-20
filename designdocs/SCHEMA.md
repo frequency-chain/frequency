@@ -119,7 +119,7 @@ Retention periods on a schema is designed for message(s) store to retain message
 
 - **Type Definition**: ```StorageMap<SchemaId, SchemaPolicy>```.
 - **Description**: Retention period are stored as a map of ```SchemaId``` and ```SchemaPolicy```. By default schemas have no retention policy and by default ```retention``` and ```starting_block``` is set to 1 signaling message store to retain messages on chain database indefinitely.
-- **Implementation**: MRC will expose a substrate sudo call ```update_schema_retention``` to updated ```retention``` period for a given ```schema_id```. On successful execution, retention block count will be updated.
+- **Implementation**: MRC will expose a substrate sudo call ```update_schema_retention``` to update ```retention``` period for a given ```schema_id```. On successful execution, retention block count will be updated.
 - **Read**: Schema registry should expose ```get_retention_period``` procedural call to return current state of retention period for a given ```schema_id```.
 
 Note: ```starting_block``` should only be modifiable via internal calls, for example, via message store and should not be exposed to consumers. Check out the following section for more details.
@@ -131,13 +131,13 @@ Note: ```starting_block``` should only be modifiable via internal calls, for exa
 
 ### Schema Retirement/Deprecation
 
-Schema(s) being immutable on MRC, would generally follow a cycle of deprecation/retirement for various reasons, such as, but not limited to, schema being buggy or missing key fields that author intend to have, author would want to retire or deprecate a schema or from chain perspective and a cost of garbage collection adding to processing fee. In general, following salient features have been proposed to address schema retirement/deprecation:
+Schema(s) being immutable on MRC, would generally follow a cycle of deprecation/retirement for various reasons, such as, but not limited to, schema being wrong from consumer perspective , such as missing key fields that author intend to have and author would want to retire or deprecate a schema, even from chain perspective the cost of garbage collection adding to processing fee would require MRC to regularly garbage collect stable/expired/deprecated schemas. In general, following salient features have been proposed to address schema retirement/deprecation:
 
   1. Schema(s) are immutable.
   2. Schema(s) that are intended to be retired based on their usage or vulnerabilities can be proposed to be deprecated in bulk via some sort of off chain governance.
   3. Same process proposed above can be used for bulk schema deletion for old/outdated schema(s) which are deemed to be not active anymore for example.
 
-**Implementation**: ```SchemaValidity``` defines a generic structure of what encompasses a particular schema validity. Where ```SchemaState``` defines various stages of existence of a schema on chain. Schemas when registered should default to Active state. Some of the possible extrinsic calls that are required to realize this mechanism of schema retirement could be as follows[*](#disclaimer):
+**Implementation**: ```SchemaValidity``` defines a generic structure of what encompasses a particular schema validity. Where ```SchemaState``` defines various stages of schema existence on chain. Schemas when registered should default to Active state. Some of the possible extrinsic calls that are required to realize this mechanism of schema retirement could be as follows[*](#disclaimer):
 
   1. ***Update*** ```update_schema_state```: Given a ```schema_id```. A valid account with sufficient balance can mark a schema deprecated or retracted (terms may change for how we want to word these). Such an update should be an outcome of curation via governance mechanism and hence can be implemented as a substrate sudo extrinsic. Typically we want to update state to ```Deprecated``` and  ```valid_from```, ```valid_to``` will be defined as range of blocks between which deprecated schema remains valid or in other words, a deprecation period.
   2. ***Delete***:```delete_schema```: Given a ```schema_id```. A valid account with sufficient balance can delete a schema from chain. Such an update should be an outcome of curation via governance mechanism and hence can be implemented as a substrate sudo extrinsic. Governance could also look at all the schemas that are past their validity range as discussed in 1. and decision around their deletion could be made, if not used anymore.
