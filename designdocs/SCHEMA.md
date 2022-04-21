@@ -132,11 +132,12 @@ Note: ```starting_block``` should only be modifiable via internal calls, for exa
 
 ### Schema Retirement/Deprecation
 
-Schema(s) being immutable on MRC, would generally follow a cycle of deprecation/retirement for various reasons, such as, but not limited to, schema being wrong from consumer perspective , such as missing key fields that author intend to have and author would want to retire or deprecate a schema, even from chain perspective the cost of garbage collection adding to processing fee would require MRC to regularly garbage collect stable/expired/deprecated schemas. In general, following salient features have been proposed to address schema retirement/deprecation:
+Schema(s) being immutable on MRC, would generally follow a cycle of deprecation/retirement for various reasons, such as, but not limited to, schema being wrong from consumer perspective , such as missing key fields that author intend to have and author would want to retire or deprecate a schema, even from chain perspective, the cost of garbage collection, processing feed or storage fees over time would require MRC to regularly garbage collect stable/expired/deprecated schemas. In general, following salient features have been proposed to address schema retirement/deprecation:
 
   1. Schema(s) are immutable.
   2. Schema(s) that are intended to be retired based on their usage or vulnerabilities can be proposed to be deprecated in bulk via some sort of off chain governance.
   3. Same process proposed above can be used for bulk schema deletion for old/outdated schema(s) which are deemed to be not active anymore for example.
+  4. Schema retirement/deprecation should be done in bulk via governance.
 
 **Implementation**: ```SchemaValidity``` defines a generic structure of what encompasses a particular schema validity. Where ```SchemaState``` defines various stages of schema existence on chain. Schemas when registered should default to Active state. Some of the possible extrinsic calls that are required to realize this mechanism of schema retirement could be as follows[*](#disclaimer):
 
