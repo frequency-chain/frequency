@@ -128,6 +128,7 @@ Note: ```starting_block``` should only be modifiable via internal calls, for exa
 
 - **Description**: On chain storage of starting block number for each schema. Required by message store. Defaults to block number 1.
 - **Implementation**: Schema registry should provide some sort of procedural call (internal to MRC) to read (```get_schema_starting_block```) and write (```set_schema_starting_block```) starting block number for a given ```schema_id```. This will be utilized by message store for further processing.
+- **Rationale**: Message store periodically garbage collect messages per schema based on their retention period for on chain storage, upon successful garbage collection message store will update starting block to last block where messages were removed from on chain storage to chain database and new set of message will be store till ```starting_block + block_count-1```.
 
 ### Schema Retirement/Deprecation
 
