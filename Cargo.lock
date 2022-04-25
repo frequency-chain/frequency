@@ -1122,6 +1122,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "common-primitives"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+]
+
+[[package]]
 name = "concurrent-queue"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4937,6 +4944,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
+ "pallet-msa",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -5784,6 +5792,21 @@ dependencies = [
  "sp-api",
  "sp-blockchain",
  "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-msa"
+version = "0.1.0"
+dependencies = [
+ "common-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
 ]
 
