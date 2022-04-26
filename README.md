@@ -51,32 +51,38 @@ source .env
 
 ### Start local Relay chain(alice and bob) and MRC(alice)  
 
-Start relay chain
+1. Start relay chain
 
-```bash
-./scripts/init.sh start-relay-chain
-```
+    ```bash
+    ./scripts/init.sh start-relay-chain
+    ```
 
-Start mrc as parachain: This step will generate genesis/wasm and onboard the parachain.
+1. Relay chain is running on port `9945` and `9946` for alice and bob respectively.
 
-Note: assumption is that relay chain is running from step one above and para id 2000 is registered.
+1. Start mrc as parachain: This step will generate genesis/wasm and onboard the parachain. If new pallets or runtime code changes have been made to mrc, then developer have to generate chain specs again. Refer to [generation spec file](#generating-a-new-spec-file) for more details.
 
-```bash
-./scripts/init.sh start-mrc
-```
+1. Note: assumption is that relay chain is running from step one above and para id 2000 is registered on relay.
 
-Note: set `RUST_LOG=debug RUST_BACKTRACE=1` as the environment variable to enable detailed logs.
+    ```bash
+    ./scripts/init.sh start-mrc
+    ```
 
-Onboarding mrc to Relay chain
+1. Note: set `RUST_LOG=debug RUST_BACKTRACE=1` as the environment variable to enable detailed logs.
 
-```bash
-./scripts/init.sh onboard-mrc
-```
+1. Onboarding mrc to Relay chain
 
-### Generating a new genesis file
+    ```bash
+    ./scripts/init.sh onboard-mrc
+    ```
+
+1. Parachain will be available at  port `$((9946 + $para_id))` which in default case is `11946`
+
+1. Link to parachain [dashboard](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A11946)
+
+### Generating a new spec file
 
 1. Update `node/chain_spec.rs` with required spec config, defaults to `para_id:2000` and relay chain to be `rococo_local.json` with `protocol_id:mrc-local`
-2. Run `cargo run --release build-spec --disable-default-bootnode [--chain [name]]> .res/genesis/mrc-spec-rococo.json` to export the chain spec
+2. Run `cargo run --release build-spec --disable-default-bootnode --chain > .res/genesis/mrc-spec-rococo.json` to export the chain spec
 3. Run `cargo run --release build-spec --disable-default-bootnode .res/genesis/mrc-spec-rococo.json> ./res/genesis/rococo-local-mrc-2000-raw.json` to export the raw chain spec
 4. Commit
 
