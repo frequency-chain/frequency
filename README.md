@@ -69,7 +69,7 @@ source .env
 
 1. Note: set `RUST_LOG=debug RUST_BACKTRACE=1` as the environment variable to enable detailed logs.
 
-1. Onboarding mrc to Relay chain
+1. Onboarding mrc to relay chain
 
     ```bash
     ./scripts/init.sh onboard-mrc
