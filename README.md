@@ -100,3 +100,8 @@ Note: To build spec against specific chain config; specify chain name in the com
 
 1. Check out the commit at which the runtime was built.
 2. Run `TARGET=build-runtime RUST_TOOLCHAIN=nightly ./ci/build.sh` to use srtool to verify the runtime.
+
+## Additional Resources
+
+- [Cumulus Tutorial](https://docs.substrate.io/tutorials/v3/cumulus/start-relay/)
+- [Private Network](https://docs.substrate.io/tutorials/v3/private-network/)
