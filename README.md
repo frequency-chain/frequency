@@ -75,7 +75,7 @@ source .env
     ./scripts/init.sh onboard-mrc
     ```
 
-1. Parachain will be available at  port `$((9946 + $para_id))` which in default case is `11946`
+1. Parachain collator will be available at  port `$((9946 + $para_id))` which in default case is `11946`, while  embedded relay chain is running on port `$((9946 + $para_id + 1 ))` which in default case is `11947`.
 
 1. Link to parachain [dashboard](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A11946)
 

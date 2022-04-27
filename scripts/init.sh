@@ -58,9 +58,9 @@ start-mrc)
     --collator \
     --base-path=$parachain_dir/data \
     --force-authoring \
-    --rpc-port $((9936 + $para_id + 1)) \
-    --port $((30355 + $para_id + 1)) \
-    --ws-port $((9946 + $para_id+ 1)) \
+    --rpc-port $((9936 + $para_id)) \
+    --port $((30355 + $para_id)) \
+    --ws-port $((9946 + $para_id)) \
     --rpc-external \
     --rpc-cors all \
     --ws-external \
@@ -69,9 +69,9 @@ start-mrc)
     -- \
     --execution wasm \
     --chain "${chain}" \
-    --rpc-port $((9936 + $para_id)) \
-    --port $((30355 + $para_id)) \
-    --ws-port $((9946 + $para_id))
+    --rpc-port $((9936 + $para_id +1)) \
+    --port $((30355 + $para_id + 1)) \
+    --ws-port $((9946 + $para_id + 1))
   ;;
 
 onboard-mrc)
