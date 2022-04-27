@@ -14,6 +14,8 @@ base_dir=/tmp/mrc
 docker_onboard="${DOCKER_ONBOARD:-false}"
 mrc_docker_image_tag="${PARA_DOCKER_IMAGE_TAG:-mrc-latest}"
 
+chain="${RELAY_CHAIN_SPEC:-./res/rococo-local.json}"
+
 case $cmd in
 install-toolchain)
   ./scripts/install_toolchain.sh
@@ -53,18 +55,23 @@ start-mrc)
 
   ./scripts/run_collator.sh \
     --chain="${chain_spec}" --alice \
+    --collator \
     --base-path=$parachain_dir/data \
-    --wasm-execution=compiled \
-    --execution=wasm \
-    --port $((30355 + $para_id)) \
-    --rpc-port $((9936 + $para_id)) \
-    --ws-port $((9946 + $para_id)) \
+    --force-authoring \
+    --rpc-port $((9936 + $para_id + 1)) \
+    --port $((30355 + $para_id + 1)) \
+    --ws-port $((9946 + $para_id+ 1)) \
     --rpc-external \
     --rpc-cors all \
     --ws-external \
     --rpc-methods=Unsafe \
     --state-cache-size 0 \
-    --log="main,debug" \
+    -- \
+    --execution wasm \
+    --chain "${chain}" \
+    --rpc-port $((9936 + $para_id)) \
+    --port $((30355 + $para_id)) \
+    --ws-port $((9946 + $para_id))
   ;;
 
 onboard-mrc)
