@@ -55,24 +55,19 @@ start-mrc)
 
   ./scripts/run_collator.sh \
     --chain="${chain_spec}" --alice \
-    --collator \
     --base-path=$parachain_dir/data \
-    --force-authoring \
-    --rpc-port $((9936 + $para_id)) \
+    --wasm-execution=compiled \
+    --execution=wasm \
     --port $((30355 + $para_id)) \
+    --rpc-port $((9936 + $para_id)) \
     --ws-port $((9946 + $para_id)) \
     --rpc-external \
     --rpc-cors all \
     --ws-external \
     --rpc-methods=Unsafe \
     --state-cache-size 0 \
-    -- \
-    --execution wasm \
-    --chain "${chain}" \
-    --rpc-port $((9936 + $para_id +1)) \
-    --port $((30355 + $para_id + 1)) \
-    --ws-port $((9946 + $para_id + 1))
   ;;
+
 
 onboard-mrc)
   echo "Onboarding parachain with runtime '$parachain' and id '$para_id'..."
