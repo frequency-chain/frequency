@@ -57,7 +57,7 @@ source .env
     ./scripts/init.sh start-relay-chain
     ```
 
-1. Relay chain is running on port `9945` and `9946` for alice and bob respectively.
+1. Relay chain is running on port [`9944`](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) and [`9945`]((https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9945#/explorer)) for alice and bob respectively.
 
 1. Start mrc as parachain: This step will generate genesis/wasm and onboard the parachain. If new pallets or runtime code changes have been made to mrc, then developer have to generate chain specs again. Refer to [generation spec file](#generating-a-new-spec-file) for more details.
 
