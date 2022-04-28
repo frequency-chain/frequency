@@ -58,6 +58,7 @@ start-mrc)
     --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
     --execution=wasm \
+    --force-authoring \
     --port $((30355 + $para_id)) \
     --rpc-port $((9936 + $para_id)) \
     --ws-port $((9946 + $para_id)) \
