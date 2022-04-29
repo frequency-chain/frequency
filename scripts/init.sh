@@ -14,6 +14,8 @@ base_dir=/tmp/mrc
 docker_onboard="${DOCKER_ONBOARD:-false}"
 mrc_docker_image_tag="${PARA_DOCKER_IMAGE_TAG:-mrc-latest}"
 
+chain="${RELAY_CHAIN_SPEC:-./res/rococo-local.json}"
+
 case $cmd in
 install-toolchain)
   ./scripts/install_toolchain.sh
@@ -56,6 +58,7 @@ start-mrc)
     --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
     --execution=wasm \
+    --force-authoring \
     --port $((30355 + $para_id)) \
     --rpc-port $((9936 + $para_id)) \
     --ws-port $((9946 + $para_id)) \
@@ -64,8 +67,8 @@ start-mrc)
     --ws-external \
     --rpc-methods=Unsafe \
     --state-cache-size 0 \
-    --log="main,debug" \
   ;;
+
 
 onboard-mrc)
   echo "Onboarding parachain with runtime '$parachain' and id '$para_id'..."
