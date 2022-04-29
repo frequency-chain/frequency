@@ -12,7 +12,7 @@ jobs:
       # Required as the JSON input file needs to be read
       - uses: actions/checkout@v3
       - id: set-build-param
-        uses: JoshuaTheMiller/conditional-build-matrix@6462c4568a159216deb872a3eda1dd4d5cc0c3d2
+        uses: JoshuaTheMiller/conditional-build-matrix@b9af2b1b137d7bd7818c1233ef830b326809a7cc
         with:
           inputFile: '.github/workflows/build-params.json'
           # we run build-node on every workflow but build-runtime only on pushes to branches
