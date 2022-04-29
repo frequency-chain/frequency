@@ -72,7 +72,7 @@ cumulus-primitives-utility = {git = "https://github.com/paritytech/cumulus", def
 pallet-collator-selection = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.18"}
 parachain-info = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.18"}
 
-pallet-msa = {path = "../../pallets/msa", default-features = false, version = "0.1.0"}
+pallet-msa = {path = "../../pallets/msa", default-features = false}
 
 [features]
 default = [

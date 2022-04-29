@@ -302,6 +302,7 @@ impl frame_system::Config for Runtime {
 
 impl pallet_msa::Config for Runtime {
 	type Event = Event;
+	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {

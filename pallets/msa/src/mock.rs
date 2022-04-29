@@ -51,6 +51,7 @@ impl system::Config for Test {
 
 impl pallet_msa::Config for Test {
 	type Event = Event;
+	type WeightInfo = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
