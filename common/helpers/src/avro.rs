@@ -1,5 +1,4 @@
 use apache_avro::schema::Schema;
-use sha2::Sha256;
 
 #[derive(thiserror::Error, Debug)]
 pub enum AvroError {
@@ -13,8 +12,8 @@ pub fn fingerprint_raw_schema(raw_schema: &str) -> Result<(Schema, Vec<u8>), Avr
 	// parse_str will fail if schema is not valid
 	let schema = Schema::parse_str(raw_schema)?;
 	// get the schema finger print
-	let schema_fingerprint = schema.fingerprint::<Sha256>();
-	Ok((schema, schema_fingerprint.bytes))
+	let schema_canonical_form = schema.canonical_form();
+	Ok((schema, schema_canonical_form.as_bytes().to_vec()))
 }
 
 pub fn fingerprint_raw_schema_list(
@@ -27,9 +26,9 @@ pub fn fingerprint_raw_schema_list(
 		// parse_str will fail if schema is not valid
 		let schema = Schema::parse_str(raw_schema)?;
 		// get the schema finger print
-		let schema_fingerprint = schema.fingerprint::<Sha256>();
+		let schema_canonical_form = schema.canonical_form();
 		// add to return
-		schema_fingerprints.push(schema_fingerprint.bytes);
+		schema_fingerprints.push(schema_canonical_form.as_bytes().to_vec());
 		schemas.push(schema);
 	}
 	Ok((schemas, schema_fingerprints))
