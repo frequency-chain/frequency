@@ -36,6 +36,11 @@ const VALID_EXAMPLES: &[(&str, bool)] = &[
     ),
 ];
 
+const INVALID_EXAMPLES: &[(&str, bool)] = &[
+    (r#"{"type": "fixed", "name": "MissingSize"}"#, false),
+    (r#"{"type": "fixed", "size": 314}"#, false),
+];
+
 #[test]
 fn test_fingerprint_raw() {
     for (raw_schema, expected) in PRIMITIVE_EXAMPLE {
@@ -189,3 +194,17 @@ fn test_populate_data_records() {
     let result_write = avro::populate_record(& mut writer, &data_map);
     assert!(result_write.is_ok());
 }
+
+#[test]
+fn test_invalid_cast_to_string_after_parse() {
+    for (raw_schema, expected) in INVALID_EXAMPLES {
+        let schema_result = avro2::fingerprint_raw_schema(raw_schema);
+        assert!(
+            schema_result.is_err(),
+            "schema {} was supposed to be invalid; error: {:?}",
+            raw_schema,
+            schema_result.err()
+        );
+    }
+}
+
