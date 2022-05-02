@@ -14,52 +14,6 @@ pub enum AvroError {
 	Avro(#[from] apache_avro::Error),
 }
 
-pub fn set_writer_schema<'a, W: Write>(writer: W, schema: &'a Schema) -> Writer<'a, W> {
-	Writer::with_codec(schema, writer, Codec::Snappy)
-}
-
-pub fn get_writer_schema<'a>(schema: &'a Schema) -> Writer<'a, Vec<u8>> {
-	Writer::with_codec(schema, Vec::new(), Codec::Snappy)
-}
-
-pub fn populate_record(
-	writer: &mut Writer<Vec<u8>>,
-	record: &HashMap<String, SchemaValue>,
-) -> Result<(), AvroError> {
-	let mut record_list = Record::new(writer.schema()).unwrap();
-	for (field_name, field_value) in record.iter() {
-		record_list.put(field_name, field_value.clone());
-	}
-	writer.append(record_list)?;
-	Ok(())
-}
-
-pub fn get_reader_schema<'a, R: Read>(
-	reader: R,
-	schema: &'a Schema,
-) -> Result<Reader<'a, R>, AvroError> {
-	Ok(Reader::with_schema(&schema, reader)?)
-}
-
-pub fn translate_schema(schema: Vec<u8>) -> Result<Schema, AvroError> {
-	let schema_str = str::from_utf8(&schema);
-	match schema_str {
-		Ok(schema_str) => {
-			let schema = Schema::parse_str(schema_str)?;
-			Ok(schema)
-		},
-		Err(error) => Err(AvroError::InvalidSchema(error.to_string())),
-	}
-}
-
-pub fn translate_schemas(schema: Vec<Vec<u8>>) -> Result<Vec<Schema>, AvroError> {
-	let mut schemas = Vec::new();
-	for s in schema {
-		schemas.push(translate_schema(s)?);
-	}
-	Ok(schemas)
-}
-
 pub fn fingerprint_raw_schema(raw_schema: &str) -> Result<(Schema, Vec<u8>), AvroError> {
 	// parse_str will fail if schema is not valid
 	panic::catch_unwind(|| {
@@ -92,4 +46,68 @@ pub fn fingerprint_raw_schema_list(
 		schemas.push(schema);
 	}
 	Ok((schemas, schema_fingerprints))
+}
+
+pub fn translate_schema(schema: Vec<u8>) -> Result<Schema, AvroError> {
+	let schema_str = str::from_utf8(&schema);
+	match schema_str {
+		Ok(schema_str) => {
+			let schema = Schema::parse_str(schema_str)?;
+			Ok(schema)
+		},
+		Err(error) => Err(AvroError::InvalidSchema(error.to_string())),
+	}
+}
+
+pub fn translate_schemas(schema: Vec<Vec<u8>>) -> Result<Vec<Schema>, AvroError> {
+	let mut schemas = Vec::new();
+	for s in schema {
+		schemas.push(translate_schema(s)?);
+	}
+	Ok(schemas)
+}
+
+pub fn set_writer_schema<'a, W: Write>(writer: W, schema: &'a Schema) -> Writer<'a, W> {
+	Writer::with_codec(schema, writer, Codec::Snappy)
+}
+
+pub fn get_writer_schema<'a>(schema: &'a Schema) -> Writer<'a, Vec<u8>> {
+	Writer::with_codec(schema, Vec::new(), Codec::Snappy)
+}
+
+pub fn populate_record(
+	writer: &mut Writer<Vec<u8>>,
+	record: &HashMap<String, SchemaValue>,
+) -> Result<(), AvroError> {
+	let mut record_list = Record::new(writer.schema()).unwrap();
+	for (field_name, field_value) in record.iter() {
+		record_list.put(field_name, field_value.clone());
+	}
+	writer.append(record_list)?;
+	Ok(())
+}
+
+
+pub fn populate_schema_and_serialize(
+    schema: &Schema,
+    record: &HashMap<String, SchemaValue>,
+) -> Result<Vec<u8>, AvroError> {
+    let mut writer = Writer::with_codec(schema, Vec::new(), Codec::Snappy);
+    let mut record_list = Record::new(writer.schema()).unwrap();
+    for (field_name, field_value) in record.iter() {
+        record_list.put(field_name, field_value.clone());
+    }
+    writer.append(record_list)?;
+    let serialized_bytes = writer.into_inner();
+    match serialized_bytes {
+        Ok(serialized_bytes) => Ok(serialized_bytes),
+        Err(error) => Err(AvroError::Avro(error)),
+    }
+}
+
+pub fn get_reader_schema<'a, R: Read>(
+	reader: R,
+	schema: &'a Schema,
+) -> Result<Reader<'a, R>, AvroError> {
+	Ok(Reader::with_schema(&schema, reader)?)
 }
