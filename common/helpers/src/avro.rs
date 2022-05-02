@@ -1,6 +1,6 @@
 use crate::types::*;
 use apache_avro::{schema::Schema, types::Record, Codec, Reader, Writer};
-use std::{collections::HashMap, panic, str};
+use std::{collections::HashMap, str};
 
 /// Represents error types returned by the `avro` module.
 #[derive(thiserror::Error, Debug)]
@@ -30,23 +30,11 @@ pub enum AvroError {
 /// let serialized_schema = schema_result.unwrap().1;
 pub fn fingerprint_raw_schema(raw_schema: &str) -> Result<(Schema, Vec<u8>), AvroError> {
 	// parse_str will fail if schema is not valid
-	panic::catch_unwind(|| {
-		let schema_result = Schema::parse_str(raw_schema);
-		// match the result of the parse_str
-		match schema_result {
-			Ok(schema) => {
-				// get the fingerprint of the schema
-				let schema_canonical_form = schema.canonical_form();
-				// return the schema and the fingerprint
-				Ok((schema, schema_canonical_form.as_bytes().to_vec()))
-			},
-			Err(e) => Err(AvroError::Avro(e)),
-		}
-	})
-	.unwrap_or_else(|_| {
-		// if the unwind is caught, return an error
-		Err(AvroError::InvalidSchema(raw_schema.to_string()))
-	})
+
+	let schema_result = Schema::parse_str(raw_schema)?;
+	let schema_canonical_form = schema_result.canonical_form();
+	// return the schema and the fingerprint
+	Ok((schema_result, schema_canonical_form.as_bytes().to_vec()))
 }
 
 /// Function to convert a list of raw schema into serialized Avro schema.
@@ -226,23 +214,22 @@ pub fn get_schema_data_reader<'a>(
 /// let serialized_record = populate_schema_and_serialize(schema_fingerprint.unwrap().1, record);
 /// let record_map = get_schema_data_map(schema_fingerprint.unwrap().1, serialized_record.unwrap());
 pub fn get_schema_data_map<'a>(
-    serialized_data: &'a Vec<u8>,
-    schema: &'a Schema,
+	serialized_data: &'a Vec<u8>,
+	schema: &'a Schema,
 ) -> Result<HashMap<String, SchemaValue>, AvroError> {
-    let reader = get_schema_data_reader(serialized_data, schema)?;
-    let mut result_record = HashMap::<String, SchemaValue>::new();
-    for record in reader {
-        let record_value = record.unwrap();
-        match record_value {
-            SchemaValue::Record(record) => {
-                for (field_name, field_value) in record.iter() {
-                    result_record.insert(field_name.clone(), field_value.clone());
-                }
-            }
-            _ => {
-                return Err(AvroError::InvalidRecords());
-            }
-        }
-    }
-    Ok(result_record)
+	let reader = get_schema_data_reader(serialized_data, schema)?;
+	let mut result_record = HashMap::<String, SchemaValue>::new();
+	for record in reader {
+		let record_value = record.unwrap();
+		match record_value {
+			SchemaValue::Record(record) =>
+				for (field_name, field_value) in record.iter() {
+					result_record.insert(field_name.clone(), field_value.clone());
+				},
+			_ => {
+				return Err(AvroError::InvalidRecords())
+			},
+		}
+	}
+	Ok(result_record)
 }
