@@ -197,8 +197,8 @@ fn test_populate_data_records() {
 
 #[test]
 fn test_invalid_cast_to_string_after_parse() {
-	for (raw_schema, expected) in INVALID_EXAMPLES {
-		let schema_result = avro2::fingerprint_raw_schema(raw_schema);
+	for (raw_schema, _expected) in INVALID_EXAMPLES {
+		let schema_result = avro::fingerprint_raw_schema(raw_schema);
 		assert!(
 			schema_result.is_err(),
 			"schema {} was supposed to be invalid; error: {:?}",
@@ -212,11 +212,41 @@ fn test_invalid_cast_to_string_after_parse() {
 fn test_invalid_translation() {
 	let bad_schema = "{\"something\": \"nothing\"}";
 	let bad_bytes = bad_schema.as_bytes().to_vec();
-	let schema_result = avro2::translate_schema(bad_bytes);
+	let schema_result = avro::translate_schema(bad_bytes);
 	assert!(
 		schema_result.is_err(),
 		"schema {} was supposed to be invalid; error: {:?}",
 		bad_schema,
 		schema_result.err()
 	);
+}
+
+#[test]
+fn test_populate_data_serialized() {
+    let raw_schema = r#"
+    {
+        "type": "record",
+        "name": "test",
+        "fields": [
+            {"name": "a", "type": "long", "default": 42},
+            {"name": "b", "type": "string"}
+        ]
+    }
+    "#;
+    let schema_result = avro2::fingerprint_raw_schema(raw_schema);
+    assert!(schema_result.is_ok());
+    let schema_res = schema_result.unwrap();
+    let translate_schema = avro2::translate_schema(schema_res.1);
+    assert!(translate_schema.is_ok());
+    let translated_schema = translate_schema.unwrap();
+    let writer = avro2::get_writer_schema(&translated_schema);
+    assert_eq!(writer.schema(), &translated_schema);
+    // hashmap to store the data
+    let mut data_map = HashMap::new();
+    // the Record type models our Record schema
+    data_map.insert("a".to_string(), SchemaValue::Long(27i64));
+    data_map.insert("b".to_string(), SchemaValue::String("foo".to_string()));
+
+    let result_write = avro2::populate_schema_and_serialize(&translated_schema, &data_map);
+    assert!(result_write.is_ok());
 }
