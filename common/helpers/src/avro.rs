@@ -106,7 +106,7 @@ pub fn translate_schema(serialized_schema: Vec<u8>) -> Result<Schema, AvroError>
 ///Function to convert a list of serialized Avro schema into Avro Schema type.
 /// If schema is malformed or invalid, returns an error.
 /// # Arguments
-/// * `serialized_schema` - list of serialized Avro schema to be converted
+/// * `serialized_schemas` - list of serialized Avro schema to be converted
 /// # Returns
 /// * `Result<Vec<Schema>, AvroError>` - structured Avro schema
 /// # Examples
@@ -119,9 +119,9 @@ pub fn translate_schema(serialized_schema: Vec<u8>) -> Result<Schema, AvroError>
 /// let translated_schema = translate_schemas(&vec![schema]);
 /// assert!(translated_schema.is_ok());
 /// ```
-pub fn translate_schemas(serialized_schema: Vec<Vec<u8>>) -> Result<Vec<Schema>, AvroError> {
+pub fn translate_schemas(serialized_schemas: Vec<Vec<u8>>) -> Result<Vec<Schema>, AvroError> {
 	let mut schemas = Vec::new();
-	for s in serialized_schema {
+	for s in serialized_schemas {
 		schemas.push(translate_schema(s)?);
 	}
 	Ok(schemas)
