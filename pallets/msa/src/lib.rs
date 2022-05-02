@@ -2,7 +2,16 @@
 
 use common_primitives::msa::AccountProvider;
 use frame_support::{dispatch::DispatchResult, ensure};
-use sp_runtime::DispatchError;
+pub use pallet::*;
+use sp_runtime::{
+	traits::{Convert, Verify},
+	DispatchError, MultiSignature,
+};
+
+use sp_core::crypto::AccountId32;
+
+pub mod types;
+pub use types::AddKeyData;
 
 #[cfg(test)]
 mod mock;
@@ -14,21 +23,22 @@ mod tests;
 mod benchmarking;
 pub mod weights;
 
-pub use pallet::*;
 pub use weights::*;
 
-pub use common_primitives::msa::MessageSenderId;
+pub use common_primitives::{msa::MessageSenderId, utils::wrap_binary_data};
+use frame_support::pallet_prelude::*;
+use frame_system::pallet_prelude::*;
+use sp_std::prelude::*;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type WeightInfo: WeightInfo;
+		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
 	}
 
 	#[pallet::pallet]
@@ -48,12 +58,16 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		MsaCreated { msa_id: MessageSenderId, key: T::AccountId },
+		KeyAdded { msa_id: MessageSenderId, key: T::AccountId },
 	}
 
 	#[pallet::error]
 	pub enum Error<T> {
 		DuplicatedKey,
 		MsaIdOverflow,
+		KeyVerificationFailed,
+		NotMsaOwner,
+		InvalidSignature,
 	}
 
 	#[pallet::call]
@@ -68,11 +82,35 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		#[pallet::weight(10_000)]
+		pub fn add_key_to_msa(
+			origin: OriginFor<T>,
+			key: T::AccountId,
+			proof: MultiSignature,
+			add_key_payload: AddKeyData,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			Self::verify_signature(proof, key.clone(), add_key_payload.encode())
+				.map_err(|_| Error::<T>::KeyVerificationFailed)?;
+
+			let msa_id = add_key_payload.msa_id;
+			Self::is_msa_owner(&who, msa_id)?;
+
+			Self::add_key(msa_id, &key)?;
+
+			Self::deposit_event(Event::KeyAdded { msa_id, key });
+
+			Ok(())
+		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
-	fn create_account(key: T::AccountId) -> Result<(MessageSenderId, T::AccountId), DispatchError> {
+	pub fn create_account(
+		key: T::AccountId,
+	) -> Result<(MessageSenderId, T::AccountId), DispatchError> {
 		let next_msa_id = Self::get_next_msa_id()?;
 		Self::add_key(next_msa_id, &key)?;
 		let _ = Self::set_msa_identifier(next_msa_id);
@@ -100,6 +138,26 @@ impl<T: Config> Pallet<T> {
 
 			Ok(())
 		})
+	}
+
+	pub fn is_msa_owner(who: &T::AccountId, msa_id: MessageSenderId) -> DispatchResult {
+		ensure!(Self::get_owner_of(&who) == Some(msa_id), Error::<T>::NotMsaOwner);
+		Ok(())
+	}
+
+	pub fn verify_signature(
+		signature: MultiSignature,
+		signer: T::AccountId,
+		payload: Vec<u8>,
+	) -> DispatchResult {
+		let key = T::ConvertIntoAccountId32::convert(signer.clone());
+		let wrapped_payload = wrap_binary_data(payload);
+		ensure!(
+			signature.verify(&wrapped_payload[..], &key.clone().into()),
+			Error::<T>::InvalidSignature
+		);
+
+		Ok(())
 	}
 }
 
