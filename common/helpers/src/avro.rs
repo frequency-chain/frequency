@@ -1,19 +1,31 @@
 use crate::types::*;
 use apache_avro::{schema::Schema, types::Record, Codec, Reader, Writer};
-use std::{
-	collections::HashMap,
-	io::{Read, Write},
-	str,
-};
+use std::{collections::HashMap, panic, str};
 
+/// Represents error types returned by the `avro` module.
 #[derive(thiserror::Error, Debug)]
 pub enum AvroError {
 	#[error("I/O error")]
 	Io(#[from] std::io::Error),
 	#[error("Avro error")]
 	Avro(#[from] apache_avro::Error),
+	#[error("Invalid avro schema: {0}")]
+	InvalidSchema(String),
 }
 
+/// Function to convert a raw schema into serialized Avro schema.
+/// If schema is malformed or invalid, returns an error.
+/// # Arguments
+/// * `raw_schema` - raw schema to be converted
+/// # Returns
+/// * `Result<(Schema, Vec<u8>), AvroError>` - structured and serialized Avro schema
+/// # Examples
+/// ```
+/// use avro::*;
+/// let raw_schema = r#"{"type": "record", "name": "User", "fields": [{"name": "name", "type": "string"}, {"name": "favorite_number", "type": "int"}]}"#;
+/// let schema_result = fingerprint_raw_schema(raw_schema);
+/// assert!(schema_result.is_ok());
+/// let serialized_schema = schema_result.unwrap().1;
 pub fn fingerprint_raw_schema(raw_schema: &str) -> Result<(Schema, Vec<u8>), AvroError> {
 	// parse_str will fail if schema is not valid
 	panic::catch_unwind(|| {
@@ -35,6 +47,20 @@ pub fn fingerprint_raw_schema(raw_schema: &str) -> Result<(Schema, Vec<u8>), Avr
 	})
 }
 
+/// Function to convert a list of raw schema into serialized Avro schema.
+/// If schema is malformed or invalid, returns an error.
+/// # Arguments
+/// * `raw_schema` - raw schema list to be converted
+/// # Returns
+/// * `Result<(Vec<Schema>, Vec<Vec<u8>>), AvroError>` - structured and serialized Avro schemas
+/// # Examples
+/// ```
+/// use avro::*;
+/// let raw_schema = r#"{"type": "record", "name": "User", "fields": [{"name": "name", "type": "string"}, {"name": "favorite_number", "type": "int"}]}"#;
+/// let schema_result = fingerprint_raw_schema_list(vec![raw_schema.to_string()]);
+/// assert!(schema_result.is_ok());
+/// let serialized_schemas = schema_result.unwrap().1;
+/// ```
 pub fn fingerprint_raw_schema_list(
 	raw_schema: &[&str],
 ) -> Result<(Vec<Schema>, Vec<Vec<u8>>), AvroError> {
@@ -48,8 +74,24 @@ pub fn fingerprint_raw_schema_list(
 	Ok((schemas, schema_fingerprints))
 }
 
-pub fn translate_schema(schema: Vec<u8>) -> Result<Schema, AvroError> {
-	let schema_str = str::from_utf8(&schema);
+///Function to convert a serialized Avro schema into Avro Schema type.
+/// If schema is malformed or invalid, returns an error.
+/// # Arguments
+/// * `serialized_schema` - serialized Avro schema to be converted
+/// # Returns
+/// * `Result<Schema, AvroError>` - structured Avro schema
+/// # Examples
+/// ```
+/// use avro::*;
+/// let raw_schema = r#"{"type": "record", "name": "User", "fields": [{"name": "name", "type": "string"}, {"name": "favorite_number", "type": "int"}]}"#;
+/// let serialized_schema = fingerprint_raw_schema(raw_schema);
+/// assert!(serialized_schema.is_ok());
+/// let schema = schema_result.unwrap().1;
+/// let translated_schema = translate_schema(&schema);
+/// assert!(translated_schema.is_ok());
+/// ```
+pub fn translate_schema(serialized_schema: Vec<u8>) -> Result<Schema, AvroError> {
+	let schema_str = str::from_utf8(&serialized_schema);
 	match schema_str {
 		Ok(schema_str) => {
 			let schema = Schema::parse_str(schema_str)?;
@@ -59,22 +101,51 @@ pub fn translate_schema(schema: Vec<u8>) -> Result<Schema, AvroError> {
 	}
 }
 
-pub fn translate_schemas(schema: Vec<Vec<u8>>) -> Result<Vec<Schema>, AvroError> {
+///Function to convert a list of serialized Avro schema into Avro Schema type.
+/// If schema is malformed or invalid, returns an error.
+/// # Arguments
+/// * `serialized_schema` - list of serialized Avro schema to be converted
+/// # Returns
+/// * `Result<Vec<Schema>, AvroError>` - structured Avro schema
+/// # Examples
+/// ```
+/// use avro::*;
+/// let raw_schema = r#"{"type": "record", "name": "User", "fields": [{"name": "name", "type": "string"}, {"name": "favorite_number", "type": "int"}]}"#;
+/// let serialized_schema = fingerprint_raw_schema(raw_schema);
+/// assert!(serialized_schema.is_ok());
+/// let schema = schema_result.unwrap().1;
+/// let translated_schema = translate_schemas(&vec![schema]);
+/// assert!(translated_schema.is_ok());
+/// ```
+pub fn translate_schemas(serialized_schema: Vec<Vec<u8>>) -> Result<Vec<Schema>, AvroError> {
 	let mut schemas = Vec::new();
-	for s in schema {
+	for s in serialized_schema {
 		schemas.push(translate_schema(s)?);
 	}
 	Ok(schemas)
 }
 
-pub fn set_writer_schema<'a, W: Write>(writer: W, schema: &'a Schema) -> Writer<'a, W> {
-	Writer::with_codec(schema, writer, Codec::Snappy)
-}
-
-pub fn get_writer_schema<'a>(schema: &'a Schema) -> Writer<'a, Vec<u8>> {
+/// Function to get the schema writer with default container as Vec<u8>
+/// # Examples
+/// ```
+/// use avro::*;
+/// let writer = get_schema_data_writer();
+/// ```
+pub fn get_schema_data_writer<'a>(schema: &'a Schema) -> Writer<'a, Vec<u8>> {
 	Writer::with_codec(schema, Vec::new(), Codec::Snappy)
 }
 
+/// Function to populate a given schema writer with schema data.
+/// # Arguments
+/// * `writer` - io Writer ( can be obtained from get_schema_data_writer() )
+/// * `record` - record to be written as HashMap<String, SchemaValue> where SchemaValue is common types
+/// # Examples
+/// ```
+/// use avro::*;
+/// let writer = get_schema_data_writer();
+/// let record = vec![("name".to_string(), SchemaValue::String("John".to_string())), ("favorite_number".to_string(), SchemaValue::Int(42))];
+/// write_schema(writer, record);
+/// ```
 pub fn populate_record(
 	writer: &mut Writer<Vec<u8>>,
 	record: &HashMap<String, SchemaValue>,
@@ -87,27 +158,52 @@ pub fn populate_record(
 	Ok(())
 }
 
-
+/// Function to populate a given schema with data and return serialized record.
+/// # Arguments
+/// * `schema` - Avro schema
+/// * `record` - record to be written as HashMap<String, SchemaValue> where SchemaValue is common types
+/// # Examples
+/// ```
+/// use avro::*;
+/// let schema = r#"{"type": "record", "name": "User", "fields": [{"name": "name", "type": "string"}, {"name": "favorite_number", "type": "int"}]}"#;
+/// let record = vec![("name".to_string(), SchemaValue::String("John".to_string())), ("favorite_number".to_string(), SchemaValue::Int(42))];
+/// let schema_fingerprint = fingerprint_raw_schema(schema);
+/// assert!(schema_fingerprint.is_ok());
+/// let serialized_record = populate_schema_and_serialize(schema_fingerprint.unwrap().1, record);
 pub fn populate_schema_and_serialize(
-    schema: &Schema,
-    record: &HashMap<String, SchemaValue>,
+	schema: &Schema,
+	record: &HashMap<String, SchemaValue>,
 ) -> Result<Vec<u8>, AvroError> {
-    let mut writer = Writer::with_codec(schema, Vec::new(), Codec::Snappy);
-    let mut record_list = Record::new(writer.schema()).unwrap();
-    for (field_name, field_value) in record.iter() {
-        record_list.put(field_name, field_value.clone());
-    }
-    writer.append(record_list)?;
-    let serialized_bytes = writer.into_inner();
-    match serialized_bytes {
-        Ok(serialized_bytes) => Ok(serialized_bytes),
-        Err(error) => Err(AvroError::Avro(error)),
-    }
+	let mut writer = Writer::with_codec(schema, Vec::new(), Codec::Snappy);
+	let mut record_list = Record::new(writer.schema()).unwrap();
+	for (field_name, field_value) in record.iter() {
+		record_list.put(field_name, field_value.clone());
+	}
+	writer.append(record_list)?;
+	let serialized_bytes = writer.into_inner();
+	match serialized_bytes {
+		Ok(serialized_bytes) => Ok(serialized_bytes),
+		Err(error) => Err(AvroError::Avro(error)),
+	}
 }
 
-pub fn get_reader_schema<'a, R: Read>(
-	reader: R,
+/// Function to populate a schema with serialized data and return an Avro reader.
+/// # Arguments
+/// * `schema` - Avro schema
+/// * `serialized_data` - serialized data
+/// # Examples
+/// ```
+/// use avro::*;
+/// let schema = r#"{"type": "record", "name": "User", "fields": [{"name": "name", "type": "string"}, {"name": "favorite_number", "type": "int"}]}"#;
+/// let record = vec![("name".to_string(), SchemaValue::String("John".to_string())), ("favorite_number".to_string(), SchemaValue::Int(42))];
+/// let schema_fingerprint = fingerprint_raw_schema(schema);
+/// assert!(schema_fingerprint.is_ok());
+/// let serialized_record = populate_schema_and_serialize(schema_fingerprint.unwrap().1, record);
+/// let reader = get_schema_data_reader(schema_fingerprint.unwrap().1, serialized_record.unwrap());
+/// ```
+pub fn get_schema_data_reader<'a>(
+	serialized_data: &'a Vec<u8>,
 	schema: &'a Schema,
-) -> Result<Reader<'a, R>, AvroError> {
-	Ok(Reader::with_schema(&schema, reader)?)
+) -> Result<Reader<'a, &'a [u8]>, AvroError> {
+	Ok(Reader::with_schema(&schema, &serialized_data[..])?)
 }
