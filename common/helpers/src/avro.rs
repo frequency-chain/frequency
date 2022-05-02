@@ -1,8 +1,10 @@
-use apache_avro::{schema::Schema, Codec, Reader, Writer, types::Record};
-use std::collections::HashMap;
-use std::io::{Read, Write};
-use std::str;
 use crate::types::*;
+use apache_avro::{schema::Schema, types::Record, Codec, Reader, Writer};
+use std::{
+	collections::HashMap,
+	io::{Read, Write},
+	str,
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum AvroError {
@@ -54,10 +56,17 @@ pub fn translate_schemas(schema: Vec<Vec<u8>>) -> Result<Vec<Schema>, AvroError>
 
 pub fn fingerprint_raw_schema(raw_schema: &str) -> Result<(Schema, Vec<u8>), AvroError> {
 	// parse_str will fail if schema is not valid
-	let schema = Schema::parse_str(raw_schema)?;
-	// get the schema finger print
-	let schema_canonical_form = schema.canonical_form();
-	Ok((schema, schema_canonical_form.as_bytes().to_vec()))
+	let schema_result = Schema::parse_str(raw_schema);
+	// match the result of the parse_str
+	match schema_result {
+		Ok(schema) => {
+			// get the fingerprint of the schema
+			let schema_canonical_form = schema.canonical_form();
+			// return the schema and the fingerprint
+			Ok((schema, schema_canonical_form.as_bytes().to_vec()))
+		},
+		Err(e) => Err(AvroError::Avro(e)),
+	}
 }
 
 pub fn fingerprint_raw_schema_list(
@@ -65,15 +74,16 @@ pub fn fingerprint_raw_schema_list(
 ) -> Result<(Vec<Schema>, Vec<Vec<u8>>), AvroError> {
 	let mut schema_fingerprints = Vec::new();
 	let mut schemas = Vec::new();
-	// iterate over schema list and generate schema fingerprints
-	for raw_schema in raw_schema {
-		// parse_str will fail if schema is not valid
-		let schema = Schema::parse_str(raw_schema)?;
-		// get the schema finger print
-		let schema_canonical_form = schema.canonical_form();
-		// add to return
-		schema_fingerprints.push(schema_canonical_form.as_bytes().to_vec());
-		schemas.push(schema);
+	let schemas_res = Schema::parse_list(raw_schema);
+	match schemas_res {
+		Ok(schemas_list) => {
+			for schema in schemas_list {
+				let schema_canonical_form = schema.canonical_form();
+				schema_fingerprints.push(schema_canonical_form.as_bytes().to_vec());
+				schemas.push(schema);
+			}
+			Ok((schemas, schema_fingerprints))
+		},
+		Err(e) => Err(AvroError::Avro(e)),
 	}
-	Ok((schemas, schema_fingerprints))
 }
