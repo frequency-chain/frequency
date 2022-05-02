@@ -8,6 +8,23 @@ pub enum AvroError {
 	Avro(#[from] apache_avro::Error),
 }
 
+pub fn set_writer_schema<'a, W: Write>(writer: W, schema: &'a Schema) -> Writer<'a, W> {
+    Writer::with_codec(schema, writer, Codec::Snappy)
+}
+
+pub fn get_reader_schema<'a, R: Read>(reader: R, schema: &'a Schema) -> Result<Reader<'a, R>, AvroError> {
+    Ok(Reader::with_schema(&schema, reader)?)
+}
+
+pub fn populate_record<W: Write>(writer: & mut Writer<W>, record: &HashMap<String, Value>) -> Result<(), AvroError> {
+    let mut record_list = Record::new(writer.schema()).unwrap();
+    for (field_name, field_value) in record.iter() {
+        record_list.put(field_name, field_value.clone());
+    }
+    writer.append(record_list)?;
+    Ok(())
+}
+
 pub fn fingerprint_raw_schema(raw_schema: &str) -> Result<(Schema, Vec<u8>), AvroError> {
 	// parse_str will fail if schema is not valid
 	let schema = Schema::parse_str(raw_schema)?;
