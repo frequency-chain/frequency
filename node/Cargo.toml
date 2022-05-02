@@ -5,7 +5,7 @@ authors = ["MRC Team"]
 description = "Substrate node for mrc"
 license = "Apache-2.0"
 homepage = "https://unfinishedlabs.io/"
-repository = "https://github.com/liberty30/mrc/"
+repository = "https://github.com/LibertyDSNP/mrc/"
 edition = "2021"
 build = "build.rs"
 
