@@ -11,6 +11,8 @@ pub enum AvroError {
 	Avro(#[from] apache_avro::Error),
 	#[error("Invalid avro schema: {0}")]
 	InvalidSchema(String),
+	#[error("Invalid avro records")]
+	InvalidRecords(),
 }
 
 /// Function to convert a raw schema into serialized Avro schema.
@@ -138,20 +140,20 @@ pub fn get_schema_data_writer<'a>(schema: &'a Schema) -> Writer<'a, Vec<u8>> {
 /// Function to populate a given schema writer with schema data.
 /// # Arguments
 /// * `writer` - io Writer ( can be obtained from get_schema_data_writer() )
-/// * `record` - record to be written as HashMap<String, SchemaValue> where SchemaValue is common types
+/// * `records` - record to be written as HashMap<String, SchemaValue> where SchemaValue is common types
 /// # Examples
 /// ```
 /// use avro::*;
 /// let writer = get_schema_data_writer();
 /// let record = vec![("name".to_string(), SchemaValue::String("John".to_string())), ("favorite_number".to_string(), SchemaValue::Int(42))];
-/// write_schema(writer, record);
+/// populate_records(writer, record);
 /// ```
-pub fn populate_record(
+pub fn populate_records(
 	writer: &mut Writer<Vec<u8>>,
-	record: &HashMap<String, SchemaValue>,
+	records: &HashMap<String, SchemaValue>,
 ) -> Result<(), AvroError> {
 	let mut record_list = Record::new(writer.schema()).unwrap();
-	for (field_name, field_value) in record.iter() {
+	for (field_name, field_value) in records.iter() {
 		record_list.put(field_name, field_value.clone());
 	}
 	writer.append(record_list)?;
@@ -206,4 +208,41 @@ pub fn get_schema_data_reader<'a>(
 	schema: &'a Schema,
 ) -> Result<Reader<'a, &'a [u8]>, AvroError> {
 	Ok(Reader::with_schema(&schema, &serialized_data[..])?)
+}
+
+/// Function to read serialized data into a schema and return a hashmap of records(K,V).
+/// # Arguments
+/// * `schema` - Avro schema
+/// * `serialized_data` - serialized data
+/// # Returns
+/// * `Result<HashMap<String, SchemaValue>, AvroError>` - HashMap of records
+/// # Examples
+/// ```
+/// use avro::*;
+/// let schema = r#"{"type": "record", "name": "User", "fields": [{"name": "name", "type": "string"}, {"name": "favorite_number", "type": "int"}]}"#;
+/// let record = vec![("name".to_string(), SchemaValue::String("John".to_string())), ("favorite_number".to_string(), SchemaValue::Int(42))];
+/// let schema_fingerprint = fingerprint_raw_schema(schema);
+/// assert!(schema_fingerprint.is_ok());
+/// let serialized_record = populate_schema_and_serialize(schema_fingerprint.unwrap().1, record);
+/// let record_map = get_schema_data_map(schema_fingerprint.unwrap().1, serialized_record.unwrap());
+pub fn get_schema_data_map<'a>(
+    serialized_data: &'a Vec<u8>,
+    schema: &'a Schema,
+) -> Result<HashMap<String, SchemaValue>, AvroError> {
+    let reader = get_schema_data_reader(serialized_data, schema)?;
+    let mut result_record = HashMap::<String, SchemaValue>::new();
+    for record in reader {
+        let record_value = record.unwrap();
+        match record_value {
+            SchemaValue::Record(record) => {
+                for (field_name, field_value) in record.iter() {
+                    result_record.insert(field_name.clone(), field_value.clone());
+                }
+            }
+            _ => {
+                return Err(AvroError::InvalidRecords());
+            }
+        }
+    }
+    Ok(result_record)
 }
