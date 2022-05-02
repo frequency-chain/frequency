@@ -207,4 +207,3 @@ fn test_invalid_cast_to_string_after_parse() {
         );
     }
 }
-
