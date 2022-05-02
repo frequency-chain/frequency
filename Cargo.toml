@@ -3,6 +3,7 @@ panic = "unwind"
 
 [workspace]
 members = [
-	"node",
-	"runtime/*",
+  "node",
+  "pallets/msa",
+  "runtime/*",
 ]
