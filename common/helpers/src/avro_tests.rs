@@ -93,12 +93,99 @@ fn test_valid_cast_to_string_after_parse() {
 
 #[test]
 fn test_get_writer_with_schema() {
-    let schema_result = avro2::fingerprint_raw_schema(r#"{"type": "int"}"#);
+    let schema_result = avro::fingerprint_raw_schema(r#"{"type": "int"}"#);
     assert!(schema_result.is_ok());
     let schema_res = schema_result.unwrap();
-    let translate_schema = avro2::translate_schema(schema_res.1);
+    let translate_schema = avro::translate_schema(schema_res.1);
     assert!(translate_schema.is_ok());
     let translated_schema = translate_schema.unwrap();
-    let writer = avro2::get_writer_schema(&translated_schema);
+    let writer = avro::get_writer_schema(&translated_schema);
     assert_eq!(writer.schema(), &translated_schema);
+}
+
+#[test]
+fn test_get_writer_with_data() {
+    let raw_schema = r#"
+    {
+        "type": "record",
+        "name": "test",
+        "fields": [
+            {"name": "a", "type": "long", "default": 42},
+            {"name": "b", "type": "string"}
+        ]
+    }
+    "#;
+    let schema_result = avro::fingerprint_raw_schema(raw_schema);
+    assert!(schema_result.is_ok());
+    let schema_res = schema_result.unwrap();
+    let translate_schema = avro::translate_schema(schema_res.1);
+    assert!(translate_schema.is_ok());
+    let translated_schema = translate_schema.unwrap();
+    let mut writer = avro::get_writer_schema(&translated_schema);
+    assert_eq!(writer.schema(), &translated_schema);
+    // the Record type models our Record schema
+    let mut record = Record::new(writer.schema()).unwrap();
+    record.put("a", 27i64);
+    record.put("b", "foo");
+    let result_write = writer.append(record);
+    assert!(result_write.is_ok());
+}
+
+#[test]
+fn test_set_writer_with_data() {
+    let raw_schema = r#"
+    {
+        "type": "record",
+        "name": "test",
+        "fields": [
+            {"name": "a", "type": "long", "default": 42},
+            {"name": "b", "type": "string"}
+        ]
+    }
+    "#;
+    let schema_result = avro::fingerprint_raw_schema(raw_schema);
+    assert!(schema_result.is_ok());
+    let schema_res = schema_result.unwrap();
+    let translate_schema = avro::translate_schema(schema_res.1);
+    assert!(translate_schema.is_ok());
+    let translated_schema = translate_schema.unwrap();
+    let writer_container = Vec::new();
+    let mut writer = avro::set_writer_schema(writer_container, &translated_schema).unwrap();
+    assert_eq!(writer.schema(), &translated_schema);
+    // the Record type models our Record schema
+    let mut record = Record::new(writer.schema()).unwrap();
+    record.put("a", 27i64);
+    record.put("b", "foo");
+    let result_write = writer.append(record);
+    assert!(result_write.is_ok());
+}
+
+#[test]
+fn test_populate_data_records() {
+    let raw_schema = r#"
+    {
+        "type": "record",
+        "name": "test",
+        "fields": [
+            {"name": "a", "type": "long", "default": 42},
+            {"name": "b", "type": "string"}
+        ]
+    }
+    "#;
+    let schema_result = avro::fingerprint_raw_schema(raw_schema);
+    assert!(schema_result.is_ok());
+    let schema_res = schema_result.unwrap();
+    let translate_schema = avro::translate_schema(schema_res.1);
+    assert!(translate_schema.is_ok());
+    let translated_schema = translate_schema.unwrap();
+    let mut writer = avro::get_writer_schema(&translated_schema);
+    assert_eq!(writer.schema(), &translated_schema);
+    // hashmap to store the data
+    let mut data_map = HashMap::new();
+    // the Record type models our Record schema
+    data_map.insert("a".to_string(), SchemaValue::Long(27i64));
+    data_map.insert("b".to_string(), SchemaValue::String("foo".to_string()));
+
+    let result_write = avro::populate_record(& mut writer, &data_map);
+    assert!(result_write.is_ok());
 }

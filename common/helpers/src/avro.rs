@@ -22,8 +22,8 @@ pub fn get_writer_schema<'a>(schema: &'a Schema) -> Writer<'a, Vec<u8>> {
 	Writer::with_codec(schema, Vec::new(), Codec::Snappy)
 }
 
-pub fn populate_record<W: Write>(
-	writer: &mut Writer<W>,
+pub fn populate_record(
+	writer: &mut Writer<Vec<u8>>,
 	record: &HashMap<String, SchemaValue>,
 ) -> Result<(), AvroError> {
 	let mut record_list = Record::new(writer.schema()).unwrap();
