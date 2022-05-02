@@ -90,3 +90,15 @@ fn test_valid_cast_to_string_after_parse() {
         }
     }
 }
+
+#[test]
+fn test_get_writer_with_schema() {
+    let schema_result = avro2::fingerprint_raw_schema(r#"{"type": "int"}"#);
+    assert!(schema_result.is_ok());
+    let schema_res = schema_result.unwrap();
+    let translate_schema = avro2::translate_schema(schema_res.1);
+    assert!(translate_schema.is_ok());
+    let translated_schema = translate_schema.unwrap();
+    let writer = avro2::get_writer_schema(&translated_schema);
+    assert_eq!(writer.schema(), &translated_schema);
+}
