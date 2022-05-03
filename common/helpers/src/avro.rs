@@ -215,10 +215,10 @@ pub fn get_schema_data_map<'a>(
 	serialized_data: &'a Vec<u8>,
 	schema: &'a Schema,
 ) -> Result<HashMap<String, SchemaValue>, AvroError> {
-	let from_data_data = from_avro_datum(schema, &mut Cursor::new(serialized_data), None)?;
+	let from_data_datum = from_avro_datum(schema, &mut Cursor::new(serialized_data), None)?;
 	let mut result_record = HashMap::<String, SchemaValue>::new();
 
-	match from_data_data {
+	match from_data_datum {
 		SchemaValue::Record(record) =>
 			for (field_name, field_value) in record.iter() {
 				result_record.insert(field_name.clone(), field_value.clone());
