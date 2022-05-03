@@ -45,6 +45,7 @@ use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 pub use sp_runtime::BuildStorage;
 
 pub use pallet_msa;
+pub use pallet_schemas;
 
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
@@ -306,6 +307,19 @@ impl pallet_msa::Config for Runtime {
 }
 
 parameter_types! {
+	pub const MinSchemaSize: u32 = 5;
+	pub const MaxSchemaSize: u32 = 100;
+	pub const MaxSchemaRegistrations: SchemaId = 1024;
+}
+
+impl pallet_schemas::Config for Runtime {
+	type Event = Event;
+	type MinSchemaSize = MinSchemaSize;
+	type MaxSchemaSize = MaxSchemaSize;
+	type MaxSchemaRegistrations = MaxSchemaRegistrations;
+}
+
+parameter_types! {
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
 
@@ -486,7 +500,8 @@ construct_runtime!(
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
 		// MRC related pallets
-		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 34
+		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 34,
+		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>} = 35
 	}
 );
 

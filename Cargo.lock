@@ -4945,6 +4945,7 @@ dependencies = [
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-msa",
+ "pallet-schemas",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -5936,6 +5937,22 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "scale-info",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-schemas"
+version = "0.1.0"
+dependencies = [
+ "common-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
