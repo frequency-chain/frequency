@@ -256,7 +256,7 @@ pub fn get_schema_data_map<'a>(
     let reader = get_schema_data_reader(serialized_data, schema)?;
     let mut result_record = HashMap::<String, SchemaValue>::new();
     for record in reader {
-        let record_value = record.unwrap();
+        let record_value = record?;
         match record_value {
             SchemaValue::Record(record) => {
                 for (field_name, field_value) in record.iter() {

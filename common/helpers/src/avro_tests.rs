@@ -333,6 +333,34 @@ fn test_end_to_end_flow() {
 }
 
 #[test]
+fn test_bad_records() {
+    // create a schema
+    let raw_schema = r#"
+    {
+        "type": "record",
+        "name": "test",
+        "fields": [
+            {"name": "a", "type": "long", "default": 42},
+            {"name": "b", "type": "string"}
+        ]
+    }
+    "#;
+    let schema_result = avro::fingerprint_raw_schema(raw_schema);
+    assert!(schema_result.is_ok());
+    let schema_res = schema_result.unwrap();
+    let translate_schema = avro::translate_schema(schema_res.1);
+    assert!(translate_schema.is_ok());
+    let translated_schema = translate_schema.unwrap();
+    let writer = avro::get_schema_data_writer(&translated_schema);
+    assert_eq!(writer.schema(), &translated_schema);
+    let mut serialized_result = Vec::new();
+    // populated serialized_result
+    serialized_result.push(0x0);
+    let reader_res = avro::get_schema_data_map(&serialized_result, &translated_schema);
+    assert!(reader_res.is_err());
+}
+
+#[test]
 fn test_end_to_end_flow_map() {
     // create a schema
     let raw_schema = r#"
