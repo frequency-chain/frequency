@@ -1,7 +1,6 @@
 use crate::avro;
 use crate::types::*;
 use apache_avro::types::Record;
-use apache_avro::types::Value;
 use std::collections::HashMap;
 
 const PRIMITIVE_EXAMPLE: &[(&str, bool)] = &[
@@ -185,7 +184,7 @@ fn test_populate_data_records() {
     let translate_schema = avro::translate_schema(schema_res.1);
     assert!(translate_schema.is_ok());
     let translated_schema = translate_schema.unwrap();
-    let mut writer = avro::get_schema_data_writer(&translated_schema);
+    let writer = avro::get_schema_data_writer(&translated_schema);
     assert_eq!(writer.schema(), &translated_schema);
     // hashmap to store the data
     let mut data_map = HashMap::new();
@@ -193,7 +192,7 @@ fn test_populate_data_records() {
     data_map.insert("a".to_string(), SchemaValue::Long(27i64));
     data_map.insert("b".to_string(), SchemaValue::String("foo".to_string()));
 
-    let result_write = avro::populate_records(&mut writer, &data_map);
+    let result_write = avro::populate_schema_and_serialize(&translated_schema, &data_map);
     assert!(result_write.is_ok());
 }
 
@@ -253,7 +252,6 @@ fn test_populate_data_serialized() {
     assert!(result_write.is_ok());
 }
 
-
 #[test]
 fn test_reader_schema_with_data() {
     let raw_schema = r#"
@@ -283,7 +281,7 @@ fn test_reader_schema_with_data() {
     let result_write = avro::populate_schema_and_serialize(&translated_schema, &data_map);
     assert!(result_write.is_ok());
     let serialized_result = result_write.unwrap();
-    let reader_res = avro::get_schema_data_reader(&serialized_result, &translated_schema);
+    let reader_res = avro::get_schema_data_map(&serialized_result, &translated_schema);
     assert!(reader_res.is_ok());
 }
 
@@ -318,18 +316,46 @@ fn test_end_to_end_flow() {
     assert!(result_write.is_ok());
     let serialized_result = result_write.unwrap();
     // read the data
-    let reader_res = avro::get_schema_data_reader(&serialized_result, &translated_schema);
+    let reader_res = avro::get_schema_data_map(&serialized_result, &translated_schema);
+    assert!(reader_res.is_ok());
+
+}
+
+#[test]
+fn test_end_to_end_flow_map() {
+    // create a schema
+    let raw_schema = r#"
+    {
+        "type": "record",
+        "name": "test",
+        "fields": [
+            {"name": "a", "type": "long", "default": 42},
+            {"name": "b", "type": "string"}
+        ]
+    }
+    "#;
+    let schema_result = avro::fingerprint_raw_schema(raw_schema);
+    assert!(schema_result.is_ok());
+    let schema_res = schema_result.unwrap();
+    let translate_schema = avro::translate_schema(schema_res.1);
+    assert!(translate_schema.is_ok());
+    let translated_schema = translate_schema.unwrap();
+    let writer = avro::get_schema_data_writer(&translated_schema);
+    assert_eq!(writer.schema(), &translated_schema);
+    // hashmap to store the data
+    let mut data_map = HashMap::new();
+    // the Record type models our Record schema
+    data_map.insert("a".to_string(), SchemaValue::Long(27i64));
+    data_map.insert("b".to_string(), SchemaValue::String("foo".to_string()));
+    // write the data
+    let result_write = avro::populate_schema_and_serialize(&translated_schema, &data_map);
+    assert!(result_write.is_ok());
+    let serialized_result = result_write.unwrap();
+    let reader_res = avro::get_schema_data_map(&serialized_result, &translated_schema);
     assert!(reader_res.is_ok());
     let reader = reader_res.unwrap();
-
-    for record in reader{
-        let record_value = record.unwrap();
-        match record_value.clone() {
-            Value::Record(ref fields) =>  assert_eq!(fields[0].1, SchemaValue::Long(27i64)),
-            _ => panic!("unexpected record")
-        }
-        println!("{:?}", record_value.clone());
-    }
+    assert_eq!(reader["a"], SchemaValue::Long(27i64));
+    assert_eq!(reader["b"], SchemaValue::String("foo".to_string()));
 }
 
 #[test]
@@ -358,87 +384,4 @@ fn test_bad_records() {
     serialized_result.push(0x0);
     let reader_res = avro::get_schema_data_map(&serialized_result, &translated_schema);
     assert!(reader_res.is_err());
-}
-
-#[test]
-fn test_end_to_end_flow_map() {
-    // create a schema
-    let raw_schema = r#"
-    {
-        "type": "record",
-        "name": "test",
-        "fields": [
-            {"name": "a", "type": "long", "default": 42},
-            {"name": "b", "type": "string"}
-        ]
-    }
-    "#;
-    let schema_result = avro::fingerprint_raw_schema(raw_schema);
-    assert!(schema_result.is_ok());
-    let schema_res = schema_result.unwrap();
-    let translate_schema = avro::translate_schema(schema_res.1);
-    assert!(translate_schema.is_ok());
-    let translated_schema = translate_schema.unwrap();
-    let writer = avro::get_schema_data_writer(&translated_schema);
-    assert_eq!(writer.schema(), &translated_schema);
-    // hashmap to store the data
-    let mut data_map = HashMap::new();
-    // the Record type models our Record schema
-    data_map.insert("a".to_string(), SchemaValue::Long(27i64));
-    data_map.insert("b".to_string(), SchemaValue::String("foo".to_string()));
-    // write the data
-    let result_write = avro::populate_schema_and_serialize(&translated_schema, &data_map);
-    assert!(result_write.is_ok());
-    let serialized_result = result_write.unwrap();
-    // read the data
-    let reader_res = avro::get_schema_data_reader(&serialized_result, &translated_schema);
-    assert!(reader_res.is_ok());
-    let reader = reader_res.unwrap();
-
-    for record in reader{
-        let record_value = record.unwrap();
-        match record_value.clone() {
-            Value::Record(ref fields) =>  assert_eq!(fields[0].1, SchemaValue::Long(27i64)),
-            _ => panic!("unexpected record")
-        }
-        println!("{:?}", record_value.clone());
-    }
-}
-
-#[test]
-fn test_end_to_end_flow_map() {
-    // create a schema
-    let raw_schema = r#"
-    {
-        "type": "record",
-        "name": "test",
-        "fields": [
-            {"name": "a", "type": "long", "default": 42},
-            {"name": "b", "type": "string"}
-        ]
-    }
-    "#;
-    let schema_result = avro::fingerprint_raw_schema(raw_schema);
-    assert!(schema_result.is_ok());
-    let schema_res = schema_result.unwrap();
-    let translate_schema = avro::translate_schema(schema_res.1);
-    assert!(translate_schema.is_ok());
-    let translated_schema = translate_schema.unwrap();
-    let writer = avro::get_schema_data_writer(&translated_schema);
-    assert_eq!(writer.schema(), &translated_schema);
-    // hashmap to store the data
-    let mut data_map = HashMap::new();
-    // the Record type models our Record schema
-    data_map.insert("a".to_string(), SchemaValue::Long(27i64));
-    data_map.insert("b".to_string(), SchemaValue::String("foo".to_string()));
-    // write the data
-    let result_write = avro::populate_schema_and_serialize(&translated_schema, &data_map);
-    assert!(result_write.is_ok());
-    let serialized_result = result_write.unwrap();
-    // read the data
-    let reader_res = avro::get_schema_data_map(&serialized_result, &translated_schema);
-    assert!(reader_res.is_ok());
-    let reader = reader_res.unwrap();
-    assert_eq!(reader["a"], SchemaValue::Long(27i64));
-    assert_eq!(reader["b"], SchemaValue::String("foo".to_string()));
 }
