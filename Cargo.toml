@@ -6,6 +6,7 @@ members = [
   "node",
   "pallets/msa",
   "pallets/messages",
+  "pallets/schemas",
   "runtime/*",
   "common/helpers"
 ]
