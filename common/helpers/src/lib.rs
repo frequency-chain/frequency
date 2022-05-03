@@ -1,4 +1,4 @@
 pub mod types;
 pub mod avro;
 #[cfg(test)]
-mod tests;
+mod avro_tests;
