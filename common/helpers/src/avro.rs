@@ -1,5 +1,5 @@
 use crate::types::*;
-use apache_avro::{schema::Schema, types::Record, Codec, Reader, Writer, to_avro_datum, from_avro_datum};
+use apache_avro::{schema::Schema, types::Record, Codec, Writer, to_avro_datum, from_avro_datum};
 use std::{collections::HashMap, io::Cursor, str};
 
 /// Represents error types returned by the `avro` module.
@@ -23,7 +23,7 @@ pub enum AvroError {
 /// * `Result<(Schema, Vec<u8>), AvroError>` - structured and serialized Avro schema
 /// # Examples
 /// ```
-/// use common_helpers::avro
+/// use common_helpers::avro;
 /// use common_helpers::types::*;
 /// let raw_schema = r#"{"type": "record", "name": "User", "fields": [{"name": "name", "type": "string"}, {"name": "favorite_number", "type": "int"}]}"#;
 /// let schema_result = avro::fingerprint_raw_schema(raw_schema);
@@ -46,7 +46,7 @@ pub fn fingerprint_raw_schema(raw_schema: &str) -> Result<(Schema, Vec<u8>), Avr
 /// * `Result<(Vec<Schema>, Vec<Vec<u8>>), AvroError>` - structured and serialized Avro schemas
 /// # Examples
 /// ```
-/// use common_helpers::avro
+/// use common_helpers::avro;
 /// use common_helpers::types::*;
 /// let raw_schema = r#"{"type": "record", "name": "User", "fields": [{"name": "name", "type": "string"}, {"name": "favorite_number", "type": "int"}]}"#;
 /// let vec_raw_schema: [&str; 1] = [raw_schema];
@@ -75,7 +75,7 @@ pub fn fingerprint_raw_schema_list(
 /// * `Result<Schema, AvroError>` - structured Avro schema
 /// # Examples
 /// ```
-/// use common_helpers::avro
+/// use common_helpers::avro;
 /// use common_helpers::types::*;
 /// let raw_schema = r#"{"type": "record", "name": "User", "fields": [{"name": "name", "type": "string"}, {"name": "favorite_number", "type": "int"}]}"#;
 /// let serialized_schema = avro::fingerprint_raw_schema(raw_schema);
@@ -103,7 +103,7 @@ pub fn translate_schema(serialized_schema: Vec<u8>) -> Result<Schema, AvroError>
 /// * `Result<Vec<Schema>, AvroError>` - structured Avro schema
 /// # Examples
 /// ```
-/// use common_helpers::avro
+/// use common_helpers::avro;
 /// use common_helpers::types::*;
 /// let raw_schema = r#"{"type": "record", "name": "User", "fields": [{"name": "name", "type": "string"}, {"name": "favorite_number", "type": "int"}]}"#;
 /// let serialized_schema = avro::fingerprint_raw_schema(raw_schema);
@@ -124,7 +124,7 @@ pub fn translate_schemas(serialized_schema: Vec<Vec<u8>>) -> Result<Vec<Schema>,
 /// Function to get the schema writer with default container as Vec<u8>
 /// # Examples
 /// ```
-/// use common_helpers::avro
+/// use common_helpers::avro;
 /// use common_helpers::types::*;
 /// let raw_schema = r#"{"type": "record", "name": "User", "fields": [{"name": "name", "type": "string"}, {"name": "favorite_number", "type": "int"}]}"#;
 /// let schema_result = avro::fingerprint_raw_schema(raw_schema);
@@ -170,7 +170,7 @@ pub fn populate_schema_and_serialize(
 	schema: &Schema,
 	records: &HashMap<String, SchemaValue>,
 ) -> Result<Vec<u8>, AvroError> {
-	let mut writer = get_schema_data_writer(schema);
+	let writer = get_schema_data_writer(schema);
 	let mut record_list = Record::new(writer.schema()).unwrap();
 	for (field_name, field_value) in records.iter() {
 		record_list.put(field_name, field_value.clone());
