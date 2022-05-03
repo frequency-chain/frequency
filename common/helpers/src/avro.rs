@@ -1,5 +1,5 @@
 use crate::types::*;
-use apache_avro::{schema::Schema, types::Record, Codec, Writer, to_avro_datum, from_avro_datum};
+use apache_avro::{from_avro_datum, schema::Schema, to_avro_datum, types::Record, Codec, Writer};
 use std::{collections::HashMap, io::Cursor, str};
 
 /// Represents error types returned by the `avro` module.
@@ -223,9 +223,7 @@ pub fn get_schema_data_map<'a>(
 			for (field_name, field_value) in record.iter() {
 				result_record.insert(field_name.clone(), field_value.clone());
 			},
-		_ => {
-			return Err(AvroError::InvalidRecords())
-		},
+		_ => return Err(AvroError::InvalidRecords()),
 	}
 
 	Ok(result_record)
