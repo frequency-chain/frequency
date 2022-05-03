@@ -40,7 +40,7 @@ pub fn fingerprint_raw_schema(raw_schema: &str) -> Result<(Schema, Vec<u8>), Avr
 }
 
 /// Function to convert a list of raw schema into serialized Avro schema.
-/// If schema is malformed or invalid, returns an error.
+/// If schema is malformed or invalid, it is set to Null.
 /// # Arguments
 /// * `raw_schema` - raw schema list to be converted
 /// # Returns
@@ -64,7 +64,7 @@ pub fn fingerprint_raw_schema_list(
 			let schema = fingerprint_raw_schema(r);
 			match schema {
 				Ok(schema) => schema,
-				Err(_error) => (Schema::Null, vec![]),
+				Err(_error) => (Schema::Null, r.to_string().as_bytes().to_vec()),
 			}
 		})
 		.collect();
@@ -101,7 +101,7 @@ pub fn translate_schema(serialized_schema: Vec<u8>) -> Result<Schema, AvroError>
 }
 
 ///Function to convert a list of serialized Avro schema into Avro Schema type.
-/// If schema is malformed or invalid, returns an error.
+/// If schema is malformed or invalid, it is set to Null.
 /// # Arguments
 /// * `serialized_schema` - list of serialized Avro schema to be converted
 /// # Returns
