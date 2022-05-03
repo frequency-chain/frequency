@@ -1,5 +1,5 @@
 use crate as pallet_schemas;
-use frame_support::{ parameter_types, traits::{ConstU16, ConstU64} };
+use frame_support::{ parameter_types, traits::{ConstU16, ConstU32, ConstU64} };
 use frame_system;
 use sp_core::H256;
 use sp_runtime::{
@@ -51,15 +51,13 @@ impl frame_system::Config for Test {
 }
 
 parameter_types! {
-	pub const MinSchemaSize: u32 = 5;
-	pub const MaxSchemaSize: u32 = 100;
 	pub const MaxSchemaRegistrations: SchemaId = 1024;
 }
 
 impl pallet_schemas::Config for Test {
 	type Event = Event;
-	type MinSchemaSize = MinSchemaSize;
-	type MaxSchemaSize = MaxSchemaSize;
+	type MinSchemaSize = ConstU32<5>;
+	type MaxSchemaSize = ConstU32<100>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
 

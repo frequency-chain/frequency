@@ -1,11 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use sp_std::{convert::TryInto, vec::Vec};
-use frame_support::{dispatch::DispatchResult, ensure};
-pub use pallet::*;
+use frame_support::{BoundedVec, dispatch::DispatchResult, ensure, traits::Get};
 use sp_runtime::DispatchError;
 
-use common_primitives::schema::SchemaId;
 
 #[cfg(test)]
 mod tests;
@@ -13,11 +11,14 @@ mod tests;
 #[cfg(test)]
 mod mock;
 
+pub use pallet::*;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+	use common_primitives::schema::SchemaId;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -94,16 +95,16 @@ pub mod pallet {
 			Ok(())
 		}
 	}
-
-	impl<T: Config> Pallet<T> {
-		pub fn require_valid_schema_size(schema: Vec<u8>) -> Result<BoundedVec<u8, T::MaxSchemaSize>, Error::<T>> {
-			let bounded_fields: BoundedVec<u8, T::MaxSchemaSize> =
-				schema.try_into().map_err(|()| <Error::<T>>::TooLongSchema)?;
-			ensure!(bounded_fields.len() >= T::MinSchemaSize::get() as usize, <Error::<T>>::TooShortSchema);
-			Ok(bounded_fields)
-		}
-	}
 }
 
+
+impl<T: Config> Pallet<T> {
+	pub fn require_valid_schema_size(schema: Vec<u8>) -> Result<BoundedVec<u8, T::MaxSchemaSize>, Error::<T>> {
+		let bounded_fields: BoundedVec<u8, T::MaxSchemaSize> =
+			schema.try_into().map_err(|()| Error::<T>::TooLongSchema)?;
+		ensure!(bounded_fields.len() >= T::MinSchemaSize::get() as usize, <Error::<T>>::TooShortSchema);
+		Ok(bounded_fields)
+	}
+}
 
 

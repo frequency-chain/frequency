@@ -1,14 +1,8 @@
-use crate::{mock::*, pallet::*};
+use crate::{mock::*, pallet::Error};
 use frame_support::{
 	assert_ok,  assert_err, assert_noop, BoundedVec,
 	traits::{OnFinalize,OnInitialize}
 };
-// use frame_system::{EventRecord, Phase};
-// use sp_core::{Hasher, H256, KeccakHasher};
-// use sp_runtime::DispatchError;
-// use sp_std::convert::TryInto;
-//
-// use sp_core::ed25519::Public;
 
 pub mod test {}
 

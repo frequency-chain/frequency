@@ -2,7 +2,6 @@
 
 use common_primitives::msa::AccountProvider;
 use frame_support::{dispatch::DispatchResult, ensure};
-pub use pallet::*;
 use sp_runtime::DispatchError;
 
 #[cfg(test)]
