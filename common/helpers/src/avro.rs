@@ -1,6 +1,6 @@
 use crate::types::*;
-use apache_avro::{schema::Schema, types::Record, Codec, Reader, Writer};
-use std::{collections::HashMap, str};
+use apache_avro::{schema::Schema, types::Record, Codec, Reader, Writer, to_avro_datum, from_avro_datum};
+use std::{collections::HashMap, io::Cursor, str};
 
 /// Represents error types returned by the `avro` module.
 #[derive(thiserror::Error, Debug)]
