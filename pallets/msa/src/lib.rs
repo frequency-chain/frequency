@@ -1,7 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{dispatch::DispatchResult, ensure};
-pub use pallet::*;
 use sp_runtime::DispatchError;
 
 #[cfg(test)]

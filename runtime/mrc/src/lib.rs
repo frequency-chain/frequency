@@ -25,7 +25,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::Everything,
+	traits::{ConstU32, Everything},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -298,7 +298,7 @@ impl frame_system::Config for Runtime {
 	type SS58Prefix = SS58Prefix;
 	/// The action to take on a Runtime Upgrade
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
+	type MaxConsumers = ConstU32<16>;
 }
 
 impl pallet_msa::Config for Runtime {
@@ -306,16 +306,16 @@ impl pallet_msa::Config for Runtime {
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 }
 
+pub use common_primitives::schema::SchemaId;
+
 parameter_types! {
-	pub const MinSchemaSize: u32 = 5;
-	pub const MaxSchemaSize: u32 = 100;
 	pub const MaxSchemaRegistrations: SchemaId = 1024;
 }
 
 impl pallet_schemas::Config for Runtime {
 	type Event = Event;
-	type MinSchemaSize = MinSchemaSize;
-	type MaxSchemaSize = MaxSchemaSize;
+	type MinSchemaSize = ConstU32<5>;
+	type MaxSchemaSize = ConstU32<100>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
 
