@@ -1,5 +1,6 @@
 use crate::types::*;
 use apache_avro::{from_avro_datum, schema::Schema, to_avro_datum, types::Record, Codec, Writer};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::{collections::HashMap, io::Cursor, str};
 
 /// Represents error types returned by the `avro` module.
@@ -57,14 +58,18 @@ pub fn fingerprint_raw_schema(raw_schema: &str) -> Result<(Schema, Vec<u8>), Avr
 pub fn fingerprint_raw_schema_list(
 	raw_schema: &[&str],
 ) -> Result<(Vec<Schema>, Vec<Vec<u8>>), AvroError> {
-	let mut schema_fingerprints = Vec::new();
-	let mut schemas = Vec::new();
-	for s in raw_schema {
-		let (schema, fingerprint) = fingerprint_raw_schema(s)?;
-		schema_fingerprints.push(fingerprint);
-		schemas.push(schema);
-	}
-	Ok((schemas, schema_fingerprints))
+	let schemas: (Vec<Schema>, Vec<Vec<u8>>) = raw_schema
+		.par_iter()
+		.map(|r| -> (Schema, Vec<u8>) {
+			let schema = fingerprint_raw_schema(r);
+			match schema {
+				Ok(schema) => schema,
+				Err(_error) => (Schema::Null, vec![]),
+			}
+		})
+		.collect();
+
+	Ok(schemas)
 }
 
 ///Function to convert a serialized Avro schema into Avro Schema type.
@@ -114,10 +119,17 @@ pub fn translate_schema(serialized_schema: Vec<u8>) -> Result<Schema, AvroError>
 /// assert!(translated_schema.is_ok());
 /// ```
 pub fn translate_schemas(serialized_schema: Vec<Vec<u8>>) -> Result<Vec<Schema>, AvroError> {
-	let mut schemas = Vec::new();
-	for s in serialized_schema {
-		schemas.push(translate_schema(s)?);
-	}
+	let schemas: Vec<Schema> = serialized_schema
+		.par_iter()
+		.map(|o| -> Schema {
+			let schema = translate_schema(o.to_vec());
+			match schema {
+				Ok(schema) => schema,
+				Err(_error) => Schema::Null,
+			}
+		})
+		.collect();
+
 	Ok(schemas)
 }
 

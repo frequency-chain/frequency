@@ -16,6 +16,7 @@ targets = ['x86_64-unknown-linux-gnu']
 apache-avro = { git = "https://github.com/apache/avro", features = ["snappy"] }
 thiserror = "1"
 sha2 = "0.10.2"
+rayon = "1.5"
 
 [dev-dependencies]
 proptest = "1.0"

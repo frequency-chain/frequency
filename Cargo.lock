@@ -1173,6 +1173,7 @@ version = "0.1.0"
 dependencies = [
  "apache-avro",
  "proptest",
+ "rayon",
  "sha2 0.10.2",
  "thiserror",
 ]
