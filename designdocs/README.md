@@ -4,6 +4,8 @@ To create a new design document, Please see the [Design Doc README](https://gith
 ## Accepted Design Documents
 
 * [On Chain Message Storage](MESSAGE_STORAGE.md)
-  * [Merged Pull Request](https://github.com/Liberty30/mrc/pull/15)
+  * [Merged Pull Request](https://github.com/LibertyDSNP/mrc/pull/15)
 * [Delegation](./delegation.md)
-  * [PR](https://github.com/Liberty30/mrc/pull/14)
+  * [PR](https://github.com/LibertyDSNP/mrc/pull/14)
+* [Message Schema(s)](./SCHEMA.md)
+  * [Merged Pull Request](https://github.com/LibertyDSNP/mrc/pull/17)

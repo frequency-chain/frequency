@@ -44,6 +44,8 @@ use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
+pub use pallet_msa;
+
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 
@@ -298,6 +300,11 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
+impl pallet_msa::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
+}
+
 parameter_types! {
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
@@ -479,6 +486,7 @@ construct_runtime!(
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
 		// MRC related pallets
+		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 34
 	}
 );
 
@@ -495,6 +503,7 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_msa, Msa]
 	);
 }
 
