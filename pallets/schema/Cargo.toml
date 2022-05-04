@@ -29,6 +29,7 @@ common-primitives = {default-features = false, path = "../../common/primitives"}
 [dev-dependencies]
 sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
 sp-io = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
+serde = { version = "1.0.132" }
 
 [features]
 default = ["std"]
