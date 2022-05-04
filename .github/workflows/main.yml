@@ -1,7 +1,7 @@
 on:
   push:
     branches: [main]
-name: Build
+name: Build Main
 jobs:
   build_prep:
     name: build-prep
