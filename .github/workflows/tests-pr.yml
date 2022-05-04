@@ -1,8 +1,9 @@
+name: Tests Pull Requests
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
 on:
-  push:
-    branches: [main]
   pull_request:
-name: Tests
 jobs:
   tests:
     name: ${{ matrix.target }}
@@ -30,7 +31,8 @@ jobs:
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           default: true
-      - uses: Swatinem/rust-cache@v1
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
       - name: Run tests
         run: ./ci/build.sh
         env:
