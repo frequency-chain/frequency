@@ -454,13 +454,14 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 parameter_types! {
-	pub const MaxMessagesPerBlock: u16 = 5000;
-	pub const MaxMessageSizeInBytes: u32 = 1024 * 1024; // 1MB
+	pub const MaxMessagesPerBlock: u16 = 7000;
+	pub const MaxMessageSizeInBytes: u32 = 1024 * 50; // 50K
 }
 
 impl pallet_messages::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_messages::weights::SubstrateWeight<Runtime>;
+	type AccountProvider = Msa;
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type MaxMessageSizeInBytes = MaxMessageSizeInBytes;
 }

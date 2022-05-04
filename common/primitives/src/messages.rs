@@ -7,16 +7,11 @@ use sp_std::{prelude::*, vec};
 pub type SchemaId = u16;
 
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct Message<AccountId> {
+pub struct MessageResponse<AccountId, BlockNumber> {
 	pub data: Vec<u8>,           //  Serialized data in a user-defined schema format
 	pub signer: AccountId,       //  Signature of the signer
 	pub msa_id: MessageSenderId, //  Message source account id (the original sender)
-	pub index: u16,              //  Stores index of message in block to keep total order
-}
-
-#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct MessageResponse<AccountId, BlockNumber> {
-	pub message: Message<AccountId>,
+	pub index: u16,              // index in block to get total order
 	pub block_number: BlockNumber,
 }
 
@@ -33,7 +28,7 @@ where
 	BlockNumber: Copy + AtLeast32BitUnsigned,
 {
 	pub const MAX_PAGE_SIZE: u32 = 10000;
-	pub const MAX_BLOCK_RANGE: u32 = 50000; // ~ 3 days
+	pub const MAX_BLOCK_RANGE: u32 = 50000; // ~3 days (6 sec per block)= ~7 days (12 sec per block)
 
 	pub fn validate(&self) -> bool {
 		self.page_size > 0 &&

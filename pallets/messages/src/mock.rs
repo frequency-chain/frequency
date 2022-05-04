@@ -1,4 +1,5 @@
 use crate as pallet_messages;
+use common_primitives::msa::{AccountProvider, MessageSenderId};
 use frame_support::{
 	parameter_types,
 	traits::{ConstU16, ConstU64, OnFinalize, OnInitialize},
@@ -57,8 +58,20 @@ parameter_types! {
 	pub const MaxMessageSizeInBytes: u32 = 100;
 }
 
+pub struct AccountHandler;
+impl AccountProvider for AccountHandler {
+	type AccountId = u64;
+	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSenderId> {
+		if *key == 1000 {
+			return None
+		}
+		Some(get_msa_from_account(*key) as MessageSenderId)
+	}
+}
+
 impl pallet_messages::Config for Test {
 	type Event = Event;
+	type AccountProvider = AccountHandler;
 	type WeightInfo = ();
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type MaxMessageSizeInBytes = MaxMessageSizeInBytes;
@@ -81,4 +94,8 @@ pub fn run_to_block(n: u64) {
 		System::on_initialize(System::block_number());
 		MessagesPallet::on_initialize(System::block_number());
 	}
+}
+
+pub fn get_msa_from_account(account_id: u64) -> u64 {
+	account_id + 100
 }

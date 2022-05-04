@@ -20,11 +20,14 @@ mod benchmarking;
 
 pub mod weights;
 
+mod types;
+
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get};
-use sp_runtime::{traits::One, DispatchError};
+use sp_runtime::traits::One;
 use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 
 pub use pallet::*;
+pub use types::*;
 pub use weights::*;
 
 use common_primitives::messages::*;
@@ -32,7 +35,7 @@ use common_primitives::messages::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::msa::MessageSenderId;
+	use common_primitives::msa::AccountProvider;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -42,6 +45,9 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		type WeightInfo: WeightInfo;
+
+		/// A type that will supply account related information
+		type AccountProvider: AccountProvider<AccountId = Self::AccountId>;
 
 		/// The maximum number of messages in a block
 		#[pallet::constant]
@@ -84,6 +90,8 @@ pub mod pallet {
 		InvalidPaginationRequest,
 		/// Type Conversion Overflow
 		TypeConversionOverflow,
+		/// Invalid Message Source Account
+		InvalidMessageSourceAccount,
 	}
 
 	#[pallet::event]
@@ -124,8 +132,11 @@ pub mod pallet {
 				message.len() < T::MaxMessageSizeInBytes::get().try_into().unwrap(),
 				Error::<T>::TooLargeMessage
 			);
+
+			let msa_id = T::AccountProvider::get_msa_id(&who);
+			ensure!(msa_id.is_some(), Error::<T>::InvalidMessageSourceAccount);
+
 			// TODO: validate schema existence and validity from schema pallet
-			// TODO: get MsaId from mrc-identity pallet
 
 			let mut block_messages = <BlockMessages<T>>::get();
 			let current_size: u16 = block_messages
@@ -141,97 +152,16 @@ pub mod pallet {
 				data: message,
 				signer: who,
 				index: current_size,
-				msa_id: 0 as MessageSenderId, // TODO: replace with actual msa_id
+				msa_id: msa_id.unwrap(),
 			};
 			block_messages.push((m, schema_id));
 			<BlockMessages<T>>::set(block_messages);
-
 			Ok(())
 		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
-	pub fn get_messages_by_schema(
-		schema_id: SchemaId,
-		pagination: BlockPaginationRequest<T::BlockNumber>,
-	) -> Result<
-		BlockPaginationResponse<T::BlockNumber, MessageResponse<T::AccountId, T::BlockNumber>>,
-		DispatchError,
-	> {
-		ensure!(pagination.validate(), Error::<T>::InvalidPaginationRequest);
-
-		let mut response = BlockPaginationResponse::new();
-		let from: u32 = pagination
-			.from_block
-			.try_into()
-			.map_err(|_| Error::<T>::TypeConversionOverflow)?;
-		let to: u32 =
-			pagination.to_block.try_into().map_err(|_| Error::<T>::TypeConversionOverflow)?;
-		let mut from_index = pagination.from_index;
-
-		'loops: for bid in from..to {
-			let block_number: T::BlockNumber = bid.into();
-			let list = <Messages<T>>::get(block_number, schema_id);
-
-			let list_size: u32 =
-				list.len().try_into().map_err(|_| Error::<T>::TypeConversionOverflow)?;
-			for i in from_index..list_size {
-				let m: Message<T::AccountId> = list[i as usize].clone();
-				response.content.push(MessageResponse { message: m, block_number });
-
-				if Self::check_end_condition_and_set_next_pagination(
-					block_number,
-					i,
-					list_size,
-					&pagination,
-					&mut response,
-				) {
-					break 'loops
-				}
-			}
-
-			// next block starts from 0
-			from_index = 0;
-		}
-
-		Ok(response)
-	}
-
-	/// Checks the end condition for paginated query and set the `PaginationResponse`
-	///
-	/// Returns `true` if page is filled
-	fn check_end_condition_and_set_next_pagination(
-		block_number: T::BlockNumber,
-		current_index: u32,
-		list_size: u32,
-		request: &BlockPaginationRequest<T::BlockNumber>,
-		result: &mut BlockPaginationResponse<
-			T::BlockNumber,
-			MessageResponse<T::AccountId, T::BlockNumber>,
-		>,
-	) -> bool {
-		if result.content.len() as u32 == request.page_size {
-			let mut next_block = block_number;
-			let mut next_index = current_index + 1;
-
-			// checking if it's end of current list
-			if next_index == list_size {
-				next_block = block_number + T::BlockNumber::one();
-				next_index = 0;
-			}
-
-			if next_block < request.to_block {
-				result.has_next = true;
-				result.next_block = Some(next_block);
-				result.next_index = Some(next_index);
-			}
-			return true
-		}
-
-		false
-	}
-
 	/// Moves messages from temporary storage `BlockMessages` into final storage `Messages`
 	/// and calculates execution weight
 	///
