@@ -1,12 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get};
 /// Pallet schema library.
 /// This pallet is used to define, validate, store and access schemas for message passing
 /// between the participants of the network.
 pub use pallet::*;
 use sp_runtime::traits::One;
 use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
+use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get};
 
 #[cfg(test)]
 mod mock;
