@@ -73,6 +73,7 @@ pallet-collator-selection = {git = "https://github.com/paritytech/cumulus", defa
 parachain-info = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.18"}
 
 pallet-msa = {path = "../../pallets/msa", default-features = false}
+pallet-schema = {path = "../../pallets/schema", default-features = false}
 
 [features]
 default = [
@@ -124,6 +125,7 @@ std = [
   "xcm-executor/std",
   "xcm/std",
   "pallet-msa/std",
+  "pallet-schema/std",
 ]
 
 runtime-benchmarks = [
