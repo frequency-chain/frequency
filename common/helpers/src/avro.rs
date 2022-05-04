@@ -31,11 +31,8 @@ pub enum AvroError {
 /// assert!(schema_result.is_ok());
 /// let serialized_schema = schema_result.unwrap().1;
 pub fn fingerprint_raw_schema(raw_schema: &str) -> Result<(Schema, Vec<u8>), AvroError> {
-	// parse_str will fail if schema is not valid
-
 	let schema_result = Schema::parse_str(raw_schema)?;
 	let schema_canonical_form = schema_result.canonical_form();
-	// return the schema and the fingerprint
 	Ok((schema_result, schema_canonical_form.as_bytes().to_vec()))
 }
 
