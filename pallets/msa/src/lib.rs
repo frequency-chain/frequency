@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use common_primitives::msa::AccountProvider;
 use frame_support::{dispatch::DispatchResult, ensure};
 pub use pallet::*;
 use sp_runtime::DispatchError;
@@ -100,5 +101,12 @@ impl<T: Config> Pallet<T> {
 
 			Ok(())
 		})
+	}
+}
+
+impl<T: Config> AccountProvider for Pallet<T> {
+	type AccountId = T::AccountId;
+	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSenderId> {
+		Self::get_owner_of(key)
 	}
 }
