@@ -41,3 +41,12 @@ fn require_valid_schema_size_errors() {
 		}
 	})
 }
+
+#[test]
+fn get_latest_schema_count() {
+	new_test_ext().execute_with(|| {
+		let schema_count = SchemasPallet::schema_count();
+		let schema_latest_rpc = SchemasPallet::get_latest_schema_id();
+		assert!(schema_count == schema_latest_rpc.unwrap());
+	})
+}
