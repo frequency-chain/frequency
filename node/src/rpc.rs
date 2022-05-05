@@ -53,6 +53,8 @@ where
 
 	io.extend_with(SystemApi::to_delegate(FullSystem::new(client.clone(), pool, deny_unsafe)));
 	io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone())));
-	io.extend_with(schema_rpc::SchemaApi::to_delegate(schema_rpc::SchemaHandler::new(client.clone())));
+	io.extend_with(schema_rpc::SchemaApi::to_delegate(schema_rpc::SchemaHandler::new(
+		client.clone(),
+	)));
 	io
 }

@@ -8,6 +8,6 @@ sp_api::decl_runtime_apis! {
 	pub trait SchemaRuntimeApi<AccountId> where
 	AccountId: codec::Codec
 	{
-        fn get_latest_schema_id() -> Result<u16, DispatchError>;
+		fn get_latest_schema_id() -> Result<u16, DispatchError>;
 	}
 }
