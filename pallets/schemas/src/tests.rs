@@ -1,7 +1,8 @@
 use crate::{mock::*, pallet::Error};
 use frame_support::{
-	assert_ok,  assert_err, assert_noop, BoundedVec,
-	traits::{OnFinalize,OnInitialize}
+	assert_err, assert_noop, assert_ok,
+	traits::{OnFinalize, OnInitialize},
+	BoundedVec,
 };
 
 pub mod test {}
@@ -40,4 +41,3 @@ fn require_valid_schema_size_errors() {
 		}
 	})
 }
-

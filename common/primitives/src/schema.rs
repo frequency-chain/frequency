@@ -1,1 +1,1 @@
-pub type SchemaId = u32;
+pub type SchemaId = u16;
