@@ -2,8 +2,6 @@
 
 use sp_std::{convert::TryInto, vec::Vec};
 use frame_support::{BoundedVec, dispatch::DispatchResult, ensure, traits::Get};
-use sp_runtime::DispatchError;
-
 
 #[cfg(test)]
 mod tests;
@@ -19,6 +17,7 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use common_primitives::schema::SchemaId;
+	use sp_runtime::DispatchError;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
