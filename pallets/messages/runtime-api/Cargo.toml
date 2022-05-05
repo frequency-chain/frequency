@@ -1,0 +1,33 @@
+[package]
+name = 'pallet-messages-runtime-api'
+version = '0.1.0'
+description = 'A package that adds Runtime Api for Messages pallet'
+authors = ['MRC Team']
+license = "Apache-2.0"
+publish = false
+homepage = "https://unfinishedlabs.io/"
+repository = "https://github.com/LibertyDSNP/mrc/"
+edition = "2021"
+
+
+[dependencies]
+codec = {package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"]}
+
+# Substrate
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+
+# MRC related dependencies
+common-primitives = {default-features = false, path = "../../../common/primitives"}
+
+[dev-dependencies]
+serde_json = "1.0"
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"sp-api/std",
+	"frame-support/std",
+	'common-primitives/std'
+]

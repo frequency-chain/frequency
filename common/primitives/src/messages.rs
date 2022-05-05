@@ -1,20 +1,29 @@
 use crate::msa::MessageSenderId;
+#[cfg(feature = "std")]
+use crate::utils;
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 use sp_runtime::traits::AtLeast32BitUnsigned;
 use sp_std::{prelude::*, vec};
+#[cfg(feature = "std")]
+use utils::*;
 
 pub type SchemaId = u16;
 
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct MessageResponse<AccountId, BlockNumber> {
-	pub data: Vec<u8>,           //  Serialized data in a user-defined schema format
+	#[cfg_attr(feature = "std", serde(with = "as_hex"))]
+	pub data: Vec<u8>, //  Serialized data in a user-defined schema format
 	pub signer: AccountId,       //  Signature of the signer
 	pub msa_id: MessageSenderId, //  Message source account id (the original sender)
 	pub index: u16,              // index in block to get total order
 	pub block_number: BlockNumber,
 }
 
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct BlockPaginationRequest<BlockNumber> {
 	pub from_block: BlockNumber, // inclusive
@@ -39,11 +48,14 @@ where
 	}
 }
 
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct BlockPaginationResponse<BlockNumber, T> {
 	pub content: Vec<T>,
 	pub has_next: bool,
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
 	pub next_block: Option<BlockNumber>,
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
 	pub next_index: Option<u32>,
 }
 

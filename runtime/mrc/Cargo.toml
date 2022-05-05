@@ -52,8 +52,10 @@ sp-transaction-pool = {git = "https://github.com/paritytech/substrate", default-
 sp-version = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18"}
 
 # Unfinished
+common-primitives = {default-features = false, path = "../../common/primitives"}
 pallet-msa = {path = "../../pallets/msa", default-features = false}
 pallet-messages = { path = "../../pallets/messages", default-features = false}
+pallet-messages-runtime-api = { path = "../../pallets/messages/runtime-api", default-features = false}
 
 # Polkadot
 pallet-xcm = {git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.18"}
@@ -86,6 +88,7 @@ std = [
   "log/std",
   "scale-info/std",
   "serde",
+  "common-primitives/std",
   "cumulus-pallet-aura-ext/std",
   "cumulus-pallet-dmp-queue/std",
   "cumulus-pallet-parachain-system/std",
@@ -110,6 +113,7 @@ std = [
   "pallet-xcm/std",
   "pallet-msa/std",
   "pallet-messages/std",
+  "pallet-messages-runtime-api/std",
   "parachain-info/std",
   "polkadot-parachain/std",
   "polkadot-runtime-common/std",

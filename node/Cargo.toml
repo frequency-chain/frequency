@@ -25,6 +25,10 @@ jsonrpc-core = "18.0.0"
 # Local
 mrc-runtime = { path = "../runtime/mrc" }
 
+# Unfinished
+pallet-messages-rpc = { path = "../pallets/messages/rpc" }
+pallet-messages-runtime-api = { path = "../pallets/messages/runtime-api", default-features = false}
+
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }

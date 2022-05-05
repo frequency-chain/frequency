@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use mrc_runtime::{opaque::Block, AccountId, Balance, Index as Nonce};
+use mrc_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Index as Nonce};
 
 use sc_client_api::AuxStore;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
@@ -42,6 +42,7 @@ where
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	C::Api: BlockBuilder<Block>,
+	C::Api: pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
@@ -51,7 +52,9 @@ where
 	let FullDeps { client, pool, deny_unsafe } = deps;
 
 	io.extend_with(SystemApi::to_delegate(FullSystem::new(client.clone(), pool, deny_unsafe)));
-	io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(client)));
-
+	io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone())));
+	io.extend_with(pallet_messages_rpc::MessagesApi::to_delegate(
+		pallet_messages_rpc::MessagesHandler::new(client.clone()),
+	));
 	io
 }
