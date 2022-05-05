@@ -25,6 +25,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, parameter_types,
+	dispatch::DispatchError,
 	traits::Everything,
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
@@ -45,7 +46,7 @@ use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 pub use sp_runtime::BuildStorage;
 
 pub use pallet_msa;
-
+pub use pallet_schema;
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 
@@ -305,6 +306,10 @@ impl pallet_msa::Config for Runtime {
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 }
 
+impl pallet_schema::Config for Runtime {
+	type Event = Event;
+}
+
 parameter_types! {
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
@@ -501,6 +506,7 @@ construct_runtime!(
 		// MRC related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 34,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 35,
+		Schemas: pallet_schema::{Pallet, Call, Storage, Event<T>} = 36,
 	}
 );
 
@@ -519,6 +525,7 @@ mod benches {
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_msa, Msa]
 		[pallet_messages, Messages]
+		[pallet_schema, Schemas]
 	);
 }
 
@@ -620,6 +627,12 @@ impl_runtime_apis! {
 			len: u32,
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
 			TransactionPayment::query_fee_details(uxt, len)
+		}
+	}
+
+	impl schema_runtime_api::SchemaRuntimeApi<Block, AccountId> for Runtime {
+		fn get_latest_schema_id() -> Result<u16, DispatchError> {
+			Schemas::get_latest_schema_id()
 		}
 	}
 
