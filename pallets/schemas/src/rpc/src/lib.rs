@@ -25,7 +25,8 @@ impl<C, M> SchemasHandler<C, M> {
 	}
 }
 
-impl<C, Block, AccountId> SchemasApi<<Block as BlockT>::Hash, AccountId> for SchemasHandler<C, Block>
+impl<C, Block, AccountId> SchemasApi<<Block as BlockT>::Hash, AccountId>
+	for SchemasHandler<C, Block>
 where
 	Block: BlockT,
 	C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
