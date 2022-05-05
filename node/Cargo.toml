@@ -81,6 +81,10 @@ cumulus-relay-chain-inprocess-interface = { git = "https://github.com/paritytech
 cumulus-relay-chain-interface = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.18" }
 cumulus-relay-chain-rpc-interface = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.18" }
 
+# Unfinished
+schemas-rpc = { path = "../pallets/schemas/src/rpc", version = "0.1.0", default-features = false }
+schemas-runtime-api = { path = "../pallets/schemas/src/runtime-api", version = "0.1.0", default-features = false }
+
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
 

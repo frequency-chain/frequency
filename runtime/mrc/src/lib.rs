@@ -467,6 +467,19 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	pub const MaxMessagesPerBlock: u16 = 7000;
+	pub const MaxMessageSizeInBytes: u32 = 1024 * 50; // 50K
+}
+
+impl pallet_messages::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = pallet_messages::weights::SubstrateWeight<Runtime>;
+	type AccountProvider = Msa;
+	type MaxMessagesPerBlock = MaxMessagesPerBlock;
+	type MaxMessageSizeInBytes = MaxMessageSizeInBytes;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -501,7 +514,8 @@ construct_runtime!(
 
 		// MRC related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 34,
-		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>} = 35
+		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 35,
+		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>} = 36,
 	}
 );
 
@@ -519,6 +533,7 @@ mod benches {
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_msa, Msa]
+		[pallet_messages, Messages]
 	);
 }
 

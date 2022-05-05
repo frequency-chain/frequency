@@ -6,3 +6,5 @@ paritytech
 polkadot
 rustfmt
 srtool
+thiserror
+

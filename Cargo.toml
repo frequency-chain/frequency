@@ -5,6 +5,11 @@ panic = "unwind"
 members = [
   "node",
   "pallets/msa",
+<<<<<<< HEAD
   "pallets/schemas",
+=======
+  "pallets/messages",
+>>>>>>> main
   "runtime/*",
+  "common/helpers"
 ]

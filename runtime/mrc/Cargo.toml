@@ -51,6 +51,11 @@ sp-std = {git = "https://github.com/paritytech/substrate", default-features = fa
 sp-transaction-pool = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18"}
 sp-version = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18"}
 
+# Unfinished
+pallet-msa = {path = "../../pallets/msa", default-features = false}
+pallet-messages = { path = "../../pallets/messages", default-features = false}
+pallet-schemas = {path = "../../pallets/schemas", default-features = false}
+
 # Polkadot
 pallet-xcm = {git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.18"}
 polkadot-parachain = {git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.18"}
@@ -71,10 +76,6 @@ cumulus-primitives-timestamp = {git = "https://github.com/paritytech/cumulus", d
 cumulus-primitives-utility = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.18"}
 pallet-collator-selection = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.18"}
 parachain-info = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.18"}
-
-common-primitives = {path = "../../common/primitives", default-features = false}
-pallet-msa = {path = "../../pallets/msa", default-features = false}
-pallet-schemas = {path = "../../pallets/schemas", default-features = false}
 
 [features]
 default = [
@@ -107,6 +108,8 @@ std = [
   "pallet-transaction-payment-rpc-runtime-api/std",
   "pallet-transaction-payment/std",
   "pallet-xcm/std",
+  "pallet-msa/std",
+  "pallet-messages/std",
   "parachain-info/std",
   "polkadot-parachain/std",
   "polkadot-runtime-common/std",
@@ -140,11 +143,12 @@ runtime-benchmarks = [
   "pallet-collator-selection/runtime-benchmarks",
   "pallet-timestamp/runtime-benchmarks",
   "pallet-xcm/runtime-benchmarks",
+  'pallet-msa/runtime-benchmarks',
+  "pallet-messages/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
   "xcm-builder/runtime-benchmarks",
   "cumulus-pallet-session-benchmarking/runtime-benchmarks",
   "cumulus-pallet-xcmp-queue/runtime-benchmarks",
-  'pallet-msa/runtime-benchmarks',
 ]
 
 try-runtime = [

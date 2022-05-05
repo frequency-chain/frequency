@@ -105,6 +105,11 @@ impl<T: Config> Pallet<T> {
 		ensure!(bounded_fields.len() >= T::MinSchemaSize::get() as usize, <Error::<T>>::TooShortSchema);
 		Ok(bounded_fields)
 	}
+
+	pub fn get_latest_schema_id() -> Result<SchemaId, DispatchError> {
+		// TODO: implement this issue#30
+		Ok(0)
+	}
 }
 
 
