@@ -55,6 +55,7 @@ sp-version = {git = "https://github.com/paritytech/substrate", default-features 
 pallet-msa = {path = "../../pallets/msa", default-features = false}
 pallet-messages = { path = "../../pallets/messages", default-features = false}
 pallet-schemas = {path = "../../pallets/schemas", default-features = false}
+schemas-runtime-api = { path = "../../pallets/schemas/src/runtime-api", default-features = false}
 
 # Polkadot
 pallet-xcm = {git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.18"}
@@ -128,9 +129,9 @@ std = [
   "xcm-builder/std",
   "xcm-executor/std",
   "xcm/std",
-  "common-primitives/std",
   "pallet-msa/std",
   "pallet-schemas/std",
+  "schemas-runtime-api/std",
 ]
 
 runtime-benchmarks = [

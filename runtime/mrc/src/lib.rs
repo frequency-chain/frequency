@@ -644,6 +644,13 @@ impl_runtime_apis! {
 		}
 	}
 
+	// TODO should this be here or under a collection of mrc runtime apis?
+	impl schemas_runtime_api::SchemasRuntimeApi<Block, AccountId> for Runtime {
+		fn get_latest_schema_id() -> Result<u16, DispatchError> {
+			Schemas::get_latest_schema_id()
+		}
+	}
+
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
 		fn on_runtime_upgrade() -> (Weight, Weight) {

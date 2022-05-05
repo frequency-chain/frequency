@@ -34,6 +34,6 @@ std = [
 	"sp-api/std",
 	"sp-core/std",
 	"frame-support/std",
-	'sp-std/std',
-	'common-primitives/std'
+	"sp-std/std",
+	"common-primitives/std",
 ]
