@@ -5004,6 +5004,7 @@ dependencies = [
 name = "mrc-runtime"
 version = "0.1.0"
 dependencies = [
+ "common-primitives",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
