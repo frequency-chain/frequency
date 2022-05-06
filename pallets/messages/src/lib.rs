@@ -22,7 +22,7 @@ pub mod weights;
 
 mod types;
 
-use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get};
+use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
 use sp_runtime::{traits::One, DispatchError};
 use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 
@@ -51,7 +51,7 @@ pub mod pallet {
 
 		/// The maximum number of messages in a block
 		#[pallet::constant]
-		type MaxMessagesPerBlock: Get<u16>;
+		type MaxMessagesPerBlock: Get<u32>;
 
 		/// The maximum size of a message [Byte]
 		#[pallet::constant]
@@ -65,8 +65,14 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_block_messages)]
-	pub(super) type BlockMessages<T: Config> //TODO: convert Vec to BoundedVec
-		= StorageValue<_, Vec<(Message<T::AccountId>, SchemaId)>, ValueQuery>;
+	pub(super) type BlockMessages<T: Config> = StorageValue<
+		_,
+		BoundedVec<
+			(Message<T::AccountId, T::MaxMessageSizeInBytes>, SchemaId),
+			T::MaxMessagesPerBlock,
+		>,
+		ValueQuery,
+	>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_messages)]
@@ -76,7 +82,7 @@ pub mod pallet {
 		T::BlockNumber,
 		Twox64Concat,
 		SchemaId,
-		Vec<Message<T::AccountId>>,
+		BoundedVec<Message<T::AccountId, T::MaxMessageSizeInBytes>, T::MaxMessagesPerBlock>,
 		ValueQuery,
 	>;
 
@@ -138,24 +144,23 @@ pub mod pallet {
 
 			// TODO: validate schema existence and validity from schema pallet
 
-			let mut block_messages = <BlockMessages<T>>::get();
+			let mut block_messages = <BlockMessages<T>>::get().into_inner();
 			let current_size: u16 = block_messages
 				.len()
 				.try_into()
 				.map_err(|_| Error::<T>::TypeConversionOverflow)?;
-			ensure!(
-				current_size < T::MaxMessagesPerBlock::get(),
-				Error::<T>::TooManyMessagesInBlock
-			);
 
 			let m = Message {
-				data: message,
+				data: message.try_into().map_err(|_| Error::<T>::TooLargeMessage)?,
 				signer: who,
 				index: current_size,
 				msa_id: msa_id.unwrap(),
 			};
 			block_messages.push((m, schema_id));
-			<BlockMessages<T>>::set(block_messages);
+
+			let bounded: BoundedVec<_, _> =
+				block_messages.try_into().map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
+			<BlockMessages<T>>::set(bounded);
 			Ok(())
 		}
 	}
@@ -265,18 +270,15 @@ impl<T: Config> Pallet<T> {
 		}
 
 		// insert into storage and create events
-		for (schema_id, messages) in &map {
+		for (schema_id, messages) in map {
 			let count = messages.len() as u16;
-			Messages::<T>::insert(&block_number, schema_id, messages);
-			Self::deposit_event(Event::MessagesStored {
-				schema_id: *schema_id,
-				block_number,
-				count,
-			});
+			let bounded_vec: BoundedVec<_, _> = messages.try_into().unwrap();
+			Messages::<T>::insert(&block_number, schema_id, &bounded_vec);
+			Self::deposit_event(Event::MessagesStored { schema_id, block_number, count });
 			schema_count += 1;
 		}
 
-		BlockMessages::<T>::set(vec![]);
+		BlockMessages::<T>::set(BoundedVec::default());
 		T::WeightInfo::on_initialize(message_count, schema_count)
 	}
 }

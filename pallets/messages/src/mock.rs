@@ -10,6 +10,7 @@ use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
+use std::fmt::Formatter;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -54,8 +55,35 @@ impl system::Config for Test {
 }
 
 parameter_types! {
-	pub const MaxMessagesPerBlock: u16 = 500;
+	pub const MaxMessagesPerBlock: u32 = 500;
 	pub const MaxMessageSizeInBytes: u32 = 100;
+}
+
+impl std::fmt::Debug for MaxMessagesPerBlock {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("MaxMessagesPerBlock")
+			.field("v", &MaxMessagesPerBlock::get())
+			.finish()
+	}
+}
+impl std::fmt::Debug for MaxMessageSizeInBytes {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("MaxMessageSizeInBytes")
+			.field("v", &MaxMessageSizeInBytes::get())
+			.finish()
+	}
+}
+
+impl PartialEq for MaxMessagesPerBlock {
+	fn eq(&self, _other: &Self) -> bool {
+		true
+	}
+}
+
+impl PartialEq for MaxMessageSizeInBytes {
+	fn eq(&self, _other: &Self) -> bool {
+		true
+	}
 }
 
 pub struct AccountHandler;

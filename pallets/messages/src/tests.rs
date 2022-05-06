@@ -41,7 +41,7 @@ fn add_message_should_store_message_on_temp_storage() {
 		));
 
 		// assert
-		let list = BlockMessages::<Test>::get();
+		let list = BlockMessages::<Test>::get().into_inner();
 		assert_eq!(list.len(), 2);
 
 		assert_eq!(
@@ -49,7 +49,7 @@ fn add_message_should_store_message_on_temp_storage() {
 			(
 				Message {
 					msa_id: get_msa_from_account(caller_1),
-					data: message_payload_1.clone(),
+					data: message_payload_1.clone().try_into().unwrap(),
 					index: 0,
 					signer: caller_1
 				},
@@ -62,7 +62,7 @@ fn add_message_should_store_message_on_temp_storage() {
 			(
 				Message {
 					msa_id: get_msa_from_account(caller_2),
-					data: message_payload_2.clone(),
+					data: message_payload_2.clone().try_into().unwrap(),
 					index: 1,
 					signer: caller_2
 				},
