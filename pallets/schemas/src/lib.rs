@@ -1,7 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
-use sp_runtime::DispatchError;
+use sp_runtime::{
+	DispatchError,
+	traits::{IdentifyAccount, Verify}
+};
 use sp_std::{convert::TryInto, vec::Vec};
 
 #[cfg(test)]
@@ -22,6 +25,9 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type Public: IdentifyAccount<AccountId = Self::AccountId>;
+		type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
+
 		// Maximum length of Schema field name
 		#[pallet::constant]
 		type MinSchemaSize: Get<u32>;
@@ -80,40 +86,50 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight((10_000, Pays::Yes))]
-		pub fn register_schema(origin: OriginFor<T>, _schema: Vec<u8>) -> DispatchResult {
+		pub fn register_schema(origin: OriginFor<T>, schema: Vec<u8>) -> DispatchResult {
 			let sender = ensure_signed(origin.clone())?;
 
 			let cur_count = Self::schema_count();
 			ensure!(cur_count < T::MaxSchemaRegistrations::get(), <Error<T>>::TooManySchemas);
-			// let schema_id = cur_count.checked_add(1).ok_or(<Error<T>>::TooManySchemas)?;
-			//
-			// Self::require_valid_schema_size(&schema);
-			// Self::add_schema(schema.clone(), schema_id)?;
-			//
-			// let current_block = <frame_system::Pallet<T>>::block_number();
-			// Self::deposit_event(Event::SchemaRegistered(sender, schema_id, current_block));
+			let schema_id = cur_count.checked_add(1).ok_or(<Error<T>>::TooManySchemas)?;
+
+			Self::require_valid_schema_size(schema.clone())?;
+			Self::add_schema(schema.clone(), schema_id)?;
+
+			let current_block = <frame_system::Pallet<T>>::block_number();
+			Self::deposit_event(Event::SchemaRegistered(sender, schema_id, current_block));
 			Ok(())
 		}
 	}
 
 	impl<T: Config> Pallet<T> {
+		fn add_schema(schema: Vec<u8>, schema_id: SchemaId) -> DispatchResult {
+			let bounded_fields = Self::require_valid_schema_size(schema)?;
+
+			<SchemaCount<T>>::set(schema_id);
+			<Schemas::<T>>::insert(
+				schema_id,
+				bounded_fields,
+			);
+
+			Ok(())
+		}
+
 		pub fn get_latest_schema_id() -> Result<SchemaId, DispatchError> {
 			let cur_count = Self::schema_count();
 			Ok(cur_count)
 		}
-	}
-}
 
-impl<T: Config> Pallet<T> {
-	pub fn require_valid_schema_size(
-		schema: Vec<u8>,
-	) -> Result<BoundedVec<u8, T::MaxSchemaSize>, Error<T>> {
-		let bounded_fields: BoundedVec<u8, T::MaxSchemaSize> =
-			schema.try_into().map_err(|()| Error::<T>::TooLongSchema)?;
-		ensure!(
+		pub fn require_valid_schema_size(
+			schema: Vec<u8>,
+		) -> Result<BoundedVec<u8, T::MaxSchemaSize>, Error<T>> {
+			let bounded_fields: BoundedVec<u8, T::MaxSchemaSize> =
+				schema.try_into().map_err(|()| Error::<T>::TooLongSchema)?;
+			ensure!(
 			bounded_fields.len() >= T::MinSchemaSize::get() as usize,
 			<Error::<T>>::TooShortSchema
 		);
-		Ok(bounded_fields)
+			Ok(bounded_fields)
+		}
 	}
 }

@@ -1,9 +1,19 @@
-use crate::{mock::*, pallet::Error};
+use common_primitives::{
+	schema::SchemaId
+};
+
+use crate::{pallet::Error, Event as AnnouncementEvent};
+use super::mock::*;
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	traits::{OnFinalize, OnInitialize},
 	BoundedVec,
 };
+use frame_system::Account;
+// use sp_keyring::Ed25519Keyring as Keyring;
+use sp_keyring::ed25519::Keyring;
+use sp_core::ed25519::Public;
+use serial_test::serial;
 
 pub mod test {}
 
@@ -48,5 +58,37 @@ fn get_latest_schema_count() {
 		let schema_count = SchemasPallet::schema_count();
 		let schema_latest_rpc = SchemasPallet::get_latest_schema_id();
 		assert!(schema_count == schema_latest_rpc.unwrap());
+	})
+}
+
+#[test]
+fn register_schema_happy_path() {
+	new_test_ext().execute_with(|| {
+		let alice = Keyring::Alice.to_raw_public();
+		let sender = Public::from_raw(alice);
+		let serialized_fields = Vec::from("foo,bar,bazz".as_bytes());
+
+		assert_ok!(SchemasPallet::register_schema(Origin::signed(sender), serialized_fields));
+	})
+}
+
+#[test]
+#[serial]
+fn register_schema_id_deposits_events_and_increments_schema_id() {
+	new_test_ext().execute_with(|| {
+		let alice = Keyring::Alice.to_raw_public();
+		let sender = Public::from_raw(alice);
+		let mut last_schema_id: SchemaId = 0;
+		for fields in ["foo,bar,bazz", "this,is,another,schema","test,one,two,three"] {
+			let serialized_fields = Vec::from(fields.as_bytes());
+			assert_ok!(SchemasPallet::register_schema(Origin::signed(sender), serialized_fields));
+			let expected_schema_id = last_schema_id + 1;
+			System::assert_last_event(
+				AnnouncementEvent::SchemaRegistered(sender,expected_schema_id,1).into(),
+			);
+			last_schema_id = expected_schema_id;
+		}
+		let serialized_fields1 = Vec::from("foo,bar,".as_bytes());
+		assert_ok!(SchemasPallet::register_schema(Origin::signed(sender), serialized_fields1));
 	})
 }
