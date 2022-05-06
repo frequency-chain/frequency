@@ -23,8 +23,11 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+use common_primitives::messages::*;
 use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime,
+	dispatch::DispatchError,
+	parameter_types,
 	traits::Everything,
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
@@ -620,6 +623,14 @@ impl_runtime_apis! {
 			len: u32,
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
 			TransactionPayment::query_fee_details(uxt, len)
+		}
+	}
+
+	impl pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber> for Runtime {
+		fn get_messages_by_schema(schema_id: SchemaId, pagination: BlockPaginationRequest<BlockNumber>) ->
+			Result<BlockPaginationResponse<BlockNumber, MessageResponse<AccountId, BlockNumber>>, DispatchError> {
+
+			Messages::get_messages_by_schema(schema_id, pagination)
 		}
 	}
 
