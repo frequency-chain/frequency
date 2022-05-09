@@ -144,24 +144,20 @@ pub mod pallet {
 
 			// TODO: validate schema existence and validity from schema pallet
 
-			let mut block_messages = <BlockMessages<T>>::get().into_inner();
-			let current_size: u16 = block_messages
-				.len()
-				.try_into()
-				.map_err(|_| Error::<T>::TypeConversionOverflow)?;
-
-			let m = Message {
-				data: message.try_into().map_err(|_| Error::<T>::TooLargeMessage)?,
-				signer: who,
-				index: current_size,
-				msa_id: msa_id.unwrap(),
-			};
-			block_messages.push((m, schema_id));
-
-			let bounded: BoundedVec<_, _> =
-				block_messages.try_into().map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
-			<BlockMessages<T>>::set(bounded);
-			Ok(())
+			<BlockMessages<T>>::try_mutate(|messages| -> DispatchResult {
+				let current_size: u16 =
+					messages.len().try_into().map_err(|_| Error::<T>::TypeConversionOverflow)?;
+				let m = Message {
+					data: message.try_into().unwrap(), // size is checked on top of extrinsic
+					signer: who,
+					index: current_size,
+					msa_id: msa_id.unwrap(),
+				};
+				messages
+					.try_push((m, schema_id))
+					.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
+				Ok(())
+			})
 		}
 	}
 }

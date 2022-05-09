@@ -59,24 +59,11 @@ parameter_types! {
 	pub const MaxMessageSizeInBytes: u32 = 100;
 }
 
-impl std::fmt::Debug for MaxMessagesPerBlock {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		f.debug_struct("MaxMessagesPerBlock")
-			.field("v", &MaxMessagesPerBlock::get())
-			.finish()
-	}
-}
 impl std::fmt::Debug for MaxMessageSizeInBytes {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		f.debug_struct("MaxMessageSizeInBytes")
 			.field("v", &MaxMessageSizeInBytes::get())
 			.finish()
-	}
-}
-
-impl PartialEq for MaxMessagesPerBlock {
-	fn eq(&self, _other: &Self) -> bool {
-		true
 	}
 }
 
