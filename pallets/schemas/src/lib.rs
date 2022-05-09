@@ -2,8 +2,8 @@
 
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
 use sp_runtime::{
+	traits::{IdentifyAccount, Verify},
 	DispatchError,
-	traits::{IdentifyAccount, Verify}
 };
 use sp_std::{convert::TryInto, vec::Vec};
 
@@ -113,10 +113,7 @@ pub mod pallet {
 			let bounded_fields = Self::require_valid_schema_size(schema)?;
 
 			<SchemaCount<T>>::set(schema_id);
-			<Schemas::<T>>::insert(
-				schema_id,
-				bounded_fields,
-			);
+			<Schemas<T>>::insert(schema_id, bounded_fields);
 
 			Ok(())
 		}
@@ -132,9 +129,9 @@ pub mod pallet {
 			let bounded_fields: BoundedVec<u8, T::MaxSchemaSize> =
 				schema.try_into().map_err(|()| Error::<T>::TooLongSchema)?;
 			ensure!(
-			bounded_fields.len() >= T::MinSchemaSize::get() as usize,
-			<Error::<T>>::TooShortSchema
-		);
+				bounded_fields.len() >= T::MinSchemaSize::get() as usize,
+				<Error::<T>>::TooShortSchema
+			);
 			Ok(bounded_fields)
 		}
 	}

@@ -1,14 +1,13 @@
-use common_primitives::{
-	schema::SchemaId
-};
+use frame_support::assert_ok;
+use serial_test::serial;
+use sp_core::ed25519::Public;
+use sp_keyring::ed25519::Keyring;
+
+use common_primitives::schema::SchemaId;
 
 use crate::{pallet::Error, Event as AnnouncementEvent};
-use super::mock::*;
-use frame_support::{assert_ok};
 
-use sp_keyring::ed25519::Keyring;
-use sp_core::ed25519::Public;
-use serial_test::serial;
+use super::mock::*;
 
 pub mod test {}
 
@@ -70,12 +69,12 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 		let alice = Keyring::Alice.to_raw_public();
 		let sender = Public::from_raw(alice);
 		let mut last_schema_id: SchemaId = 0;
-		for fields in ["foo,bar,bazz", "this,is,another,schema","test,one,two,three"] {
+		for fields in ["foo,bar,bazz", "this,is,another,schema", "test,one,two,three"] {
 			let serialized_fields = Vec::from(fields.as_bytes());
 			assert_ok!(SchemasPallet::register_schema(Origin::signed(sender), serialized_fields));
 			let expected_schema_id = last_schema_id + 1;
 			System::assert_last_event(
-				AnnouncementEvent::SchemaRegistered(sender,expected_schema_id).into(),
+				AnnouncementEvent::SchemaRegistered(sender, expected_schema_id).into(),
 			);
 			last_schema_id = expected_schema_id;
 		}

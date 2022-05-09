@@ -1,15 +1,16 @@
-use sp_core::{H256, ed25519};
-use sp_runtime::{
-	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup, Verify},
-};
-use frame_system;
 use frame_support::{
 	parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64},
 };
+use frame_system;
+use sp_core::{ed25519, H256};
+use sp_runtime::{
+	testing::Header,
+	traits::{BlakeTwo256, IdentityLookup, Verify},
+};
 
 use common_primitives::schema::SchemaId;
+
 use crate as pallet_schemas;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -42,6 +43,7 @@ impl pallet_schemas::Config for Test {
 	type MaxSchemaSize = ConstU32<100>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
+
 impl frame_system::Config for Test {
 	type AccountData = ();
 	type BaseCallFilter = frame_support::traits::Everything;
@@ -70,7 +72,8 @@ impl frame_system::Config for Test {
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut ext: sp_io::TestExternalities = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into();
+	let mut ext: sp_io::TestExternalities =
+		frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into();
 	ext.execute_with(|| System::set_block_number(1));
 	ext
 }
