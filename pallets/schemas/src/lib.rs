@@ -63,10 +63,10 @@ pub mod pallet {
 		InvalidSchema,
 		/// The maximum number of schemas is stored in the database.
 		TooManySchemas,
-		/// The schemas exceeds the maximum length allowed
-		TooLongSchema,
-		/// The schemas is less than the minimum length allowed
-		TooShortSchema,
+		/// The schema exceeds the maximum length allowed
+		ExceedsMaxSchemaBytes,
+		/// The schema is less than the minimum length allowed
+		LessThanMinSchemaBytes,
 		/// Schema does not exist
 		NoSuchSchema,
 		/// Error is converting to string
@@ -75,6 +75,8 @@ pub mod pallet {
 		DeserializationError,
 		/// Error in Serialization
 		SerializationError,
+		/// SchemaCount was attempted to overflow max, means MaxSchemaRegistrations is too big
+		SchemaCountOverflow,
 	}
 
 	#[pallet::pallet]
@@ -99,7 +101,7 @@ pub mod pallet {
 
 			let cur_count = Self::schema_count();
 			ensure!(cur_count < T::MaxSchemaRegistrations::get(), <Error<T>>::TooManySchemas);
-			let schema_id = cur_count.checked_add(1).ok_or(<Error<T>>::TooManySchemas)?;
+			let schema_id = cur_count.checked_add(1).ok_or(<Error<T>>::SchemaCountOverflow)?;
 
 			Self::add_schema(schema.clone(), schema_id)?;
 
@@ -127,10 +129,10 @@ pub mod pallet {
 			schema: Vec<u8>,
 		) -> Result<BoundedVec<u8, T::MaxSchemaSize>, Error<T>> {
 			let bounded_fields: BoundedVec<u8, T::MaxSchemaSize> =
-				schema.try_into().map_err(|()| Error::<T>::TooLongSchema)?;
+				schema.try_into().map_err(|()| Error::<T>::ExceedsMaxSchemaBytes)?;
 			ensure!(
 				bounded_fields.len() >= T::MinSchemaSize::get() as usize,
-				<Error::<T>>::TooShortSchema
+				Error::<T>::LessThanMinSchemaBytes
 			);
 			Ok(bounded_fields)
 		}

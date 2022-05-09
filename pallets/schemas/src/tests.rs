@@ -28,11 +28,11 @@ fn require_valid_schema_size_errors() {
 		let test_cases: [TestCase<Error<Test>>; 2] = [
 			TestCase {
 				schema: vec![],
-				expected: Error::TooShortSchema,
+				expected: Error::LessThanMinSchemaBytes,
 			},
 			TestCase {
 				schema: Vec::from("foo,bar,bazz,way,wayway,wayway,foo,bar,bazz,way,wayway,wayway,foo,bar,bazz,thisiswaywaywaywaywaywaywaytoolong".as_bytes()),
-				expected: Error::TooLongSchema,
+				expected: Error::ExceedsMaxSchemaBytes,
 			},
 		];
 		for tc in test_cases {
