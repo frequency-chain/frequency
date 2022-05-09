@@ -1,16 +1,22 @@
 use super::{mock::*, Event as MessageEvent};
 use crate::{BlockMessages, Config, Error, Message, Messages};
 use common_primitives::messages::{BlockPaginationRequest, MessageResponse, SchemaId};
-use frame_support::{assert_err, assert_noop, assert_ok};
+use frame_support::{assert_err, assert_noop, assert_ok, BoundedVec};
 use sp_std::vec::Vec;
 
 fn populate_messages(schema_id: SchemaId, message_per_block: Vec<u32>) {
 	let payload = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
 	let mut counter = 0;
 	for (idx, count) in message_per_block.iter().enumerate() {
-		let mut list = Vec::new();
+		let mut list = BoundedVec::default();
 		for _ in 0..*count {
-			list.push(Message { msa_id: 10, data: payload.clone(), index: counter, signer: 1 });
+			list.try_push(Message {
+				msa_id: 10,
+				data: payload.clone().try_into().unwrap(),
+				index: counter,
+				signer: 1,
+			})
+			.unwrap();
 			counter += 1;
 		}
 		Messages::<Test>::insert(idx as u64, schema_id, list);
@@ -41,7 +47,7 @@ fn add_message_should_store_message_on_temp_storage() {
 		));
 
 		// assert
-		let list = BlockMessages::<Test>::get();
+		let list = BlockMessages::<Test>::get().into_inner();
 		assert_eq!(list.len(), 2);
 
 		assert_eq!(
@@ -49,7 +55,7 @@ fn add_message_should_store_message_on_temp_storage() {
 			(
 				Message {
 					msa_id: get_msa_from_account(caller_1),
-					data: message_payload_1.clone(),
+					data: message_payload_1.clone().try_into().unwrap(),
 					index: 0,
 					signer: caller_1
 				},
@@ -62,7 +68,7 @@ fn add_message_should_store_message_on_temp_storage() {
 			(
 				Message {
 					msa_id: get_msa_from_account(caller_2),
-					data: message_payload_2.clone(),
+					data: message_payload_2.clone().try_into().unwrap(),
 					index: 1,
 					signer: caller_2
 				},
