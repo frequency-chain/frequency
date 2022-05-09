@@ -149,6 +149,7 @@ runtime-benchmarks = [
   "pallet-xcm/runtime-benchmarks",
   'pallet-msa/runtime-benchmarks',
   "pallet-messages/runtime-benchmarks",
+  "pallet-schemas/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
   "xcm-builder/runtime-benchmarks",
   "cumulus-pallet-session-benchmarking/runtime-benchmarks",

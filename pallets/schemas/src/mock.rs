@@ -1,15 +1,16 @@
-use crate as pallet_schemas;
-use common_primitives::schema::SchemaId;
-use frame_support::{
-	parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64},
-};
-use frame_system;
 use sp_core::{H256, ed25519};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup, Verify},
 };
+use frame_system;
+use frame_support::{
+	parameter_types,
+	traits::{ConstU16, ConstU32, ConstU64},
+};
+
+use common_primitives::schema::SchemaId;
+use crate as pallet_schemas;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -28,13 +29,7 @@ frame_support::construct_runtime!(
 );
 
 parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(1024);
-	pub const MinBlockSize: u64 = 10;
-	pub const MinSchemaSize: u32 = 5;
-	pub const MaxSchemaSize: u32 = 100;
-	pub const MaxSchemaRegistrations: SchemaId = 1024;
+	pub const MaxSchemaRegistrations: SchemaId = 64_000;
 }
 
 impl pallet_schemas::Config for Test {
@@ -42,10 +37,9 @@ impl pallet_schemas::Config for Test {
 	type Public = AccountId;
 	type Signature = Signature;
 	// type CallHasher = Keccak256;
-	// type MinBlockSize = MinBlockSize;
-	// type WeightInfo = ();
-	type MinSchemaSize = MinSchemaSize;
-	type MaxSchemaSize = MaxSchemaSize;
+	type WeightInfo = ();
+	type MinSchemaSize = ConstU32<5>;
+	type MaxSchemaSize = ConstU32<100>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
 impl frame_system::Config for Test {

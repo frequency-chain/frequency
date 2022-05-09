@@ -4,13 +4,8 @@ use common_primitives::{
 
 use crate::{pallet::Error, Event as AnnouncementEvent};
 use super::mock::*;
-use frame_support::{
-	assert_err, assert_noop, assert_ok,
-	traits::{OnFinalize, OnInitialize},
-	BoundedVec,
-};
-use frame_system::Account;
-// use sp_keyring::Ed25519Keyring as Keyring;
+use frame_support::{assert_ok};
+
 use sp_keyring::ed25519::Keyring;
 use sp_core::ed25519::Public;
 use serial_test::serial;

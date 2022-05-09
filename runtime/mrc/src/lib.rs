@@ -317,8 +317,14 @@ parameter_types! {
 
 impl pallet_schemas::Config for Runtime {
 	type Event = Event;
+	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
+
+	// TODO: may need to be moved into MSA and import traits into schemas pallet.
+	type Signature = MultiSignature;
+	type Public = <MultiSignature as Verify>::Signer;
+
 	type MinSchemaSize = ConstU32<5>;
-	type MaxSchemaSize = ConstU32<100>;
+	type MaxSchemaSize = ConstU32<300>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
 
@@ -524,8 +530,8 @@ construct_runtime!(
 		// MRC related pallets
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 35,
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 34,
-		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 35,
-		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>} = 36,
+		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>} = 35,
+		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 36,
 	}
 );
 
@@ -543,6 +549,7 @@ mod benches {
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_msa, Msa]
+		[pallet_schemas, Schemas]
 		[pallet_messages, Messages]
 	);
 }
