@@ -15,7 +15,7 @@ use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, DispatchError, MultiSignature,
+	ApplyExtrinsicResult, MultiSignature,
 };
 
 use sp_std::prelude::*;
@@ -528,10 +528,9 @@ construct_runtime!(
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
 		// MRC related pallets
-		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 35,
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 34,
-		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>} = 35,
-		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 36,
+		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 35,
+		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>} = 36,
 	}
 );
 
