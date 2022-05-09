@@ -23,7 +23,7 @@ pub use weights::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::schema::SchemaId;
+	use common_primitives::schema::{Schema, SchemaId};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -52,8 +52,8 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Emitted when a schemas is registered. [who, schemas id, block]
-		SchemaRegistered(T::AccountId, SchemaId, T::BlockNumber),
+		/// Emitted when a schemas is registered. [who, schemas id]
+		SchemaRegistered(T::AccountId, SchemaId),
 	}
 
 	#[derive(PartialEq)] // for testing
@@ -89,7 +89,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_schema)]
 	pub(super) type Schemas<T: Config> =
-		StorageMap<_, Twox64Concat, SchemaId, BoundedVec<u8, T::MaxSchemaSize>, ValueQuery>;
+		StorageMap<_, Twox64Concat, SchemaId, Schema<T::MaxSchemaSize>, ValueQuery>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -101,11 +101,9 @@ pub mod pallet {
 			ensure!(cur_count < T::MaxSchemaRegistrations::get(), <Error<T>>::TooManySchemas);
 			let schema_id = cur_count.checked_add(1).ok_or(<Error<T>>::TooManySchemas)?;
 
-			Self::require_valid_schema_size(schema.clone())?;
 			Self::add_schema(schema.clone(), schema_id)?;
 
-			let current_block = <frame_system::Pallet<T>>::block_number();
-			Self::deposit_event(Event::SchemaRegistered(sender, schema_id, current_block));
+			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
 			Ok(())
 		}
 	}

@@ -26,13 +26,9 @@ struct TestCase<T> {
 #[test]
 fn require_valid_schema_size_errors() {
 	new_test_ext().execute_with(|| {
-		let test_cases: [TestCase<Error<Test>>; 3] = [
+		let test_cases: [TestCase<Error<Test>>; 2] = [
 			TestCase {
 				schema: vec![],
-				expected: Error::TooShortSchema,
-			},
-			TestCase {
-				schema: Vec::from("foo".as_bytes()),
 				expected: Error::TooShortSchema,
 			},
 			TestCase {
@@ -79,7 +75,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 			assert_ok!(SchemasPallet::register_schema(Origin::signed(sender), serialized_fields));
 			let expected_schema_id = last_schema_id + 1;
 			System::assert_last_event(
-				AnnouncementEvent::SchemaRegistered(sender,expected_schema_id,1).into(),
+				AnnouncementEvent::SchemaRegistered(sender,expected_schema_id).into(),
 			);
 			last_schema_id = expected_schema_id;
 		}

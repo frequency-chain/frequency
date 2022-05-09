@@ -1191,6 +1191,7 @@ dependencies = [
 name = "common-primitives"
 version = "0.1.0"
 dependencies = [
+ "frame-support",
  "impl-serde",
  "parity-scale-codec",
  "scale-info",
