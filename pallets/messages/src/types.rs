@@ -8,7 +8,7 @@ use sp_std::prelude::*;
 #[scale_info(skip_type_params(MaxDataSize))]
 pub struct Message<AccountId, MaxDataSize>
 where
-	MaxDataSize: Get<u32>,
+	MaxDataSize: Get<u32> + Clone,
 {
 	pub data: BoundedVec<u8, MaxDataSize>, //  Serialized data in a user-defined schema format
 	pub signer: AccountId,                 //  Signature of the signer
@@ -19,7 +19,7 @@ where
 impl<AccountId, MaxDataSize> Message<AccountId, MaxDataSize>
 where
 	AccountId: Clone,
-	MaxDataSize: Get<u32>,
+	MaxDataSize: Get<u32> + Clone,
 {
 	pub fn map_to_response<BlockNumber>(
 		&self,

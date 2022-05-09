@@ -22,7 +22,9 @@ pub mod weights;
 
 mod types;
 
-use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
+use frame_support::{
+	dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get, BoundedVec,
+};
 use sp_runtime::{traits::One, DispatchError};
 use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 
@@ -55,7 +57,7 @@ pub mod pallet {
 
 		/// The maximum size of a message [Byte]
 		#[pallet::constant]
-		type MaxMessageSizeInBytes: Get<u32>;
+		type MaxMessageSizeInBytes: Get<u32> + Clone;
 	}
 
 	#[pallet::pallet]
@@ -183,12 +185,12 @@ impl<T: Config> Pallet<T> {
 
 		'loops: for bid in from..to {
 			let block_number: T::BlockNumber = bid.into();
-			let list = <Messages<T>>::get(block_number, schema_id);
+			let list = <Messages<T>>::get(block_number, schema_id).into_inner();
 
 			let list_size: u32 =
 				list.len().try_into().map_err(|_| Error::<T>::TypeConversionOverflow)?;
 			for i in from_index..list_size {
-				let m: Message<T::AccountId> = list[i as usize].clone();
+				let m = list[i as usize].clone();
 				response.content.push(m.map_to_response(block_number));
 
 				if Self::check_end_condition_and_set_next_pagination(

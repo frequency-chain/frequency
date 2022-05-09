@@ -1,16 +1,22 @@
 use super::{mock::*, Event as MessageEvent};
 use crate::{BlockMessages, Config, Error, Message, Messages};
 use common_primitives::messages::{BlockPaginationRequest, MessageResponse, SchemaId};
-use frame_support::{assert_err, assert_noop, assert_ok};
+use frame_support::{assert_err, assert_noop, assert_ok, BoundedVec};
 use sp_std::vec::Vec;
 
 fn populate_messages(schema_id: SchemaId, message_per_block: Vec<u32>) {
 	let payload = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
 	let mut counter = 0;
 	for (idx, count) in message_per_block.iter().enumerate() {
-		let mut list = Vec::new();
+		let mut list = BoundedVec::default();
 		for _ in 0..*count {
-			list.push(Message { msa_id: 10, data: payload.clone(), index: counter, signer: 1 });
+			list.try_push(Message {
+				msa_id: 10,
+				data: payload.clone().try_into().unwrap(),
+				index: counter,
+				signer: 1,
+			})
+			.unwrap();
 			counter += 1;
 		}
 		Messages::<Test>::insert(idx as u64, schema_id, list);

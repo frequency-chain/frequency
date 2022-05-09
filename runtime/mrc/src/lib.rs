@@ -461,6 +461,12 @@ parameter_types! {
 	pub const MaxMessageSizeInBytes: u32 = 1024 * 50; // 50K
 }
 
+impl Clone for MaxMessageSizeInBytes {
+	fn clone(&self) -> Self {
+		MaxMessageSizeInBytes {}
+	}
+}
+
 impl pallet_messages::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_messages::weights::SubstrateWeight<Runtime>;

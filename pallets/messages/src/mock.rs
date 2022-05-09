@@ -73,6 +73,12 @@ impl PartialEq for MaxMessageSizeInBytes {
 	}
 }
 
+impl Clone for MaxMessageSizeInBytes {
+	fn clone(&self) -> Self {
+		MaxMessageSizeInBytes {}
+	}
+}
+
 pub struct AccountHandler;
 impl AccountProvider for AccountHandler {
 	type AccountId = u64;
