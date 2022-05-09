@@ -3,10 +3,10 @@ use frame_support::{
 	traits::{ConstU16, ConstU32, ConstU64},
 };
 use frame_system;
-use sp_core::{ed25519, H256};
+use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup, Verify},
+	traits::{BlakeTwo256, IdentityLookup},
 };
 
 use common_primitives::schema::SchemaId;
@@ -15,8 +15,7 @@ use crate as pallet_schemas;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
-pub type Signature = ed25519::Signature;
-pub type AccountId = <Signature as Verify>::Signer;
+pub type AccountId = u64;
 
 frame_support::construct_runtime!(
 	pub enum Test where
@@ -35,9 +34,6 @@ parameter_types! {
 
 impl pallet_schemas::Config for Test {
 	type Event = Event;
-	type Public = AccountId;
-	type Signature = Signature;
-	// type CallHasher = Keccak256;
 	type WeightInfo = ();
 	type MinSchemaSize = ConstU32<5>;
 	type MaxSchemaSize = ConstU32<100>;

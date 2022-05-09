@@ -1,9 +1,6 @@
+use common_primitives::schema::SchemaId;
 use frame_support::assert_ok;
 use serial_test::serial;
-use sp_core::ed25519::Public;
-use sp_keyring::ed25519::Keyring;
-
-use common_primitives::schema::SchemaId;
 
 use crate::{pallet::Error, Event as AnnouncementEvent};
 
@@ -54,8 +51,7 @@ fn get_latest_schema_count() {
 #[test]
 fn register_schema_happy_path() {
 	new_test_ext().execute_with(|| {
-		let alice = Keyring::Alice.to_raw_public();
-		let sender = Public::from_raw(alice);
+		let sender: AccountId = 1;
 		let serialized_fields = Vec::from("foo,bar,bazz".as_bytes());
 
 		assert_ok!(SchemasPallet::register_schema(Origin::signed(sender), serialized_fields));
@@ -66,8 +62,7 @@ fn register_schema_happy_path() {
 #[serial]
 fn register_schema_id_deposits_events_and_increments_schema_id() {
 	new_test_ext().execute_with(|| {
-		let alice = Keyring::Alice.to_raw_public();
-		let sender = Public::from_raw(alice);
+		let sender: AccountId = 1;
 		let mut last_schema_id: SchemaId = 0;
 		for fields in ["foo,bar,bazz", "this,is,another,schema", "test,one,two,three"] {
 			let serialized_fields = Vec::from(fields.as_bytes());

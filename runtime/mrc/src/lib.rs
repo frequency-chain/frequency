@@ -318,11 +318,6 @@ parameter_types! {
 impl pallet_schemas::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
-
-	// TODO: may need to be moved into MSA and import traits into schemas pallet.
-	type Signature = MultiSignature;
-	type Public = <MultiSignature as Verify>::Signer;
-
 	type MinSchemaSize = ConstU32<5>;
 	type MaxSchemaSize = ConstU32<300>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;

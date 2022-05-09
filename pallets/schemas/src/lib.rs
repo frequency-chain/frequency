@@ -33,8 +33,8 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 
 		// TODO: may need to be moved into MSA and import traits into schemas pallet.
-		type Public: IdentifyAccount<AccountId = Self::AccountId>;
-		type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
+		// type Public: IdentifyAccount<AccountId = Self::AccountId>;
+		// type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
 
 		// Maximum length of Schema field name
 		#[pallet::constant]
