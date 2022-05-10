@@ -457,8 +457,14 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 parameter_types! {
-	pub const MaxMessagesPerBlock: u16 = 7000;
+	pub const MaxMessagesPerBlock: u32 = 7000;
 	pub const MaxMessageSizeInBytes: u32 = 1024 * 50; // 50K
+}
+
+impl Clone for MaxMessageSizeInBytes {
+	fn clone(&self) -> Self {
+		MaxMessageSizeInBytes {}
+	}
 }
 
 impl pallet_messages::Config for Runtime {
