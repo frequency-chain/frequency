@@ -10,8 +10,6 @@ use sp_std::{prelude::*, vec};
 #[cfg(feature = "std")]
 use utils::*;
 
-pub type SchemaId = u16;
-
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct MessageResponse<AccountId, BlockNumber> {

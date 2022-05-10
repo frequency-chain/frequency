@@ -28,7 +28,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::Everything,
+	traits::{ConstU32, Everything},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -48,6 +48,7 @@ use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 pub use sp_runtime::BuildStorage;
 
 pub use pallet_msa;
+pub use pallet_schemas;
 
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
@@ -300,12 +301,28 @@ impl frame_system::Config for Runtime {
 	type SS58Prefix = SS58Prefix;
 	/// The action to take on a Runtime Upgrade
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
+	type MaxConsumers = ConstU32<16>;
 }
 
 impl pallet_msa::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
+}
+
+pub use common_primitives::schema::SchemaId;
+
+parameter_types! {
+	pub const MaxSchemaRegistrations: SchemaId = 65_000;
+}
+
+impl pallet_schemas::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
+
+	// TODO: these constants need to be determined. See Issue #70
+	type MinSchemaSizeBytes = ConstU32<5>;
+	type MaxSchemaSizeBytes = ConstU32<4096>;
+	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
 
 parameter_types! {
@@ -457,8 +474,14 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 parameter_types! {
-	pub const MaxMessagesPerBlock: u16 = 7000;
+	pub const MaxMessagesPerBlock: u32 = 7000;
 	pub const MaxMessageSizeInBytes: u32 = 1024 * 50; // 50K
+}
+
+impl Clone for MaxMessageSizeInBytes {
+	fn clone(&self) -> Self {
+		MaxMessageSizeInBytes {}
+	}
 }
 
 impl pallet_messages::Config for Runtime {
@@ -504,6 +527,7 @@ construct_runtime!(
 		// MRC related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 34,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 35,
+		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>} = 36,
 	}
 );
 
@@ -521,6 +545,7 @@ mod benches {
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_msa, Msa]
+		[pallet_schemas, Schemas]
 		[pallet_messages, Messages]
 	);
 }
@@ -637,6 +662,13 @@ impl_runtime_apis! {
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
 			ParachainSystem::collect_collation_info(header)
+		}
+	}
+
+	// TODO should this be here or under a collection of mrc runtime apis?
+	impl schemas_runtime_api::SchemasRuntimeApi<Block, AccountId> for Runtime {
+		fn get_latest_schema_id() -> Result<u16, DispatchError> {
+			Schemas::get_latest_schema_id()
 		}
 	}
 

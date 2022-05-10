@@ -1,5 +1,5 @@
 use codec::Codec;
-use common_primitives::messages::*;
+use common_primitives::{messages::*, schema::*};
 use core::result::Result as CoreResult;
 use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
 use jsonrpc_derive::rpc;
