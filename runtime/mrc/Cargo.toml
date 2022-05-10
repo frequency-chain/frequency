@@ -56,6 +56,8 @@ common-primitives = {default-features = false, path = "../../common/primitives"}
 pallet-msa = {path = "../../pallets/msa", default-features = false}
 pallet-messages = { path = "../../pallets/messages", default-features = false}
 pallet-messages-runtime-api = { path = "../../pallets/messages/runtime-api", default-features = false}
+pallet-schemas = {path = "../../pallets/schemas", default-features = false}
+schemas-runtime-api = { path = "../../pallets/schemas/src/runtime-api", default-features = false}
 
 # Polkadot
 pallet-xcm = {git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.18"}
@@ -77,7 +79,6 @@ cumulus-primitives-timestamp = {git = "https://github.com/paritytech/cumulus", d
 cumulus-primitives-utility = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.18"}
 pallet-collator-selection = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.18"}
 parachain-info = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.18"}
-
 
 [features]
 default = [
@@ -114,6 +115,8 @@ std = [
   "pallet-msa/std",
   "pallet-messages/std",
   "pallet-messages-runtime-api/std",
+  "pallet-schemas/std",
+  "schemas-runtime-api/std",
   "parachain-info/std",
   "polkadot-parachain/std",
   "polkadot-runtime-common/std",
@@ -146,6 +149,7 @@ runtime-benchmarks = [
   "pallet-xcm/runtime-benchmarks",
   'pallet-msa/runtime-benchmarks',
   "pallet-messages/runtime-benchmarks",
+  "pallet-schemas/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
   "xcm-builder/runtime-benchmarks",
   "cumulus-pallet-session-benchmarking/runtime-benchmarks",

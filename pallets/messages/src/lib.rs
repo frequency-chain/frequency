@@ -32,7 +32,7 @@ pub use pallet::*;
 pub use types::*;
 pub use weights::*;
 
-use common_primitives::messages::*;
+use common_primitives::{messages::*, schema::*};
 
 #[frame_support::pallet]
 pub mod pallet {
