@@ -35,8 +35,8 @@ parameter_types! {
 impl pallet_schemas::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
-	type MinSchemaSize = ConstU32<5>;
-	type MaxSchemaSize = ConstU32<100>;
+	type MinSchemaSizeBytes = ConstU32<5>;
+	type MaxSchemaSizeBytes = ConstU32<100>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
 

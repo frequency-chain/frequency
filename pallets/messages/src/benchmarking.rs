@@ -1,7 +1,7 @@
 use super::*;
-
 #[allow(unused)]
 use crate::Pallet as MessagesPallet;
+use common_primitives::schema::*;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{assert_ok, traits::OnInitialize};
 use frame_system::RawOrigin;

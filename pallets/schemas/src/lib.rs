@@ -1,10 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate core;
+
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
-use sp_runtime::{
-	traits::{IdentifyAccount, Verify},
-	DispatchError,
-};
+use sp_runtime::DispatchError;
 use sp_std::{convert::TryInto, vec::Vec};
 
 #[cfg(test)]
@@ -32,17 +31,13 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type WeightInfo: WeightInfo;
 
-		// TODO: may need to be moved into MSA and import traits into schemas pallet.
-		// type Public: IdentifyAccount<AccountId = Self::AccountId>;
-		// type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
+		// Maximum length of Schema field name
+		#[pallet::constant]
+		type MinSchemaSizeBytes: Get<u32>;
 
 		// Maximum length of Schema field name
 		#[pallet::constant]
-		type MinSchemaSize: Get<u32>;
-
-		// Maximum length of Schema field name
-		#[pallet::constant]
-		type MaxSchemaSize: Get<u32>;
+		type MaxSchemaSizeBytes: Get<u32>;
 
 		// Maximum number of schemas that can be registered
 		#[pallet::constant]
@@ -91,11 +86,11 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_schema)]
 	pub(super) type Schemas<T: Config> =
-		StorageMap<_, Twox64Concat, SchemaId, Schema<T::MaxSchemaSize>, ValueQuery>;
+		StorageMap<_, Twox64Concat, SchemaId, Schema<T::MaxSchemaSizeBytes>, ValueQuery>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight((10_000, Pays::Yes))]
+		#[pallet::weight(<T as Config>::WeightInfo::register_schema(schema.len() as u32))]
 		pub fn register_schema(origin: OriginFor<T>, schema: Vec<u8>) -> DispatchResult {
 			let sender = ensure_signed(origin.clone())?;
 
@@ -127,11 +122,11 @@ pub mod pallet {
 
 		pub fn require_valid_schema_size(
 			schema: Vec<u8>,
-		) -> Result<BoundedVec<u8, T::MaxSchemaSize>, Error<T>> {
-			let bounded_fields: BoundedVec<u8, T::MaxSchemaSize> =
+		) -> Result<BoundedVec<u8, T::MaxSchemaSizeBytes>, Error<T>> {
+			let bounded_fields: BoundedVec<u8, T::MaxSchemaSizeBytes> =
 				schema.try_into().map_err(|()| Error::<T>::ExceedsMaxSchemaBytes)?;
 			ensure!(
-				bounded_fields.len() >= T::MinSchemaSize::get() as usize,
+				bounded_fields.len() >= T::MinSchemaSizeBytes::get() as usize,
 				Error::<T>::LessThanMinSchemaBytes
 			);
 			Ok(bounded_fields)

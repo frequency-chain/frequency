@@ -7,22 +7,34 @@ use crate::Pallet as SchemasPallet;
 
 use super::*;
 
-fn random_schema() -> Vec<u8> {
-	Vec::from("aasdf,sfdfb,eeec,dfsdfs,egsdkld,sldfklzz,sffs,sdjkl,lslsls,lfkjsf".as_bytes())
+const SCHEMAS: u32 = 5000;
+
+const EXAMPLE_SCHEMA: &[u8] = r#"{"type":"record","name":"mrc.schema.root",
+	"fields": [{"name": "name","type": "string"},
+    {"name": "type","type": "string"}}"#
+	.as_bytes();
+
+fn generate_schema(size: usize) -> Vec<u8> {
+	Vec::from(&EXAMPLE_SCHEMA[..size])
 }
 
-fn register_random_schema<T: Config>(sender: T::AccountId) -> DispatchResult {
-	SchemasPallet::<T>::register_schema(RawOrigin::Signed(sender).into(), random_schema())
+fn register_some_schema<T: Config>(sender: T::AccountId) -> DispatchResult {
+	let schema_size: usize = (T::MaxSchemaSizeBytes::get() - 1) as usize;
+	SchemasPallet::<T>::register_schema(
+		RawOrigin::Signed(sender).into(),
+		generate_schema(schema_size),
+	)
 }
 
 benchmarks! {
 	register_schema {
-		let n in 1..(T::MaxSchemaRegistrations::get() - 1).into();
+		let m in (T::MinSchemaSizeBytes::get()) .. (T::MaxSchemaSizeBytes::get() - 1);
+		let n in 1 .. SCHEMAS;
 		let sender: T::AccountId = whitelisted_caller();
 		for j in 0..(n) {
-			assert_ok!(register_random_schema::<T>(sender.clone()));
+			assert_ok!(register_some_schema::<T>(sender.clone()));
 		}
-	}: _(RawOrigin::Signed(sender), random_schema())
+	}: _(RawOrigin::Signed(sender), generate_schema(m as usize))
 
 	verify {
 		ensure!(SchemasPallet::<T>::schema_count() > 0, "Registered schema count should be > 0");

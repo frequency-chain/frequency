@@ -312,14 +312,16 @@ impl pallet_msa::Config for Runtime {
 pub use common_primitives::schema::SchemaId;
 
 parameter_types! {
-	pub const MaxSchemaRegistrations: SchemaId = 1024;
+	pub const MaxSchemaRegistrations: SchemaId = 65_000;
 }
 
 impl pallet_schemas::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
-	type MinSchemaSize = ConstU32<5>;
-	type MaxSchemaSize = ConstU32<300>;
+
+	// TODO: these constants need to be determined. See Issue #70
+	type MinSchemaSizeBytes = ConstU32<5>;
+	type MaxSchemaSizeBytes = ConstU32<4096>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
 
