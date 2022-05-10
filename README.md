@@ -59,9 +59,17 @@ source .env
 
 1. Relay chain is running on port [`9944`](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) and [`9945`](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9945#/explorer) for alice and bob respectively.
 
+1. Register a new parachain slot (parachain id) for MRC:
+
+    ```bash
+    ./scripts/init.sh register-mrc
+    ```
+
+1. Note: if parachain was previously registered on a running relay chain and no new registration is required, then, you can skip the above step.
+
 1. Start mrc as parachain: This step will generate genesis/wasm and onboard the parachain. If new pallets or runtime code changes have been made to mrc, then developer have to generate chain specs again. Refer to [generation spec file](#generating-a-new-spec-file) for more details.
 
-1. Note: assumption is that relay chain is running from step one above and para id 2000 is registered on relay.
+1. Note: assumption is that relay chain is running and para id 2000 is registered on relay. If parachain id is not 2000, update the local chain [spec](#generating-a-new-spec-file) with registered parachain id.
 
     ```bash
     ./scripts/init.sh start-mrc
