@@ -93,6 +93,7 @@ source .env
 2. Run `cargo run --release build-spec --disable-default-bootnode > ./res/genesis/mrc-spec-rococo.json` to export the chain spec
 3. Run `cargo run --release build-spec --raw --disable-default-bootnode --chain ./res/genesis/mrc-spec-rococo.json > ./res/genesis/rococo-local-mrc-2000-raw.json` to export the raw chain spec
 4. Commit
+5. Alternatively, run ```./scripts/generate_specs.sh 2001 true``` to generate plain and raw mrc spec along with genesis state and wasm. Replace 2001 with registered parachain id.
 
 Note: To build spec against specific chain config; specify chain name in the command above.
 
