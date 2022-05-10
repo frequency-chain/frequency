@@ -17,7 +17,7 @@ jsonrpc-derive = "18.0"
 
 # unfinished
 pallet-messages-runtime-api = {default-features = false, path = "../runtime-api" }
-common-primitives = {default-features = false, path = "../../../common/primitives"}
+common-primitives = {default-features = false, path = "../../../../common/primitives" }
 
 # Substrate packages
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }

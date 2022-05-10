@@ -18,10 +18,8 @@ sp-api = { git = "https://github.com/paritytech/substrate", default-features = f
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
 
 # MRC related dependencies
-common-primitives = {default-features = false, path = "../../../common/primitives"}
+common-primitives = {default-features = false, path = "../../../../common/primitives" }
 
-[dev-dependencies]
-serde_json = "1.0"
 
 [features]
 default = ["std"]

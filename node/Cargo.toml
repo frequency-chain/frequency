@@ -25,10 +25,6 @@ jsonrpc-core = "18.0.0"
 # Local
 mrc-runtime = { path = "../runtime/mrc" }
 
-# Unfinished
-pallet-messages-rpc = { path = "../pallets/messages/rpc" }
-pallet-messages-runtime-api = { path = "../pallets/messages/runtime-api", default-features = false}
-
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
@@ -86,8 +82,10 @@ cumulus-relay-chain-interface = { git = "https://github.com/paritytech/cumulus",
 cumulus-relay-chain-rpc-interface = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.18" }
 
 # Unfinished
-schemas-rpc = { path = "../pallets/schemas/src/rpc", version = "0.1.0", default-features = false }
-schemas-runtime-api = { path = "../pallets/schemas/src/runtime-api", version = "0.1.0", default-features = false }
+pallet-messages-rpc = { path = "../pallets/messages/src/rpc" }
+pallet-messages-runtime-api = { path = "../pallets/messages/src/runtime-api" }
+pallet-schemas-rpc = { path = "../pallets/schemas/src/rpc" }
+pallet-schemas-runtime-api = { path = "../pallets/schemas/src/runtime-api" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
