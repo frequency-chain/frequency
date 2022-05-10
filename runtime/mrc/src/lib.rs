@@ -666,7 +666,7 @@ impl_runtime_apis! {
 	}
 
 	// TODO should this be here or under a collection of mrc runtime apis?
-	impl schemas_runtime_api::SchemasRuntimeApi<Block, AccountId> for Runtime {
+	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block, AccountId> for Runtime {
 		fn get_latest_schema_id() -> Result<u16, DispatchError> {
 			Schemas::get_latest_schema_id()
 		}
