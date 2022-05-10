@@ -4,8 +4,8 @@ const run = async () => {
   try {
     console.log("Parsing Args ...")
 
-    const endpoint = process.argv[0];
-    const seed = process.argv[1];
+    const endpoint = process.argv[2];
+    const seed = process.argv[3];
 
     const wsProvider = new WsProvider(endpoint);
 
