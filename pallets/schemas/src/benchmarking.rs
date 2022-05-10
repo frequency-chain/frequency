@@ -28,7 +28,7 @@ fn register_some_schema<T: Config>(sender: T::AccountId) -> DispatchResult {
 
 benchmarks! {
 	register_schema {
-		let m in (T::MinSchemaSizeBytes::get()) .. (T::MaxSchemaSizeBytes::get() - 1);
+		let m in (T::MinSchemaSizeBytes::get()) .. (T::MaxSchemaSizeBytes::get());
 		let n in 1 .. SCHEMAS;
 		let sender: T::AccountId = whitelisted_caller();
 		for j in 0..(n) {

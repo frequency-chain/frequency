@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 #[rpc]
 pub trait SchemasApi<BlockHash, AccountId> {
-	#[rpc(name = "schema_get_latest_schema_id")]
+	#[rpc(name = "schemas_getLatestSchemaId")]
 	fn get_latest_schema_id(&self, at: Option<BlockHash>) -> Result<u16>;
 }
 
