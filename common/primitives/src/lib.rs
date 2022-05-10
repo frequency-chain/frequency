@@ -2,4 +2,5 @@
 
 pub mod messages;
 pub mod msa;
+pub mod schema;
 pub mod utils;

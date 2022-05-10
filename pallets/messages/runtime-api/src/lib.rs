@@ -3,7 +3,7 @@
 #![allow(clippy::unnecessary_mut_passed)]
 
 use codec::Codec;
-use common_primitives::messages::*;
+use common_primitives::{messages::*, schema::*};
 use frame_support::dispatch::DispatchError;
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
