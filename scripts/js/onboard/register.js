@@ -39,7 +39,7 @@ const reservePara = async (account, api, paraID) => {
     .signAndSend(account, { nonce: nonce }, async ({ status }) => {
       if (status.isFinalized) {
         console.log(`✔️  - Finalized at block hash #${status.asFinalized.toString()} \n`);
-        await registerPara(account, api, paraID);
+        //await registerPara(account, api, paraID);
         signAndSend();
       }
     });
