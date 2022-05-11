@@ -69,6 +69,12 @@ start-mrc)
     --state-cache-size 0 \
   ;;
 
+register-mrc)
+  echo "reserving and registering parachain with relay via first available slot..."
+  
+  cd scripts/js/onboard
+  yarn && yarn register "ws://0.0.0.0:9944" "//Alice"
+  ;;
 
 onboard-mrc)
   echo "Onboarding parachain with runtime '$parachain' and id '$para_id'..."
