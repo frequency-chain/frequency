@@ -41,6 +41,7 @@ const reservePara = async (account, api, paraID) => {
         console.log(`✔️  - Finalized at block hash #${status.asFinalized.toString()} \n`);
         //await registerPara(account, api, paraID);
         signAndSend();
+        process.exit();
       }
     });
 };
