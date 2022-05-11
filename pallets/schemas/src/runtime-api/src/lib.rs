@@ -6,6 +6,7 @@ use codec::Codec;
 use frame_support::dispatch::DispatchError;
 use pallet_transaction_payment::FeeDetails;
 use sp_runtime::traits::MaybeDisplay;
+use sp_std::vec::Vec;
 
 sp_api::decl_runtime_apis! {
 	pub trait SchemasRuntimeApi<AccountId, Balance> where
@@ -13,6 +14,6 @@ sp_api::decl_runtime_apis! {
 	Balance: Codec + MaybeDisplay,
 	{
 		fn get_latest_schema_id() -> Result<u16, DispatchError>;
-		fn query_fee_details(uxt: Block::Extrinsic, len: u32) -> FeeDetails<Balance>;
+		fn calculate_schema_cost(schema: Vec<u8>) -> FeeDetails<Balance>;
 	}
 }

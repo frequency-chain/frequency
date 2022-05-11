@@ -324,6 +324,8 @@ impl pallet_schemas::Config for Runtime {
 	type MinSchemaSizeBytes = ConstU32<5>;
 	type MaxSchemaSizeBytes = ConstU32<4096>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
+	// TODO: Currency for MRC and Adaptors needs to be implemented. See Issue #70
+	type Currency = Balances;
 }
 
 parameter_types! {
@@ -655,7 +657,6 @@ impl_runtime_apis! {
 	impl pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber> for Runtime {
 		fn get_messages_by_schema(schema_id: SchemaId, pagination: BlockPaginationRequest<BlockNumber>) ->
 			Result<BlockPaginationResponse<BlockNumber, MessageResponse<AccountId, BlockNumber>>, DispatchError> {
-
 			Messages::get_messages_by_schema(schema_id, pagination)
 		}
 	}
@@ -666,17 +667,13 @@ impl_runtime_apis! {
 		}
 	}
 
-	// TODO should this be here or under a collection of mrc runtime apis?
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block, AccountId, Balance> for Runtime {
 		fn get_latest_schema_id() -> Result<u16, DispatchError> {
 			Schemas::get_latest_schema_id()
 		}
 
-		fn query_fee_details(
-			uxt: <Block as BlockT>::Extrinsic,
-			len: u32,
-		) -> pallet_transaction_payment::FeeDetails<Balance> {
-			TransactionPayment::query_fee_details(uxt, len)
+		fn calculate_schema_cost( schema:Vec<u8>) -> pallet_transaction_payment::FeeDetails<Balance> {
+			Schemas::calculate_schema_cost(schema)
 		}
 	}
 

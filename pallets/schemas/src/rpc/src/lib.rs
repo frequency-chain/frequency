@@ -1,4 +1,4 @@
-use codec::{Codec, Decode};
+use codec::Codec;
 use core::result::Result as CoreResult;
 use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
 use jsonrpc_derive::rpc;
@@ -6,13 +6,13 @@ use pallet_schemas_runtime_api::SchemasRuntimeApi;
 use pallet_transaction_payment_rpc_runtime_api::{FeeDetails, InclusionFee, RuntimeDispatchInfo};
 use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_core::Bytes;
 use sp_rpc::number::NumberOrHex;
 use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, MaybeDisplay},
 	DispatchError,
 };
+use sp_std::vec::Vec;
 use std::sync::Arc;
 
 /// Error type of this RPC api.
@@ -40,7 +40,7 @@ pub trait SchemasApi<BlockHash, AccountId, ResponseType> {
 	fn get_schema_registration_fee(
 		&self,
 		at: Option<BlockHash>,
-		encoded_xt: Bytes,
+		schema: Vec<u8>,
 	) -> Result<FeeDetails<NumberOrHex>>;
 }
 
@@ -75,20 +75,13 @@ where
 	fn get_schema_registration_fee(
 		&self,
 		at: Option<<Block as BlockT>::Hash>,
-		encoded_xt: Bytes,
+		schema: Vec<u8>,
 	) -> Result<FeeDetails<NumberOrHex>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		let encoded_len = encoded_xt.len() as u32;
-
-		let uxt: Block::Extrinsic = Decode::decode(&mut &*encoded_xt).map_err(|e| RpcError {
-			code: ErrorCode::ServerError(Error::DecodeError.into()),
-			message: "Unable to query fee details.".into(),
-			data: Some(format!("{:?}", e).into()),
-		})?;
-		let fee_details = api.query_fee_details(&at, uxt, encoded_len).map_err(|e| RpcError {
+		let fee_details = api.calculate_schema_cost(&at, schema).map_err(|e| RpcError {
 			code: ErrorCode::ServerError(Error::RuntimeError.into()),
-			message: "Unable to query fee details.".into(),
+			message: "Unable to calculate schema fee.".into(),
 			data: Some(e.to_string().into()),
 		})?;
 

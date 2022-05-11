@@ -2,9 +2,14 @@
 
 extern crate core;
 
-use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
+use frame_support::{
+	dispatch::DispatchResult,
+	ensure,
+	traits::{Currency, Get},
+	BoundedVec,
+};
 use sp_runtime::DispatchError;
-use sp_std::{convert::TryInto, vec::Vec};
+use sp_std::vec::Vec;
 
 #[cfg(test)]
 mod tests;
@@ -19,12 +24,16 @@ pub use pallet::*;
 pub mod weights;
 pub use weights::*;
 
+type BalanceOf<T> =
+	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 	use common_primitives::schema::{Schema, SchemaId};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+	use pallet_transaction_payment::FeeDetails;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -42,6 +51,9 @@ pub mod pallet {
 		// Maximum number of schemas that can be registered
 		#[pallet::constant]
 		type MaxSchemaRegistrations: Get<SchemaId>;
+
+		// TODO: Definition of Currency/Currency Adaptors for MRC etc.
+		type Currency: Currency<Self::AccountId>;
 	}
 
 	#[pallet::event]
@@ -72,6 +84,8 @@ pub mod pallet {
 		SerializationError,
 		/// SchemaCount was attempted to overflow max, means MaxSchemaRegistrations is too big
 		SchemaCountOverflow,
+		/// TODO Errors
+		NotImplemented,
 	}
 
 	#[pallet::pallet]
@@ -130,6 +144,14 @@ pub mod pallet {
 				Error::<T>::LessThanMinSchemaBytes
 			);
 			Ok(bounded_fields)
+		}
+
+		pub fn calculate_schema_cost(schema: Vec<u8>) -> FeeDetails<BalanceOf<T>> {
+			// TODO weight to currency/token conversion needed
+			// reference: https://github.com/paritytech/substrate/blob/0ba251c9388452c879bfcca425ada66f1f9bc802/frame/transaction-payment/src/lib.rs#L445
+			let schema_weight = T::WeightInfo::register_schema(schema.len() as u32);
+			let tip = 0u32.into();
+			FeeDetails { inclusion_fee: None, tip }
 		}
 	}
 }
