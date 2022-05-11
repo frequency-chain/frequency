@@ -2,7 +2,7 @@ use codec::Codec;
 use core::result::Result as CoreResult;
 use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
 use jsonrpc_derive::rpc;
-use schemas_runtime_api::SchemasRuntimeApi;
+use pallet_schemas_runtime_api::SchemasRuntimeApi;
 use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT, DispatchError};
