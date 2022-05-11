@@ -4,8 +4,11 @@ use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, ConvertInto, IdentifyAccount, IdentityLookup, Verify},
+	AccountId32, MultiSignature,
 };
+
+pub type AccountId = <<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -33,7 +36,7 @@ impl system::Config for Test {
 	type BlockNumber = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type AccountId = u64;
+	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type Event = Event;
@@ -52,6 +55,7 @@ impl system::Config for Test {
 impl pallet_msa::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
+	type ConvertIntoAccountId32 = ConvertInto;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -59,4 +63,12 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
+}
+
+pub fn test_public(n: u8) -> AccountId32 {
+	AccountId32::new([n; 32])
+}
+
+pub fn test_origin_signed(n: u8) -> Origin {
+	Origin::signed(test_public(n).into())
 }
