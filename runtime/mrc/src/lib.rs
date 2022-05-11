@@ -667,9 +667,16 @@ impl_runtime_apis! {
 	}
 
 	// TODO should this be here or under a collection of mrc runtime apis?
-	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block, AccountId> for Runtime {
+	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block, AccountId, Balance> for Runtime {
 		fn get_latest_schema_id() -> Result<u16, DispatchError> {
 			Schemas::get_latest_schema_id()
+		}
+
+		fn query_fee_details(
+			uxt: <Block as BlockT>::Extrinsic,
+			len: u32,
+		) -> pallet_transaction_payment::FeeDetails<Balance> {
+			TransactionPayment::query_fee_details(uxt, len)
 		}
 	}
 

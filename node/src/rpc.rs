@@ -43,6 +43,7 @@ where
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber>,
+	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block, AccountId, Balance>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
@@ -55,6 +56,9 @@ where
 	io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone())));
 	io.extend_with(pallet_messages_rpc::MessagesApi::to_delegate(
 		pallet_messages_rpc::MessagesHandler::new(client.clone()),
+	));
+	io.extend_with(pallet_schemas_rpc::SchemasApi::to_delegate(
+		pallet_schemas_rpc::SchemasHandler::new(client.clone()),
 	));
 	io
 }
