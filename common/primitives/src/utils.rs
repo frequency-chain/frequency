@@ -1,3 +1,5 @@
+use sp_std::vec::Vec;
+
 #[cfg(feature = "std")]
 pub mod as_hex {
 	use serde::{Deserializer, Serializer};
@@ -12,4 +14,14 @@ pub mod as_hex {
 	pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
 		Ok(impl_serde::serialize::deserialize(deserializer)?)
 	}
+}
+
+const PREFIX: &'static str = "<Bytes>";
+const POSTFIX: &'static str = "</Bytes>";
+
+pub fn wrap_binary_data(data: Vec<u8>) -> Vec<u8> {
+	let mut encapsuled = PREFIX.as_bytes().to_vec();
+	encapsuled.append(&mut data.clone());
+	encapsuled.append(&mut POSTFIX.as_bytes().to_vec());
+	encapsuled
 }
