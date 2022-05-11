@@ -49,7 +49,7 @@ Alternatively Run `TARGET=tests ./ci/build.sh` to run cargo tests.
 source .env
 ```
 
-### Start local Relay chain(alice and bob) and MRC(alice)  
+### Start local Relay chain(alice and bob) and MRC(alice)
 
 1. Start relay chain
 
@@ -114,3 +114,9 @@ Note: To build spec against specific chain config; specify chain name in the com
 
 - [Cumulus Tutorial](https://docs.substrate.io/tutorials/v3/cumulus/start-relay/)
 - [Private Network](https://docs.substrate.io/tutorials/v3/private-network/)
+
+## Contributing
+
+Interested in contributing?
+Wonderful!
+Please check out [the information here](./CONTRIBUTING.md).
