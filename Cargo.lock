@@ -1193,9 +1193,11 @@ version = "0.1.0"
 dependencies = [
  "frame-support",
  "impl-serde",
+ "jsonrpc-core",
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "sp-api",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
 ]

@@ -16,13 +16,16 @@ mod mock;
 mod benchmarking;
 
 pub use pallet::*;
+mod types;
 pub mod weights;
+
 pub use weights::*;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::schema::{Schema, SchemaId};
+	use crate::types::Schema;
+	use common_primitives::schema::{SchemaId, SchemaResponse};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -37,7 +40,7 @@ pub mod pallet {
 
 		// Maximum length of Schema field name
 		#[pallet::constant]
-		type MaxSchemaSizeBytes: Get<u32>;
+		type MaxSchemaSizeBytes: Get<u32> + Clone;
 
 		// Maximum number of schemas that can be registered
 		#[pallet::constant]
@@ -76,6 +79,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
@@ -86,7 +90,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_schema)]
 	pub(super) type Schemas<T: Config> =
-		StorageMap<_, Twox64Concat, SchemaId, Schema<T::MaxSchemaSizeBytes>, ValueQuery>;
+		StorageMap<_, Twox64Concat, SchemaId, Schema<T::MaxSchemaSizeBytes>, OptionQuery>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -110,7 +114,7 @@ pub mod pallet {
 			let bounded_fields = Self::require_valid_schema_size(schema)?;
 
 			<SchemaCount<T>>::set(schema_id);
-			<Schemas<T>>::insert(schema_id, bounded_fields);
+			<Schemas<T>>::insert(schema_id, Schema { data: bounded_fields });
 
 			Ok(())
 		}
@@ -118,6 +122,15 @@ pub mod pallet {
 		pub fn get_latest_schema_id() -> Result<SchemaId, DispatchError> {
 			let cur_count = Self::schema_count();
 			Ok(cur_count)
+		}
+
+		pub fn get_schema_by_id(
+			schema_id: SchemaId,
+		) -> Result<Option<SchemaResponse>, DispatchError> {
+			if let Some(schema) = Self::get_schema(schema_id) {
+				return Ok(Some(schema.map_to_response(schema_id)))
+			}
+			Ok(None)
 		}
 
 		pub fn require_valid_schema_size(

@@ -1,17 +1,19 @@
-use codec::Codec;
-use core::result::Result as CoreResult;
-use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
+use common_primitives::{rpc::*, schema::*};
+use jsonrpc_core::Result;
 use jsonrpc_derive::rpc;
 use pallet_schemas_runtime_api::SchemasRuntimeApi;
-use sp_api::{ApiError, ProvideRuntimeApi};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT, DispatchError};
+use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
 #[rpc]
-pub trait SchemasApi<BlockHash, AccountId> {
+pub trait SchemasApi<BlockHash> {
 	#[rpc(name = "schemas_getLatestSchemaId")]
 	fn get_latest_schema_id(&self, at: Option<BlockHash>) -> Result<u16>;
+
+	#[rpc(name = "schemas_getBySchemaId")]
+	fn get_by_schema_id(&self, schema_id: SchemaId) -> Result<Option<SchemaResponse>>;
 }
 
 pub struct SchemasHandler<C, M> {
@@ -25,39 +27,25 @@ impl<C, M> SchemasHandler<C, M> {
 	}
 }
 
-impl<C, Block, AccountId> SchemasApi<<Block as BlockT>::Hash, AccountId>
-	for SchemasHandler<C, Block>
+impl<C, Block> SchemasApi<<Block as BlockT>::Hash> for SchemasHandler<C, Block>
 where
 	Block: BlockT,
-	C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-	C::Api: SchemasRuntimeApi<Block, AccountId>,
-	AccountId: Codec,
+	C: Send + Sync + 'static,
+	C: ProvideRuntimeApi<Block>,
+	C: HeaderBackend<Block>,
+	C::Api: SchemasRuntimeApi<Block>,
 {
 	fn get_latest_schema_id(&self, at: Option<<Block as BlockT>::Hash>) -> Result<u16> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		let schema_api_result = api.get_latest_schema_id(&at);
-		map_result(schema_api_result)
+		map_rpc_result(schema_api_result)
 	}
-}
 
-fn map_result<T>(response: CoreResult<CoreResult<T, DispatchError>, ApiError>) -> Result<T> {
-	match response {
-		Ok(Ok(res)) => Ok(res),
-		Ok(Err(DispatchError::Module(error))) => Err(RpcError {
-			code: ErrorCode::ServerError(100), // No real reason for this value
-			message: format!("Dispatch Error Module:{} error:{}", error.index, error.error).into(),
-			data: Some(error.message.unwrap_or_default().into()),
-		}),
-		Ok(Err(e)) => Err(RpcError {
-			code: ErrorCode::ServerError(200), // No real reason for this value
-			message: "Dispatch Error".into(),
-			data: Some(format!("{:?}", e).into()),
-		}),
-		Err(e) => Err(RpcError {
-			code: ErrorCode::ServerError(300), // No real reason for this value
-			message: "Api Error".into(),
-			data: Some(format!("{:?}", e).into()),
-		}),
+	fn get_by_schema_id(&self, schema_id: SchemaId) -> Result<Option<SchemaResponse>> {
+		let api = self.client.runtime_api();
+		let at = BlockId::hash(self.client.info().best_hash);
+		let schema_api_result = api.get_by_schema_id(&at, schema_id);
+		map_rpc_result(schema_api_result)
 	}
 }

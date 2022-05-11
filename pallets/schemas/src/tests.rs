@@ -77,3 +77,35 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 		assert_ok!(SchemasPallet::register_schema(Origin::signed(sender), serialized_fields1));
 	})
 }
+
+#[test]
+fn get_existing_schema_by_id_should_return_schema() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let sender: AccountId = 1;
+		let serialized_fields = Vec::from("foo,bar,bazz".as_bytes());
+		assert_ok!(SchemasPallet::register_schema(
+			Origin::signed(sender),
+			serialized_fields.clone()
+		));
+
+		// act
+		let res = SchemasPallet::get_schema_by_id(1);
+
+		// assert
+		assert_ok!(res.as_ref());
+		assert_eq!(res.as_ref().ok().unwrap().clone().unwrap().data, serialized_fields);
+	})
+}
+
+#[test]
+fn get_non_existing_schema_by_id_should_return_none() {
+	new_test_ext().execute_with(|| {
+		// act
+		let res = SchemasPallet::get_schema_by_id(1);
+
+		// assert
+		assert_ok!(res.as_ref());
+		assert_eq!(res.as_ref().ok().unwrap().is_none(), true);
+	})
+}
