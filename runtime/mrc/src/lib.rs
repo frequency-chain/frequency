@@ -324,7 +324,8 @@ impl pallet_schemas::Config for Runtime {
 	type MinSchemaSizeBytes = ConstU32<5>;
 	type MaxSchemaSizeBytes = ConstU32<4096>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
-	// TODO: Currency for MRC and Adaptors needs to be implemented. See Issue #70
+	// TODO: Currency for MRC and Adaptors needs to be implemented.
+	// See Issue: https://github.com/LibertyDSNP/mrc/issues/77
 	type Currency = Balances;
 }
 
