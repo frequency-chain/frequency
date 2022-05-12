@@ -34,6 +34,7 @@ common-primitives = {default-features = false, path = "../../common/primitives"}
 [dev-dependencies]
 sp-keyring = { default-features = false, version = '6.0.0'}
 serial_test = { default-features = false, version = '0.6.0' }
+pallet-balances = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18"}
 
 [features]
 default = ["std"]
