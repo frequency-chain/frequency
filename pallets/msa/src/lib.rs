@@ -4,14 +4,14 @@ use common_primitives::msa::AccountProvider;
 use frame_support::{dispatch::DispatchResult, ensure};
 pub use pallet::*;
 use sp_runtime::{
-	traits::{Convert, Verify},
+	traits::{Convert, Verify, Zero},
 	DispatchError, MultiSignature,
 };
 
 use sp_core::crypto::AccountId32;
 
 pub mod types;
-pub use types::AddKeyData;
+pub use types::{AddKeyData, KeyInfo};
 
 #[cfg(test)]
 mod mock;
@@ -50,15 +50,16 @@ pub mod pallet {
 	pub type MsaIdentifier<T> = StorageValue<_, MessageSenderId, ValueQuery>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn get_owner_of)]
-	pub type KeyOwnerOf<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::AccountId, MessageSenderId, OptionQuery>;
+	#[pallet::getter(fn get_key_info)]
+	pub type KeyInfoOf<T: Config> =
+		StorageMap<_, Blake2_128Concat, T::AccountId, KeyInfo<T::BlockNumber>, OptionQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		MsaCreated { msa_id: MessageSenderId, key: T::AccountId },
 		KeyAdded { msa_id: MessageSenderId, key: T::AccountId },
+		KeyRevoked { key: T::AccountId },
 	}
 
 	#[pallet::error]
@@ -68,6 +69,10 @@ pub mod pallet {
 		KeyVerificationFailed,
 		NotMsaOwner,
 		InvalidSignature,
+		NotKeyOwner,
+		NoKeyExists,
+		KeyRevoked,
+		InvalidSelfRevoke,
 	}
 
 	#[pallet::call]
@@ -96,11 +101,29 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::KeyVerificationFailed)?;
 
 			let msa_id = add_key_payload.msa_id;
-			Self::is_msa_owner(&who, msa_id)?;
+			Self::ensure_msa_owner(&who, msa_id)?;
 
 			Self::add_key(msa_id, &key)?;
 
 			Self::deposit_event(Event::KeyAdded { msa_id, key });
+
+			Ok(())
+		}
+
+		#[pallet::weight(10_000)]
+		pub fn revoke_msa_key(origin: OriginFor<T>, key: T::AccountId) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			ensure!(who != key, Error::<T>::InvalidSelfRevoke);
+
+			let who = Self::try_get_key_info(&who)?;
+			let key_info = Self::try_get_key_info(&key)?;
+			ensure!(who.expired == T::BlockNumber::zero(), Error::<T>::KeyRevoked);
+			ensure!(who.msa_id == key_info.msa_id, Error::<T>::NotKeyOwner);
+
+			Self::revoke_key(&key)?;
+
+			Self::deposit_event(Event::KeyRevoked { key });
 
 			Ok(())
 		}
@@ -131,17 +154,21 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn add_key(msa_id: MessageSenderId, key: &T::AccountId) -> DispatchResult {
-		<KeyOwnerOf<T>>::try_mutate(key, |maybe_msa| {
+		<KeyInfoOf<T>>::try_mutate(key, |maybe_msa| {
 			ensure!(maybe_msa.is_none(), Error::<T>::DuplicatedKey);
 
-			*maybe_msa = Some(msa_id);
+			*maybe_msa =
+				Some(KeyInfo { msa_id, expired: T::BlockNumber::default(), nonce: Zero::zero() });
 
 			Ok(())
 		})
 	}
 
-	pub fn is_msa_owner(who: &T::AccountId, msa_id: MessageSenderId) -> DispatchResult {
-		ensure!(Self::get_owner_of(&who) == Some(msa_id), Error::<T>::NotMsaOwner);
+	pub fn ensure_msa_owner(who: &T::AccountId, msa_id: MessageSenderId) -> DispatchResult {
+		let signer_msa_id = Self::get_owner_of(who).ok_or(Error::<T>::NoKeyExists)?;
+
+		ensure!(signer_msa_id == msa_id, Error::<T>::NotMsaOwner);
+
 		Ok(())
 	}
 
@@ -158,6 +185,33 @@ impl<T: Config> Pallet<T> {
 		);
 
 		Ok(())
+	}
+
+	pub fn revoke_key(key: &T::AccountId) -> DispatchResult {
+		KeyInfoOf::<T>::try_mutate(key, |maybe_info| -> DispatchResult {
+			let mut info = maybe_info.take().ok_or(Error::<T>::NoKeyExists)?;
+
+			ensure!(info.expired == T::BlockNumber::default(), Error::<T>::KeyRevoked);
+
+			let current_block = frame_system::Pallet::<T>::block_number();
+
+			info.expired = current_block;
+
+			*maybe_info = Some(info);
+
+			Ok(())
+		})?;
+
+		Ok(())
+	}
+
+	pub fn try_get_key_info(key: &T::AccountId) -> Result<KeyInfo<T::BlockNumber>, DispatchError> {
+		let info = Self::get_key_info(key).ok_or(Error::<T>::NoKeyExists)?;
+		Ok(info)
+	}
+
+	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSenderId> {
+		Self::get_key_info(&key).map(|info| info.msa_id)
 	}
 }
 
