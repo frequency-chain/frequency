@@ -160,9 +160,10 @@ pub mod pallet {
 			// TODO add multiplier to fee if schema registration will have increasing cost
 			let fixed_len_fee = 0u32.into();
 			let tip = 0u32.into();
+			let base_fee = 0u32.into();
 			FeeDetails {
 				inclusion_fee: Some(InclusionFee {
-					base_fee: unadjusted_weight_fee,
+					base_fee: base_fee,
 					len_fee: fixed_len_fee,
 					adjusted_weight_fee: unadjusted_weight_fee,
 				}),
