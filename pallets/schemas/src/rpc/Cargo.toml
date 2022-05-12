@@ -19,6 +19,7 @@ pallet-schemas-runtime-api = { path = "../runtime-api", default-features = false
 common-primitives = { path = '../../../../common/primitives', default-features = false }
 
 # Substrate
+frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
 sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
 sp-rpc = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }

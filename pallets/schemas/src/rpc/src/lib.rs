@@ -1,5 +1,7 @@
 use codec::Codec;
+use common_primitives::weight_to_fees::WeightToFee;
 use core::result::Result as CoreResult;
+use frame_support::weights::WeightToFeePolynomial;
 use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
 use jsonrpc_derive::rpc;
 use pallet_schemas_runtime_api::SchemasRuntimeApi;
@@ -14,7 +16,6 @@ use sp_runtime::{
 };
 use sp_std::vec::Vec;
 use std::sync::Arc;
-
 /// Error type of this RPC api.
 pub enum Error {
 	/// The transaction was not decodable.
@@ -63,7 +64,7 @@ where
 	C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
 	C::Api: SchemasRuntimeApi<Block, AccountId, Balance>,
 	AccountId: Codec,
-	Balance: Codec + MaybeDisplay + Copy + TryInto<NumberOrHex>,
+	Balance: Codec + MaybeDisplay + Copy + TryInto<NumberOrHex> + std::convert::From<u64>,
 {
 	fn get_latest_schema_id(&self, at: Option<<Block as BlockT>::Hash>) -> Result<u16> {
 		let api = self.client.runtime_api();
@@ -79,12 +80,17 @@ where
 	) -> Result<FeeDetails<NumberOrHex>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		let fee_details = api.calculate_schema_cost(&at, schema).map_err(|e| RpcError {
-			code: ErrorCode::ServerError(Error::RuntimeError.into()),
-			message: "Unable to calculate schema fee.".into(),
-			data: Some(e.to_string().into()),
-		})?;
-
+		let schema_weight_res = api.calculate_schema_cost(&at, schema);
+		let schema_weight = match schema_weight_res {
+			Ok(weight) => weight,
+			Err(err) =>
+				return Err(RpcError {
+					code: ErrorCode::ServerError(1),
+					message: "Unable to calculate weight".into(),
+					data: Some(format!("{:?}", err).into()),
+				}),
+		};
+		let unadjusted_schema_fee = WeightToFee::calc(&schema_weight);
 		let try_into_rpc_balance = |value: Balance| {
 			value.try_into().map_err(|_| RpcError {
 				code: ErrorCode::InvalidParams,
@@ -92,19 +98,19 @@ where
 				data: None,
 			})
 		};
-
-		Ok(FeeDetails {
-			inclusion_fee: if let Some(inclusion_fee) = fee_details.inclusion_fee {
-				Some(InclusionFee {
-					base_fee: try_into_rpc_balance(inclusion_fee.base_fee)?,
-					len_fee: try_into_rpc_balance(inclusion_fee.len_fee)?,
-					adjusted_weight_fee: try_into_rpc_balance(inclusion_fee.adjusted_weight_fee)?,
-				})
-			} else {
-				None
-			},
-			tip: Default::default(),
-		})
+		// TODO Issue #77: Check what fee calculation should be like
+		let fixed_len_fee = 0u64.into();
+		let tip = 0u64.into();
+		let base_fee = 0u64.into();
+		let fee_return = FeeDetails {
+			inclusion_fee: Some(InclusionFee {
+				base_fee: try_into_rpc_balance(base_fee)?,
+				len_fee: try_into_rpc_balance(fixed_len_fee)?,
+				adjusted_weight_fee: try_into_rpc_balance(unadjusted_schema_fee.into())?,
+			}),
+			tip,
+		};
+		Ok(fee_return)
 	}
 }
 

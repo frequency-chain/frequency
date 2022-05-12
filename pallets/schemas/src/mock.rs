@@ -57,8 +57,6 @@ impl pallet_schemas::Config for Test {
 	type MinSchemaSizeBytes = ConstU32<5>;
 	type MaxSchemaSizeBytes = ConstU32<100>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
-	type Currency = Balances;
-	type WeightToFee = WeightToFee;
 }
 
 parameter_types! {

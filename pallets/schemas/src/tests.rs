@@ -82,7 +82,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 fn test_calculate_schema_cost() {
 	new_test_ext().execute_with(|| {
 		let schema = Vec::from("some schema".as_bytes());
-		let fee_details = SchemasPallet::calculate_schema_cost(schema);
-		assert_eq!(fee_details.tip, 0);
+		let weight = SchemasPallet::calculate_schema_cost(schema);
+		assert!(weight > 0);
 	})
 }

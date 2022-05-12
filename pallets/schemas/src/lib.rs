@@ -2,13 +2,7 @@
 
 extern crate core;
 
-use frame_support::{
-	dispatch::DispatchResult,
-	ensure,
-	traits::{Currency, Get},
-	weights::WeightToFeePolynomial,
-	BoundedVec,
-};
+use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 
@@ -25,16 +19,12 @@ pub use pallet::*;
 pub mod weights;
 pub use weights::*;
 
-type BalanceOf<T> =
-	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 	use common_primitives::schema::{Schema, SchemaId};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use pallet_transaction_payment::{FeeDetails, InclusionFee};
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -52,11 +42,6 @@ pub mod pallet {
 		// Maximum number of schemas that can be registered
 		#[pallet::constant]
 		type MaxSchemaRegistrations: Get<SchemaId>;
-
-		type Currency: Currency<Self::AccountId>;
-
-		/// Convert a weight value into a deductible fee based on the currency type.
-		type WeightToFee: WeightToFeePolynomial<Balance = BalanceOf<Self>>;
 	}
 
 	#[pallet::event]
@@ -147,28 +132,10 @@ pub mod pallet {
 			Ok(bounded_fields)
 		}
 
-		pub fn calculate_schema_cost(schema: Vec<u8>) -> FeeDetails<BalanceOf<T>> {
+		pub fn calculate_schema_cost(schema: Vec<u8>) -> Weight {
 			let schema_len = schema.len() as u32;
 			let schema_weight = T::WeightInfo::register_schema(schema_len);
-			let unadjusted_weight_fee = T::WeightToFee::calc(&schema_weight);
-			// TODO: for issue: #77
-			//let multiplier = Self::next_fee_multiplier();
-			//let adjusted_weight_fee = multiplier.saturating_mul_int(unadjusted_weight_fee);
-			//let extrinsic_weight = T::BlockWeights::get().get(Self).base_extrinsic;
-			//let base_fee = T::WeightToFee::calc(&extrinsic_weight);
-			// TODO fixed len fee updates if this is relevant for mrc
-			// TODO add multiplier to fee if schema registration will have increasing cost
-			let fixed_len_fee = 0u32.into();
-			let tip = 0u32.into();
-			let base_fee = 0u32.into();
-			FeeDetails {
-				inclusion_fee: Some(InclusionFee {
-					base_fee,
-					len_fee: fixed_len_fee,
-					adjusted_weight_fee: unadjusted_weight_fee,
-				}),
-				tip,
-			}
+			schema_weight
 		}
 	}
 }

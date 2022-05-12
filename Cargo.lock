@@ -1196,6 +1196,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "smallvec",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
 ]
@@ -6106,6 +6107,7 @@ name = "pallet-schemas-rpc"
 version = "0.1.0"
 dependencies = [
  "common-primitives",
+ "frame-support",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
