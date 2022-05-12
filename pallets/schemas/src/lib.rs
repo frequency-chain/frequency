@@ -163,7 +163,7 @@ pub mod pallet {
 			let base_fee = 0u32.into();
 			FeeDetails {
 				inclusion_fee: Some(InclusionFee {
-					base_fee: base_fee,
+					base_fee,
 					len_fee: fixed_len_fee,
 					adjusted_weight_fee: unadjusted_weight_fee,
 				}),
