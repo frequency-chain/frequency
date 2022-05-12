@@ -52,7 +52,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxSchemaRegistrations: Get<SchemaId>;
 
-		// TODO: Definition of Currency/Currency Adaptors for MRC etc.
+		// TODO: Definition of Currency/Currency adapters for MRC etc.
 		// Issue: https://github.com/LibertyDSNP/mrc/issues/77
 		type Currency: Currency<Self::AccountId>;
 	}
