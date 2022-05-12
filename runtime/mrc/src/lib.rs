@@ -673,7 +673,6 @@ impl_runtime_apis! {
 		fn get_latest_schema_id() -> Result<u16, DispatchError> {
 			Schemas::get_latest_schema_id()
 		}
-
 		fn calculate_schema_cost( schema:Vec<u8>) -> pallet_transaction_payment::FeeDetails<Balance> {
 			Schemas::calculate_schema_cost(schema)
 		}

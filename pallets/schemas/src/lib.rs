@@ -87,9 +87,6 @@ pub mod pallet {
 		SerializationError,
 		/// SchemaCount was attempted to overflow max, means MaxSchemaRegistrations is too big
 		SchemaCountOverflow,
-		/// TODO Errors
-		// Issue: https://github.com/LibertyDSNP/mrc/issues/77
-		NotImplemented,
 	}
 
 	#[pallet::pallet]
