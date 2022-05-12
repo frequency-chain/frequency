@@ -44,7 +44,7 @@ fn get_latest_schema_count() {
 	new_test_ext().execute_with(|| {
 		let schema_count = SchemasPallet::schema_count();
 		let schema_latest_rpc = SchemasPallet::get_latest_schema_id();
-		assert!(schema_count == schema_latest_rpc.unwrap());
+		assert!(schema_count == schema_latest_rpc);
 	})
 }
 
@@ -93,8 +93,8 @@ fn get_existing_schema_by_id_should_return_schema() {
 		let res = SchemasPallet::get_schema_by_id(1);
 
 		// assert
-		assert_ok!(res.as_ref());
-		assert_eq!(res.as_ref().ok().unwrap().clone().unwrap().data, serialized_fields);
+		assert_eq!(res.as_ref().is_some(), true);
+		assert_eq!(res.as_ref().unwrap().clone().data, serialized_fields);
 	})
 }
 
@@ -105,7 +105,6 @@ fn get_non_existing_schema_by_id_should_return_none() {
 		let res = SchemasPallet::get_schema_by_id(1);
 
 		// assert
-		assert_ok!(res.as_ref());
-		assert_eq!(res.as_ref().ok().unwrap().is_none(), true);
+		assert_eq!(res.as_ref().is_none(), true);
 	})
 }

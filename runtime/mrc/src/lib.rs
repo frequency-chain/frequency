@@ -327,12 +327,6 @@ impl pallet_schemas::Config for Runtime {
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
 
-impl Clone for MaxSchemaSizeBytes {
-	fn clone(&self) -> Self {
-		MaxSchemaSizeBytes {}
-	}
-}
-
 parameter_types! {
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
@@ -676,11 +670,11 @@ impl_runtime_apis! {
 
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
 		fn get_latest_schema_id() -> Result<u16, DispatchError> {
-			Schemas::get_latest_schema_id()
+			Ok(Schemas::get_latest_schema_id())
 		}
 
 		fn get_by_schema_id(schema_id: SchemaId) -> Result<Option<SchemaResponse>, DispatchError> {
-			Schemas::get_schema_by_id(schema_id)
+			Ok(Schemas::get_schema_by_id(schema_id))
 		}
 	}
 

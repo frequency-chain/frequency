@@ -41,12 +41,6 @@ impl pallet_schemas::Config for Test {
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
 
-impl Clone for MaxSchemaSizeBytes {
-	fn clone(&self) -> Self {
-		MaxSchemaSizeBytes {}
-	}
-}
-
 impl frame_system::Config for Test {
 	type AccountData = ();
 	type BaseCallFilter = frame_support::traits::Everything;
