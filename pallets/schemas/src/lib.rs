@@ -6,6 +6,7 @@ use frame_support::{
 	dispatch::DispatchResult,
 	ensure,
 	traits::{Currency, Get},
+	weights::{WeightToFeePolynomial},
 	BoundedVec,
 };
 use sp_runtime::DispatchError;
@@ -33,7 +34,7 @@ pub mod pallet {
 	use common_primitives::schema::{Schema, SchemaId};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use pallet_transaction_payment::FeeDetails;
+	use pallet_transaction_payment::{FeeDetails, InclusionFee};
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -52,9 +53,10 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxSchemaRegistrations: Get<SchemaId>;
 
-		// TODO: Definition of Currency/Currency adapters for MRC etc.
-		// Issue: https://github.com/LibertyDSNP/mrc/issues/77
 		type Currency: Currency<Self::AccountId>;
+
+		/// Convert a weight value into a deductible fee based on the currency type.
+		type WeightToFee: WeightToFeePolynomial<Balance = BalanceOf<Self>>;
 	}
 
 	#[pallet::event]
@@ -149,12 +151,26 @@ pub mod pallet {
 		}
 
 		pub fn calculate_schema_cost(schema: Vec<u8>) -> FeeDetails<BalanceOf<T>> {
-			// TODO weight to currency/token conversion needed
-			// reference: https://github.com/paritytech/substrate/blob/0ba251c9388452c879bfcca425ada66f1f9bc802/frame/transaction-payment/src/lib.rs#L445
-			// Issue: https://github.com/LibertyDSNP/mrc/issues/77
-			let schema_weight = T::WeightInfo::register_schema(schema.len() as u32);
+			let schema_len = schema.len() as u32;
+			let schema_weight = T::WeightInfo::register_schema(schema_len);
+			let unadjusted_weight_fee = T::WeightToFee::calc(&schema_weight);
+			// TODO: for issue: #77
+			//let multiplier = Self::next_fee_multiplier();
+			//let adjusted_weight_fee = multiplier.saturating_mul_int(unadjusted_weight_fee);
+			//let extrinsic_weight = T::BlockWeights::get().get(Self).base_extrinsic;
+			//let base_fee = T::WeightToFee::calc(&extrinsic_weight);
+			// TODO fixed len fee updates if this is relevant for mrc
+			// TODO add multiplier to fee if schema registration will have increasing cost
+			let fixed_len_fee = 0u32.into();
 			let tip = 0u32.into();
-			FeeDetails { inclusion_fee: None, tip }
+			FeeDetails {
+				inclusion_fee: Some(InclusionFee {
+					base_fee: unadjusted_weight_fee,
+					len_fee: fixed_len_fee,
+					adjusted_weight_fee: unadjusted_weight_fee,
+				}),
+				tip,
+			}
 		}
 	}
 }
