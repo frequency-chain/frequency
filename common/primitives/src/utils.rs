@@ -16,6 +16,22 @@ pub mod as_hex {
 	}
 }
 
+#[cfg(feature = "std")]
+pub mod as_string {
+	use super::*;
+	use serde::{ser::Error, Deserialize, Deserializer, Serialize, Serializer};
+
+	pub fn serialize<S: Serializer>(bytes: &Vec<u8>, serializer: S) -> Result<S::Ok, S::Error> {
+		std::str::from_utf8(bytes)
+			.map_err(|e| S::Error::custom(format!("Debug buffer contains invalid UTF8: {}", e)))?
+			.serialize(serializer)
+	}
+
+	pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
+		Ok(String::deserialize(deserializer)?.into_bytes())
+	}
+}
+
 const PREFIX: &'static str = "<Bytes>";
 const POSTFIX: &'static str = "</Bytes>";
 
