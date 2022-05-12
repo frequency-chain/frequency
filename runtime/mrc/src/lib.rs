@@ -328,7 +328,6 @@ impl pallet_schemas::Config for Runtime {
 	// See Issue: https://github.com/LibertyDSNP/mrc/issues/77
 	type Currency = Balances;
 	type WeightToFee = WeightToFee;
-
 }
 
 parameter_types! {

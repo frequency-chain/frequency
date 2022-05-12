@@ -1,12 +1,15 @@
 use frame_support::{
 	parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64},
+	weights::{WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial},
 };
 use frame_system;
+use smallvec::smallvec;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
+	Perbill,
 };
 
 use common_primitives::schema::SchemaId;
@@ -33,6 +36,21 @@ parameter_types! {
 	pub const MaxSchemaRegistrations: SchemaId = 64_000;
 }
 
+pub struct WeightToFee;
+
+impl WeightToFeePolynomial for WeightToFee {
+	type Balance = u64;
+
+	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+		smallvec![WeightToFeeCoefficient {
+			degree: 1,
+			coeff_frac: Perbill::zero(),
+			coeff_integer: 1,
+			negative: false,
+		}]
+	}
+}
+
 impl pallet_schemas::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
@@ -40,6 +58,7 @@ impl pallet_schemas::Config for Test {
 	type MaxSchemaSizeBytes = ConstU32<100>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 	type Currency = Balances;
+	type WeightToFee = WeightToFee;
 }
 
 parameter_types! {

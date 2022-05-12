@@ -6093,6 +6093,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serial_test",
+ "smallvec",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
  "sp-io 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
  "sp-keyring 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",

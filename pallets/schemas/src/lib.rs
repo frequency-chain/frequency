@@ -6,7 +6,7 @@ use frame_support::{
 	dispatch::DispatchResult,
 	ensure,
 	traits::{Currency, Get},
-	weights::{WeightToFeePolynomial},
+	weights::WeightToFeePolynomial,
 	BoundedVec,
 };
 use sp_runtime::DispatchError;
