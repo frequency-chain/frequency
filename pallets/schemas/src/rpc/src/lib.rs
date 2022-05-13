@@ -1,6 +1,6 @@
 use codec::Codec;
 use common_primitives::{rpc::*, schema::*, weight_to_fees::*};
-use frame_support::weights::WeightToFeePolynomial;
+use frame_support::weights::{Weight, WeightToFeePolynomial};
 use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
 use jsonrpc_derive::rpc;
 use pallet_schemas_runtime_api::SchemasRuntimeApi;
@@ -94,6 +94,7 @@ where
 		schema: Vec<u8>,
 	) -> Result<FeeDetails<NumberOrHex>> {
 		let api = self.client.runtime_api();
+		let schema_len = schema.len();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		let schema_weight_res = api.calculate_schema_cost(&at, schema);
 		let schema_weight = match schema_weight_res {
@@ -114,13 +115,13 @@ where
 			})
 		};
 		// TODO Issue #77: Check what fee calculation should be like
-		let fixed_len_fee = 0u64.into();
+		let len_fee = WeightToFee::calc(&(schema_len as Weight));
 		let tip = 0u64.into();
 		let base_fee = 0u64.into();
 		let fee_return = FeeDetails {
 			inclusion_fee: Some(InclusionFee {
 				base_fee: try_into_rpc_balance(base_fee)?,
-				len_fee: try_into_rpc_balance(fixed_len_fee)?,
+				len_fee: try_into_rpc_balance(len_fee.into())?,
 				adjusted_weight_fee: try_into_rpc_balance(unadjusted_schema_fee.into())?,
 			}),
 			tip,
