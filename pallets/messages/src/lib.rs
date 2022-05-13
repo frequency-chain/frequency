@@ -58,6 +58,10 @@ pub mod pallet {
 		/// The maximum size of a message [Byte]
 		#[pallet::constant]
 		type MaxMessageSizeInBytes: Get<u32> + Clone;
+
+		/// Retention period for messages [Block]
+		#[pallet::constant]
+		type RetentionPeriodBlocks: Get<u32>;
 	}
 
 	#[pallet::pallet]
@@ -84,7 +88,10 @@ pub mod pallet {
 		T::BlockNumber,
 		Twox64Concat,
 		SchemaId,
-		BoundedVec<Message<T::AccountId, T::MaxMessageSizeInBytes>, T::MaxMessagesPerBlock>,
+		(
+			T::BlockNumber,
+			BoundedVec<Message<T::AccountId, T::MaxMessageSizeInBytes>, T::MaxMessagesPerBlock>,
+		),
 		ValueQuery,
 	>;
 
@@ -114,7 +121,6 @@ pub mod pallet {
 		fn on_initialize(current: T::BlockNumber) -> Weight {
 			let prev_block = current - T::BlockNumber::one();
 			Self::move_messages_into_final_storage(prev_block)
-			// TODO: add retention policy execution
 		}
 	}
 
@@ -185,8 +191,14 @@ impl<T: Config> Pallet<T> {
 
 		'loops: for bid in from..to {
 			let block_number: T::BlockNumber = bid.into();
-			let list = <Messages<T>>::get(block_number, schema_id).into_inner();
+			let retention_block = Self::get_target_retention_block(block_number);
+			let tuple = <Messages<T>>::get(retention_block, schema_id);
+			if tuple.0 != block_number {
+				// this is a left-over block from retention and should be ignored!
+				continue
+			}
 
+			let list = tuple.1.into_inner();
 			let list_size: u32 =
 				list.len().try_into().map_err(|_| Error::<T>::TypeConversionOverflow)?;
 			for i in from_index..list_size {
@@ -256,6 +268,7 @@ impl<T: Config> Pallet<T> {
 		let block_messages = BlockMessages::<T>::get();
 		let message_count = block_messages.len() as u32;
 		let mut schema_count = 0u32;
+		let target_block = Self::get_target_retention_block(block_number);
 
 		if message_count == 0 {
 			return T::DbWeight::get().reads(1)
@@ -271,12 +284,17 @@ impl<T: Config> Pallet<T> {
 		for (schema_id, messages) in map {
 			let count = messages.len() as u16;
 			let bounded_vec: BoundedVec<_, _> = messages.try_into().unwrap();
-			Messages::<T>::insert(&block_number, schema_id, &bounded_vec);
+			Messages::<T>::insert(&target_block, schema_id, (block_number, &bounded_vec));
 			Self::deposit_event(Event::MessagesStored { schema_id, block_number, count });
 			schema_count += 1;
 		}
 
 		BlockMessages::<T>::set(BoundedVec::default());
 		T::WeightInfo::on_initialize(message_count, schema_count)
+	}
+
+	fn get_target_retention_block(block_number: T::BlockNumber) -> T::BlockNumber {
+		let retention_period = T::BlockNumber::from(T::RetentionPeriodBlocks::get());
+		block_number % retention_period
 	}
 }

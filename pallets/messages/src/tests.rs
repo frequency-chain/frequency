@@ -22,7 +22,7 @@ fn populate_messages(schema_id: SchemaId, message_per_block: Vec<u32>) {
 			.unwrap();
 			counter += 1;
 		}
-		Messages::<Test>::insert(idx as u64, schema_id, list);
+		Messages::<Test>::insert(idx as u64, schema_id, (idx as u64, list));
 	}
 }
 
@@ -169,9 +169,9 @@ fn on_initialize_should_add_messages_into_storage_and_clean_temp() {
 		// assert
 		assert_eq!(BlockMessages::<Test>::get().len(), 0);
 
-		let list_1 = MessagesPallet::get_messages(current_block, schema_id_1);
+		let list_1 = MessagesPallet::get_messages(current_block, schema_id_1).1;
 		assert_eq!(list_1.len(), 2);
-		let list_2 = MessagesPallet::get_messages(current_block, schema_id_2);
+		let list_2 = MessagesPallet::get_messages(current_block, schema_id_2).1;
 		assert_eq!(list_2.len(), 1);
 
 		let events_occured = System::events();
@@ -195,6 +195,44 @@ fn on_initialize_should_add_messages_into_storage_and_clean_temp() {
 				count: 1
 			})
 			.into(),
+		);
+	});
+}
+
+#[test]
+fn on_initialize_should_override_existing_by_retention() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 5;
+		let schema_id_1: SchemaId = 1;
+		let message_payload_override = Vec::from("{'fromId': 111111}".as_bytes());
+		let max_block: u64 = <Test as Config>::RetentionPeriodBlocks::get().into();
+		let messages_per_block = vec![1; (max_block - 1) as usize];
+		populate_messages(schema_id_1, messages_per_block.clone());
+
+		run_to_block(max_block);
+		assert_ok!(MessagesPallet::add(
+			Origin::signed(caller_1),
+			schema_id_1,
+			message_payload_override.clone()
+		));
+
+		// act
+		run_to_block(max_block + 1);
+
+		// assert
+		let tuple = MessagesPallet::get_messages(0, schema_id_1);
+		assert_eq!(tuple.0, max_block);
+		let list = tuple.1.into_inner();
+		assert_eq!(list.len(), 1);
+		assert_eq!(
+			list[0],
+			Message {
+				msa_id: get_msa_from_account(caller_1),
+				data: message_payload_override.clone().try_into().unwrap(),
+				index: 0,
+				signer: caller_1
+			}
 		);
 	});
 }
@@ -296,6 +334,40 @@ fn get_messages_by_schema_with_less_messages_than_page_size_should_not_has_next(
 		assert_eq!(pagination_response.has_next, false);
 		assert_eq!(pagination_response.next_block, None);
 		assert_eq!(pagination_response.next_index, None);
+	});
+}
+
+#[test]
+fn get_messages_by_schema_with_valid_request_should_ignore_leftover_blocks() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let schema_id: SchemaId = 1;
+		let page_size = 17;
+		let from_index = 0;
+		let messages_per_block = vec![10, 0, 5, 2, 0, 3, 9];
+		let target_block = 3u64;
+		populate_messages(schema_id, messages_per_block.clone());
+		let list_1 = MessagesPallet::get_messages(target_block, schema_id).1;
+		Messages::<Test>::insert(target_block, schema_id, (target_block + 10, list_1));
+
+		let request = BlockPaginationRequest {
+			page_size,
+			from_block: 0,
+			to_block: messages_per_block.len() as u64,
+			from_index,
+		};
+
+		// act
+		let res = MessagesPallet::get_messages_by_schema(schema_id, request);
+
+		// assert
+		assert_ok!(&res);
+
+		let pagination_response = res.ok().unwrap();
+		assert_eq!(pagination_response.content.len() as u32, page_size);
+		assert_eq!(pagination_response.has_next, true);
+		assert_eq!(pagination_response.next_block, Some(5));
+		assert_eq!(pagination_response.next_index, Some(2));
 	});
 }
 

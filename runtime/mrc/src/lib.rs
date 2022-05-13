@@ -478,6 +478,10 @@ impl pallet_collator_selection::Config for Runtime {
 parameter_types! {
 	pub const MaxMessagesPerBlock: u32 = 7000;
 	pub const MaxMessageSizeInBytes: u32 = 1024 * 50; // 50K
+
+	// Todo: this is temporary retention period until we are able to get it from schema
+	// https://github.com/LibertyDSNP/mrc/issues/25
+	pub const RetentionPeriodBlocks: u32 = 6 * 30 * 24 * 60 * 10; // ~6 months 6 s/b = 1 year 12 s/b
 }
 
 impl Clone for MaxMessageSizeInBytes {
@@ -492,6 +496,7 @@ impl pallet_messages::Config for Runtime {
 	type AccountProvider = Msa;
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type MaxMessageSizeInBytes = MaxMessageSizeInBytes;
+	type RetentionPeriodBlocks = RetentionPeriodBlocks;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

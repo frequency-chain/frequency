@@ -57,6 +57,7 @@ impl system::Config for Test {
 parameter_types! {
 	pub const MaxMessagesPerBlock: u32 = 500;
 	pub const MaxMessageSizeInBytes: u32 = 100;
+	pub const RetentionPeriodBlocks: u32 = 10;
 }
 
 impl std::fmt::Debug for MaxMessageSizeInBytes {
@@ -96,6 +97,7 @@ impl pallet_messages::Config for Test {
 	type WeightInfo = ();
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type MaxMessageSizeInBytes = MaxMessageSizeInBytes;
+	type RetentionPeriodBlocks = RetentionPeriodBlocks;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

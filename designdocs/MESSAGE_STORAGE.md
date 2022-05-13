@@ -25,23 +25,12 @@ using [StorageDoubleMap](https://docs.substrate.io/rustdocs/latest/frame_support
 
 ### Main Storage types
 - **Messages**
-    - _Type_: `DoubleStorageMap<BlockNumber, SchemaId, BoundedVec<Message>>`
+    - _Type_: `DoubleStorageMap<BlockNumber, SchemaId, (BlockNumber, BoundedVec<Message>)>`
     - _Purpose_: Main structure To store all messages for a certain block number and schema id
 - **BlockMessages**
     - _Storage Type_: `StorageValue<BoundedVec<(Message, SchemaId)>>`
     - _Purpose_: A temporary storage to put each messages with it's schemaId for current block to
   increase write throughput
-- **RetentionPeriods**
-    - _Type_: `StorageMap<SchemaId, BlockNumber>`
-    - _Purpose_: To store the retention period for each SchemaId (allows future adjustments)
-    - _Defaults_: If a schema doesn't have any retention period it means there is no retention policy
-  for it, and it will be remained in chain DB indefinitely.
-- **StartingBlocks**
-    - _Type_: `StorageMap<SchemaId, BlockNumber>`
-    - _Usage_: To store the starting block number for each SchemaId (will allow future adjustments to
-  `RetentionPeriods`)
-    - _Defaults_: If any schemaId does not have a value inside this `StorageMap` then the Default
-  starting blockNumber for it is considered as **1**.
 
 ### On Chain Structure
 Following is a proposed data structure for storing a Message on chain.
@@ -110,12 +99,21 @@ from `StartingBlockNumber` until is reaches one of values from `EndBlockNumber` 
     -  nextBlock: `Optional<BlockNumber>` (has value if hasNext is true)
     -  nextPage: `Optional<u32>` (has value if hasNext is true)
 
-#### Cleanup (Retention policy)
+#### Cleanup (Retention policy - heavy)
 1. `on_initialize` remove all values from **Messages** for all blocks in following range
 [`StartingBlock`, currentBlock - `StoragePeriod` - 1]
 2. update `StartingBlock` to `max(StartingBlock, currentBlock - StoragePeriod - 1 ) + 1`
 3. `on_initialize` calculate and return Weight for number of database read and writes for
 `on_initialize` +  `on_finalize`
+
+#### Cleanup (Retention policy - light)
+The idea is to implement inserts using the same concept as a circular array. We will calculate a
+`target_block` which is going to be `current_block % retention_policy_block_size` and insert
+messages into this calculated target block. This will allow us to override messages which are
+already outside retention policy with new ones.
+
+Note: There are going to be some left-over blocks and messages that still needs another process to
+clean up.
 
 ## Benefits and Risks
 ### Benefits
