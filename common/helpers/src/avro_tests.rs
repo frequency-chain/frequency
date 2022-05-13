@@ -121,7 +121,9 @@ fn test_get_writer_with_data() {
         ]
     }
     "#;
-	let schema_result = avro::fingerprint_raw_schema(raw_schema);
+	let raw_schema_vec = raw_schema.as_bytes().to_vec();
+	let schema_string = String::from_utf8(raw_schema_vec).unwrap();
+	let schema_result = avro::fingerprint_raw_schema(&schema_string);
 	assert!(schema_result.is_ok());
 	let schema_res = schema_result.unwrap();
 	let translate_schema = avro::translate_schema(schema_res.1);
