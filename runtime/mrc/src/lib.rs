@@ -23,7 +23,7 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use common_primitives::messages::*;
+use common_primitives::{messages::*, schema::SchemaResponse};
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchError,
@@ -314,6 +314,7 @@ pub use common_primitives::schema::SchemaId;
 
 parameter_types! {
 	pub const MaxSchemaRegistrations: SchemaId = 65_000;
+	pub const MaxSchemaSizeBytes: u32 = 4096;
 }
 
 impl pallet_schemas::Config for Runtime {
@@ -322,7 +323,7 @@ impl pallet_schemas::Config for Runtime {
 
 	// TODO: these constants need to be determined. See Issue #70
 	type MinSchemaSizeBytes = ConstU32<5>;
-	type MaxSchemaSizeBytes = ConstU32<4096>;
+	type MaxSchemaSizeBytes = MaxSchemaSizeBytes;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
 
@@ -652,6 +653,13 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
+		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
+			ParachainSystem::collect_collation_info(header)
+		}
+	}
+
+	// Unfinished runtime APIs
 	impl pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber> for Runtime {
 		fn get_messages_by_schema(schema_id: SchemaId, pagination: BlockPaginationRequest<BlockNumber>) ->
 			Result<BlockPaginationResponse<BlockNumber, MessageResponse<AccountId, BlockNumber>>, DispatchError> {
@@ -659,15 +667,12 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
-		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
-			ParachainSystem::collect_collation_info(header)
-		}
-	}
-
-	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block, AccountId, Balance> for Runtime {
-		fn get_latest_schema_id() -> Result<u16, DispatchError> {
+	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block, Balance> for Runtime {
+		fn get_latest_schema_id() -> Option<u16> {
 			Schemas::get_latest_schema_id()
+		}
+		fn get_by_schema_id(schema_id: SchemaId) -> Result<Option<SchemaResponse>, DispatchError> {
+			Ok(Schemas::get_schema_by_id(schema_id))
 		}
 		fn calculate_schema_cost( schema:Vec<u8>) -> u64 {
 			Schemas::calculate_schema_cost(schema)

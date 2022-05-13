@@ -34,6 +34,7 @@ frame_support::construct_runtime!(
 
 parameter_types! {
 	pub const MaxSchemaRegistrations: SchemaId = 64_000;
+	pub const MaxSchemaSizeBytes: u32 = 100;
 }
 
 pub struct WeightToFee;
@@ -55,7 +56,7 @@ impl pallet_schemas::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type MinSchemaSizeBytes = ConstU32<5>;
-	type MaxSchemaSizeBytes = ConstU32<100>;
+	type MaxSchemaSizeBytes = MaxSchemaSizeBytes;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
 

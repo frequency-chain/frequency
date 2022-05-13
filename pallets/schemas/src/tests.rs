@@ -44,7 +44,7 @@ fn get_latest_schema_count() {
 	new_test_ext().execute_with(|| {
 		let schema_count = SchemasPallet::schema_count();
 		let schema_latest_rpc = SchemasPallet::get_latest_schema_id();
-		assert!(schema_count == schema_latest_rpc.unwrap());
+		assert!(schema_count == schema_latest_rpc);
 	})
 }
 
@@ -84,5 +84,35 @@ fn test_calculate_schema_cost() {
 		let schema = Vec::from("some schema".as_bytes());
 		let weight = SchemasPallet::calculate_schema_cost(schema);
 		assert!(weight > 0);
+	})
+}
+
+fn get_existing_schema_by_id_should_return_schema() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let sender: AccountId = 1;
+		let serialized_fields = Vec::from("foo,bar,bazz".as_bytes());
+		assert_ok!(SchemasPallet::register_schema(
+			Origin::signed(sender),
+			serialized_fields.clone()
+		));
+
+		// act
+		let res = SchemasPallet::get_schema_by_id(1);
+
+		// assert
+		assert_eq!(res.as_ref().is_some(), true);
+		assert_eq!(res.as_ref().unwrap().clone().data, serialized_fields);
+	})
+}
+
+#[test]
+fn get_non_existing_schema_by_id_should_return_none() {
+	new_test_ext().execute_with(|| {
+		// act
+		let res = SchemasPallet::get_schema_by_id(1);
+
+		// assert
+		assert_eq!(res.as_ref().is_none(), true);
 	})
 }

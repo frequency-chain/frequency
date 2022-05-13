@@ -1,10 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-extern crate core;
+use core;
 
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
-use sp_runtime::DispatchError;
-use sp_std::vec::Vec;
+use sp_std::{convert::TryInto, vec::Vec};
 
 #[cfg(test)]
 mod tests;
@@ -17,12 +16,13 @@ mod benchmarking;
 
 pub use pallet::*;
 pub mod weights;
+
 pub use weights::*;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::schema::{Schema, SchemaId};
+	use common_primitives::schema::{SchemaId, SchemaResponse};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -86,7 +86,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_schema)]
 	pub(super) type Schemas<T: Config> =
-		StorageMap<_, Twox64Concat, SchemaId, Schema<T::MaxSchemaSizeBytes>, ValueQuery>;
+		StorageMap<_, Twox64Concat, SchemaId, BoundedVec<u8, T::MaxSchemaSizeBytes>, OptionQuery>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -115,9 +115,15 @@ pub mod pallet {
 			Ok(())
 		}
 
-		pub fn get_latest_schema_id() -> Result<SchemaId, DispatchError> {
-			let cur_count = Self::schema_count();
-			Ok(cur_count)
+		pub fn get_latest_schema_id() -> Option<SchemaId> {
+			Some(Self::schema_count())
+		}
+
+		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+			if let Some(schema) = Self::get_schema(schema_id) {
+				return Some(SchemaResponse { schema_id, data: schema.into_inner() })
+			}
+			None
 		}
 
 		pub fn require_valid_schema_size(

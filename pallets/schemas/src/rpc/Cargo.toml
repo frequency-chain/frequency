@@ -15,6 +15,7 @@ jsonrpc-core = "18.0"
 jsonrpc-core-client = "18.0"
 jsonrpc-derive = "18.0"
 
+# unfinished
 pallet-schemas-runtime-api = { path = "../runtime-api", default-features = false }
 common-primitives = { path = '../../../../common/primitives', default-features = false }
 

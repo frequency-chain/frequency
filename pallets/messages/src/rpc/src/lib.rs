@@ -1,12 +1,11 @@
 use codec::Codec;
-use common_primitives::{messages::*, schema::*};
-use core::result::Result as CoreResult;
-use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
+use common_primitives::{messages::*, rpc::*, schema::*};
+use jsonrpc_core::Result;
 use jsonrpc_derive::rpc;
 use pallet_messages_runtime_api::MessagesApi as MessagesRuntimeApi;
-use sp_api::{ApiError, ProvideRuntimeApi};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT, DispatchError};
+use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
 #[rpc]
@@ -51,27 +50,6 @@ where
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 		let runtime_api_result = api.get_messages_by_schema(&at, schema_id, pagination);
-		map_result(runtime_api_result)
-	}
-}
-
-fn map_result<T>(response: CoreResult<CoreResult<T, DispatchError>, ApiError>) -> Result<T> {
-	match response {
-		Ok(Ok(res)) => Ok(res),
-		Ok(Err(DispatchError::Module(e))) => Err(RpcError {
-			code: ErrorCode::ServerError(100), // No real reason for this value
-			message: format!("Dispatch Error Module:{} error:{}", e.index, e.error).into(),
-			data: Some(e.message.unwrap_or_default().into()),
-		}),
-		Ok(Err(e)) => Err(RpcError {
-			code: ErrorCode::ServerError(200), // No real reason for this value
-			message: "Dispatch Error".into(),
-			data: Some(format!("{:?}", e).into()),
-		}),
-		Err(e) => Err(RpcError {
-			code: ErrorCode::ServerError(300), // No real reason for this value
-			message: "Api Error".into(),
-			data: Some(format!("{:?}", e).into()),
-		}),
+		map_rpc_result(runtime_api_result)
 	}
 }
