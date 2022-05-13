@@ -1,4 +1,5 @@
 use codec::Codec;
+use common_helpers::avro;
 use common_primitives::{rpc::*, schema::*, weight_to_fees::*};
 use frame_support::weights::{Weight, WeightToFeePolynomial};
 use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
@@ -93,6 +94,23 @@ where
 		at: Option<<Block as BlockT>::Hash>,
 		schema: Vec<u8>,
 	) -> Result<FeeDetails<NumberOrHex>> {
+		// Validate serialized avro schema
+		// convert Vec<u8> to String
+		let schema_string = String::from_utf8(schema.clone()).map_err(|_| RpcError {
+			code: ErrorCode::InvalidParams,
+			message: format!("invalid avro schema"),
+			data: Some(format!("{:?}", schema).into()),
+		})?;
+		let finger_print = avro::fingerprint_raw_schema(&schema_string);
+		match finger_print {
+			Ok(_) => (),
+			Err(e) =>
+				return Err(RpcError {
+					code: ErrorCode::InvalidParams,
+					message: format!("invalid avro schema"),
+					data: Some(format!("{:?}", e).into()),
+				}),
+		};
 		let api = self.client.runtime_api();
 		let schema_len = schema.len();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));

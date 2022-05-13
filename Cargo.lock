@@ -6108,6 +6108,7 @@ dependencies = [
 name = "pallet-schemas-rpc"
 version = "0.1.0"
 dependencies = [
+ "common-helpers",
  "common-primitives",
  "frame-support",
  "jsonrpc-core",
