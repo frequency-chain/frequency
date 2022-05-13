@@ -4,10 +4,12 @@ To create a new design document, Please see the [Design Doc README](https://gith
 ## Accepted Design Documents
 
 * [Accounts](./ACCOUNTS.md)
-  * [PR](https://github.com/LibertyDSNP/mrc/pull/13)
+  * [Pull Request](https://github.com/LibertyDSNP/mrc/pull/13)
 * [On Chain Message Storage](MESSAGE_STORAGE.md)
-  * [Merged Pull Request](https://github.com/LibertyDSNP/mrc/pull/15)
+  * [Pull Request](https://github.com/LibertyDSNP/mrc/pull/15)
 * [Delegation](./delegation.md)
-  * [PR](https://github.com/LibertyDSNP/mrc/pull/14)
+  * [Pull Request](https://github.com/LibertyDSNP/mrc/pull/14)
 * [Message Schema(s)](./SCHEMA.md)
-  * [Merged Pull Request](https://github.com/LibertyDSNP/mrc/pull/17)
+  * [Pull Request](https://github.com/LibertyDSNP/mrc/pull/17)
+* [Data Pruning](./pruning_data.md)
+  * [Pull Request](https://github.com/LibertyDSNP/mrc/pull/81)
