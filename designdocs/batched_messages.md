@@ -36,7 +36,7 @@ the file format cannot be verified on-chain. For details about batch file format
 
 ### Types
 * `BatchAnnouncementParams<T:Config>`: generic
-    * `batch_url`:`str` the URL of the batch file.  Must be IPFS or HTTPS URL
+    * `batch_url`:`str` the URL of the batch file.  Must be IPFS or HTTPS URL. The URL must be correctly formatted.
     * `message_type`: `MessageType`  the type of messages in this batch
     * `file_size`: `usize`, the size of the batch file, used to determine message fee.  Must be &gt;= the minimum possible DSNP batch file size.
     * `file_hash`: `<T::Hash>`, the hash of the batch file. Must not be 0 hash
@@ -57,7 +57,7 @@ the file format cannot be verified on-chain. For details about batch file format
 
 ### Extrinsics
 #### announce_batch(batch_announcement_params)
-Creates and posts a new batch message on chain.
+Creates and posts a new batch announcement message on chain.
 
 * **Parameters**
   * `batch_announcement_params`: `BatchAnnouncementParams`, the parameters to use in the batch announcement.
@@ -65,7 +65,7 @@ Creates and posts a new batch message on chain.
 * **Event**:  `Event::<T>::BatchAnnounced(schema_id file_size, file_hash, msa_id, signature)`
 * **Restrictions**:
   1. origin must own `msa_id`.
-  1.`msa_id` account must have capacity to post the transaction during the current epoch
+  2.`msa_id` account must have capacity to post the transaction during the current epoch
 
 ### Custom RPCs
 
