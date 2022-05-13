@@ -663,18 +663,19 @@ impl_runtime_apis! {
 	impl pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber> for Runtime {
 		fn get_messages_by_schema(schema_id: SchemaId, pagination: BlockPaginationRequest<BlockNumber>) ->
 			Result<BlockPaginationResponse<BlockNumber, MessageResponse<AccountId, BlockNumber>>, DispatchError> {
-
 			Messages::get_messages_by_schema(schema_id, pagination)
 		}
 	}
 
-	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
-		fn get_latest_schema_id() -> Result<u16, DispatchError> {
-			Ok(Schemas::get_latest_schema_id())
+	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block, Balance> for Runtime {
+		fn get_latest_schema_id() -> Option<u16> {
+			Schemas::get_latest_schema_id()
 		}
-
 		fn get_by_schema_id(schema_id: SchemaId) -> Result<Option<SchemaResponse>, DispatchError> {
 			Ok(Schemas::get_schema_by_id(schema_id))
+		}
+		fn calculate_schema_cost( schema:Vec<u8>) -> u64 {
+			Schemas::calculate_schema_cost(schema)
 		}
 	}
 

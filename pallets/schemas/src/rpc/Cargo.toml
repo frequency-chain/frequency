@@ -20,16 +20,25 @@ pallet-schemas-runtime-api = { path = "../runtime-api", default-features = false
 common-primitives = { path = '../../../../common/primitives', default-features = false }
 
 # Substrate
+frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
+sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+sp-rpc = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
+pallet-transaction-payment = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18"}
+pallet-transaction-payment-rpc-runtime-api = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18"}
 
 [features]
 default = ["std"]
 std = [
+	"sp-std/std",
 	"codec/std",
 	"sp-api/std",
+	"sp-core/std",
 	"sp-runtime/std",
 	"pallet-schemas-runtime-api/std",
 	"common-primitives/std",
+	"pallet-transaction-payment-rpc-runtime-api/std",
 ]

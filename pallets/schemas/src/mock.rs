@@ -1,12 +1,15 @@
 use frame_support::{
 	parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64},
+	weights::{WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial},
 };
 use frame_system;
+use smallvec::smallvec;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
+	Perbill,
 };
 
 use common_primitives::schema::SchemaId;
@@ -24,6 +27,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		SchemasPallet: pallet_schemas::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -31,6 +35,21 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub const MaxSchemaRegistrations: SchemaId = 64_000;
 	pub const MaxSchemaSizeBytes: u32 = 100;
+}
+
+pub struct WeightToFee;
+
+impl WeightToFeePolynomial for WeightToFee {
+	type Balance = u64;
+
+	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+		smallvec![WeightToFeeCoefficient {
+			degree: 1,
+			coeff_frac: Perbill::zero(),
+			coeff_integer: 1,
+			negative: false,
+		}]
+	}
 }
 
 impl pallet_schemas::Config for Test {
@@ -41,8 +60,28 @@ impl pallet_schemas::Config for Test {
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
 
+parameter_types! {
+	pub const ExistentialDeposit: u64 = 1;
+	pub const MaxLocks: u32 = 50;
+	pub const MaxReserves: u32 = 50;
+}
+
+impl pallet_balances::Config for Test {
+	type MaxLocks = MaxLocks;
+	/// The type for recording an account's balance.
+	type Balance = u64;
+	/// The ubiquitous event type.
+	type Event = Event;
+	type DustRemoval = ();
+	type ExistentialDeposit = ExistentialDeposit;
+	type AccountStore = System;
+	type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
+	type MaxReserves = MaxReserves;
+	type ReserveIdentifier = [u8; 8];
+}
+
 impl frame_system::Config for Test {
-	type AccountData = ();
+	type AccountData = pallet_balances::AccountData<u64>;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();

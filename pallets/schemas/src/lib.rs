@@ -115,8 +115,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		pub fn get_latest_schema_id() -> SchemaId {
-			Self::schema_count()
+		pub fn get_latest_schema_id() -> Option<SchemaId> {
+			Some(Self::schema_count())
 		}
 
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
@@ -136,6 +136,12 @@ pub mod pallet {
 				Error::<T>::LessThanMinSchemaBytes
 			);
 			Ok(bounded_fields)
+		}
+
+		pub fn calculate_schema_cost(schema: Vec<u8>) -> Weight {
+			let schema_len = schema.len() as u32;
+			let schema_weight = T::WeightInfo::register_schema(schema_len);
+			schema_weight
 		}
 	}
 }

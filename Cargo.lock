@@ -1197,6 +1197,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "smallvec",
  "sp-api",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
@@ -6090,9 +6091,12 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "pallet-balances",
+ "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
  "serial_test",
+ "smallvec",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
  "sp-io 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
  "sp-keyring 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6105,14 +6109,20 @@ name = "pallet-schemas-rpc"
 version = "0.1.0"
 dependencies = [
  "common-primitives",
+ "frame-support",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "pallet-schemas-runtime-api",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
  "sp-api",
  "sp-blockchain",
+ "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
+ "sp-rpc",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
 ]
 
 [[package]]
@@ -6121,8 +6131,11 @@ version = "0.1.0"
 dependencies = [
  "common-primitives",
  "frame-support",
+ "pallet-transaction-payment",
  "parity-scale-codec",
  "sp-api",
+ "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
 ]
 
 [[package]]

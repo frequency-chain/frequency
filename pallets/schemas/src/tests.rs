@@ -43,7 +43,7 @@ fn require_valid_schema_size_errors() {
 fn get_latest_schema_count() {
 	new_test_ext().execute_with(|| {
 		let schema_count = SchemasPallet::schema_count();
-		let schema_latest_rpc = SchemasPallet::get_latest_schema_id();
+		let schema_latest_rpc = SchemasPallet::get_latest_schema_id().unwrap();
 		assert!(schema_count == schema_latest_rpc);
 	})
 }
@@ -75,6 +75,15 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 		}
 		let serialized_fields1 = Vec::from("foo,bar,".as_bytes());
 		assert_ok!(SchemasPallet::register_schema(Origin::signed(sender), serialized_fields1));
+	})
+}
+
+#[test]
+fn test_calculate_schema_cost() {
+	new_test_ext().execute_with(|| {
+		let schema = Vec::from("some schema".as_bytes());
+		let weight = SchemasPallet::calculate_schema_cost(schema);
+		assert!(weight > 0);
 	})
 }
 
