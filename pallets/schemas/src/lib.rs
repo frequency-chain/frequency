@@ -4,6 +4,16 @@ use core;
 
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
 use sp_std::{convert::TryInto, vec::Vec};
+extern crate core;
+use sp_runtime::{
+	DispatchError,
+};
+use frame_support::{
+	dispatch::DispatchResult, ensure, traits::Get, BoundedVec,
+};
+
+pub use pallet::*;
+pub use weights::*;
 
 #[cfg(test)]
 mod tests;
@@ -103,6 +113,14 @@ pub mod pallet {
 			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
 			Ok(())
 		}
+
+		#[pallet::weight(30_000)]
+		pub fn set_max_schema_bytes(origin: OriginFor<T>, max_size: u32) -> DispatchResult {
+			ensure_signed(origin.clone())?;
+			SchemaMaxBytes::<T>::set(max_size);
+			Ok(())
+		}
+
 	}
 
 	impl<T: Config> Pallet<T> {
