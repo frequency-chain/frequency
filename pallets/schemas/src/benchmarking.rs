@@ -19,7 +19,7 @@ fn generate_schema(size: usize) -> Vec<u8> {
 }
 
 fn register_some_schema<T: Config>(sender: T::AccountId) -> DispatchResult {
-	let schema_size: usize = (T::SchemaBoundedVecLimit::get() - 1) as usize;
+	let schema_size: usize = (T::SchemaMaxBytesBoundedVecLimit::get() - 1) as usize;
 	SchemasPallet::<T>::register_schema(
 		RawOrigin::Signed(sender).into(),
 		generate_schema(schema_size),

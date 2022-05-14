@@ -326,6 +326,7 @@ impl pallet_schemas::Config for Runtime {
 	type MinSchemaSizeBytes = ConstU32<5>;
 	type MaxSchemaSizeBytes = MaxSchemaSizeBytes;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
+	type SchemaMaxBytesBoundedVecLimit = ConstU32<65_500>;
 }
 
 parameter_types! {

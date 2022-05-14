@@ -47,7 +47,7 @@ pub mod pallet {
 
 		// Maximum length of Schema field name
 		#[pallet::constant]
-		type MaxSchemaSizeBytes: Get<u32>;
+		type SchemaMaxBytesBoundedVecLimit: Get<u32>;
 
 		// Maximum number of schemas that can be registered
 		#[pallet::constant]
@@ -96,13 +96,35 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_schema)]
 	pub(super) type Schemas<T: Config> =
-		StorageMap<_, Twox64Concat, SchemaId, BoundedVec<u8, T::MaxSchemaSizeBytes>, OptionQuery>;
+	StorageMap<_, Twox64Concat, SchemaId, BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>, ValueQuery>;
+
+	////////////////////  TESTING
+	#[pallet::genesis_config]
+	pub struct GenesisConfig {
+		pub initial_max_schema_size: u32,
+	}
+
+	#[cfg(feature = "std")]
+	impl sp_std::default::Default for GenesisConfig {
+		fn default() -> Self {
+			Self { initial_max_schema_size: 1024 }
+		}
+	}
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			SchemaMaxBytes::<T>::put(self.initial_max_schema_size.clone());
+		}
+	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(<T as Config>::WeightInfo::register_schema(schema.len() as u32))]
-		pub fn register_schema(origin: OriginFor<T>, schema: Vec<u8>) -> DispatchResult {
+		#[pallet::weight(< T as Config >::WeightInfo::register_schema(schema.len() as u32))]
+		pub fn register_schema(origin: OriginFor<T>, schema: BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>) -> DispatchResult {
 			let sender = ensure_signed(origin.clone())?;
+
+			ensure!(schema.len() > T::MinSchemaSizeBytes::get() as usize, Error::<T>::LessThanMinSchemaBytes);
+			ensure!(schema.len() < Self::get_schema_max_bytes() as usize, Error::<T>::ExceedsMaxSchemaBytes);
 
 			let cur_count = Self::schema_count();
 			ensure!(cur_count < T::MaxSchemaRegistrations::get(), <Error<T>>::TooManySchemas);
@@ -124,9 +146,7 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		fn add_schema(schema: Vec<u8>, schema_id: SchemaId) -> DispatchResult {
-			let bounded_fields = Self::require_valid_schema_size(schema)?;
-
+		fn add_schema(schema: BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>, schema_id: SchemaId) -> DispatchResult {
 			<SchemaCount<T>>::set(schema_id);
 			<Schemas<T>>::insert(schema_id, bounded_fields);
 
