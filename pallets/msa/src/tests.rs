@@ -1,6 +1,6 @@
 use crate::{
 	mock::*,
-	types::{AddKeyData, KeyInfo},
+	types::{AddDelegate, AddKeyData, Delegate, DelegateInfo, Delegator, KeyInfo},
 	Call, Config, Error, Event, MsaIdentifier,
 };
 use common_primitives::{msa::KeyInfoResponse, utils::wrap_binary_data};
@@ -275,5 +275,211 @@ pub fn test_ensure_msa_owner() {
 		assert_ok!(Msa::add_key(1, &test_public(1)));
 
 		assert_eq!(Msa::ensure_msa_owner(&test_public(1), 1), Ok(()));
+	});
+}
+
+#[test]
+pub fn add_delegate_to_msa_is_success() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let delegate_account = key_pair.public();
+
+		let add_delegate_payload = AddDelegate { authorized_msa_id: 1, permission: 0 };
+		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+
+		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+
+		assert_ok!(Msa::create(test_origin_signed(1)));
+		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+
+		assert_ok!(Msa::add_delegate_to_msa(
+			test_origin_signed(1),
+			delegate_account.into(),
+			signature,
+			add_delegate_payload
+		));
+
+		let delegate = Delegate(2);
+		let delegator = Delegator(1);
+
+		assert_eq!(
+			Msa::get_delegate_info_of(delegate, delegator),
+			Some(DelegateInfo { permission: 0 })
+		);
+
+		System::assert_last_event(
+			Event::DelegateAdded { delegator: 1.into(), delegate: 2.into() }.into(),
+		);
+	});
+}
+
+#[test]
+pub fn add_delegate_to_msa_throws_add_delegate_verification_failed() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let account = key_pair.public();
+
+		let add_delegate_payload = AddDelegate { authorized_msa_id: 2, permission: 0 };
+		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+
+		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+
+		let fake_delegate_payload = AddDelegate { authorized_msa_id: 3, permission: 0 };
+
+		assert_noop!(
+			Msa::add_delegate_to_msa(
+				test_origin_signed(1),
+				account.into(),
+				signature,
+				fake_delegate_payload
+			),
+			Error::<Test>::AddDelegateVerificationFailed
+		);
+	});
+}
+
+#[test]
+pub fn add_delegate_to_msa_throws_no_key_exist_error() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let delegate_account = key_pair.public();
+
+		let add_delegate_payload = AddDelegate { authorized_msa_id: 2, permission: 0 };
+		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+
+		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+
+		assert_noop!(
+			Msa::add_delegate_to_msa(
+				test_origin_signed(1),
+				delegate_account.into(),
+				signature,
+				add_delegate_payload
+			),
+			Error::<Test>::NoKeyExists
+		);
+	});
+}
+
+#[test]
+pub fn add_delegate_to_msa_throws_key_revoked_error() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let delegate_account = key_pair.public();
+
+		let add_delegate_payload = AddDelegate { authorized_msa_id: 2, permission: 0 };
+		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+
+		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+
+		assert_ok!(Msa::create(test_origin_signed(1)));
+		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+		assert_ok!(Msa::revoke_key(&test_public(1)));
+
+		assert_noop!(
+			Msa::add_delegate_to_msa(
+				test_origin_signed(1),
+				delegate_account.into(),
+				signature,
+				add_delegate_payload
+			),
+			Error::<Test>::KeyRevoked
+		);
+	});
+}
+
+#[test]
+pub fn add_delegate_to_msa_throws_invalid_self_delegate_error() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let delegate_account = key_pair.public();
+
+		let add_delegate_payload = AddDelegate { authorized_msa_id: 1, permission: 0 };
+
+		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+
+		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+
+		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+
+		assert_noop!(
+			Msa::add_delegate_to_msa(
+				Origin::signed(delegate_account.into()),
+				delegate_account.into(),
+				signature,
+				add_delegate_payload
+			),
+			Error::<Test>::InvalidSelfDelegate
+		);
+	});
+}
+
+#[test]
+pub fn add_delegate_to_msa_throws_unauthorized_delegator_error() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let delegate_account = key_pair.public();
+
+		let add_delegate_payload = AddDelegate { authorized_msa_id: 2, permission: 0 };
+
+		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+
+		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+
+		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+
+		assert_noop!(
+			Msa::add_delegate_to_msa(
+				Origin::signed(delegate_account.into()),
+				delegate_account.into(),
+				signature,
+				add_delegate_payload
+			),
+			Error::<Test>::UnauthorizedDelegator
+		);
+	});
+}
+
+#[test]
+pub fn add_delegate_to_msa_throws_duplicate_delegate_error() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let delegate_account = key_pair.public();
+
+		let add_delegate_payload = AddDelegate { authorized_msa_id: 1, permission: 0 };
+		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+
+		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+
+		assert_ok!(Msa::create(test_origin_signed(1)));
+		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+
+		assert_ok!(Msa::add_delegate_to_msa(
+			test_origin_signed(1),
+			delegate_account.into(),
+			signature.clone(),
+			add_delegate_payload.clone()
+		));
+
+		assert_noop!(
+			Msa::add_delegate_to_msa(
+				test_origin_signed(1),
+				delegate_account.into(),
+				signature,
+				add_delegate_payload
+			),
+			Error::<Test>::DuplicateDelegate
+		);
+	});
+}
+
+#[test]
+pub fn ensure_valid_msa_key_is_successfull() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(Msa::ensure_valid_msa_key(&test_public(1)), Error::<Test>::NoKeyExists);
+
+		assert_ok!(Msa::create(test_origin_signed(1)));
+
+		assert_ok!(Msa::ensure_valid_msa_key(&test_public(1)));
 	});
 }
