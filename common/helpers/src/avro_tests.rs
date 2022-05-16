@@ -385,3 +385,21 @@ fn test_bad_records() {
 	let reader_res = avro::get_schema_data_map(&serialized_result, &translated_schema);
 	assert!(reader_res.is_err());
 }
+
+#[test]
+fn test_json_serialized_avro_schema() {
+	// create a schema
+	let raw_schema = r#"
+	{
+		"type": "record",
+		"name": "test",
+		"fields": [
+			{"name": "a", "type": "long", "default": 42},
+			{"name": "b", "type": "string"}
+		]
+	}
+	"#;
+	let serialized_bytes = raw_schema.as_bytes().to_vec();
+	let validation_res = avro::validate_raw_avro_schema(&serialized_bytes);
+	assert!(validation_res.is_ok());
+}

@@ -237,3 +237,35 @@ pub fn get_schema_data_map<'a>(
 
 	Ok(result_record)
 }
+
+/// Function to validate incoming json serialized schema against avro schema.
+/// # Arguments
+/// * `json_schema` - json serialized schema
+/// # Examples
+/// ```
+/// use common_helpers::avro;
+/// use common_helpers::types::*;
+/// let raw_schema = r#"
+/// {
+///    "type": "record",
+///   "name": "test",
+///  "fields": [
+///    {"name": "a", "type": "long", "default": 42},
+///   {"name": "b", "type": "string"}
+/// ]
+/// }
+/// "#;
+/// let schema_fingerprint = avro::fingerprint_raw_schema(raw_schema);
+/// assert!(schema_fingerprint.is_ok());
+pub fn validate_raw_avro_schema(json_schema: &Vec<u8>) -> Result<(), AvroError> {
+	let avro_schema_raw = String::from_utf8(json_schema.clone());
+	if avro_schema_raw.is_err() {
+		return Err(AvroError::InvalidSchema("Invalid schema".to_string()))
+	}
+	let avro_schema = avro_schema_raw.unwrap();
+	let schema_fingerprint = fingerprint_raw_schema(&avro_schema);
+	if schema_fingerprint.is_err() {
+		return Err(AvroError::InvalidSchema("Invalid schema".to_string()))
+	}
+	Ok(())
+}

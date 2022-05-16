@@ -15,6 +15,7 @@ use sp_runtime::{
 };
 use sp_std::vec::Vec;
 use std::sync::Arc;
+
 /// Error type of this RPC api.
 pub enum Error {
 	/// The transaction was not decodable.
@@ -94,19 +95,14 @@ where
 		at: Option<<Block as BlockT>::Hash>,
 		schema: Vec<u8>,
 	) -> Result<FeeDetails<NumberOrHex>> {
-		// Validate serialized avro schema
-		let schema_string = String::from_utf8(schema.clone()).map_err(|_| RpcError {
-			code: ErrorCode::InvalidParams,
-			message: format!("invalid avro schema"),
-			data: Some(format!("{:?}", schema).into()),
-		})?;
-		let finger_print = avro::fingerprint_raw_schema(&schema_string);
-		if finger_print.is_err() {
+		let validated_schema = avro::validate_raw_avro_schema(&schema);
+		if validated_schema.is_err() {
 			return Err(RpcError {
-				code: ErrorCode::InvalidParams,
-				message: format!("invalid avro schema"),
-				data: Some(format!("{:?}", schema_string).into()),
-			})
+				code: ErrorCode::ServerError(1),
+				message: "Invalid schema".into(),
+				data: Some(format!("{:?}", validated_schema).into()),
+			}
+			.into())
 		}
 		let api = self.client.runtime_api();
 		let schema_len = schema.len();
