@@ -1,4 +1,8 @@
-use crate::{mock::*, types::AddKeyData, Call, Error, Event, MsaIdentifier};
+use crate::{
+	mock::*,
+	types::{AddKeyData, KeyInfo},
+	Call, Error, Event, MsaIdentifier,
+};
 use common_primitives::utils::wrap_binary_data;
 use frame_support::{assert_noop, assert_ok, weights::GetDispatchInfo};
 use sp_core::{sr25519, Encode, Pair};
@@ -9,7 +13,10 @@ fn it_creates_an_msa_account() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::create(test_origin_signed(1)));
 
-		assert_eq!(Msa::get_owner_of(test_public(1)), Some(1));
+		assert_eq!(
+			Msa::get_key_info(test_public(1)),
+			Some(KeyInfo { msa_id: 1, expired: 0, nonce: 0 })
+		);
 
 		assert_eq!(Msa::get_identifier(), 1);
 
@@ -85,11 +92,13 @@ fn it_throws_error_when_not_msa_owner() {
 		let (key_pair_2, _) = sr25519::Pair::generate();
 
 		let account = key_pair.public();
+
 		let (new_msa_id, _) = Msa::create_account(account.into()).unwrap();
+		assert_ok!(Msa::create_account(test_public(1).into()));
 
 		let new_account = key_pair_2.public();
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id };
+		let add_new_key_data = AddKeyData { nonce: 0, msa_id: new_msa_id };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
@@ -156,5 +165,71 @@ fn it_logs_key_added_event() {
 		));
 
 		System::assert_last_event(Event::KeyAdded { msa_id: 1, key: new_key.into() }.into());
+	});
+}
+
+#[test]
+fn it_revokes_msa_key_successfully() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(Msa::add_key(2, &test_public(1)));
+		assert_ok!(Msa::add_key(2, &test_public(2)));
+
+		assert_ok!(Msa::revoke_msa_key(test_origin_signed(1), test_public(2)));
+
+		let info = Msa::get_key_info(&test_public(2));
+
+		assert_eq!(info, Some(KeyInfo { msa_id: 2, expired: 1, nonce: 0 }));
+
+		System::assert_last_event(Event::KeyRevoked { key: test_public(2).into() }.into());
+	})
+}
+
+#[test]
+pub fn test_get_onwner_of() {
+	new_test_ext().execute_with(|| {
+		assert_eq!(Msa::get_owner_of(&test_public(1)), None);
+
+		assert_ok!(Msa::create(test_origin_signed(1)));
+
+		assert_eq!(Msa::get_owner_of(&test_public(1)), Some(1));
+	});
+}
+
+#[test]
+pub fn test_revoke_key() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(Msa::add_key(1, &test_public(1)));
+
+		let info = Msa::get_key_info(&test_public(1));
+		assert_eq!(info, Some(KeyInfo { msa_id: 1, expired: 0, nonce: 0 }));
+
+		assert_ok!(Msa::revoke_key(&test_public(1)));
+
+		let info = Msa::get_key_info(&test_public(1));
+
+		assert_eq!(info, Some(KeyInfo { msa_id: 1, expired: 1, nonce: 0 }));
+	});
+}
+
+#[test]
+pub fn test_revoke_key_errors() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(Msa::revoke_key(&test_public(1)), Error::<Test>::NoKeyExists);
+
+		assert_ok!(Msa::add_key(1, &test_public(1)));
+		assert_ok!(Msa::revoke_key(&test_public(1)));
+
+		assert_noop!(Msa::revoke_key(&test_public(1)), Error::<Test>::KeyRevoked);
+	});
+}
+
+#[test]
+pub fn test_ensure_msa_owner() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(Msa::ensure_msa_owner(&test_public(1), 1), Error::<Test>::NoKeyExists);
+
+		assert_ok!(Msa::add_key(1, &test_public(1)));
+
+		assert_eq!(Msa::ensure_msa_owner(&test_public(1), 1), Ok(()));
 	});
 }
