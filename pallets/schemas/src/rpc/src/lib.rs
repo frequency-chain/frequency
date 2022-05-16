@@ -1,4 +1,5 @@
 use codec::Codec;
+use common_helpers::avro;
 use common_primitives::{rpc::*, schema::*, weight_to_fees::*};
 use frame_support::weights::{Weight, WeightToFeePolynomial};
 use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
@@ -14,6 +15,7 @@ use sp_runtime::{
 };
 use sp_std::vec::Vec;
 use std::sync::Arc;
+
 /// Error type of this RPC api.
 pub enum Error {
 	/// The transaction was not decodable.
@@ -93,6 +95,15 @@ where
 		at: Option<<Block as BlockT>::Hash>,
 		schema: Vec<u8>,
 	) -> Result<FeeDetails<NumberOrHex>> {
+		let validated_schema = avro::validate_raw_avro_schema(&schema);
+		if validated_schema.is_err() {
+			return Err(RpcError {
+				code: ErrorCode::ServerError(1),
+				message: "Invalid schema".into(),
+				data: Some(format!("{:?}", validated_schema).into()),
+			}
+			.into())
+		}
 		let api = self.client.runtime_api();
 		let schema_len = schema.len();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));

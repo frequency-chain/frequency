@@ -121,7 +121,9 @@ fn test_get_writer_with_data() {
         ]
     }
     "#;
-	let schema_result = avro::fingerprint_raw_schema(raw_schema);
+	let raw_schema_vec = raw_schema.as_bytes().to_vec();
+	let schema_string = String::from_utf8(raw_schema_vec).unwrap();
+	let schema_result = avro::fingerprint_raw_schema(&schema_string);
 	assert!(schema_result.is_ok());
 	let schema_res = schema_result.unwrap();
 	let translate_schema = avro::translate_schema(schema_res.1);
@@ -382,4 +384,40 @@ fn test_bad_records() {
 	serialized_result.push(0x0);
 	let reader_res = avro::get_schema_data_map(&serialized_result, &translated_schema);
 	assert!(reader_res.is_err());
+}
+
+#[test]
+fn test_json_serialized_avro_schema() {
+	// create a schema
+	let raw_schema = r#"
+	{
+		"type": "record",
+		"name": "test",
+		"fields": [
+			{"name": "a", "type": "long", "default": 42},
+			{"name": "b", "type": "string"}
+		]
+	}
+	"#;
+	let serialized_bytes = raw_schema.as_bytes().to_vec();
+	let validation_res = avro::validate_raw_avro_schema(&serialized_bytes);
+	assert!(validation_res.is_ok());
+}
+
+#[test]
+fn test_json_serialized_bad_avro_schema() {
+	// create a schema
+	let raw_schema = r#"
+	{
+		"type": "record",
+		"name": "test",
+		"fields": [
+			{"name": "a"},
+			{"name": "b"}
+		]
+	}
+	"#;
+	let serialized_bytes = raw_schema.as_bytes().to_vec();
+	let validation_res = avro::validate_raw_avro_schema(&serialized_bytes);
+	assert!(validation_res.is_err());
 }
