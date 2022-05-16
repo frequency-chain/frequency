@@ -41,7 +41,6 @@ the file format cannot be verified on-chain. For details about batch file format
     * `file_size`: `usize`, the size of the batch file, used to determine message fee.  Must be &gt;= the minimum possible DSNP batch file size.
     * `file_hash`: `<T::Hash>`, the hash of the batch file. Must not be 0 hash
     * `msa_id`: `MsaId`, the id to use for the announcer.  Must exist and be active
-    * `signature`: `<T::Signature>`, the signature over `file_hash`, using the origin `AccountId`.  Signature must be valid for the file hash + origin
 
 * `BatchAnnouncement`: implements `BatchAnnouncementParams`, returned by `get_batches`
 
