@@ -36,7 +36,7 @@ the file format cannot be verified on-chain. For details about batch file format
 
 ### Types
 * `BatchAnnouncementParams<T:Config>`: generic
-    * `batch_url`:`str` the URL of the batch file.  Must be IPFS or HTTPS URL. The URL must be correctly formatted.
+    * `batch_url`:`Vec` the URL of the batch file.  Must be IPFS or HTTPS URL. The URL must be correctly formatted.
     * `message_type`: `MessageType`  the type of messages in this batch
     * `file_size`: `usize`, the size of the batch file, used to determine message fee.  Must be &gt;= the minimum possible DSNP batch file size.
     * `file_hash`: `<T::Hash>`, the hash of the batch file. Must not be 0 hash
