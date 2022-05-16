@@ -56,10 +56,11 @@ the file format cannot be verified on-chain. For details about batch file format
 
 
 ### Extrinsics
-#### announce_batch(batch_announcement_params)
+#### announce_batch(origin, batch_announcement_params)
 Creates and posts a new batch announcement message on chain.
 
 * **Parameters**
+  * origin:  required for all extrinsics, the caller/sender.
   * `batch_announcement_params`: `BatchAnnouncementParams`, the parameters to use in the batch announcement.
 
 * **Event**:  `Event::<T>::BatchAnnounced(schema_id file_size, file_hash, msa_id, signature)`
