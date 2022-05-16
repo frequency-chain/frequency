@@ -403,3 +403,21 @@ fn test_json_serialized_avro_schema() {
 	let validation_res = avro::validate_raw_avro_schema(&serialized_bytes);
 	assert!(validation_res.is_ok());
 }
+
+#[test]
+fn test_json_serialized_bad_avro_schema() {
+	// create a schema
+	let raw_schema = r#"
+	{
+		"type": "record",
+		"name": "test",
+		"fields": [
+			{"name": "a"},
+			{"name": "b"}
+		]
+	}
+	"#;
+	let serialized_bytes = raw_schema.as_bytes().to_vec();
+	let validation_res = avro::validate_raw_avro_schema(&serialized_bytes);
+	assert!(validation_res.is_err());
+}
