@@ -1,5 +1,8 @@
 use crate as pallet_msa;
-use frame_support::traits::{ConstU16, ConstU64};
+use frame_support::{
+	parameter_types,
+	traits::{ConstU16, ConstU64},
+};
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
@@ -52,10 +55,15 @@ impl system::Config for Test {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
+parameter_types! {
+	pub const MaxKeys: u32 = 10;
+}
+
 impl pallet_msa::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = ConvertInto;
+	type MaxKeys = MaxKeys;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

@@ -1,11 +1,11 @@
 use crate::{
 	mock::*,
 	types::{AddKeyData, KeyInfo},
-	Call, Error, Event, MsaIdentifier,
+	Call, Config, Error, Event, MsaIdentifier,
 };
-use common_primitives::utils::wrap_binary_data;
+use common_primitives::{msa::KeyInfoResponse, utils::wrap_binary_data};
 use frame_support::{assert_noop, assert_ok, weights::GetDispatchInfo};
-use sp_core::{sr25519, Encode, Pair};
+use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
 #[test]
@@ -142,8 +142,47 @@ fn it_throws_error_when_for_duplicate_key() {
 }
 
 #[test]
-fn it_logs_key_added_event() {
+fn add_key_with_more_than_allowed_should_panic() {
 	new_test_ext().execute_with(|| {
+		// arrange
+		let (key_pair, _) = sr25519::Pair::generate();
+		let account = key_pair.public();
+		let (new_msa_id, _) = Msa::create_account(account.into()).unwrap();
+		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id };
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
+		for _ in 1..<Test as Config>::MaxKeys::get() {
+			let (new_key_pair, _) = sr25519::Pair::generate();
+			let new_account = new_key_pair.public();
+			let signature: MultiSignature = new_key_pair.sign(&encode_data_new_key_data).into();
+			assert_ok!(Msa::add_key_to_msa(
+				Origin::signed(account.into()),
+				new_account.into(),
+				signature,
+				add_new_key_data.clone()
+			));
+		}
+
+		// act
+		let (final_key_pair, _) = sr25519::Pair::generate();
+		let final_account = final_key_pair.public();
+		let signature: MultiSignature = final_key_pair.sign(&encode_data_new_key_data).into();
+		assert_noop!(
+			Msa::add_key_to_msa(
+				Origin::signed(account.into()),
+				final_account.into(),
+				signature,
+				add_new_key_data.clone()
+			),
+			Error::<Test>::KeyLimitExceeded
+		);
+	});
+}
+
+#[test]
+fn add_key_with_valid_request_should_store_value_and_event() {
+	new_test_ext().execute_with(|| {
+		// arrange
 		let (key_pair, _) = sr25519::Pair::generate();
 		let (key_pair_2, _) = sr25519::Pair::generate();
 
@@ -157,6 +196,7 @@ fn it_logs_key_added_event() {
 
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
 
+		// act
 		assert_ok!(Msa::add_key_to_msa(
 			Origin::signed(account.into()),
 			new_key.into(),
@@ -164,6 +204,10 @@ fn it_logs_key_added_event() {
 			add_new_key_data.clone(),
 		));
 
+		// assert
+		let keys = Msa::fetch_msa_keys(new_msa_id);
+		assert_eq!(keys.len(), 2);
+		assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id, nonce: 0, expired: 0}), true}
 		System::assert_last_event(Event::KeyAdded { msa_id: 1, key: new_key.into() }.into());
 	});
 }
