@@ -59,7 +59,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_msa_keys)]
-	pub(super) type MsaKeys<T: Config> = StorageMap<
+	pub(super) type MsaKeysOf<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
 		MessageSenderId,
@@ -175,7 +175,7 @@ impl<T: Config> Pallet<T> {
 				Some(KeyInfo { msa_id, expired: T::BlockNumber::default(), nonce: Zero::zero() });
 
 			// adding reverse lookup
-			<MsaKeys<T>>::try_mutate(msa_id, |ref mut key_list| {
+			<MsaKeysOf<T>>::try_mutate(msa_id, |key_list| {
 				let index = key_list.binary_search(key).err().ok_or(Error::<T>::DuplicatedKey)?;
 
 				key_list

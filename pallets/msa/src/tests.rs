@@ -180,7 +180,7 @@ fn add_key_with_more_than_allowed_should_panic() {
 }
 
 #[test]
-fn it_logs_key_added_event() {
+fn add_key_with_valid_request_should_store_value_and_event() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let (key_pair, _) = sr25519::Pair::generate();

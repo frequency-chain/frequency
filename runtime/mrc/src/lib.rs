@@ -681,7 +681,7 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_msa_runtime_api::MsaApi<Block, AccountId, BlockNumber> for Runtime {
-		fn get_msa_keys(msa_id: MessageSenderId) ->	Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>, DispatchError> {
+		fn get_msa_keys(msa_id: MessageSenderId) -> Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>, DispatchError> {
 			Ok(Msa::fetch_msa_keys(msa_id))
 		}
 	}
