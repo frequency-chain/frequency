@@ -93,6 +93,8 @@ source .env
     ./scripts/init.sh offboard-mrc
     ```
 
+Note: Clean up /tmp/mrc directory after off-boarding. This is required to avoid any conflicts with next onboarding. For local testing and devnet this will be ideal until runtime upgrades are implemented.
+
 ### Generating a new spec file
 
 1. Update `node/chain_spec.rs` with required spec config, defaults to `para_id:2000` and relay chain to be `rococo_local.json` with `protocol_id:mrc-local`
