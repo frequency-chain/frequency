@@ -39,6 +39,9 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type WeightInfo: WeightInfo;
 		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
+
+		#[pallet::constant]
+		type MaxKeys: Get<u32>;
 	}
 
 	#[pallet::pallet]
@@ -53,6 +56,16 @@ pub mod pallet {
 	#[pallet::getter(fn get_key_info)]
 	pub type KeyInfoOf<T: Config> =
 		StorageMap<_, Blake2_128Concat, T::AccountId, KeyInfo<T::BlockNumber>, OptionQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn get_msa_keys)]
+	pub(super) type MsaKeys<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		MessageSenderId,
+		BoundedVec<T::AccountId, T::MaxKeys>,
+		ValueQuery,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -72,6 +85,7 @@ pub mod pallet {
 		NotKeyOwner,
 		NoKeyExists,
 		KeyRevoked,
+		KeyLimitExceeded,
 		InvalidSelfRevoke,
 	}
 
@@ -154,13 +168,22 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn add_key(msa_id: MessageSenderId, key: &T::AccountId) -> DispatchResult {
-		<KeyInfoOf<T>>::try_mutate(key, |maybe_msa| {
+		KeyInfoOf::<T>::try_mutate(key, |maybe_msa| {
 			ensure!(maybe_msa.is_none(), Error::<T>::DuplicatedKey);
 
 			*maybe_msa =
 				Some(KeyInfo { msa_id, expired: T::BlockNumber::default(), nonce: Zero::zero() });
 
-			Ok(())
+			// adding reverse lookup
+			<MsaKeys<T>>::try_mutate(msa_id, |ref mut key_list| {
+				let index = key_list.binary_search(key).err().ok_or(Error::<T>::DuplicatedKey)?;
+
+				key_list
+					.try_insert(index, key.clone())
+					.map_err(|_| Error::<T>::KeyLimitExceeded)?;
+
+				Ok(())
+			})
 		})
 	}
 
@@ -212,6 +235,11 @@ impl<T: Config> Pallet<T> {
 
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSenderId> {
 		Self::get_key_info(&key).map(|info| info.msa_id)
+	}
+
+	pub fn fetch_msa_keys(msa_id: MessageSenderId) -> Vec<T::AccountId> {
+		let keys = Self::get_msa_keys(msa_id);
+		keys.into_inner()
 	}
 }
 

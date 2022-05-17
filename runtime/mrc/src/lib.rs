@@ -23,7 +23,7 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use common_primitives::{messages::*, schema::SchemaResponse};
+use common_primitives::{messages::*, msa::*, schema::SchemaResponse};
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchError,
@@ -308,6 +308,7 @@ impl pallet_msa::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 	type ConvertIntoAccountId32 = ConvertInto;
+	type MaxKeys = ConstU32<1000>;
 }
 
 pub use common_primitives::schema::SchemaId;
@@ -676,6 +677,12 @@ impl_runtime_apis! {
 		}
 		fn calculate_schema_cost( schema:Vec<u8>) -> u64 {
 			Schemas::calculate_schema_cost(schema)
+		}
+	}
+
+	impl pallet_msa_runtime_api::MsaApi<Block, AccountId> for Runtime {
+		fn get_msa_keys(msa_id: MessageSenderId) ->	Result<Vec<AccountId>, DispatchError> {
+			Ok(Msa::fetch_msa_keys(msa_id))
 		}
 	}
 

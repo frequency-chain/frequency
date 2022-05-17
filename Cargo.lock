@@ -4961,6 +4961,8 @@ dependencies = [
  "mrc-runtime",
  "pallet-messages-rpc",
  "pallet-messages-runtime-api",
+ "pallet-msa-rpc",
+ "pallet-msa-runtime-api",
  "pallet-schemas-rpc",
  "pallet-schemas-runtime-api",
  "pallet-transaction-payment-rpc",
@@ -5035,6 +5037,7 @@ dependencies = [
  "pallet-messages",
  "pallet-messages-runtime-api",
  "pallet-msa",
+ "pallet-msa-runtime-api",
  "pallet-schemas",
  "pallet-schemas-runtime-api",
  "pallet-session",
@@ -5950,6 +5953,32 @@ dependencies = [
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
  "sp-io 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
+]
+
+[[package]]
+name = "pallet-msa-rpc"
+version = "0.1.0"
+dependencies = [
+ "common-primitives",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-msa-runtime-api",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
+]
+
+[[package]]
+name = "pallet-msa-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "common-primitives",
+ "frame-support",
+ "parity-scale-codec",
+ "sp-api",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
 ]
 

@@ -44,6 +44,7 @@ where
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber>,
 	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block, Balance>,
+	C::Api: pallet_msa_runtime_api::MsaApi<Block, AccountId>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
@@ -62,5 +63,8 @@ where
 	io.extend_with(pallet_schemas_rpc::SchemasApi::to_delegate(
 		pallet_schemas_rpc::SchemasHandler::new(client.clone()),
 	));
+	io.extend_with(pallet_msa_rpc::MsaApi::to_delegate(pallet_msa_rpc::MsaHandler::new(
+		client.clone(),
+	)));
 	io
 }
