@@ -1,5 +1,8 @@
 use codec::Codec;
-use common_primitives::{msa::MessageSenderId, rpc::*};
+use common_primitives::{
+	msa::{KeyInfoResponse, MessageSenderId},
+	rpc::*,
+};
 use jsonrpc_core::Result;
 use jsonrpc_derive::rpc;
 use pallet_msa_runtime_api::MsaApi as MsaRuntimeApi;
@@ -9,9 +12,12 @@ use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
 #[rpc]
-pub trait MsaApi<BlockHash, AccountId> {
+pub trait MsaApi<BlockHash, AccountId, BlockNumber> {
 	#[rpc(name = "msa_getMsaKeys")]
-	fn get_msa_keys(&self, msa_id: MessageSenderId) -> Result<Vec<AccountId>>;
+	fn get_msa_keys(
+		&self,
+		msa_id: MessageSenderId,
+	) -> Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>>;
 }
 
 /// A struct that implements the `MessagesApi`.
@@ -27,16 +33,21 @@ impl<C, M> MsaHandler<C, M> {
 	}
 }
 
-impl<C, Block, AccountId> MsaApi<<Block as BlockT>::Hash, AccountId> for MsaHandler<C, Block>
+impl<C, Block, AccountId, BlockNumber> MsaApi<<Block as BlockT>::Hash, AccountId, BlockNumber>
+	for MsaHandler<C, Block>
 where
 	Block: BlockT,
 	C: Send + Sync + 'static,
 	C: ProvideRuntimeApi<Block>,
 	C: HeaderBackend<Block>,
-	C::Api: MsaRuntimeApi<Block, AccountId>,
+	C::Api: MsaRuntimeApi<Block, AccountId, BlockNumber>,
 	AccountId: Codec,
+	BlockNumber: Codec,
 {
-	fn get_msa_keys(&self, msa_id: MessageSenderId) -> Result<Vec<AccountId>> {
+	fn get_msa_keys(
+		&self,
+		msa_id: MessageSenderId,
+	) -> Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 		let runtime_api_result = api.get_msa_keys(&at, msa_id);

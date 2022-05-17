@@ -217,7 +217,7 @@ where
 		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
 		+ pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber>
 		+ pallet_schemas_runtime_api::SchemasRuntimeApi<Block, Balance>
-		+ pallet_msa_runtime_api::MsaApi<Block, AccountId>,
+		+ pallet_msa_runtime_api::MsaApi<Block, AccountId, BlockNumber>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 	RB: Fn(

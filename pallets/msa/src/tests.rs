@@ -3,9 +3,9 @@ use crate::{
 	types::{AddKeyData, KeyInfo},
 	Call, Config, Error, Event, MsaIdentifier,
 };
-use common_primitives::utils::wrap_binary_data;
+use common_primitives::{msa::KeyInfoResponse, utils::wrap_binary_data};
 use frame_support::{assert_noop, assert_ok, weights::GetDispatchInfo};
-use sp_core::{sr25519, Encode, Pair};
+use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
 #[test]
@@ -207,6 +207,7 @@ fn it_logs_key_added_event() {
 		// assert
 		let keys = Msa::fetch_msa_keys(new_msa_id);
 		assert_eq!(keys.len(), 2);
+		assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id, nonce: 0, expired: 0}), true}
 		System::assert_last_event(Event::KeyAdded { msa_id: 1, key: new_key.into() }.into());
 	});
 }

@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use common_primitives::msa::AccountProvider;
+use common_primitives::msa::{AccountProvider, KeyInfoResponse};
 use frame_support::{dispatch::DispatchResult, ensure};
 pub use pallet::*;
 use sp_runtime::{
@@ -237,9 +237,18 @@ impl<T: Config> Pallet<T> {
 		Self::get_key_info(&key).map(|info| info.msa_id)
 	}
 
-	pub fn fetch_msa_keys(msa_id: MessageSenderId) -> Vec<T::AccountId> {
-		let keys = Self::get_msa_keys(msa_id);
-		keys.into_inner()
+	/// Fetches all the keys associated with a message Source Account
+	/// NOTE: This should only be called from RPC due to heavy database reads
+	pub fn fetch_msa_keys(
+		msa_id: MessageSenderId,
+	) -> Vec<KeyInfoResponse<T::AccountId, T::BlockNumber>> {
+		let mut response = Vec::new();
+		for key in Self::get_msa_keys(msa_id) {
+			if let Ok(info) = Self::try_get_key_info(&key) {
+				response.push(info.map_to_response(key));
+			}
+		}
+		response
 	}
 }
 

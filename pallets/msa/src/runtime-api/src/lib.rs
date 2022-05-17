@@ -10,9 +10,10 @@ use sp_std::vec::Vec;
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime file (the `runtime/src/lib.rs`)
 sp_api::decl_runtime_apis! {
-	pub trait MsaApi<AccountId> where
+	pub trait MsaApi<AccountId, BlockNumber> where
 		AccountId: Codec,
+		BlockNumber: Codec,
 	{
-		fn get_msa_keys(msa_id: MessageSenderId) ->	Result<Vec<AccountId>, DispatchError>;
+		fn get_msa_keys(msa_id: MessageSenderId) ->	Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>, DispatchError>;
 	}
 }
