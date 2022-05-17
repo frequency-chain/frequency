@@ -34,7 +34,6 @@ frame_support::construct_runtime!(
 
 parameter_types! {
 	pub const MaxSchemaRegistrations: SchemaId = 64_000;
-	pub const MaxSchemaSizeBytes: u32 = 100;
 }
 
 pub struct WeightToFee;

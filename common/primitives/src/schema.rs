@@ -2,11 +2,8 @@
 use crate::utils;
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
+// use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
-#[cfg(feature = "std")]
-use utils::*;
 
 pub type SchemaId = u16;
 
