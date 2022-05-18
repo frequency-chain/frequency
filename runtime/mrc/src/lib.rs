@@ -684,6 +684,10 @@ impl_runtime_apis! {
 		fn get_msa_keys(msa_id: MessageSenderId) -> Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>, DispatchError> {
 			Ok(Msa::fetch_msa_keys(msa_id))
 		}
+
+		fn get_msa_id(key: AccountId) -> Result<Option<MessageSenderId>, DispatchError> {
+			Ok(Msa::get_owner_of(&key))
+		}
 	}
 
 	#[cfg(feature = "try-runtime")]
