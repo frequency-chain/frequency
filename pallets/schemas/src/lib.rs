@@ -21,9 +21,9 @@ pub use weights::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use common_primitives::schema::{SchemaId, SchemaResponse};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use common_primitives::schema::{SchemaId, SchemaResponse};
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -88,8 +88,13 @@ pub mod pallet {
 	// storage for message schemas hashes
 	#[pallet::storage]
 	#[pallet::getter(fn get_schema)]
-	pub(super) type Schemas<T: Config> =
-	StorageMap<_, Twox64Concat, SchemaId, BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>, OptionQuery>;
+	pub(super) type Schemas<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		SchemaId,
+		BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>,
+		OptionQuery,
+	>;
 
 	////////////////////  TESTING
 	#[pallet::genesis_config]
@@ -113,11 +118,20 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(< T as Config >::WeightInfo::register_schema(schema.len() as u32))]
-		pub fn register_schema(origin: OriginFor<T>, schema: BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>) -> DispatchResult {
+		pub fn register_schema(
+			origin: OriginFor<T>,
+			schema: BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>,
+		) -> DispatchResult {
 			let sender = ensure_signed(origin.clone())?;
 
-			ensure!(schema.len() > T::MinSchemaSizeBytes::get() as usize, Error::<T>::LessThanMinSchemaBytes);
-			ensure!(schema.len() < Self::get_schema_max_bytes() as usize, Error::<T>::ExceedsMaxSchemaBytes);
+			ensure!(
+				schema.len() > T::MinSchemaSizeBytes::get() as usize,
+				Error::<T>::LessThanMinSchemaBytes
+			);
+			ensure!(
+				schema.len() < Self::get_schema_max_bytes() as usize,
+				Error::<T>::ExceedsMaxSchemaBytes
+			);
 
 			let cur_count = Self::schema_count();
 			ensure!(cur_count < T::MaxSchemaRegistrations::get(), Error::<T>::TooManySchemas);
@@ -135,11 +149,13 @@ pub mod pallet {
 			SchemaMaxBytes::<T>::set(max_size);
 			Ok(())
 		}
-
 	}
 
 	impl<T: Config> Pallet<T> {
-		fn add_schema(schema: BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>, schema_id: SchemaId) -> DispatchResult {
+		fn add_schema(
+			schema: BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>,
+			schema_id: SchemaId,
+		) -> DispatchResult {
 			<SchemaCount<T>>::set(schema_id);
 			<Schemas<T>>::insert(schema_id, schema);
 			Ok(())
@@ -150,10 +166,11 @@ pub mod pallet {
 		}
 
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-			if let Some(schema) = Self::get_schema(schema_id) { // this should get a BoundedVec out
+			if let Some(schema) = Self::get_schema(schema_id) {
+				// this should get a BoundedVec out
 				let schema_vec = schema.into_inner();
-				let response = SchemaResponse { schema_id, data:  schema_vec };
-				return Some(response);
+				let response = SchemaResponse { schema_id, data: schema_vec };
+				return Some(response)
 			}
 			None
 		}

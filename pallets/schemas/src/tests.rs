@@ -1,16 +1,14 @@
+use crate::{Config, Error, Event as AnnouncementEvent};
 use common_primitives::schema::SchemaId;
-use frame_support::{
-	assert_ok, assert_noop,
-	BoundedVec,
-};
-use frame_support::dispatch::RawOrigin;
+use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin, BoundedVec};
 use serial_test::serial;
 use sp_runtime::DispatchError::BadOrigin;
-use crate::{Config, Error, Event as AnnouncementEvent};
 
 use super::mock::*;
 
-fn create_bounded_schema_vec(from_string: &str) -> BoundedVec<u8, <Test as Config>::SchemaMaxBytesBoundedVecLimit> {
+fn create_bounded_schema_vec(
+	from_string: &str,
+) -> BoundedVec<u8, <Test as Config>::SchemaMaxBytesBoundedVecLimit> {
 	let fields_vec = Vec::from(from_string.as_bytes());
 	BoundedVec::try_from(fields_vec).unwrap()
 }
@@ -63,7 +61,10 @@ fn register_schema_happy_path() {
 	new_test_ext().execute_with(|| {
 		sudo_set_max_schema_size();
 		let sender: AccountId = 1;
-		assert_ok!(SchemasPallet::register_schema(Origin::signed(sender), create_bounded_schema_vec("foo,bar,bazz")));
+		assert_ok!(SchemasPallet::register_schema(
+			Origin::signed(sender),
+			create_bounded_schema_vec("foo,bar,bazz")
+		));
 	})
 }
 
@@ -83,7 +84,10 @@ fn set_max_schema_size_fails_if_not_root() {
 		let new_size: u32 = 42;
 		let sender: AccountId = 1;
 		let expected_err = BadOrigin;
-		assert_noop!(SchemasPallet::set_max_schema_bytes(Origin::signed(sender), new_size), expected_err);
+		assert_noop!(
+			SchemasPallet::set_max_schema_bytes(Origin::signed(sender), new_size),
+			expected_err
+		);
 	})
 }
 
@@ -96,13 +100,19 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 		let mut last_schema_id: SchemaId = 0;
 		for fields in ["foo,bar,bazz", "this,is,another,schema", "test,one,two,three"] {
 			let expected_schema_id = last_schema_id + 1;
-			assert_ok!(SchemasPallet::register_schema(Origin::signed(sender), create_bounded_schema_vec(fields)));
+			assert_ok!(SchemasPallet::register_schema(
+				Origin::signed(sender),
+				create_bounded_schema_vec(fields)
+			));
 			System::assert_last_event(
 				AnnouncementEvent::SchemaRegistered(sender, expected_schema_id).into(),
 			);
 			last_schema_id = expected_schema_id;
 		}
-		assert_ok!(SchemasPallet::register_schema(Origin::signed(sender), create_bounded_schema_vec("foo,bar")));
+		assert_ok!(SchemasPallet::register_schema(
+			Origin::signed(sender),
+			create_bounded_schema_vec("foo,bar")
+		));
 	})
 }
 
