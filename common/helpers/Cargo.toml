@@ -14,6 +14,7 @@ targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
 apache-avro = { git = "https://github.com/apache/avro", features = ["snappy"] }
+avro-no-std = { git = "https://github.com/mehtaishita/avro-no-std", features = ["snappy"] }
 thiserror = "1"
 sha2 = "0.10.2"
 rayon = "1.5"

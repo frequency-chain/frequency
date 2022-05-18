@@ -1,5 +1,6 @@
 use crate::types::*;
 use apache_avro::{from_avro_datum, schema::Schema, to_avro_datum, types::Record, Codec, Writer};
+use avro_no_std::{parser::Parser};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::{collections::HashMap, io::Cursor, str};
 
@@ -31,7 +32,7 @@ pub enum AvroError {
 /// assert!(schema_result.is_ok());
 /// let serialized_schema = schema_result.unwrap().1;
 pub fn fingerprint_raw_schema(raw_schema: &str) -> Result<(Schema, Vec<u8>), AvroError> {
-	let schema_result = Schema::parse_str(raw_schema)?;
+	let schema_result = Parser::parse_str(raw_schema)?;
 	let schema_canonical_form = schema_result.canonical_form();
 	Ok((schema_result, schema_canonical_form.as_bytes().to_vec()))
 }
@@ -90,7 +91,7 @@ pub fn translate_schema(serialized_schema: Vec<u8>) -> Result<Schema, AvroError>
 	let schema_str = str::from_utf8(&serialized_schema);
 	match schema_str {
 		Ok(schema_str) => {
-			let schema = Schema::parse_str(schema_str)?;
+			let schema = Parser::parse_str(schema_str)?;
 			Ok(schema)
 		},
 		Err(error) => Err(AvroError::InvalidSchema(error.to_string())),
