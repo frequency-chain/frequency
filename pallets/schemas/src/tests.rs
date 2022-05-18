@@ -92,6 +92,18 @@ fn set_max_schema_size_fails_if_not_root() {
 }
 
 #[test]
+fn set_max_schema_size_fails_if_larger_than_bound() {
+	new_test_ext().execute_with(|| {
+		let new_size: u32 = 68_000;
+		let expected_err = Error::<Test>::InvalidSchemaMaxValue;
+		assert_noop!(
+			SchemasPallet::set_max_schema_bytes(RawOrigin::Root.into(), new_size),
+			expected_err
+		);
+	})
+}
+
+#[test]
 #[serial]
 fn register_schema_id_deposits_events_and_increments_schema_id() {
 	new_test_ext().execute_with(|| {
