@@ -59,6 +59,8 @@ pub mod pallet {
 		TooManySchemas,
 		/// The schema exceeds the maximum length allowed
 		ExceedsMaxSchemaBytes,
+		/// The schema value provided is invalid (greater than the BoundedVec size)
+		InvalidSchemaMaxValue,
 		/// The schema is less than the minimum length allowed
 		LessThanMinSchemaBytes,
 		/// Schema does not exist
@@ -79,7 +81,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_schema_max_bytes)]
-	pub(super) type SchemaMaxBytes<T: Config> = StorageValue<_, u32, ValueQuery>;
+	pub(super) type GovernanceSchemaMaxBytes<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn schema_count)]
@@ -96,7 +98,6 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
-	////////////////////  TESTING
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {
 		pub initial_max_schema_size: u32,
@@ -111,7 +112,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
-			SchemaMaxBytes::<T>::put(self.initial_max_schema_size.clone());
+			GovernanceSchemaMaxBytes::<T>::put(self.initial_max_schema_size.clone());
 		}
 	}
 
@@ -143,10 +144,13 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Set a new value for the Schema maximum number of bytes.  Must be <= the limit of the
+		/// Schema BoundedVec used for registration.
 		#[pallet::weight(30_000)]
 		pub fn set_max_schema_bytes(origin: OriginFor<T>, max_size: u32) -> DispatchResult {
 			ensure_root(origin.clone())?;
-			SchemaMaxBytes::<T>::set(max_size);
+			ensure!(max_size <= T::SchemaMaxBytesBoundedVecLimit, Error::<T>::InvalidSchemaMaxValue);
+			GovernanceSchemaMaxBytes::<T>::set(max_size);
 			Ok(())
 		}
 	}
