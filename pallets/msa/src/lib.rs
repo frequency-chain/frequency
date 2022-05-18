@@ -9,9 +9,8 @@ use sp_runtime::{
 };
 
 use sp_core::crypto::AccountId32;
-
 pub mod types;
-pub use types::{AddKeyData, KeyInfo};
+pub use types::{AddDelegate, AddKeyData, Delegate, DelegateInfo, Delegator, KeyInfo};
 
 #[cfg(test)]
 mod mock;
@@ -53,6 +52,18 @@ pub mod pallet {
 	pub type MsaIdentifier<T> = StorageValue<_, MessageSenderId, ValueQuery>;
 
 	#[pallet::storage]
+	#[pallet::getter(fn get_delegate_info_of)]
+	pub type DelegateInfoOf<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		Delegate,
+		Blake2_128Concat,
+		Delegator,
+		DelegateInfo,
+		OptionQuery,
+	>;
+
+	#[pallet::storage]
 	#[pallet::getter(fn get_key_info)]
 	pub type KeyInfoOf<T: Config> =
 		StorageMap<_, Blake2_128Concat, T::AccountId, KeyInfo<T::BlockNumber>, OptionQuery>;
@@ -73,6 +84,7 @@ pub mod pallet {
 		MsaCreated { msa_id: MessageSenderId, key: T::AccountId },
 		KeyAdded { msa_id: MessageSenderId, key: T::AccountId },
 		KeyRevoked { key: T::AccountId },
+		DelegateAdded { delegate: Delegate, delegator: Delegator },
 	}
 
 	#[pallet::error]
@@ -87,6 +99,11 @@ pub mod pallet {
 		KeyRevoked,
 		KeyLimitExceeded,
 		InvalidSelfRevoke,
+		InvalidSelfDelegate,
+		InvalidMsaId,
+		DuplicateDelegate,
+		AddDelegateVerificationFailed,
+		UnauthorizedDelegator,
 	}
 
 	#[pallet::call]
@@ -98,6 +115,36 @@ pub mod pallet {
 			let (identifier, _) = Self::create_account(who.clone())?;
 
 			Self::deposit_event(Event::MsaCreated { msa_id: identifier, key: who });
+
+			Ok(())
+		}
+
+		#[pallet::weight(10_000)]
+		pub fn add_delegate_to_msa(
+			origin: OriginFor<T>,
+			delegate_key: T::AccountId,
+			proof: MultiSignature,
+			add_delegate_payload: AddDelegate,
+		) -> DispatchResult {
+			let delegator_key = ensure_signed(origin)?;
+
+			Self::verify_signature(proof, delegate_key.clone(), add_delegate_payload.encode())
+				.map_err(|_| Error::<T>::AddDelegateVerificationFailed)?;
+
+			let payload_authorized_msa_id = add_delegate_payload.authorized_msa_id;
+
+			let (delegate_msa_id, delegator_msa_id) = Self::ensure_valid_delegate(
+				&delegator_key,
+				&delegate_key,
+				payload_authorized_msa_id,
+			)?;
+
+			let _ = Self::add_delegate(delegate_msa_id, delegator_msa_id)?;
+
+			Self::deposit_event(Event::DelegateAdded {
+				delegator: delegator_msa_id.into(),
+				delegate: delegate_msa_id.into(),
+			});
 
 			Ok(())
 		}
@@ -187,6 +234,21 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
+	pub fn ensure_valid_delegate(
+		delegator_key: &T::AccountId,
+		delegate_key: &T::AccountId,
+		authorized_msa_id: MessageSenderId,
+	) -> Result<(Delegate, Delegator), DispatchError> {
+		let delegate_msa_id = Self::ensure_valid_msa_key(&delegate_key)?.msa_id;
+		let delegator_msa_id = Self::ensure_valid_msa_key(&delegator_key)?.msa_id;
+
+		ensure!(authorized_msa_id == delegator_msa_id, Error::<T>::UnauthorizedDelegator);
+
+		ensure!(delegator_msa_id != delegate_msa_id, Error::<T>::InvalidSelfDelegate);
+
+		Ok((delegate_msa_id.into(), delegator_msa_id.into()))
+	}
+
 	pub fn ensure_msa_owner(who: &T::AccountId, msa_id: MessageSenderId) -> DispatchResult {
 		let signer_msa_id = Self::get_owner_of(who).ok_or(Error::<T>::NoKeyExists)?;
 
@@ -206,6 +268,20 @@ impl<T: Config> Pallet<T> {
 			signature.verify(&wrapped_payload[..], &key.clone().into()),
 			Error::<T>::InvalidSignature
 		);
+
+		Ok(())
+	}
+
+	pub fn add_delegate(delegate: Delegate, delegator: Delegator) -> DispatchResult {
+		DelegateInfoOf::<T>::try_mutate(delegate, delegator, |maybe_info| -> DispatchResult {
+			ensure!(maybe_info.take() == None, Error::<T>::DuplicateDelegate);
+
+			let info = DelegateInfo { permission: Default::default() };
+
+			*maybe_info = Some(info);
+
+			Ok(())
+		})?;
 
 		Ok(())
 	}
@@ -248,7 +324,18 @@ impl<T: Config> Pallet<T> {
 				response.push(info.map_to_response(key));
 			}
 		}
+
 		response
+	}
+
+	pub fn ensure_valid_msa_key(
+		key: &T::AccountId,
+	) -> Result<KeyInfo<T::BlockNumber>, DispatchError> {
+		let info = Self::try_get_key_info(key)?;
+
+		ensure!(info.expired == T::BlockNumber::zero(), Error::<T>::KeyRevoked);
+
+		Ok(info)
 	}
 }
 
