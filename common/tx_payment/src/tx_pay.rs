@@ -4,8 +4,8 @@ use frame_support::{
 	traits::Get,
 	weights::{DispatchClass, DispatchInfo, PostDispatchInfo},
 };
-use scale_info::TypeInfo;
 use pallet_transaction_payment::OnChargeTransaction;
+use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{
 		DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SaturatedConversion, Saturating,

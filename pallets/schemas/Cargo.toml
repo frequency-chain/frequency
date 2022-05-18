@@ -31,6 +31,7 @@ pallet-transaction-payment = {git = "https://github.com/paritytech/substrate", d
 
 # MRC related dependencies
 common-primitives = {default-features = false, path = "../../common/primitives"}
+common-tx-payment = {default-features = false, path = "../../common/tx_payment"}
 
 [dev-dependencies]
 sp-keyring = { default-features = false, version = '6.0.0'}

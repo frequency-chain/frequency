@@ -1204,6 +1204,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "common-tx-payment"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "smallvec",
+ "sp-api",
+ "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
+]
+
+[[package]]
 name = "concurrent-queue"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6088,6 +6106,7 @@ name = "pallet-schemas"
 version = "0.1.0"
 dependencies = [
  "common-primitives",
+ "common-tx-payment",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
