@@ -18,6 +18,9 @@ pub trait MsaApi<BlockHash, AccountId, BlockNumber> {
 		&self,
 		msa_id: MessageSenderId,
 	) -> Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>>;
+
+	#[rpc(name = "msa_getMsaId")]
+	fn get_msa_id(&self, key: AccountId) -> Result<Option<MessageSenderId>>;
 }
 
 /// A struct that implements the `MessagesApi`.
@@ -51,6 +54,13 @@ where
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 		let runtime_api_result = api.get_msa_keys(&at, msa_id);
+		map_rpc_result(runtime_api_result)
+	}
+
+	fn get_msa_id(&self, key: AccountId) -> Result<Option<MessageSenderId>> {
+		let api = self.client.runtime_api();
+		let at = BlockId::hash(self.client.info().best_hash);
+		let runtime_api_result = api.get_msa_id(&at, key);
 		map_rpc_result(runtime_api_result)
 	}
 }
