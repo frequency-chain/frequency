@@ -27,7 +27,6 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		SchemasPallet: pallet_schemas::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -61,28 +60,8 @@ impl pallet_schemas::Config for Test {
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
 
-parameter_types! {
-	pub const ExistentialDeposit: u64 = 1;
-	pub const MaxLocks: u32 = 50;
-	pub const MaxReserves: u32 = 50;
-}
-
-impl pallet_balances::Config for Test {
-	type MaxLocks = MaxLocks;
-	/// The type for recording an account's balance.
-	type Balance = u64;
-	/// The ubiquitous event type.
-	type Event = Event;
-	type DustRemoval = ();
-	type ExistentialDeposit = ExistentialDeposit;
-	type AccountStore = System;
-	type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
-	type MaxReserves = MaxReserves;
-	type ReserveIdentifier = [u8; 8];
-}
-
 impl frame_system::Config for Test {
-	type AccountData = pallet_balances::AccountData<u64>;
+	type AccountData = ();
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();

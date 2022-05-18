@@ -3,10 +3,7 @@
 use core;
 
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
-use sp_std::{convert::TryInto, vec::Vec};
-use sp_runtime::{
-	DispatchError,
-};
+use sp_std::vec::Vec;
 
 #[cfg(test)]
 mod tests;
@@ -92,7 +89,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_schema)]
 	pub(super) type Schemas<T: Config> =
-	StorageMap<_, Twox64Concat, SchemaId, BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>, ValueQuery>;
+	StorageMap<_, Twox64Concat, SchemaId, BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>, OptionQuery>;
 
 	////////////////////  TESTING
 	#[pallet::genesis_config]
@@ -134,7 +131,7 @@ pub mod pallet {
 
 		#[pallet::weight(30_000)]
 		pub fn set_max_schema_bytes(origin: OriginFor<T>, max_size: u32) -> DispatchResult {
-			ensure_signed(origin.clone())?;
+			ensure_root(origin.clone())?;
 			SchemaMaxBytes::<T>::set(max_size);
 			Ok(())
 		}
@@ -152,9 +149,10 @@ pub mod pallet {
 			Some(Self::schema_count())
 		}
 
-		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse<T>> {
-			if let Some(schema) = Self::get_schema(schema_id) {
-				let response: SchemaResponse<T::SchemaMaxBytesBoundedVecLimit> = { schema_id, data: schema.into_inner() };
+		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+			if let Some(schema) = Self::get_schema(schema_id) { // this should get a BoundedVec out
+				let schema_vec = schema.into_inner();
+				let response = SchemaResponse { schema_id, data:  schema_vec };
 				return Some(response);
 			}
 			None
