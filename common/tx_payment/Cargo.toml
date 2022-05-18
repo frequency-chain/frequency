@@ -1,0 +1,40 @@
+[package]
+authors = ["MRC Team"]
+description = "A package that defines common helper for transaction payment"
+edition = "2021"
+homepage = "https://unfinishedlabs.io/"
+license = "Apache-2.0"
+name = 'common-tx-payment'
+publish = false
+repository = "https://github.com/LibertyDSNP/mrc/"
+version = "0.1.0"
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies]
+serde = {version = "1.0.136", features = ["derive"], optional = true, default-features = false}
+codec = {package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"]}
+scale-info = {version = "2.0.1", default-features = false, features = ["derive"]}
+frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
+sp-runtime = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18"}
+sp-std = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18"}
+smallvec = "1.7.0"
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+pallet-transaction-payment = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18"}
+pallet-transaction-payment-rpc-runtime-api = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18"}
+
+[features]
+default = ['std']
+std = [
+    'codec/std',
+    'serde/std',
+    'frame-support/std',
+    'frame-system/std',
+    'pallet-balances/std',
+    'pallet-transaction-payment/std',
+    'sp-std/std',
+    'sp-runtime/std',
+    'frame-benchmarking/std',
+]
