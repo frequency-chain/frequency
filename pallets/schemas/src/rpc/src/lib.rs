@@ -1,6 +1,6 @@
 use codec::Codec;
 use common_helpers::avro;
-use common_primitives::{rpc::*, schema::*, weight_to_fees::*};
+use common_primitives::{rpc::*, schema::*};
 use frame_support::weights::{Weight, WeightToFeePolynomial};
 use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
 use jsonrpc_derive::rpc;
@@ -41,12 +41,8 @@ pub trait SchemasApi<BlockHash, Balance> {
 	#[rpc(name = "schemas_getBySchemaId")]
 	fn get_by_schema_id(&self, schema_id: SchemaId) -> Result<Option<SchemaResponse>>;
 
-	#[rpc(name = "schemas_calculateSchemaFee")]
-	fn get_schema_registration_fee(
-		&self,
-		at: Option<BlockHash>,
-		schema: Vec<u8>,
-	) -> Result<FeeDetails<NumberOrHex>>;
+	#[rpc(name = "schemas_checkSchemaValidity")]
+	fn check_schema_validity(&self, at: Option<BlockHash>, schema: Vec<u8>) -> Result<bool>;
 }
 
 pub struct SchemasHandler<C, M> {
@@ -90,11 +86,11 @@ where
 		}
 	}
 
-	fn get_schema_registration_fee(
+	fn check_schema_validity(
 		&self,
 		at: Option<<Block as BlockT>::Hash>,
 		schema: Vec<u8>,
-	) -> Result<FeeDetails<NumberOrHex>> {
+	) -> Result<bool> {
 		let validated_schema = avro::validate_raw_avro_schema(&schema);
 		if validated_schema.is_err() {
 			return Err(RpcError {
@@ -104,40 +100,7 @@ where
 			}
 			.into())
 		}
-		let api = self.client.runtime_api();
-		let schema_len = schema.len();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		let schema_weight_res = api.calculate_schema_cost(&at, schema);
-		let schema_weight = match schema_weight_res {
-			Ok(weight) => weight,
-			Err(e) =>
-				return Err(RpcError {
-					code: ErrorCode::ServerError(1),
-					message: "Unable to calculate schema weight".into(),
-					data: Some(format!("{:?}", e).into()),
-				}),
-		};
-		let unadjusted_schema_fee = WeightToFee::calc(&schema_weight);
-		let try_into_rpc_balance = |value: Balance| {
-			value.try_into().map_err(|_| RpcError {
-				code: ErrorCode::InvalidParams,
-				message: format!("{} doesn't fit in NumberOrHex representation", value),
-				data: None,
-			})
-		};
-		// TODO Issue #77: Check what fee calculation should be like
-		let len_fee = WeightToFee::calc(&(schema_len as Weight));
-		let tip = 0u64.into();
-		let base_fee = 0u64.into();
-		let fee_return = FeeDetails {
-			inclusion_fee: Some(InclusionFee {
-				base_fee: try_into_rpc_balance(base_fee)?,
-				len_fee: try_into_rpc_balance(len_fee.into())?,
-				adjusted_weight_fee: try_into_rpc_balance(unadjusted_schema_fee.into())?,
-			}),
-			tip,
-		};
-		Ok(fee_return)
+		Ok(true)
 	}
 
 	fn get_by_schema_id(&self, schema_id: SchemaId) -> Result<Option<SchemaResponse>> {

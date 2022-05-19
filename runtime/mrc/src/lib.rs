@@ -49,7 +49,7 @@ pub use sp_runtime::BuildStorage;
 
 pub use pallet_msa;
 pub use pallet_schemas;
-
+pub use pallet_tx_fee;
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 
@@ -327,6 +327,8 @@ impl pallet_schemas::Config for Runtime {
 	type MaxSchemaSizeBytes = MaxSchemaSizeBytes;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
+
+impl pallet_tx_fee::Config for Runtime {}
 
 parameter_types! {
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
@@ -674,9 +676,6 @@ impl_runtime_apis! {
 		}
 		fn get_by_schema_id(schema_id: SchemaId) -> Result<Option<SchemaResponse>, DispatchError> {
 			Ok(Schemas::get_schema_by_id(schema_id))
-		}
-		fn calculate_schema_cost( schema:Vec<u8>) -> u64 {
-			Schemas::calculate_schema_cost(schema)
 		}
 	}
 
