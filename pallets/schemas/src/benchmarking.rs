@@ -19,7 +19,7 @@ fn generate_schema(size: usize) -> Vec<u8> {
 }
 
 fn register_some_schema<T: Config>(sender: T::AccountId) -> DispatchResult {
-	let schema_size: usize = (T::MaxSchemaSizeBytes::get() - 1) as usize;
+	let schema_size: usize = (T::SchemaMaxBytesBoundedVecLimit::get() - 1) as usize;
 	SchemasPallet::<T>::register_schema(
 		RawOrigin::Signed(sender).into(),
 		generate_schema(schema_size),
@@ -28,7 +28,7 @@ fn register_some_schema<T: Config>(sender: T::AccountId) -> DispatchResult {
 
 benchmarks! {
 	register_schema {
-		let m in (T::MinSchemaSizeBytes::get()) .. (T::MaxSchemaSizeBytes::get());
+		let m in (T::MinSchemaSizeBytes::get()) .. (T::SchemaMaxBytesBoundedVecLimit::get());
 		let n in 1 .. SCHEMAS;
 		let sender: T::AccountId = whitelisted_caller();
 		for j in 0..(n) {
