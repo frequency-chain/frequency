@@ -48,7 +48,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Emitted when a schemas is registered. [who, schemas id]
 		SchemaRegistered(T::AccountId, SchemaId),
-		SchemaMaxSizeChanged(u32);
+		SchemaMaxSizeChanged(u32),
 	}
 
 	#[derive(PartialEq)] // for testing
@@ -150,7 +150,10 @@ pub mod pallet {
 		#[pallet::weight(30_000)]
 		pub fn set_max_schema_bytes(origin: OriginFor<T>, max_size: u32) -> DispatchResult {
 			ensure_root(origin.clone())?;
-			ensure!(max_size <= T::SchemaMaxBytesBoundedVecLimit::get(), Error::<T>::InvalidSchemaMaxValue);
+			ensure!(
+				max_size <= T::SchemaMaxBytesBoundedVecLimit::get(),
+				Error::<T>::InvalidSchemaMaxValue
+			);
 			GovernanceSchemaMaxBytes::<T>::set(max_size);
 			Self::deposit_event(Event::SchemaMaxSizeChanged(max_size));
 			Ok(())
