@@ -15,5 +15,7 @@ sp_api::decl_runtime_apis! {
 		BlockNumber: Codec,
 	{
 		fn get_msa_keys(msa_id: MessageSenderId) ->	Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>, DispatchError>;
+
+		fn get_msa_id(key: AccountId) -> Result<Option<MessageSenderId>, DispatchError>;
 	}
 }
