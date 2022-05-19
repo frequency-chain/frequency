@@ -4,6 +4,8 @@ use scale_info::TypeInfo;
 
 use codec::{Decode, Encode};
 
+pub const EMPTY_FUNCTION: fn(MessageSenderId) -> DispatchResult = |_| Ok(());
+
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq)]
 pub struct AddKeyData {
 	pub msa_id: MessageSenderId,
@@ -40,6 +42,12 @@ pub struct DelegateInfo<BlockNumber> {
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq)]
 pub struct AddDelegate {
 	pub authorized_msa_id: MessageSenderId,
+	pub permission: u8,
+}
+
+#[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq)]
+pub struct AccountCreationDelegate<AccountId> {
+	pub key: AccountId,
 	pub permission: u8,
 }
 

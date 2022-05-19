@@ -116,9 +116,44 @@ pub mod pallet {
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			let (identifier, _) = Self::create_account(who.clone())?;
+			let (identifier, _) = Self::create_account(who.clone(), EMPTY_FUNCTION)?;
 
 			Self::deposit_event(Event::MsaCreated { msa_id: identifier, key: who });
+
+			Ok(())
+		}
+
+		#[pallet::weight(T::WeightInfo::create(10_000))]
+		pub fn create_account_with_delegate(
+			origin: OriginFor<T>,
+			proof: MultiSignature,
+			creation_delegate_payload: AccountCreationDelegate<T::AccountId>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			Self::verify_signature(
+				proof,
+				creation_delegate_payload.key.clone(),
+				creation_delegate_payload.encode(),
+			)?;
+
+			let delegate_msa_id =
+				Self::ensure_valid_creation_delegate(&creation_delegate_payload.key, &who)?;
+
+			let (_, _) = Self::create_account(
+				creation_delegate_payload.key.clone(),
+				|new_msa_id: MessageSenderId| -> DispatchResult {
+					let _ = Self::add_delegate(delegate_msa_id, new_msa_id.into())?;
+
+					Self::deposit_event(Event::MsaCreatedAndDelegated {
+						new_msa_id: new_msa_id.into(),
+						delegator_key: creation_delegate_payload.key.clone(),
+						delegate: delegate_msa_id,
+					});
+
+					Ok(())
+				},
+			)?;
 
 			Ok(())
 		}
@@ -189,7 +224,7 @@ pub mod pallet {
 			let msa_id = add_key_payload.msa_id;
 			Self::ensure_msa_owner(&who, msa_id)?;
 
-			Self::add_key(msa_id, &key)?;
+			Self::add_key(msa_id, &key, EMPTY_FUNCTION)?;
 
 			Self::deposit_event(Event::KeyAdded { msa_id, key });
 
@@ -217,11 +252,15 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	pub fn create_account(
+	pub fn create_account<F>(
 		key: T::AccountId,
-	) -> Result<(MessageSenderId, T::AccountId), DispatchError> {
+		on_success: F,
+	) -> Result<(MessageSenderId, T::AccountId), DispatchError>
+	where
+		F: FnOnce(MessageSenderId) -> DispatchResult,
+	{
 		let next_msa_id = Self::get_next_msa_id()?;
-		Self::add_key(next_msa_id, &key)?;
+		Self::add_key(next_msa_id, &key, on_success)?;
 		let _ = Self::set_msa_identifier(next_msa_id);
 
 		Ok((next_msa_id, key))
@@ -239,12 +278,18 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	pub fn add_key(msa_id: MessageSenderId, key: &T::AccountId) -> DispatchResult {
+	pub fn add_key<F>(msa_id: MessageSenderId, key: &T::AccountId, on_success: F) -> DispatchResult
+	where
+		F: FnOnce(MessageSenderId) -> DispatchResult,
+	{
 		KeyInfoOf::<T>::try_mutate(key, |maybe_msa| {
 			ensure!(maybe_msa.is_none(), Error::<T>::DuplicatedKey);
 
-			*maybe_msa =
-				Some(KeyInfo { msa_id, expired: T::BlockNumber::default(), nonce: Zero::zero() });
+			*maybe_msa = Some(KeyInfo {
+				msa_id: msa_id.clone(),
+				expired: T::BlockNumber::default(),
+				nonce: Zero::zero(),
+			});
 
 			// adding reverse lookup
 			<MsaKeysOf<T>>::try_mutate(msa_id, |key_list| {
@@ -254,7 +299,7 @@ impl<T: Config> Pallet<T> {
 					.try_insert(index, key.clone())
 					.map_err(|_| Error::<T>::KeyLimitExceeded)?;
 
-				Ok(())
+				on_success(msa_id)
 			})
 		})
 	}
@@ -386,6 +431,17 @@ impl<T: Config> Pallet<T> {
 		ensure!(info.expired == T::BlockNumber::zero(), Error::<T>::KeyRevoked);
 
 		Ok(info)
+	}
+
+	fn ensure_valid_creation_delegate(
+		delegator_key: &T::AccountId,
+		delegate_key: &T::AccountId,
+	) -> Result<Delegate, DispatchError> {
+		let delegate_msa_id = Self::ensure_valid_msa_key(&delegate_key)?.msa_id;
+
+		ensure!(Self::try_get_key_info(delegator_key).is_err(), Error::<T>::AlreadyAssignedKey);
+
+		Ok(delegate_msa_id.into())
 	}
 }
 

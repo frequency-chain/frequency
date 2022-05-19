@@ -1,7 +1,11 @@
 use crate::{
+	ensure,
 	mock::*,
-	types::{AddDelegate, AddKeyData, Delegate, DelegateInfo, Delegator, KeyInfo},
-	Call, Config, Error, Event, MsaIdentifier,
+	types::{
+		AccountCreationDelegate, AddDelegate, AddKeyData, Delegate, DelegateInfo, Delegator,
+		KeyInfo, EMPTY_FUNCTION,
+	},
+	Call, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{msa::KeyInfoResponse, utils::wrap_binary_data};
 use frame_support::{assert_noop, assert_ok, weights::GetDispatchInfo};
@@ -64,7 +68,7 @@ fn it_throws_error_when_key_verification_fails() {
 		let (key_pair_2, _) = sr25519::Pair::generate();
 
 		let new_account = key_pair.public();
-		let (new_msa_id, _) = Msa::create_account(new_account.into()).unwrap();
+		let (new_msa_id, _) = Msa::create_account(new_account.into(), EMPTY_FUNCTION).unwrap();
 
 		let fake_account = key_pair_2.public();
 
@@ -93,8 +97,8 @@ fn it_throws_error_when_not_msa_owner() {
 
 		let account = key_pair.public();
 
-		let (new_msa_id, _) = Msa::create_account(account.into()).unwrap();
-		assert_ok!(Msa::create_account(test_public(1).into()));
+		let (new_msa_id, _) = Msa::create_account(account.into(), EMPTY_FUNCTION).unwrap();
+		assert_ok!(Msa::create_account(test_public(1).into(), EMPTY_FUNCTION));
 
 		let new_account = key_pair_2.public();
 
@@ -122,7 +126,7 @@ fn it_throws_error_when_for_duplicate_key() {
 
 		let new_account = key_pair.public();
 
-		let (new_msa_id, _) = Msa::create_account(new_account.into()).unwrap();
+		let (new_msa_id, _) = Msa::create_account(new_account.into(), EMPTY_FUNCTION).unwrap();
 
 		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
@@ -147,7 +151,7 @@ fn add_key_with_more_than_allowed_should_panic() {
 		// arrange
 		let (key_pair, _) = sr25519::Pair::generate();
 		let account = key_pair.public();
-		let (new_msa_id, _) = Msa::create_account(account.into()).unwrap();
+		let (new_msa_id, _) = Msa::create_account(account.into(), EMPTY_FUNCTION).unwrap();
 		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
@@ -187,7 +191,7 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 		let (key_pair_2, _) = sr25519::Pair::generate();
 
 		let account = key_pair.public();
-		let (new_msa_id, _) = Msa::create_account(account.into()).unwrap();
+		let (new_msa_id, _) = Msa::create_account(account.into(), EMPTY_FUNCTION).unwrap();
 
 		let new_key = key_pair_2.public();
 
@@ -215,8 +219,8 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 #[test]
 fn it_revokes_msa_key_successfully() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Msa::add_key(2, &test_public(1)));
-		assert_ok!(Msa::add_key(2, &test_public(2)));
+		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(2, &test_public(2), EMPTY_FUNCTION));
 
 		assert_ok!(Msa::revoke_msa_key(test_origin_signed(1), test_public(2)));
 
@@ -242,7 +246,7 @@ pub fn test_get_onwner_of() {
 #[test]
 pub fn test_revoke_key() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Msa::add_key(1, &test_public(1)));
+		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
 
 		let info = Msa::get_key_info(&test_public(1));
 		assert_eq!(info, Some(KeyInfo { msa_id: 1, expired: 0, nonce: 0 }));
@@ -260,7 +264,7 @@ pub fn test_revoke_key_errors() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(Msa::revoke_key(&test_public(1)), Error::<Test>::NoKeyExists);
 
-		assert_ok!(Msa::add_key(1, &test_public(1)));
+		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
 		assert_ok!(Msa::revoke_key(&test_public(1)));
 
 		assert_noop!(Msa::revoke_key(&test_public(1)), Error::<Test>::KeyRevoked);
@@ -272,7 +276,7 @@ pub fn test_ensure_msa_owner() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(Msa::ensure_msa_owner(&test_public(1), 1), Error::<Test>::NoKeyExists);
 
-		assert_ok!(Msa::add_key(1, &test_public(1)));
+		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
 
 		assert_eq!(Msa::ensure_msa_owner(&test_public(1), 1), Ok(()));
 	});
@@ -481,6 +485,162 @@ pub fn ensure_valid_msa_key_is_successfull() {
 		assert_ok!(Msa::create(test_origin_signed(1)));
 
 		assert_ok!(Msa::ensure_valid_msa_key(&test_public(1)));
+	});
+}
+
+#[test]
+pub fn create_account_with_delegate_with_valid_input_should_succeed() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (key_pair, _) = sr25519::Pair::generate();
+		let delegate_account = key_pair.public();
+
+		let (key_pair_delegator, _) = sr25519::Pair::generate();
+		let delegator_account = key_pair_delegator.public();
+
+		let account_creation_delegate_payload =
+			AccountCreationDelegate { key: delegator_account.into(), permission: 0 };
+		let encode_account_creation_delegate_data =
+			wrap_binary_data(account_creation_delegate_payload.encode());
+
+		let signature: MultiSignature =
+			key_pair_delegator.sign(&encode_account_creation_delegate_data).into();
+
+		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+
+		// act
+		assert_ok!(Msa::create_account_with_delegate(
+			Origin::signed(delegate_account.into()),
+			signature.clone(),
+			account_creation_delegate_payload.clone()
+		));
+
+		// assert
+		let key_info = Msa::get_key_info(AccountId32::new(delegator_account.0));
+		assert_eq!(key_info.unwrap().msa_id, 2);
+
+		let delegated = Msa::get_delegate_info_of(Delegate(1), Delegator(2));
+		assert_eq!(delegated.is_some(), true);
+
+		System::assert_last_event(
+			Event::MsaCreatedAndDelegated {
+				new_msa_id: 2u64.into(),
+				delegator_key: delegator_account.into(),
+				delegate: 1u64.into(),
+			}
+			.into(),
+		);
+	});
+}
+
+#[test]
+fn create_account_with_delegate_with_invalid_signature_should_fail() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let delegate_account = key_pair.public();
+
+		let (key_pair_delegator, _) = sr25519::Pair::generate();
+		let delegator_account = key_pair_delegator.public();
+
+		let (signer_pair, _) = sr25519::Pair::generate();
+
+		let account_creation_delegate_payload =
+			AccountCreationDelegate { key: delegator_account.into(), permission: 0 };
+		let encode_account_creation_delegate_data =
+			wrap_binary_data(account_creation_delegate_payload.encode());
+
+		let signature: MultiSignature =
+			signer_pair.sign(&encode_account_creation_delegate_data).into();
+
+		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+
+		// act
+		assert_noop!(
+			Msa::create_account_with_delegate(
+				Origin::signed(delegate_account.into()),
+				signature.clone(),
+				account_creation_delegate_payload.clone()
+			),
+			Error::<Test>::InvalidSignature
+		);
+	});
+}
+
+#[test]
+pub fn create_account_with_delegate_with_invalid_creation_delegate_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (key_pair, _) = sr25519::Pair::generate();
+		let delegate_account = key_pair.public();
+
+		let (key_pair_delegator, _) = sr25519::Pair::generate();
+		let delegator_account = key_pair_delegator.public();
+
+		let account_creation_delegate_payload =
+			AccountCreationDelegate { key: delegator_account.into(), permission: 0 };
+		let encode_account_creation_delegate_data =
+			wrap_binary_data(account_creation_delegate_payload.encode());
+
+		let signature: MultiSignature =
+			key_pair_delegator.sign(&encode_account_creation_delegate_data).into();
+
+		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
+
+		// act
+		assert_noop!(
+			Msa::create_account_with_delegate(
+				Origin::signed(delegate_account.into()),
+				signature.clone(),
+				account_creation_delegate_payload.clone()
+			),
+			Error::<Test>::AlreadyAssignedKey
+		);
+	});
+}
+
+#[test]
+pub fn add_key_with_panic_in_on_success_should_revert_everything() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let msa_id = 1u64;
+		let key = test_public(msa_id as u8);
+
+		// act
+		assert_noop!(
+			Msa::add_key(msa_id, &key, |new_msa_id| -> DispatchResult {
+				ensure!(new_msa_id != msa_id, Error::<Test>::InvalidSelfRevoke);
+				Ok(())
+			}),
+			Error::<Test>::InvalidSelfRevoke
+		);
+
+		// assert
+		assert_eq!(Msa::get_key_info(&key), None);
+
+		assert_eq!(Msa::get_msa_keys(msa_id).into_inner(), vec![])
+	});
+}
+
+#[test]
+pub fn create_account_with_panic_in_on_success_should_revert_everything() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let msa_id = 1u64;
+		let key = test_public(msa_id as u8);
+		let next_msa_id = Msa::get_next_msa_id().unwrap();
+
+		// act
+		assert_noop!(
+			Msa::create_account(key, |new_msa_id| -> DispatchResult {
+				ensure!(new_msa_id != msa_id, Error::<Test>::InvalidSelfRevoke);
+				Ok(())
+			}),
+			Error::<Test>::InvalidSelfRevoke
+		);
+
+		// assert
+		assert_eq!(next_msa_id, Msa::get_next_msa_id().unwrap());
 	});
 }
 
