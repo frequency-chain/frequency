@@ -3,7 +3,7 @@
 use core;
 
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
-use sp_std::{convert::TryInto, vec::Vec};
+use sp_std::vec::Vec;
 
 #[cfg(test)]
 mod tests;
@@ -16,7 +16,6 @@ mod benchmarking;
 
 pub use pallet::*;
 pub mod weights;
-
 pub use weights::*;
 
 #[frame_support::pallet]
@@ -35,9 +34,9 @@ pub mod pallet {
 		#[pallet::constant]
 		type MinSchemaSizeBytes: Get<u32>;
 
-		// Maximum length of Schema field name
+		// Maximum length of Schema Bounded Vec
 		#[pallet::constant]
-		type MaxSchemaSizeBytes: Get<u32>;
+		type SchemaMaxBytesBoundedVecLimit: Get<u32>;
 
 		// Maximum number of schemas that can be registered
 		#[pallet::constant]
@@ -45,10 +44,11 @@ pub mod pallet {
 	}
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Emitted when a schemas is registered. [who, schemas id]
 		SchemaRegistered(T::AccountId, SchemaId),
+		SchemaMaxSizeChanged(u32),
 	}
 
 	#[derive(PartialEq)] // for testing
@@ -60,6 +60,8 @@ pub mod pallet {
 		TooManySchemas,
 		/// The schema exceeds the maximum length allowed
 		ExceedsMaxSchemaBytes,
+		/// The schema value provided is invalid (greater than the BoundedVec size)
+		InvalidSchemaMaxValue,
 		/// The schema is less than the minimum length allowed
 		LessThanMinSchemaBytes,
 		/// Schema does not exist
@@ -79,39 +81,92 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
+	#[pallet::getter(fn get_schema_max_bytes)]
+	pub(super) type GovernanceSchemaMaxBytes<T: Config> = StorageValue<_, u32, ValueQuery>;
+
+	#[pallet::storage]
 	#[pallet::getter(fn schema_count)]
 	pub(super) type SchemaCount<T: Config> = StorageValue<_, SchemaId, ValueQuery>;
 
 	// storage for message schemas hashes
 	#[pallet::storage]
 	#[pallet::getter(fn get_schema)]
-	pub(super) type Schemas<T: Config> =
-		StorageMap<_, Twox64Concat, SchemaId, BoundedVec<u8, T::MaxSchemaSizeBytes>, OptionQuery>;
+	pub(super) type Schemas<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		SchemaId,
+		BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>,
+		OptionQuery,
+	>;
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig {
+		pub initial_max_schema_size: u32,
+	}
+
+	#[cfg(feature = "std")]
+	impl sp_std::default::Default for GenesisConfig {
+		fn default() -> Self {
+			Self { initial_max_schema_size: 1024 }
+		}
+	}
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			GovernanceSchemaMaxBytes::<T>::put(self.initial_max_schema_size.clone());
+		}
+	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(<T as Config>::WeightInfo::register_schema(schema.len() as u32))]
-		pub fn register_schema(origin: OriginFor<T>, schema: Vec<u8>) -> DispatchResult {
+		#[pallet::weight(< T as Config >::WeightInfo::register_schema(schema.len() as u32))]
+		pub fn register_schema(
+			origin: OriginFor<T>,
+			schema: BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>,
+		) -> DispatchResult {
 			let sender = ensure_signed(origin.clone())?;
 
+			ensure!(
+				schema.len() > T::MinSchemaSizeBytes::get() as usize,
+				Error::<T>::LessThanMinSchemaBytes
+			);
+			ensure!(
+				schema.len() < Self::get_schema_max_bytes() as usize,
+				Error::<T>::ExceedsMaxSchemaBytes
+			);
+
 			let cur_count = Self::schema_count();
-			ensure!(cur_count < T::MaxSchemaRegistrations::get(), <Error<T>>::TooManySchemas);
-			let schema_id = cur_count.checked_add(1).ok_or(<Error<T>>::SchemaCountOverflow)?;
+			ensure!(cur_count < T::MaxSchemaRegistrations::get(), Error::<T>::TooManySchemas);
+			let schema_id = cur_count.checked_add(1).ok_or(Error::<T>::SchemaCountOverflow)?;
 
 			Self::add_schema(schema.clone(), schema_id)?;
 
 			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
 			Ok(())
 		}
+
+		/// Set a new value for the Schema maximum number of bytes.  Must be <= the limit of the
+		/// Schema BoundedVec used for registration.
+		#[pallet::weight(30_000)]
+		pub fn set_max_schema_bytes(origin: OriginFor<T>, max_size: u32) -> DispatchResult {
+			ensure_root(origin.clone())?;
+			ensure!(
+				max_size <= T::SchemaMaxBytesBoundedVecLimit::get(),
+				Error::<T>::InvalidSchemaMaxValue
+			);
+			GovernanceSchemaMaxBytes::<T>::set(max_size);
+			Self::deposit_event(Event::SchemaMaxSizeChanged(max_size));
+			Ok(())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
-		fn add_schema(schema: Vec<u8>, schema_id: SchemaId) -> DispatchResult {
-			let bounded_fields = Self::require_valid_schema_size(schema)?;
-
+		fn add_schema(
+			schema: BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>,
+			schema_id: SchemaId,
+		) -> DispatchResult {
 			<SchemaCount<T>>::set(schema_id);
-			<Schemas<T>>::insert(schema_id, bounded_fields);
-
+			<Schemas<T>>::insert(schema_id, schema);
 			Ok(())
 		}
 
@@ -121,21 +176,12 @@ pub mod pallet {
 
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			if let Some(schema) = Self::get_schema(schema_id) {
-				return Some(SchemaResponse { schema_id, data: schema.into_inner() })
+				// this should get a BoundedVec out
+				let schema_vec = schema.into_inner();
+				let response = SchemaResponse { schema_id, data: schema_vec };
+				return Some(response)
 			}
 			None
-		}
-
-		pub fn require_valid_schema_size(
-			schema: Vec<u8>,
-		) -> Result<BoundedVec<u8, T::MaxSchemaSizeBytes>, Error<T>> {
-			let bounded_fields: BoundedVec<u8, T::MaxSchemaSizeBytes> =
-				schema.try_into().map_err(|()| Error::<T>::ExceedsMaxSchemaBytes)?;
-			ensure!(
-				bounded_fields.len() >= T::MinSchemaSizeBytes::get() as usize,
-				Error::<T>::LessThanMinSchemaBytes
-			);
-			Ok(bounded_fields)
 		}
 
 		pub fn calculate_schema_cost(schema: Vec<u8>) -> Weight {
