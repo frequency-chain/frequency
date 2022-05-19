@@ -32,26 +32,36 @@ the file format cannot be verified on-chain. For details about batch file format
 * `BatchSizeMinBytes` - the minimum possible size of a valid batch file with 1 row
 
 ### Enums
-* `MessageType` - all values specified in [DSNP Spec Announcement Types](https://spec.dsnp.org/DSNP/Announcements.html)
+* `BatchFormat` - a list of supported formats for batch files. Currently only Parquet file format is supported, however,
+other formats are being considered.
 
 ### Types
 * `BatchAnnouncementParams<T:Config>`: generic
-    * `batch_url`:`Vec<u8>` the URL of the batch file. Must be IPFS and correctly formatted.
-    * `schema_id`: `SchemaId`  the schema id for this batch message.  The Schema Id must be for a "batchable" schema.
-    * `file_size`: `usize`, the size of the batch file, used to determine message fee.  Must be &gt;= the minimum possible DSNP batch file size.
-    * `file_hash`: `<T::Hash>`, the hash of the batch file. Must not be 0 hash
-    * `msa_id`: `MsaId`, the id to use for the announcer.  Must exist and be active
+    * `batch_url`:`Vec<u8>` the URL of the batch file. Must be an IPFS [CIDv1](https://github.com/multiformats/cid/) URL. Accepted codec, algorithm, and base are to be determined.
+    * `message_schema_id`: `SchemaId`  the schema id for the messages in this batch. The `schema_id` must refer to schemas used for batching only.
+    * `file_size`: `usize`, the size of the batch file, used to determine message fee as well as to let consumers know what size files to expect.  Must be &gt;= the minimum possible DSNP batch file size.
+    * `file_format`: `BatchFormat`, indicator of the file format of the batch file.
+    * `msa_id`: `MsaId`, the id to use for the batch.  Must exist and be active. Must be owned by origin (sender).
+
+The file hash is not included separately. Since the `batch_url` uses CIDv1 specification, the file hash is already included.
 
 * `BatchAnnouncement`: implements `BatchAnnouncementParams`, returned by `get_batches`
 
-* `BatchAnnouncementOptions<T:Config>`: struct
-    * `msa_id`:  `MsaId`, the announcer's MSA id.  If 0, get all announcements
-    * `block_number`: `<T::BlockNumber>`, retrieve messages starting at the given block number (inclusive).
-    * `page_size`: `usize`, retrieve `page_size` messages at a time, up to configured `T::BatchPageSizeMax`. If 0, return `T::BatchPageSizeMax` results.
+See the [implementation of paging in the messages pallet](https://github.com/LibertyDSNP/mrc/blob/main/common/primitives/src/messages.rs#L26-L58)
 
-* `BatchAnnouncementResult`: struct
-    * `page`: `uint32`, current page number
-    * `results`: `BoundedVec<BatchAnnouncement, page_size>`
+* `BatchAnnouncementOptions<T:Config>`
+    * `msa_id`:  `MsaId`, the announcer's MSA id.  If 0, get all announcements
+    * `from_block`: `<T::BlockNumber>`, retrieve messages starting at the given block number (inclusive)
+    * `to_block`: `<T::BlockNumber>`, retrieve messages ending at the given block number (inclusive)
+    * `from_index`: `u32`, starting message index
+    * `page_size`: `usize`, retrieve `page_size` messages at a time, up to configured `T::BatchPageSizeMax`. If 0, return `T::BatchPageSizeMax` results
+
+
+* `BatchAnnouncementResult`
+    * `has_next`: `uint32`, current page number
+    * `next_block`: `<T::BlockNumber>` starting block number of next page of results
+    * `next_index`: `u32` starting index of next results in `next_block`
+    * `results`: `Vec<BatchAnnouncement>`
 
 
 ### Extrinsics
@@ -64,8 +74,8 @@ Creates and posts a new batch announcement message on chain.
 
 * **Event**:  `Event::<T>::BatchAnnounced(schema_id file_size, file_hash, msa_id, signature)`
 * **Restrictions**:
-  1. origin must own `msa_id`.
-  2.`msa_id` account must have capacity to post the transaction during the current epoch
+  * origin must own `msa_id`
+  * `msa_id` account must have capacity to post the transaction during the current epoch
 
 ### Custom RPCs
 
@@ -73,9 +83,14 @@ Creates and posts a new batch announcement message on chain.
 Retrieves paged batch announcements that have not been garbage-collected which meet `options` criteria.  The `msa_id` does not need to be active.
 
 * **Parameters**
-  1. `options`: `BatchAnnouncementOptions` containing batch announcement criteria
+  * `options`: `BatchAnnouncementOptions` containing batch announcement criteria
 
 * **Returns**
   * `None()` if no messages meet the criteria.
   * `Some(BoundedVec<BatchAnnouncement, page_size>)`, in descending block-transaction order
 
+### Glossary
+* *IPFS* [InterPlanetary File System](https://docs.ipfs.io/), a decentralized file system for building the next generation of the internet
+* *CID* [Content IDentifier](https://github.com/multiformats/cid/), Self-describing content-addressed identifiers for distributed systems
+* *MsaId* [Message Source Account ID](https://github.com/LibertyDSNP/mrc/blob/main/designdocs/ACCOUNTS.md) an identifier for a MSA.
+*
