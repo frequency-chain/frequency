@@ -2,14 +2,13 @@
 This document describes the permissioned delegation of actions, largely, but not limited to, account creation and announcing messages by the owner of an `MsaId` on chain on behalf of the owner of another `MsaId`.
 
 ## Table of Contents
-* [Context and Scope](https://github.com/LibertyDSNP/meta#installation)
-* [Problem Statement](https://github.com/LibertyDSNP/meta#dependenciesrequirements)
-* [Goals and Non-Goals](https://github.com/LibertyDSNP/meta#configuration)
-* [Proposal](https://github.com/LibertyDSNP/meta#examples)
-* [Benefits and Risks](https://github.com/LibertyDSNP/meta#roadmap)
-* [Alternatives and Rationale](https://github.com/LibertyDSNP/meta#support)
-* [Additional Resources](https://github.com/LibertyDSNP/meta#contributing)
-* [Glossary](https://github.com/LibertyDSNP/meta#overview)
+* [Context and Scope](#context-and-scope)
+* [Problem Statement](#problem-statement)
+* [Goals and Non-Goals](#goals-and-non-goals)
+* [Proposal](#proposal)
+* [Benefits and Risks](#benefits-and-risks)
+* [Alternatives and Rationale](#alternatives-and-rationale)
+* [Glossary](#glossary)
 
 
 ## Context and Scope
@@ -62,8 +61,8 @@ Creates a new `MsaId` on behalf of an MSA and adds the origin as the MSA's deleg
              * `permission` a value indicating the permission to be given to the delegate
          2. `public_key` - The authorizing key used to create `signature`
          3. `signature` - The signature of the hash of `data`
-    * Event:  `IdentityCreated`, with the `public_key`, the newly created `MsaId`, and `msa_id`
-    * Restrictions:  origin must own `msa_id` in the payload.
+  * Event:  `IdentityCreated`, with the `public_key`, the newly created `MsaId`, and `msa_id`
+  * Restrictions:  origin must own `msa_id` in the payload.
 
 #### add_self_as_delegate(payload)
 Adds the `MsaId` in the payload as a delegate, to an MSA owning `delegator_msa_id`
