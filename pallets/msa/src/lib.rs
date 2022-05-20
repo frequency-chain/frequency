@@ -124,7 +124,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(T::WeightInfo::create(10_000))]
+		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation())]
 		pub fn create_sponsored_account_with_delegation(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
