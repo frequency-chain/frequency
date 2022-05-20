@@ -1,18 +1,11 @@
-use codec::Codec;
 use common_helpers::avro;
 use common_primitives::{rpc::*, schema::*};
-use frame_support::weights::{Weight, WeightToFeePolynomial};
 use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
 use jsonrpc_derive::rpc;
 use pallet_schemas_runtime_api::SchemasRuntimeApi;
-use pallet_transaction_payment_rpc_runtime_api::{FeeDetails, InclusionFee, RuntimeDispatchInfo};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_rpc::number::NumberOrHex;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{Block as BlockT, MaybeDisplay},
-};
+use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use sp_std::vec::Vec;
 use std::sync::Arc;
 
@@ -34,7 +27,7 @@ impl From<Error> for i64 {
 }
 
 #[rpc]
-pub trait SchemasApi<BlockHash, Balance> {
+pub trait SchemasApi<BlockHash> {
 	#[rpc(name = "schemas_getLatestSchemaId")]
 	fn get_latest_schema_id(&self, at: Option<BlockHash>) -> Result<u16>;
 
@@ -56,13 +49,11 @@ impl<C, M> SchemasHandler<C, M> {
 	}
 }
 
-impl<C, Block, Balance> SchemasApi<<Block as BlockT>::Hash, RuntimeDispatchInfo<Balance>>
-	for SchemasHandler<C, Block>
+impl<C, Block> SchemasApi<<Block as BlockT>::Hash> for SchemasHandler<C, Block>
 where
 	Block: BlockT,
 	C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-	C::Api: SchemasRuntimeApi<Block, Balance>,
-	Balance: Codec + MaybeDisplay + Copy + TryInto<NumberOrHex> + std::convert::From<u64>,
+	C::Api: SchemasRuntimeApi<Block>,
 {
 	fn get_latest_schema_id(&self, at: Option<<Block as BlockT>::Hash>) -> Result<u16> {
 		let api = self.client.runtime_api();

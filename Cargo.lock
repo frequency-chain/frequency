@@ -4966,6 +4966,8 @@ dependencies = [
  "pallet-schemas-rpc",
  "pallet-schemas-runtime-api",
  "pallet-transaction-payment-rpc",
+ "pallet-tx-fee-rpc",
+ "pallet-tx-fee-runtime-api",
  "parity-scale-codec",
  "polkadot-cli",
  "polkadot-parachain",
@@ -5046,6 +5048,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-tx-fee",
+ "pallet-tx-fee-runtime-api",
  "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
@@ -6121,7 +6124,6 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
  "serial_test",
@@ -6145,8 +6147,6 @@ dependencies = [
  "jsonrpc-derive",
  "pallet-schemas-runtime-api",
  "pallet-sudo",
- "pallet-transaction-payment",
- "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
  "sp-api",
  "sp-blockchain",
@@ -6162,7 +6162,6 @@ version = "0.1.0"
 dependencies = [
  "common-primitives",
  "frame-support",
- "pallet-transaction-payment",
  "parity-scale-codec",
  "sp-api",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
@@ -6393,6 +6392,36 @@ dependencies = [
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
  "sp-io 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
  "sp-keyring 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
+]
+
+[[package]]
+name = "pallet-tx-fee-rpc"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-tx-fee-runtime-api",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
+ "sp-rpc",
+ "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
+]
+
+[[package]]
+name = "pallet-tx-fee-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "sp-api",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
 ]

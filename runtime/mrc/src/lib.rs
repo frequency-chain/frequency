@@ -532,6 +532,7 @@ construct_runtime!(
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 34,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 35,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>} = 36,
+		MrcTxPayment: pallet_tx_fee::{Pallet} = 37,
 	}
 );
 
@@ -669,7 +670,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block, Balance> for Runtime {
+	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
 		fn get_latest_schema_id() -> Option<u16> {
 			Schemas::get_latest_schema_id()
 		}
@@ -685,6 +686,15 @@ impl_runtime_apis! {
 
 		fn get_msa_id(key: AccountId) -> Result<Option<MessageSenderId>, DispatchError> {
 			Ok(Msa::get_owner_of(&key))
+		}
+	}
+
+	impl pallet_tx_fee_runtime_api::TxFeeRuntimeApi<Block, Balance> for Runtime {
+		fn compute_extrinsic_cost(
+			uxt: <Block as BlockT>::Extrinsic,
+			len: u32,
+		) -> pallet_transaction_payment::FeeDetails<Balance> {
+			MrcTxPayment::compute_extrinsic_cost(uxt, len)
 		}
 	}
 

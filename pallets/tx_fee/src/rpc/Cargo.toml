@@ -1,5 +1,5 @@
 [package]
-name = "pallet-schemas-rpc"
+name = "pallet-tx-fee-rpc"
 version = "0.1.0"
 description = "RPC package for schemas"
 authors = ["MRC Team"]
@@ -16,9 +16,7 @@ jsonrpc-core-client = "18.0"
 jsonrpc-derive = "18.0"
 
 # unfinished
-pallet-schemas-runtime-api = { path = "../runtime-api", default-features = false }
-common-primitives = { path = '../../../../common/primitives', default-features = false }
-common-helpers = { path = '../../../../common/helpers', default-features = false }
+pallet-tx-fee-runtime-api = { path = "../runtime-api", default-features = false }
 
 # Substrate
 frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
@@ -29,17 +27,12 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", default-features
 sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
 sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
 
-[dev-dependencies]
-pallet-sudo = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
-
 [features]
 default = ["std"]
 std = [
 	"sp-std/std",
 	"codec/std",
 	"sp-api/std",
-	"sp-core/std",
 	"sp-runtime/std",
-	"pallet-schemas-runtime-api/std",
-	"common-primitives/std",
+	"pallet-tx-fee-runtime-api/std",
 ]

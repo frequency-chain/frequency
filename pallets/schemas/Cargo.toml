@@ -27,7 +27,6 @@ sp-io = {default-features = false, git = "https://github.com/paritytech/substrat
 sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
 sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
 sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
-pallet-transaction-payment = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18"}
 
 # MRC related dependencies
 common-primitives = {default-features = false, path = "../../common/primitives"}
@@ -47,7 +46,6 @@ std = [
 	"sp-runtime/std",
 	"sp-std/std",
 	"sp-core/std",
-	"pallet-transaction-payment/std",
 ]
 
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]

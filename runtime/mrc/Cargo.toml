@@ -60,6 +60,7 @@ pallet-messages-runtime-api = { path = "../../pallets/messages/src/runtime-api",
 pallet-schemas = {path = "../../pallets/schemas", default-features = false}
 pallet-schemas-runtime-api = { path = "../../pallets/schemas/src/runtime-api", default-features = false}
 pallet-tx-fee= { path = "../../pallets/tx_fee", default-features = false}
+pallet-tx-fee-runtime-api = { path = "../../pallets/tx_fee/src/runtime-api", default-features = false}
 
 # Polkadot
 pallet-xcm = {git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.18"}

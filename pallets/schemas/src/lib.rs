@@ -3,7 +3,6 @@
 use core;
 
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
-use sp_std::vec::Vec;
 
 #[cfg(test)]
 mod tests;
