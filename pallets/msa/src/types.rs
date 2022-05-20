@@ -45,12 +45,6 @@ pub struct AddDelegate {
 	pub permission: u8,
 }
 
-#[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq)]
-pub struct AccountCreationDelegate<AccountId> {
-	pub key: AccountId,
-	pub permission: u8,
-}
-
 #[derive(TypeInfo, Debug, Clone, Copy, Decode, Encode, PartialEq, MaxEncodedLen, Eq)]
 pub struct Delegator(pub MessageSenderId);
 
