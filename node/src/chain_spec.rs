@@ -1,5 +1,5 @@
 use cumulus_primitives_core::ParaId;
-use mrc_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, SudoConfig};
+use mrc_runtime::{AccountId, AuraId, Signature, SudoConfig, EXISTENTIAL_DEPOSIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
