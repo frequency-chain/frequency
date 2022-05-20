@@ -1,5 +1,5 @@
 use cumulus_primitives_core::ParaId;
-use mrc_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT};
+use mrc_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, SudoConfig};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -86,6 +86,7 @@ pub fn development_config() -> ChainSpec {
 						get_collator_keys_from_seed("Bob"),
 					),
 				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -141,6 +142,7 @@ pub fn local_testnet_config() -> ChainSpec {
 						get_collator_keys_from_seed("Bob"),
 					),
 				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -178,6 +180,7 @@ pub fn local_testnet_config() -> ChainSpec {
 
 fn testnet_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
+	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> mrc_runtime::GenesisConfig {
@@ -213,6 +216,11 @@ fn testnet_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		sudo: SudoConfig {
+			// Assign network admin rights.
+			key: Some(root_key),
+		},
 		polkadot_xcm: mrc_runtime::PolkadotXcmConfig { safe_xcm_version: Some(SAFE_XCM_VERSION) },
+		schemas: Default::default(),
 	}
 }

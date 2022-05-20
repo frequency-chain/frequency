@@ -494,6 +494,11 @@ impl pallet_messages::Config for Runtime {
 	type MaxMessageSizeInBytes = MaxMessageSizeInBytes;
 }
 
+impl pallet_sudo::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -529,7 +534,9 @@ construct_runtime!(
 		// MRC related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 34,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 35,
-		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>} = 36,
+		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 36,
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T> }= 37,
+
 	}
 );
 
