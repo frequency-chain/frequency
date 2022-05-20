@@ -87,6 +87,20 @@ source .env
 
 1. Link to parachain [dashboard](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A11946)
 
+### Cleanup the environment
+
+1. Stop the relay chain.
+
+    ```bash
+    ./scripts/init.sh stop-relay-chain
+    ```
+
+1. Stop MRC running in the terminal.
+
+1. Run ```docker volume prune``` to remove unused volumes.
+
+1. Remove mrc chain data via ```rm -rf /tmp/mrc```.
+
 ### Generating a new spec file
 
 1. Update `node/chain_spec.rs` with required spec config, defaults to `para_id:2000` and relay chain to be `rococo_local.json` with `protocol_id:mrc-local`

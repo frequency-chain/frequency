@@ -7,9 +7,6 @@ use sp_runtime::{traits::Dispatchable, FixedPointOperand};
 #[cfg(test)]
 mod tests;
 
-#[cfg(test)]
-mod mock;
-
 pub use pallet::*;
 
 // Type aliases used for interaction with `OnChargeTransaction`.
