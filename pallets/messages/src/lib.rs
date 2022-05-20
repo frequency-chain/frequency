@@ -23,7 +23,7 @@ pub mod weights;
 mod types;
 
 use frame_support::{
-	dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get, BoundedVec,
+	ensure, pallet_prelude::Weight, traits::Get, BoundedVec,
 };
 use sp_runtime::{traits::One, DispatchError};
 use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
@@ -133,7 +133,7 @@ pub mod pallet {
 		/// Execution weight
 		/// # </weight>
 		#[pallet::weight(T::WeightInfo::add(message.len() as u32, 1_000))]
-		pub fn add(origin: OriginFor<T>, schema_id: SchemaId, message: Vec<u8>) -> DispatchResult {
+		pub fn add(origin: OriginFor<T>, schema_id: SchemaId, message: Vec<u8>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 
 			ensure!(
@@ -145,20 +145,24 @@ pub mod pallet {
 			ensure!(msa_id.is_some(), Error::<T>::InvalidMessageSourceAccount);
 
 			// TODO: validate schema existence and validity from schema pallet
-
-			<BlockMessages<T>>::try_mutate(|messages| -> DispatchResult {
+			<BlockMessages<T>>::try_mutate(|existing_messages| -> DispatchResultWithPostInfo {
 				let current_size: u16 =
-					messages.len().try_into().map_err(|_| Error::<T>::TypeConversionOverflow)?;
+					existing_messages.len().try_into().map_err(|_| Error::<T>::TypeConversionOverflow)?;
+				let message_size = message.len();
 				let m = Message {
 					data: message.try_into().unwrap(), // size is checked on top of extrinsic
 					signer: who,
 					index: current_size,
 					msa_id: msa_id.unwrap(),
 				};
-				messages
+				existing_messages
 					.try_push((m, schema_id))
 					.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
-				Ok(())
+
+				Ok(Some(T::WeightInfo::add(
+					message_size as u32,
+					current_size as u32,
+				)).into())
 			})
 		}
 	}

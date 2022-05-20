@@ -12,14 +12,13 @@ use sp_core::crypto::AccountId32;
 pub mod types;
 pub use types::{AddDelegate, AddKeyData, Delegate, DelegateInfo, Delegator, KeyInfo};
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 #[cfg(test)]
 mod mock;
-
 #[cfg(test)]
 mod tests;
 
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
 pub mod weights;
 
 pub use weights::*;
