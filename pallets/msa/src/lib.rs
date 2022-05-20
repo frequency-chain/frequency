@@ -59,7 +59,7 @@ pub mod pallet {
 		Delegate,
 		Blake2_128Concat,
 		Delegator,
-		DelegateInfo,
+		DelegateInfo<T::BlockNumber>,
 		OptionQuery,
 	>;
 
@@ -85,6 +85,7 @@ pub mod pallet {
 		KeyAdded { msa_id: MessageSenderId, key: T::AccountId },
 		KeyRevoked { key: T::AccountId },
 		DelegateAdded { delegate: Delegate, delegator: Delegator },
+		DelegateRevoked { delegate: Delegate, delegator: Delegator },
 	}
 
 	#[pallet::error]
@@ -104,6 +105,9 @@ pub mod pallet {
 		DuplicateDelegate,
 		AddDelegateVerificationFailed,
 		UnauthorizedDelegator,
+		DelegateRevoked,
+		DelegateError,
+		DelegateNotFound,
 	}
 
 	#[pallet::call]
@@ -144,6 +148,27 @@ pub mod pallet {
 			Self::deposit_event(Event::DelegateAdded {
 				delegator: delegator_msa_id.into(),
 				delegate: delegate_msa_id.into(),
+			});
+
+			Ok(())
+		}
+
+		#[pallet::weight(10_000)]
+		pub fn revoke_msa_delegate(
+			origin: OriginFor<T>,
+			delegate_msa_id: MessageSenderId,
+		) -> DispatchResult {
+			let delegator_key = ensure_signed(origin)?;
+
+			let delegator_msa_id: Delegator =
+				Self::ensure_valid_msa_key(&delegator_key)?.msa_id.into();
+			let delegate_msa_id = Delegate(delegate_msa_id);
+
+			Self::revoke_delegate(delegate_msa_id, delegator_msa_id)?;
+
+			Self::deposit_event(Event::DelegateRevoked {
+				delegator: delegator_msa_id,
+				delegate: delegate_msa_id,
 			});
 
 			Ok(())
@@ -276,7 +301,7 @@ impl<T: Config> Pallet<T> {
 		DelegateInfoOf::<T>::try_mutate(delegate, delegator, |maybe_info| -> DispatchResult {
 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateDelegate);
 
-			let info = DelegateInfo { permission: Default::default() };
+			let info = DelegateInfo { permission: Default::default(), expired: Default::default() };
 
 			*maybe_info = Some(info);
 
@@ -300,6 +325,31 @@ impl<T: Config> Pallet<T> {
 
 			Ok(())
 		})?;
+
+		Ok(())
+	}
+
+	pub fn revoke_delegate(
+		delegate_msa_id: Delegate,
+		delegator_msa_id: Delegator,
+	) -> DispatchResult {
+		DelegateInfoOf::<T>::try_mutate_exists(
+			delegate_msa_id,
+			delegator_msa_id,
+			|maybe_info| -> DispatchResult {
+				let mut info = maybe_info.take().ok_or(Error::<T>::DelegateNotFound)?;
+
+				ensure!(info.expired == T::BlockNumber::default(), Error::<T>::DelegateRevoked);
+
+				let current_block = frame_system::Pallet::<T>::block_number();
+
+				info.expired = current_block;
+
+				*maybe_info = Some(info);
+
+				Ok(())
+			},
+		)?;
 
 		Ok(())
 	}
