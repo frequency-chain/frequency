@@ -4,6 +4,8 @@ use scale_info::TypeInfo;
 
 use codec::{Decode, Encode};
 
+pub const EMPTY_FUNCTION: fn(MessageSenderId) -> DispatchResult = |_| Ok(());
+
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq)]
 pub struct AddKeyData {
 	pub msa_id: MessageSenderId,
@@ -17,17 +19,11 @@ pub struct KeyInfo<BlockNumber> {
 	pub expired: BlockNumber,
 }
 
-impl<BlockNumber> KeyInfo<BlockNumber>
-where
-	BlockNumber: Clone,
-{
-	pub fn map_to_response<AccountId>(
+impl<BlockNumber: Clone> KeyInfo<BlockNumber> {
+	pub fn map_to_response<AccountId: Clone>(
 		&self,
 		key: AccountId,
-	) -> KeyInfoResponse<AccountId, BlockNumber>
-	where
-		AccountId: Clone,
-	{
+	) -> KeyInfoResponse<AccountId, BlockNumber> {
 		KeyInfoResponse {
 			key: key.clone(),
 			msa_id: self.msa_id,
@@ -38,8 +34,9 @@ where
 }
 
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
-pub struct DelegateInfo {
+pub struct DelegateInfo<BlockNumber> {
 	pub permission: u8,
+	pub expired: BlockNumber,
 }
 
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq)]
