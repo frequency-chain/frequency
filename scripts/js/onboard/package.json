@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "onboard": "node onboard.js",
-    "register": "node register.js"
+    "onboard":  "node onboard.js",
+    "register": "node register.js",
+    "cleanup":  "node offboard.js"
   },
   "keywords": [],
   "author": "",

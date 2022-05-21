@@ -96,4 +96,11 @@ onboard-mrc)
   cd scripts/js/onboard
   yarn && yarn onboard "ws://0.0.0.0:9944" "//Alice" ${para_id} "${genesis}" $wasm_location
   ;;
+
+offboard-mrc)
+  echo "cleaning up parachain for id '$para_id'..."
+  
+  cd scripts/js/onboard
+  yarn && yarn cleanup "ws://0.0.0.0:9944" "//Alice" ${para_id}
+  ;;
 esac
