@@ -4961,6 +4961,8 @@ dependencies = [
  "mrc-runtime",
  "pallet-messages-rpc",
  "pallet-messages-runtime-api",
+ "pallet-msa-rpc",
+ "pallet-msa-runtime-api",
  "pallet-schemas-rpc",
  "pallet-schemas-runtime-api",
  "pallet-transaction-payment-rpc",
@@ -5035,6 +5037,7 @@ dependencies = [
  "pallet-messages",
  "pallet-messages-runtime-api",
  "pallet-msa",
+ "pallet-msa-runtime-api",
  "pallet-schemas",
  "pallet-schemas-runtime-api",
  "pallet-session",
@@ -5954,6 +5957,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-msa-rpc"
+version = "0.1.0"
+dependencies = [
+ "common-primitives",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-msa-runtime-api",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
+]
+
+[[package]]
+name = "pallet-msa-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "common-primitives",
+ "frame-support",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
+]
+
+[[package]]
 name = "pallet-multisig"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18#fc3fd073d3a0acf9933c3994b660ebd7b5833f65"
@@ -6091,7 +6120,6 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "pallet-balances",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
@@ -6115,6 +6143,7 @@ dependencies = [
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "pallet-schemas-runtime-api",
+ "pallet-sudo",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",

@@ -1,0 +1,33 @@
+[package]
+name = 'pallet-msa-runtime-api'
+version = '0.1.0'
+description = 'A package that adds Runtime Api for Msa pallet'
+authors = ['MRC Team']
+license = "Apache-2.0"
+publish = false
+homepage = "https://unfinishedlabs.io/"
+repository = "https://github.com/LibertyDSNP/mrc/"
+edition = "2021"
+
+
+[dependencies]
+codec = {package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"]}
+
+# Substrate
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+
+# MRC related dependencies
+common-primitives = {default-features = false, path = "../../../../common/primitives" }
+
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"sp-api/std",
+	"sp-std/std",
+	"frame-support/std",
+	'common-primitives/std'
+]
