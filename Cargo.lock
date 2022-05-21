@@ -6143,7 +6143,6 @@ dependencies = [
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "pallet-schemas-runtime-api",
- "pallet-sudo",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
