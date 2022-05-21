@@ -513,6 +513,7 @@ construct_runtime!(
 		} = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T> }= 4,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
@@ -535,8 +536,6 @@ construct_runtime!(
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 34,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 35,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 36,
-		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T> }= 37,
-
 	}
 );
 
