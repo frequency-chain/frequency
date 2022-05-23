@@ -669,7 +669,7 @@ pub fn create_account_with_panic_in_on_success_should_revert_everything() {
 }
 
 #[test]
-pub fn revoke_msa_delegate_is_successfull() {
+pub fn revoke_msa_delegation_by_delegator_is_successfull() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let delegate_account = key_pair.public();
@@ -689,7 +689,7 @@ pub fn revoke_msa_delegate_is_successfull() {
 			add_delegate_payload
 		));
 
-		assert_ok!(Msa::revoke_msa_delegate(test_origin_signed(1), 2));
+		assert_ok!(Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 2));
 
 		System::assert_last_event(
 			Event::DelegateRevoked { delegator: 1.into(), delegate: 2.into() }.into(),
@@ -741,17 +741,20 @@ fn revoke_delegate_throws_errors() {
 		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
 
 		assert_noop!(
-			Msa::revoke_msa_delegate(test_origin_signed(1), 1),
+			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 1),
 			Error::<Test>::NoKeyExists
 		);
 
 		assert_ok!(Msa::create(test_origin_signed(2)));
 		assert_ok!(Msa::revoke_key(&test_public(2)));
-		assert_noop!(Msa::revoke_msa_delegate(test_origin_signed(2), 1), Error::<Test>::KeyRevoked);
+		assert_noop!(
+			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(2), 1),
+			Error::<Test>::KeyRevoked
+		);
 
 		assert_ok!(Msa::create(test_origin_signed(1)));
 		assert_noop!(
-			Msa::revoke_msa_delegate(test_origin_signed(1), 4),
+			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 4),
 			Error::<Test>::DelegateNotFound
 		);
 
@@ -765,14 +768,14 @@ fn revoke_delegate_throws_errors() {
 		));
 
 		assert_noop!(
-			Msa::revoke_msa_delegate(test_origin_signed(1), 4),
+			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 4),
 			Error::<Test>::DelegateNotFound
 		);
 
-		assert_ok!(Msa::revoke_msa_delegate(test_origin_signed(1), 3));
+		assert_ok!(Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 3));
 
 		assert_noop!(
-			Msa::revoke_msa_delegate(test_origin_signed(1), 3),
+			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 3),
 			Error::<Test>::DelegateRevoked
 		);
 	});

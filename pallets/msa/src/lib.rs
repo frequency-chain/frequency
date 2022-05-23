@@ -136,15 +136,15 @@ pub mod pallet {
 
 			Self::verify_signature(proof, delegator_key.clone(), add_delegate_payload.encode())?;
 
-			let delegate_msa_id = Self::ensure_valid_msa_key(&delegate_key)?.msa_id;
+			let provider_msa_id = Self::ensure_valid_msa_key(&delegate_key)?.msa_id;
 			ensure!(
-				add_delegate_payload.authorized_msa_id == delegate_msa_id,
+				add_delegate_payload.authorized_msa_id == provider_msa_id,
 				Error::<T>::UnauthorizedDelegate
 			);
 
 			let (_, _) =
 				Self::create_account(delegator_key.clone(), |new_msa_id| -> DispatchResult {
-					let _ = Self::add_delegate(delegate_msa_id.into(), new_msa_id.into())?;
+					let _ = Self::add_delegate(provider_msa_id.into(), new_msa_id.into())?;
 
 					Self::deposit_event(Event::MsaCreated {
 						msa_id: new_msa_id.clone(),
@@ -153,7 +153,7 @@ pub mod pallet {
 
 					Self::deposit_event(Event::DelegateAdded {
 						delegator: new_msa_id.into(),
-						delegate: delegate_msa_id.into(),
+						delegate: provider_msa_id.into(),
 					});
 					Ok(())
 				})?;
@@ -175,38 +175,38 @@ pub mod pallet {
 
 			let payload_authorized_msa_id = add_delegate_payload.authorized_msa_id;
 
-			let (delegate_msa_id, delegator_msa_id) = Self::ensure_valid_delegate(
+			let (provider_msa_id, delegator_msa_id) = Self::ensure_valid_delegate(
 				&delegator_key,
 				&delegate_key,
 				payload_authorized_msa_id,
 			)?;
 
-			let _ = Self::add_delegate(delegate_msa_id, delegator_msa_id)?;
+			let _ = Self::add_delegate(provider_msa_id, delegator_msa_id)?;
 
 			Self::deposit_event(Event::DelegateAdded {
 				delegator: delegator_msa_id.into(),
-				delegate: delegate_msa_id.into(),
+				delegate: provider_msa_id.into(),
 			});
 
 			Ok(())
 		}
 
 		#[pallet::weight(10_000)]
-		pub fn revoke_msa_delegate(
+		pub fn revoke_msa_delegation_by_delegator(
 			origin: OriginFor<T>,
-			delegate_msa_id: MessageSenderId,
+			provider_msa_id: MessageSenderId,
 		) -> DispatchResult {
 			let delegator_key = ensure_signed(origin)?;
 
 			let delegator_msa_id: Delegator =
 				Self::ensure_valid_msa_key(&delegator_key)?.msa_id.into();
-			let delegate_msa_id = Delegate(delegate_msa_id);
+			let provider_msa_id = Delegate(provider_msa_id);
 
-			Self::revoke_delegate(delegate_msa_id, delegator_msa_id)?;
+			Self::revoke_delegate(provider_msa_id, delegator_msa_id)?;
 
 			Self::deposit_event(Event::DelegateRevoked {
 				delegator: delegator_msa_id,
-				delegate: delegate_msa_id,
+				delegate: provider_msa_id,
 			});
 
 			Ok(())
@@ -313,14 +313,14 @@ impl<T: Config> Pallet<T> {
 		delegate_key: &T::AccountId,
 		authorized_msa_id: MessageSenderId,
 	) -> Result<(Delegate, Delegator), DispatchError> {
-		let delegate_msa_id = Self::ensure_valid_msa_key(&delegate_key)?.msa_id;
+		let provider_msa_id = Self::ensure_valid_msa_key(&delegate_key)?.msa_id;
 		let delegator_msa_id = Self::ensure_valid_msa_key(&delegator_key)?.msa_id;
 
 		ensure!(authorized_msa_id == delegator_msa_id, Error::<T>::UnauthorizedDelegator);
 
-		ensure!(delegator_msa_id != delegate_msa_id, Error::<T>::InvalidSelfDelegate);
+		ensure!(delegator_msa_id != provider_msa_id, Error::<T>::InvalidSelfDelegate);
 
-		Ok((delegate_msa_id.into(), delegator_msa_id.into()))
+		Ok((provider_msa_id.into(), delegator_msa_id.into()))
 	}
 
 	pub fn ensure_msa_owner(who: &T::AccountId, msa_id: MessageSenderId) -> DispatchResult {
@@ -379,11 +379,11 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn revoke_delegate(
-		delegate_msa_id: Delegate,
+		provider_msa_id: Delegate,
 		delegator_msa_id: Delegator,
 	) -> DispatchResult {
 		DelegateInfoOf::<T>::try_mutate_exists(
-			delegate_msa_id,
+			provider_msa_id,
 			delegator_msa_id,
 			|maybe_info| -> DispatchResult {
 				let mut info = maybe_info.take().ok_or(Error::<T>::DelegateNotFound)?;

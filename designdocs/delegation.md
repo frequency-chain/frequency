@@ -69,12 +69,12 @@ Adds the `MsaId` in the payload as a delegate, to an MSA owning `delegator_msa_i
   * Parameters:
       1. `payload`: authorization data signed by the delegating account
           1. `data` - this is what the MSA owner must sign and provide to the delegate beforehand.
-              * `delegate_msa_id` - the delegate's `MsaId`, i.e. the caller's `MsaId`
+              * `provider_msa_id` - the delegate's `MsaId`, i.e. the caller's `MsaId`
               * `permission` a value indicating the permission to be given to the delegate
           2. `public_key` - The authorizing key used to create `signature`
           3. `signature` - The signature of the hash of `data`
-    * Event: `DelegateAddedSelf` with `public_key`, `msa_id`, and `delegate_msa_id`
-    * Restrictions:  Caller/origin must own `delegate_msa_id`. The `public_key` MSA must own `msa_id`.
+    * Event: `DelegateAddedSelf` with `public_key`, `msa_id`, and `provider_msa_id`
+    * Restrictions:  Caller/origin must own `provider_msa_id`. The `public_key` MSA must own `msa_id`.
 
 #### replace_delegate_with_self(payload)
 By signed authorization of owner of `delegator`, the `delegator`-->`old_delegate` relationship is removed and replaced with a`delegator`-->`new_delegate` relationship. The purpose of this extrinsic is to allow an End User to change delegates, for example, if they want to switch to a different DSNP dApp.
@@ -155,7 +155,7 @@ Throws an Error enum indicating if either delegate or delegator does not exist.
     3. `permission`: the `Permission` value to check against what is stored for these delegates.
         If this is the `Zero()` value, it checks only that this is a delegate for this delegator `MsaId`.
 
-#### validate_delegate_for_ids(delegate_msa_id, msa_ids, permission)
+#### validate_delegate_for_ids(provider_msa_id, msa_ids, permission)
 Validate a delegate for a bunch of `MsaIds` against the provided `permission`.
 This call is intended for validating messages in a batch, so this function would be an all-or-nothing check.
 If the permission stored for a given `MsaId` exceeds the parameter, the check for that `MsaId` passes.
@@ -164,7 +164,7 @@ For example, if a delegate has *all* permissions set, then querying for a subset
 * Returns: `Ok(true)` if delegate is valid for all ids *and* the delegate exists *and* all of the ids exist, `Ok(false)` otherwise.
   It's up to the caller to decide if they want to figure out why validation failed and how.
 * Parameters:
-  1. `delegate_msa_id`: the `MsaId` of the delegate to verify.
+  1. `provider_msa_id`: the `MsaId` of the delegate to verify.
   2. `msa_ids`: the list of `MsaIds` to check. The list of `MsaIds` should have a sensible maximum length.
   3. `permission`: the `Permission` value to check against. Since the call is intended for validating a batch, `permission` is a single value.
 
