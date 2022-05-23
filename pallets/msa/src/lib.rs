@@ -10,7 +10,7 @@ use sp_runtime::{
 
 use sp_core::crypto::AccountId32;
 pub mod types;
-pub use types::{AddDelegate, AddKeyData, Delegate, DelegateInfo, Delegator, KeyInfo};
+pub use types::{AddKeyData, AddProvider, Delegator, KeyInfo, Provider, ProviderInfo};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -51,14 +51,14 @@ pub mod pallet {
 	pub type MsaIdentifier<T> = StorageValue<_, MessageSenderId, ValueQuery>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn get_delegate_info_of)]
-	pub type DelegateInfoOf<T: Config> = StorageDoubleMap<
+	#[pallet::getter(fn get_provider_info_of)]
+	pub type ProviderInfoOf<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		Delegate,
+		Provider,
 		Blake2_128Concat,
 		Delegator,
-		DelegateInfo<T::BlockNumber>,
+		ProviderInfo<T::BlockNumber>,
 		OptionQuery,
 	>;
 
@@ -83,8 +83,8 @@ pub mod pallet {
 		MsaCreated { msa_id: MessageSenderId, key: T::AccountId },
 		KeyAdded { msa_id: MessageSenderId, key: T::AccountId },
 		KeyRevoked { key: T::AccountId },
-		DelegateAdded { delegate: Delegate, delegator: Delegator },
-		DelegateRevoked { delegate: Delegate, delegator: Delegator },
+		ProviderAdded { provider: Provider, delegator: Delegator },
+		ProviderRevoked { provider: Provider, delegator: Delegator },
 	}
 
 	#[pallet::error]
@@ -99,15 +99,14 @@ pub mod pallet {
 		KeyRevoked,
 		KeyLimitExceeded,
 		InvalidSelfRevoke,
-		InvalidSelfDelegate,
+		InvalidSelfProvider,
 		InvalidMsaId,
-		DuplicateDelegate,
-		AddDelegateVerificationFailed,
+		DuplicateProvider,
+		AddProviderVerificationFailed,
 		UnauthorizedDelegator,
-		UnauthorizedDelegate,
-		DelegateRevoked,
-		DelegateError,
-		DelegateNotFound,
+		UnauthorizedProvider,
+		ProviderRevoked,
+		ProviderNotFound,
 	}
 
 	#[pallet::call]
@@ -129,30 +128,30 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
 			proof: MultiSignature,
-			add_delegate_payload: AddDelegate,
+			add_provider_payload: AddProvider,
 		) -> DispatchResult {
-			let delegate_key = ensure_signed(origin)?;
+			let provider_key = ensure_signed(origin)?;
 
-			Self::verify_signature(proof, delegator_key.clone(), add_delegate_payload.encode())?;
+			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())?;
 
-			let provider_msa_id = Self::ensure_valid_msa_key(&delegate_key)?.msa_id;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?.msa_id;
 			ensure!(
-				add_delegate_payload.authorized_msa_id == provider_msa_id,
-				Error::<T>::UnauthorizedDelegate
+				add_provider_payload.authorized_msa_id == provider_msa_id,
+				Error::<T>::UnauthorizedProvider
 			);
 
 			let (_, _) =
 				Self::create_account(delegator_key.clone(), |new_msa_id| -> DispatchResult {
-					let _ = Self::add_delegate(provider_msa_id.into(), new_msa_id.into())?;
+					let _ = Self::add_provider(provider_msa_id.into(), new_msa_id.into())?;
 
 					Self::deposit_event(Event::MsaCreated {
 						msa_id: new_msa_id.clone(),
 						key: delegator_key.clone(),
 					});
 
-					Self::deposit_event(Event::DelegateAdded {
+					Self::deposit_event(Event::ProviderAdded {
 						delegator: new_msa_id.into(),
-						delegate: provider_msa_id.into(),
+						provider: provider_msa_id.into(),
 					});
 					Ok(())
 				})?;
@@ -161,30 +160,30 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000)]
-		pub fn add_delegate_to_msa(
+		pub fn add_provider_to_msa(
 			origin: OriginFor<T>,
-			delegate_key: T::AccountId,
+			provider_key: T::AccountId,
 			proof: MultiSignature,
-			add_delegate_payload: AddDelegate,
+			add_provider_payload: AddProvider,
 		) -> DispatchResult {
 			let delegator_key = ensure_signed(origin)?;
 
-			Self::verify_signature(proof, delegate_key.clone(), add_delegate_payload.encode())
-				.map_err(|_| Error::<T>::AddDelegateVerificationFailed)?;
+			Self::verify_signature(proof, provider_key.clone(), add_provider_payload.encode())
+				.map_err(|_| Error::<T>::AddProviderVerificationFailed)?;
 
-			let payload_authorized_msa_id = add_delegate_payload.authorized_msa_id;
+			let payload_authorized_msa_id = add_provider_payload.authorized_msa_id;
 
-			let (provider_msa_id, delegator_msa_id) = Self::ensure_valid_delegate(
+			let (provider_msa_id, delegator_msa_id) = Self::ensure_valid_provider(
 				&delegator_key,
-				&delegate_key,
+				&provider_key,
 				payload_authorized_msa_id,
 			)?;
 
-			let _ = Self::add_delegate(provider_msa_id, delegator_msa_id)?;
+			let _ = Self::add_provider(provider_msa_id, delegator_msa_id)?;
 
-			Self::deposit_event(Event::DelegateAdded {
+			Self::deposit_event(Event::ProviderAdded {
 				delegator: delegator_msa_id.into(),
-				delegate: provider_msa_id.into(),
+				provider: provider_msa_id.into(),
 			});
 
 			Ok(())
@@ -199,13 +198,13 @@ pub mod pallet {
 
 			let delegator_msa_id: Delegator =
 				Self::ensure_valid_msa_key(&delegator_key)?.msa_id.into();
-			let provider_msa_id = Delegate(provider_msa_id);
+			let provider_msa_id = Provider(provider_msa_id);
 
-			Self::revoke_delegate(provider_msa_id, delegator_msa_id)?;
+			Self::revoke_provider(provider_msa_id, delegator_msa_id)?;
 
-			Self::deposit_event(Event::DelegateRevoked {
+			Self::deposit_event(Event::ProviderRevoked {
 				delegator: delegator_msa_id,
-				delegate: provider_msa_id,
+				provider: provider_msa_id,
 			});
 
 			Ok(())
@@ -307,17 +306,17 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	pub fn ensure_valid_delegate(
+	pub fn ensure_valid_provider(
 		delegator_key: &T::AccountId,
-		delegate_key: &T::AccountId,
+		provider_key: &T::AccountId,
 		authorized_msa_id: MessageSenderId,
-	) -> Result<(Delegate, Delegator), DispatchError> {
-		let provider_msa_id = Self::ensure_valid_msa_key(&delegate_key)?.msa_id;
+	) -> Result<(Provider, Delegator), DispatchError> {
+		let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?.msa_id;
 		let delegator_msa_id = Self::ensure_valid_msa_key(&delegator_key)?.msa_id;
 
 		ensure!(authorized_msa_id == delegator_msa_id, Error::<T>::UnauthorizedDelegator);
 
-		ensure!(delegator_msa_id != provider_msa_id, Error::<T>::InvalidSelfDelegate);
+		ensure!(delegator_msa_id != provider_msa_id, Error::<T>::InvalidSelfProvider);
 
 		Ok((provider_msa_id.into(), delegator_msa_id.into()))
 	}
@@ -345,11 +344,11 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	pub fn add_delegate(delegate: Delegate, delegator: Delegator) -> DispatchResult {
-		DelegateInfoOf::<T>::try_mutate(delegate, delegator, |maybe_info| -> DispatchResult {
-			ensure!(maybe_info.take() == None, Error::<T>::DuplicateDelegate);
+	pub fn add_provider(provider: Provider, delegator: Delegator) -> DispatchResult {
+		ProviderInfoOf::<T>::try_mutate(provider, delegator, |maybe_info| -> DispatchResult {
+			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
 
-			let info = DelegateInfo { permission: Default::default(), expired: Default::default() };
+			let info = ProviderInfo { permission: Default::default(), expired: Default::default() };
 
 			*maybe_info = Some(info);
 
@@ -377,17 +376,17 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	pub fn revoke_delegate(
-		provider_msa_id: Delegate,
+	pub fn revoke_provider(
+		provider_msa_id: Provider,
 		delegator_msa_id: Delegator,
 	) -> DispatchResult {
-		DelegateInfoOf::<T>::try_mutate_exists(
+		ProviderInfoOf::<T>::try_mutate_exists(
 			provider_msa_id,
 			delegator_msa_id,
 			|maybe_info| -> DispatchResult {
-				let mut info = maybe_info.take().ok_or(Error::<T>::DelegateNotFound)?;
+				let mut info = maybe_info.take().ok_or(Error::<T>::ProviderNotFound)?;
 
-				ensure!(info.expired == T::BlockNumber::default(), Error::<T>::DelegateRevoked);
+				ensure!(info.expired == T::BlockNumber::default(), Error::<T>::ProviderRevoked);
 
 				let current_block = frame_system::Pallet::<T>::block_number();
 

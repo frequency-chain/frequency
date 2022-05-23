@@ -34,13 +34,13 @@ impl<BlockNumber: Clone> KeyInfo<BlockNumber> {
 }
 
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
-pub struct DelegateInfo<BlockNumber> {
+pub struct ProviderInfo<BlockNumber> {
 	pub permission: u8,
 	pub expired: BlockNumber,
 }
 
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq)]
-pub struct AddDelegate {
+pub struct AddProvider {
 	pub authorized_msa_id: MessageSenderId,
 	pub permission: u8,
 }
@@ -61,16 +61,16 @@ impl From<Delegator> for MessageSenderId {
 }
 
 #[derive(TypeInfo, Debug, Clone, Copy, Decode, Encode, PartialEq, MaxEncodedLen, Eq)]
-pub struct Delegate(pub MessageSenderId);
+pub struct Provider(pub MessageSenderId);
 
-impl From<MessageSenderId> for Delegate {
+impl From<MessageSenderId> for Provider {
 	fn from(t: MessageSenderId) -> Self {
-		Delegate(t)
+		Provider(t)
 	}
 }
 
-impl From<Delegate> for MessageSenderId {
-	fn from(t: Delegate) -> MessageSenderId {
+impl From<Provider> for MessageSenderId {
+	fn from(t: Provider) -> MessageSenderId {
 		t.0
 	}
 }
