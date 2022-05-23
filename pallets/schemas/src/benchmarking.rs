@@ -1,40 +1,36 @@
-use frame_benchmarking::{benchmarks, whitelisted_caller};
+use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_support::{assert_ok, ensure};
 use frame_system::RawOrigin;
-use sp_std::vec::Vec;
 
 use crate::Pallet as SchemasPallet;
 
 use super::*;
 
-const SCHEMAS: u32 = 5000;
+const SCHEMAS: u32 = 1000;
 
-const EXAMPLE_SCHEMA: &[u8] = r#"{"type":"record","name":"mrc.schema.root",
-	"fields": [{"name": "name","type": "string"},
-    {"name": "type","type": "string"}}"#
-	.as_bytes();
-
-fn generate_schema(size: usize) -> Vec<u8> {
-	Vec::from(&EXAMPLE_SCHEMA[..size])
+fn generate_schema<T: Config>(size: usize) -> BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit> {
+	let input = vec![1; size as usize];
+	input.try_into().unwrap()
 }
 
 fn register_some_schema<T: Config>(sender: T::AccountId) -> DispatchResult {
-	let schema_size: usize = (T::SchemaMaxBytesBoundedVecLimit::get() - 1) as usize;
+	let schema_size: usize = (T::SchemaMaxBytesBoundedVecLimit::get() / 2) as usize;
 	SchemasPallet::<T>::register_schema(
 		RawOrigin::Signed(sender).into(),
-		generate_schema(schema_size),
+		generate_schema::<T>(schema_size),
 	)
 }
 
 benchmarks! {
 	register_schema {
-		let m in (T::MinSchemaSizeBytes::get()) .. (T::SchemaMaxBytesBoundedVecLimit::get());
+		let m in (T::MinSchemaSizeBytes::get() + 1) .. (T::SchemaMaxBytesBoundedVecLimit::get() - 1);
 		let n in 1 .. SCHEMAS;
 		let sender: T::AccountId = whitelisted_caller();
+		assert_ok!(SchemasPallet::<T>::set_max_schema_bytes(RawOrigin::Root.into(), T::SchemaMaxBytesBoundedVecLimit::get()));
 		for j in 0..(n) {
 			assert_ok!(register_some_schema::<T>(sender.clone()));
 		}
-	}: _(RawOrigin::Signed(sender), generate_schema(m as usize))
+	}: _(RawOrigin::Signed(sender), generate_schema::<T>(m as usize))
 
 	verify {
 		ensure!(SchemasPallet::<T>::schema_count() > 0, "Registered schema count should be > 0");

@@ -12,14 +12,13 @@ use sp_core::crypto::AccountId32;
 pub mod types;
 pub use types::{AddDelegate, AddKeyData, Delegate, DelegateInfo, Delegator, KeyInfo};
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 #[cfg(test)]
 mod mock;
-
 #[cfg(test)]
 mod tests;
 
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
 pub mod weights;
 
 pub use weights::*;
@@ -125,7 +124,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(T::WeightInfo::create(10_000))]
+		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation())]
 		pub fn create_sponsored_account_with_delegation(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,

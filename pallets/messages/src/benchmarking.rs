@@ -3,13 +3,13 @@ use super::*;
 use crate::Pallet as MessagesPallet;
 use common_primitives::schema::*;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
-use frame_support::{assert_ok, traits::OnInitialize};
+use frame_support::{assert_ok, pallet_prelude::DispatchResultWithPostInfo, traits::OnInitialize};
 use frame_system::RawOrigin;
 
 const MESSAGES: u32 = 499;
 const SCHEMAS: u32 = 50;
 
-fn add_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
+fn add_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo {
 	let acc: T::AccountId = whitelisted_caller();
 	MessagesPallet::<T>::add(
 		RawOrigin::Signed(acc.clone()).into(),

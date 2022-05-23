@@ -118,7 +118,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(< T as Config >::WeightInfo::register_schema(schema.len() as u32))]
+		#[pallet::weight(< T as Config >::WeightInfo::register_schema(schema.len() as u32, 1000))]
 		pub fn register_schema(
 			origin: OriginFor<T>,
 			schema: BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>,
