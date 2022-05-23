@@ -218,7 +218,8 @@ where
 		+ pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber>
 		+ pallet_schemas_runtime_api::SchemasRuntimeApi<Block>
 		+ pallet_msa_runtime_api::MsaApi<Block, AccountId, BlockNumber>
-		+ pallet_tx_fee_runtime_api::TxFeeRuntimeApi<Block, Balance>,
+		+ pallet_tx_fee_runtime_api::TxFeeRuntimeApi<Block, Balance>
+		+ pallet_graph_runtime_api::GraphApi<Block>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 	RB: Fn(

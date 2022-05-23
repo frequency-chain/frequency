@@ -50,9 +50,9 @@ fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSender
 	(provider.clone(), key_info.msa_id)
 }
 
-fn add_delegation<T: Config>(delegator: Delegator, provider: Delegate) {
-	assert_ok!(Msa::<T>::add_delegate(provider, delegator));
-}
+// fn add_delegation<T: Config>(delegator: Delegator, provider: Delegate) {
+// 	assert_ok!(Msa::<T>::add_delegate(provider, delegator));
+// }
 
 benchmarks! {
 	create {
@@ -64,25 +64,25 @@ benchmarks! {
 		}
 	}: _ (RawOrigin::Signed(caller))
 
-	create_sponsored_account_with_delegation {
-		let caller: T::AccountId = whitelisted_caller();
-		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
-		let (payload, signature, key) = create_payload_and_signature::<T>();
-
-	}: _ (RawOrigin::Signed(caller), key, signature, payload)
-
-	remove_msa_delegation_by_provider {
-		let s in 5 .. 1005;
-
-		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
-		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
-		add_delegation::<T>(Delegator(delegator_msa_id), Delegate(provider_msa_id.clone()));
-
-		for j in 2 .. s {
-			let (other, other_msa_id) = create_account_with_msa_id::<T>(j);
-			add_delegation::<T>(Delegator(other_msa_id), Delegate(provider_msa_id.clone()));
-		}
-	}: _ (RawOrigin::Signed(provider), delegator_msa_id)
+	// create_sponsored_account_with_delegation {
+	// 	let caller: T::AccountId = whitelisted_caller();
+	// 	assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
+	// 	let (payload, signature, key) = create_payload_and_signature::<T>();
+	//
+	// }: _ (RawOrigin::Signed(caller), key, signature, payload)
+	//
+	// remove_msa_delegation_by_provider {
+	// 	let s in 5 .. 1005;
+	//
+	// 	let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
+	// 	let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
+	// 	add_delegation::<T>(Delegator(delegator_msa_id), Delegate(provider_msa_id.clone()));
+	//
+	// 	for j in 2 .. s {
+	// 		let (other, other_msa_id) = create_account_with_msa_id::<T>(j);
+	// 		add_delegation::<T>(Delegator(other_msa_id), Delegate(provider_msa_id.clone()));
+	// 	}
+	// }: _ (RawOrigin::Signed(provider), delegator_msa_id)
 
 	impl_benchmark_test_suite!(Msa, crate::mock::new_test_ext_keystore(), crate::mock::Test);
 }

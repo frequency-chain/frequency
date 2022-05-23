@@ -46,6 +46,7 @@ where
 	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block>,
 	C::Api: pallet_msa_runtime_api::MsaApi<Block, AccountId, BlockNumber>,
 	C::Api: pallet_tx_fee_runtime_api::TxFeeRuntimeApi<Block, Balance>,
+	C::Api: pallet_graph_runtime_api::GraphApi<Block>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
@@ -70,5 +71,8 @@ where
 	io.extend_with(pallet_tx_fee_rpc::MrcTxFeeApi::to_delegate(
 		pallet_tx_fee_rpc::MrcTxFeeHandler::new(client.clone()),
 	));
+	io.extend_with(pallet_graph_rpc::GraphApi::to_delegate(pallet_graph_rpc::GraphHandler::new(
+		client.clone(),
+	)));
 	io
 }
