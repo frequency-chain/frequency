@@ -61,6 +61,8 @@ pallet-schemas = {path = "../../pallets/schemas", default-features = false}
 pallet-schemas-runtime-api = { path = "../../pallets/schemas/src/runtime-api", default-features = false}
 pallet-tx-fee= { path = "../../pallets/tx_fee", default-features = false}
 pallet-tx-fee-runtime-api = { path = "../../pallets/tx_fee/src/runtime-api", default-features = false}
+pallet-graph = {path = "../../pallets/graph", default-features = false}
+pallet-graph-runtime-api = { path = "../../pallets/graph/src/runtime-api", default-features = false}
 
 # Polkadot
 pallet-xcm = {git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.18"}
@@ -119,6 +121,8 @@ std = [
   "pallet-msa-runtime-api/std",
   "pallet-messages/std",
   "pallet-messages-runtime-api/std",
+  "pallet-graph/std",
+  "pallet-graph-runtime-api/std",
   "pallet-schemas/std",
   "pallet-schemas-runtime-api/std",
   "pallet-tx-fee/std",
@@ -155,6 +159,7 @@ runtime-benchmarks = [
   "pallet-xcm/runtime-benchmarks",
   'pallet-msa/runtime-benchmarks',
   "pallet-messages/runtime-benchmarks",
+  "pallet-graph/runtime-benchmarks",
   "pallet-schemas/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
   "xcm-builder/runtime-benchmarks",

@@ -7,6 +7,7 @@ members = [
   "pallets/msa",
   "pallets/messages",
   "pallets/schemas",
+  "pallets/graph",
   "runtime/*",
   "common/helpers"
 ]
