@@ -119,7 +119,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(< T as Config >::WeightInfo::register_schema(schema.len() as u32))]
+		#[pallet::weight(< T as Config >::WeightInfo::register_schema(schema.len() as u32, 1000))]
 		pub fn register_schema(
 			origin: OriginFor<T>,
 			schema: BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>,
@@ -186,7 +186,8 @@ pub mod pallet {
 
 		pub fn calculate_schema_cost(schema: Vec<u8>) -> Weight {
 			let schema_len = schema.len() as u32;
-			let schema_weight = T::WeightInfo::register_schema(schema_len);
+			let cur_count = Self::schema_count();
+			let schema_weight = T::WeightInfo::register_schema(schema_len, cur_count.into());
 			schema_weight
 		}
 	}
