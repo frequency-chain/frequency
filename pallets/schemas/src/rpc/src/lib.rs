@@ -83,15 +83,14 @@ where
 		schema: Vec<u8>,
 	) -> Result<bool> {
 		let validated_schema = avro::validate_raw_avro_schema(&schema);
-		if validated_schema.is_err() {
-			return Err(RpcError {
+		match validated_schema {
+			Ok(_) => Ok(true),
+			Err(e) => Err(RpcError {
 				code: ErrorCode::ServerError(1),
-				message: "Invalid schema".into(),
-				data: Some(format!("{:?}", validated_schema).into()),
-			}
-			.into())
+				message: "Unable to validate schema".into(),
+				data: Some(format!("{:?}", e).into()),
+			}),
 		}
-		Ok(true)
 	}
 
 	fn get_by_schema_id(&self, schema_id: SchemaId) -> Result<Option<SchemaResponse>> {
