@@ -514,18 +514,18 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		let key_info = Msa::get_key_info(AccountId32::new(delegator_account.0));
 		assert_eq!(key_info.unwrap().msa_id, 2);
 
-		let providerd = Msa::get_provider_info_of(Provider(1), Delegator(2));
-		assert_eq!(providerd.is_some(), true);
+		let provider_info = Msa::get_provider_info_of(Provider(1), Delegator(2));
+		assert_eq!(provider_info.is_some(), true);
 
 		let events_occured = System::events();
 		let created_event = &events_occured.as_slice()[1];
-		let providerd_event = &events_occured.as_slice()[2];
+		let provider_event = &events_occured.as_slice()[2];
 		assert_eq!(
 			created_event.event,
 			Event::MsaCreated { msa_id: 2u64.into(), key: delegator_account.into() }.into()
 		);
 		assert_eq!(
-			providerd_event.event,
+			provider_event.event,
 			Event::ProviderAdded { provider: 1u64.into(), delegator: 2u64.into() }.into()
 		);
 	});
