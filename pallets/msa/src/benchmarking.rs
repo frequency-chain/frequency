@@ -30,14 +30,14 @@ fn create_msa<T: Config>(n: u32) -> DispatchResult {
 	Msa::<T>::create(RawOrigin::Signed(acc.clone()).into())
 }
 
-fn create_payload_and_signature<T: Config>() -> (AddDelegate, MultiSignature, T::AccountId) {
+fn create_payload_and_signature<T: Config>() -> (AddProvider, MultiSignature, T::AccountId) {
 	let delegator_account = SignerId::generate_pair(None);
-	let add_delegate_payload = AddDelegate { authorized_msa_id: 1u64.into(), permission: 0 };
-	let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+	let add_provider_payload = AddProvider { authorized_msa_id: 1u64.into(), permission: 0 };
+	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-	let signature = delegator_account.sign(&encode_add_delegate_data).unwrap();
+	let signature = delegator_account.sign(&encode_add_provider_data).unwrap();
 	let acc = T::AccountId::decode(&mut &delegator_account.encode()[..]).unwrap();
-	(add_delegate_payload, MultiSignature::Sr25519(signature.into()), acc.into())
+	(add_provider_payload, MultiSignature::Sr25519(signature.into()), acc.into())
 }
 
 benchmarks! {

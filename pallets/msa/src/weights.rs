@@ -71,7 +71,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa KeyInfoOf (r:2 w:1)
 	// Storage: Msa MsaIdentifier (r:1 w:1)
 	// Storage: Msa MsaKeysOf (r:1 w:1)
-	// Storage: Msa DelegateInfoOf (r:1 w:1)
+	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn create_sponsored_account_with_delegation() -> Weight {
 		(67_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(5 as Weight))
@@ -94,7 +94,7 @@ impl WeightInfo for () {
 	// Storage: Msa KeyInfoOf (r:2 w:1)
 	// Storage: Msa MsaIdentifier (r:1 w:1)
 	// Storage: Msa MsaKeysOf (r:1 w:1)
-	// Storage: Msa DelegateInfoOf (r:1 w:1)
+	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn create_sponsored_account_with_delegation() -> Weight {
 		(67_000_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
