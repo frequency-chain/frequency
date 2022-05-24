@@ -250,6 +250,29 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		#[pallet::weight((10_000, DispatchClass::Normal, Pays::No))]
+		pub fn remove_msa_delegation_by_provider(
+			origin: OriginFor<T>,
+			delegator: MessageSenderId,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			// Remover should have valid keys (non expired and exists)
+			let key_info = Self::ensure_valid_msa_key(&who);
+
+			let provider_msa_id = Delegate(key_info.msa_id);
+			let delegator_msa_id = Delegator(delegator);
+
+			Self::revoke_delegate(provider_msa_id, delegator_msa_id);
+
+			Self::deposit_event(Event::DelegateRevoked {
+				delegate: provider_msa_id,
+				delegator: delegator_msa_id,
+			});
+
+			Ok(())
+		}
 	}
 }
 
