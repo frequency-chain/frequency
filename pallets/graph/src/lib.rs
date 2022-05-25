@@ -70,6 +70,19 @@ pub mod pallet {
 	pub(super) type Graph<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSenderId, BoundedVec<Edge, T::MaxFollows>, ValueQuery>;
 
+	#[pallet::storage]
+	#[pallet::unbounded]
+	#[pallet::getter(fn graph2)]
+	pub(super) type Graph2<T: Config> = StorageDoubleMap<
+		_,
+		Twox64Concat,
+		MessageSenderId,
+		Twox64Concat,
+		MessageSenderId,
+		Permission,
+		OptionQuery,
+	>;
+
 	#[pallet::error]
 	pub enum Error<T> {
 		ActionNotPermitted,
@@ -135,7 +148,7 @@ pub mod pallet {
 			ensure!(<Nodes<T>>::contains_key(from_static_id), <Error<T>>::NoSuchNode);
 			ensure!(<Nodes<T>>::contains_key(to_static_id), <Error<T>>::NoSuchNode);
 
-			let edge = Edge { static_id: to_static_id };
+			let edge = Edge { static_id: to_static_id, permission: Permission { data: 0 } };
 
 			<Graph<T>>::try_mutate(&from_static_id, |edge_vec| {
 				match edge_vec.binary_search(&edge) {
@@ -171,7 +184,7 @@ pub mod pallet {
 			ensure!(cur_count > 0, <Error<T>>::NoSuchEdge);
 
 			<Graph<T>>::try_mutate(&from_static_id, |edge_vec| {
-				let edge = Edge { static_id: to_static_id };
+				let edge = Edge { static_id: to_static_id, permission: Permission { data: 0 } };
 				match edge_vec.binary_search(&edge) {
 					Ok(index) => {
 						edge_vec.remove(index);
@@ -181,6 +194,58 @@ pub mod pallet {
 				}
 			})
 			.map_err(|_| <Error<T>>::NoSuchEdge)?;
+
+			<EdgeCount<T>>::set(cur_count - 1);
+			Self::deposit_event(Event::Unfollowed(sender, from_static_id, to_static_id));
+
+			log::debug!("unfollowed: {:?} -> {:?}", from_static_id, to_static_id);
+			Ok(())
+		}
+
+		#[pallet::weight(T::WeightInfo::follow(*from_static_id as u32))]
+		pub fn follow2(
+			origin: OriginFor<T>,
+			from_static_id: MessageSenderId,
+			to_static_id: MessageSenderId,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			// self follow is not permitted
+			ensure!(from_static_id != to_static_id, <Error<T>>::SelfFollowNotPermitted);
+			ensure!(<Nodes<T>>::contains_key(from_static_id), <Error<T>>::NoSuchNode);
+			ensure!(<Nodes<T>>::contains_key(to_static_id), <Error<T>>::NoSuchNode);
+
+			let perm = <Graph2<T>>::try_get(from_static_id, to_static_id);
+			ensure!(perm.is_err(), <Error<T>>::EdgeExists);
+
+			<Graph2<T>>::insert(from_static_id, to_static_id, Permission { data: 0 });
+
+			let cur_count: u64 = Self::edge_count();
+			<EdgeCount<T>>::set(cur_count + 1);
+
+			Self::deposit_event(Event::Followed(sender, from_static_id, to_static_id));
+
+			log::debug!("followed: {:?} -> {:?}", from_static_id, to_static_id);
+			Ok(())
+		}
+
+		#[pallet::weight(T::WeightInfo::unfollow(*from_static_id as u32))]
+		pub fn unfollow2(
+			origin: OriginFor<T>,
+			from_static_id: MessageSenderId,
+			to_static_id: MessageSenderId,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			// self unfollow is not permitted
+			ensure!(from_static_id != to_static_id, <Error<T>>::SelfFollowNotPermitted);
+			let perm = <Graph2<T>>::try_get(from_static_id, to_static_id);
+			ensure!(perm.is_ok(), <Error<T>>::NoSuchEdge);
+
+			let cur_count: u64 = Self::edge_count();
+			ensure!(cur_count > 0, <Error<T>>::NoSuchEdge);
+
+			<Graph2<T>>::remove(from_static_id, to_static_id);
 
 			<EdgeCount<T>>::set(cur_count - 1);
 			Self::deposit_event(Event::Unfollowed(sender, from_static_id, to_static_id));
