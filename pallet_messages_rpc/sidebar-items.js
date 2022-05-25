@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["gen_client","The generated client module."]],"struct":[["MessagesApiClient","The Client."],["MessagesHandler","A struct that implements the `MessagesApi`."]],"trait":[["MessagesApi",""]]});

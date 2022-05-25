@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["mrc_collator"] = [{"text":"impl Fork for <a class=\"struct\" href=\"mrc_collator/chain_spec/struct.ExtensionsFork.html\" title=\"struct mrc_collator::chain_spec::ExtensionsFork\">ExtensionsFork</a>","synthetic":false,"types":["mrc_collator::chain_spec::ExtensionsFork"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

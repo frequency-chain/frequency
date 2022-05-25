@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["mrc_collator"] = [{"text":"impl SubstrateCli for <a class=\"struct\" href=\"mrc_collator/cli/struct.Cli.html\" title=\"struct mrc_collator::cli::Cli\">Cli</a>","synthetic":false,"types":["mrc_collator::cli::Cli"]},{"text":"impl SubstrateCli for <a class=\"struct\" href=\"mrc_collator/cli/struct.RelayChainCli.html\" title=\"struct mrc_collator::cli::RelayChainCli\">RelayChainCli</a>","synthetic":false,"types":["mrc_collator::cli::RelayChainCli"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

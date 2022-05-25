@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["mrc_runtime"] = [{"text":"impl&lt;Block:&nbsp;BlockT, C:&nbsp;CallApiAt&lt;Block&gt;&gt; ApiExt&lt;Block&gt; for <a class=\"struct\" href=\"mrc_runtime/struct.RuntimeApiImpl.html\" title=\"struct mrc_runtime::RuntimeApiImpl\">RuntimeApiImpl</a>&lt;Block, C&gt;","synthetic":false,"types":["mrc_runtime::RuntimeApiImpl"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

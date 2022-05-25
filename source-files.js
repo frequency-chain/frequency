@@ -1,0 +1,18 @@
+var N = null;var sourcesIndex = {};
+sourcesIndex["common_helpers"] = {"name":"","files":["avro.rs","lib.rs","types.rs"]};
+sourcesIndex["common_primitives"] = {"name":"","files":["lib.rs","messages.rs","msa.rs","rpc.rs","schema.rs","utils.rs"]};
+sourcesIndex["mrc_collator"] = {"name":"","files":["chain_spec.rs","cli.rs","command.rs","main.rs","rpc.rs","service.rs"]};
+sourcesIndex["mrc_runtime"] = {"name":"","files":["lib.rs","xcm_config.rs"]};
+sourcesIndex["pallet_messages"] = {"name":"","files":["lib.rs","types.rs","weights.rs"]};
+sourcesIndex["pallet_messages_rpc"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["pallet_messages_runtime_api"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["pallet_msa"] = {"name":"","files":["lib.rs","types.rs","weights.rs"]};
+sourcesIndex["pallet_msa_rpc"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["pallet_msa_runtime_api"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["pallet_schemas"] = {"name":"","files":["lib.rs","weights.rs"]};
+sourcesIndex["pallet_schemas_rpc"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["pallet_schemas_runtime_api"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["pallet_tx_fee"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["pallet_tx_fee_rpc"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["pallet_tx_fee_runtime_api"] = {"name":"","files":["lib.rs"]};
+createSourceSidebar();

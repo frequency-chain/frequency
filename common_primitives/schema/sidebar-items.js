@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["SchemaResponse",""]],"type":[["SchemaId",""]]});

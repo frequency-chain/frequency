@@ -1,0 +1,1 @@
+window.ALL_CRATES = ["common_helpers","common_primitives","mrc_collator","mrc_runtime","pallet_messages","pallet_messages_rpc","pallet_messages_runtime_api","pallet_msa","pallet_msa_rpc","pallet_msa_runtime_api","pallet_schemas","pallet_schemas_rpc","pallet_schemas_runtime_api","pallet_tx_fee","pallet_tx_fee_rpc","pallet_tx_fee_runtime_api"];

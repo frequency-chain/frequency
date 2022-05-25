@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["mrc_collator"] = [{"text":"impl Group for <a class=\"struct\" href=\"mrc_collator/chain_spec/struct.Extensions.html\" title=\"struct mrc_collator::chain_spec::Extensions\">Extensions</a>","synthetic":false,"types":["mrc_collator::chain_spec::Extensions"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
