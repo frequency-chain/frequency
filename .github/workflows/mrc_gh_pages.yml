@@ -8,8 +8,15 @@ env:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN: "nightly-2021-11-07"
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  docs:
+    name: ${{ matrix.target }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        target: [docs]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUST_TOOLCHAIN: "nightly-2021-11-07"
     steps:
     - name: Checkout 🛎️
       uses: actions/checkout@v3
