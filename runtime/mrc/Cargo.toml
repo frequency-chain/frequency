@@ -122,6 +122,7 @@ std = [
   "pallet-schemas/std",
   "pallet-schemas-runtime-api/std",
   "pallet-tx-fee/std",
+  "pallet-tx-fee-runtime-api/std",
   "parachain-info/std",
   "polkadot-parachain/std",
   "polkadot-runtime-common/std",
