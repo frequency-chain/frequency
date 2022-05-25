@@ -129,15 +129,6 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 }
 
 #[test]
-fn test_calculate_schema_cost() {
-	new_test_ext().execute_with(|| {
-		let schema = Vec::from("some schema".as_bytes());
-		let weight = SchemasPallet::calculate_schema_cost(schema);
-		assert!(weight > 0);
-	})
-}
-
-#[test]
 fn get_existing_schema_by_id_should_return_schema() {
 	new_test_ext().execute_with(|| {
 		let sender: AccountId = 1;

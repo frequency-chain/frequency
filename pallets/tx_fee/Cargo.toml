@@ -1,7 +1,7 @@
 [package]
-name = "pallet-schemas"
+name = "pallet-tx-fee"
 authors = ["MRC Team"]
-description = "Schema operations"
+description = "Generic pllet for transaction cost computations"
 edition = "2021"
 homepage = "https://unfinishedlabs.io/"
 license = "Apache-2.0"
@@ -27,6 +27,7 @@ sp-io = {default-features = false, git = "https://github.com/paritytech/substrat
 sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
 sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
 sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
+pallet-transaction-payment = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18"}
 
 # MRC related dependencies
 common-primitives = {default-features = false, path = "../../common/primitives"}
@@ -34,6 +35,7 @@ common-primitives = {default-features = false, path = "../../common/primitives"}
 [dev-dependencies]
 sp-keyring = { default-features = false, version = '6.0.0'}
 serial_test = { default-features = false, version = '0.6.0' }
+pallet-balances = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18"}
 
 [features]
 default = ["std"]
@@ -46,6 +48,7 @@ std = [
 	"sp-runtime/std",
 	"sp-std/std",
 	"sp-core/std",
+	"pallet-transaction-payment/std",
 ]
 
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
