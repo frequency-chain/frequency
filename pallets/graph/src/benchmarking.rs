@@ -23,6 +23,11 @@ fn do_follow<T: Config>(from: u32, to: u32) -> DispatchResult {
 	GraphPallet::<T>::follow(RawOrigin::Signed(caller).into(), from.into(), to.into())
 }
 
+fn do_follow2<T: Config>(from: u32, to: u32) -> DispatchResult {
+	let caller: T::AccountId = whitelisted_caller();
+	GraphPallet::<T>::follow2(RawOrigin::Signed(caller).into(), from.into(), to.into())
+}
+
 benchmarks! {
 	add_node {
 		let n in 1..NODES;
@@ -62,6 +67,41 @@ benchmarks! {
 			for j in 1..=FOLLOWS {
 				if i != j {
 					assert_ok!(do_follow::<T>(i,j));
+				}
+			}
+		}
+	}: _(RawOrigin::Signed(caller), n.into(), 1u64.into())
+
+   follow2 {
+		let n in 2..NODES;
+		let caller: T::AccountId = whitelisted_caller();
+
+		for i in 0..=NODES {
+			assert_ok!(node_addition::<T>(i));
+		}
+
+		for i in 0..=NODES {
+			for j in 2..=FOLLOWS {
+				if i != j {
+					assert_ok!(do_follow2::<T>(i,j));
+				}
+			}
+		}
+
+	}: _(RawOrigin::Signed(caller), n.into(), 1u64.into())
+
+	 unfollow2 {
+		let n in 2..NODES;
+		let caller: T::AccountId = whitelisted_caller();
+
+		for i in 0..=NODES {
+			assert_ok!(node_addition::<T>(i));
+		}
+
+		for i in 0..=NODES {
+			for j in 1..=FOLLOWS {
+				if i != j {
+					assert_ok!(do_follow2::<T>(i,j));
 				}
 			}
 		}
