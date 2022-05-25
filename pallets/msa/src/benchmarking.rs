@@ -40,6 +40,20 @@ fn create_payload_and_signature<T: Config>() -> (AddProvider, MultiSignature, T:
 	(add_provider_payload, MultiSignature::Sr25519(signature.into()), acc.into())
 }
 
+fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSenderId) {
+	let provider = create_account::<T>("account", n);
+
+	assert_ok!(Msa::<T>::create(RawOrigin::Signed(provider.clone()).into()));
+
+	let key_info = Msa::<T>::try_get_key_info(&provider).unwrap();
+
+	(provider.clone(), key_info.msa_id)
+}
+
+fn add_delegation<T: Config>(delegator: Delegator, provider: Delegate) {
+	assert_ok!(Msa::<T>::add_delegate(provider, delegator));
+}
+
 benchmarks! {
 	create {
 		let s in 1 .. 1000;
@@ -56,6 +70,19 @@ benchmarks! {
 		let (payload, signature, key) = create_payload_and_signature::<T>();
 
 	}: _ (RawOrigin::Signed(caller), key, signature, payload)
+
+	remove_msa_delegation_by_provider {
+		let s in 5 .. 1005;
+
+		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
+		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
+		add_delegation::<T>(Delegator(delegator_msa_id), Delegate(provider_msa_id.clone()));
+
+		for j in 2 .. s {
+			let (other, other_msa_id) = create_account_with_msa_id::<T>(j);
+			add_delegation::<T>(Delegator(other_msa_id), Delegate(provider_msa_id.clone()));
+		}
+	}: _ (RawOrigin::Signed(provider), delegator_msa_id)
 
 	impl_benchmark_test_suite!(Msa, crate::mock::new_test_ext_keystore(), crate::mock::Test);
 }

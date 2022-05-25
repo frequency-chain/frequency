@@ -4,11 +4,13 @@ use crate::{
 	types::{AddKeyData, AddProvider, Delegator, KeyInfo, Provider, ProviderInfo, EMPTY_FUNCTION},
 	Call, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
-use common_primitives::{
-	msa::{KeyInfoResponse, MessageSenderId},
-	utils::wrap_binary_data,
+use common_primitives::{msa::KeyInfoResponse, utils::wrap_binary_data};
+use frame_support::{
+	assert_noop, assert_ok,
+	dispatch::DispatchInfo,
+	pallet_prelude::DispatchClass,
+	weights::{GetDispatchInfo, Pays},
 };
-use frame_support::{assert_err, assert_noop, assert_ok, weights::GetDispatchInfo};
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
@@ -758,7 +760,7 @@ fn revoke_provider_throws_errors() {
 		assert_ok!(Msa::create(test_origin_signed(1)));
 		assert_noop!(
 			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 4),
-			Error::<Test>::ProviderNotFound
+			Error::<Test>::DelegationNotFound
 		);
 
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
@@ -772,7 +774,7 @@ fn revoke_provider_throws_errors() {
 
 		assert_noop!(
 			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 4),
-			Error::<Test>::ProviderNotFound
+			Error::<Test>::DelegationNotFound
 		);
 
 		assert_ok!(Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 3));
@@ -790,7 +792,7 @@ pub fn revoke_provider_throws_provider_not_found_error() {
 		let provider = Provider(1);
 		let delegator = Delegator(2);
 
-		assert_noop!(Msa::revoke_provider(provider, delegator), Error::<Test>::ProviderNotFound);
+		Error::<Test>::DelegationNotFound
 	});
 }
 
@@ -807,11 +809,11 @@ pub fn remove_msa_delegation_by_provider_happy_path() {
 		// 2. create provider MSA
 		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
 
-		// 3/ create delegator MSA and delegate to provider
+		// 3. create delegator MSA and delegate to provider
 		let add_delegate_payload = AddDelegate { authorized_msa_id: 1u64.into(), permission: 0 };
 		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
 		let signature: MultiSignature = user_pair.sign(&encode_add_delegate_data).into();
-		// act
+		// 3.5 create the user's MSA + add provider as delegate
 		assert_ok!(Msa::create_sponsored_account_with_delegation(
 			Origin::signed(provider_key.into()),
 			delegator_key.clone().into(),
@@ -819,26 +821,89 @@ pub fn remove_msa_delegation_by_provider_happy_path() {
 			add_delegate_payload.clone()
 		));
 
+		//  4. set some block number to ensure it's not a default value
+		System::set_block_number(System::block_number() + 25);
+
 		// 5. assert_ok! fn as 2 to remove delegate 1
 		assert_ok!(Msa::remove_msa_delegation_by_provider(
 			Origin::signed(provider_key.into()),
 			2u64.into()
 		));
 
-		// 6. verify that the delegate is removed
+		// 6. verify that the delegate is revoked
 		let delegated = Msa::get_delegate_info_of(Delegate(1), Delegator(2));
-		assert_eq!(delegated.is_none(), true);
-		// 7. verify no txn fee (how ?)
+		assert_eq!(delegated, Some(DelegateInfo { permission: 0, expired: 26 }));
+
+		// 7. verify the event
+		System::assert_last_event(
+			Event::DelegateRevoked { delegate: Delegate(1), delegator: Delegator(2) }.into(),
+		);
 	})
 }
 
 #[test]
-pub fn remove_msa_delegation_by_provider_errors() {
+pub fn remove_msa_delegation_call_has_correct_costs() {
 	new_test_ext().execute_with(|| {
-		// 0. when delegator msa_id not found
-		// 1. when_no_provider_msa_id
-		// 2. when_delegation_expired
-		// 3. when_no_delegator_key
-		// 4. when no provider key
+		let call = Call::<Test>::remove_msa_delegation_by_provider { delegator: 2 };
+		let dispatch_info = call.get_dispatch_info();
+
+		assert_eq!(
+			dispatch_info,
+			DispatchInfo { pays_fee: Pays::No, weight: 10_000, class: DispatchClass::Normal }
+		);
+	})
+}
+
+#[test]
+pub fn remove_msa_delegation_by_provider_errors_when_no_delegator_msa_id() {
+	new_test_ext().execute_with(|| {
+		let (provider_pair, _) = sr25519::Pair::generate();
+		let (user_pair, _) = sr25519::Pair::generate();
+
+		let provider_key = provider_pair.public();
+		let delegator_key = user_pair.public();
+
+		// 0. when provider msa_id not found
+		assert_noop!(
+			Msa::remove_msa_delegation_by_provider(
+				Origin::signed(provider_key.into()),
+				2u64.into()
+			),
+			Error::<Test>::NoKeyExists
+		);
+
+		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
+
+		System::set_block_number(System::block_number() + 19);
+
+		// 1. when delegate msa_id not found
+		assert_noop!(
+			Msa::remove_msa_delegation_by_provider(
+				Origin::signed(provider_key.into()),
+				2u64.into()
+			),
+			Error::<Test>::DelegationNotFound
+		);
+
+		assert_ok!(Msa::create(Origin::signed(delegator_key.into())));
+		// 2. when no delegation relationship
+		assert_noop!(
+			Msa::remove_msa_delegation_by_provider(
+				Origin::signed(provider_key.into()),
+				2u64.into()
+			),
+			Error::<Test>::DelegationNotFound
+		);
+
+		assert_ok!(Msa::add_delegate(Delegate(1), Delegator(2)));
+		assert_ok!(Msa::revoke_msa_delegate(Origin::signed(delegator_key.into()), 1u64));
+		// 3. when_delegation_expired
+		assert_noop!(
+			Msa::remove_msa_delegation_by_provider(
+				Origin::signed(provider_key.into()),
+				2u64.into()
+			),
+			Error::<Test>::DelegateRevoked
+		);
 	})
 }
