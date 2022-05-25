@@ -2,7 +2,7 @@ name: Build and Publish MRC Docs
 
 on:
   workflow_dispatch:
-  pull_request:
+    branches: [main]
 
 jobs:
   docs:
