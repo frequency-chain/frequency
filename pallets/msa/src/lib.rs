@@ -256,15 +256,15 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			delegator: MessageSenderId,
 		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
+			let provider_key = ensure_signed(origin)?;
 
 			// Remover should have valid keys (non expired and exists)
-			let key_info = Self::ensure_valid_msa_key(&who);
+			let key_info = Self::ensure_valid_msa_key(&provider_key)?;
 
 			let provider_msa_id = Delegate(key_info.msa_id);
 			let delegator_msa_id = Delegator(delegator);
 
-			Self::revoke_delegate(provider_msa_id, delegator_msa_id);
+			Self::revoke_delegate(provider_msa_id, delegator_msa_id)?;
 
 			Self::deposit_event(Event::DelegateRevoked {
 				delegate: provider_msa_id,
