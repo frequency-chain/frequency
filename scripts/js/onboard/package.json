@@ -4,16 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "onboard":  "node onboard.js",
+    "onboard": "node onboard.js",
     "register": "node register.js",
-    "cleanup":  "node offboard.js"
+    "cleanup": "node offboard.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@polkadot/api": "^7.6.1",
-    "@polkadot/util": "^7.6.1",
+    "@polkadot/util": "^8.7.1",
     "@polkadot/util-crypto": "^8.3.3"
   }
 }
