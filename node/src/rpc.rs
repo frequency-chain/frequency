@@ -43,8 +43,9 @@ where
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber>,
-	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block, Balance>,
+	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block>,
 	C::Api: pallet_msa_runtime_api::MsaApi<Block, AccountId, BlockNumber>,
+	C::Api: pallet_tx_fee_runtime_api::TxFeeRuntimeApi<Block, Balance>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
@@ -66,5 +67,8 @@ where
 	io.extend_with(pallet_msa_rpc::MsaApi::to_delegate(pallet_msa_rpc::MsaHandler::new(
 		client.clone(),
 	)));
+	io.extend_with(pallet_tx_fee_rpc::MrcTxFeeApi::to_delegate(
+		pallet_tx_fee_rpc::MrcTxFeeHandler::new(client.clone()),
+	));
 	io
 }

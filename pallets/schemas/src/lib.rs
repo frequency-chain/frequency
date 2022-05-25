@@ -3,7 +3,6 @@
 use core;
 
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
-use sp_std::vec::Vec;
 
 #[cfg(test)]
 mod tests;
@@ -182,13 +181,6 @@ pub mod pallet {
 				return Some(response)
 			}
 			None
-		}
-
-		pub fn calculate_schema_cost(schema: Vec<u8>) -> Weight {
-			let schema_len = schema.len() as u32;
-			let cur_count = Self::schema_count();
-			let schema_weight = T::WeightInfo::register_schema(schema_len, cur_count.into());
-			schema_weight
 		}
 	}
 }
