@@ -84,7 +84,7 @@ fn it_throws_error_when_key_verification_fails() {
 				signature,
 				add_new_key_data.clone()
 			),
-			Error::<Test>::KeyVerificationFailed
+			Error::<Test>::AddKeySignatureVerificationFailed
 		);
 	});
 }
@@ -337,7 +337,7 @@ pub fn add_provider_to_msa_throws_add_provider_verification_failed() {
 				signature,
 				fake_provider_payload
 			),
-			Error::<Test>::AddProviderVerificationFailed
+			Error::<Test>::AddProviderSignatureVerificationFailed
 		);
 	});
 }
@@ -695,7 +695,7 @@ pub fn revoke_msa_delegation_by_delegator_is_successfull() {
 		assert_ok!(Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 2));
 
 		System::assert_last_event(
-			Event::ProviderRevoked { delegator: 1.into(), provider: 2.into() }.into(),
+			Event::DelegatorRevokedDelegation { delegator: 1.into(), provider: 2.into() }.into(),
 		);
 	});
 }
@@ -779,7 +779,7 @@ fn revoke_provider_throws_errors() {
 
 		assert_noop!(
 			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 3),
-			Error::<Test>::ProviderRevoked
+			Error::<Test>::DelegationRevoked
 		);
 	});
 }
@@ -851,7 +851,8 @@ pub fn remove_delegation_by_provider_happy_path() {
 
 		// 7. verify the event
 		System::assert_last_event(
-			Event::ProviderRevoked { provider: Provider(1), delegator: Delegator(2) }.into(),
+			Event::ProviderRevokedDelegation { provider: Provider(1), delegator: Delegator(2) }
+				.into(),
 		);
 	})
 }
@@ -903,7 +904,7 @@ pub fn remove_delegation_by_provider_errors_when_no_delegator_msa_id() {
 		// 3. when_delegation_expired
 		assert_noop!(
 			Msa::remove_delegation_by_provider(Origin::signed(provider_key.into()), 2u64.into()),
-			Error::<Test>::ProviderRevoked
+			Error::<Test>::DelegationRevoked
 		);
 	})
 }
