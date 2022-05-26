@@ -96,38 +96,39 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
+		/// tried to add a key that was already registered
 		DuplicatedKey,
 		/// MsaId values have reached the maximum
 		MsaIdOverflow,
-		// Cryptographic signature verification failed for adding a key to MSA
+		/// Cryptographic signature verification failed for adding a key to MSA
 		AddKeySignatureVerificationFailed,
-		// Ony the MSA Owner may perform the operation
+		/// Ony the MSA Owner may perform the operation
 		NotMsaOwner,
-		// Cryptographic signature failed verification
+		/// Cryptographic signature failed verification
 		InvalidSignature,
-		// Only the KeyOwner may perform the operation
+		/// Only the KeyOwner may perform the operation
 		NotKeyOwner,
-		// An operation was attempted with an unknown Key
+		/// An operation was attempted with an unknown Key
 		NoKeyExists,
-		// An operation was attempted with a revoked Key
+		/// An operation was attempted with a revoked Key
 		KeyRevoked,
-		// The number of key values has reached its maximum
+		/// The number of key values has reached its maximum
 		KeyLimitExceeded,
-		// A transaction's Origin AccountId may not revoke itself
+		/// A transaction's Origin AccountId may not revoke itself
 		InvalidSelfRevoke,
-		// An MSA may not be its own delegate
+		/// An MSA may not be its own delegate
 		InvalidSelfProvider,
-		// The delegation relationship already exists for the given MSA Ids
+		/// The delegation relationship already exists for the given MSA Ids
 		DuplicateProvider,
-		// Cryptographic signature verification failed for adding the Provider as delegate
+		/// Cryptographic signature verification failed for adding the Provider as delegate
 		AddProviderSignatureVerificationFailed,
-		// Origin attempted to add a delegate for someone else's MSA
+		/// Origin attempted to add a delegate for someone else's MSA
 		UnauthorizedDelegator,
-		// Origin attempted to add a different delegate than what was in the payload
+		/// Origin attempted to add a different delegate than what was in the payload
 		UnauthorizedProvider,
-		// The operation was attempted with a revoked delegation
+		/// The operation was attempted with a revoked delegation
 		DelegationRevoked,
-		// The operation was attempted with an unknown delegation
+		/// The operation was attempted with an unknown delegation
 		DelegationNotFound,
 	}
 
