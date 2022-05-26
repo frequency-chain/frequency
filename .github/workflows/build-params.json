@@ -19,6 +19,12 @@
   },
   {
     "os": "ubuntu-latest",
+    "target": "docs",
+    "run_on_event": "any",
+    "rust_toolchain": "nightly-2021-11-07"
+  },
+  {
+    "os": "ubuntu-latest",
     "target": "build-runtime",
     "package": "mrc-runtime",
     "run_on_event": "push",
