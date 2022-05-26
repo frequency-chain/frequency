@@ -1,7 +1,7 @@
 use crate::{
 	ensure,
 	mock::*,
-	types::{AddDelegate, AddKeyData, Delegate, DelegateInfo, Delegator, KeyInfo, EMPTY_FUNCTION},
+	types::{AddKeyData, AddProvider, Delegator, KeyInfo, Provider, ProviderInfo, EMPTY_FUNCTION},
 	Call, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{msa::KeyInfoResponse, utils::wrap_binary_data};
@@ -280,82 +280,82 @@ pub fn test_ensure_msa_owner() {
 }
 
 #[test]
-pub fn add_delegate_to_msa_is_success() {
+pub fn add_provider_to_msa_is_success() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
-		let delegate_account = key_pair.public();
+		let provider_account = key_pair.public();
 
-		let add_delegate_payload = AddDelegate { authorized_msa_id: 1, permission: 0 };
-		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
 		assert_ok!(Msa::create(test_origin_signed(1)));
-		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
-		assert_ok!(Msa::add_delegate_to_msa(
+		assert_ok!(Msa::add_provider_to_msa(
 			test_origin_signed(1),
-			delegate_account.into(),
+			provider_account.into(),
 			signature,
-			add_delegate_payload
+			add_provider_payload
 		));
 
-		let delegate = Delegate(2);
+		let provider = Provider(2);
 		let delegator = Delegator(1);
 
 		assert_eq!(
-			Msa::get_delegate_info_of(delegate, delegator),
-			Some(DelegateInfo { permission: 0, expired: 0 })
+			Msa::get_provider_info_of(provider, delegator),
+			Some(ProviderInfo { permission: 0, expired: 0 })
 		);
 
 		System::assert_last_event(
-			Event::DelegateAdded { delegator: 1.into(), delegate: 2.into() }.into(),
+			Event::ProviderAdded { delegator: 1.into(), provider: 2.into() }.into(),
 		);
 	});
 }
 
 #[test]
-pub fn add_delegate_to_msa_throws_add_delegate_verification_failed() {
+pub fn add_provider_to_msa_throws_add_provider_verification_failed() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let account = key_pair.public();
 
-		let add_delegate_payload = AddDelegate { authorized_msa_id: 2, permission: 0 };
-		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+		let add_provider_payload = AddProvider { authorized_msa_id: 2, permission: 0 };
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
-		let fake_delegate_payload = AddDelegate { authorized_msa_id: 3, permission: 0 };
+		let fake_provider_payload = AddProvider { authorized_msa_id: 3, permission: 0 };
 
 		assert_noop!(
-			Msa::add_delegate_to_msa(
+			Msa::add_provider_to_msa(
 				test_origin_signed(1),
 				account.into(),
 				signature,
-				fake_delegate_payload
+				fake_provider_payload
 			),
-			Error::<Test>::AddDelegateVerificationFailed
+			Error::<Test>::AddProviderVerificationFailed
 		);
 	});
 }
 
 #[test]
-pub fn add_delegate_to_msa_throws_no_key_exist_error() {
+pub fn add_provider_to_msa_throws_no_key_exist_error() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
-		let delegate_account = key_pair.public();
+		let provider_account = key_pair.public();
 
-		let add_delegate_payload = AddDelegate { authorized_msa_id: 2, permission: 0 };
-		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+		let add_provider_payload = AddProvider { authorized_msa_id: 2, permission: 0 };
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
 		assert_noop!(
-			Msa::add_delegate_to_msa(
+			Msa::add_provider_to_msa(
 				test_origin_signed(1),
-				delegate_account.into(),
+				provider_account.into(),
 				signature,
-				add_delegate_payload
+				add_provider_payload
 			),
 			Error::<Test>::NoKeyExists
 		);
@@ -363,26 +363,26 @@ pub fn add_delegate_to_msa_throws_no_key_exist_error() {
 }
 
 #[test]
-pub fn add_delegate_to_msa_throws_key_revoked_error() {
+pub fn add_provider_to_msa_throws_key_revoked_error() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
-		let delegate_account = key_pair.public();
+		let provider_account = key_pair.public();
 
-		let add_delegate_payload = AddDelegate { authorized_msa_id: 2, permission: 0 };
-		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+		let add_provider_payload = AddProvider { authorized_msa_id: 2, permission: 0 };
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
 		assert_ok!(Msa::create(test_origin_signed(1)));
-		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 		assert_ok!(Msa::revoke_key(&test_public(1)));
 
 		assert_noop!(
-			Msa::add_delegate_to_msa(
+			Msa::add_provider_to_msa(
 				test_origin_signed(1),
-				delegate_account.into(),
+				provider_account.into(),
 				signature,
-				add_delegate_payload
+				add_provider_payload
 			),
 			Error::<Test>::KeyRevoked
 		);
@@ -390,51 +390,51 @@ pub fn add_delegate_to_msa_throws_key_revoked_error() {
 }
 
 #[test]
-pub fn add_delegate_to_msa_throws_invalid_self_delegate_error() {
+pub fn add_provider_to_msa_throws_invalid_self_provider_error() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
-		let delegate_account = key_pair.public();
+		let provider_account = key_pair.public();
 
-		let add_delegate_payload = AddDelegate { authorized_msa_id: 1, permission: 0 };
+		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
 
-		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
-		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		assert_noop!(
-			Msa::add_delegate_to_msa(
-				Origin::signed(delegate_account.into()),
-				delegate_account.into(),
+			Msa::add_provider_to_msa(
+				Origin::signed(provider_account.into()),
+				provider_account.into(),
 				signature,
-				add_delegate_payload
+				add_provider_payload
 			),
-			Error::<Test>::InvalidSelfDelegate
+			Error::<Test>::InvalidSelfProvider
 		);
 	});
 }
 
 #[test]
-pub fn add_delegate_to_msa_throws_unauthorized_delegator_error() {
+pub fn add_provider_to_msa_throws_unauthorized_delegator_error() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
-		let delegate_account = key_pair.public();
+		let provider_account = key_pair.public();
 
-		let add_delegate_payload = AddDelegate { authorized_msa_id: 2, permission: 0 };
+		let add_provider_payload = AddProvider { authorized_msa_id: 2, permission: 0 };
 
-		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
-		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		assert_noop!(
-			Msa::add_delegate_to_msa(
-				Origin::signed(delegate_account.into()),
-				delegate_account.into(),
+			Msa::add_provider_to_msa(
+				Origin::signed(provider_account.into()),
+				provider_account.into(),
 				signature,
-				add_delegate_payload
+				add_provider_payload
 			),
 			Error::<Test>::UnauthorizedDelegator
 		);
@@ -442,34 +442,34 @@ pub fn add_delegate_to_msa_throws_unauthorized_delegator_error() {
 }
 
 #[test]
-pub fn add_delegate_to_msa_throws_duplicate_delegate_error() {
+pub fn add_provider_to_msa_throws_duplicate_provider_error() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
-		let delegate_account = key_pair.public();
+		let provider_account = key_pair.public();
 
-		let add_delegate_payload = AddDelegate { authorized_msa_id: 1, permission: 0 };
-		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
 		assert_ok!(Msa::create(test_origin_signed(1)));
-		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
-		assert_ok!(Msa::add_delegate_to_msa(
+		assert_ok!(Msa::add_provider_to_msa(
 			test_origin_signed(1),
-			delegate_account.into(),
+			provider_account.into(),
 			signature.clone(),
-			add_delegate_payload.clone()
+			add_provider_payload.clone()
 		));
 
 		assert_noop!(
-			Msa::add_delegate_to_msa(
+			Msa::add_provider_to_msa(
 				test_origin_signed(1),
-				delegate_account.into(),
+				provider_account.into(),
 				signature,
-				add_delegate_payload
+				add_provider_payload
 			),
-			Error::<Test>::DuplicateDelegate
+			Error::<Test>::DuplicateProvider
 		);
 	});
 }
@@ -490,43 +490,43 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 	new_test_ext().execute_with(|| {
 		// arrange
 		let (key_pair, _) = sr25519::Pair::generate();
-		let delegate_account = key_pair.public();
+		let provider_account = key_pair.public();
 
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
 		let delegator_account = key_pair_delegator.public();
 
-		let add_delegate_payload = AddDelegate { authorized_msa_id: 1u64.into(), permission: 0 };
-		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+		let add_provider_payload = AddProvider { authorized_msa_id: 1u64.into(), permission: 0 };
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_delegate_data).into();
+		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
 
-		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		// act
 		assert_ok!(Msa::create_sponsored_account_with_delegation(
-			Origin::signed(delegate_account.into()),
+			Origin::signed(provider_account.into()),
 			delegator_account.clone().into(),
 			signature.clone(),
-			add_delegate_payload.clone()
+			add_provider_payload.clone()
 		));
 
 		// assert
 		let key_info = Msa::get_key_info(AccountId32::new(delegator_account.0));
 		assert_eq!(key_info.unwrap().msa_id, 2);
 
-		let delegated = Msa::get_delegate_info_of(Delegate(1), Delegator(2));
-		assert_eq!(delegated.is_some(), true);
+		let provider_info = Msa::get_provider_info_of(Provider(1), Delegator(2));
+		assert_eq!(provider_info.is_some(), true);
 
 		let events_occured = System::events();
 		let created_event = &events_occured.as_slice()[1];
-		let delegated_event = &events_occured.as_slice()[2];
+		let provider_event = &events_occured.as_slice()[2];
 		assert_eq!(
 			created_event.event,
 			Event::MsaCreated { msa_id: 2u64.into(), key: delegator_account.into() }.into()
 		);
 		assert_eq!(
-			delegated_event.event,
-			Event::DelegateAdded { delegate: 1u64.into(), delegator: 2u64.into() }.into()
+			provider_event.event,
+			Event::ProviderAdded { provider: 1u64.into(), delegator: 2u64.into() }.into()
 		);
 	});
 }
@@ -535,27 +535,27 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 fn create_sponsored_account_with_delegation_with_invalid_signature_should_fail() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
-		let delegate_account = key_pair.public();
+		let provider_account = key_pair.public();
 
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
 		let delegator_account = key_pair_delegator.public();
 
 		let (signer_pair, _) = sr25519::Pair::generate();
 
-		let add_delegate_payload = AddDelegate { authorized_msa_id: 1u64.into(), permission: 0 };
-		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+		let add_provider_payload = AddProvider { authorized_msa_id: 1u64.into(), permission: 0 };
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-		let signature: MultiSignature = signer_pair.sign(&encode_add_delegate_data).into();
+		let signature: MultiSignature = signer_pair.sign(&encode_add_provider_data).into();
 
-		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		// act
 		assert_noop!(
 			Msa::create_sponsored_account_with_delegation(
-				Origin::signed(delegate_account.into()),
+				Origin::signed(provider_account.into()),
 				delegator_account.clone().into(),
 				signature.clone(),
-				add_delegate_payload.clone()
+				add_provider_payload.clone()
 			),
 			Error::<Test>::InvalidSignature
 		);
@@ -563,30 +563,30 @@ fn create_sponsored_account_with_delegation_with_invalid_signature_should_fail()
 }
 
 #[test]
-pub fn create_sponsored_account_with_delegation_with_invalid_add_delegate_should_fail() {
+pub fn create_sponsored_account_with_delegation_with_invalid_add_provider_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let (key_pair, _) = sr25519::Pair::generate();
-		let delegate_account = key_pair.public();
+		let provider_account = key_pair.public();
 
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
 		let delegator_account = key_pair_delegator.public();
 
-		let add_delegate_payload = AddDelegate { authorized_msa_id: 1u64.into(), permission: 0 };
-		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+		let add_provider_payload = AddProvider { authorized_msa_id: 1u64.into(), permission: 0 };
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_delegate_data).into();
+		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
 
-		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
 
 		// act
 		assert_noop!(
 			Msa::create_sponsored_account_with_delegation(
-				Origin::signed(delegate_account.into()),
+				Origin::signed(provider_account.into()),
 				delegator_account.clone().into(),
 				signature.clone(),
-				add_delegate_payload.clone()
+				add_provider_payload.clone()
 			),
 			Error::<Test>::DuplicatedKey
 		);
@@ -598,27 +598,27 @@ pub fn create_sponsored_account_with_delegation_with_different_authorized_msa_id
 	new_test_ext().execute_with(|| {
 		// arrange
 		let (key_pair, _) = sr25519::Pair::generate();
-		let delegate_account = key_pair.public();
+		let provider_account = key_pair.public();
 
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
 		let delegator_account = key_pair_delegator.public();
 
-		let add_delegate_payload = AddDelegate { authorized_msa_id: 3u64.into(), permission: 0 };
-		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+		let add_provider_payload = AddProvider { authorized_msa_id: 3u64.into(), permission: 0 };
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_delegate_data).into();
+		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
 
-		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		// act
 		assert_noop!(
 			Msa::create_sponsored_account_with_delegation(
-				Origin::signed(delegate_account.into()),
+				Origin::signed(provider_account.into()),
 				delegator_account.clone().into(),
 				signature.clone(),
-				add_delegate_payload.clone()
+				add_provider_payload.clone()
 			),
-			Error::<Test>::UnauthorizedDelegate
+			Error::<Test>::UnauthorizedProvider
 		);
 	});
 }
@@ -669,121 +669,124 @@ pub fn create_account_with_panic_in_on_success_should_revert_everything() {
 }
 
 #[test]
-pub fn revoke_msa_delegate_is_successfull() {
+pub fn revoke_msa_delegation_by_delegator_is_successfull() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
-		let delegate_account = key_pair.public();
+		let provider_account = key_pair.public();
 
-		let add_delegate_payload = AddDelegate { authorized_msa_id: 1, permission: 0 };
-		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
 		assert_ok!(Msa::create(test_origin_signed(1)));
-		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
-		assert_ok!(Msa::add_delegate_to_msa(
+		assert_ok!(Msa::add_provider_to_msa(
 			test_origin_signed(1),
-			delegate_account.into(),
+			provider_account.into(),
 			signature,
-			add_delegate_payload
+			add_provider_payload
 		));
 
-		assert_ok!(Msa::revoke_msa_delegate(test_origin_signed(1), 2));
+		assert_ok!(Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 2));
 
 		System::assert_last_event(
-			Event::DelegateRevoked { delegator: 1.into(), delegate: 2.into() }.into(),
+			Event::ProviderRevoked { delegator: 1.into(), provider: 2.into() }.into(),
 		);
 	});
 }
 
 #[test]
-pub fn revoke_delegate_is_successfull() {
+pub fn revoke_provider_is_successfull() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
-		let delegate_account = key_pair.public();
+		let provider_account = key_pair.public();
 
-		let add_delegate_payload = AddDelegate { authorized_msa_id: 1, permission: 0 };
-		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
 		assert_ok!(Msa::create(test_origin_signed(1)));
-		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
-		assert_ok!(Msa::add_delegate_to_msa(
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+		assert_ok!(Msa::add_provider_to_msa(
 			test_origin_signed(1),
-			delegate_account.into(),
+			provider_account.into(),
 			signature.clone(),
-			add_delegate_payload.clone()
+			add_provider_payload.clone()
 		));
 
-		let delegate = Delegate(2);
+		let provider = Provider(2);
 		let delegator = Delegator(1);
 
-		assert_ok!(Msa::revoke_delegate(delegate, delegator));
+		assert_ok!(Msa::revoke_provider(provider, delegator));
 
 		assert_eq!(
-			Msa::get_delegate_info_of(delegate, delegator).unwrap(),
-			DelegateInfo { expired: 1, permission: 0 },
+			Msa::get_provider_info_of(provider, delegator).unwrap(),
+			ProviderInfo { expired: 1, permission: 0 },
 		);
 	});
 }
 
 #[test]
-fn revoke_delegate_throws_errors() {
+fn revoke_provider_throws_errors() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 
-		let delegate_account = key_pair.public();
-		let add_delegate_payload = AddDelegate { authorized_msa_id: 2, permission: 0 };
-		let encode_add_delegate_data = wrap_binary_data(add_delegate_payload.encode());
+		let provider_account = key_pair.public();
+		let add_provider_payload = AddProvider { authorized_msa_id: 2, permission: 0 };
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-		let signature: MultiSignature = key_pair.sign(&encode_add_delegate_data).into();
+		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
 		assert_noop!(
-			Msa::revoke_msa_delegate(test_origin_signed(1), 1),
+			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 1),
 			Error::<Test>::NoKeyExists
 		);
 
 		assert_ok!(Msa::create(test_origin_signed(2)));
 		assert_ok!(Msa::revoke_key(&test_public(2)));
-		assert_noop!(Msa::revoke_msa_delegate(test_origin_signed(2), 1), Error::<Test>::KeyRevoked);
+		assert_noop!(
+			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(2), 1),
+			Error::<Test>::KeyRevoked
+		);
 
 		assert_ok!(Msa::create(test_origin_signed(1)));
 		assert_noop!(
-			Msa::revoke_msa_delegate(test_origin_signed(1), 4),
-			Error::<Test>::DelegateNotFound
+			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 4),
+			Error::<Test>::ProviderNotFound
 		);
 
-		assert_ok!(Msa::create(Origin::signed(delegate_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
-		assert_ok!(Msa::add_delegate_to_msa(
+		assert_ok!(Msa::add_provider_to_msa(
 			test_origin_signed(1),
-			delegate_account.into(),
+			provider_account.into(),
 			signature.clone(),
-			add_delegate_payload.clone()
+			add_provider_payload.clone()
 		));
 
 		assert_noop!(
-			Msa::revoke_msa_delegate(test_origin_signed(1), 4),
-			Error::<Test>::DelegateNotFound
+			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 4),
+			Error::<Test>::ProviderNotFound
 		);
 
-		assert_ok!(Msa::revoke_msa_delegate(test_origin_signed(1), 3));
+		assert_ok!(Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 3));
 
 		assert_noop!(
-			Msa::revoke_msa_delegate(test_origin_signed(1), 3),
-			Error::<Test>::DelegateRevoked
+			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 3),
+			Error::<Test>::ProviderRevoked
 		);
 	});
 }
 
 #[test]
-pub fn revoke_delegate_throws_delegate_not_found_error() {
+pub fn revoke_provider_throws_provider_not_found_error() {
 	new_test_ext().execute_with(|| {
-		let delegate = Delegate(1);
+		let provider = Provider(1);
 		let delegator = Delegator(2);
 
-		assert_noop!(Msa::revoke_delegate(delegate, delegator), Error::<Test>::DelegateNotFound);
+		assert_noop!(Msa::revoke_provider(provider, delegator), Error::<Test>::ProviderNotFound);
 	});
 }
