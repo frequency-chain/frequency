@@ -106,7 +106,7 @@ pub mod pallet {
 		UnauthorizedDelegator,
 		UnauthorizedProvider,
 		ProviderRevoked,
-		ProviderNotFound,
+		DelegationNotFound,
 	}
 
 	#[pallet::call]
@@ -250,6 +250,29 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		#[pallet::weight((T::WeightInfo::remove_msa_delegation_by_provider(20_000), DispatchClass::Normal, Pays::No))]
+		pub fn remove_delegation_by_provider(
+			origin: OriginFor<T>,
+			delegator: MessageSenderId,
+		) -> DispatchResult {
+			let provider_key = ensure_signed(origin)?;
+
+			// Remover should have valid keys (non expired and exists)
+			let key_info = Self::ensure_valid_msa_key(&provider_key)?;
+
+			let provider_msa_id = Provider(key_info.msa_id);
+			let delegator_msa_id = Delegator(delegator);
+
+			Self::revoke_provider(provider_msa_id, delegator_msa_id)?;
+
+			Self::deposit_event(Event::ProviderRevoked {
+				provider: provider_msa_id,
+				delegator: delegator_msa_id,
+			});
+
+			Ok(())
+		}
 	}
 }
 
@@ -384,7 +407,7 @@ impl<T: Config> Pallet<T> {
 			provider_msa_id,
 			delegator_msa_id,
 			|maybe_info| -> DispatchResult {
-				let mut info = maybe_info.take().ok_or(Error::<T>::ProviderNotFound)?;
+				let mut info = maybe_info.take().ok_or(Error::<T>::DelegationNotFound)?;
 
 				ensure!(info.expired == T::BlockNumber::default(), Error::<T>::ProviderRevoked);
 
