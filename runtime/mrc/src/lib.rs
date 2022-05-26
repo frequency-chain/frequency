@@ -8,6 +8,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod xcm_config;
 
+use sp_std::collections::btree_map::BTreeMap;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -692,6 +693,16 @@ impl_runtime_apis! {
 
 		fn get_msa_id(key: AccountId) -> Result<Option<MessageSenderId>, DispatchError> {
 			Ok(Msa::get_owner_of(&key))
+		}
+
+		fn check_delegations(delegator_msa_ids: Vec<MessageSenderId>, provider_msa_id: MessageSenderId) -> Result<BTreeMap<MessageSenderId, bool>, DispatchError> {
+			let mut map = BTreeMap::new();
+			let provider = pallet_msa::types::Provider(provider_msa_id);
+			for id in delegator_msa_ids {
+				let delegator = pallet_msa::types::Delegator(id);
+				map.insert(id, Msa::get_provider_info_of(provider, delegator).is_some());
+			}
+			Ok(map)
 		}
 	}
 
