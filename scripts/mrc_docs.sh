@@ -4,4 +4,4 @@ set -e
 set -x
 
 ./scripts/init.sh install-toolchain
-cargo doc --no-deps
+RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps

@@ -109,6 +109,14 @@ Note: Clean up /tmp/mrc directory after off-boarding. This is required to avoid 
 
 1. Remove mrc chain data via ```rm -rf /tmp/mrc```.
 
+### Guidelines for writing code documentation
+
+- Rust follows specific style for documenting various code elements. Refer to [rust doc](https://doc.rust-lang.org/rustdoc/how-to-write-documentation.html) and [documentation example](https://doc.rust-lang.org/rust-by-example/meta/doc.html)for more details.
+
+- Running ```RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps``` will generate documentation specific to MRC and ignore documenting dependencies.
+
+- To view generated cargo docs, one can open ```./target/doc/index.html```.
+
 ### Generating a new spec file
 
 1. Update `node/chain_spec.rs` with required spec config, defaults to `para_id:2000` and relay chain to be `rococo_local.json` with `protocol_id:mrc-local`
@@ -118,9 +126,7 @@ Note: Clean up /tmp/mrc directory after off-boarding. This is required to avoid 
 5. Alternatively, run ```./scripts/generate_specs.sh 2001 true``` to generate plain and raw mrc spec along with genesis state and wasm. Replace 2001 with registered parachain id.
 
 Note: To build spec against specific chain config; specify chain name in the command above.
-
-### TODO: Refractor chain spec to add genesis config for dev, betanet and polkadot
-
+  
 ## Linting
 
 - Lint the project with `cargo +nightly fmt`.
