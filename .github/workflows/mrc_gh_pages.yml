@@ -1,0 +1,42 @@
+name: Build and Publish MRC Docs
+
+on:
+  workflow_dispatch:
+    branches: [main]
+
+jobs:
+  docs:
+    name: ${{ matrix.target }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        target: [docs]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUST_TOOLCHAIN: "nightly-2021-11-07"
+    steps:
+      - name: Free space on Ubuntu
+        if: ${{ matrix.os }} == 'ubuntu-latest'
+        run: |
+          echo "Pre cleanup"
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Post cleanup"
+          df -h
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          default: true
+      - name: Setup Cache 📦
+        uses: Swatinem/rust-cache@v1
+      - name: Build MRC related documentation 📝
+        run: ./scripts/mrc_docs.sh
+      - name: Deploy MRC docs to gh-pages 🚀
+        uses: JamesIves/github-pages-deploy-action@4.0.0
+        with:
+          branch: gh-pages
+          folder: ./target/doc
