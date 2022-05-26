@@ -847,10 +847,7 @@ pub fn remove_msa_delegation_call_has_correct_costs() {
 		let call = Call::<Test>::remove_msa_delegation_by_provider { delegator: 2 };
 		let dispatch_info = call.get_dispatch_info();
 
-		assert_eq!(
-			dispatch_info,
-			DispatchInfo { pays_fee: Pays::No, weight: 10_000, class: DispatchClass::Normal }
-		);
+		assert_eq!(dispatch_info.pays_fee, Pays::No);
 	})
 }
 
