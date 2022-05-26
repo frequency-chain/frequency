@@ -113,7 +113,7 @@ Note: Clean up /tmp/mrc directory after off-boarding. This is required to avoid 
 
 - Rust follows specific style for documenting various code elements. Refer to [rust doc](https://doc.rust-lang.org/rustdoc/how-to-write-documentation.html) and [documentation example](https://doc.rust-lang.org/rust-by-example/meta/doc.html)for more details.
 
-- Running ```RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps``` will generate documentation specific to MRC and ignore documenting dependencies.
+- Running ```RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps``` will generate documentation specific to MRC while ignoring documenting dependencies.
 
 - To view generated cargo docs, one can open ```./target/doc/index.html```.
 
