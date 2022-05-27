@@ -80,32 +80,55 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		/// A new Message Service Account was created with a new MessageSenderId
 		MsaCreated { msa_id: MessageSenderId, key: T::AccountId },
+		/// An AccountId has been associated with a MessageSenderId
 		KeyAdded { msa_id: MessageSenderId, key: T::AccountId },
+		/// An AccountId was disassociated with its MessageSenderId
 		KeyRevoked { key: T::AccountId },
+		/// A delegation relationship was added with the given provider and delegator
 		ProviderAdded { provider: Provider, delegator: Delegator },
-		ProviderRevoked { provider: Provider, delegator: Delegator },
+		/// The Delegator revoked its delegation to the Provider
+		DelegatorRevokedDelegation { provider: Provider, delegator: Delegator },
+		/// The Provider revoked itself as delegate for the Delegator
+		ProviderRevokedDelegation { provider: Provider, delegator: Delegator },
 	}
 
 	#[pallet::error]
 	pub enum Error<T> {
+		/// tried to add a key that was already registered
 		DuplicatedKey,
+		/// MsaId values have reached the maximum
 		MsaIdOverflow,
-		KeyVerificationFailed,
+		/// Cryptographic signature verification failed for adding a key to MSA
+		AddKeySignatureVerificationFailed,
+		/// Ony the MSA Owner may perform the operation
 		NotMsaOwner,
+		/// Cryptographic signature failed verification
 		InvalidSignature,
+		/// Only the KeyOwner may perform the operation
 		NotKeyOwner,
+		/// An operation was attempted with an unknown Key
 		NoKeyExists,
+		/// An operation was attempted with a revoked Key
 		KeyRevoked,
+		/// The number of key values has reached its maximum
 		KeyLimitExceeded,
+		/// A transaction's Origin AccountId may not revoke itself
 		InvalidSelfRevoke,
+		/// An MSA may not be its own delegate
 		InvalidSelfProvider,
-		InvalidMsaId,
+		/// The delegation relationship already exists for the given MSA Ids
 		DuplicateProvider,
-		AddProviderVerificationFailed,
+		/// Cryptographic signature verification failed for adding the Provider as delegate
+		AddProviderSignatureVerificationFailed,
+		/// Origin attempted to add a delegate for someone else's MSA
 		UnauthorizedDelegator,
+		/// Origin attempted to add a different delegate than what was in the payload
 		UnauthorizedProvider,
-		ProviderRevoked,
+		/// The operation was attempted with a revoked delegation
+		DelegationRevoked,
+		/// The operation was attempted with an unknown delegation
 		DelegationNotFound,
 	}
 
@@ -169,7 +192,7 @@ pub mod pallet {
 			let delegator_key = ensure_signed(origin)?;
 
 			Self::verify_signature(proof, provider_key.clone(), add_provider_payload.encode())
-				.map_err(|_| Error::<T>::AddProviderVerificationFailed)?;
+				.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
 
 			let payload_authorized_msa_id = add_provider_payload.authorized_msa_id;
 
@@ -202,7 +225,7 @@ pub mod pallet {
 
 			Self::revoke_provider(provider_msa_id, delegator_msa_id)?;
 
-			Self::deposit_event(Event::ProviderRevoked {
+			Self::deposit_event(Event::DelegatorRevokedDelegation {
 				delegator: delegator_msa_id,
 				provider: provider_msa_id,
 			});
@@ -220,7 +243,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			Self::verify_signature(proof, key.clone(), add_key_payload.encode())
-				.map_err(|_| Error::<T>::KeyVerificationFailed)?;
+				.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
 
 			let msa_id = add_key_payload.msa_id;
 			Self::ensure_msa_owner(&who, msa_id)?;
@@ -266,7 +289,7 @@ pub mod pallet {
 
 			Self::revoke_provider(provider_msa_id, delegator_msa_id)?;
 
-			Self::deposit_event(Event::ProviderRevoked {
+			Self::deposit_event(Event::ProviderRevokedDelegation {
 				provider: provider_msa_id,
 				delegator: delegator_msa_id,
 			});
@@ -409,7 +432,7 @@ impl<T: Config> Pallet<T> {
 			|maybe_info| -> DispatchResult {
 				let mut info = maybe_info.take().ok_or(Error::<T>::DelegationNotFound)?;
 
-				ensure!(info.expired == T::BlockNumber::default(), Error::<T>::ProviderRevoked);
+				ensure!(info.expired == T::BlockNumber::default(), Error::<T>::DelegationRevoked);
 
 				let current_block = frame_system::Pallet::<T>::block_number();
 
