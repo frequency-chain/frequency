@@ -5,8 +5,7 @@
 use codec::Codec;
 use common_primitives::msa::*;
 use frame_support::dispatch::DispatchError;
-use sp_std::vec::Vec;
-use sp_std::collections::btree_map::BTreeMap;
+use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime file (the `runtime/src/lib.rs`)
