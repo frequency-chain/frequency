@@ -5,7 +5,7 @@
 use codec::Codec;
 use common_primitives::msa::*;
 use frame_support::dispatch::DispatchError;
-use sp_std::vec::Vec;
+use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime file (the `runtime/src/lib.rs`)
@@ -17,5 +17,7 @@ sp_api::decl_runtime_apis! {
 		fn get_msa_keys(msa_id: MessageSenderId) ->	Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>, DispatchError>;
 
 		fn get_msa_id(key: AccountId) -> Result<Option<MessageSenderId>, DispatchError>;
+
+		fn check_delegations(delegator_msa_ids: Vec<MessageSenderId>, provider_msa_id: MessageSenderId) -> Result<BTreeMap<MessageSenderId, bool>, DispatchError>;
 	}
 }
