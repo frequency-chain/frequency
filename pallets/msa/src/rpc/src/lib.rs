@@ -9,7 +9,6 @@ use pallet_msa_runtime_api::MsaApi as MsaRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
-use sp_std::collections::btree_map::BTreeMap;
 use std::sync::Arc;
 
 #[rpc]
@@ -22,13 +21,6 @@ pub trait MsaApi<BlockHash, AccountId, BlockNumber> {
 
 	#[rpc(name = "msa_getMsaId")]
 	fn get_msa_id(&self, key: AccountId) -> Result<Option<MessageSenderId>>;
-
-	#[rpc(name = "msa_checkDelegations")]
-	fn check_delegations(
-		&self,
-		delegator_msa_ids: Vec<MessageSenderId>,
-		provider_msa_id: MessageSenderId,
-	) -> Result<BTreeMap<MessageSenderId, bool>>;
 }
 
 /// A struct that implements the `MessagesApi`.
@@ -70,15 +62,5 @@ where
 		let at = BlockId::hash(self.client.info().best_hash);
 		let runtime_api_result = api.get_msa_id(&at, key);
 		map_rpc_result(runtime_api_result)
-	}
-
-	fn check_delegations(
-		&self,
-		delegator_msa_ids: Vec<MessageSenderId>,
-		provider_msa_id: MessageSenderId,
-	) -> Result<BTreeMap<MessageSenderId, bool>> {
-		let api = self.client.runtime_api();
-		let at = BlockId::hash(self.client.info().best_hash);
-		map_rpc_result(api.check_delegations(&at, delegator_msa_ids, provider_msa_id))
 	}
 }
