@@ -28,7 +28,6 @@ services:
       --ws-external
       --rpc-methods=Unsafe
       --alice
-      --log="main,debug"
 
   node_bob:
     container_name: bob
