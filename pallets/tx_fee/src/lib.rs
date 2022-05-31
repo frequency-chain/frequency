@@ -12,7 +12,7 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::balance::{BalanceOf, OnChargeTransactionOf};
+	use common_primitives::balance::BalanceOf;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_transaction_payment::Config {}
