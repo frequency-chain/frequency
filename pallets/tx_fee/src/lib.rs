@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::weights::{DispatchInfo, GetDispatchInfo};
-use pallet_transaction_payment::{FeeDetails, OnChargeTransaction};
+use pallet_transaction_payment::FeeDetails;
 use sp_runtime::{traits::Dispatchable, FixedPointOperand};
 
 #[cfg(test)]
@@ -9,16 +9,10 @@ mod tests;
 
 pub use pallet::*;
 
-// Type aliases used for interaction with `OnChargeTransaction`.
-pub(crate) type OnChargeTransactionOf<T> =
-	<T as pallet_transaction_payment::Config>::OnChargeTransaction;
-
-// Balance type alias.
-pub(crate) type BalanceOf<T> = <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::Balance;
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use common_primitives::balance::{BalanceOf, OnChargeTransactionOf};
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_transaction_payment::Config {}

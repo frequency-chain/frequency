@@ -24,6 +24,7 @@ sp-runtime = {git = "https://github.com/paritytech/substrate", default-features 
 sp-std = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18"}
 smallvec = "1.7.0"
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+pallet-transaction-payment = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18"}
 
 [features]
 default = ['std']
@@ -35,4 +36,5 @@ std = [
   'sp-std/std',
   'sp-runtime/std',
   'sp-api/std',
+  'pallet-transaction-payment/std',
 ]

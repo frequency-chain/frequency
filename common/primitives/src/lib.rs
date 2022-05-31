@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub mod balance;
 pub mod messages;
 pub mod msa;
 #[cfg(feature = "std")]
