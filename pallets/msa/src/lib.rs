@@ -274,7 +274,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight((T::WeightInfo::remove_msa_delegation_by_provider(20_000), DispatchClass::Normal, Pays::No))]
+		#[pallet::weight((T::WeightInfo::remove_delegation_by_provider(20_000), DispatchClass::Normal, Pays::No))]
 		pub fn remove_delegation_by_provider(
 			origin: OriginFor<T>,
 			delegator: MessageSenderId,
