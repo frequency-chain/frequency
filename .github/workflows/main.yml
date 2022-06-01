@@ -55,3 +55,12 @@ jobs:
           TARGET: ${{ matrix.target }}
           RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
           PACKAGE: ${{matrix.package}}
+      - name: Create tarball of mrc binary
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: tar -cvf mrc_binary.tar ./target/release
+      - name: Upload mrc binary artifacts 📦
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: mrc_binary-${{ github.sha }}
+          path: mrc_binary.tar

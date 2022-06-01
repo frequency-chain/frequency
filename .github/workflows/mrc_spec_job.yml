@@ -1,0 +1,48 @@
+name: Build and Publish MRC Docs
+
+on:
+  workflow_dispatch:
+    branches: [main]
+
+jobs:
+  docs:
+    name: ${{ matrix.target }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        target: [docs]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUST_TOOLCHAIN: "nightly-2021-11-07"
+    steps:
+      - name: Free space on Ubuntu
+        if: ${{ matrix.os }} == 'ubuntu-latest'
+        run: |
+          echo "Pre cleanup"
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Post cleanup"
+          df -h
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
+      - name: Download mrc build artifact 📦
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: main.yml
+          workflow_conclusion: success
+          commit: ${{ github.sha }}
+          check_artifacts:  true
+      - name: Decompress mrc binary artifacts 📦
+        run: mkdir -p ./target/release && tar -xvf mrc_binary.tar -C ./target/release
+      - name: Build MRC related specs and wasm 📝
+        run: mkdir -p ./res/specs && /scripts/mrc_docs.sh 2000 true > ./res/specs
+      - name: Create tarball  of specs and wasm 📦
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: tar -cvf mrc_specs.tar ./res/specs
+      - name: Upload mrc spec and wasm artifacts 📦
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: mrc_specs-${{ github.sha }}
+          path: mrc_specs.tar
