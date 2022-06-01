@@ -57,7 +57,7 @@ jobs:
           RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
           PACKAGE: ${{matrix.package}}
       - name: Create tarball of mrc binary
-        run: tar -cvf mrc_binary.tar ./target/release/mrc-collator
+        run: tar -zcvf mrc_binary.tar ./target/release/mrc-collator
       - name: Upload mrc binary artifacts 📦
         uses: actions/upload-artifact@v3
         with:
