@@ -22,6 +22,7 @@ jobs:
     needs: build_prep
     strategy:
       matrix: ${{fromJson(needs.build_prep.outputs.matrix)}}
+      target: [build-node, build-runtime, lint, tests]
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     env:
