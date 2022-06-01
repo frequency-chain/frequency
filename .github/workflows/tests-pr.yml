@@ -3,7 +3,7 @@ concurrency:
   group: tests-${{ github.ref }}
   cancel-in-progress: true
 on:
-  pull_request:
+  workflow_dispatch:
 jobs:
   tests:
     name: ${{ matrix.target }}

@@ -63,5 +63,5 @@ jobs:
       - name: Upload mrc spec and wasm artifacts 📦
         uses: actions/upload-artifact@v3
         with:
-          name: mrc_specs-${{ github.sha }}
+          name: mrc_rococo_2000_specs-${{ github.sha }}
           path: mrc_specs.tar
