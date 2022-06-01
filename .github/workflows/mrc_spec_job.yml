@@ -2,8 +2,6 @@ name: Build and Publish MRC Docs
 
 on:
   workflow_dispatch:
-    branches: [main]
-
 jobs:
   docs:
     name: ${{ matrix.target }}
