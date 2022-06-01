@@ -129,7 +129,7 @@ Note: To build spec against specific chain config; specify chain name in the com
 
 ### Downloading MRC related spec files, generated genesis state and wasm
 
-In order to experiment with MRC, spec files and generated genesis state and wasm can be downloaded from [build artifacts](https://github.com/LibertyDSNP/mrc/actions/workflows/mrc_spec_job.yml?query=branch%3Amain)
+In order to experiment with MRC, spec files and generated genesis state and wasm can be downloaded from [build artifacts](https://github.com/LibertyDSNP/mrc/actions/workflows/main.yml?query=branch%3Amain)
 
 ## Linting
 

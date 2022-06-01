@@ -56,10 +56,12 @@ jobs:
           TARGET: ${{ matrix.target }}
           RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
           PACKAGE: ${{matrix.package}}
-      - name: Create tarball of mrc binary
-        run: tar -zcvf mrc_binary.tar ./target/release/mrc-collator
-      - name: Upload mrc binary artifacts 📦
+      - name: Build MRC related specs and wasm 📝
+        run: mkdir -p ./res/specs && /scripts/generate_specs.sh 2000 true
+      - name: Create tarball  of specs and wasm 📦
+        run: tar -cvf mrc_specs.tar ./res/genesis
+      - name: Upload mrc spec and wasm artifacts 📦
         uses: actions/upload-artifact@v3
         with:
-          name: mrc_binary-${{ github.sha }}
-          path: mrc_binary.tar
+          name: mrc_specs-${{ github.sha }}
+          path: mrc_specs.tar
