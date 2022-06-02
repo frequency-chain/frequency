@@ -182,7 +182,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight(T::WeightInfo::add_provider_to_msa())]
 		pub fn add_provider_to_msa(
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
