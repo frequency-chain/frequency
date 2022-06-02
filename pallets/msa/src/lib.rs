@@ -212,7 +212,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight(T::WeightInfo::revoke_msa_delegation_by_delegator())]
 		pub fn revoke_msa_delegation_by_delegator(
 			origin: OriginFor<T>,
 			provider_msa_id: MessageSenderId,
