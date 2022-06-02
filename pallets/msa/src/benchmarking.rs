@@ -101,5 +101,14 @@ benchmarks! {
 
 	}: _ (RawOrigin::Signed(caller), key, signature, add_provider_payload)
 
+	revoke_msa_key {
+		let caller: T::AccountId = whitelisted_caller();
+		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
+
+		let (add_provider_payload, signature, key) = add_key_payload_and_signature::<T>();
+		assert_ok!(Msa::<T>::add_key_to_msa(RawOrigin::Signed(caller.clone()).into(), key.clone(), signature, add_provider_payload));
+
+	}: _(RawOrigin::Signed(caller), key)
+
 	impl_benchmark_test_suite!(Msa, crate::mock::new_test_ext_keystore(), crate::mock::Test);
 }
