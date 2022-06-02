@@ -1,5 +1,5 @@
 use crate as pallet_messages;
-use common_primitives::msa::{AccountProvider, Delegator, MessageSenderId, Provider};
+use common_primitives::msa::{AccountProvider, Delegator, MessageSenderId, Provider, ProviderInfo};
 use frame_support::{
 	parameter_types,
 	traits::{ConstU16, ConstU64, OnFinalize, OnInitialize},

@@ -40,11 +40,13 @@ fn add_message_should_store_message_on_temp_storage() {
 		// act
 		assert_ok!(MessagesPallet::add(
 			Origin::signed(caller_1),
+			None,
 			schema_id_1,
 			message_payload_1.clone()
 		));
 		assert_ok!(MessagesPallet::add(
 			Origin::signed(caller_2),
+			None,
 			schema_id_2,
 			message_payload_2.clone()
 		));
@@ -90,7 +92,7 @@ fn add_message_with_too_large_message_should_panic() {
 		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}".as_bytes());
 
 		// act
-		assert_noop!(MessagesPallet::add(Origin::signed(caller_1), schema_id_1, message_payload_1.clone()), Error::<Test>::TooLargeMessage);
+		assert_noop!(MessagesPallet::add(Origin::signed(caller_1), None, schema_id_1, message_payload_1.clone()), Error::<Test>::TooLargeMessage);
 	});
 }
 
@@ -107,7 +109,12 @@ fn add_message_with_invalid_msa_account_should_panic() {
 
 		// act
 		assert_noop!(
-			MessagesPallet::add(Origin::signed(caller_1), schema_id_1, message_payload_1.clone()),
+			MessagesPallet::add(
+				Origin::signed(caller_1),
+				None,
+				schema_id_1,
+				message_payload_1.clone()
+			),
 			Error::<Test>::InvalidMessageSourceAccount
 		);
 	});
@@ -125,12 +132,18 @@ fn add_message_with_maxed_out_storage_should_panic() {
 		for _ in 0..<Test as Config>::MaxMessagesPerBlock::get() {
 			assert_ok!(MessagesPallet::add(
 				Origin::signed(caller_1),
+				None,
 				schema_id_1,
 				message_payload_1.clone()
 			));
 		}
 		assert_noop!(
-			MessagesPallet::add(Origin::signed(caller_1), schema_id_1, message_payload_1.clone()),
+			MessagesPallet::add(
+				Origin::signed(caller_1),
+				None,
+				schema_id_1,
+				message_payload_1.clone()
+			),
 			Error::<Test>::TooManyMessagesInBlock
 		);
 	});
@@ -149,16 +162,19 @@ fn on_initialize_should_add_messages_into_storage_and_clean_temp() {
 		let message_payload_2 = Vec::from("{'fromId': 343, 'content': '34333'}".as_bytes());
 		assert_ok!(MessagesPallet::add(
 			Origin::signed(caller_1),
+			None,
 			schema_id_1,
 			message_payload_1.clone()
 		));
 		assert_ok!(MessagesPallet::add(
 			Origin::signed(caller_2),
+			None,
 			schema_id_1,
 			message_payload_1.clone()
 		));
 		assert_ok!(MessagesPallet::add(
 			Origin::signed(caller_2),
+			None,
 			schema_id_2,
 			message_payload_2.clone()
 		));
