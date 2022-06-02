@@ -59,3 +59,33 @@ pub struct KeyInfoResponse<AccountId, BlockNumber> {
 	pub nonce: u32,
 	pub expired: BlockNumber,
 }
+
+#[derive(TypeInfo, Debug, Clone, Copy, Decode, Encode, PartialEq, MaxEncodedLen, Eq)]
+pub struct Delegator(pub MessageSenderId);
+
+impl From<MessageSenderId> for Delegator {
+	fn from(t: MessageSenderId) -> Self {
+		Delegator(t)
+	}
+}
+
+impl From<Delegator> for MessageSenderId {
+	fn from(t: Delegator) -> MessageSenderId {
+		t.0
+	}
+}
+
+#[derive(TypeInfo, Debug, Clone, Copy, Decode, Encode, PartialEq, MaxEncodedLen, Eq)]
+pub struct Provider(pub MessageSenderId);
+
+impl From<MessageSenderId> for Provider {
+	fn from(t: MessageSenderId) -> Self {
+		Provider(t)
+	}
+}
+
+impl From<Provider> for MessageSenderId {
+	fn from(t: Provider) -> MessageSenderId {
+		t.0
+	}
+}
