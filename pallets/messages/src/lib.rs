@@ -35,7 +35,7 @@ use common_primitives::{messages::*, schema::*};
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::msa::AccountProvider;
+	use common_primitives::msa::{AccountProvider, Delegator, MessageSenderId, Provider};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -98,6 +98,8 @@ pub mod pallet {
 		TypeConversionOverflow,
 		/// Invalid Message Source Account
 		InvalidMessageSourceAccount,
+		/// UnAuthorizedDelegate
+		UnAuthorizedDelegate,
 	}
 
 	#[pallet::event]
@@ -133,6 +135,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::add(message.len() as u32, 1_000))]
 		pub fn add(
 			origin: OriginFor<T>,
+			message_producer: Option<MessageSenderId>,
 			schema_id: SchemaId,
 			message: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
@@ -146,6 +149,21 @@ pub mod pallet {
 			let msa_id = T::AccountProvider::get_msa_id(&who);
 			ensure!(msa_id.is_some(), Error::<T>::InvalidMessageSourceAccount);
 
+			let message_sender_msa = msa_id.unwrap();
+			match message_producer {
+				Some(producer) => {
+					let current_provider = Provider(message_sender_msa);
+					let current_delegator = Delegator(producer);
+					let provider_info = T::AccountProvider::get_provider_info_of(
+						current_provider,
+						current_delegator,
+					);
+					// TODO: check for specific permissions, such as if message schema
+					// is allowed to be sent by the producer etc.
+					ensure!(provider_info.is_some(), Error::<T>::UnAuthorizedDelegate);
+				},
+				None => {},
+			}
 			// TODO: validate schema existence and validity from schema pallet
 			<BlockMessages<T>>::try_mutate(|existing_messages| -> DispatchResultWithPostInfo {
 				let current_size: u16 = existing_messages
@@ -157,7 +175,7 @@ pub mod pallet {
 					data: message.try_into().unwrap(), // size is checked on top of extrinsic
 					signer: who,
 					index: current_size,
-					msa_id: msa_id.unwrap(),
+					msa_id: message_sender_msa,
 				};
 				existing_messages
 					.try_push((m, schema_id))

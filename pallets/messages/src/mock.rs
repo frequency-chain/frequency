@@ -1,5 +1,5 @@
 use crate as pallet_messages;
-use common_primitives::msa::{AccountProvider, MessageSenderId};
+use common_primitives::msa::{AccountProvider, Delegator, MessageSenderId, Provider};
 use frame_support::{
 	parameter_types,
 	traits::{ConstU16, ConstU64, OnFinalize, OnInitialize},
@@ -82,11 +82,18 @@ impl Clone for MaxMessageSizeInBytes {
 pub struct AccountHandler;
 impl AccountProvider for AccountHandler {
 	type AccountId = u64;
+	type BlockNumber = u64;
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSenderId> {
 		if *key == 1000 {
 			return None
 		}
 		Some(get_msa_from_account(*key) as MessageSenderId)
+	}
+	fn get_provider_info_of(
+		provider: Provider,
+		delegator: Delegator,
+	) -> Option<ProviderInfo<Self::BlockNumber>> {
+		None
 	}
 }
 

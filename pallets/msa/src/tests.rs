@@ -1,10 +1,13 @@
 use crate::{
 	ensure,
 	mock::*,
-	types::{AddKeyData, AddProvider, Delegator, KeyInfo, Provider, ProviderInfo, EMPTY_FUNCTION},
+	types::{AddKeyData, AddProvider, KeyInfo, EMPTY_FUNCTION},
 	Call, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
-use common_primitives::{msa::KeyInfoResponse, utils::wrap_binary_data};
+use common_primitives::{
+	msa::{Delegator, KeyInfoResponse, Provider, ProviderInfo},
+	utils::wrap_binary_data,
+};
 use frame_support::{
 	assert_noop, assert_ok,
 	weights::{GetDispatchInfo, Pays},
