@@ -233,7 +233,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight(T::WeightInfo::add_key_to_msa())]
 		pub fn add_key_to_msa(
 			origin: OriginFor<T>,
 			key: T::AccountId,

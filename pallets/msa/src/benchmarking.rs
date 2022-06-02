@@ -40,6 +40,16 @@ fn create_payload_and_signature<T: Config>() -> (AddProvider, MultiSignature, T:
 	(add_provider_payload, MultiSignature::Sr25519(signature.into()), acc.into())
 }
 
+fn add_key_payload_and_signature<T: Config>() -> (AddKeyData, MultiSignature, T::AccountId) {
+	let account = SignerId::generate_pair(None);
+	let add_key_payload = AddKeyData { msa_id: 1u64.into(), nonce: 0 };
+	let encode_add_provider_data = wrap_binary_data(add_key_payload.encode());
+
+	let signature = account.sign(&encode_add_provider_data).unwrap();
+	let acc = T::AccountId::decode(&mut &account.encode()[..]).unwrap();
+	(add_key_payload, MultiSignature::Sr25519(signature.into()), acc.into())
+}
+
 fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSenderId) {
 	let provider = create_account::<T>("account", n);
 
@@ -83,6 +93,13 @@ benchmarks! {
 			add_delegation::<T>(Delegator(other_msa_id), Provider(provider_msa_id.clone()));
 		}
 	}: _ (RawOrigin::Signed(provider), delegator_msa_id)
+
+	add_key_to_msa {
+		let caller: T::AccountId = whitelisted_caller();
+		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
+		let (add_provider_payload, signature, key) = add_key_payload_and_signature::<T>();
+
+	}: _ (RawOrigin::Signed(caller), key, signature, add_provider_payload)
 
 	impl_benchmark_test_suite!(Msa, crate::mock::new_test_ext_keystore(), crate::mock::Test);
 }
