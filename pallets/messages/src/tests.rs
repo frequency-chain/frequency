@@ -358,3 +358,86 @@ fn get_messages_by_schema_with_overflowing_input_should_panic() {
 		assert_err!(res, Error::<Test>::TypeConversionOverflow);
 	});
 }
+
+#[test]
+fn add_message_via_valid_delegate_should_pass() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let message_producer = 1;
+		let caller_1 = 5;
+		let caller_2 = 2;
+		let schema_id_1: SchemaId = 1;
+		let schema_id_2: SchemaId = 2;
+		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
+		let message_payload_2 = Vec::from("{'fromId': 343, 'content': '34333'}".as_bytes());
+
+		// act
+		assert_ok!(MessagesPallet::add(
+			Origin::signed(caller_1),
+			Some(message_producer),
+			schema_id_1,
+			message_payload_1.clone()
+		));
+		assert_ok!(MessagesPallet::add(
+			Origin::signed(caller_2),
+			Some(message_producer),
+			schema_id_2,
+			message_payload_2.clone()
+		));
+
+		// assert
+		let list = BlockMessages::<Test>::get().into_inner();
+		assert_eq!(list.len(), 2);
+
+		assert_eq!(
+			list[0],
+			(
+				Message {
+					msa_id: get_msa_from_account(caller_1),
+					data: message_payload_1.clone().try_into().unwrap(),
+					index: 0,
+					signer: caller_1
+				},
+				schema_id_1
+			)
+		);
+
+		assert_eq!(
+			list[1],
+			(
+				Message {
+					msa_id: get_msa_from_account(caller_2),
+					data: message_payload_2.clone().try_into().unwrap(),
+					index: 1,
+					signer: caller_2
+				},
+				schema_id_2
+			)
+		);
+	});
+}
+
+#[test]
+fn add_message_via_non_delegate_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let message_producer = 1;
+		let message_provider = 2000;
+		let schema_id_1: SchemaId = 1;
+		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
+		// act
+		assert_err!(
+			MessagesPallet::add(
+				Origin::signed(message_provider),
+				Some(message_producer),
+				schema_id_1,
+				message_payload_1.clone()
+			),
+			Error::<Test>::UnAuthorizedDelegate
+		);
+
+		// assert
+		let list = BlockMessages::<Test>::get().into_inner();
+		assert_eq!(list.len(), 0);
+	});
+}

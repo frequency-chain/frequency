@@ -87,13 +87,19 @@ impl AccountProvider for AccountHandler {
 		if *key == 1000 {
 			return None
 		}
+		if *key == 2000 {
+			return Some(2000 as MessageSenderId)
+		}
 		Some(get_msa_from_account(*key) as MessageSenderId)
 	}
 	fn get_provider_info_of(
 		provider: Provider,
-		delegator: Delegator,
+		_delegator: Delegator,
 	) -> Option<ProviderInfo<Self::BlockNumber>> {
-		None
+		if provider == Provider(2000) {
+			return None
+		};
+		Some(ProviderInfo { permission: 0, expired: 100 })
 	}
 }
 

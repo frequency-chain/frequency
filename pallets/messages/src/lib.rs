@@ -123,7 +123,7 @@ pub mod pallet {
 		/// Adds a message into storage
 		///
 		/// The dispatch origin for this call must be _Signed_.
-		///
+		/// - `on_behalf_of`: Optional. The msa id of delegate.
 		/// - `schema_id`: Registered schema id for current message
 		/// - `message`: Serialized message data
 		///
@@ -135,7 +135,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::add(message.len() as u32, 1_000))]
 		pub fn add(
 			origin: OriginFor<T>,
-			message_producer: Option<MessageSenderId>,
+			on_behalf_of: Option<MessageSenderId>,
 			schema_id: SchemaId,
 			message: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
@@ -150,7 +150,7 @@ pub mod pallet {
 			ensure!(msa_id.is_some(), Error::<T>::InvalidMessageSourceAccount);
 
 			let message_sender_msa = msa_id.unwrap();
-			match message_producer {
+			match on_behalf_of {
 				Some(producer) => {
 					let current_provider = Provider(message_sender_msa);
 					let current_delegator = Delegator(producer);
