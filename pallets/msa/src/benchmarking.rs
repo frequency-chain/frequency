@@ -118,5 +118,13 @@ benchmarks! {
 
 	}: _ (RawOrigin::Signed(caller), key, signature, payload)
 
+	revoke_msa_delegation_by_delegator {
+		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
+		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
+		add_delegation::<T>(Delegator(delegator_msa_id), Provider(provider_msa_id.clone()));
+
+
+	}: _ (RawOrigin::Signed(delegator), provider_msa_id)
+
 	impl_benchmark_test_suite!(Msa, crate::mock::new_test_ext_keystore(), crate::mock::Test);
 }
