@@ -81,14 +81,13 @@ where
 		let at = BlockId::hash(self.client.info().best_hash);
 
 		let provider = Provider(provider_msa_id);
-		let tups = delegator_msa_ids
+
+		Ok(delegator_msa_ids
 			.par_iter()
 			.map(|&id| {
 				let delegator = Delegator(id);
 				(id, map_rpc_result(api.has_delegation(&at, delegator, provider)))
 			})
-			.collect();
-
-		Ok(tups)
+			.collect())
 	}
 }
