@@ -28,7 +28,7 @@ pub trait MsaApi<BlockHash, AccountId, BlockNumber> {
 		&self,
 		delegator_msa_ids: Vec<MessageSenderId>,
 		provider_msa_id: MessageSenderId,
-	) -> Result<Vec<(MessageSenderId, Result<bool>)>>;
+	) -> Result<Vec<(MessageSenderId, bool)>>;
 }
 
 /// A struct that implements the `MessagesApi`.
@@ -76,7 +76,7 @@ where
 		&self,
 		delegator_msa_ids: Vec<MessageSenderId>,
 		provider_msa_id: MessageSenderId,
-	) -> Result<Vec<(MessageSenderId, Result<bool>)>> {
+	) -> Result<Vec<(MessageSenderId, bool)>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 
@@ -86,7 +86,7 @@ where
 			.par_iter()
 			.map(|&id| {
 				let delegator = Delegator(id);
-				(id, map_rpc_result(api.has_delegation(&at, delegator, provider)))
+				(id, map_rpc_result(api.has_delegation(&at, delegator, provider)).unwrap())
 			})
 			.collect())
 	}
