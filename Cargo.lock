@@ -5971,6 +5971,7 @@ dependencies = [
  "jsonrpc-derive",
  "pallet-msa-runtime-api",
  "parity-scale-codec",
+ "rayon",
  "sp-api",
  "sp-blockchain",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",

@@ -14,6 +14,7 @@ codec = { package = "parity-scale-codec", version = "3.0.0" }
 jsonrpc-core = "18.0"
 jsonrpc-core-client = "18.0"
 jsonrpc-derive = "18.0"
+rayon = "1.5"
 
 # unfinished
 pallet-msa-runtime-api = {default-features = false, path = "../runtime-api" }
