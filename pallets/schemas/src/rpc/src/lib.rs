@@ -79,7 +79,7 @@ where
 
 	fn check_schema_validity(
 		&self,
-		at: Option<<Block as BlockT>::Hash>,
+		_at: Option<<Block as BlockT>::Hash>,
 		schema: Vec<u8>,
 	) -> Result<bool> {
 		let validated_schema = avro::validate_raw_avro_schema(&schema);

@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use common_primitives::msa::{AccountProvider, KeyInfoResponse};
+use common_primitives::msa::{AccountProvider, Delegator, KeyInfoResponse, Provider, ProviderInfo};
 use frame_support::{dispatch::DispatchResult, ensure};
 pub use pallet::*;
 use sp_runtime::{
@@ -10,7 +10,7 @@ use sp_runtime::{
 
 use sp_core::crypto::AccountId32;
 pub mod types;
-pub use types::{AddKeyData, AddProvider, Delegator, KeyInfo, Provider, ProviderInfo};
+pub use types::{AddKeyData, AddProvider, KeyInfo};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -484,7 +484,14 @@ impl<T: Config> Pallet<T> {
 
 impl<T: Config> AccountProvider for Pallet<T> {
 	type AccountId = T::AccountId;
+	type BlockNumber = T::BlockNumber;
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSenderId> {
 		Self::get_owner_of(key)
+	}
+	fn get_provider_info_of(
+		provider: Provider,
+		delegator: Delegator,
+	) -> Option<ProviderInfo<Self::BlockNumber>> {
+		Self::get_provider_info_of(provider, delegator)
 	}
 }
