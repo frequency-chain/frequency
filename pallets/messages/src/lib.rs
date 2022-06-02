@@ -159,7 +159,7 @@ pub mod pallet {
 						current_delegator,
 					);
 					// TODO: check for specific permissions, such as if message schema
-					// is allowed to be sent by the producer etc.
+					// is allowed to be sent by the provider etc.
 					ensure!(provider_info.is_some(), Error::<T>::UnAuthorizedDelegate);
 				},
 				None => {},
