@@ -28,7 +28,7 @@ pub trait MsaApi<BlockHash, AccountId, BlockNumber> {
 		&self,
 		delegator_msa_ids: Vec<MessageSenderId>,
 		provider_msa_id: MessageSenderId,
-	) -> Result<BTreeMap<MessageSenderId, bool>>;
+	) -> Result<Vec<(MessageSenderId, Result<bool>)>>;
 }
 
 /// A struct that implements the `MessagesApi`.
