@@ -1,15 +1,15 @@
 use codec::Codec;
 use common_primitives::{
-	msa::{KeyInfoResponse, MessageSenderId},
+	msa::{Delegator, KeyInfoResponse, MessageSenderId, Provider},
 	rpc::*,
 };
 use jsonrpc_core::Result;
 use jsonrpc_derive::rpc;
 use pallet_msa_runtime_api::MsaApi as MsaRuntimeApi;
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
-use sp_std::collections::btree_map::BTreeMap;
 use std::sync::Arc;
 
 #[rpc]
@@ -28,7 +28,7 @@ pub trait MsaApi<BlockHash, AccountId, BlockNumber> {
 		&self,
 		delegator_msa_ids: Vec<MessageSenderId>,
 		provider_msa_id: MessageSenderId,
-	) -> Result<BTreeMap<MessageSenderId, bool>>;
+	) -> Result<Vec<(MessageSenderId, bool)>>;
 }
 
 /// A struct that implements the `MessagesApi`.
@@ -76,9 +76,18 @@ where
 		&self,
 		delegator_msa_ids: Vec<MessageSenderId>,
 		provider_msa_id: MessageSenderId,
-	) -> Result<BTreeMap<MessageSenderId, bool>> {
+	) -> Result<Vec<(MessageSenderId, bool)>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		map_rpc_result(api.check_delegations(&at, delegator_msa_ids, provider_msa_id))
+
+		let provider = Provider(provider_msa_id);
+
+		Ok(delegator_msa_ids
+			.par_iter()
+			.map(|&id| {
+				let delegator = Delegator(id);
+				(id, map_rpc_result(api.has_delegation(&at, delegator, provider)).unwrap())
+			})
+			.collect())
 	}
 }
