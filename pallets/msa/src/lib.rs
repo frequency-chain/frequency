@@ -130,6 +130,8 @@ pub mod pallet {
 		DelegationRevoked,
 		/// The operation was attempted with an unknown delegation
 		DelegationNotFound,
+		/// The operation was attempted with an expired delegation
+		DelegationExpired,
 	}
 
 	#[pallet::call]
@@ -401,6 +403,16 @@ impl<T: Config> Pallet<T> {
 			Ok(())
 		})?;
 
+		Ok(())
+	}
+
+	pub fn ensure_valid_delegation(provider: Provider, delegator: Delegator) -> DispatchResult {
+		let current_block = frame_system::Pallet::<T>::block_number();
+		let info = Self::get_provider_info_of(provider, delegator).ok_or(Error::<T>::DelegationNotFound)?;
+		if info.expired == T::BlockNumber::zero() {
+			return Ok(())
+		}
+		ensure!(info.expired >= current_block, Error::<T>::DelegationExpired);
 		Ok(())
 	}
 
