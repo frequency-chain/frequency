@@ -4,6 +4,9 @@ concurrency:
   cancel-in-progress: true
 on:
   pull_request:
+    paths-ignore: # Skip running these steps if ONLY these files change
+      - 'designdocs/**'
+      - '**/*.md'
 jobs:
   tests:
     name: ${{ matrix.target }}
