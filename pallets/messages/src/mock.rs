@@ -1,5 +1,7 @@
 use crate as pallet_messages;
-use common_primitives::msa::{AccountProvider, Delegator, MessageSenderId, Provider, ProviderInfo};
+use common_primitives::msa::{
+	AccountProvider, Delegator, KeyInfo, MessageSenderId, Provider, ProviderInfo,
+};
 use frame_support::{
 	parameter_types,
 	traits::{ConstU16, ConstU64, OnFinalize, OnInitialize},
@@ -9,6 +11,7 @@ use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
+	DispatchError,
 };
 use std::fmt::Formatter;
 
@@ -100,6 +103,20 @@ impl AccountProvider for AccountHandler {
 			return None
 		};
 		Some(ProviderInfo { permission: 0, expired: 100 })
+	}
+
+	fn ensure_valid_msa_key(
+		key: &Self::AccountId,
+	) -> Result<KeyInfo<Self::BlockNumber>, DispatchError> {
+		if *key == 1000 {
+			return Err(DispatchError::Other("some error"))
+		}
+		if *key == 2000 {
+			return Ok(KeyInfo { msa_id: 2000, nonce: 0, expired: 100 })
+		}
+
+		let info = KeyInfo { msa_id: get_msa_from_account(*key), nonce: 0, expired: 100 };
+		Ok(info)
 	}
 }
 
