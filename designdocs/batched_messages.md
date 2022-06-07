@@ -62,6 +62,20 @@ See the [implementation of paging in the messages pallet](https://github.com/Lib
     * `next_index`: `u32` starting index of next results in `next_block`
     * `results`: `Vec<BatchAnnouncement>`
 
+### File Schema
+The batch file schema could look like the following:
+
+```json
+{
+  "batch_uri": Vec<u8>,
+  "message_schema_id": SchemaId,
+  "file_size": usize,
+  "file_format": BatchFormat,
+  "announcer_msa_id": MsaId,
+  "messages": [Message]
+}
+```
+
 ### Extrinsics
 #### announce_batch(origin, batch_announcement_params)
 Creates and posts a new batch announcement message on chain, using the batch message Schema Id. This Schema Id must already be registered and will need to be fetched by the extrinsic.  The transaction fee is determined in part by the file size.
