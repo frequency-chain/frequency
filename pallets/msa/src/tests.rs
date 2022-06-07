@@ -950,7 +950,6 @@ pub fn delegation_expired() {
 		System::set_block_number(System::block_number() + 1);
 		assert_ok!(Msa::ensure_valid_delegation(provider, delegator));
 
-		// System::set_block_number(System::block_number() + 1);
 		assert_ok!(Msa::revoke_provider(provider, delegator));
 
 		System::set_block_number(System::block_number() + 1);
