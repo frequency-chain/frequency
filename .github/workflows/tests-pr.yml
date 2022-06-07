@@ -26,14 +26,33 @@ jobs:
           df -h
       - name: Check out code
         uses: actions/checkout@v3
+
+      # Skip individual steps if only certain files changed
+      - uses: dorny/paths-filter@v2.2.1
+        id: filter
+        with:
+          filters: |
+            rust:
+              - '**/*.rs'
+              - '**/*.hbs'
+              - '.rustfmt.toml'
+              - '**/Cargo.toml'
+              - '**/Cargo.lock'
+              - 'ci/build.sh'
+              - 'scripts/**.sh'
+              - '.dockerignore'
+              - 'Dockerfile'
       - name: Install latest nightly
+        if: ${{ steps.filter.outputs.rust == 'true' }}
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           default: true
       - name: Cache
+        if: ${{ steps.filter.outputs.rust == 'true' }}
         uses: Swatinem/rust-cache@v1
       - name: Run tests
+        if: ${{ steps.filter.outputs.rust == 'true' }}
         run: ./ci/build.sh
         env:
           TARGET: ${{ matrix.target }}

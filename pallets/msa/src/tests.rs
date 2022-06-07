@@ -911,3 +911,52 @@ pub fn remove_delegation_by_provider_errors_when_no_delegator_msa_id() {
 		);
 	})
 }
+
+#[test]
+pub fn valid_delegation() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+
+		assert_ok!(Msa::add_provider(provider, delegator));
+
+		System::set_block_number(System::block_number() + 1);
+
+		assert_ok!(Msa::ensure_valid_delegation(provider, delegator));
+	})
+}
+
+#[test]
+pub fn delegation_not_found() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+
+		assert_noop!(
+			Msa::ensure_valid_delegation(provider, delegator),
+			Error::<Test>::DelegationNotFound
+		);
+	})
+}
+
+#[test]
+pub fn delegation_expired() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+
+		assert_ok!(Msa::add_provider(provider, delegator));
+
+		System::set_block_number(System::block_number() + 1);
+		assert_ok!(Msa::ensure_valid_delegation(provider, delegator));
+
+		assert_ok!(Msa::revoke_provider(provider, delegator));
+
+		System::set_block_number(System::block_number() + 1);
+
+		assert_noop!(
+			Msa::ensure_valid_delegation(provider, delegator),
+			Error::<Test>::DelegationExpired
+		);
+	})
+}

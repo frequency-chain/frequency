@@ -695,7 +695,10 @@ impl_runtime_apis! {
 		}
 
 		fn has_delegation(delegator: Delegator, provider: Provider) -> Result<bool, DispatchError> {
-			Ok(Msa::get_provider_info_of(provider, delegator).is_some())
+			match Msa::ensure_valid_delegation(provider, delegator) {
+				Ok(_) => Ok(true),
+				Err(_) => Err(sp_runtime::DispatchError::Other("Invalid Delegation")),
+			}
 		}
 	}
 
