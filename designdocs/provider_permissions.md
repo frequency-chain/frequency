@@ -6,10 +6,12 @@ MRC enables users(read delegators) to have control over their own data. While pr
 
 ## Problem Statement
 
-Authorization on MRC, at-minimum, should provide ***PUBLISHER*** , ***SUBSCRIBER*** and ***RESTRICTED*** level ```permissions```, as well as ***Read*** , ***Write*** and, ***Private***, level ```grants``` at specific ```schema_id``` to begin with.This entails users can enable specific permissions for provider to read and/or write data on their behalf, while while also restricting grants to providers at schema level, if they choose to restrict the delegation to providers and vice versa. For example.
+Data Access Pattern on MRC, at-minimum, should provide ***PUBLISHER*** and ***RESTRICTED*** ```permissions``` at **delegator->provider**, as well as ***PUBLISH*** and, ***BLOCKED***, ```grants``` for specific ```schema_id``` at **provider<->delegator**.This entails users can enable specific permissions for provider to write data on their behalf, while also restricting grants to providers at schema level, rendering providers as restricted. Providers should also be able to opt into publish, on behalf of, users, or block from publication, on behalf of, at schema level. Primarily, the use case can be summarized in following way:
 
-- **As a provider**, I would want to publish and/or subscribe to specific data for very specific schemas. This document is centered around the design of the Permissions and Grants.
-- **As an app user**, I would want authorize read/write grants to provider for specific data type. I should also be able to take specific data type private.
+- **As a provider**, I would want to publish data for specific ```schema_id``` on-behalf of a delegator. Defaults to ```publish``` permissions on all schemas.
+- **As a delegator**, I would like to restrict a provider, by blocking a provider from publishing data for specific ```schema_id``` on-behalf of me.
+
+Note: A publish state would mean that a provider is able to publish data on behalf of a delegator on all public schemas by passing validation. While a restricted state would mean that a provider is not able to publish data on behalf of a delegator on a specific schema, would require additional validation.
 
 ## Goals
 
