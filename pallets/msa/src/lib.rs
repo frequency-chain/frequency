@@ -511,9 +511,32 @@ impl<T: Config> AccountProvider for Pallet<T> {
 		Self::get_provider_info_of(provider, delegator)
 	}
 
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_msa_key(
 		key: &T::AccountId,
 	) -> Result<KeyInfo<Self::BlockNumber>, DispatchError> {
 		Ok(Self::ensure_valid_msa_key(key)?)
+	}
+
+	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
+	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
+	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
+	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
+	/// would like to avoid.
+	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
+	/// this method to return a dummy account in case it does not exist
+	#[cfg(feature = "runtime-benchmarks")]
+	fn ensure_valid_msa_key(
+		key: &T::AccountId,
+	) -> Result<KeyInfo<Self::BlockNumber>, DispatchError> {
+		let result = Self::ensure_valid_msa_key(key);
+		if result.is_err() {
+			return Ok(KeyInfo {
+				msa_id: 1 as MessageSenderId,
+				nonce: 0,
+				expired: Self::BlockNumber::default(),
+			})
+		}
+		Ok(result.unwrap())
 	}
 }
