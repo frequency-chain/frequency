@@ -408,7 +408,8 @@ impl<T: Config> Pallet<T> {
 
 	pub fn ensure_valid_delegation(provider: Provider, delegator: Delegator) -> DispatchResult {
 		let current_block = frame_system::Pallet::<T>::block_number();
-		let info = Self::get_provider_info_of(provider, delegator).ok_or(Error::<T>::DelegationNotFound)?;
+		let info = Self::get_provider_info_of(provider, delegator)
+			.ok_or(Error::<T>::DelegationNotFound)?;
 		if info.expired == T::BlockNumber::zero() {
 			return Ok(())
 		}

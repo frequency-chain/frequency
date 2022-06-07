@@ -934,7 +934,8 @@ pub fn delegation_not_found() {
 
 		assert_noop!(
 			Msa::ensure_valid_delegation(provider, delegator),
-			Error::<Test>::DelegationNotFound);
+			Error::<Test>::DelegationNotFound
+		);
 	})
 }
 
