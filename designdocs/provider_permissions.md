@@ -176,9 +176,6 @@ Some risks are primarily at implementation level, such a storage pattern of such
 
 ## Discussion Notes from 2022-05-25
 
-[Recording](https://drive.google.com/file/d/1wgsqx5KWTj2_K_NpCk00Ykk53P_GN8gX/view?usp=sharing
-):
-
 - Allowing a site to read my private data
   - Not posting on my behalf, reading my (private) data instead of writing data
   - Key management for reading private data
