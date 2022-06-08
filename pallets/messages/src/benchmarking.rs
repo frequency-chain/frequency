@@ -13,6 +13,7 @@ fn add_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo {
 	let acc: T::AccountId = whitelisted_caller();
 	MessagesPallet::<T>::add(
 		RawOrigin::Signed(acc.clone()).into(),
+		None,
 		schema_id,
 		Vec::from(
 			"{'fromId': 123, 'content': '232323114432', 'fromId': 123, 'content': '232323114432'}"
@@ -32,7 +33,7 @@ benchmarks! {
 			let sid = j % SCHEMAS;
 			assert_ok!(add_message::<T>(sid.try_into().unwrap()));
 		}
-	}: _ (RawOrigin::Signed(caller), 1, input)
+	}: _ (RawOrigin::Signed(caller), None, 1, input)
 
 	on_initialize {
 		let m in 1 .. MESSAGES;

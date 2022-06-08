@@ -1,11 +1,11 @@
 use crate::{
 	ensure,
 	mock::*,
-	types::{AddKeyData, AddProvider, KeyInfo, EMPTY_FUNCTION},
+	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
 	Call, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
-	msa::{Delegator, KeyInfoResponse, Provider, ProviderInfo},
+	msa::{Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo},
 	utils::wrap_binary_data,
 };
 use frame_support::{
