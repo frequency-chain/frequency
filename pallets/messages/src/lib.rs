@@ -174,7 +174,8 @@ pub mod pallet {
 					data: message.try_into().unwrap(), // size is checked on top of extrinsic
 					signer: key,
 					index: current_size,
-					msa_id: message_sender_msa,
+					sender_msa_id: message_sender_msa,
+					on_behalf_of,
 				};
 				existing_messages
 					.try_push((m, schema_id))

@@ -14,7 +14,8 @@ fn populate_messages(schema_id: SchemaId, message_per_block: Vec<u32>) {
 		let mut list = BoundedVec::default();
 		for _ in 0..*count {
 			list.try_push(Message {
-				msa_id: 10,
+				sender_msa_id: 10,
+				on_behalf_of: None,
 				data: payload.clone().try_into().unwrap(),
 				index: counter,
 				signer: 1,
@@ -59,7 +60,8 @@ fn add_message_should_store_message_on_temp_storage() {
 			list[0],
 			(
 				Message {
-					msa_id: get_msa_from_account(caller_1),
+					sender_msa_id: get_msa_from_account(caller_1),
+					on_behalf_of: None,
 					data: message_payload_1.clone().try_into().unwrap(),
 					index: 0,
 					signer: caller_1
@@ -72,7 +74,8 @@ fn add_message_should_store_message_on_temp_storage() {
 			list[1],
 			(
 				Message {
-					msa_id: get_msa_from_account(caller_2),
+					sender_msa_id: get_msa_from_account(caller_2),
+					on_behalf_of: None,
 					data: message_payload_2.clone().try_into().unwrap(),
 					index: 1,
 					signer: caller_2
@@ -245,7 +248,8 @@ fn get_messages_by_schema_with_valid_request_should_return_paginated() {
 		assert_eq!(
 			pagination_response.content[0],
 			MessageResponse {
-				msa_id: 10,
+				sender_msa_id: 10,
+				on_behalf_of: None,
 				data: Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes()),
 				index: from_index as u16,
 				signer: 1,
@@ -393,7 +397,8 @@ fn add_message_via_valid_delegate_should_pass() {
 			list[0],
 			(
 				Message {
-					msa_id: get_msa_from_account(caller_1),
+					sender_msa_id: get_msa_from_account(caller_1),
+					on_behalf_of: Some(message_producer),
 					data: message_payload_1.clone().try_into().unwrap(),
 					index: 0,
 					signer: caller_1
@@ -406,7 +411,8 @@ fn add_message_via_valid_delegate_should_pass() {
 			list[1],
 			(
 				Message {
-					msa_id: get_msa_from_account(caller_2),
+					sender_msa_id: get_msa_from_account(caller_2),
+					on_behalf_of: Some(message_producer),
 					data: message_payload_2.clone().try_into().unwrap(),
 					index: 1,
 					signer: caller_2
