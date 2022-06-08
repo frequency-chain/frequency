@@ -61,6 +61,28 @@ const mrcAPI = await ApiPromise.create({
 See [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
 
+## Helpful Notes
+
+### Option<T>
+
+Optional responses are not mapped to `null` and instead return an object with a few properties.
+For more details see the [code for the Option class](https://github.com/polkadot-js/api/blob/master/packages/types-codec/src/base/Option.ts).
+```javascript
+const optionalExample = await api.rpc.msa.getMsaId(account);
+// Does the Option have a value?
+if (!optionalExample.isEmpty) {
+    // Get the value
+    return optionalExample.value;
+}
+return null;
+```
+
+### Vec<T>
+
+Vector responses are not mapped directly to a JavaScript Array.
+Instead they are mapped to the [Vec class](https://github.com/polkadot-js/api/blob/master/packages/types-codec/src/base/Vec.ts) which does extend [Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array).
+Thus, you can still use `map`, `forEach`, etc... with responses or access the values directing via `.values()`.
+
 <!-- LICENSE -->
 ## License
 
