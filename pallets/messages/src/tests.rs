@@ -393,7 +393,7 @@ fn add_message_via_valid_delegate_should_pass() {
 			list[0],
 			(
 				Message {
-					msa_id: get_msa_from_account(caller_1),
+					msa_id: message_producer,
 					data: message_payload_1.clone().try_into().unwrap(),
 					index: 0,
 					signer: caller_1
@@ -406,7 +406,7 @@ fn add_message_via_valid_delegate_should_pass() {
 			list[1],
 			(
 				Message {
-					msa_id: get_msa_from_account(caller_2),
+					msa_id: message_producer,
 					data: message_payload_2.clone().try_into().unwrap(),
 					index: 1,
 					signer: caller_2
