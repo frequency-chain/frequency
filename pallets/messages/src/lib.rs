@@ -139,17 +139,18 @@ pub mod pallet {
 			schema_id: SchemaId,
 			message: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
-			let who = ensure_signed(origin)?;
+			let key = ensure_signed(origin)?;
 
 			ensure!(
 				message.len() < T::MaxMessageSizeInBytes::get().try_into().unwrap(),
 				Error::<T>::TooLargeMessage
 			);
 
-			let msa_id = T::AccountProvider::get_msa_id(&who);
-			ensure!(msa_id.is_some(), Error::<T>::InvalidMessageSourceAccount);
+			let info = T::AccountProvider::ensure_valid_msa_key(&key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-			let message_sender_msa = msa_id.unwrap();
+			let message_sender_msa = info.msa_id;
+
 			match on_behalf_of {
 				Some(producer) => {
 					let current_provider = Provider(message_sender_msa);
@@ -171,7 +172,7 @@ pub mod pallet {
 				let message_size = message.len();
 				let m = Message {
 					data: message.try_into().unwrap(), // size is checked on top of extrinsic
-					signer: who,
+					signer: key,
 					index: current_size,
 					msa_id: message_sender_msa,
 				};
