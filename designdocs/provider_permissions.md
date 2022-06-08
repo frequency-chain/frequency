@@ -6,7 +6,7 @@ MRC enables users(read delegators) to have control over their own data. While pr
 
 ## Problem Statement
 
-Data Access Pattern on MRC, at-minimum, should provide ***PUBLISHER*** and ***RESTRICTED*** ```permissions``` at **delegator->provider**, as well as ***PUBLISH*** and, ***BLOCKED***, ```grants``` for specific ```schema_id``` at **provider<->delegator**.This entails users can enable specific permissions for provider to write data on their behalf, while also restricting grants to providers at schema level, rendering providers as restricted. Providers should also be able to opt into publish, on behalf of, users, or block from publication, on behalf of, at schema level. Primarily, the use case can be summarized in following way:
+Data Access Pattern on MRC, at-minimum, should provide ***PUBLISHER*** and ***RESTRICTED*** ```permissions``` at **delegator->provider**, as well as ***PUBLISH*** and, ***Block***, ```grants``` for specific ```schema_id``` at **provider<->delegator**.This entails users can enable specific permissions for provider to write data on their behalf, while also restricting grants to providers at schema level, rendering providers as restricted. Providers should also be able to opt into publish, on behalf of, users, or block from publication, on behalf of, at schema level. Primarily, the use case can be summarized in following way:
 
 - **As a provider**, I would want to publish data for specific ```schema_id``` on-behalf of a delegator. Defaults to ```publish``` permissions on all schemas registered by provider on behalf of delegator.
 - **As a delegator**, I would like to restrict a provider, by allowing a provider to only publish data for specific ```schema_ids``` on-behalf of me.
@@ -42,9 +42,10 @@ Note: The terminology and implementation are subject to change at issue resoluti
 ### Permissions
 
 Permission is a generic option for any user. For version 1 of this implementation, the following options are available:
-***PUBLISHER***: Where a user grants full publication rights to a provider for any schema available to provider via MRC. This can be modified to be called a dsnp publisher where all dsnp related schemas are granted to provider. In other sense this could be super admin permission that can be granted via a governance mechanism.
 
-***RESTRICTED***: Where a user grants a provider to publish data on their behalf for specific schema(s) only. This is the default state of a provider on MRC, where a provider has to explicitly provide a list of schema(s) for which they are allowed to publish data on behalf of the user.
+- ***PUBLISHER***: Where a user grants full publication rights to a provider for any schema available to provider via MRC. This can be modified to be called a dsnp publisher where all dsnp related schemas are granted to provider. In other sense this could be super admin permission that can be granted via a governance mechanism.
+
+- ***RESTRICTED***: Where a user grants a provider to publish data on their behalf for specific schema(s) only. This is the default state of a provider on MRC, where a provider has to explicitly provide a list of schema(s) for which they are allowed to publish data on behalf of the user.
 
 An example of permission data structure is as follows:
 
@@ -67,9 +68,9 @@ pub struct Permission {
 
 Grants enable delegators as well as providers to restrict one another from publishing data on specific schema(s). For version 1 of this implementation, the following options are available:
 
-***PUBLISH***: Where a delegator grants a provider to publish data on their behalf for specific schema(s) only. This is the default state of a provider on MRC, where a provider has to explicitly provide a list of schema(s) for which they are allowed to publish data on behalf of the delegator. This also enables a delegator to opt in to publish their data.
+- ***PUBLISH***: Where a delegator grants a provider to publish data on their behalf for specific schema(s) only. This is the default state of a provider on MRC, where a provider has to explicitly provide a list of schema(s) for which they are allowed to publish data on behalf of the delegator. This also enables a delegator to opt in to publish their data.
 
-***BLOCKED***: When a delegator or provider want to restrict publication of data on specific schema(s). This is default state of any schemas, not authorized by delegator or provider as part of schema grants request.
+- ***Block***: When a delegator or provider want to restrict publication of data on specific schema(s). This is default state of any schemas, not authorized by delegator or provider as part of schema grants request.
 
 An example of grant data structure is as follows:
 
@@ -77,7 +78,7 @@ An example of grant data structure is as follows:
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum GranType {
     Publish,
-    Blocked,
+    Block,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -151,7 +152,59 @@ An extrinsic (or rpc if revoking is paid off while adding) to allow a provider o
 - Notes:
   - Revocation of a grant should be "pre-paid" (Not staking it, just paying more for the create so the revoke is "covered")
   - If this action is already paid off while [adding schema grants](#add_schema_permissions), this can be done via rpc.
+  - Un-delegation of a provider by a delegator should revoke all grants from all schemas for that provider.
+
+## Time bounded permissions
+
+- Expiry time on permissions for version 1 can be a fixed number of blocks set in MRC.
+- This expiry time can be update via goverance or runtime upgrades. Since this is not important for the scope of the design doc, implementation details can define, how MRC is handling expiry time in first version.
+- However, expiry time can be baked in the above extrinsics call and can be set as a parameter.
+
+## Validation
+
+- If a provider has **Publisher** status, then it can publish data on behalf of a delegator for any schema supported by MRC.
+- If a provider has **Restricted** status, a check will be required to ensure delegator has given **Publish** grant for a given schema.
+- This can further be extended to act as an additonal validation on publishing batched messages for a given list of delegators for a specific schema.
 
 ## Benefits and Risks
 
+Enabling permissions and grants benefits both user and provider. While providers can be trusted to publish data on behalf of a delegator, it is not always the case and vice versa. Duality of opt in at the grant level solidify the trust relationship.
+
+Some risks are primarily at implementation level, such a storage pattern of such grants, and validation surrounding weather a provider is allowed to publish or not, adds additional overhead. Though this risk is easily minimzed by using a storage pattern that is optimized for the use case.
+
 ## Additional Resources
+
+## Discussion Notes from 2022-05-25
+
+[Recording](https://drive.google.com/file/d/1wgsqx5KWTj2_K_NpCk00Ykk53P_GN8gX/view?usp=sharing
+):
+
+- Allowing a site to read my private data
+  - Not posting on my behalf, reading my (private) data instead of writing data
+  - Key management for reading private data
+- Delegation for reading vs writing
+- Do we need to have a way for the user to express how their data is used on "3rd party" sites (aka sites you don't have an explicit delegation with)
+  - Maybe not MRC, but perhaps at the DSNP layer?
+  - DSNP data use policy for each announcement (We already assume friends/followers can see it even on 3rd party sites)
+- Do we need extendable/modular permissions or "roles"?
+  - Grouping Schemas together somehow?
+  - Roles are useful for users, but hide complexity (see Android/iOS permission mess)
+  - What if there are 100's of schemas?
+  - Could the wallet solve that problem?
+- Delegation is a wallet level action
+  - Users have a wallet interaction for delegation
+- Do schemas have custom permissions?
+  - Sub-permissions CRUD? We really only have Create as a permission
+- Could service permissions be set at the provider MSA level and the delegation only have exclusions?
+  - This is more auto-optin which I think is bad.
+- Public "Read" permission (DSNP or MRC?)
+  - Robots.txt
+  - Could this be on a per service basis?
+    - aka I grant the public ability to "read" schema 7 from service A but not schema 7 from service B
+
+- Core delegation model ideas
+  - Limited Schema Ids (User allows schema: x, y, z)
+    - Want to send a message -> Check delegate -> check schema "permission"
+    - Delegation permissions are "stored with" the delegation on-chain
+      - This data must be historically immutable and retained
+    - Active opt-in
