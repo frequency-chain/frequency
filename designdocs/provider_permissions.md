@@ -1,4 +1,4 @@
-# Delegator <-> Provider Grants
+# Delegator <-> Provider Permissions/Grants
 
 ## Context and Scope
 
@@ -93,7 +93,7 @@ pub struct Grant {
 
 - ***delegator_msa***: The MSA of a user.
 - ***provider_msa***: The MSA of the provider/app.
-- ***Permission***: The generic option for any user.
+- ***Permission***: The generic option for any user. Default mode of operation is ***Restricted*** for any provider unless explicitly added as ***Publisher***.
 - ***Grant***: The user level action/result. "A user grants a permission to a provider".
 - ***ToS***: The hash of terms of service between a delegator and provider.
 - ***expiry***: The expiry time of a permission/grant.
