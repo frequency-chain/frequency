@@ -98,7 +98,7 @@ pub struct Grant {
 - ***expiry***: The expiry time of a permission/grant.
 - ***schema_id***: The unique identifier of a registered schema on MRC.
 
-### add_schema_permissions()
+### add_schema_grants()
 
 An extrinsic to allow a provider to request publish write to list of schemas. Rendering them **Restricted** status.
 
@@ -114,6 +114,8 @@ An extrinsic to allow a provider to request publish write to list of schemas. Re
 
 - Outcomes: Provider permissions are set to **Restricted** and grants have been set for selected schemas.
 
+- Notes: The weights of this extrinsic should account for required weights when revoking grants at schema level via provider/delegator.
+
 ### add_mrc_publisher()
 
 An extrinsic to allow (via goverance) to set a provider as MRC publisher. This in turn will give all publish rights on all schemas for any delegator delegating to this provider. Rending them **Publisher** status.
@@ -125,9 +127,30 @@ An extrinsic to allow (via goverance) to set a provider as MRC publisher. This i
 
 - Events: ```PublisherPermissionAdded``` where the event data is ```(delegator_msa, provider_msa, tos_hash)```.
   
-- Restrictions: This extrinsic is should only be available via goverance or via some strict mechanism, and, origin must own provider ```msa_id``` delegated by delegator ```msa_id```.
+- Restrictions:
+  - This extrinsic is should only be available via goverance or via some strict mechanism.
+  - Origin must own provider ```msa_id``` delegated by delegator ```msa_id```.
 
 - Outcomes: Provider permissions are set to **Publisher**. This can indicate to by pass schema level grants for delegator at this permission level.
+
+- Notes: The weights of this extrinsic should account for required weights when revoking grants at schema level via provider/delegator. This can then make the following an rpc instead of extrinsic.
+
+### revoke_schema_grants()
+
+An extrinsic (or rpc if revoking is paid off while adding) to allow a provider or delegator to block publishing rights on specific schemas. If a delegator has **Publisher** status, then restricting a schema will render it **Restricted** status on provider.
+
+- Parameters:
+    1. **provider_msa**: The MSA of the provider/app.
+    2. **delegator_msa**: The MSA of a user.
+    3. **schema_ids**: The list of schemas for which the provider/delegator wants to block publishing rights, typically ```Vec<SchemaId>```.
+
+- Restrictions: Origin must own provider ```msa_id``` delegated by delegator ```msa_id```.
+
+- Outcomes: Provider permissions are set to **Restricted**. While schema level grants is set to blocked for a given ```schema_id```.
+
+- Notes:
+  - Revocation of a grant should be "pre-paid" (Not staking it, just paying more for the create so the revoke is "covered")
+  - If this action is already paid off while [adding schema grants](#add_schema_permissions), this can be done via rpc.
 
 ## Benefits and Risks
 
