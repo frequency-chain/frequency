@@ -42,6 +42,10 @@ jobs:
               - 'scripts/**.sh'
               - '.dockerignore'
               - 'Dockerfile'
+            js:
+              - 'js/**'
+
+      # Rust
       - name: Install latest nightly
         if: ${{ steps.filter.outputs.rust == 'true' }}
         uses: actions-rs/toolchain@v1
@@ -57,3 +61,22 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
 
+      # JS
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: 'npm'
+          cache-dependency-path: js/rpc/package-lock.json
+      - name: Install
+        run: npm ci
+        working-directory: js/rpc
+      - name: Lint
+        run: npm run lint
+        working-directory: js/rpc
+      - name: Test
+        run: npm test
+        working-directory: js/rpc
+      - name: Build & Publish Dry Run
+        run: npm publish --dry-run
+        working-directory: js/rpc
