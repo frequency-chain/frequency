@@ -152,17 +152,14 @@ pub mod pallet {
 			let message_sender_msa = info.msa_id;
 
 			match on_behalf_of {
-				Some(producer) => {
-					let current_provider = Provider(message_sender_msa);
-					let current_delegator = Delegator(producer);
-					let provider_info = T::AccountProvider::get_provider_info_of(
-						current_provider,
-						current_delegator,
-					);
-					ensure!(provider_info.is_some(), Error::<T>::UnAuthorizedDelegate);
-				},
+				Some(producer) => T::AccountProvider::ensure_valid_delegation(
+					Provider(message_sender_msa),
+					Delegator(producer),
+				)
+				.map_err(|_| Error::<T>::UnAuthorizedDelegate)?,
 				None => {},
 			}
+
 			// TODO: validate schema existence and validity from schema pallet
 			<BlockMessages<T>>::try_mutate(|existing_messages| -> DispatchResultWithPostInfo {
 				let current_size: u16 = existing_messages
