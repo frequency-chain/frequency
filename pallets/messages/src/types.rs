@@ -12,7 +12,7 @@ where
 {
 	pub data: BoundedVec<u8, MaxDataSize>, //  Serialized data in a user-defined schema format
 	pub signer: AccountId,                 //  Signature of the signer
-	pub sender_msa_id: MessageSenderId,    //  Message source account id (the original sender)
+	pub msa_id: MessageSenderId,           //  Message source account id (the original sender)
 	pub index: u16,                        //  Stores index of message in block to keep total order
 }
 
@@ -28,7 +28,7 @@ where
 		MessageResponse {
 			signer: self.signer.clone(),
 			index: self.index,
-			sender_msa_id: self.sender_msa_id,
+			msa_id: self.msa_id,
 			block_number,
 			data: self.data.clone().into_inner(),
 		}
