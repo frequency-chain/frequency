@@ -84,8 +84,6 @@ pub enum GrantType {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Grant {
     pub grant_type: GrantType,
-    pub tos_hash: Vec<u8>,
-    pub expiry_time: u64,
 }
 ```
 
