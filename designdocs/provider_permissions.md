@@ -23,11 +23,79 @@ MRC is a default read only for items stored on and off chain, requiring an expli
 
 **ToS Baked In**: As a part of this design doc, it is recommended to discuss about baking in ***ToS*** for providers and delegators as a part of permission grants by including a hash of ToS unless there is a re-delegation. Such that MRC can also act as proof of specific agreement established between a provider and a delegator.
 
-**Time Bounded Grants**: Any grants given or revoked by a delegator (allowing provider to publish or block them for certain duration) or any grants are modified by a provider or delegator are valid for the duration of ***ToS***. This can be a control mechanism in MRC which can be a fixed number for version 1 of this implementation and be extensible via a governance mechanism, by executing an extrinsic. This also brings the question about, if not time bounded, does permissions and grants are set till they are explicitly revoked. De-delegation, definitely is an option for user to remove a provider completely from ever publishing on their behalf.
+**Time Bound Grants**: Any grants given or revoked by a delegator (allowing provider to publish or block them for certain duration) or any grants are modified by a provider or delegator are valid for the duration of ***ToS***. This can be a control mechanism in MRC which can be a fixed number for version 1 of this implementation and be extensible via a governance mechanism. This also brings the question about, if not time bounded, does permissions and grants are set till they are explicitly revoked. While un-delegation, definitely is an option for user to remove a provider completely from ever publishing on their behalf.
 
 ### Non-Goals
 
+- Does not cover the case where a delegator or provider can restrict reading of data on their behalf.
+- MRC enables a valid provider or delegator to be able to read as a default.
+- Only covers basic version 1 of permission and grant implementation details.
+- Does not cover details of economics, governance mechanism.
+- Does not cover details on dynamic expiry time for permissions/grants.
+
 ## Proposal
+
+The proposed solution is to provide delegate level permissions and schema level grants to delegators and providers alike. This will enable a provider to publish data on behalf of a delegator, while also allowing a delegator to restrict a provider from publishing data on their behalf for specific schema.
+
+Note: The terminology and implementation are subject to change at issue resolution.
+
+### Permissions
+
+Permission is a generic option for any user. For version 1 of this implementation, the following options are available:
+***PUBLISHER***: Where a user grants full publication rights to a provider for any schema available to provider via MRC. This can be modified to be called a dsnp publisher where all dsnp related schemas are granted to provider. In other sense this could be super admin permission that can be granted via a governance mechanism.
+
+***RESTRICTED***: Where a user grants a provider to publish data on their behalf for specific schema(s) only. This is the default state of a provider on MRC, where a provider has to explicitly provide a list of schema(s) for which they are allowed to publish data on behalf of the user.
+
+An example of permission data structure is as follows:
+
+```rust
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PermissionType {
+    Publisher,
+    Restricted,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Permission {
+    pub permission_type: PermissionType,
+    pub tos_hash: Vec<u8>,
+    pub expiry_time: u64,
+}
+```
+
+### Grants
+
+Grants enable delegators as well as providers to restrict one another from publishing data on specific schema(s). For version 1 of this implementation, the following options are available:
+***PUBLISH***: Where a delegator grants a provider to publish data on their behalf for specific schema(s) only. This is the default state of a provider on MRC, where a provider has to explicitly provide a list of schema(s) for which they are allowed to publish data on behalf of the delegator. This also enables a delegator to opt in to publish their data.
+
+***BLOCKED***: When a delegator or provider want to restrict publication of data on specific schema(s). This is default state of any schemas, not authorized by delegator or provider as part of schema grants request.
+
+An example of grant data structure is as follows:
+
+```rust
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum GranType {
+    Publish,
+    Blocked,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Grant {
+    pub grant_type: GranType,
+    pub tos_hash: Vec<u8>,
+    pub expiry_time: u64,
+}
+```
+
+### API (Extrinsic)
+
+- ***delegator_msa***: The MSA of a user.
+- ***provider_msa***: The MSA of the provider/app.
+- ***Permission***: The generic option for any user.
+- ***Grant***: The user level action/result. "A user grants a permission to a provider".
+- ***ToS***: The hash of terms of service between a delegator and provider.
+- ***expiry***: The expiry time of a permission/grant.
+- ***schema_id***: The unique identifier of a registered schema on MRC.
 
 ## Benefits and Risks
 
