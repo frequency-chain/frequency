@@ -23,7 +23,7 @@ An easy way to get all the custom rpc and types config to be able to easily use 
 ## Getting Started
 
 - `npm install @polkadot/api` (Polkadot API Library)
-- `npm install @libertydsnp/mrc-rpc`
+- `npm install @dsnp/mrc-rpc`
 
 ### Usage
 
@@ -32,7 +32,7 @@ For details on use, see the [Polkadot API library documentation](https://polkado
 ```javascript
 // es6 style imports
 import { ApiPromise } from '@polkadot/api';
-import { rpc, types } from "@libertydsnp/mrc-rpc";
+import { rpc, types } from "@dsnp/mrc-rpc";
 // ...
 
 const mrcAPI = await ApiPromise.create({
@@ -45,7 +45,7 @@ const mrcAPI = await ApiPromise.create({
 ```javascript
 // commonjs require
 const { ApiPromise } = require('@polkadot/api');
-const { rpc, types } = require("@libertydsnp/mrc-rpc");
+const { rpc, types } = require("@dsnp/mrc-rpc");
 // ...
 
 const mrcAPI = await ApiPromise.create({
