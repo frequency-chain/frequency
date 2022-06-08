@@ -63,6 +63,7 @@ jobs:
 
       # JS
       - name: Use Node.js
+        if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
         uses: actions/setup-node@v3
         with:
           node-version: 16
@@ -70,13 +71,17 @@ jobs:
           cache-dependency-path: js/rpc/package-lock.json
       - name: Install
         run: npm ci
+        if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
         working-directory: js/rpc
       - name: Lint
         run: npm run lint
+        if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
         working-directory: js/rpc
       - name: Test
         run: npm test
+        if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
         working-directory: js/rpc
       - name: Build & Publish Dry Run
+        if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
         run: npm publish --dry-run
         working-directory: js/rpc

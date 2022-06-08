@@ -1,7 +1,7 @@
 {
   "name": "@dsnp/mrc-rpc",
   "bugs": {
-    "url" : "https://github.com/LibertyDSNP/mrc/issues"
+    "url": "https://github.com/LibertyDSNP/mrc/issues"
   },
   "repository": {
     "type": "git",
