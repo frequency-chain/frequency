@@ -2,6 +2,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_runtime::DispatchError;
 
 pub type MessageSenderId = u64;
 
@@ -18,6 +19,13 @@ impl From<Delegator> for MessageSenderId {
 	fn from(t: Delegator) -> MessageSenderId {
 		t.0
 	}
+}
+
+#[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
+pub struct KeyInfo<BlockNumber> {
+	pub msa_id: MessageSenderId,
+	pub nonce: u32,
+	pub expired: BlockNumber,
 }
 
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
@@ -49,6 +57,9 @@ pub trait AccountProvider {
 		provider: Provider,
 		delegator: Delegator,
 	) -> Option<ProviderInfo<Self::BlockNumber>>;
+	fn ensure_valid_msa_key(
+		key: &Self::AccountId,
+	) -> Result<KeyInfo<Self::BlockNumber>, DispatchError>;
 }
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -58,4 +69,18 @@ pub struct KeyInfoResponse<AccountId, BlockNumber> {
 	pub msa_id: MessageSenderId,
 	pub nonce: u32,
 	pub expired: BlockNumber,
+}
+
+impl<BlockNumber: Clone> KeyInfo<BlockNumber> {
+	pub fn map_to_response<AccountId: Clone>(
+		&self,
+		key: AccountId,
+	) -> KeyInfoResponse<AccountId, BlockNumber> {
+		KeyInfoResponse {
+			key: key.clone(),
+			msa_id: self.msa_id,
+			nonce: self.nonce,
+			expired: self.expired.clone(),
+		}
+	}
 }

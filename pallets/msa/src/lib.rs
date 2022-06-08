@@ -1,6 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use common_primitives::msa::{AccountProvider, Delegator, KeyInfoResponse, Provider, ProviderInfo};
+use common_primitives::msa::{
+	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo,
+};
 use frame_support::{dispatch::DispatchResult, ensure};
 pub use pallet::*;
 use sp_runtime::{
@@ -10,7 +12,7 @@ use sp_runtime::{
 
 use sp_core::crypto::AccountId32;
 pub mod types;
-pub use types::{AddKeyData, AddProvider, KeyInfo};
+pub use types::{AddKeyData, AddProvider};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -501,10 +503,40 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSenderId> {
 		Self::get_owner_of(key)
 	}
+
 	fn get_provider_info_of(
 		provider: Provider,
 		delegator: Delegator,
 	) -> Option<ProviderInfo<Self::BlockNumber>> {
 		Self::get_provider_info_of(provider, delegator)
+	}
+
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	fn ensure_valid_msa_key(
+		key: &T::AccountId,
+	) -> Result<KeyInfo<Self::BlockNumber>, DispatchError> {
+		Ok(Self::ensure_valid_msa_key(key)?)
+	}
+
+	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
+	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
+	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
+	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
+	/// would like to avoid.
+	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
+	/// this method to return a dummy account in case it does not exist
+	#[cfg(feature = "runtime-benchmarks")]
+	fn ensure_valid_msa_key(
+		key: &T::AccountId,
+	) -> Result<KeyInfo<Self::BlockNumber>, DispatchError> {
+		let result = Self::ensure_valid_msa_key(key);
+		if result.is_err() {
+			return Ok(KeyInfo {
+				msa_id: 1 as MessageSenderId,
+				nonce: 0,
+				expired: Self::BlockNumber::default(),
+			})
+		}
+		Ok(result.unwrap())
 	}
 }
