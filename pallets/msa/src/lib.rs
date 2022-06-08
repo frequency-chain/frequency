@@ -511,6 +511,10 @@ impl<T: Config> AccountProvider for Pallet<T> {
 		Self::get_provider_info_of(provider, delegator)
 	}
 
+	fn ensure_valid_delegation(provider: Provider, delegation: Delegator) -> DispatchResult {
+		Ok(Self::ensure_valid_delegation(provider, delegation)?)
+	}
+
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_msa_key(
 		key: &T::AccountId,

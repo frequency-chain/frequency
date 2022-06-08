@@ -3,6 +3,7 @@ use common_primitives::msa::{
 	AccountProvider, Delegator, KeyInfo, MessageSenderId, Provider, ProviderInfo,
 };
 use frame_support::{
+	dispatch::DispatchResult,
 	parameter_types,
 	traits::{ConstU16, ConstU64, OnFinalize, OnInitialize},
 };
@@ -117,6 +118,14 @@ impl AccountProvider for AccountHandler {
 
 		let info = KeyInfo { msa_id: get_msa_from_account(*key), nonce: 0, expired: 100 };
 		Ok(info)
+	}
+
+	fn ensure_valid_delegation(provider: Provider, _delegator: Delegator) -> DispatchResult {
+		if provider == Provider(2000) {
+			return Err(DispatchError::Other("some delegation error"))
+		};
+
+		Ok(())
 	}
 }
 
