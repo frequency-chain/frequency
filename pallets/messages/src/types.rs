@@ -13,7 +13,6 @@ where
 	pub data: BoundedVec<u8, MaxDataSize>, //  Serialized data in a user-defined schema format
 	pub signer: AccountId,                 //  Signature of the signer
 	pub sender_msa_id: MessageSenderId,    //  Message source account id (the original sender)
-	pub on_behalf_of: Option<MessageSenderId>, //  Message source account id (the message producer).
 	pub index: u16,                        //  Stores index of message in block to keep total order
 }
 
@@ -30,7 +29,6 @@ where
 			signer: self.signer.clone(),
 			index: self.index,
 			sender_msa_id: self.sender_msa_id,
-			on_behalf_of: self.on_behalf_of,
 			block_number,
 			data: self.data.clone().into_inner(),
 		}

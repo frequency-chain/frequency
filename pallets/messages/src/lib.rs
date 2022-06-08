@@ -149,14 +149,17 @@ pub mod pallet {
 			let info = T::AccountProvider::ensure_valid_msa_key(&key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-			let message_sender_msa = info.msa_id;
+			let mut message_sender_msa = info.msa_id;
 
 			match on_behalf_of {
-				Some(producer) => T::AccountProvider::ensure_valid_delegation(
-					Provider(message_sender_msa),
-					Delegator(producer),
-				)
-				.map_err(|_| Error::<T>::UnAuthorizedDelegate)?,
+				Some(producer) => {
+					T::AccountProvider::ensure_valid_delegation(
+						Provider(message_sender_msa),
+						Delegator(producer),
+					)
+					.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
+					message_sender_msa = producer;
+				},
 				None => {},
 			}
 
@@ -172,7 +175,6 @@ pub mod pallet {
 					signer: key,
 					index: current_size,
 					sender_msa_id: message_sender_msa,
-					on_behalf_of,
 				};
 				existing_messages
 					.try_push((m, schema_id))
