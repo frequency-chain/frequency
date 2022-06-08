@@ -98,6 +98,37 @@ pub struct Grant {
 - ***expiry***: The expiry time of a permission/grant.
 - ***schema_id***: The unique identifier of a registered schema on MRC.
 
+### add_schema_permissions()
+
+An extrinsic to allow a provider to request publish write to list of schemas. Rendering them **Restricted** status.
+
+- Parameters:
+    1. **provider_msa**: The MSA of the provider/app.
+    2. **delegator_msa**: The MSA of a user.
+    3. **schemas**: The list of schemas for which the provider wants to grant publish write typically ```Vec<SchemaId>```.
+    4. **tos_hash**: The hash of terms of service between a delegator and provider.
+
+- Events: ```SchemaPermissionAdded``` where the event data is ```(delegator_msa, provider_msa, schemas)```.
+  
+- Restrictions: origin must own provider ```msa_id``` delegated by delegator ```msa_id```.
+
+- Outcomes: Provider permissions are set to **Restricted** and grants have been set for selected schemas.
+
+### add_mrc_publisher()
+
+An extrinsic to allow (via goverance) to set a provider as MRC publisher. This in turn will give all publish rights on all schemas for any delegator delegating to this provider. Rending them **Publisher** status.
+
+- Parameters:
+    1. **provider_msa**: The MSA of the provider/app.
+    2. **delegator_msa**: The MSA of a user.
+    3. **tos_hash**: The hash of terms of service between a delegator and provider.
+
+- Events: ```PublisherPermissionAdded``` where the event data is ```(delegator_msa, provider_msa, tos_hash)```.
+  
+- Restrictions: This extrinsic is should only be available via goverance or via some strict mechanism, and, origin must own provider ```msa_id``` delegated by delegator ```msa_id```.
+
+- Outcomes: Provider permissions are set to **Publisher**. This can indicate to by pass schema level grants for delegator at this permission level.
+
 ## Benefits and Risks
 
 ## Additional Resources
