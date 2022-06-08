@@ -76,14 +76,14 @@ An example of grant data structure is as follows:
 
 ```rust
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum GranType {
+pub enum GrantType {
     Publish,
     Block,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Grant {
-    pub grant_type: GranType,
+    pub grant_type: GrantType,
     pub tos_hash: Vec<u8>,
     pub expiry_time: u64,
 }
