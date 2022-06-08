@@ -119,7 +119,7 @@ An extrinsic to allow a provider to request publish write to list of schemas. Re
 
 ### add_mrc_publisher()
 
-An extrinsic to allow (via goverance) to set a provider as MRC publisher. This in turn will give all publish rights on all schemas for any delegator delegating to this provider. Rending them **Publisher** status.
+An extrinsic to allow (via governance) to set a provider as MRC publisher. This in turn will give all publish rights on all schemas for any delegator delegating to this provider. Rending them **Publisher** status.
 
 - Parameters:
     1. **provider_msa**: The MSA of the provider/app.
@@ -129,7 +129,7 @@ An extrinsic to allow (via goverance) to set a provider as MRC publisher. This i
 - Events: ```PublisherPermissionAdded``` where the event data is ```(delegator_msa, provider_msa, tos_hash)```.
   
 - Restrictions:
-  - This extrinsic is should only be available via goverance or via some strict mechanism.
+  - This extrinsic is should only be available via governance or via some strict mechanism.
   - Origin must own provider ```msa_id``` delegated by delegator ```msa_id```.
 
 - Outcomes: Provider permissions are set to **Publisher**. This can indicate to by pass schema level grants for delegator at this permission level.
@@ -157,20 +157,20 @@ An extrinsic (or rpc if revoking is paid off while adding) to allow a provider o
 ## Time bounded permissions
 
 - Expiry time on permissions for version 1 can be a fixed number of blocks set in MRC.
-- This expiry time can be update via goverance or runtime upgrades. Since this is not important for the scope of the design doc, implementation details can define, how MRC is handling expiry time in first version.
-- However, expiry time can be baked in the above extrinsics call and can be set as a parameter.
+- This expiry time can be update via governance or runtime upgrades. Since this is not important for the scope of the design doc, implementation details can define, how MRC is handling expiry time in first version.
+- However, expiry time can be baked in the above extrinsic call and can be set as a parameter.
 
 ## Validation
 
 - If a provider has **Publisher** status, then it can publish data on behalf of a delegator for any schema supported by MRC.
 - If a provider has **Restricted** status, a check will be required to ensure delegator has given **Publish** grant for a given schema.
-- This can further be extended to act as an additonal validation on publishing batched messages for a given list of delegators for a specific schema.
+- This can further be extended to act as an additional validation on publishing batched messages for a given list of delegators for a specific schema.
 
 ## Benefits and Risks
 
 Enabling permissions and grants benefits both user and provider. While providers can be trusted to publish data on behalf of a delegator, it is not always the case and vice versa. Duality of opt in at the grant level solidify the trust relationship.
 
-Some risks are primarily at implementation level, such a storage pattern of such grants, and validation surrounding weather a provider is allowed to publish or not, adds additional overhead. Though this risk is easily minimzed by using a storage pattern that is optimized for the use case.
+Some risks are primarily at implementation level, such a storage pattern of such grants, and validation surrounding whether a provider is allowed to publish or not, adds additional overhead. Though this risk is easily minimzed by using a storage pattern that is optimized for the use case.
 
 ## Additional Resources
 
