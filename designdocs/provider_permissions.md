@@ -91,7 +91,7 @@ pub struct Grant {
 
 ### API (Extrinsic)
 
-- ***delegator_msa***: The MSA of a user.
+- ***delegator_msa***: The MSA of a delegator/user.
 - ***provider_msa***: The MSA of the provider/app.
 - ***Permission***: The generic option for any user. Default mode of operation is ***Restricted*** for any provider unless explicitly added as ***Publisher***.
 - ***Grant***: The user level action/result. "A user grants a permission to a provider".
