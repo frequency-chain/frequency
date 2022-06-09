@@ -49,7 +49,6 @@ RUN rm -rf /usr/lib/python* && \
 # Add chain resources to image
 COPY res /res/
 
-RUN ls -lR ./res
 # USER mrc # see above
 EXPOSE 30333 9933 9944
 VOLUME ["/data"]
