@@ -42,7 +42,7 @@ COPY --from=builder /mrc/target/$PROFILE/mrc-collator /usr/local/bin
 
 # checks
 RUN ldd /usr/local/bin/mrc-collator && \
-	/usr/local/bin/mrc --version
+	/usr/local/bin/mrc-collator --version
 
 # Shrinking
 RUN rm -rf /usr/lib/python* && \
