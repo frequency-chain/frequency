@@ -23,8 +23,6 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
 	rustup target add wasm32-unknown-unknown --toolchain $RUST_TOOLCHAIN && \
 	cargo build "--$PROFILE"
 
-RUN ./scripts/generate_specs.sh 2000 true
-
 # ===== SECOND STAGE ======
 
 FROM phusion/baseimage:focal-1.0.0
