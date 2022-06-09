@@ -23,6 +23,8 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
 	rustup target add wasm32-unknown-unknown --toolchain $RUST_TOOLCHAIN && \
 	cargo build "--$PROFILE"
 
+RUN ./scripts/generate_specs.sh 2000 true
+
 # ===== SECOND STAGE ======
 
 FROM phusion/baseimage:focal-1.0.0
@@ -36,10 +38,10 @@ RUN mv /usr/share/ca* /tmp && \
 	mkdir -p /root/.local/share/mrc && \
     ln -s /root/.local/share/mrc /data
 
-COPY --from=builder /mrc/target/$PROFILE/mrc /usr/local/bin
+COPY --from=builder /mrc/target/$PROFILE/mrc-collator /usr/local/bin
 
 # checks
-RUN ldd /usr/local/bin/mrc && \
+RUN ldd /usr/local/bin/mrc-collator && \
 	/usr/local/bin/mrc --version
 
 # Shrinking
@@ -49,8 +51,9 @@ RUN rm -rf /usr/lib/python* && \
 # Add chain resources to image
 COPY res /res/
 
+RUN ls -lR ./res
 # USER mrc # see above
 EXPOSE 30333 9933 9944
 VOLUME ["/data"]
 
-ENTRYPOINT ["/usr/local/bin/mrc"]
+ENTRYPOINT ["/usr/local/bin/mrc-collator"]
