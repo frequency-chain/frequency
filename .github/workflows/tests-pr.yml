@@ -40,8 +40,6 @@ jobs:
               - '**/Cargo.lock'
               - 'ci/build.sh'
               - 'scripts/**.sh'
-              - '.dockerignore'
-              - 'Dockerfile'
             js:
               - 'js/**'
 

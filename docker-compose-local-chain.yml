@@ -4,7 +4,7 @@ services:
     container_name: mrc-alice
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.devnet
     ports:
       - "30355:30333"
       - "9936:9933"

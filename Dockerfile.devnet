@@ -36,11 +36,11 @@ RUN mv /usr/share/ca* /tmp && \
 	mkdir -p /root/.local/share/mrc && \
     ln -s /root/.local/share/mrc /data
 
-COPY --from=builder /mrc/target/$PROFILE/mrc /usr/local/bin
+COPY --from=builder /mrc/target/$PROFILE/mrc-collator /usr/local/bin
 
 # checks
-RUN ldd /usr/local/bin/mrc && \
-	/usr/local/bin/mrc --version
+RUN ldd /usr/local/bin/mrc-collator && \
+	/usr/local/bin/mrc-collator --version
 
 # Shrinking
 RUN rm -rf /usr/lib/python* && \
@@ -53,4 +53,4 @@ COPY res /res/
 EXPOSE 30333 9933 9944
 VOLUME ["/data"]
 
-ENTRYPOINT ["/usr/local/bin/mrc"]
+ENTRYPOINT ["/usr/local/bin/mrc-collator"]
