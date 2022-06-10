@@ -149,19 +149,17 @@ pub mod pallet {
 			let info = T::AccountProvider::ensure_valid_msa_key(&key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-			let mut message_sender_msa = info.msa_id;
-
-			match on_behalf_of {
+			let message_sender_msa = match on_behalf_of {
 				Some(producer) => {
 					T::AccountProvider::ensure_valid_delegation(
-						Provider(message_sender_msa),
+						Provider(info.msa_id),
 						Delegator(producer),
 					)
 					.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
-					message_sender_msa = producer;
+					producer
 				},
-				None => {},
-			}
+				None => info.msa_id,
+			};
 
 			// TODO: validate schema existence and validity from schema pallet
 			<BlockMessages<T>>::try_mutate(|existing_messages| -> DispatchResultWithPostInfo {
