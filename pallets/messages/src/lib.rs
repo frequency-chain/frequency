@@ -150,13 +150,13 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
 			let message_sender_msa = match on_behalf_of {
-				Some(producer) => {
+				Some(delegator) => {
 					T::AccountProvider::ensure_valid_delegation(
 						Provider(info.msa_id),
-						Delegator(producer),
+						Delegator(delegator),
 					)
 					.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
-					producer
+					delegator
 				},
 				None => info.msa_id,
 			};
