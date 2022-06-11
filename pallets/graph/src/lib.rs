@@ -9,9 +9,11 @@ mod benchmarking;
 
 pub mod weights;
 
+mod storage;
 mod types;
 
-use frame_support::{ensure, traits::Get, BoundedVec};
+use codec::{Decode, Encode};
+use frame_support::{ensure, traits::Get, BoundedVec, Hashable, StorageHasher, Twox64Concat};
 use sp_runtime::DispatchError;
 use sp_std::prelude::*;
 
@@ -19,11 +21,13 @@ pub use pallet::*;
 pub use types::*;
 pub use weights::*;
 
+use crate::storage::Storage;
 use common_primitives::msa::MessageSenderId;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use crate::storage::Storage;
 	use common_primitives::msa::MessageSenderId;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
@@ -60,7 +64,7 @@ pub mod pallet {
 
 	// mapping between static_id -> node
 	#[pallet::storage]
-	#[pallet::getter(fn nodes)]
+	#[pallet::getter(fn get_node)]
 	pub(super) type Nodes<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSenderId, Node, OptionQuery>;
 
@@ -125,7 +129,7 @@ pub mod pallet {
 				let cur_count = Self::node_count();
 				let node_id = cur_count.checked_add(1).ok_or(<Error<T>>::TooManyNodes)?;
 
-				*maybe_node = Some(Node {});
+				*maybe_node = Some(Node { trie_id: Storage::<T>::generate_trie_id(static_id, 1) });
 				<NodeCount<T>>::set(node_id);
 				Self::deposit_event(Event::NodeAdded(sender, static_id));
 				log::debug!("Node added: {:?} -> {:?}", static_id, node_id);
@@ -253,6 +257,62 @@ pub mod pallet {
 			log::debug!("unfollowed: {:?} -> {:?}", from_static_id, to_static_id);
 			Ok(())
 		}
+
+		#[pallet::weight(T::WeightInfo::follow(*from_static_id as u32))]
+		pub fn follow3(
+			origin: OriginFor<T>,
+			from_static_id: MessageSenderId,
+			to_static_id: MessageSenderId,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			// self follow is not permitted
+			ensure!(from_static_id != to_static_id, <Error<T>>::SelfFollowNotPermitted);
+			let from_node = Self::get_node(from_static_id);
+			ensure!(from_node.is_some(), <Error<T>>::NoSuchNode);
+			ensure!(<Nodes<T>>::contains_key(to_static_id), <Error<T>>::NoSuchNode);
+
+			let trie_id = from_node.unwrap().trie_id;
+			let perm = Storage::<T>::read(&trie_id, &Self::get_storage_key(to_static_id));
+			ensure!(perm.is_none(), <Error<T>>::EdgeExists);
+
+			let data = Permission { data: 1 };
+			Storage::<T>::write(
+				&trie_id,
+				&Self::get_storage_key(to_static_id),
+				Some(data.encode().to_vec()),
+			)?;
+
+			Self::deposit_event(Event::Followed(sender, from_static_id, to_static_id));
+
+			log::debug!("followed 3: {:?} -> {:?}", from_static_id, to_static_id);
+			Ok(())
+		}
+
+		#[pallet::weight(T::WeightInfo::unfollow(*from_static_id as u32))]
+		pub fn unfollow3(
+			origin: OriginFor<T>,
+			from_static_id: MessageSenderId,
+			to_static_id: MessageSenderId,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			// self unfollow is not permitted
+			ensure!(from_static_id != to_static_id, <Error<T>>::SelfFollowNotPermitted);
+			let from_node = Self::get_node(from_static_id);
+			ensure!(from_node.is_some(), <Error<T>>::NoSuchNode);
+
+			let trie_id = from_node.unwrap().trie_id;
+			let perm = Storage::<T>::read(&trie_id, &Self::get_storage_key(to_static_id));
+			ensure!(perm.is_some(), <Error<T>>::NoSuchEdge);
+
+			Storage::<T>::write(&trie_id, &Self::get_storage_key(to_static_id), None)?;
+
+			Self::deposit_event(Event::Unfollowed(sender, from_static_id, to_static_id));
+
+			log::debug!("unfollowed: {:?} -> {:?}", from_static_id, to_static_id);
+			Ok(())
+		}
 	}
 }
 
@@ -264,5 +324,37 @@ impl<T: Config> Pallet<T> {
 		let graph = <Graph<T>>::get(static_id);
 
 		Ok(graph.into_iter().map(|e| e.static_id).collect())
+	}
+
+	pub fn get_storage_key(static_id: MessageSenderId) -> StorageKey {
+		#[cfg(test)]
+		{
+			use std::{println as info, println as warn};
+			println!("{} to_le_bytes {:X?}", static_id, static_id.encode());
+		}
+		StorageKey::try_from(static_id.encode()).unwrap()
+	}
+
+	pub fn read_from_child_tree(static_id: MessageSenderId, key: StorageKey) -> Option<Vec<u8>> {
+		if let Some(node) = Self::get_node(static_id) {
+			return Storage::<T>::read(&node.trie_id, &key)
+		}
+		None
+	}
+
+	pub fn read_all_keys(static_id: MessageSenderId) -> Vec<MessageSenderId> {
+		if let Some(node) = Self::get_node(static_id) {
+			return Storage::<T>::iter_keys(&node.trie_id)
+				.iter()
+				.map(|v| {
+					let mut m = MessageSenderId::default();
+					for (i, b) in v.iter().enumerate() {
+						m += (*b as MessageSenderId) * (1u64 << (i * 8));
+					}
+					m.into()
+				})
+				.collect()
+		}
+		Vec::new()
 	}
 }
