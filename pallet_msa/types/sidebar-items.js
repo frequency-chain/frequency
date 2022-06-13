@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["EMPTY_FUNCTION",""]],"struct":[["AddDelegate",""],["AddKeyData",""],["Delegate",""],["DelegateInfo",""],["Delegator",""],["KeyInfo",""]]});
+initSidebarItems({"constant":[["EMPTY_FUNCTION",""]],"struct":[["AddKeyData",""],["AddProvider",""],["Delegator",""],["KeyInfoResponse",""],["Provider",""]],"type":[["MessageSenderId",""]]});

@@ -797,6 +797,13 @@
 <span id="797">797</span>
 <span id="798">798</span>
 <span id="799">799</span>
+<span id="800">800</span>
+<span id="801">801</span>
+<span id="802">802</span>
+<span id="803">803</span>
+<span id="804">804</span>
+<span id="805">805</span>
+<span id="806">806</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.</span>
 <span class="attribute">#![<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;256&quot;</span>]</span>
@@ -1491,6 +1498,13 @@
 
 		<span class="kw">fn</span> <span class="ident">get_msa_id</span>(<span class="ident">key</span>: <span class="ident">AccountId</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">MessageSenderId</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
 			<span class="prelude-val">Ok</span>(<span class="ident">Msa::get_owner_of</span>(<span class="kw-2">&amp;</span><span class="ident">key</span>))
+		}
+
+		<span class="kw">fn</span> <span class="ident">has_delegation</span>(<span class="ident">delegator</span>: <span class="ident">Delegator</span>, <span class="ident">provider</span>: <span class="ident">Provider</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
+			<span class="kw">match</span> <span class="ident">Msa::ensure_valid_delegation</span>(<span class="ident">provider</span>, <span class="ident">delegator</span>) {
+				<span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>),
+				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(<span class="ident">sp_runtime::DispatchError::Other</span>(<span class="string">&quot;Invalid Delegation&quot;</span>)),
+			}
 		}
 	}
 

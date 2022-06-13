@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["KeyInfoResponse",""]],"trait":[["AccountProvider",""]],"type":[["MessageSenderId",""]]});
+initSidebarItems({"struct":[["Delegator",""],["KeyInfo",""],["KeyInfoResponse",""],["Provider",""],["ProviderInfo",""]],"trait":[["AccountProvider",""]],"type":[["MessageSenderId",""]]});
