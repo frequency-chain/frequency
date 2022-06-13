@@ -67,3 +67,12 @@ jobs:
         with:
           name: mrc_rococo_2000_specs-${{ github.sha }}
           path: mrc_specs.tar
+      - name: Create tarball of mrc binary 📦
+        if: matrix.target == 'build-node'
+        run: tar -zcvf mrc_binary.tar ./target/mrc-collator
+      - name: Upload mrc binary artifacts 📦
+        if: matrix.target == 'build-node'
+        uses: actions/upload-artifact@v3
+        with:
+          name: mrc_binary_file-${{ github.sha }}
+          path: mrc_binary.tar
