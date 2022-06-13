@@ -67,12 +67,28 @@ jobs:
         with:
           name: mrc_rococo_2000_specs-${{ github.sha }}
           path: mrc_specs.tar
-      - name: Create tarball of mrc binary 📦
+      - name: Set up Docker Buildx
         if: matrix.target == 'build-node'
-        run: tar -zcvf mrc_binary.tar ./target/release/mrc-collator
-      - name: Upload mrc binary artifacts 📦
+        uses: docker/setup-buildx-action@v2
+      - name: Login to DockerHub
         if: matrix.target == 'build-node'
-        uses: actions/upload-artifact@v3
+        uses: docker/login-action@v2
         with:
-          name: mrc_binary_file-${{ github.sha }}
-          path: mrc_binary.tar
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Get the tag name
+        if: matrix.target == 'build-node'
+        run: |
+          date_tag=$(date +'%Y%m%d-%H%M')
+          echo ${date_tag}
+          echo "TAG=${date_tag}" >> $GITHUB_ENV
+      - name: Build and push dsnp/mrc
+        if: matrix.target == 'build-node'
+        id: docker_build_mrc
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          file: Dockerfile
+          tags: |
+            dsnp/mrc:${{ env.TAG }}
+            dsnp/mrc:latest
