@@ -68,7 +68,6 @@ Distributing data on a decentralized network has a few fundamental problems that
 are worth discussing here. Primarily, those problems are:
 - What shape is this data in?
 - How do I authenticate this data?
-- How do these actors access this information?
 
 Less primary but very much salient are a couple of secondary concerns:
 - How do I make sure this data occupies no more space / time than necessary?
@@ -85,12 +84,12 @@ would not serve its users needs.
 
 Let's try addressing the above concerns one-by-one.
 
-#### Message Shape
+#### Batch Announcement Shape
 
 The batch file message schema could look like the following:
 
 ```json
-// Batch Message
+// Batch Announcement
 
 {
   "file_uri": Vec<u8>,
@@ -105,42 +104,10 @@ messages contained in the batch, as well as the schema of each message. As far
 as the file format goes, we currently support only Parquet but this could change
 in the future.
 
-#### Message Authentication
+#### Batch Announcement Authentication
 
 TBD. All messages sent through Substrate should be signed by default. If not,
 the author could sign this message.
-
-#### Message Notification
-
-Once a batch has been announced, there must be an object that notifies actors on
-the network of the batch's existence. This object would need to contain batch
-metadata, and would likely contain the metadata for multiple batch messages:
-
-```json
-// Batch Message Broadcast
-
-{
-  "batch_schema_id": SchemaId,
-  "from_index": u32,
-  "page_size": usize,
-  "batches": [BatchMessage],
-}
-```
-
-#### Message Access
-
-Ideally, MRC exposes an RPC that allows users to read batch metadata off-chain.
-That RPC could look like the following:
-
-```rust
-#[rpc(name = "readBatch")]
-fn readBatchMetaData(
-  from_block: <T::BlockNumber>,
-  to_block: <T::BlockNumber>,
-  from_index: u32,
-  page_size: usize,
-  batch_message_reader: MessageReader<Schema>) -> Result<BatchMessageBroadcast, Err>
-```
 
 ### Extrinsics
 #### announce_batch(origin, batch_announcement_params)
