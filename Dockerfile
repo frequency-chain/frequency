@@ -7,6 +7,8 @@ WORKDIR /mrc
 RUN apt-get update && \
     apt-get install -y apt-utils apt-transport-https software-properties-common readline-common curl vim wget gnupg gnupg2 gnupg-agent ca-certificates tini
 
+RUN apt-get install jq -y
+
 COPY ./target/release/mrc-collator ./target/release/
 
 RUN ls ./target/release
@@ -24,8 +26,6 @@ RUN chmod +x ./scripts/run_collator.sh
 RUN chmod +x ./scripts/init.sh
 
 ENV MRC_BINARY_PATH=./target/release/mrc-collator
-
-# USER mrc # see above
 
 VOLUME ["/data"]
 
