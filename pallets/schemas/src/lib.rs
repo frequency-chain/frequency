@@ -125,6 +125,9 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin.clone())?;
 
+
+			Self::ensure_valid_schema(&schema)?;
+
 			ensure!(
 				schema.len() > T::MinSchemaSizeBytes::get() as usize,
 				Error::<T>::LessThanMinSchemaBytes
@@ -181,6 +184,12 @@ pub mod pallet {
 				return Some(response)
 			}
 			None
+		}
+
+		pub fn ensure_valid_schema(schema: BoundedVec..) -> DispatchResult {
+			// validate_schema(schema).map_err(|_| Error::<T>::InvalidSchema)?;
+			println!("here we are!");
+			Ok(())
 		}
 	}
 }

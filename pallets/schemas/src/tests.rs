@@ -160,3 +160,22 @@ fn get_non_existing_schema_by_id_should_return_none() {
 		assert_eq!(res.as_ref().is_none(), true);
 	})
 }
+
+#[test]
+fn validate_schema_happy_path() { //rename
+	new_test_ext().execute_with(|| {
+		assert_ok!(SchemasPallet::ensure_valid_schema(
+			create_bounded_schema_vec("foo,bar,bazz") //need to return valid json
+		));
+	})
+}
+
+// #[test]
+// fn validate_schema_unhappy_path() { //rename
+// 	new_test_ext().execute_with(|| {
+// 		assert_noop!(SchemasPallet::ensure_valid_schema(
+// 			create_bounded_schema_vec("foo,bar,bazz") //need to return invalid json
+// 		), Error::<Test>::InvalidSchema);
+// 	})
+// }
+
