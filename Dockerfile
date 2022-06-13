@@ -10,8 +10,8 @@ RUN apt-get update && \
 COPY mrc_binary/mrc-collator /mrc/target/release/
 
 # Checks
-RUN ldd /usr/local/bin/mrc-collator && \
-	/usr/local/bin/mrc-collator --version
+RUN ldd /target/release/mrc-collator && \
+	/target/release/mrc-collator --version
 
 # Add chain resources to image
 COPY res /res/
