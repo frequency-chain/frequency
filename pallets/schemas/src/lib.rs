@@ -192,5 +192,4 @@ pub mod pallet {
 			Ok(())
 		}
 	}
-	// bounded vec (into or inner or unwrap) and from slice
 }
