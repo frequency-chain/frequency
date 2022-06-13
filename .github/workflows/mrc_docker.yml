@@ -32,7 +32,7 @@ jobs:
         run: mkdir mrc_binary && tar -xvf mrc_binary_file-${{ github.sha }}/mrc_binary.tar ./mrc_binary && ls ./mrc_binary
 
       - name: Decompress mrc specs 📦
-        run: tar -xvf mrc_rococo_2000_specs-${{ github.sha }}/mrc_specs.tar ./ ls ./res
+        run: tar -xvf mrc_rococo_2000_specs-${{ github.sha }}/mrc_specs.tar && ls ./res
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
