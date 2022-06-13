@@ -141,7 +141,61 @@ One risk is that providers on MRC could simply register a new schema and announc
 
 Another risk, mentioned in the Alternatives and Rationale section, is that providers would announce smaller batches than the actual batch file sizes. Earnest MRC participants, such as indexers, will quickly learn this announcer is not reliable and ignore batches marked with that announcer's MsaId.
 
-### Alternatives and Rationale
+### Alternatives
+
+##### Background
+
+We are currently experimenting with a new system architecture that has the
+following entities:
+
+1. Protocol
+   - Id
+   - Format
+   - Schema
+   - PayloadLocation
+2. Message
+   - Off-chain / On-chain Payload
+
+*Protocols* would be responsible for indicating not only the shape of the
+underlying payload, but also its format and location. This is important, because
+a protocol's format property would indicate whether a given payload contains a
+batch or not.
+
+##### Format
+
+Payloads can either be of format type `PARQUET` or `AVRO`. These file formats
+indicate specifically whether their payloads are singular or arrays of objects
+(More info needed here).
+
+##### PayloadLocation
+
+The combination of format and location constrain possible payload types:
+
+```txt
+| Format  | Location        | Payload           |
+-------------------------------------------------
+| Avro   | On-chain         | Public Graph      |
+| Parquet| On-chain         | ??                |
+| Avro   | IPFS (Off-chain) | Private Graph (?) |
+| Parquet| IPFS (Off-chain) | Announcement      |
+```
+
+(More needed here).
+
+##### Message Payloads
+
+Message payloads can be either on-chain or off-chain. If they are off-chain,
+there is a good chance that they will be located on IPFS.
+
+#### Batch as a Logical Construct
+
+We can circumvent defining a batch explicitly if we leverage the file format
+included in the protocol. Since both Avro and Parquet file types declare whether
+or not they contain single or plural values, the format itself could indicate
+whether or not the message is a batch.
+
+#### Other Alternatives and Rationale
+
 We discussed whether a batch message itself can be delegated, but this would have complicated things and we cannot come up with a use case for delegating batches. It also violates the idea of users delegating explicitly to every provider that performs a service for them, which is a fundamental value we want to apply to the network.
 
 We discussed whether to allow URLs such as HTTP/HTTPS or other URLs and instead opted for content-addressable URIs (CIDv1) which can be resolved by some other service.  This allows us to put the file hash directly into a URI.  It reduces message storage because we don't have to include both a URL and a file hash. A file hash is necessary as a check against file tampering.
