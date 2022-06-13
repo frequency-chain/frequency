@@ -256,10 +256,11 @@ pub mod pallet {
 			None
 		}
 
-		pub fn ensure_valid_schema(schema: BoundedVec..) -> DispatchResult {
-			// validate_schema(schema).map_err(|_| Error::<T>::InvalidSchema)?;
+		pub fn ensure_valid_schema(schema: Vec<u8>) -> DispatchResult {
+			validate_schema(schema).map_err(|_| Error::<T>::InvalidSchema)?;
 			println!("here we are!");
 			Ok(())
 		}
 	}
+	// bounded vec (into or inner or unwrap) and from slice
 }
