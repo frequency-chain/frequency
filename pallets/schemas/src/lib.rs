@@ -187,9 +187,15 @@ pub mod pallet {
 		}
 
 		pub fn ensure_valid_schema(schema: Vec<u8>) -> DispatchResult {
-			serde::validate_JSON_schema(schema).map_err(|_| Error::<T>::InvalidSchema)?;
+			validate_schema(schema).map_err(|_| Error::<T>::InvalidSchema)?;
 			println!("here we are!");
 			Ok(())
+		}
+
+		pub fn validate_schema(schema: Vec<u8>) -> Result((), Error) {
+			// this is also where we can use a Trait for schema types
+			// to use both avro substrate and serde and any other ones
+			validated_schema = serde::validate_JSON_schema(&schmea)?
 		}
 	}
 }
