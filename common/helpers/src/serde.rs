@@ -10,8 +10,8 @@ pub enum SerdeError {
 	InvalidRecords(),
 }
 
-pub fn validate_JSON_schema(json_schema: &str) -> Result<(), SerdeError> {
-    let schema_raw = serde_json::from_str(json_schema)?;
+pub fn validate_JSON_schema(json_schema: &Vec<u8>) -> Result<(), SerdeError> {
+    let schema_raw = serde_json::from_slice(json_schema)?;
     if schema_raw.is_err() {
 		return Err(SerdeError::InvalidSchema("Invalid schema".to_string()))
 	}
