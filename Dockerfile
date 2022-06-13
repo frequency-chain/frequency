@@ -10,16 +10,16 @@ RUN apt-get update && \
 COPY mrc_binary/mrc-collator /mrc/target/release/
 
 # Checks
-RUN ldd /target/release/mrc-collator && \
-	/target/release/mrc-collator --version
+RUN ldd /mrc/target/release/mrc-collator && \
+	/mrc/target/release/mrc-collator --version
 
 # Add chain resources to image
-COPY res /res/
+COPY res /mrc/res/
 
-COPY scripts /scripts/
+COPY scripts /mrc/scripts/
 
-RUN chmod +x ./scripts/run_collator.sh
-RUN chmod +x ./scripts/init.sh
+RUN chmod +x /mrc/scripts/run_collator.sh
+RUN chmod +x /mrc/scripts/init.sh
 
 ENV MRC_BINARY_PATH=/mrc/target/release/mrc-collator
 
