@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use core;
+use serde;
 
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
 
@@ -125,7 +126,6 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin.clone())?;
 
-
 			Self::ensure_valid_schema(&schema)?;
 
 			ensure!(
@@ -187,7 +187,7 @@ pub mod pallet {
 		}
 
 		pub fn ensure_valid_schema(schema: Vec<u8>) -> DispatchResult {
-			validate_schema(schema).map_err(|_| Error::<T>::InvalidSchema)?;
+			serde::validate_JSON_schema(schema).map_err(|_| Error::<T>::InvalidSchema)?;
 			println!("here we are!");
 			Ok(())
 		}
