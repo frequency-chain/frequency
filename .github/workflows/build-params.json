@@ -29,5 +29,11 @@
     "package": "mrc-runtime",
     "run_on_event": "push",
     "rust_toolchain": "1.57.0"
+  },
+  {    
+    "os": "ubuntu-latest",
+    "target": "docker",
+    "run_on_event": "any"
   }
 ]
+
