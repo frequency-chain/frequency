@@ -69,7 +69,7 @@ jobs:
           path: mrc_specs.tar
       - name: Create tarball of mrc binary 📦
         if: matrix.target == 'build-node'
-        run: tar -zcvf mrc_binary.tar ./target/mrc-collator
+        run: tar -zcvf mrc_binary.tar ./target/release/mrc-collator
       - name: Upload mrc binary artifacts 📦
         if: matrix.target == 'build-node'
         uses: actions/upload-artifact@v3

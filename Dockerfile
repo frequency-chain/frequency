@@ -16,7 +16,7 @@ RUN ldd /usr/local/bin/mrc-collator && \
 COPY res /res/
 
 # USER mrc # see above
-EXPOSE 32355 11936 11946
+
 VOLUME ["/data"]
 
 ENTRYPOINT ["/usr/local/bin/mrc-collator"]
