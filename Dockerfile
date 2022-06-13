@@ -1,12 +1,13 @@
-FROM phusion/baseimage:focal-1.0.0
+FROM ubuntu:20.04
 LABEL maintainer="MRC Team"
 LABEL description="Create an image with MRC binary built in main."
 
-RUN apt-get update && \
-	apt-get dist-upgrade -y -o Dpkg::Options::="--force-confold" && \
-	apt-get install -y cmake pkg-config libssl-dev git clang libclang-dev
+WORKDIR /mrc
 
-COPY mrc_binary/mrc-collator /usr/local/bin
+RUN apt-get update && \
+    apt-get install -y apt-utils apt-transport-https software-properties-common readline-common curl vim wget gnupg gnupg2 gnupg-agent ca-certificates tini
+
+COPY mrc_binary/mrc-collator /mrc/target/release/
 
 # Checks
 RUN ldd /usr/local/bin/mrc-collator && \
@@ -15,8 +16,18 @@ RUN ldd /usr/local/bin/mrc-collator && \
 # Add chain resources to image
 COPY res /res/
 
+COPY scripts /scripts/
+
+RUN chmod +x ./scripts/run_collator.sh
+RUN chmod +x ./scripts/init.sh
+
+ENV MRC_BINARY_PATH=/mrc/target/release/mrc-collator
+
 # USER mrc # see above
 
 VOLUME ["/data"]
 
-ENTRYPOINT ["/usr/local/bin/mrc-collator"]
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+CMD ["/bin/bash", "./scripts/init.sh", "start-mrc-container"]
+

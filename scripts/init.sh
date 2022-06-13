@@ -69,6 +69,33 @@ start-mrc)
     --state-cache-size 0 \
   ;;
 
+start-mrc-container)
+
+  parachain_dir=$base_dir/parachain/${para_id}
+  mkdir -p $parachain_dir;
+  mrc_default_port=$((30355 + $para_id))
+  mrc_default_rpc_port=$((9936 + $para_id))
+  mrc_default_ws_port=$((9946 + $para_id))
+  mrc_port="${MRC_PORT:-$mrc_default_port}"
+  mrc_rpc_port="${MRC_RPC_PORT:-$mrc_default_rpc_port}"
+  mrc_ws_port="${MRC_WS_PORT:-$mrc_default_ws_port}"
+
+  ./scripts/run_collator.sh \
+    --chain="${chain_spec}" --alice \
+    --base-path=$parachain_dir/data \
+    --wasm-execution=compiled \
+    --execution=wasm \
+    --force-authoring \
+    --port "${mrc_port}" \
+    --rpc-port "${mrc_rpc_port}" \
+    --ws-port "${mrc_ws_port}" \
+    --rpc-external \
+    --rpc-cors all \
+    --ws-external \
+    --rpc-methods=Unsafe \
+    --state-cache-size 0 \
+  ;;
+
 register-mrc)
   echo "reserving and registering parachain with relay via first available slot..."
   

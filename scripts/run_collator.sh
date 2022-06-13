@@ -5,7 +5,7 @@
 
 set -e -o pipefail
 
-ctpc="./target/release/mrc-collator"
+ctpc="${MRC_BINARY_PATH:-./target/release/mrc-collator}"
 
 if [ ! -x "$ctpc" ]; then
     echo "FATAL: $ctpc does not exist or is not executable"
@@ -15,12 +15,12 @@ fi
 # name the variable with the incoming args so it isn't overwritten later by function calls
 args=( "$@" )
 
-alice="127.0.0.1"
-bob="127.0.0.1"
-alice_p2p_port="30333"
-alice_rpc_port="9933"
-bob_p2p_port="30344"
-bob_rpc_port="9935"
+alice="${ALICE_HOST_NAME:-127.0.0.1}"
+bob="${BOB_HOST_NAME:-127.0.0.1}"
+alice_p2p_port="${ALICE_WS_PORT:-30333}"
+alice_rpc_port="${ALICE_RPC_PORT:-9933}"
+bob_p2p_port="${BOB_WS_PORT:-30344}"
+bob_rpc_port="${BOB_RPC_PORT:-9935}"
 chain="${RELAY_CHAIN_SPEC:-./res/rococo-local.json}"
 
 
