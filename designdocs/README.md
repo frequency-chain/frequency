@@ -11,3 +11,26 @@ To create a new design document, Please see the [Design Doc README](https://gith
   * [PR](https://github.com/LibertyDSNP/mrc/pull/14)
 * [Message Schema(s)](./SCHEMA.md)
   * [Merged Pull Request](https://github.com/LibertyDSNP/mrc/pull/17)
+
+## MRC Glossary
+
+* `AccountId`: A public key that could be a `Token Account` and/or associated with an `MSA`
+* `Announcer AccountId`: The `AccountId` that signs a capacity transaction and is associated with an MSA from which capacity will be deducted for that capacity transaction.
+* `Announcer MSA`: The `MSA` associated with the `AccountId` that signs a capacity transaction.
+* `Delegate` (verb): The action of an `MSA` (the `Delegator`) delegating to a `Provider`. *A verb only. Do not use as a noun!*
+* `Delegator`: An `MSA` that has delegated to a `Provider`.
+* `MSA Id`: The 64 bit unsigned integer associated with an `MSA`.
+* `MSA`: Message Source Account. A registered identifier with the MSA pallet. `AccountIds` (aka public keys) may only be associated with one `MSA` and that association is immutable.
+* `Message`: A message that matches a registered `Schema` (on-chain or off-chain).
+* `Payload`: The user data in a `Message` that matches a `Schema`.
+* `Provider`: An `MSA` that is registered for being able to be delegated to and being the target of capacity rewards when a person stakes to the network for token rewards.
+* `Schema`: A registered data structure and the settings around it.
+* `Token Account`: An `AccountId` that is holding tokens.
+
+### External Terms
+
+* `IPFS`: [InterPlanetary File System](https://docs.ipfs.io/), a decentralized content-addressed file system.
+* `CID`: [Content IDentifier](https://github.com/multiformats/cid/), Self-describing content-addressed identifiers for distributed systems.
+
+### Banned Terms
+* `Delegate` (Noun): Confusing due to being spelled the same as the verb and close to `Delegator`. Replaced with `Provider`.
