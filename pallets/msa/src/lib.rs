@@ -271,7 +271,8 @@ pub mod pallet {
 
 		/// Create a delegation relationship between a `Provider` and MSA.
 		///
-		/// Requires a multi signature to verify both owner and delegator key
+		/// Requires a multi signature to verify both owner and Provider key
+		/// Throws error AddProviderSignatureVerificationFailed if signature is not verified
 		/// Generates event Provider Added
 		///
 		#[pallet::weight(T::WeightInfo::add_provider_to_msa())]
