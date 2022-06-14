@@ -15,7 +15,7 @@ fn populate_messages(schema_id: SchemaId, message_per_block: Vec<u32>) {
 		for _ in 0..*count {
 			list.try_push(Message {
 				msa_id: 10,
-				data: payload.clone().try_into().unwrap(),
+				payload: payload.clone().try_into().unwrap(),
 				index: counter,
 				signer: 1,
 			})
@@ -60,7 +60,7 @@ fn add_message_should_store_message_on_temp_storage() {
 			(
 				Message {
 					msa_id: get_msa_from_account(caller_1),
-					data: message_payload_1.clone().try_into().unwrap(),
+					payload: message_payload_1.clone().try_into().unwrap(),
 					index: 0,
 					signer: caller_1
 				},
@@ -73,7 +73,7 @@ fn add_message_should_store_message_on_temp_storage() {
 			(
 				Message {
 					msa_id: get_msa_from_account(caller_2),
-					data: message_payload_2.clone().try_into().unwrap(),
+					payload: message_payload_2.clone().try_into().unwrap(),
 					index: 1,
 					signer: caller_2
 				},
@@ -92,7 +92,7 @@ fn add_message_with_too_large_message_should_panic() {
 		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}".as_bytes());
 
 		// act
-		assert_noop!(MessagesPallet::add(Origin::signed(caller_1), None, schema_id_1, message_payload_1.clone()), Error::<Test>::TooLargeMessage);
+		assert_noop!(MessagesPallet::add(Origin::signed(caller_1), None, schema_id_1, message_payload_1.clone()), Error::<Test>::ExceedsMaxMessagePayloadSizeBytes);
 	});
 }
 
@@ -246,7 +246,7 @@ fn get_messages_by_schema_with_valid_request_should_return_paginated() {
 			pagination_response.content[0],
 			MessageResponse {
 				msa_id: 10,
-				data: Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes()),
+				payload: Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes()),
 				index: from_index as u16,
 				signer: 1,
 				block_number: 0
@@ -394,7 +394,7 @@ fn add_message_via_valid_delegate_should_pass() {
 			(
 				Message {
 					msa_id: message_producer,
-					data: message_payload_1.clone().try_into().unwrap(),
+					payload: message_payload_1.clone().try_into().unwrap(),
 					index: 0,
 					signer: caller_1
 				},
@@ -407,7 +407,7 @@ fn add_message_via_valid_delegate_should_pass() {
 			(
 				Message {
 					msa_id: message_producer,
-					data: message_payload_2.clone().try_into().unwrap(),
+					payload: message_payload_2.clone().try_into().unwrap(),
 					index: 1,
 					signer: caller_2
 				},
