@@ -166,6 +166,30 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+
+		/// Adds a given schema to storage. The schema in question must be of length
+		/// between the min and max format size allowed for schemas (see pallet
+		/// constants above). If the pallet's maximum schema limit has been
+		/// fulfilled by the time this extrinsic is called, a TooManySchemas error
+		/// will be thrown. 
+		/// 
+		/// @param 	origin	OriginFor<T:Config> 					The originator of the transaction
+		///
+		/// @return         DispatchResult                The result of dispatching
+		///                                               this extrinsic to the
+		///                                               Substrate runtime.
+		///
+		/// @throws         LessThanMinSchemaFormatBytes  The schema's length is
+		///                                               less than the minimum
+		///                                               schema length
+		/// @throws         ExceedsMaxSchemaFormatBytes   The schema's length is
+		///                                               greater than the maximum
+		///                                               schema length
+		/// @throws         TooManySchemas                The maximum number of
+		/// 																							schemas has been met
+		/// @throws         SchemaCountOverflow           The schema count has
+		///                                               exceeded its bounds
+		/// 
 		#[pallet::weight(< T as Config >::WeightInfo::register_schema(schema.len() as u32, 1000))]
 		pub fn register_schema(
 			origin: OriginFor<T>,
