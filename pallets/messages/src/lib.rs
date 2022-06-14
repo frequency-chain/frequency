@@ -1,10 +1,29 @@
 //! # Messages pallet
 //! A pallet for storing messages.
 //!
-//! ## Overview
-//!
 //! This pallet contains functionality for storing, retrieving and eventually removing messages for
 //! registered schemas on chain.
+//!
+//! - [`Config`]
+//! - [`Call`]
+//! - [`Pallet`]
+//!
+//! ## Overview
+//!
+//! The Messages Pallet provides functions for:
+//!
+//! - Adding a message for given schema.
+//! - Retrieving messages for a given schema.
+//!
+//! ### Terminology
+//!
+//! - **Message:** A message that matches a registered `Schema` (on-chain or off-chain).
+//! - **Payload:** The user data in a `Message` that matches a `Schema`.
+//! - **MSA Id:** The 64 bit unsigned integer associated with an `Message Source Account`.
+//! - **MSA:** Message Source Account. A registered identifier with the MSA pallet.
+//! - **Schema:** A registered data structure and the settings around it.
+//! - **Schema Id:** A U16 bit identifier for a schema stored on-chain.
+//!
 //!
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -44,16 +63,17 @@ pub mod pallet {
 		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
+		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
-		/// A type that will supply account related information
+		/// A type that will supply account related information.
 		type AccountProvider: AccountProvider<AccountId = Self::AccountId>;
 
-		/// The maximum number of messages in a block
+		/// The maximum number of messages in a block.
 		#[pallet::constant]
 		type MaxMessagesPerBlock: Get<u32>;
 
-		/// The maximum size of a message payload [Byte]
+		/// The maximum size of a message payload bytes.
 		#[pallet::constant]
 		type MaxMessagePayloadSizeBytes: Get<u32> + Clone;
 	}
@@ -63,6 +83,8 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
+	/// A temporary storage of messages, given a schema id, for a duration of block period.
+	/// At the start of the next block this storage is cleared and moved into Messages storage.
 	#[pallet::storage]
 	#[pallet::getter(fn get_block_messages)]
 	pub(super) type BlockMessages<T: Config> = StorageValue<
@@ -74,6 +96,7 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
+	/// A permanent storage for messages mapped by block number and schema id.
 	#[pallet::storage]
 	#[pallet::getter(fn get_messages)]
 	pub(super) type Messages<T: Config> = StorageDoubleMap<
@@ -120,18 +143,15 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Adds a message into storage
-		///
-		/// The dispatch origin for this call must be _Signed_.
-		/// - `on_behalf_of`: Optional. The msa id of delegate.
-		/// - `schema_id`: Registered schema id for current message
-		/// - `payload`: Serialized payload data
-		///
-		/// Result is equivalent to the dispatched result.
-		///
-		/// # <weight>
-		/// Execution weight
-		/// # </weight>
+		/// Gets a messages for a given schema-id and block-number.
+		/// # Arguments
+		/// * `origin` - Registered schema id for current message.
+		/// * `on_behalf_of` - Optional. The msa id of delegate.
+		/// * `schema_id` - Registered schema id for current message.
+		/// * `payload` - Serialized payload data for a given schema.
+		/// # Returns
+		/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html) The return type of a Dispatchable in frame.
+		/// When returned explicitly from a dispatchable function it allows overriding the default PostDispatchInfo returned from a dispatch.
 		#[pallet::weight(T::WeightInfo::add(payload.len() as u32, 1_000))]
 		pub fn add(
 			origin: OriginFor<T>,
@@ -185,6 +205,14 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	/// Gets a messages for a given schema-id and block-number.
+	/// # Arguments
+	/// * `schema_id` - Registered schema id for current message.
+	/// * `pagination` - [`BlockPaginationRequest`]. Request payload to retrieve paginated messages for a given block-range.
+	/// # Returns
+	/// * `Result<BlockPaginationResponse<T::BlockNumber, MessageResponse<T::AccountId, T::BlockNumber>>, DispatchError>`
+	///
+	/// Result is a paginator response of type [`BlockPaginationResponse`].
 	pub fn get_messages_by_schema(
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest<T::BlockNumber>,
