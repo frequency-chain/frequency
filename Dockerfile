@@ -9,7 +9,7 @@ RUN apt-get update && \
 
 RUN apt-get install jq -y
 
-COPY ./target/release/mrc-collator ./target/release/
+COPY target/release/mrc-collator ./target/release/
 
 RUN ls ./target/release
 
