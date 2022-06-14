@@ -52,8 +52,8 @@ services:
       --log="main,info"
     network_mode: "host"
 
-  mrc_collator:
-    container_name: mrc-alice
+  collator_mrc:
+    container_name: mrc
     build:
       context: .
       dockerfile: Dockerfile

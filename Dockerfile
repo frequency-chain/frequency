@@ -24,8 +24,12 @@ COPY scripts ./scripts/
 
 RUN chmod +x ./scripts/run_collator.sh
 RUN chmod +x ./scripts/init.sh
+RUN chmod +x ./scripts/healthcheck.sh
 
 ENV MRC_BINARY_PATH=./target/release/mrc-collator
+
+HEALTHCHECK --interval=300s --timeout=75s --start-period=30s --retries=3 \
+    CMD ["./scripts/healthcheck.sh"]
 
 VOLUME ["/data"]
 
