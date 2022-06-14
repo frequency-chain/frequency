@@ -14,7 +14,7 @@ use utils::*;
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct MessageResponse<AccountId, BlockNumber> {
 	#[cfg_attr(feature = "std", serde(with = "as_hex"))]
-	pub data: Vec<u8>, //  Serialized data in a user-defined schema format
+	pub payload: Vec<u8>, //  Serialized data in a user-defined schema format
 	pub signer: AccountId,       //  Signature of the signer
 	pub msa_id: MessageSenderId, //  Message source account id (the original sender)
 	pub index: u16,              // index in block to get total order
