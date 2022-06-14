@@ -322,9 +322,9 @@ impl pallet_schemas::Config for Runtime {
 	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
 
 	// TODO: these constants need to be determined. See Issue #70
-	type MinSchemaSizeBytes = ConstU32<5>;
+	type MinSchemaFormatSizeBytes = ConstU32<5>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
-	type SchemaMaxBytesBoundedVecLimit = ConstU32<65_500>;
+	type SchemaFormatMaxBytesBoundedVecLimit = ConstU32<65_500>;
 }
 
 impl pallet_tx_fee::Config for Runtime {}
