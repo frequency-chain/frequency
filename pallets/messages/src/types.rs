@@ -4,16 +4,21 @@ use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 use sp_std::prelude::*;
 
+/// A single message type definition.
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 #[scale_info(skip_type_params(MaxDataSize))]
 pub struct Message<AccountId, MaxDataSize>
 where
 	MaxDataSize: Get<u32> + Clone,
 {
-	pub payload: BoundedVec<u8, MaxDataSize>, //  Serialized data in a user-defined schema format
-	pub signer: AccountId,                    //  Signature of the signer
-	pub msa_id: MessageSenderId,              //  Message source account id (the original sender)
-	pub index: u16,                           //  Stores index of message in block to keep total order
+	///  Serialized data in a user-defined schema format
+	pub payload: BoundedVec<u8, MaxDataSize>,
+	///  Signature of the signer
+	pub signer: AccountId,
+	///  Message source account id (the original sender)
+	pub msa_id: MessageSenderId,
+	///  Stores index of message in block to keep total order
+	pub index: u16,
 }
 
 impl<AccountId, MaxDataSize> Message<AccountId, MaxDataSize>
@@ -21,6 +26,7 @@ where
 	AccountId: Clone,
 	MaxDataSize: Get<u32> + Clone,
 {
+	/// Helper function to handle response type [`MessageResponse`] for RPC.
 	pub fn map_to_response<BlockNumber>(
 		&self,
 		block_number: BlockNumber,

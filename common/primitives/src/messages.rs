@@ -10,23 +10,34 @@ use sp_std::{prelude::*, vec};
 #[cfg(feature = "std")]
 use utils::*;
 
+/// A type for responding with an single Message in an RPC-call.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct MessageResponse<AccountId, BlockNumber> {
 	#[cfg_attr(feature = "std", serde(with = "as_hex"))]
-	pub payload: Vec<u8>, //  Serialized data in a user-defined schema format
-	pub signer: AccountId,       //  Signature of the signer
-	pub msa_id: MessageSenderId, //  Message source account id (the original sender)
-	pub index: u16,              // index in block to get total order
+	/// Serialized data in a user-defined schema format.
+	pub payload: Vec<u8>,
+	/// Signature of the signer.
+	pub signer: AccountId,
+	/// Message source account id (the original sender).
+	pub msa_id: MessageSenderId,
+	/// Index in block to get total order
+	pub index: u16,
+	/// Block-number for which the message was stored.
 	pub block_number: BlockNumber,
 }
 
+/// A type for requesting paginated messages.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct BlockPaginationRequest<BlockNumber> {
-	pub from_block: BlockNumber, // inclusive
-	pub from_index: u32,         // starts from 0
-	pub to_block: BlockNumber,   // exclusive
+	/// Starting block-number (inclusive).
+	pub from_block: BlockNumber,
+	/// Current page index starting from 0.
+	pub from_index: u32,
+	/// Ending block-number (exclusive).
+	pub to_block: BlockNumber,
+	/// The number of messages in a single page.
 	pub page_size: u32,
 }
 
@@ -37,6 +48,9 @@ where
 	pub const MAX_PAGE_SIZE: u32 = 10000;
 	pub const MAX_BLOCK_RANGE: u32 = 50000; // ~3 days (6 sec per block)= ~7 days (12 sec per block)
 
+	/// Helper function for request validation.
+	/// * Page size should not exceed MAX_PAGE_SIZE.
+	/// * Block range [from_block:to_block) should not exceed MAX_BLOCK_RANGE.
 	pub fn validate(&self) -> bool {
 		self.page_size > 0 &&
 			self.page_size <= Self::MAX_PAGE_SIZE &&
@@ -46,14 +60,19 @@ where
 	}
 }
 
+/// A type for responding with a collection of paginated messages.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct BlockPaginationResponse<BlockNumber, T> {
+	/// Collection of messages for a given [`BlockPaginationRequest`].
 	pub content: Vec<T>,
+	/// Flag to indicate the end of paginated messages.
 	pub has_next: bool,
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
+	/// Flag to indicate the starting block number for the next page.
 	pub next_block: Option<BlockNumber>,
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
+	/// Flag to indicate the next index for the following request.
 	pub next_index: Option<u32>,
 }
 
