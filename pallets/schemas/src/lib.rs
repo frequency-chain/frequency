@@ -1,3 +1,46 @@
+//! # Schemas Pallet
+//!
+//! The Schemas pallet provides functionality for handling schemas.
+//!
+//! - [`Config`]
+//! - [`Call`]
+//! - [`Pallet`]
+//!
+//! ## Overview
+//!
+//! This pallet provides an on chain repository for schemas, thereby allowing participants of the
+//! network to flexibly interact and exchange messages with each other without facing the challenge
+//! of sharing, managing and validating messages as well as schemas between them.
+//!
+//! > NOTE: In this pallet we define the payload format that is used in Messages Pallet.
+//!
+//! The Schema pallet provides functions for:
+//!
+//! - Registering a new schema.
+//! - Setting maximum schema format size by governance.
+//! - Retrieving latest registered schema id.
+//! - Retrieving schemas by their id.
+//!
+//!
+//! ### Terminology
+//!
+//! - **Schema:** A data structure that defines the payload format of any Message that is going to
+//!   stored with that schema.
+//!
+//! - **Schema Format:** Serialization/Deserialization details of the schema
+//!
+//! - **Schema Format Type:** The type of the following Serialization/Deserialization. It can be
+//!   Avro, Parquet or ...
+//!
+//! ### Dispatchable Functions
+//!
+//! - `register_schema` - Registers a new schema after some initial validation.
+//! - `set_max_schema_format_bytes` - Sets the maximum schemas format size (Bytes) by governance.
+//!
+//! ## Genesis config
+//!
+//! The Schemas pallet depends on the [`GenesisConfig`].
+//!
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use core;
@@ -26,18 +69,21 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
+		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
-		// Maximum length of Schema field name
+		/// Minimum length of Schema format size in bytes
 		#[pallet::constant]
 		type MinSchemaFormatSizeBytes: Get<u32>;
 
-		// Maximum length of Schema Bounded Vec
+		/// Maximum length of Schema  format Bounded Vec
 		#[pallet::constant]
 		type SchemaFormatMaxBytesBoundedVecLimit: Get<u32>;
 
-		// Maximum number of schemas that can be registered
+		/// Maximum number of schemas that can be registered
 		#[pallet::constant]
 		type MaxSchemaRegistrations: Get<SchemaId>;
 	}
@@ -45,8 +91,10 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Emitted when a schemas is registered. [who, schemas id]
+		/// Emitted when a schema is registered. [who, schemas id]
 		SchemaRegistered(T::AccountId, SchemaId),
+
+		/// Emitted when maximum size for schema format is changed.
 		SchemaMaxSizeChanged(u32),
 	}
 
@@ -174,7 +222,7 @@ pub mod pallet {
 		}
 
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-			// TODO: This will eventually be a strut with other properties. Currently it is just the format
+			// TODO: This will eventually be a struct with other properties. Currently it is just the format
 			if let Some(format) = Self::get_schema(schema_id) {
 				// this should get a BoundedVec out
 				let format_vec = format.into_inner();
