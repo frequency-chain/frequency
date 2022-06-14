@@ -555,7 +555,7 @@ construct_runtime!(
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 36,
 
 		MrcTxPayment: pallet_tx_fee::{Pallet} = 37,
-		Graph: pallet_graph::{Pallet, Call, Storage, Event<T>} = 50,
+		Graph: pallet_graph::{Pallet, Call, Config, Storage, Event<T>} = 50,
 	}
 );
 

@@ -114,6 +114,68 @@ pub mod pallet {
 		Unfollowed(T::AccountId, MessageSenderId, MessageSenderId),
 	}
 
+	#[pallet::genesis_config]
+	pub struct GenesisConfig {}
+
+	#[cfg(feature = "std")]
+	impl Default for GenesisConfig {
+		fn default() -> Self {
+			Self {}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			log::info!("start list");
+			let nodes: u32 = 10_000;
+			let edges: u32 = 300;
+
+			let mut node_count: u64 = 0;
+			for n in 0..nodes {
+				if n % 100_000 == 0 {
+					log::info!("Nodes added: {:?}", n);
+				}
+				<Nodes<T>>::insert(n as MessageSenderId, Node {});
+				node_count += 1;
+			}
+			<NodeCount<T>>::set(node_count);
+
+			let mut edge_count: u64 = 0;
+
+			for n in 0..nodes {
+				if n % 100_000 == 0 {
+					log::info!("Edges added: {:?}", n);
+				}
+
+				let from_static_id: MessageSenderId = n as MessageSenderId;
+				let mut list: Vec<Edge> = sp_std::vec::Vec::new();
+
+				for e in 0..edges {
+					let ed = (n + e + 1) % nodes;
+					let edge = Edge {
+						static_id: ed as MessageSenderId,
+						permission: Permission { data: 0 },
+					};
+					match list.binary_search(&edge) {
+						Ok(_) => Err(<Error<T>>::EdgeExists),
+						Err(index) => {
+							list.insert(index, edge);
+							edge_count += 1;
+							Ok(())
+						},
+					};
+				}
+				let bounded_vec = BoundedVec::<Edge, T::MaxFollows>::try_from(list)
+					.map_err(|_| <Error<T>>::TooManyEdges)
+					.unwrap();
+				<Graph<T>>::insert(&from_static_id, &bounded_vec);
+			}
+			<EdgeCount<T>>::set(edge_count);
+			log::info!("end list");
+		}
+	}
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(T::WeightInfo::add_node(*static_id as u32) )]

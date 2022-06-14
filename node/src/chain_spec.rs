@@ -222,5 +222,6 @@ fn testnet_genesis(
 		},
 		polkadot_xcm: mrc_runtime::PolkadotXcmConfig { safe_xcm_version: Some(SAFE_XCM_VERSION) },
 		schemas: Default::default(),
+		graph: Default::default(),
 	}
 }
