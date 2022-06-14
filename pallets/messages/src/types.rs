@@ -10,10 +10,10 @@ pub struct Message<AccountId, MaxDataSize>
 where
 	MaxDataSize: Get<u32> + Clone,
 {
-	pub data: BoundedVec<u8, MaxDataSize>, //  Serialized data in a user-defined schema format
-	pub signer: AccountId,                 //  Signature of the signer
-	pub msa_id: MessageSenderId,           //  Message source account id (the original sender)
-	pub index: u16,                        //  Stores index of message in block to keep total order
+	pub payload: BoundedVec<u8, MaxDataSize>, //  Serialized data in a user-defined schema format
+	pub signer: AccountId,                    //  Signature of the signer
+	pub msa_id: MessageSenderId,              //  Message source account id (the original sender)
+	pub index: u16,                           //  Stores index of message in block to keep total order
 }
 
 impl<AccountId, MaxDataSize> Message<AccountId, MaxDataSize>
@@ -30,7 +30,7 @@ where
 			index: self.index,
 			msa_id: self.msa_id,
 			block_number,
-			data: self.data.clone().into_inner(),
+			payload: self.payload.clone().into_inner(),
 		}
 	}
 }

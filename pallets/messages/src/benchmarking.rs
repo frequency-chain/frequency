@@ -24,7 +24,7 @@ fn add_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo {
 
 benchmarks! {
 	add {
-		let n in 0 .. T::MaxMessageSizeInBytes::get() - 1;
+		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - 1;
 		let m in 1 .. MESSAGES;
 		let caller: T::AccountId = whitelisted_caller();
 		let input = vec![1; n as usize];

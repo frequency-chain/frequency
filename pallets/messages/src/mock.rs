@@ -60,26 +60,26 @@ impl system::Config for Test {
 
 parameter_types! {
 	pub const MaxMessagesPerBlock: u32 = 500;
-	pub const MaxMessageSizeInBytes: u32 = 100;
+	pub const MaxMessagePayloadSizeBytes: u32 = 100;
 }
 
-impl std::fmt::Debug for MaxMessageSizeInBytes {
+impl std::fmt::Debug for MaxMessagePayloadSizeBytes {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		f.debug_struct("MaxMessageSizeInBytes")
-			.field("v", &MaxMessageSizeInBytes::get())
+		f.debug_struct("MaxMessagePayloadSizeBytes")
+			.field("v", &MaxMessagePayloadSizeBytes::get())
 			.finish()
 	}
 }
 
-impl PartialEq for MaxMessageSizeInBytes {
+impl PartialEq for MaxMessagePayloadSizeBytes {
 	fn eq(&self, _other: &Self) -> bool {
 		true
 	}
 }
 
-impl Clone for MaxMessageSizeInBytes {
+impl Clone for MaxMessagePayloadSizeBytes {
 	fn clone(&self) -> Self {
-		MaxMessageSizeInBytes {}
+		MaxMessagePayloadSizeBytes {}
 	}
 }
 
@@ -134,7 +134,7 @@ impl pallet_messages::Config for Test {
 	type AccountProvider = AccountHandler;
 	type WeightInfo = ();
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
-	type MaxMessageSizeInBytes = MaxMessageSizeInBytes;
+	type MaxMessagePayloadSizeBytes = MaxMessagePayloadSizeBytes;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

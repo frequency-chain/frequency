@@ -53,9 +53,9 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxMessagesPerBlock: Get<u32>;
 
-		/// The maximum size of a message [Byte]
+		/// The maximum size of a message payload [Byte]
 		#[pallet::constant]
-		type MaxMessageSizeInBytes: Get<u32> + Clone;
+		type MaxMessagePayloadSizeBytes: Get<u32> + Clone;
 	}
 
 	#[pallet::pallet]
@@ -68,7 +68,7 @@ pub mod pallet {
 	pub(super) type BlockMessages<T: Config> = StorageValue<
 		_,
 		BoundedVec<
-			(Message<T::AccountId, T::MaxMessageSizeInBytes>, SchemaId),
+			(Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, SchemaId),
 			T::MaxMessagesPerBlock,
 		>,
 		ValueQuery,
@@ -82,7 +82,7 @@ pub mod pallet {
 		T::BlockNumber,
 		Twox64Concat,
 		SchemaId,
-		BoundedVec<Message<T::AccountId, T::MaxMessageSizeInBytes>, T::MaxMessagesPerBlock>,
+		BoundedVec<Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, T::MaxMessagesPerBlock>,
 		ValueQuery,
 	>;
 
@@ -90,8 +90,8 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Too many messages are added to existing block
 		TooManyMessagesInBlock,
-		/// Message size is too large
-		TooLargeMessage,
+		/// Message payload size is too large
+		ExceedsMaxMessagePayloadSizeBytes,
 		/// Invalid Pagination Request
 		InvalidPaginationRequest,
 		/// Type Conversion Overflow
@@ -125,25 +125,25 @@ pub mod pallet {
 		/// The dispatch origin for this call must be _Signed_.
 		/// - `on_behalf_of`: Optional. The msa id of delegate.
 		/// - `schema_id`: Registered schema id for current message
-		/// - `message`: Serialized message data
+		/// - `payload`: Serialized payload data
 		///
 		/// Result is equivalent to the dispatched result.
 		///
 		/// # <weight>
 		/// Execution weight
 		/// # </weight>
-		#[pallet::weight(T::WeightInfo::add(message.len() as u32, 1_000))]
+		#[pallet::weight(T::WeightInfo::add(payload.len() as u32, 1_000))]
 		pub fn add(
 			origin: OriginFor<T>,
 			on_behalf_of: Option<MessageSenderId>,
 			schema_id: SchemaId,
-			message: Vec<u8>,
+			payload: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let key = ensure_signed(origin)?;
 
 			ensure!(
-				message.len() < T::MaxMessageSizeInBytes::get().try_into().unwrap(),
-				Error::<T>::TooLargeMessage
+				payload.len() < T::MaxMessagePayloadSizeBytes::get().try_into().unwrap(),
+				Error::<T>::ExceedsMaxMessagePayloadSizeBytes
 			);
 
 			let info = T::AccountProvider::ensure_valid_msa_key(&key)
@@ -167,9 +167,9 @@ pub mod pallet {
 					.len()
 					.try_into()
 					.map_err(|_| Error::<T>::TypeConversionOverflow)?;
-				let message_size = message.len();
+				let payload_size = payload.len();
 				let m = Message {
-					data: message.try_into().unwrap(), // size is checked on top of extrinsic
+					payload: payload.try_into().unwrap(), // size is checked on top of extrinsic
 					signer: key,
 					index: current_size,
 					msa_id: message_sender_msa,
@@ -178,7 +178,7 @@ pub mod pallet {
 					.try_push((m, schema_id))
 					.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
 
-				Ok(Some(T::WeightInfo::add(message_size as u32, current_size as u32)).into())
+				Ok(Some(T::WeightInfo::add(payload_size as u32, current_size as u32)).into())
 			})
 		}
 	}
