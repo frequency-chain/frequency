@@ -62,53 +62,6 @@ See the [implementation of paging in the messages pallet](https://github.com/Lib
     * `next_index`: `u32` starting index of next results in `next_block`
     * `results`: `Vec<BatchAnnouncement>`
 
-### Message Schema
-
-Distributing data on a decentralized network has a few fundamental problems that
-are worth discussing here. Primarily, those problems are:
-- What shape is this data in?
-- How do I authenticate this data?
-
-Less primary but very much salient are a couple of secondary concerns:
-- How do I make sure this data occupies no more space / time than necessary?
-- How do I make sure this data can be easily indexed and searched?
-
-In the days of yore, it was easy to answer these questions. A centralized
-service would declare an output shape and make it available to the world via an
-API they would maintain and authorize. In our world, it is not so simple. Each
-actor on a DSNP-implementing system must be able to imbue their announcements
-with trust without exerting control over the entire network. Announcements can
-point to data stored anywhere, and this data must be accessible by any other
-actor on the network. Without these considerations, a decentralized network
-would not serve its users needs.
-
-Let's try addressing the above concerns one-by-one.
-
-#### Batch Announcement Shape
-
-The batch file message schema could look like the following:
-
-```json
-// Batch Announcement
-
-{
-  "file_uri": Vec<u8>,
-  "file_size": usize,
-  "file_format": BatchFormat,
-  "message_schema_id": SchemaId,
-}
-```
-
-This shape has a pointer to the batch file, an integer indicating the number of
-messages contained in the batch, as well as the schema of each message. As far
-as the file format goes, we currently support only Parquet but this could change
-in the future.
-
-#### Batch Announcement Authentication
-
-TBD. All messages sent through Substrate should be signed by default. If not,
-the author could sign this message.
-
 ### Extrinsics
 #### announce_batch(origin, batch_announcement_params)
 Creates and posts a new batch announcement message on chain, using the batch message Schema Id. This Schema Id must already be registered and will need to be fetched by the extrinsic.  The transaction fee is determined in part by the file size.
