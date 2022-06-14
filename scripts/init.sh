@@ -33,12 +33,12 @@ stop-relay-chain)
 
 start-mrc-docker)
   echo "Starting mrc container with Alice..."
-  docker-compose up --build mrc_collator
+  docker-compose up --build collator_mrc
   ;;
 
 stop-mrc-docker)
   echo "Stopping mrc container with Alice..."
-  docker-compose down mrc_collator
+  docker-compose down collator_mrc
   ;;
 
 start-mrc)
