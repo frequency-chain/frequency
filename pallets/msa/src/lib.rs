@@ -55,10 +55,10 @@
 //!
 //! ### Examples
 //!
+//! // todo
 //!
 //!
-//!
-//! ## Assumptions
+//! ### Assumptions
 //!
 //! * Total MSA keys should be less than the constant `Config::MSA::MaxKeys`.
 //!
@@ -210,11 +210,20 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Creates an MSA for the given Origin
+
+		/// Creates an MSA for the Origin (sender of the transaction).
+		/// Deposits [`MsaCreated`](Event::MsaCreated) event, and returns `Ok(())` on success otherwise returns an error.
 		///
-		/// Deposits Event `MsaCreated` which is responsible for
+		/// ### Errors
 		///
-		/// Returns a Dispatch Result with the new MSA id
+		/// Returns [`KeyLimitExceeded`](Error::KeyLimitExceeded) if MSA has registered `MaxKeys`.
+		/// Returns [`DuplicatedKey`](Error::DuplicatedKey) if MSA is already registered to the Origin.
+		///
+		/// ### Examples
+		///
+		/// ```
+		///
+		/// ```
 		#[pallet::weight(T::WeightInfo::create(10_000))]
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -227,12 +236,18 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// `Origin` creates an account for a given `AccountId` and sets themselves as a `Provider`.
+		/// `Origin` creates an account for a given `AccountId` and sets themselves as a `Provider`. Deposits events [`MsaCreated`](Event::MsaCreated) and [`ProviderAdded`](Event::ProviderAdded).
+		/// Returns `Ok(())` on success, otherwise returns an error.
 		///
-		/// Requires a multi signature to verify both owner and delegator key
-		/// Throws Unauthorized Provider error if payload's MSA does not match given provider MSA
+		/// ### Errors
 		///
-		/// Generates Events MSA Created and Provider Added
+		/// Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if payload's MSA does not match given provider MSA.
+		///
+		/// ### Examples
+		///
+		/// ```
+		///
+		/// ```
 		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation())]
 		pub fn create_sponsored_account_with_delegation(
 			origin: OriginFor<T>,
@@ -269,12 +284,20 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Create a delegation relationship between a `Provider` and MSA.
+
+		/// todo - need more info.
+		/// Returns `Ok(())` on success, otherwise returns an error.
 		///
-		/// Requires a multi signature to verify both owner and Provider key
-		/// Throws error AddProviderSignatureVerificationFailed if signature is not verified
-		/// Generates event Provider Added
+		/// ### Errors
 		///
+		/// Returns [`AddProviderSignatureVerificationFailed`](Error::AddProviderSignatureVerificationFailed) if `Provider` key does not match key provided in Payload.
+		/// Returns [`DuplicateProvider`](Error::DuplicateProvider) if the provider already exists for the Origin.
+		///
+		/// ### Examples
+		///
+		/// ```
+		///
+		/// ```
 		#[pallet::weight(T::WeightInfo::add_provider_to_msa())]
 		pub fn add_provider_to_msa(
 			origin: OriginFor<T>,
@@ -305,10 +328,19 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Delegator (Origin) terminates a delegation relationship with the `Provider`.
+		/// Returns `Ok(())` on success, otherwise returns an error.
 		///
+		/// ### Errors
 		///
+		/// Returns [`DelegationRevoked`](Error::DelegationRevoked) if the delegation has already been revoked.
+		/// Returns [`DelegationNotFound`](Error::DelegationNotFound) if there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
 		///
+		/// ### Examples
 		///
+		/// ```
+		///
+		/// ```
 		#[pallet::weight(T::WeightInfo::revoke_msa_delegation_by_delegator())]
 		pub fn revoke_msa_delegation_by_delegator(
 			origin: OriginFor<T>,
@@ -330,6 +362,20 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Origin adds a given key to their own MSA, which has to match the MSA in `add_key_payload`. Deposits event [`KeyAdded'](Event::KeyAdded).
+		/// Returns `Ok(())` on success, otherwise returns an error.
+		///
+		/// ### Errors
+		///
+		/// Returns [`AddKeySignatureVerificationFailed`](Error::AddKeySignatureVerificationFailed) if `key` is not a valid signer of the provided `add_key_payload`.
+		/// Returns [`NoKeyExists`](Error::NoKeyExists) if the MSA id for the account in `add_key_payload` does not exist.
+		/// Returns ['NotMsaOwner'](Error::NotMsaOwner) if Origin's MSA is not the same as 'add_key_payload` MSA. Essentially you can only add a key to your own MSA.
+		///
+		/// ### Examples
+		///
+		/// ```
+		///
+		/// ```
 		#[pallet::weight(T::WeightInfo::add_key_to_msa())]
 		pub fn add_key_to_msa(
 			origin: OriginFor<T>,
@@ -353,6 +399,18 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// <description>
+		/// Returns `Ok(())` on success, otherwise returns an error.
+		///
+		/// ### Errors
+		///
+		/// Returns [``]()
+		///
+		/// ### Examples
+		///
+		/// ```
+		///
+		/// ```
 		#[pallet::weight(T::WeightInfo::revoke_msa_key())]
 		pub fn revoke_msa_key(origin: OriginFor<T>, key: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -371,6 +429,18 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// <description>
+		/// Returns `Ok(())` on success, otherwise returns an error.
+		///
+		/// ### Errors
+		///
+		/// Returns [``]()
+		///
+		/// ### Examples
+		///
+		/// ```
+		///
+		/// ```
 		#[pallet::weight((T::WeightInfo::remove_delegation_by_provider(20_000), DispatchClass::Normal, Pays::No))]
 		pub fn remove_delegation_by_provider(
 			origin: OriginFor<T>,
