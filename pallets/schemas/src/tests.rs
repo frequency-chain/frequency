@@ -146,7 +146,7 @@ fn get_existing_schema_by_id_should_return_schema() {
 
 		// assert
 		assert_eq!(res.as_ref().is_some(), true);
-		assert_eq!(res.as_ref().unwrap().clone().data, serialized_fields);
+		assert_eq!(res.as_ref().unwrap().clone().format, serialized_fields);
 	})
 }
 
