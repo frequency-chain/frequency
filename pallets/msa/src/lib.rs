@@ -210,6 +210,11 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Creates an MSA for the given Origin
+		///
+		/// Deposits Event `MsaCreated` which is responsible for
+		///
+		/// Returns a Dispatch Result with the new MSA id
 		#[pallet::weight(T::WeightInfo::create(10_000))]
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -222,6 +227,12 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// `Origin` creates an account for a given `AccountId` and sets themselves as a `Provider`.
+		///
+		/// Requires a multi signature to verify both owner and delegator key
+		/// Throws Unauthorized Provider error if payload's MSA does not match given provider MSA
+		///
+		/// Generates Events MSA Created and Provider Added
 		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation())]
 		pub fn create_sponsored_account_with_delegation(
 			origin: OriginFor<T>,
@@ -258,6 +269,11 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Create a delegation relationship between a `Provider` and MSA.
+		///
+		/// Requires a multi signature to verify both owner and delegator key
+		/// Generates event Provider Added
+		///
 		#[pallet::weight(T::WeightInfo::add_provider_to_msa())]
 		pub fn add_provider_to_msa(
 			origin: OriginFor<T>,
@@ -288,6 +304,10 @@ pub mod pallet {
 			Ok(())
 		}
 
+		///
+		///
+		///
+		///
 		#[pallet::weight(T::WeightInfo::revoke_msa_delegation_by_delegator())]
 		pub fn revoke_msa_delegation_by_delegator(
 			origin: OriginFor<T>,
