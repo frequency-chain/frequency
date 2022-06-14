@@ -286,7 +286,7 @@ pub mod pallet {
 
 
 		/// todo - need more info.
-		/// Returns `Ok(())` on success, otherwise returns an error.
+		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`ProviderAdded`](Event::ProviderAdded).
 		///
 		/// ### Errors
 		///
@@ -328,7 +328,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Delegator (Origin) terminates a delegation relationship with the `Provider`.
+		/// Delegator (Origin) terminates a delegation relationship with the `Provider`. Deposits event[`DelegatorRevokedDelegation`](Event::DelegatorRevokedDelegation).
 		/// Returns `Ok(())` on success, otherwise returns an error.
 		///
 		/// ### Errors
@@ -400,7 +400,7 @@ pub mod pallet {
 		}
 
 		/// <description>
-		/// Returns `Ok(())` on success, otherwise returns an error.
+		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`KeyRevoked`](Event::KeyRevoked).
 		///
 		/// ### Errors
 		///
@@ -430,7 +430,7 @@ pub mod pallet {
 		}
 
 		/// <description>
-		/// Returns `Ok(())` on success, otherwise returns an error.
+		/// Returns `Ok(())` on success, otherwise returns an error. Deposits events [`ProviderRevokedDelegation`](Event::ProviderRevokedDelegation).
 		///
 		/// ### Errors
 		///
