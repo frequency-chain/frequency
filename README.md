@@ -77,17 +77,19 @@ source .env
 
 1. Note: set `RUST_LOG=debug RUST_BACKTRACE=1` as the environment variable to enable detailed logs.
 
+1. Alternative to start-mrc: Run ```cargo build --release``` and then run ```./scripts/init.sh start-mrc-docker``` to start mrc in a docker container via docker compose. ```./scripts/init.sh stop-mrc-docker``` to stop mrc container.
+
 1. Onboarding mrc to relay chain
 
     ```bash
     ./scripts/init.sh onboard-mrc
     ```
 
-1. Parachain collator will be available at  port `$((9946 + $para_id))` which in default case is `11946`, while  embedded relay chain is running on port `$((9946 + $para_id + 1 ))` which in default case is `11947`.
+3. Parachain collator will be available at  port `$((9946 + $para_id))` which in default case is `11946`, while  embedded relay chain is running on port `$((9946 + $para_id + 1 ))` which in default case is `11947`.
 
-1. Link to parachain [dashboard](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A11946)
+4. Link to parachain [dashboard](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A11946)
 
-1. Off-boarding MRC from relay chain
+5. Off-boarding MRC from relay chain
 
     ```bash
     ./scripts/init.sh offboard-mrc
