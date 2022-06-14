@@ -1,3 +1,50 @@
+// This file is part of Substrate.
+
+// Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+//! # MSA Pallet
+//!
+//! The MSA pallet provides functionality for handling Message Source Accounts.
+//!
+//! - [`Config`]
+//! - [`Call`]
+//! - [`Pallet`]
+//!
+//! ## Overview
+//!
+//! The MSA pallet provides functions for:
+//!
+//! - Creating, reading, updating, and deleting operations for MSAs.
+//! - Managing delegation relationships for MSAs.
+//! - Managing keys associated with MSA.
+//!
+//! ### Terminology
+//!
+//! ## Interface
+//!
+//! ### Dispatchable Functions
+//!
+//! - `add_key_to_msa` -
+//! - `add_provider_to_msa` -
+//! - `create` - Directly creates an MSA for the origin
+//! - `create_sponsored_account_with_delegation` - Origin creates an account for a given `Account Id` and sets themselves as a `Provider`
+//! - `remove_delegation_by_provider` -
+//! - `revoke_msa_delegation_by_delegator` -
+//! - `revoke_msa_key` -
+
 #![cfg_attr(not(feature = "std"), no_std)]
 // Strong Documentation Lints
 #![deny(missing_docs)]
@@ -45,6 +92,7 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
 
+		/// Maximum count of keys allowed per MSA
 		#[pallet::constant]
 		type MaxKeys: Get<u32>;
 	}
