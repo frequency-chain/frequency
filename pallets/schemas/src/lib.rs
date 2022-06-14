@@ -12,7 +12,7 @@
 //! network to flexibly interact and exchange messages with each other without facing the challenge
 //! of sharing, managing and validating messages as well as schemas between them.
 //!
-//! > NOTE: In this pallet we define the payload format that is used in Messages Pallet.
+//! <b>NOTE</b>: In this pallet we define the <b>payload</b> format that is used in <a href="../pallet_messages/index.html">Messages Pallet</a>.
 //!
 //! The Schema pallet provides functions for:
 //!
