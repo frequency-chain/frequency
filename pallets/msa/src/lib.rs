@@ -33,17 +33,36 @@
 //!
 //! ### Terminology
 //!
+//! ### Implementations
+//!
+//! The MSA pallet provides implementations for the following traits.
+//!
+//! - [`AccountProvider`](common_primitives::msa::AccountProvider): Functions for accessing and validating MSAs.
+//!
 //! ## Interface
 //!
 //! ### Dispatchable Functions
 //!
-//! - `add_key_to_msa` -
-//! - `add_provider_to_msa` -
-//! - `create` - Directly creates an MSA for the origin
-//! - `create_sponsored_account_with_delegation` - Origin creates an account for a given `Account Id` and sets themselves as a `Provider`
-//! - `remove_delegation_by_provider` -
-//! - `revoke_msa_delegation_by_delegator` -
-//! - `revoke_msa_key` -
+//! - `add_key_to_msa` - Associate provided key to the given payload's MSA.
+//! - `add_provider_to_msa` - Create a delegation relationship between a `Provider` and MSA.
+//! - `create` - Directly creates an MSA for the `Origin`.
+//! - `create_sponsored_account_with_delegation` - `Origin` creates an account for a given `AccountId` and sets themselves as a `Provider`.
+//! - `remove_delegation_by_provider` - `Provider` terminates a delegation relationship with MSA.
+//! - `revoke_msa_delegation_by_delegator` - MSA terminates a delegation relationship with the `Provider`.
+//! - `revoke_msa_key` - MSA owner expires the given key.
+//!
+//! ## Usage
+//!
+//! ### Examples
+//!
+//!
+//!
+//!
+//! ## Assumptions
+//!
+//! * Total MSA keys should be less than the constant `Config::MSA::MaxKeys`.
+//!
+
 
 #![cfg_attr(not(feature = "std"), no_std)]
 // Strong Documentation Lints
