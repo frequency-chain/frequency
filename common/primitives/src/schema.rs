@@ -15,5 +15,5 @@ pub type SchemaId = u16;
 pub struct SchemaResponse {
 	pub schema_id: SchemaId,
 	#[cfg_attr(feature = "std", serde(with = "as_string"))]
-	pub data: Vec<u8>,
+	pub format: Vec<u8>,
 }
