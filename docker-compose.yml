@@ -2,7 +2,7 @@
 # Node Key Bob: `subkey inspect //Bob`
 version: '3'
 services:
-  node_alice:
+  relay_alice:
     container_name: alice
     image: "parity/polkadot:v0.9.18"
     volumes:
@@ -27,7 +27,7 @@ services:
       --log="main,debug"
     network_mode: "host"
 
-  node_bob:
+  relay_bob:
     container_name: bob
     image: "parity/polkadot:v0.9.18"
     volumes:
@@ -52,12 +52,12 @@ services:
       --log="main,info"
     network_mode: "host"
 
-  mrc_alice:
+  mrc_collator:
     container_name: mrc-alice
     build:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      - node_alice
-      - node_bob
+      - relay_alice
+      - relay_bob
     network_mode: "host"

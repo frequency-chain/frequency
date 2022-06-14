@@ -23,22 +23,22 @@ install-toolchain)
 
 start-relay-chain)
   echo "Starting local relay chain with Alice and Bob..."
-  docker-compose up -d node_alice node_bob
+  docker-compose up -d relay_alice relay_bob
   ;;
 
 stop-relay-chain)
   echo "Stopping relay chain..."
-  docker-compose down node_alice node_bob
+  docker-compose down relay_alice relay_bob
   ;;
 
 start-mrc-docker)
   echo "Starting mrc container with Alice..."
-  docker-compose up --build mrc_alice
+  docker-compose up --build mrc_collator
   ;;
 
 stop-mrc-docker)
   echo "Stopping mrc container with Alice..."
-  docker-compose down mrc_alice
+  docker-compose down mrc_collator
   ;;
 
 start-mrc)
