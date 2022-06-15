@@ -2,13 +2,9 @@
 # Node Key Bob: `subkey inspect //Bob`
 version: '3'
 services:
-  node_alice:
+  relay_alice:
     container_name: alice
     image: "parity/polkadot:v0.9.18"
-    ports:
-      - "30333:30333"
-      - "9933:9933"
-      - "9944:9944"
     volumes:
       - type: bind
         source: ./res/rococo-local.json
@@ -29,14 +25,11 @@ services:
       --rpc-methods=Unsafe
       --alice
       --log="main,debug"
+    network_mode: "host"
 
-  node_bob:
+  relay_bob:
     container_name: bob
     image: "parity/polkadot:v0.9.18"
-    ports:
-      - "30344:30333"
-      - "9935:9933"
-      - "9945:9944"
     volumes:
       - type: bind
         source: ./res/rococo-local.json
@@ -48,12 +41,23 @@ services:
       --base-path=/data
       --wasm-execution=compiled
       --execution=wasm
-      --port 30333
-      --rpc-port 9933
-      --ws-port 9944
+      --port 30444
+      --rpc-port 9934
+      --ws-port 9945
       --rpc-external
       --ws-external
       --rpc-cors all
       --rpc-methods=Unsafe
       --bob
       --log="main,info"
+    network_mode: "host"
+
+  collator_mrc:
+    container_name: mrc
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - relay_alice
+      - relay_bob
+    network_mode: "host"
