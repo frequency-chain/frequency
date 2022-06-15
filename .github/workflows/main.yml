@@ -87,11 +87,5 @@ jobs:
       - name: Build and push dsnp/mrc
         if: matrix.target == 'build-node'
         id: docker_build_mrc
-        uses: mr-smithers-excellent/docker-build-push@v5
-        with:
-          image: dnsp/mrc
-          tags: ${{env.TAG}}, latest
-          registry: docker.io
-          dockerfile: Dockerfile
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          docker build -f Dockerfile -t dsnp/mrc:${{ env.TAG }} -t dsnp/mrc:latest --push .
