@@ -84,6 +84,7 @@ jobs:
           date_tag=$(date +'%Y%m%d-%H%M')
           echo ${date_tag}
           echo "TAG=${date_tag}" >> $GITHUB_ENV
+          ls -l target/release
       - name: Build and push dsnp/mrc
         if: matrix.target == 'build-node'
         id: docker_build_mrc

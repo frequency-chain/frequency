@@ -11,7 +11,6 @@ RUN apt-get install jq -y
 
 COPY target/release/mrc-collator target/release/
 
-RUN $PWD
 RUN ls target/release
 
 # Checks
