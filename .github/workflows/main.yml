@@ -91,6 +91,7 @@ jobs:
         with:
           push: true
           file: Dockerfile
+          context: .
           tags: |
             dsnp/mrc:${{ env.TAG }}
             dsnp/mrc:latest
