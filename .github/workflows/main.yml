@@ -69,6 +69,8 @@ jobs:
         with:
           name: mrc_rococo_2000_specs-${{ github.sha }}
           path: mrc_specs.tar
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         if: matrix.target == 'build-node'
         uses: docker/setup-buildx-action@v2
@@ -87,5 +89,11 @@ jobs:
       - name: Build and push dsnp/mrc
         if: matrix.target == 'build-node'
         id: docker_build_mrc
-        run: |
-          docker build -f Dockerfile -t dsnp/mrc:${{ env.TAG }} -t dsnp/mrc:latest --push .
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          file: Dockerfile
+          tags: |
+            dsnp/mrc:${{ env.TAG }}
+            dsnp/mrc:latest
