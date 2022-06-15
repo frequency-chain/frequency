@@ -15,8 +15,8 @@ fi
 # name the variable with the incoming args so it isn't overwritten later by function calls
 args=( "$@" )
 
-alice="${HOST_ALICE:-relay_alice}"
-bob="${HOST_BOB:-relay_bob}"
+alice="${HOST_ALICE:-127.0.0.1}"
+bob="${HOST_BOB:-127.0.0.1}"
 alice_rpc_port="${ALICE_RPC_PORT:-9934}"
 bob_rpc_port="${BOB_RPC_PORT:-9935}"
 chain="${RELAY_CHAIN_SPEC:-./res/rococo-local.json}"
