@@ -1,6 +1,8 @@
 on:
   push:
     branches: [main]
+  pull_request:
+
 name: Build Main
 jobs:
   build_prep:
@@ -85,10 +87,11 @@ jobs:
       - name: Build and push dsnp/mrc
         if: matrix.target == 'build-node'
         id: docker_build_mrc
-        uses: docker/build-push-action@v3
+        uses: mr-smithers-excellent/docker-build-push@v5
         with:
-          push: true
-          file: Dockerfile
-          tags: |
-            dsnp/mrc:${{ env.TAG }}
-            dsnp/mrc:latest
+          image: dnsp/mrc
+          tags: {{env.TAG}}, latest
+          registry: docker.io
+          dockerfile: Dockerfile.ci
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
