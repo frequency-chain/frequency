@@ -90,7 +90,7 @@ jobs:
         uses: mr-smithers-excellent/docker-build-push@v5
         with:
           image: dnsp/mrc
-          tags: {{env.TAG}}, latest
+          tags: ${{env.TAG}}, latest
           registry: docker.io
           dockerfile: Dockerfile.ci
           username: ${{ secrets.DOCKERHUB_USERNAME }}
