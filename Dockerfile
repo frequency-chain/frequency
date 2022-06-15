@@ -9,30 +9,30 @@ RUN apt-get update && \
 
 RUN apt-get install jq -y
 
-COPY target/release/mrc-collator ./target/release/
+COPY target/release/mrc-collator target/release/
 
-RUN ls ./target/release
+RUN ls target/release
 
 # Checks
-RUN ldd ./target/release/mrc-collator && \
-    ./target/release/mrc-collator --version
+RUN ldd target/release/mrc-collator && \
+    target/release/mrc-collator --version
 
 # Add chain resources to image
-COPY res ./res/
+COPY res res/
 
-COPY scripts ./scripts/
+COPY scripts scripts/
 
-RUN chmod +x ./scripts/run_collator.sh
-RUN chmod +x ./scripts/init.sh
-RUN chmod +x ./scripts/healthcheck.sh
+RUN chmod +x scripts/run_collator.sh
+RUN chmod +x scripts/init.sh
+RUN chmod +x scripts/healthcheck.sh
 
-ENV MRC_BINARY_PATH=./target/release/mrc-collator
+ENV MRC_BINARY_PATH=target/release/mrc-collator
 
 HEALTHCHECK --interval=300s --timeout=75s --start-period=30s --retries=3 \
-    CMD ["./scripts/healthcheck.sh"]
+    CMD ["scripts/healthcheck.sh"]
 
 VOLUME ["/data"]
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 
-CMD ["/bin/bash", "./scripts/init.sh", "start-mrc-container"]
+CMD ["/bin/bash", "scripts/init.sh", "start-mrc-container"]
