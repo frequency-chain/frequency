@@ -1,10 +1,15 @@
 use super::{mock::*, Event as MessageEvent};
 use crate::{BlockMessages, Config, Error, Message, Messages};
+// use bounded_vec::BoundedVec;
+use std::convert::TryInto;
+
 use common_primitives::{
 	messages::{BlockPaginationRequest, MessageResponse},
 	schema::*,
 };
-use frame_support::{assert_err, assert_noop, assert_ok, BoundedVec};
+use frame_support::{
+	assert_err, assert_noop, assert_ok, bounded_vec, parameter_types, traits::ConstU32, BoundedVec,
+};
 use sp_std::vec::Vec;
 
 fn populate_messages(schema_id: SchemaId, message_per_block: Vec<u32>) {
@@ -439,5 +444,37 @@ fn add_message_via_non_delegate_should_fail() {
 		// assert
 		let list = BlockMessages::<Test>::get().into_inner();
 		assert_eq!(list.len(), 0);
+	});
+}
+
+#[test]
+fn add_message_bulk_ok() {
+	new_test_ext().execute_with(|| {
+		let mut ms = MessagesPallet::get_block_messages();
+		assert_eq!(ms.len(), 0);
+
+		let message_payload_1 = "{'fromId': 123, 'content': '232323114432'}".as_bytes();
+		let message_payload_2 = "{'fromId': 123, 'content': '232323114432'}".as_bytes();
+
+		let message_payload_collection: Vec<Vec<u8>> =
+			vec![message_payload_1.clone().to_vec(), message_payload_2.clone().to_vec()];
+
+		assert_ok!(MessagesPallet::add_message_bulk(1, 1, 1, message_payload_collection));
+
+		let msg_payload_s1 = message_payload_1.to_vec().try_into().unwrap();
+		let msg_payload_s2 = message_payload_2.to_vec().try_into().unwrap();
+		let message_1: Message<u64, MaxMessagePayloadSizeBytes> =
+			Message { signer: 1, msa_id: 1, index: 0, payload: msg_payload_s1 };
+		let message_2: Message<u64, MaxMessagePayloadSizeBytes> =
+			Message { signer: 1, msa_id: 1, index: 1, payload: msg_payload_s2 };
+
+		let expected: BoundedVec<(Message<u64, MaxMessagePayloadSizeBytes>, u16), ConstU32<500>> =
+			bounded_vec![(message_1, 1), (message_2, 1)];
+
+		ms = MessagesPallet::get_block_messages();
+
+		assert_eq!(ms.len(), 2);
+		assert_eq!(ms, expected);
+		println!("messages {:?}", ms);
 	});
 }

@@ -41,7 +41,9 @@ pub mod weights;
 
 mod types;
 
-use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
+use frame_support::{
+	dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get, BoundedVec,
+};
 use sp_runtime::{traits::One, DispatchError};
 use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 
@@ -54,6 +56,8 @@ use common_primitives::{
 	msa::{AccountProvider, Delegator, MessageSenderId, Provider},
 	schema::*,
 };
+
+type BulkPayload = Vec<Vec<u8>>;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -162,23 +166,87 @@ pub mod pallet {
 			schema_id: SchemaId,
 			payload: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
-			let key = ensure_signed(origin)?;
+			let provider_key = ensure_signed(origin)?;
 
 			ensure!(
 				payload.len() < T::MaxMessagePayloadSizeBytes::get().try_into().unwrap(),
 				Error::<T>::ExceedsMaxMessagePayloadSizeBytes
 			);
 
-			let message_source_id = Self::find_msa_id(&key, on_behalf_of)?;
+			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
-			let message = Self::add_message(key, message_source_id, payload, schema_id)?;
+			let message = Self::add_message(provider_key, message_source_id, payload, schema_id)?;
 
 			Ok(Some(T::WeightInfo::add(message.payload.len() as u32, message.index as u32)).into())
+		}
+
+		// TODO:
+		// capacity transaction
+		// VALIDATE KEY
+		// VALIDATE DELEGATION
+		// ADD BULK
+		// COLLECTION BUILDER
+		//  - existing_message
+		// augment
+		// build array that its going to override
+		// Store INTO
+		#[pallet::weight(T::WeightInfo::add(bulk_payload.len() as u32, 1_000))]
+		pub fn add_bulk(
+			origin: OriginFor<T>,
+			schema_id: SchemaId,
+			on_behalf_of: Option<MessageSenderId>,
+			bulk_payload: BulkPayload,
+		) -> DispatchResultWithPostInfo {
+			let provider_key = ensure_signed(origin)?;
+
+			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
+
+			Self::add_message_bulk(provider_key, message_source_id, schema_id, bulk_payload)?;
+
+			// let message = Self::add_message(key, message_source_id, payload, schema_id)?;
+
+			// Ok(Some(T::WeightInfo::add(message.payload.len() as u32, message.index as u32)).into())
 		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
+	pub fn add_message_bulk(
+		key: T::AccountId,
+		message_source_id: MessageSenderId,
+		schema_id: SchemaId,
+		payload_collection: BulkPayload,
+	) -> DispatchResult {
+		let mut block_messages = Self::get_block_messages();
+		let current_size: u16 = block_messages
+			.len()
+			.try_into()
+			.map_err(|_| Error::<T>::TypeConversionOverflow)?;
+
+		for (index, payload) in payload_collection.into_iter().enumerate() {
+			let msg = Message {
+				payload: payload
+					.try_into()
+					.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?,
+				signer: key.clone(),
+				index: current_size.saturating_add(index as u16),
+				msa_id: message_source_id,
+			};
+
+			block_messages
+				.try_push((msg.clone(), schema_id))
+				.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
+		}
+
+		BlockMessages::<T>::put(&block_messages);
+
+		Ok(())
+	}
+
+	// fn build_message_bulk() -> {
+
+	// }
+
 	pub fn add_message(
 		key: T::AccountId,
 		message_source_id: MessageSenderId,
@@ -206,13 +274,16 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
+	// pub fn message_buld_builder(messages: existing) -> BoundedVec<>{
+
+	// }
+
 	pub fn find_msa_id(
 		key: &T::AccountId,
 		on_behalf_of: Option<MessageSenderId>,
 	) -> Result<MessageSenderId, DispatchError> {
-		let sender_msa_id = T::AccountProvider::ensure_valid_msa_key(&key)
-			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?
-			.msa_id;
+		let sender_msa_id = Self::ensure_valid_msa_key(&key)
+			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
 		let message_source_id = match on_behalf_of {
 			Some(delegator) =>
@@ -221,6 +292,14 @@ impl<T: Config> Pallet<T> {
 		};
 
 		Ok(message_source_id)
+	}
+
+	pub fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSenderId, DispatchError> {
+		let sender_msa_id = T::AccountProvider::ensure_valid_msa_key(&key)
+			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?
+			.msa_id;
+
+		Ok(sender_msa_id)
 	}
 
 	pub fn ensure_valid_delegation(

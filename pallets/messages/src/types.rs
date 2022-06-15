@@ -4,6 +4,14 @@ use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 use sp_std::prelude::*;
 
+// #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq)]
+// pub struct MessageBulkPaylod<AccountId, MaxDataSize>
+// where
+// 	MaxDataSize: Get<u32> + Clone,
+// {
+// 	pub msg: Message<AccountId, MaxDataSize>,
+// }
+
 /// A single message type definition.
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 #[scale_info(skip_type_params(MaxDataSize))]
