@@ -99,7 +99,7 @@ start-mrc-container)
 
 register-mrc)
   echo "reserving and registering parachain with relay via first available slot..."
-  
+
   cd scripts/js/onboard
   yarn && yarn register "ws://0.0.0.0:9944" "//Alice"
   ;;
@@ -127,7 +127,7 @@ onboard-mrc)
 
 offboard-mrc)
   echo "cleaning up parachain for id '$para_id'..."
-  
+
   cd scripts/js/onboard
   yarn && yarn cleanup "ws://0.0.0.0:9944" "//Alice" ${para_id}
   ;;
