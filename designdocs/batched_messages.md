@@ -95,7 +95,6 @@ One risk is that providers on MRC could simply register a new schema and announc
 Another risk, mentioned in the Alternatives and Rationale section, is that providers would announce smaller batches than the actual batch file sizes. Earnest MRC participants, such as indexers, will quickly learn this announcer is not reliable and ignore batches marked with that announcer's MsaId.
 
 ### Alternatives and Rationale
-
 We discussed whether a batch message itself can be delegated, but this would have complicated things and we cannot come up with a use case for delegating batches. It also violates the idea of users delegating explicitly to every provider that performs a service for them, which is a fundamental value we want to apply to the network.
 
 We discussed whether to allow URLs such as HTTP/HTTPS or other URLs and instead opted for content-addressable URIs (CIDv1) which can be resolved by some other service.  This allows us to put the file hash directly into a URI.  It reduces message storage because we don't have to include both a URL and a file hash. A file hash is necessary as a check against file tampering.
