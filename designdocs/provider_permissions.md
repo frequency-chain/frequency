@@ -43,7 +43,7 @@ Note: The terminology and implementation are subject to change at issue resoluti
 
 Permission is a generic option for any user. For version 1 of this implementation, the following options are available:
 
-- ***PUBLISHER***: Where a user grants full publication rights to a provider for any schema available to provider via MRC. This can be modified to be called a dsnp publisher where all dsnp related schemas are granted to provider. In other sense this could be super admin permission that can be granted via a governance mechanism.
+- ***PUBLISHER***: Where a user grants full publication rights to a provider for any schema available to provider via MRC. This can be modified to be called a dsnp publisher where all dsnp related schemas are granted to provider. In other sense this could be super admin permission that can be granted via a governance mechanism. For version 1 we will not implement this role.
 
 - ***RESTRICTED***: Where a user grants a provider to publish data on their behalf for specific schema(s) only. This is the default state of a provider on MRC, where a provider has to explicitly provide a list of schema(s) for which they are allowed to publish data on behalf of the user.
 
@@ -52,7 +52,6 @@ An example of permission data structure is as follows:
 ```rust
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PermissionType {
-    Publisher,
     Restricted,
 }
 
@@ -91,7 +90,7 @@ pub struct Grant {
 
 - ***delegator_msa***: The MSA of a delegator/user.
 - ***provider_msa***: The MSA of the provider/app.
-- ***Permission***: The generic option for any user. Default mode of operation is ***Restricted*** for any provider unless explicitly added as ***Publisher***.
+- ***Permission***: The generic option for any user. Default mode of operation is ***Restricted*** for any provider.
 - ***Grant***: The user level action/result. "A user grants a permission to a provider".
 - ***ToS***: The hash of terms of service between a delegator and provider.
 - ***expiry***: The expiry time of a permission/grant.
@@ -115,7 +114,7 @@ An extrinsic to allow a provider to request publish write to list of schemas. Re
 
 - Notes: The weights of this extrinsic should account for required weights when revoking grants at schema level via provider/delegator.
 
-### add_mrc_publisher()
+### add_mrc_publisher() : Not in the scope for version 1 of this implementation
 
 An extrinsic to allow (via governance) to set a provider as MRC publisher. This in turn will give all publish rights on all schemas for any delegator delegating to this provider. Rending them **Publisher** status.
 
@@ -136,7 +135,7 @@ An extrinsic to allow (via governance) to set a provider as MRC publisher. This 
 
 ### revoke_schema_grants()
 
-An extrinsic (or rpc if revoking is paid off while adding) to allow a provider or delegator to block publishing rights on specific schemas. If a delegator has **Publisher** status, then restricting a schema will render it **Restricted** status on provider.
+An extrinsic (or rpc if revoking is paid off while adding) to allow a provider or delegator to block publishing rights on specific schemas.
 
 - Parameters:
     1. **provider_msa**: The MSA of the provider/app.
@@ -148,7 +147,7 @@ An extrinsic (or rpc if revoking is paid off while adding) to allow a provider o
 - Outcomes: Provider permissions are set to **Restricted**. While schema level grants is set to blocked for a given ```schema_id```.
 
 - Notes:
-  - Revocation of a grant should be "pre-paid" (Not staking it, just paying more for the create so the revoke is "covered")
+  - Revocation of grant should be free for the caller as long as caller have delegated to provider. The cost of revocation extrinsic should be accounted for, in ```add_schema_grants``` .
   - If this action is already paid off while [adding schema grants](#add_schema_permissions), this can be done via rpc.
   - Un-delegation of a provider by a delegator should revoke all grants from all schemas for that provider.
 
@@ -160,15 +159,14 @@ An extrinsic (or rpc if revoking is paid off while adding) to allow a provider o
 
 ## Validation
 
-- If a provider has **Publisher** status, then it can publish data on behalf of a delegator for any schema supported by MRC.
-- If a provider has **Restricted** status, a check will be required to ensure delegator has given **Publish** grant for a given schema.
+- If a provider has **Restricted** status, a check will be required to ensure delegator has given **Publish** grant for a given schema for which a message is being sent by provider.
 - This can further be extended to act as an additional validation on publishing batched messages for a given list of delegators for a specific schema.
 
 ## Benefits and Risks
 
 Enabling permissions and grants benefits both user and provider. While providers can be trusted to publish data on behalf of a delegator, it is not always the case and vice versa. Duality of opt in at the grant level solidify the trust relationship.
 
-Some risks are primarily at implementation level, such a storage pattern of such grants, and validation surrounding whether a provider is allowed to publish or not, adds additional overhead. Though this risk is easily minimzed by using a storage pattern that is optimized for the use case.
+Some risks are primarily at implementation level, such a storage pattern of such grants, and validation surrounding whether a provider is allowed to publish or not, adds additional overhead. Though this risk is easily minimized by using a storage pattern that is optimized for the use case.
 
 ## Additional Resources
 

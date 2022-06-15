@@ -11,3 +11,5 @@ To create a new design document, Please see the [Design Doc README](https://gith
   * [PR](https://github.com/LibertyDSNP/mrc/pull/14)
 * [Message Schema(s)](./SCHEMA.md)
   * [Merged Pull Request](https://github.com/LibertyDSNP/mrc/pull/17)
+* [Provider Permissions and Grants](./provider_permissions.md)
+  * [Merged Pull Request](https://github.com/LibertyDSNP/mrc/pull/150)
