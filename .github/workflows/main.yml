@@ -69,6 +69,7 @@ jobs:
           name: mrc_rococo_2000_specs-${{ github.sha }}
           path: mrc_specs.tar
       - name: Set up QEMU
+        if: matrix.target == 'build-node'
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         if: matrix.target == 'build-node'
