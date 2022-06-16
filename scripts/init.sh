@@ -59,9 +59,9 @@ start-mrc)
     --wasm-execution=compiled \
     --execution=wasm \
     --force-authoring \
-    --port $((30355 + $para_id)) \
-    --rpc-port $((9936 + $para_id)) \
-    --ws-port $((9946 + $para_id)) \
+    --port $((30333)) \
+    --rpc-port $((9933)) \
+    --ws-port $((9944)) \
     --rpc-external \
     --rpc-cors all \
     --ws-external \
@@ -73,13 +73,12 @@ start-mrc-container)
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
-  mrc_default_port=$((30355 + $para_id))
-  mrc_default_rpc_port=$((9936 + $para_id))
-  mrc_default_ws_port=$((9946 + $para_id))
+  mrc_default_port=$((30333))
+  mrc_default_rpc_port=$((9933))
+  mrc_default_ws_port=$((9944))
   mrc_port="${MRC_PORT:-$mrc_default_port}"
   mrc_rpc_port="${MRC_RPC_PORT:-$mrc_default_rpc_port}"
   mrc_ws_port="${MRC_WS_PORT:-$mrc_default_ws_port}"
-  export HOST_NAME="127.0.0.1"
 
   ./scripts/run_collator.sh \
     --chain="${chain_spec}" --alice \
@@ -99,9 +98,9 @@ start-mrc-container)
 
 register-mrc)
   echo "reserving and registering parachain with relay via first available slot..."
-  
+
   cd scripts/js/onboard
-  yarn && yarn register "ws://0.0.0.0:9944" "//Alice"
+  yarn && yarn register "ws://0.0.0.0:9945" "//Alice"
   ;;
 
 onboard-mrc)
@@ -122,13 +121,13 @@ onboard-mrc)
   echo "WASM path:" "${parachain}-${para_id}.wasm"
 
   cd scripts/js/onboard
-  yarn && yarn onboard "ws://0.0.0.0:9944" "//Alice" ${para_id} "${genesis}" $wasm_location
+  yarn && yarn onboard "ws://0.0.0.0:9945" "//Alice" ${para_id} "${genesis}" $wasm_location
   ;;
 
 offboard-mrc)
   echo "cleaning up parachain for id '$para_id'..."
-  
+
   cd scripts/js/onboard
-  yarn && yarn cleanup "ws://0.0.0.0:9944" "//Alice" ${para_id}
+  yarn && yarn cleanup "ws://0.0.0.0:9945" "//Alice" ${para_id}
   ;;
 esac
