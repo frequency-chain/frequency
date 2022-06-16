@@ -38,8 +38,7 @@ ENTRYPOINT ["/usr/bin/tini", "--"]
 
 CMD ["/bin/bash", "./scripts/init.sh", "start-mrc-container"]
 
-# Assumes ParaId=2000
-# 32355 p2p port
-# 11946 rpc port
-# 11936 ws port
-EXPOSE 32355 11946 11936
+# 9933 p2p port
+# 9944 rpc port
+# 30333 ws port
+EXPOSE 9933 9944 30333
