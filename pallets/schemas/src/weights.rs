@@ -43,6 +43,8 @@
 // --template=./.maintain/frame-weight-template.hbs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
+#![allow(rustdoc::all)]
+#![allow(missing_docs)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
 
