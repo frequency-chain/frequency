@@ -13,8 +13,8 @@ where
 {
 	///  Serialized data in a user-defined schema format
 	pub payload: BoundedVec<u8, MaxDataSize>,
-	///  Signature of the signer
-	pub signer: AccountId,
+	///  Public key of the provider that signed the transaction
+	pub provider_key: AccountId,
 	///  Message source account id (the original source)
 	pub msa_id: MessageSourceId,
 	///  Stores index of message in block to keep total order
@@ -32,7 +32,7 @@ where
 		block_number: BlockNumber,
 	) -> MessageResponse<AccountId, BlockNumber> {
 		MessageResponse {
-			signer: self.signer.clone(),
+			provider_key: self.signer.clone(),
 			index: self.index,
 			msa_id: self.msa_id,
 			block_number,

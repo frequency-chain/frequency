@@ -195,7 +195,7 @@ pub mod pallet {
 				let payload_size = payload.len();
 				let m = Message {
 					payload: payload.try_into().unwrap(), // size is checked on top of extrinsic
-					signer: provider_key,
+					provider_key,
 					index: current_size,
 					msa_id: message_source_id,
 				};

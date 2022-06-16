@@ -17,8 +17,8 @@ pub struct MessageResponse<AccountId, BlockNumber> {
 	#[cfg_attr(feature = "std", serde(with = "as_hex"))]
 	/// Serialized data in a user-defined schema format.
 	pub payload: Vec<u8>,
-	/// Signature of the signer.
-	pub signer: AccountId,
+	/// The public key of the provider and the signer of the transaction.
+	pub provider_key: AccountId,
 	/// Message source account id (the original source).
 	pub msa_id: MessageSourceId,
 	/// Index in block to get total order
