@@ -5,10 +5,11 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::DispatchError;
 
-/// Type alias for a message source identifier.
+/// Message Source Id or msaId is the unique identifier for Message Source Accounts
 pub type MessageSourceId = u64;
 
-/// A wrapper to distinguish a MessageSourceId that belongs to a Provider vs a Delegator.
+/// A Delegator is a role for an MSA to play.
+/// Delegators delegate to Providers.
 #[derive(TypeInfo, Debug, Clone, Copy, Decode, Encode, PartialEq, MaxEncodedLen, Eq)]
 pub struct Delegator(pub MessageSourceId);
 
@@ -24,19 +25,23 @@ impl From<Delegator> for MessageSourceId {
 	}
 }
 
-/// A type that defines an MSA key and its active state.
+/// KeyInfo holds the information on the relationship between a key and an MSA
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 pub struct KeyInfo<BlockNumber> {
-	/// Message Source Account identifier.
+	/// The Message Source Account that this key is associated with
 	pub msa_id: MessageSourceId,
-	/// A cryptographic nonce.
+	/// Prevent key addition replays
 	pub nonce: u32,
-	/// Block number in which the key is revoked. Block number with value zero represents an active status.
+	/// The block number that the key was revoked on
 	pub expired: BlockNumber,
 }
 
 impl<BlockNumber: Clone> KeyInfo<BlockNumber> {
-	/// Serializing KeyInfo type for RPC response.
+	/// Convert `KeyInfo` into `KeyInfoResponse`
+	/// # Arguments
+	/// * `key` - The `AccountId` for self
+	/// # Returns
+	/// * `KeyInfoResponse<AccountId, BlockNumber>`
 	pub fn map_to_response<AccountId: Clone>(
 		&self,
 		key: AccountId,
@@ -50,16 +55,17 @@ impl<BlockNumber: Clone> KeyInfo<BlockNumber> {
 	}
 }
 
-/// A type definition for Provider datum.
+/// Struct for the information of the relationship between an MSA and a Provider
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 pub struct ProviderInfo<BlockNumber> {
-	/// Permissions settings for provider.
+	/// Specifies a permission granted by the delegator to the provider.
 	pub permission: u8,
-	/// Block number indicating when provider delegation was revoked. Block number of zero indicates an active status.
+	/// Block number the grant will be revoked.
 	pub expired: BlockNumber,
 }
 
-/// A wrapper to distiguish a MessageSourceId that belongs to a Provider vs a Delegator.
+/// Provider is the recipient of a delegation.
+/// It is a subset of an MSA
 #[derive(TypeInfo, Debug, Clone, Copy, Decode, Encode, PartialEq, MaxEncodedLen, Eq)]
 pub struct Provider(pub MessageSourceId);
 
@@ -81,32 +87,53 @@ pub trait AccountProvider {
 	type AccountId;
 	/// Type for block number.
 	type BlockNumber;
-	/// Get MSA indentifier for key.
+
+	/// Gets the MSA Id associated with this `AccountId` if any
+	/// # Arguments
+	/// * `key` - The `AccountId` to lookup
+	/// # Returns
+	/// * `Option<MessageSourceId>`
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId>;
-	/// Get delagation status between provider and delegator.
+
+	/// Gets the relationship information for this delegator, provider pair
+	/// # Arguments
+	/// * `provider` - The `MessageSourceId` that has been delegated to
+	/// * `delegator` - The `MessageSourceId` that delegated to the provider
+	/// # Returns
+	/// * `Option<ProviderInfo<Self::BlockNumber>>`
 	fn get_provider_info_of(
 		provider: Provider,
 		delegator: Delegator,
 	) -> Option<ProviderInfo<Self::BlockNumber>>;
 	/// Check that a key is associated to an MSA and returns key information.
+	/// Returns a `[DispatchError`] if there is no MSA associated with the key
+	/// # Arguments
+	/// * `key` - The `AccountId` to lookup
+	/// # Returns
+	/// * `Result<KeyInfo<Self::BlockNumber>, DispatchError>`
 	fn ensure_valid_msa_key(
 		key: &Self::AccountId,
 	) -> Result<KeyInfo<Self::BlockNumber>, DispatchError>;
 
-	/// Checks that a delegation relationship exists and is not expird between provider and delegator.
+	/// Validates that the delegator and provider have a relationship at this point
+	/// # Arguments
+	/// * `provider` - The `MessageSourceId` that has been delegated to
+	/// * `delegator` - The `MessageSourceId` that delegated to the provider
+	/// # Returns
+	/// * [DispatchResult](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResult.html) The return type of a Dispatchable in frame.
 	fn ensure_valid_delegation(provider: Provider, delegator: Delegator) -> DispatchResult;
 }
 
-/// A type definition for RPC responding with information about an MSA key.
+/// RPC Response form of [`KeyInfo`]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 pub struct KeyInfoResponse<AccountId, BlockNumber> {
-	/// Msa account key.
+	/// The `AccountId` associated with the `msa_id`
 	pub key: AccountId,
-	/// The Message source account identifier associated with key.
+	/// The MSA associated with the `key`
 	pub msa_id: MessageSourceId,
-	/// A cryptographic nonce count.
+	/// The nonce value for signed updates to this data
 	pub nonce: u32,
-	/// Block number in which the key is revoked. Block number with value zero represents an active status.
+	/// Block number that the association is revoked
 	pub expired: BlockNumber,
 }
