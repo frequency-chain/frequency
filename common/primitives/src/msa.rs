@@ -5,8 +5,11 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::DispatchError;
 
+/// Message Source Id or msaId is the unique identifier for Message Source Accounts
 pub type MessageSourceId = u64;
 
+/// A Delegator is a role for an MSA to play.
+/// Delegators delegate to Providers.
 #[derive(TypeInfo, Debug, Clone, Copy, Decode, Encode, PartialEq, MaxEncodedLen, Eq)]
 pub struct Delegator(pub MessageSourceId);
 
@@ -22,14 +25,23 @@ impl From<Delegator> for MessageSourceId {
 	}
 }
 
+/// KeyInfo holds the information on the relationship between a key and an MSA
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 pub struct KeyInfo<BlockNumber> {
+	/// The Message Source Account that this key is associated with
 	pub msa_id: MessageSourceId,
+	/// Prevent key addition replays
 	pub nonce: u32,
+	/// The block number that the key was revoked on
 	pub expired: BlockNumber,
 }
 
 impl<BlockNumber: Clone> KeyInfo<BlockNumber> {
+	/// Convert `KeyInfo` into `KeyInfoResponse`
+	/// # Arguments
+	/// * `key` - The `AccountId` for self
+	/// # Returns
+	/// * `KeyInfoResponse<AccountId, BlockNumber>`
 	pub fn map_to_response<AccountId: Clone>(
 		&self,
 		key: AccountId,
@@ -43,12 +55,17 @@ impl<BlockNumber: Clone> KeyInfo<BlockNumber> {
 	}
 }
 
+/// Struct for the information of the relationship between an MSA and a Provider
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 pub struct ProviderInfo<BlockNumber> {
+	/// Specifies a permission granted by the delegator to the provider.
 	pub permission: u8,
+	/// Block number the grant will be revoked.
 	pub expired: BlockNumber,
 }
 
+/// Provider is the recipient of a delegation.
+/// It is a subset of an MSA
 #[derive(TypeInfo, Debug, Clone, Copy, Decode, Encode, PartialEq, MaxEncodedLen, Eq)]
 pub struct Provider(pub MessageSourceId);
 
@@ -64,26 +81,59 @@ impl From<Provider> for MessageSourceId {
 	}
 }
 
+/// Account Provider??
 pub trait AccountProvider {
+	/// The `AccountId` attached to the MSA
 	type AccountId;
+	/// No Idea?
 	type BlockNumber;
+
+	/// Gets the MSA Id associated with this `AccountId` if any
+	/// # Arguments
+	/// * `key` - The `AccountId` to lookup
+	/// # Returns
+	/// * `Option<MessageSourceId>`
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId>;
+
+	/// Gets the relationship information for this delegator, provider pair
+	/// # Arguments
+	/// * `provider` - The `MessageSourceId` that has been delegated to
+	/// * `delegator` - The `MessageSourceId` that delegated to the provider
+	/// # Returns
+	/// * `Option<ProviderInfo<Self::BlockNumber>>`
 	fn get_provider_info_of(
 		provider: Provider,
 		delegator: Delegator,
 	) -> Option<ProviderInfo<Self::BlockNumber>>;
+
+	/// Returns a `[DispatchError`] if there is no MSA associated with the key
+	/// # Arguments
+	/// * `key` - The `AccountId` to lookup
+	/// # Returns
+	/// * `Result<KeyInfo<Self::BlockNumber>, DispatchError>`
 	fn ensure_valid_msa_key(
 		key: &Self::AccountId,
 	) -> Result<KeyInfo<Self::BlockNumber>, DispatchError>;
 
+	/// Validates that the delegator and provider have a relationship at this point
+	/// # Arguments
+	/// * `provider` - The `MessageSourceId` that has been delegated to
+	/// * `delegator` - The `MessageSourceId` that delegated to the provider
+	/// # Returns
+	/// * [DispatchResult](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResult.html) The return type of a Dispatchable in frame.
 	fn ensure_valid_delegation(provider: Provider, delegator: Delegator) -> DispatchResult;
 }
 
+/// RPC Response form of [`KeyInfo`]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 pub struct KeyInfoResponse<AccountId, BlockNumber> {
+	/// The `AccountId` associated with the `msa_id`
 	pub key: AccountId,
+	/// The MSA associated with the `key`
 	pub msa_id: MessageSourceId,
+	/// The nonce value for signed updates to this data
 	pub nonce: u32,
+	/// Block number that the association is revoked
 	pub expired: BlockNumber,
 }

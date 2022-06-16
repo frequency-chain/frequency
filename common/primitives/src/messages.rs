@@ -45,7 +45,9 @@ impl<BlockNumber> BlockPaginationRequest<BlockNumber>
 where
 	BlockNumber: Copy + AtLeast32BitUnsigned,
 {
+	/// Hard limit on the number of items per page that can be returned
 	pub const MAX_PAGE_SIZE: u32 = 10000;
+	/// Hard limit on the block range for a request (~7 days at 12 sec per block)
 	pub const MAX_BLOCK_RANGE: u32 = 50000; // ~3 days (6 sec per block)= ~7 days (12 sec per block)
 
 	/// Helper function for request validation.
@@ -77,6 +79,9 @@ pub struct BlockPaginationResponse<BlockNumber, T> {
 }
 
 impl<BlockNumber, T> BlockPaginationResponse<BlockNumber, T> {
+	/// Generates a new empty Pagination request
+	/// # Returns
+	/// * `BlockPaginationResponse<BlockNumber, T>`
 	pub const fn new() -> BlockPaginationResponse<BlockNumber, T> {
 		BlockPaginationResponse {
 			content: vec![],
