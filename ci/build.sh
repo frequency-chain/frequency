@@ -32,4 +32,5 @@ case $TARGET in
   lint)
     cargo fmt -- --check
     SKIP_WASM_BUILD=1 cargo clippy --all-targets
+    ;;
 esac

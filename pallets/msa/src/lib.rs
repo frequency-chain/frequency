@@ -1,5 +1,4 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-
 // Strong Documentation Lints
 #![deny(missing_docs)]
 #![deny(rustdoc::broken_intra_doc_links)]
