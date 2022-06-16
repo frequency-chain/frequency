@@ -13,6 +13,12 @@ fn create_bounded_schema_vec(
 	BoundedVec::try_from(fields_vec).unwrap()
 }
 
+fn create_schema_vec(
+	from_string: &str,
+) -> Vec<u8> {
+	Vec::from(from_string.as_bytes())
+}
+
 fn sudo_set_max_schema_size() {
 	assert_ok!(SchemasPallet::set_max_schema_model_bytes(RawOrigin::Root.into(), 50));
 }
@@ -165,7 +171,7 @@ fn get_non_existing_schema_by_id_should_return_none() {
 fn validate_schema_happy_path() { //rename
 	new_test_ext().execute_with(|| {
 		assert_ok!(SchemasPallet::ensure_valid_schema(
-			create_bounded_schema_vec("foo,bar,bazz") //need to return valid json
+			create_schema_vec("foo,bar,bazz") //need to return valid json
 		));
 	})
 }
