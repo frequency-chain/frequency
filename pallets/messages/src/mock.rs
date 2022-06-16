@@ -1,6 +1,6 @@
 use crate as pallet_messages;
 use common_primitives::msa::{
-	AccountProvider, Delegator, KeyInfo, MessageSenderId, Provider, ProviderInfo,
+	AccountProvider, Delegator, KeyInfo, MessageSourceId, Provider, ProviderInfo,
 };
 use frame_support::{
 	dispatch::DispatchResult,
@@ -87,14 +87,14 @@ pub struct AccountHandler;
 impl AccountProvider for AccountHandler {
 	type AccountId = u64;
 	type BlockNumber = u64;
-	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSenderId> {
+	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
 		if *key == 1000 {
 			return None
 		}
 		if *key == 2000 {
-			return Some(2000 as MessageSenderId)
+			return Some(2000 as MessageSourceId)
 		}
-		Some(get_msa_from_account(*key) as MessageSenderId)
+		Some(get_msa_from_account(*key) as MessageSourceId)
 	}
 	fn get_provider_info_of(
 		provider: Provider,

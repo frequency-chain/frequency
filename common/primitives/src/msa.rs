@@ -5,26 +5,26 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::DispatchError;
 
-pub type MessageSenderId = u64;
+pub type MessageSourceId = u64;
 
 #[derive(TypeInfo, Debug, Clone, Copy, Decode, Encode, PartialEq, MaxEncodedLen, Eq)]
-pub struct Delegator(pub MessageSenderId);
+pub struct Delegator(pub MessageSourceId);
 
-impl From<MessageSenderId> for Delegator {
-	fn from(t: MessageSenderId) -> Self {
+impl From<MessageSourceId> for Delegator {
+	fn from(t: MessageSourceId) -> Self {
 		Delegator(t)
 	}
 }
 
-impl From<Delegator> for MessageSenderId {
-	fn from(t: Delegator) -> MessageSenderId {
+impl From<Delegator> for MessageSourceId {
+	fn from(t: Delegator) -> MessageSourceId {
 		t.0
 	}
 }
 
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 pub struct KeyInfo<BlockNumber> {
-	pub msa_id: MessageSenderId,
+	pub msa_id: MessageSourceId,
 	pub nonce: u32,
 	pub expired: BlockNumber,
 }
@@ -50,16 +50,16 @@ pub struct ProviderInfo<BlockNumber> {
 }
 
 #[derive(TypeInfo, Debug, Clone, Copy, Decode, Encode, PartialEq, MaxEncodedLen, Eq)]
-pub struct Provider(pub MessageSenderId);
+pub struct Provider(pub MessageSourceId);
 
-impl From<MessageSenderId> for Provider {
-	fn from(t: MessageSenderId) -> Self {
+impl From<MessageSourceId> for Provider {
+	fn from(t: MessageSourceId) -> Self {
 		Provider(t)
 	}
 }
 
-impl From<Provider> for MessageSenderId {
-	fn from(t: Provider) -> MessageSenderId {
+impl From<Provider> for MessageSourceId {
+	fn from(t: Provider) -> MessageSourceId {
 		t.0
 	}
 }
@@ -67,7 +67,7 @@ impl From<Provider> for MessageSenderId {
 pub trait AccountProvider {
 	type AccountId;
 	type BlockNumber;
-	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSenderId>;
+	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId>;
 	fn get_provider_info_of(
 		provider: Provider,
 		delegator: Delegator,
@@ -83,7 +83,7 @@ pub trait AccountProvider {
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 pub struct KeyInfoResponse<AccountId, BlockNumber> {
 	pub key: AccountId,
-	pub msa_id: MessageSenderId,
+	pub msa_id: MessageSourceId,
 	pub nonce: u32,
 	pub expired: BlockNumber,
 }

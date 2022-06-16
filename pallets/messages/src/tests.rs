@@ -17,7 +17,7 @@ fn populate_messages(schema_id: SchemaId, message_per_block: Vec<u32>) {
 				msa_id: 10,
 				payload: payload.clone().try_into().unwrap(),
 				index: counter,
-				signer: 1,
+				provider_key: 1,
 			})
 			.unwrap();
 			counter += 1;
@@ -62,7 +62,7 @@ fn add_message_should_store_message_on_temp_storage() {
 					msa_id: get_msa_from_account(caller_1),
 					payload: message_payload_1.clone().try_into().unwrap(),
 					index: 0,
-					signer: caller_1
+					provider_key: caller_1
 				},
 				schema_id_1
 			)
@@ -75,7 +75,7 @@ fn add_message_should_store_message_on_temp_storage() {
 					msa_id: get_msa_from_account(caller_2),
 					payload: message_payload_2.clone().try_into().unwrap(),
 					index: 1,
-					signer: caller_2
+					provider_key: caller_2
 				},
 				schema_id_2
 			)
@@ -248,7 +248,7 @@ fn get_messages_by_schema_with_valid_request_should_return_paginated() {
 				msa_id: 10,
 				payload: Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes()),
 				index: from_index as u16,
-				signer: 1,
+				provider_key: 1,
 				block_number: 0
 			}
 		);
@@ -396,7 +396,7 @@ fn add_message_via_valid_delegate_should_pass() {
 					msa_id: message_producer,
 					payload: message_payload_1.clone().try_into().unwrap(),
 					index: 0,
-					signer: caller_1
+					provider_key: caller_1
 				},
 				schema_id_1
 			)
@@ -409,7 +409,7 @@ fn add_message_via_valid_delegate_should_pass() {
 					msa_id: message_producer,
 					payload: message_payload_2.clone().try_into().unwrap(),
 					index: 1,
-					signer: caller_2
+					provider_key: caller_2
 				},
 				schema_id_2
 			)
