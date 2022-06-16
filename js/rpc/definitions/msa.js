@@ -9,14 +9,14 @@ export default {
             type: "AccountId",
           },
         ],
-        type: "Option<MessageSenderId>",
+        type: "Option<MessageSourceId>",
       },
       getMsaKeys: {
         description: "Fetch Keys for an MSA Id",
         params: [
           {
             name: "msa_id",
-            type: "MessageSenderId",
+            type: "MessageSourceId",
           },
         ],
         type: "Vec<KeyInfoResponse>",
@@ -26,22 +26,22 @@ export default {
         params: [
           {
             name: "delegator_msa_ids",
-            type: "Vec<MessageSenderId>",
+            type: "Vec<MessageSourceId>",
           },
           {
             name: "provider_msa_id",
-            type: "MessageSenderId",
+            type: "MessageSourceId",
           },
         ],
-        type: "Vec<(MessageSenderId, bool)>",
+        type: "Vec<(MessageSourceId, bool)>",
       },
     },
   },
   types: {
-    MessageSenderId: "u64",
+    MessageSourceId: "u64",
     KeyInfoResponse: {
       key: "AccountId",
-      msaId: "MessageSenderId",
+      msaId: "MessageSourceId",
       nonce: "u32",
       expired: "BlockNumber",
     },

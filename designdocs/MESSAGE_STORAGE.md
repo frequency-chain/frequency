@@ -47,9 +47,9 @@ using [StorageDoubleMap](https://docs.substrate.io/rustdocs/latest/frame_support
 Following is a proposed data structure for storing a Message on chain.
 ```rust
 pub struct Message<AccountId> {
-    pub data: Vec<u8>,		    //  Serialized data in a user-defined schemas format
-    pub signer: AccountId,	    //  Signature of the signer
-    pub msa_id: u64,                //  Message source account id (the original sender)
+    pub payload: Vec<u8>,		    //  Serialized data in a user-defined schemas format
+    pub provider_key: AccountId,	    //  Signature of the signer
+    pub msa_id: u64,                //  Message source account id (the original source of the message)
     pub index: u16,		    //  Stores index of message in block to keep total order
 }
 ```

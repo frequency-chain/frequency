@@ -30,7 +30,7 @@ pub mod weights;
 
 pub use weights::*;
 
-pub use common_primitives::{msa::MessageSenderId, utils::wrap_binary_data};
+pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use sp_std::prelude::*;
@@ -55,7 +55,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_identifier)]
-	pub type MsaIdentifier<T> = StorageValue<_, MessageSenderId, ValueQuery>;
+	pub type MsaIdentifier<T> = StorageValue<_, MessageSourceId, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_provider_info_of)]
@@ -79,7 +79,7 @@ pub mod pallet {
 	pub(super) type MsaKeysOf<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
-		MessageSenderId,
+		MessageSourceId,
 		BoundedVec<T::AccountId, T::MaxKeys>,
 		ValueQuery,
 	>;
@@ -87,11 +87,11 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// A new Message Service Account was created with a new MessageSenderId
-		MsaCreated { msa_id: MessageSenderId, key: T::AccountId },
-		/// An AccountId has been associated with a MessageSenderId
-		KeyAdded { msa_id: MessageSenderId, key: T::AccountId },
-		/// An AccountId was disassociated with its MessageSenderId
+		/// A new Message Service Account was created with a new MessageSourceId
+		MsaCreated { msa_id: MessageSourceId, key: T::AccountId },
+		/// An AccountId has been associated with a MessageSourceId
+		KeyAdded { msa_id: MessageSourceId, key: T::AccountId },
+		/// An AccountId was disassociated with its MessageSourceId
 		KeyRevoked { key: T::AccountId },
 		/// A delegation relationship was added with the given provider and delegator
 		ProviderAdded { provider: Provider, delegator: Delegator },
@@ -224,7 +224,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::revoke_msa_delegation_by_delegator())]
 		pub fn revoke_msa_delegation_by_delegator(
 			origin: OriginFor<T>,
-			provider_msa_id: MessageSenderId,
+			provider_msa_id: MessageSourceId,
 		) -> DispatchResult {
 			let delegator_key = ensure_signed(origin)?;
 
@@ -286,7 +286,7 @@ pub mod pallet {
 		#[pallet::weight((T::WeightInfo::remove_delegation_by_provider(20_000), DispatchClass::Normal, Pays::No))]
 		pub fn remove_delegation_by_provider(
 			origin: OriginFor<T>,
-			delegator: MessageSenderId,
+			delegator: MessageSourceId,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
@@ -312,9 +312,9 @@ impl<T: Config> Pallet<T> {
 	pub fn create_account<F>(
 		key: T::AccountId,
 		on_success: F,
-	) -> Result<(MessageSenderId, T::AccountId), DispatchError>
+	) -> Result<(MessageSourceId, T::AccountId), DispatchError>
 	where
-		F: FnOnce(MessageSenderId) -> DispatchResult,
+		F: FnOnce(MessageSourceId) -> DispatchResult,
 	{
 		let next_msa_id = Self::get_next_msa_id()?;
 		Self::add_key(next_msa_id, &key, on_success)?;
@@ -323,21 +323,21 @@ impl<T: Config> Pallet<T> {
 		Ok((next_msa_id, key))
 	}
 
-	pub fn get_next_msa_id() -> Result<MessageSenderId, DispatchError> {
+	pub fn get_next_msa_id() -> Result<MessageSourceId, DispatchError> {
 		let next = Self::get_identifier().checked_add(1).ok_or(Error::<T>::MsaIdOverflow)?;
 
 		Ok(next)
 	}
 
-	pub fn set_msa_identifier(identifier: MessageSenderId) -> DispatchResult {
+	pub fn set_msa_identifier(identifier: MessageSourceId) -> DispatchResult {
 		MsaIdentifier::<T>::set(identifier);
 
 		Ok(())
 	}
 
-	pub fn add_key<F>(msa_id: MessageSenderId, key: &T::AccountId, on_success: F) -> DispatchResult
+	pub fn add_key<F>(msa_id: MessageSourceId, key: &T::AccountId, on_success: F) -> DispatchResult
 	where
-		F: FnOnce(MessageSenderId) -> DispatchResult,
+		F: FnOnce(MessageSourceId) -> DispatchResult,
 	{
 		KeyInfoOf::<T>::try_mutate(key, |maybe_msa| {
 			ensure!(maybe_msa.is_none(), Error::<T>::DuplicatedKey);
@@ -364,7 +364,7 @@ impl<T: Config> Pallet<T> {
 	pub fn ensure_valid_provider(
 		delegator_key: &T::AccountId,
 		provider_key: &T::AccountId,
-		authorized_msa_id: MessageSenderId,
+		authorized_msa_id: MessageSourceId,
 	) -> Result<(Provider, Delegator), DispatchError> {
 		let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?.msa_id;
 		let delegator_msa_id = Self::ensure_valid_msa_key(&delegator_key)?.msa_id;
@@ -376,7 +376,7 @@ impl<T: Config> Pallet<T> {
 		Ok((provider_msa_id.into(), delegator_msa_id.into()))
 	}
 
-	pub fn ensure_msa_owner(who: &T::AccountId, msa_id: MessageSenderId) -> DispatchResult {
+	pub fn ensure_msa_owner(who: &T::AccountId, msa_id: MessageSourceId) -> DispatchResult {
 		let signer_msa_id = Self::get_owner_of(who).ok_or(Error::<T>::NoKeyExists)?;
 
 		ensure!(signer_msa_id == msa_id, Error::<T>::NotMsaOwner);
@@ -472,14 +472,14 @@ impl<T: Config> Pallet<T> {
 		Ok(info)
 	}
 
-	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSenderId> {
+	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
 		Self::get_key_info(&key).map(|info| info.msa_id)
 	}
 
 	/// Fetches all the keys associated with a message Source Account
 	/// NOTE: This should only be called from RPC due to heavy database reads
 	pub fn fetch_msa_keys(
-		msa_id: MessageSenderId,
+		msa_id: MessageSourceId,
 	) -> Vec<KeyInfoResponse<T::AccountId, T::BlockNumber>> {
 		let mut response = Vec::new();
 		for key in Self::get_msa_keys(msa_id) {
@@ -505,7 +505,7 @@ impl<T: Config> Pallet<T> {
 impl<T: Config> AccountProvider for Pallet<T> {
 	type AccountId = T::AccountId;
 	type BlockNumber = T::BlockNumber;
-	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSenderId> {
+	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
 		Self::get_owner_of(key)
 	}
 
@@ -541,7 +541,7 @@ impl<T: Config> AccountProvider for Pallet<T> {
 		let result = Self::ensure_valid_msa_key(key);
 		if result.is_err() {
 			return Ok(KeyInfo {
-				msa_id: 1 as MessageSenderId,
+				msa_id: 1 as MessageSourceId,
 				nonce: 0,
 				expired: Self::BlockNumber::default(),
 			})

@@ -1,5 +1,5 @@
 use codec::{Decode, Encode};
-use common_primitives::{messages::MessageResponse, msa::MessageSenderId};
+use common_primitives::{messages::MessageResponse, msa::MessageSourceId};
 use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 use sp_std::prelude::*;
@@ -13,10 +13,10 @@ where
 {
 	///  Serialized data in a user-defined schema format
 	pub payload: BoundedVec<u8, MaxDataSize>,
-	///  Signature of the signer
-	pub signer: AccountId,
-	///  Message source account id (the original sender)
-	pub msa_id: MessageSenderId,
+	///  Public key of the provider that signed the transaction
+	pub provider_key: AccountId,
+	///  Message source account id (the original source)
+	pub msa_id: MessageSourceId,
 	///  Stores index of message in block to keep total order
 	pub index: u16,
 }
@@ -32,7 +32,7 @@ where
 		block_number: BlockNumber,
 	) -> MessageResponse<AccountId, BlockNumber> {
 		MessageResponse {
-			signer: self.signer.clone(),
+			provider_key: self.signer.clone(),
 			index: self.index,
 			msa_id: self.msa_id,
 			block_number,

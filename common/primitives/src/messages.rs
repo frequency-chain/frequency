@@ -1,4 +1,4 @@
-use crate::msa::MessageSenderId;
+use crate::msa::MessageSourceId;
 #[cfg(feature = "std")]
 use crate::utils;
 use codec::{Decode, Encode};
@@ -17,10 +17,10 @@ pub struct MessageResponse<AccountId, BlockNumber> {
 	#[cfg_attr(feature = "std", serde(with = "as_hex"))]
 	/// Serialized data in a user-defined schema format.
 	pub payload: Vec<u8>,
-	/// Signature of the signer.
-	pub signer: AccountId,
-	/// Message source account id (the original sender).
-	pub msa_id: MessageSenderId,
+	/// The public key of the provider and the signer of the transaction.
+	pub provider_key: AccountId,
+	/// Message source account id (the original source).
+	pub msa_id: MessageSourceId,
 	/// Index in block to get total order
 	pub index: u16,
 	/// Block-number for which the message was stored.
