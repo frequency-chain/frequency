@@ -126,7 +126,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin.clone())?;
 
-			Self::ensure_valid_schema((&schema).to_vec())?;
+			Self::ensure_valid_schema(&schema)?;
 
 			ensure!(
 				schema.len() > T::MinSchemaSizeBytes::get() as usize,
@@ -186,8 +186,8 @@ pub mod pallet {
 			None
 		}
 
-		pub fn ensure_valid_schema(schema: Vec<u8>) -> DispatchResult {
-			Self::validate_schema(schema)?;
+		pub fn ensure_valid_schema(schema: BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>) -> DispatchResult {
+			Self::validate_schema(&schema.to_vec())?;
 			println!("here we are!");
 			Ok(())
 		}
