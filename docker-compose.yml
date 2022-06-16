@@ -7,9 +7,9 @@ services:
     image: "parity/polkadot:v0.9.18"
     hostname: relay_alice
     ports:
-      - "30334:30334" # p2p port
-      - "9934:9934" # rpc port
-      - "9945:9945" # ws port
+      - "30334:30333" # p2p port
+      - "9934:9933" # rpc port
+      - "9945:9944" # ws port
     volumes:
       - type: bind
         source: ./res/rococo-local.json
@@ -21,9 +21,9 @@ services:
       --wasm-execution=compiled
       --execution=wasm
       --base-path=/data
-      --port 30334
-      --rpc-port 9934
-      --ws-port 9945
+      --port 30333
+      --rpc-port 9933
+      --ws-port 9944
       --rpc-external
       --rpc-cors all
       --ws-external
@@ -36,9 +36,9 @@ services:
     image: "parity/polkadot:v0.9.18"
     hostname: relay_bob
     ports:
-      - "30335:30335" # p2p port
-      - "9935:9935" # rpc port
-      - "9946:9946" # ws port
+      - "30335:30333" # p2p port
+      - "9935:9933" # rpc port
+      - "9946:9944" # ws port
     volumes:
       - type: bind
         source: ./res/rococo-local.json
@@ -50,9 +50,9 @@ services:
       --base-path=/data
       --wasm-execution=compiled
       --execution=wasm
-      --port 30335
-      --rpc-port 9935
-      --ws-port 9946
+      --port 30333
+      --rpc-port 9933
+      --ws-port 9944
       --rpc-external
       --ws-external
       --rpc-cors all
@@ -68,12 +68,12 @@ services:
     environment:
       - HOST_ALICE=relay_alice
       - HOST_BOB=relay_bob
-      - ALICE_RPC_PORT=9934
-      - BOB_RPC_PORT=9935
+      - ALICE_RPC_PORT=9933
+      - BOB_RPC_PORT=9933
     ports:
-      - "30333:30333" # p2p port assuming paraid 2000
-      - "9933:9933" # rpc port assuming paraid 2000
-      - "9944:9944" # ws port assuming paraid 2000
+      - "30333:30333" # p2p port 
+      - "9933:9933" # rpc port
+      - "9944:9944" # ws port
     depends_on:
       - relay_alice
       - relay_bob
