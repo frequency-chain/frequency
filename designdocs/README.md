@@ -12,6 +12,22 @@ To create a new design document, Please see the [Design Doc README](https://gith
 * [Message Schema(s)](./SCHEMA.md)
   * [Merged Pull Request](https://github.com/LibertyDSNP/mrc/pull/17)
 
+## Basic Data Model
+
+There are three core data models in MRC and each corresponds to a pallet.
+
+- [Message Source Account (MSA)](../pallets/msa/)
+  - Represents a pseudonymous identity that can be the source of messages or provide access to the chain to others
+  - Answers the question of Who when messages are sent
+- [Schemas](../pallets/schemas/)
+  - Represents how to form a message and details about where it should be stored.
+  - Answers the question of How when messages are sent
+- [Messages](../pallets/messages/)
+  - The metadata and payload or payload reference that a user sends that matches a particular schema.
+  - What and when a message is sent
+
+![Basic Data Model drawio](https://github.com/LibertyDSNP/DesignDocs/blob/main/img/BasicDataModel.drawio.png?raw=true)
+
 ## MRC Glossary
 
 * `AccountId`: A public key that could be a `Token Account` and/or associated with an `MSA`
