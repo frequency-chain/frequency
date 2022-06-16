@@ -1,5 +1,5 @@
 use codec::{Decode, Encode};
-use common_primitives::{messages::MessageResponse, msa::MessageSenderId};
+use common_primitives::{messages::MessageResponse, msa::MessageSourceId};
 use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 use sp_std::prelude::*;
@@ -15,8 +15,8 @@ where
 	pub payload: BoundedVec<u8, MaxDataSize>,
 	///  Signature of the signer
 	pub signer: AccountId,
-	///  Message source account id (the original sender)
-	pub msa_id: MessageSenderId,
+	///  Message source account id (the original source)
+	pub msa_id: MessageSourceId,
 	///  Stores index of message in block to keep total order
 	pub index: u16,
 }

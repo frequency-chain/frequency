@@ -49,7 +49,7 @@ Following is a proposed data structure for storing a Message on chain.
 pub struct Message<AccountId> {
     pub data: Vec<u8>,		    //  Serialized data in a user-defined schemas format
     pub signer: AccountId,	    //  Signature of the signer
-    pub msa_id: u64,                //  Message source account id (the original sender)
+    pub msa_id: u64,                //  Message source account id (the original source of the message)
     pub index: u16,		    //  Stores index of message in block to keep total order
 }
 ```

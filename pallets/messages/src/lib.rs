@@ -59,7 +59,7 @@ use common_primitives::{messages::*, schema::*};
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::msa::{AccountProvider, Delegator, MessageSenderId, Provider};
+	use common_primitives::msa::{AccountProvider, Delegator, MessageSourceId, Provider};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -160,7 +160,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::add(payload.len() as u32, 1_000))]
 		pub fn add(
 			origin: OriginFor<T>,
-			on_behalf_of: Option<MessageSenderId>,
+			on_behalf_of: Option<MessageSourceId>,
 			schema_id: SchemaId,
 			payload: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
@@ -174,7 +174,7 @@ pub mod pallet {
 			let info = T::AccountProvider::ensure_valid_msa_key(&key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-			let message_sender_msa = match on_behalf_of {
+			let message_source_id = match on_behalf_of {
 				Some(delegator) => {
 					T::AccountProvider::ensure_valid_delegation(
 						Provider(info.msa_id),
@@ -197,7 +197,7 @@ pub mod pallet {
 					payload: payload.try_into().unwrap(), // size is checked on top of extrinsic
 					signer: key,
 					index: current_size,
-					msa_id: message_sender_msa,
+					msa_id: message_source_id,
 				};
 				existing_messages
 					.try_push((m, schema_id))

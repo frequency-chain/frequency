@@ -27,7 +27,7 @@ export default {
     MessageResponse: {
       payload: "Vec<u8>", //  Serialized data in a user-defined schema format
       signer: "AccountId", //  Signature of the signer
-      msa_id: "MessageSenderId", //  Message source account id (the original sender)
+      msa_id: "MessageSourceId", //  Message source account id (the original source)
       index: "u16", // index in block to get total order
       block_number: "BlockNumber",
     },
