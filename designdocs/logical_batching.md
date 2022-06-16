@@ -11,19 +11,46 @@ We are currently experimenting with a new system architecture that has the
 following entities:
 
 1. Schema
-   - Id
-   - Format
-   - FormatType
-   - PayloadLocation
+   - id: u16
+   - format: Format
+   - format_type: FormatType
+   - payload_location: PayloadLocation
 2. Message
-   - Off-chain / On-chain Payload
+   - payload: Payload (TBD)
+   - payload_size: usize
 
-*Protocols* would be responsible for indicating not only the shape of the
+*Schemas* would be responsible for indicating not only the shape of the
 underlying payload, but also its format and location. This is important, because
-a protocol's format property would indicate whether a given payload contains a
+a schema's format property would indicate whether a given payload contains a
 batch or not.
 
+## Id
+
+```rust
+type Id = u16
+```
+
+This field serves as a unique identifier for the schema.
+
+## Format
+
+```rust
+struct Format {
+  message_schema_id: u16,
+  file_size: usize,
+}
+```
+
+The Schema's format refers to the shape of the underlying message payload.
+
 ## FormatType
+
+```rust
+enum FormatType {
+  PARQUET,
+  AVRO
+}
+```
 
 Payloads can either be of format type `PARQUET` or `AVRO`. These file formats
 indicate specifically whether their payloads are singular or arrays of objects
@@ -31,15 +58,22 @@ indicate specifically whether their payloads are singular or arrays of objects
 
 ## PayloadLocation
 
+```rust
+enum PayloadLocation {
+  OnChain,
+  IPFSCIDv2
+}
+```
+
 The combination of format and location constrain possible payload types:
 
 ```txt
-| Format  | Location        | Payload           |
--------------------------------------------------
-| Avro   | On-chain         | Public Graph      |
-| Parquet| On-chain         | ??                |
-| Avro   | IPFS (Off-chain) | Private Graph (?) |
-| Parquet| IPFS (Off-chain) | Announcement      |
+| Format  | Location        | Payload                               |
+---------------------------------------------------------------------
+| Avro   | On-chain         | DSNP Graph Change                     |
+| Parquet| On-chain         | Unknown                               |
+| Avro   | IPFS (Off-chain) | Larger Avro structures                |
+| Parquet| IPFS (Off-chain) | DSNP Broadcast or Reply Announcements |
 ```
 
 (More needed here).
@@ -47,19 +81,19 @@ The combination of format and location constrain possible payload types:
 ## Message Payloads
 
 Message payloads can be either on-chain or off-chain. If they are off-chain,
-there is a good chance that they will be located on IPFS.
+they will be stored on IPFS.
 
 ## Batch as a Logical Construct
 
 We can circumvent defining a batch explicitly if we leverage the file format
-included in the protocol. Since both Avro and Parquet file types declare whether
+included in the schema. Since both Avro and Parquet file types declare whether
 or not they contain single or plural values, the format itself could indicate
 whether or not the message is a batch.
 
 ## Rationale
 
 There are some upsides to deriving batching logically from existing structures.
-One is costsavings. Not having a batch structure means we don't need to worry
+One is cost savings. Not having a batch structure means we don't need to worry
 about any on-chain computation associated with batch messages -- we simply look
 at the format and location on the parent schema and we can deduce whether the
 file is singular or plural.
