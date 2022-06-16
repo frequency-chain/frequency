@@ -150,7 +150,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Gets a messages for a given schema-id and block-number.
 		/// # Arguments
-		/// * `origin` - Registered schema id for current message.
+		/// * `origin` - A signed transaction origin from the provider
 		/// * `on_behalf_of` - Optional. The msa id of delegate.
 		/// * `schema_id` - Registered schema id for current message.
 		/// * `payload` - Serialized payload data for a given schema.
@@ -164,26 +164,26 @@ pub mod pallet {
 			schema_id: SchemaId,
 			payload: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
-			let key = ensure_signed(origin)?;
+			let provider_key = ensure_signed(origin)?;
 
 			ensure!(
 				payload.len() < T::MaxMessagePayloadSizeBytes::get().try_into().unwrap(),
 				Error::<T>::ExceedsMaxMessagePayloadSizeBytes
 			);
 
-			let info = T::AccountProvider::ensure_valid_msa_key(&key)
+			let provider = T::AccountProvider::ensure_valid_msa_key(&provider_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
 			let message_source_id = match on_behalf_of {
-				Some(delegator) => {
+				Some(delegator_msa_id) => {
 					T::AccountProvider::ensure_valid_delegation(
-						Provider(info.msa_id),
-						Delegator(delegator),
+						Provider(provider.msa_id),
+						Delegator(delegator_msa_id),
 					)
 					.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
-					delegator
+					delegator_msa_id
 				},
-				None => info.msa_id,
+				None => provider.msa_id,
 			};
 
 			// TODO: validate schema existence and validity from schema pallet
@@ -195,7 +195,7 @@ pub mod pallet {
 				let payload_size = payload.len();
 				let m = Message {
 					payload: payload.try_into().unwrap(), // size is checked on top of extrinsic
-					signer: key,
+					signer: provider_key,
 					index: current_size,
 					msa_id: message_source_id,
 				};
