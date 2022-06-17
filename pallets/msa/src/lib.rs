@@ -500,6 +500,9 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
+	/// Checks that a provider and delegator keys are valid
+	/// and that a provider and delegator are not the same
+	/// and that a provider has authorized a delegator to create a delegation relationship.
 	pub fn ensure_valid_provider(
 		delegator_key: &T::AccountId,
 		provider_key: &T::AccountId,
@@ -629,7 +632,8 @@ impl<T: Config> Pallet<T> {
 
 		response
 	}
-	//
+
+	/// Checks that a key is associated to an MSA and has not been revoked.
 	pub fn ensure_valid_msa_key(
 		key: &T::AccountId,
 	) -> Result<KeyInfo<T::BlockNumber>, DispatchError> {
