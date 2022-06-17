@@ -58,12 +58,6 @@
 //! - `revoke_msa_delegation_by_delegator` - Delegator MSA terminates a Delegation with the `Provider` MSA by expiring it.
 //! - `revoke_msa_key` - Revokes the given key by expiring it.
 //!
-//! ## Usage
-//!
-//! ### Examples
-//!
-//! // todo
-//!
 //! ### Assumptions
 //!
 //! * Total MSA keys should be less than the constant `Config::MSA::MaxKeys`.
