@@ -27,10 +27,12 @@
 {{/each}}
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
-#![allow(rustdoc::all)]
-#![allow(missing_docs)]
-#![allow(unused_parens)]
-#![allow(unused_imports)]
+#![allow(
+	rustdoc::all,
+	missing_docs,
+	unused_parens,
+	unused_imports
+)]
 
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use sp_std::marker::PhantomData;

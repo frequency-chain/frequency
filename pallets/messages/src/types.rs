@@ -32,7 +32,7 @@ where
 		block_number: BlockNumber,
 	) -> MessageResponse<AccountId, BlockNumber> {
 		MessageResponse {
-			provider_key: self.signer.clone(),
+			provider_key: self.provider_key.clone(),
 			index: self.index,
 			msa_id: self.msa_id,
 			block_number,

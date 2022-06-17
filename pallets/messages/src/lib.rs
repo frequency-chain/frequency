@@ -28,10 +28,11 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 // Strong Documentation Lints
-#![deny(missing_docs)]
-#![deny(rustdoc::broken_intra_doc_links)]
-#![deny(rustdoc::missing_crate_level_docs)]
-#![deny(rustdoc::invalid_codeblock_attributes)]
+#![deny(
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes
+)]
 
 #[cfg(test)]
 mod mock;
@@ -134,7 +135,14 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Messages are stored for a specified schema id and block number
-		MessagesStored { schema_id: SchemaId, block_number: T::BlockNumber, count: u16 },
+		MessagesStored {
+			/// The schema for these messages
+			schema_id: SchemaId,
+			/// The block number for these messages
+			block_number: T::BlockNumber,
+			/// Number of messages in this block for this schema
+			count: u16
+		},
 	}
 
 	#[pallet::hooks]
