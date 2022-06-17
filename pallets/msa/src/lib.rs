@@ -19,7 +19,7 @@
 //! Created by generating a new MSA ID number and associating it with a Substrate `AccountID`.
 //! An MSA is required for sending Capacity-based messages and for creating Delegations.
 //! * **MSA ID** - This is the ID number created for a new Message Source Account and associated with a Substrate `AccountId`.
-//! * **Delegator** - a Message Source Account that has provably delegated certain actions to a Provider, typically sending a [`Message`]
+//! * **Delegator** - a Message Source Account that has provably delegated certain actions to a Provider, typically sending a `Message`
 //! * **Provider** - the actor that a Delegator has delegated specific actions to.
 //! * **Delegation** - A stored Delegator-Provider association between MSAs which permits the Provider to perform specific actions on the Delegator's behalf.
 //!

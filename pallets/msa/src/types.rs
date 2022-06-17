@@ -8,7 +8,7 @@ use codec::{Decode, Encode};
 /// Dispatch Empty
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 
-/// A type definition for the payload of adding an MSA key - [add_key_to_msa](msa::add_key_to_msa)
+/// A type definition for the payload of adding an MSA key - `pallet_msa::add_key_to_msa`
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq)]
 pub struct AddKeyData {
 	/// Message Source Account identifier
