@@ -186,20 +186,11 @@ pub mod pallet {
 			None
 		}
 
-		pub fn ensure_valid_schema(schema: BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>) -> DispatchResult {
-			Self::validate_schema(&schema.to_vec())?;
-			println!("here we are!");
+		pub fn ensure_valid_schema(schema: &BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>) -> DispatchResult {
+			let validated_schema = serde::validate_json_schema(schema.clone().into_inner());
+			validated_schema.map_err(|_| Error::<T>::InvalidSchema)?;
 			Ok(())
 		}
 
-		pub fn validate_schema(schema: Vec<u8>) -> Result<(), Error<T>> {
-			// this is also where we can use a Trait for schema types
-			// to use both avro substrate and serde and any other ones
-			let validated_schema = serde::validate_json_schema(schema);
-			match validated_schema {
-				Ok(_) => Ok(()),
-				Err(_e) => Err(Error::InvalidSchema),
-			}
-		}
 	}
 }

@@ -3,6 +3,7 @@ use common_primitives::schema::SchemaId;
 use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin, BoundedVec};
 use serial_test::serial;
 use sp_runtime::DispatchError::BadOrigin;
+use common_helpers::serde;
 
 use super::mock::*;
 
@@ -10,6 +11,7 @@ fn create_bounded_schema_vec(
 	from_string: &str,
 ) -> BoundedVec<u8, <Test as Config>::SchemaMaxBytesBoundedVecLimit> {
 	let fields_vec = Vec::from(from_string.as_bytes());
+	println!("Bounded vector convereted in helper function: {:?}",fields_vec);
 	BoundedVec::try_from(fields_vec).unwrap()
 }
 
@@ -140,7 +142,9 @@ fn get_existing_schema_by_id_should_return_schema() {
 		let sender: AccountId = 1;
 		sudo_set_max_schema_size();
 		// arrange
-		let test_str = "foo,bar,bazz";
+		// let test_str = "foo,bar,bazz";
+		let test_str =
+			r#"{"name":"John Doe","age":43}"#;
 		let serialized_fields = Vec::from(test_str.as_bytes());
 		assert_ok!(SchemasPallet::register_schema(
 			Origin::signed(sender),
@@ -170,10 +174,18 @@ fn get_non_existing_schema_by_id_should_return_none() {
 #[test]
 fn validate_schema_happy_path() { //rename
 	new_test_ext().execute_with(|| {
-		assert_ok!(SchemasPallet::ensure_valid_schema(
-			create_schema_vec("foo,bar,bazz") //need to return valid json
-		));
-	})
+		let test_str_raw = r#"{"name":"John Doe"}"#;
+		// println!("")
+		// let test_str_byte = b"
+        // {\"name\": \"Jone Doe\"}";
+		// let bounded_schema_vec = create_bounded_schema_vec(test_str_raw);
+		// println!("The test string byte: {:?}", test_str_byte);
+		// println!("The bounded schema vector: {:?}", bounded_schema_vec);
+		let result = SchemasPallet::ensure_valid_schema(&Vec::from(test_str_raw.as_bytes()));
+		// let mut object: Value = serde_json::from_str(test_str_raw).unwrap();
+		println!("Here's the result {:?}", result);
+		assert_ok!(result); //need to return valid json
+	});
 }
 
 // #[test]
