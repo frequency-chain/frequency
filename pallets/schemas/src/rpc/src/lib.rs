@@ -26,16 +26,24 @@ impl From<Error> for i64 {
 	}
 }
 
+/// MRC Schema API
 #[rpc]
 pub trait SchemasApi<BlockHash> {
+	/// returns the latest registered schema id
+	///
+	/// `at`: block number to query. If it's `None` will use the latest block number.
+	///
+	/// Returns schema id.
 	#[rpc(name = "schemas_getLatestSchemaId")]
 	fn get_latest_schema_id(&self, at: Option<BlockHash>) -> Result<u16>;
 
+	/// retrieving schema by schema id
 	#[rpc(name = "schemas_getBySchemaId")]
 	fn get_by_schema_id(&self, schema_id: SchemaId) -> Result<Option<SchemaResponse>>;
 
+	/// validates a schema format and returns `true` if the format is correct.
 	#[rpc(name = "schemas_checkSchemaValidity")]
-	fn check_schema_validity(&self, at: Option<BlockHash>, schema: Vec<u8>) -> Result<bool>;
+	fn check_schema_validity(&self, at: Option<BlockHash>, format: Vec<u8>) -> Result<bool>;
 }
 
 pub struct SchemasHandler<C, M> {
@@ -80,9 +88,9 @@ where
 	fn check_schema_validity(
 		&self,
 		_at: Option<<Block as BlockT>::Hash>,
-		schema: Vec<u8>,
+		format: Vec<u8>,
 	) -> Result<bool> {
-		let validated_schema = avro::validate_raw_avro_schema(&schema);
+		let validated_schema = avro::validate_raw_avro_schema(&format);
 		match validated_schema {
 			Ok(_) => Ok(true),
 			Err(e) => Err(RpcError {

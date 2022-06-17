@@ -322,9 +322,9 @@ impl pallet_schemas::Config for Runtime {
 	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
 
 	// TODO: these constants need to be determined. See Issue #70
-	type MinSchemaSizeBytes = ConstU32<5>;
+	type MinSchemaFormatSizeBytes = ConstU32<5>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
-	type SchemaMaxBytesBoundedVecLimit = ConstU32<65_500>;
+	type SchemaFormatMaxBytesBoundedVecLimit = ConstU32<65_500>;
 }
 
 impl pallet_tx_fee::Config for Runtime {}
@@ -479,12 +479,12 @@ impl pallet_collator_selection::Config for Runtime {
 
 parameter_types! {
 	pub const MaxMessagesPerBlock: u32 = 7000;
-	pub const MaxMessageSizeInBytes: u32 = 1024 * 50; // 50K
+	pub const MaxMessagePayloadSizeBytes: u32 = 1024 * 50; // 50K
 }
 
-impl Clone for MaxMessageSizeInBytes {
+impl Clone for MaxMessagePayloadSizeBytes {
 	fn clone(&self) -> Self {
-		MaxMessageSizeInBytes {}
+		MaxMessagePayloadSizeBytes {}
 	}
 }
 
@@ -493,7 +493,7 @@ impl pallet_messages::Config for Runtime {
 	type WeightInfo = pallet_messages::weights::SubstrateWeight<Runtime>;
 	type AccountProvider = Msa;
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
-	type MaxMessageSizeInBytes = MaxMessageSizeInBytes;
+	type MaxMessagePayloadSizeBytes = MaxMessagePayloadSizeBytes;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -686,11 +686,11 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_msa_runtime_api::MsaApi<Block, AccountId, BlockNumber> for Runtime {
-		fn get_msa_keys(msa_id: MessageSenderId) -> Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>, DispatchError> {
+		fn get_msa_keys(msa_id: MessageSourceId) -> Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>, DispatchError> {
 			Ok(Msa::fetch_msa_keys(msa_id))
 		}
 
-		fn get_msa_id(key: AccountId) -> Result<Option<MessageSenderId>, DispatchError> {
+		fn get_msa_id(key: AccountId) -> Result<Option<MessageSourceId>, DispatchError> {
 			Ok(Msa::get_owner_of(&key))
 		}
 
