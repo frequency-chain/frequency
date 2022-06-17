@@ -74,8 +74,7 @@ where
 					code: ErrorCode::ServerError(1),
 					message: "No schema found".into(),
 					data: None,
-				}
-				.into()),
+				}),
 			},
 			Err(e) => Err(RpcError {
 				code: ErrorCode::ServerError(1),

@@ -243,10 +243,10 @@ pub mod pallet {
 
 			let (_, _) =
 				Self::create_account(delegator_key.clone(), |new_msa_id| -> DispatchResult {
-					let _ = Self::add_provider(provider_msa_id.into(), new_msa_id.into())?;
+					Self::add_provider(provider_msa_id.into(), new_msa_id.into())?;
 
 					Self::deposit_event(Event::MsaCreated {
-						msa_id: new_msa_id.clone(),
+						msa_id: new_msa_id,
 						key: delegator_key.clone(),
 					});
 
@@ -291,11 +291,11 @@ pub mod pallet {
 				payload_authorized_msa_id,
 			)?;
 
-			let _ = Self::add_provider(provider_msa_id, delegator_msa_id)?;
+			Self::add_provider(provider_msa_id, delegator_msa_id)?;
 
 			Self::deposit_event(Event::ProviderAdded {
-				delegator: delegator_msa_id.into(),
-				provider: provider_msa_id.into(),
+				delegator: delegator_msa_id,
+				provider: provider_msa_id,
 			});
 
 			Ok(())
@@ -463,7 +463,7 @@ impl<T: Config> Pallet<T> {
 			ensure!(maybe_msa.is_none(), Error::<T>::DuplicatedKey);
 
 			*maybe_msa = Some(KeyInfo {
-				msa_id: msa_id.clone(),
+				msa_id,
 				expired: T::BlockNumber::default(),
 				nonce: Zero::zero(),
 			});
@@ -489,8 +489,8 @@ impl<T: Config> Pallet<T> {
 		provider_key: &T::AccountId,
 		authorized_msa_id: MessageSourceId,
 	) -> Result<(Provider, Delegator), DispatchError> {
-		let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?.msa_id;
-		let delegator_msa_id = Self::ensure_valid_msa_key(&delegator_key)?.msa_id;
+		let provider_msa_id = Self::ensure_valid_msa_key(provider_key)?.msa_id;
+		let delegator_msa_id = Self::ensure_valid_msa_key(delegator_key)?.msa_id;
 
 		ensure!(authorized_msa_id == delegator_msa_id, Error::<T>::UnauthorizedDelegator);
 
@@ -515,10 +515,10 @@ impl<T: Config> Pallet<T> {
 		signer: T::AccountId,
 		payload: Vec<u8>,
 	) -> DispatchResult {
-		let key = T::ConvertIntoAccountId32::convert(signer.clone());
+		let key = T::ConvertIntoAccountId32::convert(signer);
 		let wrapped_payload = wrap_binary_data(payload);
 		ensure!(
-			signature.verify(&wrapped_payload[..], &key.clone().into()),
+			signature.verify(&wrapped_payload[..], &key),
 			Error::<T>::InvalidSignature
 		);
 
@@ -674,14 +674,14 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	}
 
 	fn ensure_valid_delegation(provider: Provider, delegation: Delegator) -> DispatchResult {
-		Ok(Self::ensure_valid_delegation(provider, delegation)?)
+		Self::ensure_valid_delegation(provider, delegation)
 	}
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_msa_key(
 		key: &T::AccountId,
 	) -> Result<KeyInfo<Self::BlockNumber>, DispatchError> {
-		Ok(Self::ensure_valid_msa_key(key)?)
+		Self::ensure_valid_msa_key(key)
 	}
 
 	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
