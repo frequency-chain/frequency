@@ -6,8 +6,12 @@
 #![deny(rustdoc::invalid_codeblock_attributes)]
 
 pub mod messages;
+/// export msa primitive types.
 pub mod msa;
 #[cfg(feature = "std")]
+/// export rpc primitive types.
 pub mod rpc;
+/// export schema primitive types.
 pub mod schema;
+/// export utils primitive types.
 pub mod utils;
