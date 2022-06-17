@@ -425,6 +425,7 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	/// Create the account for the `key`
 	pub fn create_account<F>(
 		key: T::AccountId,
 		on_success: F,
@@ -439,18 +440,21 @@ impl<T: Config> Pallet<T> {
 		Ok((next_msa_id, key))
 	}
 
+	/// Generate the next MSA Id
 	pub fn get_next_msa_id() -> Result<MessageSourceId, DispatchError> {
 		let next = Self::get_identifier().checked_add(1).ok_or(Error::<T>::MsaIdOverflow)?;
 
 		Ok(next)
 	}
 
+	/// Set the current identifier in storage
 	pub fn set_msa_identifier(identifier: MessageSourceId) -> DispatchResult {
 		MsaIdentifier::<T>::set(identifier);
 
 		Ok(())
 	}
 
+	/// Add a new key to the MSA
 	pub fn add_key<F>(msa_id: MessageSourceId, key: &T::AccountId, on_success: F) -> DispatchResult
 	where
 		F: FnOnce(MessageSourceId) -> DispatchResult,
@@ -495,6 +499,7 @@ impl<T: Config> Pallet<T> {
 		Ok((provider_msa_id.into(), delegator_msa_id.into()))
 	}
 
+	/// Checks that the MSA for `who` is the same as `msa_id`
 	pub fn ensure_msa_owner(who: &T::AccountId, msa_id: MessageSourceId) -> DispatchResult {
 		let signer_msa_id = Self::get_owner_of(who).ok_or(Error::<T>::NoKeyExists)?;
 
@@ -503,6 +508,8 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Verify the `signature` was signed by `signer` on `payload` by a wallet
+	/// Note the `wrap_binary_data` follows the Polkadot wallet pattern of wrapping with `<Byte>` tags.
 	pub fn verify_signature(
 		signature: MultiSignature,
 		signer: T::AccountId,
@@ -518,6 +525,7 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Add a provider to a delegator with the default permissions
 	pub fn add_provider(provider: Provider, delegator: Delegator) -> DispatchResult {
 		ProviderInfoOf::<T>::try_mutate(provider, delegator, |maybe_info| -> DispatchResult {
 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
@@ -532,6 +540,7 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Check that the delegator has an active delegation to the provider
 	pub fn ensure_valid_delegation(provider: Provider, delegator: Delegator) -> DispatchResult {
 		let current_block = frame_system::Pallet::<T>::block_number();
 		let info = Self::get_provider_info_of(provider, delegator)
@@ -543,6 +552,14 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Disables a key so that it cannot be used again for the associated MSA
+	/// # Arguments
+	/// * `key` - The key to expire
+	/// # Returns
+	/// * [`DispatchResult`]
+	///
+	/// # Errors
+	/// * [`Error::<T>::KeyRevoked`]
 	pub fn revoke_key(key: &T::AccountId) -> DispatchResult {
 		KeyInfoOf::<T>::try_mutate(key, |maybe_info| -> DispatchResult {
 			let mut info = maybe_info.take().ok_or(Error::<T>::NoKeyExists)?;
@@ -561,6 +578,16 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Revoke the grant for permissions from the delegator to the provider
+	/// # Arguments
+	/// * `provider_msa_id` - The provider to remove the grant for
+	/// * `delegator_msa_id` - The delegator that is removing the grant
+	/// # Returns
+	/// * [`DispatchResult`]
+	///
+	/// # Errors
+	/// * [`Error::<T>::DelegationRevoked`] - Already revoked
+	/// * [`Error::<T>::DelegationNotFound`] - No delegation
 	pub fn revoke_provider(
 		provider_msa_id: Provider,
 		delegator_msa_id: Delegator,
@@ -586,11 +613,21 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Attempts to retrieve the key information for an account
+	/// # Arguments
+	/// * `key` - The `AccountId` you want to attempt to get information on
+	/// # Returns
+	/// * [`KeyInfo`]
 	pub fn try_get_key_info(key: &T::AccountId) -> Result<KeyInfo<T::BlockNumber>, DispatchError> {
 		let info = Self::get_key_info(key).ok_or(Error::<T>::NoKeyExists)?;
 		Ok(info)
 	}
 
+	/// Retrieves the MSA Id for a given `AccountId`
+	/// # Arguments
+	/// * `key` - The `AccountId` you want to attempt to get information on
+	/// # Returns
+	/// * [`MessageSourceId`]
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
 		Self::get_key_info(&key).map(|info| info.msa_id)
 	}
