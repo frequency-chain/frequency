@@ -309,7 +309,7 @@ impl<T: Config> Pallet<T> {
 	/// Moves messages from temporary storage `BlockMessages` into final storage `Messages`
 	/// and calculates execution weight
 	///
-	/// - `block_number`: Target Block Number
+	/// * `block_number`: Target Block Number
 	///
 	/// Returns execution weights
 	fn move_messages_into_final_storage(block_number: T::BlockNumber) -> Weight {
