@@ -141,7 +141,7 @@ pub mod pallet {
 			/// The block number for these messages
 			block_number: T::BlockNumber,
 			/// Number of messages in this block for this schema
-			count: u16
+			count: u16,
 		},
 	}
 
