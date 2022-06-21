@@ -47,7 +47,7 @@ impl<BlockNumber: Clone> KeyInfo<BlockNumber> {
 		key: AccountId,
 	) -> KeyInfoResponse<AccountId, BlockNumber> {
 		KeyInfoResponse {
-			key: key.clone(),
+			key,
 			msa_id: self.msa_id,
 			nonce: self.nonce,
 			expired: self.expired.clone(),
