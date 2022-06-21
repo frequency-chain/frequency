@@ -19,5 +19,5 @@ pub struct SchemaResponse {
 	pub schema_id: SchemaId,
 	/// The data that represents how this schema is structured
 	#[cfg_attr(feature = "std", serde(with = "as_string"))]
-	pub format: Vec<u8>,
+	pub model: Vec<u8>,
 }

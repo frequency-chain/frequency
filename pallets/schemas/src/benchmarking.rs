@@ -10,13 +10,13 @@ const SCHEMAS: u32 = 1000;
 
 fn generate_schema<T: Config>(
 	size: usize,
-) -> BoundedVec<u8, T::SchemaFormatMaxBytesBoundedVecLimit> {
+) -> BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> {
 	let input = vec![1; size as usize];
 	input.try_into().unwrap()
 }
 
 fn register_some_schema<T: Config>(sender: T::AccountId) -> DispatchResult {
-	let schema_size: usize = (T::SchemaFormatMaxBytesBoundedVecLimit::get() / 2) as usize;
+	let schema_size: usize = (T::SchemaModelMaxBytesBoundedVecLimit::get() / 2) as usize;
 	SchemasPallet::<T>::register_schema(
 		RawOrigin::Signed(sender).into(),
 		generate_schema::<T>(schema_size),
@@ -25,10 +25,10 @@ fn register_some_schema<T: Config>(sender: T::AccountId) -> DispatchResult {
 
 benchmarks! {
 	register_schema {
-		let m in (T::MinSchemaFormatSizeBytes::get() + 1) .. (T::SchemaFormatMaxBytesBoundedVecLimit::get() - 1);
+		let m in (T::MinSchemaModelSizeBytes::get() + 1) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
 		let n in 1 .. SCHEMAS;
 		let sender: T::AccountId = whitelisted_caller();
-		assert_ok!(SchemasPallet::<T>::set_max_schema_format_bytes(RawOrigin::Root.into(), T::SchemaFormatMaxBytesBoundedVecLimit::get()));
+		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
 		for j in 0..(n) {
 			assert_ok!(register_some_schema::<T>(sender.clone()));
 		}

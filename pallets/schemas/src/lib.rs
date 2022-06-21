@@ -12,30 +12,29 @@
 //! network to flexibly interact and exchange messages with each other without facing the challenge
 //! of sharing, managing and validating messages as well as schemas between them.
 //!
-//! <b>NOTE</b>: In this pallet we define the <b>payload</b> format that is used in <a href="../pallet_messages/index.html">Messages Pallet</a>.
+//! <b>NOTE</b>: In this pallet we define the <b>payload</b> structure that is used in <a href="../pallet_messages/index.html">Messages Pallet</a>.
 //!
 //! The Schema pallet provides functions for:
 //!
 //! - Registering a new schema.
-//! - Setting maximum schema format size by governance.
+//! - Setting maximum schema model size by governance.
 //! - Retrieving latest registered schema id.
 //! - Retrieving schemas by their id.
 //!
 //!
 //! ### Terminology
 //!
-//! - **Schema:** A data structure that defines the payload format of any Message that is going to
-//!   stored with that schema.
+//! - **Schema:** The structure that defines how a Message is stored and structured.
 //!
-//! - **Schema Format:** Serialization/Deserialization details of the schema
+//! - **Schema Model:** Serialization/Deserialization details of the schema
 //!
-//! - **Schema Format Type:** The type of the following Serialization/Deserialization. It can be
+//! - **Schema Model Type:** The type of the following Serialization/Deserialization. It can be
 //!   Avro, Parquet or ...
 //!
 //! ### Dispatchable Functions
 //!
 //! - `register_schema` - Registers a new schema after some initial validation.
-//! - `set_max_schema_format_bytes` - Sets the maximum schemas format size (Bytes) by governance.
+//! - `set_max_schema_model_bytes` - Sets the maximum schema model size (Bytes) by governance.
 //!
 //! ## Genesis config
 //!
@@ -79,13 +78,13 @@ pub mod pallet {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
-		/// Minimum length of Schema format size in bytes
+		/// Minimum length of Schema model size in bytes
 		#[pallet::constant]
-		type MinSchemaFormatSizeBytes: Get<u32>;
+		type MinSchemaModelSizeBytes: Get<u32>;
 
-		/// Maximum length of Schema  format Bounded Vec
+		/// Maximum length of a Schema model Bounded Vec
 		#[pallet::constant]
-		type SchemaFormatMaxBytesBoundedVecLimit: Get<u32>;
+		type SchemaModelMaxBytesBoundedVecLimit: Get<u32>;
 
 		/// Maximum number of schemas that can be registered
 		#[pallet::constant]
@@ -98,7 +97,7 @@ pub mod pallet {
 		/// Emitted when a schema is registered. [who, schemas id]
 		SchemaRegistered(T::AccountId, SchemaId),
 
-		/// Emitted when maximum size for schema format is changed.
+		/// Emitted when maximum size for schema model is changed.
 		SchemaMaxSizeChanged(u32),
 	}
 
@@ -109,12 +108,12 @@ pub mod pallet {
 		InvalidSchema,
 		/// The maximum number of schemas is stored in the database.
 		TooManySchemas,
-		/// The schema format exceeds the maximum length allowed
-		ExceedsMaxSchemaFormatBytes,
-		/// The governance schema format max value provided is too large (greater than the BoundedVec size)
-		ExceedsGovernanceSchemaFormatMaxValue,
+		/// The schema model exceeds the maximum length allowed
+		ExceedsMaxSchemaModelBytes,
+		/// The governance schema model max value provided is too large (greater than the BoundedVec size)
+		ExceedsGovernanceSchemaModelMaxValue,
 		/// The schema is less than the minimum length allowed
-		LessThanMinSchemaFormatBytes,
+		LessThanMinSchemaModelBytes,
 		/// Schema does not exist
 		NoSuchSchema,
 		/// Error is converting to string
@@ -132,8 +131,8 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
-	#[pallet::getter(fn get_schema_format_max_bytes)]
-	pub(super) type GovernanceSchemaFormatMaxBytes<T: Config> = StorageValue<_, u32, ValueQuery>;
+	#[pallet::getter(fn get_schema_model_max_bytes)]
+	pub(super) type GovernanceSchemaModelMaxBytes<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn schema_count)]
@@ -146,69 +145,69 @@ pub mod pallet {
 		_,
 		Twox64Concat,
 		SchemaId,
-		BoundedVec<u8, T::SchemaFormatMaxBytesBoundedVecLimit>,
+		BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 		OptionQuery,
 	>;
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {
-		pub initial_max_schema_format_size: u32,
+		pub initial_max_schema_model_size: u32,
 	}
 
 	#[cfg(feature = "std")]
 	impl sp_std::default::Default for GenesisConfig {
 		fn default() -> Self {
-			Self { initial_max_schema_format_size: 1024 }
+			Self { initial_max_schema_model_size: 1024 }
 		}
 	}
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
-			GovernanceSchemaFormatMaxBytes::<T>::put(self.initial_max_schema_format_size);
+			GovernanceSchemaModelMaxBytes::<T>::put(self.initial_max_schema_model_size);
 		}
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Adds a given schema to storage. The schema in question must be of length
-		/// between the min and max format size allowed for schemas (see pallet
+		/// between the min and max model size allowed for schemas (see pallet
 		/// constants above). If the pallet's maximum schema limit has been
 		/// fulfilled by the time this extrinsic is called, a TooManySchemas error
 		/// will be thrown.
 		///
 		/// # Arguments
 		/// * `origin` - The originator of the transaction
-		/// * `schema` - The new schema format data
+		/// * `model` - The new schema model data
 		/// # Returns
 		/// * `DispatchResult`
 		///
 		/// # Errors
-		/// * [`Error::<T>::LessThanMinSchemaFormatBytes`] - The schema's length is less than the minimum schema length
-		/// * [`Error::<T>::ExceedsMaxSchemaFormatBytes`] - The schema's length is greater than the maximum schema length
+		/// * [`Error::<T>::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
+		/// * [`Error::<T>::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
 		/// * [`Error::<T>::TooManySchemas`] - The maximum number of schemas has been met
 		/// * [`Error::<T>::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		///
-		#[pallet::weight(< T as Config >::WeightInfo::register_schema(schema.len() as u32, 1000))]
+		#[pallet::weight(< T as Config >::WeightInfo::register_schema(model.len() as u32, 1000))]
 		pub fn register_schema(
 			origin: OriginFor<T>,
-			schema: BoundedVec<u8, T::SchemaFormatMaxBytesBoundedVecLimit>,
+			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
 			ensure!(
-				schema.len() > T::MinSchemaFormatSizeBytes::get() as usize,
-				Error::<T>::LessThanMinSchemaFormatBytes
+				model.len() > T::MinSchemaModelSizeBytes::get() as usize,
+				Error::<T>::LessThanMinSchemaModelBytes
 			);
 			ensure!(
-				schema.len() < Self::get_schema_format_max_bytes() as usize,
-				Error::<T>::ExceedsMaxSchemaFormatBytes
+				model.len() < Self::get_schema_model_max_bytes() as usize,
+				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 
 			let cur_count = Self::schema_count();
 			ensure!(cur_count < T::MaxSchemaRegistrations::get(), Error::<T>::TooManySchemas);
 			let schema_id = cur_count.checked_add(1).ok_or(Error::<T>::SchemaCountOverflow)?;
 
-			Self::add_schema(schema, schema_id)?;
+			Self::add_schema(model, schema_id)?;
 
 			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
 			Ok(())
@@ -217,13 +216,13 @@ pub mod pallet {
 		/// Set a new value for the Schema maximum number of bytes.  Must be <= the limit of the
 		/// Schema BoundedVec used for registration.
 		#[pallet::weight(30_000)]
-		pub fn set_max_schema_format_bytes(origin: OriginFor<T>, max_size: u32) -> DispatchResult {
+		pub fn set_max_schema_model_bytes(origin: OriginFor<T>, max_size: u32) -> DispatchResult {
 			ensure_root(origin)?;
 			ensure!(
-				max_size <= T::SchemaFormatMaxBytesBoundedVecLimit::get(),
-				Error::<T>::ExceedsGovernanceSchemaFormatMaxValue
+				max_size <= T::SchemaModelMaxBytesBoundedVecLimit::get(),
+				Error::<T>::ExceedsGovernanceSchemaModelMaxValue
 			);
-			GovernanceSchemaFormatMaxBytes::<T>::set(max_size);
+			GovernanceSchemaModelMaxBytes::<T>::set(max_size);
 			Self::deposit_event(Event::SchemaMaxSizeChanged(max_size));
 			Ok(())
 		}
@@ -231,11 +230,11 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 		fn add_schema(
-			format: BoundedVec<u8, T::SchemaFormatMaxBytesBoundedVecLimit>,
+			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			schema_id: SchemaId,
 		) -> DispatchResult {
 			<SchemaCount<T>>::set(schema_id);
-			<Schemas<T>>::insert(schema_id, format);
+			<Schemas<T>>::insert(schema_id, model);
 			Ok(())
 		}
 
@@ -244,11 +243,11 @@ pub mod pallet {
 		}
 
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-			// TODO: This will eventually be a struct with other properties. Currently it is just the format
-			if let Some(format) = Self::get_schema(schema_id) {
+			// TODO: This will eventually be a struct with other properties. Currently it is just the model
+			if let Some(model) = Self::get_schema(schema_id) {
 				// this should get a BoundedVec out
-				let format_vec = format.into_inner();
-				let response = SchemaResponse { schema_id, format: format_vec };
+				let model_vec = model.into_inner();
+				let response = SchemaResponse { schema_id, model: model_vec };
 				return Some(response)
 			}
 			None
