@@ -6,7 +6,7 @@ MRC enables users(read delegators) to have control over their own data. While pr
 
 ## Problem Statement
 
-Data Access Pattern on MRC, at-minimum, should provide ***PUBLISHER*** and ***RESTRICTED*** ```permissions``` at **delegator->provider**, as well as ***PUBLISH*** and, ***Block***, ```grants``` for specific ```schema_id``` at **provider<->delegator**.This entails users can enable specific permissions for provider to write data on their behalf, while also restricting grants to providers at schema level, rendering providers as restricted. Providers should also be able to opt into publish, on behalf of, users, or block from publication, on behalf of, at schema level. Primarily, the use case can be summarized in following way:
+Data Access Pattern on MRC, at-minimum, should provide ***RESTRICTED*** ```permissions``` at **delegator->provider**, as well as ***PUBLISH*** and, ***Block***, ```grants``` for specific ```schema_id``` at **provider<->delegator**.This entails users can enable specific permissions for provider to write data on their behalf, while also restricting grants to providers at schema level, rendering providers as restricted. Providers should also be able to opt into publish, on behalf of, users, or block from publication, on behalf of, at schema level. Primarily, the use case can be summarized in following way:
 
 - **As a provider**, I would want to publish data for specific ```schema_id``` on-behalf of a delegator. Defaults to ```publish``` permissions on all schemas registered by provider on behalf of delegator.
 - **As a delegator**, I would like to restrict a provider, by allowing a provider to only publish data for specific ```schema_ids``` on-behalf of me.
@@ -43,8 +43,6 @@ Note: The terminology and implementation are subject to change at issue resoluti
 
 Permission is a generic option for any user. For version 1 of this implementation, the following options are available:
 
-- ***PUBLISHER***: Where a user grants full publication rights to a provider for any schema available to provider via MRC. This can be modified to be called a dsnp publisher where all dsnp related schemas are granted to provider. In other sense this could be super admin permission that can be granted via a governance mechanism. For version 1 we will not implement this role.
-
 - ***RESTRICTED***: Where a user grants a provider to publish data on their behalf for specific schema(s) only. This is the default state of a provider on MRC, where a provider has to explicitly provide a list of schema(s) for which they are allowed to publish data on behalf of the user.
 
 An example of permission data structure is as follows:
@@ -69,15 +67,12 @@ Grants enable delegators as well as providers to restrict one another from publi
 
 - ***PUBLISH***: Where a delegator grants a provider to publish data on their behalf for specific schema(s) only. This is the default state of a provider on MRC, where a provider has to explicitly provide a list of schema(s) for which they are allowed to publish data on behalf of the delegator. This also enables a delegator to opt in to publish their data.
 
-- ***BLOCK***: When a delegator or provider want to restrict publication of data on specific schema(s). This is default state of any schemas, not authorized by delegator or provider as part of schema grants request.
-
 An example of grant data structure is as follows:
 
 ```rust
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum GrantType {
     Publish,
-    Block,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
