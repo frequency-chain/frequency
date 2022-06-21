@@ -4,7 +4,9 @@ use common_primitives::{
 	messages::{BlockPaginationRequest, MessageResponse},
 	schema::*,
 };
-use frame_support::{assert_err, assert_noop, assert_ok, BoundedVec};
+use frame_support::{
+	assert_err, assert_noop, assert_ok, bounded_vec, traits::ConstU32, BoundedVec,
+};
 use sp_std::vec::Vec;
 
 fn populate_messages(schema_id: SchemaId, message_per_block: Vec<u32>) {
@@ -427,5 +429,89 @@ fn add_message_via_non_delegate_should_fail() {
 		// assert
 		let list = BlockMessages::<Test>::get().into_inner();
 		assert_eq!(list.len(), 0);
+	});
+}
+
+#[test]
+fn add_message_bulk_ok() {
+	new_test_ext().execute_with(|| {
+		let mut ms = MessagesPallet::get_block_messages();
+		assert_eq!(ms.len(), 0);
+
+		let message_payload_1 = "{'fromId': 123, 'content': '232323114432'}".as_bytes();
+		let message_payload_2 = "{'fromId': 123, 'content': '232323114432'}".as_bytes();
+
+		let message_payload_collection: Vec<Vec<u8>> =
+			vec![message_payload_1.clone().to_vec(), message_payload_2.clone().to_vec()];
+
+		assert_eq!(MessagesPallet::add_message_bulk(1, 1, 1, message_payload_collection), Ok(2));
+
+		let msg_payload_s1 = message_payload_1.to_vec().try_into().unwrap();
+		let msg_payload_s2 = message_payload_2.to_vec().try_into().unwrap();
+		let message_1: Message<u64, MaxMessagePayloadSizeBytes> =
+			Message { provider_key: 1, msa_id: 1, index: 0, payload: msg_payload_s1 };
+		let message_2: Message<u64, MaxMessagePayloadSizeBytes> =
+			Message { provider_key: 1, msa_id: 1, index: 1, payload: msg_payload_s2 };
+
+		let expected: BoundedVec<(Message<u64, MaxMessagePayloadSizeBytes>, u16), ConstU32<500>> =
+			bounded_vec![(message_1, 1), (message_2, 1)];
+
+		ms = MessagesPallet::get_block_messages();
+
+		assert_eq!(ms.len(), 2);
+		assert_eq!(ms, expected);
+	});
+}
+
+#[test]
+fn add_message_bulk_via_valid_delegate_should_pass() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let message_producer = 1;
+		let caller_1 = 5;
+		let schema_id_1: SchemaId = 1;
+		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
+		let message_payload_2 = Vec::from("{'fromId': 343, 'content': '34333'}".as_bytes());
+
+		let result = MessagesPallet::add_bulk(
+			Origin::signed(caller_1),
+			Some(message_producer),
+			schema_id_1,
+			vec![message_payload_1.clone(), message_payload_2.clone()],
+		);
+
+		// act
+		assert_ok!(result);
+
+		// assert
+		let list = BlockMessages::<Test>::get().into_inner();
+
+		assert_eq!(list.len(), 2);
+
+		assert_eq!(
+			list[0],
+			(
+				Message {
+					msa_id: message_producer,
+					payload: message_payload_1.try_into().unwrap(),
+					index: 0,
+					provider_key: caller_1
+				},
+				schema_id_1
+			)
+		);
+
+		assert_eq!(
+			list[1],
+			(
+				Message {
+					msa_id: message_producer,
+					payload: message_payload_2.try_into().unwrap(),
+					index: 1,
+					provider_key: caller_1
+				},
+				schema_id_1
+			)
+		);
 	});
 }

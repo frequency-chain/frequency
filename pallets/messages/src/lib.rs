@@ -61,6 +61,8 @@ use common_primitives::{
 	schema::*,
 };
 
+type BulkPayload = Vec<Vec<u8>>;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -188,6 +190,40 @@ pub mod pallet {
 
 			Ok(Some(T::WeightInfo::add(message.payload.len() as u32, message.index as u32)).into())
 		}
+
+		/// Gets a messages for a given schema-id and block-number.
+		/// # Arguments
+		/// * `origin` - A signed transaction origin from the provider
+		/// * `on_behalf_of` - Optional. The msa id of delegate.
+		/// * `schema_id` - Registered schema id for current message.
+		/// * `bulk_payload` - Serialized payload data for a given schema.
+		/// # Returns
+		/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html) The return type of a Dispatchable in frame.
+		/// When returned explicitly from a dispatchable function it allows overriding the default PostDispatchInfo returned from a dispatch.
+		#[pallet::weight(T::WeightInfo::add(T::MaxMessagePayloadSizeBytes::get() as u32, 1_000))]
+		pub fn add_bulk(
+			origin: OriginFor<T>,
+			on_behalf_of: Option<MessageSourceId>,
+			schema_id: SchemaId,
+			bulk_payload: BulkPayload,
+		) -> DispatchResultWithPostInfo {
+			let provider_key = ensure_signed(origin)?;
+
+			let total_bytes: u32 =
+				bulk_payload.iter().fold(0u32, |sum, val| sum + val.len() as u32);
+
+			ensure!(
+				total_bytes < T::MaxMessagePayloadSizeBytes::get().try_into().unwrap(),
+				Error::<T>::ExceedsMaxMessagePayloadSizeBytes
+			);
+
+			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
+
+			let total_messages_count =
+				Self::add_message_bulk(provider_key, message_source_id, schema_id, bulk_payload)?;
+
+			Ok(Some(T::WeightInfo::add(total_bytes, total_messages_count as u32)).into())
+		}
 	}
 }
 
@@ -225,6 +261,43 @@ impl<T: Config> Pallet<T> {
 
 			Ok(msg)
 		})
+	}
+
+	pub fn add_message_bulk(
+		key: T::AccountId,
+		message_source_id: MessageSourceId,
+		schema_id: SchemaId,
+		payload_collection: BulkPayload,
+	) -> Result<u16, DispatchError> {
+		let mut block_messages = Self::get_block_messages();
+
+		let mut current_index: u16 = block_messages
+			.len()
+			.try_into()
+			.map_err(|_| Error::<T>::TypeConversionOverflow)?;
+
+		for (index, payload) in payload_collection.into_iter().enumerate() {
+			current_index = current_index.saturating_add(index as u16);
+
+			let msg = Message {
+				payload: payload
+					.try_into()
+					.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?,
+				provider_key: key.clone(),
+				index: current_index.clone(),
+				msa_id: message_source_id,
+			};
+
+			block_messages
+				.try_push((msg.clone(), schema_id))
+				.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
+		}
+
+		BlockMessages::<T>::put(&block_messages);
+
+		let total_messages_count = current_index.saturating_add(1);
+
+		Ok(total_messages_count)
 	}
 
 	/// Resolves an MSA.
