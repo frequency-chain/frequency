@@ -41,9 +41,9 @@ pub trait SchemasApi<BlockHash> {
 	#[rpc(name = "schemas_getBySchemaId")]
 	fn get_by_schema_id(&self, schema_id: SchemaId) -> Result<Option<SchemaResponse>>;
 
-	/// validates a schema format and returns `true` if the format is correct.
+	/// validates a schema model and returns `true` if the model is correct.
 	#[rpc(name = "schemas_checkSchemaValidity")]
-	fn check_schema_validity(&self, at: Option<BlockHash>, format: Vec<u8>) -> Result<bool>;
+	fn check_schema_validity(&self, at: Option<BlockHash>, model: Vec<u8>) -> Result<bool>;
 }
 
 pub struct SchemasHandler<C, M> {
@@ -87,9 +87,9 @@ where
 	fn check_schema_validity(
 		&self,
 		_at: Option<<Block as BlockT>::Hash>,
-		format: Vec<u8>,
+		model: Vec<u8>,
 	) -> Result<bool> {
-		let validated_schema = avro::validate_raw_avro_schema(&format);
+		let validated_schema = avro::validate_raw_avro_schema(&model);
 		match validated_schema {
 			Ok(_) => Ok(true),
 			Err(e) => Err(RpcError {

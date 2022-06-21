@@ -59,7 +59,7 @@ pub trait WeightInfo {
 /// Weights for pallet_schemas using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-	// Storage: Schemas GovernanceSchemaFormatMaxBytes (r:1 w:0)
+	// Storage: Schemas GovernanceSchemaModelMaxBytes (r:1 w:0)
 	// Storage: Schemas SchemaCount (r:1 w:1)
 	// Storage: Schemas Schemas (r:0 w:1)
 	fn register_schema(_m: u32, n: u32, ) -> Weight {
@@ -73,7 +73,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-	// Storage: Schemas GovernanceSchemaFormatMaxBytes (r:1 w:0)
+	// Storage: Schemas GovernanceSchemaModelMaxBytes (r:1 w:0)
 	// Storage: Schemas SchemaCount (r:1 w:1)
 	// Storage: Schemas Schemas (r:0 w:1)
 	fn register_schema(_m: u32, n: u32, ) -> Weight {

@@ -11,7 +11,7 @@ pub struct Message<AccountId, MaxDataSize>
 where
 	MaxDataSize: Get<u32> + Clone,
 {
-	///  Serialized data in a user-defined schema format
+	///  Data structured by the associated schema's model
 	pub payload: BoundedVec<u8, MaxDataSize>,
 	///  Public key of the provider that signed the transaction
 	pub provider_key: AccountId,

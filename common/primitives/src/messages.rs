@@ -15,7 +15,7 @@ use utils::*;
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct MessageResponse<AccountId, BlockNumber> {
 	#[cfg_attr(feature = "std", serde(with = "as_hex"))]
-	/// Serialized data in a user-defined schema format.
+	/// Serialized data in a the schemas.
 	pub payload: Vec<u8>,
 	/// The public key of the provider and the signer of the transaction.
 	pub provider_key: AccountId,
