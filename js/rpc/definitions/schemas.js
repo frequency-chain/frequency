@@ -32,8 +32,8 @@ export default {
             optional: true,
           },
           {
-            name: "schema",
-            type: "SchemaData",
+            name: "format",
+            type: "SchemaFormat",
           },
         ],
         type: "bool",
@@ -42,10 +42,10 @@ export default {
   },
   types: {
     SchemaId: "u16",
-    SchemaData: "Vec<u8>",
+    SchemaFormat: "Vec<u8>",
     SchemaResponse: {
       schema_id: "SchemaId",
-      data: "SchemaData",
+      format: "SchemaFormat",
     },
   },
 };

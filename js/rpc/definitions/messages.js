@@ -25,9 +25,9 @@ export default {
       page_size: "u32",
     },
     MessageResponse: {
-      data: "Vec<u8>", //  Serialized data in a user-defined schema format
-      signer: "AccountId", //  Signature of the signer
-      msa_id: "MessageSenderId", //  Message source account id (the original sender)
+      payload: "Vec<u8>", //  Serialized data in a user-defined schema format
+      provider_key: "AccountId", //  Public key of the provider and signer of the transaction
+      msa_id: "MessageSourceId", //  Message source account id (the original source)
       index: "u16", // index in block to get total order
       block_number: "BlockNumber",
     },

@@ -12,5 +12,6 @@ rustup update $RUST_TOOLCHAIN
 rustup toolchain install $RUST_TOOLCHAIN
 rustup default $RUST_TOOLCHAIN
 rustup component add rustfmt
+rustup component add clippy
 
 rustup target add wasm32-unknown-unknown --toolchain $RUST_TOOLCHAIN
