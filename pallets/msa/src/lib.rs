@@ -462,11 +462,8 @@ impl<T: Config> Pallet<T> {
 		KeyInfoOf::<T>::try_mutate(key, |maybe_msa| {
 			ensure!(maybe_msa.is_none(), Error::<T>::DuplicatedKey);
 
-			*maybe_msa = Some(KeyInfo {
-				msa_id,
-				expired: T::BlockNumber::default(),
-				nonce: Zero::zero(),
-			});
+			*maybe_msa =
+				Some(KeyInfo { msa_id, expired: T::BlockNumber::default(), nonce: Zero::zero() });
 
 			// adding reverse lookup
 			<MsaKeysOf<T>>::try_mutate(msa_id, |key_list| {
@@ -517,10 +514,7 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		let key = T::ConvertIntoAccountId32::convert(signer);
 		let wrapped_payload = wrap_binary_data(payload);
-		ensure!(
-			signature.verify(&wrapped_payload[..], &key),
-			Error::<T>::InvalidSignature
-		);
+		ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
 
 		Ok(())
 	}

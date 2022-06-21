@@ -27,9 +27,7 @@ fn it_creates_an_msa_account() {
 
 		assert_eq!(Msa::get_identifier(), 1);
 
-		System::assert_last_event(
-			Event::MsaCreated { msa_id: 1, key: test_public(1) }.into(),
-		);
+		System::assert_last_event(Event::MsaCreated { msa_id: 1, key: test_public(1) }.into());
 	});
 }
 
@@ -843,10 +841,7 @@ pub fn remove_delegation_by_provider_happy_path() {
 		System::set_block_number(System::block_number() + 25);
 
 		// 5. assert_ok! fn as 2 to remove provider 1
-		assert_ok!(Msa::remove_delegation_by_provider(
-			Origin::signed(provider_key.into()),
-			2u64
-		));
+		assert_ok!(Msa::remove_delegation_by_provider(Origin::signed(provider_key.into()), 2u64));
 
 		// 6. verify that the provider is revoked
 		let provider_info = Msa::get_provider_info_of(Provider(1), Delegator(2));
