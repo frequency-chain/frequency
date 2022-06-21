@@ -15,6 +15,7 @@ following entities:
    - format: Format
    - format_type: FormatType
    - payload_location: PayloadLocation
+   - message_format: MessageFormat (this determines the shape of the message itself)
 2. Message
    - payload: Payload (TBD)
    - payload_size: usize

@@ -10,13 +10,32 @@
 * [Glossary](#glossary)
 
 ## Context and Scope
-This design document describes batched messages and APIs for sending and retrieving them.
+This design document describes message schemas. It also will describe
+batchability as a logical construct derived from schemas.
+
+We will also be describing APIs for sending and retrieving messages.
 
 ## Problem Statement
-In order to reduce costs for announcers of messages on-chain as well as reduce network congestion, announcers collate messages into batches of the same type of message and announce the batch location on-chain, instead of announcing each individual message.
+In order to reduce costs for announcers of messages on-chain as well as reduce
+network congestion, announcers collate messages into batches of the same type of
+message and announce the batch location on-chain, instead of announcing each
+individual message.
+
+However, this idea does not go far enough. Batching allows us to support posting
+massive amounts of data, but it would still be expensive to post data of this
+size on chain.
+
+We can leverage off chain storage to make posting large message collections cheap, but we need to
+find a way to constrain the message types posted offchain so that message
+consumers know what types of data to expect. This document aims to explore what
+a system that does the above could look like.
 
 ## Goals and Non-Goals
-This specifies how batches are to be announced on chain; what is required and how a batch may be partially verified based on on-chain information.
+This specifies how messages are to be announced on chain; what is required and how a batch may be partially verified based on on-chain information.
+
+This document specifes how messages can be inferred from both schema format type and payload location.
+
+This document also specifies how schemas will constrain the shape of off chain messages.
 
 This document does not describe the types of DSNP messages that would be in batch announcements. Batch announcements must reference a schema through its ID number. A schema may or may not describe a DSNP message.
 
@@ -29,15 +48,14 @@ the file format cannot be verified on-chain. For details about batch files thems
 * Errors in the extrinsic(s) must have different, reasonably-named error enums for each type of error for ease of debugging.
 
 ### Constants
-* `BatchPageSizeMax` - the maximum number of batch announcements that will be returned by the `get_batches` query
-* `BatchSizeMinBytes` - the minimum possible size of a valid batch file with 1 row
+TBD
 
 ### Enums
-* `BatchFormat` - a list of supported formats for batch files. Currently only Parquet file format is supported, however,
-other formats are being considered.
+* `FormatType` - supported formats for batch files. Currently only [Parquet](https://parquet.apache.org/docs/) and
+  [Avro](https://avro.apache.org/docs/current/) are supported
 
 ### Types
-* `BatchAnnouncementParams<T:Config>`: generic
+* `MessageAnnouncementParams<T:Config>`: generic
     * `batch_uri`:`Vec<u8>` the URI of the batch file. Must be an IPFS [CIDv1](https://github.com/multiformats/cid/) URI. Accepted codec, algorithm, and base are to be determined.
     * `message_schema_id`: `SchemaId`  the schema id for the messages in this batch. The `schema_id` must refer to schemas used for batching only.
     * `file_size`: `usize`, the size of the batch file, used to determine message fee as well as to let consumers know what size files to expect.  Must be &gt;= the minimum possible DSNP batch file size.
@@ -45,7 +63,7 @@ other formats are being considered.
 
 The file hash is not included separately. Since the `batch_uri` uses CIDv1 specification, the file hash is already included.
 
-* `BatchAnnouncement`: implements `BatchAnnouncementParams`, returned by `get_batches`
+* `BatchAnnouncement`: implements `MessageAnnouncementParams`, returned by `get_batches`
 
 See the [implementation of paging in the messages pallet](https://github.com/LibertyDSNP/mrc/blob/main/common/primitives/src/messages.rs#L26-L58) for comparison.
 
@@ -54,7 +72,6 @@ See the [implementation of paging in the messages pallet](https://github.com/Lib
     * `from_block`: `<T::BlockNumber>`, retrieve messages starting at the given block number (inclusive)
     * `to_block`: `<T::BlockNumber>`, retrieve messages ending at the given block number (inclusive)
     * `from_index`: `u32`, starting message index
-    * `page_size`: `usize`, retrieve `page_size` messages at a time, up to configured `T::BatchPageSizeMax`. If 0, return `T::BatchPageSizeMax` results
 
 * `BatchAnnouncementResult`
     * `has_next`: `uint32`, current page number
@@ -68,7 +85,7 @@ Creates and posts a new batch announcement message on chain, using the batch mes
 
 * **Parameters**
   * origin:  required for all extrinsics, the caller/sender.
-  * `batch_announcement_params`: `BatchAnnouncementParams`, the parameters to use in the batch announcement.
+  * `batch_announcement_params`: `MessageAnnouncementParams`, the parameters to use in the batch announcement.
 
 * **Event**:  `Event::<T>::BatchAnnounced(schema_id, msa_id, file_size, batch_uri)`
 * **Restrictions**:
