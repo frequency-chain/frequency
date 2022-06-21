@@ -55,12 +55,15 @@ pub use pallet::*;
 pub use types::*;
 pub use weights::*;
 
-use common_primitives::{messages::*, schema::*};
+use common_primitives::{
+	messages::*,
+	msa::{AccountProvider, Delegator, MessageSourceId, Provider},
+	schema::*,
+};
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::msa::{AccountProvider, Delegator, MessageSourceId, Provider};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -179,45 +182,84 @@ pub mod pallet {
 				Error::<T>::ExceedsMaxMessagePayloadSizeBytes
 			);
 
-			let provider = T::AccountProvider::ensure_valid_msa_key(&provider_key)
-				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
-			let message_source_id = match on_behalf_of {
-				Some(delegator_msa_id) => {
-					T::AccountProvider::ensure_valid_delegation(
-						Provider(provider.msa_id),
-						Delegator(delegator_msa_id),
-					)
-					.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
-					delegator_msa_id
-				},
-				None => provider.msa_id,
-			};
+			let message = Self::add_message(provider_key, message_source_id, payload, schema_id)?;
 
-			// TODO: validate schema existence and validity from schema pallet
-			<BlockMessages<T>>::try_mutate(|existing_messages| -> DispatchResultWithPostInfo {
-				let current_size: u16 = existing_messages
-					.len()
-					.try_into()
-					.map_err(|_| Error::<T>::TypeConversionOverflow)?;
-				let payload_size = payload.len();
-				let m = Message {
-					payload: payload.try_into().unwrap(), // size is checked on top of extrinsic
-					provider_key,
-					index: current_size,
-					msa_id: message_source_id,
-				};
-				existing_messages
-					.try_push((m, schema_id))
-					.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
-
-				Ok(Some(T::WeightInfo::add(payload_size as u32, current_size as u32)).into())
-			})
+			Ok(Some(T::WeightInfo::add(message.payload.len() as u32, message.index as u32)).into())
 		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
+	/// Stores a message for a given schema-id.
+	/// # Arguments
+	/// * `provider_key` - A key from the provider that submitted tx.
+	/// * `on_behalf_of` - Optional. The msa id of delegate.
+	/// * `payload` - Serialized payload data for a given schema.
+	/// * `schema_id` - Registered schema id for current message.
+	/// # Returns
+	/// * Result<Message<T::AccountId, T::MaxMessagePayloadSizeBytes> - Returns the message stored.
+	pub fn add_message(
+		provider_key: T::AccountId,
+		message_source_id: MessageSourceId,
+		payload: Vec<u8>,
+		schema_id: SchemaId,
+	) -> Result<Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, DispatchError> {
+		<BlockMessages<T>>::try_mutate(|existing_messages| -> Result<Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, DispatchError> {
+			let current_size: u16 = existing_messages
+				.len()
+				.try_into()
+				.map_err(|_| Error::<T>::TypeConversionOverflow)?;
+
+			let msg = Message {
+				payload: payload.try_into().unwrap(), // size is checked on top of extrinsic
+				provider_key: provider_key,
+				index: current_size,
+				msa_id: message_source_id,
+			};
+
+			existing_messages
+				.try_push((msg.clone(), schema_id))
+				.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
+
+			Ok(msg)
+		})
+	}
+
+	/// Resolves an MSA.
+	/// # Arguments
+	/// * `key` - An MSA key for lookup.
+	/// * `on_behalf_of` - Optional. The msa id of delegate.
+	/// # Returns
+	/// * Result<MessageSourceId, DispatchError> - Returns an MSA Id for storing a message.
+	pub fn find_msa_id(
+		key: &T::AccountId,
+		on_behalf_of: Option<MessageSourceId>,
+	) -> Result<MessageSourceId, DispatchError> {
+		let sender_msa_id = T::AccountProvider::ensure_valid_msa_key(&key)
+			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?
+			.msa_id;
+
+		let message_source_id = match on_behalf_of {
+			Some(delegator) =>
+				Self::ensure_valid_delegation(Provider(sender_msa_id), Delegator(delegator))?.1,
+			None => sender_msa_id,
+		};
+
+		Ok(message_source_id)
+	}
+
+	pub fn ensure_valid_delegation(
+		provider: Provider,
+		delegator: Delegator,
+	) -> Result<(MessageSourceId, MessageSourceId), DispatchError> {
+		T::AccountProvider::ensure_valid_delegation(provider, delegator)
+			.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
+
+		Ok((provider.into(), delegator.into()))
+	}
+
 	/// Gets a messages for a given schema-id and block-number.
 	/// # Arguments
 	/// * `schema_id` - Registered schema id for current message.
