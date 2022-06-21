@@ -49,8 +49,6 @@
 	rustdoc::invalid_codeblock_attributes
 )]
 
-use core;
-
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
 
 #[cfg(test)]
@@ -104,7 +102,7 @@ pub mod pallet {
 		SchemaMaxSizeChanged(u32),
 	}
 
-	#[derive(PartialEq)] // for testing
+	#[derive(PartialEq, Eq)] // for testing
 	#[pallet::error]
 	pub enum Error<T> {
 		/// Schema is malformed
@@ -166,7 +164,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
-			GovernanceSchemaFormatMaxBytes::<T>::put(self.initial_max_schema_format_size.clone());
+			GovernanceSchemaFormatMaxBytes::<T>::put(self.initial_max_schema_format_size);
 		}
 	}
 
@@ -195,7 +193,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			schema: BoundedVec<u8, T::SchemaFormatMaxBytesBoundedVecLimit>,
 		) -> DispatchResult {
-			let sender = ensure_signed(origin.clone())?;
+			let sender = ensure_signed(origin)?;
 
 			ensure!(
 				schema.len() > T::MinSchemaFormatSizeBytes::get() as usize,
@@ -210,7 +208,7 @@ pub mod pallet {
 			ensure!(cur_count < T::MaxSchemaRegistrations::get(), Error::<T>::TooManySchemas);
 			let schema_id = cur_count.checked_add(1).ok_or(Error::<T>::SchemaCountOverflow)?;
 
-			Self::add_schema(schema.clone(), schema_id)?;
+			Self::add_schema(schema, schema_id)?;
 
 			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
 			Ok(())
@@ -220,7 +218,7 @@ pub mod pallet {
 		/// Schema BoundedVec used for registration.
 		#[pallet::weight(30_000)]
 		pub fn set_max_schema_format_bytes(origin: OriginFor<T>, max_size: u32) -> DispatchResult {
-			ensure_root(origin.clone())?;
+			ensure_root(origin)?;
 			ensure!(
 				max_size <= T::SchemaFormatMaxBytesBoundedVecLimit::get(),
 				Error::<T>::ExceedsGovernanceSchemaFormatMaxValue

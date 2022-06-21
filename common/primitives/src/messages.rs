@@ -57,8 +57,7 @@ where
 		self.page_size > 0 &&
 			self.page_size <= Self::MAX_PAGE_SIZE &&
 			self.from_block < self.to_block &&
-			self.to_block.clone().sub(self.from_block.clone()) <=
-				BlockNumber::from(Self::MAX_BLOCK_RANGE)
+			self.to_block.sub(self.from_block) <= BlockNumber::from(Self::MAX_BLOCK_RANGE)
 	}
 }
 
