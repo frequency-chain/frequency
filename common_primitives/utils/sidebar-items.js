@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["wrap_binary_data",""]],"mod":[["as_hex",""],["as_string",""]]});
+initSidebarItems({"fn":[["wrap_binary_data","Wraps `PREFIX` and `POSTFIX` around a `Vec<u8>` Returns `PREFIX` ++ `data` ++ `POSTFIX`"]],"mod":[["as_hex","Handle serializing and deserializing from `Vec<u8>` to hexadecimal"],["as_string","Handle serializing and deserializing from `Vec<u8>` to a UTF-8 string"]]});

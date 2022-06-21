@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["BlockPaginationRequest",""],["BlockPaginationResponse",""],["MessageResponse",""]]});
+initSidebarItems({"struct":[["BlockPaginationRequest","A type for requesting paginated messages."],["BlockPaginationResponse","A type for responding with a collection of paginated messages."],["MessageResponse","A type for responding with an single Message in an RPC-call."]]});

@@ -34,22 +34,33 @@
 <span id="34">34</span>
 <span id="35">35</span>
 <span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">use</span> <span class="ident">common_primitives</span>::{<span class="ident">messages::MessageResponse</span>, <span class="ident">msa::MessageSenderId</span>};
+<span class="kw">use</span> <span class="ident">common_primitives</span>::{<span class="ident">messages::MessageResponse</span>, <span class="ident">msa::MessageSourceId</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">traits::Get</span>, <span class="ident">BoundedVec</span>};
 <span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
 <span class="kw">use</span> <span class="ident">sp_std::prelude</span>::<span class="kw-2">*</span>;
 
+<span class="doccomment">/// A single message type definition.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>)]</span>
 <span class="attribute">#[<span class="ident">scale_info</span>(<span class="ident">skip_type_params</span>(<span class="ident">MaxDataSize</span>))]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Message</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">MaxDataSize</span><span class="op">&gt;</span>
 <span class="kw">where</span>
 	<span class="ident">MaxDataSize</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Clone</span>,
 {
-	<span class="kw">pub</span> <span class="ident">data</span>: <span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">MaxDataSize</span><span class="op">&gt;</span>, <span class="comment">//  Serialized data in a user-defined schema format</span>
-	<span class="kw">pub</span> <span class="ident">signer</span>: <span class="ident">AccountId</span>,                 <span class="comment">//  Signature of the signer</span>
-	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="ident">MessageSenderId</span>,           <span class="comment">//  Message source account id (the original sender)</span>
-	<span class="kw">pub</span> <span class="ident">index</span>: <span class="ident">u16</span>,                        <span class="comment">//  Stores index of message in block to keep total order</span>
+	<span class="doccomment">///  Serialized data in a user-defined schema format</span>
+	<span class="kw">pub</span> <span class="ident">payload</span>: <span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">MaxDataSize</span><span class="op">&gt;</span>,
+	<span class="doccomment">///  Public key of the provider that signed the transaction</span>
+	<span class="kw">pub</span> <span class="ident">provider_key</span>: <span class="ident">AccountId</span>,
+	<span class="doccomment">///  Message source account id (the original source)</span>
+	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>,
+	<span class="doccomment">///  Stores index of message in block to keep total order</span>
+	<span class="kw">pub</span> <span class="ident">index</span>: <span class="ident">u16</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">MaxDataSize</span><span class="op">&gt;</span> <span class="ident">Message</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">MaxDataSize</span><span class="op">&gt;</span>
@@ -57,16 +68,17 @@
 	<span class="ident">AccountId</span>: <span class="ident">Clone</span>,
 	<span class="ident">MaxDataSize</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Clone</span>,
 {
+	<span class="doccomment">/// Helper function to handle response type [`MessageResponse`] for RPC.</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">map_to_response</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">block_number</span>: <span class="ident">BlockNumber</span>,
 	) -&gt; <span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">BlockNumber</span><span class="op">&gt;</span> {
 		<span class="ident">MessageResponse</span> {
-			<span class="ident">signer</span>: <span class="self">self</span>.<span class="ident">signer</span>.<span class="ident">clone</span>(),
+			<span class="ident">provider_key</span>: <span class="self">self</span>.<span class="ident">provider_key</span>.<span class="ident">clone</span>(),
 			<span class="ident">index</span>: <span class="self">self</span>.<span class="ident">index</span>,
 			<span class="ident">msa_id</span>: <span class="self">self</span>.<span class="ident">msa_id</span>,
 			<span class="ident">block_number</span>,
-			<span class="ident">data</span>: <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">clone</span>().<span class="ident">into_inner</span>(),
+			<span class="ident">payload</span>: <span class="self">self</span>.<span class="ident">payload</span>.<span class="ident">clone</span>().<span class="ident">into_inner</span>(),
 		}
 	}
 }

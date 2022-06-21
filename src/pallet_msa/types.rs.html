@@ -17,23 +17,39 @@
 <span id="17">17</span>
 <span id="18">18</span>
 <span id="19">19</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">common_primitives::msa</span>::{<span class="ident">Delegator</span>, <span class="ident">KeyInfoResponse</span>, <span class="ident">MessageSenderId</span>, <span class="ident">Provider</span>};
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Types for the MSA Pallet</span>
+<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">common_primitives::msa</span>::{<span class="ident">Delegator</span>, <span class="ident">KeyInfoResponse</span>, <span class="ident">MessageSourceId</span>, <span class="ident">Provider</span>};
 <span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
 
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EMPTY_FUNCTION</span>: <span class="kw">fn</span>(<span class="ident">MessageSenderId</span>) -&gt; <span class="ident">DispatchResult</span> <span class="op">=</span> <span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="prelude-val">Ok</span>(());
+<span class="doccomment">/// Dispatch Empty</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EMPTY_FUNCTION</span>: <span class="kw">fn</span>(<span class="ident">MessageSourceId</span>) -&gt; <span class="ident">DispatchResult</span> <span class="op">=</span> <span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="prelude-val">Ok</span>(());
 
+<span class="doccomment">/// A type definition for the payload of adding an MSA key - `pallet_msa::add_key_to_msa`</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AddKeyData</span> {
-	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="ident">MessageSenderId</span>,
+	<span class="doccomment">/// Message Source Account identifier</span>
+	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>,
+	<span class="doccomment">/// A cryptographic nonce.</span>
 	<span class="kw">pub</span> <span class="ident">nonce</span>: <span class="ident">u32</span>,
 }
 
+<span class="doccomment">/// Structure that is signed for granting permissions to a Provider</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AddProvider</span> {
-	<span class="kw">pub</span> <span class="ident">authorized_msa_id</span>: <span class="ident">MessageSenderId</span>,
+	<span class="doccomment">/// The provider being granted permissions</span>
+	<span class="kw">pub</span> <span class="ident">authorized_msa_id</span>: <span class="ident">MessageSourceId</span>,
+	<span class="doccomment">/// The permissions granted</span>
 	<span class="kw">pub</span> <span class="ident">permission</span>: <span class="ident">u8</span>,
 }
 </code></pre></div>

@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["messages",""],["msa",""],["rpc",""],["schema",""],["utils",""]]});
+initSidebarItems({"mod":[["messages","Structs and traits for the Messages pallet."],["msa","Structs and traits for the MSA pallet."],["rpc","Structs and traits specifically for RPC calls. export rpc primitive types."],["schema","Structs and traits for the Schema pallet"],["utils","Structs and traits for the utility package."]]});

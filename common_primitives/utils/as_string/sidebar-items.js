@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["deserialize",""],["serialize",""]]});
+initSidebarItems({"fn":[["deserialize","Serializes a UTF-8 string into a `Vec<u8>`"],["serialize","Serializes a `Vec<u8>` into a UTF-8 string"]]});

@@ -113,7 +113,31 @@
 <span id="113">113</span>
 <span id="114">114</span>
 <span id="115">115</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::msa::MessageSenderId</span>;
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::msa::MessageSourceId</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>;
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
@@ -125,23 +149,34 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">utils</span>::<span class="kw-2">*</span>;
 
+<span class="doccomment">/// A type for responding with an single Message in an RPC-call.</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">BlockNumber</span><span class="op">&gt;</span> {
 	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">serde</span>(<span class="ident">with</span> <span class="op">=</span> <span class="string">&quot;as_hex&quot;</span>))]</span>
-	<span class="kw">pub</span> <span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="comment">//  Serialized data in a user-defined schema format</span>
-	<span class="kw">pub</span> <span class="ident">signer</span>: <span class="ident">AccountId</span>,       <span class="comment">//  Signature of the signer</span>
-	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="ident">MessageSenderId</span>, <span class="comment">//  Message source account id (the original sender)</span>
-	<span class="kw">pub</span> <span class="ident">index</span>: <span class="ident">u16</span>,              <span class="comment">// index in block to get total order</span>
+	<span class="doccomment">/// Serialized data in a user-defined schema format.</span>
+	<span class="kw">pub</span> <span class="ident">payload</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// The public key of the provider and the signer of the transaction.</span>
+	<span class="kw">pub</span> <span class="ident">provider_key</span>: <span class="ident">AccountId</span>,
+	<span class="doccomment">/// Message source account id (the original source).</span>
+	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>,
+	<span class="doccomment">/// Index in block to get total order</span>
+	<span class="kw">pub</span> <span class="ident">index</span>: <span class="ident">u16</span>,
+	<span class="doccomment">/// Block-number for which the message was stored.</span>
 	<span class="kw">pub</span> <span class="ident">block_number</span>: <span class="ident">BlockNumber</span>,
 }
 
+<span class="doccomment">/// A type for requesting paginated messages.</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BlockPaginationRequest</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="ident">from_block</span>: <span class="ident">BlockNumber</span>, <span class="comment">// inclusive</span>
-	<span class="kw">pub</span> <span class="ident">from_index</span>: <span class="ident">u32</span>,         <span class="comment">// starts from 0</span>
-	<span class="kw">pub</span> <span class="ident">to_block</span>: <span class="ident">BlockNumber</span>,   <span class="comment">// exclusive</span>
+	<span class="doccomment">/// Starting block-number (inclusive).</span>
+	<span class="kw">pub</span> <span class="ident">from_block</span>: <span class="ident">BlockNumber</span>,
+	<span class="doccomment">/// Current page index starting from 0.</span>
+	<span class="kw">pub</span> <span class="ident">from_index</span>: <span class="ident">u32</span>,
+	<span class="doccomment">/// Ending block-number (exclusive).</span>
+	<span class="kw">pub</span> <span class="ident">to_block</span>: <span class="ident">BlockNumber</span>,
+	<span class="doccomment">/// The number of messages in a single page.</span>
 	<span class="kw">pub</span> <span class="ident">page_size</span>: <span class="ident">u32</span>,
 }
 
@@ -149,9 +184,14 @@
 <span class="kw">where</span>
 	<span class="ident">BlockNumber</span>: <span class="ident">Copy</span> <span class="op">+</span> <span class="ident">AtLeast32BitUnsigned</span>,
 {
+	<span class="doccomment">/// Hard limit on the number of items per page that can be returned</span>
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MAX_PAGE_SIZE</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">10000</span>;
+	<span class="doccomment">/// Hard limit on the block range for a request (~7 days at 12 sec per block)</span>
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MAX_BLOCK_RANGE</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">50000</span>; <span class="comment">// ~3 days (6 sec per block)= ~7 days (12 sec per block)</span>
 
+	<span class="doccomment">/// Helper function for request validation.</span>
+	<span class="doccomment">/// * Page size should not exceed MAX_PAGE_SIZE.</span>
+	<span class="doccomment">/// * Block range [from_block:to_block) should not exceed MAX_BLOCK_RANGE.</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">validate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
 		<span class="self">self</span>.<span class="ident">page_size</span> <span class="op">&gt;</span> <span class="number">0</span> <span class="op">&amp;&amp;</span>
 			<span class="self">self</span>.<span class="ident">page_size</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident"><span class="self">Self</span>::MAX_PAGE_SIZE</span> <span class="op">&amp;&amp;</span>
@@ -161,18 +201,26 @@
 	}
 }
 
+<span class="doccomment">/// A type for responding with a collection of paginated messages.</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BlockPaginationResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">T</span><span class="op">&gt;</span> {
+	<span class="doccomment">/// Collection of messages for a given [`BlockPaginationRequest`].</span>
 	<span class="kw">pub</span> <span class="ident">content</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// Flag to indicate the end of paginated messages.</span>
 	<span class="kw">pub</span> <span class="ident">has_next</span>: <span class="ident">bool</span>,
 	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>))]</span>
+	<span class="doccomment">/// Flag to indicate the starting block number for the next page.</span>
 	<span class="kw">pub</span> <span class="ident">next_block</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>,
 	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>))]</span>
+	<span class="doccomment">/// Flag to indicate the next index for the following request.</span>
 	<span class="kw">pub</span> <span class="ident">next_index</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">T</span><span class="op">&gt;</span> <span class="ident">BlockPaginationResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">T</span><span class="op">&gt;</span> {
+	<span class="doccomment">/// Generates a new empty Pagination request</span>
+	<span class="doccomment">/// # Returns</span>
+	<span class="doccomment">/// * `BlockPaginationResponse&lt;BlockNumber, T&gt;`</span>
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="ident">BlockPaginationResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">T</span><span class="op">&gt;</span> {
 		<span class="ident">BlockPaginationResponse</span> {
 			<span class="ident">content</span>: <span class="macro">vec!</span>[],

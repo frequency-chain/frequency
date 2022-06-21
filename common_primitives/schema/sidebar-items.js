@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["SchemaResponse",""]],"type":[["SchemaId",""]]});
+initSidebarItems({"struct":[["SchemaResponse","RPC Response form for a Schema"]],"type":[["SchemaId","Schema Id is the unique identifier for a Schema"]]});

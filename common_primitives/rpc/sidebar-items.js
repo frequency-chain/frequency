@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["map_rpc_result",""]]});
+initSidebarItems({"fn":[["map_rpc_result","Converts CoreResult to Result for RPC calls"]]});

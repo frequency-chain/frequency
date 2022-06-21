@@ -184,7 +184,129 @@
 <span id="184">184</span>
 <span id="185">185</span>
 <span id="186">186</span>
-</pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+</pre><pre class="rust"><code><span class="doccomment">//! # Schemas Pallet</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! The Schemas pallet provides functionality for handling schemas.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! - [`Config`]</span>
+<span class="doccomment">//! - [`Call`]</span>
+<span class="doccomment">//! - [`Pallet`]</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ## Overview</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! This pallet provides an on chain repository for schemas, thereby allowing participants of the</span>
+<span class="doccomment">//! network to flexibly interact and exchange messages with each other without facing the challenge</span>
+<span class="doccomment">//! of sharing, managing and validating messages as well as schemas between them.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! &lt;b&gt;NOTE&lt;/b&gt;: In this pallet we define the &lt;b&gt;payload&lt;/b&gt; format that is used in &lt;a href=&quot;../pallet_messages/index.html&quot;&gt;Messages Pallet&lt;/a&gt;.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! The Schema pallet provides functions for:</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! - Registering a new schema.</span>
+<span class="doccomment">//! - Setting maximum schema format size by governance.</span>
+<span class="doccomment">//! - Retrieving latest registered schema id.</span>
+<span class="doccomment">//! - Retrieving schemas by their id.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ### Terminology</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! - **Schema:** A data structure that defines the payload format of any Message that is going to</span>
+<span class="doccomment">//!   stored with that schema.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! - **Schema Format:** Serialization/Deserialization details of the schema</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! - **Schema Format Type:** The type of the following Serialization/Deserialization. It can be</span>
+<span class="doccomment">//!   Avro, Parquet or ...</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ### Dispatchable Functions</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! - `register_schema` - Registers a new schema after some initial validation.</span>
+<span class="doccomment">//! - `set_max_schema_format_bytes` - Sets the maximum schemas format size (Bytes) by governance.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ## Genesis config</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! The Schemas pallet depends on the [`GenesisConfig`].</span>
+<span class="doccomment">//!</span>
+<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
+<span class="comment">// Strong Documentation Lints</span>
+<span class="attribute">#![<span class="ident">deny</span>(
+	<span class="ident">rustdoc::broken_intra_doc_links</span>,
+	<span class="ident">rustdoc::missing_crate_level_docs</span>,
+	<span class="ident">rustdoc::invalid_codeblock_attributes</span>
+)]</span>
 
 <span class="kw">use</span> <span class="ident">core</span>;
 
@@ -212,18 +334,21 @@
 
 	<span class="attribute">#[<span class="ident">pallet::config</span>]</span>
 	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>: <span class="ident">frame_system::Config</span> {
+		<span class="doccomment">/// The overarching event type.</span>
 		<span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">IsType</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::Event</span><span class="op">&gt;</span>;
+
+		<span class="doccomment">/// Weight information for extrinsics in this pallet.</span>
 		<span class="kw">type</span> <span class="ident">WeightInfo</span>: <span class="ident">WeightInfo</span>;
 
-		<span class="comment">// Maximum length of Schema field name</span>
+		<span class="doccomment">/// Minimum length of Schema format size in bytes</span>
 		<span class="attribute">#[<span class="ident">pallet::constant</span>]</span>
-		<span class="kw">type</span> <span class="ident">MinSchemaSizeBytes</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
+		<span class="kw">type</span> <span class="ident">MinSchemaFormatSizeBytes</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
 
-		<span class="comment">// Maximum length of Schema Bounded Vec</span>
+		<span class="doccomment">/// Maximum length of Schema  format Bounded Vec</span>
 		<span class="attribute">#[<span class="ident">pallet::constant</span>]</span>
-		<span class="kw">type</span> <span class="ident">SchemaMaxBytesBoundedVecLimit</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
+		<span class="kw">type</span> <span class="ident">SchemaFormatMaxBytesBoundedVecLimit</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
 
-		<span class="comment">// Maximum number of schemas that can be registered</span>
+		<span class="doccomment">/// Maximum number of schemas that can be registered</span>
 		<span class="attribute">#[<span class="ident">pallet::constant</span>]</span>
 		<span class="kw">type</span> <span class="ident">MaxSchemaRegistrations</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">SchemaId</span><span class="op">&gt;</span>;
 	}
@@ -231,8 +356,10 @@
 	<span class="attribute">#[<span class="ident">pallet::event</span>]</span>
 	<span class="attribute">#[<span class="ident">pallet::generate_deposit</span>(<span class="kw">pub</span> (<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">deposit_event</span>)]</span>
 	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// Emitted when a schemas is registered. [who, schemas id]</span>
+		<span class="doccomment">/// Emitted when a schema is registered. [who, schemas id]</span>
 		<span class="ident">SchemaRegistered</span>(<span class="ident">T::AccountId</span>, <span class="ident">SchemaId</span>),
+
+		<span class="doccomment">/// Emitted when maximum size for schema format is changed.</span>
 		<span class="ident">SchemaMaxSizeChanged</span>(<span class="ident">u32</span>),
 	}
 
@@ -243,12 +370,12 @@
 		<span class="ident">InvalidSchema</span>,
 		<span class="doccomment">/// The maximum number of schemas is stored in the database.</span>
 		<span class="ident">TooManySchemas</span>,
-		<span class="doccomment">/// The schema exceeds the maximum length allowed</span>
-		<span class="ident">ExceedsMaxSchemaBytes</span>,
-		<span class="doccomment">/// The schema value provided is invalid (greater than the BoundedVec size)</span>
-		<span class="ident">InvalidSchemaMaxValue</span>,
+		<span class="doccomment">/// The schema format exceeds the maximum length allowed</span>
+		<span class="ident">ExceedsMaxSchemaFormatBytes</span>,
+		<span class="doccomment">/// The governance schema format max value provided is too large (greater than the BoundedVec size)</span>
+		<span class="ident">ExceedsGovernanceSchemaFormatMaxValue</span>,
 		<span class="doccomment">/// The schema is less than the minimum length allowed</span>
-		<span class="ident">LessThanMinSchemaBytes</span>,
+		<span class="ident">LessThanMinSchemaFormatBytes</span>,
 		<span class="doccomment">/// Schema does not exist</span>
 		<span class="ident">NoSuchSchema</span>,
 		<span class="doccomment">/// Error is converting to string</span>
@@ -266,8 +393,8 @@
 	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="kw">_</span>);
 
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">get_schema_max_bytes</span>)]</span>
-	<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type</span> <span class="ident">GovernanceSchemaMaxBytes</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">u32</span>, <span class="ident">ValueQuery</span><span class="op">&gt;</span>;
+	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">get_schema_format_max_bytes</span>)]</span>
+	<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type</span> <span class="ident">GovernanceSchemaFormatMaxBytes</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">u32</span>, <span class="ident">ValueQuery</span><span class="op">&gt;</span>;
 
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">schema_count</span>)]</span>
@@ -280,44 +407,62 @@
 		<span class="kw">_</span>,
 		<span class="ident">Twox64Concat</span>,
 		<span class="ident">SchemaId</span>,
-		<span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">T::SchemaMaxBytesBoundedVecLimit</span><span class="op">&gt;</span>,
+		<span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">T::SchemaFormatMaxBytesBoundedVecLimit</span><span class="op">&gt;</span>,
 		<span class="ident">OptionQuery</span>,
 	<span class="op">&gt;</span>;
 
 	<span class="attribute">#[<span class="ident">pallet::genesis_config</span>]</span>
 	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GenesisConfig</span> {
-		<span class="kw">pub</span> <span class="ident">initial_max_schema_size</span>: <span class="ident">u32</span>,
+		<span class="kw">pub</span> <span class="ident">initial_max_schema_format_size</span>: <span class="ident">u32</span>,
 	}
 
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 	<span class="kw">impl</span> <span class="ident">sp_std::default::Default</span> <span class="kw">for</span> <span class="ident">GenesisConfig</span> {
 		<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-			<span class="self">Self</span> { <span class="ident">initial_max_schema_size</span>: <span class="number">1024</span> }
+			<span class="self">Self</span> { <span class="ident">initial_max_schema_format_size</span>: <span class="number">1024</span> }
 		}
 	}
 	<span class="attribute">#[<span class="ident">pallet::genesis_build</span>]</span>
 	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">GenesisBuild</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">GenesisConfig</span> {
 		<span class="kw">fn</span> <span class="ident">build</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-			<span class="ident">GovernanceSchemaMaxBytes</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::put</span>(<span class="self">self</span>.<span class="ident">initial_max_schema_size</span>.<span class="ident">clone</span>());
+			<span class="ident">GovernanceSchemaFormatMaxBytes</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::put</span>(<span class="self">self</span>.<span class="ident">initial_max_schema_format_size</span>.<span class="ident">clone</span>());
 		}
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::call</span>]</span>
 	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+		<span class="doccomment">/// Adds a given schema to storage. The schema in question must be of length</span>
+		<span class="doccomment">/// between the min and max format size allowed for schemas (see pallet</span>
+		<span class="doccomment">/// constants above). If the pallet&#39;s maximum schema limit has been</span>
+		<span class="doccomment">/// fulfilled by the time this extrinsic is called, a TooManySchemas error</span>
+		<span class="doccomment">/// will be thrown.</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// # Arguments</span>
+		<span class="doccomment">/// * `origin` - The originator of the transaction</span>
+		<span class="doccomment">/// * `schema` - The new schema format data</span>
+		<span class="doccomment">/// # Returns</span>
+		<span class="doccomment">/// * `DispatchResult`</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// # Errors</span>
+		<span class="doccomment">/// * [`Error::&lt;T&gt;::LessThanMinSchemaFormatBytes`] - The schema&#39;s length is less than the minimum schema length</span>
+		<span class="doccomment">/// * [`Error::&lt;T&gt;::ExceedsMaxSchemaFormatBytes`] - The schema&#39;s length is greater than the maximum schema length</span>
+		<span class="doccomment">/// * [`Error::&lt;T&gt;::TooManySchemas`] - The maximum number of schemas has been met</span>
+		<span class="doccomment">/// * [`Error::&lt;T&gt;::SchemaCountOverflow`] - The schema count has exceeded its bounds</span>
+		<span class="doccomment">///</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="op">&lt;</span> <span class="ident">T</span> <span class="kw">as</span> <span class="ident">Config</span> <span class="op">&gt;</span><span class="ident">::WeightInfo::register_schema</span>(<span class="ident">schema</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>, <span class="number">1000</span>))]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">register_schema</span>(
 			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-			<span class="ident">schema</span>: <span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">T::SchemaMaxBytesBoundedVecLimit</span><span class="op">&gt;</span>,
+			<span class="ident">schema</span>: <span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">T::SchemaFormatMaxBytesBoundedVecLimit</span><span class="op">&gt;</span>,
 		) -&gt; <span class="ident">DispatchResult</span> {
 			<span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(
-				<span class="ident">schema</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">T::MinSchemaSizeBytes::get</span>() <span class="kw">as</span> <span class="ident">usize</span>,
-				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::LessThanMinSchemaBytes</span>
+				<span class="ident">schema</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">T::MinSchemaFormatSizeBytes::get</span>() <span class="kw">as</span> <span class="ident">usize</span>,
+				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::LessThanMinSchemaFormatBytes</span>
 			);
 			<span class="macro">ensure!</span>(
-				<span class="ident">schema</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="ident"><span class="self">Self</span>::get_schema_max_bytes</span>() <span class="kw">as</span> <span class="ident">usize</span>,
-				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ExceedsMaxSchemaBytes</span>
+				<span class="ident">schema</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="ident"><span class="self">Self</span>::get_schema_format_max_bytes</span>() <span class="kw">as</span> <span class="ident">usize</span>,
+				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ExceedsMaxSchemaFormatBytes</span>
 			);
 
 			<span class="kw">let</span> <span class="ident">cur_count</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::schema_count</span>();
@@ -333,13 +478,13 @@
 		<span class="doccomment">/// Set a new value for the Schema maximum number of bytes.  Must be &lt;= the limit of the</span>
 		<span class="doccomment">/// Schema BoundedVec used for registration.</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">30_000</span>)]</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_max_schema_bytes</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">max_size</span>: <span class="ident">u32</span>) -&gt; <span class="ident">DispatchResult</span> {
+		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_max_schema_format_bytes</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">max_size</span>: <span class="ident">u32</span>) -&gt; <span class="ident">DispatchResult</span> {
 			<span class="ident">ensure_root</span>(<span class="ident">origin</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>;
 			<span class="macro">ensure!</span>(
-				<span class="ident">max_size</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">T::SchemaMaxBytesBoundedVecLimit::get</span>(),
-				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidSchemaMaxValue</span>
+				<span class="ident">max_size</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">T::SchemaFormatMaxBytesBoundedVecLimit::get</span>(),
+				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ExceedsGovernanceSchemaFormatMaxValue</span>
 			);
-			<span class="ident">GovernanceSchemaMaxBytes</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::set</span>(<span class="ident">max_size</span>);
+			<span class="ident">GovernanceSchemaFormatMaxBytes</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::set</span>(<span class="ident">max_size</span>);
 			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::SchemaMaxSizeChanged</span>(<span class="ident">max_size</span>));
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -347,11 +492,11 @@
 
 	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 		<span class="kw">fn</span> <span class="ident">add_schema</span>(
-			<span class="ident">schema</span>: <span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">T::SchemaMaxBytesBoundedVecLimit</span><span class="op">&gt;</span>,
+			<span class="ident">format</span>: <span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">T::SchemaFormatMaxBytesBoundedVecLimit</span><span class="op">&gt;</span>,
 			<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>,
 		) -&gt; <span class="ident">DispatchResult</span> {
 			<span class="op">&lt;</span><span class="ident">SchemaCount</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::set</span>(<span class="ident">schema_id</span>);
-			<span class="op">&lt;</span><span class="ident">Schemas</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="ident">schema_id</span>, <span class="ident">schema</span>);
+			<span class="op">&lt;</span><span class="ident">Schemas</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="ident">schema_id</span>, <span class="ident">format</span>);
 			<span class="prelude-val">Ok</span>(())
 		}
 
@@ -360,10 +505,11 @@
 		}
 
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_schema_by_id</span>(<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SchemaResponse</span><span class="op">&gt;</span> {
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">schema</span>) <span class="op">=</span> <span class="ident"><span class="self">Self</span>::get_schema</span>(<span class="ident">schema_id</span>) {
+			<span class="comment">// TODO: This will eventually be a struct with other properties. Currently it is just the format</span>
+			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">format</span>) <span class="op">=</span> <span class="ident"><span class="self">Self</span>::get_schema</span>(<span class="ident">schema_id</span>) {
 				<span class="comment">// this should get a BoundedVec out</span>
-				<span class="kw">let</span> <span class="ident">schema_vec</span> <span class="op">=</span> <span class="ident">schema</span>.<span class="ident">into_inner</span>();
-				<span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="ident">SchemaResponse</span> { <span class="ident">schema_id</span>, <span class="ident">data</span>: <span class="ident">schema_vec</span> };
+				<span class="kw">let</span> <span class="ident">format_vec</span> <span class="op">=</span> <span class="ident">format</span>.<span class="ident">into_inner</span>();
+				<span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="ident">SchemaResponse</span> { <span class="ident">schema_id</span>, <span class="ident">format</span>: <span class="ident">format_vec</span> };
 				<span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">response</span>)
 			}
 			<span class="prelude-val">None</span>

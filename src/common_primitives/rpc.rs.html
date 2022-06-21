@@ -25,11 +25,21 @@
 <span id="25">25</span>
 <span id="26">26</span>
 <span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::result::Result</span> <span class="kw">as</span> <span class="ident">CoreResult</span>;
 <span class="kw">use</span> <span class="ident">jsonrpc_core</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">RpcError</span>, <span class="ident">ErrorCode</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">sp_api::ApiError</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime::DispatchError</span>;
 
+<span class="doccomment">/// Converts CoreResult to Result for RPC calls</span>
+<span class="doccomment">/// # Arguments</span>
+<span class="doccomment">/// * `response` - The response to map to an RPC response</span>
+<span class="doccomment">/// # Returns</span>
+<span class="doccomment">/// * `Result&lt;T&gt;` The RPC formatted response for JSON</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">map_rpc_result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(
 	<span class="ident">response</span>: <span class="ident">CoreResult</span><span class="op">&lt;</span><span class="ident">CoreResult</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span>, <span class="ident">ApiError</span><span class="op">&gt;</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
