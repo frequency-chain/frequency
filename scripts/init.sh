@@ -28,7 +28,7 @@ start-relay-chain)
 
 stop-relay-chain)
   echo "Stopping relay chain..."
-  docker-compose down relay_alice relay_bob
+  docker-compose down
   ;;
 
 start-mrc-docker)
