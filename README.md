@@ -57,7 +57,12 @@ source .env
     ./scripts/init.sh start-relay-chain
     ```
 
-1. Relay chain is running on port [`9945`](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) and [`9946`](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9946#/explorer) for alice and bob respectively.
+1. Relay chain is running on ports:
+    | Host | Port | URL |
+    | ---- | ---- | --- |
+    | MRC Relay Node | `9945` | [127.0.0.1:9945](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9945#/explorer) |
+    | Alice Relay Node | `9946` | [127.0.0.1:9946](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9946#/explorer) |
+    | Bob Relay Node | `9947` | [127.0.0.1:9947](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9947#/explorer) |
 
 1. Register a new parachain slot (parachain id) for MRC:
 
@@ -85,7 +90,7 @@ source .env
     ./scripts/init.sh onboard-mrc
     ```
 
-1. Parachain collator will be available at  port `$9944`.
+1. Parachain collator will be available at rpc port `9944`.
 
 1. Link to parachain [dashboard](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944)
 
@@ -104,15 +109,20 @@ Note: Clean up /tmp/mrc directory after off-boarding. This is required to avoid 
       - ```9933```  # rpc port
       - ```9944```  # ws port
 
-- Default ports for Validator Alice are:
+- Default ports for MRC Relay Chain Node are:
       - ```30334``` # p2p port
       - ```9934```  # rpc port
       - ```9945```  # ws port
 
-- Default ports for Validator Bob are:
+- Default ports for Validator Alice are:
       - ```30335``` # p2p port
       - ```9935```  # rpc port
       - ```9946```  # ws port
+
+- Default ports for Validator Bob are:
+      - ```30336``` # p2p port
+      - ```9936```  # rpc port
+      - ```9947```  # ws port
 
 ### Cleanup the environment
 

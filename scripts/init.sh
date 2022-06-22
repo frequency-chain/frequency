@@ -100,7 +100,7 @@ register-mrc)
   echo "reserving and registering parachain with relay via first available slot..."
 
   cd scripts/js/onboard
-  yarn && yarn register "ws://0.0.0.0:9945" "//Alice"
+  yarn && yarn register "ws://0.0.0.0:9946" "//Alice"
   ;;
 
 onboard-mrc)
@@ -121,13 +121,13 @@ onboard-mrc)
   echo "WASM path:" "${parachain}-${para_id}.wasm"
 
   cd scripts/js/onboard
-  yarn && yarn onboard "ws://0.0.0.0:9945" "//Alice" ${para_id} "${genesis}" $wasm_location
+  yarn && yarn onboard "ws://0.0.0.0:9946" "//Alice" ${para_id} "${genesis}" $wasm_location
   ;;
 
 offboard-mrc)
   echo "cleaning up parachain for id '$para_id'..."
 
   cd scripts/js/onboard
-  yarn && yarn cleanup "ws://0.0.0.0:9945" "//Alice" ${para_id}
+  yarn && yarn cleanup "ws://0.0.0.0:9946" "//Alice" ${para_id}
   ;;
 esac
