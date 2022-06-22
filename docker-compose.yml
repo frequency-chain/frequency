@@ -7,9 +7,9 @@ services:
     image: "parity/polkadot:v0.9.18"
     hostname: relay_alice
     ports:
-      - "30334:30333" # p2p port
-      - "9934:9933" # rpc port
-      - "9945:9944" # ws port
+      - "30335:30335" # p2p port
+      - "9935:9933" # rpc port
+      - "9946:9944" # ws port
     volumes:
       - type: bind
         source: ./res/rococo-local.json
@@ -21,7 +21,7 @@ services:
       --wasm-execution=compiled
       --execution=wasm
       --base-path=/data
-      --port 30333
+      --port 30334
       --rpc-port 9933
       --ws-port 9944
       --rpc-external
@@ -36,9 +36,9 @@ services:
     image: "parity/polkadot:v0.9.18"
     hostname: relay_bob
     ports:
-      - "30335:30333" # p2p port
-      - "9935:9933" # rpc port
-      - "9946:9944" # ws port
+      - "30336:30336" # p2p port
+      - "9936:9933" # rpc port
+      - "9947:9944" # ws port
     volumes:
       - type: bind
         source: ./res/rococo-local.json
@@ -50,7 +50,7 @@ services:
       --base-path=/data
       --wasm-execution=compiled
       --execution=wasm
-      --port 30333
+      --port 30335
       --rpc-port 9933
       --ws-port 9944
       --rpc-external
@@ -71,7 +71,7 @@ services:
       - ALICE_RPC_PORT=9933
       - BOB_RPC_PORT=9933
     ports:
-      - "30333:30333" # p2p port 
+      - "30333:30333" # p2p port
       - "9933:9933" # rpc port
       - "9944:9944" # ws port
     depends_on:
