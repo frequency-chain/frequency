@@ -1128,9 +1128,9 @@
 	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">pallet_schemas::weights::SubstrateWeight</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
 
 	<span class="comment">// TODO: these constants need to be determined. See Issue #70</span>
-	<span class="kw">type</span> <span class="ident">MinSchemaFormatSizeBytes</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">5</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">MinSchemaModelSizeBytes</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">5</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">MaxSchemaRegistrations</span> <span class="op">=</span> <span class="ident">MaxSchemaRegistrations</span>;
-	<span class="kw">type</span> <span class="ident">SchemaFormatMaxBytesBoundedVecLimit</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">65_500</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">SchemaModelMaxBytesBoundedVecLimit</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">65_500</span><span class="op">&gt;</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_tx_fee::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {}

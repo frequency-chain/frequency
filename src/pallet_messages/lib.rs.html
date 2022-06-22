@@ -341,6 +341,48 @@
 <span id="341">341</span>
 <span id="342">342</span>
 <span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # Messages pallet</span>
 <span class="doccomment">//! A pallet for storing messages.</span>
 <span class="doccomment">//!</span>
@@ -398,12 +440,15 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">types</span>::<span class="kw-2">*</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">weights</span>::<span class="kw-2">*</span>;
 
-<span class="kw">use</span> <span class="ident">common_primitives</span>::{<span class="ident">messages</span>::<span class="kw-2">*</span>, <span class="ident">schema</span>::<span class="kw-2">*</span>};
+<span class="kw">use</span> <span class="ident">common_primitives</span>::{
+	<span class="ident">messages</span>::<span class="kw-2">*</span>,
+	<span class="ident">msa</span>::{<span class="ident">AccountProvider</span>, <span class="ident">Delegator</span>, <span class="ident">MessageSourceId</span>, <span class="ident">Provider</span>},
+	<span class="ident">schema</span>::<span class="kw-2">*</span>,
+};
 
 <span class="attribute">#[<span class="ident">frame_support::pallet</span>]</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">pallet</span> {
 	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">common_primitives::msa</span>::{<span class="ident">AccountProvider</span>, <span class="ident">Delegator</span>, <span class="ident">MessageSourceId</span>, <span class="ident">Provider</span>};
 	<span class="kw">use</span> <span class="ident">frame_support::pallet_prelude</span>::<span class="kw-2">*</span>;
 	<span class="kw">use</span> <span class="ident">frame_system::pallet_prelude</span>::<span class="kw-2">*</span>;
 
@@ -522,45 +567,84 @@
 				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ExceedsMaxMessagePayloadSizeBytes</span>
 			);
 
-			<span class="kw">let</span> <span class="ident">provider</span> <span class="op">=</span> <span class="ident">T::AccountProvider::ensure_valid_msa_key</span>(<span class="kw-2">&amp;</span><span class="ident">provider_key</span>)
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidMessageSourceAccount</span>)<span class="question-mark">?</span>;
+			<span class="kw">let</span> <span class="ident">message_source_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::find_msa_id</span>(<span class="kw-2">&amp;</span><span class="ident">provider_key</span>, <span class="ident">on_behalf_of</span>)<span class="question-mark">?</span>;
 
-			<span class="kw">let</span> <span class="ident">message_source_id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">on_behalf_of</span> {
-				<span class="prelude-val">Some</span>(<span class="ident">delegator_msa_id</span>) =&gt; {
-					<span class="ident">T::AccountProvider::ensure_valid_delegation</span>(
-						<span class="ident">Provider</span>(<span class="ident">provider</span>.<span class="ident">msa_id</span>),
-						<span class="ident">Delegator</span>(<span class="ident">delegator_msa_id</span>),
-					)
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::UnAuthorizedDelegate</span>)<span class="question-mark">?</span>;
-					<span class="ident">delegator_msa_id</span>
-				},
-				<span class="prelude-val">None</span> =&gt; <span class="ident">provider</span>.<span class="ident">msa_id</span>,
-			};
+			<span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::add_message</span>(<span class="ident">provider_key</span>, <span class="ident">message_source_id</span>, <span class="ident">payload</span>, <span class="ident">schema_id</span>)<span class="question-mark">?</span>;
 
-			<span class="comment">// TODO: validate schema existence and validity from schema pallet</span>
-			<span class="op">&lt;</span><span class="ident">BlockMessages</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::try_mutate</span>(<span class="op">|</span><span class="ident">existing_messages</span><span class="op">|</span> -&gt; <span class="ident">DispatchResultWithPostInfo</span> {
-				<span class="kw">let</span> <span class="ident">current_size</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="ident">existing_messages</span>
-					.<span class="ident">len</span>()
-					.<span class="ident">try_into</span>()
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::TypeConversionOverflow</span>)<span class="question-mark">?</span>;
-				<span class="kw">let</span> <span class="ident">payload_size</span> <span class="op">=</span> <span class="ident">payload</span>.<span class="ident">len</span>();
-				<span class="kw">let</span> <span class="ident">m</span> <span class="op">=</span> <span class="ident">Message</span> {
-					<span class="ident">payload</span>: <span class="ident">payload</span>.<span class="ident">try_into</span>().<span class="ident">unwrap</span>(), <span class="comment">// size is checked on top of extrinsic</span>
-					<span class="ident">provider_key</span>,
-					<span class="ident">index</span>: <span class="ident">current_size</span>,
-					<span class="ident">msa_id</span>: <span class="ident">message_source_id</span>,
-				};
-				<span class="ident">existing_messages</span>
-					.<span class="ident">try_push</span>((<span class="ident">m</span>, <span class="ident">schema_id</span>))
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::TooManyMessagesInBlock</span>)<span class="question-mark">?</span>;
-
-				<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">T::WeightInfo::add</span>(<span class="ident">payload_size</span> <span class="kw">as</span> <span class="ident">u32</span>, <span class="ident">current_size</span> <span class="kw">as</span> <span class="ident">u32</span>)).<span class="ident">into</span>())
-			})
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">T::WeightInfo::add</span>(<span class="ident">message</span>.<span class="ident">payload</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>, <span class="ident">message</span>.<span class="ident">index</span> <span class="kw">as</span> <span class="ident">u32</span>)).<span class="ident">into</span>())
 		}
 	}
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+	<span class="doccomment">/// Stores a message for a given schema-id.</span>
+	<span class="doccomment">/// # Arguments</span>
+	<span class="doccomment">/// * `provider_key` - A key from the provider that submitted tx.</span>
+	<span class="doccomment">/// * `on_behalf_of` - Optional. The msa id of delegate.</span>
+	<span class="doccomment">/// * `payload` - Serialized payload data for a given schema.</span>
+	<span class="doccomment">/// * `schema_id` - Registered schema id for current message.</span>
+	<span class="doccomment">/// # Returns</span>
+	<span class="doccomment">/// * Result&lt;Message&lt;T::AccountId, T::MaxMessagePayloadSizeBytes&gt; - Returns the message stored.</span>
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_message</span>(
+		<span class="ident">provider_key</span>: <span class="ident">T::AccountId</span>,
+		<span class="ident">message_source_id</span>: <span class="ident">MessageSourceId</span>,
+		<span class="ident">payload</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+		<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>,
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Message</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">T::MaxMessagePayloadSizeBytes</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
+		<span class="op">&lt;</span><span class="ident">BlockMessages</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::try_mutate</span>(<span class="op">|</span><span class="ident">existing_messages</span><span class="op">|</span> -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Message</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">T::MaxMessagePayloadSizeBytes</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
+			<span class="kw">let</span> <span class="ident">current_size</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="ident">existing_messages</span>
+				.<span class="ident">len</span>()
+				.<span class="ident">try_into</span>()
+				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::TypeConversionOverflow</span>)<span class="question-mark">?</span>;
+
+			<span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">Message</span> {
+				<span class="ident">payload</span>: <span class="ident">payload</span>.<span class="ident">try_into</span>().<span class="ident">unwrap</span>(), <span class="comment">// size is checked on top of extrinsic</span>
+				<span class="ident">provider_key</span>: <span class="ident">provider_key</span>,
+				<span class="ident">index</span>: <span class="ident">current_size</span>,
+				<span class="ident">msa_id</span>: <span class="ident">message_source_id</span>,
+			};
+
+			<span class="ident">existing_messages</span>
+				.<span class="ident">try_push</span>((<span class="ident">msg</span>.<span class="ident">clone</span>(), <span class="ident">schema_id</span>))
+				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::TooManyMessagesInBlock</span>)<span class="question-mark">?</span>;
+
+			<span class="prelude-val">Ok</span>(<span class="ident">msg</span>)
+		})
+	}
+
+	<span class="doccomment">/// Resolves an MSA.</span>
+	<span class="doccomment">/// # Arguments</span>
+	<span class="doccomment">/// * `key` - An MSA key for lookup.</span>
+	<span class="doccomment">/// * `on_behalf_of` - Optional. The msa id of delegate.</span>
+	<span class="doccomment">/// # Returns</span>
+	<span class="doccomment">/// * Result&lt;MessageSourceId, DispatchError&gt; - Returns an MSA Id for storing a message.</span>
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_msa_id</span>(
+		<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>,
+		<span class="ident">on_behalf_of</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span><span class="op">&gt;</span>,
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
+		<span class="kw">let</span> <span class="ident">sender_msa_id</span> <span class="op">=</span> <span class="ident">T::AccountProvider::ensure_valid_msa_key</span>(<span class="kw-2">&amp;</span><span class="ident">key</span>)
+			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidMessageSourceAccount</span>)<span class="question-mark">?</span>
+			.<span class="ident">msa_id</span>;
+
+		<span class="kw">let</span> <span class="ident">message_source_id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">on_behalf_of</span> {
+			<span class="prelude-val">Some</span>(<span class="ident">delegator</span>) =&gt;
+				<span class="ident"><span class="self">Self</span>::ensure_valid_delegation</span>(<span class="ident">Provider</span>(<span class="ident">sender_msa_id</span>), <span class="ident">Delegator</span>(<span class="ident">delegator</span>))<span class="question-mark">?</span>.<span class="number">1</span>,
+			<span class="prelude-val">None</span> =&gt; <span class="ident">sender_msa_id</span>,
+		};
+
+		<span class="prelude-val">Ok</span>(<span class="ident">message_source_id</span>)
+	}
+
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_valid_delegation</span>(
+		<span class="ident">provider</span>: <span class="ident">Provider</span>,
+		<span class="ident">delegator</span>: <span class="ident">Delegator</span>,
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">MessageSourceId</span>, <span class="ident">MessageSourceId</span>), <span class="ident">DispatchError</span><span class="op">&gt;</span> {
+		<span class="ident">T::AccountProvider::ensure_valid_delegation</span>(<span class="ident">provider</span>, <span class="ident">delegator</span>)
+			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::UnAuthorizedDelegate</span>)<span class="question-mark">?</span>;
+
+		<span class="prelude-val">Ok</span>((<span class="ident">provider</span>.<span class="ident">into</span>(), <span class="ident">delegator</span>.<span class="ident">into</span>()))
+	}
+
 	<span class="doccomment">/// Gets a messages for a given schema-id and block-number.</span>
 	<span class="doccomment">/// # Arguments</span>
 	<span class="doccomment">/// * `schema_id` - Registered schema id for current message.</span>

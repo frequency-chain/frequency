@@ -53,7 +53,7 @@
 <span class="kw">where</span>
 	<span class="ident">MaxDataSize</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Clone</span>,
 {
-	<span class="doccomment">///  Serialized data in a user-defined schema format</span>
+	<span class="doccomment">///  Data structured by the associated schema&#39;s model</span>
 	<span class="kw">pub</span> <span class="ident">payload</span>: <span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">MaxDataSize</span><span class="op">&gt;</span>,
 	<span class="doccomment">///  Public key of the provider that signed the transaction</span>
 	<span class="kw">pub</span> <span class="ident">provider_key</span>: <span class="ident">AccountId</span>,

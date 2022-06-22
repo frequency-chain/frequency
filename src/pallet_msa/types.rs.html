@@ -36,7 +36,7 @@
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EMPTY_FUNCTION</span>: <span class="kw">fn</span>(<span class="ident">MessageSourceId</span>) -&gt; <span class="ident">DispatchResult</span> <span class="op">=</span> <span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="prelude-val">Ok</span>(());
 
 <span class="doccomment">/// A type definition for the payload of adding an MSA key - `pallet_msa::add_key_to_msa`</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">PartialEq</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AddKeyData</span> {
 	<span class="doccomment">/// Message Source Account identifier</span>
 	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>,
@@ -45,7 +45,7 @@
 }
 
 <span class="doccomment">/// Structure that is signed for granting permissions to a Provider</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">PartialEq</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AddProvider</span> {
 	<span class="doccomment">/// The provider being granted permissions</span>
 	<span class="kw">pub</span> <span class="ident">authorized_msa_id</span>: <span class="ident">MessageSourceId</span>,

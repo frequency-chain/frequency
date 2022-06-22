@@ -700,12 +700,6 @@
 <span id="700">700</span>
 <span id="701">701</span>
 <span id="702">702</span>
-<span id="703">703</span>
-<span id="704">704</span>
-<span id="705">705</span>
-<span id="706">706</span>
-<span id="707">707</span>
-<span id="708">708</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The MSA pallet provides functionality for handling Message Source Accounts.</span>
@@ -951,10 +945,10 @@
 
 			<span class="kw">let</span> (<span class="kw">_</span>, <span class="kw">_</span>) <span class="op">=</span>
 				<span class="ident"><span class="self">Self</span>::create_account</span>(<span class="ident">delegator_key</span>.<span class="ident">clone</span>(), <span class="op">|</span><span class="ident">new_msa_id</span><span class="op">|</span> -&gt; <span class="ident">DispatchResult</span> {
-					<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::add_provider</span>(<span class="ident">provider_msa_id</span>.<span class="ident">into</span>(), <span class="ident">new_msa_id</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
+					<span class="ident"><span class="self">Self</span>::add_provider</span>(<span class="ident">provider_msa_id</span>.<span class="ident">into</span>(), <span class="ident">new_msa_id</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
 
 					<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::MsaCreated</span> {
-						<span class="ident">msa_id</span>: <span class="ident">new_msa_id</span>.<span class="ident">clone</span>(),
+						<span class="ident">msa_id</span>: <span class="ident">new_msa_id</span>,
 						<span class="ident">key</span>: <span class="ident">delegator_key</span>.<span class="ident">clone</span>(),
 					});
 
@@ -999,11 +993,11 @@
 				<span class="ident">payload_authorized_msa_id</span>,
 			)<span class="question-mark">?</span>;
 
-			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::add_provider</span>(<span class="ident">provider_msa_id</span>, <span class="ident">delegator_msa_id</span>)<span class="question-mark">?</span>;
+			<span class="ident"><span class="self">Self</span>::add_provider</span>(<span class="ident">provider_msa_id</span>, <span class="ident">delegator_msa_id</span>)<span class="question-mark">?</span>;
 
 			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::ProviderAdded</span> {
-				<span class="ident">delegator</span>: <span class="ident">delegator_msa_id</span>.<span class="ident">into</span>(),
-				<span class="ident">provider</span>: <span class="ident">provider_msa_id</span>.<span class="ident">into</span>(),
+				<span class="ident">delegator</span>: <span class="ident">delegator_msa_id</span>,
+				<span class="ident">provider</span>: <span class="ident">provider_msa_id</span>,
 			});
 
 			<span class="prelude-val">Ok</span>(())
@@ -1170,11 +1164,8 @@
 		<span class="ident">KeyInfoOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::try_mutate</span>(<span class="ident">key</span>, <span class="op">|</span><span class="ident">maybe_msa</span><span class="op">|</span> {
 			<span class="macro">ensure!</span>(<span class="ident">maybe_msa</span>.<span class="ident">is_none</span>(), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::DuplicatedKey</span>);
 
-			<span class="kw-2">*</span><span class="ident">maybe_msa</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">KeyInfo</span> {
-				<span class="ident">msa_id</span>: <span class="ident">msa_id</span>.<span class="ident">clone</span>(),
-				<span class="ident">expired</span>: <span class="ident">T::BlockNumber::default</span>(),
-				<span class="ident">nonce</span>: <span class="ident">Zero::zero</span>(),
-			});
+			<span class="kw-2">*</span><span class="ident">maybe_msa</span> <span class="op">=</span>
+				<span class="prelude-val">Some</span>(<span class="ident">KeyInfo</span> { <span class="ident">msa_id</span>, <span class="ident">expired</span>: <span class="ident">T::BlockNumber::default</span>(), <span class="ident">nonce</span>: <span class="ident">Zero::zero</span>() });
 
 			<span class="comment">// adding reverse lookup</span>
 			<span class="op">&lt;</span><span class="ident">MsaKeysOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::try_mutate</span>(<span class="ident">msa_id</span>, <span class="op">|</span><span class="ident">key_list</span><span class="op">|</span> {
@@ -1197,8 +1188,8 @@
 		<span class="ident">provider_key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>,
 		<span class="ident">authorized_msa_id</span>: <span class="ident">MessageSourceId</span>,
 	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Provider</span>, <span class="ident">Delegator</span>), <span class="ident">DispatchError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">provider_msa_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::ensure_valid_msa_key</span>(<span class="kw-2">&amp;</span><span class="ident">provider_key</span>)<span class="question-mark">?</span>.<span class="ident">msa_id</span>;
-		<span class="kw">let</span> <span class="ident">delegator_msa_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::ensure_valid_msa_key</span>(<span class="kw-2">&amp;</span><span class="ident">delegator_key</span>)<span class="question-mark">?</span>.<span class="ident">msa_id</span>;
+		<span class="kw">let</span> <span class="ident">provider_msa_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::ensure_valid_msa_key</span>(<span class="ident">provider_key</span>)<span class="question-mark">?</span>.<span class="ident">msa_id</span>;
+		<span class="kw">let</span> <span class="ident">delegator_msa_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::ensure_valid_msa_key</span>(<span class="ident">delegator_key</span>)<span class="question-mark">?</span>.<span class="ident">msa_id</span>;
 
 		<span class="macro">ensure!</span>(<span class="ident">authorized_msa_id</span> <span class="op">==</span> <span class="ident">delegator_msa_id</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::UnauthorizedDelegator</span>);
 
@@ -1223,12 +1214,9 @@
 		<span class="ident">signer</span>: <span class="ident">T::AccountId</span>,
 		<span class="ident">payload</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
 	) -&gt; <span class="ident">DispatchResult</span> {
-		<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">T::ConvertIntoAccountId32::convert</span>(<span class="ident">signer</span>.<span class="ident">clone</span>());
+		<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">T::ConvertIntoAccountId32::convert</span>(<span class="ident">signer</span>);
 		<span class="kw">let</span> <span class="ident">wrapped_payload</span> <span class="op">=</span> <span class="ident">wrap_binary_data</span>(<span class="ident">payload</span>);
-		<span class="macro">ensure!</span>(
-			<span class="ident">signature</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">wrapped_payload</span>[..], <span class="kw-2">&amp;</span><span class="ident">key</span>.<span class="ident">clone</span>().<span class="ident">into</span>()),
-			<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidSignature</span>
-		);
+		<span class="macro">ensure!</span>(<span class="ident">signature</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">wrapped_payload</span>[..], <span class="kw-2">&amp;</span><span class="ident">key</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidSignature</span>);
 
 		<span class="prelude-val">Ok</span>(())
 	}
@@ -1382,14 +1370,14 @@
 	}
 
 	<span class="kw">fn</span> <span class="ident">ensure_valid_delegation</span>(<span class="ident">provider</span>: <span class="ident">Provider</span>, <span class="ident">delegation</span>: <span class="ident">Delegator</span>) -&gt; <span class="ident">DispatchResult</span> {
-		<span class="prelude-val">Ok</span>(<span class="ident"><span class="self">Self</span>::ensure_valid_delegation</span>(<span class="ident">provider</span>, <span class="ident">delegation</span>)<span class="question-mark">?</span>)
+		<span class="ident"><span class="self">Self</span>::ensure_valid_delegation</span>(<span class="ident">provider</span>, <span class="ident">delegation</span>)
 	}
 
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>))]</span>
 	<span class="kw">fn</span> <span class="ident">ensure_valid_msa_key</span>(
 		<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>,
 	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">KeyInfo</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::BlockNumber</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
-		<span class="prelude-val">Ok</span>(<span class="ident"><span class="self">Self</span>::ensure_valid_msa_key</span>(<span class="ident">key</span>)<span class="question-mark">?</span>)
+		<span class="ident"><span class="self">Self</span>::ensure_valid_msa_key</span>(<span class="ident">key</span>)
 	}
 
 	<span class="doccomment">/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded</span>

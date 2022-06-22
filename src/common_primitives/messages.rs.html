@@ -136,7 +136,6 @@
 <span id="136">136</span>
 <span id="137">137</span>
 <span id="138">138</span>
-<span id="139">139</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::msa::MessageSourceId</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>;
@@ -154,7 +153,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">BlockNumber</span><span class="op">&gt;</span> {
 	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">serde</span>(<span class="ident">with</span> <span class="op">=</span> <span class="string">&quot;as_hex&quot;</span>))]</span>
-	<span class="doccomment">/// Serialized data in a user-defined schema format.</span>
+	<span class="doccomment">/// Serialized data in a the schemas.</span>
 	<span class="kw">pub</span> <span class="ident">payload</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// The public key of the provider and the signer of the transaction.</span>
 	<span class="kw">pub</span> <span class="ident">provider_key</span>: <span class="ident">AccountId</span>,
@@ -196,8 +195,7 @@
 		<span class="self">self</span>.<span class="ident">page_size</span> <span class="op">&gt;</span> <span class="number">0</span> <span class="op">&amp;&amp;</span>
 			<span class="self">self</span>.<span class="ident">page_size</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident"><span class="self">Self</span>::MAX_PAGE_SIZE</span> <span class="op">&amp;&amp;</span>
 			<span class="self">self</span>.<span class="ident">from_block</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">to_block</span> <span class="op">&amp;&amp;</span>
-			<span class="self">self</span>.<span class="ident">to_block</span>.<span class="ident">clone</span>().<span class="ident">sub</span>(<span class="self">self</span>.<span class="ident">from_block</span>.<span class="ident">clone</span>()) <span class="op">&lt;</span><span class="op">=</span>
-				<span class="ident">BlockNumber::from</span>(<span class="ident"><span class="self">Self</span>::MAX_BLOCK_RANGE</span>)
+			<span class="self">self</span>.<span class="ident">to_block</span>.<span class="ident">sub</span>(<span class="self">self</span>.<span class="ident">from_block</span>) <span class="op">&lt;</span><span class="op">=</span> <span class="ident">BlockNumber::from</span>(<span class="ident"><span class="self">Self</span>::MAX_BLOCK_RANGE</span>)
 	}
 }
 
