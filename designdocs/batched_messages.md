@@ -31,16 +31,20 @@ consumers know what types of data to expect. This document aims to explore what
 a system that does the above could look like.
 
 ## Goals and Non-Goals
-This specifies how messages are to be announced on chain; what is required and how a batch may be partially verified based on on-chain information.
+This specifies how messages are to be announced on chain; what is required and
+how a batch may be partially verified based on on-chain information.
 
-This document specifes how messages can be inferred from both schema format type and payload location.
+This document specifes how messages can be inferred from both schema format type
+and payload location.
 
-This document also specifies how schemas will constrain the shape of off chain messages.
+This document also specifies how schemas will constrain the shape of off chain
+messages.
 
-This document does not describe the types of DSNP messages that would be in batch announcements. Batch announcements must reference a schema through its ID number. A schema may or may not describe a DSNP message.
+This document does not describe the types of DSNP messages that will be
+described by schemas. In theory, any message model can be supported.
 
-This document does not discuss validation of batch file format located at the URI in the announcement, since
-the file format cannot be verified on-chain. For details about batch files themselves, see [DSNP Spec: Batch Publications](https://spec.dsnp.org/DSNP/BatchPublications).
+This document also does not discuss validation of either model or model type. If
+this type of validation is necessary, it should be described elsewhere.
 
 ## Proposal
 * All names are placeholders and may be changed.
@@ -51,68 +55,103 @@ the file format cannot be verified on-chain. For details about batch files thems
 TBD
 
 ### Enums
-* `FormatType` - supported formats for batch files. Currently only [Parquet](https://parquet.apache.org/docs/) and
-  [Avro](https://avro.apache.org/docs/current/) are supported
+* `ModelType` - supported serialization formats for message payloads files. Currently only [Parquet](https://parquet.apache.org/docs/) and
+  [Avro](https://avro.apache.org/docs/current/) are supported.
+* `PayloadLocation` - The location of the payload. Can be either `OnChain` or `IPFS`.
+
+### Traits
+* `Model` - TBD. A set of functions for accessing message payload information.
+  * Derives `Encode`, `Decode`, `MaxEncodedLen`
+  * `max_length`: `SchemaMaxBytesBoundedVecLimit`
 
 ### Types
-* `MessageAnnouncementParams<T:Config>`: generic
-    * `batch_uri`:`Vec<u8>` the URI of the batch file. Must be an IPFS [CIDv1](https://github.com/multiformats/cid/) URI. Accepted codec, algorithm, and base are to be determined.
-    * `message_schema_id`: `SchemaId`  the schema id for the messages in this batch. The `schema_id` must refer to schemas used for batching only.
-    * `file_size`: `usize`, the size of the batch file, used to determine message fee as well as to let consumers know what size files to expect.  Must be &gt;= the minimum possible DSNP batch file size.
-    * `file_format`: `BatchFormat`, indicator of the file format of the batch file.
+* `SchemaAnnouncement<T:Config, M: Model>`: generic
+    * `model_type`: `ModelType` See enum section above.
+    * `model`: `M` Defines the shape of the message payload.
+    * `payload_location`: `PayloadLocation` See enum section above.
 
-The file hash is not included separately. Since the `batch_uri` uses CIDv1 specification, the file hash is already included.
-
-* `BatchAnnouncement`: implements `MessageAnnouncementParams`, returned by `get_batches`
-
-See the [implementation of paging in the messages pallet](https://github.com/LibertyDSNP/mrc/blob/main/common/primitives/src/messages.rs#L26-L58) for comparison.
-
-* `BatchAnnouncementOptions<T:Config>`
-    * `msa_id`:  `Option<MsaId>`, the announcer's MSA id.  Pass None() to get all announcements.
-    * `from_block`: `<T::BlockNumber>`, retrieve messages starting at the given block number (inclusive)
-    * `to_block`: `<T::BlockNumber>`, retrieve messages ending at the given block number (inclusive)
-    * `from_index`: `u32`, starting message index
-
-* `BatchAnnouncementResult`
-    * `has_next`: `uint32`, current page number
-    * `next_block`: `<T::BlockNumber>` starting block number of next page of results
-    * `next_index`: `u32` starting index of next results in `next_block`
-    * `results`: `Vec<BatchAnnouncement>`
+* `MessageAnnouncement<T:Config>`: generic
+    * `schema_id`: `u16`
+    * `source`: `MsaId` Source of the message.
+    * `provider`: `MsaId` Public key of a capacity-providing account
+    * `onchain_payload`: `Vec<u8>?`
+    * `offchain_payload`: `Vec<u8>?`
 
 ### Extrinsics
-#### announce_batch(origin, batch_announcement_params)
-Creates and posts a new batch announcement message on chain, using the batch message Schema Id. This Schema Id must already be registered and will need to be fetched by the extrinsic.  The transaction fee is determined in part by the file size.
+#### register_schema(origin, schema_params)
+Creates and posts a new schema on chain. The transaction fee is determined in part by the model size.
 
 * **Parameters**
   * origin:  required for all extrinsics, the caller/sender.
-  * `batch_announcement_params`: `MessageAnnouncementParams`, the parameters to use in the batch announcement.
+  * `schema_params`: `SchemaAnnouncement`, the parameters to use in the batch announcement.
 
-* **Event**:  `Event::<T>::BatchAnnounced(schema_id, msa_id, file_size, batch_uri)`
+* **Event**:  `Event::<T>::SchemaAnnounced(schema_id, model, model_type, payload_location)`
 * **Restrictions**:
-  * origin's `msa_id` must have capacity to post the transaction during the current epoch
+  * TBD
 
 ### Custom RPCs
 
-#### get_batches(options)
-Retrieves paged batch announcements that have not been garbage-collected which meet `options` criteria.  The `msa_id` does not need to be active.
+#### get_schema(schema_id)
+Retrieves a `SchemaAnnouncement`.
 
 * **Parameters**
-  * `options`: `BatchAnnouncementOptions` containing batch announcement criteria
+  * `schema_id`: `u16` a schema identifier
 
 * **Returns**
-  * `None()` if no messages meet the criteria.
-  * `Some(Vec<BatchAnnouncement>)`, in descending block-transaction order
+  * `None()` if no schemas meet the criteria.
+  * `Some(SchemaAnnouncement)`
 
+### Batch as a Logical Construct
+
+We can circumvent defining a batch explicitly if we leverage the model type and
+payload location included in the schema.
+
+Parquet files are lists by default, so consumers can assume that a message is
+a batch if it has a Parquet model type. In this case, the "batch" will likely be
+located off chain, because storing such a file on-chain would incur significant
+cost.
+
+Avro files, on the other hand, have the option of being `record`  types (see
+[Avro docs](https://avro.apache.org/docs/current/spec.html#schemas)). These files
+could be stored either on chain or off chain. If they are on chain, it would
+make sense for the file to be small (lower cost). However, they could be large
+and stored off chain.
+
+See below to see how the combination of format and location indicate possible
+payload types:
+
+```txt
+| Model Type | Location         | Payload                               |
+-------------------------------------------------------------------------
+| Avro       | On-chain         | DSNP Graph Change                     |
+| Parquet    | On-chain         | Unknown                               |
+| Avro       | IPFS (Off-chain) | Larger Avro structures                |
+| Parquet    | IPFS (Off-chain) | DSNP Broadcast or Reply Announcements |
+```
 
 ### Benefits and Risks
-Please see [Batching Source Dependent Messages With Delegation](https://forums.projectliberty.io/t/04-batching-source-dependent-messages-with-delegation/216), for discussion about the benefits of announcing batch files on chain rather than all types of user-created messages.
+Please see [Batching Source Dependent Messages With Delegation](https://forums.projectliberty.io/t/04-batching-source-dependent-messages-with-delegation/216), for discussion about
+the benefits of announcing batch files on chain rather than all types of
+user-created messages.
 
-One risk is that providers on MRC could simply register a new schema and announce batches "unofficially". We have not decided whether to let everyone with enough token to register a schema. Other MRC participants would need to first learn about and evaluate new schemas, then update their software to consume a new message type.
+One risk is that providers on MRC could simply register a new schema and
+announce batches "unofficially". We have not decided whether or not to let everyone
+with enough token balance register a schema. Other MRC participants would need to
+first learn about and evaluate new schemas, then update their software to
+consume a new message type.
 
-Another risk, mentioned in the Alternatives and Rationale section, is that providers would announce smaller batches than the actual batch file sizes. Earnest MRC participants, such as indexers, will quickly learn this announcer is not reliable and ignore batches marked with that announcer's MsaId.
+There are some upsides to deriving batching logically from existing structures.
+One is cost savings. Not having a batch structure means we don't need to worry
+about any on-chain computation associated with batch messages -- we simply look
+at the format and location on the parent schema and we can deduce whether the
+file is singular or plural.
 
 ### Alternatives and Rationale
-We discussed whether a batch message itself can be delegated, but this would have complicated things and we cannot come up with a use case for delegating batches. It also violates the idea of users delegating explicitly to every provider that performs a service for them, which is a fundamental value we want to apply to the network.
+We discussed whether a batch message itself can be delegated, but this would
+have complicated things and we cannot come up with a use case for delegating
+batches. It also violates the idea of users delegating explicitly to every
+provider that performs a service for them, which is a fundamental value we want
+to apply to the network.
 
 We discussed whether to allow URLs such as HTTP/HTTPS or other URLs and instead opted for content-addressable URIs (CIDv1) which can be resolved by some other service.  This allows us to put the file hash directly into a URI.  It reduces message storage because we don't have to include both a URL and a file hash. A file hash is necessary as a check against file tampering.
 
