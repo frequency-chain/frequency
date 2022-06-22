@@ -21,7 +21,7 @@ services:
       --wasm-execution=compiled
       --execution=wasm
       --base-path=/data
-      --port 30334
+      --port 30335
       --rpc-port 9933
       --ws-port 9944
       --rpc-external
@@ -50,7 +50,7 @@ services:
       --base-path=/data
       --wasm-execution=compiled
       --execution=wasm
-      --port 30335
+      --port 30336
       --rpc-port 9933
       --ws-port 9944
       --rpc-external
