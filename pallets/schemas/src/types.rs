@@ -15,13 +15,16 @@ pub enum ModelType {
 }
 
 #[derive(Default, Clone, Encode, Decode, PartialEq, TypeInfo, Debug, Eq, MaxEncodedLen)]
-#[scale_info(skip_type_params(T))]
+#[scale_info(skip_type_params(MaxModelSize))]
 /// A structure defining a Schema
-pub struct Schema<T: Get<u32>> {
+pub struct Schema<MaxModelSize>
+where
+	MaxModelSize: Get<u32>,
+{
 	/// Model Type
 	pub model_type: ModelType,
 	/// Model
-	pub model: BoundedVec<u8, T>,
+	pub model: BoundedVec<u8, MaxModelSize>,
 }
 // Constrain T to more than one trait? Such that it is also required to implement MaxEncodedLen?
 //
