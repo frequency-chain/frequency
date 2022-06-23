@@ -59,8 +59,11 @@ mod mock;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+mod types;
+
 pub use pallet::*;
 pub mod weights;
+pub use types::*;
 pub use weights::*;
 
 #[frame_support::pallet]
@@ -145,7 +148,7 @@ pub mod pallet {
 		_,
 		Twox64Concat,
 		SchemaId,
-		BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+		Schema<T::SchemaModelMaxBytesBoundedVecLimit>,
 		OptionQuery,
 	>;
 
@@ -230,11 +233,11 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 		fn add_schema(
-			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+			schema: Schema<T::SchemaModelMaxBytesBoundedVecLimit>,
 			schema_id: SchemaId,
 		) -> DispatchResult {
 			<SchemaCount<T>>::set(schema_id);
-			<Schemas<T>>::insert(schema_id, model);
+			<Schemas<T>>::insert(schema_id, schema);
 			Ok(())
 		}
 
@@ -243,10 +246,9 @@ pub mod pallet {
 		}
 
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-			// TODO: This will eventually be a struct with other properties. Currently it is just the model
-			if let Some(model) = Self::get_schema(schema_id) {
+			if let Some(schema) = Self::get_schema(schema_id) {
 				// this should get a BoundedVec out
-				let model_vec = model.into_inner();
+				let model_vec = schema.model.into_inner();
 				let response = SchemaResponse { schema_id, model: model_vec };
 				return Some(response)
 			}
