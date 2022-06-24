@@ -1,7 +1,9 @@
 use common_helpers::avro;
 use common_primitives::{rpc::*, schema::*};
-use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
-use jsonrpc_derive::rpc;
+use jsonrpsee::{
+	core::{async_trait, RpcResult},
+	proc_macros::rpc,
+};
 use pallet_schemas_runtime_api::SchemasRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -27,22 +29,22 @@ impl From<Error> for i64 {
 }
 
 /// MRC Schema API
-#[rpc]
+#[rpc(client, server)]
 pub trait SchemasApi<BlockHash> {
 	/// returns the latest registered schema id
 	///
 	/// `at`: block number to query. If it's `None` will use the latest block number.
 	///
 	/// Returns schema id.
-	#[rpc(name = "schemas_getLatestSchemaId")]
+	#[method(name = "schemas_getLatestSchemaId")]
 	fn get_latest_schema_id(&self, at: Option<BlockHash>) -> Result<u16>;
 
 	/// retrieving schema by schema id
-	#[rpc(name = "schemas_getBySchemaId")]
+	#[method(name = "schemas_getBySchemaId")]
 	fn get_by_schema_id(&self, schema_id: SchemaId) -> Result<Option<SchemaResponse>>;
 
 	/// validates a schema model and returns `true` if the model is correct.
-	#[rpc(name = "schemas_checkSchemaValidity")]
+	#[method(name = "schemas_checkSchemaValidity")]
 	fn check_schema_validity(&self, at: Option<BlockHash>, model: Vec<u8>) -> Result<bool>;
 }
 
@@ -57,13 +59,13 @@ impl<C, M> SchemasHandler<C, M> {
 	}
 }
 
-impl<C, Block> SchemasApi<<Block as BlockT>::Hash> for SchemasHandler<C, Block>
+impl<C, Block> SchemasApiServer<<Block as BlockT>::Hash> for SchemasHandler<C, Block>
 where
 	Block: BlockT,
 	C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
 	C::Api: SchemasRuntimeApi<Block>,
 {
-	fn get_latest_schema_id(&self, at: Option<<Block as BlockT>::Hash>) -> Result<u16> {
+	fn get_latest_schema_id(&self, at: Option<<Block as BlockT>::Hash>) -> RpcResult<u16> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		let schema_api_result = api.get_latest_schema_id(&at);
@@ -88,7 +90,7 @@ where
 		&self,
 		_at: Option<<Block as BlockT>::Hash>,
 		model: Vec<u8>,
-	) -> Result<bool> {
+	) -> RpcResult<bool> {
 		let validated_schema = avro::validate_raw_avro_schema(&model);
 		match validated_schema {
 			Ok(_) => Ok(true),
@@ -100,7 +102,7 @@ where
 		}
 	}
 
-	fn get_by_schema_id(&self, schema_id: SchemaId) -> Result<Option<SchemaResponse>> {
+	fn get_by_schema_id(&self, schema_id: SchemaId) -> RpcResult<Option<SchemaResponse>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 		let schema_api_result = api.get_by_schema_id(&at, schema_id);

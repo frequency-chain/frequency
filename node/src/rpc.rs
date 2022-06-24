@@ -17,7 +17,7 @@ use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
 /// A type representing all RPC extensions.
-pub type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
+pub type RpcExtension = jsonrpsee::RpcModule<()>;
 
 /// Full client dependencies
 pub struct FullDeps<C, P> {
@@ -30,7 +30,9 @@ pub struct FullDeps<C, P> {
 }
 
 /// Instantiate all RPC extensions.
-pub fn create_full<C, P>(deps: FullDeps<C, P>) -> RpcExtension
+pub fn create_full<C, P>(
+	deps: FullDeps<C, P>,
+) -> Result<RpcExtension, Box<dyn std::error::Error + Send + Sync>>
 where
 	C: ProvideRuntimeApi<Block>
 		+ HeaderBackend<Block>
@@ -48,27 +50,23 @@ where
 	C::Api: pallet_tx_fee_runtime_api::TxFeeRuntimeApi<Block, Balance>,
 	P: TransactionPool + Sync + Send + 'static,
 {
-	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
-	use substrate_frame_rpc_system::{FullSystem, SystemApi};
+	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+	use substrate_frame_rpc_system::{System, SystemApiServer};
 
-	let mut io = jsonrpc_core::IoHandler::default();
+	// Unfinished RPCs
+	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
+	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
+	use pallet_schemas_rpc::{SchemasApiServer, SchemasHandler};
+	use pallet_tx_fee_rpc::{MrcTxFeeApiServer, MrcTxFeeHandler};
+
+	let mut module = RpcExtension::new(());
 	let FullDeps { client, pool, deny_unsafe } = deps;
 
-	io.extend_with(SystemApi::to_delegate(FullSystem::new(client.clone(), pool, deny_unsafe)));
-	io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone())));
-
-	// Unfinished custom RPC
-	io.extend_with(pallet_messages_rpc::MessagesApi::to_delegate(
-		pallet_messages_rpc::MessagesHandler::new(client.clone()),
-	));
-	io.extend_with(pallet_schemas_rpc::SchemasApi::to_delegate(
-		pallet_schemas_rpc::SchemasHandler::new(client.clone()),
-	));
-	io.extend_with(pallet_msa_rpc::MsaApi::to_delegate(pallet_msa_rpc::MsaHandler::new(
-		client.clone(),
-	)));
-	io.extend_with(pallet_tx_fee_rpc::MrcTxFeeApi::to_delegate(
-		pallet_tx_fee_rpc::MrcTxFeeHandler::new(client.clone()),
-	));
-	io
+	module.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
+	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
+	module.merge(MessagesHandler::new(client.clone()).into_rpc())?;
+	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;
+	module.merge(MsaHandler::new(client.clone()).into_rpc())?;
+	module.merge(MrcTxFeeHandler::new(client.clone()).into_rpc())?;
+	Ok(module)
 }

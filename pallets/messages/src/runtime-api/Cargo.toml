@@ -14,8 +14,8 @@ edition = "2021"
 codec = {package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"]}
 
 # Substrate
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
 
 # MRC related dependencies
 common-primitives = {default-features = false, path = "../../../../common/primitives" }
