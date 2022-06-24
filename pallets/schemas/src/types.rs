@@ -1,30 +1,26 @@
 //! Types for the Schema Pallet
-use super::*;
+use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 
 use codec::{Decode, Encode, MaxEncodedLen};
 
-use frame_support::traits::Get;
-
 /// Types of modeling in which a message payload may be defined
-#[derive(Default, Clone, Encode, Decode, Debug, TypeInfo, PartialEq, Eq, MaxEncodedLen)]
+#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 pub enum ModelType {
 	/// Message payload modeled with Apache Avro
 	#[default]
 	AvroBinary,
 }
 
-#[derive(Default, Clone, Encode, Decode, PartialEq, TypeInfo, Debug, Eq, MaxEncodedLen)]
+#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxModelSize))]
 /// A structure defining a Schema
 pub struct Schema<MaxModelSize>
 where
 	MaxModelSize: Get<u32>,
 {
-	/// Model Type
+	/// The type of model (AvroBinary, Parquery, etc.)
 	pub model_type: ModelType,
-	/// Model
+	/// Defines the structure of the message payload using model_type
 	pub model: BoundedVec<u8, MaxModelSize>,
 }
-// Constrain T to more than one trait? Such that it is also required to implement MaxEncodedLen?
-//
