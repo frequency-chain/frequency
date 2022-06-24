@@ -48,7 +48,7 @@
 	rustdoc::invalid_codeblock_attributes
 )]
 
-use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
+use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
 
 #[cfg(test)]
 mod tests;
@@ -131,6 +131,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
@@ -194,6 +195,7 @@ pub mod pallet {
 		pub fn register_schema(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+			model_type: ModelType,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
@@ -206,11 +208,13 @@ pub mod pallet {
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 
+			let schema = Schema { model_type, model };
+
 			let cur_count = Self::schema_count();
 			ensure!(cur_count < T::MaxSchemaRegistrations::get(), Error::<T>::TooManySchemas);
 			let schema_id = cur_count.checked_add(1).ok_or(Error::<T>::SchemaCountOverflow)?;
 
-			Self::add_schema(model, schema_id)?;
+			Self::add_schema(schema, schema_id)?;
 
 			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
 			Ok(())
