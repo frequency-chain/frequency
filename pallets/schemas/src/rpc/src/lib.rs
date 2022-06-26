@@ -1,8 +1,9 @@
 use common_helpers::avro;
 use common_primitives::{rpc::*, schema::*};
 use jsonrpsee::{
-	core::{async_trait, RpcResult},
+	core::{async_trait, Error as RpcError, RpcResult},
 	proc_macros::rpc,
+	types::error::{CallError, ErrorCode, ErrorObject},
 };
 use pallet_schemas_runtime_api::SchemasRuntimeApi;
 use sp_api::ProvideRuntimeApi;
@@ -13,17 +14,20 @@ use std::sync::Arc;
 
 /// Error type of this RPC api.
 pub enum Error {
-	/// The transaction was not decodable.
-	DecodeError,
-	/// The call to runtime failed.
-	RuntimeError,
+	/// No schema was found for the given id.
+	SchemaNotFound,
+	/// Failed to fetch latest schema.
+	SchemaSearchError,
+	// Schema validation error.
+	SchemaValidationError,
 }
 
-impl From<Error> for i64 {
-	fn from(e: Error) -> i64 {
+impl From<Error> for i32 {
+	fn from(e: Error) -> i32 {
 		match e {
-			Error::RuntimeError => 1,
-			Error::DecodeError => 2,
+			Error::SchemaNotFound => 1,
+			Error::SchemaSearchError => 2,
+			Error::SchemaValidationError => 3,
 		}
 	}
 }
@@ -37,15 +41,15 @@ pub trait SchemasApi<BlockHash> {
 	///
 	/// Returns schema id.
 	#[method(name = "schemas_getLatestSchemaId")]
-	fn get_latest_schema_id(&self, at: Option<BlockHash>) -> Result<u16>;
+	fn get_latest_schema_id(&self, at: Option<BlockHash>) -> RpcResult<u16>;
 
 	/// retrieving schema by schema id
 	#[method(name = "schemas_getBySchemaId")]
-	fn get_by_schema_id(&self, schema_id: SchemaId) -> Result<Option<SchemaResponse>>;
+	fn get_by_schema_id(&self, schema_id: SchemaId) -> RpcResult<Option<SchemaResponse>>;
 
 	/// validates a schema model and returns `true` if the model is correct.
 	#[method(name = "schemas_checkSchemaValidity")]
-	fn check_schema_validity(&self, at: Option<BlockHash>, model: Vec<u8>) -> Result<bool>;
+	fn check_schema_validity(&self, at: Option<BlockHash>, model: Vec<u8>) -> RpcResult<bool>;
 }
 
 pub struct SchemasHandler<C, M> {
@@ -59,6 +63,7 @@ impl<C, M> SchemasHandler<C, M> {
 	}
 }
 
+#[async_trait]
 impl<C, Block> SchemasApiServer<<Block as BlockT>::Hash> for SchemasHandler<C, Block>
 where
 	Block: BlockT,
@@ -72,17 +77,17 @@ where
 		match schema_api_result {
 			Ok(schema_id) => match schema_id {
 				Some(id) => Ok(id),
-				None => Err(RpcError {
-					code: ErrorCode::ServerError(1),
-					message: "No schema found".into(),
-					data: None,
-				}),
+				None => Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
+					Error::SchemaNotFound.into(),
+					"No schema found for given id",
+					None::<()>,
+				)))),
 			},
-			Err(e) => Err(RpcError {
-				code: ErrorCode::ServerError(1),
-				message: "Unable to get latest schema id".into(),
-				data: Some(format!("{:?}", e).into()),
-			}),
+			Err(e) => Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
+				Error::SchemaSearchError.into(),
+				"Unable to get latest schema",
+				Some(format!("{:?}", e)),
+			)))),
 		}
 	}
 
@@ -94,11 +99,11 @@ where
 		let validated_schema = avro::validate_raw_avro_schema(&model);
 		match validated_schema {
 			Ok(_) => Ok(true),
-			Err(e) => Err(RpcError {
-				code: ErrorCode::ServerError(1),
-				message: "Unable to validate schema".into(),
-				data: Some(format!("{:?}", e).into()),
-			}),
+			Err(e) => Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
+				Error::SchemaValidationError.into(),
+				"Unable to validate schema",
+				Some(format!("{:?}", e)),
+			)))),
 		}
 	}
 

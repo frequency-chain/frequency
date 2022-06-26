@@ -20,17 +20,17 @@ pub trait MsaApi<BlockHash, AccountId, BlockNumber> {
 	fn get_msa_keys(
 		&self,
 		msa_id: MessageSourceId,
-	) -> Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>>;
+	) -> RpcResult<Vec<KeyInfoResponse<AccountId, BlockNumber>>>;
 
 	#[method(name = "msa_getMsaId")]
-	fn get_msa_id(&self, key: AccountId) -> Result<Option<MessageSourceId>>;
+	fn get_msa_id(&self, key: AccountId) -> RpcResult<Option<MessageSourceId>>;
 
 	#[method(name = "msa_checkDelegations")]
 	fn check_delegations(
 		&self,
 		delegator_msa_ids: Vec<MessageSourceId>,
 		provider_msa_id: MessageSourceId,
-	) -> Result<Vec<(MessageSourceId, bool)>>;
+	) -> RpcResult<Vec<(MessageSourceId, bool)>>;
 }
 
 /// A struct that implements the `MessagesApi`.

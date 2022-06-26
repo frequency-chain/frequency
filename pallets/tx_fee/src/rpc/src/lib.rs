@@ -1,6 +1,7 @@
 use codec::{Codec, Decode};
 use jsonrpsee::{
-	core::{Error as RpcError, RpcResult},
+	core::{async_trait, Error as RpcError, RpcResult},
+	proc_macros::rpc,
 	types::error::{CallError, ErrorCode, ErrorObject},
 };
 use pallet_tx_fee_runtime_api::{FeeDetails, InclusionFee, RuntimeDispatchInfo, TxFeeRuntimeApi};
@@ -22,8 +23,8 @@ pub enum Error {
 	RuntimeError,
 }
 
-impl From<Error> for i64 {
-	fn from(e: Error) -> i64 {
+impl From<Error> for i32 {
+	fn from(e: Error) -> i32 {
 		match e {
 			Error::RuntimeError => 1,
 			Error::DecodeError => 2,
@@ -38,7 +39,7 @@ pub trait MrcTxFeeApi<BlockHash, Balance> {
 		&self,
 		encoded_xt: Bytes,
 		at: Option<BlockHash>,
-	) -> Result<FeeDetails<NumberOrHex>>;
+	) -> RpcResult<FeeDetails<NumberOrHex>>;
 }
 
 pub struct MrcTxFeeHandler<C, M> {
@@ -52,6 +53,7 @@ impl<C, M> MrcTxFeeHandler<C, M> {
 	}
 }
 
+#[async_trait]
 impl<C, Block, Balance> MrcTxFeeApiServer<<Block as BlockT>::Hash, RuntimeDispatchInfo<Balance>>
 	for MrcTxFeeHandler<C, Block>
 where
@@ -71,25 +73,25 @@ where
 		let encoded_len = encoded_xt.len() as u32;
 		let uxt: Block::Extrinsic = Decode::decode(&mut &*encoded_xt).map_err(|e| {
 			RpcError::Call(CallError::Custom(ErrorObject::owned(
-				ErrorCode::ServerError(Error::DecodeError.into()),
+				Error::DecodeError.into(),
 				"Bad encoded extrinsic",
 				Some(format!("{:?}", e)),
 			)))
 		})?;
 		let fee_details = api.compute_extrinsic_cost(&at, uxt, encoded_len).map_err(|e| {
 			RpcError::Call(CallError::Custom(ErrorObject::owned(
-				ErrorCode::ServerError(Error::RuntimeError.into()),
+				Error::RuntimeError.into(),
 				"Failed to compute cost of unsigned extrinsic",
 				Some(format!("{:?}", e)),
 			)))
 		})?;
 
 		let try_into_rpc_balance = |value: Balance| {
-			value.try_into().map_err(|e| {
+			value.try_into().map_err(|_| {
 				RpcError::Call(CallError::Custom(ErrorObject::owned(
-					ErrorCode::InvalidParams,
+					ErrorCode::InvalidParams.code(),
 					format!("{} doesn't fit in NumberOrHex representation", value),
-					Some(format!("{:?}", e)),
+					None::<()>,
 				)))
 			})
 		};

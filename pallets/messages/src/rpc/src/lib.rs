@@ -3,6 +3,7 @@ use common_primitives::{messages::*, rpc::*, schema::*};
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
+	types::error::{CallError, ErrorCode, ErrorObject},
 };
 use pallet_messages_runtime_api::MessagesApi as MessagesRuntimeApi;
 use sp_api::ProvideRuntimeApi;
