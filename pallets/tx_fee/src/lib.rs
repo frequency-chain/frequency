@@ -17,7 +17,8 @@
 #![deny(
 	rustdoc::broken_intra_doc_links,
 	rustdoc::missing_crate_level_docs,
-	rustdoc::invalid_codeblock_attributes
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
 )]
 
 use frame_support::weights::{DispatchInfo, GetDispatchInfo};
@@ -51,6 +52,7 @@ pub mod pallet {
 	pub enum Error<T> {}
 
 	impl<T: Config> Pallet<T> {
+		/// Computer fee details of a given extrinsic
 		pub fn compute_extrinsic_cost<Extrinsic: sp_runtime::traits::Extrinsic + GetDispatchInfo>(
 			unchecked_extrinsic: Extrinsic,
 			len: u32,

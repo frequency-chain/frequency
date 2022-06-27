@@ -9,7 +9,8 @@
 	missing_docs,
 	rustdoc::broken_intra_doc_links,
 	rustdoc::missing_crate_level_docs,
-	rustdoc::invalid_codeblock_attributes
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
 )]
 
 /// Structs and traits for the Messages pallet.

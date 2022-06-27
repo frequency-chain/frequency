@@ -31,7 +31,8 @@
 #![deny(
 	rustdoc::broken_intra_doc_links,
 	rustdoc::missing_crate_level_docs,
-	rustdoc::invalid_codeblock_attributes
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
 )]
 
 #[cfg(test)]
@@ -250,6 +251,12 @@ impl<T: Config> Pallet<T> {
 		Ok(message_source_id)
 	}
 
+	/// Check for delegation between Delegator and Provider
+	/// # Arguments
+	/// * `provider` - An MSA of the provider.
+	/// * `delegator` - An MSA of the delegator.
+	/// # Returns
+	/// * Result<MessageSourceId, MessageSourceId> - Returns MessageSourceId mapping of provider and delegator.
 	pub fn ensure_valid_delegation(
 		provider: Provider,
 		delegator: Delegator,
