@@ -36,7 +36,7 @@ jobs:
       - name: Build MRC related documentation 📝
         run: ./scripts/mrc_docs.sh
       - name: Deploy MRC docs to gh-pages 🚀
-        uses: JamesIves/github-pages-deploy-action@v4.3.3
+        uses: JamesIves/github-pages-deploy-action@v4.3.4
         with:
           branch: gh-pages
           folder: ./target/doc
