@@ -13,7 +13,7 @@
 This design document describes message schemas. It also will describe
 batchability as a logical construct derived from schemas.
 
-We will also be describing APIs for sending and retrieving messages.
+We will also be updating the APIs for creating schemas.
 
 ## Problem Statement
 In order to reduce costs for announcers of messages on-chain as well as reduce
@@ -40,7 +40,7 @@ and payload location.
 This document also specifies how schemas will constrain the shape of off chain
 messages.
 
-This document does not describe the types of DSNP messages that will be
+This document does not describe the types of DSNP Announcements that will be
 described by schemas. In theory, any message model can be supported.
 
 This document also does not discuss validation of either model or model type. If
@@ -65,12 +65,12 @@ TBD
   * `max_length`: `SchemaMaxBytesBoundedVecLimit`
 
 ### Types
-* `SchemaAnnouncement<T:Config, M: Model>`: generic
+* `Schema<T:Config, M: Model>`: generic
     * `model_type`: `ModelType` See enum section above.
     * `model`: `M` Defines the shape of the message payload.
     * `payload_location`: `PayloadLocation` See enum section above.
 
-* `MessageAnnouncement<T:Config>`: generic
+* `Message<T:Config>`: generic
     * `schema_id`: `u16`
     * `source`: `MsaId` Source of the message.
     * `provider`: `MsaId` Public key of a capacity-providing account
@@ -83,23 +83,22 @@ Creates and posts a new schema on chain. The transaction fee is determined in pa
 
 * **Parameters**
   * origin:  required for all extrinsics, the caller/sender.
-  * `schema_params`: `SchemaAnnouncement`, the parameters to use in the batch announcement.
+  * `schema_params`: `Schema`, the parameters to use in the batch announcement.
 
-* **Event**:  `Event::<T>::SchemaAnnounced(schema_id, model, model_type, payload_location)`
 * **Restrictions**:
   * TBD
 
 ### Custom RPCs
 
 #### get_schema(schema_id)
-Retrieves a `SchemaAnnouncement`.
+Retrieves a `Schema`.
 
 * **Parameters**
   * `schema_id`: `u16` a schema identifier
 
 * **Returns**
   * `None()` if no schemas meet the criteria.
-  * `Some(SchemaAnnouncement)`
+  * `Some(Schema)`
 
 ### Batch as a Logical Construct
 
@@ -121,7 +120,7 @@ See below to see how the combination of format and location indicate possible
 payload types:
 
 ```txt
-| Model Type | Location         | Payload                               |
+| Model Type | Location         | Example Use Case                      |
 -------------------------------------------------------------------------
 | Avro       | On-chain         | DSNP Graph Change                     |
 | Parquet    | On-chain         | Unknown                               |
