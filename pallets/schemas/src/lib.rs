@@ -182,6 +182,7 @@ pub mod pallet {
 		/// # Arguments
 		/// * `origin` - The originator of the transaction
 		/// * `model` - The new schema model data
+		/// * 'model_type' - The formatting type of the model data
 		/// # Returns
 		/// * `DispatchResult`
 		///
