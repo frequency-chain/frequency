@@ -1,4 +1,4 @@
-use crate::{Config, Error, Event as AnnouncementEvent};
+use crate::{Config, Error, Event as AnnouncementEvent, ModelType};
 use common_primitives::schema::SchemaId;
 use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin, BoundedVec};
 use serial_test::serial;
@@ -41,7 +41,7 @@ fn require_valid_schema_size_errors() {
 		];
 		for tc in test_cases {
 			assert_noop!(
-				SchemasPallet::register_schema(Origin::signed(sender), create_bounded_schema_vec(tc.schema)),
+				SchemasPallet::register_schema(Origin::signed(sender), create_bounded_schema_vec(tc.schema), ModelType::AvroBinary),
 				tc.expected.0);
 		}
 	})
@@ -63,7 +63,8 @@ fn register_schema_happy_path() {
 		let sender: AccountId = 1;
 		assert_ok!(SchemasPallet::register_schema(
 			Origin::signed(sender),
-			create_bounded_schema_vec("foo,bar,bazz")
+			create_bounded_schema_vec("foo,bar,bazz"),
+			ModelType::AvroBinary
 		));
 	})
 }
@@ -114,7 +115,8 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 			let expected_schema_id = last_schema_id + 1;
 			assert_ok!(SchemasPallet::register_schema(
 				Origin::signed(sender),
-				create_bounded_schema_vec(fields)
+				create_bounded_schema_vec(fields),
+				ModelType::AvroBinary
 			));
 			System::assert_last_event(
 				AnnouncementEvent::SchemaRegistered(sender, expected_schema_id).into(),
@@ -123,7 +125,8 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 		}
 		assert_ok!(SchemasPallet::register_schema(
 			Origin::signed(sender),
-			create_bounded_schema_vec("foo,bar")
+			create_bounded_schema_vec("foo,bar"),
+			ModelType::AvroBinary
 		));
 	})
 }
@@ -138,7 +141,8 @@ fn get_existing_schema_by_id_should_return_schema() {
 		let serialized_fields = Vec::from(test_str.as_bytes());
 		assert_ok!(SchemasPallet::register_schema(
 			Origin::signed(sender),
-			create_bounded_schema_vec(test_str)
+			create_bounded_schema_vec(test_str),
+			ModelType::AvroBinary
 		));
 
 		// act
