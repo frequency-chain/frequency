@@ -13,7 +13,7 @@
 This design document describes message schemas. It also will describe
 batchability as a logical construct derived from schemas.
 
-We will also be updating the APIs for creating schemas.
+We will also be updating the APIs for creating schemas`.
 
 ## Problem Statement
 In order to reduce costs for announcers of messages on-chain as well as reduce
@@ -58,9 +58,15 @@ TBD
 * `ModelType` - supported serialization formats for message payloads files. Currently only [Parquet](https://parquet.apache.org/docs/) and
   [Avro](https://avro.apache.org/docs/current/) are supported.
 * `PayloadLocation` - The location of the payload. Can be either `OnChain` or `IPFS`.
+  * `OnChain`
+    * `source`: `MsaId`
+    * `payload`: `Vec<u8>`
+  * `IPFS`
+    * `payload_cid`: `TBD`
+    * `payload_byte_length`: `TBD`
 
 ### Traits
-* `Model` - TBD. A set of functions for accessing message payload information.
+* `Model` - TBD. A common interface for accessing message payload information.
   * Derives `Encode`, `Decode`, `MaxEncodedLen`
   * `max_length`: `SchemaMaxBytesBoundedVecLimit`
 
@@ -70,12 +76,11 @@ TBD
     * `model`: `M` Defines the shape of the message payload.
     * `payload_location`: `PayloadLocation` See enum section above.
 
-* `Message<T:Config>`: generic
+* `Message<T:Config, P: PayloadLocation>`: generic
     * `schema_id`: `u16`
     * `source`: `MsaId` Source of the message.
     * `provider`: `MsaId` Public key of a capacity-providing account
-    * `onchain_payload`: `Vec<u8>?`
-    * `offchain_payload`: `Vec<u8>?`
+    * `payload`: `P` The `PayloadLocation`, could be on-chain or off-chain
 
 ### Extrinsics
 #### register_schema(origin, schema_params)
@@ -156,7 +161,45 @@ We discussed whether to allow URLs such as HTTP/HTTPS or other URLs and instead 
 
 We revisited the idea of whether it really is necessary to include a file size. We will be charging a premium for larger files, however, there will be per-byte discount for larger files in order to create an incentive for posting batches while reducing the incentive for announcers to allow spam. Although the processing and downloading time for enormous files also serves as a disincentive for spam, we feel it would not be sufficient.
 
-Despite the fact that announcers can lie abut the file size, the file_size parameter also serves as an on-chain declaration that not only allows consumers of batches to quickly discover if a batch announcer was honest, but the file requestor can know in advance when to stop requesting data.
+Despite the fact that announcers can lie abut the file size, the file_size
+parameter also serves as an on-chain declaration that not only allows consumers
+of batches to quickly discover if a batch announcer was honest, but the file
+requestor can know in advance when to stop requesting data.
+
+#### Message Payloads
+The document above describes payload location as an enumeration of on-chain and
+off-chain types. This allows us to encapsulate different information for both
+on-chain and IPFS payloads without overloading a single type with both sets of
+fields.
+
+However, if we discover that both on-chain and off-chain payloads are too
+complex to fit into a single enum, we could use traits to our advantage:
+
+```rust
+trait OnChainPayload {
+  // FYI: the following is just for demonstrative purposes
+  fn source() -> MsaId
+  fn payload() -> Vec<u8>
+}
+
+trait IPFSPayload {
+  // FYI: the following is just for demonstrative purposes
+  fn payload_cid() -> CIDv2
+  fn payload_length() -> u32
+}
+
+enum PayloadLocation {
+  OnChain(Box<dyn OnChainPayload>),
+  OffChain(Box<dyn IPFSPayload>)
+}
+```
+
+This would give us a flexible and expressive set of interfaces to describe
+payloads of any shape without crowding a single payload type.
+
+The typing here is less than ideal, but the above is an example of the bare
+minimum. We could supply some concrete implementations of both `OnChainPayload`
+and `IPFSPayload` to make the API a bit more lucid.
 
 ### Glossary
 * *IPFS* [InterPlanetary File System](https://docs.ipfs.io/), a decentralized file system for building the next generation of the internet
