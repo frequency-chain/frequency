@@ -1149,9 +1149,12 @@ name = "common-helpers"
 version = "0.1.0"
 dependencies = [
  "apache-avro",
+ "jsonrpsee",
  "proptest",
  "rayon",
  "sha2 0.10.2",
+ "sp-api",
+ "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.25)",
  "thiserror",
 ]
 
@@ -1161,7 +1164,6 @@ version = "0.1.0"
 dependencies = [
  "frame-support",
  "impl-serde",
- "jsonrpsee",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -5699,6 +5701,7 @@ dependencies = [
 name = "pallet-messages-rpc"
 version = "0.1.0"
 dependencies = [
+ "common-helpers",
  "common-primitives",
  "jsonrpsee",
  "pallet-messages-runtime-api",
@@ -5772,6 +5775,7 @@ dependencies = [
 name = "pallet-msa-rpc"
 version = "0.1.0"
 dependencies = [
+ "common-helpers",
  "common-primitives",
  "jsonrpsee",
  "pallet-msa-runtime-api",

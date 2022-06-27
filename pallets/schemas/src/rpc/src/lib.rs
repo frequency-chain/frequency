@@ -1,9 +1,9 @@
-use common_helpers::avro;
-use common_primitives::{rpc::*, schema::*};
+use common_helpers::{avro, rpc::*};
+use common_primitives::schema::*;
 use jsonrpsee::{
 	core::{async_trait, Error as RpcError, RpcResult},
 	proc_macros::rpc,
-	types::error::{CallError, ErrorCode, ErrorObject},
+	types::error::{CallError, ErrorObject},
 };
 use pallet_schemas_runtime_api::SchemasRuntimeApi;
 use sp_api::ProvideRuntimeApi;

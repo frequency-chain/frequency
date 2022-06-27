@@ -16,7 +16,7 @@ jsonrpsee = { version = "0.14.0", features = ["server", "macros"] }
 # unfinished
 pallet-messages-runtime-api = {default-features = false, path = "../runtime-api" }
 common-primitives = {default-features = false, path = "../../../../common/primitives" }
-
+common-helpers = {default-features = false, path = "../../../../common/helpers" }
 # Substrate packages
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }

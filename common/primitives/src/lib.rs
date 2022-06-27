@@ -16,10 +16,6 @@
 pub mod messages;
 /// Structs and traits for the MSA pallet.
 pub mod msa;
-/// Structs and traits specifically for RPC calls.
-#[cfg(feature = "std")]
-/// export rpc primitive types.
-pub mod rpc;
 /// Structs and traits for the Schema pallet
 pub mod schema;
 /// Structs and traits for the utility package.

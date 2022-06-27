@@ -214,7 +214,7 @@ impl<T: Config> Pallet<T> {
 
 			let msg = Message {
 				payload: payload.try_into().unwrap(), // size is checked on top of extrinsic
-				provider_key: provider_key,
+				provider_key,
 				index: current_size,
 				msa_id: message_source_id,
 			};
@@ -237,7 +237,7 @@ impl<T: Config> Pallet<T> {
 		key: &T::AccountId,
 		on_behalf_of: Option<MessageSourceId>,
 	) -> Result<MessageSourceId, DispatchError> {
-		let sender_msa_id = T::AccountProvider::ensure_valid_msa_key(&key)
+		let sender_msa_id = T::AccountProvider::ensure_valid_msa_key(key)
 			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?
 			.msa_id;
 

@@ -1,8 +1,7 @@
 use codec::Codec;
-use common_primitives::{
-	msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider},
-	rpc::*,
-};
+use common_helpers::rpc::*;
+use common_primitives::msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider};
+
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
