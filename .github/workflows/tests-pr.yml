@@ -8,7 +8,10 @@ jobs:
   tests:
     name: ${{ matrix.target }}
     strategy:
-      matrix: ${{fromJson(needs.build_prep.outputs.matrix)}}
+      matrix:
+        os: [ubuntu-latest]
+        target: [tests, lint]
+        rust_toolchain: [nightly-2022-06-27]
     runs-on: ${{ matrix.os }}
     env:
       RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
