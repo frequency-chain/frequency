@@ -1,16 +1,9 @@
 //! Types for the Schema Pallet
+use common_primitives::schema::ModelType;
 use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 
 use codec::{Decode, Encode, MaxEncodedLen};
-
-/// Types of modeling in which a message payload may be defined
-#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
-pub enum ModelType {
-	/// Message payload modeled with Apache Avro
-	#[default]
-	AvroBinary,
-}
 
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxModelSize))]

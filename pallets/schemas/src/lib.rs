@@ -69,7 +69,7 @@ pub use weights::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::schema::{SchemaId, SchemaResponse};
+	use common_primitives::schema::{ModelType, SchemaId, SchemaResponse};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -254,7 +254,9 @@ pub mod pallet {
 			if let Some(schema) = Self::get_schema(schema_id) {
 				// this should get a BoundedVec out
 				let model_vec = schema.model.into_inner();
-				let response = SchemaResponse { schema_id, model: model_vec };
+
+				let response =
+					SchemaResponse { schema_id, model: model_vec, model_type: schema.model_type };
 				return Some(response)
 			}
 			None
