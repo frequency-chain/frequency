@@ -190,18 +190,16 @@ trait IPFSPayload {
   fn payload_length() -> u32
 }
 
-enum Payload {
-  OnChain(Box<dyn OnChainPayload>),
-  IPFS(Box<dyn IPFSPayload>)
+pub Payload<S: OnChainPayload,T: IPFSPayload> {
+    OnChain(S),
+    IPFS (T),
 }
 ```
 
 This would give us a flexible and expressive set of interfaces to describe
 payloads of any shape without crowding a single payload type.
 
-The typing here is less than ideal, but the above is an example of the bare
-minimum. We could supply some concrete implementations of both `OnChainPayload`
-and `IPFSPayload` to make the API a bit more lucid.
+**NOTE: This is purely a way to demonstrate how we could describe payloads using traits. It is being included here for the sake of completeness with regard to discussion around possible design.**
 
 ### Glossary
 * *IPFS* [InterPlanetary File System](https://docs.ipfs.io/), a decentralized file system for building the next generation of the internet
