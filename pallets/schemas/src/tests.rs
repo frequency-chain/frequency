@@ -1,5 +1,5 @@
-use crate::{Config, Error, Event as AnnouncementEvent, ModelType};
-use common_primitives::schema::SchemaId;
+use crate::{Config, Error, Event as AnnouncementEvent};
+use common_primitives::schema::{ModelType, SchemaId};
 use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin, BoundedVec};
 use serial_test::serial;
 use sp_runtime::DispatchError::BadOrigin;
