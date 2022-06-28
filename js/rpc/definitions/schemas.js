@@ -46,6 +46,7 @@ export default {
     SchemaResponse: {
       schema_id: "SchemaId",
       model: "SchemaModel",
+      model_type: "ModelType",
     },
   },
 };
