@@ -51,13 +51,13 @@ this type of validation is necessary, it should be described elsewhere.
 * Types may change as needed during implementation phase
 * Errors in the extrinsic(s) must have different, reasonably-named error enums for each type of error for ease of debugging.
 
-### Constants
-TBD
-
 ### Enums
 * `ModelType` - supported serialization formats for message payloads files. Currently only [Parquet](https://parquet.apache.org/docs/) and
   [Avro](https://avro.apache.org/docs/current/) are supported.
-* `PayloadLocation` - The location of the payload. Can be either `OnChain` or `IPFS`.
+* `PayloadLocation` - The location of the payload. Can be either `OnChain` or `OffChain`.
+  * `OnChain`
+  * `OffChain`
+* `Payload`
   * `OnChain`
     * `source`: `MsaId`
     * `payload`: `Vec<u8>`
@@ -71,16 +71,18 @@ TBD
   * `max_length`: `SchemaMaxBytesBoundedVecLimit`
 
 ### Types
-* `Schema<T:Config, M: Model>`: generic
+* `Schema<T:Config>`: generic
     * `model_type`: `ModelType` See enum section above.
-    * `model`: `M` Defines the shape of the message payload.
+    * `model`: `Model` Defines the shape of the message payload.
     * `payload_location`: `PayloadLocation` See enum section above.
 
-* `Message<T:Config, P: PayloadLocation>`: generic
+* `Message<T:Config>`: generic
     * `schema_id`: `u16`
     * `source`: `MsaId` Source of the message.
     * `provider`: `MsaId` Public key of a capacity-providing account
-    * `payload`: `P` The `PayloadLocation`, could be on-chain or off-chain
+    * `payload`: `Payload` The payload.
+
+(See alternatives section for another way to structure payloads)
 
 ### Extrinsics
 #### register_schema(origin, schema_params)
@@ -188,9 +190,9 @@ trait IPFSPayload {
   fn payload_length() -> u32
 }
 
-enum PayloadLocation {
+enum Payload {
   OnChain(Box<dyn OnChainPayload>),
-  OffChain(Box<dyn IPFSPayload>)
+  IPFS(Box<dyn IPFSPayload>)
 }
 ```
 
