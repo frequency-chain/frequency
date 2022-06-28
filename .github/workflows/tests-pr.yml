@@ -51,7 +51,7 @@ jobs:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           default: true
       - name: Cache
-        if: ${{ steps.filter.outputs.rust == 'false' }}
+        if: ${{ steps.filter.outputs.rust == 'true' }}
         uses: Swatinem/rust-cache@v1
       - name: Run tests
         if: ${{ steps.filter.outputs.rust == 'true' }}
