@@ -13,7 +13,7 @@
 This design document describes message schemas. It also will describe
 batchability as a logical construct derived from schemas.
 
-We will also be updating the APIs for creating schemas`.
+We will also be updating the APIs for creating schemas.
 
 ## Problem Statement
 In order to reduce costs for announcers of messages on-chain as well as reduce
@@ -26,7 +26,7 @@ massive amounts of data, but it would still be expensive to post data of this
 size on chain.
 
 We can leverage off chain storage to make posting large message collections cheap, but we need to
-find a way to constrain the message types posted offchain so that message
+find a way to constrain the message types posted off chain so that message
 consumers know what types of data to expect. This document aims to explore what
 a system that does the above could look like.
 
@@ -54,16 +54,16 @@ this type of validation is necessary, it should be described elsewhere.
 ### Enums
 * `ModelType` - supported serialization formats for message payloads files. Currently only [Parquet](https://parquet.apache.org/docs/) and
   [Avro](https://avro.apache.org/docs/current/) are supported.
-* `PayloadLocation` - The location of the payload. Can be either `OnChain` or `OffChain`.
+* `PayloadLocation` - The location of the payload. Can be either `OnChain` or `IPFS`.
   * `OnChain`
-  * `OffChain`
+  * `IPFS`
 * `Payload`
   * `OnChain`
     * `source`: `MsaId`
     * `payload`: `Vec<u8>`
   * `IPFS`
-    * `payload_cid`: `TBD`
-    * `payload_byte_length`: `TBD`
+    * `payload_cidv1`: `Vec<u8>`
+    * `payload_byte_length`: `u64`
 
 ### Traits
 * `Model` - TBD. A common interface for accessing message payload information.
@@ -163,7 +163,7 @@ We discussed whether to allow URLs such as HTTP/HTTPS or other URLs and instead 
 
 We revisited the idea of whether it really is necessary to include a file size. We will be charging a premium for larger files, however, there will be per-byte discount for larger files in order to create an incentive for posting batches while reducing the incentive for announcers to allow spam. Although the processing and downloading time for enormous files also serves as a disincentive for spam, we feel it would not be sufficient.
 
-Despite the fact that announcers can lie abut the file size, the file_size
+Despite the fact that announcers can lie about the file size, the file_size
 parameter also serves as an on-chain declaration that not only allows consumers
 of batches to quickly discover if a batch announcer was honest, but the file
 requestor can know in advance when to stop requesting data.
