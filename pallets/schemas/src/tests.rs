@@ -172,28 +172,21 @@ fn get_non_existing_schema_by_id_should_return_none() {
 }
 
 #[test]
-fn validate_schema_happy_path() { //rename
+fn validate_schema_is_acceptable() {
 	new_test_ext().execute_with(|| {
 		let test_str_raw = r#"{"name":"John Doe"}"#;
-		// println!("")
-		// let test_str_byte = b"
-        // {\"name\": \"Jone Doe\"}";
-		// let bounded_schema_vec = create_bounded_schema_vec(test_str_raw);
-		// println!("The test string byte: {:?}", test_str_byte);
-		// println!("The bounded schema vector: {:?}", bounded_schema_vec);
 		let result = SchemasPallet::ensure_valid_schema(&Vec::from(test_str_raw.as_bytes()));
-		// let mut object: Value = serde_json::from_str(test_str_raw).unwrap();
-		println!("Here's the result {:?}", result);
-		assert_ok!(result); //need to return valid json
+		assert_ok!(result);
 	});
 }
 
-// #[test]
-// fn validate_schema_unhappy_path() { //rename
-// 	new_test_ext().execute_with(|| {
-// 		assert_noop!(SchemasPallet::ensure_valid_schema(
-// 			create_bounded_schema_vec("foo,bar,bazz") //need to return invalid json
-// 		), Error::<Test>::InvalidSchema);
-// 	})
-// }
+#[test]
+fn reject_null_json_schema() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(SchemasPallet::ensure_valid_schema(
+			create_bounded_schema_vec("null")
+		), Error::<Test>::InvalidSchema);
+	})
+}
+
 
