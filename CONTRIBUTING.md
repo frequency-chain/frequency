@@ -5,7 +5,7 @@ For contributing guidelines see the [Project Liberty Contributing Guidelines](ht
 
 # Path to Beta
 
-While we are trying to get MRC off the ground, the work is slightly different than with a stable project.
+While we are trying to get Frequency off the ground, the work is slightly different than with a stable project.
 Here are our rules of thumb
 How we work while trying to get off the ground.
 Expect this to change as we stabilize.

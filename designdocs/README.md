@@ -16,7 +16,7 @@ To create a new design document, Please see the [Design Doc README](https://gith
 
 ## Basic Data Model
 
-There are three core data models in MRC and each corresponds to a pallet.
+There are three core data models in Frequency and each corresponds to a pallet.
 
 - [Message Source Account (MSA)](../pallets/msa/)
   - Represents a pseudonymous identity that can be the source of messages or provide access to the chain to others
@@ -30,13 +30,14 @@ There are three core data models in MRC and each corresponds to a pallet.
 
 ![Basic Data Model drawio](https://github.com/LibertyDSNP/DesignDocs/blob/main/img/BasicDataModel.drawio.png?raw=true)
 
-## MRC Glossary
+## Frequency Glossary
 
 * `AccountId`: A public key that could be a `Token Account` and/or associated with an `MSA`
 * `Announcer AccountId`: The `AccountId` that signs a capacity transaction and is associated with an MSA from which capacity will be deducted for that capacity transaction.
 * `Announcer MSA`: The `MSA` associated with the `AccountId` that signs a capacity transaction.
 * `Delegate` (verb): The action of an `MSA` (the `Delegator`) delegating to a `Provider`. *A verb only. Do not use as a noun!*
 * `Delegator`: An `MSA` that has delegated to a `Provider`.
+* `MRC`: The old name for Frequency
 * `MSA Id`: The 64 bit unsigned integer associated with an `MSA`.
 * `MSA`: Message Source Account. A registered identifier with the MSA pallet. `AccountIds` (aka public keys) may only be associated with one `MSA` and that association is immutable.
 * `Message`: A message that matches a registered `Schema` (on-chain or off-chain).

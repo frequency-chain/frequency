@@ -1,4 +1,4 @@
-# MRC
+# Frequency
 
 ## Build
 
@@ -49,7 +49,7 @@ Alternatively Run `TARGET=tests ./ci/build.sh` to run cargo tests.
 source .env
 ```
 
-### Start local Relay chain(alice and bob) and MRC(alice)
+### Start local Relay chain(alice and bob) and Frequency(alice)
 
 1. Start relay chain
 
@@ -60,11 +60,11 @@ source .env
 1. Relay chain is running on ports:
     | Host | Port | URL |
     | ---- | ---- | --- |
-    | MRC Relay Node | `9945` | [127.0.0.1:9945](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9945#/explorer) |
+    | Frequency Relay Node | `9945` | [127.0.0.1:9945](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9945#/explorer) |
     | Alice Relay Node | `9946` | [127.0.0.1:9946](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9946#/explorer) |
     | Bob Relay Node | `9947` | [127.0.0.1:9947](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9947#/explorer) |
 
-1. Register a new parachain slot (parachain id) for MRC:
+1. Register a new parachain slot (parachain id) for Frequency:
 
     ```bash
     ./scripts/init.sh register-mrc
@@ -72,7 +72,7 @@ source .env
 
 1. Note: if parachain was previously registered on a running relay chain and no new registration is required, then, you can skip the above step.
 
-1. Start mrc as parachain: This step will generate genesis/wasm and onboard the parachain. If new pallets or runtime code changes have been made to mrc, then developer have to generate chain specs again. Refer to [generation spec file](#generating-a-new-spec-file) for more details.
+1. Start Frequency as parachain: This step will generate genesis/wasm and onboard the parachain. If new pallets or runtime code changes have been made to Frequency, then developer have to generate chain specs again. Refer to [generation spec file](#generating-a-new-spec-file) for more details.
 
 1. Note: assumption is that relay chain is running and para id 2000 is registered on relay. If parachain id is not 2000, update the local chain [spec](#generating-a-new-spec-file) with registered parachain id.
 
@@ -82,9 +82,9 @@ source .env
 
 1. Note: set `RUST_LOG=debug RUST_BACKTRACE=1` as the environment variable to enable detailed logs.
 
-1. Alternative to start-mrc: Run ```cargo build --release``` and then run ```./scripts/init.sh start-mrc-docker``` to start mrc in a docker container via docker compose. ```./scripts/init.sh stop-mrc-docker``` to stop mrc container.
+1. Alternative to start-mrc: Run ```cargo build --release``` and then run ```./scripts/init.sh start-mrc-docker``` to start Frequency in a docker container via docker compose. ```./scripts/init.sh stop-mrc-docker``` to stop Frequency container.
 
-1. Onboarding mrc to relay chain
+1. Onboarding Frequency to the relay chain
 
     ```bash
     ./scripts/init.sh onboard-mrc
@@ -94,7 +94,7 @@ source .env
 
 1. Link to parachain [dashboard](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944)
 
-1. Off-boarding MRC from relay chain
+1. Off-boarding Frequency from relay chain
 
     ```bash
     ./scripts/init.sh offboard-mrc
@@ -104,12 +104,12 @@ Note: Clean up /tmp/mrc directory after off-boarding. This is required to avoid 
 
 ### Ports
 
-- Default ports for MRC are:
+- Default ports for Frequency are:
       - ```30333``` # p2p port
       - ```9933```  # rpc port
       - ```9944```  # ws port
 
-- Default ports for MRC Relay Chain Node are:
+- Default ports for Frequency Relay Chain Node are:
       - ```30334``` # p2p port
       - ```9934```  # rpc port
       - ```9945```  # ws port
@@ -132,17 +132,17 @@ Note: Clean up /tmp/mrc directory after off-boarding. This is required to avoid 
     ./scripts/init.sh stop-relay-chain
     ```
 
-1. Stop MRC running in the terminal.
+1. Stop Frequency running in the terminal.
 
 1. Run ```docker volume prune``` to remove unused volumes.
 
-1. Remove mrc chain data via ```rm -rf /tmp/mrc```.
+1. Remove Frequency chain data via ```rm -rf /tmp/mrc```.
 
 ### Guidelines for writing code documentation
 
 - Rust follows specific style for documenting various code elements. Refer to [rust doc](https://doc.rust-lang.org/rustdoc/how-to-write-documentation.html) and [documentation example](https://doc.rust-lang.org/rust-by-example/meta/doc.html) for more details.
 
-- Running ```RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps``` will generate documentation specific to MRC while ignoring documenting dependencies.
+- Running ```RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps``` will generate documentation specific to Frequency while ignoring documenting dependencies.
 
 - To view generated cargo docs, one can open ```./target/doc/index.html```.
 
@@ -156,9 +156,9 @@ Note: Clean up /tmp/mrc directory after off-boarding. This is required to avoid 
 
 Note: To build spec against specific chain config; specify chain name in the command above.
 
-### Downloading MRC related spec files, generated genesis state and wasm
+### Downloading Frequency related spec files, generated genesis state and wasm
 
-In order to experiment with MRC, spec files and generated genesis state and wasm can be downloaded from [build artifacts](https://github.com/LibertyDSNP/mrc/actions/workflows/main.yml?query=branch%3Amain)
+In order to experiment with Frequency, spec files and generated genesis state and wasm can be downloaded from [build artifacts](https://github.com/LibertyDSNP/mrc/actions/workflows/main.yml?query=branch%3Amain)
 
 ## Linting
 

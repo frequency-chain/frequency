@@ -15,9 +15,9 @@
 [![MIT License][license-shield]][license-url]
 
 
-# MRC Custom RPC and Types for Polkadot JS API
+# Frequency Custom RPC and Types for Polkadot JS API
 
-An easy way to get all the custom rpc and types config to be able to easily use [MRC](https://github.com/LibertyDSNP/mrc/) with the [Polkadot JS API library](https://www.npmjs.com/package/@polkadot/api).
+An easy way to get all the custom rpc and types config to be able to easily use [Frequency](https://github.com/LibertyDSNP/mrc/) with the [Polkadot JS API library](https://www.npmjs.com/package/@polkadot/api).
 
 <!-- GETTING STARTED -->
 ## Getting Started
