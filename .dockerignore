@@ -1,9 +1,5 @@
 .git
-**/target/
 **/*.txt
 **/*.md
-/docker/
-!/target/release/polkadot-collator
-
 # dotfiles in the repo root
 /.*

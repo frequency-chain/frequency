@@ -1,4 +1,24 @@
+//! # Transaction Fee Pallet
+//!
+//! The TxFee pallet provides RPCs for estimating transaction fees
+//!
+//! - [`Config`]
+//! - [`Call`]
+//! - [`Pallet`]
+//!
+//! ## Overview
+//!
+//! ### Dispatchable Functions
+//!
+//! None
+//!
 #![cfg_attr(not(feature = "std"), no_std)]
+// Strong Documentation Lints
+#![deny(
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes
+)]
 
 use frame_support::weights::{DispatchInfo, GetDispatchInfo};
 use pallet_transaction_payment::{FeeDetails, OnChargeTransaction};

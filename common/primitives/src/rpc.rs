@@ -3,6 +3,11 @@ use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
 use sp_api::ApiError;
 use sp_runtime::DispatchError;
 
+/// Converts CoreResult to Result for RPC calls
+/// # Arguments
+/// * `response` - The response to map to an RPC response
+/// # Returns
+/// * `Result<T>` The RPC formatted response for JSON
 pub fn map_rpc_result<T>(
 	response: CoreResult<CoreResult<T, DispatchError>, ApiError>,
 ) -> Result<T> {

@@ -1,8 +1,9 @@
 use crate as pallet_messages;
 use common_primitives::msa::{
-	AccountProvider, Delegator, KeyInfo, MessageSenderId, Provider, ProviderInfo,
+	AccountProvider, Delegator, KeyInfo, MessageSourceId, Provider, ProviderInfo,
 };
 use frame_support::{
+	dispatch::DispatchResult,
 	parameter_types,
 	traits::{ConstU16, ConstU64, OnFinalize, OnInitialize},
 };
@@ -59,26 +60,26 @@ impl system::Config for Test {
 
 parameter_types! {
 	pub const MaxMessagesPerBlock: u32 = 500;
-	pub const MaxMessageSizeInBytes: u32 = 100;
+	pub const MaxMessagePayloadSizeBytes: u32 = 100;
 }
 
-impl std::fmt::Debug for MaxMessageSizeInBytes {
+impl std::fmt::Debug for MaxMessagePayloadSizeBytes {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		f.debug_struct("MaxMessageSizeInBytes")
-			.field("v", &MaxMessageSizeInBytes::get())
+		f.debug_struct("MaxMessagePayloadSizeBytes")
+			.field("v", &MaxMessagePayloadSizeBytes::get())
 			.finish()
 	}
 }
 
-impl PartialEq for MaxMessageSizeInBytes {
+impl PartialEq for MaxMessagePayloadSizeBytes {
 	fn eq(&self, _other: &Self) -> bool {
 		true
 	}
 }
 
-impl Clone for MaxMessageSizeInBytes {
+impl Clone for MaxMessagePayloadSizeBytes {
 	fn clone(&self) -> Self {
-		MaxMessageSizeInBytes {}
+		MaxMessagePayloadSizeBytes {}
 	}
 }
 
@@ -86,14 +87,14 @@ pub struct AccountHandler;
 impl AccountProvider for AccountHandler {
 	type AccountId = u64;
 	type BlockNumber = u64;
-	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSenderId> {
+	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
 		if *key == 1000 {
 			return None
 		}
 		if *key == 2000 {
-			return Some(2000 as MessageSenderId)
+			return Some(2000 as MessageSourceId)
 		}
-		Some(get_msa_from_account(*key) as MessageSenderId)
+		Some(get_msa_from_account(*key) as MessageSourceId)
 	}
 	fn get_provider_info_of(
 		provider: Provider,
@@ -118,6 +119,14 @@ impl AccountProvider for AccountHandler {
 		let info = KeyInfo { msa_id: get_msa_from_account(*key), nonce: 0, expired: 100 };
 		Ok(info)
 	}
+
+	fn ensure_valid_delegation(provider: Provider, _delegator: Delegator) -> DispatchResult {
+		if provider == Provider(2000) {
+			return Err(DispatchError::Other("some delegation error"))
+		};
+
+		Ok(())
+	}
 }
 
 impl pallet_messages::Config for Test {
@@ -125,11 +134,11 @@ impl pallet_messages::Config for Test {
 	type AccountProvider = AccountHandler;
 	type WeightInfo = ();
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
-	type MaxMessageSizeInBytes = MaxMessageSizeInBytes;
+	type MaxMessagePayloadSizeBytes = MaxMessagePayloadSizeBytes;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap().into();
+	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext

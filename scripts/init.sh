@@ -23,22 +23,22 @@ install-toolchain)
 
 start-relay-chain)
   echo "Starting local relay chain with Alice and Bob..."
-  docker-compose -f ./docker-compose-local-relay.yml up -d
+  docker-compose up -d relay_alice relay_bob
   ;;
 
 stop-relay-chain)
   echo "Stopping relay chain..."
-  docker-compose -f ./docker-compose-local-relay.yml down
+  docker-compose down
   ;;
 
 start-mrc-docker)
   echo "Starting mrc container with Alice..."
-  docker-compose -f ./docker-compose-local-chain.yml up -d
+  docker-compose up --build collator_mrc
   ;;
 
 stop-mrc-docker)
   echo "Stopping mrc container with Alice..."
-  docker-compose -f ./docker-compose-local-chain.yml down
+  docker-compose down collator_mrc
   ;;
 
 start-mrc)
@@ -59,9 +59,36 @@ start-mrc)
     --wasm-execution=compiled \
     --execution=wasm \
     --force-authoring \
-    --port $((30355 + $para_id)) \
-    --rpc-port $((9936 + $para_id)) \
-    --ws-port $((9946 + $para_id)) \
+    --port $((30333)) \
+    --rpc-port $((9933)) \
+    --ws-port $((9944)) \
+    --rpc-external \
+    --rpc-cors all \
+    --ws-external \
+    --rpc-methods=Unsafe \
+    --state-cache-size 0 \
+  ;;
+
+start-mrc-container)
+
+  parachain_dir=$base_dir/parachain/${para_id}
+  mkdir -p $parachain_dir;
+  mrc_default_port=$((30333))
+  mrc_default_rpc_port=$((9933))
+  mrc_default_ws_port=$((9944))
+  mrc_port="${MRC_PORT:-$mrc_default_port}"
+  mrc_rpc_port="${MRC_RPC_PORT:-$mrc_default_rpc_port}"
+  mrc_ws_port="${MRC_WS_PORT:-$mrc_default_ws_port}"
+
+  ./scripts/run_collator.sh \
+    --chain="${chain_spec}" --alice \
+    --base-path=$parachain_dir/data \
+    --wasm-execution=compiled \
+    --execution=wasm \
+    --force-authoring \
+    --port "${mrc_port}" \
+    --rpc-port "${mrc_rpc_port}" \
+    --ws-port "${mrc_ws_port}" \
     --rpc-external \
     --rpc-cors all \
     --ws-external \
@@ -71,9 +98,9 @@ start-mrc)
 
 register-mrc)
   echo "reserving and registering parachain with relay via first available slot..."
-  
+
   cd scripts/js/onboard
-  yarn && yarn register "ws://0.0.0.0:9944" "//Alice"
+  yarn && yarn register "ws://0.0.0.0:9946" "//Alice"
   ;;
 
 onboard-mrc)
@@ -94,13 +121,13 @@ onboard-mrc)
   echo "WASM path:" "${parachain}-${para_id}.wasm"
 
   cd scripts/js/onboard
-  yarn && yarn onboard "ws://0.0.0.0:9944" "//Alice" ${para_id} "${genesis}" $wasm_location
+  yarn && yarn onboard "ws://0.0.0.0:9946" "//Alice" ${para_id} "${genesis}" $wasm_location
   ;;
 
 offboard-mrc)
   echo "cleaning up parachain for id '$para_id'..."
-  
+
   cd scripts/js/onboard
-  yarn && yarn cleanup "ws://0.0.0.0:9944" "//Alice" ${para_id}
+  yarn && yarn cleanup "ws://0.0.0.0:9946" "//Alice" ${para_id}
   ;;
 esac

@@ -9,7 +9,7 @@ use super::mock::*;
 
 fn create_bounded_schema_vec(
 	from_string: &str,
-) -> BoundedVec<u8, <Test as Config>::SchemaMaxBytesBoundedVecLimit> {
+) -> BoundedVec<u8, <Test as Config>::SchemaModelMaxBytesBoundedVecLimit> {
 	let fields_vec = Vec::from(from_string.as_bytes());
 	println!("Bounded vector convereted in helper function: {:?}",fields_vec);
 	BoundedVec::try_from(fields_vec).unwrap()
@@ -22,7 +22,7 @@ fn create_schema_vec(
 }
 
 fn sudo_set_max_schema_size() {
-	assert_ok!(SchemasPallet::set_max_schema_bytes(RawOrigin::Root.into(), 50));
+	assert_ok!(SchemasPallet::set_max_schema_model_bytes(RawOrigin::Root.into(), 50));
 }
 
 pub mod test {}
@@ -40,11 +40,11 @@ fn require_valid_schema_size_errors() {
 		let test_cases: [TestCase<(Error<Test>, u8)>; 2] = [
 			TestCase {
 				schema: "",
-				expected: (Error::<Test>::LessThanMinSchemaBytes,3),
+				expected: (Error::<Test>::LessThanMinSchemaModelBytes,3),
 			},
 			TestCase {
 				schema: "foo,bar,bazz,way,wayway,wayway,foo,bar,bazz,way,wayway,wayway,foo,bar,bazz,thisiswaywaywaywaywaywaywaytoolong",
-				expected: (Error::<Test>::ExceedsMaxSchemaBytes, 2),
+				expected: (Error::<Test>::ExceedsMaxSchemaModelBytes, 2),
 			},
 		];
 		for tc in test_cases {
@@ -80,8 +80,8 @@ fn register_schema_happy_path() {
 fn set_max_schema_size_works_if_root() {
 	new_test_ext().execute_with(|| {
 		let new_size: u32 = 42;
-		assert_ok!(SchemasPallet::set_max_schema_bytes(RawOrigin::Root.into(), new_size));
-		let new_schema_size = SchemasPallet::get_schema_max_bytes();
+		assert_ok!(SchemasPallet::set_max_schema_model_bytes(RawOrigin::Root.into(), new_size));
+		let new_schema_size = SchemasPallet::get_schema_model_max_bytes();
 		assert_eq!(new_size, new_schema_size);
 	})
 }
@@ -93,7 +93,7 @@ fn set_max_schema_size_fails_if_not_root() {
 		let sender: AccountId = 1;
 		let expected_err = BadOrigin;
 		assert_noop!(
-			SchemasPallet::set_max_schema_bytes(Origin::signed(sender), new_size),
+			SchemasPallet::set_max_schema_model_bytes(Origin::signed(sender), new_size),
 			expected_err
 		);
 	})
@@ -103,9 +103,9 @@ fn set_max_schema_size_fails_if_not_root() {
 fn set_max_schema_size_fails_if_larger_than_bound() {
 	new_test_ext().execute_with(|| {
 		let new_size: u32 = 68_000;
-		let expected_err = Error::<Test>::InvalidSchemaMaxValue;
+		let expected_err = Error::<Test>::ExceedsGovernanceSchemaModelMaxValue;
 		assert_noop!(
-			SchemasPallet::set_max_schema_bytes(RawOrigin::Root.into(), new_size),
+			SchemasPallet::set_max_schema_model_bytes(RawOrigin::Root.into(), new_size),
 			expected_err
 		);
 	})
@@ -156,7 +156,7 @@ fn get_existing_schema_by_id_should_return_schema() {
 
 		// assert
 		assert_eq!(res.as_ref().is_some(), true);
-		assert_eq!(res.as_ref().unwrap().clone().data, serialized_fields);
+		assert_eq!(res.as_ref().unwrap().clone().model, serialized_fields);
 	})
 }
 

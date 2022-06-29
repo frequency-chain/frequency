@@ -3,7 +3,7 @@ use frame_support::{
 	traits::{ConstU16, ConstU32, ConstU64},
 	weights::{WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial},
 };
-use frame_system;
+
 use smallvec::smallvec;
 use sp_core::H256;
 use sp_runtime::{
@@ -53,10 +53,10 @@ impl WeightToFeePolynomial for WeightToFee {
 impl pallet_schemas::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
-	type MinSchemaSizeBytes = ConstU32<5>;
+	type MinSchemaModelSizeBytes = ConstU32<5>;
 	// a very high limit on incoming schema size, expected to be much higher than what
 	// is actually allowed.
-	type SchemaMaxBytesBoundedVecLimit = ConstU32<65_000>;
+	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<65_000>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
 
