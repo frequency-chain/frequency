@@ -107,6 +107,22 @@ Retrieves a `Schema`.
   * `None()` if no schemas meet the criteria.
   * `Some(Schema)`
 
+#### MessagesPallet::add(origin, on_behalf_of, schema_id, payload, payload_location)
+This existing RPC call will need to change slightly. The `payload` param, at the
+of this document's writing, is a `Vec<u8>`. This proposal will turn the
+`payload` param's type to `Payload`. It will also add a 5th param for
+`payload_location`.
+
+* **Parameters**
+  * `origin`: `Origin` A signed transaction origin from the provider
+  * `on_behalf_of`: `Option<MessageSourceId>` The msa id of delegate.
+  * `schema_id`: `u16` A schema identifier
+  * `payload`: `Payload` The message payload
+  * `payload_location`: `PayloadLocation` The payload location
+
+* **Returns**
+  * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html) The return type of a Dispatchable in frame.
+
 ### Batch as a Logical Construct
 
 We can circumvent defining a batch explicitly if we leverage the model type and
