@@ -1,8 +1,8 @@
-// use serde_json_core;
-use serde_json::{Result, Value, Error};
+// use serde_json_core::{Result, Value, from_slice};
+use serde_json::{Result, Value, from_slice};
 
 pub fn validate_json_schema(json_schema: Vec<u8>) -> Result<()> { // short curcuit
-    let result: Value = serde_json::from_slice(&json_schema)?;
+    let result: Value = from_slice(&json_schema)?;
     Ok(())
 }
 
