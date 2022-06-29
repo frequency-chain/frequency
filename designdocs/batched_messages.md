@@ -217,6 +217,29 @@ payloads of any shape without crowding a single payload type.
 
 **NOTE: This is purely a way to demonstrate how we could describe payloads using traits. It is being included here for the sake of completeness with regard to discussion around possible design.**
 
+#### Changes to `get_messages_by_schema`
+The `MessagesPallet::get_messages_by_schema` RPC returns a paginated
+`MessageResponse`. It is possible that this document will change the structure
+of the `MessageResponse` to be more like the following:
+
+```rust
+pub struct MessageResponse<AccountId, BlockNumber> {
+	#[cfg_attr(feature = "std", serde(with = "as_hex"))]
+	/// Serialized data in a the schemas.
+	pub payload: Payload,
+  /// Payload location
+  pub payload_location: PayloadLocation,
+	/// The public key of the provider and the signer of the transaction.
+	pub provider_key: AccountId,
+	/// Message source account id (the original source).
+	pub msa_id: MessageSourceId,
+	/// Index in block to get total order
+	pub index: u16,
+	/// Block-number for which the message was stored.
+	pub block_number: BlockNumber,
+}
+```
+
 ### Glossary
 * *IPFS* [InterPlanetary File System](https://docs.ipfs.io/), a decentralized file system for building the next generation of the internet
 * *CID* [Content IDentifier](https://github.com/multiformats/cid/), Self-describing content-addressed identifiers for distributed systems
