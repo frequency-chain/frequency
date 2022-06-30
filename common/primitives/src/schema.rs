@@ -13,11 +13,16 @@ pub type SchemaId = u16;
 
 /// Types of modeling in which a message payload may be defined
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 pub enum ModelType {
 	/// Message payload modeled with Apache Avro
-	#[default]
 	AvroBinary,
+}
+
+impl Default for ModelType {
+	fn default() -> Self {
+		Self::AvroBinary
+	}
 }
 
 /// RPC Response form for a Schema
