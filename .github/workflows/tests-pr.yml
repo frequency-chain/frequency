@@ -54,6 +54,8 @@ jobs:
       - name: Cache
         if: ${{ steps.filter.outputs.rust == 'true' }}
         uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ env.RUST_TOOLCHAIN }}
       - name: Run tests
         if: ${{ steps.filter.outputs.rust == 'true' }}
         run: ./ci/build.sh
