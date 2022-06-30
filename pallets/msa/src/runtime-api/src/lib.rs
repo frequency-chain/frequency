@@ -14,9 +14,9 @@ sp_api::decl_runtime_apis! {
 		AccountId: Codec,
 		BlockNumber: Codec,
 	{
-		fn get_msa_keys(msa_id: MessageSourceId) ->	Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>, DispatchError>;
+		fn get_msa_keys(msa_id: MessageSenderId) ->	Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>, DispatchError>;
 
-		fn get_msa_id(key: AccountId) -> Result<Option<MessageSourceId>, DispatchError>;
+		fn get_msa_id(key: AccountId) -> Result<Option<MessageSenderId>, DispatchError>;
 
 		fn has_delegation(delegator: Delegator, provider: Provider) -> Result<bool, DispatchError>;
 	}

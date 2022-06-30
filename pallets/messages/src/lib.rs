@@ -1,38 +1,13 @@
 //! # Messages pallet
 //! A pallet for storing messages.
 //!
+//! ## Overview
+//!
 //! This pallet contains functionality for storing, retrieving and eventually removing messages for
 //! registered schemas on chain.
 //!
-//! - [`Config`]
-//! - [`Call`]
-//! - [`Pallet`]
-//!
-//! ## Overview
-//!
-//! The Messages Pallet provides functions for:
-//!
-//! - Adding a message for given schema.
-//! - Retrieving messages for a given schema.
-//!
-//! ### Terminology
-//!
-//! - **Message:** A message that matches a registered `Schema` (on-chain or off-chain).
-//! - **Payload:** The user data in a `Message` that matches a `Schema`.
-//! - **MSA Id:** The 64 bit unsigned integer associated with an `Message Source Account`.
-//! - **MSA:** Message Source Account. A registered identifier with the MSA pallet.
-//! - **Schema:** A registered data structure and the settings around it.
-//! - **Schema Id:** A U16 bit identifier for a schema stored on-chain.
-//!
-//!
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
-// Strong Documentation Lints
-#![deny(
-	rustdoc::broken_intra_doc_links,
-	rustdoc::missing_crate_level_docs,
-	rustdoc::invalid_codeblock_attributes
-)]
 
 #[cfg(test)]
 mod mock;
@@ -55,15 +30,12 @@ pub use pallet::*;
 pub use types::*;
 pub use weights::*;
 
-use common_primitives::{
-	messages::*,
-	msa::{AccountProvider, Delegator, MessageSourceId, Provider},
-	schema::*,
-};
+use common_primitives::{messages::*, schema::*};
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use common_primitives::msa::{AccountProvider, Delegator, MessageSenderId, Provider};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -72,19 +44,18 @@ pub mod pallet {
 		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
-		/// A type that will supply account related information.
+		/// A type that will supply account related information
 		type AccountProvider: AccountProvider<AccountId = Self::AccountId>;
 
-		/// The maximum number of messages in a block.
+		/// The maximum number of messages in a block
 		#[pallet::constant]
 		type MaxMessagesPerBlock: Get<u32>;
 
-		/// The maximum size of a message payload bytes.
+		/// The maximum size of a message [Byte]
 		#[pallet::constant]
-		type MaxMessagePayloadSizeBytes: Get<u32> + Clone;
+		type MaxMessageSizeInBytes: Get<u32> + Clone;
 	}
 
 	#[pallet::pallet]
@@ -92,20 +63,17 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
-	/// A temporary storage of messages, given a schema id, for a duration of block period.
-	/// At the start of the next block this storage is cleared and moved into Messages storage.
 	#[pallet::storage]
 	#[pallet::getter(fn get_block_messages)]
 	pub(super) type BlockMessages<T: Config> = StorageValue<
 		_,
 		BoundedVec<
-			(Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, SchemaId),
+			(Message<T::AccountId, T::MaxMessageSizeInBytes>, SchemaId),
 			T::MaxMessagesPerBlock,
 		>,
 		ValueQuery,
 	>;
 
-	/// A permanent storage for messages mapped by block number and schema id.
 	#[pallet::storage]
 	#[pallet::getter(fn get_messages)]
 	pub(super) type Messages<T: Config> = StorageDoubleMap<
@@ -114,7 +82,7 @@ pub mod pallet {
 		T::BlockNumber,
 		Twox64Concat,
 		SchemaId,
-		BoundedVec<Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, T::MaxMessagesPerBlock>,
+		BoundedVec<Message<T::AccountId, T::MaxMessageSizeInBytes>, T::MaxMessagesPerBlock>,
 		ValueQuery,
 	>;
 
@@ -122,8 +90,8 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Too many messages are added to existing block
 		TooManyMessagesInBlock,
-		/// Message payload size is too large
-		ExceedsMaxMessagePayloadSizeBytes,
+		/// Message size is too large
+		TooLargeMessage,
 		/// Invalid Pagination Request
 		InvalidPaginationRequest,
 		/// Type Conversion Overflow
@@ -138,14 +106,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Messages are stored for a specified schema id and block number
-		MessagesStored {
-			/// The schema for these messages
-			schema_id: SchemaId,
-			/// The block number for these messages
-			block_number: T::BlockNumber,
-			/// Number of messages in this block for this schema
-			count: u16,
-		},
+		MessagesStored { schema_id: SchemaId, block_number: T::BlockNumber, count: u16 },
 	}
 
 	#[pallet::hooks]
@@ -159,115 +120,73 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Gets a messages for a given schema-id and block-number.
-		/// # Arguments
-		/// * `origin` - A signed transaction origin from the provider
-		/// * `on_behalf_of` - Optional. The msa id of delegate.
-		/// * `schema_id` - Registered schema id for current message.
-		/// * `payload` - Serialized payload data for a given schema.
-		/// # Returns
-		/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html) The return type of a Dispatchable in frame.
-		/// When returned explicitly from a dispatchable function it allows overriding the default PostDispatchInfo returned from a dispatch.
-		#[pallet::weight(T::WeightInfo::add(payload.len() as u32, 1_000))]
+		/// Adds a message into storage
+		///
+		/// The dispatch origin for this call must be _Signed_.
+		/// - `on_behalf_of`: Optional. The msa id of delegate.
+		/// - `schema_id`: Registered schema id for current message
+		/// - `message`: Serialized message data
+		///
+		/// Result is equivalent to the dispatched result.
+		///
+		/// # <weight>
+		/// Execution weight
+		/// # </weight>
+		#[pallet::weight(T::WeightInfo::add(message.len() as u32, 1_000))]
 		pub fn add(
 			origin: OriginFor<T>,
-			on_behalf_of: Option<MessageSourceId>,
+			on_behalf_of: Option<MessageSenderId>,
 			schema_id: SchemaId,
-			payload: Vec<u8>,
+			message: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
-			let provider_key = ensure_signed(origin)?;
+			let key = ensure_signed(origin)?;
 
 			ensure!(
-				payload.len() < T::MaxMessagePayloadSizeBytes::get().try_into().unwrap(),
-				Error::<T>::ExceedsMaxMessagePayloadSizeBytes
+				message.len() < T::MaxMessageSizeInBytes::get().try_into().unwrap(),
+				Error::<T>::TooLargeMessage
 			);
 
-			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
+			let info = T::AccountProvider::ensure_valid_msa_key(&key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-			let message = Self::add_message(provider_key, message_source_id, payload, schema_id)?;
+			let message_sender_msa = info.msa_id;
 
-			Ok(Some(T::WeightInfo::add(message.payload.len() as u32, message.index as u32)).into())
+			match on_behalf_of {
+				Some(producer) => {
+					let current_provider = Provider(message_sender_msa);
+					let current_delegator = Delegator(producer);
+					let provider_info = T::AccountProvider::get_provider_info_of(
+						current_provider,
+						current_delegator,
+					);
+					ensure!(provider_info.is_some(), Error::<T>::UnAuthorizedDelegate);
+				},
+				None => {},
+			}
+			// TODO: validate schema existence and validity from schema pallet
+			<BlockMessages<T>>::try_mutate(|existing_messages| -> DispatchResultWithPostInfo {
+				let current_size: u16 = existing_messages
+					.len()
+					.try_into()
+					.map_err(|_| Error::<T>::TypeConversionOverflow)?;
+				let message_size = message.len();
+				let m = Message {
+					data: message.try_into().unwrap(), // size is checked on top of extrinsic
+					signer: key,
+					index: current_size,
+					msa_id: message_sender_msa,
+				};
+				existing_messages
+					.try_push((m, schema_id))
+					.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
+
+				Ok(Some(T::WeightInfo::add(message_size as u32, current_size as u32)).into())
+			})
 		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
-	/// Stores a message for a given schema-id.
-	/// # Arguments
-	/// * `provider_key` - A key from the provider that submitted tx.
-	/// * `on_behalf_of` - Optional. The msa id of delegate.
-	/// * `payload` - Serialized payload data for a given schema.
-	/// * `schema_id` - Registered schema id for current message.
-	/// # Returns
-	/// * Result<Message<T::AccountId, T::MaxMessagePayloadSizeBytes> - Returns the message stored.
-	pub fn add_message(
-		provider_key: T::AccountId,
-		message_source_id: MessageSourceId,
-		payload: Vec<u8>,
-		schema_id: SchemaId,
-	) -> Result<Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, DispatchError> {
-		<BlockMessages<T>>::try_mutate(|existing_messages| -> Result<Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, DispatchError> {
-			let current_size: u16 = existing_messages
-				.len()
-				.try_into()
-				.map_err(|_| Error::<T>::TypeConversionOverflow)?;
-
-			let msg = Message {
-				payload: payload.try_into().unwrap(), // size is checked on top of extrinsic
-				provider_key: provider_key,
-				index: current_size,
-				msa_id: message_source_id,
-			};
-
-			existing_messages
-				.try_push((msg.clone(), schema_id))
-				.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
-
-			Ok(msg)
-		})
-	}
-
-	/// Resolves an MSA.
-	/// # Arguments
-	/// * `key` - An MSA key for lookup.
-	/// * `on_behalf_of` - Optional. The msa id of delegate.
-	/// # Returns
-	/// * Result<MessageSourceId, DispatchError> - Returns an MSA Id for storing a message.
-	pub fn find_msa_id(
-		key: &T::AccountId,
-		on_behalf_of: Option<MessageSourceId>,
-	) -> Result<MessageSourceId, DispatchError> {
-		let sender_msa_id = T::AccountProvider::ensure_valid_msa_key(&key)
-			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?
-			.msa_id;
-
-		let message_source_id = match on_behalf_of {
-			Some(delegator) =>
-				Self::ensure_valid_delegation(Provider(sender_msa_id), Delegator(delegator))?.1,
-			None => sender_msa_id,
-		};
-
-		Ok(message_source_id)
-	}
-
-	pub fn ensure_valid_delegation(
-		provider: Provider,
-		delegator: Delegator,
-	) -> Result<(MessageSourceId, MessageSourceId), DispatchError> {
-		T::AccountProvider::ensure_valid_delegation(provider, delegator)
-			.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
-
-		Ok((provider.into(), delegator.into()))
-	}
-
-	/// Gets a messages for a given schema-id and block-number.
-	/// # Arguments
-	/// * `schema_id` - Registered schema id for current message.
-	/// * `pagination` - [`BlockPaginationRequest`]. Request payload to retrieve paginated messages for a given block-range.
-	/// # Returns
-	/// * `Result<BlockPaginationResponse<T::BlockNumber, MessageResponse<T::AccountId, T::BlockNumber>>, DispatchError>`
-	///
-	/// Result is a paginator response of type [`BlockPaginationResponse`].
 	pub fn get_messages_by_schema(
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest<T::BlockNumber>,
@@ -351,7 +270,7 @@ impl<T: Config> Pallet<T> {
 	/// Moves messages from temporary storage `BlockMessages` into final storage `Messages`
 	/// and calculates execution weight
 	///
-	/// * `block_number`: Target Block Number
+	/// - `block_number`: Target Block Number
 	///
 	/// Returns execution weights
 	fn move_messages_into_final_storage(block_number: T::BlockNumber) -> Weight {

@@ -1,44 +1,56 @@
-FROM --platform=linux/amd64 ubuntu:20.04
-LABEL maintainer="MRC Team"
-LABEL description="Create an image with MRC binary built in main."
+# Based from https://github.com/paritytech/substrate/blob/master/.maintain/Dockerfile
 
+FROM phusion/baseimage:focal-1.0.0 as builder
+LABEL maintainer="MRC Team"
+LABEL description="Build stage to create MRC binary."
+
+ARG RUST_TOOLCHAIN=nightly
+ENV DEBIAN_FRONTEND=noninteractive
+ENV RUST_TOOLCHAIN=$RUST_TOOLCHAIN
+
+ARG PROFILE=release
 WORKDIR /mrc
 
+COPY . /mrc
+
 RUN apt-get update && \
-    apt-get install -y jq apt-utils apt-transport-https software-properties-common readline-common curl vim wget gnupg gnupg2 gnupg-agent ca-certificates tini && \
-    rm -rf /var/lib/apt/lists/*
+	apt-get dist-upgrade -y -o Dpkg::Options::="--force-confold" && \
+	apt-get install -y cmake pkg-config libssl-dev git clang libclang-dev
 
-COPY target/release/mrc-collator ./target/release/
-RUN chmod +x target/release/mrc-collator
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
+	export PATH="$PATH:$HOME/.cargo/bin" && \
+	rustup default $RUST_TOOLCHAIN && \
+	rustup target add wasm32-unknown-unknown --toolchain $RUST_TOOLCHAIN && \
+	cargo build "--$PROFILE"
 
-RUN ls ./target/release
+# ===== SECOND STAGE ======
 
-# Checks
-RUN ls -lah /
-RUN file ./target/release/mrc-collator && \
-    ./target/release/mrc-collator --version
+FROM phusion/baseimage:focal-1.0.0
+LABEL maintainer="MRC Team"
+LABEL description="Create an image with MRC binary built in first stage."
+ARG PROFILE=release
+
+RUN mv /usr/share/ca* /tmp && \
+	rm -rf /usr/share/*  && \
+	mv /tmp/ca-certificates /usr/share/ && \
+	mkdir -p /root/.local/share/mrc && \
+    ln -s /root/.local/share/mrc /data
+
+COPY --from=builder /mrc/target/$PROFILE/mrc /usr/local/bin
+
+# checks
+RUN ldd /usr/local/bin/mrc && \
+	/usr/local/bin/mrc --version
+
+# Shrinking
+RUN rm -rf /usr/lib/python* && \
+	rm -rf /usr/bin /usr/sbin /usr/share/man
 
 # Add chain resources to image
-COPY res ./res/
+COPY res /res/
 
-COPY scripts ./scripts/
-
-RUN chmod +x ./scripts/run_collator.sh
-RUN chmod +x ./scripts/init.sh
-RUN chmod +x ./scripts/healthcheck.sh
-
-ENV MRC_BINARY_PATH=./target/release/mrc-collator
-
-HEALTHCHECK --interval=300s --timeout=75s --start-period=30s --retries=3 \
-    CMD ["./scripts/healthcheck.sh"]
-
+# USER mrc # see above
+EXPOSE 30333 9933 9944
 VOLUME ["/data"]
 
-ENTRYPOINT ["/usr/bin/tini", "--"]
-
-CMD ["/bin/bash", "./scripts/init.sh", "start-mrc-container"]
-
-# 9933 p2p port
-# 9944 rpc port
-# 30333 ws port
-EXPOSE 9933 9944 30333
+ENTRYPOINT ["/usr/local/bin/mrc"]

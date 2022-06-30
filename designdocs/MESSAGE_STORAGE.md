@@ -20,7 +20,7 @@ that will allow us to store these messages on chain.
 Storing messages on chain using **BlockNumber** and **SchemaId** as main and secondary keys
 using [StorageDoubleMap](https://docs.substrate.io/rustdocs/latest/frame_support/storage/trait.StorageDoubleMap.html) data structure provided in Substrate.
 
-![Data-Page-3 drawio](https://github.com/LibertyDSNP/DesignDocs/blob/main/img/main_storage_type.png?raw=true)
+![Data-Page-3 drawio](https://raw.githubusercontent.com/LibertyDSNP/DesignDocs/main/img/main_storage_type.png?token=GHSAT0AAAAAABPAUB3DH5DW4MIJKDCKUDQEYS57U4Q)
 
 
 ### Main Storage types
@@ -47,9 +47,9 @@ using [StorageDoubleMap](https://docs.substrate.io/rustdocs/latest/frame_support
 Following is a proposed data structure for storing a Message on chain.
 ```rust
 pub struct Message<AccountId> {
-    pub payload: Vec<u8>,		    //  Serialized data in a user-defined schemas format
-    pub provider_key: AccountId,	    //  Signature of the signer
-    pub msa_id: u64,                //  Message source account id (the original source of the message)
+    pub data: Vec<u8>,		    //  Serialized data in a user-defined schemas format
+    pub signer: AccountId,	    //  Signature of the signer
+    pub msa_id: u64,                //  Message source account id (the original sender)
     pub index: u16,		    //  Stores index of message in block to keep total order
 }
 ```
@@ -136,12 +136,12 @@ any messages, to eliminate unnecessary DB reads. We can use a BitArray per Schem
 we would need to store this indexing data off-chain, and we can create jobs to create or update
 it periodically.
 
-![Data-OnChainAnnouncements drawio](https://github.com/LibertyDSNP/DesignDocs/blob/main/img/message_storage_bitvector.png?raw=true)
+![Data-OnChainAnnouncements drawio](https://raw.githubusercontent.com/LibertyDSNP/DesignDocs/main/img/message_storage_bitvector.png?token=GHSAT0AAAAAABPAUB3DLXKOTEIG5OYRUZFAYS57YEA)
 ## Alternatives and Rationale
 Storing messages on chain using a map of `schemaId` and `staring` index to a sequential fixed sized
 bucket.
 
-![Data-Page-2 drawio](https://github.com/LibertyDSNP/DesignDocs/blob/main/img/message_storage_alternative.png?raw=true)
+![Data-Page-2 drawio](https://raw.githubusercontent.com/LibertyDSNP/DesignDocs/main/img/message_storage_alternative.png?token=GHSAT0AAAAAABPAUB3DTEWGIOKN5PNXSZJOYS57ZOA)
 
 ### Main Storage types
 - **Messages**

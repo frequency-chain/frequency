@@ -1,6 +1,6 @@
 use codec::Codec;
 use common_primitives::{
-	msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider},
+	msa::{Delegator, KeyInfoResponse, MessageSenderId, Provider},
 	rpc::*,
 };
 use jsonrpc_core::Result;
@@ -17,18 +17,18 @@ pub trait MsaApi<BlockHash, AccountId, BlockNumber> {
 	#[rpc(name = "msa_getMsaKeys")]
 	fn get_msa_keys(
 		&self,
-		msa_id: MessageSourceId,
+		msa_id: MessageSenderId,
 	) -> Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>>;
 
 	#[rpc(name = "msa_getMsaId")]
-	fn get_msa_id(&self, key: AccountId) -> Result<Option<MessageSourceId>>;
+	fn get_msa_id(&self, key: AccountId) -> Result<Option<MessageSenderId>>;
 
 	#[rpc(name = "msa_checkDelegations")]
 	fn check_delegations(
 		&self,
-		delegator_msa_ids: Vec<MessageSourceId>,
-		provider_msa_id: MessageSourceId,
-	) -> Result<Vec<(MessageSourceId, bool)>>;
+		delegator_msa_ids: Vec<MessageSenderId>,
+		provider_msa_id: MessageSenderId,
+	) -> Result<Vec<(MessageSenderId, bool)>>;
 }
 
 /// A struct that implements the `MessagesApi`.
@@ -57,7 +57,7 @@ where
 {
 	fn get_msa_keys(
 		&self,
-		msa_id: MessageSourceId,
+		msa_id: MessageSenderId,
 	) -> Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
@@ -65,7 +65,7 @@ where
 		map_rpc_result(runtime_api_result)
 	}
 
-	fn get_msa_id(&self, key: AccountId) -> Result<Option<MessageSourceId>> {
+	fn get_msa_id(&self, key: AccountId) -> Result<Option<MessageSenderId>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 		let runtime_api_result = api.get_msa_id(&at, key);
@@ -74,9 +74,9 @@ where
 
 	fn check_delegations(
 		&self,
-		delegator_msa_ids: Vec<MessageSourceId>,
-		provider_msa_id: MessageSourceId,
-	) -> Result<Vec<(MessageSourceId, bool)>> {
+		delegator_msa_ids: Vec<MessageSenderId>,
+		provider_msa_id: MessageSenderId,
+	) -> Result<Vec<(MessageSenderId, bool)>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 
