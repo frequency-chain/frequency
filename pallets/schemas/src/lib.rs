@@ -3,6 +3,7 @@
 use core;
 
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
+use common_helpers::serde;
 
 #[cfg(test)]
 mod tests;
@@ -125,7 +126,6 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin.clone())?;
 
-
 			Self::ensure_valid_schema(&schema)?;
 
 			ensure!(
@@ -186,16 +186,11 @@ pub mod pallet {
 			None
 		}
 
-		pub fn ensure_valid_schema(schema: Vec<u8>) -> DispatchResult {
-			validate_schema(schema).map_err(|_| Error::<T>::InvalidSchema)?;
-			println!("here we are!");
+		pub fn ensure_valid_schema(schema: &BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>) -> DispatchResult {
+			let validated_schema = serde::validate_json_schema(schema.clone().into_inner());
+			validated_schema.map_err(|_| Error::<T>::InvalidSchema)?;
 			Ok(())
 		}
 
-		pub fn validate_schema(schema: Vec<u8>) -> Result((), Error) {
-			// this is also where we can use a Trait for schema types
-			// to use both avro substrate and serde and any other ones
-			validated_schema = serde::validate_JSON_schema(&schmea)?
-		}
 	}
 }
