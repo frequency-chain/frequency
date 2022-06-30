@@ -109,7 +109,7 @@ An extrinsic to allow a provider to request publish write to list of schemas. Re
 
 - Notes: The weights of this extrinsic should account for required weights when revoking grants at schema level via provider/delegator.
 
-### add_mrc_publisher() : Not in the scope for version 1 of this implementation
+### add_frequency_publisher() : Not in the scope for version 1 of this implementation
 
 An extrinsic to allow (via governance) to set a provider as Frequency publisher. This in turn will give all publish rights on all schemas for any delegator delegating to this provider. Rending them **Publisher** status.
 
