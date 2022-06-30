@@ -5,7 +5,7 @@ The proposed feature consists of changes that is going to be one (or more) palle
 Substrate based blockchain, and it will be used in all environments including production.
 
 ## Problem Statement
-One of the core features of **MRC** is to facilitate passing messages between different
+One of the core features of **Frequency** is to facilitate passing messages between different
 participants. To implement this core feature, backed with guarantees provided by Blockchain
 technology (in our case **Substrate**) we are looking for architectures and data structures
 that will allow us to store these messages on chain.
@@ -67,7 +67,7 @@ Following is a list of considerations for choosing a serialization format.
 2. **Efficient storage**
    - On chain data storage is a limited resource, and we need to minimize stored data
 3. **Supported on popular Languages**
-   - To facilitate third-party integrations with **MRC** the serialization format should be
+   - To facilitate third-party integrations with **Frequency** the serialization format should be
    widely supported in popular programming languages.
 
 #### Candidates
@@ -128,7 +128,7 @@ from `StartingBlockNumber` until is reaches one of values from `EndBlockNumber` 
 
 #### Mitigations
 1. To be able to achieve high throughput we need to carefully calculate `pre-defined maximum number`
-of messages per block. This number should be sufficiently big enough to satisfy **MRC**
+of messages per block. This number should be sufficiently big enough to satisfy **Frequency**
 requirements without allowing any denial of service attacks.
 2. One way to improve read throughput for sequential data is to index the block numbers that have
 any messages, to eliminate unnecessary DB reads. We can use a BitArray per SchemaId storing
