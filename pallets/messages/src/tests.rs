@@ -15,9 +15,9 @@ fn populate_messages(schema_id: SchemaId, message_per_block: Vec<u32>) {
 		for _ in 0..*count {
 			list.try_push(Message {
 				msa_id: 10,
-				payload: payload.clone().try_into().unwrap(),
+				data: payload.clone().try_into().unwrap(),
 				index: counter,
-				provider_key: 1,
+				signer: 1,
 			})
 			.unwrap();
 			counter += 1;
@@ -60,9 +60,9 @@ fn add_message_should_store_message_on_temp_storage() {
 			(
 				Message {
 					msa_id: get_msa_from_account(caller_1),
-					payload: message_payload_1.try_into().unwrap(),
+					data: message_payload_1.clone().try_into().unwrap(),
 					index: 0,
-					provider_key: caller_1
+					signer: caller_1
 				},
 				schema_id_1
 			)
@@ -73,9 +73,9 @@ fn add_message_should_store_message_on_temp_storage() {
 			(
 				Message {
 					msa_id: get_msa_from_account(caller_2),
-					payload: message_payload_2.try_into().unwrap(),
+					data: message_payload_2.clone().try_into().unwrap(),
 					index: 1,
-					provider_key: caller_2
+					signer: caller_2
 				},
 				schema_id_2
 			)
@@ -92,7 +92,7 @@ fn add_message_with_too_large_message_should_panic() {
 		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}".as_bytes());
 
 		// act
-		assert_noop!(MessagesPallet::add(Origin::signed(caller_1), None, schema_id_1, message_payload_1), Error::<Test>::ExceedsMaxMessagePayloadSizeBytes);
+		assert_noop!(MessagesPallet::add(Origin::signed(caller_1), None, schema_id_1, message_payload_1.clone()), Error::<Test>::TooLargeMessage);
 	});
 }
 
@@ -109,7 +109,12 @@ fn add_message_with_invalid_msa_account_should_panic() {
 
 		// act
 		assert_noop!(
-			MessagesPallet::add(Origin::signed(caller_1), None, schema_id_1, message_payload_1),
+			MessagesPallet::add(
+				Origin::signed(caller_1),
+				None,
+				schema_id_1,
+				message_payload_1.clone()
+			),
 			Error::<Test>::InvalidMessageSourceAccount
 		);
 	});
@@ -133,7 +138,12 @@ fn add_message_with_maxed_out_storage_should_panic() {
 			));
 		}
 		assert_noop!(
-			MessagesPallet::add(Origin::signed(caller_1), None, schema_id_1, message_payload_1),
+			MessagesPallet::add(
+				Origin::signed(caller_1),
+				None,
+				schema_id_1,
+				message_payload_1.clone()
+			),
 			Error::<Test>::TooManyMessagesInBlock
 		);
 	});
@@ -160,13 +170,13 @@ fn on_initialize_should_add_messages_into_storage_and_clean_temp() {
 			Origin::signed(caller_2),
 			None,
 			schema_id_1,
-			message_payload_1
+			message_payload_1.clone()
 		));
 		assert_ok!(MessagesPallet::add(
 			Origin::signed(caller_2),
 			None,
 			schema_id_2,
-			message_payload_2
+			message_payload_2.clone()
 		));
 
 		// act
@@ -189,7 +199,8 @@ fn on_initialize_should_add_messages_into_storage_and_clean_temp() {
 				block_number: current_block,
 				schema_id: schema_id_1,
 				count: 2
-			}),
+			})
+			.into(),
 		);
 
 		assert_eq!(
@@ -198,7 +209,8 @@ fn on_initialize_should_add_messages_into_storage_and_clean_temp() {
 				block_number: current_block,
 				schema_id: schema_id_2,
 				count: 1
-			}),
+			})
+			.into(),
 		);
 	});
 }
@@ -234,9 +246,9 @@ fn get_messages_by_schema_with_valid_request_should_return_paginated() {
 			pagination_response.content[0],
 			MessageResponse {
 				msa_id: 10,
-				payload: Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes()),
+				data: Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes()),
 				index: from_index as u16,
-				provider_key: 1,
+				signer: 1,
 				block_number: 0
 			}
 		);
@@ -311,7 +323,7 @@ fn get_messages_by_schema_with_invalid_request_should_panic() {
 		let page_size = 30;
 		let from_index = 0;
 		let messages_per_block = vec![10, 0, 5, 2, 0, 3, 9];
-		populate_messages(schema_id, messages_per_block);
+		populate_messages(schema_id, messages_per_block.clone());
 		let request =
 			BlockPaginationRequest { page_size, from_block: 22, to_block: 15, from_index };
 
@@ -331,7 +343,7 @@ fn get_messages_by_schema_with_overflowing_input_should_panic() {
 		let page_size = 30;
 		let from_index = 0;
 		let messages_per_block = vec![10, 0, 5, 2, 0, 3, 9];
-		populate_messages(schema_id, messages_per_block);
+		populate_messages(schema_id, messages_per_block.clone());
 		let request = BlockPaginationRequest {
 			page_size,
 			from_block: 22_343_223_111,
@@ -381,10 +393,10 @@ fn add_message_via_valid_delegate_should_pass() {
 			list[0],
 			(
 				Message {
-					msa_id: message_producer,
-					payload: message_payload_1.try_into().unwrap(),
+					msa_id: get_msa_from_account(caller_1),
+					data: message_payload_1.clone().try_into().unwrap(),
 					index: 0,
-					provider_key: caller_1
+					signer: caller_1
 				},
 				schema_id_1
 			)
@@ -394,10 +406,10 @@ fn add_message_via_valid_delegate_should_pass() {
 			list[1],
 			(
 				Message {
-					msa_id: message_producer,
-					payload: message_payload_2.try_into().unwrap(),
+					msa_id: get_msa_from_account(caller_2),
+					data: message_payload_2.clone().try_into().unwrap(),
 					index: 1,
-					provider_key: caller_2
+					signer: caller_2
 				},
 				schema_id_2
 			)
@@ -419,7 +431,7 @@ fn add_message_via_non_delegate_should_fail() {
 				Origin::signed(message_provider),
 				Some(message_producer),
 				schema_id_1,
-				message_payload_1
+				message_payload_1.clone()
 			),
 			Error::<Test>::UnAuthorizedDelegate
 		);

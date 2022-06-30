@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v3
 
       # Skip individual steps if only certain files changed
-      - uses: dorny/paths-filter@v2.10.2
+      - uses: dorny/paths-filter@v2.2.1
         id: filter
         with:
           filters: |
@@ -40,10 +40,8 @@ jobs:
               - '**/Cargo.lock'
               - 'ci/build.sh'
               - 'scripts/**.sh'
-            js:
-              - 'js/**'
-
-      # Rust
+              - '.dockerignore'
+              - 'Dockerfile'
       - name: Install latest nightly
         if: ${{ steps.filter.outputs.rust == 'true' }}
         uses: actions-rs/toolchain@v1
@@ -59,27 +57,3 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
 
-      # JS
-      - name: Use Node.js
-        if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: 'npm'
-          cache-dependency-path: js/rpc/package-lock.json
-      - name: Install
-        run: npm ci
-        if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
-        working-directory: js/rpc
-      - name: Lint
-        run: npm run lint
-        if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
-        working-directory: js/rpc
-      - name: Test
-        run: npm test
-        if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
-        working-directory: js/rpc
-      - name: Build & Publish Dry Run
-        if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
-        run: npm publish --dry-run
-        working-directory: js/rpc

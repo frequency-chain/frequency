@@ -67,7 +67,7 @@ impl pallet_msa::Config for Test {
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap().into();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
@@ -78,7 +78,7 @@ pub fn test_public(n: u8) -> AccountId32 {
 }
 
 pub fn test_origin_signed(n: u8) -> Origin {
-	Origin::signed(test_public(n))
+	Origin::signed(test_public(n).into())
 }
 
 #[cfg(feature = "runtime-benchmarks")]

@@ -184,7 +184,7 @@ pub fn populate_schema_and_serialize(
 	for (field_name, field_value) in records.iter() {
 		record_list.put(field_name, field_value.clone());
 	}
-	let datum_res = to_avro_datum(schema, record_list)?;
+	let datum_res = to_avro_datum(&schema, record_list)?;
 	Ok(datum_res)
 }
 

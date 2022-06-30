@@ -2,14 +2,13 @@
 # Node Key Bob: `subkey inspect //Bob`
 version: '3'
 services:
-  relay_alice:
+  node_alice:
     container_name: alice
     image: "parity/polkadot:v0.9.18"
-    hostname: relay_alice
     ports:
-      - "30335:30335" # p2p port
-      - "9935:9933" # rpc port
-      - "9946:9944" # ws port
+      - "30333:30333"
+      - "9933:9933"
+      - "9944:9944"
     volumes:
       - type: bind
         source: ./res/rococo-local.json
@@ -21,7 +20,7 @@ services:
       --wasm-execution=compiled
       --execution=wasm
       --base-path=/data
-      --port 30335
+      --port 30333
       --rpc-port 9933
       --ws-port 9944
       --rpc-external
@@ -31,14 +30,13 @@ services:
       --alice
       --log="main,debug"
 
-  relay_bob:
+  node_bob:
     container_name: bob
     image: "parity/polkadot:v0.9.18"
-    hostname: relay_bob
     ports:
-      - "30336:30336" # p2p port
-      - "9936:9933" # rpc port
-      - "9947:9944" # ws port
+      - "30344:30333"
+      - "9935:9933"
+      - "9945:9944"
     volumes:
       - type: bind
         source: ./res/rococo-local.json
@@ -50,7 +48,7 @@ services:
       --base-path=/data
       --wasm-execution=compiled
       --execution=wasm
-      --port 30336
+      --port 30333
       --rpc-port 9933
       --ws-port 9944
       --rpc-external
@@ -59,21 +57,3 @@ services:
       --rpc-methods=Unsafe
       --bob
       --log="main,info"
-
-  collator_mrc:
-    container_name: mrc
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      - HOST_ALICE=relay_alice
-      - HOST_BOB=relay_bob
-      - ALICE_RPC_PORT=9933
-      - BOB_RPC_PORT=9933
-    ports:
-      - "30333:30333" # p2p port
-      - "9933:9933" # rpc port
-      - "9944:9944" # ws port
-    depends_on:
-      - relay_alice
-      - relay_bob

@@ -50,7 +50,7 @@ fn add_key_payload_and_signature<T: Config>() -> (AddKeyData, MultiSignature, T:
 	(add_key_payload, MultiSignature::Sr25519(signature.into()), acc.into())
 }
 
-fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSourceId) {
+fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSenderId) {
 	let provider = create_account::<T>("account", n);
 
 	assert_ok!(Msa::<T>::create(RawOrigin::Signed(provider.clone()).into()));
