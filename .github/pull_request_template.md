@@ -1,7 +1,7 @@
 # Goal
 The goal of this PR is <!-- insert goal here -->
 
-Closes / Fixes <!-- issue # -->
+Closes <!-- issue # -->
 
 # Discussion
 <!-- List discussion items -->
