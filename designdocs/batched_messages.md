@@ -25,10 +25,8 @@ However, this idea does not go far enough. Batching allows us to support posting
 massive amounts of data, but it would still be expensive to post data of this
 size on chain.
 
-We can leverage off chain storage to make posting large message collections cheap, but we need to
-find a way to constrain the message types posted off chain so that message
-consumers know what types of data to expect. This document aims to explore what
-a system that does the above could look like.
+We can leverage off chain storage to make posting large message collections cheap.
+This document aims to explore what a system that does that could look like.
 
 ## Goals and Non-Goals
 This specifies how messages are to be announced on chain; what is required and
@@ -118,7 +116,6 @@ of this document's writing, is a `Vec<u8>`. This proposal will turn the
   * `on_behalf_of`: `Option<MessageSourceId>` The msa id of delegate.
   * `schema_id`: `u16` A schema identifier
   * `payload`: `Payload` The message payload
-  * `payload_location`: `PayloadLocation` The payload location
 
 * **Returns**
   * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html) The return type of a Dispatchable in frame.
@@ -129,11 +126,11 @@ We can circumvent defining a batch explicitly if we leverage the model type and
 payload location included in the schema.
 
 Parquet files are lists by default, so consumers can assume that a message is
-a batch if it has a Parquet model type. In this case, the "batch" will likely be
+a batch if it has a Parquet model type. In this case, the "batch" will be
 located off chain, because storing such a file on-chain would incur significant
 cost.
 
-Avro files, on the other hand, have the option of being `record`  types (see
+Avro files, on the other hand, have the option of being `record` types (see
 [Avro docs](https://avro.apache.org/docs/current/spec.html#schemas)). These files
 could be stored either on chain or off chain. If they are on chain, it would
 make sense for the file to be small (lower cost). However, they could be large
@@ -183,39 +180,6 @@ Despite the fact that announcers can lie about the file size, the file_size
 parameter also serves as an on-chain declaration that not only allows consumers
 of batches to quickly discover if a batch announcer was honest, but the file
 requestor can know in advance when to stop requesting data.
-
-#### Message Payloads
-The document above describes payload location as an enumeration of on-chain and
-off-chain types. This allows us to encapsulate different information for both
-on-chain and IPFS payloads without overloading a single type with both sets of
-fields.
-
-However, if we discover that both on-chain and off-chain payloads are too
-complex to fit into a single enum, we could use traits to our advantage:
-
-```rust
-trait OnChainPayload {
-  // FYI: the following is just for demonstrative purposes
-  fn source() -> MsaId
-  fn payload() -> Vec<u8>
-}
-
-trait IPFSPayload {
-  // FYI: the following is just for demonstrative purposes
-  fn payload_cid() -> CIDv2
-  fn payload_length() -> u32
-}
-
-pub Payload<S: OnChainPayload,T: IPFSPayload> {
-    OnChain(S),
-    IPFS (T),
-}
-```
-
-This would give us a flexible and expressive set of interfaces to describe
-payloads of any shape without crowding a single payload type.
-
-**NOTE: This is purely a way to demonstrate how we could describe payloads using traits. It is being included here for the sake of completeness with regard to discussion around possible design.**
 
 #### Changes to `get_messages_by_schema`
 The `MessagesPallet::get_messages_by_schema` RPC returns a paginated
