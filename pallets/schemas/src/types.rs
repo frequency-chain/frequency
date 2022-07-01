@@ -12,7 +12,7 @@ pub struct Schema<MaxModelSize>
 where
 	MaxModelSize: Get<u32>,
 {
-	/// The type of model (AvroBinary, Parquery, etc.)
+	/// The type of model (AvroBinary, Parquet, etc.)
 	pub model_type: ModelType,
 	/// Defines the structure of the message payload using model_type
 	pub model: BoundedVec<u8, MaxModelSize>,
