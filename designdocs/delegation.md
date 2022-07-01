@@ -22,8 +22,8 @@ The primary motivation for delegation is to support End Users of the DSNP platfo
 
 Market research makes it clear that End Users are extremely reluctant to pay to use applications, particularly social networks.
 This means there needs to be some way to onboard End Users and relay their activity through the DSNP platform without charging them.
-On Ethereum and now on MRC, the use of authorized Delegates enables the creation of End User accounts as well as processing and storing user messages and other data for the End Users, paid for by a Provider, who can recoup these costs by other means (outside the scope of this Design Document).
-The vast majority of this activity will not reside on chain, however, MRC needs to be able to coordinate the exchange of data, and to securely allow an End User or any other type of account holder to manage their Delegates.
+On Ethereum and now on Frequency, the use of authorized Delegates enables the creation of End User accounts as well as processing and storing user messages and other data for the End Users, paid for by a Provider, who can recoup these costs by other means (outside the scope of this Design Document).
+The vast majority of this activity will not reside on chain, however, Frequency needs to be able to coordinate the exchange of data, and to securely allow an End User or any other type of account holder to manage their Delegates.
 The delegation is managed by assigning each account, called a Message Sourcing Account or MSA, an ID number, called an MsaId.
 
 ## Goals and Non-Goals
@@ -226,7 +226,7 @@ Including an effective block range in the provider storage data would allow prov
 Directly adding a provider, with or without a provider's permission, is not to be implemented at this time. The original use case was for a potential wallet app to support browsing and adding providers. Adding/replacing a provider for an existing account with an `MsaId` could still be done using the delegated methods, `add_self_as_delegate` or `replace_delegate_with_self`.  A direct add brought up concerns about potential risks of adding a provider without the provider's knowledge. For example, if the provider has removed the delegator for legitimate reasons, such as if the End User violated the provider's Terms of Service, then the provider ought to be able to prevent them from adding the provider again just by paying for it.
 
 ## Glossary
-* **Provider**: An `MsaId` that has been granted specific permissions by its Delegator. A company or individual operating an on-chain Provider MSA in order to post MRC transactions on behalf of other MSAs.
+* **Provider**: An `MsaId` that has been granted specific permissions by its Delegator. A company or individual operating an on-chain Provider MSA in order to post Frequency transactions on behalf of other MSAs.
 * **Delegator**: An `MsaId` that has granted specific permissions to a Provider.
 * **MSA**: Message Sourcing Account. A collection of key pairs which can have a specific token balance.
 * **Public Key**: A 32-byte (u256) number that is used to refer to an on-chain MSA and verify signatures. It is one of the keys of an MSA key pair
