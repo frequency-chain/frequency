@@ -2,11 +2,11 @@
 
 ## Context and Scope
 
-MRC enables users(read delegators) to have control over their own data. While providers can send and receive messages on behalf of users, there is need for separation of control via **delegator->provider**, **provider<->delegator** relationships in form of Permissions and Grants respectively. This document describes the design of the two types of relationships and recommendation on how to implement them.
+Frequency enables users(read delegators) to have control over their own data. While providers can send and receive messages on behalf of users, there is need for separation of control via **delegator->provider**, **provider<->delegator** relationships in form of Permissions and Grants respectively. This document describes the design of the two types of relationships and recommendation on how to implement them.
 
 ## Problem Statement
 
-Data Access Pattern on MRC, at-minimum, should provide ***RESTRICTED*** ```permissions``` at **delegator->provider**, as well as ***PUBLISH*** and, ***Block***, ```grants``` for specific ```schema_id``` at **provider<->delegator**.This entails users can enable specific permissions for provider to write data on their behalf, while also restricting grants to providers at schema level, rendering providers as restricted. Providers should also be able to opt into publish, on behalf of, users, or block from publication, on behalf of, at schema level. Primarily, the use case can be summarized in following way:
+Data Access Pattern on Frequency, at-minimum, should provide ***RESTRICTED*** ```permissions``` at **delegator->provider**, as well as ***PUBLISH*** and, ***Block***, ```grants``` for specific ```schema_id``` at **provider<->delegator**.This entails users can enable specific permissions for provider to write data on their behalf, while also restricting grants to providers at schema level, rendering providers as restricted. Providers should also be able to opt into publish, on behalf of, users, or block from publication, on behalf of, at schema level. Primarily, the use case can be summarized in following way:
 
 - **As a provider**, I would want to publish data for specific ```schema_id``` on-behalf of a delegator. Defaults to ```publish``` permissions on all schemas registered by provider on behalf of delegator.
 - **As a delegator**, I would like to restrict a provider, by allowing a provider to only publish data for specific ```schema_ids``` on-behalf of me.
@@ -15,20 +15,20 @@ Note: A publish state would mean that a provider is able to publish data on beha
 
 ## Goals and Non-Goals
 
-MRC is a default read only for items stored on and off chain, requiring an explicit process to control writing or publishing of messages via some permissions and grants. Some of the major goals surrounding provider permissions and grants are:
+Frequency is a default read only for items stored on and off chain, requiring an explicit process to control writing or publishing of messages via some permissions and grants. Some of the major goals surrounding provider permissions and grants are:
 
 ### Goals
 
-**Opt In and Duality**: Providers should register users with MRC and delegate on behalf of them, while also specifically allowing a collection of schema(s) for which delegator provide them full publication rights. This ensures default state of providers is ***Restrict***. Delegators can also choose to restrict providers on per-schema basis by blocking them from publishing data on their behalf. This ensures default state of delegators is ***Block*** for all non provider preferred ```schema_ids```. Duality should be implemented at schema level grants.
+**Opt In and Duality**: Providers should register users with Frequency and delegate on behalf of them, while also specifically allowing a collection of schema(s) for which delegator provide them full publication rights. This ensures default state of providers is ***Restrict***. Delegators can also choose to restrict providers on per-schema basis by blocking them from publishing data on their behalf. This ensures default state of delegators is ***Block*** for all non provider preferred ```schema_ids```. Duality should be implemented at schema level grants.
 
-**ToS Baked In**: As a part of this design doc, it is recommended to discuss about baking in ***ToS*** for providers and delegators as a part of permission grants by including a hash of ToS unless there is a re-delegation. Such that MRC can also act as proof of specific agreement established between a provider and a delegator.
+**ToS Baked In**: As a part of this design doc, it is recommended to discuss about baking in ***ToS*** for providers and delegators as a part of permission grants by including a hash of ToS unless there is a re-delegation. Such that Frequency can also act as proof of specific agreement established between a provider and a delegator.
 
-**Time Bound Grants**: Any grants given or revoked by a delegator (allowing provider to publish or block them for certain duration) or any grants are modified by a provider or delegator are valid for the duration of ***ToS***. This can be a control mechanism in MRC which can be a fixed number for version 1 of this implementation and be extensible via a governance mechanism. This also brings the question about, if not time bounded, does permissions and grants are set till they are explicitly revoked. While un-delegation, definitely is an option for user to remove a provider completely from ever publishing on their behalf.
+**Time Bound Grants**: Any grants given or revoked by a delegator (allowing provider to publish or block them for certain duration) or any grants are modified by a provider or delegator are valid for the duration of ***ToS***. This can be a control mechanism in Frequency which can be a fixed number for version 1 of this implementation and be extensible via a governance mechanism. This also brings the question about, if not time bounded, does permissions and grants are set till they are explicitly revoked. While un-delegation, definitely is an option for user to remove a provider completely from ever publishing on their behalf.
 
 ### Non-Goals
 
 - Does not cover the case where a delegator or provider can restrict reading of data on their behalf.
-- MRC enables a valid provider or delegator to be able to read as a default.
+- Frequency enables a valid provider or delegator to be able to read as a default.
 - Only covers basic version 1 of permission and grant implementation details.
 - Does not cover details of economics, governance mechanism.
 - Does not cover details on dynamic expiry time for permissions/grants.
@@ -43,7 +43,7 @@ Note: The terminology and implementation are subject to change at issue resoluti
 
 Permission is a generic option for any user. For version 1 of this implementation, the following options are available:
 
-- ***RESTRICTED***: Where a user grants a provider to publish data on their behalf for specific schema(s) only. This is the default state of a provider on MRC, where a provider has to explicitly provide a list of schema(s) for which they are allowed to publish data on behalf of the user.
+- ***RESTRICTED***: Where a user grants a provider to publish data on their behalf for specific schema(s) only. This is the default state of a provider on Frequency, where a provider has to explicitly provide a list of schema(s) for which they are allowed to publish data on behalf of the user.
 
 An example of permission data structure is as follows:
 
@@ -65,7 +65,7 @@ pub struct Permission {
 
 Grants enable delegators as well as providers to restrict one another from publishing data on specific schema(s). For version 1 of this implementation, the following options are available:
 
-- ***PUBLISH***: Where a delegator grants a provider to publish data on their behalf for specific schema(s) only. This is the default state of a provider on MRC, where a provider has to explicitly provide a list of schema(s) for which they are allowed to publish data on behalf of the delegator. This also enables a delegator to opt in to publish their data.
+- ***PUBLISH***: Where a delegator grants a provider to publish data on their behalf for specific schema(s) only. This is the default state of a provider on Frequency, where a provider has to explicitly provide a list of schema(s) for which they are allowed to publish data on behalf of the delegator. This also enables a delegator to opt in to publish their data.
 
 An example of grant data structure is as follows:
 
@@ -89,7 +89,7 @@ pub struct Grant {
 - ***Grant***: The user level action/result. "A user grants a permission to a provider".
 - ***ToS***: The hash of terms of service between a delegator and provider.
 - ***expiry***: The expiry time of a permission/grant.
-- ***schema_id***: The unique identifier of a registered schema on MRC.
+- ***schema_id***: The unique identifier of a registered schema on Frequency.
 
 ### add_schema_grants()
 
@@ -109,9 +109,9 @@ An extrinsic to allow a provider to request publish write to list of schemas. Re
 
 - Notes: The weights of this extrinsic should account for required weights when revoking grants at schema level via provider/delegator.
 
-### add_mrc_publisher() : Not in the scope for version 1 of this implementation
+### add_frequency_publisher() : Not in the scope for version 1 of this implementation
 
-An extrinsic to allow (via governance) to set a provider as MRC publisher. This in turn will give all publish rights on all schemas for any delegator delegating to this provider. Rending them **Publisher** status.
+An extrinsic to allow (via governance) to set a provider as Frequency publisher. This in turn will give all publish rights on all schemas for any delegator delegating to this provider. Rending them **Publisher** status.
 
 - Parameters:
     1. **provider_msa**: The MSA of the provider/app.
@@ -148,8 +148,8 @@ An extrinsic (or rpc if revoking is paid off while adding) to allow a provider o
 
 ## Time bounded permissions
 
-- Expiry time on permissions for version 1 can be a fixed number of blocks set in MRC.
-- This expiry time can be update via governance or runtime upgrades. Since this is not important for the scope of the design doc, implementation details can define, how MRC is handling expiry time in first version.
+- Expiry time on permissions for version 1 can be a fixed number of blocks set in Frequency.
+- This expiry time can be update via governance or runtime upgrades. Since this is not important for the scope of the design doc, implementation details can define, how Frequency is handling expiry time in first version.
 - However, expiry time can be baked in the above extrinsic call and can be set as a parameter.
 
 ## Validation
@@ -172,7 +172,7 @@ Some risks are primarily at implementation level, such a storage pattern of such
   - Key management for reading private data
 - Delegation for reading vs writing
 - Do we need to have a way for the user to express how their data is used on "3rd party" sites (aka sites you don't have an explicit delegation with)
-  - Maybe not MRC, but perhaps at the DSNP layer?
+  - Maybe not Frequency, but perhaps at the DSNP layer?
   - DSNP data use policy for each announcement (We already assume friends/followers can see it even on 3rd party sites)
 - Do we need extendable/modular permissions or "roles"?
   - Grouping Schemas together somehow?
@@ -185,7 +185,7 @@ Some risks are primarily at implementation level, such a storage pattern of such
   - Sub-permissions CRUD? We really only have Create as a permission
 - Could service permissions be set at the provider MSA level and the delegation only have exclusions?
   - This is more auto-optin which I think is bad.
-- Public "Read" permission (DSNP or MRC?)
+- Public "Read" permission (DSNP or Frequency?)
   - Robots.txt
   - Could this be on a per service basis?
     - aka I grant the public ability to "read" schema 7 from service A but not schema 7 from service B

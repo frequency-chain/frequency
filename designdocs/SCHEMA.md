@@ -1,25 +1,25 @@
-# MRC Message Schemas
+# Frequency Message Schemas
 
 ## Context and Scope
 
-Messages on MRC are validated and stored against pre-defined schema(s). In order to support a variety of message types, it is imperative to define an on-chain semantics, pallet(s) for example, to handle dynamic registration, validation, storage and retention schemes for schemas.
+Messages on Frequency are validated and stored against pre-defined schema(s). In order to support a variety of message types, it is imperative to define an on-chain semantics, pallet(s) for example, to handle dynamic registration, validation, storage and retention schemes for schemas.
 
 This document describes how schemas are handled on chain in the following sections.
 
 ## Problem Statement
 
-Message passing is a core functionality to networking protocols. The way to enforce a communication protocol between participants of network via services is done by messaging schema. Analogous to interfaces, schemas provide a strongly typed description for messages ensuring their correctness, validity, extensibility and interoperability between services interacting with MRC.
+Message passing is a core functionality to networking protocols. The way to enforce a communication protocol between participants of network via services is done by messaging schema. Analogous to interfaces, schemas provide a strongly typed description for messages ensuring their correctness, validity, extensibility and interoperability between services interacting with Frequency.
 
 ## Goals
 
-At a minimum, MRC should implement procedures to register, validate, store and access variety of messaging schemas dynamically. Schemas on chain must have the following salient features:
+At a minimum, Frequency should implement procedures to register, validate, store and access variety of messaging schemas dynamically. Schemas on chain must have the following salient features:
 
 - **Registry**: Implement a schema registry, enabling participants to register and store validated schemas on chain.
 
-- **Validation**: Schema validation enables message consumers and producers to entrust MRC with correctness of schema prior to storage and a valid ```schema_id``` is produced. Schema validation can be done on chain with following basic steps:
+- **Validation**: Schema validation enables message consumers and producers to entrust Frequency with correctness of schema prior to storage and a valid ```schema_id``` is produced. Schema validation can be done on chain with following basic steps:
   - Some sort of duplication checks to be put in place ensuring uniqueness of schemas.
   - Total count of schemas does not exceed a pre-defined maximum count that can be stored on chain.
-  - Schema being registered should have a minimum size as defined by MRC and should not exceed a pre-defined maximum size.
+  - Schema being registered should have a minimum size as defined by Frequency and should not exceed a pre-defined maximum size.
   - Schema should not be malformed.
 
 Note: due to the [serialization concerns](./OnChainMessageStorage.md#serialization-concerns) pertaining to processing restrictions on chain as well as lack of better serialization rust libraries, schema integrity may be required to be validated off chain.
@@ -34,11 +34,11 @@ Note: due to the [serialization concerns](./OnChainMessageStorage.md#serializati
   - Schema itself has bug which was overlooked during registration.
   - Cost of garbage collecting data would eventually be a factor.
 
-- **Evolution**: An important aspect of message passing is schema evolution. After initial schema is defined, network participants may need to evolve it over time depending on their respective use cases, it is critical to messaging system to handle data encoded with both old and new schema seamlessly. Schema evolution on MRC can be achieved simply via various approaches, preferably some sort of retirement mechanism discussed in this proposal. See [additional notes](#additional-notes) for more details.
+- **Evolution**: An important aspect of message passing is schema evolution. After initial schema is defined, network participants may need to evolve it over time depending on their respective use cases, it is critical to messaging system to handle data encoded with both old and new schema seamlessly. Schema evolution on Frequency can be achieved simply via various approaches, preferably some sort of retirement mechanism discussed in this proposal. See [additional notes](#additional-notes) for more details.
 
 ## Proposal
 
-This document outlines various components of MRC schemas, including, but not limited to, ability of network participants to register, validate and access message schemas dynamically via on chain semantics.
+This document outlines various components of Frequency schemas, including, but not limited to, ability of network participants to register, validate and access message schemas dynamically via on chain semantics.
 
 ## Schema Registry
 
@@ -93,14 +93,14 @@ Using schema registry, message producers no longer need to include full schema w
 
 - **Type definition**: ```StorageMap<_, Twox64Concat, SchemaId, BoundedVec<Schema,T::MaxSchemaSize>>```
 - **Description**: Schemas are stored as key-value pair of SchemaId vs Serialized schema payload allowed to a maximum size.
-- **Implementation**: MRC will expose a substrate extrinsic ``` register_schema ``` to allow participants store a schema on chain. On successful registration raise ```SchemaRegistered``` event with ```schema_id``` and schema payload. Schema registration should also initialize default ```SchemaPolicy``` upon successful schema registration.
+- **Implementation**: Frequency will expose a substrate extrinsic ``` register_schema ``` to allow participants store a schema on chain. On successful registration raise ```SchemaRegistered``` event with ```schema_id``` and schema payload. Schema registration should also initialize default ```SchemaPolicy``` upon successful schema registration.
 
 ### Schema Validation
 
-Schema registry, at least, performs following checks before onboarding a schema on MRC:
+Schema registry, at least, performs following checks before onboarding a schema on Frequency:
 
 - Payload is signed by an authorizing AccountId.
-- MRC did not exceed maximum count of schemas that can be hosted on chain.
+- Frequency did not exceed maximum count of schemas that can be hosted on chain.
 - A given schema adheres to minimum and maximum size limits allowed per schema.
 - Schema itself is not broken or malformed.
 - No duplicate schema(s) ever get registered.
@@ -119,7 +119,7 @@ Retention periods on a schema is designed for message(s) store to retain message
 
 - **Type Definition**: ```StorageMap<SchemaId, SchemaPolicy>```.
 - **Description**: Retention period are stored as a map of ```SchemaId``` and ```SchemaPolicy```. By default schemas have no retention policy and by default ```retention``` and ```starting_block``` is set to 1 signaling message store to retain messages on chain database indefinitely.
-- **Implementation**: MRC will expose a substrate sudo call ```update_schema_retention``` to update ```retention``` period for a given ```schema_id```. On successful execution, retention block count will be updated.
+- **Implementation**: Frequency will expose a substrate sudo call ```update_schema_retention``` to update ```retention``` period for a given ```schema_id```. On successful execution, retention block count will be updated.
 - **Read**: Schema registry should expose ```get_retention_period``` procedural call to return current state of retention period for a given ```schema_id```.
 
 Note: ```starting_block``` should only be modifiable via internal calls, for example, via message store and should not be exposed to consumers. Check out the following section for more details.
@@ -127,12 +127,12 @@ Note: ```starting_block``` should only be modifiable via internal calls, for exa
 ### Starting Blocks Storage and Access
 
 - **Description**: On chain storage of starting block number for each schema. Required by message store. Defaults to block number 1.
-- **Implementation**: Schema registry should provide some sort of procedural call (internal to MRC) to read (```get_schema_starting_block```) and write (```set_schema_starting_block```) starting block number for a given ```schema_id```. This will be utilized by message store for further processing.
+- **Implementation**: Schema registry should provide some sort of procedural call (internal to Frequency) to read (```get_schema_starting_block```) and write (```set_schema_starting_block```) starting block number for a given ```schema_id```. This will be utilized by message store for further processing.
 - **Rationale**: Message store periodically garbage collect messages per schema based on their retention period for on chain storage, upon successful garbage collection message store will update starting block to last block where messages were removed from on chain storage to chain database and new set of message will be store till ```starting_block + block_count-1```.
 
 ### Schema Retirement/Deprecation
 
-Schema(s) being immutable on MRC, would generally follow a cycle of deprecation/retirement for various reasons, such as, but not limited to, schema being wrong from consumer perspective , such as missing key fields that author intend to have and author would want to retire or deprecate a schema, even from chain perspective, the cost of garbage collection, processing feed or storage fees over time would require MRC to regularly garbage collect stable/expired/deprecated schemas. In general, following salient features have been proposed to address schema retirement/deprecation:
+Schema(s) being immutable on Frequency, would generally follow a cycle of deprecation/retirement for various reasons, such as, but not limited to, schema being wrong from consumer perspective , such as missing key fields that author intend to have and author would want to retire or deprecate a schema, even from chain perspective, the cost of garbage collection, processing feed or storage fees over time would require Frequency to regularly garbage collect stable/expired/deprecated schemas. In general, following salient features have been proposed to address schema retirement/deprecation:
 
   1. Schema(s) are immutable.
   2. Schema(s) that are intended to be retired based on their usage or vulnerabilities can be proposed to be deprecated in bulk via some sort of off chain governance.
@@ -148,7 +148,7 @@ Note: Given the nature of dependency on governance we might want these extrinsic
 
 ### Schema Evolution
 
-With Schema Registry, different consumers of MRC can evolve a given schema at different rates, changing the shape of data and entrusting schema registry to handle translations from one schema to another. Currently schema evolution is not directly supported on chain and can be achieved by different consumers via unique [schema retirement procedure](#schema-retirementdeprecation) for evolved schemas. This is work in progress and various suggestions for future reference and development are listed in [additional notes](#additional-notes), preferably [suggestion 4](#suggestion-4).
+With Schema Registry, different consumers of Frequency can evolve a given schema at different rates, changing the shape of data and entrusting schema registry to handle translations from one schema to another. Currently schema evolution is not directly supported on chain and can be achieved by different consumers via unique [schema retirement procedure](#schema-retirementdeprecation) for evolved schemas. This is work in progress and various suggestions for future reference and development are listed in [additional notes](#additional-notes), preferably [suggestion 4](#suggestion-4).
 
 ## Benefits and Risks
 
@@ -164,9 +164,9 @@ With Schema Registry, different consumers of MRC can evolve a given schema at di
 
 ### Risks
 
-- Schema registration on MRC should prevent DoS attempts given schema registration will be open to anyone with enough balance to pay for the same. Should schema registration be costly, or restricting it specific accounts would be worth considering.
+- Schema registration on Frequency should prevent DoS attempts given schema registration will be open to anyone with enough balance to pay for the same. Should schema registration be costly, or restricting it specific accounts would be worth considering.
 
-- Schema evolution is critical to any message passing system, how does MRC intend to handle it or is it required , is still a question that needs to be ironed out.
+- Schema evolution is critical to any message passing system, how does Frequency intend to handle it or is it required , is still a question that needs to be ironed out.
 
 - Another factor to consider is who is permissioned to modify retention periods per schema, who will pay for such an update and what are the defaults, if any.
 
