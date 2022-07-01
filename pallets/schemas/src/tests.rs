@@ -3,6 +3,7 @@ use common_primitives::schema::SchemaId;
 use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin, BoundedVec};
 use serial_test::serial;
 use sp_runtime::DispatchError::BadOrigin;
+use common_helpers::serde;
 
 use super::mock::*;
 
@@ -158,5 +159,23 @@ fn get_non_existing_schema_by_id_should_return_none() {
 
 		// assert
 		assert_eq!(res.as_ref().is_none(), true);
+	})
+}
+
+#[test]
+fn validate_schema_is_acceptable() {
+	new_test_ext().execute_with(|| {
+		let test_str_raw = r#"{"name":"John Doe"}"#;
+		let result = SchemasPallet::ensure_valid_schema(&create_bounded_schema_vec(test_str_raw));
+		assert_ok!(result);
+	});
+}
+
+#[test]
+fn reject_null_json_schema() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(SchemasPallet::ensure_valid_schema(
+			&create_bounded_schema_vec("")
+		), Error::<Test>::InvalidSchema);
 	})
 }
