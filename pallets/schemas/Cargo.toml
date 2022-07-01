@@ -30,6 +30,7 @@ sp-core = {default-features = false, git = "https://github.com/paritytech/substr
 
 # MRC related dependencies
 common-primitives = {default-features = false, path = "../../common/primitives"}
+common-helpers = { default-features = false, path = "../../common/helpers" }
 
 [dev-dependencies]
 sp-keyring = { default-features = false, version = '6.0.0'}
