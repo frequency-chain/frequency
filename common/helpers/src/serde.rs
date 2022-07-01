@@ -1,5 +1,5 @@
 // use serde_json_core::{Result, Value, from_slice, Error};
-use serde_json::{Value, from_slice, Error};
+use serde_json::{Value, from_slice};
 
 /// Represents error types returned by the `Serde` module.
 #[derive(thiserror::Error, Debug)]
@@ -14,13 +14,11 @@ pub enum SerdeError {
 	InvalidRecords(),
 }
 
-pub fn validate_json_schema(json_schema: Vec<u8>) -> Result<()> {
-    let result: Value = from_slice(&json_schema).map_err(|_| SerdeError::InvalidNullSchema("The provided Json schema is null"))?; // map error
+pub fn validate_json_schema(json_schema: Vec<u8>) -> Result<(), SerdeError> {
+    let result: Value = from_slice(&json_schema).map_err(|e| SerdeError::InvalidSchema(e.to_string()))?; // map error
     match result {
-        Value::Null => Error{},
+        Value::Null => Err(SerdeError::InvalidNullSchema("Provided schema is null".to_string())),
         _ => Ok(())
-        // Ok() => Ok(()),
-        // Err(error) => Err(SerdeError::InvalidSchema(error.to_string()))
     }
 }
 

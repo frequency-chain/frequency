@@ -1183,6 +1183,7 @@ dependencies = [
  "apache-avro",
  "proptest",
  "rayon",
+ "serde_json",
  "sha2 0.10.2",
  "thiserror",
 ]
@@ -6123,6 +6124,7 @@ dependencies = [
 name = "pallet-schemas"
 version = "0.1.0"
 dependencies = [
+ "common-helpers",
  "common-primitives",
  "frame-benchmarking",
  "frame-support",
