@@ -1,9 +1,9 @@
 use crate::{Config, Error, Event as AnnouncementEvent};
+use common_helpers::serde;
 use common_primitives::schema::SchemaId;
 use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin, BoundedVec};
 use serial_test::serial;
 use sp_runtime::DispatchError::BadOrigin;
-use common_helpers::serde;
 
 use super::mock::*;
 
@@ -174,8 +174,9 @@ fn validate_schema_is_acceptable() {
 #[test]
 fn reject_null_json_schema() {
 	new_test_ext().execute_with(|| {
-		assert_noop!(SchemasPallet::ensure_valid_schema(
-			&create_bounded_schema_vec("")
-		), Error::<Test>::InvalidSchema);
+		assert_noop!(
+			SchemasPallet::ensure_valid_schema(&create_bounded_schema_vec("")),
+			Error::<Test>::InvalidSchema
+		);
 	})
 }

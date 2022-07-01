@@ -48,8 +48,8 @@
 	rustdoc::invalid_codeblock_attributes
 )]
 
-use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
 use common_helpers::serde;
+use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
 
 #[cfg(test)]
 mod tests;
@@ -255,7 +255,9 @@ pub mod pallet {
 			None
 		}
 
-		pub fn ensure_valid_schema(schema: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>) -> DispatchResult {
+		pub fn ensure_valid_schema(
+			schema: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+		) -> DispatchResult {
 			let validated_schema = serde::validate_json_schema(schema.clone().into_inner());
 			validated_schema.map_err(|_| Error::<T>::InvalidSchema)?;
 			Ok(())
