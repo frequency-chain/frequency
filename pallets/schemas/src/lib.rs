@@ -209,11 +209,7 @@ pub mod pallet {
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 
-			let cur_count = Self::schema_count();
-			ensure!(cur_count < T::MaxSchemaRegistrations::get(), Error::<T>::TooManySchemas);
-			let schema_id = cur_count.checked_add(1).ok_or(Error::<T>::SchemaCountOverflow)?;
-
-			Self::add_schema(schema_id, model, model_type)?;
+			let schema_id = Self::add_schema(model, model_type)?;
 
 			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
 			Ok(())
@@ -236,14 +232,17 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 		fn add_schema(
-			schema_id: SchemaId,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
-		) -> DispatchResult {
+		) -> Result<SchemaId, DispatchError> {
+			let cur_count = Self::schema_count();
+			ensure!(cur_count < T::MaxSchemaRegistrations::get(), Error::<T>::TooManySchemas);
+			let schema_id = cur_count.checked_add(1).ok_or(Error::<T>::SchemaCountOverflow)?;
+
 			let schema = Schema { model_type, model };
 			<SchemaCount<T>>::set(schema_id);
 			<Schemas<T>>::insert(schema_id, schema);
-			Ok(())
+			Ok(schema_id)
 		}
 
 		pub fn get_latest_schema_id() -> Option<SchemaId> {
