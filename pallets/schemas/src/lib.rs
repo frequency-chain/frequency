@@ -49,6 +49,7 @@
 )]
 
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
+use common_helpers::serde;
 
 #[cfg(test)]
 mod tests;
@@ -194,6 +195,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
+			Self::ensure_valid_schema(&schema)?;
 			ensure!(
 				model.len() > T::MinSchemaModelSizeBytes::get() as usize,
 				Error::<T>::LessThanMinSchemaModelBytes
@@ -251,6 +253,12 @@ pub mod pallet {
 				return Some(response)
 			}
 			None
+		}
+
+		pub fn ensure_valid_schema(schema: &BoundedVec<u8, T::SchemaMaxBytesBoundedVecLimit>) -> DispatchResult {
+			let validated_schema = serde::validate_json_schema(schema.clone().into_inner());
+			validated_schema.map_err(|_| Error::<T>::InvalidSchema)?;
+			Ok(())
 		}
 	}
 }
