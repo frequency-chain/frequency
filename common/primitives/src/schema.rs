@@ -15,7 +15,7 @@ pub type SchemaId = u16;
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 pub enum ModelType {
-	/// Message payload modeled with Apache Avro
+	/// Message payload modeled with Apache Avro: https://avro.apache.org/docs/current/spec.html
 	AvroBinary,
 }
 
