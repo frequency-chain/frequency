@@ -18,7 +18,7 @@ jobs:
         with:
           inputFile: '.github/workflows/build-params.json'
           # we run build-node on every workflow but build-runtime only on pushes to branches
-          #filter: '[?run_on_event==`any` || run_on_event==`${{ github.event_name }}`]'
+          filter: '[?run_on_event==`any` || run_on_event==`${{ github.event_name }}`]'
   build:
     needs: build_prep
     strategy:
