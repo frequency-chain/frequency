@@ -54,7 +54,8 @@ impl<C, M> FrequencyTxFeeHandler<C, M> {
 }
 
 #[async_trait]
-impl<C, Block, Balance> FrequencyTxFeeApiServer<<Block as BlockT>::Hash, RuntimeDispatchInfo<Balance>>
+impl<C, Block, Balance>
+	FrequencyTxFeeApiServer<<Block as BlockT>::Hash, RuntimeDispatchInfo<Balance>>
 	for FrequencyTxFeeHandler<C, Block>
 where
 	Block: BlockT,
