@@ -222,7 +222,9 @@ fn testnet_genesis(
 			// Assign network admin rights.
 			key: root_key,
 		},
-		polkadot_xcm: frequency_runtime::PolkadotXcmConfig { safe_xcm_version: Some(SAFE_XCM_VERSION) },
+		polkadot_xcm: frequency_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
 		schemas: Default::default(),
 	}
 }
