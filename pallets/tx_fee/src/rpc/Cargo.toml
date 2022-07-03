@@ -2,7 +2,7 @@
 name = "pallet-tx-fee-rpc"
 version = "0.1.0"
 description = "RPC package for schemas"
-authors = ["MRC Team"]
+authors = ["Frequency Team"]
 license = "Apache-2.0"
 publish = false
 homepage = "https://unfinishedlabs.io/"

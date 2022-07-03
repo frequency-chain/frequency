@@ -1,6 +1,6 @@
 [package]
 name = "pallet-schemas"
-authors = ["MRC Team"]
+authors = ["Frequency Team"]
 description = "Schema operations"
 edition = "2021"
 homepage = "https://unfinishedlabs.io/"
@@ -28,7 +28,7 @@ sp-runtime = {default-features = false, git = "https://github.com/paritytech/sub
 sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
 sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
 
-# MRC related dependencies
+# Frequency related dependencies
 common-primitives = {default-features = false, path = "../../common/primitives"}
 
 [dev-dependencies]

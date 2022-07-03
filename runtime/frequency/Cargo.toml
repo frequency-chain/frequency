@@ -1,6 +1,6 @@
 [package]
-authors = ["MRC Team"]
-description = "Runtime for MRC parachain"
+authors = ["Frequency Team"]
+description = "Runtime for Frequency parachain"
 edition = "2021"
 homepage = "https://unfinishedlabs.io/"
 license = "Apache-2.0"

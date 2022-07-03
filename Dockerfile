@@ -1,6 +1,6 @@
 FROM --platform=linux/amd64 ubuntu:20.04
-LABEL maintainer="MRC Team"
-LABEL description="Create an image with MRC binary built in main."
+LABEL maintainer="Frequency Team"
+LABEL description="Create an image with Frequency binary built in main."
 
 WORKDIR /frequency
 

@@ -37,7 +37,7 @@ There are three core data models in Frequency and each corresponds to a pallet.
 * `Announcer MSA`: The `MSA` associated with the `AccountId` that signs a capacity transaction.
 * `Delegate` (verb): The action of an `MSA` (the `Delegator`) delegating to a `Provider`. *A verb only. Do not use as a noun!*
 * `Delegator`: An `MSA` that has delegated to a `Provider`.
-* `MRC`: The old name for Frequency
+* `Frequency`: The old name for Frequency
 * `MSA Id`: The 64 bit unsigned integer associated with an `MSA`.
 * `MSA`: Message Source Account. A registered identifier with the MSA pallet. `AccountIds` (aka public keys) may only be associated with one `MSA` and that association is immutable.
 * `Message`: A message that matches a registered `Schema` (on-chain or off-chain).

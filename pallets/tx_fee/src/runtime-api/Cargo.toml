@@ -2,7 +2,7 @@
 name = "pallet-tx-fee-runtime-api"
 version = "0.1.0"
 description = "RPC runtime package for tx fee"
-authors = ["MRC Team"]
+authors = ["Frequency Team"]
 license = "Apache-2.0"
 publish = false
 homepage = "https://unfinishedlabs.io/"

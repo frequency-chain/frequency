@@ -33,12 +33,12 @@ stop-relay-chain)
 
 start-frequency-docker)
   echo "Starting frequency container with Alice..."
-  docker-compose up --build collator_mrc
+  docker-compose up --build collator_frequency
   ;;
 
 stop-frequency-docker)
   echo "Stopping frequency container with Alice..."
-  docker-compose down collator_mrc
+  docker-compose down collator_frequency
   ;;
 
 start-frequency)

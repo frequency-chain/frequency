@@ -60,7 +60,7 @@ services:
       --bob
       --log="main,info"
 
-  collator_mrc:
+  collator_frequency:
     container_name: frequency
     build:
       context: .

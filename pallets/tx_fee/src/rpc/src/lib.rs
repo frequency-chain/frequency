@@ -33,7 +33,7 @@ impl From<Error> for i32 {
 }
 
 #[rpc(client, server)]
-pub trait MrcTxFeeApi<BlockHash, Balance> {
+pub trait FrequencyTxFeeApi<BlockHash, Balance> {
 	#[method(name = "frequency_computeExtrinsicCost")]
 	fn compute_extrinsic_cost(
 		&self,
@@ -42,20 +42,20 @@ pub trait MrcTxFeeApi<BlockHash, Balance> {
 	) -> RpcResult<FeeDetails<NumberOrHex>>;
 }
 
-pub struct MrcTxFeeHandler<C, M> {
+pub struct FrequencyTxFeeHandler<C, M> {
 	client: Arc<C>,
 	_marker: std::marker::PhantomData<M>,
 }
 
-impl<C, M> MrcTxFeeHandler<C, M> {
+impl<C, M> FrequencyTxFeeHandler<C, M> {
 	pub fn new(client: Arc<C>) -> Self {
 		Self { client, _marker: Default::default() }
 	}
 }
 
 #[async_trait]
-impl<C, Block, Balance> MrcTxFeeApiServer<<Block as BlockT>::Hash, RuntimeDispatchInfo<Balance>>
-	for MrcTxFeeHandler<C, Block>
+impl<C, Block, Balance> FrequencyTxFeeApiServer<<Block as BlockT>::Hash, RuntimeDispatchInfo<Balance>>
+	for FrequencyTxFeeHandler<C, Block>
 where
 	Block: BlockT,
 	C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,

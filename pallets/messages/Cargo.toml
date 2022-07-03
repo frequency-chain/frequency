@@ -2,7 +2,7 @@
 name = 'pallet-messages'
 version = '0.1.0'
 description = 'FRAME Message Storage Pallet'
-authors = ['MRC Team']
+authors = ['Frequency Team']
 license = "Apache-2.0"
 publish = false
 homepage = "https://unfinishedlabs.io/"
@@ -26,7 +26,7 @@ frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
 
-# MRC related dependencies
+# Frequency related dependencies
 common-primitives = {default-features = false, path = "../../common/primitives"}
 
 [features]

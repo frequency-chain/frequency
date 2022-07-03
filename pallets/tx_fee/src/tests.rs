@@ -36,7 +36,7 @@ frame_support::construct_runtime!(
 		System: system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
-		MrcTxFeePallet: pallet_tx_fee::{Pallet},
+		FrequencyTxFeePallet: pallet_tx_fee::{Pallet},
 	}
 );
 
@@ -218,7 +218,7 @@ fn compute_extrinsic_fee_works() {
 		<NextFeeMultiplier<Runtime>>::put(Multiplier::saturating_from_rational(3, 2));
 
 		assert_eq!(
-			MrcTxFeePallet::compute_extrinsic_cost(xt, len),
+			FrequencyTxFeePallet::compute_extrinsic_cost(xt, len),
 			FeeDetails {
 				inclusion_fee: Some(InclusionFee {
 					base_fee: 5 * 2,
@@ -231,7 +231,7 @@ fn compute_extrinsic_fee_works() {
 		);
 
 		assert_eq!(
-			MrcTxFeePallet::compute_extrinsic_cost(unsigned_xt, len),
+			FrequencyTxFeePallet::compute_extrinsic_cost(unsigned_xt, len),
 			FeeDetails { inclusion_fee: None, tip: 0 },
 		);
 	});

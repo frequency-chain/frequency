@@ -35,7 +35,7 @@ import { ApiPromise } from '@polkadot/api';
 import { rpc, types } from "@dsnp/frequency-rpc";
 // ...
 
-const mrcAPI = await ApiPromise.create({
+const frequencyAPI = await ApiPromise.create({
     // ...
     rpc,
     types,
@@ -48,7 +48,7 @@ const { ApiPromise } = require('@polkadot/api');
 const { rpc, types } = require("@dsnp/frequency-rpc");
 // ...
 
-const mrcAPI = await ApiPromise.create({
+const frequencyAPI = await ApiPromise.create({
     // ...
     rpc,
     types,

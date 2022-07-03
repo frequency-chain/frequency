@@ -9,7 +9,7 @@
     "directory": "js/rpc"
   },
   "version": "0.0.0",
-  "description": "RPC configuration for MRC for use with Polkadotjs API",
+  "description": "RPC configuration for Frequency for use with Polkadotjs API",
   "main": "index.js",
   "scripts": {
     "test": "mocha",

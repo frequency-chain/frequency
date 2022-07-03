@@ -1,4 +1,4 @@
-name: Release JS MRC RPC Package
+name: Release JS Frequency RPC Package
 defaults:
   run:
     working-directory: js/rpc

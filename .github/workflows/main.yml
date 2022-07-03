@@ -56,7 +56,7 @@ jobs:
           TARGET: ${{ matrix.target }}
           RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
           PACKAGE: ${{matrix.package}}
-      - name: Build MRC related specs and wasm 📝
+      - name: Build Frequency related specs and wasm 📝
         if: matrix.target == 'build-node'
         run: ./scripts/generate_specs.sh 2000 true
       - name: Create tarball  of specs and wasm 📦
@@ -88,7 +88,7 @@ jobs:
           echo "TAG=${date_tag}" >> $GITHUB_ENV
       - name: Build and push dsnp/frequency
         if: matrix.target == 'build-node'
-        id: docker_build_mrc
+        id: docker_build_frequency
         uses: docker/build-push-action@v3
         with:
           context: .

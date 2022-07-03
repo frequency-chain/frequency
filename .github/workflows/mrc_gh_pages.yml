@@ -1,4 +1,4 @@
-name: Build and Publish MRC Docs
+name: Build and Publish Frequency Docs
 
 on:
   workflow_dispatch:
@@ -33,9 +33,9 @@ jobs:
           default: true
       - name: Setup Cache 📦
         uses: Swatinem/rust-cache@v1
-      - name: Build MRC related documentation 📝
+      - name: Build Frequency related documentation 📝
         run: ./scripts/frequency_docs.sh
-      - name: Deploy MRC docs to gh-pages 🚀
+      - name: Deploy Frequency docs to gh-pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4.3.3
         with:
           branch: gh-pages

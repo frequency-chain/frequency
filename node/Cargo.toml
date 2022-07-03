@@ -1,7 +1,7 @@
 [package]
 name = "frequency-node"
 version = "0.1.0"
-authors = ["MRC Team"]
+authors = ["Frequency Team"]
 description = "Substrate node for frequency"
 license = "Apache-2.0"
 homepage = "https://unfinishedlabs.io/"
@@ -22,7 +22,7 @@ serde = { version = "1.0.137", features = ["derive"] }
 hex-literal = "0.3.4"
 jsonrpsee = { version = "0.14.0", features = ["server"] }
 
-# MRC Runtime
+# Frequency Runtime
 frequency-runtime = { path = "../runtime/frequency" }
 
 # Substrate
