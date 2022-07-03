@@ -45,7 +45,8 @@
 #![deny(
 	rustdoc::broken_intra_doc_links,
 	rustdoc::missing_crate_level_docs,
-	rustdoc::invalid_codeblock_attributes
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
 )]
 
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
@@ -130,15 +131,18 @@ pub mod pallet {
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
+	/// Storage type for max bytes for schema model
 	#[pallet::storage]
 	#[pallet::getter(fn get_schema_model_max_bytes)]
 	pub(super) type GovernanceSchemaModelMaxBytes<T: Config> = StorageValue<_, u32, ValueQuery>;
 
+	/// Storage type for current number of schemas
+	/// Useful for retrieving latest schema id
 	#[pallet::storage]
 	#[pallet::getter(fn schema_count)]
 	pub(super) type SchemaCount<T: Config> = StorageValue<_, SchemaId, ValueQuery>;
 
-	// storage for message schemas hashes
+	/// Storage for message schemas hashes
 	#[pallet::storage]
 	#[pallet::getter(fn get_schema)]
 	pub(super) type Schemas<T: Config> = StorageMap<
@@ -151,6 +155,7 @@ pub mod pallet {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {
+		/// Maximum schema size in bytes at genesis
 		pub initial_max_schema_model_size: u32,
 	}
 
@@ -238,10 +243,12 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Retrieve latest schema id via total count of schemas on chain
 		pub fn get_latest_schema_id() -> Option<SchemaId> {
 			Some(Self::schema_count())
 		}
 
+		/// Retrieve a schema by id
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			// TODO: This will eventually be a struct with other properties. Currently it is just the model
 			if let Some(model) = Self::get_schema(schema_id) {
