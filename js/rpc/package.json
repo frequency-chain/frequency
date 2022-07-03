@@ -1,11 +1,11 @@
 {
-  "name": "@dsnp/mrc-rpc",
+  "name": "@dsnp/frequency-rpc",
   "bugs": {
-    "url": "https://github.com/LibertyDSNP/mrc/issues"
+    "url": "https://github.com/LibertyDSNP/frequency/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/LibertyDSNP/mrc.git",
+    "url": "https://github.com/LibertyDSNP/frequency.git",
     "directory": "js/rpc"
   },
   "version": "0.0.0",

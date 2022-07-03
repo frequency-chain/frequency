@@ -47,7 +47,7 @@ jobs:
         uses: Swatinem/rust-cache@v1
         with: # cache the runtime target instead of root target for build-runtime
           working-directory: './runtime'
-          target-dir: './target/mrc'
+          target-dir: './target/frequency'
       - if: matrix.target == 'build-node'
         uses: Swatinem/rust-cache@v1
       - name: ${{ matrix.target }}
@@ -61,13 +61,13 @@ jobs:
         run: ./scripts/generate_specs.sh 2000 true
       - name: Create tarball  of specs and wasm 📦
         if: matrix.target == 'build-node'
-        run: tar -cvf mrc_specs.tar ./res/genesis
-      - name: Upload mrc spec and wasm artifacts 📦
+        run: tar -cvf frequency_specs.tar ./res/genesis
+      - name: Upload frequency spec and wasm artifacts 📦
         if: matrix.target == 'build-node'
         uses: actions/upload-artifact@v3
         with:
-          name: mrc_rococo_2000_specs-${{ github.sha }}
-          path: mrc_specs.tar
+          name: frequency_rococo_2000_specs-${{ github.sha }}
+          path: frequency_specs.tar
       - name: Set up QEMU
         if: matrix.target == 'build-node'
         uses: docker/setup-qemu-action@v2
@@ -86,7 +86,7 @@ jobs:
           date_tag=$(date +'%Y%m%d-%H%M')
           echo ${date_tag}
           echo "TAG=${date_tag}" >> $GITHUB_ENV
-      - name: Build and push dsnp/mrc
+      - name: Build and push dsnp/frequency
         if: matrix.target == 'build-node'
         id: docker_build_mrc
         uses: docker/build-push-action@v3
@@ -95,5 +95,5 @@ jobs:
           push: true
           file: Dockerfile
           tags: |
-            dsnp/mrc:${{ env.TAG }}
-            dsnp/mrc:latest
+            dsnp/frequency:${{ env.TAG }}
+            dsnp/frequency:latest

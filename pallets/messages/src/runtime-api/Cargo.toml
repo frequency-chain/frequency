@@ -6,7 +6,7 @@ authors = ['MRC Team']
 license = "Apache-2.0"
 publish = false
 homepage = "https://unfinishedlabs.io/"
-repository = "https://github.com/LibertyDSNP/mrc/"
+repository = "https://github.com/LibertyDSNP/frequency/"
 edition = "2021"
 
 

@@ -23,7 +23,7 @@ An easy way to get all the custom rpc and types config to be able to easily use 
 ## Getting Started
 
 - `npm install @polkadot/api` (Polkadot API Library)
-- `npm install @dsnp/mrc-rpc`
+- `npm install @dsnp/frequency-rpc`
 
 ### Usage
 
@@ -32,7 +32,7 @@ For details on use, see the [Polkadot API library documentation](https://polkado
 ```javascript
 // es6 style imports
 import { ApiPromise } from '@polkadot/api';
-import { rpc, types } from "@dsnp/mrc-rpc";
+import { rpc, types } from "@dsnp/frequency-rpc";
 // ...
 
 const mrcAPI = await ApiPromise.create({
@@ -45,7 +45,7 @@ const mrcAPI = await ApiPromise.create({
 ```javascript
 // commonjs require
 const { ApiPromise } = require('@polkadot/api');
-const { rpc, types } = require("@dsnp/mrc-rpc");
+const { rpc, types } = require("@dsnp/frequency-rpc");
 // ...
 
 const mrcAPI = await ApiPromise.create({
@@ -91,13 +91,13 @@ Distributed under the Apache 2.0 License. See `LICENSE` for more information.
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/LibertyDSNP/mrc.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/LibertyDSNP/frequency.svg?style=for-the-badge
 [contributors-url]: https://github.com/LibertyDSNP/frequency/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/LibertyDSNP/mrc.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/LibertyDSNP/frequency.svg?style=for-the-badge
 [forks-url]: https://github.com/LibertyDSNP/frequency/network/members
-[stars-shield]: https://img.shields.io/github/stars/LibertyDSNP/mrc.svg?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/LibertyDSNP/frequency.svg?style=for-the-badge
 [stars-url]: https://github.com/LibertyDSNP/frequency/stargazers
-[issues-shield]: https://img.shields.io/github/issues/LibertyDSNP/mrc.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/LibertyDSNP/frequency.svg?style=for-the-badge
 [issues-url]: https://github.com/LibertyDSNP/frequency/issues
-[license-shield]: https://img.shields.io/github/license/LibertyDSNP/mrc.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/LibertyDSNP/frequency.svg?style=for-the-badge
 [license-url]: https://github.com/LibertyDSNP/frequency/blob/master/LICENSE

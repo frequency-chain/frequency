@@ -6,7 +6,7 @@ homepage = "https://unfinishedlabs.io/"
 license = "Apache-2.0"
 name = "pallet-msa"
 publish = false
-repository = "https://github.com/libertyDSNP/mrc/"
+repository = "https://github.com/libertyDSNP/frequency/"
 version = "0.1.0"
 
 [package.metadata.docs.rs]

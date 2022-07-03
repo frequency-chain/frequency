@@ -34,7 +34,7 @@ impl From<Error> for i32 {
 
 #[rpc(client, server)]
 pub trait MrcTxFeeApi<BlockHash, Balance> {
-	#[method(name = "mrc_computeExtrinsicCost")]
+	#[method(name = "frequency_computeExtrinsicCost")]
 	fn compute_extrinsic_cost(
 		&self,
 		encoded_xt: Bytes,

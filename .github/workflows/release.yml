@@ -6,7 +6,7 @@ on:
   release:
     types: [ released ]
     tags:
-      - js-mrc-rpc-v*
+      - js-frequency-rpc-v*
 jobs:
   publish-to-npm:
     runs-on: ubuntu-20.04

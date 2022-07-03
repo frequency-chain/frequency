@@ -6,7 +6,7 @@ homepage = "https://unfinishedlabs.io/"
 license = "Apache-2.0"
 name = 'common-helpers'
 publish = false
-repository = "https://github.com/LibertyDSNP/mrc/"
+repository = "https://github.com/LibertyDSNP/frequency/"
 version = "0.1.0"
 
 [package.metadata.docs.rs]

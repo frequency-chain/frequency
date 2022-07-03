@@ -4,8 +4,8 @@ description = "Runtime for MRC parachain"
 edition = "2021"
 homepage = "https://unfinishedlabs.io/"
 license = "Apache-2.0"
-name = "mrc-runtime"
-repository = "https://github.com/LibertyDSNP/mrc/"
+name = "frequency-runtime"
+repository = "https://github.com/LibertyDSNP/frequency/"
 version = "0.1.0"
 
 [package.metadata.docs.rs]

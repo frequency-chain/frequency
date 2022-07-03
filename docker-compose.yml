@@ -61,7 +61,7 @@ services:
       --log="main,info"
 
   collator_mrc:
-    container_name: mrc
+    container_name: frequency
     build:
       context: .
       dockerfile: Dockerfile

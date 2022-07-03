@@ -34,7 +34,7 @@ jobs:
       - name: Setup Cache 📦
         uses: Swatinem/rust-cache@v1
       - name: Build MRC related documentation 📝
-        run: ./scripts/mrc_docs.sh
+        run: ./scripts/frequency_docs.sh
       - name: Deploy MRC docs to gh-pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4.3.3
         with:

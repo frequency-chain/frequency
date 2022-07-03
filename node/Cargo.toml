@@ -1,16 +1,16 @@
 [package]
-name = "mrc-node"
+name = "frequency-node"
 version = "0.1.0"
 authors = ["MRC Team"]
-description = "Substrate node for mrc"
+description = "Substrate node for frequency"
 license = "Apache-2.0"
 homepage = "https://unfinishedlabs.io/"
-repository = "https://github.com/LibertyDSNP/mrc/"
+repository = "https://github.com/LibertyDSNP/frequency/"
 edition = "2021"
 build = "build.rs"
 
 [[bin]]
-name = "mrc-collator"
+name = "frequency-collator"
 path = "src/main.rs"
 
 [dependencies]
@@ -23,7 +23,7 @@ hex-literal = "0.3.4"
 jsonrpsee = { version = "0.14.0", features = ["server"] }
 
 # MRC Runtime
-mrc-runtime = { path = "../runtime/mrc" }
+frequency-runtime = { path = "../runtime/frequency" }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
@@ -97,7 +97,7 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 
 [features]
 runtime-benchmarks = [
-	"mrc-runtime/runtime-benchmarks",
+	"frequency-runtime/runtime-benchmarks",
 	"polkadot-cli/runtime-benchmarks",
 ]
-try-runtime = ["mrc-runtime/try-runtime"]
+try-runtime = ["frequency-runtime/try-runtime"]
