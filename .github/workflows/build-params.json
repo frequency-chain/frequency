@@ -27,7 +27,7 @@
     "os": "ubuntu-latest",
     "target": "build-runtime",
     "package": "mrc-runtime",
-    "run_on_event": "any",
+    "run_on_event": "push",
     "rust_toolchain": "1.57.0"
   }
 ]
