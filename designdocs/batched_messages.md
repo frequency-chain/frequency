@@ -153,9 +153,9 @@ Please see [Batching Source Dependent Messages With Delegation](https://forums.p
 the benefits of announcing batch files on chain rather than all types of
 user-created messages.
 
-One risk is that providers on MRC could simply register a new schema and
+One risk is that providers on Frequency could simply register a new schema and
 announce batches "unofficially". We have not decided whether or not to let everyone
-with enough token balance register a schema. Other MRC participants would need to
+with enough token balance register a schema. Other Frequency participants would need to
 first learn about and evaluate new schemas, then update their software to
 consume a new message type.
 
@@ -207,4 +207,4 @@ pub struct MessageResponse<AccountId, BlockNumber> {
 ### Glossary
 * *IPFS* [InterPlanetary File System](https://docs.ipfs.io/), a decentralized file system for building the next generation of the internet
 * *CID* [Content IDentifier](https://github.com/multiformats/cid/), Self-describing content-addressed identifiers for distributed systems
-* *MsaId* [Message Source Account ID](https://github.com/LibertyDSNP/mrc/blob/main/designdocs/ACCOUNTS.md) an identifier for a MSA.
+* *MsaId* [Message Source Account ID](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/ACCOUNTS.md) an identifier for a MSA.

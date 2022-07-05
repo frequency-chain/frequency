@@ -3,16 +3,16 @@
 set -e
 
 cmd=$1
-chain_spec="${RAW_PARACHAIN_CHAIN_SPEC:-./res/genesis/rococo-local-mrc-2000-raw.json}"
+chain_spec="${RAW_PARACHAIN_CHAIN_SPEC:-./res/genesis/rococo-local-frequency-2000-raw.json}"
 # The runtime we want to use
-parachain="${PARA_CHAIN_CONFIG:-mrc-local}"
+parachain="${PARA_CHAIN_CONFIG:-frequency-local}"
 # The parachain Id we want to use
 para_id="${PARA_ID:-2000}"
 # The tmp base directory
-base_dir=/tmp/mrc
+base_dir=/tmp/frequency
 # Option to use the Docker image to export state & wasm
 docker_onboard="${DOCKER_ONBOARD:-false}"
-mrc_docker_image_tag="${PARA_DOCKER_IMAGE_TAG:-mrc-latest}"
+frequency_docker_image_tag="${PARA_DOCKER_IMAGE_TAG:-frequency-latest}"
 
 chain="${RELAY_CHAIN_SPEC:-./res/rococo-local.json}"
 
@@ -31,18 +31,18 @@ stop-relay-chain)
   docker-compose down
   ;;
 
-start-mrc-docker)
-  echo "Starting mrc container with Alice..."
-  docker-compose up --build collator_mrc
+start-frequency-docker)
+  echo "Starting frequency container with Alice..."
+  docker-compose up --build collator_frequency
   ;;
 
-stop-mrc-docker)
-  echo "Stopping mrc container with Alice..."
-  docker-compose down collator_mrc
+stop-frequency-docker)
+  echo "Stopping frequency container with Alice..."
+  docker-compose down collator_frequency
   ;;
 
-start-mrc)
-  printf "\nBuilding mrc with runtime '$parachain' and id '$para_id'...\n"
+start-frequency)
+  printf "\nBuilding frequency with runtime '$parachain' and id '$para_id'...\n"
   cargo build --release
 
   parachain_dir=$base_dir/parachain/${para_id}
@@ -69,16 +69,16 @@ start-mrc)
     --state-cache-size 0 \
   ;;
 
-start-mrc-container)
+start-frequency-container)
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
-  mrc_default_port=$((30333))
-  mrc_default_rpc_port=$((9933))
-  mrc_default_ws_port=$((9944))
-  mrc_port="${MRC_PORT:-$mrc_default_port}"
-  mrc_rpc_port="${MRC_RPC_PORT:-$mrc_default_rpc_port}"
-  mrc_ws_port="${MRC_WS_PORT:-$mrc_default_ws_port}"
+  frequency_default_port=$((30333))
+  frequency_default_rpc_port=$((9933))
+  frequency_default_ws_port=$((9944))
+  frequency_port="${Frequency_PORT:-$frequency_default_port}"
+  frequency_rpc_port="${Frequency_RPC_PORT:-$frequency_default_rpc_port}"
+  frequency_ws_port="${Frequency_WS_PORT:-$frequency_default_ws_port}"
 
   ./scripts/run_collator.sh \
     --chain="${chain_spec}" --alice \
@@ -86,9 +86,9 @@ start-mrc-container)
     --wasm-execution=compiled \
     --execution=wasm \
     --force-authoring \
-    --port "${mrc_port}" \
-    --rpc-port "${mrc_rpc_port}" \
-    --ws-port "${mrc_ws_port}" \
+    --port "${frequency_port}" \
+    --rpc-port "${frequency_rpc_port}" \
+    --ws-port "${frequency_ws_port}" \
     --rpc-external \
     --rpc-cors all \
     --ws-external \
@@ -96,14 +96,14 @@ start-mrc-container)
     --state-cache-size 0 \
   ;;
 
-register-mrc)
+register-frequency)
   echo "reserving and registering parachain with relay via first available slot..."
 
   cd scripts/js/onboard
   yarn && yarn register "ws://0.0.0.0:9946" "//Alice"
   ;;
 
-onboard-mrc)
+onboard-frequency)
   echo "Onboarding parachain with runtime '$parachain' and id '$para_id'..."
 
    onboard_dir="$base_dir/onboard"
@@ -111,11 +111,11 @@ onboard-mrc)
 
    wasm_location="$onboard_dir/${parachain}-${para_id}.wasm"
     if [ "$docker_onboard" == "true" ]; then
-      genesis=$(docker run -it {REPO_NAME}/mrc:${mrc_docker_image_tag} export-genesis-state --chain="${chain_spec}")
-      docker run -it {REPO_NAME}/mrc:${mrc_docker_image_tag} export-genesis-wasm --chain="${chain_spec}" > $wasm_location
+      genesis=$(docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-state --chain="${chain_spec}")
+      docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-wasm --chain="${chain_spec}" > $wasm_location
     else
-      genesis=$(./target/release/mrc-collator export-genesis-state --chain="${chain_spec}")
-      ./target/release/mrc-collator export-genesis-wasm --chain="${chain_spec}" > $wasm_location
+      genesis=$(./target/release/frequency-collator export-genesis-state --chain="${chain_spec}")
+      ./target/release/frequency-collator export-genesis-wasm --chain="${chain_spec}" > $wasm_location
     fi
 
   echo "WASM path:" "${parachain}-${para_id}.wasm"
@@ -124,7 +124,7 @@ onboard-mrc)
   yarn && yarn onboard "ws://0.0.0.0:9946" "//Alice" ${para_id} "${genesis}" $wasm_location
   ;;
 
-offboard-mrc)
+offboard-frequency)
   echo "cleaning up parachain for id '$para_id'..."
 
   cd scripts/js/onboard

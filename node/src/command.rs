@@ -7,8 +7,8 @@ use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
+use frequency_runtime::{Block, RuntimeApi};
 use log::info;
-use mrc_runtime::{Block, RuntimeApi};
 
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
@@ -44,7 +44,7 @@ impl SubstrateCli for Cli {
 		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
-		mrc-collator <parachain-args> -- <relay-chain-args>"
+		frequency-collator <parachain-args> -- <relay-chain-args>"
 			.into()
 	}
 
@@ -65,7 +65,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&mrc_runtime::VERSION
+		&frequency_runtime::VERSION
 	}
 }
 
@@ -82,7 +82,7 @@ impl SubstrateCli for RelayChainCli {
 		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
-		mrc-collator <parachain-args> -- <relay-chain-args>"
+		frequency-collator <parachain-args> -- <relay-chain-args>"
 			.into()
 	}
 

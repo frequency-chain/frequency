@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use mrc_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Index as Nonce};
+use frequency_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Index as Nonce};
 
 use sc_client_api::AuxStore;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
@@ -57,7 +57,7 @@ where
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
 	use pallet_schemas_rpc::{SchemasApiServer, SchemasHandler};
-	use pallet_tx_fee_rpc::{MrcTxFeeApiServer, MrcTxFeeHandler};
+	use pallet_tx_fee_rpc::{FrequencyTxFeeApiServer, FrequencyTxFeeHandler};
 
 	let mut module = RpcExtension::new(());
 	let FullDeps { client, pool, deny_unsafe } = deps;
@@ -67,6 +67,6 @@ where
 	module.merge(MessagesHandler::new(client.clone()).into_rpc())?;
 	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;
 	module.merge(MsaHandler::new(client.clone()).into_rpc())?;
-	module.merge(MrcTxFeeHandler::new(client).into_rpc())?;
+	module.merge(FrequencyTxFeeHandler::new(client).into_rpc())?;
 	Ok(module)
 }

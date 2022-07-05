@@ -1,12 +1,12 @@
 [package]
-authors = ["MRC Team"]
-description = "A package that defines common helper modules used in MRC"
+authors = ["Frequency Team"]
+description = "A package that defines common helper modules used in Frequency"
 edition = "2021"
 homepage = "https://unfinishedlabs.io/"
 license = "Apache-2.0"
 name = 'common-helpers'
 publish = false
-repository = "https://github.com/LibertyDSNP/mrc/"
+repository = "https://github.com/LibertyDSNP/frequency/"
 version = "0.1.0"
 
 [package.metadata.docs.rs]
