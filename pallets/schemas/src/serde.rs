@@ -25,7 +25,7 @@ fn serde_helper_valid_schema() {
 		r#"{"name":"John Doe"}"#,
 		r#"{"minimum": -90,"maximum": 90}"#,
 		r#"{"a":0}"#,
-		r#"{"fruits":[ "apple",{"fruitName": "orange","fruitLike": true }]}"#
+		r#"{"fruits":[ "apple",{"fruitName": "orange","fruitLike": true }]}"#,
 	] {
 		assert!(validate_json_schema(create_schema_vec(test_str_raw)).is_ok());
 	}
@@ -36,7 +36,7 @@ fn serde_helper_invalid_schema() {
 	for test_str_raw in [
 		r#"{"name","John Doe"}"#,
 		r#"{"minimum": -90, 90}"#,
-		r#"{"fruits":[ "apple",{"fruitName": "orange" "fruitLike": true }}"#
+		r#"{"fruits":[ "apple",{"fruitName": "orange" "fruitLike": true }}"#,
 	] {
 		assert!(validate_json_schema(create_schema_vec(test_str_raw)).is_err());
 	}

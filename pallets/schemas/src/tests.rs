@@ -114,7 +114,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 		for fields in [
 			r#"{"Name": "Bond", "Code": "007"}"#,
 			r#"{"type": "num","minimum": -90,"maximum": 90}"#,
-			r#"{"latitude": 48.858093,"longitude": 2.294694}"#
+			r#"{"latitude": 48.858093,"longitude": 2.294694}"#,
 		] {
 			let expected_schema_id = last_schema_id + 1;
 			assert_ok!(SchemasPallet::register_schema(
