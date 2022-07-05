@@ -15,14 +15,14 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstU32, ConstU64, Imbalance, OnUnbalanced},
 	weights::{
-		DispatchClass, GetDispatchInfo, WeightToFeeCoefficient, WeightToFeeCoefficients,
-		WeightToFeePolynomial,
+		DispatchClass, GetDispatchInfo, Weight, WeightToFee as WeightToFeeT,
+		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 	},
 };
 use frame_system as system;
 use pallet_balances::Call as BalancesCall;
 use pallet_transaction_payment::{CurrencyAdapter, InclusionFee, Multiplier, NextFeeMultiplier};
-use sp_runtime::FixedPointNumber;
+use sp_runtime::{traits::SaturatedConversion, FixedPointNumber};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
@@ -63,6 +63,7 @@ parameter_types! {
 	pub static WeightToFee: u64 = 1;
 	pub static TransactionByteFee: u64 = 1;
 	pub static OperationalFeeMultiplier: u8 = 5;
+
 }
 
 impl frame_system::Config for Runtime {
@@ -106,34 +107,26 @@ impl pallet_balances::Config for Runtime {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
-	type TransactionByteFee = TransactionByteFee;
+	type LengthToFee = TransactionByteFee;
 	type WeightToFee = WeightToFee;
 	type FeeMultiplierUpdate = ();
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
-impl WeightToFeePolynomial for WeightToFee {
+
+impl WeightToFeeT for WeightToFee {
 	type Balance = u64;
 
-	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		smallvec![WeightToFeeCoefficient {
-			degree: 1,
-			coeff_frac: Perbill::zero(),
-			coeff_integer: WEIGHT_TO_FEE.with(|v| *v.borrow()),
-			negative: false,
-		}]
+	fn weight_to_fee(weight: &Weight) -> Self::Balance {
+		Self::Balance::saturated_from(*weight).saturating_mul(WEIGHT_TO_FEE.with(|v| *v.borrow()))
 	}
 }
 
-impl WeightToFeePolynomial for TransactionByteFee {
+impl WeightToFeeT for TransactionByteFee {
 	type Balance = u64;
 
-	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		smallvec![WeightToFeeCoefficient {
-			degree: 1,
-			coeff_frac: Perbill::zero(),
-			coeff_integer: TRANSACTION_BYTE_FEE.with(|v| *v.borrow()),
-			negative: false,
-		}]
+	fn weight_to_fee(weight: &Weight) -> Self::Balance {
+		Self::Balance::saturated_from(*weight)
+			.saturating_mul(TRANSACTION_BYTE_FEE.with(|v| *v.borrow()))
 	}
 }
 

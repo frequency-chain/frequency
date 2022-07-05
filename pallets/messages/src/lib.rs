@@ -31,7 +31,8 @@
 #![deny(
 	rustdoc::broken_intra_doc_links,
 	rustdoc::missing_crate_level_docs,
-	rustdoc::invalid_codeblock_attributes
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
 )]
 
 #[cfg(test)]
@@ -214,7 +215,7 @@ impl<T: Config> Pallet<T> {
 
 			let msg = Message {
 				payload: payload.try_into().unwrap(), // size is checked on top of extrinsic
-				provider_key: provider_key,
+				provider_key,
 				index: current_size,
 				msa_id: message_source_id,
 			};
@@ -237,7 +238,7 @@ impl<T: Config> Pallet<T> {
 		key: &T::AccountId,
 		on_behalf_of: Option<MessageSourceId>,
 	) -> Result<MessageSourceId, DispatchError> {
-		let sender_msa_id = T::AccountProvider::ensure_valid_msa_key(&key)
+		let sender_msa_id = T::AccountProvider::ensure_valid_msa_key(key)
 			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?
 			.msa_id;
 
@@ -250,6 +251,12 @@ impl<T: Config> Pallet<T> {
 		Ok(message_source_id)
 	}
 
+	/// Check for delegation between Delegator and Provider
+	/// # Arguments
+	/// * `provider` - An MSA of the provider.
+	/// * `delegator` - An MSA of the delegator.
+	/// # Returns
+	/// * Result<MessageSourceId, MessageSourceId> - Returns MessageSourceId mapping of provider and delegator.
 	pub fn ensure_valid_delegation(
 		provider: Provider,
 		delegator: Delegator,

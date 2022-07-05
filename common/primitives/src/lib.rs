@@ -9,17 +9,14 @@
 	missing_docs,
 	rustdoc::broken_intra_doc_links,
 	rustdoc::missing_crate_level_docs,
-	rustdoc::invalid_codeblock_attributes
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
 )]
 
 /// Structs and traits for the Messages pallet.
 pub mod messages;
 /// Structs and traits for the MSA pallet.
 pub mod msa;
-/// Structs and traits specifically for RPC calls.
-#[cfg(feature = "std")]
-/// export rpc primitive types.
-pub mod rpc;
 /// Structs and traits for the Schema pallet
 pub mod schema;
 /// Structs and traits for the utility package.
