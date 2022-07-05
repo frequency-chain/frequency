@@ -1,4 +1,4 @@
-name: Release JS MRC RPC Package
+name: Release JS Frequency RPC Package
 defaults:
   run:
     working-directory: js/rpc
@@ -6,7 +6,7 @@ on:
   release:
     types: [ released ]
     tags:
-      - js-mrc-rpc-v*
+      - js-frequency-rpc-v*
 jobs:
   publish-to-npm:
     runs-on: ubuntu-20.04

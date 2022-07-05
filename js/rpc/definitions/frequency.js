@@ -1,6 +1,6 @@
 export default {
   rpc: {
-    mrc: {
+    frequency: {
       computeExtrinsicCost: {
         description: "Retrieve the Fee Details for a given encoded transaction",
         params: [

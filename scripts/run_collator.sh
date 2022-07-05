@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-# this script runs the mrc after fetching
+# this script runs the frequency after fetching
 # appropriate bootnode IDs
 
 set -e -o pipefail
 
-ctpc="${MRC_BINARY_PATH:-./target/release/mrc-collator}"
+ctpc="${Frequency_BINARY_PATH:-./target/release/frequency-collator}"
 
 if [ ! -x "$ctpc" ]; then
     echo "FATAL: $ctpc does not exist or is not executable"

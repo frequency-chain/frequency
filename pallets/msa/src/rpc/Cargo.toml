@@ -2,11 +2,11 @@
 name = "pallet-msa-rpc"
 version = '0.1.0'
 description = 'A package that adds RPC to Msa pallet'
-authors = ['MRC Team']
+authors = ['Frequency Team']
 license = "Apache-2.0"
 publish = false
 homepage = "https://unfinishedlabs.io/"
-repository = "https://github.com/LibertyDSNP/mrc/"
+repository = "https://github.com/LibertyDSNP/frequency/"
 edition = "2021"
 
 [dependencies]

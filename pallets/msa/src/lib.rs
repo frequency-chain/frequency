@@ -15,7 +15,7 @@
 //! - Managing keys associated with MSA.
 //!
 //! ### Terminology
-//! * **MSA** - Message Source Account.  A Source or Provider Account for MRC Messages. It may or may not have `Capacity` token.  It must have at least one `AccountId` (public key) associated with it.
+//! * **MSA** - Message Source Account.  A Source or Provider Account for Frequency Messages. It may or may not have `Capacity` token.  It must have at least one `AccountId` (public key) associated with it.
 //! Created by generating a new MSA ID number and associating it with a Substrate `AccountID`.
 //! An MSA is required for sending Capacity-based messages and for creating Delegations.
 //! * **MSA ID** - This is the ID number created for a new Message Source Account and associated with a Substrate `AccountId`.

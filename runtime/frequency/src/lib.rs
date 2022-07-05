@@ -538,11 +538,11 @@ construct_runtime!(
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-		// MRC related pallets
+		// Frequency related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 34,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 35,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 36,
-		MrcTxPayment: pallet_tx_fee::{Pallet} = 37,
+		FrequencyTxPayment: pallet_tx_fee::{Pallet} = 37,
 	}
 );
 
@@ -711,7 +711,7 @@ impl_runtime_apis! {
 			uxt: <Block as BlockT>::Extrinsic,
 			len: u32,
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
-			MrcTxPayment::compute_extrinsic_cost(uxt, len)
+			FrequencyTxPayment::compute_extrinsic_cost(uxt, len)
 		}
 	}
 

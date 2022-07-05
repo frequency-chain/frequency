@@ -1,5 +1,5 @@
 //! Types for the Schema Pallet
-use common_primitives::schema::ModelType;
+use common_primitives::schema::{ModelType, PayloadLocation};
 use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 
@@ -16,4 +16,6 @@ where
 	pub model_type: ModelType,
 	/// Defines the structure of the message payload using model_type
 	pub model: BoundedVec<u8, MaxModelSize>,
+	/// The payload location
+	pub payload_location: PayloadLocation,
 }

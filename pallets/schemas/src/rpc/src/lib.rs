@@ -32,7 +32,7 @@ impl From<Error> for i32 {
 	}
 }
 
-/// MRC Schema API
+/// Frequency Schema API
 #[rpc(client, server)]
 pub trait SchemasApi<BlockHash> {
 	/// returns the latest registered schema id

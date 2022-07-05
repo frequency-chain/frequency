@@ -1,12 +1,12 @@
 [package]
-authors = ["MRC Team"]
+authors = ["Frequency Team"]
 description = "A package that defines common primitives used in runtime and RPCs"
 edition = "2021"
 homepage = "https://unfinishedlabs.io/"
 license = "Apache-2.0"
 name = 'common-primitives'
 publish = false
-repository = "https://github.com/LibertyDSNP/mrc/"
+repository = "https://github.com/LibertyDSNP/frequency/"
 version = "0.1.0"
 
 [package.metadata.docs.rs]
