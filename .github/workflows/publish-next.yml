@@ -1,7 +1,4 @@
 name: Publish JS Frequency RPC Package @next
-defaults:
-  run:
-    working-directory: js/api-augment
 on:
   push:
     branches: [ main ]
@@ -19,9 +16,11 @@ jobs:
         with:
           node-version: 16
           cache: 'npm'
+          cache-dependency-path: js/api-augment/package-lock.json
 
       - name: Install 💾
         run: npm ci
+        working-directory: js/api-augment
 
       - name: Version ⬆️
         run: npm version --new-version "v0.0.0-${FULL_SHA:0:6}" --no-git-tag-version

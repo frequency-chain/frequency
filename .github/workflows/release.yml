@@ -1,7 +1,4 @@
 name: Release JS Frequency API Augment Package
-defaults:
-  run:
-    working-directory: js/api-augment
 on:
   release:
     types: [ released ]
@@ -19,6 +16,7 @@ jobs:
         with:
           node-version: 16
           cache: 'npm'
+          cache-dependency-path: js/api-augment/package-lock.json
 
       - name: Install 💾
         run: npm ci

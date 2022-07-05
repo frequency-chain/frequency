@@ -69,6 +69,7 @@ jobs:
         with:
           node-version: 16
           cache: 'npm'
+          cache-dependency-path: js/api-augment/package-lock.json
       - name: Install
         run: npm ci
         if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
