@@ -31,11 +31,11 @@ fn require_valid_schema_size_errors() {
 		sudo_set_max_schema_size();
 		let test_cases: [TestCase<(Error<Test>, u8)>; 2] = [
 			TestCase {
-				schema: "",
+				schema: r#"{"a":1}"#,
 				expected: (Error::<Test>::LessThanMinSchemaModelBytes,3),
 			},
 			TestCase {
-				schema: "foo,bar,bazz,way,wayway,wayway,foo,bar,bazz,way,wayway,wayway,foo,bar,bazz,thisiswaywaywaywaywaywaywaytoolong",
+				schema: r#"{"id": "long", "title": "I am a very very very long schema", "properties": "just way too long to live a long life", "description": "Just a never ending stream of bytes that goes on for a minute too long"}"#,
 				expected: (Error::<Test>::ExceedsMaxSchemaModelBytes, 2),
 			},
 		];
@@ -63,7 +63,7 @@ fn register_schema_happy_path() {
 		let sender: AccountId = 1;
 		assert_ok!(SchemasPallet::register_schema(
 			Origin::signed(sender),
-			create_bounded_schema_vec("foo,bar,bazz")
+			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#)
 		));
 	})
 }
@@ -110,7 +110,11 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 		sudo_set_max_schema_size();
 		let sender: AccountId = 1;
 		let mut last_schema_id: SchemaId = 0;
-		for fields in ["foo,bar,bazz", "this,is,another,schema", "test,one,two,three"] {
+		for fields in [
+			r#"{"Name": "Bond", "Code": "007"}"#,
+			r#"{"type": "num","minimum": -90,"maximum": 90}"#,
+			r#"{"latitude": 48.858093,"longitude": 2.294694}"#
+		] {
 			let expected_schema_id = last_schema_id + 1;
 			assert_ok!(SchemasPallet::register_schema(
 				Origin::signed(sender),
@@ -123,7 +127,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 		}
 		assert_ok!(SchemasPallet::register_schema(
 			Origin::signed(sender),
-			create_bounded_schema_vec("foo,bar")
+			create_bounded_schema_vec(r#"{"account":3050}"#)
 		));
 	})
 }
@@ -134,7 +138,7 @@ fn get_existing_schema_by_id_should_return_schema() {
 		let sender: AccountId = 1;
 		sudo_set_max_schema_size();
 		// arrange
-		let test_str = "foo,bar,bazz";
+		let test_str = r#"{"foo": "bar", "bar": "buzz"}"#;
 		let serialized_fields = Vec::from(test_str.as_bytes());
 		assert_ok!(SchemasPallet::register_schema(
 			Origin::signed(sender),

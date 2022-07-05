@@ -31,7 +31,7 @@ fn serde_helper_invalid_schema() {
 
 #[test]
 fn serde_helper_null_schema() {
-	let bad_schema = r#"{}"#;
+	let bad_schema = r#"{""}"#;
 	let result = validate_json_schema(Vec::from(bad_schema.as_bytes()));
 	assert!(result.is_err());
 }
