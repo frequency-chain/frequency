@@ -63,7 +63,7 @@ fn register_schema_happy_path() {
 		let sender: AccountId = 1;
 		assert_ok!(SchemasPallet::register_schema(
 			Origin::signed(sender),
-			create_bounded_schema_vec("r#"{"name": "Doe", "type": "lost"}"#"),
+			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
 			ModelType::AvroBinary
 		));
 	})
