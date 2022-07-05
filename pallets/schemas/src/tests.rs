@@ -14,7 +14,7 @@ fn create_bounded_schema_vec(
 }
 
 fn sudo_set_max_schema_size() {
-	assert_ok!(SchemasPallet::set_max_schema_model_bytes(RawOrigin::Root.into(), 50));
+	assert_ok!(SchemasPallet::set_max_schema_model_bytes(RawOrigin::Root.into(), 70));
 }
 
 pub mod test {}
