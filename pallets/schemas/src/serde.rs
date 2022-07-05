@@ -15,23 +15,38 @@ pub fn validate_json_schema(json_schema: Vec<u8>) -> Result<(), SerdeError> {
 	}
 }
 
+fn create_schema_vec(from_string: &str) -> Vec<u8> {
+	Vec::from(from_string.as_bytes())
+}
+
 #[test]
 fn validate_serde_helper() {
-	let test_str_raw = r#"{"name":"John Doe"}"#;
-	let result = validate_json_schema(Vec::from(test_str_raw.as_bytes()));
-	assert!(result.is_ok());
+	for test_str_raw in [
+		r#"{"name":"John Doe"}"#,
+		r#"{"minimum": -90,"maximum": 90}"#,
+		r#"{"a":0}"#
+	] {
+		assert!(validate_json_schema(create_schema_vec(test_str_raw)).is_ok());
+	}
 }
 
 #[test]
 fn serde_helper_invalid_schema() {
 	let bad_schema = r#"{"John Doe","nothing"}"#;
-	let result = validate_json_schema(Vec::from(bad_schema.as_bytes()));
+	let result = validate_json_schema(create_schema_vec(bad_schema));
 	assert!(result.is_err());
 }
 
 #[test]
 fn serde_helper_null_schema() {
 	let bad_schema = r#"{""}"#;
-	let result = validate_json_schema(Vec::from(bad_schema.as_bytes()));
+	let result = validate_json_schema(create_schema_vec(bad_schema));
 	assert!(result.is_err());
+}
+
+#[test]
+fn serde_helper_utf8_encoding() {
+	let bad_schema = r#"{"a":"Espíritu navideño"}"#;
+	let result = validate_json_schema(create_schema_vec(bad_schema));
+	assert!(result.is_ok());
 }
