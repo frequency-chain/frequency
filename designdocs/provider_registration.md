@@ -10,11 +10,11 @@
 * [Glossary](#glossary)
 
 ## Context and Scope
-In order to properly implement MRC, we need to describe how service providers
+In order to properly implement Frequency, we need to describe how service providers
 will participate on the network.
 
 ## Problem Statement
-Service providers are an integral part of how MRC functions. However, there are
+Service providers are an integral part of how Frequency functions. However, there are
 some open questions about how they operate, questions that this document hopes
 to provide clarity on.
 
@@ -29,7 +29,7 @@ Among those questions are:
 
 ## Goals and Non-Goals
 This document will discuss the ways in which service providers can register with
-and participate in the MRC network.
+and participate in the Frequency network.
 
 This document will not discuss the specifics of how providers will process
 service requests from users on the network. This document will also not discuss
