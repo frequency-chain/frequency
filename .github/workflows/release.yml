@@ -21,6 +21,12 @@ jobs:
       - name: Install 💾
         run: npm ci
 
+      - name: Build
+        run: npm run build
+        working-directory: js/api-augment
+        env:
+          FULL_SHA: ${{ github.sha }}
+
       - name: Version ⬆️
         run: npm version --new-version ${{ github.event.release.tag_name }} --no-git-tag-version
         working-directory: js/api-augment/dist
