@@ -69,20 +69,19 @@ jobs:
         with:
           node-version: 16
           cache: 'npm'
-          cache-dependency-path: js/rpc/package-lock.json
       - name: Install
         run: npm ci
         if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
-        working-directory: js/rpc
+        working-directory: js/api-augment
       - name: Lint
         run: npm run lint
         if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
-        working-directory: js/rpc
+        working-directory: js/api-augment
       - name: Test
         run: npm test
         if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
-        working-directory: js/rpc
+        working-directory: js/api-augment
       - name: Build & Publish Dry Run
         if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
         run: npm publish --dry-run
-        working-directory: js/rpc
+        working-directory: js/api-augment/dist

@@ -22,8 +22,8 @@ An easy way to get all the custom rpc and types config to be able to easily use 
 <!-- GETTING STARTED -->
 ## Getting Started
 
+- `npm install @dsnp/frequency-api-augment` (API Augmentation Library)
 - `npm install @polkadot/api` (Polkadot API Library)
-- `npm install @dsnp/frequency-rpc`
 
 ### Usage
 
@@ -31,27 +31,25 @@ For details on use, see the [Polkadot API library documentation](https://polkado
 
 ```javascript
 // es6 style imports
+import { options } from "@dsnp/frequency-api-augment";
 import { ApiPromise } from '@polkadot/api';
-import { rpc, types } from "@dsnp/frequency-rpc";
 // ...
 
-const frequencyAPI = await ApiPromise.create({
+const api = await ApiPromise.create({
+    ...options,
     // ...
-    rpc,
-    types,
 });
 ```
 
 ```javascript
 // commonjs require
+const { options } = require("@dsnp/frequency-api-augment");
 const { ApiPromise } = require('@polkadot/api');
-const { rpc, types } = require("@dsnp/frequency-rpc");
 // ...
 
-const frequencyAPI = await ApiPromise.create({
+const api = await ApiPromise.create({
+    ...options,
     // ...
-    rpc,
-    types,
 });
 ```
 
@@ -59,6 +57,13 @@ const frequencyAPI = await ApiPromise.create({
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+
+### Updating Definitions
+
+1. Update `./definitions`
+2. Build and start the chain (does not need to be on-boarded)
+3. Run `npm run fetch:local`
+4. Commit changes
 
 
 ## Helpful Notes
@@ -91,13 +96,13 @@ Distributed under the Apache 2.0 License. See `LICENSE` for more information.
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/LibertyDSNP/frequency.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/LibertyDSNP/mrc.svg?style=for-the-badge
 [contributors-url]: https://github.com/LibertyDSNP/frequency/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/LibertyDSNP/frequency.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/LibertyDSNP/mrc.svg?style=for-the-badge
 [forks-url]: https://github.com/LibertyDSNP/frequency/network/members
-[stars-shield]: https://img.shields.io/github/stars/LibertyDSNP/frequency.svg?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/LibertyDSNP/mrc.svg?style=for-the-badge
 [stars-url]: https://github.com/LibertyDSNP/frequency/stargazers
-[issues-shield]: https://img.shields.io/github/issues/LibertyDSNP/frequency.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/LibertyDSNP/mrc.svg?style=for-the-badge
 [issues-url]: https://github.com/LibertyDSNP/frequency/issues
-[license-shield]: https://img.shields.io/github/license/LibertyDSNP/frequency.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/LibertyDSNP/mrc.svg?style=for-the-badge
 [license-url]: https://github.com/LibertyDSNP/frequency/blob/master/LICENSE
