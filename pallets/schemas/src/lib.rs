@@ -62,6 +62,7 @@ mod benchmarking;
 pub use pallet::*;
 pub mod weights;
 pub use weights::*;
+mod serde;
 
 #[frame_support::pallet]
 pub mod pallet {
