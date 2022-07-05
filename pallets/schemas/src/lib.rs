@@ -270,6 +270,8 @@ pub mod pallet {
 			None
 		}
 
+		/// Validates a schema is a valid JSON
+		/// Rejects a malformed or null schema
 		pub fn ensure_valid_schema(
 			schema: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 		) -> DispatchResult {
