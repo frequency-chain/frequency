@@ -23,5 +23,5 @@
             ]
         }
     },
-    "exclude": ["node_modules/**", "./test/**", "./scripts/**", "**/*.test.ts"],
+    "exclude": ["node_modules/**", "./test/**", "./scripts/**", "**/*.test.ts", "./dist/**"],
 }
