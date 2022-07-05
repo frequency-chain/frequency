@@ -56,7 +56,6 @@ Please note:
 ### Types
 * `ProviderRegistrationParams<T: Config>`, the arguments used to register an announcement.
   * `provider_msa_id`: `MsaId`
-  * `registration_fee`: `Balance`
   * `provider_metadata`: `ProviderAnnouncementMetadata`
 * `ProviderRegistrationAnnouncement<T: Config>`, the resource that exists on-chain
   * `block_number`: `BlockNumber`
@@ -83,9 +82,6 @@ Please note:
   * Stores registered providers and provides lookup functionality via `MsaId`.
     Existence in this storage structure implies that a provider's fee has been
     paid and their registration was otherwise successful.
-* `ProviderRegistrationFees<T: Config>`: `StorageMap<MsaId, Balance>`
-  * Stores registration fees paid by providers. This structure can be used to
-    verify that a provider has indeed paid their registration fee.
 
 ### Extrinsics
 #### register_provider(origin, registration_params)
@@ -93,7 +89,7 @@ Creates and posts a `ProviderRegistrationAnnouncement` on chain. The `MsaId`
 included in the announcement must already exist.
 
 This extrinsic is responsible for storing the registered provider in the
-`ProviderRegistry` as well as the provider's fee in the `ProviderRegistrationFees`.
+`ProviderRegistry`.
 
 * **Parameters**
   * `origin`: `Origin`  required for all extrinsics, the caller/sender.
@@ -148,17 +144,11 @@ document, the only provider information required is a name (non-unique). In the
 future, we may include other information like domain, logo, business address, etc.
 
 ### Provider Fees
-This document leaves the amount to charge entities for registering as an open
-question. It may be prudent, in the future, to determine whether or not
-registrations are fixed or vary based on the amount of verifable information
-given on a registration attempt. The latter may allow us to place more trust
-into providers that do not have traditional business attributes.
-
-### Recording Provider Fees
-This document defines an onchain map for storing registraion fees by `MsaId`.
-This may be useful for granting insight into how much was paid to register in
-the event fees differ by provider. It also may give us visibilty into when and
-how much was paid in the event the chain treasury is opaque.
+This document assumes that registration fees will be a fixed amount. It may be
+prudent, in the future, to determine whether or not registrations are fixed or
+vary based on the amount of verifable information given on a registration
+attempt. The latter may allow us to place more trust into providers that do not
+have traditional business attributes.
 
 ### Provider Verification
 There should be a way to verify whether providers are legitimate entities. As of
