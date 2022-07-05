@@ -5,7 +5,7 @@ import type { ApiTypes, AugmentedQuery, QueryableStorageEntry } from '@polkadot/
 import type { BTreeMap, Bytes, Option, Vec, bool, u128, u16, u32, u64 } from '@polkadot/types-codec';
 import type { AnyNumber, ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, H256 } from '@polkadot/types/interfaces/runtime';
-import type { CommonPrimitivesMsaKeyInfo, CommonPrimitivesMsaProviderInfo, CumulusPalletDmpQueueConfigData, CumulusPalletDmpQueuePageIndexData, CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot, CumulusPalletXcmpQueueInboundChannelDetails, CumulusPalletXcmpQueueOutboundChannelDetails, CumulusPalletXcmpQueueQueueConfigData, FrameSupportWeightsPerDispatchClassU64, FrameSystemAccountInfo, FrameSystemEventRecord, FrameSystemLastRuntimeUpgradeInfo, FrameSystemPhase, MrcRuntimeSessionKeys, PalletAuthorshipUncleEntryItem, PalletBalancesAccountData, PalletBalancesBalanceLock, PalletBalancesReleases, PalletBalancesReserveData, PalletCollatorSelectionCandidateInfo, PalletMessagesMessage, PalletTransactionPaymentReleases, PolkadotCorePrimitivesOutboundHrmpMessage, PolkadotPrimitivesV1AbridgedHostConfiguration, PolkadotPrimitivesV1PersistedValidationData, PolkadotPrimitivesV1UpgradeRestriction, SpConsensusAuraSr25519AppSr25519Public, SpCoreCryptoKeyTypeId, SpRuntimeDigest, SpTrieStorageProof } from '@polkadot/types/lookup';
+import type { CommonPrimitivesMsaKeyInfo, CommonPrimitivesMsaProviderInfo, CumulusPalletDmpQueueConfigData, CumulusPalletDmpQueuePageIndexData, CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot, CumulusPalletXcmpQueueInboundChannelDetails, CumulusPalletXcmpQueueOutboundChannelDetails, CumulusPalletXcmpQueueQueueConfigData, FrameSupportWeightsPerDispatchClassU64, FrameSystemAccountInfo, FrameSystemEventRecord, FrameSystemLastRuntimeUpgradeInfo, FrameSystemPhase, FrequencyRuntimeSessionKeys, PalletAuthorshipUncleEntryItem, PalletBalancesAccountData, PalletBalancesBalanceLock, PalletBalancesReleases, PalletBalancesReserveData, PalletCollatorSelectionCandidateInfo, PalletMessagesMessage, PalletSchemasSchema, PalletTransactionPaymentReleases, PolkadotCorePrimitivesOutboundHrmpMessage, PolkadotPrimitivesV2AbridgedHostConfiguration, PolkadotPrimitivesV2PersistedValidationData, PolkadotPrimitivesV2UpgradeRestriction, SpConsensusAuraSr25519AppSr25519Public, SpCoreCryptoKeyTypeId, SpRuntimeDigest, SpTrieStorageProof } from '@polkadot/types/lookup';
 import type { Observable } from '@polkadot/types/types';
 
 export type __AugmentedQuery<ApiType extends ApiTypes> = AugmentedQuery<ApiType, () => unknown>;
@@ -153,9 +153,21 @@ declare module '@polkadot/api-base/types/storage' {
       messages: AugmentedQuery<ApiType, (arg1: u32 | AnyNumber | Uint8Array, arg2: u16 | AnyNumber | Uint8Array) => Observable<Vec<PalletMessagesMessage>>, [u32, u16]>;
     };
     msa: {
+      /**
+       * Storage type for MSA key information
+       **/
       keyInfoOf: AugmentedQuery<ApiType, (arg: AccountId32 | string | Uint8Array) => Observable<Option<CommonPrimitivesMsaKeyInfo>>, [AccountId32]>;
+      /**
+       * Storage type for MSA identifier
+       **/
       msaIdentifier: AugmentedQuery<ApiType, () => Observable<u64>, []>;
+      /**
+       * Storage type for MSA keys
+       **/
       msaKeysOf: AugmentedQuery<ApiType, (arg: u64 | AnyNumber | Uint8Array) => Observable<Vec<AccountId32>>, [u64]>;
+      /**
+       * Storage type for mapping delegation
+       **/
       providerInfoOf: AugmentedQuery<ApiType, (arg1: u64 | AnyNumber | Uint8Array, arg2: u64 | AnyNumber | Uint8Array) => Observable<Option<CommonPrimitivesMsaProviderInfo>>, [u64, u64]>;
     };
     parachainInfo: {
@@ -189,7 +201,7 @@ declare module '@polkadot/api-base/types/storage' {
        * 
        * This data is also absent from the genesis.
        **/
-      hostConfiguration: AugmentedQuery<ApiType, () => Observable<Option<PolkadotPrimitivesV1AbridgedHostConfiguration>>, []>;
+      hostConfiguration: AugmentedQuery<ApiType, () => Observable<Option<PolkadotPrimitivesV2AbridgedHostConfiguration>>, []>;
       /**
        * HRMP messages that were sent in a block.
        * 
@@ -216,6 +228,10 @@ declare module '@polkadot/api-base/types/storage' {
        * by the system inherent.
        **/
       lastHrmpMqcHeads: AugmentedQuery<ApiType, () => Observable<BTreeMap<u32, H256>>, []>;
+      /**
+       * The relay chain block number associated with the last parachain block.
+       **/
+      lastRelayChainBlockNumber: AugmentedQuery<ApiType, () => Observable<u32>, []>;
       /**
        * Validation code that is set by the parachain and is to be communicated to collator and
        * consequently the relay-chain.
@@ -281,7 +297,7 @@ declare module '@polkadot/api-base/types/storage' {
        * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
        * set after the inherent.
        **/
-      upgradeRestrictionSignal: AugmentedQuery<ApiType, () => Observable<Option<PolkadotPrimitivesV1UpgradeRestriction>>, []>;
+      upgradeRestrictionSignal: AugmentedQuery<ApiType, () => Observable<Option<PolkadotPrimitivesV2UpgradeRestriction>>, []>;
       /**
        * Upward messages that were sent in a block.
        * 
@@ -293,12 +309,22 @@ declare module '@polkadot/api-base/types/storage' {
        * This value is expected to be set only once per block and it's never stored
        * in the trie.
        **/
-      validationData: AugmentedQuery<ApiType, () => Observable<Option<PolkadotPrimitivesV1PersistedValidationData>>, []>;
+      validationData: AugmentedQuery<ApiType, () => Observable<Option<PolkadotPrimitivesV2PersistedValidationData>>, []>;
     };
     schemas: {
+      /**
+       * Storage type for max bytes for schema model
+       **/
       governanceSchemaModelMaxBytes: AugmentedQuery<ApiType, () => Observable<u32>, []>;
+      /**
+       * Storage type for current number of schemas
+       * Useful for retrieving latest schema id
+       **/
       schemaCount: AugmentedQuery<ApiType, () => Observable<u16>, []>;
-      schemas: AugmentedQuery<ApiType, (arg: u16 | AnyNumber | Uint8Array) => Observable<Option<Bytes>>, [u16]>;
+      /**
+       * Storage for message schemas hashes
+       **/
+      schemas: AugmentedQuery<ApiType, (arg: u16 | AnyNumber | Uint8Array) => Observable<Option<PalletSchemasSchema>>, [u16]>;
     };
     session: {
       /**
@@ -320,7 +346,7 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * The next session keys for a validator.
        **/
-      nextKeys: AugmentedQuery<ApiType, (arg: AccountId32 | string | Uint8Array) => Observable<Option<MrcRuntimeSessionKeys>>, [AccountId32]>;
+      nextKeys: AugmentedQuery<ApiType, (arg: AccountId32 | string | Uint8Array) => Observable<Option<FrequencyRuntimeSessionKeys>>, [AccountId32]>;
       /**
        * True if the underlying economic identities or weighting behind the validators
        * has changed in the queued validator set.
@@ -330,7 +356,7 @@ declare module '@polkadot/api-base/types/storage' {
        * The queued keys for the next session. When the next session begins, these keys
        * will be used to determine the validator's session keys.
        **/
-      queuedKeys: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[AccountId32, MrcRuntimeSessionKeys]>>>, []>;
+      queuedKeys: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[AccountId32, FrequencyRuntimeSessionKeys]>>>, []>;
       /**
        * The current set of validators.
        **/
@@ -370,8 +396,11 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * Events deposited for the current block.
        * 
-       * NOTE: This storage item is explicitly unbounded since it is never intended to be read
-       * from within the runtime.
+       * NOTE: The item is unbound and should therefore never be read on chain.
+       * It could otherwise inflate the PoV size of a block.
+       * 
+       * Events have a large in-memory size. Box the events to not go out-of-memory
+       * just in case someone still reads them from within the runtime.
        **/
       events: AugmentedQuery<ApiType, () => Observable<Vec<FrameSystemEventRecord>>, []>;
       /**

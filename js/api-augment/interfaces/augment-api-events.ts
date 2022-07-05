@@ -55,11 +55,11 @@ declare module '@polkadot/api-base/types/events' {
       Withdraw: AugmentedEvent<ApiType, [who: AccountId32, amount: u128], { who: AccountId32, amount: u128 }>;
     };
     collatorSelection: {
-      CandidateAdded: AugmentedEvent<ApiType, [AccountId32, u128]>;
-      CandidateRemoved: AugmentedEvent<ApiType, [AccountId32]>;
-      NewCandidacyBond: AugmentedEvent<ApiType, [u128]>;
-      NewDesiredCandidates: AugmentedEvent<ApiType, [u32]>;
-      NewInvulnerables: AugmentedEvent<ApiType, [Vec<AccountId32>]>;
+      CandidateAdded: AugmentedEvent<ApiType, [accountId: AccountId32, deposit: u128], { accountId: AccountId32, deposit: u128 }>;
+      CandidateRemoved: AugmentedEvent<ApiType, [accountId: AccountId32], { accountId: AccountId32 }>;
+      NewCandidacyBond: AugmentedEvent<ApiType, [bondAmount: u128], { bondAmount: u128 }>;
+      NewDesiredCandidates: AugmentedEvent<ApiType, [desiredCandidates: u32], { desiredCandidates: u32 }>;
+      NewInvulnerables: AugmentedEvent<ApiType, [invulnerables: Vec<AccountId32>], { invulnerables: Vec<AccountId32> }>;
     };
     cumulusXcm: {
       /**
@@ -81,34 +81,28 @@ declare module '@polkadot/api-base/types/events' {
     dmpQueue: {
       /**
        * Downward message executed with the given outcome.
-       * \[ id, outcome \]
        **/
-      ExecutedDownward: AugmentedEvent<ApiType, [U8aFixed, XcmV2TraitsOutcome]>;
+      ExecutedDownward: AugmentedEvent<ApiType, [messageId: U8aFixed, outcome: XcmV2TraitsOutcome], { messageId: U8aFixed, outcome: XcmV2TraitsOutcome }>;
       /**
        * Downward message is invalid XCM.
-       * \[ id \]
        **/
-      InvalidFormat: AugmentedEvent<ApiType, [U8aFixed]>;
+      InvalidFormat: AugmentedEvent<ApiType, [messageId: U8aFixed], { messageId: U8aFixed }>;
       /**
        * Downward message is overweight and was placed in the overweight queue.
-       * \[ id, index, required \]
        **/
-      OverweightEnqueued: AugmentedEvent<ApiType, [U8aFixed, u64, u64]>;
+      OverweightEnqueued: AugmentedEvent<ApiType, [messageId: U8aFixed, overweightIndex: u64, requiredWeight: u64], { messageId: U8aFixed, overweightIndex: u64, requiredWeight: u64 }>;
       /**
        * Downward message from the overweight queue was executed.
-       * \[ index, used \]
        **/
-      OverweightServiced: AugmentedEvent<ApiType, [u64, u64]>;
+      OverweightServiced: AugmentedEvent<ApiType, [overweightIndex: u64, weightUsed: u64], { overweightIndex: u64, weightUsed: u64 }>;
       /**
        * Downward message is unsupported version of XCM.
-       * \[ id \]
        **/
-      UnsupportedVersion: AugmentedEvent<ApiType, [U8aFixed]>;
+      UnsupportedVersion: AugmentedEvent<ApiType, [messageId: U8aFixed], { messageId: U8aFixed }>;
       /**
        * The weight limit for handling downward messages was reached.
-       * \[ id, remaining, required \]
        **/
-      WeightExhausted: AugmentedEvent<ApiType, [U8aFixed, u64, u64]>;
+      WeightExhausted: AugmentedEvent<ApiType, [messageId: U8aFixed, remainingWeight: u64, requiredWeight: u64], { messageId: U8aFixed, remainingWeight: u64, requiredWeight: u64 }>;
     };
     messages: {
       /**
@@ -126,7 +120,7 @@ declare module '@polkadot/api-base/types/events' {
        **/
       KeyAdded: AugmentedEvent<ApiType, [msaId: u64, key: AccountId32], { msaId: u64, key: AccountId32 }>;
       /**
-       * An AccountId was disassociated with its MessageSourceId
+       * An AccountId had all permissions revoked from its MessageSourceId
        **/
       KeyRevoked: AugmentedEvent<ApiType, [key: AccountId32], { key: AccountId32 }>;
       /**
@@ -145,22 +139,20 @@ declare module '@polkadot/api-base/types/events' {
     parachainSystem: {
       /**
        * Downward messages were processed using the given weight.
-       * \[ weight_used, result_mqc_head \]
        **/
-      DownwardMessagesProcessed: AugmentedEvent<ApiType, [u64, H256]>;
+      DownwardMessagesProcessed: AugmentedEvent<ApiType, [weightUsed: u64, dmqHead: H256], { weightUsed: u64, dmqHead: H256 }>;
       /**
        * Some downward messages have been received and will be processed.
-       * \[ count \]
        **/
-      DownwardMessagesReceived: AugmentedEvent<ApiType, [u32]>;
+      DownwardMessagesReceived: AugmentedEvent<ApiType, [count: u32], { count: u32 }>;
       /**
        * An upgrade has been authorized.
        **/
-      UpgradeAuthorized: AugmentedEvent<ApiType, [H256]>;
+      UpgradeAuthorized: AugmentedEvent<ApiType, [codeHash: H256], { codeHash: H256 }>;
       /**
        * The validation function was applied as of the contained relay chain block number.
        **/
-      ValidationFunctionApplied: AugmentedEvent<ApiType, [u32]>;
+      ValidationFunctionApplied: AugmentedEvent<ApiType, [relayChainBlockNum: u32], { relayChainBlockNum: u32 }>;
       /**
        * The relay-chain aborted the upgrade process.
        **/
@@ -349,35 +341,35 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * Bad XCM format used.
        **/
-      BadFormat: AugmentedEvent<ApiType, [Option<H256>]>;
+      BadFormat: AugmentedEvent<ApiType, [messageHash: Option<H256>], { messageHash: Option<H256> }>;
       /**
        * Bad XCM version used.
        **/
-      BadVersion: AugmentedEvent<ApiType, [Option<H256>]>;
+      BadVersion: AugmentedEvent<ApiType, [messageHash: Option<H256>], { messageHash: Option<H256> }>;
       /**
        * Some XCM failed.
        **/
-      Fail: AugmentedEvent<ApiType, [Option<H256>, XcmV2TraitsError]>;
+      Fail: AugmentedEvent<ApiType, [messageHash: Option<H256>, error: XcmV2TraitsError, weight: u64], { messageHash: Option<H256>, error: XcmV2TraitsError, weight: u64 }>;
       /**
        * An XCM exceeded the individual message weight budget.
        **/
-      OverweightEnqueued: AugmentedEvent<ApiType, [u32, u32, u64, u64]>;
+      OverweightEnqueued: AugmentedEvent<ApiType, [sender: u32, sentAt: u32, index: u64, required: u64], { sender: u32, sentAt: u32, index: u64, required: u64 }>;
       /**
        * An XCM from the overweight queue was executed with the given actual weight used.
        **/
-      OverweightServiced: AugmentedEvent<ApiType, [u64, u64]>;
+      OverweightServiced: AugmentedEvent<ApiType, [index: u64, used: u64], { index: u64, used: u64 }>;
       /**
        * Some XCM was executed ok.
        **/
-      Success: AugmentedEvent<ApiType, [Option<H256>]>;
+      Success: AugmentedEvent<ApiType, [messageHash: Option<H256>, weight: u64], { messageHash: Option<H256>, weight: u64 }>;
       /**
        * An upward message was sent to the relay chain.
        **/
-      UpwardMessageSent: AugmentedEvent<ApiType, [Option<H256>]>;
+      UpwardMessageSent: AugmentedEvent<ApiType, [messageHash: Option<H256>], { messageHash: Option<H256> }>;
       /**
        * An HRMP message was sent to a sibling parachain.
        **/
-      XcmpMessageSent: AugmentedEvent<ApiType, [Option<H256>]>;
+      XcmpMessageSent: AugmentedEvent<ApiType, [messageHash: Option<H256>], { messageHash: Option<H256> }>;
     };
   } // AugmentedEvents
 } // declare module

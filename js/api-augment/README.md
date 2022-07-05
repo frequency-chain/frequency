@@ -96,13 +96,13 @@ Distributed under the Apache 2.0 License. See `LICENSE` for more information.
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/LibertyDSNP/mrc.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/LibertyDSNP/frequency.svg?style=for-the-badge
 [contributors-url]: https://github.com/LibertyDSNP/frequency/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/LibertyDSNP/mrc.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/LibertyDSNP/frequency.svg?style=for-the-badge
 [forks-url]: https://github.com/LibertyDSNP/frequency/network/members
-[stars-shield]: https://img.shields.io/github/stars/LibertyDSNP/mrc.svg?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/LibertyDSNP/frequency.svg?style=for-the-badge
 [stars-url]: https://github.com/LibertyDSNP/frequency/stargazers
-[issues-shield]: https://img.shields.io/github/issues/LibertyDSNP/mrc.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/LibertyDSNP/frequency.svg?style=for-the-badge
 [issues-url]: https://github.com/LibertyDSNP/frequency/issues
-[license-shield]: https://img.shields.io/github/license/LibertyDSNP/mrc.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/LibertyDSNP/frequency.svg?style=for-the-badge
 [license-url]: https://github.com/LibertyDSNP/frequency/blob/master/LICENSE

@@ -101,6 +101,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       TooManyCandidates: AugmentedError<ApiType>;
       /**
+       * Too many invulnerables
+       **/
+      TooManyInvulnerables: AugmentedError<ApiType>;
+      /**
        * Unknown error
        **/
       Unknown: AugmentedError<ApiType>;
@@ -120,6 +124,8 @@ declare module '@polkadot/api-base/types/errors' {
        * The message index given is unknown.
        **/
       Unknown: AugmentedError<ApiType>;
+    };
+    frequencyTxPayment: {
     };
     messages: {
       /**
@@ -146,8 +152,6 @@ declare module '@polkadot/api-base/types/errors' {
        * UnAuthorizedDelegate
        **/
       UnAuthorizedDelegate: AugmentedError<ApiType>;
-    };
-    mrcTxPayment: {
     };
     msa: {
       /**

@@ -2,8 +2,8 @@
 /* eslint-disable */
 
 import type { ApiTypes, AugmentedConst } from '@polkadot/api-base/types';
-import type { Vec, u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
-import type { FrameSupportWeightsRuntimeDbWeight, FrameSupportWeightsWeightToFeeCoefficient, FrameSystemLimitsBlockLength, FrameSystemLimitsBlockWeights, SpVersionRuntimeVersion } from '@polkadot/types/lookup';
+import type { u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
+import type { FrameSupportWeightsRuntimeDbWeight, FrameSystemLimitsBlockLength, FrameSystemLimitsBlockWeights, SpVersionRuntimeVersion } from '@polkadot/types/lookup';
 
 export type __AugmentedConst<ApiType extends ApiTypes> = AugmentedConst<ApiType>;
 
@@ -126,14 +126,6 @@ declare module '@polkadot/api-base/types/consts' {
        * transactions.
        **/
       operationalFeeMultiplier: u8 & AugmentedConst<ApiType>;
-      /**
-       * The fee to be paid for making a transaction; the per-byte portion.
-       **/
-      transactionByteFee: u128 & AugmentedConst<ApiType>;
-      /**
-       * The polynomial that is applied in order to derive fee from weight.
-       **/
-      weightToFee: Vec<FrameSupportWeightsWeightToFeeCoefficient> & AugmentedConst<ApiType>;
     };
   } // AugmentedConsts
 } // declare module

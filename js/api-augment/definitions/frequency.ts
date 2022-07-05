@@ -16,15 +16,5 @@ export default {
       type: "FeeDetails",
     },
   },
-  types: {
-    // InclusionFee: {
-    //   base_fee: "Balance",
-    //   len_fee: "Balance",
-    //   adjusted_weight_fee: "Balance",
-    // },
-    // FeeDetails: {
-    //   inclusion_fee: "Option<InclusionFee>",
-    //   tip: "Balance",
-    // },
-  },
+  types: {},
 };
