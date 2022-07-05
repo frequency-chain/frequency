@@ -1,10 +1,11 @@
 use codec::Codec;
-use common_primitives::{
-	msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider},
-	rpc::*,
+use common_helpers::rpc::*;
+use common_primitives::msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider};
+
+use jsonrpsee::{
+	core::{async_trait, RpcResult},
+	proc_macros::rpc,
 };
-use jsonrpc_core::Result;
-use jsonrpc_derive::rpc;
 use pallet_msa_runtime_api::MsaApi as MsaRuntimeApi;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use sp_api::ProvideRuntimeApi;
@@ -12,23 +13,23 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
-#[rpc]
+#[rpc(client, server)]
 pub trait MsaApi<BlockHash, AccountId, BlockNumber> {
-	#[rpc(name = "msa_getMsaKeys")]
+	#[method(name = "msa_getMsaKeys")]
 	fn get_msa_keys(
 		&self,
 		msa_id: MessageSourceId,
-	) -> Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>>;
+	) -> RpcResult<Vec<KeyInfoResponse<AccountId, BlockNumber>>>;
 
-	#[rpc(name = "msa_getMsaId")]
-	fn get_msa_id(&self, key: AccountId) -> Result<Option<MessageSourceId>>;
+	#[method(name = "msa_getMsaId")]
+	fn get_msa_id(&self, key: AccountId) -> RpcResult<Option<MessageSourceId>>;
 
-	#[rpc(name = "msa_checkDelegations")]
+	#[method(name = "msa_checkDelegations")]
 	fn check_delegations(
 		&self,
 		delegator_msa_ids: Vec<MessageSourceId>,
 		provider_msa_id: MessageSourceId,
-	) -> Result<Vec<(MessageSourceId, bool)>>;
+	) -> RpcResult<Vec<(MessageSourceId, bool)>>;
 }
 
 /// A struct that implements the `MessagesApi`.
@@ -44,7 +45,8 @@ impl<C, M> MsaHandler<C, M> {
 	}
 }
 
-impl<C, Block, AccountId, BlockNumber> MsaApi<<Block as BlockT>::Hash, AccountId, BlockNumber>
+#[async_trait]
+impl<C, Block, AccountId, BlockNumber> MsaApiServer<<Block as BlockT>::Hash, AccountId, BlockNumber>
 	for MsaHandler<C, Block>
 where
 	Block: BlockT,
@@ -58,14 +60,14 @@ where
 	fn get_msa_keys(
 		&self,
 		msa_id: MessageSourceId,
-	) -> Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>> {
+	) -> RpcResult<Vec<KeyInfoResponse<AccountId, BlockNumber>>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 		let runtime_api_result = api.get_msa_keys(&at, msa_id);
 		map_rpc_result(runtime_api_result)
 	}
 
-	fn get_msa_id(&self, key: AccountId) -> Result<Option<MessageSourceId>> {
+	fn get_msa_id(&self, key: AccountId) -> RpcResult<Option<MessageSourceId>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 		let runtime_api_result = api.get_msa_id(&at, key);
@@ -76,7 +78,7 @@ where
 		&self,
 		delegator_msa_ids: Vec<MessageSourceId>,
 		provider_msa_id: MessageSourceId,
-	) -> Result<Vec<(MessageSourceId, bool)>> {
+	) -> RpcResult<Vec<(MessageSourceId, bool)>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 

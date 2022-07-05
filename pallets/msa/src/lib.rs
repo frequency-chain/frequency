@@ -51,7 +51,8 @@
 #![deny(
 	rustdoc::broken_intra_doc_links,
 	rustdoc::missing_crate_level_docs,
-	rustdoc::invalid_codeblock_attributes
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
 )]
 
 use common_primitives::msa::{
@@ -90,8 +91,13 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
+		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		/// AccountId truncated to 32 bytes
 		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
 
 		/// Maximum count of keys allowed per MSA
@@ -103,10 +109,12 @@ pub mod pallet {
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
+	/// Storage type for MSA identifier
 	#[pallet::storage]
 	#[pallet::getter(fn get_identifier)]
 	pub type MsaIdentifier<T> = StorageValue<_, MessageSourceId, ValueQuery>;
 
+	/// Storage type for mapping delegation
 	#[pallet::storage]
 	#[pallet::getter(fn get_provider_info_of)]
 	pub type ProviderInfoOf<T: Config> = StorageDoubleMap<
@@ -119,11 +127,13 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
+	/// Storage type for MSA key information
 	#[pallet::storage]
 	#[pallet::getter(fn get_key_info)]
 	pub type KeyInfoOf<T: Config> =
 		StorageMap<_, Blake2_128Concat, T::AccountId, KeyInfo<T::BlockNumber>, OptionQuery>;
 
+	/// Storage type for MSA keys
 	#[pallet::storage]
 	#[pallet::getter(fn get_msa_keys)]
 	pub(super) type MsaKeysOf<T: Config> = StorageMap<
@@ -138,17 +148,45 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A new Message Service Account was created with a new MessageSourceId
-		MsaCreated { msa_id: MessageSourceId, key: T::AccountId },
+		MsaCreated {
+			/// The MSA for the Event
+			msa_id: MessageSourceId,
+			/// The key added to the MSA
+			key: T::AccountId,
+		},
 		/// An AccountId has been associated with a MessageSourceId
-		KeyAdded { msa_id: MessageSourceId, key: T::AccountId },
-		/// An AccountId was disassociated with its MessageSourceId
-		KeyRevoked { key: T::AccountId },
+		KeyAdded {
+			/// The MSA for the Event
+			msa_id: MessageSourceId,
+			/// The key added to the MSA
+			key: T::AccountId,
+		},
+		/// An AccountId had all permissions revoked from its MessageSourceId
+		KeyRevoked {
+			/// The key no longer approved for the associated MSA
+			key: T::AccountId,
+		},
 		/// A delegation relationship was added with the given provider and delegator
-		ProviderAdded { provider: Provider, delegator: Delegator },
+		ProviderAdded {
+			/// The Provider MSA Id
+			provider: Provider,
+			/// The Delegator MSA Id
+			delegator: Delegator,
+		},
 		/// The Delegator revoked its delegation to the Provider
-		DelegatorRevokedDelegation { provider: Provider, delegator: Delegator },
+		DelegatorRevokedDelegation {
+			/// The Provider MSA Id
+			provider: Provider,
+			/// The Delegator MSA Id
+			delegator: Delegator,
+		},
 		/// The Provider revoked itself as delegate for the Delegator
-		ProviderRevokedDelegation { provider: Provider, delegator: Delegator },
+		ProviderRevokedDelegation {
+			/// The Provider MSA Id
+			provider: Provider,
+			/// The Delegator MSA Id
+			delegator: Delegator,
+		},
 	}
 
 	#[pallet::error]
