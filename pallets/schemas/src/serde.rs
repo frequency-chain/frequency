@@ -1,16 +1,17 @@
 use serde_json::{from_slice, Value};
+use sp_std::vec::Vec;
 
 #[derive(Debug)]
 pub enum SerdeError {
-	InvalidNullSchema(String),
-	InvalidSchema(String),
+	InvalidNullSchema(),
+	InvalidSchema(),
 }
 
 pub fn validate_json_model(json_schema: Vec<u8>) -> Result<(), SerdeError> {
 	let result: Value =
-		from_slice(&json_schema).map_err(|e| SerdeError::InvalidSchema(e.to_string()))?; // map error
+		from_slice(&json_schema).map_err(|_| SerdeError::InvalidSchema())?; // map error
 	match result {
-		Value::Null => Err(SerdeError::InvalidNullSchema("Provided JSON is null".to_string())),
+		Value::Null => Err(SerdeError::InvalidNullSchema()),
 		_ => Ok(()),
 	}
 }
