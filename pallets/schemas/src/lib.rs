@@ -263,8 +263,12 @@ pub mod pallet {
 				// this should get a BoundedVec out
 				let model_vec = schema.model.into_inner();
 
-				let response =
-					SchemaResponse { schema_id, model: model_vec, model_type: schema.model_type, schema.payload_location };
+				let response = SchemaResponse {
+					schema_id,
+					model: model_vec,
+					model_type: schema.model_type,
+					payload_location: schema.payload_location,
+				};
 				return Some(response)
 			}
 			None

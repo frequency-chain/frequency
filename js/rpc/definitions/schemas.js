@@ -47,7 +47,7 @@ export default {
       _enum: ["AvroBinary"],
     },
     PayloadLocation: {
-      _enum: ["OnChain", "IPFS"]
+      _enum: ["OnChain", "IPFS"],
     },
     SchemaResponse: {
       schema_id: "SchemaId",

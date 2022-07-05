@@ -65,7 +65,7 @@ fn register_schema_happy_path() {
 			Origin::signed(sender),
 			create_bounded_schema_vec("foo,bar,bazz"),
 			ModelType::AvroBinary,
-      PayloadLocation::OnChain
+			PayloadLocation::OnChain
 		));
 	})
 }
@@ -118,7 +118,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 				Origin::signed(sender),
 				create_bounded_schema_vec(fields),
 				ModelType::AvroBinary,
-        PayloadLocation::OnChain
+				PayloadLocation::OnChain
 			));
 			System::assert_last_event(
 				AnnouncementEvent::SchemaRegistered(sender, expected_schema_id).into(),
@@ -129,7 +129,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 			Origin::signed(sender),
 			create_bounded_schema_vec("foo,bar"),
 			ModelType::AvroBinary,
-      PayloadLocation::OnChain
+			PayloadLocation::OnChain
 		));
 	})
 }
@@ -146,7 +146,7 @@ fn get_existing_schema_by_id_should_return_schema() {
 			Origin::signed(sender),
 			create_bounded_schema_vec(test_str),
 			ModelType::AvroBinary,
-      PayloadLocation::OnChain
+			PayloadLocation::OnChain
 		));
 
 		// act
