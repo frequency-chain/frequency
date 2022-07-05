@@ -63,7 +63,7 @@ fn register_schema_happy_path() {
 		let sender: AccountId = 1;
 		assert_ok!(SchemasPallet::register_schema(
 			Origin::signed(sender),
-			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#)
+			create_bounded_schema_vec("foo,bar,bazz")
 		));
 	})
 }
@@ -127,7 +127,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 		}
 		assert_ok!(SchemasPallet::register_schema(
 			Origin::signed(sender),
-			create_bounded_schema_vec(r#"{"account":3050}"#)
+			create_bounded_schema_vec("foo,bar")
 		));
 	})
 }
