@@ -275,7 +275,7 @@ pub mod pallet {
 		pub fn ensure_valid_schema(
 			schema: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 		) -> DispatchResult {
-			let validated_schema = serde::validate_json_schema(schema.clone().into_inner());
+			let validated_schema = serde::validate_json_model(schema.clone().into_inner());
 			validated_schema.map_err(|_| Error::<T>::InvalidSchema)?;
 			Ok(())
 		}

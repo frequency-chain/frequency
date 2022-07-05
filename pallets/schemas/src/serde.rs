@@ -6,7 +6,7 @@ pub enum SerdeError {
 	InvalidSchema(String),
 }
 
-pub fn validate_json_schema(json_schema: Vec<u8>) -> Result<(), SerdeError> {
+pub fn validate_json_model(json_schema: Vec<u8>) -> Result<(), SerdeError> {
 	let result: Value =
 		from_slice(&json_schema).map_err(|e| SerdeError::InvalidSchema(e.to_string()))?; // map error
 	match result {
@@ -27,7 +27,7 @@ fn serde_helper_valid_schema() {
 		r#"{"a":0}"#,
 		r#"{"fruits":[ "apple",{"fruitName": "orange","fruitLike": true }]}"#,
 	] {
-		assert!(validate_json_schema(create_schema_vec(test_str_raw)).is_ok());
+		assert!(validate_json_model(create_schema_vec(test_str_raw)).is_ok());
 	}
 }
 
@@ -38,20 +38,20 @@ fn serde_helper_invalid_schema() {
 		r#"{"minimum": -90, 90}"#,
 		r#"{"fruits":[ "apple",{"fruitName": "orange" "fruitLike": true }}"#,
 	] {
-		assert!(validate_json_schema(create_schema_vec(test_str_raw)).is_err());
+		assert!(validate_json_model(create_schema_vec(test_str_raw)).is_err());
 	}
 }
 
 #[test]
 fn serde_helper_null_schema() {
 	let bad_schema = r#"{""}"#;
-	let result = validate_json_schema(create_schema_vec(bad_schema));
+	let result = validate_json_model(create_schema_vec(bad_schema));
 	assert!(result.is_err());
 }
 
 #[test]
 fn serde_helper_utf8_encoding_schema() {
 	let bad_schema = r#"{"a":"Espíritu navideño"}"#;
-	let result = validate_json_schema(create_schema_vec(bad_schema));
+	let result = validate_json_model(create_schema_vec(bad_schema));
 	assert!(result.is_ok());
 }
