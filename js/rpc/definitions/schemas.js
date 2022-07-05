@@ -43,9 +43,13 @@ export default {
   types: {
     SchemaId: "u16",
     SchemaModel: "Vec<u8>",
+    ModelType: {
+      _enum: ["AvroBinary"],
+    },
     SchemaResponse: {
       schema_id: "SchemaId",
       model: "SchemaModel",
+      model_type: "ModelType",
     },
   },
 };
