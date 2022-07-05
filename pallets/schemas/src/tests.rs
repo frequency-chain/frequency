@@ -1,5 +1,5 @@
 use crate::{Config, Error, Event as AnnouncementEvent};
-use common_primitives::schema::{ModelType, SchemaId};
+use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
 use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin, BoundedVec};
 use serial_test::serial;
 use sp_runtime::DispatchError::BadOrigin;
@@ -41,7 +41,12 @@ fn require_valid_schema_size_errors() {
 		];
 		for tc in test_cases {
 			assert_noop!(
-				SchemasPallet::register_schema(Origin::signed(sender), create_bounded_schema_vec(tc.schema), ModelType::AvroBinary),
+				SchemasPallet::register_schema(
+					Origin::signed(sender),
+					create_bounded_schema_vec(tc.schema),
+					ModelType::AvroBinary,
+					PayloadLocation::OnChain
+				),
 				tc.expected.0);
 		}
 	})
@@ -64,7 +69,8 @@ fn register_schema_happy_path() {
 		assert_ok!(SchemasPallet::register_schema(
 			Origin::signed(sender),
 			create_bounded_schema_vec("foo,bar,bazz"),
-			ModelType::AvroBinary
+			ModelType::AvroBinary,
+			PayloadLocation::OnChain
 		));
 	})
 }
@@ -116,7 +122,8 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 			assert_ok!(SchemasPallet::register_schema(
 				Origin::signed(sender),
 				create_bounded_schema_vec(fields),
-				ModelType::AvroBinary
+				ModelType::AvroBinary,
+				PayloadLocation::OnChain
 			));
 			System::assert_last_event(
 				AnnouncementEvent::SchemaRegistered(sender, expected_schema_id).into(),
@@ -126,7 +133,8 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 		assert_ok!(SchemasPallet::register_schema(
 			Origin::signed(sender),
 			create_bounded_schema_vec("foo,bar"),
-			ModelType::AvroBinary
+			ModelType::AvroBinary,
+			PayloadLocation::OnChain
 		));
 	})
 }
@@ -142,7 +150,8 @@ fn get_existing_schema_by_id_should_return_schema() {
 		assert_ok!(SchemasPallet::register_schema(
 			Origin::signed(sender),
 			create_bounded_schema_vec(test_str),
-			ModelType::AvroBinary
+			ModelType::AvroBinary,
+			PayloadLocation::OnChain
 		));
 
 		// act

@@ -69,7 +69,7 @@ pub use weights::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::schema::{ModelType, SchemaId, SchemaResponse};
+	use common_primitives::schema::{ModelType, PayloadLocation, SchemaId, SchemaResponse};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -197,6 +197,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
+			payload_location: PayloadLocation,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
@@ -213,7 +214,7 @@ pub mod pallet {
 			ensure!(cur_count < T::MaxSchemaRegistrations::get(), Error::<T>::TooManySchemas);
 			let schema_id = cur_count.checked_add(1).ok_or(Error::<T>::SchemaCountOverflow)?;
 
-			Self::add_schema(schema_id, model, model_type)?;
+			Self::add_schema(schema_id, model, model_type, payload_location)?;
 
 			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
 			Ok(())
@@ -239,8 +240,9 @@ pub mod pallet {
 			schema_id: SchemaId,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
+			payload_location: PayloadLocation,
 		) -> DispatchResult {
-			let schema = Schema { model_type, model };
+			let schema = Schema { model_type, model, payload_location };
 			<SchemaCount<T>>::set(schema_id);
 			<Schemas<T>>::insert(schema_id, schema);
 			Ok(())
@@ -255,8 +257,12 @@ pub mod pallet {
 				// this should get a BoundedVec out
 				let model_vec = schema.model.into_inner();
 
-				let response =
-					SchemaResponse { schema_id, model: model_vec, model_type: schema.model_type };
+				let response = SchemaResponse {
+					schema_id,
+					model: model_vec,
+					model_type: schema.model_type,
+					payload_location: schema.payload_location,
+				};
 				return Some(response)
 			}
 			None
