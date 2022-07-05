@@ -49,7 +49,7 @@
 	missing_docs
 )]
 
-use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
+use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
 
 #[cfg(test)]
 mod tests;
@@ -60,14 +60,17 @@ mod mock;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+mod types;
+
 pub use pallet::*;
 pub mod weights;
+pub use types::*;
 pub use weights::*;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::schema::{SchemaId, SchemaResponse};
+	use common_primitives::schema::{ModelType, SchemaId, SchemaResponse};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -129,6 +132,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	/// Storage type for max bytes for schema model
@@ -149,7 +153,7 @@ pub mod pallet {
 		_,
 		Twox64Concat,
 		SchemaId,
-		BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+		Schema<T::SchemaModelMaxBytesBoundedVecLimit>,
 		OptionQuery,
 	>;
 
@@ -183,6 +187,7 @@ pub mod pallet {
 		/// # Arguments
 		/// * `origin` - The originator of the transaction
 		/// * `model` - The new schema model data
+		/// * 'model_type' - The formatting type of the model data
 		/// # Returns
 		/// * `DispatchResult`
 		///
@@ -196,6 +201,7 @@ pub mod pallet {
 		pub fn register_schema(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+			model_type: ModelType,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
@@ -208,11 +214,7 @@ pub mod pallet {
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 
-			let cur_count = Self::schema_count();
-			ensure!(cur_count < T::MaxSchemaRegistrations::get(), Error::<T>::TooManySchemas);
-			let schema_id = cur_count.checked_add(1).ok_or(Error::<T>::SchemaCountOverflow)?;
-
-			Self::add_schema(model, schema_id)?;
+			let schema_id = Self::add_schema(model, model_type)?;
 
 			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
 			Ok(())
@@ -236,11 +238,16 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		fn add_schema(
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
-			schema_id: SchemaId,
-		) -> DispatchResult {
+			model_type: ModelType,
+		) -> Result<SchemaId, DispatchError> {
+			let cur_count = Self::schema_count();
+			ensure!(cur_count < T::MaxSchemaRegistrations::get(), Error::<T>::TooManySchemas);
+			let schema_id = cur_count.checked_add(1).ok_or(Error::<T>::SchemaCountOverflow)?;
+
+			let schema = Schema { model_type, model };
 			<SchemaCount<T>>::set(schema_id);
-			<Schemas<T>>::insert(schema_id, model);
-			Ok(())
+			<Schemas<T>>::insert(schema_id, schema);
+			Ok(schema_id)
 		}
 
 		/// Retrieve latest schema id via total count of schemas on chain
@@ -250,11 +257,12 @@ pub mod pallet {
 
 		/// Retrieve a schema by id
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-			// TODO: This will eventually be a struct with other properties. Currently it is just the model
-			if let Some(model) = Self::get_schema(schema_id) {
+			if let Some(schema) = Self::get_schema(schema_id) {
 				// this should get a BoundedVec out
-				let model_vec = model.into_inner();
-				let response = SchemaResponse { schema_id, model: model_vec };
+				let model_vec = schema.model.into_inner();
+
+				let response =
+					SchemaResponse { schema_id, model: model_vec, model_type: schema.model_type };
 				return Some(response)
 			}
 			None
