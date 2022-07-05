@@ -1,15 +1,15 @@
 {
-  "name": "@dsnp/mrc-rpc",
+  "name": "@dsnp/frequency-rpc",
   "bugs": {
-    "url": "https://github.com/LibertyDSNP/mrc/issues"
+    "url": "https://github.com/LibertyDSNP/frequency/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/LibertyDSNP/mrc.git",
+    "url": "https://github.com/LibertyDSNP/frequency.git",
     "directory": "js/rpc"
   },
   "version": "0.0.0",
-  "description": "RPC configuration for MRC for use with Polkadotjs API",
+  "description": "RPC configuration for Frequency for use with Polkadotjs API",
   "main": "index.js",
   "scripts": {
     "test": "mocha",

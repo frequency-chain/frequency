@@ -1,4 +1,4 @@
-name: Publish JS MRC RPC Package @next
+name: Publish JS Frequency RPC Package @next
 defaults:
   run:
     working-directory: js/rpc

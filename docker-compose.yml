@@ -60,8 +60,8 @@ services:
       --bob
       --log="main,info"
 
-  collator_mrc:
-    container_name: mrc
+  collator_frequency:
+    container_name: frequency
     build:
       context: .
       dockerfile: Dockerfile
