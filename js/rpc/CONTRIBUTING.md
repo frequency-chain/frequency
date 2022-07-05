@@ -9,8 +9,8 @@ For contributing guidelines see the [Project Liberty Contributing Guidelines](ht
 ## How to Release
 
 1. Create a New Release on GitHub.com
-2. Set tag to `js-mrc-rpc-v[X.X.X]` following [Semver 2.0](https://semver.org/)
-3. Set title to "js-mrc-rpc-v[version] Major Feature Name"
+2. Set tag to `js-frequency-rpc-v[X.X.X]` following [Semver 2.0](https://semver.org/)
+3. Set title to "js-frequency-rpc-v[version] Major Feature Name"
 4. Set contents to follow [KeepAChangeLog.com 1.0](https://keepachangelog.com/en/1.0.0/), but limited to just the new release information
     ```markdown
     ## [0.1.0] - 2017-06-20

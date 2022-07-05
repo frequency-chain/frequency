@@ -67,7 +67,7 @@ source .env
 1. Register a new parachain slot (parachain id) for Frequency:
 
     ```bash
-    ./scripts/init.sh register-mrc
+    ./scripts/init.sh register-frequency
     ```
 
 1. Note: if parachain was previously registered on a running relay chain and no new registration is required, then, you can skip the above step.
@@ -77,17 +77,17 @@ source .env
 1. Note: assumption is that relay chain is running and para id 2000 is registered on relay. If parachain id is not 2000, update the local chain [spec](#generating-a-new-spec-file) with registered parachain id.
 
     ```bash
-    ./scripts/init.sh start-mrc
+    ./scripts/init.sh start-frequency
     ```
 
 1. Note: set `RUST_LOG=debug RUST_BACKTRACE=1` as the environment variable to enable detailed logs.
 
-1. Alternative to start-mrc: Run ```cargo build --release``` and then run ```./scripts/init.sh start-mrc-docker``` to start Frequency in a docker container via docker compose. ```./scripts/init.sh stop-mrc-docker``` to stop Frequency container.
+1. Alternative to start-frequency: Run ```cargo build --release``` and then run ```./scripts/init.sh start-frequency-docker``` to start Frequency in a docker container via docker compose. ```./scripts/init.sh stop-frequency-docker``` to stop Frequency container.
 
 1. Onboarding Frequency to the relay chain
 
     ```bash
-    ./scripts/init.sh onboard-mrc
+    ./scripts/init.sh onboard-frequency
     ```
 
 1. Parachain collator will be available at rpc port `9944`.
@@ -97,10 +97,10 @@ source .env
 1. Off-boarding Frequency from relay chain
 
     ```bash
-    ./scripts/init.sh offboard-mrc
+    ./scripts/init.sh offboard-frequency
     ```
 
-Note: Clean up /tmp/mrc directory after off-boarding. This is required to avoid any conflicts with next onboarding. For local testing and devnet this will be ideal until runtime upgrades are implemented.
+Note: Clean up /tmp/frequency directory after off-boarding. This is required to avoid any conflicts with next onboarding. For local testing and devnet this will be ideal until runtime upgrades are implemented.
 
 ### Ports
 
@@ -136,7 +136,7 @@ Note: Clean up /tmp/mrc directory after off-boarding. This is required to avoid 
 
 1. Run ```docker volume prune``` to remove unused volumes.
 
-1. Remove Frequency chain data via ```rm -rf /tmp/mrc```.
+1. Remove Frequency chain data via ```rm -rf /tmp/frequency```.
 
 ### Guidelines for writing code documentation
 
@@ -148,11 +148,11 @@ Note: Clean up /tmp/mrc directory after off-boarding. This is required to avoid 
 
 ### Generating a new spec file
 
-1. Update `node/chain_spec.rs` with required spec config, defaults to `para_id:2000` and relay chain to be `rococo_local.json` with `protocol_id:mrc-local`
-2. Run `cargo run --release build-spec --disable-default-bootnode > ./res/genesis/mrc-spec-rococo.json` to export the chain spec
-3. Run `cargo run --release build-spec --raw --disable-default-bootnode --chain ./res/genesis/mrc-spec-rococo.json > ./res/genesis/rococo-local-mrc-2000-raw.json` to export the raw chain spec
+1. Update `node/chain_spec.rs` with required spec config, defaults to `para_id:2000` and relay chain to be `rococo_local.json` with `protocol_id:frequency-local`
+2. Run `cargo run --release build-spec --disable-default-bootnode > ./res/genesis/frequency-spec-rococo.json` to export the chain spec
+3. Run `cargo run --release build-spec --raw --disable-default-bootnode --chain ./res/genesis/frequency-spec-rococo.json > ./res/genesis/rococo-local-frequency-2000-raw.json` to export the raw chain spec
 4. Commit
-5. Alternatively, run ```./scripts/generate_specs.sh 2001 true``` to generate plain and raw mrc spec along with genesis state and wasm. Replace 2001 with registered parachain id.
+5. Alternatively, run ```./scripts/generate_specs.sh 2001 true``` to generate plain and raw frequency spec along with genesis state and wasm. Replace 2001 with registered parachain id.
 
 Note: To build spec against specific chain config; specify chain name in the command above.
 

@@ -6,8 +6,10 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+mod weights;
 pub mod xcm_config;
 
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -30,9 +32,8 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstU32, Everything},
 	weights::{
-		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
-		DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-		WeightToFeePolynomial,
+		constants::WEIGHT_PER_SECOND, ConstantMultiplier, DispatchClass, Weight,
+		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 	},
 	PalletId,
 };
@@ -51,7 +52,9 @@ pub use pallet_msa;
 pub use pallet_schemas;
 pub use pallet_tx_fee;
 // Polkadot Imports
-use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
+use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
+
+use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 // XCM Imports
 use xcm::latest::prelude::BodyId;
@@ -301,7 +304,7 @@ impl frame_system::Config for Runtime {
 	type SS58Prefix = SS58Prefix;
 	/// The action to take on a Runtime Upgrade
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
-	type MaxConsumers = ConstU32<16>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 impl pallet_msa::Config for Runtime {
@@ -380,8 +383,8 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
-	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = WeightToFee;
+	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
@@ -400,6 +403,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type OutboundXcmpMessageSource = XcmpQueue;
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
+	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -534,11 +538,11 @@ construct_runtime!(
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-		// MRC related pallets
+		// Frequency related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 34,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 35,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 36,
-		MrcTxPayment: pallet_tx_fee::{Pallet} = 37,
+		FrequencyTxPayment: pallet_tx_fee::{Pallet} = 37,
 	}
 );
 
@@ -707,7 +711,7 @@ impl_runtime_apis! {
 			uxt: <Block as BlockT>::Extrinsic,
 			len: u32,
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
-			MrcTxPayment::compute_extrinsic_cost(uxt, len)
+			FrequencyTxPayment::compute_extrinsic_cost(uxt, len)
 		}
 	}
 

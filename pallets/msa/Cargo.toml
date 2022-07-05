@@ -1,12 +1,12 @@
 [package]
-authors = ["MRC Team"]
+authors = ["Frequency Team"]
 description = "Pallet for creating MSA"
 edition = "2021"
 homepage = "https://unfinishedlabs.io/"
 license = "Apache-2.0"
 name = "pallet-msa"
 publish = false
-repository = "https://github.com/libertyDSNP/mrc/"
+repository = "https://github.com/libertyDSNP/frequency/"
 version = "0.1.0"
 
 [package.metadata.docs.rs]
@@ -16,20 +16,20 @@ targets = ["x86_64-unknown-linux-gnu"]
 codec = {package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
   "derive",
 ]}
-frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18", optional = true}
-frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
-frame-system = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
+frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25", optional = true}
+frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
+frame-system = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
 scale-info = {version = "2.0.0", default-features = false, features = ["derive"]}
-sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
-sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
-sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
+sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
+sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
+sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
 
-# MRC related dependencies
+# Frequency related dependencies
 common-primitives = {default-features = false, path = "../../common/primitives"}
 
 [dev-dependencies]
-sp-io = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
-sp-keystore = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
+sp-io = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
+sp-keystore = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
 
 [features]
 default = ["std"]

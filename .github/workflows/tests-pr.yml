@@ -11,9 +11,10 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         target: [tests, lint]
+        rust_toolchain: [nightly-2022-06-27]
     runs-on: ${{ matrix.os }}
     env:
-      RUST_TOOLCHAIN: "nightly-2022-06-27"
+      RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
     steps:
       - name: Free space on Ubuntu
         if: ${{ matrix.os }} == 'ubuntu-latest'
@@ -53,6 +54,8 @@ jobs:
       - name: Cache
         if: ${{ steps.filter.outputs.rust == 'true' }}
         uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ env.RUST_TOOLCHAIN }}
       - name: Run tests
         if: ${{ steps.filter.outputs.rust == 'true' }}
         run: ./ci/build.sh

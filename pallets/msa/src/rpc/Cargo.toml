@@ -2,29 +2,28 @@
 name = "pallet-msa-rpc"
 version = '0.1.0'
 description = 'A package that adds RPC to Msa pallet'
-authors = ['MRC Team']
+authors = ['Frequency Team']
 license = "Apache-2.0"
 publish = false
 homepage = "https://unfinishedlabs.io/"
-repository = "https://github.com/LibertyDSNP/mrc/"
+repository = "https://github.com/LibertyDSNP/frequency/"
 edition = "2021"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0" }
-jsonrpc-core = "18.0"
-jsonrpc-core-client = "18.0"
-jsonrpc-derive = "18.0"
+jsonrpsee = { version = "0.14.0", features = ["server", "macros"] }
 rayon = "1.5"
 
 # unfinished
 pallet-msa-runtime-api = {default-features = false, path = "../runtime-api" }
 common-primitives = {default-features = false, path = "../../../../common/primitives" }
+common-helpers = {default-features = false, path = "../../../../common/helpers" }
 
 # Substrate packages
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.18" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
 
 [features]
 default = ["std"]

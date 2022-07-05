@@ -1,21 +1,24 @@
 use codec::Codec;
-use common_primitives::{messages::*, rpc::*, schema::*};
-use jsonrpc_core::Result;
-use jsonrpc_derive::rpc;
+use common_helpers::rpc::*;
+use common_primitives::{messages::*, schema::*};
+use jsonrpsee::{
+	core::{async_trait, RpcResult},
+	proc_macros::rpc,
+};
 use pallet_messages_runtime_api::MessagesApi as MessagesRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
-#[rpc]
+#[rpc(client, server)]
 pub trait MessagesApi<BlockHash, AccountId, BlockNumber> {
-	#[rpc(name = "messages_getBySchema")]
+	#[method(name = "messages_getBySchema")]
 	fn get_messages_by_schema(
 		&self,
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest<BlockNumber>,
-	) -> Result<BlockPaginationResponse<BlockNumber, MessageResponse<AccountId, BlockNumber>>>;
+	) -> RpcResult<BlockPaginationResponse<BlockNumber, MessageResponse<AccountId, BlockNumber>>>;
 }
 
 /// A struct that implements the `MessagesApi`.
@@ -31,8 +34,9 @@ impl<C, M> MessagesHandler<C, M> {
 	}
 }
 
-impl<C, Block, AccountId, BlockNumber> MessagesApi<<Block as BlockT>::Hash, AccountId, BlockNumber>
-	for MessagesHandler<C, Block>
+#[async_trait]
+impl<C, Block, AccountId, BlockNumber>
+	MessagesApiServer<<Block as BlockT>::Hash, AccountId, BlockNumber> for MessagesHandler<C, Block>
 where
 	Block: BlockT,
 	C: Send + Sync + 'static,
@@ -46,7 +50,7 @@ where
 		&self,
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest<BlockNumber>,
-	) -> Result<BlockPaginationResponse<BlockNumber, MessageResponse<AccountId, BlockNumber>>> {
+	) -> RpcResult<BlockPaginationResponse<BlockNumber, MessageResponse<AccountId, BlockNumber>>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 		let runtime_api_result = api.get_messages_by_schema(&at, schema_id, pagination);

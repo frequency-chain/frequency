@@ -1,6 +1,9 @@
 use codec::{Codec, Decode};
-use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
-use jsonrpc_derive::rpc;
+use jsonrpsee::{
+	core::{async_trait, Error as RpcError, RpcResult},
+	proc_macros::rpc,
+	types::error::{CallError, ErrorCode, ErrorObject},
+};
 use pallet_tx_fee_runtime_api::{FeeDetails, InclusionFee, RuntimeDispatchInfo, TxFeeRuntimeApi};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -20,8 +23,8 @@ pub enum Error {
 	RuntimeError,
 }
 
-impl From<Error> for i64 {
-	fn from(e: Error) -> i64 {
+impl From<Error> for i32 {
+	fn from(e: Error) -> i32 {
 		match e {
 			Error::RuntimeError => 1,
 			Error::DecodeError => 2,
@@ -29,29 +32,31 @@ impl From<Error> for i64 {
 	}
 }
 
-#[rpc]
-pub trait MrcTxFeeApi<BlockHash, Balance> {
-	#[rpc(name = "mrc_computeExtrinsicCost")]
+#[rpc(client, server)]
+pub trait FrequencyTxFeeApi<BlockHash, Balance> {
+	#[method(name = "frequency_computeExtrinsicCost")]
 	fn compute_extrinsic_cost(
 		&self,
 		encoded_xt: Bytes,
 		at: Option<BlockHash>,
-	) -> Result<FeeDetails<NumberOrHex>>;
+	) -> RpcResult<FeeDetails<NumberOrHex>>;
 }
 
-pub struct MrcTxFeeHandler<C, M> {
+pub struct FrequencyTxFeeHandler<C, M> {
 	client: Arc<C>,
 	_marker: std::marker::PhantomData<M>,
 }
 
-impl<C, M> MrcTxFeeHandler<C, M> {
+impl<C, M> FrequencyTxFeeHandler<C, M> {
 	pub fn new(client: Arc<C>) -> Self {
 		Self { client, _marker: Default::default() }
 	}
 }
 
-impl<C, Block, Balance> MrcTxFeeApi<<Block as BlockT>::Hash, RuntimeDispatchInfo<Balance>>
-	for MrcTxFeeHandler<C, Block>
+#[async_trait]
+impl<C, Block, Balance>
+	FrequencyTxFeeApiServer<<Block as BlockT>::Hash, RuntimeDispatchInfo<Balance>>
+	for FrequencyTxFeeHandler<C, Block>
 where
 	Block: BlockT,
 	C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
@@ -62,28 +67,33 @@ where
 		&self,
 		encoded_xt: Bytes,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<FeeDetails<NumberOrHex>> {
+	) -> RpcResult<FeeDetails<NumberOrHex>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
 		let encoded_len = encoded_xt.len() as u32;
-		let uxt: Block::Extrinsic = Decode::decode(&mut &*encoded_xt).map_err(|e| RpcError {
-			code: ErrorCode::ServerError(Error::DecodeError.into()),
-			message: "Bad encoded extrinsic".into(),
-			data: Some(format!("{:?}", e).into()),
+		let uxt: Block::Extrinsic = Decode::decode(&mut &*encoded_xt).map_err(|e| {
+			RpcError::Call(CallError::Custom(ErrorObject::owned(
+				Error::DecodeError.into(),
+				"Bad encoded extrinsic",
+				Some(format!("{:?}", e)),
+			)))
 		})?;
-		let fee_details =
-			api.compute_extrinsic_cost(&at, uxt, encoded_len).map_err(|e| RpcError {
-				code: ErrorCode::ServerError(Error::RuntimeError.into()),
-				message: "Failed to compute cost of unsigned extrinsic".into(),
-				data: Some(format!("{:?}", e).into()),
-			})?;
+		let fee_details = api.compute_extrinsic_cost(&at, uxt, encoded_len).map_err(|e| {
+			RpcError::Call(CallError::Custom(ErrorObject::owned(
+				Error::RuntimeError.into(),
+				"Failed to compute cost of unsigned extrinsic",
+				Some(format!("{:?}", e)),
+			)))
+		})?;
 
 		let try_into_rpc_balance = |value: Balance| {
-			value.try_into().map_err(|_| RpcError {
-				code: ErrorCode::InvalidParams,
-				message: format!("{} doesn't fit in NumberOrHex representation", value),
-				data: None,
+			value.try_into().map_err(|_| {
+				RpcError::Call(CallError::Custom(ErrorObject::owned(
+					ErrorCode::InvalidParams.code(),
+					format!("{} doesn't fit in NumberOrHex representation", value),
+					None::<()>,
+				)))
 			})
 		};
 		Ok(FeeDetails {
