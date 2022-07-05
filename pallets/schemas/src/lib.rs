@@ -48,7 +48,6 @@
 	rustdoc::invalid_codeblock_attributes
 )]
 
-use common_helpers::serde;
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get, BoundedVec};
 
 #[cfg(test)]

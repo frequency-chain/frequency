@@ -1,5 +1,4 @@
 use crate::{Config, Error, Event as AnnouncementEvent};
-use common_helpers::serde;
 use common_primitives::schema::SchemaId;
 use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin, BoundedVec};
 use serial_test::serial;

@@ -17,8 +17,6 @@ apache-avro = { git = "https://github.com/apache/avro", features = ["snappy"] }
 thiserror = "1"
 sha2 = "0.10.2"
 rayon = "1.5"
-# serde_json_core = { version = "0.3" , default-features = false }
-serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
 proptest = "1.0"

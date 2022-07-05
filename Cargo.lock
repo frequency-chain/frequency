@@ -1183,7 +1183,6 @@ dependencies = [
  "apache-avro",
  "proptest",
  "rayon",
- "serde_json",
  "sha2 0.10.2",
  "thiserror",
 ]
@@ -6124,13 +6123,13 @@ dependencies = [
 name = "pallet-schemas"
 version = "0.1.0"
 dependencies = [
- "common-helpers",
  "common-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
  "scale-info",
+ "serde_json",
  "serial_test",
  "smallvec",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.18)",
