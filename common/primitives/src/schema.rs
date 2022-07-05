@@ -37,3 +37,7 @@ pub struct SchemaResponse {
 	/// The model format type for how the schema model is represented
 	pub model_type: ModelType,
 }
+
+/// This allows other pallets to resolve Schema information.
+pub trait SchemaProvider {
+}
