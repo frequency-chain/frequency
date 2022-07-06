@@ -36,6 +36,10 @@
 //! - `register_schema` - Registers a new schema after some initial validation.
 //! - `set_max_schema_model_bytes` - Sets the maximum schema model size (Bytes) by governance.
 //!
+//! The Schema pallet implements the following traits:
+//!
+//! - [`SchemaProvider`](common_primitives::schema::SchemaProvider<SchemaId>): Functions for accessing and validating Schemas.  This implementation is what is used in the runtime.
+//!
 //! ## Genesis config
 //!
 //! The Schemas pallet depends on the [`GenesisConfig`].
