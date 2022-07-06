@@ -50,5 +50,5 @@ pub trait SchemaProvider {
 	/// * `Option<SchemaResponse>`
 	/// # Remarks
 	/// This function is used to resolve a Schema from a SchemaId.
-	fn get_schema_by_id(schema_id: &Self::SchemaId) -> Option<SchemaResponse>;
+	fn get_schema_by_id(schema_id: Self::SchemaId) -> Option<SchemaResponse>;
 }
