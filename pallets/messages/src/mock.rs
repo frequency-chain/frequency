@@ -138,6 +138,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 				schema_id: 1,
 				model: r#"schema1"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
+				payload_location: PayloadLocation::default(),
 			})
 		}
 		if schema_id == 2 {
@@ -145,6 +146,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 				schema_id: 1,
 				model: r#"schema2"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
+				payload_location: PayloadLocation::default(),
 			})
 		}
 		None

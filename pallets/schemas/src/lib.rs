@@ -53,8 +53,10 @@
 	missing_docs
 )]
 
+use common_primitives::schema::{
+	ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse,
+};
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
-
 #[cfg(test)]
 mod tests;
 
@@ -75,9 +77,8 @@ mod serde;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::schema::{
-		ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse,
-	};
+
+	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
@@ -291,10 +292,10 @@ pub mod pallet {
 			Ok(())
 		}
 	}
+}
 
-	impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
-		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-			Self::get_schema_by_id(schema_id)
-		}
+impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
+	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+		Self::get_schema_by_id(schema_id)
 	}
 }
