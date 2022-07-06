@@ -126,13 +126,6 @@ chain need to query provider information. As of the time of writing this
 document, the only provider information required is a name (non-unique). In the
 future, we may include other information like domain, logo, business address, etc.
 
-### Provider Fees
-This document assumes that registration fees will be a fixed amount. It may be
-prudent, in the future, to determine whether or not registrations are fixed or
-vary based on the amount of verifable information given on a registration
-attempt. The latter may allow us to place more trust into providers that do not
-have traditional business attributes.
-
 ### Provider Verification
 There should be a way to verify whether providers are legitimate entities. As of
 now, there is no authority that we can query to verify providers, nor is there a
@@ -150,6 +143,14 @@ legitimateness is through a fee that is high enough to discourage malicious acto
 If consumers want to examine provider registration / unregistration events, they
 must fetch them from an archival node. This document does not outline an RPC for
 fetching registration / unregistration events.
+
+## Alternatives
+### Provider Fees
+This document assumes that registration fees will be a fixed amount. It may be
+prudent, in the future, to determine whether or not registrations are fixed or
+vary based on the amount of verifable information given on a registration
+attempt. The latter may allow us to place more trust into providers that do not
+have traditional business attributes.
 
 ## Glossary
 TBD.
