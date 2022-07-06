@@ -75,7 +75,9 @@ mod serde;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::schema::{ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse};
+	use common_primitives::schema::{
+		ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse,
+	};
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
