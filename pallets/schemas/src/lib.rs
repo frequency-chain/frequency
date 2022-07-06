@@ -70,7 +70,7 @@ pub use weights::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::schema::{ModelType, SchemaId, SchemaResponse};
+	use common_primitives::schema::{ModelType, SchemaId, SchemaProvider, SchemaResponse};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -266,6 +266,13 @@ pub mod pallet {
 				return Some(response)
 			}
 			None
+		}
+	}
+
+	impl<T: Config> SchemaProvider for Pallet<T> {
+		type SchemaId = SchemaId;
+		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+			Self::get_schema_by_id(schema_id)
 		}
 	}
 }

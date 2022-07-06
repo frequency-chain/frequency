@@ -79,6 +79,9 @@ pub mod pallet {
 		/// A type that will supply account related information.
 		type AccountProvider: AccountProvider<AccountId = Self::AccountId>;
 
+		/// A type that will supply schema related information.
+		type SchemaProvider: SchemaProvider;
+
 		/// The maximum number of messages in a block.
 		#[pallet::constant]
 		type MaxMessagesPerBlock: Get<u32>;
