@@ -43,9 +43,8 @@ The basic workflow for provider registration is as follows:
 
 Should a provider choose at any point to stop providing services, it can issue a
 request to remove itself from the provider registry:
-1. The provider issues an announcement that it will stop providing services.
+1. The provider issues an event that it will stop providing services.
 1. The provider's MSA id is removed from storage.
-
 
 Please note:
 * All names are placeholders and may be changed.
@@ -54,28 +53,24 @@ Please note:
   for each type of error for ease of debugging.
 
 ### Types
-* `ProviderRegistrationParams<T: Config>`, the arguments used to register an announcement.
+* `ProviderRegistrationParams<T: Config>`, the arguments used to emit registration event.
   * `provider_msa_id`: `MsaId`
-  * `provider_metadata`: `ProviderAnnouncementMetadata`
-* `ProviderRegistrationAnnouncement<T: Config>`, the resource that exists on-chain
-  * `block_number`: `BlockNumber`
+  * `provider_metadata`: `ProviderMetadata`
+* `ProviderUnregistrationParams<T:Config>`, the arguments used to unregister a provider.
   * `provider_msa_id`: `MsaId`
-  * `provider_metadata`: `ProviderAnnouunucementMetadata`
-* `ProviderUnregistrationParams<T:Config>`, the arguments used to unregister an announcement.
-  * `provider_msa_id`: `MsaId`
-* `ProviderUnregistrationAnnouncement<T:Config>`, the resource that exists on-chain
-  * `provider_msa_id`: `MsaId`
-* `ProviderAnnouncementMetadata`
+* `ProviderMetadata`
   * `name`: `Vec<u8>`
 * `Provider`
   * `provider_msa_id`: `MsaId`
-  * `name`: `Vec<u8>`
-* `ProviderRegistrationAnnouncementOptions<T:Config>`
-  * `provider_msa_id`:  `Option<MsaId>`, the announcer's MSA id.  Pass None() to get all announcements.
-  * `from_block`: `<T::BlockNumber>`, retrieve messages starting at the given block number (inclusive)
-  * `to_block`: `<T::BlockNumber>`, retrieve messages ending at the given block number (inclusive)
-  * `from_index`: `u32`, starting message index
-  * `page_size`: `usize`, retrieve `page_size` messages at a time, up to configured `T::PageSizeMax`. If 0, return `T::PageSizeMax` results
+  * `metadata`: `ProviderMetadata`
+
+#### Events
+* `ProviderRegistrationEvent<T: Config>`, the resource that exists on-chain
+  * `block_number`: `BlockNumber`
+  * `provider_msa_id`: `MsaId`
+  * `provider_metadata`: `ProviderAnnouunucementMetadata`
+* `ProviderUnregistrationEvent<T:Config>`, the resource that exists on-chain
+  * `provider_msa_id`: `MsaId`
 
 #### Storage
 * `ProviderRegistry<T: Config>`: `StorageMap<MsaId, Provider>`
@@ -85,36 +80,36 @@ Please note:
 
 ### Extrinsics
 #### register_provider(origin, registration_params)
-Creates and posts a `ProviderRegistrationAnnouncement` on chain. The `MsaId`
-included in the announcement must already exist.
+Creates and posts a `ProviderRegistrationEvent`. The `MsaId`
+included in the registration must already exist.
 
 This extrinsic is responsible for storing the registered provider in the
 `ProviderRegistry`.
 
 * **Parameters**
   * `origin`: `Origin`  required for all extrinsics, the caller/sender.
-  * `registration_params`: `ProviderRegistrationParams`, the parameters to use in the registration announcement.
-* **Event**:  `Event::<T>::ProviderRegistered(provider_msa_id, provider_metadata)`
+  * `registration_params`: `ProviderRegistrationParams`, the parameters to use for registration.
+* **Event**:  `Event::<T>::ProviderRegistrationEvent(provider_msa_id, provider_metadata)`
 * **Restrictions**:
-  * `origin`'s `msa_id` must have capacity to post the transaction (including fee) during the current epoch
+  * `origin`'s `msa_id` must have capacity to post the transaction (including fee) during the current epoch.
 
 #### unregister_provider(origin, unregistration_params)
-Creates and posts a `ProviderUnregistrationAnnouncement` on chain. The `MsaId`
-included in the announcement must already exist.
+Creates and posts a `ProviderUnregistrationEvent`. The `MsaId`
+included in the event must already exist.
 
 This extrinsic is responsible for deleting the registered provider's `MsaId` from the
 `ProviderRegistry`.
 
 * **Parameters**
   * `origin`: `Origin`  required for all extrinsics, the caller/sender.
-  * `unregistration_params`: `ProviderUnregistrationParams`, the parameters to use in the unregistration announcement.
-* **Event**:  `Event::<T>::ProviderUnregistered(provider_msa_id, provider_name)`
+  * `unregistration_params`: `ProviderUnregistrationParams`, the parameters to use in the unregistration.
+* **Event**:  `Event::<T>::ProviderUnregistrationEvent(provider_msa_id, provider_name)`
 * **Restrictions**:
-  * `origin`'s `msa_id` must have capacity to post the transaction during the current epoch
+  * `origin`'s `msa_id` must have capacity to post the transaction during the current epoch.
 
 ### Custom RPCs
-#### get_provider_announcement(provider_msa_id)
-Retrieves a single provider announcement. The `provider_msa_id` can belong to a
+#### get_provider(provider_msa_id)
+Retrieves a single provider. The `provider_msa_id` can belong to a
 registered or unregistered provider.
 
 * **Parameters**
@@ -122,19 +117,7 @@ registered or unregistered provider.
 
 * **Returns**
   * `None()` if no messages meet the criteria.
-  * `Some(ProviderRegistrationAnnouncement)`
-
-#### get_provider_announcements(options)
-Retrieves paged registration announcements that have not been garbage-collected
-which meet `options` criteria. The `provider_msa_id`s can belong to
-registered or unregistered providers.
-
-* **Parameters**
-  * `options`: `ProviderRegistrationAnnouncementOptions` containing regitration announcement criteria
-
-* **Returns**
-  * `None()` if no messages meet the criteria.
-  * `Some(Vec<ProviderRegistrationAnnouncement>)`, in descending block-transaction order
+  * `Some(Provider)`
 
 ## Benefits and Risks
 ### Provider Registry and Info
@@ -163,13 +146,10 @@ providers ("mom and pop" local businesses and/or "freelancers").
 So to allow inclusion for all actors, it may be that the best way of verifying
 legitimateness is through a fee that is high enough to discourage malicious actors.
 
-## Alternatives and Rationale
-#### Privacy
-A full copy of provider metadata is recorded to the chain when a provider is
-registered. However, that information has been intentionally left out of the
-unregister announcement because it seems plausible that a provider that chooses
-to step down may not want their information publicized (to allow for a silent
-exit).
+### Archival Provider Information
+If consumers want to examine provider registration / unregistration events, they
+must fetch them from an archival node. This document does not outline an RPC for
+fetching registration / unregistration events.
 
 ## Glossary
 TBD.
