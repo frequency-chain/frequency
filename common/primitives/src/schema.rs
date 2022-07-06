@@ -25,6 +25,22 @@ impl Default for ModelType {
 	}
 }
 
+/// Types of payload locations
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+pub enum PayloadLocation {
+	/// Message payload is located on chain
+	OnChain,
+	/// Message payload is located on IPFS
+	IPFS,
+}
+
+impl Default for PayloadLocation {
+	fn default() -> Self {
+		Self::OnChain
+	}
+}
+
 /// RPC Response form for a Schema
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
@@ -36,6 +52,8 @@ pub struct SchemaResponse {
 	pub model: Vec<u8>,
 	/// The model format type for how the schema model is represented
 	pub model_type: ModelType,
+	/// The payload location
+	pub payload_location: PayloadLocation,
 }
 
 /// This allows other pallets to resolve Schema information. With generic SchemaId

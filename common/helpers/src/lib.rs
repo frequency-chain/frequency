@@ -1,4 +1,5 @@
 pub mod avro;
+
 #[cfg(test)]
 mod avro_tests;
 /// Structs and traits specifically for RPC calls.

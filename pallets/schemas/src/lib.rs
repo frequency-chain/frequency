@@ -70,12 +70,12 @@ pub use pallet::*;
 pub mod weights;
 pub use types::*;
 pub use weights::*;
+mod serde;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::schema::{ModelType, SchemaId, SchemaProvider, SchemaResponse};
-	use frame_support::pallet_prelude::*;
+	use common_primitives::schema::{ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse};
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
@@ -206,9 +206,11 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
+			payload_location: PayloadLocation,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
+			Self::ensure_valid_schema(&model)?;
 			ensure!(
 				model.len() > T::MinSchemaModelSizeBytes::get() as usize,
 				Error::<T>::LessThanMinSchemaModelBytes
@@ -218,7 +220,7 @@ pub mod pallet {
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 
-			let schema_id = Self::add_schema(model, model_type)?;
+			let schema_id = Self::add_schema(model, model_type, payload_location)?;
 
 			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
 			Ok(())
@@ -243,12 +245,13 @@ pub mod pallet {
 		fn add_schema(
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
+			payload_location: PayloadLocation,
 		) -> Result<SchemaId, DispatchError> {
 			let cur_count = Self::schema_count();
 			ensure!(cur_count < T::MaxSchemaRegistrations::get(), Error::<T>::TooManySchemas);
 			let schema_id = cur_count.checked_add(1).ok_or(Error::<T>::SchemaCountOverflow)?;
 
-			let schema = Schema { model_type, model };
+			let schema = Schema { model_type, model, payload_location };
 			<SchemaCount<T>>::set(schema_id);
 			<Schemas<T>>::insert(schema_id, schema);
 			Ok(schema_id)
@@ -265,11 +268,25 @@ pub mod pallet {
 				// this should get a BoundedVec out
 				let model_vec = schema.model.into_inner();
 
-				let response =
-					SchemaResponse { schema_id, model: model_vec, model_type: schema.model_type };
+				let response = SchemaResponse {
+					schema_id,
+					model: model_vec,
+					model_type: schema.model_type,
+					payload_location: schema.payload_location,
+				};
 				return Some(response)
 			}
 			None
+		}
+
+		/// Ensures schema is a valid JSON before registering it
+		/// Rejects malformed or null JSON
+		pub fn ensure_valid_schema(
+			schema: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+		) -> DispatchResult {
+			let validated_schema = serde::validate_json_model(schema.clone().into_inner());
+			validated_schema.map_err(|_| Error::<T>::InvalidSchema)?;
+			Ok(())
 		}
 	}
 

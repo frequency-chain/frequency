@@ -46,6 +46,9 @@ export default {
     ModelType: {
       _enum: ["AvroBinary"],
     },
+    PayloadLocation: {
+      _enum: ["OnChain", "IPFS"],
+    },
     SchemaResponse: {
       schema_id: "SchemaId",
       model: "SchemaModel",
