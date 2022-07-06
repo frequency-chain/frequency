@@ -45,6 +45,7 @@ Should a provider choose at any point to stop providing services, it can issue a
 request to remove itself from the provider registry:
 1. The provider issues an event that it will stop providing services.
 1. The provider's MSA id is removed from storage.
+1. Any delegations associated with that provider should be revoked.
 
 Please note:
 * All names are placeholders and may be changed.
