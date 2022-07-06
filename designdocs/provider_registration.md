@@ -57,7 +57,7 @@ Please note:
 * `ProviderRegistrationParams<T: Config>`, the arguments used to emit registration event.
   * `provider_msa_id`: `MsaId`
   * `provider_metadata`: `ProviderMetadata`
-* `ProviderUnregistrationParams<T:Config>`, the arguments used to unregister a provider.
+* `ProviderDeregistrationParams<T:Config>`, the arguments used to deregister a provider.
   * `provider_msa_id`: `MsaId`
 * `ProviderMetadata`
   * `name`: `Vec<u8>`
@@ -70,7 +70,7 @@ Please note:
   * `block_number`: `BlockNumber`
   * `provider_msa_id`: `MsaId`
   * `provider_metadata`: `ProviderAnnouunucementMetadata`
-* `ProviderUnregistrationEvent<T:Config>`, the resource that exists on-chain
+* `ProviderDeregistrationEvent<T:Config>`, the resource that exists on-chain
   * `provider_msa_id`: `MsaId`
 
 #### Storage
@@ -94,8 +94,8 @@ This extrinsic is responsible for storing the registered provider in the
 * **Restrictions**:
   * `origin`'s `msa_id` must have capacity to post the transaction (including fee) during the current epoch.
 
-#### unregister_provider(origin, unregistration_params)
-Creates and posts a `ProviderUnregistrationEvent`. The `MsaId`
+#### deregister_provider(origin, deregistration_params)
+Creates and posts a `ProviderDeregistrationEvent`. The `MsaId`
 included in the event must already exist.
 
 This extrinsic is responsible for deleting the registered provider's `MsaId` from the
@@ -103,15 +103,15 @@ This extrinsic is responsible for deleting the registered provider's `MsaId` fro
 
 * **Parameters**
   * `origin`: `Origin`  required for all extrinsics, the caller/sender.
-  * `unregistration_params`: `ProviderUnregistrationParams`, the parameters to use in the unregistration.
-* **Event**:  `Event::<T>::ProviderUnregistrationEvent(provider_msa_id, provider_name)`
+  * `deregistration_params`: `ProviderDeregistrationParams`, the parameters to use in the deregistration.
+* **Event**:  `Event::<T>::ProviderDeregistrationEvent(provider_msa_id, provider_name)`
 * **Restrictions**:
   * `origin`'s `msa_id` must have capacity to post the transaction during the current epoch.
 
 ### Custom RPCs
 #### get_provider(provider_msa_id)
-Retrieves a single provider. The `provider_msa_id` can belong to a
-registered or unregistered provider.
+Retrieves a single provider. The `provider_msa_id` should belong to a registered
+provider.
 
 * **Parameters**
   * `provider_msa_id`: `MsaId` the `MsaId` of the provider in question.
@@ -141,9 +141,9 @@ So to allow inclusion for all actors, it may be that the best way of verifying
 legitimateness is through a fee that is high enough to discourage malicious actors.
 
 ### Archival Provider Information
-If consumers want to examine provider registration / unregistration events, they
+If consumers want to examine provider registration / deregistration events, they
 must fetch them from an archival node. This document does not outline an RPC for
-fetching registration / unregistration events.
+fetching registration / deregistration events.
 
 ## Alternatives
 ### Provider Fees
