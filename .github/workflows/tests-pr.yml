@@ -82,6 +82,10 @@ jobs:
         run: npm test
         if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
         working-directory: js/api-augment
+      - name: Build
+        run: npm run build
+        if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
+        working-directory: js/api-augment
       - name: Build & Publish Dry Run
         if: ${{ steps.filter.outputs.js == 'true' && matrix.target == 'tests' }}
         run: npm publish --dry-run
