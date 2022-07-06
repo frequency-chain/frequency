@@ -269,8 +269,7 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: Config> SchemaProvider for Pallet<T> {
-		type SchemaId = SchemaId;
+	impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
 		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			Self::get_schema_by_id(schema_id)
 		}

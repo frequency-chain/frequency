@@ -80,7 +80,7 @@ pub mod pallet {
 		type AccountProvider: AccountProvider<AccountId = Self::AccountId>;
 
 		/// A type that will supply schema related information.
-		type SchemaProvider: SchemaProvider;
+		type SchemaProvider: SchemaProvider<SchemaId>;
 
 		/// The maximum number of messages in a block.
 		#[pallet::constant]
@@ -134,6 +134,8 @@ pub mod pallet {
 		TypeConversionOverflow,
 		/// Invalid Message Source Account
 		InvalidMessageSourceAccount,
+		/// Invalid SchemaId or Schema not found
+		InvalidSchemaId,
 		/// UnAuthorizedDelegate
 		UnAuthorizedDelegate,
 	}
@@ -180,6 +182,9 @@ pub mod pallet {
 			payload: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
+
+			let schema_id_check = T::SchemaProvider::get_schema_by_id(schema_id);
+			ensure!(schema_id_check.is_some(), Error::<T>::InvalidSchemaId);
 
 			ensure!(
 				payload.len() < T::MaxMessagePayloadSizeBytes::get().try_into().unwrap(),

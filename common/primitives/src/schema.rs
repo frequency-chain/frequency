@@ -38,17 +38,14 @@ pub struct SchemaResponse {
 	pub model_type: ModelType,
 }
 
-/// This allows other pallets to resolve Schema information.
-pub trait SchemaProvider {
-	/// Type used to associate a key to a Schema.
-	type SchemaId;
-
-	/// Gets the Schema Id associated with this `SchemaId` if any
+/// This allows other pallets to resolve Schema information. With generic SchemaId
+pub trait SchemaProvider<SchemaId> {
+	/// Gets the Schema details associated with this `SchemaId` if any
 	/// # Arguments
 	/// * `schema_id` - The `SchemaId` to lookup
 	/// # Returns
 	/// * `Option<SchemaResponse>`
 	/// # Remarks
 	/// This function is used to resolve a Schema from a SchemaId.
-	fn get_schema_by_id(schema_id: Self::SchemaId) -> Option<SchemaResponse>;
+	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse>;
 }

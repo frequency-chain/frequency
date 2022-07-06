@@ -131,17 +131,16 @@ impl AccountProvider for AccountHandler {
 }
 
 pub struct SchemaHandler;
-impl SchemaProvider for SchemaHandler {
-	type SchemaId = u16;
-	fn get_schema_by_id(schema_id: &Self::SchemaId) -> Option<SchemaResponse> {
-		if *schema_id == 1 {
+impl SchemaProvider<u16> for SchemaHandler {
+	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+		if schema_id == 1 {
 			return Some(SchemaResponse {
 				schema_id: 1,
 				model: r#"schema1"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 			})
 		}
-		if *schema_id == 2 {
+		if schema_id == 2 {
 			return Some(SchemaResponse {
 				schema_id: 1,
 				model: r#"schema2"#.to_string().as_bytes().to_vec(),
