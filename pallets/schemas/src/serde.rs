@@ -8,8 +8,7 @@ pub enum SerdeError {
 }
 
 pub fn validate_json_model(json_schema: Vec<u8>) -> Result<(), SerdeError> {
-	let result: Value =
-		from_slice(&json_schema).map_err(|_| SerdeError::InvalidSchema())?; // map error
+	let result: Value = from_slice(&json_schema).map_err(|_| SerdeError::InvalidSchema())?; // map error
 	match result {
 		Value::Null => Err(SerdeError::InvalidNullSchema()),
 		_ => Ok(()),
