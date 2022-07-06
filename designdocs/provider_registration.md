@@ -69,7 +69,6 @@ Please note:
 * `ProviderRegistrationEvent<T: Config>`, the resource that exists on-chain
   * `block_number`: `BlockNumber`
   * `provider_msa_id`: `MsaId`
-  * `provider_metadata`: `ProviderAnnouunucementMetadata`
 * `ProviderDeregistrationEvent<T:Config>`, the resource that exists on-chain
   * `provider_msa_id`: `MsaId`
 
@@ -90,7 +89,7 @@ This extrinsic is responsible for storing the registered provider in the
 * **Parameters**
   * `origin`: `Origin`  required for all extrinsics, the caller/sender.
   * `registration_params`: `ProviderRegistrationParams`, the parameters to use for registration.
-* **Event**:  `Event::<T>::ProviderRegistrationEvent(provider_msa_id, provider_metadata)`
+* **Event**:  `Event::<T>::ProviderRegistrationEvent(provider_msa_id)`
 * **Restrictions**:
   * `origin`'s `msa_id` must have capacity to post the transaction (including fee) during the current epoch.
 
@@ -104,7 +103,7 @@ This extrinsic is responsible for deleting the registered provider's `MsaId` fro
 * **Parameters**
   * `origin`: `Origin`  required for all extrinsics, the caller/sender.
   * `deregistration_params`: `ProviderDeregistrationParams`, the parameters to use in the deregistration.
-* **Event**:  `Event::<T>::ProviderDeregistrationEvent(provider_msa_id, provider_name)`
+* **Event**:  `Event::<T>::ProviderDeregistrationEvent(provider_msa_id)`
 * **Restrictions**:
   * `origin`'s `msa_id` must have capacity to post the transaction during the current epoch.
 
