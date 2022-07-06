@@ -27,10 +27,15 @@ sp-io = {default-features = false, git = "https://github.com/paritytech/substrat
 sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
 sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
 sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
-serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+serde = { version = "1.0", default-features = false, features = ["alloc"] }
+serde-json-core = { version = "0.4.0" }
+# serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 
 # Frequency related dependencies
 common-primitives = {default-features = false, path = "../../common/primitives"}
+
+# [build-dependencies]
+# serde-json-core = {version  = "0.4.0", default-features = false, features = ["heapless"] }
 
 [dev-dependencies]
 sp-keyring = { default-features = false, version = '6.0.0'}
@@ -47,6 +52,7 @@ std = [
 	"sp-runtime/std",
 	"sp-std/std",
 	"sp-core/std",
+	"serde-json-core/std"
 ]
 
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
