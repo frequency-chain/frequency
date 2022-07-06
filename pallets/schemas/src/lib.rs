@@ -271,7 +271,7 @@ pub mod pallet {
 					model_type: schema.model_type,
 					payload_location: schema.payload_location,
 				};
-				return Some(response)
+				return Some(response);
 			}
 			None
 		}
