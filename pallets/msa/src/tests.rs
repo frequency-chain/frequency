@@ -786,6 +786,33 @@ fn revoke_provider_throws_errors() {
 }
 
 #[test]
+pub fn revoke_provider_call_has_correct_costs() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let provider_account = key_pair.public();
+
+		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+
+		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
+
+		assert_ok!(Msa::create(test_origin_signed(1)));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+		assert_ok!(Msa::add_provider_to_msa(
+			test_origin_signed(1),
+			provider_account.into(),
+			signature,
+			add_provider_payload
+		));
+
+		let call = Call::<Test>::revoke_msa_delegation_by_delegator { provider_msa_id: 2 };
+		let dispatch_info = call.get_dispatch_info();
+
+		assert_eq!(dispatch_info.pays_fee, Pays::No);
+	})
+}
+
+#[test]
 pub fn revoke_provider_throws_delegation_not_found_error() {
 	new_test_ext().execute_with(|| {
 		// 1. create two key pairs
