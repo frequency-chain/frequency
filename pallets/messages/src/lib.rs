@@ -183,8 +183,8 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
 
-			let schema_id_check = T::SchemaProvider::get_schema_by_id(schema_id);
-			ensure!(schema_id_check.is_some(), Error::<T>::InvalidSchemaId);
+			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
+			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
 
 			ensure!(
 				payload.len() < T::MaxMessagePayloadSizeBytes::get().try_into().unwrap(),
