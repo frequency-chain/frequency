@@ -295,7 +295,24 @@ pub mod pallet {
 }
 
 impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 		Self::get_schema_by_id(schema_id)
+	}
+	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
+	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
+	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
+	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
+	/// would like to avoid.
+	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
+	/// this method to return schema checks requested by the benchmark to also be some.
+	#[cfg(feature = "runtime-benchmarks")]
+	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+		Some(SchemaResponse {
+			schema_id,
+			model: "{}".as_bytes().to_vec(),
+			model_type: ModelType::default(),
+			payload_location: PayloadLocation::default(),
+		})
 	}
 }
