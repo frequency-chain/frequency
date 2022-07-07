@@ -1,6 +1,6 @@
 import assert from "assert";
 import { TypeRegistry } from "@polkadot/types";
-import { types } from "../index.js";
+import { types } from "../index";
 
 describe("types", function () {
   it("should be able to successfully register", function () {
