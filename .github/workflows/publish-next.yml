@@ -1,11 +1,11 @@
-name: Publish JS Frequency RPC Package @next
+name: Publish @next JS Frequency API Augment Package
 on:
   push:
     branches: [ main ]
     paths:
-      - 'js/api-augment'
+      - js/api-augment/**
 jobs:
-  test:
+  publish:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout

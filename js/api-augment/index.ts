@@ -3,6 +3,9 @@ import "./interfaces/augment-api";
 import "./interfaces/augment-types";
 import * as definitions from "./interfaces/definitions";
 
+/**
+ * Build up the types for ApiPromise.create
+ */
 export const types = Object.entries(definitions).reduce((acc, [_key, value]) => {
   return {
     ...acc,
@@ -10,6 +13,9 @@ export const types = Object.entries(definitions).reduce((acc, [_key, value]) => 
   }
 }, {})
 
+/**
+ * Build up the rpc calls for ApiPromise.create
+ */
 export const rpc = Object.entries(definitions).reduce((acc, [key, value]) => {
   return {
     ...acc,
@@ -17,6 +23,16 @@ export const rpc = Object.entries(definitions).reduce((acc, [key, value]) => {
   }
 }, {})
 
+/**
+ * Export for easy use with Polkadot API's ApiPromise
+ *
+ * ```javascript
+ * const api = await ApiPromise.create({
+ *    ...options,
+ *    provider
+ *  });
+ * ```
+ */
 export const options = {
   rpc,
   types
