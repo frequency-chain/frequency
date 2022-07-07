@@ -348,7 +348,7 @@ pub mod pallet {
 		/// - Returns [`DelegationNotFound`](Error::DelegationNotFound) if there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
 		/// - May also return []
 		///
-		#[pallet::weight(T::WeightInfo::revoke_msa_delegation_by_delegator())]
+		#[pallet::weight((T::WeightInfo::revoke_msa_delegation_by_delegator(), DispatchClass::Normal, Pays::No))]
 		pub fn revoke_msa_delegation_by_delegator(
 			origin: OriginFor<T>,
 			provider_msa_id: MessageSourceId,
