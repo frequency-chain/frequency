@@ -308,6 +308,8 @@ impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
 	/// this method to return schema checks requested by the benchmark to also be some.
 	#[cfg(feature = "runtime-benchmarks")]
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+		// To account for db read
+		Self::get_schema_by_id(schema_id);
 		Some(SchemaResponse {
 			schema_id,
 			model: "{}".as_bytes().to_vec(),
