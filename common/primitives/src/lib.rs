@@ -21,3 +21,5 @@ pub mod msa;
 pub mod schema;
 /// Structs and traits for the utility package.
 pub mod utils;
+/// Structs and traits for parquet
+pub mod parquet;

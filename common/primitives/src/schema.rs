@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use utils::*;
+use crate::parquet::Model;
 
 /// Schema Id is the unique identifier for a Schema
 pub type SchemaId = u16;
@@ -17,6 +18,8 @@ pub type SchemaId = u16;
 pub enum ModelType {
 	/// Message payload modeled with Apache Avro: https://avro.apache.org/docs/current/spec.html
 	AvroBinary,
+	/// Message payload modeled with Apache Parquet: https://parquet.apache.org/
+	Parquet,
 }
 
 impl Default for ModelType {
