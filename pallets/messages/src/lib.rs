@@ -183,13 +183,13 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
 
-			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
-			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
-
 			ensure!(
 				payload.len() < T::MaxMessagePayloadSizeBytes::get().try_into().unwrap(),
 				Error::<T>::ExceedsMaxMessagePayloadSizeBytes
 			);
+
+			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
+			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
