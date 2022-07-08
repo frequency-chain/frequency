@@ -1,12 +1,10 @@
 use super::*;
 use crate as pallet_tx_fee;
 use codec::Encode;
-use smallvec::smallvec;
 use sp_core::H256;
 use sp_runtime::{
 	testing::{Header, TestXt},
 	traits::{BlakeTwo256, IdentityLookup},
-	Perbill,
 };
 use std::cell::RefCell;
 
@@ -14,10 +12,7 @@ use frame_support::{
 	pallet_prelude::Get,
 	parameter_types,
 	traits::{ConstU32, ConstU64, Imbalance, OnUnbalanced},
-	weights::{
-		DispatchClass, GetDispatchInfo, Weight, WeightToFee as WeightToFeeT,
-		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
-	},
+	weights::{DispatchClass, GetDispatchInfo, Weight, WeightToFee as WeightToFeeT},
 };
 use frame_system as system;
 use pallet_balances::Call as BalancesCall;

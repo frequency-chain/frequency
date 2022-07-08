@@ -36,6 +36,10 @@
 //! - `register_schema` - Registers a new schema after some initial validation.
 //! - `set_max_schema_model_bytes` - Sets the maximum schema model size (Bytes) by governance.
 //!
+//! The Schema pallet implements the following traits:
+//!
+//! - [`SchemaProvider`](common_primitives::schema::SchemaProvider<SchemaId>): Functions for accessing and validating Schemas.  This implementation is what is used in the runtime.
+//!
 //! ## Genesis config
 //!
 //! The Schemas pallet depends on the [`GenesisConfig`].
@@ -49,8 +53,10 @@
 	missing_docs
 )]
 
+use common_primitives::schema::{
+	ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse,
+};
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
-
 #[cfg(test)]
 mod tests;
 
@@ -71,7 +77,7 @@ mod serde;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::schema::{ModelType, PayloadLocation, SchemaId, SchemaResponse};
+
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -285,5 +291,30 @@ pub mod pallet {
 			validated_schema.map_err(|_| Error::<T>::InvalidSchema)?;
 			Ok(())
 		}
+	}
+}
+
+impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+		Self::get_schema_by_id(schema_id)
+	}
+	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
+	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
+	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
+	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
+	/// would like to avoid.
+	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
+	/// this method to return schema checks requested by the benchmark to also be some.
+	#[cfg(feature = "runtime-benchmarks")]
+	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+		// To account for db read
+		Self::get_schema_by_id(schema_id);
+		Some(SchemaResponse {
+			schema_id,
+			model: "{}".as_bytes().to_vec(),
+			model_type: ModelType::default(),
+			payload_location: PayloadLocation::default(),
+		})
 	}
 }
