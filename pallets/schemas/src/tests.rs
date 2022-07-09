@@ -197,6 +197,6 @@ fn reject_not_object_json_schema() {
 			SchemasPallet::ensure_valid_schema(&create_bounded_schema_vec(test_str)),
 			Error::<Test>::InvalidSchema
 		);
-	})
+	}})
 }
 

@@ -1,6 +1,7 @@
-use serde_json_core::{from_slice, de::{Error, IgnoredAny}};
+use serde_json_core::{from_slice, de::{Error}};
+use sp_runtime::traits::UniqueSaturatedFrom;
 use sp_std::vec::Vec;
-use frame_support::{dispatch::{DispatchResult, DispatchError},assert_ok};
+use frame_support::assert_ok;
 
 
 // #[derive(Debug)]
@@ -11,7 +12,12 @@ pub enum SerdeError {
 
 pub fn validate_json_model(json_schema: Vec<u8>) -> Result<(), Error> {
 	// let result: (()), usize)  = from_slice(&json_schema).map_err(|e| SerdeError::InvalidSchema(e))?;
-	let result = from_slice::<()>(&json_schema)?;
+	struct Prop<'a> {
+		#[serde(borrow)]
+		tyoe: Option<&'a str>,
+	}
+
+	let result = from_slice::<Prop>(&json_schema)?;
 
 	Ok(())
 	// println!("{}",_result.unwrap());
@@ -50,12 +56,12 @@ fn serde_helper_invalid_schema() {
 	}
 }
 
-// #[test]
-// fn serde_helper_null_schema() {
-// 	let bad_schema = r#"{""}"#;
-// 	let result = validate_json_model(create_schema_vec(bad_schema));
-// 	assert!(result.is_err());
-// }
+#[test]
+fn serde_helper_null_schema() {
+	let bad_schema = r#"{""}"#;
+	let result = validate_json_model(create_schema_vec(bad_schema));
+	assert!(result.is_err());
+}
 
 #[test]
 fn serde_helper_utf8_encoding_schema() {
