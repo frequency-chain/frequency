@@ -23,14 +23,14 @@ impl Default for ParquetTemporalType {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 pub struct ParquetTime {
-  is_adjusted_to_UTC: bool,
+  is_adjusted_to_utc: bool,
   unit: ParquetTimeUnit
 }
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 pub struct ParquetTimestamp {
-  is_adjusted_to_UTC: bool,
+  is_adjusted_to_utc: bool,
   unit: ParquetTimeUnit
 }
 

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use utils::*;
-use crate::parquet::Model;
+use crate::parquet::ParquetModel;
 
 /// Schema Id is the unique identifier for a Schema
 pub type SchemaId = u16;
