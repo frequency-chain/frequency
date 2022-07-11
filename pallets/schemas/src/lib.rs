@@ -216,7 +216,10 @@ pub mod pallet {
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 
-			Self::is_valid_schema(&model)?;
+			ensure!(
+				serde::is_valid_schema(model.clone().into_inner()),
+				Error::<T>::InvalidSchema
+			);
 
 			let schema_id = Self::add_schema(model, model_type, payload_location)?;
 
@@ -297,7 +300,8 @@ pub mod pallet {
 				_ => Err(Error::<T>::InvalidSchema),
 			}?;
 
-			serde::validate_json_model(json_val).map_err(|_| Error::<T>::InvalidSchema)
+			// serde::validate_json_model(json_val).map_err(|_| Error::<T>::InvalidSchema)?;
+			Ok(())
 
 		}
 	}

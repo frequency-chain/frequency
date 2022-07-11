@@ -71,6 +71,20 @@ fn register_schema_happy_path() {
 }
 
 #[test]
+fn register_schema_unhappy_path() {
+	new_test_ext().execute_with(|| {
+		sudo_set_max_schema_size();
+		let sender: AccountId = 1;
+		assert_ok!(SchemasPallet::register_schema(
+			Origin::signed(sender),
+			create_bounded_schema_vec(r#"{"name", "type": "lost"}"#),
+			ModelType::AvroBinary,
+			PayloadLocation::OnChain
+		));
+	})
+}
+
+#[test]
 fn set_max_schema_size_works_if_root() {
 	new_test_ext().execute_with(|| {
 		let new_size: u32 = 42;
@@ -171,32 +185,5 @@ fn get_non_existing_schema_by_id_should_return_none() {
 		// assert
 		assert_eq!(res.as_ref().is_none(), true);
 	})
-}
-
-#[test]
-fn validate_schema_is_acceptable() {
-	new_test_ext().execute_with(|| {
-		let test_str_raw = r#"{"name":"John Doe"}"#;
-		let result = SchemasPallet::ensure_valid_schema(&create_bounded_schema_vec(test_str_raw));
-		assert_ok!(result);
-	});
-}
-
-#[test]
-fn reject_not_object_json_schema() {
-	new_test_ext().execute_with(|| {
-		for test_str in [
-			"true",
-			"",
-			r#"["apple",{"fruitName": "orange","fruitLike": true }]"#,
-			"5",
-			r#"{"hello""#,
-			r#"56}"#,
-		] {
-		assert_noop!(
-			SchemasPallet::ensure_valid_schema(&create_bounded_schema_vec(test_str)),
-			Error::<Test>::InvalidSchema
-		);
-	}})
 }
 

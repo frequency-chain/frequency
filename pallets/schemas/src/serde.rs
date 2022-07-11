@@ -1,34 +1,31 @@
-use serde_json_core::{from_slice, de::{Error}};
-use sp_runtime::traits::UniqueSaturatedFrom;
+use serde_json_core::from_slice;
 use sp_std::vec::Vec;
-use frame_support::assert_ok;
 
+pub fn is_valid_schema(json_schema: Vec<u8>) -> bool {
 
-// #[derive(Debug)]
-pub enum SerdeError {
-	InvalidSchema(),
-}
+	// The given json is wrapped with "{ }"
+	match json_schema.get(0) {
+		Some(123) => true, // Curly left "{"
+		_ => {return false},
+	};
 
+	match json_schema.get(json_schema.len() - 1) {
+		Some(125) =>true, // Curly right "}"
+		_ => {return false},
+	};
 
-pub fn validate_json_model(json_schema: Vec<u8>) -> Result<(), Error> {
-	// let result: (()), usize)  = from_slice(&json_schema).map_err(|e| SerdeError::InvalidSchema(e))?;
-	struct Prop<'a> {
-		#[serde(borrow)]
-		tyoe: Option<&'a str>,
+	match from_slice::<()>(&json_schema)
+
+	// .map_or_else(|_| false, |_| true)
+	// map(|_| true).or_else(false).unwrap()
+	{
+		Ok(_) => true,
+		value => { println!( "the value that fails: {:?}", value); return false},
 	}
 
-	let result = from_slice::<Prop>(&json_schema)?;
-
-	Ok(())
-	// println!("{}",_result.unwrap());
-	// Ok(())
-	// .map_err(|_| SerdeError::InvalidSchema()); // map error
-	// match result {
-	// 	Value::Null => Err(SerdeError::InvalidNullSchema()),
-	// 	_ => Ok(()),
-	// }
 }
 
+#[allow(dead_code)]
 fn create_schema_vec(from_string: &str) -> Vec<u8> {
 	Vec::from(from_string.as_bytes())
 }
@@ -36,12 +33,12 @@ fn create_schema_vec(from_string: &str) -> Vec<u8> {
 #[test]
 fn serde_helper_valid_schema() {
 	for test_str_raw in [
-		r#"{"name":"John Doe"}"#,
+		r#"{"type": "string", "name": "John Doe"}"#,
 		r#"{"minimum": -90,"maximum": 90}"#,
 		r#"{"a":0}"#,
 		r#"{"fruits":[ "apple",{"fruitName": "orange","fruitLike": true }]}"#,
 	] {
-		assert_ok!(validate_json_model(create_schema_vec(test_str_raw)));
+		assert!(is_valid_schema(create_schema_vec(test_str_raw)), " Failed test string {}", test_str_raw);
 	}
 }
 
@@ -51,21 +48,28 @@ fn serde_helper_invalid_schema() {
 		r#"{"name","John Doe"}"#,
 		r#"{"minimum": -90, 90}"#,
 		r#"{"fruits":[ "apple",{"fruitName": "orange" "fruitLike": true }}"#,
+		"true",
+		"",
+		r#"["apple",{"fruitName": "orange","fruitLike": true }]"#,
+		"5",
+		r#"{"hello""#,
+		r#"56}"#,
+		r#" { "type": "bool" } "#
 	] {
-		assert_ok!(validate_json_model(create_schema_vec(test_str_raw)));
+		assert_eq!(is_valid_schema(create_schema_vec(test_str_raw)), false);
 	}
 }
 
 #[test]
 fn serde_helper_null_schema() {
 	let bad_schema = r#"{""}"#;
-	let result = validate_json_model(create_schema_vec(bad_schema));
-	assert!(result.is_err());
+	let result = is_valid_schema(create_schema_vec(bad_schema));
+	assert_eq!(result, false);
 }
 
 #[test]
 fn serde_helper_utf8_encoding_schema() {
-	let bad_schema = r#"{"a":"Espíritu navideño"}"#;
-	let result = validate_json_model(create_schema_vec(bad_schema));
-	assert_ok!(result);
+	let utf_schema = r#"{"a":"Espíritu navideño"}"#;
+	let result = is_valid_schema(create_schema_vec(utf_schema));
+	assert_eq!(result, true);
 }
