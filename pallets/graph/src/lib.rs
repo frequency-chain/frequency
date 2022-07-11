@@ -27,7 +27,7 @@ use common_primitives::msa::MessageSenderId;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::storage::Storage;
+	use crate::storage::{GraphType, Storage};
 	use common_primitives::msa::MessageSenderId;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
@@ -116,6 +116,9 @@ pub mod pallet {
 
 		/// Event emitted when a follow has been removed. [who, staticId, staticId]
 		Unfollowed(T::AccountId, MessageSenderId, MessageSenderId),
+
+		/// Event emitted when a follow has been modified. [who, staticId]
+		Modified(T::AccountId, MessageSenderId),
 	}
 
 	#[pallet::call]
@@ -289,6 +292,36 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::weight((0, Pays::No))]
+		pub fn private_graph_update(
+			origin: OriginFor<T>,
+			from_static_id: MessageSenderId,
+			key: Vec<u8>,
+			page: u16,
+			value: Vec<u8>,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			// self follow is not permitted
+			let from_node = Self::get_node(from_static_id);
+			ensure!(from_node.is_some(), <Error<T>>::NoSuchNode);
+
+			let trie_id = from_node.unwrap().trie_id;
+
+			Storage::<T>::write_graph(
+				&trie_id,
+				GraphType::Private,
+				&Self::get_storage_key_vec(key),
+				page,
+				if value.len() > 0 { Some(value) } else { None},
+			)?;
+
+			Self::deposit_event(Event::Modified(sender, from_static_id));
+
+			log::debug!("modified: {:?}", from_static_id);
+			Ok(())
+		}
+
 		#[pallet::weight(T::WeightInfo::unfollow(*from_static_id as u32))]
 		pub fn unfollow3(
 			origin: OriginFor<T>,
@@ -333,6 +366,15 @@ impl<T: Config> Pallet<T> {
 			println!("{} to_le_bytes {:X?}", static_id, static_id.encode());
 		}
 		StorageKey::try_from(static_id.encode()).unwrap()
+	}
+
+	pub fn get_storage_key_vec(data: Vec<u8>) -> StorageKey {
+		#[cfg(test)]
+			{
+				use std::{println as info, println as warn};
+				println!("{:X?}", &data);
+			}
+		StorageKey::try_from(data).unwrap()
 	}
 
 	pub fn read_from_child_tree(static_id: MessageSenderId, key: StorageKey) -> Option<Vec<u8>> {

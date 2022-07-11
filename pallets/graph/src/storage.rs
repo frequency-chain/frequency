@@ -6,7 +6,7 @@ use frame_support::{
 };
 use log::log;
 use sp_core::crypto::UncheckedFrom;
-use sp_io::{default_child_storage, hashing::blake2_256};
+use sp_io::{default_child_storage, hashing::{blake2_256, twox_128}};
 use sp_runtime::{
 	traits::{BlakeTwo256, Hash},
 	DispatchError,
@@ -20,6 +20,11 @@ fn child_trie_info(trie_id: &[u8]) -> ChildInfo {
 
 fn blake2_128_concat(key: &[u8]) -> Vec<u8> {
 	Blake2_128Concat::hash(key)
+}
+
+pub enum GraphType {
+	Public,
+	Private,
 }
 
 pub struct Storage<T>(PhantomData<T>);
@@ -71,6 +76,27 @@ where
 		Ok(true)
 	}
 
+	pub fn write_graph(
+		trie_id: &TrieId,
+		graph: GraphType,
+		key: &StorageKey,
+		page: u16,
+		new_value: Option<Vec<u8>>,
+	) -> Result<bool, DispatchError> {
+
+		let child_trie_info = &child_trie_info(trie_id);
+		let whole_key = Self::get_whole_key(graph, Some(key), Some(page));
+
+		log::info!("trie_id: {:02x?} key: {:02x?}", trie_id.clone().into_inner(),  whole_key.clone());
+
+		match &new_value {
+			Some(new_value) => child::put_raw(child_trie_info, &whole_key, new_value),
+			None => child::kill(child_trie_info, &whole_key),
+		}
+
+		Ok(true)
+	}
+
 	pub fn iter_keys(trie_id: &TrieId) -> Vec<StorageKey> {
 		#[cfg(test)]
 		use std::{println as info, println as warn};
@@ -104,5 +130,38 @@ where
 		}
 
 		res
+	}
+
+	fn get_graph_key_prefix(graph: GraphType) -> Vec<u8> {
+		let mut k: Vec<u8> = vec![];
+		k.extend(&twox_128(b"G"));
+		match graph {
+			GraphType::Public => k.extend(&twox_128(b"B")),
+			GraphType::Private => k.extend(&twox_128(b"R")),
+		}
+		k
+	}
+
+	fn get_whole_key(graph: GraphType,
+					 key: Option<&StorageKey>,
+					 page: Option<u16>) -> Vec<u8> {
+		let prefix = Self::get_graph_key_prefix(graph);
+		let mut whole_key = vec![];
+		whole_key.extend_from_slice(prefix.as_ref());
+
+		match (key, page) {
+			(Some(k), Some(p)) => {
+				let hashed_key = blake2_128_concat(k);
+				whole_key.extend_from_slice(hashed_key.as_ref());
+				whole_key.extend(&p.blake2_128_concat());
+				whole_key
+			},
+			(Some(k), None) => {
+				let hashed_key = blake2_128_concat(k);
+				whole_key.extend_from_slice(hashed_key.as_ref());
+				whole_key
+			},
+			(_, _) => whole_key
+		}
 	}
 }
