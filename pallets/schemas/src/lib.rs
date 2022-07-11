@@ -216,11 +216,7 @@ pub mod pallet {
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 
-			ensure!(
-				Self::is_valid_schema(&model),
-				Error::<T>::InvalidSchema
-			);
-
+			Self::is_valid_schema(&model)?;
 
 			let schema_id = Self::add_schema(model, model_type, payload_location)?;
 
@@ -285,25 +281,23 @@ pub mod pallet {
 		/// Rejects malformed or null JSON
 		pub fn is_valid_schema(
 			schema: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
-		) -> Result<(), String> {
+		) -> Result<(), Error<T>> {
 
 
 			let json_val = schema.clone().into_inner();
-			let curly_left = "{".as_bytes().get(0);
-			let curly_right = "}".as_bytes().get(0);
 
 			// The given json is wrapped with "{ }"
 			match json_val.get(0) {
-				Some(curly_left) => Ok(()),
-				_ => Err("Unable to parse Json"),
+				Some(123) => Ok(()), // Curly left "{"
+				_ => Err(Error::<T>::InvalidSchema),
 			}?;
 
 			match json_val.get(json_val.len() - 1){
-				Some(curly_right) => Ok(()),
-				_ => Err("Unable to parse Json"),
+				Some(125) => Ok(()), // Curly right "}"
+				_ => Err(Error::<T>::InvalidSchema),
 			}?;
 
-			serde::validate_json_model(json_val).or(Err("Unable to parse Json".to_string()))
+			serde::validate_json_model(json_val).map_err(|_| Error::<T>::InvalidSchema)
 
 		}
 	}
