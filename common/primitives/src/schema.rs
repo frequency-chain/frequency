@@ -51,8 +51,8 @@ pub struct SchemaResponse {
 	/// The unique identifier for this Schema
 	pub schema_id: SchemaId,
 	/// The data that represents how this schema is structured
-	#[cfg_attr(feature = "std", serde(with = "as_string"))]
-	pub model: Vec<u8>,
+	#[cfg_attr(feature = "std", serde(with = "as_model"))]
+	pub model: ParquetModel,
 	/// The model format type for how the schema model is represented
 	pub model_type: ModelType,
 	/// The payload location
