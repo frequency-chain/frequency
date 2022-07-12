@@ -3,15 +3,17 @@ use sp_std::vec::Vec;
 
 #[derive(Debug)]
 pub enum SerdeError {
-	InvalidNullSchema(),
-	InvalidSchema(),
+	InvalidNullSchema,
+	InvalidSchema,
+	DeserializationError
 }
 
 pub fn validate_json_model(json_schema: Vec<u8>) -> Result<(), SerdeError> {
-	let result: Value = from_slice(&json_schema).map_err(|_| SerdeError::InvalidSchema())?; // map error
+	let result: Value = from_slice(&json_schema).map_err(|_| SerdeError::DeserializationError)?;
 	match result {
-		Value::Null => Err(SerdeError::InvalidNullSchema()),
-		_ => Ok(()),
+		Value::Null => Err(SerdeError::InvalidNullSchema),
+		Value::Object(_) => Ok(()),
+		_ => Err(SerdeError::InvalidSchema)
 	}
 }
 
@@ -40,6 +42,16 @@ fn serde_helper_invalid_schema() {
 	] {
 		assert!(validate_json_model(create_schema_vec(test_str_raw)).is_err());
 	}
+}
+
+#[test]
+fn serde_helper_deserialzer_error() {
+	assert!(
+		validate_json_model(create_schema_vec(r#"{"name","John Doe"}"#)).is_err());
+		assert_noop!(
+			validate_json_model(create_schema_vec(r#"{"name":"#)),
+			SerdeError::DeserializationError
+		)
 }
 
 #[test]
