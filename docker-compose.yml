@@ -4,7 +4,7 @@ version: '3'
 services:
   relay_alice:
     container_name: alice
-    image: "parity/polkadot:latest"
+    image: "centrifugeio/polkadot:verify-qemu-fix"
     hostname: relay_alice
     ports:
       - "30335:30335" # p2p port
@@ -29,11 +29,11 @@ services:
       --ws-external
       --rpc-methods=Unsafe
       --alice
-      --log="main,debug"
+      --log="main"
 
   relay_bob:
     container_name: bob
-    image: "parity/polkadot:latest"
+    image: "centrifugeio/polkadot:verify-qemu-fix"
     hostname: relay_bob
     ports:
       - "30336:30336" # p2p port

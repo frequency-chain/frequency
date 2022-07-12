@@ -496,6 +496,7 @@ impl pallet_messages::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_messages::weights::SubstrateWeight<Runtime>;
 	type AccountProvider = Msa;
+	type SchemaProvider = Schemas;
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type MaxMessagePayloadSizeBytes = MaxMessagePayloadSizeBytes;
 }

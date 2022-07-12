@@ -186,4 +186,3 @@ fn get_non_existing_schema_by_id_should_return_none() {
 		assert_eq!(res.as_ref().is_none(), true);
 	})
 }
-
