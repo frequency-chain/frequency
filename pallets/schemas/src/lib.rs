@@ -66,7 +66,7 @@ pub use pallet::*;
 pub mod weights;
 pub use types::*;
 pub use weights::*;
-mod serde;
+mod validator;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -217,7 +217,7 @@ pub mod pallet {
 			);
 
 			ensure!(
-				serde::is_valid_schema(model.clone().into_inner()),
+				validator::is_valid_json(model.clone().into_inner()),
 				Error::<T>::InvalidSchema
 			);
 
@@ -278,31 +278,6 @@ pub mod pallet {
 				return Some(response);
 			}
 			None
-		}
-
-		/// Ensures schema is a valid JSON before registering it
-		/// Rejects malformed or null JSON
-		pub fn is_valid_schema(
-			schema: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
-		) -> Result<(), Error<T>> {
-
-
-			let json_val = schema.clone().into_inner();
-
-			// The given json is wrapped with "{ }"
-			match json_val.get(0) {
-				Some(123) => Ok(()), // Curly left "{"
-				_ => Err(Error::<T>::InvalidSchema),
-			}?;
-
-			match json_val.get(json_val.len() - 1){
-				Some(125) => Ok(()), // Curly right "}"
-				_ => Err(Error::<T>::InvalidSchema),
-			}?;
-
-			// serde::validate_json_model(json_val).map_err(|_| Error::<T>::InvalidSchema)?;
-			Ok(())
-
 		}
 	}
 }
