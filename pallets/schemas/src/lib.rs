@@ -56,6 +56,7 @@
 use common_primitives::schema::{
 	ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse,
 };
+use common_primitives::parquet::ParquetModel;
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
 #[cfg(test)]
 mod tests;
@@ -77,7 +78,6 @@ mod serde;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -160,7 +160,7 @@ pub mod pallet {
 		_,
 		Twox64Concat,
 		SchemaId,
-		Schema<T::SchemaModelMaxBytesBoundedVecLimit>,
+		Schema,
 		OptionQuery,
 	>;
 
@@ -224,7 +224,8 @@ pub mod pallet {
 
 			Self::ensure_valid_schema(&model)?;
 
-			let schema_id = Self::add_schema(model, model_type, payload_location)?;
+			let model_: ParquetModel = serde_json::from_slice(&model.clone().into_inner()).unwrap();
+			let schema_id = Self::add_schema(model_, model_type, payload_location)?;
 
 			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
 			Ok(())
@@ -247,7 +248,7 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 		fn add_schema(
-			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+			model: ParquetModel,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
 		) -> Result<SchemaId, DispatchError> {
@@ -269,12 +270,10 @@ pub mod pallet {
 		/// Retrieve a schema by id
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			if let Some(schema) = Self::get_schema(schema_id) {
-				// this should get a BoundedVec out
-				let model_vec = schema.model.into_inner();
 
 				let response = SchemaResponse {
 					schema_id,
-					model: model_vec,
+					model: schema.model,
 					model_type: schema.model_type,
 					payload_location: schema.payload_location,
 				};

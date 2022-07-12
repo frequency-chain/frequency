@@ -1,6 +1,5 @@
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
 
@@ -13,8 +12,7 @@ pub mod compression_codec;
 use crate::parquet::types::ParquetType;
 use crate::parquet::compression_codec::CompressionCodec;
 
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize)]
 pub struct ParquetModel {
   _type: ParquetType,
   compression: CompressionCodec,
@@ -23,13 +21,3 @@ pub struct ParquetModel {
   optional: bool
 }
 
-pub trait Model {
-  fn get_serialized_data(&self) -> Vec<u8>;
-}
-
-impl Model for ParquetModel {
-  fn get_serialized_data(&self) -> Vec<u8> {
-    // TBD serialization
-    todo!()
-  }
-}
