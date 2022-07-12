@@ -75,12 +75,12 @@ fn register_schema_unhappy_path() {
 	new_test_ext().execute_with(|| {
 		sudo_set_max_schema_size();
 		let sender: AccountId = 1;
-		assert_ok!(SchemasPallet::register_schema(
+		assert_noop!(SchemasPallet::register_schema(
 			Origin::signed(sender),
-			create_bounded_schema_vec(r#"{"name", "type": "lost"}"#),
+			create_bounded_schema_vec(r#"["this","is","an","array"]"#), // not a json object type
 			ModelType::AvroBinary,
 			PayloadLocation::OnChain
-		));
+		), Error::<Test>::InvalidSchema);
 	})
 }
 
