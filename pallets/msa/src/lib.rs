@@ -154,6 +154,11 @@ pub mod pallet {
 			/// The key added to the MSA
 			key: T::AccountId,
 		},
+		/// An MSA has been retired by the user
+		MSARetired {
+			/// The MSA for the event
+			msa_id: MessageSourceId,
+		},
 		/// An AccountId has been associated with a MessageSourceId
 		KeyAdded {
 			/// The MSA for the Event
@@ -467,6 +472,17 @@ pub mod pallet {
 		/// - Returns ['NotMsaOwner'](Error::NotMsaOwner)
 		#[pallet::weight(T::WeightInfo::retire_my_msa())]
 		pub fn retire_my_msa(origin: OriginFor<T>) -> DispatchResult {
+
+			// fetch msa id from origin
+			let msa_owner = ensure_signed(origin)?;
+			let msa_id = Self::get_msa_id(&msa_owner);
+
+			// check if already retired
+			Self::ensure_current_msa(&msa_id)?;
+			// call self::retire_msa()
+			Self::retire_msa(&msa_id)?;
+			// Emit event to notify of retirement
+			Self::deposit_event(Event::MSARetired { msa_id });
 
 			Ok(())
 		}
