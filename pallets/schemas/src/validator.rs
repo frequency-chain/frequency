@@ -1,10 +1,9 @@
 use sp_std::vec::Vec;
 
 pub fn is_valid_json(json_schema: Vec<u8>) -> bool {
-	// The given json is wrapped with "{ }"
-	let t = (json_schema.first(), json_schema.last());
-	match t {
-		(Some(123), Some(125)) => true,
+	// The given json is wrapped with "{ }". Does not trim whitespaces
+	match json_schema[..] {
+		[b'{', .., b'}'] => true,
 		_ => false,
 	}
 }
