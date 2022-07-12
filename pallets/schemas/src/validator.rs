@@ -5,7 +5,7 @@ pub fn is_valid_json(json_schema: Vec<u8>) -> bool {
 	let t = (json_schema.first(), json_schema.last());
 	match t {
 		(Some(123), Some(125)) => true,
-		_ => false
+		_ => false,
 	}
 }
 
@@ -22,7 +22,11 @@ fn serde_helper_valid_schema() {
 		r#"{"a":0}"#,
 		r#"{"fruits":[ "apple",{"fruitName": "orange","fruitLike": true }]}"#,
 	] {
-		assert!(is_valid_json(create_schema_vec(test_str_raw)), " Failed test string {}", test_str_raw);
+		assert!(
+			is_valid_json(create_schema_vec(test_str_raw)),
+			" Failed test string {}",
+			test_str_raw
+		);
 	}
 }
 
@@ -35,7 +39,7 @@ fn serde_helper_invalid_schema() {
 		"5",
 		r#"{"hello""#,
 		r#"56}"#,
-		r#" { "type": "bool" } "#
+		r#" { "type": "bool" } "#,
 	] {
 		assert_eq!(is_valid_json(create_schema_vec(test_str_raw)), false);
 	}

@@ -75,12 +75,15 @@ fn register_schema_unhappy_path() {
 	new_test_ext().execute_with(|| {
 		sudo_set_max_schema_size();
 		let sender: AccountId = 1;
-		assert_noop!(SchemasPallet::register_schema(
-			Origin::signed(sender),
-			create_bounded_schema_vec(r#"["this","is","an","array"]"#), // not a json object type
-			ModelType::AvroBinary,
-			PayloadLocation::OnChain
-		), Error::<Test>::InvalidSchema);
+		assert_noop!(
+			SchemasPallet::register_schema(
+				Origin::signed(sender),
+				create_bounded_schema_vec(r#"["this","is","an","array"]"#), // not a json object type
+				ModelType::AvroBinary,
+				PayloadLocation::OnChain
+			),
+			Error::<Test>::InvalidSchema
+		);
 	})
 }
 
@@ -186,4 +189,3 @@ fn get_non_existing_schema_by_id_should_return_none() {
 		assert_eq!(res.as_ref().is_none(), true);
 	})
 }
-
