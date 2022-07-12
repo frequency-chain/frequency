@@ -22,11 +22,7 @@ fn serde_helper_valid_schema() {
 		r#"{"a":0}"#,
 		r#"{"fruits":[ "apple",{"fruitName": "orange","fruitLike": true }]}"#,
 	] {
-		assert!(
-			is_valid_json(create_schema_vec(test_str_raw)),
-			" Failed test string {}",
-			test_str_raw
-		);
+		assert!(is_valid_json(create_schema_vec(test_str_raw)));
 	}
 }
 
