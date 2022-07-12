@@ -474,13 +474,13 @@ pub mod pallet {
 		pub fn retire_my_msa(origin: OriginFor<T>) -> DispatchResult {
 
 			// fetch msa id from origin
-			let msa_owner = ensure_signed(origin)?;
-			let msa_id = Self::get_msa_id(&msa_owner);
+			let account_id = ensure_signed(origin)?;
+			let msa_id = Self::ensure_valid_msa_key(&account_id)?.msa_id.into();
 
 			// check if already retired
-			Self::ensure_current_msa(&msa_id)?;
+			Self::ensure_current_msa(msa_id)?;
 			// call self::retire_msa()
-			Self::retire_msa(&msa_id)?;
+			Self::retire_msa(msa_id)?;
 			// Emit event to notify of retirement
 			Self::deposit_event(Event::MSARetired { msa_id });
 
