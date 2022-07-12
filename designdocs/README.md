@@ -13,6 +13,8 @@ To create a new design document, Please see the [Design Doc README](https://gith
   * [Merged Pull Request](https://github.com/LibertyDSNP/frequency/pull/17)
 * [Provider Permissions and Grants](./provider_permissions.md)
   * [Merged Pull Request](https://github.com/LibertyDSNP/frequency/pull/150)
+* [Provider Registration](./provider_registration.md)
+  * [Merged Pull Request](https://github.com/LibertyDSNP/frequency/pull/208)
 
 ## Basic Data Model
 

@@ -1,6 +1,7 @@
 use crate as pallet_messages;
-use common_primitives::msa::{
-	AccountProvider, Delegator, KeyInfo, MessageSourceId, Provider, ProviderInfo,
+use common_primitives::{
+	msa::{AccountProvider, Delegator, KeyInfo, MessageSourceId, Provider, ProviderInfo},
+	schema::*,
 };
 use frame_support::{
 	dispatch::DispatchResult,
@@ -129,9 +130,33 @@ impl AccountProvider for AccountHandler {
 	}
 }
 
+pub struct SchemaHandler;
+impl SchemaProvider<u16> for SchemaHandler {
+	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+		if schema_id == 1 {
+			return Some(SchemaResponse {
+				schema_id: 1,
+				model: r#"schema1"#.to_string().as_bytes().to_vec(),
+				model_type: ModelType::AvroBinary,
+				payload_location: PayloadLocation::default(),
+			})
+		}
+		if schema_id == 2 {
+			return Some(SchemaResponse {
+				schema_id: 1,
+				model: r#"schema2"#.to_string().as_bytes().to_vec(),
+				model_type: ModelType::AvroBinary,
+				payload_location: PayloadLocation::default(),
+			})
+		}
+		None
+	}
+}
+
 impl pallet_messages::Config for Test {
 	type Event = Event;
 	type AccountProvider = AccountHandler;
+	type SchemaProvider = SchemaHandler;
 	type WeightInfo = ();
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type MaxMessagePayloadSizeBytes = MaxMessagePayloadSizeBytes;
