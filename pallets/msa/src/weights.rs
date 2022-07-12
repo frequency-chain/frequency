@@ -60,6 +60,7 @@ pub trait WeightInfo {
 	fn revoke_msa_key() -> Weight;
 	fn add_provider_to_msa() -> Weight;
 	fn revoke_msa_delegation_by_delegator() -> Weight;
+	fn retire_my_msa() -> Weight;
 }
 
 /// Weights for pallet_msa using the Substrate node and recommended hardware.
@@ -120,6 +121,12 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
+	//
+	fn retire_my_msa() -> Weight {
+		(0 as Weight)
+			.saturating_add(T::DbWeight::get().reads(0 as Weight))
+			.saturating_add(T::DbWeight::get().writes(0 as Weight))
+	}
 }
 
 // For backwards compatibility and tests
@@ -178,5 +185,11 @@ impl WeightInfo for () {
 		(34_000_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+	}
+	//
+	fn retire_my_msa() -> Weight {
+		(0 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(0 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(0 as Weight))
 	}
 }
