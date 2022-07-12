@@ -80,6 +80,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+	use sp_std::vec::Vec;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -160,7 +161,7 @@ pub mod pallet {
 		_,
 		Twox64Concat,
 		SchemaId,
-		Schema,
+		Schema<T::SchemaModelMaxBytesBoundedVecLimit>,
 		OptionQuery,
 	>;
 
@@ -222,10 +223,7 @@ pub mod pallet {
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 
-			Self::ensure_valid_schema(&model)?;
-
-			let model_: ParquetModel = serde_json::from_slice(&model.clone().into_inner()).unwrap();
-			let schema_id = Self::add_schema(model_, model_type, payload_location)?;
+			let schema_id = Self::add_schema(model, model_type, payload_location)?;
 
 			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
 			Ok(())
@@ -248,7 +246,7 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 		fn add_schema(
-			model: ParquetModel,
+			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
 		) -> Result<SchemaId, DispatchError> {
@@ -270,10 +268,16 @@ pub mod pallet {
 		/// Retrieve a schema by id
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			if let Some(schema) = Self::get_schema(schema_id) {
+				let model_vec: Vec<u8> = schema.model.into_inner();
+				if schema.model_type == ModelType::Parquet {
+					let p: ParquetModel = serde_json::from_slice(&model_vec).ok()?;
+				} else {
+					unimplemented!("Avro models not implemented yet.");
+				}
 
 				let response = SchemaResponse {
 					schema_id,
-					model: schema.model,
+					model: model_vec,
 					model_type: schema.model_type,
 					payload_location: schema.payload_location,
 				};
