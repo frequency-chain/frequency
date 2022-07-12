@@ -459,6 +459,17 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Current user can retire their own MSA, so that it cannot be used again.
+		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`MSARetired`](Event::MSARetired).
+		///
+		/// ### Errors
+		/// - Returns ['NotMsaOwner'](Error::NotMsaOwner)
+		#[pallet::weight(T::WeightInfo::retire_my_msa())]
+		pub fn retire_my_msa(origin: OriginFor<T>) -> DispatchResult {
+
+			Ok(())
+		}
 	}
 }
 
@@ -645,6 +656,23 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Disables given MSA by expiring it at the current block.
+	///
+	/// # Arguments
+	/// * `msa_id` - The user's MSA to be retired.
+	///
+	/// # Returns
+	/// * [`DispatchResult`]
+	///
+	/// # Errors
+	/// * [`Error::<T>::_`] - MSA is already retired
+	pub fn retire_msa(
+		msa_id: MessageSourceId
+	) -> DispatchResult {
+
+		Ok(())
+	}
+
 	/// Attempts to retrieve the key information for an account
 	/// # Arguments
 	/// * `key` - The `AccountId` you want to attempt to get information on
@@ -688,6 +716,14 @@ impl<T: Config> Pallet<T> {
 		ensure!(info.expired == T::BlockNumber::zero(), Error::<T>::KeyRevoked);
 
 		Ok(info)
+	}
+
+	/// Checks that an MSA is current and not retired.
+	pub fn ensure_current_msa(
+		msa_id: MessageSourceId
+	) -> Result<(), DispatchError> {
+
+		Ok(())
 	}
 }
 
