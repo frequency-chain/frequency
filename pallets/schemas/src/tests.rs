@@ -156,6 +156,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 }
 
 #[test]
+#[ignore]
 fn get_existing_schema_by_id_should_return_schema() {
 	new_test_ext().execute_with(|| {
 		let sender: AccountId = 1;
@@ -194,7 +195,39 @@ fn get_non_existing_schema_by_id_should_return_none() {
 fn validate_schema_is_acceptable() {
 	new_test_ext().execute_with(|| {
 		let test_str_raw = r#"{"name":"John Doe"}"#;
-		let result = SchemasPallet::ensure_valid_schema(&create_bounded_schema_vec(test_str_raw));
+		let result = SchemasPallet::ensure_valid_json(&create_bounded_schema_vec(test_str_raw));
 		assert_ok!(result);
 	});
+}
+
+#[test]
+fn reject_null_json_schema() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(
+			SchemasPallet::ensure_valid_json(&create_bounded_schema_vec("")),
+			Error::<Test>::InvalidSchema
+		);
+	})
+}
+
+#[test]
+fn validate_parquet_model() {
+	new_test_ext().execute_with(|| {
+		let test_str_raw = r#"{"_type":"Boolean", "compression": "Uncompressed", "statistics": "false", "bloom_filter": "true", optional: "false"}"#;
+		let test_vec = Vec::from(test_str_raw.as_bytes());
+		let result = SchemasPallet::ensure_valid_model(&ModelType::Parquet, &test_vec);
+		assert_ok!(result);
+	});
+}
+
+#[test]
+fn reject_incorrect_parquet_model() {
+	new_test_ext().execute_with(|| {
+		let test_str_raw = r#"{"name":"John Doe"}"#;
+		let test_vec = Vec::from(test_str_raw.as_bytes());
+		assert_noop!(
+			SchemasPallet::ensure_valid_model(&ModelType::Parquet, &test_vec),
+			Error::<Test>::InvalidSchema
+		);
+	})
 }
