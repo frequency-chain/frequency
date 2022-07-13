@@ -1,4 +1,7 @@
+#[cfg(test)]
 use super::mock::*;
+
+#[allow(unused_imports)]
 use frame_support::assert_noop;
 use serde_json::{from_slice, Value};
 use sp_std::vec::Vec;
