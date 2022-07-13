@@ -300,7 +300,7 @@ pub mod pallet {
 			model_vec: &Vec<u8>,
 		) -> DispatchResult {
 			if model_type == &ModelType::Parquet {
-				let p: ParquetModel = serde_json::from_slice(model_vec).map_err(|_| Error::<T>::InvalidSchema)?;
+				let _p: ParquetModel = serde_json::from_slice(model_vec).map_err(|_| Error::<T>::InvalidSchema)?;
 			} else {
 				unimplemented!("Avro models not implemented yet.");
 			}

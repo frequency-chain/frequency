@@ -3,9 +3,12 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
 
+/// Parquet numeric types: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize)]
 pub enum ParquetNumericType {
+  /// Integers
   Integer(ParquetInteger),
+  /// Decimals
   Decimal(ParquetDecimal)
 }
 
@@ -15,6 +18,7 @@ impl Default for ParquetNumericType {
 	}
 }
 
+/// Parquet Integers
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize)]
 pub struct ParquetInteger {
   bit_width: u8,
@@ -25,6 +29,7 @@ pub struct ParquetInteger {
   sign: bool
 }
 
+/// Parquet Decimals
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize)]
 pub struct ParquetDecimal {
   scale: u8,

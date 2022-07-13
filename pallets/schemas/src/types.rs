@@ -2,7 +2,6 @@
 use common_primitives::schema::{ModelType, PayloadLocation};
 use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
-use common_primitives::parquet::ParquetModel;
 
 use codec::{Decode, Encode, MaxEncodedLen};
 

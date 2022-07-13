@@ -1,8 +1,13 @@
 use crate::{Config, Error, Event as AnnouncementEvent};
 use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
+use common_primitives::parquet::ParquetModel;
+use common_primitives::parquet::types::ParquetType;
+use common_primitives::parquet::base::ParquetBaseType;
+use common_primitives::parquet::compression_codec::CompressionCodec;
 use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin, BoundedVec};
 use serial_test::serial;
 use sp_runtime::DispatchError::BadOrigin;
+use serde_json::json;
 
 use super::mock::*;
 
@@ -211,9 +216,21 @@ fn reject_null_json_schema() {
 }
 
 #[test]
+fn serialize_parquet_model() {
+	new_test_ext().execute_with(|| {
+		let p: ParquetModel = ParquetModel::new(
+			ParquetType::default(),
+			CompressionCodec::default(),
+			true
+		);
+		assert_eq!(serde_json::to_string(&p).unwrap(), r#"{"_type":"Boolean","compression":"Uncompressed","bloom_filter":true}"#);
+	})
+}
+
+#[test]
 fn validate_parquet_model() {
 	new_test_ext().execute_with(|| {
-		let test_str_raw = r#"{"_type":"Boolean", "compression": "Uncompressed", "statistics": "false", "bloom_filter": "true", optional: "false"}"#;
+		let test_str_raw = r#"{"_type": "Boolean", "compression": "Uncompressed", "bloom_filter": true}"#;
 		let test_vec = Vec::from(test_str_raw.as_bytes());
 		let result = SchemasPallet::ensure_valid_model(&ModelType::Parquet, &test_vec);
 		assert_ok!(result);
