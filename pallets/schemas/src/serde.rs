@@ -34,6 +34,11 @@ fn serde_helper_valid_schema() {
 		r#"{"minimum": -90,"maximum": 90}"#,
 		r#"{"a":0}"#,
 		r#"{"fruits":[ "apple",{"fruitName": "orange","fruitLike": true }]}"#,
+		r#"{ "links": {
+			"self": "http://example.com/articles?page[number]=3&page[size]=1",
+			"first": "http://example.com/articles?page[number]=1&page[size]=1"
+		  }}"#,
+		r#"{ "alias": "0xd8f3" }"#,
 	] {
 		assert!(validate_json_model(create_schema_vec(test_str_raw)).is_ok());
 	}
@@ -47,9 +52,9 @@ fn serde_helper_invalid_schema() {
 		r#"string"#,
 		"",
 		r#"["this","is","a","weird","array"],
-		r#"{"name","John Doe"}"#,
-		r#"{"minimum": -90, 90}"#,
-		r#"{"fruits":[ "apple",{"fruitName": "orange" "fruitLike": true }}"#,
+		r#"{ "name", "John Doe" }"#,
+		r#"{ "minimum": -90, 90 }"#,
+		r#"{ "fruits": [ "apple", {"fruitName": "orange" "fruitLike": true }}"#,
 	] {
 		assert!(validate_json_model(create_schema_vec(test_str_raw)).is_err());
 	}
@@ -58,10 +63,18 @@ fn serde_helper_invalid_schema() {
 #[test]
 fn serde_helper_deserialzer_error() {
 	new_test_ext().execute_with(|| {
-		assert_noop!(
-			validate_json_model(create_schema_vec(r#"{"name":"#)),
-			SerdeError::DeserializationError
-		);
+		for test_str_raw in [
+			r#"{ "name": "#,                          // ExpectedSomeValue
+			r#"{ 56: "number" }"#,                    // KeyMustBeAString
+			r#"{ "file address": "file path" \r\n}"#, // EofWhileParsingObject
+			r#"{ "unicode code point": "\ud83f" }"#,  // InvalidUnicodeCodePoint
+			r#"{ "v": 300e715100 }"#,                 // NumberOutOfRange
+		] {
+			assert_noop!(
+				validate_json_model(create_schema_vec(test_str_raw)),
+				SerdeError::DeserializationError
+			);
+		}
 	});
 }
 
