@@ -42,6 +42,7 @@ fn serde_helper_invalid_schema() {
 		"true",
 		"567",
 		r#"string"#,
+		"",
 		r#"["this","is","a","weird","array"],
 		r#"{"name","John Doe"}"#,
 		r#"{"minimum": -90, 90}"#,
