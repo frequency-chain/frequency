@@ -213,7 +213,6 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			Self::ensure_valid_schema(&model)?;
 			ensure!(
 				model.len() > T::MinSchemaModelSizeBytes::get() as usize,
 				Error::<T>::LessThanMinSchemaModelBytes
@@ -222,6 +221,8 @@ pub mod pallet {
 				model.len() < Self::get_schema_model_max_bytes() as usize,
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
+
+			Self::ensure_valid_schema(&model)?;
 
 			let schema_id = Self::add_schema(model, model_type, payload_location)?;
 
