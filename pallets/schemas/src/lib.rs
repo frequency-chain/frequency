@@ -72,7 +72,7 @@ pub use pallet::*;
 pub mod weights;
 pub use types::*;
 pub use weights::*;
-pub mod serde;
+mod serde;
 
 #[frame_support::pallet]
 pub mod pallet {
