@@ -223,6 +223,8 @@ pub mod pallet {
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 
+			Self::ensure_valid_schema(&model)?;
+
 			let schema_id = Self::add_schema(model, model_type, payload_location)?;
 
 			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
