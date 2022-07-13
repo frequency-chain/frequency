@@ -198,13 +198,3 @@ fn validate_schema_is_acceptable() {
 		assert_ok!(result);
 	});
 }
-
-#[test]
-fn reject_null_json_schema() {
-	new_test_ext().execute_with(|| {
-		assert_noop!(
-			SchemasPallet::ensure_valid_schema(&create_bounded_schema_vec("")),
-			Error::<Test>::InvalidSchema
-		);
-	})
-}
