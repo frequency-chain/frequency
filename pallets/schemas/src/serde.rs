@@ -1,11 +1,13 @@
+use super::mock::*;
+use frame_support::assert_noop;
 use serde_json::{from_slice, Value};
 use sp_std::vec::Vec;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum SerdeError {
 	InvalidNullSchema,
 	InvalidSchema,
-	DeserializationError
+	DeserializationError,
 }
 
 pub fn validate_json_model(json_schema: Vec<u8>) -> Result<(), SerdeError> {
@@ -13,10 +15,11 @@ pub fn validate_json_model(json_schema: Vec<u8>) -> Result<(), SerdeError> {
 	match result {
 		Value::Null => Err(SerdeError::InvalidNullSchema),
 		Value::Object(_) => Ok(()),
-		_ => Err(SerdeError::InvalidSchema)
+		_ => Err(SerdeError::InvalidSchema),
 	}
 }
 
+#[allow(dead_code)]
 fn create_schema_vec(from_string: &str) -> Vec<u8> {
 	Vec::from(from_string.as_bytes())
 }
@@ -36,6 +39,10 @@ fn serde_helper_valid_schema() {
 #[test]
 fn serde_helper_invalid_schema() {
 	for test_str_raw in [
+		"true",
+		"567",
+		r#"string"#,
+		r#"["this","is","a","weird","array"],
 		r#"{"name","John Doe"}"#,
 		r#"{"minimum": -90, 90}"#,
 		r#"{"fruits":[ "apple",{"fruitName": "orange" "fruitLike": true }}"#,
@@ -46,24 +53,24 @@ fn serde_helper_invalid_schema() {
 
 #[test]
 fn serde_helper_deserialzer_error() {
-	assert!(
-		validate_json_model(create_schema_vec(r#"{"name","John Doe"}"#)).is_err());
+	new_test_ext().execute_with(|| {
 		assert_noop!(
 			validate_json_model(create_schema_vec(r#"{"name":"#)),
 			SerdeError::DeserializationError
-		)
+		);
+	});
 }
 
 #[test]
 fn serde_helper_null_schema() {
-	let bad_schema = r#"{""}"#;
-	let result = validate_json_model(create_schema_vec(bad_schema));
-	assert!(result.is_err());
+	new_test_ext().execute_with(|| {
+		assert_noop!(validate_json_model(create_schema_vec("null")), SerdeError::InvalidNullSchema);
+	});
 }
 
 #[test]
 fn serde_helper_utf8_encoding_schema() {
-	let bad_schema = r#"{"a":"Espíritu navideño"}"#;
-	let result = validate_json_model(create_schema_vec(bad_schema));
+	let utf8_schema = r#"{"a":"Espíritu navideño"}"#;
+	let result = validate_json_model(create_schema_vec(utf8_schema));
 	assert!(result.is_ok());
 }
