@@ -27,7 +27,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"frequency_dev" => Box::new(chain_spec::frequency_local::development_config()),
 		"frequency_local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
 		"" | "local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
-		path => Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
+		path => Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(
+			std::path::PathBuf::from(path),
+		)?),
 	})
 }
 
