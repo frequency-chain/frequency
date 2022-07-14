@@ -1,5 +1,6 @@
 use crate::{Config, Error, Event as AnnouncementEvent};
 use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
+use common_primitives::parquet::ParquetModel;
 use common_primitives::parquet::column::ParquetColumn;
 use common_primitives::parquet::types::ParquetType;
 use common_primitives::parquet::base::ParquetBaseType;
@@ -216,7 +217,7 @@ fn reject_null_json_schema() {
 }
 
 #[test]
-fn serialize_parquet_model() {
+fn serialize_parquet_column() {
 	new_test_ext().execute_with(|| {
 		let p: ParquetColumn = ParquetColumn::new(
 			ParquetType::default(),
@@ -230,7 +231,7 @@ fn serialize_parquet_model() {
 #[test]
 fn validate_parquet_model() {
 	new_test_ext().execute_with(|| {
-		let test_str_raw = r#"{"_type": "Boolean", "compression": "Uncompressed", "bloom_filter": true}"#;
+		let test_str_raw = r#"[{"_type": "Boolean", "compression": "Uncompressed", "bloom_filter": true}]"#;
 		let test_vec = Vec::from(test_str_raw.as_bytes());
 		let result = SchemasPallet::ensure_valid_model(&ModelType::Parquet, &test_vec);
 		assert_ok!(result);
@@ -247,4 +248,16 @@ fn reject_incorrect_parquet_model() {
 			Error::<Test>::InvalidSchema
 		);
 	})
+}
+
+#[test]
+fn serialize_parquet_model() {
+	new_test_ext().execute_with(|| {
+		let p: ParquetModel = vec![ParquetColumn::new(
+			ParquetType::default(),
+			ColumnCompressionCodec::default(),
+			true
+		)];
+		assert_eq!(serde_json::to_string(&p).unwrap(), r#"[{"_type":"Boolean","compression":"Uncompressed","bloom_filter":true}]"#);
+	});
 }
