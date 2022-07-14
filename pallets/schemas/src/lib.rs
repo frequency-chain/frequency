@@ -294,7 +294,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Docs
+		/// Ensures that a given u8 Vector conforms to a recognized Parquet shape
 		pub fn ensure_valid_model(
 			model_type: &ModelType,
 			model_vec: &Vec<u8>,
