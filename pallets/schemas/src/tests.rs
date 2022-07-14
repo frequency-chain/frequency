@@ -3,7 +3,7 @@ use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
 use common_primitives::parquet::ParquetModel;
 use common_primitives::parquet::types::ParquetType;
 use common_primitives::parquet::base::ParquetBaseType;
-use common_primitives::parquet::compression_codec::CompressionCodec;
+use common_primitives::parquet::column_compression_codec::ColumnCompressionCodec;
 use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin, BoundedVec};
 use serial_test::serial;
 use sp_runtime::DispatchError::BadOrigin;
@@ -220,7 +220,7 @@ fn serialize_parquet_model() {
 	new_test_ext().execute_with(|| {
 		let p: ParquetModel = ParquetModel::new(
 			ParquetType::default(),
-			CompressionCodec::default(),
+			ColumnCompressionCodec::default(),
 			true
 		);
 		assert_eq!(serde_json::to_string(&p).unwrap(), r#"{"_type":"Boolean","compression":"Uncompressed","bloom_filter":true}"#);
