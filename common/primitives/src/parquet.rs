@@ -15,28 +15,6 @@ pub mod temporal;
 pub mod types;
 /// Importing all compression codec types
 pub mod column_compression_codec;
+/// Importing column type
+pub mod column;
 
-use crate::parquet::types::ParquetType;
-use crate::parquet::column_compression_codec::ColumnCompressionCodec;
-
-/// The model for Parquet data
-#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize)]
-pub struct ParquetModel {
-  /// Parquet type labels
-  _type: ParquetType,
-  /// Compression for column
-  compression: ColumnCompressionCodec,
-  /// Whether or not to use a bloom filter
-  bloom_filter: bool,
-}
-
-impl ParquetModel {
-  /// Creates instance of struct
-  pub fn new(_type: ParquetType, compression: ColumnCompressionCodec, bloom_filter: bool) -> ParquetModel {
-    ParquetModel {
-      _type,
-      compression,
-      bloom_filter
-    }
-  }
-}

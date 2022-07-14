@@ -56,7 +56,7 @@
 use common_primitives::schema::{
 	ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse,
 };
-use common_primitives::parquet::ParquetModel;
+use common_primitives::parquet::column::ParquetColumn;
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
 #[cfg(test)]
 mod tests;
@@ -300,7 +300,7 @@ pub mod pallet {
 			model_vec: &Vec<u8>,
 		) -> DispatchResult {
 			if model_type == &ModelType::Parquet {
-				let _p: ParquetModel = serde_json::from_slice(model_vec).map_err(|_| Error::<T>::InvalidSchema)?;
+				let _p: ParquetColumn = serde_json::from_slice(model_vec).map_err(|_| Error::<T>::InvalidSchema)?;
 			} else {
 				unimplemented!("Avro models not implemented yet.");
 			}

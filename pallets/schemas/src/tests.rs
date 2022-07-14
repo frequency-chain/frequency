@@ -1,6 +1,6 @@
 use crate::{Config, Error, Event as AnnouncementEvent};
 use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
-use common_primitives::parquet::ParquetModel;
+use common_primitives::parquet::column::ParquetColumn;
 use common_primitives::parquet::types::ParquetType;
 use common_primitives::parquet::base::ParquetBaseType;
 use common_primitives::parquet::column_compression_codec::ColumnCompressionCodec;
@@ -218,7 +218,7 @@ fn reject_null_json_schema() {
 #[test]
 fn serialize_parquet_model() {
 	new_test_ext().execute_with(|| {
-		let p: ParquetModel = ParquetModel::new(
+		let p: ParquetColumn = ParquetColumn::new(
 			ParquetType::default(),
 			ColumnCompressionCodec::default(),
 			true

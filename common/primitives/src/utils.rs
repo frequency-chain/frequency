@@ -1,5 +1,4 @@
 use sp_std::vec::Vec;
-use crate::parquet::ParquetModel;
 
 
 /// Handle serializing and deserializing from `Vec<u8>` to hexadecimal
@@ -37,23 +36,6 @@ pub mod as_string {
 	/// Serializes a UTF-8 string into a `Vec<u8>`
 	pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
 		Ok(String::deserialize(deserializer)?.into_bytes())
-	}
-}
-
-/// Handle serializing and deserializing from `Vec<u8>` to a UTF-8 string
-#[cfg(feature = "std")]
-pub mod as_model {
-	use super::*;
-	use serde::{ser::Error, Deserialize, Deserializer, Serialize, Serializer};
-
-	/// Serializes a `Parquet Model` into a UTF-8 string
-	pub fn serialize<S: Serializer>(model: &ParquetModel, serializer: S) -> Result<S::Ok, S::Error> {
-		model.serialize(serializer)
-	}
-
-	/// Serializes a UTF-8 string into a `Vec<u8>`
-	pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<ParquetModel, D::Error> {
-		Ok(ParquetModel::deserialize(deserializer)?)
 	}
 }
 
