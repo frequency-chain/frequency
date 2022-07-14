@@ -24,10 +24,12 @@ use std::net::SocketAddr;
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	Ok(match id {
-		"dev" => Box::new(chain_spec::development_config()),
-		"template-rococo" => Box::new(chain_spec::local_testnet_config()),
-		"" | "local" => Box::new(chain_spec::local_testnet_config()),
-		path => Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
+		"frequency_dev" => Box::new(chain_spec::frequency_local::development_config()),
+		"frequency_local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
+		"" | "local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
+		path => Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(
+			std::path::PathBuf::from(path),
+		)?),
 	})
 }
 
@@ -258,7 +260,7 @@ pub fn run() -> Result<()> {
 					None
 				};
 
-				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
+				let para_id = chain_spec::frequency_local::Extensions::try_get(&*config.chain_spec)
 					.map(|e| e.para_id)
 					.ok_or("Could not find parachain ID in chain-spec.")?;
 
