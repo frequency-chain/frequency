@@ -1,14 +1,7 @@
-//! Substrate Parachain Node Template CLI
+//! Substrate Frequency Node CLI
 
 #![warn(missing_docs)]
 
-mod chain_spec;
-#[macro_use]
-mod service;
-mod cli;
-mod command;
-mod rpc;
-
 fn main() -> sc_cli::Result<()> {
-	command::run()
+	frequency_cli::run()
 }
