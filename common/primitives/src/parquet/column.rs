@@ -1,11 +1,11 @@
-use crate::parquet::types::ParquetType;
-use crate::parquet::column_compression_codec::ColumnCompressionCodec;
-
 /// The model for Parquet data
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
+
+use crate::parquet::types::ParquetType;
+use crate::parquet::column_compression_codec::ColumnCompressionCodec;
 
 /// Encapsulation for a single Parquet column
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize)]

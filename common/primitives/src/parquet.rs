@@ -1,6 +1,3 @@
-use codec::{Decode, Encode, MaxEncodedLen};
-use scale_info::TypeInfo;
-use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
 
 /// Importing all base types
@@ -18,3 +15,7 @@ pub mod column_compression_codec;
 /// Importing column type
 pub mod column;
 
+use crate::parquet::column::ParquetColumn;
+
+/// Type for Parquet files. Files are just lists of columns.
+pub type ParquetModel = Vec<ParquetColumn>;
