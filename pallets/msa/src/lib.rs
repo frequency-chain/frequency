@@ -477,8 +477,16 @@ pub mod pallet {
 			let account_id = ensure_signed(origin)?;
 			let msa_id = Self::ensure_valid_msa_key(&account_id)?.msa_id.into();
 
+			// get keys for msa_id
+			// loop through and check the expiry
+			// then reject transaction and ask user to revoke all their keys first before trying to retire
+			// is that fair?
+
 			// check if already retired
 			Self::ensure_current_msa(msa_id)?;
+
+			// revoke delegation relationship
+
 			// call self::retire_msa()
 			Self::retire_msa(msa_id)?;
 			// Emit event to notify of retirement
@@ -685,7 +693,16 @@ impl<T: Config> Pallet<T> {
 	pub fn retire_msa(
 		msa_id: MessageSourceId
 	) -> DispatchResult {
+		// iterate through double map of provider, delegator (look at the docs)
+		// set to expire (block number to current)
+		//
 
+
+
+		// revoke key that signed the origin trans
+		// also get all keys and revoke them all
+		//
+		revoke_key();
 		Ok(())
 	}
 
@@ -739,6 +756,7 @@ impl<T: Config> Pallet<T> {
 		msa_id: MessageSourceId
 	) -> Result<(), DispatchError> {
 
+		//
 		Ok(())
 	}
 }
