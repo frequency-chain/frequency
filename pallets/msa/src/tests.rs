@@ -1,19 +1,27 @@
+use crate::mock::*;
 use crate::{
 	ensure,
-	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
-	Call, Config, DispatchResult, Error, Event, MsaIdentifier,
+	CheckProviderRevokation,
+	Config,
+	DispatchResult,
+	Error,
+	Event,
+	MsaIdentifier,
 };
 use common_primitives::{
-	msa::{Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo},
+	msa::{Delegator, KeyInfo, KeyInfoResponse, MessageSourceId, Provider, ProviderInfo},
 	utils::wrap_binary_data,
 };
 use frame_support::{
 	assert_noop, assert_ok,
-	weights::{GetDispatchInfo, Pays},
+	weights::{DispatchInfo, GetDispatchInfo, Pays},
 };
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
-use sp_runtime::MultiSignature;
+use sp_runtime::{
+	traits::SignedExtension,
+	MultiSignature,
+};
 
 #[test]
 fn it_creates_an_msa_account() {
@@ -55,7 +63,7 @@ fn it_does_not_allow_duplicate_keys() {
 #[test]
 fn it_create_has_weight() {
 	new_test_ext().execute_with(|| {
-		let call = Call::<Test>::create {};
+		let call = MsaCall::<Test>::create {};
 		let dispatch_info = call.get_dispatch_info();
 
 		assert!(dispatch_info.weight > 10_000);
@@ -805,7 +813,7 @@ pub fn revoke_provider_call_has_correct_costs() {
 			add_provider_payload
 		));
 
-		let call = Call::<Test>::revoke_msa_delegation_by_delegator { provider_msa_id: 2 };
+		let call = MsaCall::<Test>::revoke_msa_delegation_by_delegator { provider_msa_id: 2 };
 		let dispatch_info = call.get_dispatch_info();
 
 		assert_eq!(dispatch_info.pays_fee, Pays::No);
@@ -885,7 +893,7 @@ pub fn remove_delegation_by_provider_happy_path() {
 #[test]
 pub fn remove_msa_delegation_call_has_correct_costs() {
 	new_test_ext().execute_with(|| {
-		let call = Call::<Test>::remove_delegation_by_provider { delegator: 2 };
+		let call = MsaCall::<Test>::remove_delegation_by_provider { delegator: 2 };
 		let dispatch_info = call.get_dispatch_info();
 
 		assert_eq!(dispatch_info.pays_fee, Pays::No);
@@ -985,62 +993,35 @@ pub fn delegation_expired() {
 
 #[test]
 fn signed_extension_revoke_msa_delegation_by_delegator() {
-	let (key_pair, _) = sr25519::Pair::generate();
-	let provider_account = key_pair.public();
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let provider_account = key_pair.public();
 
-	let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
-	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
-	let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
+		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
-	assert_ok!(Msa::create(test_origin_signed(1)));
-	assert_ok!(Msa::create(Origin::signed(provider_account.into())));
-	assert_ok!(Msa::add_provider_to_msa(
-		test_origin_signed(1),
-		provider_account.into(),
-		signature,
-		add_provider_payload
-	));
+		assert_ok!(Msa::create(test_origin_signed(1)));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+		assert_ok!(Msa::add_provider_to_msa(
+			test_origin_signed(1),
+			provider_account.into(),
+			signature,
+			add_provider_payload
+		));
 
-	let call_revoke_delegation: &<Test as frame_system::Config>::Call =
-		&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator {});
-
-	// ExtBuilder::default()
-	// 	.balance_factor(20)
-	// 	.base_weight(5)
-	// 	.build()
-	// 	.execute_with(|| {
-	// 		let call_revoke_delegator: &<Test as frame_system::Config>::Call =
-	// 			&Call::revoke_msa_delegation_by_delegator {
-	// 				test_origin_signed(1),
-
-	// 			};
-
-	// 		let len = 10;
-
-	// 		let res = pallet_capacity::Pallet::<Test>::create_capacity(
-	// 			Origin::signed(test_pub(1)),
-	// 			1,
-	// 			100,
-	// 		);
-
-	// 		assert_ok!(res);
-
-	// 		let capacity_balance = pallet_capacity::Accounts::<Test>::get(1).available;
-
-	// 		assert_eq!(capacity_balance, 100);
-
-	// 		let res = ChargeTransactionPayment::<Test>::from(0).validate(
-	// 			&test_pub(1),
-	// 			call_create_account,
-	// 			&info_from_weight(5),
-	// 			len,
-	// 		);
-
-	// 		println!("result error ------------------ {:?}", res);
-	// 		res.unwrap();
-
-	// 		let capacity_balance = pallet_capacity::Accounts::<Test>::get(1u32).available;
-	// 		assert_eq!(capacity_balance, 80);
-	// 	});
+		let provider: MessageSourceId = 2;
+		let call_revoke_delegation: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id: provider});
+		let info = DispatchInfo::default();
+		let len = 0_usize;
+		let result = CheckProviderRevokation::<Test>::new().validate(
+			&test_public(1),
+			call_revoke_delegation,
+			&info,
+			len,
+		);
+		assert_ok!(result);
+	});
 }

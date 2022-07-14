@@ -59,7 +59,7 @@ use codec::{Decode, Encode};
 use common_primitives::msa::{
 	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo,
 };
-use frame_support::{dispatch::DispatchResult, ensure, weights::DispatchInfo};
+use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -243,7 +243,6 @@ pub mod pallet {
 		///
 		#[pallet::weight(T::WeightInfo::create(10_000))]
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
-			log::info!("msa::create extrinsic");
 			let who = ensure_signed(origin)?;
 
 			let (_, _) = Self::create_account(who.clone(), |new_msa_id| -> DispatchResult {
@@ -356,7 +355,6 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			provider_msa_id: MessageSourceId,
 		) -> DispatchResult {
-			log::info!("Entering extrinsic: revoke_msa_delegation_by_delegator");
 			let delegator_key = ensure_signed(origin)?;
 
 			let delegator_msa_id: Delegator =
@@ -749,6 +747,13 @@ impl<T: Config> AccountProvider for Pallet<T> {
 #[scale_info(skip_type_params(T))]
 pub struct CheckProviderRevokation<T: Config + Send + Sync>(PhantomData<T>);
 
+impl<T: Config + Send + Sync> CheckProviderRevokation<T> {
+	/// Create new `SignedExtension` to check runtime version.
+	pub fn new() -> Self {
+		Self(sp_std::marker::PhantomData)
+	}
+}
+
 impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckProviderRevokation<T> {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
@@ -762,7 +767,7 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckProviderRevokation<T> 
 
 impl<T: Config + Send + Sync> SignedExtension for CheckProviderRevokation<T>
 where
-	T::Call: Dispatchable<Info = DispatchInfo>,
+	T::Call: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
 {
 	type AccountId = T::AccountId;
 	type Call = T::Call;
@@ -771,7 +776,6 @@ where
 	const IDENTIFIER: &'static str = "CheckProviderRevokation";
 
 	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
-		log::info!("CheckProviderRevokation additional_signed()");
 		Ok(())
 	}
 
@@ -782,63 +786,29 @@ where
 		info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
-		log::info!("CheckProviderRevokation pre_dispatch()");
 		self.validate(who, call, info, len).map(|_| ())
 	}
 
 	fn validate(
 		&self,
 		who: &Self::AccountId,
-		_call: &Self::Call,
+		call: &Self::Call,
 		_info: &DispatchInfoOf<Self::Call>,
 		_len: usize,
 	) -> TransactionValidity {
-		// Check call meta data to see if the revoke_msa_delegation_by_delegator extrinsic was called
-		// If not, return ValidTransaction
-		// If the call is revoke_msa_delegation_by_delegator
-		//    If provider_msa_id key exists as a provider return ValidTransaction
-		//    If there is no provider delegated, return InvalidTransaction error
-		// let metadata = _call.get_call_metadata();
-		// let (pallet_name, function_name) = (metadata.pallet_name, metadata.function_name);
+		match call.is_sub_type() {
+			Some(Call::revoke_msa_delegation_by_delegator { provider_msa_id, .. }) => {
+				let delegator_msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(&who)
+					.map_err(|_| InvalidTransaction::Payment)?
+					.msa_id
+					.into();
+				let provider_msa_id = Provider(*provider_msa_id);
 
-		// if (pallet_name == "pallet_msa" && function_name == "revoke_msa_delegation_by_delegator") {
-		// 	let delegator_msa_id: Delegator = Self::ensure_valid_msa_key(&who)?.msa_id.into();
-		// 	let provider_msa_id = Provider(provider_msa_id);
-		// 	ensure_valid_delegation(provider_msa_id, delegator_msa_id)
-		// }
-
-		log::info!("CheckProviderRevokation validate()");
-		log::info!("who");
-		log::info!("{:?}", who);
-		log::info!("_call");
-		log::info!("{:?}", _call);
-		log::info!("_info");
-		log::info!("{:?}", _info);
-		log::info!("_len");
-		log::info!("{}", _len);
-		Ok(ValidTransaction::default())
+				Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id)
+					.map_err(|_| InvalidTransaction::Payment)?;
+				return Ok(Default::default())
+			},
+			_ => return Ok(Default::default()),
+		}
 	}
-
-	// fn validate(
-	// 	&self,
-	// 	who: &Self::AccountId,
-	// 	call: &Self::Call,
-	// 	_info: &DispatchInfoOf<Self::Call>,
-	// 	_len: usize,
-	// ) -> TransactionValidity {
-	// 	match call.is_sub_type() {
-	// 		Some(Call::revoke_msa_delegation_by_delegator { provider_msa_id, .. }) => {
-	// 			let delegator_msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(&who)
-	// 				.map_err(|_| InvalidTransaction::Payment)?
-	// 				.msa_id
-	// 				.into();
-	// 			let provider_msa_id = Provider(provider_msa_id);
-
-	// 			Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id)
-	// 				.map_err(|_| InvalidTransaction::Payment)?;
-	// 			return Ok(Default::default())
-	// 		},
-	// 		_ => return Ok(Default::default()),
-	// 	}
-	// }
 }
