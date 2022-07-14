@@ -1,5 +1,6 @@
 use crate as pallet_msa;
 use frame_support::{
+	dispatch::{DispatchInfo, PostDispatchInfo, Weight},
 	parameter_types,
 	traits::{ConstU16, ConstU64},
 };
@@ -10,6 +11,9 @@ use sp_runtime::{
 	traits::{BlakeTwo256, ConvertInto, IdentifyAccount, IdentityLookup, Verify},
 	AccountId32, MultiSignature,
 };
+use std::cell::RefCell;
+
+pub use pallet_msa::Call as MsaCall;
 
 pub type AccountId = <<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId;
 
@@ -91,4 +95,60 @@ pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 	ext.register_extension(KeystoreExt(Arc::new(KeyStore::new()) as SyncCryptoStorePtr));
 
 	ext
+}
+pub struct ExtBuilder {
+	balance_factor: u64,
+	base_weight: u64,
+	byte_fee: u64,
+	weight_to_fee: u64,
+}
+
+impl Default for ExtBuilder {
+	fn default() -> Self {
+		Self { balance_factor: 1, base_weight: 0, byte_fee: 1, weight_to_fee: 1 }
+	}
+}
+
+// https://www.sitepoint.com/rust-global-variables/
+thread_local! {
+	static EXTRINSIC_BASE_WEIGHT: RefCell<u64> = RefCell::new(0);
+}
+
+impl ExtBuilder {
+	pub fn base_weight(mut self, base_weight: u64) -> Self {
+		self.base_weight = base_weight;
+
+		self
+	}
+
+	pub fn balance_factor(mut self, factor: u64) -> Self {
+		self.balance_factor = factor;
+		self
+	}
+
+	fn set_constants(&self) {
+		EXTRINSIC_BASE_WEIGHT.with(|v| *v.borrow_mut() = self.base_weight);
+		TRANSACTION_BYTE_FEE.with(|v| *v.borrow_mut() = self.byte_fee);
+		WEIGHT_TO_FEE.with(|v| *v.borrow_mut() = self.weight_to_fee);
+	}
+
+	pub fn build(self) -> sp_io::TestExternalities {
+		self.set_constants();
+		let t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+
+		let mut ext = sp_io::TestExternalities::new(t);
+		ext.execute_with(|| System::set_block_number(1));
+		ext
+
+		//t.into()
+	}
+}
+
+pub fn info_from_weight(w: Weight) -> DispatchInfo {
+	// pays_fee: Pays::Yes -- class: DispatchClass::Normal
+	DispatchInfo { weight: w, ..Default::default() }
+}
+
+pub fn post_info_from_weight(w: Weight) -> PostDispatchInfo {
+	PostDispatchInfo { actual_weight: Some(w), pays_fee: Default::default() }
 }
