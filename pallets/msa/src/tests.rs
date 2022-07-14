@@ -1,13 +1,8 @@
-use crate::mock::*;
 use crate::{
 	ensure,
+	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
-	CheckProviderRevokation,
-	Config,
-	DispatchResult,
-	Error,
-	Event,
-	MsaIdentifier,
+	CheckProviderRevokation, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
 	msa::{Delegator, KeyInfo, KeyInfoResponse, MessageSourceId, Provider, ProviderInfo},
@@ -18,10 +13,7 @@ use frame_support::{
 	weights::{DispatchInfo, GetDispatchInfo, Pays},
 };
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
-use sp_runtime::{
-	traits::SignedExtension,
-	MultiSignature,
-};
+use sp_runtime::{traits::SignedExtension, MultiSignature};
 
 #[test]
 fn it_creates_an_msa_account() {
@@ -1013,7 +1005,7 @@ fn signed_extension_revoke_msa_delegation_by_delegator() {
 
 		let provider: MessageSourceId = 2;
 		let call_revoke_delegation: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id: provider});
+			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id: provider });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result = CheckProviderRevokation::<Test>::new().validate(
