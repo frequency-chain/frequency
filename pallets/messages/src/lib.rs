@@ -79,6 +79,9 @@ pub mod pallet {
 		/// A type that will supply account related information.
 		type AccountProvider: AccountProvider<AccountId = Self::AccountId>;
 
+		/// A type that will supply schema related information.
+		type SchemaProvider: SchemaProvider<SchemaId>;
+
 		/// The maximum number of messages in a block.
 		#[pallet::constant]
 		type MaxMessagesPerBlock: Get<u32>;
@@ -131,6 +134,8 @@ pub mod pallet {
 		TypeConversionOverflow,
 		/// Invalid Message Source Account
 		InvalidMessageSourceAccount,
+		/// Invalid SchemaId or Schema not found
+		InvalidSchemaId,
 		/// UnAuthorizedDelegate
 		UnAuthorizedDelegate,
 	}
@@ -182,6 +187,9 @@ pub mod pallet {
 				payload.len() < T::MaxMessagePayloadSizeBytes::get().try_into().unwrap(),
 				Error::<T>::ExceedsMaxMessagePayloadSizeBytes
 			);
+
+			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
+			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 

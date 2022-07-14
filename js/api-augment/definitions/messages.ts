@@ -1,20 +1,18 @@
 export default {
   rpc: {
-    messages: {
-      getBySchema: {
-        description: "Get messages by schemaId paginated",
-        params: [
-          {
-            name: "schema_id",
-            type: "SchemaId",
-          },
-          {
-            name: "pagination",
-            type: "BlockPaginationRequest",
-          },
-        ],
-        type: "BlockPaginationResponseMessage",
-      },
+    getBySchema: {
+      description: "Get messages by schemaId paginated",
+      params: [
+        {
+          name: "schema_id",
+          type: "SchemaId",
+        },
+        {
+          name: "pagination",
+          type: "BlockPaginationRequest",
+        },
+      ],
+      type: "BlockPaginationResponseMessage",
     },
   },
   types: {

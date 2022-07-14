@@ -71,6 +71,23 @@ fn register_schema_happy_path() {
 }
 
 #[test]
+fn register_schema_unhappy_path() {
+	new_test_ext().execute_with(|| {
+		sudo_set_max_schema_size();
+		let sender: AccountId = 1;
+		assert_noop!(
+			SchemasPallet::register_schema(
+				Origin::signed(sender),
+				create_bounded_schema_vec(r#"{"name", 54, "type": "none"}"#),
+				ModelType::AvroBinary,
+				PayloadLocation::OnChain
+			),
+			Error::<Test>::InvalidSchema
+		);
+	})
+}
+
+#[test]
 fn set_max_schema_size_works_if_root() {
 	new_test_ext().execute_with(|| {
 		let new_size: u32 = 42;
@@ -180,14 +197,4 @@ fn validate_schema_is_acceptable() {
 		let result = SchemasPallet::ensure_valid_schema(&create_bounded_schema_vec(test_str_raw));
 		assert_ok!(result);
 	});
-}
-
-#[test]
-fn reject_null_json_schema() {
-	new_test_ext().execute_with(|| {
-		assert_noop!(
-			SchemasPallet::ensure_valid_schema(&create_bounded_schema_vec("")),
-			Error::<Test>::InvalidSchema
-		);
-	})
 }

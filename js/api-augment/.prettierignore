@@ -2,7 +2,6 @@
 package.json
 build/*
 coverage/*
-src/guards.ts
 multimodules/*
 /*.d.ts
 /*.map

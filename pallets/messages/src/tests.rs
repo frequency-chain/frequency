@@ -429,3 +429,22 @@ fn add_message_via_non_delegate_should_fail() {
 		assert_eq!(list.len(), 0);
 	});
 }
+
+#[test]
+fn add_message_with_invalid_schema_id_should_error() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 5;
+		let schema_id_1: SchemaId = 3;
+		let message_payload_1 = Vec::from(
+			"{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}"
+				.as_bytes(),
+		);
+
+		// act
+		assert_err!(
+			MessagesPallet::add(Origin::signed(caller_1), None, schema_id_1, message_payload_1),
+			Error::<Test>::InvalidSchemaId
+		);
+	});
+}
