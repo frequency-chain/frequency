@@ -2,7 +2,7 @@
 authors = ["Frequency Team"]
 description = "Pallet for creating MSA"
 edition = "2021"
-homepage = "https://unfinishedlabs.io/"
+homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = "pallet-msa"
 publish = false
