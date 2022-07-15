@@ -7,6 +7,7 @@ use sp_std::prelude::*;
 #[derive(
 	Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize,
 )]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ColumnCompressionCodec {
 	/// Uncompressed
 	Uncompressed,

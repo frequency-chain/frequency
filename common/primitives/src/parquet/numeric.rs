@@ -3,6 +3,7 @@ use sp_std::prelude::*;
 
 /// Parquet numeric types: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md
 #[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum ParquetNumericType {
 	/// Integers
 	Integer(ParquetInteger),
@@ -10,17 +11,13 @@ pub enum ParquetNumericType {
 	Decimal(ParquetDecimal),
 }
 
-// impl Default for ParquetNumericType {
-// 	fn default() -> Self {
-// 		Self::Integer(ParquetInteger::default())
-// 	}
-// }
-
 /// Parquet Integers
 #[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]
 pub struct ParquetInteger {
-	bit_width: u8,
-	sign: bool,
+	/// The number of bits allocated to the parquet integer
+	pub bit_width: u8,
+	/// Whether the integer is signed
+	pub sign: bool,
 }
 
 /// Parquet Decimals

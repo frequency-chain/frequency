@@ -3,6 +3,7 @@ use sp_std::prelude::*;
 
 /// Base types
 #[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ParquetBaseType {
 	/// Encapsulates true / false values
 	Boolean,
