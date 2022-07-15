@@ -12,15 +12,14 @@ pub enum ParquetNumericType {
 	Decimal(ParquetDecimal),
 }
 
-impl Default for ParquetNumericType {
-	fn default() -> Self {
-		Self::Integer(ParquetInteger::default())
-	}
-}
+// impl Default for ParquetNumericType {
+// 	fn default() -> Self {
+// 		Self::Integer(ParquetInteger::default())
+// 	}
+// }
 
 /// Parquet Integers
 #[derive(
-	Default,
 	Clone,
 	PartialEq,
 	Debug,
@@ -35,7 +34,6 @@ pub struct ParquetInteger {
 
 /// Parquet Decimals
 #[derive(
-	Default,
 	Clone,
 	PartialEq,
 	Debug,

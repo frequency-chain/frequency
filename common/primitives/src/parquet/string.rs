@@ -13,9 +13,3 @@ pub enum ParquetStringType {
 	/// Parquet UUIDs
 	UUID,
 }
-
-// impl Default for ParquetStringType {
-// 	fn default() -> Self {
-// 		Self::String
-// 	}
-// }

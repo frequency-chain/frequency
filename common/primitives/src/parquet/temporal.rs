@@ -16,15 +16,8 @@ pub enum ParquetTemporalType {
 	Timestamp(ParquetTimestamp),
 }
 
-impl Default for ParquetTemporalType {
-	fn default() -> Self {
-		Self::Timestamp(ParquetTimestamp::default())
-	}
-}
-
 /// Parquet time: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md
 #[derive(
-	Default,
 	Clone,
 	PartialEq,
 	Debug,
@@ -39,7 +32,6 @@ pub struct ParquetTime {
 
 /// Parquet timestamps: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md
 #[derive(
-	Default,
 	Clone,
 	PartialEq,
 	Debug,
@@ -63,10 +55,4 @@ enum ParquetTimeUnit {
 	MICROS,
 	/// nanoseconds
 	NANOS,
-}
-
-impl Default for ParquetTimeUnit {
-	fn default() -> Self {
-		Self::MILLIS
-	}
 }
