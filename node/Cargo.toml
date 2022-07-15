@@ -1,5 +1,5 @@
 [package]
-name = "frequency-node"
+name = "frequency"
 version = "0.1.0"
 authors = ["Frequency Team"]
 description = "Substrate node for Frequency"
@@ -10,7 +10,7 @@ edition = "2021"
 build = "build.rs"
 
 [[bin]]
-name = "frequency-collator"
+name = "frequency"
 path = "src/main.rs"
 
 [dependencies]

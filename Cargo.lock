@@ -2728,6 +2728,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "frequency"
+version = "0.1.0"
+dependencies = [
+ "frequency-cli",
+ "frequency-runtime",
+ "sc-cli",
+ "substrate-build-script-utils",
+]
+
+[[package]]
 name = "frequency-cli"
 version = "0.1.0"
 dependencies = [
@@ -2757,16 +2767,6 @@ dependencies = [
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.25)",
  "substrate-build-script-utils",
  "try-runtime-cli",
-]
-
-[[package]]
-name = "frequency-node"
-version = "0.1.0"
-dependencies = [
- "frequency-cli",
- "frequency-runtime",
- "sc-cli",
- "substrate-build-script-utils",
 ]
 
 [[package]]
