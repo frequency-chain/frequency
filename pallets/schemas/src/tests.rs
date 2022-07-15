@@ -220,18 +220,19 @@ fn reject_null_json_schema() {
 fn serialize_parquet_column() {
 	new_test_ext().execute_with(|| {
 		let p: ParquetColumn = ParquetColumn::new(
+			"Foo".to_string(),
 			ParquetType::default(),
 			ColumnCompressionCodec::default(),
 			true
 		);
-		assert_eq!(serde_json::to_string(&p).unwrap(), r#"{"_type":"Boolean","compression":"Uncompressed","bloom_filter":true}"#);
+		assert_eq!(serde_json::to_string(&p).unwrap(), r#"{"name":"Foo","_type":"Boolean","compression":"Uncompressed","bloom_filter":true}"#);
 	})
 }
 
 #[test]
 fn validate_parquet_model() {
 	new_test_ext().execute_with(|| {
-		let test_str_raw = r#"[{"_type": "Boolean", "compression": "Uncompressed", "bloom_filter": true}]"#;
+		let test_str_raw = r#"[{"name": "Foo", "_type": "Boolean", "compression": "Uncompressed", "bloom_filter": true}]"#;
 		let test_vec = Vec::from(test_str_raw.as_bytes());
 		let result = SchemasPallet::ensure_valid_model(&ModelType::Parquet, &test_vec);
 		assert_ok!(result);
@@ -254,10 +255,11 @@ fn reject_incorrect_parquet_model() {
 fn serialize_parquet_model() {
 	new_test_ext().execute_with(|| {
 		let p: ParquetModel = vec![ParquetColumn::new(
+			"Baz".to_string(),
 			ParquetType::default(),
 			ColumnCompressionCodec::default(),
 			true
 		)];
-		assert_eq!(serde_json::to_string(&p).unwrap(), r#"[{"_type":"Boolean","compression":"Uncompressed","bloom_filter":true}]"#);
+		assert_eq!(serde_json::to_string(&p).unwrap(), r#"[{"name":"Baz","_type":"Boolean","compression":"Uncompressed","bloom_filter":true}]"#);
 	});
 }
