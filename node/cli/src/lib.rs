@@ -1,7 +1,6 @@
 //! Frequency CLI library.
 
-#[allow(missing_docs)] 
-
+#[allow(missing_docs)]
 #[cfg(feature = "cli")]
 mod cli;
 #[cfg(feature = "cli")]
