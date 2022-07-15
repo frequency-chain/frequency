@@ -11,12 +11,18 @@ pub enum ColumnCompressionCodec {
 	/// The compression used in the Bloom filter
 	/// NOTE: more research required here
 	Uncompressed,
+	/// Snappy, aka Zippy, compression
 	Snappy,
+	/// Gzip compression
 	Gzip,
+	/// Lempel-Zip-Obenhumer compression: https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Oberhumer
 	Lzo,
+	/// Brotli compression
 	Brotli,
+	/// Zstandard compression: https://en.wikipedia.org/wiki/Zstd
 	ZSTD,
-	LZ4_RAW,
+	/// Lz4 compression without block headers
+	Lz4Raw,
 }
 
 impl Default for ColumnCompressionCodec {
