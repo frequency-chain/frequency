@@ -1,6 +1,5 @@
 use sp_std::vec::Vec;
 
-
 /// Handle serializing and deserializing from `Vec<u8>` to hexadecimal
 #[cfg(feature = "std")]
 pub mod as_hex {
