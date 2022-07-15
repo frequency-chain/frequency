@@ -295,12 +295,10 @@ pub mod pallet {
 		}
 
 		/// Ensures that a given u8 Vector conforms to a recognized Parquet shape
-		pub fn ensure_valid_model(model_type: &ModelType, model_vec: &Vec<u8>) -> DispatchResult {
+		pub fn ensure_valid_model(model_type: &ModelType, model: &Vec<u8>) -> DispatchResult {
 			if model_type == &ModelType::Parquet {
 				let _p: ParquetModel =
-					serde_json::from_slice(model_vec).map_err(|_| Error::<T>::InvalidSchema)?;
-			} else {
-				unimplemented!("Avro models not implemented yet.");
+					serde_json::from_slice(model).map_err(|_| Error::<T>::InvalidSchema)?;
 			}
 			Ok(())
 		}
