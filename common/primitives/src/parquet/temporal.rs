@@ -2,9 +2,7 @@ use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
 
 /// Parquet temporal types: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md
-#[derive(
-	Clone, PartialEq, Debug, Eq, Serialize, Deserialize,
-)]
+#[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]
 pub enum ParquetTemporalType {
 	/// Parquet dates
 	Date,
@@ -17,37 +15,21 @@ pub enum ParquetTemporalType {
 }
 
 /// Parquet time: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md
-#[derive(
-	Clone,
-	PartialEq,
-	Debug,
-	Eq,
-	Serialize,
-	Deserialize,
-)]
+#[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]
 pub struct ParquetTime {
 	is_adjusted_to_utc: bool,
 	unit: ParquetTimeUnit,
 }
 
 /// Parquet timestamps: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md
-#[derive(
-	Clone,
-	PartialEq,
-	Debug,
-	Eq,
-	Serialize,
-	Deserialize,
-)]
+#[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]
 pub struct ParquetTimestamp {
 	is_adjusted_to_utc: bool,
 	unit: ParquetTimeUnit,
 }
 
 /// Units of time
-#[derive(
-	Clone, PartialEq, Debug, Eq, Serialize, Deserialize,
-)]
+#[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]
 enum ParquetTimeUnit {
 	/// milliseconds
 	MILLIS,

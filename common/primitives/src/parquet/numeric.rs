@@ -2,9 +2,7 @@ use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
 
 /// Parquet numeric types: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md
-#[derive(
-	Clone, PartialEq, Debug, Eq, Serialize, Deserialize,
-)]
+#[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]
 pub enum ParquetNumericType {
 	/// Integers
 	Integer(ParquetInteger),
@@ -19,28 +17,14 @@ pub enum ParquetNumericType {
 // }
 
 /// Parquet Integers
-#[derive(
-	Clone,
-	PartialEq,
-	Debug,
-	Eq,
-	Serialize,
-	Deserialize,
-)]
+#[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]
 pub struct ParquetInteger {
 	bit_width: u8,
 	sign: bool,
 }
 
 /// Parquet Decimals
-#[derive(
-	Clone,
-	PartialEq,
-	Debug,
-	Eq,
-	Serialize,
-	Deserialize,
-)]
+#[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]
 pub struct ParquetDecimal {
 	scale: u8,
 

@@ -214,8 +214,6 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			Self::ensure_valid_json(&model)?;
-
 			ensure!(
 				model.len() > T::MinSchemaModelSizeBytes::get() as usize,
 				Error::<T>::LessThanMinSchemaModelBytes
@@ -225,6 +223,7 @@ pub mod pallet {
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 
+			Self::ensure_valid_model(&model_type, &model)?;
 			let schema_id = Self::add_schema(model, model_type, payload_location)?;
 
 			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
@@ -271,7 +270,6 @@ pub mod pallet {
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			if let Some(schema) = Self::get_schema(schema_id) {
 				let model_vec: Vec<u8> = schema.model.into_inner();
-				Self::ensure_valid_model(&schema.model_type, &model_vec).ok()?;
 
 				let response = SchemaResponse {
 					schema_id,
@@ -284,21 +282,17 @@ pub mod pallet {
 			None
 		}
 
-		/// Ensures schema is a valid JSON before registering it
-		/// Rejects malformed or null JSON
-		pub fn ensure_valid_json(
-			schema: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
-		) -> DispatchResult {
-			let validated_schema = serde::validate_json_model(schema.clone().into_inner());
-			validated_schema.map_err(|_| Error::<T>::InvalidSchema)?;
-			Ok(())
-		}
-
 		/// Ensures that a given u8 Vector conforms to a recognized Parquet shape
-		pub fn ensure_valid_model(model_type: &ModelType, model: &Vec<u8>) -> DispatchResult {
+		pub fn ensure_valid_model(
+			model_type: &ModelType,
+			model: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+		) -> DispatchResult {
 			if model_type == &ModelType::Parquet {
 				let _p: ParquetModel =
 					serde_json::from_slice(model).map_err(|_| Error::<T>::InvalidSchema)?;
+			} else if model_type == &ModelType::AvroBinary {
+				serde::validate_json_model(model.clone().into_inner())
+					.map_err(|_| Error::<T>::InvalidSchema)?;
 			}
 			Ok(())
 		}

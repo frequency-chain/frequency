@@ -8,9 +8,7 @@ use crate::parquet::{
 };
 
 /// Encapsulates label types for Parquet
-#[derive(
-	Clone, PartialEq, Debug, Eq, Serialize, Deserialize,
-)]
+#[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ParquetType {
 	/// Base types (bool, int, etc)

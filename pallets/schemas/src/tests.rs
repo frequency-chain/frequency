@@ -85,6 +85,7 @@ fn register_schema_unhappy_path() {
 		assert_noop!(
 			SchemasPallet::register_schema(
 				Origin::signed(sender),
+				// name key does not have a colon
 				create_bounded_schema_vec(r#"{"name", 54, "type": "none"}"#),
 				ModelType::AvroBinary,
 				PayloadLocation::OnChain
@@ -163,7 +164,6 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 }
 
 #[test]
-#[ignore]
 fn get_existing_schema_by_id_should_return_schema() {
 	new_test_ext().execute_with(|| {
 		let sender: AccountId = 1;
@@ -202,7 +202,10 @@ fn get_non_existing_schema_by_id_should_return_none() {
 fn validate_schema_is_acceptable() {
 	new_test_ext().execute_with(|| {
 		let test_str_raw = r#"{"name":"John Doe"}"#;
-		let result = SchemasPallet::ensure_valid_json(&create_bounded_schema_vec(test_str_raw));
+		let result = SchemasPallet::ensure_valid_model(
+			&ModelType::AvroBinary,
+			&create_bounded_schema_vec(test_str_raw),
+		);
 		assert_ok!(result);
 	});
 }
@@ -211,7 +214,10 @@ fn validate_schema_is_acceptable() {
 fn reject_null_json_schema() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(
-			SchemasPallet::ensure_valid_json(&create_bounded_schema_vec("")),
+			SchemasPallet::ensure_valid_model(
+				&ModelType::AvroBinary,
+				&create_bounded_schema_vec("")
+			),
 			Error::<Test>::InvalidSchema
 		);
 	})
@@ -237,8 +243,7 @@ fn serialize_parquet_column() {
 fn validate_parquet_model() {
 	new_test_ext().execute_with(|| {
 		let test_str_raw = r#"[{"name": "Foo", "type": "Boolean", "compression": "Uncompressed", "bloom_filter": true}]"#;
-		let test_vec = Vec::from(test_str_raw.as_bytes());
-		let result = SchemasPallet::ensure_valid_model(&ModelType::Parquet, &test_vec);
+		let result = SchemasPallet::ensure_valid_model(&ModelType::Parquet, &create_bounded_schema_vec(test_str_raw));
 		assert_ok!(result);
 	});
 }
@@ -247,9 +252,11 @@ fn validate_parquet_model() {
 fn reject_incorrect_parquet_model() {
 	new_test_ext().execute_with(|| {
 		let test_str_raw = r#"{"name":"John Doe"}"#;
-		let test_vec = Vec::from(test_str_raw.as_bytes());
 		assert_noop!(
-			SchemasPallet::ensure_valid_model(&ModelType::Parquet, &test_vec),
+			SchemasPallet::ensure_valid_model(
+				&ModelType::Parquet,
+				&create_bounded_schema_vec(test_str_raw)
+			),
 			Error::<Test>::InvalidSchema
 		);
 	})
