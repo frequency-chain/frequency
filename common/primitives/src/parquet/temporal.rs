@@ -7,7 +7,7 @@ use sp_std::prelude::*;
 pub enum ParquetTemporalType {
 	/// Parquet dates
 	Date,
-	/// Parquet intervals
+	/// Parquet intervals: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#interval
 	Interval,
 	/// Time
 	Time(ParquetTime),
@@ -33,10 +33,10 @@ pub struct ParquetTimestamp {
 #[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 enum ParquetTimeUnit {
-	/// milliseconds
+	/// Millisecond precision for time: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#time
 	Millis,
-	/// microseconds
+	/// Microsecond precision for time: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#time
 	Micros,
-	/// nanoseconds
+	/// Manosecond precision for time: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#time
 	Nanos,
 }
