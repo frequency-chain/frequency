@@ -1,11 +1,9 @@
-use codec::{Decode, Encode, MaxEncodedLen};
-use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
 
 /// Parquet temporal types: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md
 #[derive(
-	Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize,
+	Clone, PartialEq, Debug, Eq, Serialize, Deserialize,
 )]
 pub enum ParquetTemporalType {
 	/// Parquet dates
@@ -28,13 +26,9 @@ impl Default for ParquetTemporalType {
 #[derive(
 	Default,
 	Clone,
-	Encode,
-	Decode,
 	PartialEq,
 	Debug,
-	TypeInfo,
 	Eq,
-	MaxEncodedLen,
 	Serialize,
 	Deserialize,
 )]
@@ -47,13 +41,9 @@ pub struct ParquetTime {
 #[derive(
 	Default,
 	Clone,
-	Encode,
-	Decode,
 	PartialEq,
 	Debug,
-	TypeInfo,
 	Eq,
-	MaxEncodedLen,
 	Serialize,
 	Deserialize,
 )]
@@ -64,7 +54,7 @@ pub struct ParquetTimestamp {
 
 /// Units of time
 #[derive(
-	Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize,
+	Clone, PartialEq, Debug, Eq, Serialize, Deserialize,
 )]
 enum ParquetTimeUnit {
 	/// milliseconds

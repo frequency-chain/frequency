@@ -1,11 +1,9 @@
-use codec::{Decode, Encode, MaxEncodedLen};
-use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
 
 /// Parquet numeric types: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md
 #[derive(
-	Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize,
+	Clone, PartialEq, Debug, Eq, Serialize, Deserialize,
 )]
 pub enum ParquetNumericType {
 	/// Integers
@@ -24,22 +22,14 @@ impl Default for ParquetNumericType {
 #[derive(
 	Default,
 	Clone,
-	Encode,
-	Decode,
 	PartialEq,
 	Debug,
-	TypeInfo,
 	Eq,
-	MaxEncodedLen,
 	Serialize,
 	Deserialize,
 )]
 pub struct ParquetInteger {
 	bit_width: u8,
-
-	// Note: If we want the default to be signed/unsigned, we should add an
-	// explicit default value here:
-	// #[derivative(Default(value = "false"))]
 	sign: bool,
 }
 
@@ -47,13 +37,9 @@ pub struct ParquetInteger {
 #[derive(
 	Default,
 	Clone,
-	Encode,
-	Decode,
 	PartialEq,
 	Debug,
-	TypeInfo,
 	Eq,
-	MaxEncodedLen,
 	Serialize,
 	Deserialize,
 )]

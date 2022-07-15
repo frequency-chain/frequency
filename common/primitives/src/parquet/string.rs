@@ -1,5 +1,3 @@
-use codec::{Decode, Encode, MaxEncodedLen};
-use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
 
@@ -7,7 +5,7 @@ use sp_std::prelude::*;
 /// NOTE: We are not supporting ENUMs yet.
 
 #[derive(
-	Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize,
+	Clone, PartialEq, Debug, Eq, Serialize, Deserialize,
 )]
 pub enum ParquetStringType {
 	/// Parquet strings
@@ -16,8 +14,8 @@ pub enum ParquetStringType {
 	UUID,
 }
 
-impl Default for ParquetStringType {
-	fn default() -> Self {
-		Self::String
-	}
-}
+// impl Default for ParquetStringType {
+// 	fn default() -> Self {
+// 		Self::String
+// 	}
+// }

@@ -8,8 +8,7 @@ use sp_std::prelude::*;
 	Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize,
 )]
 pub enum ColumnCompressionCodec {
-	/// The compression used in the Bloom filter
-	/// NOTE: more research required here
+	/// Uncompressed
 	Uncompressed,
 	/// Snappy, aka Zippy, compression
 	Snappy,

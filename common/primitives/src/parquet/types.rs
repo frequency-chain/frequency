@@ -1,5 +1,3 @@
-use codec::{Decode, Encode, MaxEncodedLen};
-use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
 
@@ -11,7 +9,7 @@ use crate::parquet::{
 
 /// Encapsulates label types for Parquet
 #[derive(
-	Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize,
+	Clone, PartialEq, Debug, Eq, Serialize, Deserialize,
 )]
 #[serde(untagged)]
 pub enum ParquetType {
