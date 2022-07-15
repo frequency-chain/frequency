@@ -1,7 +1,6 @@
 //! Frequency CLI library.
 
-#![warn(missing_docs)]
-#![warn(unused_extern_crates)]
+#[allow(missing_docs)] 
 
 #[cfg(feature = "cli")]
 mod cli;
