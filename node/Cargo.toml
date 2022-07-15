@@ -2,9 +2,9 @@
 name = "frequency-node"
 version = "0.1.0"
 authors = ["Frequency Team"]
-description = "Substrate node for frequency"
+description = "Substrate node for Frequency"
 license = "Apache-2.0"
-homepage = "https://unfinishedlabs.io/"
+homepage = "https://frequency.xyz"
 repository = "https://github.com/LibertyDSNP/frequency/"
 edition = "2021"
 build = "build.rs"
