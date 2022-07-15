@@ -233,6 +233,27 @@ fn it_revokes_msa_key_successfully() {
 	})
 }
 
+// newtest
+#[test]
+fn it_retires_msa_id_successfully() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(Msa::create());
+		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
+
+		assert_ok!(Msa::retire_my_msa(test_origin_signed(1)));
+
+		let info = Msa::get_msa_id(&test_public(2));
+
+		// have to check expired from..
+	})
+}
+
+// newtest
+#[test]
+fn it_retires_msa_and_removes_delegations_successfully() {
+
+}
+
 #[test]
 pub fn test_get_owner_of() {
 	new_test_ext().execute_with(|| {

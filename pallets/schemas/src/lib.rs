@@ -286,7 +286,7 @@ pub mod pallet {
 		/// Rejects malformed or null JSON
 		pub fn ensure_valid_schema(
 			schema: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
-		) -> DispatchResult {
+		) -> Result<(), Error> {
 			let validated_schema = serde::validate_json_model(schema.clone().into_inner());
 			validated_schema.map_err(|_| Error::<T>::InvalidSchema)?;
 			Ok(())
