@@ -6,12 +6,14 @@ use sp_std::prelude::*;
 /// Parquet String types: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md
 /// NOTE: We are not supporting ENUMs yet.
 
-#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize)]
+#[derive(
+	Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize,
+)]
 pub enum ParquetStringType {
 	/// Parquet strings
-  String,
+	String,
 	/// Parquet UUIDs
-  UUID
+	UUID,
 }
 
 impl Default for ParquetStringType {

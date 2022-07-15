@@ -16,9 +16,9 @@
 pub mod messages;
 /// Structs and traits for the MSA pallet.
 pub mod msa;
+/// Structs and traits for parquet
+pub mod parquet;
 /// Structs and traits for the Schema pallet
 pub mod schema;
 /// Structs and traits for the utility package.
 pub mod utils;
-/// Structs and traits for parquet
-pub mod parquet;

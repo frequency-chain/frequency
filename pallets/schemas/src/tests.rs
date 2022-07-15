@@ -1,14 +1,15 @@
 use crate::{Config, Error, Event as AnnouncementEvent};
-use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
-use common_primitives::parquet::ParquetModel;
-use common_primitives::parquet::column::ParquetColumn;
-use common_primitives::parquet::types::ParquetType;
-use common_primitives::parquet::base::ParquetBaseType;
-use common_primitives::parquet::column_compression_codec::ColumnCompressionCodec;
+use common_primitives::{
+	parquet::{
+		base::ParquetBaseType, column::ParquetColumn,
+		column_compression_codec::ColumnCompressionCodec, types::ParquetType, ParquetModel,
+	},
+	schema::{ModelType, PayloadLocation, SchemaId},
+};
 use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin, BoundedVec};
+use serde_json::json;
 use serial_test::serial;
 use sp_runtime::DispatchError::BadOrigin;
-use serde_json::json;
 
 use super::mock::*;
 
@@ -223,9 +224,12 @@ fn serialize_parquet_column() {
 			"Foo".to_string(),
 			ParquetType::default(),
 			ColumnCompressionCodec::default(),
-			true
+			true,
 		);
-		assert_eq!(serde_json::to_string(&p).unwrap(), r#"{"name":"Foo","type":"Boolean","compression":"Uncompressed","bloom_filter":true}"#);
+		assert_eq!(
+			serde_json::to_string(&p).unwrap(),
+			r#"{"name":"Foo","type":"Boolean","compression":"Uncompressed","bloom_filter":true}"#
+		);
 	})
 }
 
@@ -258,8 +262,11 @@ fn serialize_parquet_model() {
 			"Baz".to_string(),
 			ParquetType::default(),
 			ColumnCompressionCodec::default(),
-			true
+			true,
 		)];
-		assert_eq!(serde_json::to_string(&p).unwrap(), r#"[{"name":"Baz","type":"Boolean","compression":"Uncompressed","bloom_filter":true}]"#);
+		assert_eq!(
+			serde_json::to_string(&p).unwrap(),
+			r#"[{"name":"Baz","type":"Boolean","compression":"Uncompressed","bloom_filter":true}]"#
+		);
 	});
 }
