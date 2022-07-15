@@ -8,7 +8,13 @@ use sp_std::prelude::*;
 pub enum ColumnCompressionCodec {
 	/// The compression used in the Bloom filter
 	/// NOTE: more research required here
-  Uncompressed
+  Uncompressed,
+	Snappy,
+	Gzip,
+	Lzo,
+	Brotli,
+	ZSTD,
+	LZ4_RAW
 }
 
 impl Default for ColumnCompressionCodec {
