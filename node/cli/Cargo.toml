@@ -1,17 +1,12 @@
 [package]
-name = "frequency-node"
+name = "frequency-cli"
 version = "0.1.0"
 authors = ["Frequency Team"]
-description = "Substrate node for frequency"
+description = "Substrate cli for frequency node"
 license = "Apache-2.0"
 homepage = "https://unfinishedlabs.io/"
 repository = "https://github.com/LibertyDSNP/frequency/"
 edition = "2021"
-build = "build.rs"
-
-[[bin]]
-name = "frequency-collator"
-path = "src/main.rs"
 
 [dependencies]
 clap = { version = "3.2.5", features = ["derive"] }
@@ -23,16 +18,16 @@ hex-literal = "0.3.4"
 jsonrpsee = { version = "0.14.0", features = ["server"] }
 
 # Frequency Runtime
-frequency-runtime = { path = "../runtime/frequency" }
-frequency-cli = { path = "cli" }
+frequency-runtime = { path = "../../runtime/frequency" }
+frequency-service = { package = "frequency-service", path = "../service", default-features = false, optional = true }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
+frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25", optional = true }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
-sc-cli = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "polkadot-v0.9.25" }
+sc-cli = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "polkadot-v0.9.25", optional = true }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sc-executor = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "polkadot-v0.9.25" }
@@ -40,7 +35,7 @@ sc-keystore = { git = "https://github.com/paritytech/substrate", branch = "polka
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
-sc-service = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "polkadot-v0.9.25" }
+sc-service = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "polkadot-v0.9.25", optional = true }
 sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
@@ -51,7 +46,7 @@ sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25", optional = true }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
@@ -61,7 +56,7 @@ sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polk
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
-try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
+try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25", optional = true }
 
 # Polkadot
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.25" }
@@ -83,23 +78,21 @@ cumulus-relay-chain-inprocess-interface = { git = "https://github.com/paritytech
 cumulus-relay-chain-interface = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.25" }
 cumulus-relay-chain-rpc-interface = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.25" }
 
-# Unfinished
-pallet-messages-rpc = { path = "../pallets/messages/src/rpc" }
-pallet-messages-runtime-api = { path = "../pallets/messages/src/runtime-api" }
-pallet-schemas-rpc = { path = "../pallets/schemas/src/rpc" }
-pallet-schemas-runtime-api = { path = "../pallets/schemas/src/runtime-api" }
-pallet-msa-rpc = { path = "../pallets/msa/src/rpc" }
-pallet-msa-runtime-api = { path = "../pallets/msa/src/runtime-api" }
-pallet-tx-fee-rpc = { path = "../pallets/tx_fee/src/rpc" }
-pallet-tx-fee-runtime-api = { path = "../pallets/tx_fee/src/runtime-api" }
-
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 
 [features]
-runtime-benchmarks = [
-	"frequency-runtime/runtime-benchmarks",
-	"polkadot-cli/runtime-benchmarks",
-	"frequency-cli/runtime-benchmarks",
+default = [ "wasmtime", "cli"]
+wasmtime = [ "sc-cli/wasmtime" ]
+cli = [
+	"frequency-service",
+	"sp-core",
+	"sc-cli",
+	"sc-service",
+	"frame-benchmarking-cli",
+	"try-runtime-cli",
 ]
-try-runtime = ["frequency-runtime/try-runtime"]
+runtime-benchmarks = [
+	"polkadot-cli/runtime-benchmarks",
+]
+try-runtime = []

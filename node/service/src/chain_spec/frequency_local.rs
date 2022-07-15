@@ -1,3 +1,4 @@
+#![warn(missing_docs)]
 use cumulus_primitives_core::ParaId;
 use frequency_runtime::{AccountId, AuraId, Signature, SudoConfig, EXISTENTIAL_DEPOSIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
