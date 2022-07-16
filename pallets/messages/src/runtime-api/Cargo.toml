@@ -5,7 +5,7 @@ description = 'A package that adds Runtime Api for Messages pallet'
 authors = ['Frequency Team']
 license = "Apache-2.0"
 publish = false
-homepage = "https://unfinishedlabs.io/"
+homepage = "https://frequency.xyz"
 repository = "https://github.com/LibertyDSNP/frequency/"
 edition = "2021"
 

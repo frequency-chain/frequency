@@ -2,7 +2,7 @@
 authors = ["Frequency Team"]
 description = "Runtime for Frequency parachain"
 edition = "2021"
-homepage = "https://unfinishedlabs.io/"
+homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = "frequency-runtime"
 repository = "https://github.com/LibertyDSNP/frequency/"

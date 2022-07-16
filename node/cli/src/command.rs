@@ -1,8 +1,6 @@
-use crate::{
-	chain_spec,
-	cli::{Cli, RelayChainCli, Subcommand},
-	service::{new_partial, TemplateRuntimeExecutor},
-};
+use crate::cli::{Cli, RelayChainCli, Subcommand};
+use frequency_service::{chain_spec, service::*};
+
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
@@ -33,9 +31,13 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	})
 }
 
+fn chain_name() -> String {
+	"Frequency".into()
+}
+
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Parachain Collator Template".into()
+		format!("{} Node", chain_name())
 	}
 
 	fn impl_version() -> String {
@@ -46,7 +48,7 @@ impl SubstrateCli for Cli {
 		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
-		frequency-collator <parachain-args> -- <relay-chain-args>"
+		frequency <parachain-args> -- <relay-chain-args>"
 			.into()
 	}
 
@@ -73,7 +75,7 @@ impl SubstrateCli for Cli {
 
 impl SubstrateCli for RelayChainCli {
 	fn impl_name() -> String {
-		"Parachain Collator Template".into()
+		"Frequency".into()
 	}
 
 	fn impl_version() -> String {
@@ -84,7 +86,7 @@ impl SubstrateCli for RelayChainCli {
 		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
-		frequency-collator <parachain-args> -- <relay-chain-args>"
+		frequency <parachain-args> -- <relay-chain-args>"
 			.into()
 	}
 
@@ -119,7 +121,7 @@ macro_rules! construct_async_run {
 				_
 			>(
 				&$config,
-				crate::service::parachain_build_import_queue,
+				parachain_build_import_queue,
 			)?;
 			let task_manager = $components.task_manager;
 			{ $( $code )* }.map(|v| (v, task_manager))
@@ -210,14 +212,14 @@ pub fn run() -> Result<()> {
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
 					let partials = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
 						&config,
-						crate::service::parachain_build_import_queue,
+						parachain_build_import_queue,
 					)?;
 					cmd.run(partials.client)
 				}),
 				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
 					let partials = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
 						&config,
-						crate::service::parachain_build_import_queue,
+						parachain_build_import_queue,
 					)?;
 					let db = partials.backend.expose_db();
 					let storage = partials.backend.expose_storage();
@@ -289,16 +291,10 @@ pub fn run() -> Result<()> {
 				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
-				crate::service::start_parachain_node(
-					config,
-					polkadot_config,
-					collator_options,
-					id,
-					hwbench,
-				)
-				.await
-				.map(|r| r.0)
-				.map_err(Into::into)
+				start_parachain_node(config, polkadot_config, collator_options, id, hwbench)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
 			})
 		},
 	}

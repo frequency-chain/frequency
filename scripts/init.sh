@@ -114,8 +114,8 @@ onboard-frequency)
       genesis=$(docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-state --chain="${chain_spec}")
       docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-wasm --chain="${chain_spec}" > $wasm_location
     else
-      genesis=$(./target/release/frequency-collator export-genesis-state --chain="${chain_spec}")
-      ./target/release/frequency-collator export-genesis-wasm --chain="${chain_spec}" > $wasm_location
+      genesis=$(./target/release/frequency export-genesis-state --chain="${chain_spec}")
+      ./target/release/frequency export-genesis-wasm --chain="${chain_spec}" > $wasm_location
     fi
 
   echo "WASM path:" "${parachain}-${para_id}.wasm"
