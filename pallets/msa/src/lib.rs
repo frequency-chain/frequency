@@ -745,19 +745,19 @@ impl<T: Config> AccountProvider for Pallet<T> {
 /// calling extrinsic is revoking a provider to an msa.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct CheckProviderRevokation<T: Config + Send + Sync>(PhantomData<T>);
+pub struct CheckProviderRevocation<T: Config + Send + Sync>(PhantomData<T>);
 
-impl<T: Config + Send + Sync> CheckProviderRevokation<T> {
+impl<T: Config + Send + Sync> CheckProviderRevocation<T> {
 	/// Create new `SignedExtension` to check runtime version.
 	pub fn new() -> Self {
 		Self(sp_std::marker::PhantomData)
 	}
 }
 
-impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckProviderRevokation<T> {
+impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckProviderRevocation<T> {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		write!(f, "CheckProviderRevokation<{:?}>", self.0)
+		write!(f, "CheckProviderRevocation<{:?}>", self.0)
 	}
 	#[cfg(not(feature = "std"))]
 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
@@ -765,7 +765,7 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckProviderRevokation<T> 
 	}
 }
 
-impl<T: Config + Send + Sync> SignedExtension for CheckProviderRevokation<T>
+impl<T: Config + Send + Sync> SignedExtension for CheckProviderRevocation<T>
 where
 	T::Call: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
 {
@@ -773,7 +773,7 @@ where
 	type Call = T::Call;
 	type AdditionalSigned = ();
 	type Pre = ();
-	const IDENTIFIER: &'static str = "CheckProviderRevokation";
+	const IDENTIFIER: &'static str = "CheckProviderRevocation";
 
 	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
 		Ok(())
