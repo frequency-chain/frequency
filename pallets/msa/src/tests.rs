@@ -1065,3 +1065,18 @@ fn signed_extension_validation_failure_on_revoked() {
 		assert!(result_revoked.is_err());
 	});
 }
+
+#[test]
+fn signed_extension_validation_valid_for_others() {
+	let random_call_should_pass: &<Test as frame_system::Config>::Call =
+		&Call::Msa(MsaCall::create {});
+	let info = DispatchInfo::default();
+	let len = 0_usize;
+	let result = CheckProviderRevocation::<Test>::new().validate(
+		&test_public(1),
+		random_call_should_pass,
+		&info,
+		len,
+	);
+	assert_ok!(result);
+}
