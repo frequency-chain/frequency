@@ -116,13 +116,13 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn nodes)]
 	pub(super) type Nodes<T: Config> =
-	StorageMap<_, Twox64Concat, MessageSourceId, Node, OptionQuery>;
+		StorageMap<_, Twox64Concat, MessageSourceId, Node, OptionQuery>;
 
 	/// static_id -> [edge, edge, ...]
 	#[pallet::storage]
 	#[pallet::getter(fn graph)]
 	pub(super) type Graph<T: Config> =
-	StorageMap<_, Twox64Concat, MessageSourceId, BoundedVec<Edge, T::MaxFollows>, ValueQuery>;
+		StorageMap<_, Twox64Concat, MessageSourceId, BoundedVec<Edge, T::MaxFollows>, ValueQuery>;
 
 	/// double storage
 	#[pallet::storage]
@@ -266,7 +266,7 @@ pub mod pallet {
 					Err(_) => Err(()),
 				}
 			})
-				.map_err(|_| <Error<T>>::NoSuchEdge)?;
+			.map_err(|_| <Error<T>>::NoSuchEdge)?;
 
 			<EdgeCount<T>>::set(cur_count - 1);
 			Self::deposit_event(Event::Unfollowed(sender, from_static_id, to_static_id));

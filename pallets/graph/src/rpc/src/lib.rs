@@ -1,4 +1,5 @@
-use common_helpers::{rpc::*};
+use common_helpers::rpc::*;
+use common_primitives::msa::MessageSourceId;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
@@ -9,7 +10,6 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use sp_std::vec::Vec;
 use std::sync::Arc;
-use common_primitives::msa::MessageSourceId;
 
 /// Frequency Schema API
 #[rpc(client, server)]
@@ -38,12 +38,12 @@ impl<C, M> GraphHandler<C, M> {
 
 #[async_trait]
 impl<C, Block> GraphApiServer<<Block as BlockT>::Hash> for GraphHandler<C, Block>
-	where
-		Block: BlockT,
-		C: Send + Sync + 'static,
-		C: ProvideRuntimeApi<Block>,
-		C: HeaderBackend<Block>,
-		C::Api: GraphRuntimeApi<Block>,
+where
+	Block: BlockT,
+	C: Send + Sync + 'static,
+	C: ProvideRuntimeApi<Block>,
+	C: HeaderBackend<Block>,
+	C::Api: GraphRuntimeApi<Block>,
 {
 	fn get_following_list_public(
 		&self,

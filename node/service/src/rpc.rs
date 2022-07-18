@@ -54,10 +54,10 @@ where
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 
 	// Unfinished RPCs
+	use pallet_graph_rpc::{GraphApiServer, GraphHandler};
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
 	use pallet_schemas_rpc::{SchemasApiServer, SchemasHandler};
-	use pallet_graph_rpc::{GraphApiServer, GraphHandler};
 
 	let mut module = RpcExtension::new(());
 	let FullDeps { client, pool, deny_unsafe } = deps;
