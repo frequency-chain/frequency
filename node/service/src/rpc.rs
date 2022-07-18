@@ -47,6 +47,7 @@ where
 	C::Api: pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber>,
 	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block>,
 	C::Api: pallet_msa_runtime_api::MsaApi<Block, AccountId, BlockNumber>,
+	C::Api: pallet_graph_runtime_api::GraphRuntimeApi<Block>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
@@ -56,6 +57,7 @@ where
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
 	use pallet_schemas_rpc::{SchemasApiServer, SchemasHandler};
+	use pallet_graph_rpc::{GraphApiServer, GraphHandler};
 
 	let mut module = RpcExtension::new(());
 	let FullDeps { client, pool, deny_unsafe } = deps;
@@ -65,5 +67,6 @@ where
 	module.merge(MessagesHandler::new(client.clone()).into_rpc())?;
 	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;
 	module.merge(MsaHandler::new(client.clone()).into_rpc())?;
+	module.merge(GraphHandler::new(client.clone()).into_rpc())?;
 	Ok(module)
 }

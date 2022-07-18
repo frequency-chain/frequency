@@ -59,6 +59,8 @@ pallet-messages = { path = "../../pallets/messages", default-features = false}
 pallet-messages-runtime-api = { path = "../../pallets/messages/src/runtime-api", default-features = false}
 pallet-schemas = {path = "../../pallets/schemas", default-features = false}
 pallet-schemas-runtime-api = { path = "../../pallets/schemas/src/runtime-api", default-features = false}
+pallet-graph = {path = "../../pallets/graph", default-features = false}
+pallet-graph-runtime-api = { path = "../../pallets/graph/src/runtime-api", default-features = false}
 
 # Polkadot
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.25" }
@@ -117,6 +119,8 @@ std = [
   "pallet-msa-runtime-api/std",
   "pallet-messages/std",
   "pallet-messages-runtime-api/std",
+  "pallet-graph/std",
+  "pallet-graph-runtime-api/std",
   "pallet-schemas/std",
   "pallet-schemas-runtime-api/std",
   "parachain-info/std",
@@ -152,6 +156,7 @@ runtime-benchmarks = [
   'pallet-msa/runtime-benchmarks',
   "pallet-messages/runtime-benchmarks",
   "pallet-schemas/runtime-benchmarks",
+  "pallet-graph/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
   "xcm-builder/runtime-benchmarks",
   "cumulus-pallet-session-benchmarking/runtime-benchmarks",

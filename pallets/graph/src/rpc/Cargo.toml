@@ -1,0 +1,40 @@
+[package]
+name = "pallet-graph-rpc"
+version = "0.1.0"
+description = "RPC package for schemas"
+authors = ["Frequency Team"]
+license = "Apache-2.0"
+publish = false
+homepage = "https://frequency.xyz"
+repository = "https://github.com/libertyDSNP/frequency/"
+edition = "2021"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0" }
+jsonrpsee = { version = "0.14.0", features = ["server", "macros"] }
+
+# unfinished
+pallet-graph-runtime-api = { path = "../runtime-api", default-features = false }
+common-primitives = { path = '../../../../common/primitives', default-features = false }
+common-helpers = { path = '../../../../common/helpers', default-features = false }
+
+# Substrate
+frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
+sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
+sp-rpc = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
+sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
+
+[features]
+default = ["std"]
+std = [
+	"sp-std/std",
+	"codec/std",
+	"sp-api/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"pallet-graph-runtime-api/std",
+	"common-primitives/std",
+]
