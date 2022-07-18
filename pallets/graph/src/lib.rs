@@ -61,13 +61,16 @@ mod benchmarking;
 
 pub mod weights;
 
+mod storage;
 mod types;
 
+use codec::Encode;
 use frame_support::{ensure, traits::Get, BoundedVec};
 use sp_runtime::DispatchError;
 use sp_std::prelude::*;
 
 pub use pallet::*;
+pub use storage::*;
 pub use types::*;
 pub use weights::*;
 
@@ -114,21 +117,21 @@ pub mod pallet {
 
 	/// mapping between static_id -> node
 	#[pallet::storage]
-	#[pallet::getter(fn nodes)]
+	#[pallet::getter(fn get_node)]
 	pub(super) type Nodes<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, Node, OptionQuery>;
 
 	/// static_id -> [edge, edge, ...]
 	#[pallet::storage]
-	#[pallet::getter(fn graph)]
-	pub(super) type Graph<T: Config> =
+	#[pallet::getter(fn graph_adj)]
+	pub(super) type GraphAdj<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, BoundedVec<Edge, T::MaxFollows>, ValueQuery>;
 
 	/// double storage
 	#[pallet::storage]
 	#[pallet::unbounded]
-	#[pallet::getter(fn graph2)]
-	pub(super) type Graph2<T: Config> = StorageDoubleMap<
+	#[pallet::getter(fn graph_map)]
+	pub(super) type GraphMap<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
 		MessageSourceId,
@@ -182,6 +185,9 @@ pub mod pallet {
 
 		/// Event emitted when a follow has been removed. [who, staticId, staticId]
 		Unfollowed(T::AccountId, MessageSourceId, MessageSourceId),
+
+		/// Event emitted when a follow has been modified. [who, staticId]
+		Modified(T::AccountId, MessageSourceId),
 	}
 
 	#[pallet::call]
@@ -196,7 +202,7 @@ pub mod pallet {
 				let cur_count = Self::node_count();
 				let node_id = cur_count.checked_add(1).ok_or(<Error<T>>::TooManyNodes)?;
 
-				*maybe_node = Some(Node {});
+				*maybe_node = Some(Node { trie_id: Storage::<T>::generate_trie_id(static_id, 1) });
 				<NodeCount<T>>::set(node_id);
 				Self::deposit_event(Event::NodeAdded(sender, static_id));
 				log::debug!("Node added: {:?} -> {:?}", static_id, node_id);
@@ -207,8 +213,8 @@ pub mod pallet {
 		}
 
 		/// follow docs
-		#[pallet::weight(T::WeightInfo::follow(*from_static_id as u32))]
-		pub fn follow(
+		#[pallet::weight(T::WeightInfo::follow_adj(*from_static_id as u32))]
+		pub fn follow_adj(
 			origin: OriginFor<T>,
 			from_static_id: MessageSourceId,
 			to_static_id: MessageSourceId,
@@ -222,7 +228,7 @@ pub mod pallet {
 
 			let edge = Edge { static_id: to_static_id, permission: Permission { data: 0 } };
 
-			<Graph<T>>::try_mutate(&from_static_id, |edge_vec| {
+			<GraphAdj<T>>::try_mutate(&from_static_id, |edge_vec| {
 				match edge_vec.binary_search(&edge) {
 					Ok(_) => Err(<Error<T>>::EdgeExists),
 					Err(index) =>
@@ -240,8 +246,8 @@ pub mod pallet {
 		}
 
 		/// unfollow docs
-		#[pallet::weight(T::WeightInfo::unfollow(*from_static_id as u32))]
-		pub fn unfollow(
+		#[pallet::weight(T::WeightInfo::unfollow_adj(*from_static_id as u32))]
+		pub fn unfollow_adj(
 			origin: OriginFor<T>,
 			from_static_id: MessageSourceId,
 			to_static_id: MessageSourceId,
@@ -256,7 +262,7 @@ pub mod pallet {
 			let cur_count: u64 = Self::edge_count();
 			ensure!(cur_count > 0, <Error<T>>::NoSuchEdge);
 
-			<Graph<T>>::try_mutate(&from_static_id, |edge_vec| {
+			<GraphAdj<T>>::try_mutate(&from_static_id, |edge_vec| {
 				let edge = Edge { static_id: to_static_id, permission: Permission { data: 0 } };
 				match edge_vec.binary_search(&edge) {
 					Ok(index) => {
@@ -276,8 +282,8 @@ pub mod pallet {
 		}
 
 		/// follow_2 docs
-		#[pallet::weight(T::WeightInfo::follow(*from_static_id as u32))]
-		pub fn follow2(
+		#[pallet::weight(T::WeightInfo::follow_map(*from_static_id as u32))]
+		pub fn follow_map(
 			origin: OriginFor<T>,
 			from_static_id: MessageSourceId,
 			to_static_id: MessageSourceId,
@@ -289,10 +295,10 @@ pub mod pallet {
 			ensure!(<Nodes<T>>::contains_key(from_static_id), <Error<T>>::NoSuchNode);
 			ensure!(<Nodes<T>>::contains_key(to_static_id), <Error<T>>::NoSuchNode);
 
-			let perm = <Graph2<T>>::try_get(from_static_id, to_static_id);
+			let perm = <GraphMap<T>>::try_get(from_static_id, to_static_id);
 			ensure!(perm.is_err(), <Error<T>>::EdgeExists);
 
-			<Graph2<T>>::insert(from_static_id, to_static_id, Permission { data: 0 });
+			<GraphMap<T>>::insert(from_static_id, to_static_id, Permission { data: 0 });
 
 			let cur_count: u64 = Self::edge_count();
 			<EdgeCount<T>>::set(cur_count + 1);
@@ -304,8 +310,8 @@ pub mod pallet {
 		}
 
 		/// unfollow2 docs
-		#[pallet::weight(T::WeightInfo::unfollow(*from_static_id as u32))]
-		pub fn unfollow2(
+		#[pallet::weight(T::WeightInfo::unfollow_map(*from_static_id as u32))]
+		pub fn unfollow_map(
 			origin: OriginFor<T>,
 			from_static_id: MessageSourceId,
 			to_static_id: MessageSourceId,
@@ -314,13 +320,13 @@ pub mod pallet {
 
 			// self unfollow is not permitted
 			ensure!(from_static_id != to_static_id, <Error<T>>::SelfFollowNotPermitted);
-			let perm = <Graph2<T>>::try_get(from_static_id, to_static_id);
+			let perm = <GraphMap<T>>::try_get(from_static_id, to_static_id);
 			ensure!(perm.is_ok(), <Error<T>>::NoSuchEdge);
 
 			let cur_count: u64 = Self::edge_count();
 			ensure!(cur_count > 0, <Error<T>>::NoSuchEdge);
 
-			<Graph2<T>>::remove(from_static_id, to_static_id);
+			<GraphMap<T>>::remove(from_static_id, to_static_id);
 
 			<EdgeCount<T>>::set(cur_count - 1);
 			Self::deposit_event(Event::Unfollowed(sender, from_static_id, to_static_id));
@@ -328,17 +334,149 @@ pub mod pallet {
 			log::debug!("unfollowed: {:?} -> {:?}", from_static_id, to_static_id);
 			Ok(())
 		}
+
+		/// child graph public follow
+		#[pallet::weight(T::WeightInfo::follow_child_public(*from_static_id as u32))]
+		pub fn follow_child_public(
+			origin: OriginFor<T>,
+			from_static_id: MessageSourceId,
+			to_static_id: MessageSourceId,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			// self follow is not permitted
+			ensure!(from_static_id != to_static_id, <Error<T>>::SelfFollowNotPermitted);
+			let from_node = Self::get_node(from_static_id);
+			ensure!(from_node.is_some(), <Error<T>>::NoSuchNode);
+			ensure!(<Nodes<T>>::contains_key(to_static_id), <Error<T>>::NoSuchNode);
+
+			let trie_id = from_node.unwrap().trie_id;
+			let perm = Storage::<T>::read(&trie_id, &Self::get_storage_key(to_static_id));
+			ensure!(perm.is_none(), <Error<T>>::EdgeExists);
+
+			let data = Permission { data: 1 };
+			Storage::<T>::write(
+				&trie_id,
+				&Self::get_storage_key(to_static_id),
+				Some(data.encode().to_vec()),
+			)?;
+
+			Self::deposit_event(Event::Followed(sender, from_static_id, to_static_id));
+
+			log::debug!("followed child: {:?} -> {:?}", from_static_id, to_static_id);
+			Ok(())
+		}
+
+		/// child graph public unfollow
+		#[pallet::weight(T::WeightInfo::unfollow_child_public(*from_static_id as u32))]
+		pub fn unfollow_child_public(
+			origin: OriginFor<T>,
+			from_static_id: MessageSourceId,
+			to_static_id: MessageSourceId,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			// self unfollow is not permitted
+			ensure!(from_static_id != to_static_id, <Error<T>>::SelfFollowNotPermitted);
+			let from_node = Self::get_node(from_static_id);
+			ensure!(from_node.is_some(), <Error<T>>::NoSuchNode);
+
+			let trie_id = from_node.unwrap().trie_id;
+			let perm = Storage::<T>::read(&trie_id, &Self::get_storage_key(to_static_id));
+			ensure!(perm.is_some(), <Error<T>>::NoSuchEdge);
+
+			Storage::<T>::write(&trie_id, &Self::get_storage_key(to_static_id), None)?;
+
+			Self::deposit_event(Event::Unfollowed(sender, from_static_id, to_static_id));
+
+			log::debug!("unfollowed child: {:?} -> {:?}", from_static_id, to_static_id);
+			Ok(())
+		}
+
+		/// private graph update
+		#[pallet::weight((0, Pays::No))]
+		pub fn private_graph_update(
+			origin: OriginFor<T>,
+			from_static_id: MessageSourceId,
+			key: Vec<u8>,
+			page: u16,
+			value: Vec<u8>,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			// self follow is not permitted
+			let from_node = Self::get_node(from_static_id);
+			ensure!(from_node.is_some(), <Error<T>>::NoSuchNode);
+
+			let trie_id = from_node.unwrap().trie_id;
+
+			Storage::<T>::write_graph(
+				&trie_id,
+				GraphType::Private,
+				&Self::get_storage_key_vec(key),
+				page,
+				if value.len() > 0 { Some(value) } else { None },
+			)?;
+
+			Self::deposit_event(Event::Modified(sender, from_static_id));
+
+			log::debug!("modified: {:?}", from_static_id);
+			Ok(())
+		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
-	/// get neighbors
+	/// get neighbors from adj graph
 	pub fn get_following_list_public(
 		static_id: MessageSourceId,
 	) -> Result<Vec<MessageSourceId>, DispatchError> {
 		ensure!(<Nodes<T>>::contains_key(static_id), <Error<T>>::NoSuchNode);
-		let graph = <Graph<T>>::get(static_id);
+		let graph = <GraphAdj<T>>::get(static_id);
 
 		Ok(graph.into_iter().map(|e| e.static_id).collect())
+	}
+
+	/// get storage key
+	pub fn get_storage_key(static_id: MessageSourceId) -> StorageKey {
+		#[cfg(test)]
+		{
+			println!("{} to_le_bytes {:X?}", static_id, static_id.encode());
+		}
+		StorageKey::try_from(static_id.encode()).unwrap()
+	}
+
+	/// get storage vec
+	pub fn get_storage_key_vec(data: Vec<u8>) -> StorageKey {
+		#[cfg(test)]
+		{
+			println!("{:X?}", &data);
+		}
+		StorageKey::try_from(data).unwrap()
+	}
+
+	/// read from child tree
+	pub fn read_from_child_tree(static_id: MessageSourceId, key: StorageKey) -> Option<Vec<u8>> {
+		if let Some(node) = Self::get_node(static_id) {
+			return Storage::<T>::read(&node.trie_id, &key)
+		}
+		None
+	}
+
+	/// read all keys
+	pub fn read_all_keys(static_id: MessageSourceId) -> Vec<MessageSourceId> {
+		if let Some(node) = Self::get_node(static_id) {
+			return Storage::<T>::iter_keys(&node.trie_id)
+				.iter()
+				.map(|v| {
+					let mut m = MessageSourceId::default();
+					for (i, b) in v.iter().enumerate() {
+						m += (*b as MessageSourceId) * (1u64 << (i * 8));
+					}
+					m.into()
+				})
+				.collect()
+		}
+		Vec::new()
 	}
 }

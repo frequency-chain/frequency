@@ -18,14 +18,19 @@ fn node_addition<T: Config>(n: u32) -> DispatchResult {
 	GraphPallet::<T>::add_node(RawOrigin::Signed(other.clone()).into(), n.into())
 }
 
-fn do_follow<T: Config>(from: u32, to: u32) -> DispatchResult {
+fn do_follow_adj<T: Config>(from: u32, to: u32) -> DispatchResult {
 	let caller: T::AccountId = whitelisted_caller();
-	GraphPallet::<T>::follow(RawOrigin::Signed(caller).into(), from.into(), to.into())
+	GraphPallet::<T>::follow_adj(RawOrigin::Signed(caller).into(), from.into(), to.into())
 }
 
-fn do_follow2<T: Config>(from: u32, to: u32) -> DispatchResult {
+fn do_follow_map<T: Config>(from: u32, to: u32) -> DispatchResult {
 	let caller: T::AccountId = whitelisted_caller();
-	GraphPallet::<T>::follow2(RawOrigin::Signed(caller).into(), from.into(), to.into())
+	GraphPallet::<T>::follow_map(RawOrigin::Signed(caller).into(), from.into(), to.into())
+}
+
+fn do_follow_child<T: Config>(from: u32, to: u32) -> DispatchResult {
+	let caller: T::AccountId = whitelisted_caller();
+	GraphPallet::<T>::follow_child_public(RawOrigin::Signed(caller).into(), from.into(), to.into())
 }
 
 benchmarks! {
@@ -37,7 +42,7 @@ benchmarks! {
 		}
 	}: _(RawOrigin::Signed(caller), n.into())
 
-   follow {
+   follow_adj {
 		let n in 2..NODES;
 		let caller: T::AccountId = whitelisted_caller();
 
@@ -48,14 +53,14 @@ benchmarks! {
 		for i in 0..=NODES {
 			for j in 2..=FOLLOWS {
 				if i != j {
-					assert_ok!(do_follow::<T>(i,j));
+					assert_ok!(do_follow_adj::<T>(i,j));
 				}
 			}
 		}
 
 	}: _(RawOrigin::Signed(caller), n.into(), 1u64.into())
 
-	 unfollow {
+	 unfollow_adj {
 		let n in 2..NODES;
 		let caller: T::AccountId = whitelisted_caller();
 
@@ -66,13 +71,13 @@ benchmarks! {
 		for i in 0..=NODES {
 			for j in 1..=FOLLOWS {
 				if i != j {
-					assert_ok!(do_follow::<T>(i,j));
+					assert_ok!(do_follow_adj::<T>(i,j));
 				}
 			}
 		}
 	}: _(RawOrigin::Signed(caller), n.into(), 1u64.into())
 
-   follow2 {
+   follow_map {
 		let n in 2..NODES;
 		let caller: T::AccountId = whitelisted_caller();
 
@@ -83,14 +88,14 @@ benchmarks! {
 		for i in 0..=NODES {
 			for j in 2..=FOLLOWS {
 				if i != j {
-					assert_ok!(do_follow2::<T>(i,j));
+					assert_ok!(do_follow_map::<T>(i,j));
 				}
 			}
 		}
 
 	}: _(RawOrigin::Signed(caller), n.into(), 1u64.into())
 
-	 unfollow2 {
+	 unfollow_map {
 		let n in 2..NODES;
 		let caller: T::AccountId = whitelisted_caller();
 
@@ -101,7 +106,42 @@ benchmarks! {
 		for i in 0..=NODES {
 			for j in 1..=FOLLOWS {
 				if i != j {
-					assert_ok!(do_follow2::<T>(i,j));
+					assert_ok!(do_follow_map::<T>(i,j));
+				}
+			}
+		}
+	}: _(RawOrigin::Signed(caller), n.into(), 1u64.into())
+
+	follow_child_public {
+		let n in 2..NODES;
+		let caller: T::AccountId = whitelisted_caller();
+
+		for i in 0..=NODES {
+			assert_ok!(node_addition::<T>(i));
+		}
+
+		for i in 0..=NODES {
+			for j in 2..=FOLLOWS {
+				if i != j {
+					assert_ok!(do_follow_child::<T>(i,j));
+				}
+			}
+		}
+
+	}: _(RawOrigin::Signed(caller), n.into(), 1u64.into())
+
+	 unfollow_child_public {
+		let n in 2..NODES;
+		let caller: T::AccountId = whitelisted_caller();
+
+		for i in 0..=NODES {
+			assert_ok!(node_addition::<T>(i));
+		}
+
+		for i in 0..=NODES {
+			for j in 1..=FOLLOWS {
+				if i != j {
+					assert_ok!(do_follow_child::<T>(i,j));
 				}
 			}
 		}

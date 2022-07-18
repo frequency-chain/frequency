@@ -54,10 +54,12 @@ use sp_std::marker::PhantomData;
 /// Weight functions needed for pallet_graph.
 pub trait WeightInfo {
 	fn add_node(n: u32, ) -> Weight;
-	fn follow(n: u32, ) -> Weight;
-	fn unfollow(n: u32, ) -> Weight;
-	fn follow2(n: u32, ) -> Weight;
-	fn unfollow2(n: u32, ) -> Weight;
+	fn follow_adj(n: u32, ) -> Weight;
+	fn unfollow_adj(n: u32, ) -> Weight;
+	fn follow_map(n: u32, ) -> Weight;
+	fn unfollow_map(n: u32, ) -> Weight;
+	fn follow_child_public(n: u32, ) -> Weight;
+	fn unfollow_child_public(n: u32, ) -> Weight;
 }
 
 /// Weights for pallet_graph using the Substrate node and recommended hardware.
@@ -75,7 +77,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Graph Nodes (r:2 w:0)
 	// Storage: Graph Graph (r:1 w:1)
 	// Storage: Graph EdgeCount (r:1 w:1)
-	fn follow(_n: u32, ) -> Weight {
+	fn follow_adj(_n: u32, ) -> Weight {
 		(55_977_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
@@ -83,7 +85,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Graph Nodes (r:2 w:0)
 	// Storage: Graph EdgeCount (r:1 w:1)
 	// Storage: Graph Graph (r:1 w:1)
-	fn unfollow(_n: u32, ) -> Weight {
+	fn unfollow_adj(_n: u32, ) -> Weight {
 		(57_865_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
@@ -91,7 +93,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Graph Nodes (r:2 w:0)
 	// Storage: Graph Graph2 (r:1 w:1)
 	// Storage: Graph EdgeCount (r:1 w:1)
-	fn follow2(n: u32, ) -> Weight {
+	fn follow_map(n: u32, ) -> Weight {
 		(76_665_000 as Weight)
 			// Standard Error: 2_000
 			.saturating_add((1_000 as Weight).saturating_mul(n as Weight))
@@ -100,12 +102,27 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	// Storage: Graph Graph2 (r:1 w:1)
 	// Storage: Graph EdgeCount (r:1 w:1)
-	fn unfollow2(n: u32, ) -> Weight {
+	fn unfollow_map(n: u32, ) -> Weight {
 		(64_359_000 as Weight)
 			// Standard Error: 2_000
 			.saturating_add((1_000 as Weight).saturating_mul(n as Weight))
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+	}
+
+	// Storage: Graph Nodes (r:2 w:0)
+	// Storage: unknown [0x9ea2d098b5f70192f96c06f38d3fbc970100000000000000] (r:1 w:1)
+	fn follow_child_public(_n: u32, ) -> Weight {
+		(97_196_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(3 as Weight))
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
+	// Storage: Graph Nodes (r:1 w:0)
+	// Storage: unknown [0x9ea2d098b5f70192f96c06f38d3fbc970100000000000000] (r:1 w:1)
+	fn unfollow_child_public(_n: u32, ) -> Weight {
+		(90_140_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(2 as Weight))
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 }
 
@@ -123,7 +140,7 @@ impl WeightInfo for () {
 	// Storage: Graph Nodes (r:2 w:0)
 	// Storage: Graph Graph (r:1 w:1)
 	// Storage: Graph EdgeCount (r:1 w:1)
-	fn follow(_n: u32, ) -> Weight {
+	fn follow_adj(_n: u32, ) -> Weight {
 		(55_977_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
@@ -131,7 +148,7 @@ impl WeightInfo for () {
 	// Storage: Graph Nodes (r:2 w:0)
 	// Storage: Graph EdgeCount (r:1 w:1)
 	// Storage: Graph Graph (r:1 w:1)
-	fn unfollow(_n: u32, ) -> Weight {
+	fn unfollow_adj(_n: u32, ) -> Weight {
 		(57_865_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
@@ -139,7 +156,7 @@ impl WeightInfo for () {
 	// Storage: Graph Nodes (r:2 w:0)
 	// Storage: Graph Graph2 (r:1 w:1)
 	// Storage: Graph EdgeCount (r:1 w:1)
-	fn follow2(n: u32, ) -> Weight {
+	fn follow_map(n: u32, ) -> Weight {
 		(76_665_000 as Weight)
 			// Standard Error: 2_000
 			.saturating_add((1_000 as Weight).saturating_mul(n as Weight))
@@ -148,11 +165,26 @@ impl WeightInfo for () {
 	}
 	// Storage: Graph Graph2 (r:1 w:1)
 	// Storage: Graph EdgeCount (r:1 w:1)
-	fn unfollow2(n: u32, ) -> Weight {
+	fn unfollow_map(n: u32, ) -> Weight {
 		(64_359_000 as Weight)
 			// Standard Error: 2_000
 			.saturating_add((1_000 as Weight).saturating_mul(n as Weight))
 			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
+	}
+
+	// Storage: Graph Nodes (r:2 w:0)
+	// Storage: unknown [0x9ea2d098b5f70192f96c06f38d3fbc970100000000000000] (r:1 w:1)
+	fn follow_child_public(_n: u32, ) -> Weight {
+		(97_196_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+	}
+	// Storage: Graph Nodes (r:1 w:0)
+	// Storage: unknown [0x9ea2d098b5f70192f96c06f38d3fbc970100000000000000] (r:1 w:1)
+	fn unfollow_child_public(_n: u32, ) -> Weight {
+		(90_140_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 }

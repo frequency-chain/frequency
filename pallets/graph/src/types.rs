@@ -1,17 +1,24 @@
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::msa::MessageSourceId;
-use frame_support::RuntimeDebug;
+use frame_support::{pallet_prelude::ConstU32, BoundedVec, RuntimeDebug};
 use scale_info::TypeInfo;
 use sp_std::{
 	cmp::{Ord, Ordering},
 	prelude::*,
 };
 
-/// Graph Edge
+/// account if type
+pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
+/// storage key type
+pub type StorageKey = BoundedVec<u8, ConstU32<4096>>;
+/// trie id type
+pub type TrieId = BoundedVec<u8, ConstU32<128>>;
+
+/// graph edge
 #[derive(Clone, Copy, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, Eq, PartialOrd)]
 #[scale_info(skip_type_params(T))]
 pub struct Edge {
-	/// neighbor id
+	/// target node id
 	pub static_id: MessageSourceId,
 	/// connection permission
 	pub permission: Permission,
@@ -23,16 +30,17 @@ impl Ord for Edge {
 	}
 }
 
-/// Graph Node
-#[derive(Default, Clone, Copy, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, Eq)]
+/// graph node
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 pub struct Node {
-	// going to add node related fields here
+	/// Unique ID for the subtree encoded as a bytes vector.
+	pub trie_id: TrieId,
 }
 
-/// Graph Edge Permission
+/// connection permission
 #[derive(Clone, Copy, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, Ord, Eq, PartialOrd)]
 pub struct Permission {
-	/// permission details
+	/// permission type
 	pub data: u16,
 }

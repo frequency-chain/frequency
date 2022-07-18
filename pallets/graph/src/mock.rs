@@ -1,6 +1,8 @@
 use crate as pallet_graph;
+use crate::Permission;
+use codec::Encode;
 use frame_support::{
-	parameter_types,
+	assert_ok, parameter_types,
 	traits::{ConstU16, ConstU64},
 };
 use frame_system as system;
@@ -65,10 +67,51 @@ impl pallet_graph::Config for Test {
 	// type MaxFollowers = u64;
 }
 
-#[cfg(feature = "runtime-benchmarks")]
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap().into();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
+}
+
+#[test]
+fn test_add_node() {
+	new_test_ext().execute_with(|| {
+		let account_id_origin: u64 = 10;
+
+		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 1234));
+		assert_eq!(GraphPallet::node_count(), 1);
+		assert_eq!(GraphPallet::edge_count(), 0);
+	});
+}
+
+#[test]
+fn follow3_unfollow3() {
+	new_test_ext().execute_with(|| {
+		let account_id_origin: u64 = 10;
+
+		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 1234));
+		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 3));
+		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 1240));
+		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 2767378));
+
+		assert_ok!(GraphPallet::follow_child_public(Origin::signed(account_id_origin), 1234, 3));
+		assert_ok!(GraphPallet::follow_child_public(Origin::signed(account_id_origin), 1234, 1240));
+		assert_ok!(GraphPallet::follow_child_public(
+			Origin::signed(account_id_origin),
+			1234,
+			2767378
+		));
+
+		assert_ok!(GraphPallet::follow_child_public(Origin::signed(account_id_origin), 1240, 3));
+
+		let perm = GraphPallet::read_from_child_tree(1234, GraphPallet::get_storage_key(3));
+		assert_eq!(perm, Some(Permission { data: 1 }.encode().to_vec()));
+
+		GraphPallet::read_all_keys(1234);
+
+		assert_ok!(GraphPallet::unfollow_child_public(Origin::signed(account_id_origin), 1234, 3));
+		let perm = GraphPallet::read_from_child_tree(1234, GraphPallet::get_storage_key(3));
+		assert_eq!(perm, None);
+	});
 }
