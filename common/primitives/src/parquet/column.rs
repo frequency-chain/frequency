@@ -11,8 +11,7 @@ pub struct ParquetColumn {
 	/// The label for what this column represents
 	name: String,
 	/// Parquet type labels
-	#[serde(rename = "type")]
-	_type: ParquetType,
+	column_type: ParquetType,
 	/// Compression for column
 	compression: ColumnCompressionCodec,
 	/// Whether or not to use a bloom filter
@@ -23,10 +22,10 @@ impl ParquetColumn {
 	/// Creates instance of struct
 	pub fn new(
 		name: String,
-		_type: ParquetType,
+		column_type: ParquetType,
 		compression: ColumnCompressionCodec,
 		bloom_filter: bool,
 	) -> ParquetColumn {
-		ParquetColumn { name, _type, compression, bloom_filter }
+		ParquetColumn { name, column_type, compression, bloom_filter }
 	}
 }

@@ -238,7 +238,7 @@ fn serialize_parquet_column() {
 		);
 		assert_eq!(
 			serde_json::to_string(&p).unwrap(),
-			r#"{"name":"Foo","type":"BOOLEAN","compression":"UNCOMPRESSED","bloom_filter":true}"#
+			r#"{"name":"Foo","column_type":"BOOLEAN","compression":"UNCOMPRESSED","bloom_filter":true}"#
 		);
 	})
 }
@@ -246,7 +246,7 @@ fn serialize_parquet_column() {
 #[test]
 fn validate_parquet_model() {
 	new_test_ext().execute_with(|| {
-		let test_str_raw = r#"[{"name": "Foo", "type": "BOOLEAN", "compression": "UNCOMPRESSED", "bloom_filter": true}]"#;
+		let test_str_raw = r#"[{"name": "Foo", "column_type": "BOOLEAN", "compression": "UNCOMPRESSED", "bloom_filter": true}]"#;
 		let result = SchemasPallet::ensure_valid_model(&ModelType::Parquet, &create_bounded_schema_vec(test_str_raw));
 		assert_ok!(result);
 	});
@@ -277,7 +277,7 @@ fn serialize_parquet_model() {
 		)];
 		assert_eq!(
 			serde_json::to_string(&p).unwrap(),
-			r#"[{"name":"Baz","type":"BOOLEAN","compression":"UNCOMPRESSED","bloom_filter":true}]"#
+			r#"[{"name":"Baz","column_type":"BOOLEAN","compression":"UNCOMPRESSED","bloom_filter":true}]"#
 		);
 	});
 }
@@ -298,7 +298,7 @@ fn serialize_parquet_model_integer() {
 		)];
 		assert_eq!(
 			serde_json::to_string(&p).unwrap(),
-			r#"[{"name":"Baz","type":{"INTEGER":{"bit_width":32,"sign":false}},"compression":"UNCOMPRESSED","bloom_filter":true}]"#
+			r#"[{"name":"Baz","column_type":{"INTEGER":{"bit_width":32,"sign":false}},"compression":"UNCOMPRESSED","bloom_filter":true}]"#
 		);
 	});
 }
@@ -306,7 +306,7 @@ fn serialize_parquet_model_integer() {
 #[test]
 fn validate_parquet_model_integer() {
 	new_test_ext().execute_with(|| {
-		let test_str_raw = r#"[{"name":"Baz","type":{"INTEGER":{"bit_width":32,"sign":false}},"compression":"UNCOMPRESSED","bloom_filter":true}]"#;
+		let test_str_raw = r#"[{"name":"Baz","column_type":{"INTEGER":{"bit_width":32,"sign":false}},"compression":"UNCOMPRESSED","bloom_filter":true}]"#;
 		let result = SchemasPallet::ensure_valid_model(&ModelType::Parquet, &create_bounded_schema_vec(test_str_raw));
 		assert_ok!(result);
 	});
@@ -318,7 +318,7 @@ fn dsnp_broadcast() {
 	[
 		{
 			"name": "announcementType",
-			"type": {
+			"column_type": {
 				"INTEGER": {
 					"bit_width": 32,
 					"sign": true
@@ -329,13 +329,13 @@ fn dsnp_broadcast() {
 		},
 		{
 			"name": "contentHash",
-			"type": "BYTE_ARRAY",
+			"column_type": "BYTE_ARRAY",
 			"compression": "SNAPPY",
 			"bloom_filter": true
 		},
 		{
 			"name": "fromId",
-			"type": {
+			"column_type": {
 				"INTEGER": {
 					"bit_width": 64,
 					"sign": false
@@ -346,7 +346,7 @@ fn dsnp_broadcast() {
 		},
 		{
 			"name": "url",
-			"type": "STRING",
+			"column_type": "STRING",
 			"compression": "LZO",
 			"bloom_filter": false
 		}

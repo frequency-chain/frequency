@@ -287,13 +287,14 @@ pub mod pallet {
 			model_type: &ModelType,
 			model: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 		) -> DispatchResult {
-			if model_type == &ModelType::Parquet {
-				let _p: ParquetModel =
-					serde_json::from_slice(model).map_err(|_| Error::<T>::InvalidSchema)?;
-			} else if model_type == &ModelType::AvroBinary {
-				serde::validate_json_model(model.clone().into_inner())
-					.map_err(|_| Error::<T>::InvalidSchema)?;
-			}
+			match model_type {
+				&ModelType::Parquet => {
+					serde_json::from_slice::<ParquetModel>(model)
+						.map_err(|_| Error::<T>::InvalidSchema)?;
+				},
+				&ModelType::AvroBinary => serde::validate_json_model(model.clone().into_inner())
+					.map_err(|_| Error::<T>::InvalidSchema)?,
+			};
 			Ok(())
 		}
 	}
