@@ -57,13 +57,13 @@ pub type Staking<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, Stak
 
 pub struct StakingDetails<Balance, BlockNumber> {
   /// The message source id to which an account is staked to.
-	pub msa_id: MessageSourceId,
- 
+  pub msa_id: MessageSourceId,
+
   /// The amount being staked to an MSA account.
-	pub total_reserved: Balance,
+  pub total_reserved: Balance,
 
   /// start of staking
-	pub since: BlockNumber,
+  pub since: BlockNumber,
 }
 ```
 
@@ -193,7 +193,9 @@ Upon the finalization of each block, we can get the total amount of weight used 
 
 **Transaction fees**
 
-When submitting signed extrinsics, before including these transaction in a block they are validated at the transaction pool. The validation implemented doing a [SignedExtension](https://docs.rs/sp-runtime/latest/sp_runtime/traits/trait.SignedExtension.html) that validates that signer has either a token or capacity balance. 
+When submitting signed extrinsics, before including these transaction in a block they are validated at the transaction pool. The validation implemented doing a [SignedExtension](https://docs.rs/sp-runtime/latest/sp_runtime/traits/trait.SignedExtension.html) that validates that the signer has either enough token or capacity to cover fee. 
+
+![fee-extension](https://user-images.githubusercontent.com/3433442/179636315-ee010b99-514e-4a60-b306-02a79c20a8bb.png)
 
 Since we have introduce an additional form of payment for a transactions via Capacity we cannot use FRAME's Transaction-Payment-Pallet. Instead we can create a wrapper around this pallet that allows us to toggle between different forms of payments. 
 
@@ -201,19 +203,19 @@ We can distinguish how to retrive if a transaction should be paid with Capacity 
 
 ```rust
 #[pallet::call]
-	impl<T: Config> Pallet<T> {
-    #[pallet::weight({
-		let dispatch_info = call.get_dispatch_info();
-			(T::WeightInfo::pay_with_capacity().saturating_add(dispatch_info.weight), dispatch_info.class,)
-		})]
-		pub fn pay_with_capacity(
-			origin: OriginFor<T>,
-			call: Box<CallOf<T>>,
-		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin.clone())?;
-			call.dispatch(origin)
-		}
+impl<T: Config> Pallet<T> {
+  #[pallet::weight({
+    let dispatch_info = call.get_dispatch_info();
+    (T::WeightInfo::pay_with_capacity().saturating_add(dispatch_info.weight), dispatch_info.class,)
+  })]
+  pub fn pay_with_capacity(
+    origin: OriginFor<T>,
+    call: Box<CallOf<T>>,
+  ) -> DispatchResultWithPostInfo {
+    ensure_signed(origin.clone())?;
+    call.dispatch(origin)
   }
+}
 ```
 
 `ChargeTransactionPayment` struct type is used to implement a SignedExtension which validates that the signer has enought Capacity or Token to withdraw a fee. A withdraw_fee method is used to resolve and withdraw payment fee from either a Token or Capacity account. If the signer does not have enought to pay for transaction errors with a `TransactionValidityError` and drops the transaction from the pool. 
@@ -236,12 +238,12 @@ where
   
   /// Given a fee is required, withdraw the fee from Capacity or Token account.
   fn withdraw_fee(
-		&self,
-		who: &T::AccountId,
-		call: &CallOf<T>,
-		info: &DispatchInfoOf<CallOf<T>>,
-		len: usize,
-	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
+    &self,
+    who: &T::AccountId,
+    call: &CallOf<T>,
+    info: &DispatchInfoOf<CallOf<T>>,
+    len: usize,
+  ) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
     let tip = self.0;
     let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
 
@@ -253,7 +255,7 @@ where
     // match against the call to be dispatched.
     match call.is_sub_type() {
       Some(Call::pay_with_capacity { .. }) =>
-        T::OnChargeCapacityTransaction::withdraw_fee(1, call, info, fee.into(), tip.into())
+        T::OnChargeCapacityTransaction::withdraw_fee(who, call, info, fee.into(), tip.into())
           .map(|i| (fee, InitialPayment::Capacity(i))),
       _ => <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
         who, call, info, fee, self.0,
@@ -271,15 +273,15 @@ Below is the partial implementation of the SignedExtension on ChargeTransactionP
 /// Implement signed extension SignedExtension to validate that a transaction payment can be withdrawn for a Capacity or Token account. This allows transactions to be dropped from the transaction pool if signer does not have enough to pay for fee. Pre-dispatch withdraws the actual payment from the account and Post-dispatch refunds over charges made at pre-dispatch.
 impl<T: Config + Send + Sync> SignedExtension for ChargeTransactionPayment<T>
 where
-	BalanceOf<T>: Send + Sync + FixedPointOperand + From<u64> + IsType<ChargeCapacityBalanceOf<T>>,
-	CallOf<T>: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + IsSubType<Call<T>>,
+  BalanceOf<T>: Send + Sync + FixedPointOperand + From<u64> + IsType<ChargeCapacityBalanceOf<T>>,
+  CallOf<T>: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + IsSubType<Call<T>>,
 {
   const IDENTIFIER: &'static str = "ChargePayment";
-	type AccountId = T::AccountId;
-	type Call = CallOf<T>;
-	type AdditionalSigned = ();
-	type Pre = (BalanceOf<T>, Self::AccountId, InitialPayment<T>);
-
+  type AccountId = T::AccountId;
+  type Call = CallOf<T>;
+  type AdditionalSigned = ();
+  type Pre = (BalanceOf<T>, Self::AccountId, InitialPayment<T>);
+  
   /// Validate that payment can be withdrawn from Capacity or Token account.
   fn validate(
     &self,
@@ -289,7 +291,7 @@ where
     len: usize,
   ) -> TransactionValidity {
     use pallet_transaction_payment::ChargeTransactionPayment;
-    
+
     let (fee, _) = self.withdraw_fee(who, call, info, len)?;
     let priority = ChargeTransactionPayment::<T>::get_priority(len, info, fee);
     
@@ -307,11 +309,13 @@ where
     let (_fee, initial_payment) = self.withdraw_fee(who, call, info, len)?;
 
     let tip = self.0;
+
     Ok((tip, who.clone(), initial_payment))
   }
 
   ...
 }
+```
 
 Notice that Pre-dispatch returns a type `Pre`, this is the type that gets passed from Pre-dispatch to Post-dispatch. It lets Post-dispach know how the payment was paid for in Capacity, Token or No payment.
 
@@ -337,45 +341,50 @@ where
 	CallOf<T>: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + IsSubType<Call<T>>,
 {
   ...
-
-	fn post_dispatch(
-		pre: Self::Pre,
-		info: &DispatchInfoOf<Self::Call>,
-		post_info: &PostDispatchInfoOf<CallOf<T>>,
-		len: usize,
-		result: &DispatchResult,
-	) -> Result<(), TransactionValidityError> {
-		use pallet_transaction_payment::ChargeTransactionPayment;
-
-		let (tip, who, initial_payment) = pre;
-		let actual_fee = pallet_transaction_payment::Pallet::<T>::compute_actual_fee(
-			len as u32, info, post_info, tip,
-		);
-
-		match initial_payment {
-			InitialPayment::Token(already_withdrawn) => {
-				let pre_pre = (tip, who, already_withdrawn);
-				ChargeTransactionPayment::<T>::post_dispatch(
-					pre_pre, info, post_info, len, result,
-				)?;
-			},
-			InitialPayment::Capacity(already_withdrawn) => {
-				let account = 1u32;
-				T::OnChargeCapacityTransaction::correct_and_deposit_fee(
-					&account,
-					info,
-					post_info,
-					actual_fee.into(),
-					tip.into(),
-					already_withdrawn,
-				)?;
-			},
-			InitialPayment::Nothing => {
-				debug_assert!(tip.is_zero(), "tip should be zero if initial fee was zero.");
-			},
-		}
-		Ok(())
-	}
+  
+  fn post_dispatch(
+    pre: Self::Pre,
+    info: &DispatchInfoOf<Self::Call>,
+    post_info: &PostDispatchInfoOf<CallOf<T>>,
+    len: usize,
+    result: &DispatchResult,
+  ) -> Result<(), TransactionValidityError> {
+    use pallet_transaction_payment::ChargeTransactionPayment;
+    
+    let (tip, who, initial_payment) = pre;
+    let actual_fee = pallet_transaction_payment::Pallet::<T>::compute_actual_fee(
+      len as u32,
+      info,
+      post_info,
+      tip,
+    );
+    
+    match initial_payment {
+      InitialPayment::Token(already_withdrawn) => {
+        let pre_pre = (tip, who, already_withdrawn);
+        ChargeTransactionPayment::<T>::post_dispatch(
+          pre_pre, info, post_info, len, result,
+        )?;
+      },
+      InitialPayment::Capacity(already_withdrawn) => {
+        let account = 1u32; 
+        T::OnChargeCapacityTransaction::correct_and_deposit_fee(
+          &account,
+          info,
+          post_info,
+          actual_fee.into(),
+          tip.into(),
+          already_withdrawn,
+        )?;
+      },
+      InitialPayment::Nothing => {
+        debug_assert!(tip.is_zero(), "tip should be zero if initial fee was zero.");
+      },
+    }
+    Ok(())
+  }
+  ...
+}
 ```
 
 If the MSA has capacity it then increases the amount of capacity is used. If no Capacity is remaining for the epoch period the transaction remains in the future queue until the next epoch. Once the next epoch starts and Capacity becomes available the transaction is processed.
