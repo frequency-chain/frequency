@@ -25,32 +25,15 @@ There is a minimum required for staking that will be detailed further in a suppl
 - Send a message
 - Send a batch message
 
-As mentioned above, Capacity is non-transferable and at a minimum implements the following interface.
-
-```rust
-traits Nontransferable {
-   type Balance = Balance;
-
-   /// The available Capacity for an MSA account. 
-   fn available(msa_id: MessageSourceId) -> Result<Balance, DispatchError>;
-   
-   /// Reduce the available Capacity of an MSA account. 
-   fn reduce_available(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError>;
-
-   /// Increase the available Capacity for an MSA account.
-   fn increase_available(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError>;
- }
-
-```
 
 Capacity will be stored as a mapping of an MsaId to information containing the total balance available to an MSA.
 
 ```rust
 /// Storage for an MSA's Capacity balance details.
 #[pallet::storage]
-pub type CapacityOf<T: Config> = StorageMap<_, Blake2_128Concat, MessageSourceId, Details<T::Balance>>;
+pub type CapacityOf<T: Config> = StorageMap<_, Blake2_128Concat, MessageSourceId, CapacityDetails<T::Balance>>;
 
-pub struct CapacityDetails {
+pub struct CapacityDetails<Balance> {
   /// The amount of Capacity used for an Epoch.
   pub used: Balance,
 
@@ -65,23 +48,30 @@ pub struct CapacityDetails {
 }
 ```
 
-And we can store the a token account staking to MSA by mapping.
+And we can store records of a token account staking to MSA by using the following map.
 
 ```rust
 /// Storage for keeping record of Accounts staking to MSA's.
 #[pallet::storage]
 pub type Staking<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, StakingDetails<T::Balance>>;
 
-pub struct StakingDetails<Balance> {
+pub struct StakingDetails<Balance, BlockNumber> {
   /// The message source id to which an account is staked to.
 	pub msa_id: MessageSourceId,
  
   /// The amount being staked to an MSA account.
 	pub total_reserved: Balance,
+
+  /// start of staking
+	pub since: BlockNumber,
 }
 ```
 
 Initially, you are limited to staking and un-staking token for Capacity. As mentioned above a more detailed design doc around staking and rewards are deferred to the [staking design doc](https://github.com/LibertyDSNP/frequency/issues/40). Note that these interface can change as we introduce stash and controller accounts using Proxy pallet.
+
+The amount staked is reserved from the account balance using the [NamedReserveableCurrency](https://paritytech.github.io/substrate/master/frame_support/traits/trait.NamedReservableCurrency.html) trait.
+
+
 
 ```rust
 /// Stakes some amount of tokens to an MSA account.
@@ -91,10 +81,14 @@ Initially, you are limited to staking and un-staking token for Capacity. As ment
 /// - Returns Error::AlreadyStaked if sender already staked to that MSA.
 /// - Returns Error::InsufficientBalance if sender does not have enought to cover the amount wanting to stake.
 /// - Returns Error::InvalidMsa if attempting to stake to a non-existing MSA account.
-pub fn stake(origin: OriginFor<T>, account: MessageSourceId, amount: BalanceOf<T>)
+pub fn stake(origin: OriginFor<T>, account: MessageSourceId, amount: BalanceOf<T>) -> DispatchResult {
+
+}
 
 /// Unstakes some amount of tokens from an MSA.
-pub fn unstake(origin: OriginFor<T>, account: MessageSourceId, amount: BalanceOf<T>)
+pub fn unstake(origin: OriginFor<T>, account: MessageSourceId, amount: BalanceOf<T>) -> DispatchResult {
+
+}
 ```
 
 Events for triggers for staking include
@@ -142,6 +136,24 @@ pub enum Error<T> {
 }
 ```
 
+As mentioned above, Capacity is non-transferable and at a implements the following interface to reduce and increase capacity on an MSA.
+
+```rust
+traits Nontransferable {
+   type Balance = Balance;
+
+   /// The available Capacity for an MSA account. 
+   fn available(msa_id: MessageSourceId) -> Result<Balance, DispatchError>;
+   
+   /// Reduce the available Capacity of an MSA account. 
+   fn reduce_available(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError>;
+
+   /// Increase the available Capacity for an MSA account.
+   fn increase_available(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError>;
+ }
+
+```
+
 **Capacity is replenishable**
 
 Replenishable means that after a certain fixed period, called an epoch, all capacity is replenished. The epoch period is composed of blocks.  Moreover, one unit of Capacity is `10^12` and matches with substrate weight measurement where `10^12` is 1 second of execution time.
@@ -149,7 +161,7 @@ Replenishable means that after a certain fixed period, called an epoch, all capa
 Since we want the ability to replenish Capacity the following interface is implement to replenish capacity.
 
 ```rust
-traits Replenishable {
+trait Replenishable {
   type Balance: Balance;
    
   /// Replenish an MSA amount.
@@ -165,7 +177,7 @@ traits Replenishable {
 
 **How capacity replenishes**
 
-As mentioned above, epoch periods are composed of blocks. The next epoch period calculated is based on the current epoch fullness, and expands and contracts depending on a threshold. This threshold is configurable and can be called `config::epochThreshold` . Additionally, we can also configure a multiplier that we increase or decrease the next epoch based on the fullness of the current epoch. This is defined as `config::epochUtilizationMultiplier`.
+As mentioned above, epoch periods are composed of blocks. The next epoch period calculated is based on the current epoch fullness, and expands and contracts depending on a threshold. This threshold is configurable and can be called `config::epochThreshold`. Additionally, we can also configure a multiplier that we increase or decrease the next epoch based on the fullness of the current epoch. This is defined as `config::epochUtilizationMultiplier`.
 
 ![Untitled](https://user-images.githubusercontent.com/3433442/171747512-651112be-bbdc-4197-96ef-0cd208f702db.png)
 
@@ -175,18 +187,201 @@ The above illustrates two epochs where the second one contracts because network 
 
 Epoch are used to manage congestion on the network. As demand increases for network resources the epoch length increases which results in capacity taking longer to replenish. 
 
-Upon the finalization of each block, we can get the total amount of weight used and update the total amount of weight for an epoch
+Upon the finalization of each block, we can get the total amount of weight used and update the total amount of weight for an epoch.
 
 ![Untitled](https://user-images.githubusercontent.com/3433442/171747526-566ee44a-194f-47e3-8abb-e2c415ac7fb5.png)
 
-**Transactions fees**
+**Transaction fees**
 
-When submitting capacity transactions, before including these transaction in a block they are validated at the transaction pool. The validation implemented doing a [SignedExtension](https://docs.rs/sp-runtime/latest/sp_runtime/traits/trait.SignedExtension.html) that validates that the signed transaction is associated to an MSA that contains a Capacity balance. If the MSA has capacity it then increases the amount of capacity is used. If no Capacity is remaining for the epoch period the transaction remains in the future queue until the next epoch. Once the next epoch starts and Capacity becomes available the transaction is processed.
+When submitting signed extrinsics, before including these transaction in a block they are validated at the transaction pool. The validation implemented doing a [SignedExtension](https://docs.rs/sp-runtime/latest/sp_runtime/traits/trait.SignedExtension.html) that validates that signer has either a token or capacity balance. 
+
+
+Since we have introduce an additional form of payment for a transactions via Capacity we cannot use FRAME's Transaction-Payment-Pallet. Instead we can create a wrapper around this pallet that allows us to toggle between different forms of payments. 
+
+
+```rust
+/// Types for handling how the payment will processed. This type is passed to Post-dispatch to be able to distinguish how to reinbused overcharges in fee payment.
+#[derive(Encode, Decode, DefaultNoBound, TypeInfo)]
+pub enum InitialPayment<T: Config> {
+  /// Pay no fee.
+  Nothing,
+  /// Pay fee with Token.
+  Native(LiquidityInfoOf<T>),
+  /// Pay fee with Capacity.
+  Capacity(ChargeCapacityBalanceOf<T>),
+}
+
+/// A type that is used for implementing a SignedExtension to handle transaction fees.
+#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct ChargeTransactionPayment<T: Config>(#[codec(compact)] BalanceOf<T>);
+
+impl<T: Config> ChargeTransactionPayment<T>
+where
+  CallOf<T>: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + IsSubType<Call<T>> + From<CallOf<T>>,
+  BalanceOf<T>: Send + Sync + FixedPointOperand + IsType<ChargeCapacityBalanceOf<T>>,
+{
+  /// Constructor
+  pub fn from(fee: BalanceOf<T>) -> Self {
+    Self(fee)
+  }
+
+  /// Given a fee is required, withdraw the fee from Capacity or Token account.
+	fn withdraw_fee(
+		&self,
+		who: &T::AccountId,
+		call: &CallOf<T>,
+		info: &DispatchInfoOf<CallOf<T>>,
+		len: usize,
+	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
+    let tip = self.0;
+    let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
+
+    // Handle case when no fee is required.
+    if fee.is_zero() {
+      return Ok((fee, InitialPayment::Nothing))
+    }
+    
+    // match against the call to be dispatched.
+    match call.is_sub_type() {
+      Some(Call::pay_with_capacity { .. }) =>
+        T::OnChargeCapacityTransaction::withdraw_fee(1, call, info, fee.into(), tip.into())
+          .map(|i| (fee, InitialPayment::Capacity(i))),
+      _ => <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
+        who, call, info, fee, self.0,
+      )
+      .map(|i| (fee, InitialPayment::Native(i)))
+      .map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() }),
+    }
+  }
+}
+```
+
+```rust
+/// Implement signed extension SignedExtension to validate that a transaction payment can be withdrawn for a Capacity or Token account. This allows transactions to be dropped from the transaction pool if signer does not have enough to pay for fee. Pre-dispatch withdraws the actual payment from the account and Post-dispatch refunds over charges made at pre-dispatch.
+impl<T: Config + Send + Sync> SignedExtension for ChargeTransactionPayment<T>
+where
+	BalanceOf<T>: Send + Sync + FixedPointOperand + From<u64> + IsType<ChargeCapacityBalanceOf<T>>,
+	CallOf<T>: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + IsSubType<Call<T>>,
+{
+  const IDENTIFIER: &'static str = "ChargePayment";
+	type AccountId = T::AccountId;
+	type Call = CallOf<T>;
+	type AdditionalSigned = ();
+	type Pre = (BalanceOf<T>, Self::AccountId, InitialPayment<T>);
+
+  /// Validate that payment can be withdrawn from Capacity or Token account.
+  fn validate(
+    &self,
+    who: &Self::AccountId,
+    call: &Self::Call,
+    info: &DispatchInfoOf<CallOf<T>>,
+    len: usize,
+  ) -> TransactionValidity {
+    use pallet_transaction_payment::ChargeTransactionPayment;
+    
+    let (fee, _) = self.withdraw_fee(who, call, info, len)?;
+    let priority = ChargeTransactionPayment::<T>::get_priority(len, info, fee);
+    
+    Ok(ValidTransaction { priority, ..Default::default() })
+  }
+
+  /// Check and Withdraw fee payment from Capacity or Token account before executing authoring.
+  fn pre_dispatch(
+    self,
+    who: &Self::AccountId,
+    call: &Self::Call,
+    info: &DispatchInfoOf<Self::Call>,
+    len: usize,
+  ) -> Result<Self::Pre, TransactionValidityError> {
+    let (_fee, initial_payment) = self.withdraw_fee(who, call, info, len)?;
+
+    let tip = self.0;
+    Ok((tip, who.clone(), initial_payment))
+  }
+}
+```
+
+If the MSA has capacity it then increases the amount of capacity is used. If no Capacity is remaining for the epoch period the transaction remains in the future queue until the next epoch. Once the next epoch starts and Capacity becomes available the transaction is processed.
+
 
 Non-capacity transaction remained unchanged and follow the same default flow. During implementation a wrapper capacity transaction pallet is used to wrap pallet transaction payment to toggle between capacity and non-capacity transactions and set the [validity of the transaction.](https://paritytech.github.io/substrate/master/sp_runtime/transaction_validity/struct.ValidTransaction.html)
 
 ![Untitled](https://user-images.githubusercontent.com/3433442/171749900-21470787-b74f-44fa-b32d-ac06138f7616.png)
 
+```rust
+#[pallet::call]
+	impl<T: Config> Pallet<T> {
+    #[pallet::weight({
+		let dispatch_info = call.get_dispatch_info();
+			(T::WeightInfo::pay_with_capacity().saturating_add(dispatch_info.weight), dispatch_info.class,)
+		})]
+		pub fn pay_with_capacity(
+			origin: OriginFor<T>,
+			call: Box<CallOf<T>>,
+		) -> DispatchResultWithPostInfo {
+			ensure_signed(origin.clone())?;
+			call.dispatch(origin)
+		}
+  }
+
+```
+
+
+```rust
+pub struct ChargeTransactionPayment<T: Config>(#[codec(compact)] BalanceOf<T>);
+
+
+impl<T: Config> ChargeTransactionPayment<T>
+where
+	T::Call: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+	BalanceOf<T>: Send + Sync + FixedPointOperand,
+{
+	/// utility constructor. Used only in client/factory code.
+	pub fn from(fee: BalanceOf<T>) -> Self {
+		Self(fee)
+	}
+
+	/// Returns the tip as being choosen by the transaction sender.
+	pub fn tip(&self) -> BalanceOf<T> {
+		self.0
+	}
+
+	fn withdraw_fee(
+		&self,
+		who: &T::AccountId,
+		call: &T::Call,
+		info: &DispatchInfoOf<T::Call>,
+		len: usize,
+	) -> Result<
+		(
+			BalanceOf<T>,
+			<<T as Config>::OnChargeTransaction as OnChargeTransaction<T>>::LiquidityInfo,
+		),
+		TransactionValidityError,
+	> {
+		let tip = self.0;
+		let fee = Pallet::<T>::compute_fee(len as u32, info, tip);
+
+    if fee.is_zero() {
+			return Ok((fee, None, 0, who.clone()));
+		}
+
+    match call.is_sub_type() {
+      Some(Call::pay_with_capacity { .. }) => { 
+         T::OnChargeCapacityTransaction::withdraw_fee(
+                1, call, info, fee.into(), tip.into()
+            ).map(|i| (fee, InitialPayment::Capacity(i)))
+      },
+      _ => {
+        <<T as Config>::OnChargeTransaction as OnChargeTransaction<T>>::withdraw_fee(
+			    who, call, info, fee, tip,
+		    ).map(|i| (fee, i))
+    }
+	
+	}
+
+```
 
 ## Non-Goals
 Staking details are left for another design document.
