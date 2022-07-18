@@ -195,23 +195,31 @@ Upon the finalization of each block, we can get the total amount of weight used 
 
 When submitting signed extrinsics, before including these transaction in a block they are validated at the transaction pool. The validation implemented doing a [SignedExtension](https://docs.rs/sp-runtime/latest/sp_runtime/traits/trait.SignedExtension.html) that validates that signer has either a token or capacity balance. 
 
-
 Since we have introduce an additional form of payment for a transactions via Capacity we cannot use FRAME's Transaction-Payment-Pallet. Instead we can create a wrapper around this pallet that allows us to toggle between different forms of payments. 
 
+We can distinguish how to retrive if a transaction should be paid with Capacity or Token by requiring that a payment via Capacity to be called with `pay_with_capacity` extrinsic. 
 
 ```rust
-/// Types for handling how the payment will processed. This type is passed to Post-dispatch to be able to distinguish how to reinbused overcharges in fee payment.
-#[derive(Encode, Decode, DefaultNoBound, TypeInfo)]
-pub enum InitialPayment<T: Config> {
-  /// Pay no fee.
-  Nothing,
-  /// Pay fee with Token.
-  Native(LiquidityInfoOf<T>),
-  /// Pay fee with Capacity.
-  Capacity(ChargeCapacityBalanceOf<T>),
-}
+#[pallet::call]
+	impl<T: Config> Pallet<T> {
+    #[pallet::weight({
+		let dispatch_info = call.get_dispatch_info();
+			(T::WeightInfo::pay_with_capacity().saturating_add(dispatch_info.weight), dispatch_info.class,)
+		})]
+		pub fn pay_with_capacity(
+			origin: OriginFor<T>,
+			call: Box<CallOf<T>>,
+		) -> DispatchResultWithPostInfo {
+			ensure_signed(origin.clone())?;
+			call.dispatch(origin)
+		}
+  }
+```
 
-/// A type that is used for implementing a SignedExtension to handle transaction fees.
+`ChargeTransactionPayment` struct type is used to implement a SignedExtension which validates that the signer has enought Capacity or Token to withdraw a fee. A withdraw_fee method is used to resolve and withdraw payment fee from either a Token or Capacity account. If the signer does not have enought to pay for transaction errors with a `TransactionValidityError` and drops the transaction from the pool. 
+
+```rust
+/// A type that is used for implementing a SignedExtension to handle transaction fees validation and withdrawal.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct ChargeTransactionPayment<T: Config>(#[codec(compact)] BalanceOf<T>);
@@ -221,13 +229,13 @@ where
   CallOf<T>: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + IsSubType<Call<T>> + From<CallOf<T>>,
   BalanceOf<T>: Send + Sync + FixedPointOperand + IsType<ChargeCapacityBalanceOf<T>>,
 {
-  /// Constructor
+  /// utility constructor. Used only in client/factory code.
   pub fn from(fee: BalanceOf<T>) -> Self {
     Self(fee)
   }
-
+  
   /// Given a fee is required, withdraw the fee from Capacity or Token account.
-	fn withdraw_fee(
+  fn withdraw_fee(
 		&self,
 		who: &T::AccountId,
 		call: &CallOf<T>,
@@ -250,12 +258,14 @@ where
       _ => <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
         who, call, info, fee, self.0,
       )
-      .map(|i| (fee, InitialPayment::Native(i)))
+      .map(|i| (fee, InitialPayment::Token(i)))
       .map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() }),
     }
   }
 }
 ```
+
+Below is the partial implementation of the SignedExtension on ChargeTransactionPayment containing the validate and pre-dispatch requirements.
 
 ```rust
 /// Implement signed extension SignedExtension to validate that a transaction payment can be withdrawn for a Capacity or Token account. This allows transactions to be dropped from the transaction pool if signer does not have enough to pay for fee. Pre-dispatch withdraws the actual payment from the account and Post-dispatch refunds over charges made at pre-dispatch.
@@ -299,89 +309,79 @@ where
     let tip = self.0;
     Ok((tip, who.clone(), initial_payment))
   }
+
+  ...
 }
+
+Notice that Pre-dispatch returns a type `Pre`, this is the type that gets passed from Pre-dispatch to Post-dispatch. It lets Post-dispach know how the payment was paid for in Capacity, Token or No payment.
+
+```rust
+/// Types for handling how the payment will processed. This type is passed to Post-dispatch to be able to distinguish how to reinbused overcharges in fee payment.
+#[derive(Encode, Decode, DefaultNoBound, TypeInfo)]
+pub enum InitialPayment<T: Config> {
+  /// Pay no fee.
+  Nothing,
+  /// Pay fee with Token.
+  Token(LiquidityInfoOf<T>),
+  /// Pay fee with Capacity.
+  Capacity(ChargeCapacityBalanceOf<T>),
+}
+```
+
+When after the transaction is authored Post-dispatch refunds the overcharged Capacity or Token payment. Using the type `Pre` that gets passed in from Pre-dispatch it corrects the fee refunding the amount overcharged.
+
+```rust
+impl<T: Config + Send + Sync> SignedExtension for ChargeTransactionPayment<T>
+where
+	BalanceOf<T>: Send + Sync + FixedPointOperand + From<u64> + IsType<ChargeCapacityBalanceOf<T>>,
+	CallOf<T>: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + IsSubType<Call<T>>,
+{
+  ...
+
+	fn post_dispatch(
+		pre: Self::Pre,
+		info: &DispatchInfoOf<Self::Call>,
+		post_info: &PostDispatchInfoOf<CallOf<T>>,
+		len: usize,
+		result: &DispatchResult,
+	) -> Result<(), TransactionValidityError> {
+		use pallet_transaction_payment::ChargeTransactionPayment;
+
+		let (tip, who, initial_payment) = pre;
+		let actual_fee = pallet_transaction_payment::Pallet::<T>::compute_actual_fee(
+			len as u32, info, post_info, tip,
+		);
+
+		match initial_payment {
+			InitialPayment::Token(already_withdrawn) => {
+				let pre_pre = (tip, who, already_withdrawn);
+				ChargeTransactionPayment::<T>::post_dispatch(
+					pre_pre, info, post_info, len, result,
+				)?;
+			},
+			InitialPayment::Capacity(already_withdrawn) => {
+				let account = 1u32;
+				T::OnChargeCapacityTransaction::correct_and_deposit_fee(
+					&account,
+					info,
+					post_info,
+					actual_fee.into(),
+					tip.into(),
+					already_withdrawn,
+				)?;
+			},
+			InitialPayment::Nothing => {
+				debug_assert!(tip.is_zero(), "tip should be zero if initial fee was zero.");
+			},
+		}
+		Ok(())
+	}
 ```
 
 If the MSA has capacity it then increases the amount of capacity is used. If no Capacity is remaining for the epoch period the transaction remains in the future queue until the next epoch. Once the next epoch starts and Capacity becomes available the transaction is processed.
 
 
 Non-capacity transaction remained unchanged and follow the same default flow. During implementation a wrapper capacity transaction pallet is used to wrap pallet transaction payment to toggle between capacity and non-capacity transactions and set the [validity of the transaction.](https://paritytech.github.io/substrate/master/sp_runtime/transaction_validity/struct.ValidTransaction.html)
-
-![Untitled](https://user-images.githubusercontent.com/3433442/171749900-21470787-b74f-44fa-b32d-ac06138f7616.png)
-
-```rust
-#[pallet::call]
-	impl<T: Config> Pallet<T> {
-    #[pallet::weight({
-		let dispatch_info = call.get_dispatch_info();
-			(T::WeightInfo::pay_with_capacity().saturating_add(dispatch_info.weight), dispatch_info.class,)
-		})]
-		pub fn pay_with_capacity(
-			origin: OriginFor<T>,
-			call: Box<CallOf<T>>,
-		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin.clone())?;
-			call.dispatch(origin)
-		}
-  }
-
-```
-
-
-```rust
-pub struct ChargeTransactionPayment<T: Config>(#[codec(compact)] BalanceOf<T>);
-
-
-impl<T: Config> ChargeTransactionPayment<T>
-where
-	T::Call: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
-	BalanceOf<T>: Send + Sync + FixedPointOperand,
-{
-	/// utility constructor. Used only in client/factory code.
-	pub fn from(fee: BalanceOf<T>) -> Self {
-		Self(fee)
-	}
-
-	/// Returns the tip as being choosen by the transaction sender.
-	pub fn tip(&self) -> BalanceOf<T> {
-		self.0
-	}
-
-	fn withdraw_fee(
-		&self,
-		who: &T::AccountId,
-		call: &T::Call,
-		info: &DispatchInfoOf<T::Call>,
-		len: usize,
-	) -> Result<
-		(
-			BalanceOf<T>,
-			<<T as Config>::OnChargeTransaction as OnChargeTransaction<T>>::LiquidityInfo,
-		),
-		TransactionValidityError,
-	> {
-		let tip = self.0;
-		let fee = Pallet::<T>::compute_fee(len as u32, info, tip);
-
-    if fee.is_zero() {
-			return Ok((fee, None, 0, who.clone()));
-		}
-
-    match call.is_sub_type() {
-      Some(Call::pay_with_capacity { .. }) => { 
-         T::OnChargeCapacityTransaction::withdraw_fee(
-                1, call, info, fee.into(), tip.into()
-            ).map(|i| (fee, InitialPayment::Capacity(i)))
-      },
-      _ => {
-        <<T as Config>::OnChargeTransaction as OnChargeTransaction<T>>::withdraw_fee(
-			    who, call, info, fee, tip,
-		    ).map(|i| (fee, i))
-    }
-	
-	}
-
-```
 
 ## Non-Goals
 Staking details are left for another design document.
