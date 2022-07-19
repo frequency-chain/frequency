@@ -40,3 +40,29 @@ where
 		}
 	}
 }
+
+/// Newtype for CIDv2 addresses. We can change the inner type as we understand
+/// more about how to structurre IPFS addressable content.
+pub struct CIDv2(Vec<u8>);
+
+impl CIDv2 {
+	/// Exposes the inner vector
+	pub fn get(&self) -> &Vec<u8> {
+		&self.0
+	}
+}
+
+/// Offchain payloads are defined by two members, a CID address and a payload length
+pub struct OffchainPayload {
+	/// IPFS Content address 
+	pub cid: CIDv2,
+	payload_length: u64
+}
+
+/// Sum type for payloads
+pub enum Payload {
+	/// As of now, onchain payloads are strings of ASCII
+	Onchain(Vec<u8>),
+	/// Offchain payload
+	Offchain(OffchainPayload)
+}

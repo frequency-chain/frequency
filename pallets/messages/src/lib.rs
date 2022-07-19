@@ -138,6 +138,8 @@ pub mod pallet {
 		InvalidSchemaId,
 		/// UnAuthorizedDelegate
 		UnAuthorizedDelegate,
+		/// Invalid payload location
+		InvalidPayloadLocation,
 	}
 
 	#[pallet::event]
@@ -193,7 +195,7 @@ pub mod pallet {
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
-			let message = Self::add_message(provider_key, message_source_id, payload, schema_id)?;
+			let message = Self::add_message(provider_key, message_source_id, Payload::Onchain(payload), schema_id)?;
 
 			Ok(Some(T::WeightInfo::add(message.payload.len() as u32, message.index as u32)).into())
 		}
@@ -212,7 +214,7 @@ impl<T: Config> Pallet<T> {
 	pub fn add_message(
 		provider_key: T::AccountId,
 		message_source_id: MessageSourceId,
-		payload: Vec<u8>,
+		payload: Payload,
 		schema_id: SchemaId,
 	) -> Result<Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, DispatchError> {
 		<BlockMessages<T>>::try_mutate(|existing_messages| -> Result<Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, DispatchError> {
@@ -222,7 +224,8 @@ impl<T: Config> Pallet<T> {
 				.map_err(|_| Error::<T>::TypeConversionOverflow)?;
 
 			let msg = Message {
-				payload: payload.try_into().unwrap(), // size is checked on top of extrinsic
+				payload: Self::payload_to_message(payload), // size is checked on top of extrinsic
+				// payload: payload.try_into().unwrap(), // size is checked on top of extrinsic
 				provider_key,
 				index: current_size,
 				msa_id: message_source_id,
@@ -234,6 +237,16 @@ impl<T: Config> Pallet<T> {
 
 			Ok(msg)
 		})
+	}
+
+	/// Converts a Payload to a message string
+	pub fn payload_to_message(payload: Payload) -> BoundedVec<u8, T::MaxMessagePayloadSizeBytes> {
+		match payload {
+			Payload::Onchain(payload_vec) => {
+				payload_vec.try_into().unwrap()
+			},
+			Payload::Offchain(offchain_payload) => offchain_payload.cid.get().clone().try_into().unwrap()
+		}
 	}
 
 	/// Resolves an MSA.
