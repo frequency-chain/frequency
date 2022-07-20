@@ -702,7 +702,7 @@ impl<T: Config> Pallet<T> {
 		// revoke key that signed the origin trans
 		// also get all keys and revoke them all
 		//
-		revoke_key();
+		// Self::revoke_key();
 		Ok(())
 	}
 
