@@ -237,12 +237,12 @@ fn it_revokes_msa_key_successfully() {
 #[test]
 fn it_retires_msa_id_successfully() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Msa::create());
+		assert_ok!(Msa::create(test_origin_signed(1)));
 		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
 
 		assert_ok!(Msa::retire_my_msa(test_origin_signed(1)));
 
-		let info = Msa::get_msa_id(&test_public(2));
+		let info = Msa::get_msa_id();
 
 		// have to check expired from..
 	})
