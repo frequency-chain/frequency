@@ -1,18 +1,22 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
+import '@polkadot/api-base/types/submittable';
+
 import type { ApiTypes, AugmentedSubmittable, SubmittableExtrinsic, SubmittableExtrinsicFunction } from '@polkadot/api-base/types';
 import type { Bytes, Compact, Option, Vec, bool, u128, u16, u32, u64 } from '@polkadot/types-codec';
 import type { AnyNumber, IMethod, ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, Call, H256, MultiAddress, Perbill } from '@polkadot/types/interfaces/runtime';
-import type { CommonPrimitivesSchemaModelType, CumulusPrimitivesParachainInherentParachainInherentData, FrequencyRuntimeSessionKeys, PalletMsaAddKeyData, PalletMsaAddProvider, SpRuntimeHeader, SpRuntimeMultiSignature, XcmV1MultiLocation, XcmV2WeightLimit, XcmVersionedMultiAssets, XcmVersionedMultiLocation, XcmVersionedXcm } from '@polkadot/types/lookup';
+import type { CommonPrimitivesSchemaModelType, CommonPrimitivesSchemaPayloadLocation, CumulusPrimitivesParachainInherentParachainInherentData, FrequencyRuntimeSessionKeys, PalletMsaAddKeyData, PalletMsaAddProvider, SpRuntimeHeader, SpRuntimeMultiSignature, XcmV1MultiLocation, XcmV2WeightLimit, XcmVersionedMultiAssets, XcmVersionedMultiLocation, XcmVersionedXcm } from '@polkadot/types/lookup';
 
 export type __AugmentedSubmittable = AugmentedSubmittable<() => unknown>;
 export type __SubmittableExtrinsic<ApiType extends ApiTypes> = SubmittableExtrinsic<ApiType>;
 export type __SubmittableExtrinsicFunction<ApiType extends ApiTypes> = SubmittableExtrinsicFunction<ApiType>;
 
 declare module '@polkadot/api-base/types/submittable' {
-  export interface AugmentedSubmittables<ApiType extends ApiTypes> {
+  interface AugmentedSubmittables<ApiType extends ApiTypes> {
     authorship: {
       /**
        * Provide a set of uncles.
@@ -165,7 +169,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html) The return type of a Dispatchable in frame.
        * When returned explicitly from a dispatchable function it allows overriding the default PostDispatchInfo returned from a dispatch.
        **/
-      add: AugmentedSubmittable<(onBehalfOf: Option<u64> | null | object | string | Uint8Array, schemaId: u16 | AnyNumber | Uint8Array, payload: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Option<u64>, u16, Bytes]>;
+      add: AugmentedSubmittable<(onBehalfOf: Option<u64> | null | Uint8Array | u64 | AnyNumber, schemaId: u16 | AnyNumber | Uint8Array, payload: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Option<u64>, u16, Bytes]>;
     };
     msa: {
       /**
@@ -295,7 +299,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * - `origin`: Must be Root.
        * - `maybe_xcm_version`: The default XCM encoding version, or `None` to disable.
        **/
-      forceDefaultXcmVersion: AugmentedSubmittable<(maybeXcmVersion: Option<u32> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Option<u32>]>;
+      forceDefaultXcmVersion: AugmentedSubmittable<(maybeXcmVersion: Option<u32> | null | Uint8Array | u32 | AnyNumber) => SubmittableExtrinsic<ApiType>, [Option<u32>]>;
       /**
        * Ask a location to notify us regarding their XCM version and any changes to it.
        * 
@@ -423,7 +427,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * * [`Error::<T>::SchemaCountOverflow`] - The schema count has exceeded its bounds
        * 
        **/
-      registerSchema: AugmentedSubmittable<(model: Bytes | string | Uint8Array, modelType: CommonPrimitivesSchemaModelType | 'AvroBinary' | number | Uint8Array) => SubmittableExtrinsic<ApiType>, [Bytes, CommonPrimitivesSchemaModelType]>;
+      registerSchema: AugmentedSubmittable<(model: Bytes | string | Uint8Array, modelType: CommonPrimitivesSchemaModelType | 'AvroBinary' | 'Parquet' | number | Uint8Array, payloadLocation: CommonPrimitivesSchemaPayloadLocation | 'OnChain' | 'IPFS' | number | Uint8Array) => SubmittableExtrinsic<ApiType>, [Bytes, CommonPrimitivesSchemaModelType, CommonPrimitivesSchemaPayloadLocation]>;
       /**
        * Set a new value for the Schema maximum number of bytes.  Must be <= the limit of the
        * Schema BoundedVec used for registration.
