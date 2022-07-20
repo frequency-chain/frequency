@@ -253,6 +253,10 @@ pub fn run() -> Result<()> {
 			let collator_options = cli.run.collator_options();
 
 			runner.run_node_until_exit(|config| async move {
+				let para_id = chain_spec::frequency_local::Extensions::try_get(&*config.chain_spec)
+					.map(|e| e.para_id)
+					.ok_or("Could not find parachain ID in chain-spec.")?;
+
 				let hwbench = if !cli.no_hardware_benchmarks {
 					config.database.path().map(|database_path| {
 						let _ = std::fs::create_dir_all(&database_path);
@@ -262,9 +266,9 @@ pub fn run() -> Result<()> {
 					None
 				};
 
-				let para_id = chain_spec::frequency_local::Extensions::try_get(&*config.chain_spec)
-					.map(|e| e.para_id)
-					.ok_or("Could not find parachain ID in chain-spec.")?;
+				if cli.instant_sealing {
+					return frequency_dev(config, cli.instant_sealing).map_err(Into::into)
+				}
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,

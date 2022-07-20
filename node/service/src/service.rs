@@ -536,3 +536,11 @@ pub async fn start_parachain_node(
 	)
 	.await
 }
+
+pub fn frequency_dev(
+	config: Configuration,
+	instant_sealing: bool,
+) -> Result<TaskManager, sc_service::error::Error> {
+	//frequency_dev_run(config, instant_sealing)
+	Err("Instant sealing not implemented!".into())
+}
