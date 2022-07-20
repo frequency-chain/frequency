@@ -20,22 +20,32 @@ use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
+use cumulus_primitives_parachain_inherent::{
+	MockValidationDataInherentDataProvider, MockXcmConfig,
+};
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 
 // Substrate Imports
 use sc_client_api::ExecutorProvider;
+use sc_consensus::LongestChain;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::ConstructRuntimeApi;
+use sp_blockchain::HeaderBackend;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::BlakeTwo256;
 use substrate_prometheus_endpoint::Registry;
 
+pub use futures::stream::StreamExt;
 use polkadot_service::CollatorPair;
+
+type FullBackend = TFullBackend<Block>;
+
+type MaybeFullSelectChain = Option<LongestChain<FullBackend, Block>>;
 
 /// Native executor instance.
 pub struct TemplateRuntimeExecutor;
@@ -60,11 +70,12 @@ impl sc_executor::NativeExecutionDispatch for TemplateRuntimeExecutor {
 pub fn new_partial<RuntimeApi, Executor, BIQ>(
 	config: &Configuration,
 	build_import_queue: BIQ,
+	instant_sealing: bool,
 ) -> Result<
 	PartialComponents<
 		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
 		TFullBackend<Block>,
-		(),
+		MaybeFullSelectChain,
 		sc_consensus::DefaultImportQueue<
 			Block,
 			TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
@@ -153,6 +164,9 @@ where
 		&task_manager,
 	)?;
 
+	let select_chain =
+		if instant_sealing { Some(LongestChain::new(backend.clone())) } else { None };
+
 	let params = PartialComponents {
 		backend,
 		client,
@@ -160,7 +174,7 @@ where
 		keystore_container,
 		task_manager,
 		transaction_pool,
-		select_chain: (),
+		select_chain,
 		other: (telemetry, telemetry_worker_handle),
 	};
 
@@ -266,7 +280,8 @@ where
 
 	let parachain_config = prepare_node_config(parachain_config);
 
-	let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
+	let params =
+		new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue, false)?;
 	let (mut telemetry, telemetry_worker_handle) = params.other;
 
 	let client = params.client.clone();
@@ -316,6 +331,7 @@ where
 				client: client.clone(),
 				pool: transaction_pool.clone(),
 				deny_unsafe,
+				command_sink: None,
 			};
 
 			crate::rpc::create_full(deps).map_err(Into::into)
@@ -536,11 +552,172 @@ pub async fn start_parachain_node(
 	)
 	.await
 }
+fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_service::error::Error> {
+	let parachain_config = prepare_node_config(config);
 
-pub fn frequency_dev(
+	let sc_service::PartialComponents {
+		client,
+		backend,
+		mut task_manager,
+		import_queue,
+		keystore_container,
+		select_chain: maybe_select_chain,
+		transaction_pool,
+		other: (mut telemetry, _),
+	} = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
+		&parachain_config,
+		parachain_build_import_queue,
+		true,
+	)?;
+
+	let (network, system_rpc_tx, network_starter) =
+		sc_service::build_network(sc_service::BuildNetworkParams {
+			config: &parachain_config,
+			client: client.clone(),
+			transaction_pool: transaction_pool.clone(),
+			spawn_handle: task_manager.spawn_handle(),
+			import_queue,
+			block_announce_validator_builder: None,
+			warp_sync: None,
+		})?;
+
+	if parachain_config.offchain_worker.enabled {
+		let offchain_workers = Arc::new(sc_offchain::OffchainWorkers::new_with_options(
+			client.clone(),
+			sc_offchain::OffchainWorkerOptions { enable_http_requests: false },
+		));
+
+		// Start the offchain workers to have
+		task_manager.spawn_handle().spawn(
+			"offchain-notifications",
+			None,
+			sc_offchain::notification_future(
+				parachain_config.role.is_authority(),
+				client.clone(),
+				offchain_workers,
+				task_manager.spawn_handle(),
+				network.clone(),
+			),
+		);
+	}
+
+	let prometheus_registry = parachain_config.prometheus_registry().cloned();
+
+	let role = parachain_config.role.clone();
+
+	let select_chain = maybe_select_chain
+		.expect("In frequency dev mode, `new_partial` will return some `select_chain`; qed");
+
+	let command_sink = if role.is_authority() {
+		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
+			task_manager.spawn_handle(),
+			client.clone(),
+			transaction_pool.clone(),
+			prometheus_registry.as_ref(),
+			telemetry.as_ref().map(|x| x.handle()),
+		);
+
+		// Channel for the rpc handler to communicate with the authorship task.
+		let (command_sink, commands_stream) = futures::channel::mpsc::channel(1024);
+
+		let pool = transaction_pool.pool().clone();
+		let import_stream = pool.validated_pool().import_notification_stream().map(|_| {
+			sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
+				create_empty: false,
+				finalize: true,
+				parent_hash: None,
+				sender: None,
+			}
+		});
+
+		let client_for_cidp = client.clone();
+
+		let authorship_future =
+			sc_consensus_manual_seal::run_manual_seal(sc_consensus_manual_seal::ManualSealParams {
+				block_import: client.clone(),
+				env: proposer_factory,
+				client: client.clone(),
+				pool: transaction_pool.clone(),
+				commands_stream: futures::stream_select!(commands_stream, import_stream),
+				select_chain,
+				consensus_data_provider: None,
+				create_inherent_data_providers: move |block: Hash, _| {
+					let current_para_block = client_for_cidp
+						.number(block)
+						.expect("Header lookup should succeed")
+						.expect("Header passed in as parent should be present in backend.");
+					let client_for_xcm = client_for_cidp.clone();
+					async move {
+						let mocked_parachain = MockValidationDataInherentDataProvider {
+							current_para_block,
+							relay_offset: 1000,
+							relay_blocks_per_para_block: 2,
+							xcm_config: MockXcmConfig::new(
+								&*client_for_xcm,
+								block,
+								Default::default(),
+								Default::default(),
+							),
+							raw_downward_messages: vec![],
+							raw_horizontal_messages: vec![],
+						};
+						Ok((
+							sp_timestamp::InherentDataProvider::from_system_time(),
+							mocked_parachain,
+						))
+					}
+				},
+			});
+		// we spawn the future on a background thread managed by service.
+		task_manager.spawn_essential_handle().spawn_blocking(
+			"instant-seal",
+			Some("block-authoring"),
+			authorship_future,
+		);
+		Some(command_sink)
+	} else {
+		None
+	};
+
+	let rpc_extensions_builder = {
+		let client = client.clone();
+		let transaction_pool = transaction_pool.clone();
+
+		move |deny_unsafe, _| {
+			let deps = crate::rpc::FullDeps {
+				client: client.clone(),
+				pool: transaction_pool.clone(),
+				deny_unsafe,
+				command_sink: command_sink.clone(),
+			};
+
+			crate::rpc::create_full(deps).map_err(Into::into)
+		}
+	};
+
+	sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+		rpc_builder: Box::new(rpc_extensions_builder),
+		client,
+		transaction_pool,
+		task_manager: &mut task_manager,
+		config: parachain_config,
+		keystore: keystore_container.sync_keystore(),
+		backend,
+		network,
+		system_rpc_tx,
+		telemetry: telemetry.as_mut(),
+	})?;
+
+	network_starter.start_network();
+
+	Ok(task_manager)
+}
+
+/// Function to start frequency parachain with instant sealing in dev mode.
+/// This function is called when --chain dev --instant-sealing is passed.
+/// This function is called when --chain frequency_dev --instant-sealing is passed.
+pub fn frequency_dev_instant_sealing(
 	config: Configuration,
-	instant_sealing: bool,
 ) -> Result<TaskManager, sc_service::error::Error> {
-	//frequency_dev_run(config, instant_sealing)
-	Err("Instant sealing not implemented!".into())
+	frequency_dev_instant(config)
 }

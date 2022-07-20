@@ -122,6 +122,7 @@ macro_rules! construct_async_run {
 			>(
 				&$config,
 				parachain_build_import_queue,
+				false,
 			)?;
 			let task_manager = $components.task_manager;
 			{ $( $code )* }.map(|v| (v, task_manager))
@@ -213,6 +214,7 @@ pub fn run() -> Result<()> {
 					let partials = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
 						&config,
 						parachain_build_import_queue,
+						false,
 					)?;
 					cmd.run(partials.client)
 				}),
@@ -220,6 +222,7 @@ pub fn run() -> Result<()> {
 					let partials = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
 						&config,
 						parachain_build_import_queue,
+						false,
 					)?;
 					let db = partials.backend.expose_db();
 					let storage = partials.backend.expose_storage();
@@ -267,7 +270,7 @@ pub fn run() -> Result<()> {
 				};
 
 				if cli.instant_sealing {
-					return frequency_dev(config, cli.instant_sealing).map_err(Into::into)
+					return frequency_dev_instant_sealing(config).map_err(Into::into)
 				}
 
 				let polkadot_cli = RelayChainCli::new(
