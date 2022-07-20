@@ -751,14 +751,6 @@ impl<T: Config> Pallet<T> {
 		Ok(info)
 	}
 
-	/// Checks that an MSA is current and not retired.
-	pub fn ensure_current_msa(
-		msa_id: MessageSourceId
-	) -> Result<(), DispatchError> {
-
-		//
-		Ok(())
-	}
 }
 
 impl<T: Config> AccountProvider for Pallet<T> {
