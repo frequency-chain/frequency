@@ -69,6 +69,34 @@ start-frequency)
     --state-cache-size 0 \
   ;;
 
+start-frequency-instant)
+  printf "\nBuilding frequency with runtime '$parachain' and id '$para_id'...\n"
+  cargo build --release
+
+  parachain_dir=$base_dir/parachain/${para_id}
+  mkdir -p $parachain_dir;
+
+  if [ "$2" == "purge" ]; then
+    echo "purging parachain..."
+    rm -rf $parachain_dir
+  fi
+
+  ./target/release/frequency \
+    --dev \
+    --instant-sealing \
+    --execution=native \
+    --no-telemetry \
+    --no-prometheus \
+    --port $((30333)) \
+    --rpc-port $((9933)) \
+    --ws-port $((9944)) \
+    --rpc-external \
+    --rpc-cors all \
+    --ws-external \
+    --rpc-methods=Unsafe \
+    --tmp
+  ;;
+
 start-frequency-container)
 
   parachain_dir=$base_dir/parachain/${para_id}

@@ -1,6 +1,6 @@
 .PHONY: start
 start:
-	cargo run -- --dev -lruntime=debug --instant-sealing
+	./scripts/init.sh start-frequency-instant
 
 start-relay:
 	./scripts/init.sh start-relay-chain
