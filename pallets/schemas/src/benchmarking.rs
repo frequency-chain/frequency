@@ -1,6 +1,8 @@
 use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_support::{assert_ok, ensure, BoundedVec};
 use frame_system::RawOrigin;
+use numtoa::NumToA;
+use sp_std::vec::Vec;
 
 use crate::Pallet as SchemasPallet;
 
@@ -11,8 +13,23 @@ const SCHEMAS: u32 = 1000;
 fn generate_schema<T: Config>(
 	size: usize,
 ) -> BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> {
-	let input = vec![1; size as usize];
-	input.try_into().unwrap()
+	let mut json: Vec<u8> = vec![];
+	json.extend(b"{");
+	for i in 0..size {
+		let mut item: Vec<u8> = vec![];
+		item.extend(b"\"key");
+		let mut buff = [0u8; 30];
+		item.extend(i.numtoa(10, &mut buff));
+		item.extend(b"\":\"val\",");
+		if item.len() + json.len() < size {
+			json.extend(item);
+		} else {
+			break
+		}
+	}
+	json.pop(); // removing last ,
+	json.extend(b"}");
+	json.try_into().unwrap()
 }
 
 fn register_some_schema<T: Config>(
@@ -31,7 +48,7 @@ fn register_some_schema<T: Config>(
 
 benchmarks! {
 	register_schema {
-		let m in (T::MinSchemaModelSizeBytes::get() + 1) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
+		let m in (T::MinSchemaModelSizeBytes::get() + 15) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
 		let n in 1 .. SCHEMAS;
 		let sender: T::AccountId = whitelisted_caller();
 		let model_type = ModelType::default();
@@ -40,8 +57,8 @@ benchmarks! {
 		for j in 0..(n) {
 			assert_ok!(register_some_schema::<T>(sender.clone(), model_type.clone(), payload_location.clone()));
 		}
-	}: _(RawOrigin::Signed(sender), generate_schema::<T>(m as usize), model_type, payload_location)
-
+		let schema_input = generate_schema::<T>(m as usize);
+	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location)
 	verify {
 		ensure!(SchemasPallet::<T>::schema_count() > 0, "Registered schema count should be > 0");
 	}

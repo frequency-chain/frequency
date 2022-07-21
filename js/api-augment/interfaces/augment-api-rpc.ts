@@ -1,6 +1,10 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
+import '@polkadot/rpc-core/types/jsonrpc';
+
 import type { BlockPaginationRequest, BlockPaginationResponseMessage } from '@dsnp/frequency-api-augment/messages';
 import type { KeyInfoResponse, MessageSourceId } from '@dsnp/frequency-api-augment/msa';
 import type { SchemaId, SchemaModel, SchemaResponse } from '@dsnp/frequency-api-augment/schemas';
@@ -29,8 +33,10 @@ import type { MigrationStatusResult, ReadProof, RuntimeVersion, TraceBlockRespon
 import type { ApplyExtrinsicResult, ChainProperties, ChainType, Health, NetworkState, NodeRole, PeerInfo, SyncState } from '@polkadot/types/interfaces/system';
 import type { IExtrinsic, Observable } from '@polkadot/types/types';
 
+export type __AugmentedRpc = AugmentedRpc<() => unknown>;
+
 declare module '@polkadot/rpc-core/types/jsonrpc' {
-  export interface RpcInterface {
+  interface RpcInterface {
     author: {
       /**
        * Returns true if the keystore has private keys for the given public key and key type.
@@ -203,7 +209,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
       /**
        * Returns fee history for given block count & reward percentiles
        **/
-      feeHistory: AugmentedRpc<(blockCount: U256 | AnyNumber | Uint8Array, newestBlock: BlockNumber | AnyNumber | Uint8Array, rewardPercentiles: Option<Vec<f64>> | null | object | string | Uint8Array) => Observable<EthFeeHistory>>;
+      feeHistory: AugmentedRpc<(blockCount: U256 | AnyNumber | Uint8Array, newestBlock: BlockNumber | AnyNumber | Uint8Array, rewardPercentiles: Option<Vec<f64>> | null | Uint8Array | Vec<f64> | (f64)[]) => Observable<EthFeeHistory>>;
       /**
        * Returns current gas price.
        **/
@@ -348,12 +354,6 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        * Uninstalls filter.
        **/
       uninstallFilter: AugmentedRpc<(index: U256 | AnyNumber | Uint8Array) => Observable<bool>>;
-    };
-    frequency: {
-      /**
-       * Retrieve the Fee Details for a given encoded transaction
-       **/
-      computeExtrinsicCost: AugmentedRpc<(encoded_xt: Bytes | string | Uint8Array, at: BlockHash | string | Uint8Array) => Observable<FeeDetails>>;
     };
     grandpa: {
       /**
@@ -533,7 +533,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
       /**
        * Provides a way to trace the re-execution of a single block
        **/
-      traceBlock: AugmentedRpc<(block: Hash | string | Uint8Array, targets: Option<Text> | null | object | string | Uint8Array, storageKeys: Option<Text> | null | object | string | Uint8Array, methods: Option<Text> | null | object | string | Uint8Array) => Observable<TraceBlockResponse>>;
+      traceBlock: AugmentedRpc<(block: Hash | string | Uint8Array, targets: Option<Text> | null | Uint8Array | Text | string, storageKeys: Option<Text> | null | Uint8Array | Text | string, methods: Option<Text> | null | Uint8Array | Text | string) => Observable<TraceBlockResponse>>;
       /**
        * Check current migration state
        **/

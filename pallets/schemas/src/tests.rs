@@ -1,6 +1,17 @@
 use crate::{Config, Error, Event as AnnouncementEvent};
-use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
+use common_primitives::{
+	parquet::{
+		base::ParquetBaseType,
+		column::ParquetColumn,
+		column_compression_codec::ColumnCompressionCodec,
+		numeric::{ParquetInteger, ParquetNumericType},
+		types::ParquetType,
+		ParquetModel,
+	},
+	schema::{ModelType, PayloadLocation, SchemaId},
+};
 use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin, BoundedVec};
+use serde_json::json;
 use serial_test::serial;
 use sp_runtime::DispatchError::BadOrigin;
 
@@ -78,6 +89,7 @@ fn register_schema_unhappy_path() {
 		assert_noop!(
 			SchemasPallet::register_schema(
 				Origin::signed(sender),
+				// name key does not have a colon
 				create_bounded_schema_vec(r#"{"name", 54, "type": "none"}"#),
 				ModelType::AvroBinary,
 				PayloadLocation::OnChain
@@ -194,7 +206,155 @@ fn get_non_existing_schema_by_id_should_return_none() {
 fn validate_schema_is_acceptable() {
 	new_test_ext().execute_with(|| {
 		let test_str_raw = r#"{"name":"John Doe"}"#;
-		let result = SchemasPallet::ensure_valid_schema(&create_bounded_schema_vec(test_str_raw));
+		let result = SchemasPallet::ensure_valid_model(
+			&ModelType::AvroBinary,
+			&create_bounded_schema_vec(test_str_raw),
+		);
 		assert_ok!(result);
 	});
+}
+
+#[test]
+fn reject_null_json_schema() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(
+			SchemasPallet::ensure_valid_model(
+				&ModelType::AvroBinary,
+				&create_bounded_schema_vec("")
+			),
+			Error::<Test>::InvalidSchema
+		);
+	})
+}
+
+#[test]
+fn serialize_parquet_column() {
+	new_test_ext().execute_with(|| {
+		let p: ParquetColumn = ParquetColumn::new(
+			"Foo".to_string(),
+			ParquetType::default(),
+			ColumnCompressionCodec::default(),
+			true,
+		);
+		assert_eq!(
+			serde_json::to_string(&p).unwrap(),
+			r#"{"name":"Foo","column_type":"BOOLEAN","compression":"UNCOMPRESSED","bloom_filter":true}"#
+		);
+	})
+}
+
+#[test]
+fn validate_parquet_model() {
+	new_test_ext().execute_with(|| {
+		let test_str_raw = r#"[{"name": "Foo", "column_type": "BOOLEAN", "compression": "UNCOMPRESSED", "bloom_filter": true}]"#;
+		let result = SchemasPallet::ensure_valid_model(&ModelType::Parquet, &create_bounded_schema_vec(test_str_raw));
+		assert_ok!(result);
+	});
+}
+
+#[test]
+fn reject_incorrect_parquet_model() {
+	new_test_ext().execute_with(|| {
+		let test_str_raw = r#"{"name":"John Doe"}"#;
+		assert_noop!(
+			SchemasPallet::ensure_valid_model(
+				&ModelType::Parquet,
+				&create_bounded_schema_vec(test_str_raw)
+			),
+			Error::<Test>::InvalidSchema
+		);
+	})
+}
+
+#[test]
+fn serialize_parquet_model() {
+	new_test_ext().execute_with(|| {
+		let p: ParquetModel = vec![ParquetColumn::new(
+			"Baz".to_string(),
+			ParquetType::default(),
+			ColumnCompressionCodec::default(),
+			true,
+		)];
+		assert_eq!(
+			serde_json::to_string(&p).unwrap(),
+			r#"[{"name":"Baz","column_type":"BOOLEAN","compression":"UNCOMPRESSED","bloom_filter":true}]"#
+		);
+	});
+}
+
+#[test]
+fn serialize_parquet_model_integer() {
+	new_test_ext().execute_with(|| {
+		let p: ParquetModel = vec![ParquetColumn::new(
+			"Baz".to_string(),
+			ParquetType::NumericType(ParquetNumericType::Integer(
+				ParquetInteger {
+					bit_width: 32,
+					sign: false
+				}
+			)),
+			ColumnCompressionCodec::default(),
+			true,
+		)];
+		assert_eq!(
+			serde_json::to_string(&p).unwrap(),
+			r#"[{"name":"Baz","column_type":{"INTEGER":{"bit_width":32,"sign":false}},"compression":"UNCOMPRESSED","bloom_filter":true}]"#
+		);
+	});
+}
+
+#[test]
+fn validate_parquet_model_integer() {
+	new_test_ext().execute_with(|| {
+		let test_str_raw = r#"[{"name":"Baz","column_type":{"INTEGER":{"bit_width":32,"sign":false}},"compression":"UNCOMPRESSED","bloom_filter":true}]"#;
+		let result = SchemasPallet::ensure_valid_model(&ModelType::Parquet, &create_bounded_schema_vec(test_str_raw));
+		assert_ok!(result);
+	});
+}
+
+#[test]
+fn dsnp_broadcast() {
+	let test_str_raw = r#"
+	[
+		{
+			"name": "announcementType",
+			"column_type": {
+				"INTEGER": {
+					"bit_width": 32,
+					"sign": true
+				}
+			},
+			"compression": "GZIP",
+			"bloom_filter": false
+		},
+		{
+			"name": "contentHash",
+			"column_type": "BYTE_ARRAY",
+			"compression": "SNAPPY",
+			"bloom_filter": true
+		},
+		{
+			"name": "fromId",
+			"column_type": {
+				"INTEGER": {
+					"bit_width": 64,
+					"sign": false
+				}
+			},
+			"compression": "UNCOMPRESSED",
+			"bloom_filter": true
+		},
+		{
+			"name": "url",
+			"column_type": "STRING",
+			"compression": "LZO",
+			"bloom_filter": false
+		}
+	]
+	"#;
+	let result = SchemasPallet::ensure_valid_model(
+		&ModelType::Parquet,
+		&create_bounded_schema_vec(test_str_raw),
+	);
+	assert_ok!(result);
 }
