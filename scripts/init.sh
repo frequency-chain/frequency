@@ -83,8 +83,10 @@ start-frequency-instant)
 
   ./target/release/frequency \
     --dev \
+    -lruntime=debug \
     --instant-sealing \
-    --execution=native \
+    --wasm-execution=compiled \
+    --execution=wasm \
     --no-telemetry \
     --no-prometheus \
     --port $((30333)) \
