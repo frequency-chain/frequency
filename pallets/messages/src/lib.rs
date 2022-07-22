@@ -190,6 +190,7 @@ pub mod pallet {
 
 			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
+			ensure!(schema.unwrap().payload_location == PayloadLocation::IPFS, Error::<T>::InvalidPayloadLocation);
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
@@ -223,6 +224,7 @@ pub mod pallet {
 
 			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
+			ensure!(schema.unwrap().payload_location == PayloadLocation::OnChain, Error::<T>::InvalidPayloadLocation);
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
