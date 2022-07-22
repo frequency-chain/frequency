@@ -4,6 +4,7 @@ use common_primitives::{
 	messages::{BlockPaginationRequest, MessageResponse},
 	schema::*,
 };
+use crate::types::{Payload, OffchainPayload, CIDv2};
 use frame_support::{assert_err, assert_noop, assert_ok, BoundedVec};
 use sp_std::vec::Vec;
 
@@ -446,5 +447,29 @@ fn add_message_with_invalid_schema_id_should_error() {
 			MessagesPallet::add(Origin::signed(caller_1), None, schema_id_1, message_payload_1),
 			Error::<Test>::InvalidSchemaId
 		);
+	});
+}
+
+#[test]
+fn payload_to_message_onchain() {
+	new_test_ext().execute_with(|| {
+		let payload = Payload::Onchain(Vec::from("hello"));
+		let msg = MessagesPallet::payload_to_message(payload);
+		let control: BoundedVec<u8, <Test as Config>::MaxMessagePayloadSizeBytes> =
+			BoundedVec::try_from(Vec::from("hello".as_bytes())).unwrap();
+		assert_eq!(msg, control);
+	});
+}
+
+#[test]
+fn payload_to_message_offchain() {
+	new_test_ext().execute_with(|| {
+		let cid = CIDv2::new(Vec::from("hello"));
+		let offchain_payload = OffchainPayload::new(cid, 1);
+		let payload = Payload::Offchain(offchain_payload);
+		let msg = MessagesPallet::payload_to_message(payload);
+		let control: BoundedVec<u8, <Test as Config>::MaxMessagePayloadSizeBytes> =
+			BoundedVec::try_from(Vec::from("hello".as_bytes())).unwrap();
+		assert_eq!(msg, control);
 	});
 }

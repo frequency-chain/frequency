@@ -277,6 +277,8 @@ impl<T: Config> Pallet<T> {
 			Payload::Onchain(payload_vec) => {
 				payload_vec.try_into().unwrap()
 			},
+			// TODO: What is the right way to format an offchain payload? May need to
+			// table until #190 is picked up.
 			Payload::Offchain(offchain_payload) => offchain_payload.cid.get().clone().try_into().unwrap()
 		}
 	}
