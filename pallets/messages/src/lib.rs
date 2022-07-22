@@ -182,7 +182,7 @@ pub mod pallet {
 			on_behalf_of: Option<MessageSourceId>,
 			schema_id: SchemaId,
 			cid: CIDv2,
-			payload_length: u32
+			payload_length: u32,
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
 
@@ -190,14 +190,26 @@ pub mod pallet {
 
 			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
-			ensure!(schema.unwrap().payload_location == PayloadLocation::IPFS, Error::<T>::InvalidPayloadLocation);
+			ensure!(
+				schema.unwrap().payload_location == PayloadLocation::IPFS,
+				Error::<T>::InvalidPayloadLocation
+			);
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
 			let payload = OffchainPayload::new(cid, payload_length);
-			let message = Self::add_message(provider_key, message_source_id, Payload::Offchain(payload), schema_id)?;
+			let message = Self::add_message(
+				provider_key,
+				message_source_id,
+				Payload::Offchain(payload),
+				schema_id,
+			)?;
 
-			Ok(Some(T::WeightInfo::add_offchain(message.payload.len() as u32, message.index as u32)).into())
+			Ok(Some(T::WeightInfo::add_offchain(
+				message.payload.len() as u32,
+				message.index as u32,
+			))
+			.into())
 		}
 		/// Gets a messages for a given schema-id and block-number.
 		/// # Arguments
@@ -224,11 +236,19 @@ pub mod pallet {
 
 			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
-			ensure!(schema.unwrap().payload_location == PayloadLocation::OnChain, Error::<T>::InvalidPayloadLocation);
+			ensure!(
+				schema.unwrap().payload_location == PayloadLocation::OnChain,
+				Error::<T>::InvalidPayloadLocation
+			);
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
-			let message = Self::add_message(provider_key, message_source_id, Payload::Onchain(payload), schema_id)?;
+			let message = Self::add_message(
+				provider_key,
+				message_source_id,
+				Payload::Onchain(payload),
+				schema_id,
+			)?;
 
 			Ok(Some(T::WeightInfo::add(message.payload.len() as u32, message.index as u32)).into())
 		}
@@ -274,12 +294,11 @@ impl<T: Config> Pallet<T> {
 	/// Converts a Payload to a message string
 	pub fn payload_to_message(payload: Payload) -> BoundedVec<u8, T::MaxMessagePayloadSizeBytes> {
 		match payload {
-			Payload::Onchain(payload_vec) => {
-				payload_vec.try_into().unwrap()
-			},
+			Payload::Onchain(payload_vec) => payload_vec.try_into().unwrap(),
 			// TODO: What is the right way to format an offchain payload? May need to
 			// table until #190 is picked up.
-			Payload::Offchain(offchain_payload) => offchain_payload.cid.get().clone().try_into().unwrap()
+			Payload::Offchain(offchain_payload) =>
+				offchain_payload.cid.get().clone().try_into().unwrap(),
 		}
 	}
 

@@ -51,7 +51,7 @@ impl CIDv2 {
 	pub fn new(vec: Vec<u8>) -> CIDv2 {
 		CIDv2(vec)
 	}
-	
+
 	/// Exposes the inner vector
 	pub fn get(&self) -> &Vec<u8> {
 		&self.0
@@ -60,19 +60,16 @@ impl CIDv2 {
 
 /// Offchain payloads are defined by two members, a CID address and a payload length
 pub struct OffchainPayload {
-	/// IPFS Content address 
+	/// IPFS Content address
 	pub cid: CIDv2,
 	/// Size of the IPFS payload
-	pub payload_length: u32
+	pub payload_length: u32,
 }
 
 impl OffchainPayload {
 	/// Constructor
 	pub fn new(cid: CIDv2, payload_length: u32) -> OffchainPayload {
-		OffchainPayload {
-			cid: cid,
-			payload_length: payload_length
-		}
+		OffchainPayload { cid, payload_length }
 	}
 }
 
@@ -81,5 +78,5 @@ pub enum Payload {
 	/// As of now, onchain payloads are strings of ASCII
 	Onchain(Vec<u8>),
 	/// Offchain payload
-	Offchain(OffchainPayload)
+	Offchain(OffchainPayload),
 }

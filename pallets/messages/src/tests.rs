@@ -1,10 +1,12 @@
 use super::{mock::*, Event as MessageEvent};
-use crate::{BlockMessages, Config, Error, Message, Messages};
+use crate::{
+	types::{CIDv2, OffchainPayload, Payload},
+	BlockMessages, Config, Error, Message, Messages,
+};
 use common_primitives::{
 	messages::{BlockPaginationRequest, MessageResponse},
 	schema::*,
 };
-use crate::types::{Payload, OffchainPayload, CIDv2};
 use frame_support::{assert_err, assert_noop, assert_ok, BoundedVec};
 use sp_std::vec::Vec;
 
