@@ -42,10 +42,16 @@ where
 }
 
 /// Newtype for CIDv2 addresses. We can change the inner type as we understand
-/// more about how to structurre IPFS addressable content.
+/// more about how to structure IPFS addressable content.
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct CIDv2(Vec<u8>);
 
 impl CIDv2 {
+	/// Constructor
+	pub fn new(vec: Vec<u8>) -> CIDv2 {
+		CIDv2(vec)
+	}
+	
 	/// Exposes the inner vector
 	pub fn get(&self) -> &Vec<u8> {
 		&self.0
@@ -56,7 +62,18 @@ impl CIDv2 {
 pub struct OffchainPayload {
 	/// IPFS Content address 
 	pub cid: CIDv2,
-	payload_length: u64
+	/// Size of the IPFS payload
+	pub payload_length: u32
+}
+
+impl OffchainPayload {
+	/// Constructor
+	pub fn new(cid: CIDv2, payload_length: u32) -> OffchainPayload {
+		OffchainPayload {
+			cid: cid,
+			payload_length: payload_length
+		}
+	}
 }
 
 /// Sum type for payloads

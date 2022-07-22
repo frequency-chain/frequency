@@ -167,6 +167,37 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Adds a message for an offchain resource
+		/// # Arguments
+		/// * `origin` - A signed transaction origin from the provider
+		/// * `on_behalf_of` - Optional. The msa id of delegate.
+		/// * `schema_id` - Registered schema id for current message.
+		/// * `cid` - The content address for an IPFS payload
+		/// * `payload_length` - The size of the payload
+		/// * Returns
+		/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html)
+		#[pallet::weight(T::WeightInfo::add_offchain(cid.get().len() as u32, 1_000))]
+		pub fn add_offchain(
+			origin: OriginFor<T>,
+			on_behalf_of: Option<MessageSourceId>,
+			schema_id: SchemaId,
+			cid: CIDv2,
+			payload_length: u32
+		) -> DispatchResultWithPostInfo {
+			let provider_key = ensure_signed(origin)?;
+
+			// TODO: Is there a size limit on offchain payloads?
+
+			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
+			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
+
+			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
+
+			let payload = OffchainPayload::new(cid, payload_length);
+			let message = Self::add_message(provider_key, message_source_id, Payload::Offchain(payload), schema_id)?;
+
+			Ok(Some(T::WeightInfo::add_offchain(message.payload.len() as u32, message.index as u32)).into())
+		}
 		/// Gets a messages for a given schema-id and block-number.
 		/// # Arguments
 		/// * `origin` - A signed transaction origin from the provider
@@ -225,7 +256,7 @@ impl<T: Config> Pallet<T> {
 
 			let msg = Message {
 				payload: Self::payload_to_message(payload), // size is checked on top of extrinsic
-				// payload: payload.try_into().unwrap(), // size is checked on top of extrinsic
+				// payload: payload.try_into().unwrap(),
 				provider_key,
 				index: current_size,
 				msa_id: message_source_id,
