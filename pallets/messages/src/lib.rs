@@ -258,7 +258,6 @@ impl<T: Config> Pallet<T> {
 
 			let msg = Message {
 				payload: Self::payload_to_message(payload), // size is checked on top of extrinsic
-				// payload: payload.try_into().unwrap(),
 				provider_key,
 				index: current_size,
 				msa_id: message_source_id,
