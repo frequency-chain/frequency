@@ -66,6 +66,12 @@ pub struct Cli {
 	/// Relay chain arguments
 	#[clap(raw = true)]
 	pub relay_chain_args: Vec<String>,
+
+	/// Instant block sealing
+	///
+	/// Can only be used with `--dev`
+	#[clap(long = "instant-sealing", requires = "dev")]
+	pub instant_sealing: bool,
 }
 
 #[derive(Debug)]
