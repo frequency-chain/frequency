@@ -7,7 +7,11 @@ use common_primitives::{
 	messages::{BlockPaginationRequest, MessageResponse},
 	schema::*,
 };
-use frame_support::{assert_err, assert_noop, assert_ok, BoundedVec};
+use frame_support::{
+	assert_err, assert_noop, assert_ok,
+	weights::{GetDispatchInfo, Pays, PostDispatchInfo},
+	BoundedVec,
+};
 use sp_std::vec::Vec;
 
 fn populate_messages(schema_id: SchemaId, message_per_block: Vec<u32>) {
@@ -473,5 +477,45 @@ fn payload_to_message_offchain() {
 		let control: BoundedVec<u8, <Test as Config>::MaxMessagePayloadSizeBytes> =
 			BoundedVec::try_from(Vec::from("hello".as_bytes())).unwrap();
 		assert_eq!(msg, control);
+	});
+}
+
+#[test]
+fn valid_payload_location() {
+	new_test_ext().execute_with(|| {
+		let caller_1 = 5;
+		let schema_id_1: SchemaId = IPFS_SCHEMA_ID;
+
+		// act
+		assert_eq!(
+			MessagesPallet::add_offchain(
+				Origin::signed(caller_1),
+				None,
+				schema_id_1,
+				CIDv2::new(Vec::from("foo")),
+				1
+			),
+			Ok(PostDispatchInfo { actual_weight: Some(201994000), pays_fee: Pays::Yes })
+		);
+	});
+}
+
+#[test]
+fn invalid_payload_location() {
+	new_test_ext().execute_with(|| {
+		let caller_1 = 5;
+		let schema_id_1: SchemaId = 1;
+
+		// act
+		assert_noop!(
+			MessagesPallet::add_offchain(
+				Origin::signed(caller_1),
+				None,
+				schema_id_1,
+				CIDv2::new(Vec::from("foo")),
+				1
+			),
+			Error::<Test>::InvalidPayloadLocation
+		);
 	});
 }
