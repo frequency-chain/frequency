@@ -16,6 +16,7 @@ codec = { package = "parity-scale-codec", version = "3.0.0" }
 serde = { version = "1.0.137", features = ["derive"] }
 hex-literal = "0.3.4"
 jsonrpsee = { version = "0.14.0", features = ["server"] }
+futures = "0.3.21"
 
 # Frequency Runtime
 frequency-runtime = { path = "../../runtime/frequency" }
@@ -32,6 +33,7 @@ sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polk
 sc-executor = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"], branch = "polkadot-v0.9.25" }
 sc-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
+sc-offchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 sc-service = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"], branch = "polkadot-v0.9.25" }
@@ -56,6 +58,7 @@ sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch 
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
+sc-consensus-manual-seal = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 
 # Polkadot
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.25" }

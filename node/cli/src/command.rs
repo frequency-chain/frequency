@@ -22,7 +22,7 @@ use std::net::SocketAddr;
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	Ok(match id {
-		"frequency_dev" => Box::new(chain_spec::frequency_local::development_config()),
+		"frequency_dev" | "dev" => Box::new(chain_spec::frequency_local::development_config()),
 		"frequency_local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
 		"" | "local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
 		path => Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(
@@ -122,6 +122,7 @@ macro_rules! construct_async_run {
 			>(
 				&$config,
 				parachain_build_import_queue,
+				false,
 			)?;
 			let task_manager = $components.task_manager;
 			{ $( $code )* }.map(|v| (v, task_manager))
@@ -213,6 +214,7 @@ pub fn run() -> Result<()> {
 					let partials = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
 						&config,
 						parachain_build_import_queue,
+						false,
 					)?;
 					cmd.run(partials.client)
 				}),
@@ -220,6 +222,7 @@ pub fn run() -> Result<()> {
 					let partials = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
 						&config,
 						parachain_build_import_queue,
+						false,
 					)?;
 					let db = partials.backend.expose_db();
 					let storage = partials.backend.expose_storage();
@@ -253,6 +256,10 @@ pub fn run() -> Result<()> {
 			let collator_options = cli.run.collator_options();
 
 			runner.run_node_until_exit(|config| async move {
+				let para_id = chain_spec::frequency_local::Extensions::try_get(&*config.chain_spec)
+					.map(|e| e.para_id)
+					.ok_or("Could not find parachain ID in chain-spec.")?;
+
 				let hwbench = if !cli.no_hardware_benchmarks {
 					config.database.path().map(|database_path| {
 						let _ = std::fs::create_dir_all(&database_path);
@@ -262,9 +269,9 @@ pub fn run() -> Result<()> {
 					None
 				};
 
-				let para_id = chain_spec::frequency_local::Extensions::try_get(&*config.chain_spec)
-					.map(|e| e.para_id)
-					.ok_or("Could not find parachain ID in chain-spec.")?;
+				if cli.instant_sealing {
+					return frequency_dev_instant_sealing(config).map_err(Into::into)
+				}
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
