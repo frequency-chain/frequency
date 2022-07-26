@@ -9,7 +9,7 @@ use common_primitives::{
 };
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
-	weights::{GetDispatchInfo, Pays, PostDispatchInfo},
+	weights::{Pays, PostDispatchInfo},
 	BoundedVec,
 };
 use sp_std::vec::Vec;
@@ -485,18 +485,19 @@ fn valid_payload_location() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = IPFS_SCHEMA_ID;
-
-		// act
-		assert_eq!(
-			MessagesPallet::add_ipfs_message(
-				Origin::signed(caller_1),
-				None,
-				schema_id_1,
-				CIDv2::new(Vec::from("foo")),
-				1
-			),
-			Ok(PostDispatchInfo { actual_weight: Some(201994000), pays_fee: Pays::Yes })
+		let info_result = MessagesPallet::add_ipfs_message(
+			Origin::signed(caller_1),
+			None,
+			schema_id_1,
+			CIDv2::new(Vec::from("foo")),
+			1,
 		);
+
+		assert_eq!(info_result.is_ok(), true);
+		let info: PostDispatchInfo = info_result.unwrap();
+
+		assert_eq!(info.actual_weight.is_some(), true);
+		assert_eq!(info.pays_fee, Pays::Yes);
 	});
 }
 
@@ -506,7 +507,6 @@ fn invalid_payload_location() {
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = 1;
 
-		// act
 		assert_noop!(
 			MessagesPallet::add_ipfs_message(
 				Origin::signed(caller_1),
