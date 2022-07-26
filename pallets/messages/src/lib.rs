@@ -206,7 +206,7 @@ pub mod pallet {
 			)?;
 
 			Ok(Some(T::WeightInfo::add_ipfs_message(
-				message.payload.len() as u32,
+				payload_length,
 				message.index as u32,
 			))
 			.into())
