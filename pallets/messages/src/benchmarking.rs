@@ -11,7 +11,7 @@ const SCHEMAS: u32 = 50;
 
 fn add_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo {
 	let acc: T::AccountId = whitelisted_caller();
-	MessagesPallet::<T>::add(
+	MessagesPallet::<T>::add_onchain_message(
 		RawOrigin::Signed(acc.clone()).into(),
 		None,
 		schema_id,
@@ -23,7 +23,7 @@ fn add_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo {
 }
 
 benchmarks! {
-	add {
+	add_onchain_message {
 		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - 1;
 		let m in 1 .. MESSAGES;
 		let caller: T::AccountId = whitelisted_caller();

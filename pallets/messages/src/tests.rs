@@ -45,13 +45,13 @@ fn add_message_should_store_message_on_temp_storage() {
 		let message_payload_2 = Vec::from("{'fromId': 343, 'content': '34333'}".as_bytes());
 
 		// act
-		assert_ok!(MessagesPallet::add(
+		assert_ok!(MessagesPallet::add_onchain_message(
 			Origin::signed(caller_1),
 			None,
 			schema_id_1,
 			message_payload_1.clone()
 		));
-		assert_ok!(MessagesPallet::add(
+		assert_ok!(MessagesPallet::add_onchain_message(
 			Origin::signed(caller_2),
 			None,
 			schema_id_2,
@@ -99,7 +99,7 @@ fn add_message_with_too_large_message_should_panic() {
 		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}".as_bytes());
 
 		// act
-		assert_noop!(MessagesPallet::add(Origin::signed(caller_1), None, schema_id_1, message_payload_1), Error::<Test>::ExceedsMaxMessagePayloadSizeBytes);
+		assert_noop!(MessagesPallet::add_onchain_message(Origin::signed(caller_1), None, schema_id_1, message_payload_1), Error::<Test>::ExceedsMaxMessagePayloadSizeBytes);
 	});
 }
 
@@ -116,7 +116,7 @@ fn add_message_with_invalid_msa_account_should_panic() {
 
 		// act
 		assert_noop!(
-			MessagesPallet::add(Origin::signed(caller_1), None, schema_id_1, message_payload_1),
+			MessagesPallet::add_onchain_message(Origin::signed(caller_1), None, schema_id_1, message_payload_1),
 			Error::<Test>::InvalidMessageSourceAccount
 		);
 	});
@@ -132,7 +132,7 @@ fn add_message_with_maxed_out_storage_should_panic() {
 
 		// act
 		for _ in 0..<Test as Config>::MaxMessagesPerBlock::get() {
-			assert_ok!(MessagesPallet::add(
+			assert_ok!(MessagesPallet::add_onchain_message(
 				Origin::signed(caller_1),
 				None,
 				schema_id_1,
@@ -140,7 +140,7 @@ fn add_message_with_maxed_out_storage_should_panic() {
 			));
 		}
 		assert_noop!(
-			MessagesPallet::add(Origin::signed(caller_1), None, schema_id_1, message_payload_1),
+			MessagesPallet::add_onchain_message(Origin::signed(caller_1), None, schema_id_1, message_payload_1),
 			Error::<Test>::TooManyMessagesInBlock
 		);
 	});
@@ -157,19 +157,19 @@ fn on_initialize_should_add_messages_into_storage_and_clean_temp() {
 		let schema_id_2: SchemaId = 2;
 		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
 		let message_payload_2 = Vec::from("{'fromId': 343, 'content': '34333'}".as_bytes());
-		assert_ok!(MessagesPallet::add(
+		assert_ok!(MessagesPallet::add_onchain_message(
 			Origin::signed(caller_1),
 			None,
 			schema_id_1,
 			message_payload_1.clone()
 		));
-		assert_ok!(MessagesPallet::add(
+		assert_ok!(MessagesPallet::add_onchain_message(
 			Origin::signed(caller_2),
 			None,
 			schema_id_1,
 			message_payload_1
 		));
-		assert_ok!(MessagesPallet::add(
+		assert_ok!(MessagesPallet::add_onchain_message(
 			Origin::signed(caller_2),
 			None,
 			schema_id_2,
@@ -367,13 +367,13 @@ fn add_message_via_valid_delegate_should_pass() {
 		let message_payload_2 = Vec::from("{'fromId': 343, 'content': '34333'}".as_bytes());
 
 		// act
-		assert_ok!(MessagesPallet::add(
+		assert_ok!(MessagesPallet::add_onchain_message(
 			Origin::signed(caller_1),
 			Some(message_producer),
 			schema_id_1,
 			message_payload_1.clone()
 		));
-		assert_ok!(MessagesPallet::add(
+		assert_ok!(MessagesPallet::add_onchain_message(
 			Origin::signed(caller_2),
 			Some(message_producer),
 			schema_id_2,
@@ -422,7 +422,7 @@ fn add_message_via_non_delegate_should_fail() {
 		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
 		// act
 		assert_err!(
-			MessagesPallet::add(
+			MessagesPallet::add_onchain_message(
 				Origin::signed(message_provider),
 				Some(message_producer),
 				schema_id_1,
@@ -450,7 +450,7 @@ fn add_message_with_invalid_schema_id_should_error() {
 
 		// act
 		assert_err!(
-			MessagesPallet::add(Origin::signed(caller_1), None, schema_id_1, message_payload_1),
+			MessagesPallet::add_onchain_message(Origin::signed(caller_1), None, schema_id_1, message_payload_1),
 			Error::<Test>::InvalidSchemaId
 		);
 	});

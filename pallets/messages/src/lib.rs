@@ -190,10 +190,10 @@ pub mod pallet {
 
 			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
-			ensure!(
-				schema.unwrap().payload_location == PayloadLocation::IPFS,
-				Error::<T>::InvalidPayloadLocation
-			);
+			// ensure!(
+			// 	schema.unwrap().payload_location == PayloadLocation::IPFS,
+			// 	Error::<T>::InvalidPayloadLocation
+			// );
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
@@ -220,8 +220,8 @@ pub mod pallet {
 		/// # Returns
 		/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html) The return type of a Dispatchable in frame.
 		/// When returned explicitly from a dispatchable function it allows overriding the default PostDispatchInfo returned from a dispatch.
-		#[pallet::weight(T::WeightInfo::add(payload.len() as u32, 1_000))]
-		pub fn add(
+		#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() as u32, 1_000))]
+		pub fn add_onchain_message(
 			origin: OriginFor<T>,
 			on_behalf_of: Option<MessageSourceId>,
 			schema_id: SchemaId,
@@ -236,10 +236,10 @@ pub mod pallet {
 
 			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
-			ensure!(
-				schema.unwrap().payload_location == PayloadLocation::OnChain,
-				Error::<T>::InvalidPayloadLocation
-			);
+			// ensure!(
+			// 	schema.unwrap().payload_location == PayloadLocation::OnChain,
+			// 	Error::<T>::InvalidPayloadLocation
+			// );
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
@@ -250,7 +250,7 @@ pub mod pallet {
 				schema_id,
 			)?;
 
-			Ok(Some(T::WeightInfo::add(message.payload.len() as u32, message.index as u32)).into())
+			Ok(Some(T::WeightInfo::add_onchain_message(message.payload.len() as u32, message.index as u32)).into())
 		}
 	}
 }
