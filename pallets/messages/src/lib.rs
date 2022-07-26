@@ -197,11 +197,11 @@ pub mod pallet {
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
-			let payload = OffchainPayload::new(cid, payload_length);
+			let payload = IPFSPayload::new(cid, payload_length);
 			let message = Self::add_message(
 				provider_key,
 				message_source_id,
-				Payload::Offchain(payload),
+				Payload::IPFS(payload),
 				schema_id,
 			)?;
 
@@ -295,10 +295,7 @@ impl<T: Config> Pallet<T> {
 	pub fn payload_to_message(payload: Payload) -> BoundedVec<u8, T::MaxMessagePayloadSizeBytes> {
 		match payload {
 			Payload::Onchain(payload_vec) => payload_vec.try_into().unwrap(),
-			// TODO: What is the right way to format an offchain payload? May need to
-			// table until #190 is picked up.
-			Payload::Offchain(offchain_payload) =>
-				offchain_payload.cid.get().clone().try_into().unwrap(),
+			Payload::IPFS(ipfs_payload) => ipfs_payload.cid.get().clone().try_into().unwrap(),
 		}
 	}
 

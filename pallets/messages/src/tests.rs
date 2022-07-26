@@ -1,6 +1,6 @@
 use super::{mock::*, Event as MessageEvent};
 use crate::{
-	types::{CIDv2, OffchainPayload, Payload},
+	types::{CIDv2, IPFSPayload, Payload},
 	BlockMessages, Config, Error, Message, Messages,
 };
 use common_primitives::{
@@ -471,8 +471,8 @@ fn payload_to_message_onchain() {
 fn payload_to_message_offchain() {
 	new_test_ext().execute_with(|| {
 		let cid = CIDv2::new(Vec::from("hello"));
-		let offchain_payload = OffchainPayload::new(cid, 1);
-		let payload = Payload::Offchain(offchain_payload);
+		let offchain_payload = IPFSPayload::new(cid, 1);
+		let payload = Payload::IPFS(offchain_payload);
 		let msg = MessagesPallet::payload_to_message(payload);
 		let control: BoundedVec<u8, <Test as Config>::MaxMessagePayloadSizeBytes> =
 			BoundedVec::try_from(Vec::from("hello".as_bytes())).unwrap();

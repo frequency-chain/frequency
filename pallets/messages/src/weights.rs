@@ -19,14 +19,14 @@
 //!
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2022-07-26, STEPS: `20`, REPEAT: 5, LOW RANGE: `[]`, HIGH RANGE: `[]`
-//! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("./res/genesis/frequency-test.json"), DB CACHE: 1024
+//! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("./res/genesis/frequency-weights.json"), DB CACHE: 1024
 
 // Executed Command:
 // ./target/release/frequency
 // benchmark
 // pallet
 // --chain
-// ./res/genesis/frequency-test.json
+// ./res/genesis/frequency-weights.json
 // --execution=wasm
 // --wasm-execution=compiled
 // --pallet
@@ -55,7 +55,7 @@ use sp_std::marker::PhantomData;
 /// Weight functions needed for pallet_messages.
 pub trait WeightInfo {
 	fn add(n: u32, m: u32, ) -> Weight;
-	fn add_offchain(n: u32, m: u32, ) -> Weight;
+	fn add_ipfs_message(n: u32, m: u32, ) -> Weight;
 	fn on_initialize(m: u32, s: u32, ) -> Weight;
 }
 
@@ -66,23 +66,21 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add(n: u32, m: u32, ) -> Weight {
-		(12_045_000 as Weight)
+		(20_970_000 as Weight)
 			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(n as Weight))
-			// Standard Error: 19_000
-			.saturating_add((411_000 as Weight).saturating_mul(m as Weight))
+			.saturating_add((2_000 as Weight).saturating_mul(n as Weight))
+			// Standard Error: 18_000
+			.saturating_add((442_000 as Weight).saturating_mul(m as Weight))
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: Schemas Schemas (r:1 w:0)
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
-	fn add_offchain(n: u32, m: u32, ) -> Weight {
-		(17_825_000 as Weight)
+	fn add_ipfs_message(n: u32, _m: u32, ) -> Weight {
+		(32_177_000 as Weight)
 			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(n as Weight))
-			// Standard Error: 16_000
-			.saturating_add((400_000 as Weight).saturating_mul(m as Weight))
+			.saturating_add((2_000 as Weight).saturating_mul(n as Weight))
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
@@ -91,9 +89,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn on_initialize(m: u32, s: u32, ) -> Weight {
 		(0 as Weight)
 			// Standard Error: 53_000
-			.saturating_add((875_000 as Weight).saturating_mul(m as Weight))
-			// Standard Error: 527_000
-			.saturating_add((12_342_000 as Weight).saturating_mul(s as Weight))
+			.saturating_add((902_000 as Weight).saturating_mul(m as Weight))
+			// Standard Error: 529_000
+			.saturating_add((12_564_000 as Weight).saturating_mul(s as Weight))
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(s as Weight)))
 	}
@@ -105,23 +103,21 @@ impl WeightInfo for () {
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add(n: u32, m: u32, ) -> Weight {
-		(12_045_000 as Weight)
+		(20_970_000 as Weight)
 			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(n as Weight))
-			// Standard Error: 19_000
-			.saturating_add((411_000 as Weight).saturating_mul(m as Weight))
+			.saturating_add((2_000 as Weight).saturating_mul(n as Weight))
+			// Standard Error: 18_000
+			.saturating_add((442_000 as Weight).saturating_mul(m as Weight))
 			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	// Storage: Schemas Schemas (r:1 w:0)
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
-	fn add_offchain(n: u32, m: u32, ) -> Weight {
-		(17_825_000 as Weight)
+	fn add_ipfs_message(n: u32, _m: u32, ) -> Weight {
+		(32_177_000 as Weight)
 			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(n as Weight))
-			// Standard Error: 16_000
-			.saturating_add((400_000 as Weight).saturating_mul(m as Weight))
+			.saturating_add((2_000 as Weight).saturating_mul(n as Weight))
 			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
@@ -130,9 +126,9 @@ impl WeightInfo for () {
 	fn on_initialize(m: u32, s: u32, ) -> Weight {
 		(0 as Weight)
 			// Standard Error: 53_000
-			.saturating_add((875_000 as Weight).saturating_mul(m as Weight))
-			// Standard Error: 527_000
-			.saturating_add((12_342_000 as Weight).saturating_mul(s as Weight))
+			.saturating_add((902_000 as Weight).saturating_mul(m as Weight))
+			// Standard Error: 529_000
+			.saturating_add((12_564_000 as Weight).saturating_mul(s as Weight))
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(s as Weight)))
 	}

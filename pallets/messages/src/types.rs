@@ -58,18 +58,18 @@ impl CIDv2 {
 	}
 }
 
-/// Offchain payloads are defined by two members, a CID address and a payload length
-pub struct OffchainPayload {
+/// IPFS payloads are defined by two members, a CID address and a payload length
+pub struct IPFSPayload {
 	/// IPFS Content address
 	pub cid: CIDv2,
 	/// Size of the IPFS payload
 	pub payload_length: u32,
 }
 
-impl OffchainPayload {
+impl IPFSPayload {
 	/// Constructor
-	pub fn new(cid: CIDv2, payload_length: u32) -> OffchainPayload {
-		OffchainPayload { cid, payload_length }
+	pub fn new(cid: CIDv2, payload_length: u32) -> IPFSPayload {
+		IPFSPayload { cid, payload_length }
 	}
 }
 
@@ -78,5 +78,5 @@ pub enum Payload {
 	/// As of now, onchain payloads are strings of ASCII
 	Onchain(Vec<u8>),
 	/// Offchain payload
-	Offchain(OffchainPayload),
+	IPFS(IPFSPayload),
 }

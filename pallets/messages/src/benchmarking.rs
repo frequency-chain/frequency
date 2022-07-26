@@ -44,10 +44,10 @@ benchmarks! {
 		let payload_length = 1_000;
 
 		// for j in 0 .. m {
-		// 	let sid = 0;
+		// 	let sid = j % SCHEMAS;
 		// 	assert_ok!(add_message::<T>(sid.try_into().unwrap()));
 		// }
-	}: _ (RawOrigin::Signed(caller), None, 1, cid, payload_length)
+	}: _ (RawOrigin::Signed(caller), None, 65535, cid, payload_length)
 
 	on_initialize {
 		let m in 1 .. MESSAGES;
