@@ -49,7 +49,7 @@ use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureRoot, RawOrigin,
+	EnsureRoot, RawOrigin, EnsureSignedBy
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
@@ -423,6 +423,11 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = [u8; 8];
 }
 
+
+pub const MILLICENTS: Balance = 1_000_000_000;
+pub const CENTS: Balance = 1_000 * MILLICENTS; // assume this is worth about a cent.
+pub const DOLLARS: Balance = 100 * CENTS;
+
 parameter_types! {
 	// The maximum weight that may be scheduled per block for any dispatchables of less priority than schedule::HARD_DEADLINE.
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(10) * RuntimeBlockWeights::get().max_block;
@@ -439,7 +444,7 @@ impl pallet_scheduler::Config for Runtime {
 	type PalletsOrigin = OriginCaller;
 	type Call = Call;
 	type MaximumWeight = MaximumSchedulerWeight;
-	type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
+	type ScheduleOrigin = EnsureRoot<AccountId>;
 	type MaxScheduledPerBlock = MaxScheduledPerBlock;
 	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 	type OriginPrivilegeCmp = EqualPrivilegeOnly;
@@ -462,6 +467,90 @@ impl pallet_preimage::Config for Runtime {
 	type BaseDeposit = PreimageBaseDeposit;
 	type ByteDeposit = PreimageByteDeposit;
 }
+
+// Config from
+// https://github.com/paritytech/substrate/blob/367dab0d4bd7fd7b6c222dd15c753169c057dd42/bin/node/runtime/src/lib.rs#L880
+parameter_types! {
+	pub const LaunchPeriod: BlockNumber = 28 * 24 * 60 * MINUTES;
+	pub const VotingPeriod: BlockNumber = 28 * 24 * 60 * MINUTES;
+	pub const FastTrackVotingPeriod: BlockNumber = 3 * 24 * 60 * MINUTES;
+	pub const MinimumDeposit: Balance = 100 * DOLLARS;
+	pub const EnactmentPeriod: BlockNumber = 30 * 24 * 60 * MINUTES;
+	pub const CooloffPeriod: BlockNumber = 28 * 24 * 60 * MINUTES;
+	pub const MaxProposals: u32 = 100;
+}
+
+// see https://paritytech.github.io/substrate/master/pallet_democracy/pallet/trait.Config.html
+// for the definitions of these configs
+impl pallet_democracy::Config for Runtime {
+	type CooloffPeriod = CooloffPeriod;
+	type Currency = Balances;
+	type EnactmentPeriod = EnactmentPeriod;
+	type Event = Event;
+	type FastTrackVotingPeriod = FastTrackVotingPeriod;
+	type InstantAllowed = frame_support::traits::ConstBool<true>;
+	type LaunchPeriod = LaunchPeriod;
+	type MaxProposals = MaxProposals;
+	type MaxVotes = ConstU32<100>;
+	type MinimumDeposit = MinimumDeposit;
+	type PreimageByteDeposit = PreimageByteDeposit;
+	type Proposal = Call;
+	type Scheduler = Scheduler;
+	type Slash = (); // Treasury;
+	type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
+	type VoteLockingPeriod = EnactmentPeriod; // Same as EnactmentPeriod
+	type VotingPeriod = VotingPeriod;
+
+
+	// See https://paritytech.github.io/substrate/master/pallet_democracy/index.html for
+	// the descriptions of these origins.
+	type ExternalDefaultOrigin = EnsureRoot<AccountId>;
+	type ExternalMajorityOrigin =  EnsureRoot<AccountId>;
+	type ExternalOrigin = EnsureRoot<AccountId>;
+	type FastTrackOrigin = EnsureRoot<AccountId>;
+	type InstantOrigin = EnsureRoot<AccountId>;
+	type PalletsOrigin = OriginCaller;
+	type CancellationOrigin = EnsureRoot<AccountId>;
+	type CancelProposalOrigin = EnsureRoot<AccountId>;
+	type BlacklistOrigin = EnsureRoot<AccountId>;
+	type VetoOrigin = ;
+	type OperationalPreimageOrigin = ;
+
+	// // See https://paritytech.github.io/substrate/master/pallet_democracy/index.html for
+	// // the descriptions of these origins.
+	//
+	// /// A unanimous council can have the next scheduled referendum be a straight default-carries
+	// /// (NTB) vote.
+	// type ExternalDefaultOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>;
+	//
+	// /// A super-majority can have the next scheduled referendum be a straight majority-carries vote.
+	// type ExternalMajorityOrigin =  pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 4>;
+	//
+	// /// A straight majority of the council can decide what their next motion is.
+	// type ExternalOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>;
+	//
+	// /// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
+	// /// be tabled immediately and with a shorter voting/enactment period.
+	// type FastTrackOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>;
+	//
+	// type InstantOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>;
+	//
+	// type PalletsOrigin = OriginCaller;
+	// // To cancel a proposal which has been passed, 2/3 of the council must agree to it.
+	// type CancellationOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>;
+	// // To cancel a proposal before it has been passed, the technical committee must be unanimous or
+	// // Root must agree.
+	// type CancelProposalOrigin = EitherOfDiverse<EnsureRoot<AccountId>, pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>>;
+	//
+	// type BlacklistOrigin = EnsureRoot<AccountId>;
+	//
+	// // Any single technical committee member may veto a coming council proposal, however they can
+	// // only do it once and it lasts only for the cool-off period.
+	// type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCollective>;
+	//
+	// type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
+}
+
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
 	pub const TransactionByteFee: Balance = 10 * MICROUNIT;
@@ -615,7 +704,8 @@ construct_runtime!(
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T> }= 4,
-		Scheduler: pallet_scheduler = 5,
+		Democracy: pallet_democracy = 5,
+		Scheduler: pallet_scheduler = 6,
 		Preimage: pallet_preimage = 7,
 
 		Utility: pallet_utility::{Pallet, Call, Event} = 8,

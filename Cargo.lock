@@ -2962,6 +2962,8 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
+ "pallet-collective",
+ "pallet-democracy",
  "pallet-messages",
  "pallet-messages-runtime-api",
  "pallet-msa",
