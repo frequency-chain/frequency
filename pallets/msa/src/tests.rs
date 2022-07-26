@@ -1,3 +1,5 @@
+use core::num;
+
 use crate::{
 	ensure,
 	mock::*,
@@ -235,23 +237,36 @@ fn it_revokes_msa_key_successfully() {
 
 // newtest
 #[test]
-fn it_retires_msa_id_successfully() {
+fn it_retires_msa_and_revokes_keys_successfully() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::create(test_origin_signed(1)));
 		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
 
 		assert_ok!(Msa::retire_my_msa(test_origin_signed(1)));
 
-		let info = Msa::get_msa_id();
+		let info = Msa::get_key_info(&test_public(1));
+		assert_eq!(info, Some(KeyInfo { msa_id: 1, expired: 1, nonce: 0 }));
 
-		// have to check expired from..
 	})
 }
 
 // newtest
 #[test]
 fn it_retires_msa_and_removes_delegations_successfully() {
+	new_test_ext().execute_with(|| {
 
+		create_delegation_relationships(3);
+
+		assert_ok!(Msa::retire_my_msa(test_origin_signed(1)));
+
+		for i in 1..4 {
+			assert_eq!(
+				Msa::get_provider_info_of(Provider(i), Delegator(1)).unwrap(),
+				ProviderInfo { expired: 1, permission: 0 },
+			);
+		}
+
+	})
 }
 
 #[test]
@@ -725,22 +740,7 @@ pub fn revoke_msa_delegation_by_delegator_is_successfull() {
 #[test]
 pub fn revoke_provider_is_successful() {
 	new_test_ext().execute_with(|| {
-		let (key_pair, _) = sr25519::Pair::generate();
-		let provider_account = key_pair.public();
-
-		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
-		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
-
-		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
-
-		assert_ok!(Msa::create(test_origin_signed(1)));
-		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
-		assert_ok!(Msa::add_provider_to_msa(
-			test_origin_signed(1),
-			provider_account.into(),
-			signature,
-			add_provider_payload
-		));
+		create_delegation_relationships(1);
 
 		let provider = Provider(2);
 		let delegator = Delegator(1);
@@ -752,6 +752,24 @@ pub fn revoke_provider_is_successful() {
 			ProviderInfo { expired: 1, permission: 0 },
 		);
 	});
+}
+
+fn create_delegation_relationships(num_of: u8) {
+	assert_ok!(Msa::create(test_origin_signed(1)));
+	for i in 0..num_of {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let provider_account = key_pair.public();
+		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+		assert_ok!(Msa::add_provider_to_msa(
+					test_origin_signed(1),
+					provider_account.into(),
+					signature,
+					add_provider_payload
+			));
+		}
 }
 
 #[test]
