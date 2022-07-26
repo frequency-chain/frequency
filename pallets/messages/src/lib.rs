@@ -190,10 +190,10 @@ pub mod pallet {
 
 			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
-			// ensure!(
-			// 	schema.unwrap().payload_location == PayloadLocation::IPFS,
-			// 	Error::<T>::InvalidPayloadLocation
-			// );
+			ensure!(
+				schema.unwrap().payload_location == PayloadLocation::IPFS,
+				Error::<T>::InvalidPayloadLocation
+			);
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
@@ -236,10 +236,10 @@ pub mod pallet {
 
 			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
-			// ensure!(
-			// 	schema.unwrap().payload_location == PayloadLocation::OnChain,
-			// 	Error::<T>::InvalidPayloadLocation
-			// );
+			ensure!(
+				schema.unwrap().payload_location == PayloadLocation::OnChain,
+				Error::<T>::InvalidPayloadLocation
+			);
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
@@ -250,7 +250,11 @@ pub mod pallet {
 				schema_id,
 			)?;
 
-			Ok(Some(T::WeightInfo::add_onchain_message(message.payload.len() as u32, message.index as u32)).into())
+			Ok(Some(T::WeightInfo::add_onchain_message(
+				message.payload.len() as u32,
+				message.index as u32,
+			))
+			.into())
 		}
 	}
 }

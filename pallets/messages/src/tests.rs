@@ -116,7 +116,12 @@ fn add_message_with_invalid_msa_account_should_panic() {
 
 		// act
 		assert_noop!(
-			MessagesPallet::add_onchain_message(Origin::signed(caller_1), None, schema_id_1, message_payload_1),
+			MessagesPallet::add_onchain_message(
+				Origin::signed(caller_1),
+				None,
+				schema_id_1,
+				message_payload_1
+			),
 			Error::<Test>::InvalidMessageSourceAccount
 		);
 	});
@@ -140,7 +145,12 @@ fn add_message_with_maxed_out_storage_should_panic() {
 			));
 		}
 		assert_noop!(
-			MessagesPallet::add_onchain_message(Origin::signed(caller_1), None, schema_id_1, message_payload_1),
+			MessagesPallet::add_onchain_message(
+				Origin::signed(caller_1),
+				None,
+				schema_id_1,
+				message_payload_1
+			),
 			Error::<Test>::TooManyMessagesInBlock
 		);
 	});
@@ -450,7 +460,12 @@ fn add_message_with_invalid_schema_id_should_error() {
 
 		// act
 		assert_err!(
-			MessagesPallet::add_onchain_message(Origin::signed(caller_1), None, schema_id_1, message_payload_1),
+			MessagesPallet::add_onchain_message(
+				Origin::signed(caller_1),
+				None,
+				schema_id_1,
+				message_payload_1
+			),
 			Error::<Test>::InvalidSchemaId
 		);
 	});
