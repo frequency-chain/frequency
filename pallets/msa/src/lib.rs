@@ -58,7 +58,7 @@
 use common_primitives::msa::{
 	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo,
 };
-use frame_support::{dispatch::DispatchResult, ensure};
+use frame_support::{dispatch::DispatchResult, ensure, storage::PrefixIterator};
 pub use pallet::*;
 use sp_runtime::{
 	traits::{Convert, Verify, Zero},
@@ -232,6 +232,8 @@ pub mod pallet {
 		DelegationNotFound,
 		/// The operation was attempted with an expired delegation
 		DelegationExpired,
+		/// Msa Id is already revoked
+		MsaRevoked,
 	}
 
 	#[pallet::call]
@@ -477,16 +479,6 @@ pub mod pallet {
 			let account_id = ensure_signed(origin)?;
 			let msa_id = Self::ensure_valid_msa_key(&account_id)?.msa_id.into();
 
-			// get keys for msa_id
-			// loop through and check the expiry
-			// then reject transaction and ask user to revoke all their keys first before trying to retire
-			// is that fair?
-
-			// check if already retired
-			Self::ensure_current_msa(msa_id)?;
-
-			// revoke delegation relationship
-
 			// call self::retire_msa()
 			Self::retire_msa(msa_id)?;
 			// Emit event to notify of retirement
@@ -693,17 +685,22 @@ impl<T: Config> Pallet<T> {
 	pub fn retire_msa(
 		msa_id: MessageSourceId
 	) -> DispatchResult {
-		// iterate through double map of provider, delegator (look at the docs)
-		// set to expire (block number to current)
-		//
 
+		ProviderInfoOf::<T>::iter_key_prefix(msa_id.into())
+			.for_each(|delegator: Delegator| -> Result<(), Error<T>> {
+				Self::revoke_provider(msa_id.into(), delegator.into()).map_err(|_| Error::<T>::MsaRevoked)
+			});
 
+		// Revoke all keys associated with that Msa
+		MsaKeysOf::<T>::try_mutate(msa_id, |key_list|-> DispatchResult {
+			key_list
+				.iter_mut()
+				.for_each(|iKey| -> Result<(), Error<T>> {
 
-		// revoke key that signed the origin trans
-		// also get all keys and revoke them all
-		//
-		// Self::revoke_key();
-		Ok(())
+					Self::revoke_key(iKey).map_err(|_| Error::<T>::MsaRevoked)
+			});
+			Ok(())
+		})
 	}
 
 	/// Attempts to retrieve the key information for an account
