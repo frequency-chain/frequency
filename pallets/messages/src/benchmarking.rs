@@ -35,7 +35,7 @@ benchmarks! {
 		}
 	}: _ (RawOrigin::Signed(caller), None, 1, input)
 
-	add_offchain {
+	add_ipfs_message {
 		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - 1;
 		let m in 1 .. MESSAGES;
 		let caller: T::AccountId = whitelisted_caller();

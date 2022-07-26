@@ -176,8 +176,8 @@ pub mod pallet {
 		/// * `payload_length` - The size of the payload
 		/// * Returns
 		/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html)
-		#[pallet::weight(T::WeightInfo::add_offchain(cid.get().len() as u32, 1_000))]
-		pub fn add_offchain(
+		#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.get().len() as u32, 1_000))]
+		pub fn add_ipfs_message(
 			origin: OriginFor<T>,
 			on_behalf_of: Option<MessageSourceId>,
 			schema_id: SchemaId,
@@ -205,7 +205,7 @@ pub mod pallet {
 				schema_id,
 			)?;
 
-			Ok(Some(T::WeightInfo::add_offchain(
+			Ok(Some(T::WeightInfo::add_ipfs_message(
 				message.payload.len() as u32,
 				message.index as u32,
 			))

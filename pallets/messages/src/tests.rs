@@ -488,7 +488,7 @@ fn valid_payload_location() {
 
 		// act
 		assert_eq!(
-			MessagesPallet::add_offchain(
+			MessagesPallet::add_ipfs_message(
 				Origin::signed(caller_1),
 				None,
 				schema_id_1,
@@ -508,7 +508,7 @@ fn invalid_payload_location() {
 
 		// act
 		assert_noop!(
-			MessagesPallet::add_offchain(
+			MessagesPallet::add_ipfs_message(
 				Origin::signed(caller_1),
 				None,
 				schema_id_1,
