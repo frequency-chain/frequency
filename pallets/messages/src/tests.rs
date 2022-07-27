@@ -489,7 +489,7 @@ fn valid_payload_location() {
 }
 
 #[test]
-fn invalid_payload_location() {
+fn invalid_payload_location_ipfs() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = 1;
@@ -497,6 +497,24 @@ fn invalid_payload_location() {
 
 		assert_noop!(
 			MessagesPallet::add_ipfs_message(Origin::signed(caller_1), None, schema_id_1, payload,),
+			Error::<Test>::InvalidPayloadLocation
+		);
+	});
+}
+
+#[test]
+fn invalid_payload_location_onchain() {
+	new_test_ext().execute_with(|| {
+		let caller_1 = 5;
+		let payload: Vec<u8> = Vec::from("foo");
+
+		assert_noop!(
+			MessagesPallet::add_onchain_message(
+				Origin::signed(caller_1),
+				None,
+				IPFS_SCHEMA_ID,
+				payload,
+			),
 			Error::<Test>::InvalidPayloadLocation
 		);
 	});
