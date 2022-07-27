@@ -167,7 +167,11 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Adds a message for an offchain resource
+		/// Adds a message for a resource hosted on IPFS. The IPFS payload should
+		/// contain both a
+		/// [CID](https://docs.ipfs.io/concepts/content-addressing/#identifier-formats)
+		/// as well as a 32-bit payload length.
+
 		/// # Arguments
 		/// * `origin` - A signed transaction origin from the provider
 		/// * `on_behalf_of` - Optional. The msa id of delegate.
