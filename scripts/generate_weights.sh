@@ -21,6 +21,11 @@ if [ -z "$weights_file" ]
     weights_file="./pallets/$pallet/src/weights.rs";
     echo "No weight file provided, using default: $weights_file"
 fi
+if [ ! -f "$weights_file" ]
+  then
+    echo "Error: Default file $weights_file does not exist." >&2;
+    exit 1;
+fi
 
 cargo build --features runtime-benchmarks --release
 
