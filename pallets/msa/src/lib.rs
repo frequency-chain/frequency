@@ -791,6 +791,7 @@ where
 		self.validate(who, call, info, len).map(|_| ())
 	}
 
+	/// Frequently called by the transaction queue to ensure that the transaction is valid such that:
 	/// * The calling extrinsic is 'revoke_msa_delegation_by_delegator'.
 	/// * The sender key is associated to an MSA and not revoked.
 	/// * The provider MSA is a valid provider to the delegator MSA.
@@ -811,7 +812,9 @@ where
 
 				Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id)
 					.map_err(|_| InvalidTransaction::Payment)?;
-				return Ok(Default::default())
+				return Ok(ValidTransaction::with_tag_prefix("DelegationRevocationAssociatedCheck")
+					.and_provides(remote_account)
+					.build())
 			},
 			_ => return Ok(Default::default()),
 		}
