@@ -227,5 +227,6 @@ fn testnet_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 		schemas: Default::default(),
+		vesting: Default::default(),
 	}
 }

@@ -9,13 +9,16 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 mod weights;
 pub mod xcm_config;
 
+
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+/// Block number from relay-chain
+use cumulus_pallet_parachain_system::RelaychainBlockNumberProvider;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify},
+	traits::{AccountIdLookup, AccountIdConversion, Convert, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
@@ -30,7 +33,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU32, Everything},
+	traits::{ConstU32, Everything, ConstU128, EnsureOrigin},
 	weights::{
 		constants::WEIGHT_PER_SECOND, ConstantMultiplier, DispatchClass, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
@@ -40,6 +43,7 @@ use frame_support::{
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
+	RawOrigin,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
@@ -50,6 +54,10 @@ pub use sp_runtime::BuildStorage;
 
 pub use pallet_msa;
 pub use pallet_schemas;
+pub use orml_vesting;
+
+// use hex_literal::hex;
+use hex_literal;
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
@@ -498,6 +506,87 @@ impl pallet_messages::Config for Runtime {
 	type MaxMessagePayloadSizeBytes = MaxMessagePayloadSizeBytes;
 }
 
+parameter_types! {
+	// Alice
+	// and Bob
+	pub TreasuryAccounts: Vec<AccountId> = vec![
+		hex_literal::hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into(),
+		hex_literal::hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"].into(),
+	];
+}
+
+pub struct EnsureRootOrTreasury;
+impl EnsureOrigin<Origin> for EnsureRootOrTreasury {
+	type Success = AccountId;
+
+	fn try_origin(o: Origin) -> Result<Self::Success, Origin> {
+		Into::<Result<RawOrigin<AccountId>, Origin>>::into(o).and_then(|o| match o {
+			RawOrigin::Root => Ok(TreasuryAccounts::get().get(0).unwrap().clone()),
+			RawOrigin::Signed(caller) => {
+				if TreasuryAccounts::get().contains(&caller) {
+					return Ok(caller)
+				} else {
+					return Err(Origin::from(Some(caller)))
+				}
+			}
+			r => Err(Origin::from(r)),
+		})
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn successful_origin() -> Origin {
+		let zero_account_id = AccountId::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes())
+			.expect("infinite length input; no invalid inputs for type; qed");
+		Origin::from(RawOrigin::Signed(zero_account_id))
+	}
+} 
+
+parameter_types! {
+	// Alice
+	// and Bob
+	pub LibertyFoundationAccounts: Vec<AccountId> = vec![
+		hex_literal::hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into(),
+		hex_literal::hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"].into(),
+	];
+}
+
+pub struct EnsureLibertyFoundation;
+impl EnsureOrigin<Origin> for EnsureLibertyFoundation {
+	type Success = AccountId;
+
+	fn try_origin(o: Origin) -> Result<Self::Success, Origin> {
+		Into::<Result<RawOrigin<AccountId>, Origin>>::into(o).and_then(|o| match o {
+			RawOrigin::Signed(caller) => {
+				if LibertyFoundationAccounts::get().contains(&caller) {
+					Ok(caller)
+				} else {
+					Err(Origin::from(Some(caller)))
+				}
+			}
+			r => Err(Origin::from(r))
+		})
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn successful_origin() -> Origin {
+		let zero_account_id = AccountId::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes())
+			.expect("infinite length input; no invalid inputs for type; qed");
+		Origin::from(RawOrigin::Signed(zero_account_id))
+	}
+}
+
+
+impl orml_vesting::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type MinVestedTransfer = ConstU128<0>;
+	type VestedTransferOrigin = EnsureLibertyFoundation;
+	// Update and run weights
+	type WeightInfo = ();
+	type MaxVestingSchedules = ConstU32<100>;
+	type BlockNumberProvider = RelaychainBlockNumberProvider<Runtime>;
+}
+
 impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
@@ -536,10 +625,13 @@ construct_runtime!(
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
+		// ORML
+		Vesting: orml_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 34,
+
 		// Frequency related pallets
-		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 34,
-		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 35,
-		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 36,
+		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 40,
+		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 41,
+		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 42,
 	}
 );
 
@@ -559,6 +651,7 @@ mod benches {
 		[pallet_msa, Msa]
 		[pallet_schemas, Schemas]
 		[pallet_messages, Messages]
+		[orml_vesting, Vesting]
 	);
 }
 
