@@ -29,7 +29,7 @@ fn offchain_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInf
 		RawOrigin::Signed(acc.clone()).into(),
 		None,
 		schema_id,
-		payload
+		payload,
 	)
 }
 

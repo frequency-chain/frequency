@@ -205,11 +205,7 @@ pub mod pallet {
 				schema_id,
 			)?;
 
-			Ok(Some(T::WeightInfo::add_ipfs_message(
-				payload_length,
-				message.index as u32,
-			))
-			.into())
+			Ok(Some(T::WeightInfo::add_ipfs_message(payload_length, message.index as u32)).into())
 		}
 		/// Gets a messages for a given schema-id and block-number.
 		/// # Arguments

@@ -1,6 +1,6 @@
 use super::{mock::*, Event as MessageEvent};
 use crate::{
-	types::{CID, IPFSPayload, Payload},
+	types::{IPFSPayload, CID},
 	BlockMessages, Config, Error, Message, Messages,
 };
 use common_primitives::{
@@ -477,12 +477,8 @@ fn valid_payload_location() {
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = IPFS_SCHEMA_ID;
 		let payload: IPFSPayload = IPFSPayload::new(CID::new(Vec::from("foo")), 1);
-		let info_result = MessagesPallet::add_ipfs_message(
-			Origin::signed(caller_1),
-			None,
-			schema_id_1,
-			payload,
-		);
+		let info_result =
+			MessagesPallet::add_ipfs_message(Origin::signed(caller_1), None, schema_id_1, payload);
 
 		assert_eq!(info_result.is_ok(), true);
 		let info: PostDispatchInfo = info_result.unwrap();
@@ -500,12 +496,7 @@ fn invalid_payload_location() {
 		let payload: IPFSPayload = IPFSPayload::new(CID::new(Vec::from("foo")), 1);
 
 		assert_noop!(
-			MessagesPallet::add_ipfs_message(
-				Origin::signed(caller_1),
-				None,
-				schema_id_1,
-				payload,
-			),
+			MessagesPallet::add_ipfs_message(Origin::signed(caller_1), None, schema_id_1, payload,),
 			Error::<Test>::InvalidPayloadLocation
 		);
 	});

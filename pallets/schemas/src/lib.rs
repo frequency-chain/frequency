@@ -319,7 +319,8 @@ impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
 
 		// This is janky, but it allows us to benchmark both message extrinsics from
 		// this pallet.
-		let location: PayloadLocation = if schema_id <= 50 {PayloadLocation::OnChain} else {PayloadLocation::IPFS};
+		let location: PayloadLocation =
+			if schema_id <= 50 { PayloadLocation::OnChain } else { PayloadLocation::IPFS };
 		Some(SchemaResponse {
 			schema_id,
 			model: "{}".as_bytes().to_vec(),
