@@ -1,6 +1,6 @@
 use super::{mock::*, Event as MessageEvent};
 use crate::{
-	types::{CIDv2, IPFSPayload, Payload},
+	types::{CID, IPFSPayload, Payload},
 	BlockMessages, Config, Error, Message, Messages,
 };
 use common_primitives::{
@@ -485,7 +485,7 @@ fn payload_to_message_onchain() {
 #[test]
 fn payload_to_message_offchain() {
 	new_test_ext().execute_with(|| {
-		let cid = CIDv2::new(Vec::from("hello"));
+		let cid = CID::new(Vec::from("hello"));
 		let offchain_payload = IPFSPayload::new(cid, 1);
 		let payload = Payload::IPFS(offchain_payload);
 		let msg = MessagesPallet::payload_to_message(payload);
@@ -504,7 +504,7 @@ fn valid_payload_location() {
 			Origin::signed(caller_1),
 			None,
 			schema_id_1,
-			CIDv2::new(Vec::from("foo")),
+			CID::new(Vec::from("foo")),
 			1,
 		);
 
@@ -527,7 +527,7 @@ fn invalid_payload_location() {
 				Origin::signed(caller_1),
 				None,
 				schema_id_1,
-				CIDv2::new(Vec::from("foo")),
+				CID::new(Vec::from("foo")),
 				1
 			),
 			Error::<Test>::InvalidPayloadLocation

@@ -181,7 +181,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			on_behalf_of: Option<MessageSourceId>,
 			schema_id: SchemaId,
-			cid: CIDv2,
+			cid: CID,
 			payload_length: u32,
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;

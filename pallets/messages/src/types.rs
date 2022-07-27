@@ -41,15 +41,15 @@ where
 	}
 }
 
-/// Newtype for CIDv2 addresses. We can change the inner type as we understand
+/// Newtype for CID addresses. We can change the inner type as we understand
 /// more about how to structure IPFS addressable content.
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct CIDv2(Vec<u8>);
+pub struct CID(Vec<u8>);
 
-impl CIDv2 {
+impl CID {
 	/// Constructor
-	pub fn new(vec: Vec<u8>) -> CIDv2 {
-		CIDv2(vec)
+	pub fn new(vec: Vec<u8>) -> CID {
+		CID(vec)
 	}
 
 	/// Exposes the inner vector
@@ -61,14 +61,14 @@ impl CIDv2 {
 /// IPFS payloads are defined by two members, a CID address and a payload length
 pub struct IPFSPayload {
 	/// IPFS Content address
-	pub cid: CIDv2,
+	pub cid: CID,
 	/// Size of the IPFS payload
 	pub payload_length: u32,
 }
 
 impl IPFSPayload {
 	/// Constructor
-	pub fn new(cid: CIDv2, payload_length: u32) -> IPFSPayload {
+	pub fn new(cid: CID, payload_length: u32) -> IPFSPayload {
 		IPFSPayload { cid, payload_length }
 	}
 }
