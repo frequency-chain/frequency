@@ -316,11 +316,15 @@ impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 		// To account for db read
 		Self::get_schema_by_id(schema_id);
+
+		// This is janky, but it allows us to benchmark both message extrinsics from
+		// this pallet.
+		let location: PayloadLocation = if schema_id <= 50 {PayloadLocation::OnChain} else {PayloadLocation::IPFS};
 		Some(SchemaResponse {
 			schema_id,
 			model: "{}".as_bytes().to_vec(),
 			model_type: ModelType::default(),
-			payload_location: PayloadLocation::default(),
+			payload_location: location,
 		})
 	}
 }

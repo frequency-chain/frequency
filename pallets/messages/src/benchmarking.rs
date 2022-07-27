@@ -9,7 +9,7 @@ use frame_system::RawOrigin;
 const MESSAGES: u32 = 499;
 const SCHEMAS: u32 = 50;
 
-fn add_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo {
+fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo {
 	let acc: T::AccountId = whitelisted_caller();
 	MessagesPallet::<T>::add_onchain_message(
 		RawOrigin::Signed(acc.clone()).into(),
@@ -22,6 +22,17 @@ fn add_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo {
 	)
 }
 
+fn offchain_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo {
+	let acc: T::AccountId = whitelisted_caller();
+	let payload: IPFSPayload = IPFSPayload::new(CID::new(Vec::from("foo")), 1_000);
+	MessagesPallet::<T>::add_ipfs_message(
+		RawOrigin::Signed(acc.clone()).into(),
+		None,
+		schema_id,
+		payload
+	)
+}
+
 benchmarks! {
 	add_onchain_message {
 		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - 1;
@@ -31,7 +42,7 @@ benchmarks! {
 
 		for j in 0 .. m {
 			let sid = j % SCHEMAS;
-			assert_ok!(add_message::<T>(sid.try_into().unwrap()));
+			assert_ok!(onchain_message::<T>(sid.try_into().unwrap()));
 		}
 	}: _ (RawOrigin::Signed(caller), None, 1, input)
 
@@ -45,10 +56,10 @@ benchmarks! {
 		let payload: IPFSPayload = IPFSPayload::new(cid, payload_length);
 
 		for j in 0 .. m {
-			let sid = j % SCHEMAS;
-			assert_ok!(add_message::<T>(sid.try_into().unwrap()));
+			let sid = (j % SCHEMAS) + 51;
+			assert_ok!(offchain_message::<T>(sid.try_into().unwrap()));
 		}
-	}: _ (RawOrigin::Signed(caller), None, 1, payload)
+	}: _ (RawOrigin::Signed(caller), None, 51, payload)
 
 	on_initialize {
 		let m in 1 .. MESSAGES;
@@ -56,7 +67,7 @@ benchmarks! {
 
 		for j in 0 .. m {
 			let sid = j % s;
-			assert_ok!(add_message::<T>(sid.try_into().unwrap()));
+			assert_ok!(onchain_message::<T>(sid.try_into().unwrap()));
 		}
 
 	}: {
