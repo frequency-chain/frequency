@@ -59,6 +59,7 @@ impl CID {
 }
 
 /// IPFS payloads are defined by two members, a CID address and a payload length
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct IPFSPayload {
 	/// IPFS Content address
 	pub cid: CID,
@@ -71,12 +72,4 @@ impl IPFSPayload {
 	pub fn new(cid: CID, payload_length: u32) -> IPFSPayload {
 		IPFSPayload { cid, payload_length }
 	}
-}
-
-/// Sum type for payloads
-pub enum Payload {
-	/// As of now, onchain payloads are strings of ASCII
-	Onchain(Vec<u8>),
-	/// Offchain payload
-	IPFS(IPFSPayload),
 }

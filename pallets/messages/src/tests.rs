@@ -472,40 +472,16 @@ fn add_message_with_invalid_schema_id_should_error() {
 }
 
 #[test]
-fn payload_to_message_onchain() {
-	new_test_ext().execute_with(|| {
-		let payload = Payload::Onchain(Vec::from("hello"));
-		let msg = MessagesPallet::payload_to_message(payload);
-		let control: BoundedVec<u8, <Test as Config>::MaxMessagePayloadSizeBytes> =
-			BoundedVec::try_from(Vec::from("hello".as_bytes())).unwrap();
-		assert_eq!(msg, control);
-	});
-}
-
-#[test]
-fn payload_to_message_offchain() {
-	new_test_ext().execute_with(|| {
-		let cid = CID::new(Vec::from("hello"));
-		let offchain_payload = IPFSPayload::new(cid, 1);
-		let payload = Payload::IPFS(offchain_payload);
-		let msg = MessagesPallet::payload_to_message(payload);
-		let control: BoundedVec<u8, <Test as Config>::MaxMessagePayloadSizeBytes> =
-			BoundedVec::try_from(Vec::from("hello".as_bytes())).unwrap();
-		assert_eq!(msg, control);
-	});
-}
-
-#[test]
 fn valid_payload_location() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = IPFS_SCHEMA_ID;
+		let payload: IPFSPayload = IPFSPayload::new(CID::new(Vec::from("foo")), 1);
 		let info_result = MessagesPallet::add_ipfs_message(
 			Origin::signed(caller_1),
 			None,
 			schema_id_1,
-			CID::new(Vec::from("foo")),
-			1,
+			payload,
 		);
 
 		assert_eq!(info_result.is_ok(), true);
@@ -521,14 +497,14 @@ fn invalid_payload_location() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = 1;
+		let payload: IPFSPayload = IPFSPayload::new(CID::new(Vec::from("foo")), 1);
 
 		assert_noop!(
 			MessagesPallet::add_ipfs_message(
 				Origin::signed(caller_1),
 				None,
 				schema_id_1,
-				CID::new(Vec::from("foo")),
-				1
+				payload,
 			),
 			Error::<Test>::InvalidPayloadLocation
 		);
