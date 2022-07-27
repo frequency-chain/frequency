@@ -741,8 +741,10 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	}
 }
 
-/// Check to ensure that a provider has not yet been revoked if the
-/// calling extrinsic is revoking a provider to an msa.
+/// The SignedExtension trait is implemented on CheckProviderRevocation to validate that a provider
+/// has not already been revoked if the calling extrinsic is revoking a provider to an MSA. The
+/// purpose of this is to ensure that the revoke_msa_delegation_by_delegator extrinsic cannot be
+/// repeatedly called and flood the network.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct CheckProviderRevocation<T: Config + Send + Sync>(PhantomData<T>);
@@ -789,6 +791,9 @@ where
 		self.validate(who, call, info, len).map(|_| ())
 	}
 
+	/// * The calling extrinsic is 'revoke_msa_delegation_by_delegator'.
+	/// * The sender key is associated to an MSA and not revoked.
+	/// * The provider MSA is a valid provider to the delegator MSA.
 	fn validate(
 		&self,
 		who: &Self::AccountId,
