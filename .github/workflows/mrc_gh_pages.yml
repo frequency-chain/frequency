@@ -1,7 +1,7 @@
-name: Build and Publish Frequency Docs
+name: Build and Publish Frequency Rust Docs
 
 on:
-  workflow_dispatch:
+  push:
     branches: [main]
 
 jobs:
