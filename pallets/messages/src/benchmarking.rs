@@ -22,17 +22,6 @@ fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo
 	)
 }
 
-fn offchain_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo {
-	let acc: T::AccountId = whitelisted_caller();
-	let payload: IPFSPayload = IPFSPayload::new(CID::new(Vec::from("foo")), 1_000);
-	MessagesPallet::<T>::add_ipfs_message(
-		RawOrigin::Signed(acc.clone()).into(),
-		None,
-		schema_id,
-		payload,
-	)
-}
-
 benchmarks! {
 	add_onchain_message {
 		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - 1;
@@ -56,8 +45,8 @@ benchmarks! {
 		let payload: IPFSPayload = IPFSPayload::new(cid, payload_length);
 
 		for j in 0 .. m {
-			let sid = (j % SCHEMAS) + 51;
-			assert_ok!(offchain_message::<T>(sid.try_into().unwrap()));
+			let sid = j % SCHEMAS;
+			assert_ok!(onchain_message::<T>(sid.try_into().unwrap()));
 		}
 	}: _ (RawOrigin::Signed(caller), None, 51, payload)
 
