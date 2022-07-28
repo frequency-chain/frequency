@@ -986,26 +986,9 @@ pub fn delegation_expired() {
 #[test]
 fn signed_extension_revoke_msa_delegation_by_delegator() {
 	new_test_ext().execute_with(|| {
-		let (key_pair, _) = sr25519::Pair::generate();
-		let provider_account = key_pair.public();
-
-		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
-		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
-
-		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
-
-		assert_ok!(Msa::create(test_origin_signed(1)));
-		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
-		assert_ok!(Msa::add_provider_to_msa(
-			test_origin_signed(1),
-			provider_account.into(),
-			signature,
-			add_provider_payload
-		));
-
-		let provider: MessageSourceId = 2;
+		let (_, provider_msa_id) = test_create_delegator_msa_with_provider();
 		let call_revoke_delegation: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id: provider });
+			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result = CheckProviderRevocation::<Test>::new().validate(
@@ -1021,26 +1004,9 @@ fn signed_extension_revoke_msa_delegation_by_delegator() {
 #[test]
 fn signed_extension_validation_failure_on_revoked() {
 	new_test_ext().execute_with(|| {
-		let (key_pair, _) = sr25519::Pair::generate();
-		let provider_account = key_pair.public();
-
-		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
-		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
-
-		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
-
-		assert_ok!(Msa::create(test_origin_signed(1)));
-		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
-		assert_ok!(Msa::add_provider_to_msa(
-			test_origin_signed(1),
-			provider_account.into(),
-			signature,
-			add_provider_payload
-		));
-
-		let provider: MessageSourceId = 2;
+		let (_, provider_msa_id) = test_create_delegator_msa_with_provider();
 		let call_revoke_delegation: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id: provider });
+			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result = CheckProviderRevocation::<Test>::new().validate(
@@ -1050,10 +1016,10 @@ fn signed_extension_validation_failure_on_revoked() {
 			len,
 		);
 		assert_ok!(result);
-		assert_ok!(Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), provider));
+		assert_ok!(Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), provider_msa_id));
 		System::set_block_number(System::block_number() + 1);
 		let call_revoke_delegation: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id: provider });
+			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result_revoked = CheckProviderRevocation::<Test>::new().validate(
