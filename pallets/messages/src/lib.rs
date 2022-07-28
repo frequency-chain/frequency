@@ -197,7 +197,6 @@ pub mod pallet {
 			);
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
-			let payload_length = payload.payload_length;
 			let message = Self::add_message(
 				provider_key,
 				message_source_id,
@@ -205,7 +204,11 @@ pub mod pallet {
 				schema_id,
 			)?;
 
-			Ok(Some(T::WeightInfo::add_ipfs_message(payload_length, message.index as u32)).into())
+			Ok(Some(T::WeightInfo::add_ipfs_message(
+				payload.cid.get().len() as u32,
+				message.index as u32,
+			))
+			.into())
 		}
 		/// Gets a messages for a given schema-id and block-number.
 		/// # Arguments

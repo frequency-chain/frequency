@@ -1,7 +1,6 @@
 #! /bin/sh
 
 set -e
-set -x
 
 while getopts p:w: flag
 do

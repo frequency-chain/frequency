@@ -8,6 +8,7 @@ use frame_system::RawOrigin;
 
 const MESSAGES: u32 = 499;
 const SCHEMAS: u32 = 50;
+const IPFS_SCHEMA_ID: u16 = 65535;
 
 fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo {
 	let acc: T::AccountId = whitelisted_caller();
@@ -48,7 +49,7 @@ benchmarks! {
 			let sid = j % SCHEMAS;
 			assert_ok!(onchain_message::<T>(sid.try_into().unwrap()));
 		}
-	}: _ (RawOrigin::Signed(caller), None, 51, payload)
+	}: _ (RawOrigin::Signed(caller), None, IPFS_SCHEMA_ID, payload)
 
 	on_initialize {
 		let m in 1 .. MESSAGES;
