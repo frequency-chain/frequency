@@ -1,12 +1,16 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
+import '@polkadot/api-base/types/errors';
+
 import type { ApiTypes, AugmentedError } from '@polkadot/api-base/types';
 
 export type __AugmentedError<ApiType extends ApiTypes> = AugmentedError<ApiType>;
 
 declare module '@polkadot/api-base/types/errors' {
-  export interface AugmentedErrors<ApiType extends ApiTypes> {
+  interface AugmentedErrors<ApiType extends ApiTypes> {
     authorship: {
       /**
        * The uncle is genesis.
@@ -125,8 +129,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       Unknown: AugmentedError<ApiType>;
     };
-    frequencyTxPayment: {
-    };
     messages: {
       /**
        * Message payload size is too large
@@ -140,6 +142,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Invalid Pagination Request
        **/
       InvalidPaginationRequest: AugmentedError<ApiType>;
+      /**
+       * Invalid SchemaId or Schema not found
+       **/
+      InvalidSchemaId: AugmentedError<ApiType>;
       /**
        * Too many messages are added to existing block
        **/

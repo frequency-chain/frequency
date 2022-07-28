@@ -2,7 +2,7 @@
 authors = ["Frequency Team"]
 description = "A package that defines common helper modules used in Frequency"
 edition = "2021"
-homepage = "https://unfinishedlabs.io/"
+homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = 'common-helpers'
 publish = false

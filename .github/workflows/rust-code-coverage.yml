@@ -1,0 +1,81 @@
+name: Rust Code Coverage
+concurrency:
+  group: codecov-${{ github.ref }}
+  cancel-in-progress: true
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  codecov:
+    name: Code Coverage Report
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        rust_toolchain: [nightly-2022-06-27]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
+    steps:
+      - name: Free space on Ubuntu
+        if: ${{ matrix.os }} == 'ubuntu-latest'
+        run: |
+          echo "Pre cleanup"
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Post cleanup"
+          df -h
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      # Skip individual steps if only certain files changed
+      - uses: dorny/paths-filter@v2.10.2
+        id: filter
+        with:
+          filters: |
+            rust:
+              - '**/*.rs'
+              - '**/*.hbs'
+              - '.rustfmt.toml'
+              - '**/Cargo.toml'
+              - '**/Cargo.lock'
+              - 'ci/build.sh'
+              - 'scripts/**.sh'
+            js:
+              - 'js/**'
+
+      # Rust
+      - name: Install latest nightly
+        if: ${{ steps.filter.outputs.rust == 'true' }}
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          profile: minimal
+          target: wasm32-unknown-unknown
+          default: true
+
+      - name: Cache
+        if: ${{ steps.filter.outputs.rust == 'true' }}
+        uses: Swatinem/rust-cache@v1
+        with:
+          key: codecov-${{ env.RUST_TOOLCHAIN }}
+
+      - name: Run cargo-tarpaulin
+        if: ${{ steps.filter.outputs.rust == 'true' }}
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          version: '0.20.1'
+          # Tarpaulin Docs https://github.com/xd009642/tarpaulin
+          # -e for exclude
+          args:  |
+            -v --no-fail-fast --workspace
+            -e frequency frequency-cli frequency-runtime frequency-service
+            --exclude-files **/mock.rs **/weights.rs **/weights/*
+
+      - name: Upload to codecov.io
+        if: ${{ steps.filter.outputs.rust == 'true' }}
+        uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: false # optional (default = false)
+          verbose: true # optional (default = false)

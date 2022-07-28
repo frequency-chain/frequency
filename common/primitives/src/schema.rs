@@ -17,6 +17,8 @@ pub type SchemaId = u16;
 pub enum ModelType {
 	/// Message payload modeled with Apache Avro: https://avro.apache.org/docs/current/spec.html
 	AvroBinary,
+	/// Message payload modeled with Apache Parquet: https://parquet.apache.org/
+	Parquet,
 }
 
 impl Default for ModelType {

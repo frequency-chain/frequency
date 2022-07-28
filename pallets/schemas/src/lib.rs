@@ -53,8 +53,9 @@
 	missing_docs
 )]
 
-use common_primitives::schema::{
-	ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse,
+use common_primitives::{
+	parquet::ParquetModel,
+	schema::{ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse},
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
 #[cfg(test)]
@@ -77,9 +78,9 @@ mod serde;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+	use sp_std::vec::Vec;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -213,7 +214,6 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			Self::ensure_valid_schema(&model)?;
 			ensure!(
 				model.len() > T::MinSchemaModelSizeBytes::get() as usize,
 				Error::<T>::LessThanMinSchemaModelBytes
@@ -223,6 +223,7 @@ pub mod pallet {
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 
+			Self::ensure_valid_model(&model_type, &model)?;
 			let schema_id = Self::add_schema(model, model_type, payload_location)?;
 
 			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
@@ -268,8 +269,7 @@ pub mod pallet {
 		/// Retrieve a schema by id
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			if let Some(schema) = Self::get_schema(schema_id) {
-				// this should get a BoundedVec out
-				let model_vec = schema.model.into_inner();
+				let model_vec: Vec<u8> = schema.model.into_inner();
 
 				let response = SchemaResponse {
 					schema_id,
@@ -282,13 +282,19 @@ pub mod pallet {
 			None
 		}
 
-		/// Ensures schema is a valid JSON before registering it
-		/// Rejects malformed or null JSON
-		pub fn ensure_valid_schema(
-			schema: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+		/// Ensures that a given u8 Vector conforms to a recognized Parquet shape
+		pub fn ensure_valid_model(
+			model_type: &ModelType,
+			model: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 		) -> DispatchResult {
-			let validated_schema = serde::validate_json_model(schema.clone().into_inner());
-			validated_schema.map_err(|_| Error::<T>::InvalidSchema)?;
+			match model_type {
+				&ModelType::Parquet => {
+					serde_json::from_slice::<ParquetModel>(model)
+						.map_err(|_| Error::<T>::InvalidSchema)?;
+				},
+				&ModelType::AvroBinary => serde::validate_json_model(model.clone().into_inner())
+					.map_err(|_| Error::<T>::InvalidSchema)?,
+			};
 			Ok(())
 		}
 	}

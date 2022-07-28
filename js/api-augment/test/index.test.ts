@@ -28,7 +28,6 @@ describe("index", function () {
     });
     assert.notEqual(api.rpc.messages, undefined);
     assert.notEqual(api.rpc.msa, undefined);
-    assert.notEqual(api.rpc.frequency, undefined);
     assert.notEqual(api.rpc.schemas, undefined);
     await api.disconnect();
   });

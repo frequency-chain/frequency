@@ -7,9 +7,10 @@
 
 use std::sync::Arc;
 
-use frequency_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Index as Nonce};
+use frequency_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Hash, Index as Nonce};
 
 use sc_client_api::AuxStore;
+use sc_consensus_manual_seal::rpc::{EngineCommand, ManualSeal, ManualSealApiServer};
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
@@ -27,6 +28,8 @@ pub struct FullDeps<C, P> {
 	pub pool: Arc<P>,
 	/// Whether to deny unsafe calls
 	pub deny_unsafe: DenyUnsafe,
+	/// Manual seal command sink
+	pub command_sink: Option<futures::channel::mpsc::Sender<EngineCommand<Hash>>>,
 }
 
 /// Instantiate all RPC extensions.
@@ -47,7 +50,6 @@ where
 	C::Api: pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber>,
 	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block>,
 	C::Api: pallet_msa_runtime_api::MsaApi<Block, AccountId, BlockNumber>,
-	C::Api: pallet_tx_fee_runtime_api::TxFeeRuntimeApi<Block, Balance>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
@@ -57,16 +59,21 @@ where
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
 	use pallet_schemas_rpc::{SchemasApiServer, SchemasHandler};
-	use pallet_tx_fee_rpc::{FrequencyTxFeeApiServer, FrequencyTxFeeHandler};
 
 	let mut module = RpcExtension::new(());
-	let FullDeps { client, pool, deny_unsafe } = deps;
+	let FullDeps { client, pool, deny_unsafe, command_sink } = deps;
 
 	module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 	module.merge(MessagesHandler::new(client.clone()).into_rpc())?;
 	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;
 	module.merge(MsaHandler::new(client.clone()).into_rpc())?;
-	module.merge(FrequencyTxFeeHandler::new(client).into_rpc())?;
+	if let Some(command_sink) = command_sink {
+		module.merge(
+			// We provide the rpc handler with the sending end of the channel to allow the rpc
+			// send EngineCommands to the background block authorship task.
+			ManualSeal::new(command_sink).into_rpc(),
+		)?;
+	}
 	Ok(module)
 }

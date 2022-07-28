@@ -1,8 +1,6 @@
-use crate::{
-	chain_spec,
-	cli::{Cli, RelayChainCli, Subcommand},
-	service::{new_partial, TemplateRuntimeExecutor},
-};
+use crate::cli::{Cli, RelayChainCli, Subcommand};
+use frequency_service::{chain_spec, service::*};
+
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
@@ -24,16 +22,22 @@ use std::net::SocketAddr;
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	Ok(match id {
-		"dev" => Box::new(chain_spec::development_config()),
-		"template-rococo" => Box::new(chain_spec::local_testnet_config()),
-		"" | "local" => Box::new(chain_spec::local_testnet_config()),
-		path => Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
+		"frequency_dev" | "dev" => Box::new(chain_spec::frequency_local::development_config()),
+		"frequency_local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
+		"" | "local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
+		path => Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(
+			std::path::PathBuf::from(path),
+		)?),
 	})
+}
+
+fn chain_name() -> String {
+	"Frequency".into()
 }
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Parachain Collator Template".into()
+		format!("{} Node", chain_name())
 	}
 
 	fn impl_version() -> String {
@@ -44,7 +48,7 @@ impl SubstrateCli for Cli {
 		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
-		frequency-collator <parachain-args> -- <relay-chain-args>"
+		frequency <parachain-args> -- <relay-chain-args>"
 			.into()
 	}
 
@@ -71,7 +75,7 @@ impl SubstrateCli for Cli {
 
 impl SubstrateCli for RelayChainCli {
 	fn impl_name() -> String {
-		"Parachain Collator Template".into()
+		"Frequency".into()
 	}
 
 	fn impl_version() -> String {
@@ -82,7 +86,7 @@ impl SubstrateCli for RelayChainCli {
 		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
-		frequency-collator <parachain-args> -- <relay-chain-args>"
+		frequency <parachain-args> -- <relay-chain-args>"
 			.into()
 	}
 
@@ -117,7 +121,8 @@ macro_rules! construct_async_run {
 				_
 			>(
 				&$config,
-				crate::service::parachain_build_import_queue,
+				parachain_build_import_queue,
+				false,
 			)?;
 			let task_manager = $components.task_manager;
 			{ $( $code )* }.map(|v| (v, task_manager))
@@ -208,14 +213,16 @@ pub fn run() -> Result<()> {
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
 					let partials = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
 						&config,
-						crate::service::parachain_build_import_queue,
+						parachain_build_import_queue,
+						false,
 					)?;
 					cmd.run(partials.client)
 				}),
 				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
 					let partials = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
 						&config,
-						crate::service::parachain_build_import_queue,
+						parachain_build_import_queue,
+						false,
 					)?;
 					let db = partials.backend.expose_db();
 					let storage = partials.backend.expose_storage();
@@ -249,6 +256,10 @@ pub fn run() -> Result<()> {
 			let collator_options = cli.run.collator_options();
 
 			runner.run_node_until_exit(|config| async move {
+				let para_id = chain_spec::frequency_local::Extensions::try_get(&*config.chain_spec)
+					.map(|e| e.para_id)
+					.ok_or("Could not find parachain ID in chain-spec.")?;
+
 				let hwbench = if !cli.no_hardware_benchmarks {
 					config.database.path().map(|database_path| {
 						let _ = std::fs::create_dir_all(&database_path);
@@ -258,9 +269,9 @@ pub fn run() -> Result<()> {
 					None
 				};
 
-				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
-					.map(|e| e.para_id)
-					.ok_or("Could not find parachain ID in chain-spec.")?;
+				if cli.instant_sealing {
+					return frequency_dev_instant_sealing(config).map_err(Into::into)
+				}
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
@@ -287,16 +298,10 @@ pub fn run() -> Result<()> {
 				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
-				crate::service::start_parachain_node(
-					config,
-					polkadot_config,
-					collator_options,
-					id,
-					hwbench,
-				)
-				.await
-				.map(|r| r.0)
-				.map_err(Into::into)
+				start_parachain_node(config, polkadot_config, collator_options, id, hwbench)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
 			})
 		},
 	}

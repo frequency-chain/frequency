@@ -69,6 +69,36 @@ start-frequency)
     --state-cache-size 0 \
   ;;
 
+start-frequency-instant)
+  printf "\nBuilding frequency with runtime '$parachain' and id '$para_id'...\n"
+  cargo build --release
+
+  parachain_dir=$base_dir/parachain/${para_id}
+  mkdir -p $parachain_dir;
+
+  if [ "$2" == "purge" ]; then
+    echo "purging parachain..."
+    rm -rf $parachain_dir
+  fi
+
+  ./target/release/frequency \
+    --dev \
+    -lruntime=debug \
+    --instant-sealing \
+    --wasm-execution=compiled \
+    --execution=wasm \
+    --no-telemetry \
+    --no-prometheus \
+    --port $((30333)) \
+    --rpc-port $((9933)) \
+    --ws-port $((9944)) \
+    --rpc-external \
+    --rpc-cors all \
+    --ws-external \
+    --rpc-methods=Unsafe \
+    --tmp
+  ;;
+
 start-frequency-container)
 
   parachain_dir=$base_dir/parachain/${para_id}
@@ -114,8 +144,8 @@ onboard-frequency)
       genesis=$(docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-state --chain="${chain_spec}")
       docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-wasm --chain="${chain_spec}" > $wasm_location
     else
-      genesis=$(./target/release/frequency-collator export-genesis-state --chain="${chain_spec}")
-      ./target/release/frequency-collator export-genesis-wasm --chain="${chain_spec}" > $wasm_location
+      genesis=$(./target/release/frequency export-genesis-state --chain="${chain_spec}")
+      ./target/release/frequency export-genesis-wasm --chain="${chain_spec}" > $wasm_location
     fi
 
   echo "WASM path:" "${parachain}-${para_id}.wasm"

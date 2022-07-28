@@ -3,7 +3,7 @@ name = "pallet-schemas"
 authors = ["Frequency Team"]
 description = "Schema operations"
 edition = "2021"
-homepage = "https://unfinishedlabs.io/"
+homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 publish = false
 repository = "https://github.com/libertyDSNP/frequency/"
@@ -28,6 +28,7 @@ sp-runtime = {default-features = false, git = "https://github.com/paritytech/sub
 sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
 sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+numtoa = { default-features = false, version = '0.2.4' , optional = true}
 
 # Frequency related dependencies
 common-primitives = {default-features = false, path = "../../common/primitives"}
@@ -49,6 +50,9 @@ std = [
 	"sp-core/std",
 ]
 
-runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+runtime-benchmarks = [
+	"frame-benchmarking/runtime-benchmarks",
+	"numtoa"
+]
 
 try-runtime = ["frame-support/try-runtime"]
