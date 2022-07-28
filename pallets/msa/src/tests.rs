@@ -785,8 +785,9 @@ fn revoke_provider_throws_errors() {
 	});
 }
 
+/// Assert that the call to revoke a delegation is free.
 #[test]
-pub fn revoke_provider_call_has_correct_costs() {
+pub fn revoke_provider_call_has_no_cost() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
@@ -983,7 +984,7 @@ pub fn delegation_expired() {
 	})
 }
 
-/// Asserts that revoking an MSA delegation passes the signed extension CheckProviderRevocation
+/// Assert that revoking an MSA delegation passes the signed extension CheckProviderRevocation
 /// validation when a valid delegation exists.
 #[test]
 fn signed_extension_revoke_msa_delegation_by_delegator() {
@@ -1003,7 +1004,7 @@ fn signed_extension_revoke_msa_delegation_by_delegator() {
 	});
 }
 
-/// Asserts that revoking an MSA delegation fails the signed extension CheckProviderRevocation
+/// Assert that revoking an MSA delegation fails the signed extension CheckProviderRevocation
 /// validation when no valid delegation exists.
 #[test]
 fn signed_extension_validation_failure_on_revoked() {
@@ -1036,7 +1037,7 @@ fn signed_extension_validation_failure_on_revoked() {
 	});
 }
 
-/// Asserts that a call that is not revoke_msa_delegation_by_delegator passes the signed extension
+/// Assert that a call that is not revoke_msa_delegation_by_delegator passes the signed extension
 /// CheckProviderRevocation validaton.
 #[test]
 fn signed_extension_validation_valid_for_others() {
