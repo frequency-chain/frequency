@@ -1,4 +1,3 @@
-// use super::*;
 use crate as pallet_msa;
 use frame_support::{
 	parameter_types,
