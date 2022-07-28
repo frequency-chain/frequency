@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["avro",""],["types",""]]});
+window.SIDEBAR_ITEMS = {"mod":[["avro",""],["rpc","Structs and traits specifically for RPC calls. export rpc primitive types."],["types",""]]};

@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["gen_client","The generated client module."]],"struct":[["MessagesApiClient","The Client."],["MessagesHandler","A struct that implements the `MessagesApi`."]],"trait":[["MessagesApi",""]]});
+window.SIDEBAR_ITEMS = {"struct":[["MessagesHandler","A struct that implements the `MessagesApi`."]],"trait":[["MessagesApiClient","Client implementation for the `MessagesApi` RPC API."],["MessagesApiServer","Server trait implementation for the `MessagesApi` RPC API."]]};

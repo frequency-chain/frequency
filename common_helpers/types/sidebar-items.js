@@ -1,1 +1,1 @@
-initSidebarItems({"type":[["SchemaValue",""]]});
+window.SIDEBAR_ITEMS = {"type":[["SchemaValue",""]]};

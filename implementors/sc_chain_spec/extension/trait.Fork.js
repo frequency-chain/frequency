@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["mrc_collator"] = [{"text":"impl Fork for <a class=\"struct\" href=\"mrc_collator/chain_spec/struct.ExtensionsFork.html\" title=\"struct mrc_collator::chain_spec::ExtensionsFork\">ExtensionsFork</a>","synthetic":false,"types":["mrc_collator::chain_spec::ExtensionsFork"]}];
+implementors["frequency_service"] = [{"text":"impl Fork for <a class=\"struct\" href=\"frequency_service/chain_spec/frequency_local/struct.ExtensionsFork.html\" title=\"struct frequency_service::chain_spec::frequency_local::ExtensionsFork\">ExtensionsFork</a>","synthetic":false,"types":["frequency_service::chain_spec::frequency_local::ExtensionsFork"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

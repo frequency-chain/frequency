@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["mrc_collator"] = [{"text":"impl Subcommand for <a class=\"enum\" href=\"mrc_collator/cli/enum.Subcommand.html\" title=\"enum mrc_collator::cli::Subcommand\">Subcommand</a>","synthetic":false,"types":["mrc_collator::cli::Subcommand"]}];
+implementors["frequency_cli"] = [{"text":"impl Subcommand for <a class=\"enum\" href=\"frequency_cli/enum.Subcommand.html\" title=\"enum frequency_cli::Subcommand\">Subcommand</a>","synthetic":false,"types":["frequency_cli::cli::Subcommand"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

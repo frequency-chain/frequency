@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["SchemaResponse","RPC Response form for a Schema"]],"type":[["SchemaId","Schema Id is the unique identifier for a Schema"]]});
+window.SIDEBAR_ITEMS = {"enum":[["ModelType","Types of modeling in which a message payload may be defined"],["PayloadLocation","Types of payload locations"]],"struct":[["SchemaResponse","RPC Response form for a Schema"]],"trait":[["SchemaProvider","This allows other pallets to resolve Schema information. With generic SchemaId"]],"type":[["SchemaId","Schema Id is the unique identifier for a Schema"]]};

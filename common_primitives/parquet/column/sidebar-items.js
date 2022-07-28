@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["ParquetColumn","Encapsulation for a single Parquet column"]]};

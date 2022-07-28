@@ -1,1 +1,1 @@
-initSidebarItems({"trait":[["SchemasRuntimeApi",""]]});
+window.SIDEBAR_ITEMS = {"trait":[["SchemasRuntimeApi",""]]};

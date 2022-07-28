@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["mrc_runtime"] = [{"text":"impl GetCallMetadata for <a class=\"enum\" href=\"mrc_runtime/enum.Call.html\" title=\"enum mrc_runtime::Call\">Call</a>","synthetic":false,"types":["mrc_runtime::Call"]}];
+implementors["frequency_runtime"] = [{"text":"impl GetCallMetadata for <a class=\"enum\" href=\"frequency_runtime/enum.Call.html\" title=\"enum frequency_runtime::Call\">Call</a>","synthetic":false,"types":["frequency_runtime::Call"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

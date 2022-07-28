@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["ParquetType","Encapsulates label types for Parquet"]]};

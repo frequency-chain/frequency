@@ -1,1 +1,1 @@
-initSidebarItems({"trait":[["MessagesApi",""]]});
+window.SIDEBAR_ITEMS = {"trait":[["MessagesApi",""]]};

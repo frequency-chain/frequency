@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["mrc_collator"] = [{"text":"impl NativeExecutionDispatch for <a class=\"struct\" href=\"mrc_collator/service/struct.TemplateRuntimeExecutor.html\" title=\"struct mrc_collator::service::TemplateRuntimeExecutor\">TemplateRuntimeExecutor</a>","synthetic":false,"types":["mrc_collator::service::TemplateRuntimeExecutor"]}];
+implementors["frequency_service"] = [{"text":"impl NativeExecutionDispatch for <a class=\"struct\" href=\"frequency_service/service/struct.TemplateRuntimeExecutor.html\" title=\"struct frequency_service::service::TemplateRuntimeExecutor\">TemplateRuntimeExecutor</a>","synthetic":false,"types":["frequency_service::service::TemplateRuntimeExecutor"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

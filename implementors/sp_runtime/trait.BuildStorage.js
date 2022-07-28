@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["frequency_runtime"] = [{"text":"impl <a class=\"trait\" href=\"frequency_runtime/trait.BuildStorage.html\" title=\"trait frequency_runtime::BuildStorage\">BuildStorage</a> for <a class=\"struct\" href=\"frequency_runtime/struct.GenesisConfig.html\" title=\"struct frequency_runtime::GenesisConfig\">GenesisConfig</a>","synthetic":false,"types":["frequency_runtime::GenesisConfig"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

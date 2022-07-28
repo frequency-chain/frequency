@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["ColumnCompressionCodec","Compression codecs: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md"]]};

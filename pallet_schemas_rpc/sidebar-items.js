@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Error","Error type of this RPC api."]],"mod":[["gen_client","The generated client module."]],"struct":[["SchemasApiClient","The Client."],["SchemasHandler",""]],"trait":[["SchemasApi","MRC Schema API"]]});
+window.SIDEBAR_ITEMS = {"enum":[["Error","Error type of this RPC api."]],"struct":[["SchemasHandler",""]],"trait":[["SchemasApiClient","Client implementation for the `SchemasApi` RPC API."],["SchemasApiServer","Server trait implementation for the `SchemasApi` RPC API."]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["ParquetTemporalType","Parquet temporal types: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md"]],"struct":[["ParquetTime","Parquet time: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md"],["ParquetTimestamp","Parquet timestamps: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md"]]};

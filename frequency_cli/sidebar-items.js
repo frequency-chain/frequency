@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Error","Error type for the CLI."],["Subcommand","Sub-commands supported by the collator."]],"fn":[["run","Parse command line arguments into service configuration."]],"struct":[["Cli",""],["RelayChainCli",""]],"type":[["Result","Result type alias for the CLI."]]};

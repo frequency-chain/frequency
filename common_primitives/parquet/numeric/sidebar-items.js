@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["ParquetNumericType","Parquet numeric types: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md"]],"struct":[["ParquetDecimal","Parquet Decimals"],["ParquetInteger","Parquet Integers"]]};

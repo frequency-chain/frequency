@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["mrc_runtime"] = [{"text":"impl ValidateUnsigned for <a class=\"struct\" href=\"mrc_runtime/struct.Runtime.html\" title=\"struct mrc_runtime::Runtime\">Runtime</a>","synthetic":false,"types":["mrc_runtime::Runtime"]}];
+implementors["frequency_runtime"] = [{"text":"impl ValidateUnsigned for <a class=\"struct\" href=\"frequency_runtime/struct.Runtime.html\" title=\"struct frequency_runtime::Runtime\">Runtime</a>","synthetic":false,"types":["frequency_runtime::Runtime"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

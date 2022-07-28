@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["ParquetStringType","Parquet String types: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md NOTE: We are not supporting ENUMs yet."]]};

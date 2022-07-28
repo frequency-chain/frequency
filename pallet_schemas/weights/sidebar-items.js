@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["SubstrateWeight","Weights for pallet_schemas using the Substrate node and recommended hardware."]],"trait":[["WeightInfo","Weight functions needed for pallet_schemas."]]});
+window.SIDEBAR_ITEMS = {"struct":[["SubstrateWeight","Weights for pallet_schemas using the Substrate node and recommended hardware."]],"trait":[["WeightInfo","Weight functions needed for pallet_schemas."]]};
