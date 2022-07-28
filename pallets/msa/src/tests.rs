@@ -983,6 +983,8 @@ pub fn delegation_expired() {
 	})
 }
 
+/// Asserts that revoking an MSA delegation passes the signed extension CheckProviderRevocation
+/// validation when a valid delegation exists.
 #[test]
 fn signed_extension_revoke_msa_delegation_by_delegator() {
 	new_test_ext().execute_with(|| {
@@ -1001,6 +1003,8 @@ fn signed_extension_revoke_msa_delegation_by_delegator() {
 	});
 }
 
+/// Asserts that revoking an MSA delegation fails the signed extension CheckProviderRevocation
+/// validation when no valid delegation exists.
 #[test]
 fn signed_extension_validation_failure_on_revoked() {
 	new_test_ext().execute_with(|| {
@@ -1032,6 +1036,8 @@ fn signed_extension_validation_failure_on_revoked() {
 	});
 }
 
+/// Asserts that a call that is not revoke_msa_delegation_by_delegator passes the signed extension
+/// CheckProviderRevocation validaton.
 #[test]
 fn signed_extension_validation_valid_for_others() {
 	let random_call_should_pass: &<Test as frame_system::Config>::Call =
