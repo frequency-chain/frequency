@@ -804,6 +804,7 @@ where
 	) -> TransactionValidity {
 		match call.is_sub_type() {
 			Some(Call::revoke_msa_delegation_by_delegator { provider_msa_id, .. }) => {
+				const TAG_PREFIX: &str = "DelegationRevokation";
 				let delegator_msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(&who)
 					.map_err(|_| InvalidTransaction::Payment)?
 					.msa_id
@@ -812,9 +813,7 @@ where
 
 				Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id)
 					.map_err(|_| InvalidTransaction::Payment)?;
-				return Ok(ValidTransaction::with_tag_prefix("DelegationRevocationAssociatedCheck")
-					.and_provides(remote_account)
-					.build())
+				return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(who).build()
 			},
 			_ => return Ok(Default::default()),
 		}
