@@ -749,6 +749,14 @@ impl<T: Config> AccountProvider for Pallet<T> {
 #[scale_info(skip_type_params(T))]
 pub struct CheckProviderRevocation<T: Config + Send + Sync>(PhantomData<T>);
 
+/// Errors related to the validity of the CheckProviderRevocation signed extension.
+enum ValidityError {
+	/// Delegation to provider is not found or expired.
+	InvalidDelegation,
+	/// MSA key as been revoked.
+	InvalidMsaKey,
+}
+
 impl<T: Config + Send + Sync> CheckProviderRevocation<T> {
 	/// Create new `SignedExtension` to check runtime version.
 	pub fn new() -> Self {
@@ -806,13 +814,14 @@ where
 			Some(Call::revoke_msa_delegation_by_delegator { provider_msa_id, .. }) => {
 				const TAG_PREFIX: &str = "DelegationRevokation";
 				let delegator_msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(&who)
-					.map_err(|_| InvalidTransaction::Payment)?
+					.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
 					.msa_id
 					.into();
 				let provider_msa_id = Provider(*provider_msa_id);
 
-				Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id)
-					.map_err(|_| InvalidTransaction::Payment)?;
+				Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id).map_err(
+					|_| InvalidTransaction::Custom(ValidityError::InvalidDelegation as u8),
+				)?;
 				return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(who).build()
 			},
 			_ => return Ok(Default::default()),
