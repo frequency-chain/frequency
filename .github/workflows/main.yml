@@ -56,6 +56,15 @@ jobs:
           TARGET: ${{ matrix.target }}
           RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
           PACKAGE: ${{matrix.package}}
+      - name: Create tarball  of deterministic wasm from srtool 📦
+        if: matrix.target == 'build-runtime'
+        run: tar -cvf frequency_wasm.tar ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime
+      - name: Upload frequency deterministic wasm to artifacts 📦
+        if: matrix.target == 'build-runtime'
+        uses: actions/upload-artifact@v3
+        with:
+          name: frequency_wasm_srtool-${{ github.sha }}
+          path: frequency_wasm.tar
       - name: Build Frequency related specs and wasm 📝
         if: matrix.target == 'build-node'
         run: ./scripts/generate_specs.sh 2000 true
