@@ -256,7 +256,7 @@ pub fn run() -> Result<()> {
 			let collator_options = cli.run.collator_options();
 
 			runner.run_node_until_exit(|config| async move {
-				let para_id = chain_spec::frequency_local::Extensions::try_get(&*config.chain_spec)
+				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
 					.map(|e| e.para_id)
 					.ok_or("Could not find parachain ID in chain-spec.")?;
 
