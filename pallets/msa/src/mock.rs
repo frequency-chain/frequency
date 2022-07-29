@@ -1,15 +1,18 @@
 use crate as pallet_msa;
+use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use frame_support::{
-	parameter_types,
+	assert_ok, parameter_types,
 	traits::{ConstU16, ConstU64},
 };
 use frame_system as system;
-use sp_core::H256;
+use sp_core::{sr25519, Encode, Pair, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, ConvertInto, IdentifyAccount, IdentityLookup, Verify},
 	AccountId32, MultiSignature,
 };
+
+pub use pallet_msa::Call as MsaCall;
 
 pub type AccountId = <<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId;
 
@@ -79,6 +82,33 @@ pub fn test_public(n: u8) -> AccountId32 {
 
 pub fn test_origin_signed(n: u8) -> Origin {
 	Origin::signed(test_public(n))
+}
+
+/// Creates a provider and delegator MSA and sets the delegation relationship.
+/// # Returns
+/// * (u8, u64) - Returns a delegator_msa_id and provider_msa_id.
+pub fn test_create_delegator_msa_with_provider() -> (u8, u64) {
+	let (key_pair, _) = sr25519::Pair::generate();
+	let provider_account = key_pair.public();
+	let delegator_msa_id: u8 = 1;
+
+	let add_provider_payload =
+		pallet_msa::AddProvider { authorized_msa_id: delegator_msa_id.into(), permission: 0 };
+	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+
+	let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
+
+	assert_ok!(Msa::create(test_origin_signed(delegator_msa_id)));
+	assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+	assert_ok!(Msa::add_provider_to_msa(
+		test_origin_signed(delegator_msa_id),
+		provider_account.into(),
+		signature,
+		add_provider_payload
+	));
+
+	let provider_msa_id: MessageSourceId = 2;
+	(delegator_msa_id, provider_msa_id)
 }
 
 #[cfg(feature = "runtime-benchmarks")]
