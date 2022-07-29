@@ -802,6 +802,7 @@
 <span id="796">796</span>
 <span id="797">797</span>
 <span id="798">798</span>
+<span id="799">799</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.</span>
 <span class="attribute">#![<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;256&quot;</span>]</span>
@@ -907,6 +908,7 @@
 	<span class="ident">frame_system::CheckNonce</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
 	<span class="ident">frame_system::CheckWeight</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
 	<span class="ident">pallet_transaction_payment::ChargeTransactionPayment</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
+	<span class="ident">pallet_msa::CheckProviderRevocation</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
 );
 
 <span class="doccomment">/// Unchecked extrinsic type as expected by this runtime.</span>
