@@ -66,11 +66,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add_onchain_message(n: u32, m: u32, ) -> Weight {
-		(14_714_000 as Weight)
+		(0 as Weight)
 			// Standard Error: 0
 			.saturating_add((2_000 as Weight).saturating_mul(n as Weight))
-			// Standard Error: 34_000
-			.saturating_add((435_000 as Weight).saturating_mul(m as Weight))
+			// Standard Error: 36_000
+			.saturating_add((575_000 as Weight).saturating_mul(m as Weight))
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
@@ -78,11 +78,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add_ipfs_message(n: u32, m: u32, ) -> Weight {
-		(1_280_000 as Weight)
+		(20_895_000 as Weight)
 			// Standard Error: 0
-			.saturating_add((2_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add((1_000 as Weight).saturating_mul(n as Weight))
 			// Standard Error: 30_000
-			.saturating_add((445_000 as Weight).saturating_mul(m as Weight))
+			.saturating_add((534_000 as Weight).saturating_mul(m as Weight))
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
@@ -90,10 +90,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Messages Messages (r:0 w:1)
 	fn on_initialize(m: u32, s: u32, ) -> Weight {
 		(0 as Weight)
-			// Standard Error: 77_000
-			.saturating_add((886_000 as Weight).saturating_mul(m as Weight))
-			// Standard Error: 767_000
-			.saturating_add((13_935_000 as Weight).saturating_mul(s as Weight))
+			// Standard Error: 57_000
+			.saturating_add((1_025_000 as Weight).saturating_mul(m as Weight))
+			// Standard Error: 564_000
+			.saturating_add((13_467_000 as Weight).saturating_mul(s as Weight))
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(s as Weight)))
 	}
@@ -105,11 +105,11 @@ impl WeightInfo for () {
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add_onchain_message(n: u32, m: u32, ) -> Weight {
-		(14_714_000 as Weight)
+		(0 as Weight)
 			// Standard Error: 0
 			.saturating_add((2_000 as Weight).saturating_mul(n as Weight))
-			// Standard Error: 34_000
-			.saturating_add((435_000 as Weight).saturating_mul(m as Weight))
+			// Standard Error: 36_000
+			.saturating_add((575_000 as Weight).saturating_mul(m as Weight))
 			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
@@ -117,11 +117,11 @@ impl WeightInfo for () {
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add_ipfs_message(n: u32, m: u32, ) -> Weight {
-		(1_280_000 as Weight)
+		(20_895_000 as Weight)
 			// Standard Error: 0
-			.saturating_add((2_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add((1_000 as Weight).saturating_mul(n as Weight))
 			// Standard Error: 30_000
-			.saturating_add((445_000 as Weight).saturating_mul(m as Weight))
+			.saturating_add((534_000 as Weight).saturating_mul(m as Weight))
 			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
@@ -129,10 +129,10 @@ impl WeightInfo for () {
 	// Storage: Messages Messages (r:0 w:1)
 	fn on_initialize(m: u32, s: u32, ) -> Weight {
 		(0 as Weight)
-			// Standard Error: 77_000
-			.saturating_add((886_000 as Weight).saturating_mul(m as Weight))
-			// Standard Error: 767_000
-			.saturating_add((13_935_000 as Weight).saturating_mul(s as Weight))
+			// Standard Error: 57_000
+			.saturating_add((1_025_000 as Weight).saturating_mul(m as Weight))
+			// Standard Error: 564_000
+			.saturating_add((13_467_000 as Weight).saturating_mul(s as Weight))
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(s as Weight)))
 	}
