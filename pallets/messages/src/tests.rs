@@ -519,3 +519,12 @@ fn invalid_payload_location_onchain() {
 		);
 	});
 }
+
+#[test]
+fn ipfs_payload() {
+	new_test_ext().execute_with(|| {
+		let cid = CID::new(Vec::from("foo"));
+		let payload = IPFSPayload::new(cid, 1);
+		assert_eq!(payload.cid.get().len(), 3);
+	});
+}
