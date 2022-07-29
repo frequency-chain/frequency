@@ -188,10 +188,11 @@ pub mod pallet {
 			payload: IPFSPayload,
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
-			ensure!(
-				payload.cid.get().len() < T::MaxMessagePayloadSizeBytes::get().try_into().unwrap(),
-				Error::<T>::ExceedsMaxMessagePayloadSizeBytes
-			);
+			let cid: &Vec<u8> = payload.cid.get();
+			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = cid
+				.clone()
+				.try_into()
+				.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
 			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
@@ -201,18 +202,10 @@ pub mod pallet {
 			);
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
-			let message = Self::add_message(
-				provider_key,
-				message_source_id,
-				payload.cid.get().clone().try_into().unwrap(),
-				schema_id,
-			)?;
+			let message =
+				Self::add_message(provider_key, message_source_id, bounded_payload, schema_id)?;
 
-			Ok(Some(T::WeightInfo::add_ipfs_message(
-				payload.cid.get().len() as u32,
-				message.index as u32,
-			))
-			.into())
+			Ok(Some(T::WeightInfo::add_ipfs_message(cid.len() as u32, message.index as u32)).into())
 		}
 		/// Gets a messages for a given schema-id and block-number.
 		/// # Arguments
@@ -232,10 +225,8 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
 
-			ensure!(
-				payload.len() < T::MaxMessagePayloadSizeBytes::get().try_into().unwrap(),
-				Error::<T>::ExceedsMaxMessagePayloadSizeBytes
-			);
+			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> =
+				payload.try_into().map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
 			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
@@ -246,12 +237,8 @@ pub mod pallet {
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
-			let message = Self::add_message(
-				provider_key,
-				message_source_id,
-				payload.try_into().unwrap(),
-				schema_id,
-			)?;
+			let message =
+				Self::add_message(provider_key, message_source_id, bounded_payload, schema_id)?;
 
 			Ok(Some(T::WeightInfo::add_onchain_message(
 				message.payload.len() as u32,
