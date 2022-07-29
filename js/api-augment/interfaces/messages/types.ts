@@ -30,4 +30,15 @@ export interface MessageResponse extends Struct {
   readonly block_number: BlockNumber;
 }
 
+
+/** @name CID */
+export interface CID {
+  
+}
+/** @name IPFSPayload */
+export interface IPFSPayload extends Struct {
+  readonly cid: CID;
+  readonly payload_length: u32;
+}
+
 export type PHANTOM_MESSAGES = 'messages';
