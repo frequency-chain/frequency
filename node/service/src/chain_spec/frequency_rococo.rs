@@ -11,6 +11,10 @@ const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
 use super::{get_properties, Extensions};
 
+// pub fn load_frequency_rococo_spec() -> Result<ChainSpec, String> {
+// 	ChainSpec::from_json_bytes(&include_bytes!("../../specs/frequency_rococo.json")[..])
+// }
+
 pub fn frequency_rococo_testnet() -> ChainSpec {
 	let properties = get_properties("UNIT", 12, 42);
 	let para_id: ParaId = 4044.into();
