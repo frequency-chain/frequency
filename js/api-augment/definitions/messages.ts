@@ -23,7 +23,7 @@ export default {
       page_size: "u32",
     },
     IPFSPayload: {
-      cid: "CID", // An IPFS content address (https://proto.school/anatomy-of-a-cid)
+      cid: "Vec<u8>", // An IPFS content address (https://proto.school/anatomy-of-a-cid)
       payload_length: "u32",
     },
     MessageResponse: {
