@@ -22,7 +22,7 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 	let para_id: ParaId = 4044.into();
 	ChainSpec::from_genesis(
 		// Name
-		"Frequency",
+		"Frequency Rococo",
 		// ID
 		"frequency_rococo",
 		ChainType::Live,
