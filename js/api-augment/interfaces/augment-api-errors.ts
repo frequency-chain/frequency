@@ -425,6 +425,32 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       SpecVersionNeedsToIncrease: AugmentedError<ApiType>;
     };
+    vesting: {
+      /**
+       * The vested transfer amount is too low
+       **/
+      AmountLow: AugmentedError<ApiType>;
+      /**
+       * Insufficient amount of balance to lock
+       **/
+      InsufficientBalanceToLock: AugmentedError<ApiType>;
+      /**
+       * Failed because the maximum vesting schedules was exceeded
+       **/
+      MaxVestingSchedulesExceeded: AugmentedError<ApiType>;
+      /**
+       * This account have too many vesting schedules
+       **/
+      TooManyVestingSchedules: AugmentedError<ApiType>;
+      /**
+       * Vesting period is zero
+       **/
+      ZeroVestingPeriod: AugmentedError<ApiType>;
+      /**
+       * Number of vests is zero
+       **/
+      ZeroVestingPeriodCount: AugmentedError<ApiType>;
+    };
     xcmpQueue: {
       /**
        * Bad overweight index.

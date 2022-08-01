@@ -262,6 +262,7 @@ parameter_types! {
 	pub const SS58Prefix: u16 = 42;
 }
 
+
 // Configure FRAME pallets to include in runtime.
 
 impl frame_system::Config for Runtime {
@@ -313,6 +314,13 @@ impl frame_system::Config for Runtime {
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
+
+// impl pallet_utility::Config for Runtime {
+// 	type Event = Event;
+// 	type PalletsOrigin = OriginCaller;
+// 	type Call = Call;
+// 	type WeightInfo = ();
+// }
 
 impl pallet_msa::Config for Runtime {
 	type Event = Event;
@@ -607,6 +615,7 @@ construct_runtime!(
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T> }= 4,
+		// Utility: pallet_utility::{Pallet, Call, Event<T>}
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,

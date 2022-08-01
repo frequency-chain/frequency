@@ -131,5 +131,11 @@ declare module '@polkadot/api-base/types/consts' {
        **/
       operationalFeeMultiplier: u8 & AugmentedConst<ApiType>;
     };
+    vesting: {
+      /**
+       * The minimum amount transferred to call `vested_transfer`.
+       **/
+      minVestedTransfer: u128 & AugmentedConst<ApiType>;
+    };
   } // AugmentedConsts
 } // declare module
