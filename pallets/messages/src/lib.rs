@@ -138,6 +138,8 @@ pub mod pallet {
 		InvalidSchemaId,
 		/// UnAuthorizedDelegate
 		UnAuthorizedDelegate,
+		/// Invalid payload location
+		InvalidPayloadLocation,
 	}
 
 	#[pallet::event]
@@ -165,6 +167,46 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Adds a message for a resource hosted on IPFS. The IPFS payload should
+		/// contain both a
+		/// [CID](https://docs.ipfs.io/concepts/content-addressing/#identifier-formats)
+		/// as well as a 32-bit payload length.
+
+		/// # Arguments
+		/// * `origin` - A signed transaction origin from the provider
+		/// * `on_behalf_of` - Optional. The msa id of delegate.
+		/// * `schema_id` - Registered schema id for current message.
+		/// * `cid` - The content address for an IPFS payload
+		/// * `payload_length` - The size of the payload
+		/// * Returns
+		/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html)
+		#[pallet::weight(T::WeightInfo::add_ipfs_message(payload.cid.get().len() as u32, 1_000))]
+		pub fn add_ipfs_message(
+			origin: OriginFor<T>,
+			on_behalf_of: Option<MessageSourceId>,
+			schema_id: SchemaId,
+			payload: IPFSPayload,
+		) -> DispatchResultWithPostInfo {
+			let provider_key = ensure_signed(origin)?;
+			let cid: &Vec<u8> = payload.cid.get();
+			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = cid
+				.clone()
+				.try_into()
+				.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
+
+			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
+			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
+			ensure!(
+				schema.unwrap().payload_location == PayloadLocation::IPFS,
+				Error::<T>::InvalidPayloadLocation
+			);
+
+			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
+			let message =
+				Self::add_message(provider_key, message_source_id, bounded_payload, schema_id)?;
+
+			Ok(Some(T::WeightInfo::add_ipfs_message(cid.len() as u32, message.index as u32)).into())
+		}
 		/// Gets a messages for a given schema-id and block-number.
 		/// # Arguments
 		/// * `origin` - A signed transaction origin from the provider
@@ -174,8 +216,8 @@ pub mod pallet {
 		/// # Returns
 		/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html) The return type of a Dispatchable in frame.
 		/// When returned explicitly from a dispatchable function it allows overriding the default PostDispatchInfo returned from a dispatch.
-		#[pallet::weight(T::WeightInfo::add(payload.len() as u32, 1_000))]
-		pub fn add(
+		#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() as u32, 1_000))]
+		pub fn add_onchain_message(
 			origin: OriginFor<T>,
 			on_behalf_of: Option<MessageSourceId>,
 			schema_id: SchemaId,
@@ -183,19 +225,26 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
 
-			ensure!(
-				payload.len() < T::MaxMessagePayloadSizeBytes::get().try_into().unwrap(),
-				Error::<T>::ExceedsMaxMessagePayloadSizeBytes
-			);
+			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> =
+				payload.try_into().map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
 			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
+			ensure!(
+				schema.unwrap().payload_location == PayloadLocation::OnChain,
+				Error::<T>::InvalidPayloadLocation
+			);
 
 			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
-			let message = Self::add_message(provider_key, message_source_id, payload, schema_id)?;
+			let message =
+				Self::add_message(provider_key, message_source_id, bounded_payload, schema_id)?;
 
-			Ok(Some(T::WeightInfo::add(message.payload.len() as u32, message.index as u32)).into())
+			Ok(Some(T::WeightInfo::add_onchain_message(
+				message.payload.len() as u32,
+				message.index as u32,
+			))
+			.into())
 		}
 	}
 }
@@ -212,7 +261,7 @@ impl<T: Config> Pallet<T> {
 	pub fn add_message(
 		provider_key: T::AccountId,
 		message_source_id: MessageSourceId,
-		payload: Vec<u8>,
+		payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes>,
 		schema_id: SchemaId,
 	) -> Result<Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, DispatchError> {
 		<BlockMessages<T>>::try_mutate(|existing_messages| -> Result<Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, DispatchError> {
@@ -222,7 +271,7 @@ impl<T: Config> Pallet<T> {
 				.map_err(|_| Error::<T>::TypeConversionOverflow)?;
 
 			let msg = Message {
-				payload: payload.try_into().unwrap(), // size is checked on top of extrinsic
+				payload, // size is checked on top of extrinsic
 				provider_key,
 				index: current_size,
 				msa_id: message_source_id,
