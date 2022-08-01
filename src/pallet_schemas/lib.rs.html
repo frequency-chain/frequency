@@ -330,6 +330,16 @@
 <span id="324">324</span>
 <span id="325">325</span>
 <span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # Schemas Pallet</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The Schemas pallet provides functionality for handling schemas.</span>
@@ -648,11 +658,21 @@
 	<span class="kw">fn</span> <span class="ident">get_schema_by_id</span>(<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SchemaResponse</span><span class="op">&gt;</span> {
 		<span class="comment">// To account for db read</span>
 		<span class="ident"><span class="self">Self</span>::get_schema_by_id</span>(<span class="ident">schema_id</span>);
+
+		<span class="comment">// This method allows the benchmarks to cover both payload location types</span>
+		<span class="comment">// used by the messages pallets. Maybe one day we can replace this with a</span>
+		<span class="comment">// common &quot;benchmarking&quot; crate.</span>
+		<span class="kw">const</span> <span class="ident">IPFS_SCHEMA_ID</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="number">65535</span>;
+		<span class="kw">let</span> <span class="ident">location</span>: <span class="ident">PayloadLocation</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">schema_id</span> <span class="op">==</span> <span class="ident">IPFS_SCHEMA_ID</span> {
+			<span class="ident">PayloadLocation::IPFS</span>
+		} <span class="kw">else</span> {
+			<span class="ident">PayloadLocation::OnChain</span>
+		};
 		<span class="prelude-val">Some</span>(<span class="ident">SchemaResponse</span> {
 			<span class="ident">schema_id</span>,
 			<span class="ident">model</span>: <span class="string">&quot;{}&quot;</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>(),
 			<span class="ident">model_type</span>: <span class="ident">ModelType::default</span>(),
-			<span class="ident">payload_location</span>: <span class="ident">PayloadLocation::default</span>(),
+			<span class="ident">payload_location</span>: <span class="ident">location</span>,
 		})
 	}
 }
