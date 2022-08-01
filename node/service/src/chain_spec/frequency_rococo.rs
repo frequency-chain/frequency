@@ -30,7 +30,9 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 			frequency_rococo_genesis(
 				// initial collators.
 				vec![],
-				Some(hex!["a4c16e3ce8b11a0e43102bc4a718e9f031df2d0f61b1b03031b2f45ed664f853"].into()),
+				Some(
+					hex!["a4c16e3ce8b11a0e43102bc4a718e9f031df2d0f61b1b03031b2f45ed664f853"].into(),
+				),
 				vec![],
 				para_id,
 			)
