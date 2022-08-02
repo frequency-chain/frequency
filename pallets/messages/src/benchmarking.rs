@@ -8,10 +8,11 @@ use frame_system::RawOrigin;
 
 const MESSAGES: u32 = 499;
 const SCHEMAS: u32 = 50;
+const IPFS_SCHEMA_ID: u16 = 65535;
 
-fn add_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo {
+fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo {
 	let acc: T::AccountId = whitelisted_caller();
-	MessagesPallet::<T>::add(
+	MessagesPallet::<T>::add_onchain_message(
 		RawOrigin::Signed(acc.clone()).into(),
 		None,
 		schema_id,
@@ -23,7 +24,7 @@ fn add_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo {
 }
 
 benchmarks! {
-	add {
+	add_onchain_message {
 		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - 1;
 		let m in 1 .. MESSAGES;
 		let caller: T::AccountId = whitelisted_caller();
@@ -31,9 +32,24 @@ benchmarks! {
 
 		for j in 0 .. m {
 			let sid = j % SCHEMAS;
-			assert_ok!(add_message::<T>(sid.try_into().unwrap()));
+			assert_ok!(onchain_message::<T>(sid.try_into().unwrap()));
 		}
 	}: _ (RawOrigin::Signed(caller), None, 1, input)
+
+	add_ipfs_message {
+		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - 1;
+		let m in 1 .. MESSAGES;
+		let caller: T::AccountId = whitelisted_caller();
+		let input = vec![1; n as usize];
+		let cid = CID::new(input);
+		let payload_length = 1_000;
+		let payload: IPFSPayload = IPFSPayload::new(cid, payload_length);
+
+		for j in 0 .. m {
+			let sid = j % SCHEMAS;
+			assert_ok!(onchain_message::<T>(sid.try_into().unwrap()));
+		}
+	}: _ (RawOrigin::Signed(caller), None, IPFS_SCHEMA_ID, payload)
 
 	on_initialize {
 		let m in 1 .. MESSAGES;
@@ -41,7 +57,7 @@ benchmarks! {
 
 		for j in 0 .. m {
 			let sid = j % s;
-			assert_ok!(add_message::<T>(sid.try_into().unwrap()));
+			assert_ok!(onchain_message::<T>(sid.try_into().unwrap()));
 		}
 
 	}: {
