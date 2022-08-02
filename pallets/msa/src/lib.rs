@@ -58,7 +58,7 @@
 use common_primitives::msa::{
 	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo,
 };
-use frame_support::{dispatch::DispatchResult, ensure, storage::PrefixIterator};
+use frame_support::{dispatch::DispatchResult, ensure};
 pub use pallet::*;
 use sp_runtime::{
 	traits::{Convert, Verify, Zero},
@@ -468,20 +468,14 @@ pub mod pallet {
 		}
 
 		/// Current user can retire their own MSA, so that it cannot be used again.
-		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`MSARetired`](Event::MSARetired).
-		///
-		/// ### Errors
-		/// - Returns ['NotMsaOwner'](Error::NotMsaOwner)
-		#[pallet::weight(T::WeightInfo::retire_my_msa())]
+		/// Deposits event [`MSARetired`](Event::MSARetired).
+		#[pallet::weight(10_000)]
 		pub fn retire_my_msa(origin: OriginFor<T>) -> DispatchResult {
 
-			// fetch msa id from origin
 			let account_id = ensure_signed(origin)?;
 			let msa_id = Self::ensure_valid_msa_key(&account_id)?.msa_id.into();
 
-			// call self::retire_msa()
 			Self::retire_msa(msa_id)?;
-			// Emit event to notify of retirement
 			Self::deposit_event(Event::MSARetired { msa_id });
 
 			Ok(())
@@ -672,36 +666,36 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Disables given MSA by expiring it at the current block.
+
+	/// Disables given MSA by revoking its keys and delegation relationships
 	///
 	/// # Arguments
 	/// * `msa_id` - The user's MSA to be retired.
 	///
 	/// # Returns
 	/// * [`DispatchResult`]
-	///
-	/// # Errors
-	/// * [`Error::<T>::_`] - MSA is already retired
 	pub fn retire_msa(
 		msa_id: MessageSourceId
 	) -> DispatchResult {
 
-		ProviderInfoOf::<T>::iter_key_prefix(msa_id.into())
-			.for_each(|delegator: Delegator| -> Result<(), Error<T>> {
-				Self::revoke_provider(msa_id.into(), delegator.into()).map_err(|_| Error::<T>::MsaRevoked)
-			});
+		let delegations_iter = ProviderInfoOf::<T>::iter_keys();
+			for delegation in delegations_iter {
+				if delegation.1 == Delegator(msa_id) {
+					if let Err(_) = Self::revoke_provider(delegation.0, delegation.1) {
+						continue;
+					}
+				}
+			}
 
-		// Revoke all keys associated with that Msa
-		MsaKeysOf::<T>::try_mutate(msa_id, |key_list|-> DispatchResult {
-			key_list
-				.iter_mut()
-				.for_each(|iKey| -> Result<(), Error<T>> {
+		let all_keys_iter = MsaKeysOf::<T>::try_get(msa_id).unwrap();
+			for key in all_keys_iter {
+				if let Err(_) = Self::revoke_key(&key) {
+					continue;
+				}
+			}
+		Ok(())
 
-					Self::revoke_key(iKey).map_err(|_| Error::<T>::MsaRevoked)
-			});
-			Ok(())
-		})
-	}
+}
 
 	/// Attempts to retrieve the key information for an account
 	/// # Arguments
