@@ -20,6 +20,34 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::net::SocketAddr;
 
+enum ChainIdentity {
+	Frequency,
+	FrequencyRococo,
+}
+
+trait IdentifyChain {
+	fn identify(&self) -> ChainIdentity;
+}
+
+impl IdentifyChain for dyn sc_service::ChainSpec {
+	fn identify(&self) -> ChainIdentity {
+		if self.id().contains("frequency_rococo") ||
+			self.id().contains("rococo") ||
+			self.id().contains("testnet")
+		{
+			ChainIdentity::FrequencyRococo
+		} else {
+			ChainIdentity::Frequency
+		}
+	}
+}
+
+impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
+	fn identify(&self) -> ChainIdentity {
+		<dyn sc_service::ChainSpec>::identify(self)
+	}
+}
+
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	Ok(match id {
 		"frequency_dev" | "dev" => Box::new(chain_spec::frequency_local::development_config()),

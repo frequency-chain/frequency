@@ -173,8 +173,8 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("frequency"),
-	impl_name: create_runtime_str!("frequency"),
+	spec_name: create_runtime_str!("frequency-rococo"),
+	impl_name: create_runtime_str!("frequency-rococo"),
 	authoring_version: 1,
 	spec_version: 1,
 	impl_version: 0,
@@ -453,10 +453,10 @@ impl pallet_aura::Config for Runtime {
 
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
-	pub const MaxCandidates: u32 = 1000;
-	pub const MinCandidates: u32 = 5;
+	pub const MaxCandidates: u32 = 0;
+	pub const MinCandidates: u32 = 0;
 	pub const SessionLength: BlockNumber = 6 * HOURS;
-	pub const MaxInvulnerables: u32 = 100;
+	pub const MaxInvulnerables: u32 = 2;
 	pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 

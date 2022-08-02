@@ -16,6 +16,7 @@ path = "src/main.rs"
 [dependencies]
 # Frequency Runtime
 frequency-runtime = { path = "../runtime/frequency" }
+frequency-rococo-runtime = { path = "../runtime/frequency-rococo" }
 frequency-cli = { path = "cli" }
 
 # Substrate
@@ -29,4 +30,4 @@ runtime-benchmarks = [
 	"frequency-runtime/runtime-benchmarks",
 	"frequency-cli/runtime-benchmarks",
 ]
-try-runtime = ["frequency-runtime/try-runtime"]
+try-runtime = ["frequency-runtime/try-runtime", "frequency-rococo-runtime/try-runtime"]
