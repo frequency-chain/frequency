@@ -1,6 +1,4 @@
 #![allow(missing_docs)]
-use hex_literal::hex;
-
 use cumulus_primitives_core::ParaId;
 use frequency_runtime::{AccountId, AuraId, SudoConfig, EXISTENTIAL_DEPOSIT};
 use hex::FromHex;
@@ -20,6 +18,8 @@ pub mod public_testnet_keys {
 		"0x42ec8b3541d5647e46711e8f109ed51838cdde115a0a7e56622c033d7e04a678";
 	pub const COLLATOR_2_SR25519: &str =
 		"0x58025fbd92bcc65fc2e054b623d10a8558662ae545a9718e26815024a2433545";
+	pub const ROCOCO_FRQ_SUDO: &str =
+		"0xa4c16e3ce8b11a0e43102bc4a718e9f031df2d0f61b1b03031b2f45ed664f853";
 }
 
 // pub fn load_frequency_rococo_spec() -> Result<ChainSpec, String> {
@@ -68,9 +68,7 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 						.unwrap(),
 					),
 				],
-				Some(
-					hex!["e629a017ec68546c9ca74c9c4f4046231345a3ca185236e03339371316a3d100"].into(),
-				),
+				Some(public_testnet_keys::ROCOCO_FRQ_SUDO.parse::<AccountId>().unwrap().into()),
 				vec![],
 				para_id,
 			)
