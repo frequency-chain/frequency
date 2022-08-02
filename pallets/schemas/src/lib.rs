@@ -316,11 +316,21 @@ impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 		// To account for db read
 		Self::get_schema_by_id(schema_id);
+
+		// This method allows the benchmarks to cover both payload location types
+		// used by the messages pallets. Maybe one day we can replace this with a
+		// common "benchmarking" crate.
+		const IPFS_SCHEMA_ID: u16 = 65535;
+		let location: PayloadLocation = if schema_id == IPFS_SCHEMA_ID {
+			PayloadLocation::IPFS
+		} else {
+			PayloadLocation::OnChain
+		};
 		Some(SchemaResponse {
 			schema_id,
 			model: "{}".as_bytes().to_vec(),
 			model_type: ModelType::default(),
-			payload_location: PayloadLocation::default(),
+			payload_location: location,
 		})
 	}
 }

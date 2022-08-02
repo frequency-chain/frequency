@@ -2,7 +2,7 @@
 /* eslint-disable */
 
 import type { MessageSourceId } from '@dsnp/frequency-api-augment/msa';
-import type { Bytes, Option, Struct, Vec, bool, u16, u32 } from '@polkadot/types-codec';
+import type { Bytes, Option, Struct, Vec, bool, u8, u16, u32 } from '@polkadot/types-codec';
 import type { AccountId, BlockNumber } from '@polkadot/types/interfaces/runtime';
 
 /** @name BlockPaginationRequest */
@@ -28,6 +28,12 @@ export interface MessageResponse extends Struct {
   readonly msa_id: MessageSourceId;
   readonly index: u16;
   readonly block_number: BlockNumber;
+}
+
+/** @name IPFSPayload */
+export interface IPFSPayload extends Struct {
+  readonly cid: Vec<u8>;
+  readonly payload_length: u32;
 }
 
 export type PHANTOM_MESSAGES = 'messages';

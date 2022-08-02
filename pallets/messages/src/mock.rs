@@ -21,6 +21,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 pub const INVALID_SCHEMA_ID: SchemaId = 65534;
+pub const IPFS_SCHEMA_ID: SchemaId = 65535;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -137,6 +138,14 @@ impl SchemaProvider<u16> for SchemaHandler {
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 		if schema_id == INVALID_SCHEMA_ID {
 			return None
+		}
+		if schema_id == IPFS_SCHEMA_ID {
+			return Some(SchemaResponse {
+				schema_id,
+				model: r#"schema"#.to_string().as_bytes().to_vec(),
+				model_type: ModelType::Parquet,
+				payload_location: PayloadLocation::IPFS,
+			})
 		}
 
 		Some(SchemaResponse {

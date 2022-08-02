@@ -22,6 +22,10 @@ export default {
       to_block: "BlockNumber", // exclusive
       page_size: "u32",
     },
+    IPFSPayload: {
+      cid: "Vec<u8>", // An IPFS content address (https://proto.school/anatomy-of-a-cid)
+      payload_length: "u32",
+    },
     MessageResponse: {
       payload: "Vec<u8>", //  Serialized data in a user-defined schema format
       provider_key: "AccountId", //  Public key of the provider and signer of the transaction
