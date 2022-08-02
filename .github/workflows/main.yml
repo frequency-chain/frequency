@@ -57,20 +57,21 @@ jobs:
           TARGET: ${{ matrix.target }}
           RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
           PACKAGE: ${{matrix.package}}
+          RUNTIME_DIR: ${{ matrix.dir }}
       - name: Create tarball  of deterministic wasm from srtool 📦
-        if: matrix.target == 'build-runtime'
+        if: matrix.target == 'build-runtime' && matrix.package == 'frequency-runtime'
         run: tar -cvf frequency_wasm.tar ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime
       - name: Upload frequency deterministic wasm to artifacts 📦
-        if: matrix.target == 'build-runtime'
+        if: matrix.target == 'build-runtime' && matrix.package == 'frequency-runtime'
         uses: actions/upload-artifact@v3
         with:
           name: frequency_wasm_srtool-${{ github.sha }}
           path: frequency_wasm.tar
       - name: Create tarball  of deterministic wasm from srtool for rococo📦
-        if: matrix.target == 'build-runtime-rococo'
+        if: matrix.target == 'build-runtime' && matrix.package == 'frequency-rococo-runtime'
         run: tar -cvf frequency_wasm_rococo.tar ./runtime/frequency/target/srtool/release/wbuild/frequency-rococo-runtime
       - name: Upload frequency deterministic wasm to artifacts for rococo 📦
-        if: matrix.target == 'build-runtime-rococo'
+        if: matrix.target == 'build-runtime' && matrix.package == 'frequency-rococo-runtime'
         uses: actions/upload-artifact@v3
         with:
           name: frequency_wasm_srtool_rococo-${{ github.sha }}

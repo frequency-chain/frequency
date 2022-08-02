@@ -27,13 +27,15 @@
     "os": "ubuntu-latest",
     "target": "build-runtime",
     "package": "frequency-runtime",
+    "dir":"runtime/frequency",
     "run_on_event": "any",
     "rust_toolchain": "1.57.0"
   },
   {
     "os": "ubuntu-latest",
     "target": "build-runtime",
-    "package": "frequency-rococo",
+    "package": "frequency-rococo-runtime",
+    "dir": "runtime/frequency-rococo",
     "run_on_event": "any",
     "rust_toolchain": "1.57.0"
   }
