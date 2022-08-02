@@ -13,6 +13,10 @@ pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 pub type StorageKey = BoundedVec<u8, ConstU32<4096>>;
 /// trie id type
 pub type TrieId = BoundedVec<u8, ConstU32<128>>;
+/// Public Page type
+pub type PublicPage = BoundedVec<MessageSourceId, ConstU32<512>>;
+/// Private Page type
+pub type PrivatePage = BoundedVec<u8, ConstU32<4096>>;
 
 /// graph edge
 #[derive(Clone, Copy, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, Eq, PartialOrd)]
@@ -33,14 +37,29 @@ impl Ord for Edge {
 /// graph node
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
-pub struct Node {
-	/// Unique ID for the subtree encoded as a bytes vector.
-	pub trie_id: TrieId,
-}
+pub struct Node {}
 
 /// connection permission
 #[derive(Clone, Copy, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, Ord, Eq, PartialOrd)]
 pub struct Permission {
 	/// permission type
 	pub data: u16,
+}
+
+/// graph key
+#[derive(Clone, Copy, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, Ord, Eq, PartialOrd)]
+pub struct GraphKey {
+	/// permission type
+	pub permission: Permission,
+	/// page number
+	pub page: u16,
+}
+
+/// type of graph
+#[derive(Clone, Copy, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
+pub enum GraphType {
+	/// public graph
+	Public,
+	/// private graph
+	Private,
 }

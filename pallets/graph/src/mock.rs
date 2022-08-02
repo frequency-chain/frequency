@@ -1,6 +1,5 @@
 use crate as pallet_graph;
-use crate::Permission;
-use codec::Encode;
+use crate::{GraphType, Permission, PrivatePage, PublicPage};
 use frame_support::{
 	assert_ok, parameter_types,
 	traits::{ConstU16, ConstU64},
@@ -86,32 +85,228 @@ fn test_add_node() {
 }
 
 #[test]
-fn follow3_unfollow3() {
+fn follow_unfollow_child_public() {
 	new_test_ext().execute_with(|| {
 		let account_id_origin: u64 = 10;
+		let friendship = Permission { data: 8 };
+		let page = 0u16;
 
 		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 1234));
 		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 3));
 		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 1240));
 		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 2767378));
 
-		assert_ok!(GraphPallet::follow_child_public(Origin::signed(account_id_origin), 1234, 3));
-		assert_ok!(GraphPallet::follow_child_public(Origin::signed(account_id_origin), 1234, 1240));
 		assert_ok!(GraphPallet::follow_child_public(
 			Origin::signed(account_id_origin),
 			1234,
-			2767378
+			3,
+			friendship,
+			page
+		));
+		assert_ok!(GraphPallet::follow_child_public(
+			Origin::signed(account_id_origin),
+			1234,
+			2767378,
+			friendship,
+			page
+		));
+		assert_ok!(GraphPallet::follow_child_public(
+			Origin::signed(account_id_origin),
+			1234,
+			1240,
+			friendship,
+			page
 		));
 
-		assert_ok!(GraphPallet::follow_child_public(Origin::signed(account_id_origin), 1240, 3));
+		assert_ok!(GraphPallet::follow_child_public(
+			Origin::signed(account_id_origin),
+			1240,
+			3,
+			friendship,
+			page
+		));
 
-		let perm = GraphPallet::read_from_child_tree(1234, GraphPallet::get_storage_key(3));
-		assert_eq!(perm, Some(Permission { data: 1 }.encode().to_vec()));
+		let perm = GraphPallet::read_public_graph_node(
+			1234,
+			GraphPallet::get_storage_key(&friendship, page),
+		);
+		assert_eq!(perm, Some(PublicPage::try_from(vec![3, 1240, 2767378]).unwrap()));
 
-		GraphPallet::read_all_keys(1234);
+		let keys = GraphPallet::read_public_graph(1234);
+		for (k, v) in keys {
+			println!("public {:?} -> {:?}", k, v);
+		}
 
-		assert_ok!(GraphPallet::unfollow_child_public(Origin::signed(account_id_origin), 1234, 3));
-		let perm = GraphPallet::read_from_child_tree(1234, GraphPallet::get_storage_key(3));
+		assert_ok!(GraphPallet::unfollow_child_public(
+			Origin::signed(account_id_origin),
+			1234,
+			3,
+			friendship,
+			page
+		));
+		let perm = GraphPallet::read_public_graph_node(
+			1234,
+			GraphPallet::get_storage_key(&friendship, page),
+		);
+		assert_eq!(perm, Some(PublicPage::try_from(vec![1240, 2767378]).unwrap()));
+	});
+}
+
+#[test]
+fn follow_unfollow_child_private() {
+	new_test_ext().execute_with(|| {
+		let account_id_origin: u64 = 10;
+		let friendship = Permission { data: 8 };
+		let page = 0u16;
+		let data: PrivatePage = PrivatePage::try_from(vec![1, 2, 3, 4]).unwrap();
+
+		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 1234));
+		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 3));
+		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 1240));
+		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 2767378));
+
+		assert_ok!(GraphPallet::private_graph_update(
+			Origin::signed(account_id_origin),
+			1234,
+			friendship,
+			page,
+			data.clone()
+		));
+
+		assert_ok!(GraphPallet::private_graph_update(
+			Origin::signed(account_id_origin),
+			1234,
+			friendship,
+			page + 1,
+			data
+		));
+
+		let perm = GraphPallet::read_private_graph_node(
+			1234,
+			GraphPallet::get_storage_key(&friendship, page),
+		);
+		assert_eq!(perm, Some(PrivatePage::try_from(vec![1, 2, 3, 4]).unwrap()));
+
+		let keys = GraphPallet::read_private_graph(1234);
+		for (k, v) in keys {
+			println!("private {:?} -> {:?}", k, v);
+		}
+
+		assert_ok!(GraphPallet::private_graph_update(
+			Origin::signed(account_id_origin),
+			1234,
+			friendship,
+			page + 1,
+			PrivatePage::try_from(vec![]).unwrap()
+		));
+
+		let perm = GraphPallet::read_private_graph_node(
+			1234,
+			GraphPallet::get_storage_key(&friendship, page + 1),
+		);
 		assert_eq!(perm, None);
+	});
+}
+
+#[test]
+fn change_page_public_tests() {
+	new_test_ext().execute_with(|| {
+		let account_id_origin: u64 = 10;
+		let friendship = Permission { data: 8 };
+		let page = 0u16;
+
+		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 1234));
+		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 3));
+		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 2767378));
+
+		assert_ok!(GraphPallet::follow_child_public(
+			Origin::signed(account_id_origin),
+			1234,
+			3,
+			friendship,
+			page
+		));
+		assert_ok!(GraphPallet::follow_child_public(
+			Origin::signed(account_id_origin),
+			1234,
+			2767378,
+			friendship,
+			page + 1
+		));
+
+		// this should remove page
+		assert_ok!(GraphPallet::unfollow_child_public(
+			Origin::signed(account_id_origin),
+			1234,
+			3,
+			friendship,
+			page
+		));
+
+		assert_ok!(GraphPallet::change_page_number(
+			Origin::signed(account_id_origin),
+			1234,
+			GraphType::Public,
+			friendship,
+			1,
+			0
+		));
+
+		let keys = GraphPallet::read_public_graph(1234);
+		for (k, v) in keys {
+			println!("after {:?} -> {:?}", k, v);
+		}
+	});
+}
+
+#[test]
+fn change_page_private_tests() {
+	new_test_ext().execute_with(|| {
+		let account_id_origin: u64 = 10;
+		let friendship = Permission { data: 8 };
+		let page = 0u16;
+		let data: PrivatePage = PrivatePage::try_from(vec![1, 2, 3, 4]).unwrap();
+
+		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 1234));
+		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 3));
+		assert_ok!(GraphPallet::add_node(Origin::signed(account_id_origin), 2767378));
+
+		assert_ok!(GraphPallet::private_graph_update(
+			Origin::signed(account_id_origin),
+			1234,
+			friendship,
+			page,
+			data.clone()
+		));
+		assert_ok!(GraphPallet::private_graph_update(
+			Origin::signed(account_id_origin),
+			1234,
+			friendship,
+			page + 1,
+			data.clone()
+		));
+
+		// this should remove page
+		assert_ok!(GraphPallet::private_graph_update(
+			Origin::signed(account_id_origin),
+			1234,
+			friendship,
+			page,
+			PrivatePage::default()
+		));
+
+		assert_ok!(GraphPallet::change_page_number(
+			Origin::signed(account_id_origin),
+			1234,
+			GraphType::Private,
+			friendship,
+			1,
+			0
+		));
+
+		let keys = GraphPallet::read_private_graph(1234);
+		for (k, v) in keys {
+			println!("after {:?} -> {:?}", k, v);
+		}
 	});
 }

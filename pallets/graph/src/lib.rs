@@ -154,6 +154,8 @@ pub mod pallet {
 		/// dummy
 		NoSuchEdge,
 		/// dummy
+		NoSuchPage,
+		/// dummy
 		NoSuchStaticId,
 		/// dummy
 		NodeExists,
@@ -202,7 +204,7 @@ pub mod pallet {
 				let cur_count = Self::node_count();
 				let node_id = cur_count.checked_add(1).ok_or(<Error<T>>::TooManyNodes)?;
 
-				*maybe_node = Some(Node { trie_id: Storage::<T>::generate_trie_id(static_id, 1) });
+				*maybe_node = Some(Node {});
 				<NodeCount<T>>::set(node_id);
 				Self::deposit_event(Event::NodeAdded(sender, static_id));
 				log::debug!("Node added: {:?} -> {:?}", static_id, node_id);
@@ -341,25 +343,36 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			from_static_id: MessageSourceId,
 			to_static_id: MessageSourceId,
+			permission: Permission,
+			page: u16,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
 			// self follow is not permitted
 			ensure!(from_static_id != to_static_id, <Error<T>>::SelfFollowNotPermitted);
-			let from_node = Self::get_node(from_static_id);
-			ensure!(from_node.is_some(), <Error<T>>::NoSuchNode);
+			ensure!(<Nodes<T>>::contains_key(from_static_id), <Error<T>>::NoSuchNode);
 			ensure!(<Nodes<T>>::contains_key(to_static_id), <Error<T>>::NoSuchNode);
 
-			let trie_id = from_node.unwrap().trie_id;
-			let perm = Storage::<T>::read(&trie_id, &Self::get_storage_key(to_static_id));
-			ensure!(perm.is_none(), <Error<T>>::EdgeExists);
+			let key = Self::get_storage_key(&permission, page);
+			let perm = Storage::<T>::read_public_graph(&from_static_id, &key.clone());
 
-			let data = Permission { data: 1 };
-			Storage::<T>::write(
-				&trie_id,
-				&Self::get_storage_key(to_static_id),
-				Some(data.encode().to_vec()),
-			)?;
+			let mut edges: Vec<MessageSourceId> = Vec::new();
+			match perm {
+				Some(p) => {
+					edges = p.into_inner();
+					match edges.binary_search(&to_static_id) {
+						Ok(_) => Err(<Error<T>>::EdgeExists),
+						Err(index) => {
+							edges.insert(index, to_static_id);
+							Ok(())
+						},
+					}?;
+				},
+				None => edges.push(to_static_id),
+			}
+
+			let p = PublicPage::try_from(edges).map_err(|_| <Error<T>>::TooManyEdges)?;
+			Storage::<T>::write_public(&from_static_id, &key, Some(p.into()))?;
 
 			Self::deposit_event(Event::Followed(sender, from_static_id, to_static_id));
 
@@ -373,19 +386,35 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			from_static_id: MessageSourceId,
 			to_static_id: MessageSourceId,
+			permission: Permission,
+			page: u16,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
 			// self unfollow is not permitted
 			ensure!(from_static_id != to_static_id, <Error<T>>::SelfFollowNotPermitted);
-			let from_node = Self::get_node(from_static_id);
-			ensure!(from_node.is_some(), <Error<T>>::NoSuchNode);
+			ensure!(<Nodes<T>>::contains_key(from_static_id), <Error<T>>::NoSuchNode);
 
-			let trie_id = from_node.unwrap().trie_id;
-			let perm = Storage::<T>::read(&trie_id, &Self::get_storage_key(to_static_id));
+			let key = Self::get_storage_key(&permission, page);
+			let perm = Storage::<T>::read_public_graph(&from_static_id, &key.clone());
 			ensure!(perm.is_some(), <Error<T>>::NoSuchEdge);
 
-			Storage::<T>::write(&trie_id, &Self::get_storage_key(to_static_id), None)?;
+			let mut edge_vec = perm.unwrap();
+			match edge_vec.binary_search(&to_static_id) {
+				Ok(index) => {
+					edge_vec.remove(index);
+					Ok(())
+				},
+				Err(_) => Err(<Error<T>>::NoSuchEdge),
+			}?;
+
+			// removing an item should not need to check bounded size
+			let p = PublicPage::try_from(edge_vec).unwrap();
+			Storage::<T>::write_public(
+				&from_static_id,
+				&key,
+				if p.len() > 0 { Some(p) } else { None },
+			)?;
 
 			Self::deposit_event(Event::Unfollowed(sender, from_static_id, to_static_id));
 
@@ -398,29 +427,62 @@ pub mod pallet {
 		pub fn private_graph_update(
 			origin: OriginFor<T>,
 			from_static_id: MessageSourceId,
-			key: Vec<u8>,
+			permission: Permission,
 			page: u16,
-			value: Vec<u8>,
+			value: PrivatePage,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			// self follow is not permitted
-			let from_node = Self::get_node(from_static_id);
-			ensure!(from_node.is_some(), <Error<T>>::NoSuchNode);
+			ensure!(<Nodes<T>>::contains_key(from_static_id), <Error<T>>::NoSuchNode);
+			let key = Self::get_storage_key(&permission, page);
 
-			let trie_id = from_node.unwrap().trie_id;
-
-			Storage::<T>::write_graph(
-				&trie_id,
-				GraphType::Private,
-				&Self::get_storage_key_vec(key),
-				page,
+			Storage::<T>::write_private(
+				&from_static_id,
+				&key,
 				if value.len() > 0 { Some(value) } else { None },
 			)?;
 
 			Self::deposit_event(Event::Modified(sender, from_static_id));
 
 			log::debug!("modified: {:?}", from_static_id);
+			Ok(())
+		}
+
+		/// change page number, used to swap last page number with the page that just got removed
+		#[pallet::weight((0, Pays::No))]
+		pub fn change_page_number(
+			origin: OriginFor<T>,
+			from_static_id: MessageSourceId,
+			graph_type: GraphType,
+			permission: Permission,
+			from_page: u16,
+			to_page: u16,
+		) -> DispatchResult {
+			let _ = ensure_signed(origin)?;
+
+			ensure!(<Nodes<T>>::contains_key(from_static_id), <Error<T>>::NoSuchNode);
+			let from_key = Self::get_storage_key(&permission, from_page);
+			let to_key = Self::get_storage_key(&permission, to_page);
+
+			match graph_type {
+				GraphType::Public => {
+					let from = Storage::<T>::read_public_graph(&from_static_id, &from_key.clone());
+					ensure!(from.is_some(), <Error<T>>::NoSuchPage);
+					let to = Storage::<T>::read_public_graph(&from_static_id, &to_key.clone());
+					ensure!(to.is_none(), <Error<T>>::NoSuchPage);
+					Storage::<T>::write_public(&from_static_id, &to_key, from)?;
+					Storage::<T>::write_public(&from_static_id, &from_key, None)?;
+				},
+				GraphType::Private => {
+					let from = Storage::<T>::read_private_graph(&from_static_id, &from_key.clone());
+					ensure!(from.is_some(), <Error<T>>::NoSuchPage);
+					let to = Storage::<T>::read_private_graph(&from_static_id, &to_key.clone());
+					ensure!(to.is_none(), <Error<T>>::NoSuchPage);
+					Storage::<T>::write_private(&from_static_id, &to_key, from)?;
+					Storage::<T>::write_private(&from_static_id, &from_key, None)?;
+				},
+			};
+
 			Ok(())
 		}
 	}
@@ -438,45 +500,56 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// get storage key
-	pub fn get_storage_key(static_id: MessageSourceId) -> StorageKey {
-		#[cfg(test)]
-		{
-			println!("{} to_le_bytes {:X?}", static_id, static_id.encode());
-		}
-		StorageKey::try_from(static_id.encode()).unwrap()
-	}
-
-	/// get storage vec
-	pub fn get_storage_key_vec(data: Vec<u8>) -> StorageKey {
-		#[cfg(test)]
-		{
-			println!("{:X?}", &data);
-		}
-		StorageKey::try_from(data).unwrap()
+	pub fn get_storage_key(permission: &Permission, page: u16) -> StorageKey {
+		let key = GraphKey { permission: *permission, page };
+		let mut buf: Vec<u8> = Vec::new();
+		buf.extend_from_slice(&key.encode()[..]);
+		StorageKey::try_from(buf).unwrap()
 	}
 
 	/// read from child tree
-	pub fn read_from_child_tree(static_id: MessageSourceId, key: StorageKey) -> Option<Vec<u8>> {
-		if let Some(node) = Self::get_node(static_id) {
-			return Storage::<T>::read(&node.trie_id, &key)
+	pub fn read_public_graph_node(
+		static_id: MessageSourceId,
+		key: StorageKey,
+	) -> Option<PublicPage> {
+		if let Some(_) = Self::get_node(static_id) {
+			return Storage::<T>::read_public_graph(&static_id, &key)
 		}
 		None
 	}
 
-	/// read all keys
-	pub fn read_all_keys(static_id: MessageSourceId) -> Vec<MessageSourceId> {
-		if let Some(node) = Self::get_node(static_id) {
-			return Storage::<T>::iter_keys(&node.trie_id)
-				.iter()
-				.map(|v| {
-					let mut m = MessageSourceId::default();
-					for (i, b) in v.iter().enumerate() {
-						m += (*b as MessageSourceId) * (1u64 << (i * 8));
-					}
-					m.into()
-				})
-				.collect()
+	/// read all public keys
+	pub fn read_public_graph(static_id: MessageSourceId) -> Vec<(GraphKey, PublicPage)> {
+		let mut v = Vec::new();
+		if let Some(_) = Self::get_node(static_id) {
+			let tree_nodes = Storage::<T>::public_graph_iter(&static_id);
+			for n in tree_nodes {
+				v.push(n);
+			}
 		}
-		Vec::new()
+		v
+	}
+
+	/// read from child tree
+	pub fn read_private_graph_node(
+		static_id: MessageSourceId,
+		key: StorageKey,
+	) -> Option<PrivatePage> {
+		if let Some(_) = Self::get_node(static_id) {
+			return Storage::<T>::read_private_graph(&static_id, &key)
+		}
+		None
+	}
+
+	/// read all private keys
+	pub fn read_private_graph(static_id: MessageSourceId) -> Vec<(GraphKey, PrivatePage)> {
+		let mut v = Vec::new();
+		if let Some(_) = Self::get_node(static_id) {
+			let tree_nodes = Storage::<T>::private_graph_iter(&static_id);
+			for n in tree_nodes {
+				v.push(n);
+			}
+		}
+		v
 	}
 }
