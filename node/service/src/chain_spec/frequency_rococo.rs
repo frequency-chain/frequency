@@ -69,7 +69,13 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 					),
 				],
 				Some(public_testnet_keys::ROCOCO_FRQ_SUDO.parse::<AccountId>().unwrap().into()),
-				vec![],
+				// endowed accounts.
+				vec![
+					// 5E9QpPsz28HM1JM7AMnDS2aRN5unyf8EuNtz96eW4KvmxRrV
+					public_testnet_keys::COLLATOR_1_SR25519.parse::<AccountId>().unwrap().into(),
+					// 5CntRvAGYzzorsvN3UKotz5gpFd5BgMwUzALKtbWGn3JsQAu
+					public_testnet_keys::COLLATOR_2_SR25519.parse::<AccountId>().unwrap().into(),
+				],
 				para_id,
 			)
 		},
