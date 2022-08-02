@@ -69,7 +69,7 @@ jobs:
           path: frequency_wasm.tar
       - name: Create tarball  of deterministic wasm from srtool for rococo📦
         if: matrix.target == 'build-runtime' && matrix.package == 'frequency-rococo-runtime'
-        run: tar -cvf frequency_wasm_rococo.tar ./runtime/frequency/target/srtool/release/wbuild/frequency-rococo-runtime
+        run: tar -cvf frequency_wasm_rococo.tar ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime
       - name: Upload frequency deterministic wasm to artifacts for rococo 📦
         if: matrix.target == 'build-runtime' && matrix.package == 'frequency-rococo-runtime'
         uses: actions/upload-artifact@v3
