@@ -32,7 +32,7 @@
   },
   {
     "os": "ubuntu-latest",
-    "target": "build-runtime-rococo",
+    "target": "build-runtime",
     "package": "frequency-rococo",
     "run_on_event": "any",
     "rust_toolchain": "1.57.0"
