@@ -1,6 +1,7 @@
 on:
   push:
     branches: [main]
+  pull_request:
 
 name: Build Main
 jobs:
@@ -65,6 +66,15 @@ jobs:
         with:
           name: frequency_wasm_srtool-${{ github.sha }}
           path: frequency_wasm.tar
+      - name: Create tarball  of deterministic wasm from srtool for rococo📦
+        if: matrix.target == 'build-runtime'
+        run: tar -cvf frequency_wasm_rococo.tar ./runtime/frequency/target/srtool/release/wbuild/frequency-rococo-runtime
+      - name: Upload frequency deterministic wasm to artifacts for rococo 📦
+        if: matrix.target == 'build-runtime'
+        uses: actions/upload-artifact@v3
+        with:
+          name: frequency_wasm_srtool_rococo-${{ github.sha }}
+          path: frequency_wasm_rococo.tar
       - name: Build Frequency related specs and wasm 📝
         if: matrix.target == 'build-node'
         run: ./scripts/generate_specs.sh 2000 true
