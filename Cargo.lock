@@ -1169,6 +1169,7 @@ dependencies = [
  "serde",
  "smallvec",
  "sp-api",
+ "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.25)",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.25)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.25)",
 ]
@@ -2743,11 +2744,13 @@ name = "frequency-cli"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "common-primitives",
  "cumulus-client-cli",
  "cumulus-client-service",
  "cumulus-primitives-core",
  "derive_more",
  "frame-benchmarking-cli",
+ "frequency-rococo-runtime",
  "frequency-runtime",
  "frequency-service",
  "hex-literal",
@@ -2903,6 +2906,7 @@ name = "frequency-service"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "common-primitives",
  "cumulus-client-cli",
  "cumulus-client-collator",
  "cumulus-client-consensus-aura",
@@ -2917,6 +2921,7 @@ dependencies = [
  "derive_more",
  "frame-benchmarking",
  "frame-benchmarking-cli",
+ "frequency-rococo-runtime",
  "frequency-runtime",
  "futures",
  "hex",

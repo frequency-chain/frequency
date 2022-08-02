@@ -5,9 +5,9 @@ use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-use frequency_runtime::{Block, RuntimeApi};
 use log::info;
 
+use common_primitives::node::Block;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -98,8 +98,11 @@ impl SubstrateCli for Cli {
 		load_spec(id)
 	}
 
-	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&frequency_runtime::VERSION
+	fn native_runtime_version(spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+		match spec.identify() {
+			ChainIdentity::Frequency => &frequency_runtime::VERSION,
+			ChainIdentity::FrequencyRococo => &frequency_rococo_runtime::VERSION,
+		}
 	}
 }
 
@@ -144,19 +147,38 @@ impl SubstrateCli for RelayChainCli {
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
-		runner.async_run(|$config| {
-			let $components = new_partial::<
-				RuntimeApi,
-				TemplateRuntimeExecutor,
-				_
-			>(
-				&$config,
-				parachain_build_import_queue,
-				false,
-			)?;
-			let task_manager = $components.task_manager;
-			{ $( $code )* }.map(|v| (v, task_manager))
-		})
+		match runner.config().chain_spec.identify() {
+			ChainIdentity::Frequency => {
+				runner.async_run(|$config| {
+					let $components = new_partial::<
+					frequency_runtime::RuntimeApi,
+						FrequencyRuntimeExecutor,
+						_
+					>(
+						&$config,
+						parachain_build_import_queue,
+						false,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			}
+			ChainIdentity::FrequencyRococo => {
+				runner.async_run(|$config| {
+					let $components = new_partial::<
+					frequency_rococo_runtime::RuntimeApi,
+						FrequencyRococoRuntimeExecutor,
+						_
+					>(
+						&$config,
+						parachain_build_import_queue,
+						false,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			}
+		}
 	}}
 }
 
@@ -229,39 +251,68 @@ pub fn run() -> Result<()> {
 			})
 		},
 		Some(Subcommand::Benchmark(cmd)) => {
-			let runner = cli.create_runner(cmd)?;
-			// Switch on the concrete benchmark sub-command-
-			match cmd {
-				BenchmarkCmd::Pallet(cmd) =>
-					if cfg!(feature = "runtime-benchmarks") {
-						runner.sync_run(|config| cmd.run::<Block, TemplateRuntimeExecutor>(config))
-					} else {
-						Err("Benchmarking wasn't enabled when building the node. \
-					You can enable it with `--features runtime-benchmarks`."
-							.into())
+			if cfg!(feature = "runtime-benchmarks") {
+				let runner = cli.create_runner(cmd)?;
+				// Switch on the concrete benchmark sub-command-
+				match cmd {
+					BenchmarkCmd::Pallet(cmd) => match runner.config().chain_spec.identify() {
+						ChainIdentity::Frequency => runner.sync_run(|config| {
+							cmd.run::<frequency_runtime::Block, FrequencyRuntimeExecutor>(config)
+						}),
+						ChainIdentity::FrequencyRococo => runner.sync_run(|config| {
+							cmd.run::<frequency_rococo_runtime::Block, FrequencyRococoRuntimeExecutor>(config)
+						}),
 					},
-				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
-					let partials = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
-						&config,
-						parachain_build_import_queue,
-						false,
-					)?;
-					cmd.run(partials.client)
-				}),
-				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
-					let partials = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
-						&config,
-						parachain_build_import_queue,
-						false,
-					)?;
-					let db = partials.backend.expose_db();
-					let storage = partials.backend.expose_storage();
+					BenchmarkCmd::Block(cmd) => match runner.config().chain_spec.identify() {
+						ChainIdentity::Frequency => runner.sync_run(|config| {
+							let partials = new_partial::<
+								frequency_runtime::RuntimeApi,
+								FrequencyRuntimeExecutor,
+								_,
+							>(&config, parachain_build_import_queue, false)?;
+							cmd.run(partials.client)
+						}),
+						ChainIdentity::FrequencyRococo => runner.sync_run(|config| {
+							let partials = new_partial::<
+								frequency_rococo_runtime::RuntimeApi,
+								FrequencyRococoRuntimeExecutor,
+								_,
+							>(&config, parachain_build_import_queue, false)?;
+							cmd.run(partials.client)
+						}),
+					},
+					BenchmarkCmd::Storage(cmd) => match runner.config().chain_spec.identify() {
+						ChainIdentity::Frequency => runner.sync_run(|config| {
+							let partials = new_partial::<
+								frequency_runtime::RuntimeApi,
+								FrequencyRuntimeExecutor,
+								_,
+							>(&config, parachain_build_import_queue, false)?;
+							let db = partials.backend.expose_db();
+							let storage = partials.backend.expose_storage();
 
-					cmd.run(config, partials.client.clone(), db, storage)
-				}),
-				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
-				BenchmarkCmd::Machine(cmd) =>
-					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
+							cmd.run(config, partials.client.clone(), db, storage)
+						}),
+						ChainIdentity::FrequencyRococo => runner.sync_run(|config| {
+							let partials = new_partial::<
+								frequency_rococo_runtime::RuntimeApi,
+								FrequencyRococoRuntimeExecutor,
+								_,
+							>(&config, parachain_build_import_queue, false)?;
+							let db = partials.backend.expose_db();
+							let storage = partials.backend.expose_storage();
+
+							cmd.run(config, partials.client.clone(), db, storage)
+						}),
+					},
+					BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
+					BenchmarkCmd::Machine(cmd) => runner
+						.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
+				}
+			} else {
+				Err("Benchmarking wasn't enabled when building the node. \
+				You can enable it with `--features runtime-benchmarks`."
+					.into())
 			}
 		},
 		Some(Subcommand::TryRuntime(cmd)) => {
@@ -273,10 +324,18 @@ pub fn run() -> Result<()> {
 				let task_manager =
 					TaskManager::new(runner.config().tokio_handle.clone(), *registry)
 						.map_err(|e| format!("Error: {:?}", e))?;
-
-				runner.async_run(|config| {
-					Ok((cmd.run::<Block, TemplateRuntimeExecutor>(config), task_manager))
-				})
+				match runner.config().chain_spec.identify() {
+					ChainIdentity::Frequency => {
+						runner.async_run(|config| {
+							Ok((cmd.run::<frequency_runtime::Block, FrequencyRuntimeExecutor>(config), task_manager))
+						})
+					}							,
+					ChainIdentity::FrequencyRococo => {
+						runner.async_run(|config| {
+							Ok((cmd.run::<frequency_rococo_runtime::Block, FrequencyRococoRuntimeExecutor>(config), task_manager))
+						})
+					}
+				}
 			} else {
 				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
 			}
@@ -327,11 +386,24 @@ pub fn run() -> Result<()> {
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
-
-				start_parachain_node(config, polkadot_config, collator_options, id, hwbench)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
+				match config.chain_spec.identify() {
+					ChainIdentity::Frequency =>
+						start_parachain_node::<
+							frequency_runtime::RuntimeApi,
+							FrequencyRuntimeExecutor,
+						>(config, polkadot_config, collator_options, id, hwbench)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into),
+					ChainIdentity::FrequencyRococo =>
+						start_parachain_node::<
+							frequency_rococo_runtime::RuntimeApi,
+							FrequencyRococoRuntimeExecutor,
+						>(config, polkadot_config, collator_options, id, hwbench)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into),
+				}
 			})
 		},
 	}

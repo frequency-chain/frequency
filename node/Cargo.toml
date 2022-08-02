@@ -28,6 +28,7 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 [features]
 runtime-benchmarks = [
 	"frequency-runtime/runtime-benchmarks",
+	"frequency-rococo-runtime/runtime-benchmarks",
 	"frequency-cli/runtime-benchmarks",
 ]
 try-runtime = ["frequency-runtime/try-runtime", "frequency-rococo-runtime/try-runtime"]

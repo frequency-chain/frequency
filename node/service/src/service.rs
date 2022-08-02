@@ -7,11 +7,8 @@ use std::{sync::Arc, time::Duration};
 use jsonrpsee::RpcModule;
 
 use cumulus_client_cli::CollatorOptions;
-// Local Runtime Types
-use frequency_runtime::{
-	opaque::Block, AccountId, Balance, BlockNumber, Hash, Index as Nonce, RuntimeApi,
-};
 
+use common_primitives::node::{AccountId, Balance, Block, BlockNumber, Hash, Index as Nonce};
 // Cumulus Imports
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::ParachainConsensus;
@@ -42,15 +39,16 @@ use substrate_prometheus_endpoint::Registry;
 
 pub use futures::stream::StreamExt;
 use polkadot_service::CollatorPair;
+pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
 type FullBackend = TFullBackend<Block>;
 
 type MaybeFullSelectChain = Option<LongestChain<FullBackend, Block>>;
 
-/// Native executor instance.
-pub struct TemplateRuntimeExecutor;
+/// Native executor instance for frequency.
+pub struct FrequencyRuntimeExecutor;
 
-impl sc_executor::NativeExecutionDispatch for TemplateRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for FrequencyRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -59,6 +57,21 @@ impl sc_executor::NativeExecutionDispatch for TemplateRuntimeExecutor {
 
 	fn native_version() -> sc_executor::NativeVersion {
 		frequency_runtime::native_version()
+	}
+}
+
+/// Native executor instance for frequency rococo testnet
+pub struct FrequencyRococoRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for FrequencyRococoRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		frequency_rococo_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		frequency_rococo_runtime::native_version()
 	}
 }
 
@@ -423,18 +436,41 @@ where
 
 /// Build the import queue for the parachain runtime.
 #[allow(clippy::type_complexity)]
-pub fn parachain_build_import_queue(
-	client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<TemplateRuntimeExecutor>>>,
+pub fn parachain_build_import_queue<RuntimeApi, Executor>(
+	client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
 ) -> Result<
 	sc_consensus::DefaultImportQueue<
 		Block,
-		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<TemplateRuntimeExecutor>>,
+		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
 	>,
 	sc_service::Error,
-> {
+>
+where
+	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+		+ Send
+		+ Sync
+		+ 'static,
+	RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
+		+ sp_api::Metadata<Block>
+		+ sp_session::SessionKeys<Block>
+		+ sp_api::ApiExt<
+			Block,
+			StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
+		> + sp_offchain::OffchainWorkerApi<Block>
+		+ sp_consensus_aura::AuraApi<Block, AuraId>
+		+ sp_block_builder::BlockBuilder<Block>
+		+ cumulus_primitives_core::CollectCollationInfo<Block>
+		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+		+ pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber>
+		+ pallet_schemas_runtime_api::SchemasRuntimeApi<Block>
+		+ pallet_msa_runtime_api::MsaApi<Block, AccountId, BlockNumber>,
+	Executor: sc_executor::NativeExecutionDispatch + 'static,
+	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
+{
 	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
 
 	cumulus_client_consensus_aura::import_queue::<
@@ -468,7 +504,7 @@ pub fn parachain_build_import_queue(
 }
 
 /// Start a parachain node.
-pub async fn start_parachain_node(
+pub async fn start_parachain_node<RuntimeApi, Executor>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
@@ -476,15 +512,38 @@ pub async fn start_parachain_node(
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> sc_service::error::Result<(
 	TaskManager,
-	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<TemplateRuntimeExecutor>>>,
-)> {
-	start_node_impl::<RuntimeApi, TemplateRuntimeExecutor, _, _, _>(
+	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+)>
+where
+	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+		+ Send
+		+ Sync
+		+ 'static,
+	RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
+		+ sp_api::Metadata<Block>
+		+ sp_session::SessionKeys<Block>
+		+ sp_api::ApiExt<
+			Block,
+			StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
+		> + sp_offchain::OffchainWorkerApi<Block>
+		+ sp_consensus_aura::AuraApi<Block, AuraId>
+		+ sp_block_builder::BlockBuilder<Block>
+		+ cumulus_primitives_core::CollectCollationInfo<Block>
+		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+		+ pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber>
+		+ pallet_schemas_runtime_api::SchemasRuntimeApi<Block>
+		+ pallet_msa_runtime_api::MsaApi<Block, AccountId, BlockNumber>,
+	Executor: sc_executor::NativeExecutionDispatch + 'static,
+	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
+{
+	start_node_impl::<RuntimeApi, Executor, _, _, _>(
 		parachain_config,
 		polkadot_config,
 		collator_options,
 		id,
 		|_| Ok(RpcModule::new(())),
-		parachain_build_import_queue,
+		parachain_build_import_queue::<RuntimeApi, Executor>,
 		|client,
 		 prometheus_registry,
 		 telemetry,
@@ -564,7 +623,7 @@ fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_servic
 		select_chain: maybe_select_chain,
 		transaction_pool,
 		other: (mut telemetry, _),
-	} = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
+	} = new_partial::<frequency_runtime::RuntimeApi, FrequencyRuntimeExecutor, _>(
 		&parachain_config,
 		parachain_build_import_queue,
 		true,
