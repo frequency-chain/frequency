@@ -1,6 +1,30 @@
 [
   {
     "os": "ubuntu-latest",
+    "target": "build-node",
+    "run_on_event": "any",
+    "rust_toolchain": "nightly-2022-06-27"
+  },
+  {
+    "os": "ubuntu-latest",
+    "target": "lint",
+    "run_on_event": "any",
+    "rust_toolchain": "nightly-2022-06-27"
+  },
+  {
+    "os": "ubuntu-latest",
+    "target": "tests",
+    "run_on_event": "any",
+    "rust_toolchain": "nightly-2022-06-27"
+  },
+  {
+    "os": "ubuntu-latest",
+    "target": "docs",
+    "run_on_event": "any",
+    "rust_toolchain": "nightly-2022-06-27"
+  },
+  {
+    "os": "ubuntu-latest",
     "target": "build-runtime",
     "package": "frequency-runtime",
     "run_on_event": "push",
