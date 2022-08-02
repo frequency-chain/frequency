@@ -2800,6 +2800,7 @@ dependencies = [
  "pallet-messages-runtime-api",
  "pallet-msa",
  "pallet-msa-runtime-api",
+ "pallet-scheduler",
  "pallet-schemas",
  "pallet-schemas-runtime-api",
  "pallet-session",

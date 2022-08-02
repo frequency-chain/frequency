@@ -30,7 +30,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU32, Everything},
+	traits::{ConstU32, EqualPrivilegeOnly, Everything},
 	weights::{
 		constants::WEIGHT_PER_SECOND, ConstantMultiplier, DispatchClass, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
@@ -374,6 +374,28 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(10) * RuntimeBlockWeights::get().max_block;
+	// others use 50
+	pub const MaxScheduledPerBlock: u32 = 25;
+	// Retry a scheduled item every 25 blocks (5 minute) until the preimage exists.
+	pub const NoPreimagePostponement: Option<u32> = Some(5 * MINUTES);
+}
+
+impl pallet_scheduler::Config for Runtime {
+	type Event = Event;
+	type Origin = Origin;
+	type PalletsOrigin = OriginCaller;
+	type Call = Call;
+	type MaximumWeight = MaximumSchedulerWeight;
+	type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxScheduledPerBlock = MaxScheduledPerBlock;
+	type WeightInfo = ();
+	type OriginPrivilegeCmp = EqualPrivilegeOnly;
+	type PreimageProvider = ();
+	type NoPreimagePostponement = NoPreimagePostponement;
+}
+
+parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
 	pub const TransactionByteFee: Balance = 10 * MICROUNIT;
 	pub const OperationalFeeMultiplier: u8 = 5;
@@ -519,6 +541,7 @@ construct_runtime!(
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T> }= 4,
+		Scheduler: pallet_scheduler = 5,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
