@@ -471,7 +471,6 @@ pub mod pallet {
 		/// Deposits event [`MSARetired`](Event::MSARetired).
 		#[pallet::weight(10_000)]
 		pub fn retire_my_msa(origin: OriginFor<T>) -> DispatchResult {
-
 			let account_id = ensure_signed(origin)?;
 			let msa_id = Self::ensure_valid_msa_key(&account_id)?.msa_id.into();
 
@@ -666,7 +665,6 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-
 	/// Disables given MSA by revoking its keys and delegation relationships
 	///
 	/// # Arguments
@@ -674,28 +672,24 @@ impl<T: Config> Pallet<T> {
 	///
 	/// # Returns
 	/// * [`DispatchResult`]
-	pub fn retire_msa(
-		msa_id: MessageSourceId
-	) -> DispatchResult {
-
+	pub fn retire_msa(msa_id: MessageSourceId) -> DispatchResult {
 		let delegations_iter = ProviderInfoOf::<T>::iter_keys();
-			for delegation in delegations_iter {
-				if delegation.1 == Delegator(msa_id) {
-					if let Err(_) = Self::revoke_provider(delegation.0, delegation.1) {
-						continue;
-					}
+		for delegation in delegations_iter {
+			if delegation.1 == Delegator(msa_id) {
+				if let Err(_) = Self::revoke_provider(delegation.0, delegation.1) {
+					continue
 				}
 			}
+		}
 
 		let all_keys_iter = MsaKeysOf::<T>::try_get(msa_id).unwrap();
-			for key in all_keys_iter {
-				if let Err(_) = Self::revoke_key(&key) {
-					continue;
-				}
+		for key in all_keys_iter {
+			if let Err(_) = Self::revoke_key(&key) {
+				continue
 			}
+		}
 		Ok(())
-
-}
+	}
 
 	/// Attempts to retrieve the key information for an account
 	/// # Arguments
@@ -741,7 +735,6 @@ impl<T: Config> Pallet<T> {
 
 		Ok(info)
 	}
-
 }
 
 impl<T: Config> AccountProvider for Pallet<T> {

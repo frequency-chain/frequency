@@ -246,7 +246,6 @@ fn it_retires_msa_and_revokes_keys_successfully() {
 
 		assert_eq!(info1, Some(KeyInfo { msa_id: 1, expired: 1, nonce: 0 }));
 		assert_eq!(info2, Some(KeyInfo { msa_id: 1, expired: 1, nonce: 0 }));
-
 	})
 }
 
@@ -261,11 +260,11 @@ fn it_retires_msa_and_removes_delegations_successfully() {
 		assert_ok!(Msa::create(test_origin_signed(1)));
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 		assert_ok!(Msa::add_provider_to_msa(
-					test_origin_signed(1),
-					provider_account.into(),
-					signature,
-					add_provider_payload
-			));
+			test_origin_signed(1),
+			provider_account.into(),
+			signature,
+			add_provider_payload
+		));
 
 		let provider = Provider(2);
 		let delegator = Delegator(1);
@@ -279,11 +278,9 @@ fn it_retires_msa_and_removes_delegations_successfully() {
 	});
 }
 
-
 #[test]
 fn it_retires_msa_despite_key_revoked_error() {
 	new_test_ext().execute_with(|| {
-
 		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
 		assert_ok!(Msa::add_key(1, &test_public(2), EMPTY_FUNCTION));
 
@@ -296,7 +293,6 @@ fn it_retires_msa_despite_key_revoked_error() {
 
 		assert_eq!(info1, Some(KeyInfo { msa_id: 1, expired: 1, nonce: 0 }));
 		assert_eq!(info2, Some(KeyInfo { msa_id: 1, expired: 1, nonce: 0 }));
-
 	});
 }
 
@@ -313,11 +309,11 @@ fn it_retires_msa_and_removes_delegations_despite_provider_revoked_error() {
 
 			assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 			assert_ok!(Msa::add_provider_to_msa(
-						test_origin_signed(1),
-						provider_account.into(),
-						signature,
-						add_provider_payload
-				));
+				test_origin_signed(1),
+				provider_account.into(),
+				signature,
+				add_provider_payload
+			));
 		}
 
 		let provider1 = Provider(2);
@@ -351,11 +347,11 @@ pub fn revoke_provider_is_successful() {
 		assert_ok!(Msa::create(test_origin_signed(1)));
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 		assert_ok!(Msa::add_provider_to_msa(
-					test_origin_signed(1),
-					provider_account.into(),
-					signature,
-					add_provider_payload
-			));
+			test_origin_signed(1),
+			provider_account.into(),
+			signature,
+			add_provider_payload
+		));
 
 		let provider = Provider(2);
 		let delegator = Delegator(1);
