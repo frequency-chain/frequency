@@ -521,6 +521,7 @@ impl pallet_collator_selection::Config for Runtime {
 parameter_types! {
 	pub const MaxMessagesPerBlock: u32 = 7000;
 	pub const MaxMessagePayloadSizeBytes: u32 = 1024 * 50; // 50K
+	pub const MaxDsnpOffchainPayloadSizeBytes: u32 = 1024 * 128;
 }
 
 impl Clone for MaxMessagePayloadSizeBytes {
@@ -536,6 +537,7 @@ impl pallet_messages::Config for Runtime {
 	type SchemaProvider = Schemas;
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type MaxMessagePayloadSizeBytes = MaxMessagePayloadSizeBytes;
+	type MaxDsnpOffchainPayloadSizeBytes = MaxDsnpOffchainPayloadSizeBytes;
 }
 
 impl pallet_sudo::Config for Runtime {
