@@ -3,7 +3,9 @@ use hex_literal::hex;
 
 use cumulus_primitives_core::ParaId;
 use frequency_runtime::{AccountId, AuraId, SudoConfig, EXISTENTIAL_DEPOSIT};
+use hex::FromHex;
 use sc_service::ChainType;
+use sp_core::ByteArray;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConfig, Extensions>;
@@ -12,6 +14,13 @@ pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConf
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
 use super::{get_properties, Extensions};
+
+pub mod public_testnet_keys {
+	pub const COLLATOR_1_SR25519: &str =
+		"0x42ec8b3541d5647e46711e8f109ed51838cdde115a0a7e56622c033d7e04a678";
+	pub const COLLATOR_2_SR25519: &str =
+		"0x58025fbd92bcc65fc2e054b623d10a8558662ae545a9718e26815024a2433545";
+}
 
 // pub fn load_frequency_rococo_spec() -> Result<ChainSpec, String> {
 // 	ChainSpec::from_json_bytes(&include_bytes!("../../specs/frequency_rococo.json")[..])
@@ -29,7 +38,36 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 		move || {
 			frequency_rococo_genesis(
 				// initial collators.
-				vec![],
+				vec![
+					(
+						// 5E9QpPsz28HM1JM7AMnDS2aRN5unyf8EuNtz96eW4KvmxRrV
+						public_testnet_keys::COLLATOR_1_SR25519
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						AuraId::from_slice(
+							&<[u8; 32]>::from_hex(
+								public_testnet_keys::COLLATOR_1_SR25519.strip_prefix("0x").unwrap(),
+							)
+							.unwrap(),
+						)
+						.unwrap(),
+					),
+					(
+						// 5CntRvAGYzzorsvN3UKotz5gpFd5BgMwUzALKtbWGn3JsQAu
+						public_testnet_keys::COLLATOR_2_SR25519
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						AuraId::from_slice(
+							&<[u8; 32]>::from_hex(
+								public_testnet_keys::COLLATOR_2_SR25519.strip_prefix("0x").unwrap(),
+							)
+							.unwrap(),
+						)
+						.unwrap(),
+					),
+				],
 				Some(
 					hex!["e629a017ec68546c9ca74c9c4f4046231345a3ca185236e03339371316a3d100"].into(),
 				),

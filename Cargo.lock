@@ -2854,6 +2854,7 @@ dependencies = [
  "frame-benchmarking-cli",
  "frequency-runtime",
  "futures",
+ "hex",
  "hex-literal",
  "jsonrpsee",
  "log",
