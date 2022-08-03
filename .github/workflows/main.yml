@@ -77,7 +77,7 @@ jobs:
           path: frequency_wasm_rococo.tar
       - name: Build Frequency related specs and wasm 📝
         if: matrix.target == 'build-node'
-        run: ./scripts/generate_specs.sh 2000 true
+        run: ./scripts/generate_specs.sh 2000 build-local && ./scripts/generate_specs.sh 4044 build-testnet
       - name: Create tarball  of specs and wasm 📦
         if: matrix.target == 'build-node'
         run: tar -cvf frequency_specs.tar ./res/genesis
@@ -85,7 +85,7 @@ jobs:
         if: matrix.target == 'build-node'
         uses: actions/upload-artifact@v3
         with:
-          name: frequency_rococo_2000_specs-${{ github.sha }}
+          name: frequency_specs-${{ github.sha }}
           path: frequency_specs.tar
       - name: Set up QEMU
         if: matrix.target == 'build-node'
