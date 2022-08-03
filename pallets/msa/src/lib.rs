@@ -55,13 +55,15 @@
 	missing_docs
 )]
 
+use codec::{Decode, Encode};
 use common_primitives::msa::{
 	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo,
 };
-use frame_support::{dispatch::DispatchResult, ensure};
+use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 pub use pallet::*;
+use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{Convert, Verify, Zero},
+	traits::{Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, Zero},
 	DispatchError, MultiSignature,
 };
 
@@ -348,7 +350,7 @@ pub mod pallet {
 		/// - Returns [`DelegationNotFound`](Error::DelegationNotFound) if there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
 		/// - May also return []
 		///
-		#[pallet::weight(T::WeightInfo::revoke_msa_delegation_by_delegator())]
+		#[pallet::weight((T::WeightInfo::revoke_msa_delegation_by_delegator(), DispatchClass::Normal, Pays::No))]
 		pub fn revoke_msa_delegation_by_delegator(
 			origin: OriginFor<T>,
 			provider_msa_id: MessageSourceId,
@@ -736,5 +738,93 @@ impl<T: Config> AccountProvider for Pallet<T> {
 			})
 		}
 		Ok(result.unwrap())
+	}
+}
+
+/// The SignedExtension trait is implemented on CheckProviderRevocation to validate that a provider
+/// has not already been revoked if the calling extrinsic is revoking a provider to an MSA. The
+/// purpose of this is to ensure that the revoke_msa_delegation_by_delegator extrinsic cannot be
+/// repeatedly called and flood the network.
+#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct CheckProviderRevocation<T: Config + Send + Sync>(PhantomData<T>);
+
+/// Errors related to the validity of the CheckProviderRevocation signed extension.
+enum ValidityError {
+	/// Delegation to provider is not found or expired.
+	InvalidDelegation,
+	/// MSA key as been revoked.
+	InvalidMsaKey,
+}
+
+impl<T: Config + Send + Sync> CheckProviderRevocation<T> {
+	/// Create new `SignedExtension` to check runtime version.
+	pub fn new() -> Self {
+		Self(sp_std::marker::PhantomData)
+	}
+}
+
+impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckProviderRevocation<T> {
+	#[cfg(feature = "std")]
+	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		write!(f, "CheckProviderRevocation<{:?}>", self.0)
+	}
+	#[cfg(not(feature = "std"))]
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
+}
+
+impl<T: Config + Send + Sync> SignedExtension for CheckProviderRevocation<T>
+where
+	T::Call: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
+{
+	type AccountId = T::AccountId;
+	type Call = T::Call;
+	type AdditionalSigned = ();
+	type Pre = ();
+	const IDENTIFIER: &'static str = "CheckProviderRevocation";
+
+	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+		Ok(())
+	}
+
+	fn pre_dispatch(
+		self,
+		who: &Self::AccountId,
+		call: &Self::Call,
+		info: &DispatchInfoOf<Self::Call>,
+		len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		self.validate(who, call, info, len).map(|_| ())
+	}
+
+	/// Frequently called by the transaction queue to ensure that the transaction is valid such that:
+	/// * The calling extrinsic is 'revoke_msa_delegation_by_delegator'.
+	/// * The sender key is associated to an MSA and not revoked.
+	/// * The provider MSA is a valid provider to the delegator MSA.
+	fn validate(
+		&self,
+		who: &Self::AccountId,
+		call: &Self::Call,
+		_info: &DispatchInfoOf<Self::Call>,
+		_len: usize,
+	) -> TransactionValidity {
+		match call.is_sub_type() {
+			Some(Call::revoke_msa_delegation_by_delegator { provider_msa_id, .. }) => {
+				const TAG_PREFIX: &str = "DelegationRevokation";
+				let delegator_msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(&who)
+					.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
+					.msa_id
+					.into();
+				let provider_msa_id = Provider(*provider_msa_id);
+
+				Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id).map_err(
+					|_| InvalidTransaction::Custom(ValidityError::InvalidDelegation as u8),
+				)?;
+				return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(who).build()
+			},
+			_ => return Ok(Default::default()),
+		}
 	}
 }
