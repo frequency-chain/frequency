@@ -117,7 +117,7 @@ So to allow inclusion for all actors, it may be that the best way of verifying
 legitimateness is through a fee that is high enough to discourage malicious actors.
 
 ### Provider Commitment
-Users can only delegate to Providers. To create a delegation relationship, the Msa has to be registered as a Provider. Only Providers can have Capacity, and can therefore create capacity transactions.
+Users can only delegate to Providers. Only Providers can have Capacity and can therefore generate capacity transactions.
 ### Archival Provider Information
 If consumers want to examine provider registration events, they
 must fetch them from an archival node. This document does not outline an RPC for
@@ -132,7 +132,7 @@ attempt. The latter may allow us to place more trust into providers that do not
 have traditional business attributes. It's important to note that instead of or in addition to a fee payment, that the provider could be required to post a bond.
 
 ### Provider Deregistration
-Currently, the Provider MSA id cannot be retired once it is registered. The current version does not outline a way to completely revoke the Provider status. In the future, Provider MSA id may be deregistered, with their MSA id removed from the Provider Registry and any associated delegations revoked.
+Currently, the Provider MSA id cannot be retired once registered. The current version does not entirely outline a way to revoke the Provider's status. In the future, Provider MSA id may be deregistered, with their MSA id removed from the Provider Registry and any associated delegations revoked.
 
 ## Glossary
 TBD.
