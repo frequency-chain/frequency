@@ -542,3 +542,25 @@ fn offchain_payload_size() {
 		assert_noop!(MessagesPallet::add_ipfs_message(Origin::signed(caller_1), None, schema_id_1, payload), Error::<Test>::ExceedsMaxMessagePayloadSizeBytes);
 	});
 }
+
+#[test]
+fn offchain_payload_size_exceeded() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 5;
+		let schema_id_1: SchemaId = 1;
+		let cid = CID::new(Vec::from("{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}".as_bytes()));
+		let payload = IPFSPayload::new(cid, 1024 * 128 + 1);
+
+		// act
+		assert_noop!(
+			MessagesPallet::add_ipfs_message(
+				Origin::signed(caller_1),
+				None,
+				IPFS_SCHEMA_ID,
+				payload,
+			),
+			Error::<Test>::ExceedsMaxMessagePayloadSizeBytes
+		);
+	});
+}
