@@ -37,8 +37,8 @@ case $build_step in
     rm ./res/genesis/testnet/frequency-spec-rococo-testnet.json.bu
 
     echo "Exporting state and wasm for frequency testnet"
-    $PWD/target/release/frequency export-genesis-state --chain=frequency_rococo ./res/genesis/testnet/rococo-testnet-frequency-raw.json > ./res/genesis/testnet/frequency-rococo-testnet-genesis-state
-    $PWD/target/release/frequency export-genesis-wasm --chain=frequency_rococo ./res/genesis/testnet/rococo-testnet-frequency-raw.json > ./res/genesis/testnet/frequency-rococo-testnet-genesis-wasm
+    $PWD/target/release/frequency export-genesis-state --chain ./res/genesis/testnet/rococo-testnet-frequency-raw.json > ./res/genesis/testnet/frequency-rococo-testnet-genesis-state
+    $PWD/target/release/frequency export-genesis-wasm --chain ./res/genesis/testnet/rococo-testnet-frequency-raw.json > ./res/genesis/testnet/frequency-rococo-testnet-genesis-wasm
     ;;
   *)
     echo "Unknown build step: $build_step"
