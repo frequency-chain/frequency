@@ -28,7 +28,7 @@
     "target": "build-runtime",
     "package": "frequency-runtime",
     "dir":"runtime/frequency",
-    "run_on_event": "push",
+    "run_on_event": "any",
     "rust_toolchain": "1.57.0"
   },
   {
@@ -36,7 +36,7 @@
     "target": "build-runtime",
     "package": "frequency-rococo-runtime",
     "dir": "runtime/frequency-rococo",
-    "run_on_event": "push",
+    "run_on_event": "any",
     "rust_toolchain": "1.57.0"
   }
 ]
