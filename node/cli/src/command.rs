@@ -251,68 +251,71 @@ pub fn run() -> Result<()> {
 			})
 		},
 		Some(Subcommand::Benchmark(cmd)) => {
-			if cfg!(feature = "runtime-benchmarks") {
-				let runner = cli.create_runner(cmd)?;
-				// Switch on the concrete benchmark sub-command-
-				match cmd {
-					BenchmarkCmd::Pallet(cmd) => match runner.config().chain_spec.identify() {
-						ChainIdentity::Frequency => runner.sync_run(|config| {
-							cmd.run::<frequency_runtime::Block, FrequencyRuntimeExecutor>(config)
-						}),
-						ChainIdentity::FrequencyRococo => runner.sync_run(|config| {
-							cmd.run::<frequency_rococo_runtime::Block, FrequencyRococoRuntimeExecutor>(config)
-						}),
+			let runner = cli.create_runner(cmd)?;
+			// Switch on the concrete benchmark sub-command-
+			match cmd {
+				BenchmarkCmd::Pallet(cmd) =>
+					if cfg!(feature = "runtime-benchmarks") {
+						match runner.config().chain_spec.identify() {
+							ChainIdentity::Frequency => runner.sync_run(|config| {
+								cmd.run::<frequency_runtime::Block, FrequencyRuntimeExecutor>(
+									config,
+								)
+							}),
+							ChainIdentity::FrequencyRococo => runner.sync_run(|config| {
+								cmd.run::<frequency_rococo_runtime::Block, FrequencyRococoRuntimeExecutor>(config)
+							}),
+						}
+					} else {
+						Err("Benchmarking wasn't enabled when building the node. \
+					You can enable it with `--features runtime-benchmarks`."
+							.into())
 					},
-					BenchmarkCmd::Block(cmd) => match runner.config().chain_spec.identify() {
-						ChainIdentity::Frequency => runner.sync_run(|config| {
-							let partials = new_partial::<
-								frequency_runtime::RuntimeApi,
-								FrequencyRuntimeExecutor,
-								_,
-							>(&config, parachain_build_import_queue, false)?;
-							cmd.run(partials.client)
-						}),
-						ChainIdentity::FrequencyRococo => runner.sync_run(|config| {
-							let partials = new_partial::<
-								frequency_rococo_runtime::RuntimeApi,
-								FrequencyRococoRuntimeExecutor,
-								_,
-							>(&config, parachain_build_import_queue, false)?;
-							cmd.run(partials.client)
-						}),
-					},
-					BenchmarkCmd::Storage(cmd) => match runner.config().chain_spec.identify() {
-						ChainIdentity::Frequency => runner.sync_run(|config| {
-							let partials = new_partial::<
-								frequency_runtime::RuntimeApi,
-								FrequencyRuntimeExecutor,
-								_,
-							>(&config, parachain_build_import_queue, false)?;
-							let db = partials.backend.expose_db();
-							let storage = partials.backend.expose_storage();
+				BenchmarkCmd::Block(cmd) => match runner.config().chain_spec.identify() {
+					ChainIdentity::Frequency => runner.sync_run(|config| {
+						let partials = new_partial::<
+							frequency_runtime::RuntimeApi,
+							FrequencyRuntimeExecutor,
+							_,
+						>(&config, parachain_build_import_queue, false)?;
+						cmd.run(partials.client)
+					}),
+					ChainIdentity::FrequencyRococo => runner.sync_run(|config| {
+						let partials = new_partial::<
+							frequency_rococo_runtime::RuntimeApi,
+							FrequencyRococoRuntimeExecutor,
+							_,
+						>(&config, parachain_build_import_queue, false)?;
+						cmd.run(partials.client)
+					}),
+				},
+				BenchmarkCmd::Storage(cmd) => match runner.config().chain_spec.identify() {
+					ChainIdentity::Frequency => runner.sync_run(|config| {
+						let partials = new_partial::<
+							frequency_runtime::RuntimeApi,
+							FrequencyRuntimeExecutor,
+							_,
+						>(&config, parachain_build_import_queue, false)?;
+						let db = partials.backend.expose_db();
+						let storage = partials.backend.expose_storage();
 
-							cmd.run(config, partials.client.clone(), db, storage)
-						}),
-						ChainIdentity::FrequencyRococo => runner.sync_run(|config| {
-							let partials = new_partial::<
-								frequency_rococo_runtime::RuntimeApi,
-								FrequencyRococoRuntimeExecutor,
-								_,
-							>(&config, parachain_build_import_queue, false)?;
-							let db = partials.backend.expose_db();
-							let storage = partials.backend.expose_storage();
+						cmd.run(config, partials.client.clone(), db, storage)
+					}),
+					ChainIdentity::FrequencyRococo => runner.sync_run(|config| {
+						let partials = new_partial::<
+							frequency_rococo_runtime::RuntimeApi,
+							FrequencyRococoRuntimeExecutor,
+							_,
+						>(&config, parachain_build_import_queue, false)?;
+						let db = partials.backend.expose_db();
+						let storage = partials.backend.expose_storage();
 
-							cmd.run(config, partials.client.clone(), db, storage)
-						}),
-					},
-					BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
-					BenchmarkCmd::Machine(cmd) => runner
-						.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
-				}
-			} else {
-				Err("Benchmarking wasn't enabled when building the node. \
-				You can enable it with `--features runtime-benchmarks`."
-					.into())
+						cmd.run(config, partials.client.clone(), db, storage)
+					}),
+				},
+				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
+				BenchmarkCmd::Machine(cmd) =>
+					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
 			}
 		},
 		Some(Subcommand::TryRuntime(cmd)) => {
