@@ -33,8 +33,8 @@ case $build_step in
     $PWD/target/release/frequency build-spec --chain=frequency_rococo --disable-default-bootnode > ./res/genesis/testnet/frequency-spec-rococo-testnet.json
     sed -i.bu "s/\"parachainId\": 4044/\"parachainId\": $parachain_id/g" ./res/genesis/testnet/frequency-spec-rococo-testnet.json
     sed -i.bu "s/\"para_id\": 4044/\"para_id\": $parachain_id/g" ./res/genesis/testnet/frequency-spec-rococo-testnet.json
-    $PWD/target/release/frequency build-spec --raw --disable-default-bootnode --chain=frequency_rococo ./res/genesis/testnet/frequency-spec-rococo-testnet.json > ./res/genesis/testnet/rococo-testnet-frequency-raw.json
-    rm ./res/genesis/testnet/frequency-spec-rococo.json.bu
+    $PWD/target/release/frequency build-spec --raw --disable-default-bootnode --chain ./res/genesis/testnet/frequency-spec-rococo-testnet.json > ./res/genesis/testnet/rococo-testnet-frequency-raw.json
+    rm ./res/genesis/testnet/frequency-spec-rococo-testnet.json.bu
 
     echo "Exporting state and wasm for frequency testnet"
     $PWD/target/release/frequency export-genesis-state --chain=frequency_rococo ./res/genesis/testnet/rococo-testnet-frequency-raw.json > ./res/genesis/testnet/frequency-rococo-testnet-genesis-state
