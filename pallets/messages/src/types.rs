@@ -3,6 +3,9 @@ use common_primitives::{messages::MessageResponse, msa::MessageSourceId};
 use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 use sp_std::prelude::*;
+// use cid::multihash::{Code, MultihashDigest};
+// use cid::Cid;
+// use std::convert::TryFrom;
 
 /// A single message type definition.
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
@@ -71,5 +74,10 @@ impl IPFSPayload {
 	/// Constructor
 	pub fn new(cid: CID, payload_length: u32) -> IPFSPayload {
 		IPFSPayload { cid, payload_length }
+	}
+	
+	/// Checks if a CID has been validated properly
+	pub fn is_valid(cid: CID) -> bool {
+		false
 	}
 }
