@@ -35,7 +35,9 @@ specifics around creating and honoring transactions between users.
 
 ## Proposal
 The basic workflow for provider registration is as follows:
-1. User stakes balance to become a provider. This is called a "Registration Fee".
+1. Any user can register to be a Provider.
+1. User pays the balance to become a provider. This is called a "Registration Fee".
+1. The "Registration Fee" is set by Governance.
 1. The "Registration Fee" is credited to the Chain Treasury (TBD).
 1. The provider's MSA id is added to storage on chain.
 
@@ -114,6 +116,8 @@ providers ("mom and pop" local businesses and/or "freelancers").
 So to allow inclusion for all actors, it may be that the best way of verifying
 legitimateness is through a fee that is high enough to discourage malicious actors.
 
+### Provider Commitment
+Users can only delegate to Providers. To create a delegation relationship, the Msa has to be registered as a Provider. Only Providers can have Capacity, and can therefore create capacity transactions.
 ### Archival Provider Information
 If consumers want to examine provider registration events, they
 must fetch them from an archival node. This document does not outline an RPC for
@@ -125,7 +129,8 @@ This document assumes that registration fees will be a fixed amount. It may be
 prudent, in the future, to determine whether or not registrations are fixed or
 vary based on the amount of verifable information given on a registration
 attempt. The latter may allow us to place more trust into providers that do not
-have traditional business attributes.
+have traditional business attributes. It's important to note that instead of or in addition to a fee payment, that the provider could be required to post a bond.
+
 ### Provider Deregistration
 Currently, the Provider MSA id cannot be retired once it is registered. The current version does not outline a way to completely revoke the Provider status. In the future, Provider MSA id may be deregistered, with their MSA id removed from the Provider Registry and any associated delegations revoked.
 
