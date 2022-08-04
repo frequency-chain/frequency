@@ -154,6 +154,7 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+	"pallet-scheduler/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	'pallet-msa/runtime-benchmarks',
