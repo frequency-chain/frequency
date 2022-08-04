@@ -21,10 +21,10 @@ fn populate_messages(schema_id: SchemaId, message_per_block: Vec<u32>) {
 		let mut list = BoundedVec::default();
 		for _ in 0..*count {
 			list.try_push(Message {
-				msa_id: 10,
+				original_msa_id: 10,
 				payload: payload.clone().try_into().unwrap(),
 				index: counter,
-				provider_key: 1,
+				signer_msa_id: 1,
 			})
 			.unwrap();
 			counter += 1;
@@ -66,10 +66,10 @@ fn add_message_should_store_message_on_temp_storage() {
 			list[0],
 			(
 				Message {
-					msa_id: get_msa_from_account(caller_1),
+					original_msa_id: get_msa_from_account(caller_1),
 					payload: message_payload_1.try_into().unwrap(),
 					index: 0,
-					provider_key: caller_1
+					signer_msa_id: get_msa_from_account(caller_1)
 				},
 				schema_id_1
 			)
@@ -79,10 +79,10 @@ fn add_message_should_store_message_on_temp_storage() {
 			list[1],
 			(
 				Message {
-					msa_id: get_msa_from_account(caller_2),
+					original_msa_id: get_msa_from_account(caller_2),
 					payload: message_payload_2.try_into().unwrap(),
 					index: 1,
-					provider_key: caller_2
+					signer_msa_id: get_msa_from_account(caller_2)
 				},
 				schema_id_2
 			)
@@ -250,10 +250,10 @@ fn get_messages_by_schema_with_valid_request_should_return_paginated() {
 		assert_eq!(
 			pagination_response.content[0],
 			MessageResponse {
-				msa_id: 10,
+				original_msa_id: 10,
 				payload: Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes()),
 				index: from_index as u16,
-				provider_key: 1,
+				signer_msa_id: 1,
 				block_number: 0
 			}
 		);
@@ -398,10 +398,10 @@ fn add_message_via_valid_delegate_should_pass() {
 			list[0],
 			(
 				Message {
-					msa_id: message_producer,
+					original_msa_id: message_producer,
 					payload: message_payload_1.try_into().unwrap(),
 					index: 0,
-					provider_key: caller_1
+					signer_msa_id: get_msa_from_account(caller_1)
 				},
 				schema_id_1
 			)
@@ -411,10 +411,10 @@ fn add_message_via_valid_delegate_should_pass() {
 			list[1],
 			(
 				Message {
-					msa_id: message_producer,
+					original_msa_id: message_producer,
 					payload: message_payload_2.try_into().unwrap(),
 					index: 1,
-					provider_key: caller_2
+					signer_msa_id: get_msa_from_account(caller_2)
 				},
 				schema_id_2
 			)
