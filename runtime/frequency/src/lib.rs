@@ -374,13 +374,15 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
+	// The maximum weight that may be scheduled per block for any dispatchables of less priority than schedule::HARD_DEADLINE.
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(10) * RuntimeBlockWeights::get().max_block;
-	// others use 50
-	pub const MaxScheduledPerBlock: u32 = 25;
+	// The maximum number of scheduled calls in the queue for a single block. Not strictly enforced, but used for weight estimation.
+	pub const MaxScheduledPerBlock: u32 = 50;
 	// Retry a scheduled item every 25 blocks (5 minute) until the preimage exists.
 	pub const NoPreimagePostponement: Option<u32> = Some(5 * MINUTES);
 }
 
+// See also https://docs.rs/pallet-scheduler/latest/pallet_scheduler/trait.Config.html
 impl pallet_scheduler::Config for Runtime {
 	type Event = Event;
 	type Origin = Origin;
