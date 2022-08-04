@@ -7,34 +7,36 @@ use sp_std::prelude::*;
 /// A single message type definition.
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 #[scale_info(skip_type_params(MaxDataSize))]
-pub struct Message<AccountId, MaxDataSize>
+pub struct Message<MaxDataSize>
 where
 	MaxDataSize: Get<u32> + Clone,
 {
-	///  Data structured by the associated schema's model
+	///  Data structured by the associated schema's model.
 	pub payload: BoundedVec<u8, MaxDataSize>,
-	///  Public key of the provider that signed the transaction
-	pub provider_key: AccountId,
-	///  Message source account id (the original source)
-	pub msa_id: MessageSourceId,
-	///  Stores index of message in block to keep total order
+	/// Message source account id of the MSA that signed the transaction. This may be the same id
+	/// as contained in `original_msa_id`, indicating that the transaction to add the message was
+	/// signed by the originator. An id differing from that of `original_msa_id` indicates that a
+	/// provider was delegated by `original_msa_id` to send this message on its behalf.
+	pub signer_msa_id: MessageSourceId,
+	///  Message source account id (the original source).
+	pub original_msa_id: MessageSourceId,
+	///  Stores index of message in block to keep total order.
 	pub index: u16,
 }
 
-impl<AccountId, MaxDataSize> Message<AccountId, MaxDataSize>
+impl<MaxDataSize> Message<MaxDataSize>
 where
-	AccountId: Clone,
 	MaxDataSize: Get<u32> + Clone,
 {
 	/// Helper function to handle response type [`MessageResponse`] for RPC.
 	pub fn map_to_response<BlockNumber>(
 		&self,
 		block_number: BlockNumber,
-	) -> MessageResponse<AccountId, BlockNumber> {
+	) -> MessageResponse<BlockNumber> {
 		MessageResponse {
-			provider_key: self.provider_key.clone(),
+			signer_msa_id: self.signer_msa_id,
 			index: self.index,
-			msa_id: self.msa_id,
+			original_msa_id: self.original_msa_id,
 			block_number,
 			payload: self.payload.clone().into_inner(),
 		}
