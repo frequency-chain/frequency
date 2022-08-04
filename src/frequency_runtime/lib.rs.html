@@ -803,6 +803,48 @@
 <span id="797">797</span>
 <span id="798">798</span>
 <span id="799">799</span>
+<span id="800">800</span>
+<span id="801">801</span>
+<span id="802">802</span>
+<span id="803">803</span>
+<span id="804">804</span>
+<span id="805">805</span>
+<span id="806">806</span>
+<span id="807">807</span>
+<span id="808">808</span>
+<span id="809">809</span>
+<span id="810">810</span>
+<span id="811">811</span>
+<span id="812">812</span>
+<span id="813">813</span>
+<span id="814">814</span>
+<span id="815">815</span>
+<span id="816">816</span>
+<span id="817">817</span>
+<span id="818">818</span>
+<span id="819">819</span>
+<span id="820">820</span>
+<span id="821">821</span>
+<span id="822">822</span>
+<span id="823">823</span>
+<span id="824">824</span>
+<span id="825">825</span>
+<span id="826">826</span>
+<span id="827">827</span>
+<span id="828">828</span>
+<span id="829">829</span>
+<span id="830">830</span>
+<span id="831">831</span>
+<span id="832">832</span>
+<span id="833">833</span>
+<span id="834">834</span>
+<span id="835">835</span>
+<span id="836">836</span>
+<span id="837">837</span>
+<span id="838">838</span>
+<span id="839">839</span>
+<span id="840">840</span>
+<span id="841">841</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.</span>
 <span class="attribute">#![<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;256&quot;</span>]</span>
@@ -835,7 +877,7 @@
 	<span class="ident">construct_runtime</span>,
 	<span class="ident">dispatch::DispatchError</span>,
 	<span class="ident">parameter_types</span>,
-	<span class="ident">traits</span>::{<span class="ident">ConstU32</span>, <span class="ident">Everything</span>},
+	<span class="ident">traits</span>::{<span class="ident">ConstU32</span>, <span class="ident">EqualPrivilegeOnly</span>, <span class="ident">Everything</span>},
 	<span class="ident">weights</span>::{
 		<span class="ident">constants::WEIGHT_PER_SECOND</span>, <span class="ident">ConstantMultiplier</span>, <span class="ident">DispatchClass</span>, <span class="ident">Weight</span>,
 		<span class="ident">WeightToFeeCoefficient</span>, <span class="ident">WeightToFeeCoefficients</span>, <span class="ident">WeightToFeePolynomial</span>,
@@ -1179,6 +1221,45 @@
 }
 
 <span class="macro">parameter_types!</span> {
+	<span class="comment">// The maximum weight that may be scheduled per block for any dispatchables of less priority than schedule::HARD_DEADLINE.</span>
+	<span class="kw">pub</span> <span class="ident">MaximumSchedulerWeight</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">Perbill::from_percent</span>(<span class="number">10</span>) <span class="op">*</span> <span class="ident">RuntimeBlockWeights::get</span>().<span class="ident">max_block</span>;
+	<span class="comment">// The maximum number of scheduled calls in the queue for a single block. Not strictly enforced, but used for weight estimation.</span>
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxScheduledPerBlock</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">50</span>;
+	<span class="comment">// Retry a scheduled item every 25 blocks (5 minute) until the preimage exists.</span>
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NoPreimagePostponement</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="number">5</span> <span class="op">*</span> <span class="ident">MINUTES</span>);
+}
+
+<span class="comment">// See also https://docs.rs/pallet-scheduler/latest/pallet_scheduler/trait.Config.html</span>
+<span class="kw">impl</span> <span class="ident">pallet_scheduler::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+	<span class="kw">type</span> <span class="ident">Origin</span> <span class="op">=</span> <span class="ident">Origin</span>;
+	<span class="kw">type</span> <span class="ident">PalletsOrigin</span> <span class="op">=</span> <span class="ident">OriginCaller</span>;
+	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
+	<span class="kw">type</span> <span class="ident">MaximumWeight</span> <span class="op">=</span> <span class="ident">MaximumSchedulerWeight</span>;
+	<span class="kw">type</span> <span class="ident">ScheduleOrigin</span> <span class="op">=</span> <span class="ident">frame_system::EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">MaxScheduledPerBlock</span> <span class="op">=</span> <span class="ident">MaxScheduledPerBlock</span>;
+	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> ();
+	<span class="kw">type</span> <span class="ident">OriginPrivilegeCmp</span> <span class="op">=</span> <span class="ident">EqualPrivilegeOnly</span>;
+	<span class="kw">type</span> <span class="ident">PreimageProvider</span> <span class="op">=</span> <span class="ident">Preimage</span>;
+	<span class="kw">type</span> <span class="ident">NoPreimagePostponement</span> <span class="op">=</span> <span class="ident">NoPreimagePostponement</span>;
+}
+
+<span class="macro">parameter_types!</span> {
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PreimageMaxSize</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">4096</span> <span class="op">*</span> <span class="number">1024</span>;
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PreimageBaseDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1</span> <span class="op">*</span> <span class="ident">MILLIUNIT</span>;
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PreimageByteDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1</span> <span class="op">*</span> <span class="ident">MICROUNIT</span>;
+}
+
+<span class="kw">impl</span> <span class="ident">pallet_preimage::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">pallet_preimage::weights::SubstrateWeight</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+	<span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
+	<span class="kw">type</span> <span class="ident">ManagerOrigin</span> <span class="op">=</span> <span class="ident">EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">MaxSize</span> <span class="op">=</span> <span class="ident">PreimageMaxSize</span>;
+	<span class="kw">type</span> <span class="ident">BaseDeposit</span> <span class="op">=</span> <span class="ident">PreimageBaseDeposit</span>;
+	<span class="kw">type</span> <span class="ident">ByteDeposit</span> <span class="op">=</span> <span class="ident">PreimageByteDeposit</span>;
+}
+<span class="macro">parameter_types!</span> {
 	<span class="doccomment">/// Relay Chain `TransactionByteFee` / 10</span>
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TransactionByteFee</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">10</span> <span class="op">*</span> <span class="ident">MICROUNIT</span>;
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">OperationalFeeMultiplier</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">5</span>;
@@ -1324,6 +1405,8 @@
 		<span class="ident">Timestamp</span>: <span class="ident">pallet_timestamp</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Inherent</span>} <span class="op">=</span> <span class="number">2</span>,
 		<span class="ident">ParachainInfo</span>: <span class="ident">parachain_info</span>::{<span class="ident">Pallet</span>, <span class="ident">Storage</span>, <span class="ident">Config</span>} <span class="op">=</span> <span class="number">3</span>,
 		<span class="ident">Sudo</span>: <span class="ident">pallet_sudo</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> }<span class="op">=</span> <span class="number">4</span>,
+		<span class="ident">Scheduler</span>: <span class="ident">pallet_scheduler</span> <span class="op">=</span> <span class="number">5</span>,
+		<span class="ident">Preimage</span>: <span class="ident">pallet_preimage</span> <span class="op">=</span> <span class="number">7</span>,
 
 		<span class="comment">// Monetary stuff.</span>
 		<span class="ident">Balances</span>: <span class="ident">pallet_balances</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">10</span>,
@@ -1358,6 +1441,7 @@
 	<span class="macro">define_benchmarks!</span>(
 		[<span class="ident">frame_system</span>, <span class="ident">SystemBench</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>]
 		[<span class="ident">pallet_balances</span>, <span class="ident">Balances</span>]
+		[<span class="ident">pallet_scheduler</span>, <span class="ident">Scheduler</span>]
 		[<span class="ident">pallet_session</span>, <span class="ident">SessionBench</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>]
 		[<span class="ident">pallet_timestamp</span>, <span class="ident">Timestamp</span>]
 		[<span class="ident">pallet_collator_selection</span>, <span class="ident">CollatorSelection</span>]
