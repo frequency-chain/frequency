@@ -4,7 +4,7 @@ set -eux
 
 PACKAGE="${PACKAGE:-frequency-runtime}" #Need to replicate job for all runtimes
 RUNTIME_DIR="${RUNTIME_DIR:-runtime/frequency}"
-SRT_TOOL_VERSION="${SRT_TOOL_VERSION:-1.60.0}"
+SRT_TOOL_VERSION="${SRT_TOOL_VERSION:-1.62.0}"
 
 # Enable warnings about unused extern crates
 export RUSTFLAGS=" -W unused-extern-crates"
