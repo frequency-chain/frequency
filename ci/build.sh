@@ -3,7 +3,8 @@
 set -eux
 
 PACKAGE="${PACKAGE:-frequency-runtime}" #Need to replicate job for all runtimes
-SRT_TOOL_VERSION="${SRT_TOOL_VERSION:-1.60.0}"
+RUNTIME_DIR="${RUNTIME_DIR:-runtime/frequency}"
+SRT_TOOL_VERSION="${SRT_TOOL_VERSION:-1.62.0}"
 
 # Enable warnings about unused extern crates
 export RUSTFLAGS=" -W unused-extern-crates"
@@ -22,7 +23,7 @@ case $TARGET in
   build-runtime)
     export RUSTC_VERSION=$SRT_TOOL_VERSION
     echo "Building runtime with rustc version $RUSTC_VERSION"
-    docker run --rm -e PACKAGE=$PACKAGE -v $PWD:/build -v /tmp/cargo:/cargo-home paritytech/srtool:$RUSTC_VERSION build
+    docker run --rm -e PACKAGE=$PACKAGE -e RUNTIME_DIR=$RUNTIME_DIR -v $PWD:/build -v /tmp/cargo:/cargo-home paritytech/srtool:$RUSTC_VERSION build
     ;;
 
   tests)

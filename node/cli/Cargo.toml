@@ -19,7 +19,9 @@ jsonrpsee = { version = "0.14.0", features = ["server"] }
 
 # Frequency Runtime
 frequency-runtime = { path = "../../runtime/frequency" }
+frequency-rococo-runtime = { path = "../../runtime/frequency-rococo" }
 frequency-service = { package = "frequency-service", path = "../service", default-features = false, optional = true }
+common-primitives = {default-features = false, path = "../../common/primitives"}
 
 # Substrate
 sc-cli = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "polkadot-v0.9.25", optional = true }

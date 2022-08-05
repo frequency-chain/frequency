@@ -33,3 +33,11 @@ offboard:
 .PHONY: install
 install-toolchain:
 	./scripts/init.sh install-toolchain
+
+.PHONY: specs
+specs-local:
+	./scripts/generate_specs.sh 2000 build-local
+
+specs-testnet:
+	./scripts/generate_specs.sh 4044 build-testnet
+
