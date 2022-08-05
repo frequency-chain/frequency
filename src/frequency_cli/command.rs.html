@@ -449,6 +449,111 @@
 <span id="443">443</span>
 <span id="444">444</span>
 <span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
+<span id="506">506</span>
+<span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::cli</span>::{<span class="ident">Cli</span>, <span class="ident">RelayChainCli</span>, <span class="ident">Subcommand</span>};
 <span class="kw">use</span> <span class="ident">frequency_service</span>::{<span class="ident">chain_spec</span>, <span class="ident">service</span>::<span class="kw-2">*</span>};
 
@@ -456,9 +561,9 @@
 <span class="kw">use</span> <span class="ident">cumulus_client_cli::generate_genesis_block</span>;
 <span class="kw">use</span> <span class="ident">cumulus_primitives_core::ParaId</span>;
 <span class="kw">use</span> <span class="ident">frame_benchmarking_cli</span>::{<span class="ident">BenchmarkCmd</span>, <span class="ident">SUBSTRATE_REFERENCE_HARDWARE</span>};
-<span class="kw">use</span> <span class="ident">frequency_runtime</span>::{<span class="ident">Block</span>, <span class="ident">RuntimeApi</span>};
 <span class="kw">use</span> <span class="ident">log::info</span>;
 
+<span class="kw">use</span> <span class="ident">common_primitives::node::Block</span>;
 <span class="kw">use</span> <span class="ident">sc_cli</span>::{
 	<span class="ident">ChainSpec</span>, <span class="ident">CliConfiguration</span>, <span class="ident">DefaultConfigurationValues</span>, <span class="ident">ImportParams</span>, <span class="ident">KeystoreParams</span>,
 	<span class="ident">NetworkParams</span>, <span class="prelude-ty">Result</span>, <span class="ident">RuntimeVersion</span>, <span class="ident">SharedParams</span>, <span class="ident">SubstrateCli</span>,
@@ -471,10 +576,40 @@
 <span class="kw">use</span> <span class="ident">sp_runtime::traits</span>::{<span class="ident">AccountIdConversion</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>};
 <span class="kw">use</span> <span class="ident">std::net::SocketAddr</span>;
 
+<span class="kw">enum</span> <span class="ident">ChainIdentity</span> {
+	<span class="ident">Frequency</span>,
+	<span class="ident">FrequencyRococo</span>,
+}
+
+<span class="kw">trait</span> <span class="ident">IdentifyChain</span> {
+	<span class="kw">fn</span> <span class="ident">identify</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">ChainIdentity</span>;
+}
+
+<span class="kw">impl</span> <span class="ident">IdentifyChain</span> <span class="kw">for</span> <span class="kw">dyn</span> <span class="ident">sc_service::ChainSpec</span> {
+	<span class="kw">fn</span> <span class="ident">identify</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">ChainIdentity</span> {
+		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">id</span>().<span class="ident">contains</span>(<span class="string">&quot;frequency_rococo&quot;</span>) <span class="op">|</span><span class="op">|</span>
+			<span class="self">self</span>.<span class="ident">id</span>().<span class="ident">contains</span>(<span class="string">&quot;rococo&quot;</span>) <span class="op">|</span><span class="op">|</span>
+			<span class="self">self</span>.<span class="ident">id</span>().<span class="ident">contains</span>(<span class="string">&quot;testnet&quot;</span>)
+		{
+			<span class="ident">ChainIdentity::FrequencyRococo</span>
+		} <span class="kw">else</span> {
+			<span class="ident">ChainIdentity::Frequency</span>
+		}
+	}
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">sc_service::ChainSpec</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span> <span class="ident">IdentifyChain</span> <span class="kw">for</span> <span class="ident">T</span> {
+	<span class="kw">fn</span> <span class="ident">identify</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">ChainIdentity</span> {
+		<span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">sc_service::ChainSpec</span><span class="op">&gt;</span><span class="ident">::identify</span>(<span class="self">self</span>)
+	}
+}
+
 <span class="kw">fn</span> <span class="ident">load_spec</span>(<span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ChainSpec</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
 	<span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">id</span> {
 		<span class="string">&quot;frequency_dev&quot;</span> <span class="op">|</span> <span class="string">&quot;dev&quot;</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">chain_spec::frequency_local::development_config</span>()),
 		<span class="string">&quot;frequency_local&quot;</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">chain_spec::frequency_local::local_testnet_config</span>()),
+		<span class="string">&quot;frequency_rococo&quot;</span> <span class="op">|</span> <span class="string">&quot;rococo&quot;</span> <span class="op">|</span> <span class="string">&quot;testnet&quot;</span> =&gt;
+			<span class="ident">Box::new</span>(<span class="ident">chain_spec::frequency_rococo::frequency_rococo_testnet</span>()),
 		<span class="string">&quot;&quot;</span> <span class="op">|</span> <span class="string">&quot;local&quot;</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">chain_spec::frequency_local::local_testnet_config</span>()),
 		<span class="ident">path</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">chain_spec::frequency_local::ChainSpec::from_json_file</span>(
 			<span class="ident">std::path::PathBuf::from</span>(<span class="ident">path</span>),
@@ -496,7 +631,7 @@
 	}
 
 	<span class="kw">fn</span> <span class="ident">description</span>() -&gt; <span class="ident">String</span> {
-		<span class="string">&quot;Parachain Collator Template\n\nThe command-line arguments provided first will be \
+		<span class="string">&quot;Frequency\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
 		frequency &lt;parachain-args&gt; -- &lt;relay-chain-args&gt;&quot;</span>
@@ -519,8 +654,11 @@
 		<span class="ident">load_spec</span>(<span class="ident">id</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">native_runtime_version</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ChainSpec</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">RuntimeVersion</span> {
-		<span class="kw-2">&amp;</span><span class="ident">frequency_runtime::VERSION</span>
+	<span class="kw">fn</span> <span class="ident">native_runtime_version</span>(<span class="ident">spec</span>: <span class="kw-2">&amp;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ChainSpec</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">RuntimeVersion</span> {
+		<span class="kw">match</span> <span class="ident">spec</span>.<span class="ident">identify</span>() {
+			<span class="ident">ChainIdentity::Frequency</span> =&gt; <span class="kw-2">&amp;</span><span class="ident">frequency_runtime::VERSION</span>,
+			<span class="ident">ChainIdentity::FrequencyRococo</span> =&gt; <span class="kw-2">&amp;</span><span class="ident">frequency_rococo_runtime::VERSION</span>,
+		}
 	}
 }
 
@@ -534,7 +672,7 @@
 	}
 
 	<span class="kw">fn</span> <span class="ident">description</span>() -&gt; <span class="ident">String</span> {
-		<span class="string">&quot;Parachain Collator Template\n\nThe command-line arguments provided first will be \
+		<span class="string">&quot;Frequency\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
 		frequency &lt;parachain-args&gt; -- &lt;relay-chain-args&gt;&quot;</span>
@@ -565,19 +703,38 @@
 <span class="macro">macro_rules!</span> <span class="ident">construct_async_run</span> {
 	(<span class="op">|</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">components</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">cli</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">cmd</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>:<span class="ident">ident</span><span class="op">|</span> $( <span class="macro-nonterminal">$</span><span class="macro-nonterminal">code</span>:<span class="ident">tt</span> )<span class="op">*</span> ) =&gt; {{
 		<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">cli</span>.<span class="ident">create_runner</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">cmd</span>)<span class="question-mark">?</span>;
-		<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span><span class="op">|</span> {
-			<span class="kw">let</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">components</span> <span class="op">=</span> <span class="ident">new_partial</span>::<span class="op">&lt;</span>
-				<span class="ident">RuntimeApi</span>,
-				<span class="ident">TemplateRuntimeExecutor</span>,
-				<span class="kw">_</span>
-			<span class="op">&gt;</span>(
-				<span class="kw-2">&amp;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>,
-				<span class="ident">parachain_build_import_queue</span>,
-				<span class="bool-val">false</span>,
-			)<span class="question-mark">?</span>;
-			<span class="kw">let</span> <span class="ident">task_manager</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">components</span>.<span class="ident">task_manager</span>;
-			{ $( <span class="macro-nonterminal">$</span><span class="macro-nonterminal">code</span> )<span class="op">*</span> }.<span class="ident">map</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> (<span class="ident">v</span>, <span class="ident">task_manager</span>))
-		})
+		<span class="kw">match</span> <span class="ident">runner</span>.<span class="ident">config</span>().<span class="ident">chain_spec</span>.<span class="ident">identify</span>() {
+			<span class="ident">ChainIdentity::Frequency</span> =&gt; {
+				<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span><span class="op">|</span> {
+					<span class="kw">let</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">components</span> <span class="op">=</span> <span class="ident">new_partial</span>::<span class="op">&lt;</span>
+					<span class="ident">frequency_runtime::RuntimeApi</span>,
+						<span class="ident">FrequencyRuntimeExecutor</span>,
+						<span class="kw">_</span>
+					<span class="op">&gt;</span>(
+						<span class="kw-2">&amp;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>,
+						<span class="ident">parachain_build_import_queue</span>,
+						<span class="bool-val">false</span>,
+					)<span class="question-mark">?</span>;
+					<span class="kw">let</span> <span class="ident">task_manager</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">components</span>.<span class="ident">task_manager</span>;
+					{ $( <span class="macro-nonterminal">$</span><span class="macro-nonterminal">code</span> )<span class="op">*</span> }.<span class="ident">map</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> (<span class="ident">v</span>, <span class="ident">task_manager</span>))
+				})
+			}
+			<span class="ident">ChainIdentity::FrequencyRococo</span> =&gt; {
+				<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span><span class="op">|</span> {
+					<span class="kw">let</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">components</span> <span class="op">=</span> <span class="ident">new_partial</span>::<span class="op">&lt;</span>
+					<span class="ident">frequency_rococo_runtime::RuntimeApi</span>,
+						<span class="ident">FrequencyRococoRuntimeExecutor</span>,
+						<span class="kw">_</span>
+					<span class="op">&gt;</span>(
+						<span class="kw-2">&amp;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>,
+						<span class="ident">parachain_build_import_queue</span>,
+						<span class="bool-val">false</span>,
+					)<span class="question-mark">?</span>;
+					<span class="kw">let</span> <span class="ident">task_manager</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">components</span>.<span class="ident">task_manager</span>;
+					{ $( <span class="macro-nonterminal">$</span><span class="macro-nonterminal">code</span> )<span class="op">*</span> }.<span class="ident">map</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> (<span class="ident">v</span>, <span class="ident">task_manager</span>))
+				})
+			}
+		}
 	}}
 }
 
@@ -655,31 +812,63 @@
 			<span class="kw">match</span> <span class="ident">cmd</span> {
 				<span class="ident">BenchmarkCmd::Pallet</span>(<span class="ident">cmd</span>) =&gt;
 					<span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>) {
-						<span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="ident">cmd</span>.<span class="ident">run</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">TemplateRuntimeExecutor</span><span class="op">&gt;</span>(<span class="ident">config</span>))
+						<span class="kw">match</span> <span class="ident">runner</span>.<span class="ident">config</span>().<span class="ident">chain_spec</span>.<span class="ident">identify</span>() {
+							<span class="ident">ChainIdentity::Frequency</span> =&gt; <span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
+								<span class="ident">cmd</span>.<span class="ident">run</span>::<span class="op">&lt;</span><span class="ident">frequency_runtime::Block</span>, <span class="ident">FrequencyRuntimeExecutor</span><span class="op">&gt;</span>(
+									<span class="ident">config</span>,
+								)
+							}),
+							<span class="ident">ChainIdentity::FrequencyRococo</span> =&gt; <span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
+								<span class="ident">cmd</span>.<span class="ident">run</span>::<span class="op">&lt;</span><span class="ident">frequency_rococo_runtime::Block</span>, <span class="ident">FrequencyRococoRuntimeExecutor</span><span class="op">&gt;</span>(<span class="ident">config</span>)
+							}),
+						}
 					} <span class="kw">else</span> {
 						<span class="prelude-val">Err</span>(<span class="string">&quot;Benchmarking wasn&#39;t enabled when building the node. \
 					You can enable it with `--features runtime-benchmarks`.&quot;</span>
 							.<span class="ident">into</span>())
 					},
-				<span class="ident">BenchmarkCmd::Block</span>(<span class="ident">cmd</span>) =&gt; <span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
-					<span class="kw">let</span> <span class="ident">partials</span> <span class="op">=</span> <span class="ident">new_partial</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="ident">TemplateRuntimeExecutor</span>, <span class="kw">_</span><span class="op">&gt;</span>(
-						<span class="kw-2">&amp;</span><span class="ident">config</span>,
-						<span class="ident">parachain_build_import_queue</span>,
-						<span class="bool-val">false</span>,
-					)<span class="question-mark">?</span>;
-					<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">partials</span>.<span class="ident">client</span>)
-				}),
-				<span class="ident">BenchmarkCmd::Storage</span>(<span class="ident">cmd</span>) =&gt; <span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
-					<span class="kw">let</span> <span class="ident">partials</span> <span class="op">=</span> <span class="ident">new_partial</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="ident">TemplateRuntimeExecutor</span>, <span class="kw">_</span><span class="op">&gt;</span>(
-						<span class="kw-2">&amp;</span><span class="ident">config</span>,
-						<span class="ident">parachain_build_import_queue</span>,
-						<span class="bool-val">false</span>,
-					)<span class="question-mark">?</span>;
-					<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">partials</span>.<span class="ident">backend</span>.<span class="ident">expose_db</span>();
-					<span class="kw">let</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">partials</span>.<span class="ident">backend</span>.<span class="ident">expose_storage</span>();
+				<span class="ident">BenchmarkCmd::Block</span>(<span class="ident">cmd</span>) =&gt; <span class="kw">match</span> <span class="ident">runner</span>.<span class="ident">config</span>().<span class="ident">chain_spec</span>.<span class="ident">identify</span>() {
+					<span class="ident">ChainIdentity::Frequency</span> =&gt; <span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
+						<span class="kw">let</span> <span class="ident">partials</span> <span class="op">=</span> <span class="ident">new_partial</span>::<span class="op">&lt;</span>
+							<span class="ident">frequency_runtime::RuntimeApi</span>,
+							<span class="ident">FrequencyRuntimeExecutor</span>,
+							<span class="kw">_</span>,
+						<span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="ident">parachain_build_import_queue</span>, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
+						<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">partials</span>.<span class="ident">client</span>)
+					}),
+					<span class="ident">ChainIdentity::FrequencyRococo</span> =&gt; <span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
+						<span class="kw">let</span> <span class="ident">partials</span> <span class="op">=</span> <span class="ident">new_partial</span>::<span class="op">&lt;</span>
+							<span class="ident">frequency_rococo_runtime::RuntimeApi</span>,
+							<span class="ident">FrequencyRococoRuntimeExecutor</span>,
+							<span class="kw">_</span>,
+						<span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="ident">parachain_build_import_queue</span>, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
+						<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">partials</span>.<span class="ident">client</span>)
+					}),
+				},
+				<span class="ident">BenchmarkCmd::Storage</span>(<span class="ident">cmd</span>) =&gt; <span class="kw">match</span> <span class="ident">runner</span>.<span class="ident">config</span>().<span class="ident">chain_spec</span>.<span class="ident">identify</span>() {
+					<span class="ident">ChainIdentity::Frequency</span> =&gt; <span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
+						<span class="kw">let</span> <span class="ident">partials</span> <span class="op">=</span> <span class="ident">new_partial</span>::<span class="op">&lt;</span>
+							<span class="ident">frequency_runtime::RuntimeApi</span>,
+							<span class="ident">FrequencyRuntimeExecutor</span>,
+							<span class="kw">_</span>,
+						<span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="ident">parachain_build_import_queue</span>, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
+						<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">partials</span>.<span class="ident">backend</span>.<span class="ident">expose_db</span>();
+						<span class="kw">let</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">partials</span>.<span class="ident">backend</span>.<span class="ident">expose_storage</span>();
 
-					<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">config</span>, <span class="ident">partials</span>.<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">db</span>, <span class="ident">storage</span>)
-				}),
+						<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">config</span>, <span class="ident">partials</span>.<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">db</span>, <span class="ident">storage</span>)
+					}),
+					<span class="ident">ChainIdentity::FrequencyRococo</span> =&gt; <span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
+						<span class="kw">let</span> <span class="ident">partials</span> <span class="op">=</span> <span class="ident">new_partial</span>::<span class="op">&lt;</span>
+							<span class="ident">frequency_rococo_runtime::RuntimeApi</span>,
+							<span class="ident">FrequencyRococoRuntimeExecutor</span>,
+							<span class="kw">_</span>,
+						<span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="ident">parachain_build_import_queue</span>, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
+						<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">partials</span>.<span class="ident">backend</span>.<span class="ident">expose_db</span>();
+						<span class="kw">let</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">partials</span>.<span class="ident">backend</span>.<span class="ident">expose_storage</span>();
+
+						<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">config</span>, <span class="ident">partials</span>.<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">db</span>, <span class="ident">storage</span>)
+					}),
+				},
 				<span class="ident">BenchmarkCmd::Overhead</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(<span class="string">&quot;Unsupported benchmarking command&quot;</span>.<span class="ident">into</span>()),
 				<span class="ident">BenchmarkCmd::Machine</span>(<span class="ident">cmd</span>) =&gt;
 					<span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="ident">cmd</span>.<span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="ident">SUBSTRATE_REFERENCE_HARDWARE</span>.<span class="ident">clone</span>())),
@@ -694,10 +883,18 @@
 				<span class="kw">let</span> <span class="ident">task_manager</span> <span class="op">=</span>
 					<span class="ident">TaskManager::new</span>(<span class="ident">runner</span>.<span class="ident">config</span>().<span class="ident">tokio_handle</span>.<span class="ident">clone</span>(), <span class="kw-2">*</span><span class="ident">registry</span>)
 						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;Error: {:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
-
-				<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
-					<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">TemplateRuntimeExecutor</span><span class="op">&gt;</span>(<span class="ident">config</span>), <span class="ident">task_manager</span>))
-				})
+				<span class="kw">match</span> <span class="ident">runner</span>.<span class="ident">config</span>().<span class="ident">chain_spec</span>.<span class="ident">identify</span>() {
+					<span class="ident">ChainIdentity::Frequency</span> =&gt; {
+						<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
+							<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>::<span class="op">&lt;</span><span class="ident">frequency_runtime::Block</span>, <span class="ident">FrequencyRuntimeExecutor</span><span class="op">&gt;</span>(<span class="ident">config</span>), <span class="ident">task_manager</span>))
+						})
+					}							,
+					<span class="ident">ChainIdentity::FrequencyRococo</span> =&gt; {
+						<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
+							<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>::<span class="op">&lt;</span><span class="ident">frequency_rococo_runtime::Block</span>, <span class="ident">FrequencyRococoRuntimeExecutor</span><span class="op">&gt;</span>(<span class="ident">config</span>), <span class="ident">task_manager</span>))
+						})
+					}
+				}
 			} <span class="kw">else</span> {
 				<span class="prelude-val">Err</span>(<span class="string">&quot;Try-runtime must be enabled by `--features try-runtime`.&quot;</span>.<span class="ident">into</span>())
 			}
@@ -707,7 +904,7 @@
 			<span class="kw">let</span> <span class="ident">collator_options</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">run</span>.<span class="ident">collator_options</span>();
 
 			<span class="ident">runner</span>.<span class="ident">run_node_until_exit</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> {
-				<span class="kw">let</span> <span class="ident">para_id</span> <span class="op">=</span> <span class="ident">chain_spec::frequency_local::Extensions::try_get</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">config</span>.<span class="ident">chain_spec</span>)
+				<span class="kw">let</span> <span class="ident">para_id</span> <span class="op">=</span> <span class="ident">chain_spec::Extensions::try_get</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">config</span>.<span class="ident">chain_spec</span>)
 					.<span class="ident">map</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">para_id</span>)
 					.<span class="ident">ok_or</span>(<span class="string">&quot;Could not find parachain ID in chain-spec.&quot;</span>)<span class="question-mark">?</span>;
 
@@ -748,11 +945,24 @@
 				<span class="macro">info!</span>(<span class="string">&quot;Parachain Account: {}&quot;</span>, <span class="ident">parachain_account</span>);
 				<span class="macro">info!</span>(<span class="string">&quot;Parachain genesis state: {}&quot;</span>, <span class="ident">genesis_state</span>);
 				<span class="macro">info!</span>(<span class="string">&quot;Is collating: {}&quot;</span>, <span class="kw">if</span> <span class="ident">config</span>.<span class="ident">role</span>.<span class="ident">is_authority</span>() { <span class="string">&quot;yes&quot;</span> } <span class="kw">else</span> { <span class="string">&quot;no&quot;</span> });
-
-				<span class="ident">start_parachain_node</span>(<span class="ident">config</span>, <span class="ident">polkadot_config</span>, <span class="ident">collator_options</span>, <span class="ident">id</span>, <span class="ident">hwbench</span>)
-					.<span class="kw">await</span>
-					.<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="number">0</span>)
-					.<span class="ident">map_err</span>(<span class="ident">Into::into</span>)
+				<span class="kw">match</span> <span class="ident">config</span>.<span class="ident">chain_spec</span>.<span class="ident">identify</span>() {
+					<span class="ident">ChainIdentity::Frequency</span> =&gt;
+						<span class="ident">start_parachain_node</span>::<span class="op">&lt;</span>
+							<span class="ident">frequency_runtime::RuntimeApi</span>,
+							<span class="ident">FrequencyRuntimeExecutor</span>,
+						<span class="op">&gt;</span>(<span class="ident">config</span>, <span class="ident">polkadot_config</span>, <span class="ident">collator_options</span>, <span class="ident">id</span>, <span class="ident">hwbench</span>)
+						.<span class="kw">await</span>
+						.<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="number">0</span>)
+						.<span class="ident">map_err</span>(<span class="ident">Into::into</span>),
+					<span class="ident">ChainIdentity::FrequencyRococo</span> =&gt;
+						<span class="ident">start_parachain_node</span>::<span class="op">&lt;</span>
+							<span class="ident">frequency_rococo_runtime::RuntimeApi</span>,
+							<span class="ident">FrequencyRococoRuntimeExecutor</span>,
+						<span class="op">&gt;</span>(<span class="ident">config</span>, <span class="ident">polkadot_config</span>, <span class="ident">collator_options</span>, <span class="ident">id</span>, <span class="ident">hwbench</span>)
+						.<span class="kw">await</span>
+						.<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="number">0</span>)
+						.<span class="ident">map_err</span>(<span class="ident">Into::into</span>),
+				}
 			})
 		},
 	}

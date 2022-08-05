@@ -1,3 +1,4 @@
 (function() {var implementors = {};
+implementors["frequency_rococo_runtime"] = [{"text":"impl WeightToFeePolynomial for <a class=\"struct\" href=\"frequency_rococo_runtime/struct.WeightToFee.html\" title=\"struct frequency_rococo_runtime::WeightToFee\">WeightToFee</a>","synthetic":false,"types":["frequency_rococo_runtime::WeightToFee"]}];
 implementors["frequency_runtime"] = [{"text":"impl WeightToFeePolynomial for <a class=\"struct\" href=\"frequency_runtime/struct.WeightToFee.html\" title=\"struct frequency_runtime::WeightToFee\">WeightToFee</a>","synthetic":false,"types":["frequency_runtime::WeightToFee"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

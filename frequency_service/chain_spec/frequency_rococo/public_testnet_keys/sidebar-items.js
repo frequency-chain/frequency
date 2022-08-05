@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["COLLATOR_1_SR25519",""],["COLLATOR_2_SR25519",""],["ROCOCO_FRQ_SUDO",""]]};
