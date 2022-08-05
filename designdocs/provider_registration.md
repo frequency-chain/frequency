@@ -24,6 +24,8 @@ Among those questions are:
 1. How does a user become a provider?
 1. What are the attributes of a provider?
 1. How will providers be identified to other network actors?
+1. How does one stop being a provider?
+1. Can provider status be revoked from a provider?
 
 ## Goals and Non-Goals
 This document will discuss the ways in which service providers can register with
@@ -127,7 +129,7 @@ fetching registration events.
 ### Provider Fees
 This document assumes that registration fees will be a fixed amount. It may be prudent, in the future, to determine whether or not registrations are fixed or vary based on the amount of verifiable information given on a registration attempt. The latter may allow us to place more trust in providers that do not have traditional business attributes. Further, the Provider could be required to post a bond instead of or in addition to fee payment.
 ### Provider Deregistration
-Currently, the Provider MSA id cannot be retired once registered. The current version does not entirely outline a way to revoke the Provider's status. In the future, Provider MSA id may be deregistered, with their MSA id removed from the Provider Registry and any associated delegations revoked.
+Currently, the Provider MSA id cannot be retired once registered. The current version does not entirely outline a way to revoke the Provider's status. In the future, Provider can request to revoke their status as a service provider. Provider MSA id may be deregistered, with their MSA id removed from the Provider Registry and any associated delegations revoked.
 
 ## Glossary
 TBD.
