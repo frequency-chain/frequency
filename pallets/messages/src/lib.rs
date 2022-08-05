@@ -92,7 +92,7 @@ pub mod pallet {
 
 		/// The maximum size for an offchain payload.
 		#[pallet::constant]
-		type MaxDsnpOffchainPayloadSizeBytes: Get<u32>;
+		type MaxOffchainPayloadSizeBytes: Get<u32>;
 	}
 
 	#[pallet::pallet]
@@ -199,7 +199,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
 			ensure!(
-				payload_length <= T::MaxDsnpOffchainPayloadSizeBytes::get(),
+				payload_length <= T::MaxOffchainPayloadSizeBytes::get(),
 				Error::<T>::ExceedsMaxMessagePayloadSizeBytes
 			);
 

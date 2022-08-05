@@ -65,7 +65,7 @@ impl system::Config for Test {
 parameter_types! {
 	pub const MaxMessagesPerBlock: u32 = 500;
 	pub const MaxMessagePayloadSizeBytes: u32 = 100;
-	pub const MaxDsnpOffchainPayloadSizeBytes: u32 = 1000;
+	pub const MaxOffchainPayloadSizeBytes: u32 = 1000;
 }
 
 impl std::fmt::Debug for MaxMessagePayloadSizeBytes {
@@ -165,7 +165,7 @@ impl pallet_messages::Config for Test {
 	type WeightInfo = ();
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type MaxMessagePayloadSizeBytes = MaxMessagePayloadSizeBytes;
-	type MaxDsnpOffchainPayloadSizeBytes = MaxDsnpOffchainPayloadSizeBytes;
+	type MaxOffchainPayloadSizeBytes = MaxOffchainPayloadSizeBytes;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
