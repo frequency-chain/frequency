@@ -184,22 +184,22 @@ pub mod pallet {
 		/// * `payload_length` - The size of the payload
 		/// * Returns
 		/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html)
-		#[pallet::weight(T::WeightInfo::add_ipfs_message(payload.cid.get().len() as u32, 1_000))]
+		#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() as u32, 1_000))]
 		pub fn add_ipfs_message(
 			origin: OriginFor<T>,
 			on_behalf_of: Option<MessageSourceId>,
 			schema_id: SchemaId,
-			payload: IPFSPayload,
+			cid: Vec<u8>,
+			payload_length: u32
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
-			let cid: &Vec<u8> = payload.cid.get();
 			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = cid
 				.clone()
 				.try_into()
 				.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
 			ensure!(
-				payload.payload_length <= T::MaxDsnpOffchainPayloadSizeBytes::get(),
+				payload_length <= T::MaxDsnpOffchainPayloadSizeBytes::get(),
 				Error::<T>::ExceedsMaxMessagePayloadSizeBytes
 			);
 

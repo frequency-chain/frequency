@@ -3,9 +3,6 @@ use common_primitives::{messages::MessageResponse, msa::MessageSourceId};
 use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 use sp_std::prelude::*;
-// use cid::multihash::{Code, MultihashDigest};
-// use cid::Cid;
-// use std::convert::TryFrom;
 
 /// A single message type definition.
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
@@ -46,38 +43,13 @@ where
 
 /// Newtype for CID addresses. We can change the inner type as we understand
 /// more about how to structure IPFS addressable content.
-#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct CID(Vec<u8>);
+#[derive(Clone, PartialEq, Debug, Eq)]
+pub struct FrequencyCid(Vec<u8>);
 
-impl CID {
-	/// Constructor
-	pub fn new(vec: Vec<u8>) -> CID {
-		CID(vec)
-	}
-
-	/// Exposes the inner vector
-	pub fn get(&self) -> &Vec<u8> {
-		&self.0
-	}
-}
-
-/// IPFS payloads are defined by two members, a CID address and a payload length
-#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct IPFSPayload {
-	/// IPFS Content address
-	pub cid: CID,
-	/// Size of the IPFS payload
-	pub payload_length: u32,
-}
-
-impl IPFSPayload {
-	/// Constructor
-	pub fn new(cid: CID, payload_length: u32) -> IPFSPayload {
-		IPFSPayload { cid, payload_length }
-	}
+impl FrequencyCid {
 	
-	/// Checks if a CID has been validated properly
-	pub fn is_valid(cid: CID) -> bool {
-		false
+	/// Checks if a given string is a valid CID
+	pub fn is_valid(&self) -> bool {
+		unimplemented!("No way to check CID validity yet")
 	}
 }

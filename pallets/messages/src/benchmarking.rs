@@ -40,16 +40,14 @@ benchmarks! {
 		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - 1;
 		let m in 1 .. MESSAGES;
 		let caller: T::AccountId = whitelisted_caller();
-		let input = vec![1; n as usize];
-		let cid = CID::new(input);
+		let cid = vec![1; n as usize];
 		let payload_length = 1_000;
-		let payload: IPFSPayload = IPFSPayload::new(cid, payload_length);
 
 		for j in 0 .. m {
 			let sid = j % SCHEMAS;
 			assert_ok!(onchain_message::<T>(sid.try_into().unwrap()));
 		}
-	}: _ (RawOrigin::Signed(caller), None, IPFS_SCHEMA_ID, payload)
+	}: _ (RawOrigin::Signed(caller), None, IPFS_SCHEMA_ID, cid, payload_length)
 
 	on_initialize {
 		let m in 1 .. MESSAGES;
