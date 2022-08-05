@@ -16,6 +16,8 @@
 pub mod messages;
 /// Structs and traits for the MSA pallet.
 pub mod msa;
+/// Node level primitives.
+pub mod node;
 /// Structs and traits for parquet
 pub mod parquet;
 /// Structs and traits for the Schema pallet
