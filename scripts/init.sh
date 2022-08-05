@@ -3,7 +3,7 @@
 set -e
 
 cmd=$1
-chain_spec="${RAW_PARACHAIN_CHAIN_SPEC:-./res/genesis/rococo-local-frequency-2000-raw.json}"
+chain_spec="${RAW_PARACHAIN_CHAIN_SPEC:-./res/genesis/local/rococo-local-frequency-2000-raw.json}"
 # The runtime we want to use
 parachain="${PARA_CHAIN_CONFIG:-frequency-local}"
 # The parachain Id we want to use

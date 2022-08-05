@@ -5,9 +5,9 @@ use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-use frequency_runtime::{Block, RuntimeApi};
 use log::info;
 
+use common_primitives::node::Block;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -20,10 +20,40 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::net::SocketAddr;
 
+enum ChainIdentity {
+	Frequency,
+	FrequencyRococo,
+}
+
+trait IdentifyChain {
+	fn identify(&self) -> ChainIdentity;
+}
+
+impl IdentifyChain for dyn sc_service::ChainSpec {
+	fn identify(&self) -> ChainIdentity {
+		if self.id().contains("frequency_rococo") ||
+			self.id().contains("rococo") ||
+			self.id().contains("testnet")
+		{
+			ChainIdentity::FrequencyRococo
+		} else {
+			ChainIdentity::Frequency
+		}
+	}
+}
+
+impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
+	fn identify(&self) -> ChainIdentity {
+		<dyn sc_service::ChainSpec>::identify(self)
+	}
+}
+
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	Ok(match id {
 		"frequency_dev" | "dev" => Box::new(chain_spec::frequency_local::development_config()),
 		"frequency_local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
+		"frequency_rococo" | "rococo" | "testnet" =>
+			Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet()),
 		"" | "local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
 		path => Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(
 			std::path::PathBuf::from(path),
@@ -45,7 +75,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn description() -> String {
-		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
+		"Frequency\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
 		frequency <parachain-args> -- <relay-chain-args>"
@@ -68,8 +98,11 @@ impl SubstrateCli for Cli {
 		load_spec(id)
 	}
 
-	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&frequency_runtime::VERSION
+	fn native_runtime_version(spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+		match spec.identify() {
+			ChainIdentity::Frequency => &frequency_runtime::VERSION,
+			ChainIdentity::FrequencyRococo => &frequency_rococo_runtime::VERSION,
+		}
 	}
 }
 
@@ -83,7 +116,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn description() -> String {
-		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
+		"Frequency\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
 		frequency <parachain-args> -- <relay-chain-args>"
@@ -114,19 +147,38 @@ impl SubstrateCli for RelayChainCli {
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
-		runner.async_run(|$config| {
-			let $components = new_partial::<
-				RuntimeApi,
-				TemplateRuntimeExecutor,
-				_
-			>(
-				&$config,
-				parachain_build_import_queue,
-				false,
-			)?;
-			let task_manager = $components.task_manager;
-			{ $( $code )* }.map(|v| (v, task_manager))
-		})
+		match runner.config().chain_spec.identify() {
+			ChainIdentity::Frequency => {
+				runner.async_run(|$config| {
+					let $components = new_partial::<
+					frequency_runtime::RuntimeApi,
+						FrequencyRuntimeExecutor,
+						_
+					>(
+						&$config,
+						parachain_build_import_queue,
+						false,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			}
+			ChainIdentity::FrequencyRococo => {
+				runner.async_run(|$config| {
+					let $components = new_partial::<
+					frequency_rococo_runtime::RuntimeApi,
+						FrequencyRococoRuntimeExecutor,
+						_
+					>(
+						&$config,
+						parachain_build_import_queue,
+						false,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			}
+		}
 	}}
 }
 
@@ -204,31 +256,63 @@ pub fn run() -> Result<()> {
 			match cmd {
 				BenchmarkCmd::Pallet(cmd) =>
 					if cfg!(feature = "runtime-benchmarks") {
-						runner.sync_run(|config| cmd.run::<Block, TemplateRuntimeExecutor>(config))
+						match runner.config().chain_spec.identify() {
+							ChainIdentity::Frequency => runner.sync_run(|config| {
+								cmd.run::<frequency_runtime::Block, FrequencyRuntimeExecutor>(
+									config,
+								)
+							}),
+							ChainIdentity::FrequencyRococo => runner.sync_run(|config| {
+								cmd.run::<frequency_rococo_runtime::Block, FrequencyRococoRuntimeExecutor>(config)
+							}),
+						}
 					} else {
 						Err("Benchmarking wasn't enabled when building the node. \
 					You can enable it with `--features runtime-benchmarks`."
 							.into())
 					},
-				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
-					let partials = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
-						&config,
-						parachain_build_import_queue,
-						false,
-					)?;
-					cmd.run(partials.client)
-				}),
-				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
-					let partials = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
-						&config,
-						parachain_build_import_queue,
-						false,
-					)?;
-					let db = partials.backend.expose_db();
-					let storage = partials.backend.expose_storage();
+				BenchmarkCmd::Block(cmd) => match runner.config().chain_spec.identify() {
+					ChainIdentity::Frequency => runner.sync_run(|config| {
+						let partials = new_partial::<
+							frequency_runtime::RuntimeApi,
+							FrequencyRuntimeExecutor,
+							_,
+						>(&config, parachain_build_import_queue, false)?;
+						cmd.run(partials.client)
+					}),
+					ChainIdentity::FrequencyRococo => runner.sync_run(|config| {
+						let partials = new_partial::<
+							frequency_rococo_runtime::RuntimeApi,
+							FrequencyRococoRuntimeExecutor,
+							_,
+						>(&config, parachain_build_import_queue, false)?;
+						cmd.run(partials.client)
+					}),
+				},
+				BenchmarkCmd::Storage(cmd) => match runner.config().chain_spec.identify() {
+					ChainIdentity::Frequency => runner.sync_run(|config| {
+						let partials = new_partial::<
+							frequency_runtime::RuntimeApi,
+							FrequencyRuntimeExecutor,
+							_,
+						>(&config, parachain_build_import_queue, false)?;
+						let db = partials.backend.expose_db();
+						let storage = partials.backend.expose_storage();
 
-					cmd.run(config, partials.client.clone(), db, storage)
-				}),
+						cmd.run(config, partials.client.clone(), db, storage)
+					}),
+					ChainIdentity::FrequencyRococo => runner.sync_run(|config| {
+						let partials = new_partial::<
+							frequency_rococo_runtime::RuntimeApi,
+							FrequencyRococoRuntimeExecutor,
+							_,
+						>(&config, parachain_build_import_queue, false)?;
+						let db = partials.backend.expose_db();
+						let storage = partials.backend.expose_storage();
+
+						cmd.run(config, partials.client.clone(), db, storage)
+					}),
+				},
 				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
 				BenchmarkCmd::Machine(cmd) =>
 					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
@@ -243,10 +327,18 @@ pub fn run() -> Result<()> {
 				let task_manager =
 					TaskManager::new(runner.config().tokio_handle.clone(), *registry)
 						.map_err(|e| format!("Error: {:?}", e))?;
-
-				runner.async_run(|config| {
-					Ok((cmd.run::<Block, TemplateRuntimeExecutor>(config), task_manager))
-				})
+				match runner.config().chain_spec.identify() {
+					ChainIdentity::Frequency => {
+						runner.async_run(|config| {
+							Ok((cmd.run::<frequency_runtime::Block, FrequencyRuntimeExecutor>(config), task_manager))
+						})
+					}							,
+					ChainIdentity::FrequencyRococo => {
+						runner.async_run(|config| {
+							Ok((cmd.run::<frequency_rococo_runtime::Block, FrequencyRococoRuntimeExecutor>(config), task_manager))
+						})
+					}
+				}
 			} else {
 				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
 			}
@@ -256,7 +348,7 @@ pub fn run() -> Result<()> {
 			let collator_options = cli.run.collator_options();
 
 			runner.run_node_until_exit(|config| async move {
-				let para_id = chain_spec::frequency_local::Extensions::try_get(&*config.chain_spec)
+				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
 					.map(|e| e.para_id)
 					.ok_or("Could not find parachain ID in chain-spec.")?;
 
@@ -297,11 +389,24 @@ pub fn run() -> Result<()> {
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
-
-				start_parachain_node(config, polkadot_config, collator_options, id, hwbench)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
+				match config.chain_spec.identify() {
+					ChainIdentity::Frequency =>
+						start_parachain_node::<
+							frequency_runtime::RuntimeApi,
+							FrequencyRuntimeExecutor,
+						>(config, polkadot_config, collator_options, id, hwbench)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into),
+					ChainIdentity::FrequencyRococo =>
+						start_parachain_node::<
+							frequency_rococo_runtime::RuntimeApi,
+							FrequencyRococoRuntimeExecutor,
+						>(config, polkadot_config, collator_options, id, hwbench)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into),
+				}
 			})
 		},
 	}
