@@ -423,7 +423,6 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = [u8; 8];
 }
 
-
 pub const MILLICENTS: Balance = 1_000_000_000;
 pub const CENTS: Balance = 1_000 * MILLICENTS; // assume this is worth about a cent.
 pub const DOLLARS: Balance = 100 * CENTS;
@@ -468,6 +467,24 @@ impl pallet_preimage::Config for Runtime {
 	type ByteDeposit = PreimageByteDeposit;
 }
 
+parameter_types! {
+	pub const CouncilMotionDuration: BlockNumber = 5 * DAYS;
+	pub const CouncilMaxProposals: u32 = 25;
+	pub const CouncilMaxMembers: u32 = 1;
+}
+
+type CouncilCollective = pallet_collective::Instance1;
+impl pallet_collective::Config<CouncilCollective> for Runtime {
+	type Origin = Origin;
+	type Proposal = Call;
+	type Event = Event;
+	type MotionDuration = CouncilMotionDuration;
+	type MaxProposals = CouncilMaxProposals;
+	type MaxMembers = CouncilMaxMembers;
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+}
+
 // Config from
 // https://github.com/paritytech/substrate/blob/367dab0d4bd7fd7b6c222dd15c753169c057dd42/bin/node/runtime/src/lib.rs#L880
 parameter_types! {
@@ -501,11 +518,10 @@ impl pallet_democracy::Config for Runtime {
 	type VoteLockingPeriod = EnactmentPeriod; // Same as EnactmentPeriod
 	type VotingPeriod = VotingPeriod;
 
-
 	// See https://paritytech.github.io/substrate/master/pallet_democracy/index.html for
 	// the descriptions of these origins.
 	type ExternalDefaultOrigin = EnsureRoot<AccountId>;
-	type ExternalMajorityOrigin =  EnsureRoot<AccountId>;
+	type ExternalMajorityOrigin = EnsureRoot<AccountId>;
 	type ExternalOrigin = EnsureRoot<AccountId>;
 	type FastTrackOrigin = EnsureRoot<AccountId>;
 	type InstantOrigin = EnsureRoot<AccountId>;
@@ -513,8 +529,8 @@ impl pallet_democracy::Config for Runtime {
 	type CancellationOrigin = EnsureRoot<AccountId>;
 	type CancelProposalOrigin = EnsureRoot<AccountId>;
 	type BlacklistOrigin = EnsureRoot<AccountId>;
-	type VetoOrigin = ;
-	type OperationalPreimageOrigin = ;
+	type VetoOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
+	type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
 
 	// // See https://paritytech.github.io/substrate/master/pallet_democracy/index.html for
 	// // the descriptions of these origins.
@@ -704,9 +720,11 @@ construct_runtime!(
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T> }= 4,
-		Democracy: pallet_democracy = 5,
-		Scheduler: pallet_scheduler = 6,
-		Preimage: pallet_preimage = 7,
+		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 5,
+		// Council: pallet_collective::<Instance1>,
+		Democracy: pallet_democracy::{Pallet, Call, Config<T>, Storage, Event<T> } = 6,
+		Council: pallet_collective::<Instance1>::{Pallet, Call, Config<T,I>, Storage, Event<T>, Origin<T>} = 7,
+		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T> } = 8,
 
 		Utility: pallet_utility::{Pallet, Call, Event} = 8,
 
@@ -746,6 +764,7 @@ mod benches {
 	define_benchmarks!(
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_balances, Balances]
+		// [pallet_collective, Collective]
 		[pallet_scheduler, Scheduler]
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_timestamp, Timestamp]

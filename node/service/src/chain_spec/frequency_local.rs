@@ -175,5 +175,7 @@ fn testnet_genesis(
 		},
 		schemas: Default::default(),
 		vesting: Default::default(),
+		democracy: Default::default(),
+		council: Default::default(),
 	}
 }

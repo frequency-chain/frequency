@@ -119,6 +119,8 @@ std = [
   "pallet-aura/std",
   "pallet-authorship/std",
   "pallet-balances/std",
+  "pallet-collective/std",
+  "pallet-democracy/std",
   "pallet-collator-selection/std",
   "pallet-scheduler/std",
   "pallet-session/std",
