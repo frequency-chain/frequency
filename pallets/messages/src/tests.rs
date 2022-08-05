@@ -1,7 +1,5 @@
 use super::{mock::*, Event as MessageEvent};
-use crate::{
-	BlockMessages, Config, Error, Message, Messages,
-};
+use crate::{BlockMessages, Config, Error, Message, Messages};
 use common_primitives::{
 	messages::{BlockPaginationRequest, MessageResponse},
 	schema::*,
@@ -475,8 +473,13 @@ fn valid_payload_location() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = IPFS_SCHEMA_ID;
-		let info_result =
-			MessagesPallet::add_ipfs_message(Origin::signed(caller_1), None, schema_id_1, Vec::from("foo"), 1);
+		let info_result = MessagesPallet::add_ipfs_message(
+			Origin::signed(caller_1),
+			None,
+			schema_id_1,
+			Vec::from("foo"),
+			1,
+		);
 
 		assert_eq!(info_result.is_ok(), true);
 		let info: PostDispatchInfo = info_result.unwrap();
@@ -493,7 +496,13 @@ fn invalid_payload_location_ipfs() {
 		let schema_id_1: SchemaId = 1;
 
 		assert_noop!(
-			MessagesPallet::add_ipfs_message(Origin::signed(caller_1), None, schema_id_1, Vec::from("foo"), 1),
+			MessagesPallet::add_ipfs_message(
+				Origin::signed(caller_1),
+				None,
+				schema_id_1,
+				Vec::from("foo"),
+				1
+			),
 			Error::<Test>::InvalidPayloadLocation
 		);
 	});

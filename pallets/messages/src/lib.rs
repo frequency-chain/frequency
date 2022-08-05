@@ -190,7 +190,7 @@ pub mod pallet {
 			on_behalf_of: Option<MessageSourceId>,
 			schema_id: SchemaId,
 			cid: Vec<u8>,
-			payload_length: u32
+			payload_length: u32,
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
 			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = cid

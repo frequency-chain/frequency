@@ -47,7 +47,6 @@ where
 pub struct FrequencyCid(Vec<u8>);
 
 impl FrequencyCid {
-	
 	/// Checks if a given string is a valid CID
 	pub fn is_valid(&self) -> bool {
 		unimplemented!("No way to check CID validity yet")
