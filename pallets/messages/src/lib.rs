@@ -205,7 +205,7 @@ pub mod pallet {
 
 			Ok(Some(T::WeightInfo::add_ipfs_message(cid.len() as u32, message.index as u32)).into())
 		}
-		/// Gets a messages for a given schema-id and block-number.
+		/// Add an on-chain message for a given schema-id.
 		/// # Arguments
 		/// * `origin` - A signed transaction origin from the provider
 		/// * `on_behalf_of` - Optional. The msa id of delegate.
