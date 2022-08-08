@@ -538,9 +538,9 @@ impl<T: Config> Pallet<T> {
 
 	/// Checks that the MSA for `who` is the same as `msa_id`
 	pub fn ensure_msa_owner(who: &T::AccountId, msa_id: MessageSourceId) -> DispatchResult {
-		let signer_msa_id = Self::get_owner_of(who).ok_or(Error::<T>::NoKeyExists)?;
+		let provider_msa_id = Self::get_owner_of(who).ok_or(Error::<T>::NoKeyExists)?;
 
-		ensure!(signer_msa_id == msa_id, Error::<T>::NotMsaOwner);
+		ensure!(provider_msa_id == msa_id, Error::<T>::NotMsaOwner);
 
 		Ok(())
 	}

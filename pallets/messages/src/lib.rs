@@ -198,11 +198,11 @@ pub mod pallet {
 				Error::<T>::InvalidPayloadLocation
 			);
 
-			let signer_msa_id = Self::find_msa_id(&provider_key, None)?;
-			let original_msa_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
+			let provider_msa_id = Self::find_msa_id(&provider_key, None)?;
+			let msa_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
 			let message =
-				Self::add_message(signer_msa_id, original_msa_id, bounded_payload, schema_id)?;
+				Self::add_message(provider_msa_id, msa_id, bounded_payload, schema_id)?;
 
 			Ok(Some(T::WeightInfo::add_ipfs_message(cid.len() as u32, message.index as u32)).into())
 		}
@@ -234,11 +234,11 @@ pub mod pallet {
 				Error::<T>::InvalidPayloadLocation
 			);
 
-			let signer_msa_id = Self::find_msa_id(&provider_key, None)?;
-			let original_msa_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
+			let provider_msa_id = Self::find_msa_id(&provider_key, None)?;
+			let msa_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
 			let message =
-				Self::add_message(signer_msa_id, original_msa_id, bounded_payload, schema_id)?;
+				Self::add_message(provider_msa_id, msa_id, bounded_payload, schema_id)?;
 
 			Ok(Some(T::WeightInfo::add_onchain_message(
 				message.payload.len() as u32,
@@ -259,8 +259,8 @@ impl<T: Config> Pallet<T> {
 	/// # Returns
 	/// * Result<Message<T::MaxMessagePayloadSizeBytes> - Returns the message stored.
 	pub fn add_message(
-		signer_msa_id: MessageSourceId,
-		original_msa_id: MessageSourceId,
+		provider_msa_id: MessageSourceId,
+		msa_id: MessageSourceId,
 		payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes>,
 		schema_id: SchemaId,
 	) -> Result<Message<T::MaxMessagePayloadSizeBytes>, DispatchError> {
@@ -273,8 +273,8 @@ impl<T: Config> Pallet<T> {
 
 				let msg = Message {
 					payload, // size is checked on top of extrinsic
-					signer_msa_id,
-					original_msa_id,
+					provider_msa_id,
+					msa_id,
 					index: current_size,
 				};
 

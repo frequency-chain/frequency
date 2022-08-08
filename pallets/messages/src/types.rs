@@ -13,13 +13,13 @@ where
 {
 	///  Data structured by the associated schema's model.
 	pub payload: BoundedVec<u8, MaxDataSize>,
-	/// Message source account id of the MSA that signed the transaction. This may be the same id
-	/// as contained in `original_msa_id`, indicating that the transaction to add the message was
-	/// signed by the originator. An id differing from that of `original_msa_id` indicates that a
-	/// provider was delegated by `original_msa_id` to send this message on its behalf.
-	pub signer_msa_id: MessageSourceId,
+	/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
+	/// indicating that the original source MSA is acting as its own provider. An id differing from that
+	/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
+	/// its behalf.
+	pub provider_msa_id: MessageSourceId,
 	///  Message source account id (the original source).
-	pub original_msa_id: MessageSourceId,
+	pub msa_id: MessageSourceId,
 	///  Stores index of message in block to keep total order.
 	pub index: u16,
 }
@@ -34,9 +34,9 @@ where
 		block_number: BlockNumber,
 	) -> MessageResponse<BlockNumber> {
 		MessageResponse {
-			signer_msa_id: self.signer_msa_id,
+			provider_msa_id: self.provider_msa_id,
 			index: self.index,
-			original_msa_id: self.original_msa_id,
+			msa_id: self.msa_id,
 			block_number,
 			payload: self.payload.clone().into_inner(),
 		}

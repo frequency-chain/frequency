@@ -28,8 +28,8 @@ export default {
     },
     MessageResponse: {
       payload: "Vec<u8>", //  Serialized data in a user-defined schema format
-      signer_msa_id: "MessageSourceId", //  Message source account id of the MSA that signed the transaction.
-      original_msa_id: "MessageSourceId", //  Message source account id (the original source)
+      provider_msa_id: "MessageSourceId", //  Message source account id of the Provider
+      msa_id: "MessageSourceId", //  Message source account id (the original source)
       index: "u16", // index in block to get total order
       block_number: "BlockNumber",
     },
