@@ -635,15 +635,15 @@
 		<span class="doccomment">/// * `payload_length` - The size of the payload</span>
 		<span class="doccomment">/// * Returns</span>
 		<span class="doccomment">/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html)</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="ident">T::WeightInfo::add_ipfs_message</span>(<span class="ident">payload</span>.<span class="ident">cid</span>.<span class="ident">get</span>().<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>, <span class="number">1_000</span>))]</span>
+		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="ident">T::WeightInfo::add_ipfs_message</span>(<span class="ident">cid</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>, <span class="number">1_000</span>))]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_ipfs_message</span>(
 			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
 			<span class="ident">on_behalf_of</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span><span class="op">&gt;</span>,
 			<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>,
-			<span class="ident">payload</span>: <span class="ident">IPFSPayload</span>,
+			<span class="ident">cid</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+			<span class="ident">_payload_length</span>: <span class="ident">u32</span>,
 		) -&gt; <span class="ident">DispatchResultWithPostInfo</span> {
 			<span class="kw">let</span> <span class="ident">provider_key</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
-			<span class="kw">let</span> <span class="ident">cid</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">payload</span>.<span class="ident">cid</span>.<span class="ident">get</span>();
 			<span class="kw">let</span> <span class="ident">bounded_payload</span>: <span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">T::MaxMessagePayloadSizeBytes</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">cid</span>
 				.<span class="ident">clone</span>()
 				.<span class="ident">try_into</span>()
