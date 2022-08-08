@@ -89,10 +89,6 @@ pub mod pallet {
 		/// The maximum size of a message payload bytes.
 		#[pallet::constant]
 		type MaxMessagePayloadSizeBytes: Get<u32> + Clone;
-
-		/// The maximum size for an offchain payload.
-		#[pallet::constant]
-		type MaxOffchainPayloadSizeBytes: Get<u32>;
 	}
 
 	#[pallet::pallet]
@@ -190,18 +186,13 @@ pub mod pallet {
 			on_behalf_of: Option<MessageSourceId>,
 			schema_id: SchemaId,
 			cid: Vec<u8>,
-			payload_length: u32,
+			_payload_length: u32,
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
 			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = cid
 				.clone()
 				.try_into()
 				.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
-
-			ensure!(
-				payload_length <= T::MaxOffchainPayloadSizeBytes::get(),
-				Error::<T>::ExceedsMaxMessagePayloadSizeBytes
-			);
 
 			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);

@@ -525,39 +525,3 @@ fn invalid_payload_location_onchain() {
 		);
 	});
 }
-
-#[test]
-fn offchain_payload_size() {
-	new_test_ext().execute_with(|| {
-		// arrange
-		let caller_1 = 5;
-		let schema_id_1: SchemaId = 1;
-		let cid = Vec::from("{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}".as_bytes());
-
-		// act
-		assert_noop!(MessagesPallet::add_ipfs_message(Origin::signed(caller_1), None, schema_id_1, cid, 1), Error::<Test>::ExceedsMaxMessagePayloadSizeBytes);
-	});
-}
-
-#[test]
-fn offchain_payload_size_exceeded() {
-	new_test_ext().execute_with(|| {
-		// arrange
-		let caller_1 = 5;
-		let schema_id_1: SchemaId = 1;
-		let cid = Vec::from("{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}".as_bytes());
-		let payload_length = 1024 * 128 + 1;
-
-		// act
-		assert_noop!(
-			MessagesPallet::add_ipfs_message(
-				Origin::signed(caller_1),
-				None,
-				IPFS_SCHEMA_ID,
-				cid,
-				payload_length,
-			),
-			Error::<Test>::ExceedsMaxMessagePayloadSizeBytes
-		);
-	});
-}
