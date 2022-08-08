@@ -201,8 +201,7 @@ pub mod pallet {
 			let provider_msa_id = Self::find_msa_id(&provider_key, None)?;
 			let msa_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
-			let message =
-				Self::add_message(provider_msa_id, msa_id, bounded_payload, schema_id)?;
+			let message = Self::add_message(provider_msa_id, msa_id, bounded_payload, schema_id)?;
 
 			Ok(Some(T::WeightInfo::add_ipfs_message(cid.len() as u32, message.index as u32)).into())
 		}
@@ -237,8 +236,7 @@ pub mod pallet {
 			let provider_msa_id = Self::find_msa_id(&provider_key, None)?;
 			let msa_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
-			let message =
-				Self::add_message(provider_msa_id, msa_id, bounded_payload, schema_id)?;
+			let message = Self::add_message(provider_msa_id, msa_id, bounded_payload, schema_id)?;
 
 			Ok(Some(T::WeightInfo::add_onchain_message(
 				message.payload.len() as u32,
