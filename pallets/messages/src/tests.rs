@@ -1,8 +1,5 @@
 use super::{mock::*, Event as MessageEvent};
-use crate::{
-	types::{IPFSPayload, CID},
-	BlockMessages, Config, Error, Message, Messages,
-};
+use crate::{BlockMessages, Config, Error, Message, Messages};
 use common_primitives::{
 	messages::{BlockPaginationRequest, MessageResponse},
 	schema::*,
@@ -476,9 +473,13 @@ fn valid_payload_location() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = IPFS_SCHEMA_ID;
-		let payload: IPFSPayload = IPFSPayload::new(CID::new(Vec::from("foo")), 1);
-		let info_result =
-			MessagesPallet::add_ipfs_message(Origin::signed(caller_1), None, schema_id_1, payload);
+		let info_result = MessagesPallet::add_ipfs_message(
+			Origin::signed(caller_1),
+			None,
+			schema_id_1,
+			Vec::from("foo"),
+			1,
+		);
 
 		assert_eq!(info_result.is_ok(), true);
 		let info: PostDispatchInfo = info_result.unwrap();
@@ -493,10 +494,15 @@ fn invalid_payload_location_ipfs() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = 1;
-		let payload: IPFSPayload = IPFSPayload::new(CID::new(Vec::from("foo")), 1);
 
 		assert_noop!(
-			MessagesPallet::add_ipfs_message(Origin::signed(caller_1), None, schema_id_1, payload,),
+			MessagesPallet::add_ipfs_message(
+				Origin::signed(caller_1),
+				None,
+				schema_id_1,
+				Vec::from("foo"),
+				1
+			),
 			Error::<Test>::InvalidPayloadLocation
 		);
 	});
@@ -517,28 +523,5 @@ fn invalid_payload_location_onchain() {
 			),
 			Error::<Test>::InvalidPayloadLocation
 		);
-	});
-}
-
-#[test]
-fn ipfs_payload() {
-	new_test_ext().execute_with(|| {
-		let cid = CID::new(Vec::from("foo"));
-		let payload = IPFSPayload::new(cid, 1);
-		assert_eq!(payload.cid.get().len(), 3);
-	});
-}
-
-#[test]
-fn offchain_payload_size() {
-	new_test_ext().execute_with(|| {
-		// arrange
-		let caller_1 = 5;
-		let schema_id_1: SchemaId = 1;
-		let cid = CID::new(Vec::from("{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}".as_bytes()));
-		let payload = IPFSPayload::new(cid, 1);
-
-		// act
-		assert_noop!(MessagesPallet::add_ipfs_message(Origin::signed(caller_1), None, schema_id_1, payload), Error::<Test>::ExceedsMaxMessagePayloadSizeBytes);
 	});
 }
