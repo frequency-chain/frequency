@@ -1,0 +1,97 @@
+name: Build Frequency Binary and Specs
+
+on:
+  push:
+    tags:
+      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9][0-9]'
+  pull_request:
+
+jobs:
+  build_binary_and_specs:
+    name: ${{ matrix.target }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        target: [build-node]
+        rust_toolchain: [nightly-2022-06-27]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
+    steps:
+      - name: Free space on Ubuntu
+        if: ${{ matrix.os }} == 'ubuntu-latest'
+        run: |
+          echo "Pre cleanup"
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Post cleanup"
+          df -h
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      # Rust
+      - name: Install latest nightly
+        if: ${{ steps.filter.outputs.rust == 'true' }}
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          default: true
+      - name: Cache
+        if: ${{ steps.filter.outputs.rust == 'true' }}
+        uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ env.RUST_TOOLCHAIN }}
+      - name: Run Build
+        if: ${{ steps.filter.outputs.rust == 'true' }}
+        run: ./ci/build.sh
+        env:
+          TARGET: build-node
+      - name: Run Srtool For Local Wasm
+        run: ./ci/build.sh
+        env:
+          TARGET: build-runtime
+          RUST_TOOLCHAIN: ${{ env.RUST_TOOLCHAIN  }}
+          PACKAGE: frequency-runtime
+          RUNTIME_DIR: runtime/frequency
+      - name: Run Srtool For Rococo Wasm
+        run: ./ci/build.sh
+        env:
+          TARGET: build-runtime
+          RUST_TOOLCHAIN: ${{ env.RUST_TOOLCHAIN  }}
+          PACKAGE: frequency-rococo-runtime
+          RUNTIME_DIR: runtime/frequency-rococo
+      - name: Create tarball  of deterministic wasm from srtool 📦
+        if: matrix.target == 'build-runtime' && matrix.package == 'frequency-runtime'
+        run: tar -cvf frequency_wasm_local.tar ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.compact.wasm ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.wasm
+      - name: Upload frequency deterministic wasm to artifacts 📦
+        if: matrix.target == 'build-runtime' && matrix.package == 'frequency-runtime'
+        uses: actions/upload-artifact@v3
+        with:
+          name: frequency_wasm_srtool_local-${{ github.sha }}
+          path: frequency_wasm_local.tar
+      - name: Create tarball  of deterministic wasm from srtool for rococo📦
+        if: matrix.target == 'build-runtime' && matrix.package == 'frequency-rococo-runtime'
+        run: tar -cvf frequency_wasm_rococo.tar ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.compressed.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.wasm
+      - name: Upload frequency deterministic wasm to artifacts for rococo 📦
+        if: matrix.target == 'build-runtime' && matrix.package == 'frequency-rococo-runtime'
+        uses: actions/upload-artifact@v3
+        with:
+          name: frequency_wasm_srtool_rococo-${{ github.sha }}
+          path: frequency_wasm_rococo.tar
+      - name: Build Frequency related specs and wasm 📝
+        run: ./scripts/generate_specs.sh 2000 build-local && ./scripts/generate_specs.sh 4044 build-testnet
+      - name: Create tarball of local specs and wasm 📦
+        run: tar -czvf frequency_specs_local.tar -C ./res/genesis/local
+      - name: Upload frequency local spec and wasm artifacts 📦
+        uses: actions/upload-artifact@v3
+        with:
+          name: frequency_specs_local-${{ github.sha }}
+          path: frequency_specs_local.tar
+      - name: Create tarball of rococo spec and wasm 📦
+        run: tar -czvf frequency_specs_rococo_testnet.tar -C ./res/genesis/testnet
+      - name: Upload frequency rococo spec and wasm artifacts 📦
+        uses: actions/upload-artifact@v3
+        with:
+          name: frequency_specs_rococo_testnet-${{ github.sha }}
+          path: frequency_specs_rococo_testnet.tar
