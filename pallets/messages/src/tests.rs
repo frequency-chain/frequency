@@ -1,8 +1,5 @@
 use super::{mock::*, Event as MessageEvent};
-use crate::{
-	types::{IPFSPayload, CID},
-	BlockMessages, Config, Error, Message, Messages,
-};
+use crate::{BlockMessages, Config, Error, Message, Messages};
 use common_primitives::{
 	messages::{BlockPaginationRequest, MessageResponse},
 	schema::*,
@@ -24,7 +21,7 @@ fn populate_messages(schema_id: SchemaId, message_per_block: Vec<u32>) {
 				msa_id: 10,
 				payload: payload.clone().try_into().unwrap(),
 				index: counter,
-				provider_key: 1,
+				provider_msa_id: 1,
 			})
 			.unwrap();
 			counter += 1;
@@ -69,7 +66,7 @@ fn add_message_should_store_message_on_temp_storage() {
 					msa_id: get_msa_from_account(caller_1),
 					payload: message_payload_1.try_into().unwrap(),
 					index: 0,
-					provider_key: caller_1
+					provider_msa_id: get_msa_from_account(caller_1)
 				},
 				schema_id_1
 			)
@@ -82,7 +79,7 @@ fn add_message_should_store_message_on_temp_storage() {
 					msa_id: get_msa_from_account(caller_2),
 					payload: message_payload_2.try_into().unwrap(),
 					index: 1,
-					provider_key: caller_2
+					provider_msa_id: get_msa_from_account(caller_2)
 				},
 				schema_id_2
 			)
@@ -253,7 +250,7 @@ fn get_messages_by_schema_with_valid_request_should_return_paginated() {
 				msa_id: 10,
 				payload: Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes()),
 				index: from_index as u16,
-				provider_key: 1,
+				provider_msa_id: 1,
 				block_number: 0
 			}
 		);
@@ -401,7 +398,7 @@ fn add_message_via_valid_delegate_should_pass() {
 					msa_id: message_producer,
 					payload: message_payload_1.try_into().unwrap(),
 					index: 0,
-					provider_key: caller_1
+					provider_msa_id: get_msa_from_account(caller_1)
 				},
 				schema_id_1
 			)
@@ -414,7 +411,7 @@ fn add_message_via_valid_delegate_should_pass() {
 					msa_id: message_producer,
 					payload: message_payload_2.try_into().unwrap(),
 					index: 1,
-					provider_key: caller_2
+					provider_msa_id: get_msa_from_account(caller_2)
 				},
 				schema_id_2
 			)
@@ -476,9 +473,13 @@ fn valid_payload_location() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = IPFS_SCHEMA_ID;
-		let payload: IPFSPayload = IPFSPayload::new(CID::new(Vec::from("foo")), 1);
-		let info_result =
-			MessagesPallet::add_ipfs_message(Origin::signed(caller_1), None, schema_id_1, payload);
+		let info_result = MessagesPallet::add_ipfs_message(
+			Origin::signed(caller_1),
+			None,
+			schema_id_1,
+			Vec::from("foo"),
+			1,
+		);
 
 		assert_eq!(info_result.is_ok(), true);
 		let info: PostDispatchInfo = info_result.unwrap();
@@ -493,10 +494,15 @@ fn invalid_payload_location_ipfs() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = 1;
-		let payload: IPFSPayload = IPFSPayload::new(CID::new(Vec::from("foo")), 1);
 
 		assert_noop!(
-			MessagesPallet::add_ipfs_message(Origin::signed(caller_1), None, schema_id_1, payload,),
+			MessagesPallet::add_ipfs_message(
+				Origin::signed(caller_1),
+				None,
+				schema_id_1,
+				Vec::from("foo"),
+				1
+			),
 			Error::<Test>::InvalidPayloadLocation
 		);
 	});
@@ -517,28 +523,5 @@ fn invalid_payload_location_onchain() {
 			),
 			Error::<Test>::InvalidPayloadLocation
 		);
-	});
-}
-
-#[test]
-fn ipfs_payload() {
-	new_test_ext().execute_with(|| {
-		let cid = CID::new(Vec::from("foo"));
-		let payload = IPFSPayload::new(cid, 1);
-		assert_eq!(payload.cid.get().len(), 3);
-	});
-}
-
-#[test]
-fn offchain_payload_size() {
-	new_test_ext().execute_with(|| {
-		// arrange
-		let caller_1 = 5;
-		let schema_id_1: SchemaId = 1;
-		let cid = CID::new(Vec::from("{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}".as_bytes()));
-		let payload = IPFSPayload::new(cid, 1);
-
-		// act
-		assert_noop!(MessagesPallet::add_ipfs_message(Origin::signed(caller_1), None, schema_id_1, payload), Error::<Test>::ExceedsMaxMessagePayloadSizeBytes);
 	});
 }
