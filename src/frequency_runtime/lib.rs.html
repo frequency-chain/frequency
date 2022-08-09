@@ -1666,9 +1666,9 @@
 	}
 
 	<span class="comment">// Unfinished runtime APIs</span>
-	<span class="kw">impl</span> <span class="ident">pallet_messages_runtime_api::MessagesApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">BlockNumber</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+	<span class="kw">impl</span> <span class="ident">pallet_messages_runtime_api::MessagesApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">BlockNumber</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 		<span class="kw">fn</span> <span class="ident">get_messages_by_schema</span>(<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>, <span class="ident">pagination</span>: <span class="ident">BlockPaginationRequest</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) -&gt;
-			<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">BlockPaginationResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
+			<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">BlockPaginationResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
 			<span class="ident">Messages::get_messages_by_schema</span>(<span class="ident">schema_id</span>, <span class="ident">pagination</span>)
 		}
 	}
