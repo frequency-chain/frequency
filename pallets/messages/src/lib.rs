@@ -102,10 +102,7 @@ pub mod pallet {
 	#[pallet::getter(fn get_block_messages)]
 	pub(super) type BlockMessages<T: Config> = StorageValue<
 		_,
-		BoundedVec<
-			(Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, SchemaId),
-			T::MaxMessagesPerBlock,
-		>,
+		BoundedVec<(Message<T::MaxMessagePayloadSizeBytes>, SchemaId), T::MaxMessagesPerBlock>,
 		ValueQuery,
 	>;
 
@@ -118,7 +115,7 @@ pub mod pallet {
 		T::BlockNumber,
 		Twox64Concat,
 		SchemaId,
-		BoundedVec<Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, T::MaxMessagesPerBlock>,
+		BoundedVec<Message<T::MaxMessagePayloadSizeBytes>, T::MaxMessagesPerBlock>,
 		ValueQuery,
 	>;
 
@@ -201,13 +198,14 @@ pub mod pallet {
 				Error::<T>::InvalidPayloadLocation
 			);
 
-			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
-			let message =
-				Self::add_message(provider_key, message_source_id, bounded_payload, schema_id)?;
+			let provider_msa_id = Self::find_msa_id(&provider_key, None)?;
+			let msa_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
+
+			let message = Self::add_message(provider_msa_id, msa_id, bounded_payload, schema_id)?;
 
 			Ok(Some(T::WeightInfo::add_ipfs_message(cid.len() as u32, message.index as u32)).into())
 		}
-		/// Gets a messages for a given schema-id and block-number.
+		/// Add an on-chain message for a given schema-id.
 		/// # Arguments
 		/// * `origin` - A signed transaction origin from the provider
 		/// * `on_behalf_of` - Optional. The msa id of delegate.
@@ -235,10 +233,10 @@ pub mod pallet {
 				Error::<T>::InvalidPayloadLocation
 			);
 
-			let message_source_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
+			let provider_msa_id = Self::find_msa_id(&provider_key, None)?;
+			let msa_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 
-			let message =
-				Self::add_message(provider_key, message_source_id, bounded_payload, schema_id)?;
+			let message = Self::add_message(provider_msa_id, msa_id, bounded_payload, schema_id)?;
 
 			Ok(Some(T::WeightInfo::add_onchain_message(
 				message.payload.len() as u32,
@@ -252,40 +250,46 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	/// Stores a message for a given schema-id.
 	/// # Arguments
-	/// * `provider_key` - A key from the provider that submitted tx.
-	/// * `on_behalf_of` - Optional. The msa id of delegate.
+	/// * `provider_msa_id` - The MSA id of the provider that submitted the transaction.
+	/// * `message_source_id` - The
 	/// * `payload` - Serialized payload data for a given schema.
 	/// * `schema_id` - Registered schema id for current message.
 	/// # Returns
-	/// * Result<Message<T::AccountId, T::MaxMessagePayloadSizeBytes> - Returns the message stored.
+	/// * Result<Message<T::MaxMessagePayloadSizeBytes> - Returns the message stored.
 	pub fn add_message(
-		provider_key: T::AccountId,
-		message_source_id: MessageSourceId,
+		provider_msa_id: MessageSourceId,
+		msa_id: MessageSourceId,
 		payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes>,
 		schema_id: SchemaId,
-	) -> Result<Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, DispatchError> {
-		<BlockMessages<T>>::try_mutate(|existing_messages| -> Result<Message<T::AccountId, T::MaxMessagePayloadSizeBytes>, DispatchError> {
-			let current_size: u16 = existing_messages
-				.len()
-				.try_into()
-				.map_err(|_| Error::<T>::TypeConversionOverflow)?;
+	) -> Result<Message<T::MaxMessagePayloadSizeBytes>, DispatchError> {
+		<BlockMessages<T>>::try_mutate(
+			|existing_messages| -> Result<Message<T::MaxMessagePayloadSizeBytes>, DispatchError> {
+				let current_size: u16 = existing_messages
+					.len()
+					.try_into()
+					.map_err(|_| Error::<T>::TypeConversionOverflow)?;
 
-			let msg = Message {
-				payload, // size is checked on top of extrinsic
-				provider_key,
-				index: current_size,
-				msa_id: message_source_id,
-			};
+				let msg = Message {
+					payload, // size is checked on top of extrinsic
+					provider_msa_id,
+					msa_id,
+					index: current_size,
+				};
 
-			existing_messages
-				.try_push((msg.clone(), schema_id))
-				.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
+				existing_messages
+					.try_push((msg.clone(), schema_id))
+					.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
 
-			Ok(msg)
-		})
+				Ok(msg)
+			},
+		)
 	}
 
-	/// Resolves an MSA.
+	/// Resolve an MSA from an account key(key) and an optional MSA Id (on_behalf_of).
+	/// If a delegation relationship exists between an MSA held by the account key and the optional
+	/// MSA, the MSA Id associated with the optional MSA is returned. Otherwise an MSA Id associated
+	/// with the account key is returned, if one exists.
+	///
 	/// # Arguments
 	/// * `key` - An MSA key for lookup.
 	/// * `on_behalf_of` - Optional. The msa id of delegate.
@@ -329,14 +333,14 @@ impl<T: Config> Pallet<T> {
 	/// * `schema_id` - Registered schema id for current message.
 	/// * `pagination` - [`BlockPaginationRequest`]. Request payload to retrieve paginated messages for a given block-range.
 	/// # Returns
-	/// * `Result<BlockPaginationResponse<T::BlockNumber, MessageResponse<T::AccountId, T::BlockNumber>>, DispatchError>`
+	/// * `Result<BlockPaginationResponse<T::BlockNumber, MessageResponse<T::BlockNumber>>, DispatchError>`
 	///
 	/// Result is a paginator response of type [`BlockPaginationResponse`].
 	pub fn get_messages_by_schema(
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest<T::BlockNumber>,
 	) -> Result<
-		BlockPaginationResponse<T::BlockNumber, MessageResponse<T::AccountId, T::BlockNumber>>,
+		BlockPaginationResponse<T::BlockNumber, MessageResponse<T::BlockNumber>>,
 		DispatchError,
 	> {
 		ensure!(pagination.validate(), Error::<T>::InvalidPaginationRequest);
@@ -386,10 +390,7 @@ impl<T: Config> Pallet<T> {
 		current_index: u32,
 		list_size: u32,
 		request: &BlockPaginationRequest<T::BlockNumber>,
-		result: &mut BlockPaginationResponse<
-			T::BlockNumber,
-			MessageResponse<T::AccountId, T::BlockNumber>,
-		>,
+		result: &mut BlockPaginationResponse<T::BlockNumber, MessageResponse<T::BlockNumber>>,
 	) -> bool {
 		if result.content.len() as u32 == request.page_size {
 			let mut next_block = block_number;

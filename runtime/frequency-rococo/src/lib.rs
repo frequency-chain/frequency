@@ -765,9 +765,9 @@ impl_runtime_apis! {
 	}
 
 	// Unfinished runtime APIs
-	impl pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber> for Runtime {
+	impl pallet_messages_runtime_api::MessagesApi<Block, BlockNumber> for Runtime {
 		fn get_messages_by_schema(schema_id: SchemaId, pagination: BlockPaginationRequest<BlockNumber>) ->
-			Result<BlockPaginationResponse<BlockNumber, MessageResponse<AccountId, BlockNumber>>, DispatchError> {
+			Result<BlockPaginationResponse<BlockNumber, MessageResponse<BlockNumber>>, DispatchError> {
 			Messages::get_messages_by_schema(schema_id, pagination)
 		}
 	}

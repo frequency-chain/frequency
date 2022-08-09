@@ -47,7 +47,7 @@ where
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	C::Api: BlockBuilder<Block>,
-	C::Api: pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber>,
+	C::Api: pallet_messages_runtime_api::MessagesApi<Block, BlockNumber>,
 	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block>,
 	C::Api: pallet_msa_runtime_api::MsaApi<Block, AccountId, BlockNumber>,
 	P: TransactionPool + Sync + Send + 'static,

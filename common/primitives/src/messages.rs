@@ -13,15 +13,18 @@ use utils::*;
 /// A type for responding with an single Message in an RPC-call.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct MessageResponse<AccountId, BlockNumber> {
+pub struct MessageResponse<BlockNumber> {
 	#[cfg_attr(feature = "std", serde(with = "as_hex"))]
 	/// Serialized data in a the schemas.
 	pub payload: Vec<u8>,
-	/// The public key of the provider and the signer of the transaction.
-	pub provider_key: AccountId,
-	/// Message source account id (the original source).
+	/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
+	/// indicating that the original source MSA is acting as its own provider. An id differing from that
+	/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
+	/// its behalf.
+	pub provider_msa_id: MessageSourceId,
+	///  Message source account id (the original source).
 	pub msa_id: MessageSourceId,
-	/// Index in block to get total order
+	/// Index in block to get total order.
 	pub index: u16,
 	/// Block-number for which the message was stored.
 	pub block_number: BlockNumber,
