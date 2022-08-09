@@ -411,7 +411,9 @@ pub mod pallet {
 		/// - Returns [`KeyRevoked`](Error::KeyRevoked) if `key` is already expired.
 		/// - Returns [`NotKeyOwner`](Error::NotKeyOwner) if `origin` does not own the MSA ID associated with `key`.
 		/// - Returns [`NotKeyExists`](Error::NoKeyExists) if `origin` or `key` are not associated with `origin`'s MSA ID.
-		///
+		/// ### Remarks
+		/// - Removal of key deletes the association of the key with the MSA.
+		/// - The key can be re-added to same or another MSA if needed.
 		#[pallet::weight(T::WeightInfo::delete_msa_key())]
 		pub fn delete_msa_key(origin: OriginFor<T>, key: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
