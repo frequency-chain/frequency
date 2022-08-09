@@ -423,6 +423,7 @@ pub mod pallet {
 			ensure!(who.expired == T::BlockNumber::zero(), Error::<T>::KeyRevoked);
 			ensure!(who.msa_id == key_info.msa_id, Error::<T>::NotKeyOwner);
 
+			Self::delete_key_for_msa(who.msa_id, &key)?;
 			Self::delete_key_info(&key)?;
 
 			Self::deposit_event(Event::KeyRevoked { key });
@@ -594,6 +595,23 @@ impl<T: Config> Pallet<T> {
 	pub fn delete_key_info(key: &T::AccountId) -> DispatchResult {
 		KeyInfoOf::<T>::remove(key);
 		Ok(())
+	}
+
+	/// Deletes a key associated with a given MSA
+	/// # Arguments
+	/// * `msa_id` - The MSA for which the key needs to be removed
+	/// * `key` - The key to be removed from the MSA
+	/// # Returns
+	/// * [`DispatchResult`]
+	/// # Errors
+	/// * [`Error::<T>::NoKeyExists`] - If the key does not exist in the MSA
+	pub fn delete_key_for_msa(msa_id: MessageSourceId, key: &T::AccountId) -> DispatchResult {
+		<MsaKeysOf<T>>::try_mutate(msa_id, |key_list| {
+			let index = key_list.binary_search(key);
+			ensure!(index.is_ok(), Error::<T>::NoKeyExists);
+			key_list.remove(index.unwrap());
+			Ok(())
+		})
 	}
 
 	/// Revoke the grant for permissions from the delegator to the provider

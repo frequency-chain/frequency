@@ -227,7 +227,7 @@ fn it_revokes_msa_key_successfully() {
 
 		let info = Msa::get_key_info(&test_public(2));
 
-		assert_eq!(info, Some(KeyInfo { msa_id: 2, expired: 1, nonce: 0 }));
+		assert_eq!(info, None);
 
 		System::assert_last_event(Event::KeyRevoked { key: test_public(2) }.into());
 	})
@@ -250,25 +250,19 @@ pub fn test_delete_key() {
 		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
 
 		let info = Msa::get_key_info(&test_public(1));
+
 		assert_eq!(info, Some(KeyInfo { msa_id: 1, expired: 0, nonce: 0 }));
 
 		assert_ok!(Msa::delete_key_info(&test_public(1)));
-
-		let info = Msa::get_key_info(&test_public(1));
-
-		assert_eq!(info, Some(KeyInfo { msa_id: 1, expired: 1, nonce: 0 }));
 	});
 }
 
 #[test]
 pub fn test_delete_key_errors() {
 	new_test_ext().execute_with(|| {
-		assert_noop!(Msa::delete_key_info(&test_public(1)), Error::<Test>::NoKeyExists);
-
 		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
-		assert_ok!(Msa::delete_key_info(&test_public(1)));
 
-		assert_noop!(Msa::delete_key_info(&test_public(1)), Error::<Test>::KeyRevoked);
+		assert_ok!(Msa::delete_key_info(&test_public(1)));
 	});
 }
 
@@ -388,7 +382,7 @@ pub fn add_provider_to_msa_throws_key_revoked_error() {
 				signature,
 				add_provider_payload
 			),
-			Error::<Test>::KeyRevoked
+			Error::<Test>::NoKeyExists
 		);
 	});
 }
@@ -753,7 +747,7 @@ fn revoke_provider_throws_errors() {
 		assert_ok!(Msa::delete_key_info(&test_public(2)));
 		assert_noop!(
 			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(2), 1),
-			Error::<Test>::KeyRevoked
+			Error::<Test>::NoKeyExists
 		);
 
 		assert_ok!(Msa::create(test_origin_signed(1)));
