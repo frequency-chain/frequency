@@ -423,7 +423,7 @@ pub mod pallet {
 			ensure!(who.expired == T::BlockNumber::zero(), Error::<T>::KeyRevoked);
 			ensure!(who.msa_id == key_info.msa_id, Error::<T>::NotKeyOwner);
 
-			Self::delete_key(&key)?;
+			Self::delete_key_info(&key)?;
 
 			Self::deposit_event(Event::KeyRevoked { key });
 
@@ -586,29 +586,13 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Disables a key so that it cannot be used again for the associated MSA
+	/// Deletes KeyInfo for a key so that it cannot be used again for the associated MSA
 	/// # Arguments
-	/// * `key` - The key to be removed
+	/// * `key` - The key for which key info needs to be removed
 	/// # Returns
 	/// * [`DispatchResult`]
-	///
-	/// # Errors
-	/// * [`Error::<T>::KeyRevoked`]
-	pub fn delete_key(key: &T::AccountId) -> DispatchResult {
-		KeyInfoOf::<T>::try_mutate(key, |maybe_info| -> DispatchResult {
-			let mut info = maybe_info.take().ok_or(Error::<T>::NoKeyExists)?;
-
-			ensure!(info.expired == T::BlockNumber::default(), Error::<T>::KeyRevoked);
-
-			let current_block = frame_system::Pallet::<T>::block_number();
-
-			info.expired = current_block;
-
-			*maybe_info = Some(info);
-
-			Ok(())
-		})?;
-
+	pub fn delete_key_info(key: &T::AccountId) -> DispatchResult {
+		KeyInfoOf::<T>::remove(key);
 		Ok(())
 	}
 
