@@ -58,7 +58,7 @@ pub trait WeightInfo {
 	fn create_sponsored_account_with_delegation() -> Weight;
 	fn remove_delegation_by_provider(s: u32, ) -> Weight;
 	fn add_key_to_msa() -> Weight;
-	fn revoke_msa_key() -> Weight;
+	fn delete_msa_key() -> Weight;
 	fn add_provider_to_msa() -> Weight;
 	fn revoke_msa_delegation_by_delegator() -> Weight;
 }
@@ -102,7 +102,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:2 w:1)
-	fn revoke_msa_key() -> Weight {
+	fn delete_msa_key() -> Weight {
 		(60_330_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
@@ -161,7 +161,7 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:2 w:1)
-	fn revoke_msa_key() -> Weight {
+	fn delete_msa_key() -> Weight {
 		(60_330_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))

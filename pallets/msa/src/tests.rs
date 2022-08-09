@@ -223,7 +223,7 @@ fn it_revokes_msa_key_successfully() {
 		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
 		assert_ok!(Msa::add_key(2, &test_public(2), EMPTY_FUNCTION));
 
-		assert_ok!(Msa::revoke_msa_key(test_origin_signed(1), test_public(2)));
+		assert_ok!(Msa::delete_msa_key(test_origin_signed(1), test_public(2)));
 
 		let info = Msa::get_key_info(&test_public(2));
 
@@ -245,14 +245,14 @@ pub fn test_get_owner_of() {
 }
 
 #[test]
-pub fn test_revoke_key() {
+pub fn test_delete_key() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
 
 		let info = Msa::get_key_info(&test_public(1));
 		assert_eq!(info, Some(KeyInfo { msa_id: 1, expired: 0, nonce: 0 }));
 
-		assert_ok!(Msa::revoke_key(&test_public(1)));
+		assert_ok!(Msa::delete_key(&test_public(1)));
 
 		let info = Msa::get_key_info(&test_public(1));
 
@@ -261,14 +261,14 @@ pub fn test_revoke_key() {
 }
 
 #[test]
-pub fn test_revoke_key_errors() {
+pub fn test_delete_key_errors() {
 	new_test_ext().execute_with(|| {
-		assert_noop!(Msa::revoke_key(&test_public(1)), Error::<Test>::NoKeyExists);
+		assert_noop!(Msa::delete_key(&test_public(1)), Error::<Test>::NoKeyExists);
 
 		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
-		assert_ok!(Msa::revoke_key(&test_public(1)));
+		assert_ok!(Msa::delete_key(&test_public(1)));
 
-		assert_noop!(Msa::revoke_key(&test_public(1)), Error::<Test>::KeyRevoked);
+		assert_noop!(Msa::delete_key(&test_public(1)), Error::<Test>::KeyRevoked);
 	});
 }
 
@@ -379,7 +379,7 @@ pub fn add_provider_to_msa_throws_key_revoked_error() {
 
 		assert_ok!(Msa::create(test_origin_signed(1)));
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
-		assert_ok!(Msa::revoke_key(&test_public(1)));
+		assert_ok!(Msa::delete_key(&test_public(1)));
 
 		assert_noop!(
 			Msa::add_provider_to_msa(
@@ -750,7 +750,7 @@ fn revoke_provider_throws_errors() {
 		);
 
 		assert_ok!(Msa::create(test_origin_signed(2)));
-		assert_ok!(Msa::revoke_key(&test_public(2)));
+		assert_ok!(Msa::delete_key(&test_public(2)));
 		assert_noop!(
 			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(2), 1),
 			Error::<Test>::KeyRevoked

@@ -39,7 +39,7 @@
 //! - `create_sponsored_account_with_delegation` - `Origin` creates an account for a given `AccountId` and sets themselves as a `Provider`.
 //! - `remove_delegation_by_provider` - `Provider` MSA terminates a Delegation with Delegator MSA by expiring it.
 //! - `revoke_msa_delegation_by_delegator` - Delegator MSA terminates a Delegation with the `Provider` MSA by expiring it.
-//! - `revoke_msa_key` - Revokes the given key by expiring it.
+//! - `delete_msa_key` - Removes the given key by from storage against respective MSA.
 //!
 //! ### Assumptions
 //!
@@ -412,8 +412,8 @@ pub mod pallet {
 		/// - Returns [`NotKeyOwner`](Error::NotKeyOwner) if `origin` does not own the MSA ID associated with `key`.
 		/// - Returns [`NotKeyExists`](Error::NoKeyExists) if `origin` or `key` are not associated with `origin`'s MSA ID.
 		///
-		#[pallet::weight(T::WeightInfo::revoke_msa_key())]
-		pub fn revoke_msa_key(origin: OriginFor<T>, key: T::AccountId) -> DispatchResult {
+		#[pallet::weight(T::WeightInfo::delete_msa_key())]
+		pub fn delete_msa_key(origin: OriginFor<T>, key: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
 			ensure!(who != key, Error::<T>::InvalidSelfRevoke);
@@ -423,7 +423,7 @@ pub mod pallet {
 			ensure!(who.expired == T::BlockNumber::zero(), Error::<T>::KeyRevoked);
 			ensure!(who.msa_id == key_info.msa_id, Error::<T>::NotKeyOwner);
 
-			Self::revoke_key(&key)?;
+			Self::delete_key(&key)?;
 
 			Self::deposit_event(Event::KeyRevoked { key });
 
@@ -588,13 +588,13 @@ impl<T: Config> Pallet<T> {
 
 	/// Disables a key so that it cannot be used again for the associated MSA
 	/// # Arguments
-	/// * `key` - The key to expire
+	/// * `key` - The key to be removed
 	/// # Returns
 	/// * [`DispatchResult`]
 	///
 	/// # Errors
 	/// * [`Error::<T>::KeyRevoked`]
-	pub fn revoke_key(key: &T::AccountId) -> DispatchResult {
+	pub fn delete_key(key: &T::AccountId) -> DispatchResult {
 		KeyInfoOf::<T>::try_mutate(key, |maybe_info| -> DispatchResult {
 			let mut info = maybe_info.take().ok_or(Error::<T>::NoKeyExists)?;
 
