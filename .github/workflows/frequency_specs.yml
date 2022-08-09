@@ -46,19 +46,19 @@ jobs:
       - name: Build Frequency related specs and wasm 📝
         run: ./scripts/generate_specs.sh 2000 build-local && ./scripts/generate_specs.sh 4044 build-testnet
       - name: Create tarball of local specs and wasm 📦
-        run: tar -czvf frequency_specs_local-${{ github.sha }}.tar -C ./res/genesis/local
+        run: tar -cvf frequency_specs_local-${{ github.sha }}.tar ./res/genesis/local
       - name: Upload frequency local spec and wasm artifacts 📦
         uses: softprops/action-gh-release@v1
         with:
           files: frequency_specs_local.tar
       - name: Create tarball of rococo spec and wasm 📦
-        run: tar -czvf frequency_specs_rococo_testnet-${{ github.sha }}.tar -C ./res/genesis/testnet
+        run: tar -cvf frequency_specs_rococo_testnet-${{ github.sha }}.tar ./res/genesis/testnet
       - name: Upload frequency rococo spec and wasm artifacts 📦
         uses: softprops/action-gh-release@v1
         with:
           files: frequency_specs_rococo_testnet.tar
       - name: Create tarball of frequency binary 📦
-        run: tar -czvf frequency_binary-${{ github.sha }}.tar -C ./target/release/frequency
+        run: tar -cvf frequency_binary-${{ github.sha }}.tar ./target/release/frequency
       - name: Upload frequency binary artifacts 📦
         uses: softprops/action-gh-release@v1
         with:
