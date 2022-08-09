@@ -116,15 +116,15 @@ pub mod pallet {
 	#[pallet::getter(fn get_identifier)]
 	pub type MsaIdentifier<T> = StorageValue<_, MessageSourceId, ValueQuery>;
 
-	/// Storage type for mapping delegation
+	/// Storage type for mapping the relationship between a Delegator and its Provider.
 	#[pallet::storage]
 	#[pallet::getter(fn get_provider_info_of)]
 	pub type ProviderInfoOf<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		Provider,
-		Blake2_128Concat,
 		Delegator,
+		Blake2_128Concat,
+		Provider,
 		ProviderInfo<T::BlockNumber>,
 		OptionQuery,
 	>;
@@ -561,7 +561,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Add a provider to a delegator with the default permissions
 	pub fn add_provider(provider: Provider, delegator: Delegator) -> DispatchResult {
-		ProviderInfoOf::<T>::try_mutate(provider, delegator, |maybe_info| -> DispatchResult {
+		ProviderInfoOf::<T>::try_mutate(delegator, provider, |maybe_info| -> DispatchResult {
 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
 
 			let info = ProviderInfo { permission: Default::default(), expired: Default::default() };
@@ -627,8 +627,8 @@ impl<T: Config> Pallet<T> {
 		delegator_msa_id: Delegator,
 	) -> DispatchResult {
 		ProviderInfoOf::<T>::try_mutate_exists(
-			provider_msa_id,
 			delegator_msa_id,
+			provider_msa_id,
 			|maybe_info| -> DispatchResult {
 				let mut info = maybe_info.take().ok_or(Error::<T>::DelegationNotFound)?;
 
