@@ -308,7 +308,7 @@ pub fn add_provider_to_msa_is_success() {
 		let delegator = Delegator(1);
 
 		assert_eq!(
-			Msa::get_provider_info_of(provider, delegator),
+			Msa::get_provider_info_of(delegator, provider),
 			Some(ProviderInfo { permission: 0, expired: 0 })
 		);
 
@@ -518,7 +518,7 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		let key_info = Msa::get_key_info(AccountId32::new(delegator_account.0));
 		assert_eq!(key_info.unwrap().msa_id, 2);
 
-		let provider_info = Msa::get_provider_info_of(Provider(1), Delegator(2));
+		let provider_info = Msa::get_provider_info_of(Delegator(2), Provider(1));
 		assert_eq!(provider_info.is_some(), true);
 
 		let events_occured = System::events();
@@ -727,7 +727,7 @@ pub fn revoke_provider_is_successful() {
 		assert_ok!(Msa::revoke_provider(provider, delegator));
 
 		assert_eq!(
-			Msa::get_provider_info_of(provider, delegator).unwrap(),
+			Msa::get_provider_info_of(delegator, provider).unwrap(),
 			ProviderInfo { expired: 1, permission: 0 },
 		);
 	});
@@ -872,7 +872,7 @@ pub fn remove_delegation_by_provider_happy_path() {
 		assert_ok!(Msa::remove_delegation_by_provider(Origin::signed(provider_key.into()), 2u64));
 
 		// 6. verify that the provider is revoked
-		let provider_info = Msa::get_provider_info_of(Provider(1), Delegator(2));
+		let provider_info = Msa::get_provider_info_of(Delegator(2), Provider(1));
 		assert_eq!(provider_info, Some(ProviderInfo { permission: 0, expired: 26 }));
 
 		// 7. verify the event
