@@ -5,7 +5,7 @@ use crate::{
 	CheckProviderRevocation, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
-	msa::{Delegator, KeyInfo, KeyInfoResponse, MessageSourceId, Provider, ProviderInfo},
+	msa::{Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo},
 	utils::wrap_binary_data,
 };
 use frame_support::{
