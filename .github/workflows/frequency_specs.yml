@@ -8,7 +8,7 @@ on:
 
 jobs:
   build_binary_and_specs:
-    name: ${{ matrix.target }}
+    name: build_binary_and_specs
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -65,7 +65,7 @@ jobs:
         with:
           files: frequency_binary.tar
   build_local_srtool_wasm:
-    name: ${{ matrix.target }}
+    name: build_local_srtool_wasm
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -100,7 +100,7 @@ jobs:
         with:
           files: frequency_wasm_local.tar
   build_testnet_srtool_wasm:
-    name: ${{ matrix.target }}
+    name: build_testnet_srtool_wasm
     strategy:
       matrix:
         os: [ubuntu-latest]
