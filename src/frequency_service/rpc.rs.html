@@ -152,7 +152,7 @@
 	<span class="ident">module</span>.<span class="ident">merge</span>(<span class="ident">TransactionPayment::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()).<span class="ident">into_rpc</span>())<span class="question-mark">?</span>;
 	<span class="ident">module</span>.<span class="ident">merge</span>(<span class="ident">MessagesHandler::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()).<span class="ident">into_rpc</span>())<span class="question-mark">?</span>;
 	<span class="ident">module</span>.<span class="ident">merge</span>(<span class="ident">SchemasHandler::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()).<span class="ident">into_rpc</span>())<span class="question-mark">?</span>;
-	<span class="ident">module</span>.<span class="ident">merge</span>(<span class="ident">MsaHandler::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()).<span class="ident">into_rpc</span>())<span class="question-mark">?</span>;
+	<span class="ident">module</span>.<span class="ident">merge</span>(<span class="ident">MsaHandler::new</span>(<span class="ident">client</span>).<span class="ident">into_rpc</span>())<span class="question-mark">?</span>;
 	<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">command_sink</span>) <span class="op">=</span> <span class="ident">command_sink</span> {
 		<span class="ident">module</span>.<span class="ident">merge</span>(
 			<span class="comment">// We provide the rpc handler with the sending end of the channel to allow the rpc</span>

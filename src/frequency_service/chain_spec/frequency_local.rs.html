@@ -181,6 +181,7 @@
 <span id="175">175</span>
 <span id="176">176</span>
 <span id="177">177</span>
+<span id="178">178</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
 <span class="kw">use</span> <span class="ident">cumulus_primitives_core::ParaId</span>;
 <span class="kw">use</span> <span class="ident">frequency_runtime</span>::{<span class="ident">AccountId</span>, <span class="ident">AuraId</span>, <span class="ident">SudoConfig</span>, <span class="ident">EXISTENTIAL_DEPOSIT</span>};
@@ -356,6 +357,7 @@
 			<span class="ident">safe_xcm_version</span>: <span class="prelude-val">Some</span>(<span class="ident">SAFE_XCM_VERSION</span>),
 		},
 		<span class="ident">schemas</span>: <span class="ident">Default::default</span>(),
+		<span class="ident">vesting</span>: <span class="ident">Default::default</span>(),
 	}
 }
 </code></pre></div>
