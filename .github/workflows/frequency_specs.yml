@@ -68,6 +68,16 @@ jobs:
           name: frequency_binary-${{ github.sha }}
           path: frequency_binary.tar
   build_local_srtool_wasm:
+    name: ${{ matrix.target }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        target: [build-node]
+        rust_toolchain: [nightly-2022-06-27]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
+    steps:
       - name: Run Srtool For Local Wasm
         run: ./ci/build.sh
         env:
@@ -85,6 +95,16 @@ jobs:
           name: frequency_wasm_srtool_local-${{ github.sha }}
           path: frequency_wasm_local.tar
   build_testnet_srtool_wasm:
+    name: ${{ matrix.target }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        target: [build-node]
+        rust_toolchain: [nightly-2022-06-27]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
+    steps:
       - name: Run Srtool For Rococo Wasm
         run: ./ci/build.sh
         env:
