@@ -577,7 +577,7 @@ impl<T: Config> Pallet<T> {
 	/// Check that the delegator has an active delegation to the provider
 	pub fn ensure_valid_delegation(provider: Provider, delegator: Delegator) -> DispatchResult {
 		let current_block = frame_system::Pallet::<T>::block_number();
-		let info = Self::get_provider_info_of(provider, delegator)
+		let info = Self::get_provider_info_of(delegator, provider)
 			.ok_or(Error::<T>::DelegationNotFound)?;
 		if info.expired == T::BlockNumber::zero() {
 			return Ok(())
@@ -701,10 +701,10 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	}
 
 	fn get_provider_info_of(
-		provider: Provider,
 		delegator: Delegator,
+		provider: Provider,
 	) -> Option<ProviderInfo<Self::BlockNumber>> {
-		Self::get_provider_info_of(provider, delegator)
+		Self::get_provider_info_of(delegator, provider)
 	}
 
 	fn ensure_valid_delegation(provider: Provider, delegation: Delegator) -> DispatchResult {
