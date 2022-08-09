@@ -78,6 +78,17 @@ jobs:
     env:
       RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
     steps:
+      - name: Free space on Ubuntu
+        if: ${{ matrix.os }} == 'ubuntu-latest'
+        run: |
+          echo "Pre cleanup"
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Post cleanup"
+          df -h
+      - name: Check out code
+        uses: actions/checkout@v3
       - name: Run Srtool For Local Wasm
         run: ./ci/build.sh
         env:
@@ -105,6 +116,17 @@ jobs:
     env:
       RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
     steps:
+      - name: Free space on Ubuntu
+        if: ${{ matrix.os }} == 'ubuntu-latest'
+        run: |
+          echo "Pre cleanup"
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Post cleanup"
+          df -h
+      - name: Check out code
+        uses: actions/checkout@v3
       - name: Run Srtool For Rococo Wasm
         run: ./ci/build.sh
         env:
