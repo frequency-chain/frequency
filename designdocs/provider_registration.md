@@ -37,15 +37,11 @@ specifics around creating and honoring transactions between users.
 
 ## Proposal
 The basic workflow for provider registration is as follows:
-1. User stakes balance to become a provider. This is called a "Registration Fee".
+1. Any user can register to be a Provider.
+1. User pays the balance to become a provider. This is called a "Registration Fee".
+1. The "Registration Fee" is set by Governance.
 1. The "Registration Fee" is credited to the Chain Treasury (TBD).
 1. The provider's MSA id is added to storage on chain.
-
-Should a provider choose at any point to stop providing services, it can issue a
-request to remove itself from the provider registry:
-1. The provider issues an event that it will stop providing services.
-1. The provider's MSA id is removed from storage.
-1. Any delegations associated with that provider should be revoked.
 
 Please note:
 * All names are placeholders and may be changed.
@@ -57,8 +53,6 @@ Please note:
 * `ProviderRegistrationParams<T: Config>`, the arguments used to emit registration event.
   * `provider_msa_id`: `MsaId`
   * `provider_metadata`: `ProviderMetadata`
-* `ProviderDeregistrationParams<T:Config>`, the arguments used to deregister a provider.
-  * `provider_msa_id`: `MsaId`
 * `ProviderMetadata`
   * `name`: `Vec<u8>`
 * `Provider`
@@ -68,8 +62,6 @@ Please note:
 #### Events
 * `ProviderRegistrationEvent<T: Config>`, the resource that exists on-chain
   * `block_number`: `BlockNumber`
-  * `provider_msa_id`: `MsaId`
-* `ProviderDeregistrationEvent<T:Config>`, the resource that exists on-chain
   * `provider_msa_id`: `MsaId`
 
 #### Storage
@@ -93,19 +85,6 @@ This extrinsic is responsible for storing the registered provider in the
 * **Restrictions**:
   * `origin`'s `msa_id` must have capacity to post the transaction (including fee) during the current epoch.
 
-#### deregister_provider(origin, deregistration_params)
-Creates and posts a `ProviderDeregistrationEvent`. The `MsaId`
-included in the event must already exist.
-
-This extrinsic is responsible for deleting the registered provider's `MsaId` from the
-`ProviderRegistry`.
-
-* **Parameters**
-  * `origin`: `Origin`  required for all extrinsics, the caller/sender.
-  * `deregistration_params`: `ProviderDeregistrationParams`, the parameters to use in the deregistration.
-* **Event**:  `Event::<T>::ProviderDeregistrationEvent(provider_msa_id)`
-* **Restrictions**:
-  * `origin`'s `msa_id` must have capacity to post the transaction during the current epoch.
 
 ### Custom RPCs
 #### get_provider(provider_msa_id)
@@ -139,18 +118,18 @@ providers ("mom and pop" local businesses and/or "freelancers").
 So to allow inclusion for all actors, it may be that the best way of verifying
 legitimateness is through a fee that is high enough to discourage malicious actors.
 
+### Provider Commitment
+Users can only delegate to Providers. Only Providers can have Capacity and can therefore generate capacity transactions.
 ### Archival Provider Information
-If consumers want to examine provider registration / deregistration events, they
+If consumers want to examine provider registration events, they
 must fetch them from an archival node. This document does not outline an RPC for
-fetching registration / deregistration events.
+fetching registration events.
 
 ## Alternatives
 ### Provider Fees
-This document assumes that registration fees will be a fixed amount. It may be
-prudent, in the future, to determine whether or not registrations are fixed or
-vary based on the amount of verifable information given on a registration
-attempt. The latter may allow us to place more trust into providers that do not
-have traditional business attributes.
+This document assumes that registration fees will be a fixed amount. It may be prudent, in the future, to determine whether or not registrations are fixed or vary based on the amount of verifiable information given on a registration attempt. The latter may allow us to place more trust in providers that do not have traditional business attributes. Further, the Provider could be required to post a bond instead of or in addition to fee payment.
+### Provider Deregistration
+Currently, the Provider MSA id cannot be retired once registered. The current version does not entirely outline a way to revoke the Provider's status. In the future, Provider can request to revoke their status as a service provider. Provider MSA id may be deregistered, with their MSA id removed from the Provider Registry and any associated delegations revoked.
 
 ## Glossary
 TBD.
