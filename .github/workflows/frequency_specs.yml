@@ -95,3 +95,11 @@ jobs:
         with:
           name: frequency_specs_rococo_testnet-${{ github.sha }}
           path: frequency_specs_rococo_testnet.tar
+      - name: Create tarball of frequency binary 📦
+        run: tar -czvf frequency_binary.tar -C ./target/release/frequency
+      - name: Upload frequency binary artifacts 📦
+        uses: actions/upload-artifact@v3
+        with:
+          name: frequency_binary-${{ github.sha }}
+          path: frequency_binary.tar
+
