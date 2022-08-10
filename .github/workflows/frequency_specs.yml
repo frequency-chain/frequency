@@ -1,0 +1,137 @@
+name: Build Frequency Binary and Specs
+
+on:
+  push:
+    tags:
+      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9][0-9]'
+
+jobs:
+  build_binary_and_specs:
+    name: build_binary_and_specs
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        target: [build-node]
+        rust_toolchain: [nightly-2022-06-27]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
+    steps:
+      - name: Free space on Ubuntu
+        if: ${{ matrix.os }} == 'ubuntu-latest'
+        run: |
+          echo "Pre cleanup"
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Post cleanup"
+          df -h
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      # Rust
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          default: true
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ env.RUST_TOOLCHAIN }}
+      - name: Run Build
+        run: ./ci/build.sh
+        env:
+          TARGET: build-node
+      - name: Build Frequency related specs and wasm 📝
+        run: ./scripts/generate_specs.sh 2000 build-local && ./scripts/generate_specs.sh 4044 build-testnet
+      - name: Create tarball of local specs and wasm 📦
+        run: tar -cvf frequency_specs_local-${{ github.sha }}.tar ./res/genesis/local
+      - name: Upload frequency local spec and wasm artifacts 📦
+        uses: softprops/action-gh-release@v1
+        with:
+          files: frequency_specs_local.tar
+      - name: Create tarball of rococo spec and wasm 📦
+        run: tar -cvf frequency_specs_rococo_testnet-${{ github.sha }}.tar ./res/genesis/testnet
+      - name: Upload frequency rococo spec and wasm artifacts 📦
+        uses: softprops/action-gh-release@v1
+        with:
+          files: frequency_specs_rococo_testnet.tar
+      - name: Create tarball of frequency binary 📦
+        run: tar -cvf frequency_binary-${{ github.sha }}.tar ./target/release/frequency
+      - name: Upload frequency binary artifacts 📦
+        uses: softprops/action-gh-release@v1
+        with:
+          files: frequency_binary.tar
+  build_local_srtool_wasm:
+    name: build_local_srtool_wasm
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        target: [build-node]
+        rust_toolchain: [nightly-2022-06-27]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
+    steps:
+      - name: Free space on Ubuntu
+        if: ${{ matrix.os }} == 'ubuntu-latest'
+        run: |
+          echo "Pre cleanup"
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Post cleanup"
+          df -h
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Run Srtool For Local Wasm
+        run: ./ci/build.sh
+        env:
+          TARGET: build-runtime
+          RUST_TOOLCHAIN: ${{ env.RUST_TOOLCHAIN  }}
+          PACKAGE: frequency-runtime
+          RUNTIME_DIR: runtime/frequency
+      - name: Create tarball  of deterministic wasm from srtool 📦
+        run: tar -cvf frequency_wasm_local-${{ github.sha }}.tar ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.compact.wasm ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.wasm
+      - name: Upload frequency deterministic wasm to artifacts 📦
+        uses: softprops/action-gh-release@v1
+        with:
+          files: frequency_wasm_local.tar
+  build_testnet_srtool_wasm:
+    name: build_testnet_srtool_wasm
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        target: [build-node]
+        rust_toolchain: [nightly-2022-06-27]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
+    steps:
+      - name: Free space on Ubuntu
+        if: ${{ matrix.os }} == 'ubuntu-latest'
+        run: |
+          echo "Pre cleanup"
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Post cleanup"
+          df -h
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Run Srtool For Rococo Wasm
+        run: ./ci/build.sh
+        env:
+          TARGET: build-runtime
+          RUST_TOOLCHAIN: ${{ env.RUST_TOOLCHAIN  }}
+          PACKAGE: frequency-rococo-runtime
+          RUNTIME_DIR: runtime/frequency-rococo
+      - name: Create tarball  of deterministic wasm from srtool for rococo📦
+        run: tar -cvf frequency_wasm_rococo-${{ github.sha }}.tar ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.compressed.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.wasm
+      - name: Upload frequency deterministic wasm to artifacts for rococo 📦
+        uses: softprops/action-gh-release@v1
+        with:
+          files: frequency_wasm_rococo.tar
+
+

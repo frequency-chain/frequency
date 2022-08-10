@@ -57,36 +57,6 @@ jobs:
           RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
           PACKAGE: ${{matrix.package}}
           RUNTIME_DIR: ${{ matrix.dir }}
-      - name: Create tarball  of deterministic wasm from srtool 📦
-        if: matrix.target == 'build-runtime' && matrix.package == 'frequency-runtime'
-        run: tar -cvf frequency_wasm.tar ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.compact.wasm ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.wasm
-      - name: Upload frequency deterministic wasm to artifacts 📦
-        if: matrix.target == 'build-runtime' && matrix.package == 'frequency-runtime'
-        uses: actions/upload-artifact@v3
-        with:
-          name: frequency_wasm_srtool-${{ github.sha }}
-          path: frequency_wasm.tar
-      - name: Create tarball  of deterministic wasm from srtool for rococo📦
-        if: matrix.target == 'build-runtime' && matrix.package == 'frequency-rococo-runtime'
-        run: tar -cvf frequency_wasm_rococo.tar ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.compressed.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.wasm
-      - name: Upload frequency deterministic wasm to artifacts for rococo 📦
-        if: matrix.target == 'build-runtime' && matrix.package == 'frequency-rococo-runtime'
-        uses: actions/upload-artifact@v3
-        with:
-          name: frequency_wasm_srtool_rococo-${{ github.sha }}
-          path: frequency_wasm_rococo.tar
-      - name: Build Frequency related specs and wasm 📝
-        if: matrix.target == 'build-node'
-        run: ./scripts/generate_specs.sh 2000 build-local && ./scripts/generate_specs.sh 4044 build-testnet
-      - name: Create tarball  of specs and wasm 📦
-        if: matrix.target == 'build-node'
-        run: tar -cvf frequency_specs.tar ./res/genesis
-      - name: Upload frequency spec and wasm artifacts 📦
-        if: matrix.target == 'build-node'
-        uses: actions/upload-artifact@v3
-        with:
-          name: frequency_specs-${{ github.sha }}
-          path: frequency_specs.tar
       - name: Set up QEMU
         if: matrix.target == 'build-node'
         uses: docker/setup-qemu-action@v2
