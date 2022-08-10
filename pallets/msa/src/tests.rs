@@ -251,6 +251,8 @@ pub fn test_delete_key() {
 		assert_eq!(info, Some(KeyInfo { msa_id: 1, nonce: 0 }));
 
 		assert_ok!(Msa::delete_key_info(&test_public(1)));
+
+		assert_ok!(Msa::delete_key_for_msa(info.unwrap().msa_id, &test_public(1)));
 	});
 }
 
@@ -1043,4 +1045,55 @@ fn signed_extension_validation_valid_for_others() {
 		len,
 	);
 	assert_ok!(result);
+}
+
+#[test]
+fn double_add_key_two_msa_fails() {
+	new_test_ext().execute_with(|| {
+		let (key_pair1, _) = sr25519::Pair::generate();
+		let new_account1 = key_pair1.public();
+		let (key_pair2, _) = sr25519::Pair::generate();
+		let new_account2 = key_pair2.public();
+		let (_msa_id1, _) = Msa::create_account(new_account1.into(), EMPTY_FUNCTION).unwrap();
+		let (msa_id2, _) = Msa::create_account(new_account2.into(), EMPTY_FUNCTION).unwrap();
+
+		let add_new_key_data = AddKeyData { nonce: 1, msa_id: msa_id2 };
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+		let signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
+		assert_noop!(
+			Msa::add_key_to_msa(
+				Origin::signed(new_account2.into()),
+				new_account1.into(),
+				signature,
+				add_new_key_data
+			),
+			Error::<Test>::KeyAlreadyRegistered
+		);
+	})
+}
+
+#[test]
+fn add_removed_key_to_msa_pass() {
+	new_test_ext().execute_with(|| {
+		let (key_pair1, _) = sr25519::Pair::generate();
+		let new_account1 = key_pair1.public();
+		let (key_pair2, _) = sr25519::Pair::generate();
+		let new_account2 = key_pair2.public();
+		let (msa_id1, _) = Msa::create_account(new_account1.into(), EMPTY_FUNCTION).unwrap();
+		let (msa_id2, _) = Msa::create_account(new_account2.into(), EMPTY_FUNCTION).unwrap();
+
+		assert_ok!(Msa::delete_key_info(&new_account1.into()));
+
+		assert_ok!(Msa::delete_key_for_msa(msa_id1, &new_account1.into()));
+
+		let add_new_key_data = AddKeyData { nonce: 1, msa_id: msa_id2 };
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+		let signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
+		assert_ok!(Msa::add_key_to_msa(
+			Origin::signed(new_account2.into()),
+			new_account1.into(),
+			signature,
+			add_new_key_data
+		));
+	})
 }

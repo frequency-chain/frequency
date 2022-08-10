@@ -209,6 +209,8 @@ pub mod pallet {
 		NoKeyExists,
 		/// The number of key values has reached its maximum
 		KeyLimitExceeded,
+		/// The key is already registered to the MSA
+		KeyAlreadyRegistered,
 		/// A transaction's Origin (AccountId) may not revoke itself
 		InvalidSelfRevoke,
 		/// An MSA may not be its own delegate
@@ -389,7 +391,10 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
 
 			let msa_id = add_key_payload.msa_id;
+
 			Self::ensure_msa_owner(&who, msa_id)?;
+
+			Self::is_key_taken(msa_id, &key)?;
 
 			Self::add_key(msa_id, &key.clone(), |new_msa_id| -> DispatchResult {
 				Self::deposit_event(Event::KeyAdded { msa_id: new_msa_id, key });
@@ -537,6 +542,16 @@ impl<T: Config> Pallet<T> {
 
 		ensure!(provider_msa_id == msa_id, Error::<T>::NotMsaOwner);
 
+		Ok(())
+	}
+
+	/// Checks that the key is not already associated with another MSA
+	pub fn is_key_taken(msa_id: MessageSourceId, key: &T::AccountId) -> DispatchResult {
+		let key_info = Self::try_get_key_info(key);
+		if key_info.is_err() {
+			return Ok(())
+		}
+		ensure!(key_info.unwrap().msa_id == msa_id, Error::<T>::KeyAlreadyRegistered);
 		Ok(())
 	}
 
