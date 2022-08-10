@@ -89,7 +89,7 @@ pub fn create_account() -> (MessageSourceId, AccountId32) {
 	let (key_pair, _) = sr25519::Pair::generate();
 	let result_key = Msa::create_account(AccountId32::from(key_pair.public()), EMPTY_FUNCTION);
 	assert_ok!(&result_key);
-	return result_key.unwrap()
+	result_key.unwrap()
 }
 
 /// Creates a provider and delegator MSA and sets the delegation relationship.

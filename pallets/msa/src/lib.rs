@@ -813,7 +813,7 @@ where
 		match call.is_sub_type() {
 			Some(Call::revoke_msa_delegation_by_delegator { provider_msa_id, .. }) => {
 				const TAG_PREFIX: &str = "DelegationRevokation";
-				let delegator_msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(&who)
+				let delegator_msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(who)
 					.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
 					.msa_id
 					.into();
@@ -824,9 +824,9 @@ where
 				)?;
 				return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(who).build()
 			},
-			Some(Call::revoke_msa_key { .. }) => {
+			Some(Call::revoke_msa_key { key, .. }) => {
 				const TAG_PREFIX: &str = "KeyRevokation";
-				let _msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(&who)
+				let _msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(&key)
 					.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
 					.msa_id
 					.into();

@@ -1116,19 +1116,20 @@ fn signed_extension_validation_failure_on_msa_key_revoked() {
 			&info,
 			len,
 		);
+
+		System::set_block_number(2);
 		assert_ok!(result);
 		assert_ok!(Msa::revoke_msa_key(
 			Origin::signed(AccountId32::from(owner_key.clone())),
-			user_account_id
+			user_account_id.clone()
 		));
 
-		System::set_block_number(System::block_number() + 1);
 		let call_revoke_msa_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::revoke_msa_key { key: owner_key.clone() });
+			&Call::Msa(MsaCall::revoke_msa_key { key: user_account_id.clone() });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result_revoked = CheckProviderRevocation::<Test>::new().validate(
-			&owner_key,
+			&user_account_id.clone(),
 			call_revoke_msa_key,
 			&info,
 			len,
