@@ -143,6 +143,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidPaginationRequest: AugmentedError<ApiType>;
       /**
+       * Invalid payload location
+       **/
+      InvalidPayloadLocation: AugmentedError<ApiType>;
+      /**
        * Invalid SchemaId or Schema not found
        **/
       InvalidSchemaId: AugmentedError<ApiType>;
@@ -204,10 +208,6 @@ declare module '@polkadot/api-base/types/errors' {
        * The number of key values has reached its maximum
        **/
       KeyLimitExceeded: AugmentedError<ApiType>;
-      /**
-       * An operation was attempted with a revoked Key
-       **/
-      KeyRevoked: AugmentedError<ApiType>;
       /**
        * MsaId values have reached the maximum
        **/
@@ -325,6 +325,50 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       UnweighableMessage: AugmentedError<ApiType>;
     };
+    preimage: {
+      /**
+       * Preimage has already been noted on-chain.
+       **/
+      AlreadyNoted: AugmentedError<ApiType>;
+      /**
+       * The user is not authorized to perform this action.
+       **/
+      NotAuthorized: AugmentedError<ApiType>;
+      /**
+       * The preimage cannot be removed since it has not yet been noted.
+       **/
+      NotNoted: AugmentedError<ApiType>;
+      /**
+       * The preimage request cannot be removed since no outstanding requests exist.
+       **/
+      NotRequested: AugmentedError<ApiType>;
+      /**
+       * A preimage may not be removed when there are outstanding requests.
+       **/
+      Requested: AugmentedError<ApiType>;
+      /**
+       * Preimage is too large to store on-chain.
+       **/
+      TooLarge: AugmentedError<ApiType>;
+    };
+    scheduler: {
+      /**
+       * Failed to schedule a call
+       **/
+      FailedToSchedule: AugmentedError<ApiType>;
+      /**
+       * Cannot find the scheduled call.
+       **/
+      NotFound: AugmentedError<ApiType>;
+      /**
+       * Reschedule failed because it does not change scheduled time.
+       **/
+      RescheduleNoChange: AugmentedError<ApiType>;
+      /**
+       * Given target block number is in the past.
+       **/
+      TargetBlockNumberInPast: AugmentedError<ApiType>;
+    };
     schemas: {
       /**
        * Error in Deserialization
@@ -424,6 +468,32 @@ declare module '@polkadot/api-base/types/errors' {
        * and the new runtime.
        **/
       SpecVersionNeedsToIncrease: AugmentedError<ApiType>;
+    };
+    vesting: {
+      /**
+       * The vested transfer amount is too low
+       **/
+      AmountLow: AugmentedError<ApiType>;
+      /**
+       * Insufficient amount of balance to lock
+       **/
+      InsufficientBalanceToLock: AugmentedError<ApiType>;
+      /**
+       * Failed because the maximum vesting schedules was exceeded
+       **/
+      MaxVestingSchedulesExceeded: AugmentedError<ApiType>;
+      /**
+       * This account have too many vesting schedules
+       **/
+      TooManyVestingSchedules: AugmentedError<ApiType>;
+      /**
+       * Vesting period is zero
+       **/
+      ZeroVestingPeriod: AugmentedError<ApiType>;
+      /**
+       * Number of vests is zero
+       **/
+      ZeroVestingPeriodCount: AugmentedError<ApiType>;
     };
     xcmpQueue: {
       /**
