@@ -50,19 +50,19 @@ jobs:
       - name: Upload frequency local spec and wasm artifacts 📦
         uses: softprops/action-gh-release@v1
         with:
-          files: frequency_specs_local.tar
+          files: frequency_specs_local-${{ github.sha }}.tar
       - name: Create tarball of rococo spec and wasm 📦
         run: tar -cvf frequency_specs_rococo_testnet-${{ github.sha }}.tar ./res/genesis/testnet
       - name: Upload frequency rococo spec and wasm artifacts 📦
         uses: softprops/action-gh-release@v1
         with:
-          files: frequency_specs_rococo_testnet.tar
+          files: frequency_specs_rococo_testnet-${{ github.sha }}.tar
       - name: Create tarball of frequency binary 📦
         run: tar -cvf frequency_binary-${{ github.sha }}.tar ./target/release/frequency
       - name: Upload frequency binary artifacts 📦
         uses: softprops/action-gh-release@v1
         with:
-          files: frequency_binary.tar
+          files: frequency_binary-${{ github.sha }}.tar
   build_local_srtool_wasm:
     name: build_local_srtool_wasm
     strategy:
@@ -97,7 +97,7 @@ jobs:
       - name: Upload frequency deterministic wasm to artifacts 📦
         uses: softprops/action-gh-release@v1
         with:
-          files: frequency_wasm_local.tar
+          files: frequency_wasm_local-${{ github.sha }}.tar
   build_testnet_srtool_wasm:
     name: build_testnet_srtool_wasm
     strategy:
@@ -132,6 +132,6 @@ jobs:
       - name: Upload frequency deterministic wasm to artifacts for rococo 📦
         uses: softprops/action-gh-release@v1
         with:
-          files: frequency_wasm_rococo.tar
+          files: frequency_wasm_rococo-${{ github.sha }}.tar
 
 
