@@ -717,11 +717,7 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<KeyInfo, DispatchError> {
 		let result = Self::ensure_valid_msa_key(key);
 		if result.is_err() {
-			return Ok(KeyInfo {
-				msa_id: 1 as MessageSourceId,
-				nonce: 0,
-				expired: Self::BlockNumber::default(),
-			})
+			return Ok(KeyInfo { msa_id: 1 as MessageSourceId, nonce: 0 })
 		}
 		Ok(result.unwrap())
 	}
