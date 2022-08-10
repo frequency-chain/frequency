@@ -242,13 +242,13 @@
 
 	<span class="doccomment">/// Gets the relationship information for this delegator, provider pair</span>
 	<span class="doccomment">/// # Arguments</span>
-	<span class="doccomment">/// * `provider` - The `MessageSourceId` that has been delegated to</span>
 	<span class="doccomment">/// * `delegator` - The `MessageSourceId` that delegated to the provider</span>
+	<span class="doccomment">/// * `provider` - The `MessageSourceId` that has been delegated to</span>
 	<span class="doccomment">/// # Returns</span>
 	<span class="doccomment">/// * `Option&lt;ProviderInfo&lt;Self::BlockNumber&gt;&gt;`</span>
 	<span class="kw">fn</span> <span class="ident">get_provider_info_of</span>(
-		<span class="ident">provider</span>: <span class="ident">Provider</span>,
 		<span class="ident">delegator</span>: <span class="ident">Delegator</span>,
+		<span class="ident">provider</span>: <span class="ident">Provider</span>,
 	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ProviderInfo</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 	<span class="doccomment">/// Check that a key is associated to an MSA and returns key information.</span>
 	<span class="doccomment">/// Returns a `[DispatchError`] if there is no MSA associated with the key</span>

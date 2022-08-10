@@ -952,15 +952,15 @@
 	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">get_identifier</span>)]</span>
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">MsaIdentifier</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">MessageSourceId</span>, <span class="ident">ValueQuery</span><span class="op">&gt;</span>;
 
-	<span class="doccomment">/// Storage type for mapping delegation</span>
+	<span class="doccomment">/// Storage type for mapping the relationship between a Delegator and its Provider.</span>
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">get_provider_info_of</span>)]</span>
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ProviderInfoOf</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageDoubleMap</span><span class="op">&lt;</span>
 		<span class="kw">_</span>,
 		<span class="ident">Blake2_128Concat</span>,
-		<span class="ident">Provider</span>,
-		<span class="ident">Blake2_128Concat</span>,
 		<span class="ident">Delegator</span>,
+		<span class="ident">Blake2_128Concat</span>,
+		<span class="ident">Provider</span>,
 		<span class="ident">ProviderInfo</span><span class="op">&lt;</span><span class="ident">T::BlockNumber</span><span class="op">&gt;</span>,
 		<span class="ident">OptionQuery</span>,
 	<span class="op">&gt;</span>;
@@ -1397,7 +1397,7 @@
 
 	<span class="doccomment">/// Add a provider to a delegator with the default permissions</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_provider</span>(<span class="ident">provider</span>: <span class="ident">Provider</span>, <span class="ident">delegator</span>: <span class="ident">Delegator</span>) -&gt; <span class="ident">DispatchResult</span> {
-		<span class="ident">ProviderInfoOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::try_mutate</span>(<span class="ident">provider</span>, <span class="ident">delegator</span>, <span class="op">|</span><span class="ident">maybe_info</span><span class="op">|</span> -&gt; <span class="ident">DispatchResult</span> {
+		<span class="ident">ProviderInfoOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::try_mutate</span>(<span class="ident">delegator</span>, <span class="ident">provider</span>, <span class="op">|</span><span class="ident">maybe_info</span><span class="op">|</span> -&gt; <span class="ident">DispatchResult</span> {
 			<span class="macro">ensure!</span>(<span class="ident">maybe_info</span>.<span class="ident">take</span>() <span class="op">==</span> <span class="prelude-val">None</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::DuplicateProvider</span>);
 
 			<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">ProviderInfo</span> { <span class="ident">permission</span>: <span class="ident">Default::default</span>(), <span class="ident">expired</span>: <span class="ident">Default::default</span>() };
@@ -1413,7 +1413,7 @@
 	<span class="doccomment">/// Check that the delegator has an active delegation to the provider</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_valid_delegation</span>(<span class="ident">provider</span>: <span class="ident">Provider</span>, <span class="ident">delegator</span>: <span class="ident">Delegator</span>) -&gt; <span class="ident">DispatchResult</span> {
 		<span class="kw">let</span> <span class="ident">current_block</span> <span class="op">=</span> <span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::block_number</span>();
-		<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::get_provider_info_of</span>(<span class="ident">provider</span>, <span class="ident">delegator</span>)
+		<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::get_provider_info_of</span>(<span class="ident">delegator</span>, <span class="ident">provider</span>)
 			.<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::DelegationNotFound</span>)<span class="question-mark">?</span>;
 		<span class="kw">if</span> <span class="ident">info</span>.<span class="ident">expired</span> <span class="op">==</span> <span class="ident">T::BlockNumber::zero</span>() {
 			<span class="kw">return</span> <span class="prelude-val">Ok</span>(())
@@ -1463,8 +1463,8 @@
 		<span class="ident">delegator_msa_id</span>: <span class="ident">Delegator</span>,
 	) -&gt; <span class="ident">DispatchResult</span> {
 		<span class="ident">ProviderInfoOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::try_mutate_exists</span>(
-			<span class="ident">provider_msa_id</span>,
 			<span class="ident">delegator_msa_id</span>,
+			<span class="ident">provider_msa_id</span>,
 			<span class="op">|</span><span class="ident">maybe_info</span><span class="op">|</span> -&gt; <span class="ident">DispatchResult</span> {
 				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">maybe_info</span>.<span class="ident">take</span>().<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::DelegationNotFound</span>)<span class="question-mark">?</span>;
 
@@ -1537,10 +1537,10 @@
 	}
 
 	<span class="kw">fn</span> <span class="ident">get_provider_info_of</span>(
-		<span class="ident">provider</span>: <span class="ident">Provider</span>,
 		<span class="ident">delegator</span>: <span class="ident">Delegator</span>,
+		<span class="ident">provider</span>: <span class="ident">Provider</span>,
 	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ProviderInfo</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="ident"><span class="self">Self</span>::get_provider_info_of</span>(<span class="ident">provider</span>, <span class="ident">delegator</span>)
+		<span class="ident"><span class="self">Self</span>::get_provider_info_of</span>(<span class="ident">delegator</span>, <span class="ident">provider</span>)
 	}
 
 	<span class="kw">fn</span> <span class="ident">ensure_valid_delegation</span>(<span class="ident">provider</span>: <span class="ident">Provider</span>, <span class="ident">delegation</span>: <span class="ident">Delegator</span>) -&gt; <span class="ident">DispatchResult</span> {
