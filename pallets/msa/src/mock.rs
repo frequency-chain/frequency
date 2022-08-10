@@ -1,4 +1,5 @@
 use crate as pallet_msa;
+use crate::types::EMPTY_FUNCTION;
 use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use frame_support::{
 	assert_ok, parameter_types,
@@ -82,6 +83,13 @@ pub fn test_public(n: u8) -> AccountId32 {
 
 pub fn test_origin_signed(n: u8) -> Origin {
 	Origin::signed(test_public(n))
+}
+
+pub fn create_account() -> (MessageSourceId, AccountId32) {
+	let (key_pair, _) = sr25519::Pair::generate();
+	let result_key = Msa::create_account(AccountId32::from(key_pair.public()), EMPTY_FUNCTION);
+	assert_ok!(&result_key);
+	return result_key.unwrap()
 }
 
 /// Creates a provider and delegator MSA and sets the delegation relationship.

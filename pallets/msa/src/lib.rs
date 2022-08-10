@@ -412,7 +412,7 @@ pub mod pallet {
 		/// - Returns [`NotKeyOwner`](Error::NotKeyOwner) if `origin` does not own the MSA ID associated with `key`.
 		/// - Returns [`NotKeyExists`](Error::NoKeyExists) if `origin` or `key` are not associated with `origin`'s MSA ID.
 		///
-		#[pallet::weight(T::WeightInfo::revoke_msa_key())]
+		#[pallet::weight((T::WeightInfo::revoke_msa_key(), DispatchClass::Normal, Pays::No))]
 		pub fn revoke_msa_key(origin: OriginFor<T>, key: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -822,6 +822,14 @@ where
 				Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id).map_err(
 					|_| InvalidTransaction::Custom(ValidityError::InvalidDelegation as u8),
 				)?;
+				return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(who).build()
+			},
+			Some(Call::revoke_msa_key { .. }) => {
+				const TAG_PREFIX: &str = "KeyRevokation";
+				let _msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(&who)
+					.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
+					.msa_id
+					.into();
 				return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(who).build()
 			},
 			_ => return Ok(Default::default()),

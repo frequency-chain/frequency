@@ -5,7 +5,7 @@ use crate::{
 	CheckProviderRevocation, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
-	msa::{Delegator, KeyInfo, KeyInfoResponse, MessageSourceId, Provider, ProviderInfo},
+	msa::{Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo},
 	utils::wrap_binary_data,
 };
 use frame_support::{
@@ -1052,4 +1052,87 @@ fn signed_extension_validation_valid_for_others() {
 		len,
 	);
 	assert_ok!(result);
+}
+
+#[test]
+pub fn revoke_msa_key_call_has_correct_costs() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let new_key = key_pair.public();
+
+		let call = MsaCall::<Test>::revoke_msa_key { key: AccountId32::from(new_key) };
+		let dispatch_info = call.get_dispatch_info();
+		assert_eq!(dispatch_info.pays_fee, Pays::No);
+	})
+}
+
+#[test]
+fn signed_extension_validation_on_msa_key_revoked() {
+	new_test_ext().execute_with(|| {
+		let (owner_msa_id, owner_key) = create_account();
+
+		let (user_key_pair, _) = sr25519::Pair::generate();
+		let user_public_key = user_key_pair.public();
+		let user_account_id = AccountId32::from(user_public_key.clone());
+		assert_ok!(Msa::add_key(owner_msa_id, &user_account_id, EMPTY_FUNCTION));
+
+		let call_revoke_msa_key: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::revoke_msa_key { key: owner_key.clone() });
+
+		let info = DispatchInfo::default();
+		let len = 0_usize;
+		let result = CheckProviderRevocation::<Test>::new().validate(
+			&owner_key,
+			call_revoke_msa_key,
+			&info,
+			len,
+		);
+		assert_ok!(result);
+		assert_ok!(Msa::revoke_msa_key(
+			Origin::signed(AccountId32::from(owner_key.clone())),
+			user_account_id
+		));
+	});
+}
+
+#[test]
+fn signed_extension_validation_failure_on_msa_key_revoked() {
+	new_test_ext().execute_with(|| {
+		let (owner_msa_id, owner_key) = create_account();
+
+		let (user_key_pair, _) = sr25519::Pair::generate();
+		let user_public_key = user_key_pair.public();
+		let user_account_id = AccountId32::from(user_public_key.clone());
+		assert_ok!(Msa::add_key(owner_msa_id, &user_account_id, EMPTY_FUNCTION));
+
+		let call_revoke_msa_key: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::revoke_msa_key { key: owner_key.clone() });
+
+		let info = DispatchInfo::default();
+		let len = 0_usize;
+		let result = CheckProviderRevocation::<Test>::new().validate(
+			&owner_key,
+			call_revoke_msa_key,
+			&info,
+			len,
+		);
+		assert_ok!(result);
+		assert_ok!(Msa::revoke_msa_key(
+			Origin::signed(AccountId32::from(owner_key.clone())),
+			user_account_id
+		));
+
+		System::set_block_number(System::block_number() + 1);
+		let call_revoke_msa_key: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::revoke_msa_key { key: owner_key.clone() });
+		let info = DispatchInfo::default();
+		let len = 0_usize;
+		let result_revoked = CheckProviderRevocation::<Test>::new().validate(
+			&owner_key,
+			call_revoke_msa_key,
+			&info,
+			len,
+		);
+		assert!(result_revoked.is_err());
+	});
 }
