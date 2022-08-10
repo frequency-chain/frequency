@@ -14,12 +14,9 @@ use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
 #[rpc(client, server)]
-pub trait MsaApi<BlockHash, AccountId, BlockNumber> {
+pub trait MsaApi<BlockHash, AccountId> {
 	#[method(name = "msa_getMsaKeys")]
-	fn get_msa_keys(
-		&self,
-		msa_id: MessageSourceId,
-	) -> RpcResult<Vec<KeyInfoResponse<AccountId, BlockNumber>>>;
+	fn get_msa_keys(&self, msa_id: MessageSourceId) -> RpcResult<Vec<KeyInfoResponse<AccountId>>>;
 
 	#[method(name = "msa_getMsaId")]
 	fn get_msa_id(&self, key: AccountId) -> RpcResult<Option<MessageSourceId>>;
@@ -46,21 +43,16 @@ impl<C, M> MsaHandler<C, M> {
 }
 
 #[async_trait]
-impl<C, Block, AccountId, BlockNumber> MsaApiServer<<Block as BlockT>::Hash, AccountId, BlockNumber>
-	for MsaHandler<C, Block>
+impl<C, Block, AccountId> MsaApiServer<<Block as BlockT>::Hash, AccountId> for MsaHandler<C, Block>
 where
 	Block: BlockT,
 	C: Send + Sync + 'static,
 	C: ProvideRuntimeApi<Block>,
 	C: HeaderBackend<Block>,
-	C::Api: MsaRuntimeApi<Block, AccountId, BlockNumber>,
+	C::Api: MsaRuntimeApi<Block, AccountId>,
 	AccountId: Codec,
-	BlockNumber: Codec,
 {
-	fn get_msa_keys(
-		&self,
-		msa_id: MessageSourceId,
-	) -> RpcResult<Vec<KeyInfoResponse<AccountId, BlockNumber>>> {
+	fn get_msa_keys(&self, msa_id: MessageSourceId) -> RpcResult<Vec<KeyInfoResponse<AccountId>>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 		let runtime_api_result = api.get_msa_keys(&at, msa_id);

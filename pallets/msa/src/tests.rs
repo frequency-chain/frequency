@@ -20,10 +20,7 @@ fn it_creates_an_msa_account() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::create(test_origin_signed(1)));
 
-		assert_eq!(
-			Msa::get_key_info(test_public(1)),
-			Some(KeyInfo { msa_id: 1, expired: 0, nonce: 0 })
-		);
+		assert_eq!(Msa::get_key_info(test_public(1)), Some(KeyInfo { msa_id: 1, nonce: 0 }));
 
 		assert_eq!(Msa::get_identifier(), 1);
 
@@ -212,7 +209,7 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 		// assert
 		let keys = Msa::fetch_msa_keys(new_msa_id);
 		assert_eq!(keys.len(), 2);
-		assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id, nonce: 0, expired: 0}), true}
+		assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id, nonce: 0}), true}
 		System::assert_last_event(Event::KeyAdded { msa_id: 1, key: new_key.into() }.into());
 	});
 }
@@ -251,7 +248,7 @@ pub fn test_delete_key() {
 
 		let info = Msa::get_key_info(&test_public(1));
 
-		assert_eq!(info, Some(KeyInfo { msa_id: 1, expired: 0, nonce: 0 }));
+		assert_eq!(info, Some(KeyInfo { msa_id: 1, nonce: 0 }));
 
 		assert_ok!(Msa::delete_key_info(&test_public(1)));
 	});

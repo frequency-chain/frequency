@@ -133,7 +133,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_key_info)]
 	pub type KeyInfoOf<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::AccountId, KeyInfo<T::BlockNumber>, OptionQuery>;
+		StorageMap<_, Blake2_128Concat, T::AccountId, KeyInfo, OptionQuery>;
 
 	/// Storage type for MSA keys
 	#[pallet::storage]
@@ -207,8 +207,6 @@ pub mod pallet {
 		NotKeyOwner,
 		/// An operation was attempted with an unknown Key
 		NoKeyExists,
-		/// An operation was attempted with a revoked Key
-		KeyRevoked,
 		/// The number of key values has reached its maximum
 		KeyLimitExceeded,
 		/// A transaction's Origin (AccountId) may not revoke itself
@@ -261,7 +259,6 @@ pub mod pallet {
 		/// - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if payload's MSA does not match given provider MSA.
 		/// - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
-		/// - Returns [`KeyRevoked`](Error::KeyRevoked) if MSA of `origin` is expired.
 		/// - Returns [`DuplicatedKey`](Error::DuplicatedKey) if there is already an MSA for `delegator_key`.
 		///
 		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation())]
@@ -307,7 +304,6 @@ pub mod pallet {
 		/// - Returns [`AddProviderSignatureVerificationFailed`](Error::AddProviderSignatureVerificationFailed) if `provider_key`'s MSA ID does not equal `add_provider_payload.authorized_msa_id`.
 		/// - Returns [`DuplicateProvider`](Error::DuplicateProvider) if there is already a Delegation for `origin` MSA and `provider_key` MSA.
 		/// ## Errors
-		/// - Returns [`KeyRevoked`](Error::KeyRevoked) if MSA of `origin` or `authorized_msa_id` is expired.
 		/// - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if `add_provider_payload.authorized_msa_id`  does not match MSA ID of `provider_key`.
 		/// - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
@@ -408,7 +404,6 @@ pub mod pallet {
 		///
 		/// ### Errors
 		/// - Returns [`InvalidSelfRevoke`](Error::InvalidSelfRevoke) if `origin` and `key` are the same.
-		/// - Returns [`KeyRevoked`](Error::KeyRevoked) if `key` is already expired.
 		/// - Returns [`NotKeyOwner`](Error::NotKeyOwner) if `origin` does not own the MSA ID associated with `key`.
 		/// - Returns [`NotKeyExists`](Error::NoKeyExists) if `origin` or `key` are not associated with `origin`'s MSA ID.
 		/// ### Remarks
@@ -422,7 +417,6 @@ pub mod pallet {
 
 			let who = Self::try_get_key_info(&who)?;
 			let key_info = Self::try_get_key_info(&key)?;
-			ensure!(who.expired == T::BlockNumber::zero(), Error::<T>::KeyRevoked);
 			ensure!(who.msa_id == key_info.msa_id, Error::<T>::NotKeyOwner);
 
 			Self::delete_key_for_msa(who.msa_id, &key)?;
@@ -439,7 +433,6 @@ pub mod pallet {
 		/// ### Errors
 		///
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if `provider_key` does not have an MSA key.
-		/// - Returns [`KeyRevoked`](Error::KeyRevoked) if `provider_key` is revoked
 		/// - Returns [`DelegationNotFound`](Error::DelegationNotFound) if there is no Delegation between origin MSA and provider MSA.
 		///
 		#[pallet::weight((T::WeightInfo::remove_delegation_by_provider(20_000), DispatchClass::Normal, Pays::No))]
@@ -505,8 +498,7 @@ impl<T: Config> Pallet<T> {
 		KeyInfoOf::<T>::try_mutate(key, |maybe_msa| {
 			ensure!(maybe_msa.is_none(), Error::<T>::DuplicatedKey);
 
-			*maybe_msa =
-				Some(KeyInfo { msa_id, expired: T::BlockNumber::default(), nonce: Zero::zero() });
+			*maybe_msa = Some(KeyInfo { msa_id, nonce: Zero::zero() });
 
 			// adding reverse lookup
 			<MsaKeysOf<T>>::try_mutate(msa_id, |key_list| {
@@ -656,7 +648,7 @@ impl<T: Config> Pallet<T> {
 	/// * `key` - The `AccountId` you want to attempt to get information on
 	/// # Returns
 	/// * [`KeyInfo`]
-	pub fn try_get_key_info(key: &T::AccountId) -> Result<KeyInfo<T::BlockNumber>, DispatchError> {
+	pub fn try_get_key_info(key: &T::AccountId) -> Result<KeyInfo, DispatchError> {
 		let info = Self::get_key_info(key).ok_or(Error::<T>::NoKeyExists)?;
 		Ok(info)
 	}
@@ -672,9 +664,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Fetches all the keys associated with a message Source Account
 	/// NOTE: This should only be called from RPC due to heavy database reads
-	pub fn fetch_msa_keys(
-		msa_id: MessageSourceId,
-	) -> Vec<KeyInfoResponse<T::AccountId, T::BlockNumber>> {
+	pub fn fetch_msa_keys(msa_id: MessageSourceId) -> Vec<KeyInfoResponse<T::AccountId>> {
 		let mut response = Vec::new();
 		for key in Self::get_msa_keys(msa_id) {
 			if let Ok(info) = Self::try_get_key_info(&key) {
@@ -686,12 +676,8 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Checks that a key is associated to an MSA and has not been revoked.
-	pub fn ensure_valid_msa_key(
-		key: &T::AccountId,
-	) -> Result<KeyInfo<T::BlockNumber>, DispatchError> {
+	pub fn ensure_valid_msa_key(key: &T::AccountId) -> Result<KeyInfo, DispatchError> {
 		let info = Self::try_get_key_info(key)?;
-
-		ensure!(info.expired == T::BlockNumber::zero(), Error::<T>::KeyRevoked);
 
 		Ok(info)
 	}
@@ -716,9 +702,7 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	}
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	fn ensure_valid_msa_key(
-		key: &T::AccountId,
-	) -> Result<KeyInfo<Self::BlockNumber>, DispatchError> {
+	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<KeyInfo, DispatchError> {
 		Self::ensure_valid_msa_key(key)
 	}
 
