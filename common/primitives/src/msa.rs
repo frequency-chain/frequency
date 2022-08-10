@@ -100,7 +100,7 @@ pub trait AccountProvider {
 	/// # Arguments
 	/// * `key` - The `AccountId` to lookup
 	/// # Returns
-	/// * `Result<KeyInfo<Self::BlockNumber>, DispatchError>`
+	/// * `Result<KeyInfo, DispatchError>`
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<KeyInfo, DispatchError>;
 
 	/// Validates that the delegator and provider have a relationship at this point

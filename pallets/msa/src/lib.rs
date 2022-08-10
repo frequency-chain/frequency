@@ -714,9 +714,7 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
 	/// this method to return a dummy account in case it does not exist
 	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_valid_msa_key(
-		key: &T::AccountId,
-	) -> Result<KeyInfo<Self::BlockNumber>, DispatchError> {
+	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<KeyInfo, DispatchError> {
 		let result = Self::ensure_valid_msa_key(key);
 		if result.is_err() {
 			return Ok(KeyInfo {
