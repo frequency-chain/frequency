@@ -1,183 +1,182 @@
-# Frequency
+Frequency is a Polkadot parachain designed to run Decentralized Social Network Protocol
+(DSNP), but it could run other things.
 
-## Build
+# Prerequisites
 
-Install Docker and Docker Compose:
+1. [Docker Engine](https://docs.docker.com/engine/install/)*
+1. [Docker Compose](https://docs.docker.com/compose/install/)
 
-1. Follow the instructions on [Docker](https://docs.docker.com/engine/install/)
-2. Follow instructions on [Docker Compose](https://docs.docker.com/compose/install/)
 
-Note: For mac users, [Docker Desktop](https://docs.docker.com/desktop/mac/install/) also installs docker compose environment.
+---
+* For Mac users, [Docker Desktop](https://docs.docker.com/desktop/mac/install/) engine also installs docker compose environment, so no need to install it separately.
 
-Install Rust:
+# Build
 
-```bash
-curl https://sh.rustup.rs -sSf | sh
+1. Install Rust.
+   ```sh
+   curl https://sh.rustup.rs -sSf | sh
+   source "$HOME/.cargo/env"
+   ```
+1. Init your Wasm Build environment.
+   ```sh
+   cd [path/to/repo/root]
+   ./scripts/init.sh install-toolchain
+   ```
+1. Build Wasm and native code. *Note, if you get errors complaining about missing
+dependencies (cmake, yarn, node, jq, etc.) install them with your favorite package
+manager(e.g. Homebrew on Mac) and re-run the command again.*
+   ```sh
+   cargo build --release
+   ```
+   Alternatively you may run `TARGET=build-node ./ci/build.sh`
+
+At this point you should have `./target/release` directory generated locally with compiled
+project files.
+
+# Run
+
+There are 2 options to run the chain locally:
+
+## (Option 1) Local Testnet with Instant Sealing
+
+This option runs just one collator node in instant seal mode and nothing more.
+A "collator node" is a Frequency parachain node that is actively collating (aka forming blocks to submit to the relay chain). The instant seal mode allows a blockchain node to author a block
+as soon as it goes into a queue. This is also a great option to run with an example client.
+
+Start chain in instant sealing mode
+```sh
+make start
 ```
 
-Initialize your Wasm Build environment:
+To stop running chain hit [Ctrl+C] in terminal where the chain was started.
 
-```bash
-./scripts/init.sh install-toolchain
-```
+| **Host** | **Ports** | **Dashboard URL** |
+| ---- | ---- | --- |
+| Frequency Collator Node | ws:`9944`, rpc`:9933`, p2p:`3033` | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
 
-Build Wasm and native code:
 
-```bash
-cargo build --release
-```
+## (Option 2) Local Testnet with One Collator and Relay Chain Nodes
 
-Alternatively run
+This option runs one collator node and two relay chain validator nodes. The validator
+nodes are run locally in docker, but could be any other relay chain like the
+devnet relay chain.
 
-```bash
-TARGET=build-node ./ci/build.sh
-```
+1. Start relay chain validator nodes.
+   ```sh
+   make start-relay
+   ```
 
-## Run
+1. Register a new parachain slot (parachain id) for Frequency. *Note, if parachain was
+previously registered on a running relay chain and no new registration is required,
+then you can skip the above step.*
+   ```sh
+   make register
+   ```
+1. Generate chain spec files. If this is your first time running the project or
+new pallets/runtime code changes have been made to Frequency, then the chain specs
+need to be generated. Refer to [generation spec file](#generate-a-new-spec-file)
+for more details.
 
-### Tests
+1. Start Frequency as parachain. This step will generate genesis/wasm and onboard the
+parachain.
+   ```sh
+   make start-frequency
+   ```
 
-```bash
-cargo test
-```
+1. Onboard Frequency to the relay chain
+   ```sh
+   make onboard
+   ```
 
-Alternatively Run `TARGET=tests ./ci/build.sh` to run cargo tests.
+| **Host** | **Ports** | **Dashboard URL** |
+| ---- | ----- | ------------ |
+| Frequency Relay Node | ws:`9944`, rpc`:9933`, p2p:`30333` | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
+| Alice Relay Node | ws:`:9946`, rpc`:9935`, p2p:`30335` | [127.0.0.1:9946](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9946#/explorer) |
+| Bob Relay Node | ws:`:9947`, rpc`:9936`, p2p:`30336` | [127.0.0.1:9947](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9947#/explorer) |
 
-### Configure the environment
+## Stop and Clean Environment
 
-```bash
-source .env
-```
-
-### Start local Relay chain(alice and bob) and Frequency(alice)
-
-1. Start relay chain
-
-    ```bash
-    ./scripts/init.sh start-relay-chain
-    ```
-
-1. Relay chain is running on ports:
-    | Host | Port | URL |
-    | ---- | ---- | --- |
-    | Frequency Relay Node | `9945` | [127.0.0.1:9945](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9945#/explorer) |
-    | Alice Relay Node | `9946` | [127.0.0.1:9946](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9946#/explorer) |
-    | Bob Relay Node | `9947` | [127.0.0.1:9947](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9947#/explorer) |
-
-1. Register a new parachain slot (parachain id) for Frequency:
-
-    ```bash
-    ./scripts/init.sh register-frequency
-    ```
-
-1. Note: if parachain was previously registered on a running relay chain and no new registration is required, then, you can skip the above step.
-
-1. Start Frequency as parachain: This step will generate genesis/wasm and onboard the parachain. If new pallets or runtime code changes have been made to Frequency, then developer have to generate chain specs again. Refer to [generation spec file](#generating-a-new-spec-file) for more details.
-
-1. Note: assumption is that relay chain is running and para id 2000 is registered on relay. If parachain id is not 2000, update the local chain [spec](#generating-a-new-spec-file) with registered parachain id.
-
-    ```bash
-    ./scripts/init.sh start-frequency
-    ```
-
-1. Note: set `RUST_LOG=debug RUST_BACKTRACE=1` as the environment variable to enable detailed logs.
-
-1. Alternative to start-frequency: Run ```cargo build --release``` and then run ```./scripts/init.sh start-frequency-docker``` to start Frequency in a docker container via docker compose. ```./scripts/init.sh stop-frequency-docker``` to stop Frequency container.
-
-1. Onboarding Frequency to the relay chain
-
-    ```bash
-    ./scripts/init.sh onboard-frequency
-    ```
-
-1. Parachain collator will be available at rpc port `9944`.
-
-1. Link to parachain [dashboard](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944)
-
-1. Off-boarding Frequency from relay chain
-
-    ```bash
-    ./scripts/init.sh offboard-frequency
-    ```
-
-Note: Clean up /tmp/frequency directory after off-boarding. This is required to avoid any conflicts with next onboarding. For local testing and devnet this will be ideal until runtime upgrades are implemented.
-
-### Ports
-
-- Default ports for Frequency are:
-      - ```30333``` # p2p port
-      - ```9933```  # rpc port
-      - ```9944```  # ws port
-
-- Default ports for Frequency Relay Chain Node are:
-      - ```30334``` # p2p port
-      - ```9934```  # rpc port
-      - ```9945```  # ws port
-
-- Default ports for Validator Alice are:
-      - ```30335``` # p2p port
-      - ```9935```  # rpc port
-      - ```9946```  # ws port
-
-- Default ports for Validator Bob are:
-      - ```30336``` # p2p port
-      - ```9936```  # rpc port
-      - ```9947```  # ws port
-
-### Cleanup the environment
-
+1. Off-board Frequency from relay chain.
+   ```sh
+   make offboard
+   ```
+1. [Ctrl+C] to stop Frequency running in the terminal.
 1. Stop the relay chain.
+   ```bash
+   make stop-relay
+   ```
+1. Run to remove unused volumes.
+   ```sh
+   docker volume prune
+   ```
+1. Clean up temporary directory to avoid any conflicts with next onboarding
+   ```sh
+   rm -fr /tmp/frequency
+   ```
 
-    ```bash
-    ./scripts/init.sh stop-relay-chain
-    ```
+## Generate a New Spec File
 
-1. Stop Frequency running in the terminal.
+To build spec against specific chain config specify chain name in the command above.
 
-1. Run ```docker volume prune``` to remove unused volumes.
+1. Update `node/**/chain_spec.rs` with required spec config, defaults to `para_id:2000`
+and relay chain to be `rococo_local.json` with `protocol_id:frequency-local`
+1. Export the chain spec
+   ```sh
+   cargo run --release build-spec --disable-default-bootnode > ./res/genesis/local/frequency-spec-rococo.json
+   ```
+1. Export the raw chain spec
+   ```sh
+   cargo run --release build-spec --raw --disable-default-bootnode --chain ./res/genesis/local/frequency-spec-rococo.json > ./res/genesis/local/rococo-local-frequency-2000-raw.json
+   ```
 
-1. Remove Frequency chain data via ```rm -rf /tmp/frequency```.
+~~Alternatively, run ```./scripts/generate_specs.sh 2001 true``` to generate plain and raw frequency spec along with genesis state and wasm. Replace 2001 with registered parachain id.~~
 
-### Guidelines for writing code documentation
+Alternatively, run `make specs-local` to generate plain and raw frequency spec along with genesis state and wasm.
 
-- Rust follows specific style for documenting various code elements. Refer to [rust doc](https://doc.rust-lang.org/rustdoc/how-to-write-documentation.html) and [documentation example](https://doc.rust-lang.org/rust-by-example/meta/doc.html) for more details.
-
-- Running ```RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps``` will generate documentation specific to Frequency while ignoring documenting dependencies.
-
-- To view generated cargo docs, one can open ```./target/doc/index.html```.
-
-### Generating a new spec file
-
-1. Update `node/chain_spec.rs` with required spec config, defaults to `para_id:2000` and relay chain to be `rococo_local.json` with `protocol_id:frequency-local`
-2. Run `cargo run --release build-spec --disable-default-bootnode > ./res/genesis/frequency-spec-rococo.json` to export the chain spec
-3. Run `cargo run --release build-spec --raw --disable-default-bootnode --chain ./res/genesis/frequency-spec-rococo.json > ./res/genesis/rococo-local-frequency-2000-raw.json` to export the raw chain spec
-4. Commit
-5. Alternatively, run ```./scripts/generate_specs.sh 2001 true``` to generate plain and raw frequency spec along with genesis state and wasm. Replace 2001 with registered parachain id.
-
-Note: To build spec against specific chain config; specify chain name in the command above.
-
-### Downloading Frequency related spec files, generated genesis state and wasm
-
-In order to experiment with Frequency, spec files and generated genesis state and wasm can be downloaded from [build artifacts](https://github.com/LibertyDSNP/frequency/actions/workflows/main.yml?query=branch%3Amain)
-
-## Linting
+# Lint
 
 - Lint the project with `cargo +nightly fmt`.
 - Linting standards are defined in `rustfmt.toml`.
 - Alternatively run `TARGET=lint ./ci/build.sh`
 
-## Verifying Runtime
+# Verify Runtime
 
 1. Check out the commit at which the runtime was built.
-2. Run `TARGET=build-runtime RUST_TOOLCHAIN=nightly ./ci/build.sh` to use srtool to verify the runtime.
+2. Use srtool to verify the runtime:
+   ```sh
+   TARGET=build-runtime RUST_TOOLCHAIN=nightly ./ci/build.sh
+   ```
 
-## Additional Resources
-
-- [Cumulus Tutorial](https://docs.substrate.io/tutorials/v3/cumulus/start-relay/)
-- [Private Network](https://docs.substrate.io/tutorials/v3/private-network/)
-
-## Contributing
+# Contributing
 
 Interested in contributing?
 Wonderful!
 Please check out [the information here](./CONTRIBUTING.md).
+
+# Additional Resources
+- [Cumulus Project](https://github.com/paritytech/cumulus)
+- [Cumulus Tutorials](https://docs.substrate.io/tutorials/)
+- (more to come...)
+
+# Misc
+
+## Run Frequency in Docker Container
+There is an alternative way to start Frequency in a docker container
+(:exclamation: currently works on Linux only):
+```sh
+# Start Frequency in docker
+cargo build --release
+make start-frequency-docker
+
+# Stop Frequency in docker
+make stop-frequency-docker
+```
+
+## Helpers
+```sh
+# View all listening ports
+lsof -i -P | grep -i "listen"
+
+# View ports Frequency node is listening on
+lsof -i -P | grep -i "listen" | grep frequency
+```
