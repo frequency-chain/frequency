@@ -9,14 +9,13 @@ use frame_support::dispatch::DispatchError;
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime file (the `runtime/src/lib.rs`)
 sp_api::decl_runtime_apis! {
-	pub trait MessagesApi<AccountId, BlockNumber> where
-		AccountId: Codec,
+	pub trait MessagesApi<BlockNumber> where
 		BlockNumber: Codec,
 	{
 		fn get_messages_by_schema(schema_id: SchemaId,
 			pagination: BlockPaginationRequest<BlockNumber>) ->
 		Result<
-			BlockPaginationResponse<BlockNumber, MessageResponse<AccountId, BlockNumber>>,
+			BlockPaginationResponse<BlockNumber, MessageResponse<BlockNumber>>,
 			DispatchError,
 		>;
 	}

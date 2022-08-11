@@ -97,13 +97,13 @@ pub trait AccountProvider {
 
 	/// Gets the relationship information for this delegator, provider pair
 	/// # Arguments
-	/// * `provider` - The `MessageSourceId` that has been delegated to
 	/// * `delegator` - The `MessageSourceId` that delegated to the provider
+	/// * `provider` - The `MessageSourceId` that has been delegated to
 	/// # Returns
 	/// * `Option<ProviderInfo<Self::BlockNumber>>`
 	fn get_provider_info_of(
-		provider: Provider,
 		delegator: Delegator,
+		provider: Provider,
 	) -> Option<ProviderInfo<Self::BlockNumber>>;
 	/// Check that a key is associated to an MSA and returns key information.
 	/// Returns a `[DispatchError`] if there is no MSA associated with the key

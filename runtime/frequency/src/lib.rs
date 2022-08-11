@@ -9,16 +9,24 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 mod weights;
 pub mod xcm_config;
 
+mod benchmarking;
+
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, Verify},
+	traits::{
+		AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
+		IdentifyAccount, Verify,
+	},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
+
+#[cfg(feature = "runtime-benchmarks")]
+use codec::Decode;
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -26,11 +34,12 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use common_primitives::{messages::*, msa::*, schema::SchemaResponse};
+use cumulus_pallet_parachain_system::RelaychainBlockNumberProvider;
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU32, EqualPrivilegeOnly, Everything},
+	traits::{ConstU32, EnsureOrigin, EqualPrivilegeOnly, Everything},
 	weights::{
 		constants::WEIGHT_PER_SECOND, ConstantMultiplier, DispatchClass, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
@@ -39,7 +48,7 @@ use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureRoot,
+	EnsureRoot, RawOrigin,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
@@ -307,11 +316,50 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
+parameter_types! {
+	pub const VestingPalletId: PalletId = PalletId(*b"py/vstng");
+}
+
+pub struct RootAsVestingPallet;
+impl EnsureOrigin<Origin> for RootAsVestingPallet {
+	type Success = AccountId;
+
+	fn try_origin(o: Origin) -> Result<Self::Success, Origin> {
+		Into::<Result<RawOrigin<AccountId>, Origin>>::into(o).and_then(|o| match o {
+			RawOrigin::Root => Ok(VestingPalletId::get().into_account_truncating()),
+			r => Err(Origin::from(r)),
+		})
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn successful_origin() -> Origin {
+		let zero_account_id =
+			AccountId::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes())
+				.expect("infinite length input; no invalid inputs for type; qed");
+		Origin::from(RawOrigin::Signed(zero_account_id))
+	}
+}
+
+parameter_types! {
+	pub const MaxVestingSchedules: u32 = 50;
+	pub const MinVestedTransfer: Balance = 0;
+}
+
+impl orml_vesting::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type MinVestedTransfer = MinVestedTransfer;
+	type VestedTransferOrigin = RootAsVestingPallet;
+	type WeightInfo = weights::orml_vesting::SubstrateWeight<Runtime>;
+	type MaxVestingSchedules = MaxVestingSchedules;
+	type BlockNumberProvider = RelaychainBlockNumberProvider<Runtime>;
+}
+
 impl pallet_msa::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 	type ConvertIntoAccountId32 = ConvertInto;
-	type MaxKeys = ConstU32<1000>;
+	type MaxKeys = ConstU32<25>;
 }
 
 pub use common_primitives::schema::SchemaId;
@@ -543,6 +591,13 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
+impl pallet_utility::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type PalletsOrigin = OriginCaller;
+	type WeightInfo = weights::utility_weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -561,6 +616,7 @@ construct_runtime!(
 		Scheduler: pallet_scheduler = 5,
 		Preimage: pallet_preimage = 7,
 
+		Utility: pallet_utility::{Pallet, Call, Event} = 8,
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
@@ -578,10 +634,13 @@ construct_runtime!(
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
+		// ORML
+		Vesting: orml_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 40,
+
 		// Frequency related pallets
-		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 34,
-		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 35,
-		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 36,
+		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
+		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
+		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 62,
 	}
 );
 
@@ -602,6 +661,7 @@ mod benches {
 		[pallet_msa, Msa]
 		[pallet_schemas, Schemas]
 		[pallet_messages, Messages]
+		[pallet_utility, Utility]
 	);
 }
 
@@ -713,9 +773,9 @@ impl_runtime_apis! {
 	}
 
 	// Unfinished runtime APIs
-	impl pallet_messages_runtime_api::MessagesApi<Block, AccountId, BlockNumber> for Runtime {
+	impl pallet_messages_runtime_api::MessagesApi<Block, BlockNumber> for Runtime {
 		fn get_messages_by_schema(schema_id: SchemaId, pagination: BlockPaginationRequest<BlockNumber>) ->
-			Result<BlockPaginationResponse<BlockNumber, MessageResponse<AccountId, BlockNumber>>, DispatchError> {
+			Result<BlockPaginationResponse<BlockNumber, MessageResponse<BlockNumber>>, DispatchError> {
 			Messages::get_messages_by_schema(schema_id, pagination)
 		}
 	}
@@ -769,9 +829,11 @@ impl_runtime_apis! {
 			use frame_support::traits::StorageInfoTrait;
 			use frame_system_benchmarking::Pallet as SystemBench;
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
+			use orml_benchmarking::list_benchmark as list_orml_benchmark;
 
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
+			list_orml_benchmark!(list, extra, orml_vesting, benchmarking::vesting);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 			return (list, storage_info)
@@ -781,6 +843,7 @@ impl_runtime_apis! {
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
+			use orml_benchmarking::{add_benchmark as orml_add_benchmark};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
@@ -804,6 +867,7 @@ impl_runtime_apis! {
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 			add_benchmarks!(params, batches);
+			orml_add_benchmark!(params, batches, orml_vesting, benchmarking::vesting);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

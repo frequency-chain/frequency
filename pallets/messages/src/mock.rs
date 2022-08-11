@@ -101,8 +101,8 @@ impl AccountProvider for AccountHandler {
 		Some(get_msa_from_account(*key) as MessageSourceId)
 	}
 	fn get_provider_info_of(
-		provider: Provider,
 		_delegator: Delegator,
+		provider: Provider,
 	) -> Option<ProviderInfo<Self::BlockNumber>> {
 		if provider == Provider(2000) {
 			return None

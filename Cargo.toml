@@ -4,9 +4,10 @@ panic = "unwind"
 [workspace]
 members = [
   "node",
-	"node/cli",
-	"node/service",
+  "node/cli",
+  "node/service",
   "pallets/*",
-  "runtime/*",
-  "common/helpers"
+  "runtime/frequency",
+  "runtime/frequency-rococo",
+  "common/helpers",
 ]
