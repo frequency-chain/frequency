@@ -741,15 +741,15 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	}
 }
 
-/// The SignedExtension trait is implemented on CheckProviderRevocation to validate that a provider
+/// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate that a provider
 /// has not already been revoked if the calling extrinsic is revoking a provider to an MSA. The
 /// purpose of this is to ensure that the revoke_msa_delegation_by_delegator extrinsic cannot be
 /// repeatedly called and flood the network.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct CheckProviderRevocation<T: Config + Send + Sync>(PhantomData<T>);
+pub struct CheckFreeExtrinsicUse<T: Config + Send + Sync>(PhantomData<T>);
 
-/// Errors related to the validity of the CheckProviderRevocation signed extension.
+/// Errors related to the validity of the CheckFreeExtrinsicUse signed extension.
 enum ValidityError {
 	/// Delegation to provider is not found or expired.
 	InvalidDelegation,
@@ -757,17 +757,17 @@ enum ValidityError {
 	InvalidMsaKey,
 }
 
-impl<T: Config + Send + Sync> CheckProviderRevocation<T> {
+impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// Create new `SignedExtension` to check runtime version.
 	pub fn new() -> Self {
 		Self(sp_std::marker::PhantomData)
 	}
 }
 
-impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckProviderRevocation<T> {
+impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckFreeExtrinsicUse<T> {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		write!(f, "CheckProviderRevocation<{:?}>", self.0)
+		write!(f, "CheckFreeExtrinsicUse<{:?}>", self.0)
 	}
 	#[cfg(not(feature = "std"))]
 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
@@ -775,7 +775,7 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckProviderRevocation<T> 
 	}
 }
 
-impl<T: Config + Send + Sync> SignedExtension for CheckProviderRevocation<T>
+impl<T: Config + Send + Sync> SignedExtension for CheckFreeExtrinsicUse<T>
 where
 	T::Call: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
 {
@@ -783,7 +783,7 @@ where
 	type Call = T::Call;
 	type AdditionalSigned = ();
 	type Pre = ();
-	const IDENTIFIER: &'static str = "CheckProviderRevocation";
+	const IDENTIFIER: &'static str = "CheckFreeExtrinsicUse";
 
 	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
 		Ok(())
@@ -812,7 +812,7 @@ where
 	) -> TransactionValidity {
 		match call.is_sub_type() {
 			Some(Call::revoke_msa_delegation_by_delegator { provider_msa_id, .. }) => {
-				const TAG_PREFIX: &str = "DelegationRevokation";
+				const TAG_PREFIX: &str = "DelegationRevocation";
 				let delegator_msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(who)
 					.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
 					.msa_id
@@ -825,7 +825,7 @@ where
 				return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(who).build()
 			},
 			Some(Call::revoke_msa_key { key, .. }) => {
-				const TAG_PREFIX: &str = "KeyRevokation";
+				const TAG_PREFIX: &str = "KeyRevocation";
 				let _msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(&key)
 					.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
 					.msa_id

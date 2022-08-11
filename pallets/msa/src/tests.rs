@@ -2,7 +2,7 @@ use crate::{
 	ensure,
 	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
-	CheckProviderRevocation, Config, DispatchResult, Error, Event, MsaIdentifier,
+	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
 	msa::{Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo},
@@ -984,7 +984,7 @@ pub fn delegation_expired() {
 	})
 }
 
-/// Assert that revoking an MSA delegation passes the signed extension CheckProviderRevocation
+/// Assert that revoking an MSA delegation passes the signed extension CheckFreeExtrinsicUse
 /// validation when a valid delegation exists.
 #[test]
 fn signed_extension_revoke_msa_delegation_by_delegator() {
@@ -994,7 +994,7 @@ fn signed_extension_revoke_msa_delegation_by_delegator() {
 			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result = CheckProviderRevocation::<Test>::new().validate(
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
 			&test_public(1),
 			call_revoke_delegation,
 			&info,
@@ -1004,7 +1004,7 @@ fn signed_extension_revoke_msa_delegation_by_delegator() {
 	});
 }
 
-/// Assert that revoking an MSA delegation fails the signed extension CheckProviderRevocation
+/// Assert that revoking an MSA delegation fails the signed extension CheckFreeExtrinsicUse
 /// validation when no valid delegation exists.
 #[test]
 fn signed_extension_validation_failure_on_revoked() {
@@ -1014,7 +1014,7 @@ fn signed_extension_validation_failure_on_revoked() {
 			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result = CheckProviderRevocation::<Test>::new().validate(
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
 			&test_public(1),
 			call_revoke_delegation,
 			&info,
@@ -1027,7 +1027,7 @@ fn signed_extension_validation_failure_on_revoked() {
 			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result_revoked = CheckProviderRevocation::<Test>::new().validate(
+		let result_revoked = CheckFreeExtrinsicUse::<Test>::new().validate(
 			&test_public(1),
 			call_revoke_delegation,
 			&info,
@@ -1038,14 +1038,14 @@ fn signed_extension_validation_failure_on_revoked() {
 }
 
 /// Assert that a call that is not revoke_msa_delegation_by_delegator passes the signed extension
-/// CheckProviderRevocation validaton.
+/// CheckFreeExtrinsicUse validaton.
 #[test]
 fn signed_extension_validation_valid_for_others() {
 	let random_call_should_pass: &<Test as frame_system::Config>::Call =
 		&Call::Msa(MsaCall::create {});
 	let info = DispatchInfo::default();
 	let len = 0_usize;
-	let result = CheckProviderRevocation::<Test>::new().validate(
+	let result = CheckFreeExtrinsicUse::<Test>::new().validate(
 		&test_public(1),
 		random_call_should_pass,
 		&info,
@@ -1081,7 +1081,7 @@ fn signed_extension_validation_on_msa_key_revoked() {
 
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result = CheckProviderRevocation::<Test>::new().validate(
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
 			&owner_key,
 			call_revoke_msa_key,
 			&info,
@@ -1110,7 +1110,7 @@ fn signed_extension_validation_failure_on_msa_key_revoked() {
 
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result = CheckProviderRevocation::<Test>::new().validate(
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
 			&owner_key,
 			call_revoke_msa_key,
 			&info,
@@ -1128,7 +1128,7 @@ fn signed_extension_validation_failure_on_msa_key_revoked() {
 			&Call::Msa(MsaCall::revoke_msa_key { key: user_account_id.clone() });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result_revoked = CheckProviderRevocation::<Test>::new().validate(
+		let result_revoked = CheckFreeExtrinsicUse::<Test>::new().validate(
 			&user_account_id.clone(),
 			call_revoke_msa_key,
 			&info,
