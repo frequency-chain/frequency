@@ -30,8 +30,6 @@ impl From<Delegator> for MessageSourceId {
 pub struct KeyInfo<BlockNumber> {
 	/// The Message Source Account that this key is associated with
 	pub msa_id: MessageSourceId,
-	/// Prevent key addition replays
-	pub nonce: u32,
 	/// The block number that the key was revoked on
 	pub expired: BlockNumber,
 }
@@ -46,12 +44,7 @@ impl<BlockNumber: Clone> KeyInfo<BlockNumber> {
 		&self,
 		key: AccountId,
 	) -> KeyInfoResponse<AccountId, BlockNumber> {
-		KeyInfoResponse {
-			key,
-			msa_id: self.msa_id,
-			nonce: self.nonce,
-			expired: self.expired.clone(),
-		}
+		KeyInfoResponse { key, msa_id: self.msa_id, expired: self.expired.clone() }
 	}
 }
 
@@ -132,8 +125,6 @@ pub struct KeyInfoResponse<AccountId, BlockNumber> {
 	pub key: AccountId,
 	/// The MSA associated with the `key`
 	pub msa_id: MessageSourceId,
-	/// The nonce value for signed updates to this data
-	pub nonce: u32,
 	/// Block number that the association is revoked
 	pub expired: BlockNumber,
 }

@@ -117,10 +117,10 @@ impl AccountProvider for AccountHandler {
 			return Err(DispatchError::Other("some error"))
 		}
 		if *key == 2000 {
-			return Ok(KeyInfo { msa_id: 2000, nonce: 0, expired: 100 })
+			return Ok(KeyInfo { msa_id: 2000, expired: 100 })
 		}
 
-		let info = KeyInfo { msa_id: get_msa_from_account(*key), nonce: 0, expired: 100 };
+		let info = KeyInfo { msa_id: get_msa_from_account(*key), expired: 100 };
 		Ok(info)
 	}
 

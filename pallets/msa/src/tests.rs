@@ -20,10 +20,7 @@ fn it_creates_an_msa_account() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::create(test_origin_signed(1)));
 
-		assert_eq!(
-			Msa::get_key_info(test_public(1)),
-			Some(KeyInfo { msa_id: 1, expired: 0, nonce: 0 })
-		);
+		assert_eq!(Msa::get_key_info(test_public(1)), Some(KeyInfo { msa_id: 1, expired: 0 }));
 
 		assert_eq!(Msa::get_identifier(), 1);
 
@@ -212,7 +209,7 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 		// assert
 		let keys = Msa::fetch_msa_keys(new_msa_id);
 		assert_eq!(keys.len(), 2);
-		assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id, nonce: 0, expired: 0}), true}
+		assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id, expired: 0}), true}
 		System::assert_last_event(Event::KeyAdded { msa_id: 1, key: new_key.into() }.into());
 	});
 }
@@ -227,7 +224,7 @@ fn it_revokes_msa_key_successfully() {
 
 		let info = Msa::get_key_info(&test_public(2));
 
-		assert_eq!(info, Some(KeyInfo { msa_id: 2, expired: 1, nonce: 0 }));
+		assert_eq!(info, Some(KeyInfo { msa_id: 2, expired: 1 }));
 
 		System::assert_last_event(Event::KeyRevoked { key: test_public(2) }.into());
 	})
@@ -250,13 +247,13 @@ pub fn test_revoke_key() {
 		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
 
 		let info = Msa::get_key_info(&test_public(1));
-		assert_eq!(info, Some(KeyInfo { msa_id: 1, expired: 0, nonce: 0 }));
+		assert_eq!(info, Some(KeyInfo { msa_id: 1, expired: 0 }));
 
 		assert_ok!(Msa::revoke_key(&test_public(1)));
 
 		let info = Msa::get_key_info(&test_public(1));
 
-		assert_eq!(info, Some(KeyInfo { msa_id: 1, expired: 1, nonce: 0 }));
+		assert_eq!(info, Some(KeyInfo { msa_id: 1, expired: 1 }));
 	});
 }
 

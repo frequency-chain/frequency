@@ -502,8 +502,7 @@ impl<T: Config> Pallet<T> {
 		KeyInfoOf::<T>::try_mutate(key, |maybe_msa| {
 			ensure!(maybe_msa.is_none(), Error::<T>::DuplicatedKey);
 
-			*maybe_msa =
-				Some(KeyInfo { msa_id, expired: T::BlockNumber::default(), nonce: Zero::zero() });
+			*maybe_msa = Some(KeyInfo { msa_id, expired: T::BlockNumber::default() });
 
 			// adding reverse lookup
 			<MsaKeysOf<T>>::try_mutate(msa_id, |key_list| {
@@ -733,7 +732,6 @@ impl<T: Config> AccountProvider for Pallet<T> {
 		if result.is_err() {
 			return Ok(KeyInfo {
 				msa_id: 1 as MessageSourceId,
-				nonce: 0,
 				expired: Self::BlockNumber::default(),
 			})
 		}
