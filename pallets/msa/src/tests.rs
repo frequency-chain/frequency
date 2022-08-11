@@ -250,8 +250,6 @@ pub fn test_delete_key() {
 
 		assert_eq!(info, Some(KeyInfo { msa_id: 1, nonce: 0 }));
 
-		assert_ok!(Msa::delete_key_info(&test_public(1)));
-
 		assert_ok!(Msa::delete_key_for_msa(info.unwrap().msa_id, &test_public(1)));
 	});
 }
@@ -261,7 +259,7 @@ pub fn test_delete_key_errors() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
 
-		assert_ok!(Msa::delete_key_info(&test_public(1)));
+		assert_ok!(Msa::delete_key_for_msa(1, &test_public(1)));
 	});
 }
 
@@ -372,7 +370,7 @@ pub fn add_provider_to_msa_throws_key_revoked_error() {
 
 		assert_ok!(Msa::create(test_origin_signed(1)));
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
-		assert_ok!(Msa::delete_key_info(&test_public(1)));
+		assert_ok!(Msa::delete_key_for_msa(1, &test_public(1)));
 
 		assert_noop!(
 			Msa::add_provider_to_msa(
@@ -743,7 +741,7 @@ fn revoke_provider_throws_errors() {
 		);
 
 		assert_ok!(Msa::create(test_origin_signed(2)));
-		assert_ok!(Msa::delete_key_info(&test_public(2)));
+		assert_ok!(Msa::delete_key_for_msa(1, &test_public(2)));
 		assert_noop!(
 			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(2), 1),
 			Error::<Test>::NoKeyExists
@@ -1081,8 +1079,6 @@ fn add_removed_key_to_msa_pass() {
 		let new_account2 = key_pair2.public();
 		let (msa_id1, _) = Msa::create_account(new_account1.into(), EMPTY_FUNCTION).unwrap();
 		let (msa_id2, _) = Msa::create_account(new_account2.into(), EMPTY_FUNCTION).unwrap();
-
-		assert_ok!(Msa::delete_key_info(&new_account1.into()));
 
 		assert_ok!(Msa::delete_key_for_msa(msa_id1, &new_account1.into()));
 

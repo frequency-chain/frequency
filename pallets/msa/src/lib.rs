@@ -425,7 +425,6 @@ pub mod pallet {
 			ensure!(who.msa_id == key_info.msa_id, Error::<T>::NotKeyOwner);
 
 			Self::delete_key_for_msa(who.msa_id, &key)?;
-			Self::delete_key_info(&key)?;
 
 			Self::deposit_event(Event::KeyRevoked { key });
 
@@ -596,16 +595,6 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Deletes KeyInfo for a key so that it cannot be used again for the associated MSA
-	/// # Arguments
-	/// * `key` - The key for which key info needs to be removed
-	/// # Returns
-	/// * [`DispatchResult`]
-	pub fn delete_key_info(key: &T::AccountId) -> DispatchResult {
-		KeyInfoOf::<T>::remove(key);
-		Ok(())
-	}
-
 	/// Deletes a key associated with a given MSA
 	/// # Arguments
 	/// * `msa_id` - The MSA for which the key needs to be removed
@@ -619,6 +608,7 @@ impl<T: Config> Pallet<T> {
 			let index = key_list.binary_search(key);
 			ensure!(index.is_ok(), Error::<T>::NoKeyExists);
 			key_list.remove(index.unwrap());
+			KeyInfoOf::<T>::remove(key);
 			Ok(())
 		})
 	}
