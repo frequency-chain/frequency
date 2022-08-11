@@ -5,7 +5,7 @@
 // this is required to allow for ambient/previous definitions
 import '@polkadot/types/types/registry';
 
-import type { BlockPaginationRequest, BlockPaginationResponseMessage, MessageResponse } from '@dsnp/frequency-api-augment/messages';
+import type { BlockPaginationRequest, BlockPaginationResponseMessage, IPFSPayload, MessageResponse } from '@dsnp/frequency-api-augment/messages';
 import type { KeyInfoResponse, MessageSourceId } from '@dsnp/frequency-api-augment/msa';
 import type { ModelType, PayloadLocation, SchemaId, SchemaModel, SchemaResponse } from '@dsnp/frequency-api-augment/schemas';
 import type { Data, StorageKey } from '@polkadot/types';
@@ -583,6 +583,7 @@ declare module '@polkadot/types/types/registry' {
     InteriorMultiLocation: InteriorMultiLocation;
     InvalidDisputeStatementKind: InvalidDisputeStatementKind;
     InvalidTransaction: InvalidTransaction;
+    IPFSPayload: IPFSPayload;
     Json: Json;
     Junction: Junction;
     Junctions: Junctions;

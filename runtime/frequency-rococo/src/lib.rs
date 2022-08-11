@@ -592,6 +592,13 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
+impl pallet_utility::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type PalletsOrigin = OriginCaller;
+	type WeightInfo = weights::utility_weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -609,6 +616,8 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T> }= 4,
 		Scheduler: pallet_scheduler = 5,
 		Preimage: pallet_preimage = 7,
+
+		Utility: pallet_utility::{Pallet, Call, Event} = 8,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
@@ -654,6 +663,7 @@ mod benches {
 		[pallet_msa, Msa]
 		[pallet_schemas, Schemas]
 		[pallet_messages, Messages]
+		[pallet_utility, Utility]
 	);
 }
 
