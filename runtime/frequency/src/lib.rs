@@ -717,7 +717,6 @@ construct_runtime!(
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T> }= 4,
 		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 5,
-		// Council: pallet_collective::<Instance1>,
 		Democracy: pallet_democracy::{Pallet, Call, Config<T>, Storage, Event<T> } = 6,
 		Council: pallet_collective::<Instance1>::{Pallet, Call, Config<T,I>, Storage, Event<T>, Origin<T>} = 7,
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T> } = 8,
@@ -760,7 +759,9 @@ mod benches {
 	define_benchmarks!(
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_balances, Balances]
-		// [pallet_collective, Collective]
+		[pallet_collective, Council]
+		[pallet_preimage, Preimage]
+		[pallet_democracy, Democracy]
 		[pallet_scheduler, Scheduler]
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_timestamp, Timestamp]
