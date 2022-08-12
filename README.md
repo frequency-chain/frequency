@@ -129,9 +129,11 @@ and relay chain to be `rococo_local.json` with `protocol_id:frequency-local`
    cargo run --release build-spec --raw --disable-default-bootnode --chain ./res/genesis/local/frequency-spec-rococo.json > ./res/genesis/local/rococo-local-frequency-2000-raw.json
    ```
 
-~~Alternatively, run ```./scripts/generate_specs.sh 2001 true``` to generate plain and raw frequency spec along with genesis state and wasm. Replace 2001 with registered parachain id.~~
+Alternatively, run the following to generate plain and raw frequency spec along with
+genesis state and WASM:
 
-Alternatively, run `make specs-local` to generate plain and raw frequency spec along with genesis state and wasm.
+- `make specs-local` for Rococo local testnet
+- `make specs-testnet` for Rococo public testnet
 
 # Lint
 
