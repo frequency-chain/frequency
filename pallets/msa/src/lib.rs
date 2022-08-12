@@ -394,8 +394,6 @@ pub mod pallet {
 
 			Self::ensure_msa_owner(&who, msa_id)?;
 
-			Self::is_key_taken(msa_id, &key)?;
-
 			Self::add_key(msa_id, &key.clone(), |new_msa_id| -> DispatchResult {
 				Self::deposit_event(Event::KeyAdded { msa_id: new_msa_id, key });
 				Ok(())
