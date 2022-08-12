@@ -32,7 +32,7 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use common_primitives::{
+pub use common_primitives::{
 	messages::*,
 	msa::*,
 	node::{AccountId, Address, Balance, BlockNumber, Hash, Index, Signature},
