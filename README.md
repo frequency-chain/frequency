@@ -39,6 +39,8 @@ There are 2 options to run the chain locally:
 
 ## (Option 1) Local Testnet with Instant Sealing
 
+![](docs/images/local-dev-env-option-1.png)
+
 This option runs just one collator node in instant seal mode and nothing more.
 A "collator node" is a Frequency parachain node that is actively collating (aka forming blocks to submit to the relay chain). The instant seal mode allows a blockchain node to author a block
 as soon as it goes into a queue. This is also a great option to run with an example client.
@@ -56,6 +58,8 @@ To stop running chain hit [Ctrl+C] in terminal where the chain was started.
 
 
 ## (Option 2) Local Testnet with One Collator and Relay Chain Nodes
+
+![](docs/images/local-dev-env-option-2.png)
 
 This option runs one collator node and two relay chain validator nodes. The validator
 nodes are run locally in docker, but could be any other relay chain like the
