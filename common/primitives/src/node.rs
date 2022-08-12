@@ -5,6 +5,9 @@ pub use sp_runtime::{
 	MultiAddress, MultiSignature, OpaqueExtrinsic,
 };
 
+/// The address format for describing accounts.
+pub type Address = MultiAddress<AccountId, ()>;
+
 /// Balance is a generic type for the balance of an account.
 pub type Balance = u128;
 
