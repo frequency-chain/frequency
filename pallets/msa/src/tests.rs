@@ -1045,6 +1045,8 @@ fn signed_extension_validation_valid_for_others() {
 	assert_ok!(result);
 }
 
+/// Assert that when a key has been added to an MSA, that it my NOT be added to any other MSA.
+/// Expected error: KeyAlreadyRegistered
 #[test]
 fn double_add_key_two_msa_fails() {
 	new_test_ext().execute_with(|| {
@@ -1070,6 +1072,7 @@ fn double_add_key_two_msa_fails() {
 	})
 }
 
+/// Assert that when a key has been deleted from one MSA, that it may be added to a different MSA.
 #[test]
 fn add_removed_key_to_msa_pass() {
 	new_test_ext().execute_with(|| {
