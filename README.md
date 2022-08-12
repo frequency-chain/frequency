@@ -135,11 +135,13 @@ genesis state and WASM:
 - `make specs-local` for Rococo local testnet
 - `make specs-testnet` for Rococo public testnet
 
-# Lint
+# Format and Lint
 
-- Lint the project with `cargo +nightly fmt`.
-- Linting standards are defined in `rustfmt.toml`.
-- Alternatively run `TARGET=lint ./ci/build.sh`
+- Format code with `make format`  according to style guidelines and configurations
+in `rustfmt.toml`.
+- Lint code with with `make lint` to catch common mistakes and improve your
+[Rust](https://github.com/rust-lang/rust) code.
+- Alternatively, run `make format-lint` to run both at the same time.
 
 # Verify Runtime
 
