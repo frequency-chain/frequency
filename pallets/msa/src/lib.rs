@@ -497,16 +497,25 @@ impl<T: Config> Pallet<T> {
 	where
 		F: FnOnce(MessageSourceId) -> DispatchResult,
 	{
-		KeyInfoOf::<T>::try_mutate(key, |maybe_msa| {
-			ensure!(maybe_msa.is_none(), Error::<T>::DuplicatedKey);
+		// Ensure that the key is not already associated with an MSA
+		// let key_info = Self::try_get_key_info(key);
+		// if key_info.is_ok() {
+		// 	let stored_msa_id = key_info.unwrap().msa_id;
+		// 	ensure!(stored_msa_id == msa_id, Error::<T>::KeyAlreadyRegistered);
+		// }
 
-			// Ensure that the key is not already associated with another MSA
-			let key_info = Self::try_get_key_info(key);
-			if key_info.is_ok() {
-				ensure!(key_info.unwrap().msa_id == msa_id, Error::<T>::KeyAlreadyRegistered);
+		KeyInfoOf::<T>::try_mutate(key, |maybe_key_info| {
+			if maybe_key_info.is_some() {
+				let key_info = maybe_key_info.take();
+
+				if key_info.unwrap().msa_id == msa_id {
+					return Err(Error::<T>::DuplicatedKey.into())
+				} else {
+					return Err(Error::<T>::KeyAlreadyRegistered.into())
+				}
 			}
 
-			*maybe_msa = Some(KeyInfo { msa_id, nonce: Zero::zero() });
+			*maybe_key_info = Some(KeyInfo { msa_id, nonce: Zero::zero() });
 
 			// adding reverse lookup
 			<MsaKeysOf<T>>::try_mutate(msa_id, |key_list| {
