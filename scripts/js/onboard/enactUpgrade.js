@@ -16,7 +16,7 @@ async function main() {
         );
         let wasm;
         try {
-          wasm = fs.readFileSync(wasmFile, 'utf8')
+          wasm = '0x' + fs.readFileSync(wasmFile).toString('hex')
         } catch (err) {
           console.error(err)
           throw err

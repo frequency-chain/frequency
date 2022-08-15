@@ -168,11 +168,11 @@ upgrade-frequency)
     --locked \
     --profile release \
     --package frequency-runtime \
-    --target-dir $root_dir/target/ \
+    --target-dir $root_dir/target/upgrade \
     -Z unstable-options
 
 
-  wasm_location=$root_dir/target/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
+  wasm_location=$root_dir/target/upgrade/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
 
   ./scripts/runtime-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
   
