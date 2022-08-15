@@ -43,7 +43,10 @@ fn it_does_not_allow_duplicate_keys() {
 	new_test_ext().execute_with(|| {
 		Msa::create(test_origin_signed(1));
 
-		assert_noop!(Msa::create(test_origin_signed(1)), Error::<Test>::KeyAlreadyRegisteredToAnotherMSA);
+		assert_noop!(
+			Msa::create(test_origin_signed(1)),
+			Error::<Test>::KeyAlreadyRegisteredToAnotherMSA
+		);
 
 		assert_eq!(Msa::get_identifier(), 1);
 	});
