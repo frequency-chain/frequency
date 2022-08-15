@@ -13,7 +13,6 @@ base_dir=/tmp/frequency
 # Option to use the Docker image to export state & wasm
 docker_onboard="${DOCKER_ONBOARD:-false}"
 frequency_docker_image_tag="${PARA_DOCKER_IMAGE_TAG:-frequency-latest}"
-
 chain="${RELAY_CHAIN_SPEC:-./res/rococo-local.json}"
 
 case $cmd in
@@ -160,4 +159,9 @@ offboard-frequency)
   cd scripts/js/onboard
   yarn && yarn cleanup "ws://0.0.0.0:9946" "//Alice" ${para_id}
   ;;
+
+upgrade-frequency)
+  ./scripts/runtime-upgrade.sh "//Alice" "ws://0.0.0.0:9944"
+  ;;
+
 esac

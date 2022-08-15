@@ -33,34 +33,34 @@ const run = async () => {
       validation_code: wasm,
       parachain: true,
     };
-    
+
     let genesis = api.createType("ParaGenesisArgs", paraGenesisArgs);
 
     const nonce = Number((await api.query.system.account(alice.address)).nonce);
 
     console.log(
-        `--- Submitting extrinsic to register parachain ${id}. (nonce: ${nonce}) ---`
+      `--- Submitting extrinsic to register parachain ${id}. (nonce: ${nonce}) ---`
     );
     const sudoCall = await api.tx.sudo
-        .sudo(api.tx.parasSudoWrapper.sudoScheduleParaInitialize(id, genesis))
-        .signAndSend(alice, { nonce: nonce, era: 0 }, (result) => {
-          console.log(`Current status is ${result.status}`);
-          if (result.status.isInBlock) {
-            console.log(
-                `Transaction included at blockHash ${result.status.asInBlock}`
-            );
-            console.log("Waiting for finalization...");
-          } else if (result.status.isFinalized) {
-            console.log(
-                `Transaction finalized at blockHash ${result.status.asFinalized}`
-            );
-            sudoCall();
-            process.exit()
-          } else if (result.isError) {
-            console.log(`Transaction Error`);
-            process.exit()
-          }
-        });
+      .sudo(api.tx.parasSudoWrapper.sudoScheduleParaInitialize(id, genesis))
+      .signAndSend(alice, { nonce: nonce, era: 0 }, (result) => {
+        console.log(`Current status is ${result.status}`);
+        if (result.status.isInBlock) {
+          console.log(
+            `Transaction included at blockHash ${result.status.asInBlock}`
+          );
+          console.log("Waiting for finalization...");
+        } else if (result.status.isFinalized) {
+          console.log(
+            `Transaction finalized at blockHash ${result.status.asFinalized}`
+          );
+          sudoCall();
+          process.exit()
+        } else if (result.isError) {
+          console.log(`Transaction Error`);
+          process.exit()
+        }
+      });
 
   } catch (error) {
     console.log('error:', error);
