@@ -497,13 +497,6 @@ impl<T: Config> Pallet<T> {
 	where
 		F: FnOnce(MessageSourceId) -> DispatchResult,
 	{
-		// Ensure that the key is not already associated with an MSA
-		// let key_info = Self::try_get_key_info(key);
-		// if key_info.is_ok() {
-		// 	let stored_msa_id = key_info.unwrap().msa_id;
-		// 	ensure!(stored_msa_id == msa_id, Error::<T>::KeyAlreadyRegistered);
-		// }
-
 		KeyInfoOf::<T>::try_mutate(key, |maybe_key_info| {
 			if maybe_key_info.is_some() {
 				let key_info = maybe_key_info.take();
