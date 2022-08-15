@@ -43,7 +43,7 @@ fn it_does_not_allow_duplicate_keys() {
 	new_test_ext().execute_with(|| {
 		Msa::create(test_origin_signed(1));
 
-		assert_noop!(Msa::create(test_origin_signed(1)), Error::<Test>::KeyAlreadyRegistered);
+		assert_noop!(Msa::create(test_origin_signed(1)), Error::<Test>::KeyAlreadyRegisteredToAnotherMSA);
 
 		assert_eq!(Msa::get_identifier(), 1);
 	});
@@ -138,7 +138,7 @@ fn it_throws_error_when_for_duplicate_key() {
 				signature,
 				add_new_key_data
 			),
-			Error::<Test>::DuplicatedKey
+			Error::<Test>::KeyAlreadyRegisteredToThisMSA
 		);
 	});
 }
@@ -583,7 +583,7 @@ pub fn create_sponsored_account_with_delegation_with_invalid_add_provider_should
 				signature,
 				add_provider_payload
 			),
-			Error::<Test>::KeyAlreadyRegistered
+			Error::<Test>::KeyAlreadyRegisteredToAnotherMSA
 		);
 	});
 }
@@ -1046,7 +1046,7 @@ fn signed_extension_validation_valid_for_others() {
 }
 
 /// Assert that when a key has been added to an MSA, that it my NOT be added to any other MSA.
-/// Expected error: KeyAlreadyRegistered
+/// Expected error: KeyAlreadyRegisteredToAnotherMSA
 #[test]
 fn double_add_key_two_msa_fails() {
 	new_test_ext().execute_with(|| {
@@ -1067,7 +1067,7 @@ fn double_add_key_two_msa_fails() {
 				signature,
 				add_new_key_data
 			),
-			Error::<Test>::KeyAlreadyRegistered
+			Error::<Test>::KeyAlreadyRegisteredToAnotherMSA
 		);
 	})
 }
