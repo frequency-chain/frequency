@@ -41,3 +41,13 @@ specs-local:
 specs-testnet:
 	./scripts/generate_specs.sh 4044 build-testnet
 
+.PHONY: format
+format:
+	cargo +nightly fmt
+
+.PHONY: lint
+lint:
+	SKIP_WASM_BUILD=1 cargo clippy --all-targets  -- -A clippy::bool_assert_comparison
+
+.PHONY: format-lint
+format-lint: format lint
