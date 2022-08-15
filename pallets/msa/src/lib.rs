@@ -749,6 +749,38 @@ impl<T: Config> AccountProvider for Pallet<T> {
 #[scale_info(skip_type_params(T))]
 pub struct CheckFreeExtrinsicUse<T: Config + Send + Sync>(PhantomData<T>);
 
+impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
+	/// Validates the delegation by making sure that the MSA ids used are valid
+	pub fn validate_delegation_by_delegator(
+		account_id: &T::AccountId,
+		provider_msa_id: &MessageSourceId,
+	) -> TransactionValidity {
+		const TAG_PREFIX: &str = "DelegationRevocation";
+		let delegator_msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(account_id)
+			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
+			.msa_id
+			.into();
+		let provider_msa_id = Provider(*provider_msa_id);
+
+		Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id)
+			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidDelegation as u8))?;
+		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
+	}
+
+	/// validates that a key being revoked is both valid and owned by a valid MSA account
+	pub fn validate_key_revocation(
+		account_id: &T::AccountId,
+		key: &T::AccountId,
+	) -> TransactionValidity {
+		const TAG_PREFIX: &str = "KeyRevocation";
+		let _msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(key)
+			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
+			.msa_id
+			.into();
+		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
+	}
+}
+
 /// Errors related to the validity of the CheckFreeExtrinsicUse signed extension.
 enum ValidityError {
 	/// Delegation to provider is not found or expired.
@@ -811,27 +843,10 @@ where
 		_len: usize,
 	) -> TransactionValidity {
 		match call.is_sub_type() {
-			Some(Call::revoke_msa_delegation_by_delegator { provider_msa_id, .. }) => {
-				const TAG_PREFIX: &str = "DelegationRevocation";
-				let delegator_msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(who)
-					.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
-					.msa_id
-					.into();
-				let provider_msa_id = Provider(*provider_msa_id);
-
-				Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id).map_err(
-					|_| InvalidTransaction::Custom(ValidityError::InvalidDelegation as u8),
-				)?;
-				return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(who).build()
-			},
-			Some(Call::revoke_msa_key { key, .. }) => {
-				const TAG_PREFIX: &str = "KeyRevocation";
-				let _msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(&key)
-					.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
-					.msa_id
-					.into();
-				return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(who).build()
-			},
+			Some(Call::revoke_msa_delegation_by_delegator { provider_msa_id, .. }) =>
+				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id),
+			Some(Call::revoke_msa_key { key, .. }) =>
+				CheckFreeExtrinsicUse::<T>::validate_key_revocation(who, key),
 			_ => return Ok(Default::default()),
 		}
 	}
