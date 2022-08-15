@@ -165,7 +165,7 @@ in `rustfmt.toml`.
    4. For testnet and mainnet, the upgrade is done slightly differently using ```scheduler``` and enactment is scheduled for a specific block number in the future.
 3. To upgrade the runtime, run the following command:
    ```sh
-   make upgrade-local
+   make upgrade-frequency
    ```
 
 # Contributing
