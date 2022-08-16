@@ -211,8 +211,8 @@ pub mod pallet {
 		KeyLimitExceeded,
 		/// The key is already registered to the MSA
 		KeyAlreadyRegisteredToAnotherMSA,
-		/// A transaction's Origin (AccountId) may not revoke itself
-		InvalidSelfRevoke,
+		/// A transaction's Origin (AccountId) may not remove itself
+		InvalidSelfRemoval,
 		/// An MSA may not be its own delegate
 		InvalidSelfProvider,
 		/// The delegation relationship already exists for the given MSA Ids
@@ -402,11 +402,11 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Revokes a key associated with an MSA by expiring it at the current block.
+		/// Remove a key associated with an MSA by expiring it at the current block.
 		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`KeyRevoked`](Event::KeyRevoked).
 		///
 		/// ### Errors
-		/// - Returns [`InvalidSelfRevoke`](Error::InvalidSelfRevoke) if `origin` and `key` are the same.
+		/// - Returns [`InvalidSelfRemoval`](Error::InvalidSelfRemoval) if `origin` and `key` are the same.
 		/// - Returns [`NotKeyOwner`](Error::NotKeyOwner) if `origin` does not own the MSA ID associated with `key`.
 		/// - Returns [`NotKeyExists`](Error::NoKeyExists) if `origin` or `key` are not associated with `origin`'s MSA ID.
 		///
@@ -417,7 +417,7 @@ pub mod pallet {
 		pub fn delete_msa_key(origin: OriginFor<T>, key: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			ensure!(who != key, Error::<T>::InvalidSelfRevoke);
+			ensure!(who != key, Error::<T>::InvalidSelfRemoval);
 
 			let who = Self::try_get_key_info(&who)?;
 			let key_info = Self::try_get_key_info(&key)?;

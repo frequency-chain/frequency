@@ -631,10 +631,10 @@ pub fn add_key_with_panic_in_on_success_should_revert_everything() {
 		// act
 		assert_noop!(
 			Msa::add_key(msa_id, &key, |new_msa_id| -> DispatchResult {
-				ensure!(new_msa_id != msa_id, Error::<Test>::InvalidSelfRevoke);
+				ensure!(new_msa_id != msa_id, Error::<Test>::InvalidSelfRemoval);
 				Ok(())
 			}),
-			Error::<Test>::InvalidSelfRevoke
+			Error::<Test>::InvalidSelfRemoval
 		);
 
 		// assert
@@ -655,10 +655,10 @@ pub fn create_account_with_panic_in_on_success_should_revert_everything() {
 		// act
 		assert_noop!(
 			Msa::create_account(key, |new_msa_id| -> DispatchResult {
-				ensure!(new_msa_id != msa_id, Error::<Test>::InvalidSelfRevoke);
+				ensure!(new_msa_id != msa_id, Error::<Test>::InvalidSelfRemoval);
 				Ok(())
 			}),
-			Error::<Test>::InvalidSelfRevoke
+			Error::<Test>::InvalidSelfRemoval
 		);
 
 		// assert
