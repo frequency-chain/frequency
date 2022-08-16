@@ -164,7 +164,7 @@ pub mod pallet {
 			key: T::AccountId,
 		},
 		/// An AccountId had all permissions revoked from its MessageSourceId
-		KeyRevoked {
+		KeyRemoved {
 			/// The key no longer approved for the associated MSA
 			key: T::AccountId,
 		},
@@ -403,7 +403,7 @@ pub mod pallet {
 		}
 
 		/// Remove a key associated with an MSA by expiring it at the current block.
-		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`KeyRevoked`](Event::KeyRevoked).
+		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`KeyRemoved`](Event::KeyRemoved).
 		///
 		/// ### Errors
 		/// - Returns [`InvalidSelfRemoval`](Error::InvalidSelfRemoval) if `origin` and `key` are the same.
@@ -425,7 +425,7 @@ pub mod pallet {
 
 			Self::delete_key_for_msa(who.msa_id, &key)?;
 
-			Self::deposit_event(Event::KeyRevoked { key });
+			Self::deposit_event(Event::KeyRemoved { key });
 
 			Ok(())
 		}

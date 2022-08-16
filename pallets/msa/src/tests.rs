@@ -229,7 +229,7 @@ fn it_revokes_msa_key_successfully() {
 
 		assert_eq!(info, None);
 
-		System::assert_last_event(Event::KeyRevoked { key: test_public(2) }.into());
+		System::assert_last_event(Event::KeyRemoved { key: test_public(2) }.into());
 	})
 }
 
