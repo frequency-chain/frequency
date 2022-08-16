@@ -503,10 +503,8 @@ impl<T: Config> Pallet<T> {
 
 			// adding reverse lookup
 			<MsaKeysOf<T>>::try_mutate(msa_id, |key_list| {
-				let index = key_list
-					.binary_search(key)
-					.err()
-					.ok_or(Error::<T>::KeyAlreadyRegistered)?;
+				let index =
+					key_list.binary_search(key).err().ok_or(Error::<T>::KeyAlreadyRegistered)?;
 
 				key_list
 					.try_insert(index, key.clone())
