@@ -834,6 +834,29 @@
 <span id="828">828</span>
 <span id="829">829</span>
 <span id="830">830</span>
+<span id="831">831</span>
+<span id="832">832</span>
+<span id="833">833</span>
+<span id="834">834</span>
+<span id="835">835</span>
+<span id="836">836</span>
+<span id="837">837</span>
+<span id="838">838</span>
+<span id="839">839</span>
+<span id="840">840</span>
+<span id="841">841</span>
+<span id="842">842</span>
+<span id="843">843</span>
+<span id="844">844</span>
+<span id="845">845</span>
+<span id="846">846</span>
+<span id="847">847</span>
+<span id="848">848</span>
+<span id="849">849</span>
+<span id="850">850</span>
+<span id="851">851</span>
+<span id="852">852</span>
+<span id="853">853</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The MSA pallet provides functionality for handling Message Source Accounts.</span>
@@ -1248,7 +1271,7 @@
 		<span class="doccomment">/// - Returns [`NotKeyOwner`](Error::NotKeyOwner) if `origin` does not own the MSA ID associated with `key`.</span>
 		<span class="doccomment">/// - Returns [`NotKeyExists`](Error::NoKeyExists) if `origin` or `key` are not associated with `origin`&#39;s MSA ID.</span>
 		<span class="doccomment">///</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="ident">T::WeightInfo::revoke_msa_key</span>())]</span>
+		<span class="attribute">#[<span class="ident">pallet::weight</span>((<span class="ident">T::WeightInfo::revoke_msa_key</span>(), <span class="ident">DispatchClass::Normal</span>, <span class="ident">Pays::No</span>))]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">revoke_msa_key</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">key</span>: <span class="ident">T::AccountId</span>) -&gt; <span class="ident">DispatchResult</span> {
 			<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 
@@ -1577,15 +1600,47 @@
 	}
 }
 
-<span class="doccomment">/// The SignedExtension trait is implemented on CheckProviderRevocation to validate that a provider</span>
+<span class="doccomment">/// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate that a provider</span>
 <span class="doccomment">/// has not already been revoked if the calling extrinsic is revoking a provider to an MSA. The</span>
 <span class="doccomment">/// purpose of this is to ensure that the revoke_msa_delegation_by_delegator extrinsic cannot be</span>
 <span class="doccomment">/// repeatedly called and flood the network.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">TypeInfo</span>)]</span>
 <span class="attribute">#[<span class="ident">scale_info</span>(<span class="ident">skip_type_params</span>(<span class="ident">T</span>))]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CheckProviderRevocation</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>);
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CheckFreeExtrinsicUse</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>);
 
-<span class="doccomment">/// Errors related to the validity of the CheckProviderRevocation signed extension.</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span> <span class="ident">CheckFreeExtrinsicUse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+	<span class="doccomment">/// Validates the delegation by making sure that the MSA ids used are valid</span>
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">validate_delegation_by_delegator</span>(
+		<span class="ident">account_id</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>,
+		<span class="ident">provider_msa_id</span>: <span class="kw-2">&amp;</span><span class="ident">MessageSourceId</span>,
+	) -&gt; <span class="ident">TransactionValidity</span> {
+		<span class="kw">const</span> <span class="ident">TAG_PREFIX</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;DelegationRevocation&quot;</span>;
+		<span class="kw">let</span> <span class="ident">delegator_msa_id</span>: <span class="ident">Delegator</span> <span class="op">=</span> <span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ensure_valid_msa_key</span>(<span class="ident">account_id</span>)
+			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">InvalidTransaction::Custom</span>(<span class="ident">ValidityError::InvalidMsaKey</span> <span class="kw">as</span> <span class="ident">u8</span>))<span class="question-mark">?</span>
+			.<span class="ident">msa_id</span>
+			.<span class="ident">into</span>();
+		<span class="kw">let</span> <span class="ident">provider_msa_id</span> <span class="op">=</span> <span class="ident">Provider</span>(<span class="kw-2">*</span><span class="ident">provider_msa_id</span>);
+
+		<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ensure_valid_delegation</span>(<span class="ident">provider_msa_id</span>, <span class="ident">delegator_msa_id</span>)
+			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">InvalidTransaction::Custom</span>(<span class="ident">ValidityError::InvalidDelegation</span> <span class="kw">as</span> <span class="ident">u8</span>))<span class="question-mark">?</span>;
+		<span class="kw">return</span> <span class="ident">ValidTransaction::with_tag_prefix</span>(<span class="ident">TAG_PREFIX</span>).<span class="ident">and_provides</span>(<span class="ident">account_id</span>).<span class="ident">build</span>()
+	}
+
+	<span class="doccomment">/// validates that a key being revoked is both valid and owned by a valid MSA account</span>
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">validate_key_revocation</span>(
+		<span class="ident">account_id</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>,
+		<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>,
+	) -&gt; <span class="ident">TransactionValidity</span> {
+		<span class="kw">const</span> <span class="ident">TAG_PREFIX</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;KeyRevocation&quot;</span>;
+		<span class="kw">let</span> <span class="ident">_msa_id</span>: <span class="ident">Delegator</span> <span class="op">=</span> <span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ensure_valid_msa_key</span>(<span class="ident">key</span>)
+			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">InvalidTransaction::Custom</span>(<span class="ident">ValidityError::InvalidMsaKey</span> <span class="kw">as</span> <span class="ident">u8</span>))<span class="question-mark">?</span>
+			.<span class="ident">msa_id</span>
+			.<span class="ident">into</span>();
+		<span class="kw">return</span> <span class="ident">ValidTransaction::with_tag_prefix</span>(<span class="ident">TAG_PREFIX</span>).<span class="ident">and_provides</span>(<span class="ident">account_id</span>).<span class="ident">build</span>()
+	}
+}
+
+<span class="doccomment">/// Errors related to the validity of the CheckFreeExtrinsicUse signed extension.</span>
 <span class="kw">enum</span> <span class="ident">ValidityError</span> {
 	<span class="doccomment">/// Delegation to provider is not found or expired.</span>
 	<span class="ident">InvalidDelegation</span>,
@@ -1593,17 +1648,17 @@
 	<span class="ident">InvalidMsaKey</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span> <span class="ident">CheckProviderRevocation</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span> <span class="ident">CheckFreeExtrinsicUse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 	<span class="doccomment">/// Create new `SignedExtension` to check runtime version.</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="self">Self</span> {
 		<span class="self">Self</span>(<span class="ident">sp_std::marker::PhantomData</span>)
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span> <span class="ident">sp_std::fmt::Debug</span> <span class="kw">for</span> <span class="ident">CheckProviderRevocation</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span> <span class="ident">sp_std::fmt::Debug</span> <span class="kw">for</span> <span class="ident">CheckFreeExtrinsicUse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 	<span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">sp_std::fmt::Formatter</span>) -&gt; <span class="ident">sp_std::fmt::Result</span> {
-		<span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;CheckProviderRevocation&lt;{:?}&gt;&quot;</span>, <span class="self">self</span>.<span class="number">0</span>)
+		<span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;CheckFreeExtrinsicUse&lt;{:?}&gt;&quot;</span>, <span class="self">self</span>.<span class="number">0</span>)
 	}
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>))]</span>
 	<span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="kw-2">&amp;mut</span> <span class="ident">sp_std::fmt::Formatter</span>) -&gt; <span class="ident">sp_std::fmt::Result</span> {
@@ -1611,7 +1666,7 @@
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span> <span class="ident">SignedExtension</span> <span class="kw">for</span> <span class="ident">CheckProviderRevocation</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span> <span class="ident">SignedExtension</span> <span class="kw">for</span> <span class="ident">CheckFreeExtrinsicUse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
 <span class="kw">where</span>
 	<span class="ident">T::Call</span>: <span class="ident">Dispatchable</span><span class="op">&lt;</span><span class="ident">Info</span> <span class="op">=</span> <span class="ident">DispatchInfo</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">IsSubType</span><span class="op">&lt;</span><span class="ident">Call</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 {
@@ -1619,7 +1674,7 @@
 	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">T::Call</span>;
 	<span class="kw">type</span> <span class="ident">AdditionalSigned</span> <span class="op">=</span> ();
 	<span class="kw">type</span> <span class="ident">Pre</span> <span class="op">=</span> ();
-	<span class="kw">const</span> <span class="ident">IDENTIFIER</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;CheckProviderRevocation&quot;</span>;
+	<span class="kw">const</span> <span class="ident">IDENTIFIER</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;CheckFreeExtrinsicUse&quot;</span>;
 
 	<span class="kw">fn</span> <span class="ident">additional_signed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">sp_std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">TransactionValidityError</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(())
@@ -1647,19 +1702,10 @@
 		<span class="ident">_len</span>: <span class="ident">usize</span>,
 	) -&gt; <span class="ident">TransactionValidity</span> {
 		<span class="kw">match</span> <span class="ident">call</span>.<span class="ident">is_sub_type</span>() {
-			<span class="prelude-val">Some</span>(<span class="ident">Call::revoke_msa_delegation_by_delegator</span> { <span class="ident">provider_msa_id</span>, .. }) =&gt; {
-				<span class="kw">const</span> <span class="ident">TAG_PREFIX</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;DelegationRevokation&quot;</span>;
-				<span class="kw">let</span> <span class="ident">delegator_msa_id</span>: <span class="ident">Delegator</span> <span class="op">=</span> <span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ensure_valid_msa_key</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>)
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">InvalidTransaction::Custom</span>(<span class="ident">ValidityError::InvalidMsaKey</span> <span class="kw">as</span> <span class="ident">u8</span>))<span class="question-mark">?</span>
-					.<span class="ident">msa_id</span>
-					.<span class="ident">into</span>();
-				<span class="kw">let</span> <span class="ident">provider_msa_id</span> <span class="op">=</span> <span class="ident">Provider</span>(<span class="kw-2">*</span><span class="ident">provider_msa_id</span>);
-
-				<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ensure_valid_delegation</span>(<span class="ident">provider_msa_id</span>, <span class="ident">delegator_msa_id</span>).<span class="ident">map_err</span>(
-					<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">InvalidTransaction::Custom</span>(<span class="ident">ValidityError::InvalidDelegation</span> <span class="kw">as</span> <span class="ident">u8</span>),
-				)<span class="question-mark">?</span>;
-				<span class="kw">return</span> <span class="ident">ValidTransaction::with_tag_prefix</span>(<span class="ident">TAG_PREFIX</span>).<span class="ident">and_provides</span>(<span class="ident">who</span>).<span class="ident">build</span>()
-			},
+			<span class="prelude-val">Some</span>(<span class="ident">Call::revoke_msa_delegation_by_delegator</span> { <span class="ident">provider_msa_id</span>, .. }) =&gt;
+				<span class="ident">CheckFreeExtrinsicUse</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::validate_delegation_by_delegator</span>(<span class="ident">who</span>, <span class="ident">provider_msa_id</span>),
+			<span class="prelude-val">Some</span>(<span class="ident">Call::revoke_msa_key</span> { <span class="ident">key</span>, .. }) =&gt;
+				<span class="ident">CheckFreeExtrinsicUse</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::validate_key_revocation</span>(<span class="ident">who</span>, <span class="ident">key</span>),
 			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Default::default</span>()),
 		}
 	}
