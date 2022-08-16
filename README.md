@@ -158,7 +158,7 @@ in `rustfmt.toml`.
 # Runtime Upgrade
 
 1. Runtime upgrade enables upgrading running chain to a new runtime.
-2. To upgrade the runtime, current scripts does a follow step process:
+2. To upgrade the runtime, current scripts does following step process:
    1. Build new runtime and generate the compressed wasm
    2. Call ```authorizeUpgrade``` extrinsic from parachain system to initate the upgrade.
    3. Call ```enactAuthorizedUpgrade``` extrinsic from parachain system to enact the upgrade.
