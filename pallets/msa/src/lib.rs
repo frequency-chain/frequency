@@ -193,8 +193,8 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Tried to add a key that was already registered
-		KeyAlreadyRegisteredToThisMSA,
+		/// Tried to add a key that was already registered to an MSA
+		KeyAlreadyRegistered,
 		/// MsaId values have reached the maximum
 		MsaIdOverflow,
 		/// Cryptographic signature verification failed for adding a key to MSA
@@ -209,8 +209,6 @@ pub mod pallet {
 		NoKeyExists,
 		/// The number of key values has reached its maximum
 		KeyLimitExceeded,
-		/// The key is already registered to the MSA
-		KeyAlreadyRegisteredToAnotherMSA,
 		/// A transaction's Origin (AccountId) may not remove itself
 		InvalidSelfRemoval,
 		/// An MSA may not be its own delegate
@@ -239,7 +237,7 @@ pub mod pallet {
 		/// ### Errors
 		///
 		/// - Returns [`KeyLimitExceeded`](Error::KeyLimitExceeded) if MSA has registered `MaxKeys`.
-		/// - Returns [`KeyAlreadyRegisteredToThisMSA`](Error::KeyAlreadyRegisteredToThisMSA) if MSA is already registered to the Origin.
+		/// - Returns [`KeyAlreadyRegistered`](Error::KeyAlreadyRegistered) if MSA is already registered to the Origin.
 		///
 		#[pallet::weight(T::WeightInfo::create(10_000))]
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
@@ -261,7 +259,7 @@ pub mod pallet {
 		/// - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if payload's MSA does not match given provider MSA.
 		/// - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
-		/// - Returns [`KeyAlreadyRegisteredToThisMSA`](Error::KeyAlreadyRegisteredToThisMSA) if there is already an MSA for `delegator_key`.
+		/// - Returns [`KeyAlreadyRegistered`](Error::KeyAlreadyRegistered) if there is already an MSA for `delegator_key`.
 		///
 		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation())]
 		pub fn create_sponsored_account_with_delegation(
@@ -499,15 +497,7 @@ impl<T: Config> Pallet<T> {
 		F: FnOnce(MessageSourceId) -> DispatchResult,
 	{
 		KeyInfoOf::<T>::try_mutate(key, |maybe_key_info| {
-			if maybe_key_info.is_some() {
-				let key_info = maybe_key_info.take();
-
-				if key_info.unwrap().msa_id == msa_id {
-					return Err(Error::<T>::KeyAlreadyRegisteredToThisMSA.into())
-				} else {
-					return Err(Error::<T>::KeyAlreadyRegisteredToAnotherMSA.into())
-				}
-			}
+			ensure!(maybe_key_info.is_none(), Error::<T>::KeyAlreadyRegistered);
 
 			*maybe_key_info = Some(KeyInfo { msa_id, nonce: Zero::zero() });
 
@@ -516,7 +506,7 @@ impl<T: Config> Pallet<T> {
 				let index = key_list
 					.binary_search(key)
 					.err()
-					.ok_or(Error::<T>::KeyAlreadyRegisteredToThisMSA)?;
+					.ok_or(Error::<T>::KeyAlreadyRegistered)?;
 
 				key_list
 					.try_insert(index, key.clone())
