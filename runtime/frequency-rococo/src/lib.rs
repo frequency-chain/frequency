@@ -333,8 +333,6 @@ parameter_types! {
 impl pallet_schemas::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
-
-	// TODO: these constants need to be determined. See Issue #70
 	type MinSchemaModelSizeBytes = ConstU32<8>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<65_500>;
