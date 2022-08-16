@@ -53,10 +53,10 @@ impl WeightToFeePolynomial for WeightToFee {
 impl pallet_schemas::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
-	type MinSchemaModelSizeBytes = ConstU32<15>;
+	type MinSchemaModelSizeBytes = ConstU32<8>;
 	// a very high limit on incoming schema size, expected to be much higher than what
 	// is actually allowed.
-	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<65_000>;
+	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<65_500>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 }
 
