@@ -1049,12 +1049,12 @@ fn signed_extension_validation_valid_for_others() {
 }
 
 #[test]
-pub fn revoke_msa_key_call_has_correct_costs() {
+pub fn delete_msa_key_call_has_correct_costs() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let new_key = key_pair.public();
 
-		let call = MsaCall::<Test>::revoke_msa_key { key: AccountId32::from(new_key) };
+		let call = MsaCall::<Test>::delete_msa_key { key: AccountId32::from(new_key) };
 		let dispatch_info = call.get_dispatch_info();
 		assert_eq!(dispatch_info.pays_fee, Pays::No);
 	})

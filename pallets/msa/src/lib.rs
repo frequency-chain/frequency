@@ -413,7 +413,7 @@ pub mod pallet {
 		/// ### Remarks
 		/// - Removal of key deletes the association of the key with the MSA.
 		/// - The key can be re-added to same or another MSA if needed.
-		#[pallet::weight((T::WeightInfo::revoke_msa_key(), DispatchClass::Normal, Pays::No))]
+		#[pallet::weight((T::WeightInfo::delete_msa_key(), DispatchClass::Normal, Pays::No))]
 		pub fn delete_msa_key(origin: OriginFor<T>, key: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -832,7 +832,7 @@ where
 		match call.is_sub_type() {
 			Some(Call::revoke_msa_delegation_by_delegator { provider_msa_id, .. }) =>
 				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id),
-			Some(Call::revoke_msa_key { key, .. }) =>
+			Some(Call::delete_msa_key { key, .. }) =>
 				CheckFreeExtrinsicUse::<T>::validate_key_revocation(who, key),
 			_ => return Ok(Default::default()),
 		}
