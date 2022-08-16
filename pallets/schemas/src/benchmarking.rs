@@ -48,7 +48,7 @@ fn register_some_schema<T: Config>(
 
 benchmarks! {
 	register_schema {
-		let m in (T::MinSchemaModelSizeBytes::get() + 15) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
+		let m in (T::MinSchemaModelSizeBytes::get() + 8) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
 		let n in 1 .. SCHEMAS;
 		let sender: T::AccountId = whitelisted_caller();
 		let model_type = ModelType::default();

@@ -2,7 +2,7 @@ use crate::{
 	ensure,
 	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
-	CheckProviderRevocation, Config, DispatchResult, Error, Event, MsaIdentifier,
+	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
 	msa::{Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo},
@@ -978,7 +978,7 @@ pub fn delegation_expired() {
 	})
 }
 
-/// Assert that revoking an MSA delegation passes the signed extension CheckProviderRevocation
+/// Assert that revoking an MSA delegation passes the signed extension CheckFreeExtrinsicUse
 /// validation when a valid delegation exists.
 #[test]
 fn signed_extension_revoke_msa_delegation_by_delegator() {
@@ -988,7 +988,7 @@ fn signed_extension_revoke_msa_delegation_by_delegator() {
 			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result = CheckProviderRevocation::<Test>::new().validate(
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
 			&test_public(1),
 			call_revoke_delegation,
 			&info,
@@ -998,7 +998,7 @@ fn signed_extension_revoke_msa_delegation_by_delegator() {
 	});
 }
 
-/// Assert that revoking an MSA delegation fails the signed extension CheckProviderRevocation
+/// Assert that revoking an MSA delegation fails the signed extension CheckFreeExtrinsicUse
 /// validation when no valid delegation exists.
 #[test]
 fn signed_extension_validation_failure_on_revoked() {
@@ -1008,7 +1008,7 @@ fn signed_extension_validation_failure_on_revoked() {
 			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result = CheckProviderRevocation::<Test>::new().validate(
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
 			&test_public(1),
 			call_revoke_delegation,
 			&info,
@@ -1021,7 +1021,7 @@ fn signed_extension_validation_failure_on_revoked() {
 			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result_revoked = CheckProviderRevocation::<Test>::new().validate(
+		let result_revoked = CheckFreeExtrinsicUse::<Test>::new().validate(
 			&test_public(1),
 			call_revoke_delegation,
 			&info,
@@ -1032,20 +1032,104 @@ fn signed_extension_validation_failure_on_revoked() {
 }
 
 /// Assert that a call that is not revoke_msa_delegation_by_delegator passes the signed extension
-/// CheckProviderRevocation validaton.
+/// CheckFreeExtrinsicUse validaton.
 #[test]
 fn signed_extension_validation_valid_for_others() {
 	let random_call_should_pass: &<Test as frame_system::Config>::Call =
 		&Call::Msa(MsaCall::create {});
 	let info = DispatchInfo::default();
 	let len = 0_usize;
-	let result = CheckProviderRevocation::<Test>::new().validate(
+	let result = CheckFreeExtrinsicUse::<Test>::new().validate(
 		&test_public(1),
 		random_call_should_pass,
 		&info,
 		len,
 	);
 	assert_ok!(result);
+}
+
+#[test]
+pub fn revoke_msa_key_call_has_correct_costs() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let new_key = key_pair.public();
+
+		let call = MsaCall::<Test>::revoke_msa_key { key: AccountId32::from(new_key) };
+		let dispatch_info = call.get_dispatch_info();
+		assert_eq!(dispatch_info.pays_fee, Pays::No);
+	})
+}
+
+#[test]
+fn signed_extension_validation_on_msa_key_deleted() {
+	new_test_ext().execute_with(|| {
+		let (owner_msa_id, owner_key) = create_account();
+
+		let (user_key_pair, _) = sr25519::Pair::generate();
+		let user_public_key = user_key_pair.public();
+		let user_account_id = AccountId32::from(user_public_key.clone());
+		assert_ok!(Msa::add_key(owner_msa_id, &user_account_id, EMPTY_FUNCTION));
+
+		let call_delete_msa_key: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::delete_msa_key { key: owner_key.clone() });
+
+		let info = DispatchInfo::default();
+		let len = 0_usize;
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
+			&owner_key,
+			call_delete_msa_key,
+			&info,
+			len,
+		);
+		assert_ok!(result);
+		assert_ok!(Msa::delete_msa_key(
+			Origin::signed(AccountId32::from(owner_key.clone())),
+			user_account_id
+		));
+	});
+}
+
+#[test]
+fn signed_extension_validation_failure_on_msa_key_deleted() {
+	new_test_ext().execute_with(|| {
+		let (owner_msa_id, owner_key) = create_account();
+
+		let (user_key_pair, _) = sr25519::Pair::generate();
+		let user_public_key = user_key_pair.public();
+		let user_account_id = AccountId32::from(user_public_key.clone());
+		assert_ok!(Msa::add_key(owner_msa_id, &user_account_id, EMPTY_FUNCTION));
+
+		let call_delete_msa_key: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::delete_msa_key { key: owner_key.clone() });
+
+		let info = DispatchInfo::default();
+		let len = 0_usize;
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
+			&owner_key,
+			call_delete_msa_key,
+			&info,
+			len,
+		);
+
+		System::set_block_number(2);
+		assert_ok!(result);
+		assert_ok!(Msa::delete_msa_key(
+			Origin::signed(AccountId32::from(owner_key.clone())),
+			user_account_id.clone()
+		));
+
+		let call_delete_msa_key: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::delete_msa_key { key: user_account_id.clone() });
+		let info = DispatchInfo::default();
+		let len = 0_usize;
+		let result_deleted = CheckFreeExtrinsicUse::<Test>::new().validate(
+			&user_account_id.clone(),
+			call_delete_msa_key,
+			&info,
+			len,
+		);
+		assert!(result_deleted.is_err());
+	});
 }
 
 /// Assert that when a key has been added to an MSA, that it my NOT be added to any other MSA.

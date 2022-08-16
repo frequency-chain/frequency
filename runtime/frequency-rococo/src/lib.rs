@@ -113,7 +113,7 @@ pub type SignedExtra = (
 	frame_system::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
-	pallet_msa::CheckProviderRevocation<Runtime>,
+	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
 );
 
 /// Unchecked extrinsic type as expected by this runtime.
@@ -333,9 +333,7 @@ parameter_types! {
 impl pallet_schemas::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
-
-	// TODO: these constants need to be determined. See Issue #70
-	type MinSchemaModelSizeBytes = ConstU32<5>;
+	type MinSchemaModelSizeBytes = ConstU32<8>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<65_500>;
 }
