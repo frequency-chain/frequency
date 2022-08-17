@@ -2735,6 +2735,7 @@ dependencies = [
  "frequency-cli",
  "frequency-local-runtime",
  "frequency-rococo-runtime",
+ "frequency-runtime",
  "sc-cli",
  "substrate-build-script-utils",
 ]
