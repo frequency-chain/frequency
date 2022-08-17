@@ -3,7 +3,7 @@
 set -eux
 
 PACKAGE="${PACKAGE:-frequency-local-runtime}" #Need to replicate job for all runtimes
-RUNTIME_DIR="${RUNTIME_DIR:-runtime/frequency}"
+RUNTIME_DIR="${RUNTIME_DIR:-runtime/frequency-local}"
 SRT_TOOL_VERSION="${SRT_TOOL_VERSION:-1.62.0}"
 
 # Enable warnings about unused extern crates

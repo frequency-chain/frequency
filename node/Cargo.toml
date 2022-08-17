@@ -15,6 +15,7 @@ path = "src/main.rs"
 
 [dependencies]
 # Frequency Runtime
+frequency-runtime = { path = "../../runtime/frequency" }
 frequency-local-runtime = { path = "../runtime/frequency-local" }
 frequency-rococo-runtime = { path = "../runtime/frequency-rococo" }
 frequency-cli = { path = "cli" }
@@ -27,8 +28,9 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 
 [features]
 runtime-benchmarks = [
+	"frequency-runtime/runtime-benchmarks",
 	"frequency-local-runtime/runtime-benchmarks",
 	"frequency-rococo-runtime/runtime-benchmarks",
 	"frequency-cli/runtime-benchmarks",
 ]
-try-runtime = ["frequency-local-runtime/try-runtime", "frequency-rococo-runtime/try-runtime"]
+try-runtime = ["frequency-runtime/try-runtime", "frequency-local-runtime/try-runtime", "frequency-rococo-runtime/try-runtime"]
