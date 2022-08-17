@@ -7,7 +7,7 @@ export default {
         {
           name: "at",
           type: "BlockHash",
-          optional: true,
+          isOptional: true,
         },
       ],
       type: "SchemaId",
@@ -28,7 +28,7 @@ export default {
         {
           name: "at",
           type: "BlockHash",
-          optional: true,
+          isOptional: true,
         },
         {
           name: "model",
