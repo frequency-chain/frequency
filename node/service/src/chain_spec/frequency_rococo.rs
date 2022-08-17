@@ -34,7 +34,7 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 		// Name
 		"Frequency Rococo",
 		// ID
-		"frequency_rococo",
+		"frequency-rococo",
 		ChainType::Live,
 		move || {
 			frequency_rococo_genesis(

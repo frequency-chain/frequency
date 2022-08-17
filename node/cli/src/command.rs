@@ -51,9 +51,9 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	Ok(match id {
 		"frequency" => Box::new(chain_spec::frequency::frequency()),
-		"frequency_dev" | "dev" => Box::new(chain_spec::frequency_local::development_config()),
-		"frequency_local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
-		"frequency_rococo" | "rococo" | "testnet" =>
+		"frequency-dev" | "dev" => Box::new(chain_spec::frequency_local::development_config()),
+		"frequency-local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
+		"frequency-rococo" | "rococo" | "testnet" =>
 			Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet()),
 		"" | "local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
 		path => Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(
