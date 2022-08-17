@@ -2,7 +2,7 @@
 
 set -eux
 
-PACKAGE="${PACKAGE:-frequency-runtime}" #Need to replicate job for all runtimes
+PACKAGE="${PACKAGE:-frequency-local-runtime}" #Need to replicate job for all runtimes
 RUNTIME_DIR="${RUNTIME_DIR:-runtime/frequency}"
 SRT_TOOL_VERSION="${SRT_TOOL_VERSION:-1.62.0}"
 

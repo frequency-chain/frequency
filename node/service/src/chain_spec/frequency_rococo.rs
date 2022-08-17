@@ -1,12 +1,13 @@
 #![allow(missing_docs)]
 use cumulus_primitives_core::ParaId;
-use frequency_runtime::{AccountId, AuraId, SudoConfig, EXISTENTIAL_DEPOSIT};
+use frequency_local_runtime::{AccountId, AuraId, SudoConfig, EXISTENTIAL_DEPOSIT};
 use hex::FromHex;
 use sc_service::ChainType;
 use sp_core::ByteArray;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConfig, Extensions>;
+pub type ChainSpec =
+	sc_service::GenericChainSpec<frequency_local_runtime::GenesisConfig, Extensions>;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
@@ -102,30 +103,30 @@ fn frequency_rococo_genesis(
 	root_key: Option<AccountId>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> frequency_runtime::GenesisConfig {
-	frequency_runtime::GenesisConfig {
-		system: frequency_runtime::SystemConfig {
-			code: frequency_runtime::WASM_BINARY
+) -> frequency_local_runtime::GenesisConfig {
+	frequency_local_runtime::GenesisConfig {
+		system: frequency_local_runtime::SystemConfig {
+			code: frequency_local_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 		},
-		balances: frequency_runtime::BalancesConfig {
+		balances: frequency_local_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
-		parachain_info: frequency_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: frequency_runtime::CollatorSelectionConfig {
+		parachain_info: frequency_local_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: frequency_local_runtime::CollatorSelectionConfig {
 			invulnerables: initial_authorities.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
 			..Default::default()
 		},
-		session: frequency_runtime::SessionConfig {
+		session: frequency_local_runtime::SessionConfig {
 			keys: initial_authorities
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                             // account id
-						acc,                                     // validator id
-						frequency_runtime::SessionKeys { aura }, // session keys
+						acc.clone(),                                   // account id
+						acc,                                           // validator id
+						frequency_local_runtime::SessionKeys { aura }, // session keys
 					)
 				})
 				.collect(),
@@ -139,7 +140,7 @@ fn frequency_rococo_genesis(
 			// Assign network admin rights.
 			key: root_key,
 		},
-		polkadot_xcm: frequency_runtime::PolkadotXcmConfig {
+		polkadot_xcm: frequency_local_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 		schemas: Default::default(),

@@ -100,7 +100,7 @@ impl SubstrateCli for Cli {
 
 	fn native_runtime_version(spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
 		match spec.identify() {
-			ChainIdentity::Frequency => &frequency_runtime::VERSION,
+			ChainIdentity::Frequency => &frequency_local_runtime::VERSION,
 			ChainIdentity::FrequencyRococo => &frequency_rococo_runtime::VERSION,
 		}
 	}
@@ -151,7 +151,7 @@ macro_rules! construct_async_run {
 			ChainIdentity::Frequency => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<
-					frequency_runtime::RuntimeApi,
+					frequency_local_runtime::RuntimeApi,
 						FrequencyRuntimeExecutor,
 						_
 					>(
@@ -258,7 +258,7 @@ pub fn run() -> Result<()> {
 					if cfg!(feature = "runtime-benchmarks") {
 						match runner.config().chain_spec.identify() {
 							ChainIdentity::Frequency => runner.sync_run(|config| {
-								cmd.run::<frequency_runtime::Block, FrequencyRuntimeExecutor>(
+								cmd.run::<frequency_local_runtime::Block, FrequencyRuntimeExecutor>(
 									config,
 								)
 							}),
@@ -274,7 +274,7 @@ pub fn run() -> Result<()> {
 				BenchmarkCmd::Block(cmd) => match runner.config().chain_spec.identify() {
 					ChainIdentity::Frequency => runner.sync_run(|config| {
 						let partials = new_partial::<
-							frequency_runtime::RuntimeApi,
+							frequency_local_runtime::RuntimeApi,
 							FrequencyRuntimeExecutor,
 							_,
 						>(&config, parachain_build_import_queue, false)?;
@@ -292,7 +292,7 @@ pub fn run() -> Result<()> {
 				BenchmarkCmd::Storage(cmd) => match runner.config().chain_spec.identify() {
 					ChainIdentity::Frequency => runner.sync_run(|config| {
 						let partials = new_partial::<
-							frequency_runtime::RuntimeApi,
+							frequency_local_runtime::RuntimeApi,
 							FrequencyRuntimeExecutor,
 							_,
 						>(&config, parachain_build_import_queue, false)?;
@@ -330,7 +330,7 @@ pub fn run() -> Result<()> {
 				match runner.config().chain_spec.identify() {
 					ChainIdentity::Frequency => {
 						runner.async_run(|config| {
-							Ok((cmd.run::<frequency_runtime::Block, FrequencyRuntimeExecutor>(config), task_manager))
+							Ok((cmd.run::<frequency_local_runtime::Block, FrequencyRuntimeExecutor>(config), task_manager))
 						})
 					}							,
 					ChainIdentity::FrequencyRococo => {
@@ -392,7 +392,7 @@ pub fn run() -> Result<()> {
 				match config.chain_spec.identify() {
 					ChainIdentity::Frequency =>
 						start_parachain_node::<
-							frequency_runtime::RuntimeApi,
+							frequency_local_runtime::RuntimeApi,
 							FrequencyRuntimeExecutor,
 						>(config, polkadot_config, collator_options, id, hwbench)
 						.await

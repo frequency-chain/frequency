@@ -4,7 +4,7 @@ description = "Runtime for Frequency parachain"
 edition = "2021"
 homepage = "https://frequency.xyz"
 license = "Apache-2.0"
-name = "frequency-runtime"
+name = "frequency-local-runtime"
 repository = "https://github.com/LibertyDSNP/frequency/"
 version = "0.1.0"
 

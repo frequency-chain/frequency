@@ -54,7 +54,7 @@ export default {
     }
   },
   /**
-   * Lookup16: frame_system::EventRecord<frequency_runtime::Event, primitive_types::H256>
+   * Lookup16: frame_system::EventRecord<frequency_local_runtime::Event, primitive_types::H256>
    **/
   FrameSystemEventRecord: {
     phase: 'FrameSystemPhase',
@@ -1241,7 +1241,7 @@ export default {
     }
   },
   /**
-   * Lookup148: frame_support::traits::schedule::MaybeHashed<frequency_runtime::Call, primitive_types::H256>
+   * Lookup148: frame_support::traits::schedule::MaybeHashed<frequency_local_runtime::Call, primitive_types::H256>
    **/
   FrameSupportScheduleMaybeHashed: {
     _enum: {
@@ -1371,7 +1371,7 @@ export default {
     }
   },
   /**
-   * Lookup159: frequency_runtime::SessionKeys
+   * Lookup159: frequency_local_runtime::SessionKeys
    **/
   FrequencyRuntimeSessionKeys: {
     aura: 'SpConsensusAuraSr25519AppSr25519Public'
@@ -1851,7 +1851,7 @@ export default {
     _enum: ['RequireSudo']
   },
   /**
-   * Lookup209: pallet_scheduler::ScheduledV3<frame_support::traits::schedule::MaybeHashed<frequency_runtime::Call, primitive_types::H256>, BlockNumber, frequency_runtime::OriginCaller, sp_core::crypto::AccountId32>
+   * Lookup209: pallet_scheduler::ScheduledV3<frame_support::traits::schedule::MaybeHashed<frequency_local_runtime::Call, primitive_types::H256>, BlockNumber, frequency_local_runtime::OriginCaller, sp_core::crypto::AccountId32>
    **/
   PalletSchedulerScheduledV3: {
     maybeId: 'Option<Bytes>',
@@ -1861,7 +1861,7 @@ export default {
     origin: 'FrequencyRuntimeOriginCaller'
   },
   /**
-   * Lookup210: frequency_runtime::OriginCaller
+   * Lookup210: frequency_local_runtime::OriginCaller
    **/
   FrequencyRuntimeOriginCaller: {
     _enum: {
@@ -2196,7 +2196,7 @@ export default {
    **/
   PalletMsaCheckProviderRevocation: 'Null',
   /**
-   * Lookup298: frequency_runtime::Runtime
+   * Lookup298: frequency_local_runtime::Runtime
    **/
   FrequencyRuntimeRuntime: 'Null'
 };

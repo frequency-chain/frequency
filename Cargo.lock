@@ -2733,8 +2733,8 @@ name = "frequency"
 version = "0.1.0"
 dependencies = [
  "frequency-cli",
+ "frequency-local-runtime",
  "frequency-rococo-runtime",
- "frequency-runtime",
  "sc-cli",
  "substrate-build-script-utils",
 ]
@@ -2750,8 +2750,8 @@ dependencies = [
  "cumulus-primitives-core",
  "derive_more",
  "frame-benchmarking-cli",
+ "frequency-local-runtime",
  "frequency-rococo-runtime",
- "frequency-runtime",
  "frequency-service",
  "hex-literal",
  "jsonrpsee",
@@ -2774,7 +2774,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "frequency-rococo-runtime"
+name = "frequency-local-runtime"
 version = "0.1.0"
 dependencies = [
  "common-primitives",
@@ -2844,7 +2844,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "frequency-runtime"
+name = "frequency-rococo-runtime"
 version = "0.1.0"
 dependencies = [
  "common-primitives",
@@ -2933,8 +2933,8 @@ dependencies = [
  "derive_more",
  "frame-benchmarking",
  "frame-benchmarking-cli",
+ "frequency-local-runtime",
  "frequency-rococo-runtime",
- "frequency-runtime",
  "futures",
  "hex",
  "hex-literal",
