@@ -1701,8 +1701,8 @@
 		}
 	}
 
-	<span class="kw">impl</span> <span class="ident">pallet_msa_runtime_api::MsaApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">BlockNumber</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-		<span class="kw">fn</span> <span class="ident">get_msa_keys</span>(<span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">KeyInfoResponse</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
+	<span class="kw">impl</span> <span class="ident">pallet_msa_runtime_api::MsaApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+		<span class="kw">fn</span> <span class="ident">get_msa_keys</span>(<span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">KeyInfoResponse</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
 			<span class="prelude-val">Ok</span>(<span class="ident">Msa::fetch_msa_keys</span>(<span class="ident">msa_id</span>))
 		}
 

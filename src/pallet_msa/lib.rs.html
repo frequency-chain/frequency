@@ -832,31 +832,6 @@
 <span id="826">826</span>
 <span id="827">827</span>
 <span id="828">828</span>
-<span id="829">829</span>
-<span id="830">830</span>
-<span id="831">831</span>
-<span id="832">832</span>
-<span id="833">833</span>
-<span id="834">834</span>
-<span id="835">835</span>
-<span id="836">836</span>
-<span id="837">837</span>
-<span id="838">838</span>
-<span id="839">839</span>
-<span id="840">840</span>
-<span id="841">841</span>
-<span id="842">842</span>
-<span id="843">843</span>
-<span id="844">844</span>
-<span id="845">845</span>
-<span id="846">846</span>
-<span id="847">847</span>
-<span id="848">848</span>
-<span id="849">849</span>
-<span id="850">850</span>
-<span id="851">851</span>
-<span id="852">852</span>
-<span id="853">853</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The MSA pallet provides functionality for handling Message Source Accounts.</span>
@@ -898,7 +873,7 @@
 <span class="doccomment">//! - `create_sponsored_account_with_delegation` - `Origin` creates an account for a given `AccountId` and sets themselves as a `Provider`.</span>
 <span class="doccomment">//! - `remove_delegation_by_provider` - `Provider` MSA terminates a Delegation with Delegator MSA by expiring it.</span>
 <span class="doccomment">//! - `revoke_msa_delegation_by_delegator` - Delegator MSA terminates a Delegation with the `Provider` MSA by expiring it.</span>
-<span class="doccomment">//! - `revoke_msa_key` - Revokes the given key by expiring it.</span>
+<span class="doccomment">//! - `delete_msa_key` - Removes the given key by from storage against respective MSA.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ### Assumptions</span>
 <span class="doccomment">//!</span>
@@ -992,7 +967,7 @@
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">get_key_info</span>)]</span>
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">KeyInfoOf</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span>
-		<span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Blake2_128Concat</span>, <span class="ident">T::AccountId</span>, <span class="ident">KeyInfo</span><span class="op">&lt;</span><span class="ident">T::BlockNumber</span><span class="op">&gt;</span>, <span class="ident">OptionQuery</span><span class="op">&gt;</span>;
+		<span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Blake2_128Concat</span>, <span class="ident">T::AccountId</span>, <span class="ident">KeyInfo</span>, <span class="ident">OptionQuery</span><span class="op">&gt;</span>;
 
 	<span class="doccomment">/// Storage type for MSA keys</span>
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
@@ -1023,7 +998,7 @@
 			<span class="ident">key</span>: <span class="ident">T::AccountId</span>,
 		},
 		<span class="doccomment">/// An AccountId had all permissions revoked from its MessageSourceId</span>
-		<span class="ident">KeyRevoked</span> {
+		<span class="ident">KeyRemoved</span> {
 			<span class="doccomment">/// The key no longer approved for the associated MSA</span>
 			<span class="ident">key</span>: <span class="ident">T::AccountId</span>,
 		},
@@ -1052,8 +1027,8 @@
 
 	<span class="attribute">#[<span class="ident">pallet::error</span>]</span>
 	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// Tried to add a key that was already registered</span>
-		<span class="ident">DuplicatedKey</span>,
+		<span class="doccomment">/// Tried to add a key that was already registered to an MSA</span>
+		<span class="ident">KeyAlreadyRegistered</span>,
 		<span class="doccomment">/// MsaId values have reached the maximum</span>
 		<span class="ident">MsaIdOverflow</span>,
 		<span class="doccomment">/// Cryptographic signature verification failed for adding a key to MSA</span>
@@ -1066,12 +1041,10 @@
 		<span class="ident">NotKeyOwner</span>,
 		<span class="doccomment">/// An operation was attempted with an unknown Key</span>
 		<span class="ident">NoKeyExists</span>,
-		<span class="doccomment">/// An operation was attempted with a revoked Key</span>
-		<span class="ident">KeyRevoked</span>,
 		<span class="doccomment">/// The number of key values has reached its maximum</span>
 		<span class="ident">KeyLimitExceeded</span>,
-		<span class="doccomment">/// A transaction&#39;s Origin (AccountId) may not revoke itself</span>
-		<span class="ident">InvalidSelfRevoke</span>,
+		<span class="doccomment">/// A transaction&#39;s Origin (AccountId) may not remove itself</span>
+		<span class="ident">InvalidSelfRemoval</span>,
 		<span class="doccomment">/// An MSA may not be its own delegate</span>
 		<span class="ident">InvalidSelfProvider</span>,
 		<span class="doccomment">/// The delegation relationship already exists for the given MSA Ids</span>
@@ -1098,7 +1071,7 @@
 		<span class="doccomment">/// ### Errors</span>
 		<span class="doccomment">///</span>
 		<span class="doccomment">/// - Returns [`KeyLimitExceeded`](Error::KeyLimitExceeded) if MSA has registered `MaxKeys`.</span>
-		<span class="doccomment">/// - Returns [`DuplicatedKey`](Error::DuplicatedKey) if MSA is already registered to the Origin.</span>
+		<span class="doccomment">/// - Returns [`KeyAlreadyRegistered`](Error::KeyAlreadyRegistered) if MSA is already registered to the Origin.</span>
 		<span class="doccomment">///</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="ident">T::WeightInfo::create</span>(<span class="number">10_000</span>))]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) -&gt; <span class="ident">DispatchResult</span> {
@@ -1120,8 +1093,7 @@
 		<span class="doccomment">/// - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if payload&#39;s MSA does not match given provider MSA.</span>
 		<span class="doccomment">/// - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`</span>
 		<span class="doccomment">/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.</span>
-		<span class="doccomment">/// - Returns [`KeyRevoked`](Error::KeyRevoked) if MSA of `origin` is expired.</span>
-		<span class="doccomment">/// - Returns [`DuplicatedKey`](Error::DuplicatedKey) if there is already an MSA for `delegator_key`.</span>
+		<span class="doccomment">/// - Returns [`KeyAlreadyRegistered`](Error::KeyAlreadyRegistered) if there is already an MSA for `delegator_key`.</span>
 		<span class="doccomment">///</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="ident">T::WeightInfo::create_sponsored_account_with_delegation</span>())]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_sponsored_account_with_delegation</span>(
@@ -1166,7 +1138,6 @@
 		<span class="doccomment">/// - Returns [`AddProviderSignatureVerificationFailed`](Error::AddProviderSignatureVerificationFailed) if `provider_key`&#39;s MSA ID does not equal `add_provider_payload.authorized_msa_id`.</span>
 		<span class="doccomment">/// - Returns [`DuplicateProvider`](Error::DuplicateProvider) if there is already a Delegation for `origin` MSA and `provider_key` MSA.</span>
 		<span class="doccomment">/// ## Errors</span>
-		<span class="doccomment">/// - Returns [`KeyRevoked`](Error::KeyRevoked) if MSA of `origin` or `authorized_msa_id` is expired.</span>
 		<span class="doccomment">/// - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if `add_provider_payload.authorized_msa_id`  does not match MSA ID of `provider_key`.</span>
 		<span class="doccomment">/// - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`</span>
 		<span class="doccomment">/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.</span>
@@ -1252,6 +1223,7 @@
 				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AddKeySignatureVerificationFailed</span>)<span class="question-mark">?</span>;
 
 			<span class="kw">let</span> <span class="ident">msa_id</span> <span class="op">=</span> <span class="ident">add_key_payload</span>.<span class="ident">msa_id</span>;
+
 			<span class="ident"><span class="self">Self</span>::ensure_msa_owner</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>, <span class="ident">msa_id</span>)<span class="question-mark">?</span>;
 
 			<span class="ident"><span class="self">Self</span>::add_key</span>(<span class="ident">msa_id</span>, <span class="kw-2">&amp;</span><span class="ident">key</span>.<span class="ident">clone</span>(), <span class="op">|</span><span class="ident">new_msa_id</span><span class="op">|</span> -&gt; <span class="ident">DispatchResult</span> {
@@ -1262,29 +1234,30 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Revokes a key associated with an MSA by expiring it at the current block.</span>
-		<span class="doccomment">/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`KeyRevoked`](Event::KeyRevoked).</span>
+		<span class="doccomment">/// Remove a key associated with an MSA by expiring it at the current block.</span>
+		<span class="doccomment">/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`KeyRemoved`](Event::KeyRemoved).</span>
 		<span class="doccomment">///</span>
 		<span class="doccomment">/// ### Errors</span>
-		<span class="doccomment">/// - Returns [`InvalidSelfRevoke`](Error::InvalidSelfRevoke) if `origin` and `key` are the same.</span>
-		<span class="doccomment">/// - Returns [`KeyRevoked`](Error::KeyRevoked) if `key` is already expired.</span>
+		<span class="doccomment">/// - Returns [`InvalidSelfRemoval`](Error::InvalidSelfRemoval) if `origin` and `key` are the same.</span>
 		<span class="doccomment">/// - Returns [`NotKeyOwner`](Error::NotKeyOwner) if `origin` does not own the MSA ID associated with `key`.</span>
 		<span class="doccomment">/// - Returns [`NotKeyExists`](Error::NoKeyExists) if `origin` or `key` are not associated with `origin`&#39;s MSA ID.</span>
 		<span class="doccomment">///</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>((<span class="ident">T::WeightInfo::revoke_msa_key</span>(), <span class="ident">DispatchClass::Normal</span>, <span class="ident">Pays::No</span>))]</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">revoke_msa_key</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">key</span>: <span class="ident">T::AccountId</span>) -&gt; <span class="ident">DispatchResult</span> {
+		<span class="doccomment">/// ### Remarks</span>
+		<span class="doccomment">/// - Removal of key deletes the association of the key with the MSA.</span>
+		<span class="doccomment">/// - The key can be re-added to same or another MSA if needed.</span>
+		<span class="attribute">#[<span class="ident">pallet::weight</span>((<span class="ident">T::WeightInfo::delete_msa_key</span>(), <span class="ident">DispatchClass::Normal</span>, <span class="ident">Pays::No</span>))]</span>
+		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">delete_msa_key</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">key</span>: <span class="ident">T::AccountId</span>) -&gt; <span class="ident">DispatchResult</span> {
 			<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 
-			<span class="macro">ensure!</span>(<span class="ident">who</span> <span class="op">!</span><span class="op">=</span> <span class="ident">key</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidSelfRevoke</span>);
+			<span class="macro">ensure!</span>(<span class="ident">who</span> <span class="op">!</span><span class="op">=</span> <span class="ident">key</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidSelfRemoval</span>);
 
 			<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::try_get_key_info</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>)<span class="question-mark">?</span>;
 			<span class="kw">let</span> <span class="ident">key_info</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::try_get_key_info</span>(<span class="kw-2">&amp;</span><span class="ident">key</span>)<span class="question-mark">?</span>;
-			<span class="macro">ensure!</span>(<span class="ident">who</span>.<span class="ident">expired</span> <span class="op">==</span> <span class="ident">T::BlockNumber::zero</span>(), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::KeyRevoked</span>);
 			<span class="macro">ensure!</span>(<span class="ident">who</span>.<span class="ident">msa_id</span> <span class="op">==</span> <span class="ident">key_info</span>.<span class="ident">msa_id</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotKeyOwner</span>);
 
-			<span class="ident"><span class="self">Self</span>::revoke_key</span>(<span class="kw-2">&amp;</span><span class="ident">key</span>)<span class="question-mark">?</span>;
+			<span class="ident"><span class="self">Self</span>::delete_key_for_msa</span>(<span class="ident">who</span>.<span class="ident">msa_id</span>, <span class="kw-2">&amp;</span><span class="ident">key</span>)<span class="question-mark">?</span>;
 
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::KeyRevoked</span> { <span class="ident">key</span> });
+			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::KeyRemoved</span> { <span class="ident">key</span> });
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -1295,7 +1268,6 @@
 		<span class="doccomment">/// ### Errors</span>
 		<span class="doccomment">///</span>
 		<span class="doccomment">/// - Returns [`NoKeyExists`](Error::NoKeyExists) if `provider_key` does not have an MSA key.</span>
-		<span class="doccomment">/// - Returns [`KeyRevoked`](Error::KeyRevoked) if `provider_key` is revoked</span>
 		<span class="doccomment">/// - Returns [`DelegationNotFound`](Error::DelegationNotFound) if there is no Delegation between origin MSA and provider MSA.</span>
 		<span class="doccomment">///</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>((<span class="ident">T::WeightInfo::remove_delegation_by_provider</span>(<span class="number">20_000</span>), <span class="ident">DispatchClass::Normal</span>, <span class="ident">Pays::No</span>))]</span>
@@ -1358,15 +1330,15 @@
 	<span class="kw">where</span>
 		<span class="ident">F</span>: <span class="ident">FnOnce</span>(<span class="ident">MessageSourceId</span>) -&gt; <span class="ident">DispatchResult</span>,
 	{
-		<span class="ident">KeyInfoOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::try_mutate</span>(<span class="ident">key</span>, <span class="op">|</span><span class="ident">maybe_msa</span><span class="op">|</span> {
-			<span class="macro">ensure!</span>(<span class="ident">maybe_msa</span>.<span class="ident">is_none</span>(), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::DuplicatedKey</span>);
+		<span class="ident">KeyInfoOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::try_mutate</span>(<span class="ident">key</span>, <span class="op">|</span><span class="ident">maybe_key_info</span><span class="op">|</span> {
+			<span class="macro">ensure!</span>(<span class="ident">maybe_key_info</span>.<span class="ident">is_none</span>(), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::KeyAlreadyRegistered</span>);
 
-			<span class="kw-2">*</span><span class="ident">maybe_msa</span> <span class="op">=</span>
-				<span class="prelude-val">Some</span>(<span class="ident">KeyInfo</span> { <span class="ident">msa_id</span>, <span class="ident">expired</span>: <span class="ident">T::BlockNumber::default</span>(), <span class="ident">nonce</span>: <span class="ident">Zero::zero</span>() });
+			<span class="kw-2">*</span><span class="ident">maybe_key_info</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">KeyInfo</span> { <span class="ident">msa_id</span>, <span class="ident">nonce</span>: <span class="ident">Zero::zero</span>() });
 
 			<span class="comment">// adding reverse lookup</span>
 			<span class="op">&lt;</span><span class="ident">MsaKeysOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::try_mutate</span>(<span class="ident">msa_id</span>, <span class="op">|</span><span class="ident">key_list</span><span class="op">|</span> {
-				<span class="kw">let</span> <span class="ident">index</span> <span class="op">=</span> <span class="ident">key_list</span>.<span class="ident">binary_search</span>(<span class="ident">key</span>).<span class="ident">err</span>().<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::DuplicatedKey</span>)<span class="question-mark">?</span>;
+				<span class="kw">let</span> <span class="ident">index</span> <span class="op">=</span>
+					<span class="ident">key_list</span>.<span class="ident">binary_search</span>(<span class="ident">key</span>).<span class="ident">err</span>().<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::KeyAlreadyRegistered</span>)<span class="question-mark">?</span>;
 
 				<span class="ident">key_list</span>
 					.<span class="ident">try_insert</span>(<span class="ident">index</span>, <span class="ident">key</span>.<span class="ident">clone</span>())
@@ -1445,30 +1417,22 @@
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="doccomment">/// Disables a key so that it cannot be used again for the associated MSA</span>
+	<span class="doccomment">/// Deletes a key associated with a given MSA</span>
 	<span class="doccomment">/// # Arguments</span>
-	<span class="doccomment">/// * `key` - The key to expire</span>
+	<span class="doccomment">/// * `msa_id` - The MSA for which the key needs to be removed</span>
+	<span class="doccomment">/// * `key` - The key to be removed from the MSA</span>
 	<span class="doccomment">/// # Returns</span>
 	<span class="doccomment">/// * [`DispatchResult`]</span>
-	<span class="doccomment">///</span>
 	<span class="doccomment">/// # Errors</span>
-	<span class="doccomment">/// * [`Error::&lt;T&gt;::KeyRevoked`]</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">revoke_key</span>(<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>) -&gt; <span class="ident">DispatchResult</span> {
-		<span class="ident">KeyInfoOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::try_mutate</span>(<span class="ident">key</span>, <span class="op">|</span><span class="ident">maybe_info</span><span class="op">|</span> -&gt; <span class="ident">DispatchResult</span> {
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">maybe_info</span>.<span class="ident">take</span>().<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NoKeyExists</span>)<span class="question-mark">?</span>;
-
-			<span class="macro">ensure!</span>(<span class="ident">info</span>.<span class="ident">expired</span> <span class="op">==</span> <span class="ident">T::BlockNumber::default</span>(), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::KeyRevoked</span>);
-
-			<span class="kw">let</span> <span class="ident">current_block</span> <span class="op">=</span> <span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::block_number</span>();
-
-			<span class="ident">info</span>.<span class="ident">expired</span> <span class="op">=</span> <span class="ident">current_block</span>;
-
-			<span class="kw-2">*</span><span class="ident">maybe_info</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">info</span>);
-
+	<span class="doccomment">/// * [`Error::&lt;T&gt;::NoKeyExists`] - If the key does not exist in the MSA</span>
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">delete_key_for_msa</span>(<span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>) -&gt; <span class="ident">DispatchResult</span> {
+		<span class="op">&lt;</span><span class="ident">MsaKeysOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::try_mutate</span>(<span class="ident">msa_id</span>, <span class="op">|</span><span class="ident">key_list</span><span class="op">|</span> {
+			<span class="kw">let</span> <span class="ident">index</span> <span class="op">=</span> <span class="ident">key_list</span>.<span class="ident">binary_search</span>(<span class="ident">key</span>);
+			<span class="macro">ensure!</span>(<span class="ident">index</span>.<span class="ident">is_ok</span>(), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NoKeyExists</span>);
+			<span class="ident">key_list</span>.<span class="ident">remove</span>(<span class="ident">index</span>.<span class="ident">unwrap</span>());
+			<span class="ident">KeyInfoOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::remove</span>(<span class="ident">key</span>);
 			<span class="prelude-val">Ok</span>(())
-		})<span class="question-mark">?</span>;
-
-		<span class="prelude-val">Ok</span>(())
+		})
 	}
 
 	<span class="doccomment">/// Revoke the grant for permissions from the delegator to the provider</span>
@@ -1511,7 +1475,7 @@
 	<span class="doccomment">/// * `key` - The `AccountId` you want to attempt to get information on</span>
 	<span class="doccomment">/// # Returns</span>
 	<span class="doccomment">/// * [`KeyInfo`]</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_get_key_info</span>(<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">KeyInfo</span><span class="op">&lt;</span><span class="ident">T::BlockNumber</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_get_key_info</span>(<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">KeyInfo</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::get_key_info</span>(<span class="ident">key</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NoKeyExists</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(<span class="ident">info</span>)
 	}
@@ -1527,9 +1491,7 @@
 
 	<span class="doccomment">/// Fetches all the keys associated with a message Source Account</span>
 	<span class="doccomment">/// NOTE: This should only be called from RPC due to heavy database reads</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fetch_msa_keys</span>(
-		<span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>,
-	) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">KeyInfoResponse</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">T::BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fetch_msa_keys</span>(<span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">KeyInfoResponse</span><span class="op">&lt;</span><span class="ident">T::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">response</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
 		<span class="kw">for</span> <span class="ident">key</span> <span class="kw">in</span> <span class="ident"><span class="self">Self</span>::get_msa_keys</span>(<span class="ident">msa_id</span>) {
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">info</span>) <span class="op">=</span> <span class="ident"><span class="self">Self</span>::try_get_key_info</span>(<span class="kw-2">&amp;</span><span class="ident">key</span>) {
@@ -1541,12 +1503,8 @@
 	}
 
 	<span class="doccomment">/// Checks that a key is associated to an MSA and has not been revoked.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_valid_msa_key</span>(
-		<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">KeyInfo</span><span class="op">&lt;</span><span class="ident">T::BlockNumber</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_valid_msa_key</span>(<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">KeyInfo</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::try_get_key_info</span>(<span class="ident">key</span>)<span class="question-mark">?</span>;
-
-		<span class="macro">ensure!</span>(<span class="ident">info</span>.<span class="ident">expired</span> <span class="op">==</span> <span class="ident">T::BlockNumber::zero</span>(), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::KeyRevoked</span>);
 
 		<span class="prelude-val">Ok</span>(<span class="ident">info</span>)
 	}
@@ -1571,9 +1529,7 @@
 	}
 
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>))]</span>
-	<span class="kw">fn</span> <span class="ident">ensure_valid_msa_key</span>(
-		<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">KeyInfo</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::BlockNumber</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">ensure_valid_msa_key</span>(<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">KeyInfo</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
 		<span class="ident"><span class="self">Self</span>::ensure_valid_msa_key</span>(<span class="ident">key</span>)
 	}
 
@@ -1585,16 +1541,10 @@
 	<span class="doccomment">/// To successfully run benchmarks without adding dependencies between pallets we re-defined</span>
 	<span class="doccomment">/// this method to return a dummy account in case it does not exist</span>
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>)]</span>
-	<span class="kw">fn</span> <span class="ident">ensure_valid_msa_key</span>(
-		<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">KeyInfo</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::BlockNumber</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">ensure_valid_msa_key</span>(<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">KeyInfo</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::ensure_valid_msa_key</span>(<span class="ident">key</span>);
 		<span class="kw">if</span> <span class="ident">result</span>.<span class="ident">is_err</span>() {
-			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">KeyInfo</span> {
-				<span class="ident">msa_id</span>: <span class="number">1</span> <span class="kw">as</span> <span class="ident">MessageSourceId</span>,
-				<span class="ident">nonce</span>: <span class="number">0</span>,
-				<span class="ident">expired</span>: <span class="ident"><span class="self">Self</span>::BlockNumber::default</span>(),
-			})
+			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">KeyInfo</span> { <span class="ident">msa_id</span>: <span class="number">1</span> <span class="kw">as</span> <span class="ident">MessageSourceId</span>, <span class="ident">nonce</span>: <span class="number">0</span> })
 		}
 		<span class="prelude-val">Ok</span>(<span class="ident">result</span>.<span class="ident">unwrap</span>())
 	}
@@ -1704,7 +1654,7 @@
 		<span class="kw">match</span> <span class="ident">call</span>.<span class="ident">is_sub_type</span>() {
 			<span class="prelude-val">Some</span>(<span class="ident">Call::revoke_msa_delegation_by_delegator</span> { <span class="ident">provider_msa_id</span>, .. }) =&gt;
 				<span class="ident">CheckFreeExtrinsicUse</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::validate_delegation_by_delegator</span>(<span class="ident">who</span>, <span class="ident">provider_msa_id</span>),
-			<span class="prelude-val">Some</span>(<span class="ident">Call::revoke_msa_key</span> { <span class="ident">key</span>, .. }) =&gt;
+			<span class="prelude-val">Some</span>(<span class="ident">Call::delete_msa_key</span> { <span class="ident">key</span>, .. }) =&gt;
 				<span class="ident">CheckFreeExtrinsicUse</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::validate_key_revocation</span>(<span class="ident">who</span>, <span class="ident">key</span>),
 			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Default::default</span>()),
 		}

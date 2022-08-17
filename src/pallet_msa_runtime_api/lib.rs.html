@@ -26,7 +26,6 @@
 <span id="20">20</span>
 <span id="21">21</span>
 <span id="22">22</span>
-<span id="23">23</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::too_many_arguments</span>)]</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::unnecessary_mut_passed</span>)]</span>
@@ -39,11 +38,10 @@
 <span class="comment">// Here we declare the runtime API. It is implemented it the `impl` block in</span>
 <span class="comment">// runtime file (the `runtime/src/lib.rs`)</span>
 <span class="macro">sp_api::decl_runtime_apis!</span> {
-	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">MsaApi</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">BlockNumber</span><span class="op">&gt;</span> <span class="kw">where</span>
+	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">MsaApi</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span> <span class="kw">where</span>
 		<span class="ident">AccountId</span>: <span class="ident">Codec</span>,
-		<span class="ident">BlockNumber</span>: <span class="ident">Codec</span>,
 	{
-		<span class="kw">fn</span> <span class="ident">get_msa_keys</span>(<span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>) -&gt;	<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">KeyInfoResponse</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span>;
+		<span class="kw">fn</span> <span class="ident">get_msa_keys</span>(<span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>) -&gt;	<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">KeyInfoResponse</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span>;
 
 		<span class="kw">fn</span> <span class="ident">get_msa_id</span>(<span class="ident">key</span>: <span class="ident">AccountId</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span>;
 
