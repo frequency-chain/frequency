@@ -1,6 +1,6 @@
 [package]
 authors = ["Frequency Team"]
-description = "Runtime for Frequency parachain"
+description = "Runtime for Frequency devnet"
 edition = "2021"
 homepage = "https://frequency.xyz"
 license = "Apache-2.0"

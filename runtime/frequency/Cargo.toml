@@ -1,10 +1,10 @@
 [package]
 authors = ["Frequency Team"]
-description = "Runtime for Frequency rococo testnet"
+description = "Runtime for Frequency mainnet"
 edition = "2021"
 homepage = "https://frequency.xyz"
 license = "Apache-2.0"
-name = "frequency-rococo-runtime"
+name = "frequency-runtime"
 repository = "https://github.com/LibertyDSNP/frequency/"
 version = "0.1.0"
 
