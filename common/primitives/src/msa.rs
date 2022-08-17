@@ -27,31 +27,21 @@ impl From<Delegator> for MessageSourceId {
 
 /// KeyInfo holds the information on the relationship between a key and an MSA
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
-pub struct KeyInfo<BlockNumber> {
+pub struct KeyInfo {
 	/// The Message Source Account that this key is associated with
 	pub msa_id: MessageSourceId,
 	/// Prevent key addition replays
 	pub nonce: u32,
-	/// The block number that the key was revoked on
-	pub expired: BlockNumber,
 }
 
-impl<BlockNumber: Clone> KeyInfo<BlockNumber> {
+impl KeyInfo {
 	/// Convert `KeyInfo` into `KeyInfoResponse`
 	/// # Arguments
 	/// * `key` - The `AccountId` for self
 	/// # Returns
 	/// * `KeyInfoResponse<AccountId, BlockNumber>`
-	pub fn map_to_response<AccountId: Clone>(
-		&self,
-		key: AccountId,
-	) -> KeyInfoResponse<AccountId, BlockNumber> {
-		KeyInfoResponse {
-			key,
-			msa_id: self.msa_id,
-			nonce: self.nonce,
-			expired: self.expired.clone(),
-		}
+	pub fn map_to_response<AccountId: Clone>(&self, key: AccountId) -> KeyInfoResponse<AccountId> {
+		KeyInfoResponse { key, msa_id: self.msa_id, nonce: self.nonce }
 	}
 }
 
@@ -110,10 +100,8 @@ pub trait AccountProvider {
 	/// # Arguments
 	/// * `key` - The `AccountId` to lookup
 	/// # Returns
-	/// * `Result<KeyInfo<Self::BlockNumber>, DispatchError>`
-	fn ensure_valid_msa_key(
-		key: &Self::AccountId,
-	) -> Result<KeyInfo<Self::BlockNumber>, DispatchError>;
+	/// * `Result<KeyInfo, DispatchError>`
+	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<KeyInfo, DispatchError>;
 
 	/// Validates that the delegator and provider have a relationship at this point
 	/// # Arguments
@@ -127,13 +115,11 @@ pub trait AccountProvider {
 /// RPC Response form of [`KeyInfo`]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
-pub struct KeyInfoResponse<AccountId, BlockNumber> {
+pub struct KeyInfoResponse<AccountId> {
 	/// The `AccountId` associated with the `msa_id`
 	pub key: AccountId,
 	/// The MSA associated with the `key`
 	pub msa_id: MessageSourceId,
 	/// The nonce value for signed updates to this data
 	pub nonce: u32,
-	/// Block number that the association is revoked
-	pub expired: BlockNumber,
 }

@@ -110,17 +110,15 @@ impl AccountProvider for AccountHandler {
 		Some(ProviderInfo { permission: 0, expired: 100 })
 	}
 
-	fn ensure_valid_msa_key(
-		key: &Self::AccountId,
-	) -> Result<KeyInfo<Self::BlockNumber>, DispatchError> {
+	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<KeyInfo, DispatchError> {
 		if *key == 1000 {
 			return Err(DispatchError::Other("some error"))
 		}
 		if *key == 2000 {
-			return Ok(KeyInfo { msa_id: 2000, nonce: 0, expired: 100 })
+			return Ok(KeyInfo { msa_id: 2000, nonce: 0 })
 		}
 
-		let info = KeyInfo { msa_id: get_msa_from_account(*key), nonce: 0, expired: 100 };
+		let info = KeyInfo { msa_id: get_msa_from_account(*key), nonce: 0 };
 		Ok(info)
 	}
 
