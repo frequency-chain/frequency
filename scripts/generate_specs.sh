@@ -30,7 +30,7 @@ case $build_step in
     ;;
   build-testnet)
     echo "Building Spec for frequency as rococo testnet"
-    $PWD/target/release/frequency build-spec --chain=frequency_rococo --disable-default-bootnode > ./res/genesis/testnet/frequency-spec-rococo-testnet.json
+    $PWD/target/release/frequency build-spec --chain=frequency-rococo --disable-default-bootnode > ./res/genesis/testnet/frequency-spec-rococo-testnet.json
     sed -i.bu "s/\"parachainId\": 4044/\"parachainId\": $parachain_id/g" ./res/genesis/testnet/frequency-spec-rococo-testnet.json
     sed -i.bu "s/\"para_id\": 4044/\"para_id\": $parachain_id/g" ./res/genesis/testnet/frequency-spec-rococo-testnet.json
     $PWD/target/release/frequency build-spec --raw --disable-default-bootnode --chain ./res/genesis/testnet/frequency-spec-rococo-testnet.json > ./res/genesis/testnet/rococo-testnet-frequency-raw.json
