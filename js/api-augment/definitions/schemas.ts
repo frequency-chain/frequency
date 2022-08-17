@@ -26,13 +26,13 @@ export default {
       description: "",
       params: [
         {
+          name: "model",
+          type: "SchemaModel",
+        },
+        {
           name: "at",
           type: "BlockHash",
           isOptional: true,
-        },
-        {
-          name: "model",
-          type: "SchemaModel",
         },
       ],
       type: "bool",

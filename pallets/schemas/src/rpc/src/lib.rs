@@ -49,7 +49,7 @@ pub trait SchemasApi<BlockHash> {
 
 	/// validates a schema model and returns `true` if the model is correct.
 	#[method(name = "schemas_checkSchemaValidity")]
-	fn check_schema_validity(&self, at: Option<BlockHash>, model: Vec<u8>) -> RpcResult<bool>;
+	fn check_schema_validity(&self, model: Vec<u8>, at: Option<BlockHash>) -> RpcResult<bool>;
 }
 
 pub struct SchemasHandler<C, M> {
@@ -93,8 +93,8 @@ where
 
 	fn check_schema_validity(
 		&self,
-		_at: Option<<Block as BlockT>::Hash>,
 		model: Vec<u8>,
+		_at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<bool> {
 		let validated_schema = avro::validate_raw_avro_schema(&model);
 		match validated_schema {
