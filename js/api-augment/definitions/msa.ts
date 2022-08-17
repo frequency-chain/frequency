@@ -41,7 +41,6 @@ export default {
       key: "AccountId",
       msaId: "MessageSourceId",
       nonce: "u32",
-      expired: "BlockNumber",
     },
   },
 };

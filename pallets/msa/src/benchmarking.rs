@@ -101,7 +101,7 @@ benchmarks! {
 
 	}: _ (RawOrigin::Signed(caller), key, signature, add_provider_payload)
 
-	revoke_msa_key {
+	delete_msa_key {
 		let caller: T::AccountId = whitelisted_caller();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
 
