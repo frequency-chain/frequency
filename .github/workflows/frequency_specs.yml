@@ -139,7 +139,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: frequency_wasm_rococo-${{ github.sha }}.tar
- build_mainnet_srtool_wasm:
+  build_mainnet_srtool_wasm:
     name: build_mainnet_srtool_wasm
     strategy:
       matrix:
