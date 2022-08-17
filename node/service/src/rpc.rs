@@ -7,9 +7,7 @@
 
 use std::sync::Arc;
 
-use frequency_local_runtime::{
-	opaque::Block, AccountId, Balance, BlockNumber, Hash, Index as Nonce,
-};
+use common_primitives::node::{AccountId, Balance, Block, BlockNumber, Hash, Index as Nonce};
 
 use sc_client_api::AuxStore;
 use sc_consensus_manual_seal::rpc::{EngineCommand, ManualSeal, ManualSealApiServer};
