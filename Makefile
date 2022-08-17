@@ -41,6 +41,9 @@ specs-local:
 specs-testnet:
 	./scripts/generate_specs.sh 4044 build-testnet
 
+specs-main:
+	./scripts/generate_specs.sh 999 build-mainnet
+
 .PHONY: format
 format:
 	cargo +nightly fmt

@@ -20,6 +20,7 @@ futures = "0.3.21"
 hex = "0.4.0"
 
 # Frequency Runtime
+frequency-runtime = { path = "../../runtime/frequency" }
 frequency-local-runtime = { path = "../../runtime/frequency-local" }
 frequency-rococo-runtime = { path = "../../runtime/frequency-rococo" }
 
@@ -98,9 +99,10 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 default = [ "std" ]
 std = []
 runtime-benchmarks = [
+	"frequency-runtime/runtime-benchmarks",
 	"frequency-local-runtime/runtime-benchmarks",
 	"frequency-rococo-runtime/runtime-benchmarks",
 	"polkadot-service/runtime-benchmarks",
 
 ]
-try-runtime = ["frequency-local-runtime/try-runtime", "frequency-rococo-runtime/try-runtime"]
+try-runtime = ["frequency-runtime/try-runtime", "frequency-local-runtime/try-runtime", "frequency-rococo-runtime/try-runtime"]

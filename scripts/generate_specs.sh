@@ -40,8 +40,22 @@ case $build_step in
     $PWD/target/release/frequency export-genesis-state --chain ./res/genesis/testnet/rococo-testnet-frequency-raw.json > ./res/genesis/testnet/frequency-rococo-testnet-genesis-state
     $PWD/target/release/frequency export-genesis-wasm --chain ./res/genesis/testnet/rococo-testnet-frequency-raw.json > ./res/genesis/testnet/frequency-rococo-testnet-genesis-wasm
     ;;
+
+  build-mainnet)
+    echo "Building Spec for frequency mainnet"
+    $PWD/target/release/frequency build-spec --chain=frequency --disable-default-bootnode > ./res/genesis/mainnet/frequency.json
+    sed -i.bu "s/\"parachainId\": 999/\"parachainId\": $parachain_id/g" ./res/genesis/mainnet/frequency.json
+    sed -i.bu "s/\"para_id\": 999/\"para_id\": $parachain_id/g" ./res/genesis/mainnet/frequency.json
+    $PWD/target/release/frequency build-spec --raw --disable-default-bootnode --chain ./res/genesis/mainnet/frequency.json > ./res/genesis/mainnet/frequency-raw.json
+    rm ./res/genesis/mainnet/frequency.json.bu
+
+    echo "Exporting state and wasm for frequency mainnet"
+    $PWD/target/release/frequency export-genesis-state --chain ./res/genesis/mainnet/frequency-raw.json > ./res/genesis/mainnet/frequency-state
+    $PWD/target/release/frequency export-genesis-wasm --chain ./res/genesis/mainnet/frequency-raw.json > ./res/genesis/mainnet/frequency-wasm
+    ;;
   *)
     echo "Unknown build step: $build_step"
     exit 1
     ;;
+
 esac

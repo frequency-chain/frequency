@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
+pub mod frequency;
 pub mod frequency_local;
 pub mod frequency_rococo;
 

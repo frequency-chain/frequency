@@ -1,0 +1,1 @@
+# Specs for frequency mainnet

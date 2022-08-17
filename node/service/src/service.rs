@@ -45,10 +45,25 @@ type FullBackend = TFullBackend<Block>;
 
 type MaybeFullSelectChain = Option<LongestChain<FullBackend, Block>>;
 
-/// Native executor instance for frequency.
+/// Native executor instance for frequency mainnet.
 pub struct FrequencyRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for FrequencyRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		frequency_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		frequency_runtime::native_version()
+	}
+}
+
+/// Native executor instance for frequency local.
+pub struct FrequencyLocalRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for FrequencyLocalRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -618,7 +633,7 @@ fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_servic
 		select_chain: maybe_select_chain,
 		transaction_pool,
 		other: (mut telemetry, _),
-	} = new_partial::<frequency_local_runtime::RuntimeApi, FrequencyRuntimeExecutor, _>(
+	} = new_partial::<frequency_local_runtime::RuntimeApi, FrequencyLocalRuntimeExecutor, _>(
 		&parachain_config,
 		parachain_build_import_queue,
 		true,
