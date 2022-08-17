@@ -11,7 +11,9 @@ pub mod xcm_config;
 
 mod benchmarking;
 
-use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+use cumulus_pallet_parachain_system::{
+	RelayNumberStrictlyIncreases, RelaychainBlockNumberProvider,
+};
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -34,7 +36,6 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use common_primitives::{messages::*, msa::*, schema::SchemaResponse};
-use cumulus_pallet_parachain_system::RelaychainBlockNumberProvider;
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchError,
@@ -182,8 +183,8 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("frequency"),
-	impl_name: create_runtime_str!("frequency"),
+	spec_name: create_runtime_str!("frequency-local"),
+	impl_name: create_runtime_str!("frequency-local"),
 	authoring_version: 1,
 	spec_version: 1,
 	impl_version: 0,
@@ -316,6 +317,27 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
+impl pallet_msa::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
+	type ConvertIntoAccountId32 = ConvertInto;
+	type MaxKeys = ConstU32<25>;
+}
+
+pub use common_primitives::schema::SchemaId;
+
+parameter_types! {
+	pub const MaxSchemaRegistrations: SchemaId = 65_000;
+}
+
+impl pallet_schemas::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
+	type MinSchemaModelSizeBytes = ConstU32<8>;
+	type MaxSchemaRegistrations = MaxSchemaRegistrations;
+	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<65_500>;
+}
+
 parameter_types! {
 	pub const VestingPalletId: PalletId = PalletId(*b"py/vstng");
 }
@@ -350,30 +372,9 @@ impl orml_vesting::Config for Runtime {
 	type Currency = Balances;
 	type MinVestedTransfer = MinVestedTransfer;
 	type VestedTransferOrigin = RootAsVestingPallet;
-	type WeightInfo = weights::orml_vesting::SubstrateWeight<Runtime>;
+	type WeightInfo = ();
 	type MaxVestingSchedules = MaxVestingSchedules;
 	type BlockNumberProvider = RelaychainBlockNumberProvider<Runtime>;
-}
-
-impl pallet_msa::Config for Runtime {
-	type Event = Event;
-	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
-	type ConvertIntoAccountId32 = ConvertInto;
-	type MaxKeys = ConstU32<25>;
-}
-
-pub use common_primitives::schema::SchemaId;
-
-parameter_types! {
-	pub const MaxSchemaRegistrations: SchemaId = 65_000;
-}
-
-impl pallet_schemas::Config for Runtime {
-	type Event = Event;
-	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
-	type MinSchemaModelSizeBytes = ConstU32<8>;
-	type MaxSchemaRegistrations = MaxSchemaRegistrations;
-	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<65_500>;
 }
 
 parameter_types! {
@@ -615,6 +616,7 @@ construct_runtime!(
 		Preimage: pallet_preimage = 7,
 
 		Utility: pallet_utility::{Pallet, Call, Event} = 8,
+
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
@@ -787,8 +789,8 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_msa_runtime_api::MsaApi<Block, AccountId, BlockNumber> for Runtime {
-		fn get_msa_keys(msa_id: MessageSourceId) -> Result<Vec<KeyInfoResponse<AccountId, BlockNumber>>, DispatchError> {
+	impl pallet_msa_runtime_api::MsaApi<Block, AccountId> for Runtime {
+		fn get_msa_keys(msa_id: MessageSourceId) -> Result<Vec<KeyInfoResponse<AccountId>>, DispatchError> {
 			Ok(Msa::fetch_msa_keys(msa_id))
 		}
 
@@ -829,6 +831,7 @@ impl_runtime_apis! {
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 			use orml_benchmarking::list_benchmark as list_orml_benchmark;
 
+
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
 			list_orml_benchmark!(list, extra, orml_vesting, benchmarking::vesting);
@@ -841,13 +844,13 @@ impl_runtime_apis! {
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
-			use orml_benchmarking::{add_benchmark as orml_add_benchmark};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
 
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
+			use orml_benchmarking::{add_benchmark as orml_add_benchmark};
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
 				// Block Number
