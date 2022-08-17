@@ -2,14 +2,13 @@
 /* eslint-disable */
 
 import type { Struct, u32, u64 } from '@polkadot/types-codec';
-import type { AccountId, BlockNumber } from '@polkadot/types/interfaces/runtime';
+import type { AccountId } from '@polkadot/types/interfaces/runtime';
 
 /** @name KeyInfoResponse */
 export interface KeyInfoResponse extends Struct {
   readonly key: AccountId;
   readonly msaId: MessageSourceId;
   readonly nonce: u32;
-  readonly expired: BlockNumber;
 }
 
 /** @name MessageSourceId */
