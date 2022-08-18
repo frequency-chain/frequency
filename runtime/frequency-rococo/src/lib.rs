@@ -6,7 +6,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-mod weights;
 pub mod xcm_config;
 
 mod benchmarking;
@@ -64,7 +63,10 @@ pub use pallet_schemas;
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
-use weights::{BlockExecutionWeight, ExtrinsicBaseWeight};
+pub use common_runtime::{
+	weights,
+	weights::{BlockExecutionWeight, ExtrinsicBaseWeight},
+};
 
 // XCM Imports
 use xcm::latest::prelude::BodyId;

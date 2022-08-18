@@ -1175,6 +1175,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "common-runtime"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "orml-vesting",
+ "pallet-utility",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.25)",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.25)",
+ "substrate-wasm-builder",
+]
+
+[[package]]
 name = "concurrent-queue"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2850,6 +2865,7 @@ name = "frequency-rococo-runtime"
 version = "0.1.0"
 dependencies = [
  "common-primitives",
+ "common-runtime",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -2920,6 +2936,7 @@ name = "frequency-runtime"
 version = "0.1.0"
 dependencies = [
  "common-primitives",
+ "common-runtime",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
