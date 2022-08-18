@@ -3,6 +3,7 @@ use frame_support::dispatch::DispatchResult;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use frame_support::{traits::Get, BoundedVec};
 use sp_runtime::DispatchError;
 
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
@@ -58,6 +59,18 @@ pub struct ProviderInfo<BlockNumber> {
 /// It is a subset of an MSA
 #[derive(TypeInfo, Debug, Clone, Copy, Decode, Encode, PartialEq, MaxEncodedLen, Eq)]
 pub struct Provider(pub MessageSourceId);
+
+/// This is the metadata associated with a provider. As of now it is just a
+/// name, but it will likely be expanded in the future
+#[derive(MaxEncodedLen, TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
+#[scale_info(skip_type_params(T))]
+pub struct ProviderMetadata<T>
+where
+	T: Get<u32>,
+{
+	/// The provider's name
+	pub provider_name: BoundedVec<u8, T>
+}
 
 impl From<MessageSourceId> for Provider {
 	fn from(t: MessageSourceId) -> Self {
