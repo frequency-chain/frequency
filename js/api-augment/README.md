@@ -13,6 +13,8 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
+[![NPM @latest][npm-shield]][npm-url]
+[![NPM @next][npm-next-shield]][npm-next-url]
 
 
 # Frequency Custom RPC and Types for Polkadot JS API
@@ -106,3 +108,7 @@ Distributed under the Apache 2.0 License. See `LICENSE` for more information.
 [issues-url]: https://github.com/LibertyDSNP/frequency/issues
 [license-shield]: https://img.shields.io/github/license/LibertyDSNP/frequency.svg?style=for-the-badge
 [license-url]: https://github.com/LibertyDSNP/frequency/blob/master/LICENSE
+[npm-shield]: https://img.shields.io/npm/v/@dsnp/frequency-api-augment?label=npm%20%40latest&style=for-the-badge
+[npm-url]: https://www.npmjs.com/package/@dsnp/frequency-api-augment
+[npm-next-shield]: https://img.shields.io/npm/v/@dsnp/frequency-api-augment/next?label=npm%20%40next&style=for-the-badge
+[npm-next-url]: https://www.npmjs.com/package/@dsnp/frequency-api-augment

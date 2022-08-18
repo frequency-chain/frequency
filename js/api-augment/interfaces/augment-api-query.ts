@@ -170,7 +170,7 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       msaKeysOf: AugmentedQuery<ApiType, (arg: u64 | AnyNumber | Uint8Array) => Observable<Vec<AccountId32>>, [u64]>;
       /**
-       * Storage type for mapping delegation
+       * Storage type for mapping the relationship between a Delegator and its Provider.
        **/
       providerInfoOf: AugmentedQuery<ApiType, (arg1: u64 | AnyNumber | Uint8Array, arg2: u64 | AnyNumber | Uint8Array) => Observable<Option<CommonPrimitivesMsaProviderInfo>>, [u64, u64]>;
     };

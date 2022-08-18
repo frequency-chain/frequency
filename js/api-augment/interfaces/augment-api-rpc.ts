@@ -443,7 +443,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
       /**
        * 
        **/
-      checkSchemaValidity: AugmentedRpc<(at: BlockHash | string | Uint8Array, model: SchemaModel | string | Uint8Array) => Observable<bool>>;
+      checkSchemaValidity: AugmentedRpc<(model: SchemaModel | string | Uint8Array, at?: BlockHash | string | Uint8Array) => Observable<bool>>;
       /**
        * Get a Schema by Id
        **/
@@ -451,7 +451,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
       /**
        * Get the most recent (aka highest) Schema Id. Useful for then retrieving a list of all Schemas (1-[result])
        **/
-      getLatestSchemaId: AugmentedRpc<(at: BlockHash | string | Uint8Array) => Observable<SchemaId>>;
+      getLatestSchemaId: AugmentedRpc<(at?: BlockHash | string | Uint8Array) => Observable<SchemaId>>;
     };
     state: {
       /**

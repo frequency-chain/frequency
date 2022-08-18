@@ -28,13 +28,13 @@
   "author": "LibertyDSNP",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@polkadot/rpc-provider": "^8.13.1",
-    "@polkadot/typegen": "^8.13.1",
-    "@polkadot/types": "^8.13.1",
+    "@polkadot/rpc-provider": "9.2.2",
+    "@polkadot/typegen": "9.2.2",
+    "@polkadot/types": "9.2.2",
     "@types/mocha": "^9.1.1",
-    "@typescript-eslint/eslint-plugin": "^5.30.7",
-    "@typescript-eslint/parser": "^5.30.7",
-    "eslint": "^8.20.0",
+    "@typescript-eslint/eslint-plugin": "^5.33.1",
+    "@typescript-eslint/parser": "^5.33.1",
+    "eslint": "^8.22.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-mocha": "^10.1.0",
@@ -45,6 +45,6 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "@polkadot/api": "^8.13.1"
+    "@polkadot/api": "9.2.2"
   }
 }
