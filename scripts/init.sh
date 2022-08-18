@@ -167,12 +167,12 @@ upgrade-frequency)
   cargo build \
     --locked \
     --profile release \
-    --package frequency-runtime \
+    --package frequency-local-runtime \
     --target-dir $root_dir/target/upgrade \
     -Z unstable-options
 
 
-  wasm_location=$root_dir/target/upgrade/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
+  wasm_location=$root_dir/target/upgrade/release/wbuild/frequency-local-runtime/frequency_local_runtime.compact.compressed.wasm
 
   ./scripts/runtime-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
   
