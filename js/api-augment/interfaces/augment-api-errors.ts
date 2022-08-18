@@ -185,10 +185,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       DelegationRevoked: AugmentedError<ApiType>;
       /**
-       * Tried to add a key that was already registered
-       **/
-      DuplicatedKey: AugmentedError<ApiType>;
-      /**
        * The delegation relationship already exists for the given MSA Ids
        **/
       DuplicateProvider: AugmentedError<ApiType>;
@@ -197,13 +193,17 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidSelfProvider: AugmentedError<ApiType>;
       /**
-       * A transaction's Origin (AccountId) may not revoke itself
+       * A transaction's Origin (AccountId) may not remove itself
        **/
-      InvalidSelfRevoke: AugmentedError<ApiType>;
+      InvalidSelfRemoval: AugmentedError<ApiType>;
       /**
        * Cryptographic signature failed verification
        **/
       InvalidSignature: AugmentedError<ApiType>;
+      /**
+       * Tried to add a key that was already registered to an MSA
+       **/
+      KeyAlreadyRegistered: AugmentedError<ApiType>;
       /**
        * The number of key values has reached its maximum
        **/
@@ -468,6 +468,12 @@ declare module '@polkadot/api-base/types/errors' {
        * and the new runtime.
        **/
       SpecVersionNeedsToIncrease: AugmentedError<ApiType>;
+    };
+    utility: {
+      /**
+       * Too many calls batched.
+       **/
+      TooManyCalls: AugmentedError<ApiType>;
     };
     vesting: {
       /**

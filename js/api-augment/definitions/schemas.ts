@@ -7,7 +7,7 @@ export default {
         {
           name: "at",
           type: "BlockHash",
-          optional: true,
+          isOptional: true,
         },
       ],
       type: "SchemaId",
@@ -26,13 +26,13 @@ export default {
       description: "",
       params: [
         {
-          name: "at",
-          type: "BlockHash",
-          optional: true,
-        },
-        {
           name: "model",
           type: "SchemaModel",
+        },
+        {
+          name: "at",
+          type: "BlockHash",
+          isOptional: true,
         },
       ],
       type: "bool",
