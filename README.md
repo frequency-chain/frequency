@@ -206,12 +206,6 @@ cargo test --features runtime-benchmarks, std
 cargo test --all-features --workspace --release
 ```
 
-## Run Benchmarks
-
-```sh
-make benchmarks
-```
-
 ## Generate Specs
 
 To build spec against specific chain config specify chain name in the command above.
@@ -239,6 +233,36 @@ genesis state and WASM:
 -   Lint code with with `make lint` to catch common mistakes and improve your [Rust](https://github.com/rust-lang/rust) code.
 -   Alternatively, run `make format-lint` to run both at the same time.
 -   Run `cargo-audit` to audit Cargo.lock files for crates with security vulnerabilities reported to the RustSec Advisory Database. [See cargo-audit installation instructions](https://github.com/RustSec/rustsec/tree/main/cargo-audit)
+
+# Run Benchmarks
+
+In order to achieve a certain block time, for example 6 seconds per block,
+there is a limited number of lines of code can be run during that time frame.
+When writing a pallet function, the developer is responsible for calculating its
+computational complexity, which is called **weight**. The process of
+determining that complexity, or simply put, time cost is called benchmarking.
+
+There are 2 options to run benchmarks:
+
+-   Locally on a developer laptop
+-   Remotely on referenced hardware in the cloud
+
+## 1. Locally
+
+```sh
+make benchmarks
+```
+
+## 2. On Referenced Hardware
+
+:exclamation: DO NOT commit weights yourself!
+They will be auto-committed by CI job upon completion.
+
+To trigger running benchmarks on reference hardware in the cloud:
+
+1. Enter `/run-benchmarks` slash command in a GitHub PR comment.
+   This will kick off remote Jenkins job.
+1. Upon completion, the updated weights will be committed back to the PR branch in a new commit.
 
 # Verify Runtime
 
