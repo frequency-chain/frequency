@@ -70,7 +70,7 @@ jobs:
           # -e for exclude
           args:  |
             -v --no-fail-fast --workspace
-            -e frequency frequency-cli frequency-runtime frequency-service
+            -e frequency frequency-cli frequency-runtime frequency-local-runtime frequency-rococo-runtime frequency-service
             --exclude-files **/mock.rs **/weights.rs **/weights/*
 
       - name: Upload to codecov.io

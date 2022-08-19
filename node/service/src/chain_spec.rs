@@ -1,11 +1,12 @@
 #![allow(missing_docs)]
-use frequency_runtime::{AccountId, AuraId, Signature};
+use frequency_local_runtime::{AccountId, AuraId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::Properties;
 use serde::{Deserialize, Serialize};
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
+pub mod frequency;
 pub mod frequency_local;
 pub mod frequency_rococo;
 

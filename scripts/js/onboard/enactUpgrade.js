@@ -12,7 +12,7 @@ async function main() {
         const keyring = new Keyring({ type: "sr25519" });
         const sudo = keyring.addFromUri(seed);
         console.log(
-            `--- Submitting extrinsic to authorize frequency-local upgrade ---`
+            `--- Submitting extrinsic to authorize rococo-2000 upgrade ---`
         );
         let wasm;
         try {
