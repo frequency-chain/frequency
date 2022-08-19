@@ -128,7 +128,6 @@ benchmarks! {
 
 	register_provider {
 		let (provider, _provider_msa_id) = create_account_with_msa_id::<T>(1);
-		assert_ok!(Msa::<T>::create(RawOrigin::Signed(provider.clone()).into()));
 	}: _ (RawOrigin::Signed(provider), Vec::from("Foo"))
 
 	impl_benchmark_test_suite!(Msa, crate::mock::new_test_ext_keystore(), crate::mock::Test);

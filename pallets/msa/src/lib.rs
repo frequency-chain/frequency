@@ -317,7 +317,7 @@ pub mod pallet {
 		/// ## Errors
 		/// - Returns
 		///   [`DuplicateProviderMetadata`](Error::DuplicateProviderMetadata) if there is already a ProviderMetadata associated with the given MSA id.
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::register_provider())]
 		pub fn register_provider(
 			origin: OriginFor<T>,
 			provider_name: Vec<u8>
