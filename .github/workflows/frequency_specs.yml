@@ -44,7 +44,7 @@ jobs:
         env:
           TARGET: build-node
       - name: Build Frequency related specs and wasm 📝
-        run: ./scripts/generate_specs.sh 2000 build-local && ./scripts/generate_specs.sh 4044 build-testnet
+        run: ./scripts/generate_specs.sh 2000 rococo-2000 && ./scripts/generate_specs.sh 4044 rococo-4044 && ./scripts/generate_specs.sh 999 mainnet
       - name: Create tarball of local specs and wasm 📦
         run: tar -cvf frequency_specs_local-${{ github.sha }}.tar ./res/genesis/local
       - name: Upload frequency local spec and wasm artifacts 📦
@@ -57,6 +57,12 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: frequency_specs_rococo_testnet-${{ github.sha }}.tar
+      - name: Create tarball of frequency spec and wasm 📦
+        run: tar -cvf frequency_specs_main-${{ github.sha }}.tar ./res/genesis/mainnet
+      - name: Upload frequency spec and wasm artifacts 📦
+        uses: softprops/action-gh-release@v1
+        with:
+          files: frequency_specs_main-${{ github.sha }}.tar
       - name: Create tarball of frequency binary 📦
         run: tar -cvf frequency_binary-${{ github.sha }}.tar ./target/release/frequency
       - name: Upload frequency binary artifacts 📦
@@ -90,10 +96,10 @@ jobs:
         env:
           TARGET: build-runtime
           RUST_TOOLCHAIN: ${{ env.RUST_TOOLCHAIN  }}
-          PACKAGE: frequency-runtime
-          RUNTIME_DIR: runtime/frequency
+          PACKAGE: frequency-local-runtime
+          RUNTIME_DIR: runtime/frequency-local
       - name: Create tarball  of deterministic wasm from srtool 📦
-        run: tar -cvf frequency_wasm_local-${{ github.sha }}.tar ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.compact.wasm ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.wasm
+        run: tar -cvf frequency_wasm_local-${{ github.sha }}.tar ./runtime/frequency-local/target/srtool/release/wbuild/frequency-local-runtime/frequency_local_runtime.compact.compressed.wasm ./runtime/frequency-local/target/srtool/release/wbuild/frequency-local-runtime/frequency_local_runtime.compact.wasm ./runtime/frequency-local/target/srtool/release/wbuild/frequency-local-runtime/frequency_local_runtime.wasm
       - name: Upload frequency deterministic wasm to artifacts 📦
         uses: softprops/action-gh-release@v1
         with:
@@ -133,5 +139,38 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: frequency_wasm_rococo-${{ github.sha }}.tar
-
-
+  build_mainnet_srtool_wasm:
+    name: build_mainnet_srtool_wasm
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        target: [build-node]
+        rust_toolchain: [nightly-2022-06-27]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
+    steps:
+      - name: Free space on Ubuntu
+        if: ${{ matrix.os }} == 'ubuntu-latest'
+        run: |
+          echo "Pre cleanup"
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Post cleanup"
+          df -h
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Run Srtool For Frequency Wasm
+        run: ./ci/build.sh
+        env:
+          TARGET: build-runtime
+          RUST_TOOLCHAIN: ${{ env.RUST_TOOLCHAIN  }}
+          PACKAGE: frequency-runtime
+          RUNTIME_DIR: runtime/frequency
+      - name: Create tarball  of deterministic wasm from srtool for mainnet
+        run: tar -cvf frequency_wasm_main-${{ github.sha }}.tar ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.compact.wasm ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.wasm
+      - name: Upload frequency deterministic wasm to artifacts for mainnet 📦
+        uses: softprops/action-gh-release@v1
+        with:
+          files: frequency_wasm_main-${{ github.sha }}.tar

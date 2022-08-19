@@ -54,7 +54,7 @@ export default {
     }
   },
   /**
-   * Lookup16: frame_system::EventRecord<frequency_runtime::Event, primitive_types::H256>
+   * Lookup16: frame_system::EventRecord<frequency_local_runtime::Event, primitive_types::H256>
    **/
   FrameSystemEventRecord: {
     phase: 'FrameSystemPhase',

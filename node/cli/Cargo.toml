@@ -19,6 +19,7 @@ jsonrpsee = { version = "0.14.0", features = ["server"] }
 
 # Frequency Runtime
 frequency-runtime = { path = "../../runtime/frequency" }
+frequency-local-runtime = { path = "../../runtime/frequency-local" }
 frequency-rococo-runtime = { path = "../../runtime/frequency-rococo" }
 frequency-service = { package = "frequency-service", path = "../service", default-features = false, optional = true }
 common-primitives = {default-features = false, path = "../../common/primitives"}

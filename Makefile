@@ -35,11 +35,14 @@ install-toolchain:
 	./scripts/init.sh install-toolchain
 
 .PHONY: specs
-specs-local:
-	./scripts/generate_specs.sh 2000 build-local
+specs-rococo-2000:
+	./scripts/generate_specs.sh 2000 rococo-2000
 
-specs-testnet:
-	./scripts/generate_specs.sh 4044 build-testnet
+specs-rococo-4044:
+	./scripts/generate_specs.sh 4044 rococo-4044
+
+specs-mainnet:
+	./scripts/generate_specs.sh 999 mainnet
 
 .PHONY: format
 format:

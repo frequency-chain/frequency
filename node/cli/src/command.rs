@@ -23,6 +23,7 @@ use std::net::SocketAddr;
 enum ChainIdentity {
 	Frequency,
 	FrequencyRococo,
+	FrequencyLocal,
 }
 
 trait IdentifyChain {
@@ -31,13 +32,12 @@ trait IdentifyChain {
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
 	fn identify(&self) -> ChainIdentity {
-		if self.id().contains("frequency_rococo") ||
-			self.id().contains("rococo") ||
-			self.id().contains("testnet")
-		{
+		if self.id() == "frequency" {
+			ChainIdentity::Frequency
+		} else if self.id() == "frequency-rococo" {
 			ChainIdentity::FrequencyRococo
 		} else {
-			ChainIdentity::Frequency
+			ChainIdentity::FrequencyLocal
 		}
 	}
 }
@@ -50,9 +50,10 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	Ok(match id {
-		"frequency_dev" | "dev" => Box::new(chain_spec::frequency_local::development_config()),
-		"frequency_local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
-		"frequency_rococo" | "rococo" | "testnet" =>
+		"frequency" => Box::new(chain_spec::frequency::frequency()),
+		"frequency-dev" | "dev" => Box::new(chain_spec::frequency_local::development_config()),
+		"frequency-local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
+		"frequency-rococo" | "rococo" | "testnet" =>
 			Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet()),
 		"" | "local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
 		path => Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(
@@ -87,7 +88,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn support_url() -> String {
-		"https://github.com/paritytech/cumulus/issues/new".into()
+		"https://github.com/libertydsnp/frequency/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
@@ -102,6 +103,7 @@ impl SubstrateCli for Cli {
 		match spec.identify() {
 			ChainIdentity::Frequency => &frequency_runtime::VERSION,
 			ChainIdentity::FrequencyRococo => &frequency_rococo_runtime::VERSION,
+			ChainIdentity::FrequencyLocal => &frequency_local_runtime::VERSION,
 		}
 	}
 }
@@ -153,6 +155,21 @@ macro_rules! construct_async_run {
 					let $components = new_partial::<
 					frequency_runtime::RuntimeApi,
 						FrequencyRuntimeExecutor,
+						_
+					>(
+						&$config,
+						parachain_build_import_queue,
+						false,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			}
+			ChainIdentity::FrequencyLocal => {
+				runner.async_run(|$config| {
+					let $components = new_partial::<
+					frequency_local_runtime::RuntimeApi,
+						FrequencyLocalRuntimeExecutor,
 						_
 					>(
 						&$config,
@@ -262,6 +279,11 @@ pub fn run() -> Result<()> {
 									config,
 								)
 							}),
+							ChainIdentity::FrequencyLocal => runner.sync_run(|config| {
+								cmd.run::<frequency_local_runtime::Block, FrequencyLocalRuntimeExecutor>(
+									config,
+								)
+							}),
 							ChainIdentity::FrequencyRococo => runner.sync_run(|config| {
 								cmd.run::<frequency_rococo_runtime::Block, FrequencyRococoRuntimeExecutor>(config)
 							}),
@@ -280,6 +302,14 @@ pub fn run() -> Result<()> {
 						>(&config, parachain_build_import_queue, false)?;
 						cmd.run(partials.client)
 					}),
+					ChainIdentity::FrequencyLocal => runner.sync_run(|config| {
+						let partials = new_partial::<
+							frequency_local_runtime::RuntimeApi,
+							FrequencyLocalRuntimeExecutor,
+							_,
+						>(&config, parachain_build_import_queue, false)?;
+						cmd.run(partials.client)
+					}),
 					ChainIdentity::FrequencyRococo => runner.sync_run(|config| {
 						let partials = new_partial::<
 							frequency_rococo_runtime::RuntimeApi,
@@ -294,6 +324,17 @@ pub fn run() -> Result<()> {
 						let partials = new_partial::<
 							frequency_runtime::RuntimeApi,
 							FrequencyRuntimeExecutor,
+							_,
+						>(&config, parachain_build_import_queue, false)?;
+						let db = partials.backend.expose_db();
+						let storage = partials.backend.expose_storage();
+
+						cmd.run(config, partials.client.clone(), db, storage)
+					}),
+					ChainIdentity::FrequencyLocal => runner.sync_run(|config| {
+						let partials = new_partial::<
+							frequency_local_runtime::RuntimeApi,
+							FrequencyLocalRuntimeExecutor,
 							_,
 						>(&config, parachain_build_import_queue, false)?;
 						let db = partials.backend.expose_db();
@@ -331,6 +372,11 @@ pub fn run() -> Result<()> {
 					ChainIdentity::Frequency => {
 						runner.async_run(|config| {
 							Ok((cmd.run::<frequency_runtime::Block, FrequencyRuntimeExecutor>(config), task_manager))
+						})
+					}
+					ChainIdentity::FrequencyLocal => {
+						runner.async_run(|config| {
+							Ok((cmd.run::<frequency_local_runtime::Block, FrequencyLocalRuntimeExecutor>(config), task_manager))
 						})
 					}							,
 					ChainIdentity::FrequencyRococo => {
@@ -394,6 +440,14 @@ pub fn run() -> Result<()> {
 						start_parachain_node::<
 							frequency_runtime::RuntimeApi,
 							FrequencyRuntimeExecutor,
+						>(config, polkadot_config, collator_options, id, hwbench)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into),
+					ChainIdentity::FrequencyLocal =>
+						start_parachain_node::<
+							frequency_local_runtime::RuntimeApi,
+							FrequencyLocalRuntimeExecutor,
 						>(config, polkadot_config, collator_options, id, hwbench)
 						.await
 						.map(|r| r.0)
