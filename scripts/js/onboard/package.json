@@ -6,6 +6,8 @@
   "scripts": {
     "onboard": "node onboard.js",
     "register": "node register.js",
+    "upgrade-auth": "node authUpgrade.js",
+    "upgrade-enact": "node enactUpgrade.js",
     "cleanup": "node offboard.js"
   },
   "keywords": [],

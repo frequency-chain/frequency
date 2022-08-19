@@ -54,3 +54,7 @@ lint:
 
 .PHONY: format-lint
 format-lint: format lint
+
+.PHONY: upgrade
+upgrade-local:
+	./scripts/init.sh upgrade-frequency
