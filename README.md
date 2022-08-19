@@ -12,12 +12,9 @@ Frequency is a Polkadot parachain designed to run Decentralized Social Network P
 
 # Build
 
-1. Install Rust.
-   ```sh
-   curl https://sh.rustup.rs -sSf | sh
-   source "$HOME/.cargo/env"
-   ```
-1. Init your Wasm Build environment.
+## Local desktop
+1. Install Rust using the [official instructions](https://www.rust-lang.org/tools/install).
+1. Initialize your Wasm Build environment.
    ```sh
    cd [path/to/repo/root]
    ./scripts/init.sh install-toolchain
@@ -32,6 +29,21 @@ manager(e.g. Homebrew on Mac) and re-run the command again.*
 
 At this point you should have `./target/release` directory generated locally with compiled
 project files.
+
+## Remote instance such as AWS EC2
+For remote instances running Linux, if you want to check out and build such as on an AWS EC2 instance, the process is slightly different to what is in the Substrate documents.
+### Ubuntu
+1. Upgrade the instance and install missing packages with `apt`:
+```bash
+sudo apt upgrade
+sudo apt upgrade git
+sudo apt install —assume-yes build-essential
+sudo apt install --assume-yes clang curl libssl-dev cmake
+```
+2. Follow [official instructions to install rust](https://www.rust-lang.org/tools/install), but select `3. customize the installation`, then reply **n** to `Modify PATH variable? (Y/n)`
+3. Follow steps 6-10 at [Substrate: Linux development](https://docs.substrate.io/main-docs/install/linux/)
+
+4. Proceed with building frequency as above.
 
 # Run
 
@@ -153,19 +165,6 @@ in `rustfmt.toml`.
 2. Use srtool to verify the runtime:
    ```sh
    TARGET=build-runtime RUST_TOOLCHAIN=nightly ./ci/build.sh
-   ```
-
-# Runtime Upgrade
-
-1. Runtime upgrade enables upgrading running chain to a new runtime.
-2. To upgrade the runtime, current scripts does following step process:
-   1. Build new runtime and generate the compressed wasm
-   2. Call ```authorizeUpgrade``` extrinsic from parachain system to initate the upgrade.
-   3. Call ```enactAuthorizedUpgrade``` extrinsic from parachain system to enact the upgrade.
-   4. For testnet and mainnet, the upgrade is done slightly differently using ```scheduler``` and enactment is scheduled for a specific block number in the future.
-3. To upgrade the runtime, run the following command:
-   ```sh
-   make upgrade-local
    ```
 
 # Contributing
