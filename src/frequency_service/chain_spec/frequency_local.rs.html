@@ -182,15 +182,17 @@
 <span id="176">176</span>
 <span id="177">177</span>
 <span id="178">178</span>
+<span id="179">179</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
 <span class="kw">use</span> <span class="ident">cumulus_primitives_core::ParaId</span>;
-<span class="kw">use</span> <span class="ident">frequency_runtime</span>::{<span class="ident">AccountId</span>, <span class="ident">AuraId</span>, <span class="ident">SudoConfig</span>, <span class="ident">EXISTENTIAL_DEPOSIT</span>};
+<span class="kw">use</span> <span class="ident">frequency_local_runtime</span>::{<span class="ident">AccountId</span>, <span class="ident">AuraId</span>, <span class="ident">SudoConfig</span>, <span class="ident">EXISTENTIAL_DEPOSIT</span>};
 <span class="kw">use</span> <span class="ident">sc_service::ChainType</span>;
 <span class="kw">use</span> <span class="ident">sp_core::sr25519</span>;
 
 <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">get_account_id_from_seed</span>, <span class="ident">get_collator_keys_from_seed</span>, <span class="ident">get_properties</span>, <span class="ident">Extensions</span>};
 <span class="doccomment">/// Specialized `ChainSpec` for the normal parachain runtime.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ChainSpec</span> <span class="op">=</span> <span class="ident">sc_service::GenericChainSpec</span><span class="op">&lt;</span><span class="ident">frequency_runtime::GenesisConfig</span>, <span class="ident">Extensions</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ChainSpec</span> <span class="op">=</span>
+	<span class="ident">sc_service::GenericChainSpec</span><span class="op">&lt;</span><span class="ident">frequency_local_runtime::GenesisConfig</span>, <span class="ident">Extensions</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// The default XCM version to set in genesis config.</span>
 <span class="kw">const</span> <span class="ident">SAFE_XCM_VERSION</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="ident">xcm::prelude::XCM_VERSION</span>;
@@ -198,8 +200,8 @@
 <span class="doccomment">/// Generate the session keys from individual elements.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// The input must be a tuple of individual keys (a single arg for now since we have just one key).</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">template_session_keys</span>(<span class="ident">keys</span>: <span class="ident">AuraId</span>) -&gt; <span class="ident">frequency_runtime::SessionKeys</span> {
-	<span class="ident">frequency_runtime::SessionKeys</span> { <span class="ident">aura</span>: <span class="ident">keys</span> }
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">template_session_keys</span>(<span class="ident">keys</span>: <span class="ident">AuraId</span>) -&gt; <span class="ident">frequency_local_runtime::SessionKeys</span> {
+	<span class="ident">frequency_local_runtime::SessionKeys</span> { <span class="ident">aura</span>: <span class="ident">keys</span> }
 }
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">development_config</span>() -&gt; <span class="ident">ChainSpec</span> {
@@ -316,23 +318,23 @@
 	<span class="ident">root_key</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
 	<span class="ident">endowed_accounts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
 	<span class="ident">id</span>: <span class="ident">ParaId</span>,
-) -&gt; <span class="ident">frequency_runtime::GenesisConfig</span> {
-	<span class="ident">frequency_runtime::GenesisConfig</span> {
-		<span class="ident">system</span>: <span class="ident">frequency_runtime::SystemConfig</span> {
-			<span class="ident">code</span>: <span class="ident">frequency_runtime::WASM_BINARY</span>
+) -&gt; <span class="ident">frequency_local_runtime::GenesisConfig</span> {
+	<span class="ident">frequency_local_runtime::GenesisConfig</span> {
+		<span class="ident">system</span>: <span class="ident">frequency_local_runtime::SystemConfig</span> {
+			<span class="ident">code</span>: <span class="ident">frequency_local_runtime::WASM_BINARY</span>
 				.<span class="ident">expect</span>(<span class="string">&quot;WASM binary was not build, please build it!&quot;</span>)
 				.<span class="ident">to_vec</span>(),
 		},
-		<span class="ident">balances</span>: <span class="ident">frequency_runtime::BalancesConfig</span> {
+		<span class="ident">balances</span>: <span class="ident">frequency_local_runtime::BalancesConfig</span> {
 			<span class="ident">balances</span>: <span class="ident">endowed_accounts</span>.<span class="ident">iter</span>().<span class="ident">cloned</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">k</span><span class="op">|</span> (<span class="ident">k</span>, <span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">60</span>)).<span class="ident">collect</span>(),
 		},
-		<span class="ident">parachain_info</span>: <span class="ident">frequency_runtime::ParachainInfoConfig</span> { <span class="ident">parachain_id</span>: <span class="ident">id</span> },
-		<span class="ident">collator_selection</span>: <span class="ident">frequency_runtime::CollatorSelectionConfig</span> {
+		<span class="ident">parachain_info</span>: <span class="ident">frequency_local_runtime::ParachainInfoConfig</span> { <span class="ident">parachain_id</span>: <span class="ident">id</span> },
+		<span class="ident">collator_selection</span>: <span class="ident">frequency_local_runtime::CollatorSelectionConfig</span> {
 			<span class="ident">invulnerables</span>: <span class="ident">invulnerables</span>.<span class="ident">iter</span>().<span class="ident">cloned</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">acc</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">acc</span>).<span class="ident">collect</span>(),
 			<span class="ident">candidacy_bond</span>: <span class="ident">EXISTENTIAL_DEPOSIT</span> <span class="op">*</span> <span class="number">16</span>,
 			..<span class="ident">Default::default</span>()
 		},
-		<span class="ident">session</span>: <span class="ident">frequency_runtime::SessionConfig</span> {
+		<span class="ident">session</span>: <span class="ident">frequency_local_runtime::SessionConfig</span> {
 			<span class="ident">keys</span>: <span class="ident">invulnerables</span>
 				.<span class="ident">into_iter</span>()
 				.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">acc</span>, <span class="ident">aura</span>)<span class="op">|</span> {
@@ -353,7 +355,7 @@
 			<span class="comment">// Assign network admin rights.</span>
 			<span class="ident">key</span>: <span class="ident">root_key</span>,
 		},
-		<span class="ident">polkadot_xcm</span>: <span class="ident">frequency_runtime::PolkadotXcmConfig</span> {
+		<span class="ident">polkadot_xcm</span>: <span class="ident">frequency_local_runtime::PolkadotXcmConfig</span> {
 			<span class="ident">safe_xcm_version</span>: <span class="prelude-val">Some</span>(<span class="ident">SAFE_XCM_VERSION</span>),
 		},
 		<span class="ident">schemas</span>: <span class="ident">Default::default</span>(),

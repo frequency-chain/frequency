@@ -152,15 +152,17 @@
 <span id="146">146</span>
 <span id="147">147</span>
 <span id="148">148</span>
+<span id="149">149</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
 <span class="kw">use</span> <span class="ident">cumulus_primitives_core::ParaId</span>;
-<span class="kw">use</span> <span class="ident">frequency_runtime</span>::{<span class="ident">AccountId</span>, <span class="ident">AuraId</span>, <span class="ident">SudoConfig</span>, <span class="ident">EXISTENTIAL_DEPOSIT</span>};
+<span class="kw">use</span> <span class="ident">frequency_rococo_runtime</span>::{<span class="ident">AccountId</span>, <span class="ident">AuraId</span>, <span class="ident">SudoConfig</span>, <span class="ident">EXISTENTIAL_DEPOSIT</span>};
 <span class="kw">use</span> <span class="ident">hex::FromHex</span>;
 <span class="kw">use</span> <span class="ident">sc_service::ChainType</span>;
 <span class="kw">use</span> <span class="ident">sp_core::ByteArray</span>;
 
 <span class="doccomment">/// Specialized `ChainSpec` for the normal parachain runtime.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ChainSpec</span> <span class="op">=</span> <span class="ident">sc_service::GenericChainSpec</span><span class="op">&lt;</span><span class="ident">frequency_runtime::GenesisConfig</span>, <span class="ident">Extensions</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ChainSpec</span> <span class="op">=</span>
+	<span class="ident">sc_service::GenericChainSpec</span><span class="op">&lt;</span><span class="ident">frequency_rococo_runtime::GenesisConfig</span>, <span class="ident">Extensions</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// The default XCM version to set in genesis config.</span>
 <span class="kw">const</span> <span class="ident">SAFE_XCM_VERSION</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="ident">xcm::prelude::XCM_VERSION</span>;
@@ -187,7 +189,7 @@
 		<span class="comment">// Name</span>
 		<span class="string">&quot;Frequency Rococo&quot;</span>,
 		<span class="comment">// ID</span>
-		<span class="string">&quot;frequency_rococo&quot;</span>,
+		<span class="string">&quot;frequency-rococo&quot;</span>,
 		<span class="ident">ChainType::Live</span>,
 		<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
 			<span class="ident">frequency_rococo_genesis</span>(
@@ -256,30 +258,30 @@
 	<span class="ident">root_key</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
 	<span class="ident">endowed_accounts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
 	<span class="ident">id</span>: <span class="ident">ParaId</span>,
-) -&gt; <span class="ident">frequency_runtime::GenesisConfig</span> {
-	<span class="ident">frequency_runtime::GenesisConfig</span> {
-		<span class="ident">system</span>: <span class="ident">frequency_runtime::SystemConfig</span> {
-			<span class="ident">code</span>: <span class="ident">frequency_runtime::WASM_BINARY</span>
+) -&gt; <span class="ident">frequency_rococo_runtime::GenesisConfig</span> {
+	<span class="ident">frequency_rococo_runtime::GenesisConfig</span> {
+		<span class="ident">system</span>: <span class="ident">frequency_rococo_runtime::SystemConfig</span> {
+			<span class="ident">code</span>: <span class="ident">frequency_rococo_runtime::WASM_BINARY</span>
 				.<span class="ident">expect</span>(<span class="string">&quot;WASM binary was not build, please build it!&quot;</span>)
 				.<span class="ident">to_vec</span>(),
 		},
-		<span class="ident">balances</span>: <span class="ident">frequency_runtime::BalancesConfig</span> {
+		<span class="ident">balances</span>: <span class="ident">frequency_rococo_runtime::BalancesConfig</span> {
 			<span class="ident">balances</span>: <span class="ident">endowed_accounts</span>.<span class="ident">iter</span>().<span class="ident">cloned</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">k</span><span class="op">|</span> (<span class="ident">k</span>, <span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">60</span>)).<span class="ident">collect</span>(),
 		},
-		<span class="ident">parachain_info</span>: <span class="ident">frequency_runtime::ParachainInfoConfig</span> { <span class="ident">parachain_id</span>: <span class="ident">id</span> },
-		<span class="ident">collator_selection</span>: <span class="ident">frequency_runtime::CollatorSelectionConfig</span> {
+		<span class="ident">parachain_info</span>: <span class="ident">frequency_rococo_runtime::ParachainInfoConfig</span> { <span class="ident">parachain_id</span>: <span class="ident">id</span> },
+		<span class="ident">collator_selection</span>: <span class="ident">frequency_rococo_runtime::CollatorSelectionConfig</span> {
 			<span class="ident">invulnerables</span>: <span class="ident">initial_authorities</span>.<span class="ident">iter</span>().<span class="ident">cloned</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">acc</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">acc</span>).<span class="ident">collect</span>(),
 			<span class="ident">candidacy_bond</span>: <span class="ident">EXISTENTIAL_DEPOSIT</span> <span class="op">*</span> <span class="number">16</span>,
 			..<span class="ident">Default::default</span>()
 		},
-		<span class="ident">session</span>: <span class="ident">frequency_runtime::SessionConfig</span> {
+		<span class="ident">session</span>: <span class="ident">frequency_rococo_runtime::SessionConfig</span> {
 			<span class="ident">keys</span>: <span class="ident">initial_authorities</span>
 				.<span class="ident">into_iter</span>()
 				.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">acc</span>, <span class="ident">aura</span>)<span class="op">|</span> {
 					(
-						<span class="ident">acc</span>.<span class="ident">clone</span>(),                             <span class="comment">// account id</span>
-						<span class="ident">acc</span>,                                     <span class="comment">// validator id</span>
-						<span class="ident">frequency_runtime::SessionKeys</span> { <span class="ident">aura</span> }, <span class="comment">// session keys</span>
+						<span class="ident">acc</span>.<span class="ident">clone</span>(),                                    <span class="comment">// account id</span>
+						<span class="ident">acc</span>,                                            <span class="comment">// validator id</span>
+						<span class="ident">frequency_rococo_runtime::SessionKeys</span> { <span class="ident">aura</span> }, <span class="comment">// session keys</span>
 					)
 				})
 				.<span class="ident">collect</span>(),
@@ -293,7 +295,7 @@
 			<span class="comment">// Assign network admin rights.</span>
 			<span class="ident">key</span>: <span class="ident">root_key</span>,
 		},
-		<span class="ident">polkadot_xcm</span>: <span class="ident">frequency_runtime::PolkadotXcmConfig</span> {
+		<span class="ident">polkadot_xcm</span>: <span class="ident">frequency_rococo_runtime::PolkadotXcmConfig</span> {
 			<span class="ident">safe_xcm_version</span>: <span class="prelude-val">Some</span>(<span class="ident">SAFE_XCM_VERSION</span>),
 		},
 		<span class="ident">schemas</span>: <span class="ident">Default::default</span>(),
