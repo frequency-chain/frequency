@@ -44,7 +44,7 @@ jobs:
         env:
           TARGET: build-node
       - name: Build Frequency related specs and wasm 📝
-        run: ./scripts/generate_specs.sh 2000 build-local && ./scripts/generate_specs.sh 4044 build-testnet && ./scripts/generate_specs.sh 999 build-mainnet
+        run: ./scripts/generate_specs.sh 2000 rococo-2000 && ./scripts/generate_specs.sh 4044 rococo-4044 && ./scripts/generate_specs.sh 999 mainnet
       - name: Create tarball of local specs and wasm 📦
         run: tar -cvf frequency_specs_local-${{ github.sha }}.tar ./res/genesis/local
       - name: Upload frequency local spec and wasm artifacts 📦
