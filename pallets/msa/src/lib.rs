@@ -136,7 +136,7 @@ pub mod pallet {
 	/// Storage type for MSA key information
 	#[pallet::storage]
 	#[pallet::getter(fn get_provider_metadata)]
-	pub type ProviderMetadataOf<T: Config> = StorageMap<
+	pub type ProviderRegistry<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
 		MessageSourceId,
@@ -189,6 +189,11 @@ pub mod pallet {
 			provider: Provider,
 			/// The Delegator MSA Id
 			delegator: Delegator,
+		},
+		/// A Provider-MSA relationship was registered
+		ProviderRegistered {
+			/// The MSA id associated with the provider
+			provider_msa_id: MessageSourceId,
 		},
 		/// The Delegator revoked its delegation to the Provider
 		DelegatorRevokedDelegation {
@@ -329,7 +334,7 @@ pub mod pallet {
 				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?.msa_id;
-			ProviderMetadataOf::<T>::try_mutate(
+			ProviderRegistry::<T>::try_mutate(
 				provider_msa_id,
 				|maybe_metadata| -> DispatchResult {
 					ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderMetadata);
@@ -337,6 +342,7 @@ pub mod pallet {
 					Ok(())
 				},
 			)?;
+			Self::deposit_event(Event::ProviderRegistered { provider_msa_id });
 			Ok(())
 		}
 

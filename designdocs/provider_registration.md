@@ -50,14 +50,8 @@ Please note:
   for each type of error for ease of debugging.
 
 ### Types
-* `ProviderRegistrationParams<T: Config>`, the arguments used to emit registration event.
-  * `provider_msa_id`: `MsaId`
-  * `provider_metadata`: `ProviderMetadata`
 * `ProviderMetadata`
   * `name`: `Vec<u8>`
-* `Provider`
-  * `provider_msa_id`: `MsaId`
-  * `metadata`: `ProviderMetadata`
 
 #### Events
 * `ProviderRegistrationEvent<T: Config>`, the resource that exists on-chain
@@ -65,13 +59,13 @@ Please note:
   * `provider_msa_id`: `MsaId`
 
 #### Storage
-* `ProviderRegistry<T: Config>`: `StorageMap<MsaId, Provider>`
+* `ProviderRegistry<T: Config>`: `StorageMap<MsaId, ProviderMetadata>`
   * Stores registered providers and provides lookup functionality via `MsaId`.
     Existence in this storage structure implies that a provider's fee has been
     paid and their registration was otherwise successful.
 
 ### Extrinsics
-#### register_provider(origin, registration_params)
+#### register_provider(origin, provider_name)
 Creates and posts a `ProviderRegistrationEvent`. The `MsaId`
 included in the registration must already exist.
 
@@ -80,7 +74,7 @@ This extrinsic is responsible for storing the registered provider in the
 
 * **Parameters**
   * `origin`: `Origin`  required for all extrinsics, the caller/sender.
-  * `registration_params`: `ProviderRegistrationParams`, the parameters to use for registration.
+  * `provider_name`: the name used for the provider.
 * **Event**:  `Event::<T>::ProviderRegistrationEvent(provider_msa_id)`
 * **Restrictions**:
   * `origin`'s `msa_id` must have capacity to post the transaction (including fee) during the current epoch.
