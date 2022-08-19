@@ -103,10 +103,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:2 w:1)
-	fn revoke_msa_key() -> Weight {
-		(59_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+	// Storage: Msa MsaKeysOf (r:1 w:1)
+	fn delete_msa_key() -> Weight {
+		(50_519_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(3 as Weight))
+			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:2 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
@@ -148,7 +149,7 @@ impl WeightInfo for () {
 	// Storage: Msa MsaKeysOf (r:1 w:1)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn create_sponsored_account_with_delegation() -> Weight {
-		(152_000_000 as Weight)
+		(87_198_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
 	}
@@ -169,10 +170,11 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:2 w:1)
-	fn revoke_msa_key() -> Weight {
-		(59_000_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+	// Storage: Msa MsaKeysOf (r:1 w:1)
+	fn delete_msa_key() -> Weight {
+		(50_519_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:2 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)

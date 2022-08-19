@@ -1,9 +1,8 @@
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::dispatch::DispatchResult;
+use frame_support::{dispatch::DispatchResult, traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use frame_support::{traits::Get, BoundedVec};
 use sp_runtime::DispatchError;
 
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
@@ -69,7 +68,7 @@ where
 	T: Get<u32>,
 {
 	/// The provider's name
-	pub provider_name: BoundedVec<u8, T>
+	pub provider_name: BoundedVec<u8, T>,
 }
 
 impl From<MessageSourceId> for Provider {

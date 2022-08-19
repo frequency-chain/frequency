@@ -57,7 +57,7 @@
 
 use codec::{Decode, Encode};
 use common_primitives::msa::{
-	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo, ProviderMetadata
+	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo, ProviderMetadata,
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 pub use pallet::*;
@@ -136,8 +136,13 @@ pub mod pallet {
 	/// Storage type for MSA key information
 	#[pallet::storage]
 	#[pallet::getter(fn get_provider_metadata)]
-	pub type ProviderMetadataOf<T: Config> =
-		StorageMap<_, Blake2_128Concat, MessageSourceId, ProviderMetadata<T::MaxProviderNameSize>, OptionQuery>;
+	pub type ProviderMetadataOf<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		MessageSourceId,
+		ProviderMetadata<T::MaxProviderNameSize>,
+		OptionQuery,
+	>;
 
 	/// Storage type for MSA key information
 	#[pallet::storage]
@@ -240,7 +245,7 @@ pub mod pallet {
 		/// The MSA id submitted for provider creation has already been associated with a provider
 		DuplicateProviderMetadata,
 		/// The maximum length for a provider name has been exceeded
-		ExceedsMaxProviderNameSize
+		ExceedsMaxProviderNameSize,
 	}
 
 	#[pallet::call]
@@ -318,20 +323,20 @@ pub mod pallet {
 		/// - Returns
 		///   [`DuplicateProviderMetadata`](Error::DuplicateProviderMetadata) if there is already a ProviderMetadata associated with the given MSA id.
 		#[pallet::weight(T::WeightInfo::register_provider())]
-		pub fn register_provider(
-			origin: OriginFor<T>,
-			provider_name: Vec<u8>
-		) -> DispatchResult {
+		pub fn register_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
 				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?.msa_id;
-			ProviderMetadataOf::<T>::try_mutate(provider_msa_id, |maybe_metadata| -> DispatchResult {
-				ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderMetadata);
-				*maybe_metadata = Some(ProviderMetadata { provider_name: bounded_name });
-				Ok(())
-			})?;
+			ProviderMetadataOf::<T>::try_mutate(
+				provider_msa_id,
+				|maybe_metadata| -> DispatchResult {
+					ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderMetadata);
+					*maybe_metadata = Some(ProviderMetadata { provider_name: bounded_name });
+					Ok(())
+				},
+			)?;
 			Ok(())
 		}
 

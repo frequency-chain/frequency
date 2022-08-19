@@ -1178,5 +1178,18 @@ fn add_removed_key_to_msa_pass() {
 			signature,
 			add_new_key_data
 		));
+	});
+}
+
+#[test]
+fn register_provider() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let (_new_msa_id, _) =
+			Msa::create_account(key_pair.public().into(), EMPTY_FUNCTION).unwrap();
+		assert_ok!(Msa::register_provider(
+			Origin::signed(key_pair.public().into()),
+			Vec::from("Foo")
+		));
 	})
 }
