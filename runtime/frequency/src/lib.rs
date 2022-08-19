@@ -39,7 +39,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU32, EnsureOrigin, EqualPrivilegeOnly, Everything},
+	traits::{ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly, Everything},
 	weights::{
 		constants::{RocksDbWeight, WEIGHT_PER_SECOND},
 		ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -490,7 +490,7 @@ parameter_types! {
 	pub const MinimumDeposit: Balance = 100 * UNIT;
 	pub const EnactmentPeriod: BlockNumber = 30 * 24 * 60 * MINUTES;
 	pub const CooloffPeriod: BlockNumber = 28 * 24 * 60 * MINUTES;
-	pub const MaxProposals: u32 = 100;
+	pub const MaxProposals: u32 = 50;
 }
 
 // see https://paritytech.github.io/substrate/master/pallet_democracy/pallet/trait.Config.html
@@ -516,51 +516,49 @@ impl pallet_democracy::Config for Runtime {
 
 	// See https://paritytech.github.io/substrate/master/pallet_democracy/index.html for
 	// the descriptions of these origins.
-	type ExternalDefaultOrigin = EnsureRoot<AccountId>;
-	type ExternalMajorityOrigin = EnsureRoot<AccountId>;
-	type ExternalOrigin = EnsureRoot<AccountId>;
+	/// A unanimous council can have the next scheduled referendum be a straight default-carries
+	/// (NTB) vote.
+	type ExternalDefaultOrigin =
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>;
+
+	// /// A super-majority can have the next scheduled referendum be a straight majority-carries vote.
+	type ExternalMajorityOrigin =
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 4>;
+
+	// /// A straight majority of the council can decide what their next motion is.
+	type ExternalOrigin =
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>;
+
 	type FastTrackOrigin = EnsureRoot<AccountId>;
 	type InstantOrigin = EnsureRoot<AccountId>;
 	type PalletsOrigin = OriginCaller;
-	type CancellationOrigin = EnsureRoot<AccountId>;
-	type CancelProposalOrigin = EnsureRoot<AccountId>;
+
+	// // To cancel a proposal which has been passed, 2/3 of the council must agree to it.
+	type CancellationOrigin =
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>;
+
+	// To cancel a proposal before it has been passed, the technical committee must be unanimous or
+	// Root must agree.
+	type CancelProposalOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
+	>;
+
 	type BlacklistOrigin = EnsureRoot<AccountId>;
 	type VetoOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
 	type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
 
-	// // See https://paritytech.github.io/substrate/master/pallet_democracy/index.html for
-	// // the descriptions of these origins.
-	//
-	// /// A unanimous council can have the next scheduled referendum be a straight default-carries
-	// /// (NTB) vote.
-	// type ExternalDefaultOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>;
-	//
-	// /// A super-majority can have the next scheduled referendum be a straight majority-carries vote.
-	// type ExternalMajorityOrigin =  pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 4>;
-	//
-	// /// A straight majority of the council can decide what their next motion is.
-	// type ExternalOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>;
-	//
 	// /// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
 	// /// be tabled immediately and with a shorter voting/enactment period.
 	// type FastTrackOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>;
 	//
 	// type InstantOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>;
 	//
-	// type PalletsOrigin = OriginCaller;
-	// // To cancel a proposal which has been passed, 2/3 of the council must agree to it.
-	// type CancellationOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>;
-	// // To cancel a proposal before it has been passed, the technical committee must be unanimous or
-	// // Root must agree.
-	// type CancelProposalOrigin = EitherOfDiverse<EnsureRoot<AccountId>, pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>>;
-	//
 	// type BlacklistOrigin = EnsureRoot<AccountId>;
 	//
 	// // Any single technical committee member may veto a coming council proposal, however they can
 	// // only do it once and it lasts only for the cool-off period.
 	// type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCollective>;
-	//
-	// type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
 }
 
 parameter_types! {
@@ -721,8 +719,7 @@ construct_runtime!(
 		Council: pallet_collective::<Instance1>::{Pallet, Call, Config<T,I>, Storage, Event<T>, Origin<T>} = 7,
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T> } = 8,
 
-		Utility: pallet_utility::{Pallet, Call, Event} = 8,
-
+		Utility: pallet_utility::{Pallet, Call, Event} = 9,
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
