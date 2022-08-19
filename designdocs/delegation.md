@@ -1,5 +1,5 @@
 # Delegations
-This document describes the permissioned delegation of actions, largely, but not limited to, account creation and announcing messages by the owner of an `MsaId` on chain on behalf of the owner of another `MsaId`.
+This document describes the permissioned delegation of actions, largely, but not limited to, account creation and announcing messages by the owner of an MSA id` on chain on behalf of the owner of another MSA id`.
 
 ## Table of Contents
 * [Context and Scope](#context-and-scope)
@@ -36,30 +36,32 @@ Put another way, delegation must have the following properties:
 * **Revocable** - a Delegator can withdraw permissions completely from the Provider.
 
 ### Non-Goals
-* Doesn't cover handling the retirement of an `MsaId`, which is a possible future feature and would affect delegation validation and queries.
+* Doesn't cover handling the retirement of an MSA id`, which is a possible future feature and would affect delegation validation and queries.
 * Delegated removal would allow removing any other provider without substituting itself as the new provider. Such an endpoint presents serious enough issues that it should be discussed and designed separately, if it's to be implemented at all.
 * Does not specify what the permissions are nor the permissions data type.
 * Does not specify a value for pallet constants, only when there should be one. These values should be determined by such factors as storage costs and performance.
-* Does not include a "block/ban" feature for delegation, which is under discussion; the belief is that a Provider also ought to be able to permanently refuse service to a given `MsaId`, which further supports the idea of a mutually agreed upon relationship.
+* Does not include a "block/ban" feature for delegation, which is under discussion; the belief is that a Provider also ought to be able to permanently refuse service to a given MSA id`, which further supports the idea of a mutually agreed upon relationship.
 
 ## Proposal
-The proposed solution is to give End Users the ability to create an on-chain `MsaId` through an authorized provider. End Users can also transparently authorize and manage their own Providers and permissions, either directly using a native token or through an explicitly authorized Provider. Additionally, we allow `MsaIds` to be directly purchased using a native token.
+The proposed solution is to give End Users the ability to create an on-chain MSA id` through an authorized provider. End Users can also transparently authorize and manage their own Providers and permissions, either directly using a native token or through an explicitly authorized Provider. Additionally, we allow MSA ids` to be directly purchased using a native token.
 
 ### API (extrinsics)
 * All names are placeholders and may be changed.
 * All extrinsics must emit an appropriate event with all parameters for the call, unless otherwise specified.
 * Errors in the extrinsics must have different, reasonably-named error enums for each type of error for ease of debugging.
-* "Owner only" means the caller must own the delegator`MsaId`.
+* "Owner only" means the caller must own the delegatorMSA id`.
 * Events are not deposited for read-only extrinsic calls.
 
 #### create_sponsored_account_with_delegation
 Creates a new MSA on behalf of a delegator and adds the origin held MSA as its provider.
+
   * Parameters:
       1. `add_provider_payload` - this is what the holder of delegator_key must sign and provide to the provider beforehand.
           * `authorized_msa_id` - the provider, of type `MessageSourceId`
           * `permission` a value indicating the permission to be given to the provider
       2. `delegator_key` - The authorizing key used to create `proof`
       3. `proof` - The signature of the hash of `add_provider_payload` by the delgator
+
   * Events:
       1. `MsaCreated`
           * `new_msa_id` - id of the newly created MSA
@@ -70,8 +72,10 @@ Creates a new MSA on behalf of a delegator and adds the origin held MSA as its p
 
 #### remove_delegation_by_provider
 Provider removes its relationship from the specified `delegator` in the parameters.  This function allows a provider to control access to its services, for example, in the case of an End User that violates Terms of Service.
+
   * Parameters:
       1. `delegator` - the MSA id of the delegator
+
   * Events:
       1. `ProviderRevokedDelegation`
           * `provider` - id of the MSA held by the delegator
@@ -87,67 +91,60 @@ This is a signed call directly from the caller, so the owner of the new MSA pays
 A delegator removes its relationship from a provider.
 This is a signed call directly from the delegator's MSA.
 This call incurs no fees.
+
   * Parameters:
       1. `provider_msa_id` - id of the MSA held by the provider
+
   * Restrictions:  **Owner only**.
+
   * Event: `DelegateRemoved`
       1. `delegator` - id of the MSA held by the delegator
       2. `provider` - id of the MSA held by the provider
 
 ### Custom RPC endpoints
 #### get_msa_keys(msa_id)
-Retrieve a list of public keys of up to `MaxKeys` size for the provided `MsaId`, or `None()` if the `MsaId` does not exist.
+Retrieve a list of public keys of up to `MaxKeys` size for the provided MSA id, or an empty list if the MSA id does not exist.
 
-#### get_msa_id(public_key)
-Retrieve the `MsaId` for the provided `public_key`, or `None()` if`public_key` does not exist.
+* Parameters:
+    1. `msa_id`: the MSA id of which associated keys are to be retrieved
 
-#### validate_provider(delegator, provider, permission)
-Verify that the provided provider `MsaId` is a provider of the delegator, and has the given permission value.
+#### get_msa_id(key)
+Retrieve the MSA id for the provided public key `key`.
+
+* Parameters:
+    1. `key`: the public key of of which an associated MSA id is to be retrieved
+
+#### check_delegations
+Validate that a provider can delegate for a list of MSA ids.
+This call is intended for validating messages in a batch, so this function would be an all-or-nothing check.
+If the permission stored for a given MSA id` exceeds the parameter, the check for that MSA id` passes.
+For example, if a provider has *all* permissions set, then querying for a subset of permissions will pass.
+Verify that the provided provider `provider_msa_id` is a provider of the delegator, and has the given permission value.
 Returns `Ok(true)` if provider is valid, `Ok(false)` if not.
 Throws an Error enum indicating if either provider or delegator does not exist.
 
 * Parameters:
-    1. `delegator`: the `MsaId` of the delegator
-    2. `provider`: the `MsaId` of the provider to verify.
-    3. `permission`: the `Permission` value to check against what is stored for these providers.
-        If this is the `Zero()` value, it checks only that this is a provider for this delegator `MsaId`.
-
-#### validate_provider_for_ids(provider_msa_id, msa_ids, permission)
-Validate a provider for a bunch of `MsaIds` against the provided `permission`.
-This call is intended for validating messages in a batch, so this function would be an all-or-nothing check.
-If the permission stored for a given `MsaId` exceeds the parameter, the check for that `MsaId` passes.
-For example, if a provider has *all* permissions set, then querying for a subset of permissions will pass.
-
-* Returns: `Ok(true)` if provider is valid for all ids *and* the provider exists *and* all of the ids exist, `Ok(false)` otherwise.
-  It's up to the caller to decide if they want to figure out why validation failed and how.
-* Parameters:
-  1. `provider_msa_id`: the `MsaId` of the provider to verify.
-  2. `msa_ids`: the list of `MsaIds` to check. The list of `MsaIds` should have a sensible maximum length.
-  3. `permission`: the `Permission` value to check against. Since the call is intended for validating a batch, `permission` is a single value.
-
-### Related Pallet configuration, constants and enumerations
-* `MaxProviders` - maximum number of providers a given ID is allowed to have. Pallet configuration.
-* `Permissions` type should be explicitly set in `types.rs` for the pallet
-* `Permissions` definitions to be discussed.  Possibilities:  Owner, Announcer, Expiring
+    1. `delegator_msa_ids`: a list of MSA ids possible delegators
+    2. `provider_msa_id`: the MSA id of the provider to verify
 
 ### Storage
-* Delegations are stored as a Double-key map of Delegator `MsaId` --> Provider `MsaId`. The data stored contains the `Permission` for that relationship:
+* Delegations are stored as a Double-key map of Delegator MSA id` --> Provider MSA id`. The data stored contains the `Permission` for that relationship:
 ```rust
-pub(super) type Delegates<T: Config> = StorageDoubleMap<
+pub(super) type ProviderInfoOf<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		MsaId,
+		Delegator,
 		Blake2_128Concat,
-		MsaId,
-		Permission,
+		Provider,
+		ProviderInfo<T::BlockNumber>,
 		OptionQuery,
 	>;
 ```
 
 ## Benefits and Risks
-As stated earlier, one of the primary intended benefits of delegation is to allow feeless account creation and announcing.
+As stated earlier, one of the primary intended benefits of delegation is to allow feeless account creation and messaging.
 
-There is a risk of abuse with delegation of announcements, since this makes it possible for a provider to, for example, modify the End User's messages before batching them. The announcer would have to be caught and the End User must react after the fact, instead of the announcer being technologically prevented from this type of dishonesty.
+There is a risk of abuse with delegation of messages, since this makes it possible for a provider to, for example, modify the End User's messages before batching them. The message sender would have to be caught and the End User must react after the fact, instead of the message sender being technologically prevented from this type of dishonesty.
 
 There is another risk of abuse for any other type of delegated call if the wallet that provides the signing capability does not make it very clear to the End User what they're signing.
 
@@ -164,27 +161,27 @@ We decided against this option for a number of reasons.
 1. It could create a potential for abuse and token loss by those creating numerous fake accounts and then removing the dApp Public Key as a provider.
 2. We have the ability not to require an existential deposit, and felt this to be a better option in this particular case.
 
-### End user pays to announce, with no possibility of delegating
-An alternative for delegating announcement capabilities was to have each End User pay for their own announcing.
+### End user pays to send messages, with no possibility of delegating
+An alternative for delegating messaging capabilities was to have each End User pay for their own messages.
 This was ruled out as the sole solution because:
 1. The average person can't or won't pay to use social media.
-2. Making End Users pay to announce would require people to sign transactions every time they make any updates — all posts, all reactions, all replies, all profile changes, all follows/unfollows, etc. Having to do this would be too annoying for the End User.
+2. Making End Users pay to send messages would require people to sign transactions every time they make any updates — all posts, all reactions, all replies, all profile changes, all follows/unfollows, etc. Having to do this would be too annoying for the End User.
 
-This design still include some direct pay endpoints, so even if an End User did not want to trust a provider, they could still pay for all of their announcing if they want to assume the cost of running a node and pay directly.
+This design still include some direct pay endpoints, so even if an End User did not want to trust a provider, they could still pay for all of their messages if they want to assume the cost of running a node and pay directly.
 
 ### Permissioned delegation is an industry standard
 Furthermore, permissioned delegation via verifiable strong cryptographic signature is a well-known and tested feature in smart contracts of distributed blockchain-based applications.
 
 ### Deferred features
 #### An "effective block range" for providers
-Including an effective block range in the provider storage data would allow providers to be expired, not just removed.  A block range could better support features like Tombstone, blocking, and retiring an `MsaId`.  Effective block range is deferred because those features have not been fully defined.
+Including an effective block range in the provider storage data would allow providers to be expired, not just removed.  A block range could better support features like Tombstone, blocking, and retiring an MSA id`.  Effective block range is deferred because those features have not been fully defined.
 
 #### add_provider(delegator, provider, permissions)
-Directly adding a provider, with or without a provider's permission, is not to be implemented at this time. The original use case was for a potential wallet app to support browsing and adding providers. Adding/replacing a provider for an existing account with an `MsaId` could still be done using the delegated methods, `add_self_as_delegate` or `replace_delegate_with_self`.  A direct add brought up concerns about potential risks of adding a provider without the provider's knowledge. For example, if the provider has removed the delegator for legitimate reasons, such as if the End User violated the provider's Terms of Service, then the provider ought to be able to prevent them from adding the provider again just by paying for it.
+Directly adding a provider, with or without a provider's permission, is not to be implemented at this time. The original use case was for a potential wallet app to support browsing and adding providers. Adding/replacing a provider for an existing account with an MSA id` could still be done using the delegated methods, `add_self_as_delegate` or `replace_delegate_with_self`.  A direct add brought up concerns about potential risks of adding a provider without the provider's knowledge. For example, if the provider has removed the delegator for legitimate reasons, such as if the End User violated the provider's Terms of Service, then the provider ought to be able to prevent them from adding the provider again just by paying for it.
 
 ## Glossary
-* **Provider**: An `MsaId` that has been granted specific permissions by its Delegator. A company or individual operating an on-chain Provider MSA in order to post Frequency transactions on behalf of other MSAs.
-* **Delegator**: An `MsaId` that has granted specific permissions to a Provider.
+* **Provider**: An MSA id` that has been granted specific permissions by its Delegator. A company or individual operating an on-chain Provider MSA in order to post Frequency transactions on behalf of other MSAs.
+* **Delegator**: An MSA id` that has granted specific permissions to a Provider.
 * **MSA**: Message Source Account. A collection of key pairs which can have a specific token balance.
 * **Public Key**: A 32-byte (u256) number that is used to refer to an on-chain MSA and verify signatures. It is one of the keys of an MSA key pair
 * **MsaId**: An 8-byte (u64) number used as a lookup and storage key for delegations, among other things
