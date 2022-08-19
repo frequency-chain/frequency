@@ -5,7 +5,7 @@ set -e
 cmd=$1
 chain_spec="${RAW_PARACHAIN_CHAIN_SPEC:-./res/genesis/local/rococo-local-frequency-2000-raw.json}"
 # The runtime we want to use
-parachain="${PARA_CHAIN_CONFIG:-frequency-local}"
+parachain="${PARA_CHAIN_CONFIG:-rococo-2000}"
 # The parachain Id we want to use
 para_id="${PARA_ID:-2000}"
 # The tmp base directory
@@ -70,7 +70,7 @@ start-frequency)
   ;;
 
 start-frequency-instant)
-  printf "\nBuilding frequency with runtime '$parachain' and id '$para_id'...\n"
+  printf "\nBuilding frequency with runtime instant sealing ...\n"
   cargo build --release
 
   parachain_dir=$base_dir/parachain/${para_id}
