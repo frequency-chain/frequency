@@ -43,7 +43,7 @@ sudo apt install --assume-yes clang curl libssl-dev cmake
 2. Follow [official instructions to install rust](https://www.rust-lang.org/tools/install), but select `3. customize the installation`, then reply **n** to `Modify PATH variable? (Y/n)`
 3. Follow steps 6-10 at [Substrate: Linux development](https://docs.substrate.io/main-docs/install/linux/)
 
-4. Proceed with building frequency as above.
+4. Proceed with checking out and building frequency as above.
 
 # Run
 
