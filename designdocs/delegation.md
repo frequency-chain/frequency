@@ -22,9 +22,9 @@ The primary motivation for delegation is to support End Users of the DSNP platfo
 
 Market research makes it clear that End Users are extremely reluctant to pay to use applications, particularly social networks.
 This means there needs to be some way to onboard End Users and relay their activity through the DSNP platform without charging them.
-On Ethereum and now on Frequency, the use of authorized Delegates enables the creation of End User accounts as well as processing and storing user messages and other data for the End Users, paid for by a Provider, who can recoup these costs by other means (outside the scope of this Design Document).
+The use of authorized Delegates enables the creation of End User accounts as well as processing and storing user messages and other data for the End Users, paid for by a Provider, who can recoup these costs by other means (outside the scope of this Design Document).
 The vast majority of this activity will not reside on chain, however, Frequency needs to be able to coordinate the exchange of data, and to securely allow an End User or any other type of account holder to manage their Delegates.
-The delegation is managed by assigning each account, called a Message Sourcing Account or MSA, an ID number, called an MsaId.
+The delegation is managed by assigning each account, called a Message Source Account or MSA, an ID number, called an MsaId.
 
 ## Goals and Non-Goals
 Delegation, roughly speaking, must allow all Create, Read, Update and Delete (CRUD) operations by a Delegating MSA to fulfill the purpose of giving other MSAs proper authority over their Delegates.
@@ -32,7 +32,7 @@ Put another way, delegation must have the following properties:
 * **Authorizable** - delegations can be authorized with specific permissions by MSAs.
 * **Verifiable** - there is a way to check that Providers are doing things only when authorized and only what they are authorized to do.
 * **Transparent** - delegations can be readable by anyone, in order to maximize opportunities to police Provider actions.
-* **Changeable** - a Delegator can change Provider permissions to give MSAs control over what tasks are permitted to the Provider.
+* **Changeable** - a Delegator can change Provider permissions to give MSAs control over what tasks are permitted to the Provider. https://github.com/LibertyDSNP/frequency/blob/main/designdocs/provider_permissions.md
 * **Revocable** - a Delegator can withdraw permissions completely from the Provider.
 
 ### Non-Goals
@@ -52,93 +52,50 @@ The proposed solution is to give End Users the ability to create an on-chain `Ms
 * "Owner only" means the caller must own the delegator`MsaId`.
 * Events are not deposited for read-only extrinsic calls.
 
-#### create_account_with_provider
-Creates a new `MsaId` on behalf of an MSA and adds the origin as the MSA's provider.
+#### create_sponsored_account_with_delegation
+Creates a new MSA on behalf of a delegator and adds the origin held MSA as its provider.
   * Parameters:
-      1. `payload`:
-         1. `data` - this is what the MSA owner must sign and provide to the provider beforehand.
-             * `msa_id` - the provider, of type `MsaId`
-             * `permission` a value indicating the permission to be given to the provider
-         2. `public_key` - The authorizing key used to create `signature`
-         3. `signature` - The signature of the hash of `data`
-  * Event:  `IdentityCreated`, with the `public_key`, the newly created `MsaId`, and `msa_id`
-  * Restrictions:  origin must own `msa_id` in the payload.
+      1. `add_provider_payload` - this is what the holder of delegator_key must sign and provide to the provider beforehand.
+          * `authorized_msa_id` - the provider, of type `MessageSourceId`
+          * `permission` a value indicating the permission to be given to the provider
+      2. `delegator_key` - The authorizing key used to create `proof`
+      3. `proof` - The signature of the hash of `add_provider_payload` by the delgator
+  * Events:
+      1. `MsaCreated`
+          * `new_msa_id` - id of the newly created MSA
+          * `key` - the `delegator_key`
+      2. `ProviderAdded`
+          * `delegator` - id of the newly created MSA
+          * `provider` - id of the MSA help by the provider
 
-#### add_self_as_provider(payload)
-Adds the `MsaId` in the payload as a provider, to an MSA owning `delegator_msa_id`
+#### remove_delegation_by_provider
+Provider removes its relationship from the specified `delegator` in the parameters.  This function allows a provider to control access to its services, for example, in the case of an End User that violates Terms of Service.
   * Parameters:
-      1. `payload`: authorization data signed by the delegating account
-          1. `data` - this is what the MSA owner must sign and provide to the provider beforehand.
-              * `provider_msa_id` - the provider's `MsaId`, i.e. the caller's `MsaId`
-              * `permission` a value indicating the permission to be given to the provider
-          2. `public_key` - The authorizing key used to create `signature`
-          3. `signature` - The signature of the hash of `data`
-    * Event: `ProviderAddedSelf` with `public_key`, `msa_id`, and `provider_msa_id`
-    * Restrictions:  Caller/origin must own `provider_msa_id`. The `public_key` MSA must own `msa_id`.
+      1. `delegator` - the MSA id of the delegator
+  * Events:
+      1. `ProviderRevokedDelegation`
+          * `provider` - id of the MSA held by the delegator
+          * `delegator` - id of the MSA held by the provider
+#### create
+Directly creates an MSA for the origin (caller) without a provider.
+This is a signed call directly from the caller, so the owner of the new MSA pays the fees for its creation.
 
-#### replace_provider_with_self(payload)
-By signed authorization of owner of `delegator`, the `delegator`-->`old_provider` relationship is removed and replaced with a`delegator`-->`new_provider` relationship. The purpose of this extrinsic is to allow an End User to change providers, for example, if they want to switch to a different DSNP dApp.
-* **Parameters:**
-  1. `payload`: authorization data signed by the delegating account
-     * `data` - what the MSA owner must sign and provide to the provider beforehand.
-       * `new_provider` - the new provider's `MsaId`, i.e. the caller's `MsaId`
-       * `old_provider` - the `MsaId` of the provider to be replaced
-       * `msa_id` - the `MsaId` of the authorizing MSA
-       * `permission` a value indicating the permission to be given to the *new* provider
-  2. `public_key` - The authorizing key used to create `signature`
-  3. `signature` - The signature of the hash of `data`
-* **Event**: `ProviderReplacedWithSelf` with the `public_key`, `msa_id`,`old_provider` and `new_delegat
-* **Restrictions**:
-  * Caller/origin must own `new_provider`.
-  * `public_key` MSA must own `msa_id`.
-  * `old_provider` must be a provider of `msa_id`.
-
-#### update_provider_self(payload)
-By signed authorization of owner of `delegator`, `provider`'s own permissions are updated to `new_permissions`.
-* Parameters
-  1. `payload`: authorization data signed by the delegating account
-     1. `data` - what the MSA owner must sign and provide to the provider beforehand.
-               * `provider` - the provider's `MsaId`, i.e. the caller's `MsaId`
-               * `msa_id` - the `MsaId` of the authorizing MSA.
-               * `new_permission` a value indicating the new permission to be given to this provider
-     2. `public_key` - The authorizing key used to create `signature`
-     3. `signature` - The signature of the hash of `data`
-* Event: `ProviderUpdatedSelf` with `provider`, `msa_id`, `new_permissions`
-
-#### remove_provider_self(payload)
-Provider removes themselves from the specified `msa_id` in the payload.  This function allows a provider to control access to its services, for example, in the case of an End User that violates Terms of Service.
-
-#### create_msa_id()
-Directly creates a `MsaId` for the origin (caller) MSA with no providers.
-This is a signed call directly from the caller, so the owner of the new `MsaId` pays the fees for `MsaId` creation.
-
-* Event: `IdentityCreated`, with the caller's Public Key, the newly created `MsaId`, and an empty provider `MsaId`.
-
-#### update_provider(delegator, provider, permissions)
-Changes the permissions for an existing `delegator`-->`provider` relationship.
+  * Events:
+    1. `DelegatorRevokedDelegation`
+        * `msa_id` - id of the newly created MSA
+#### revoke_msa_delegation_by_delegator
+A delegator removes its relationship from a provider.
 This is a signed call directly from the delegator's MSA.
-The *delegator* account pays the fees.
-  * Parameters: the same as `add_provider`.
+This call incurs no fees.
+  * Parameters:
+      1. `provider_msa_id` - id of the MSA held by the provider
   * Restrictions:  **Owner only**.
-  * Event: `ProviderUpdated` with `delegator`, `provider`, `new_permissions`
-
-#### remove_provider(delegator,provider)
-Deletes a provider's entry from the list of providers for the provided `MsaId`.
-This is a signed call directly from the delegator's MSA.
-The *delegator* account pays the fees, if any.
-* Parameters:
-       1. `delegator` - the `MsaId` removing the provider
-       2. `provider` - the `MsaId` of the provider to be removed
-    * Restrictions:  **Owner only**.
-    * Event: `DelegateRemoved` with `delegator`, `provider`
-
-#### remove_msa_id(msa_id)
-Deletes the `MsaId` from the registry entirely.
-* Restrictions:  Owner [and/or sudoer?]
-* Event: `MsaIdRemoved` with `msa_id`
+  * Event: `DelegateRemoved`
+      1. `delegator` - id of the MSA held by the delegator
+      2. `provider` - id of the MSA held by the provider
 
 ### Custom RPC endpoints
-#### get_account_ids(msa_id)
+#### get_msa_keys(msa_id)
 Retrieve a list of public keys of up to `MaxKeys` size for the provided `MsaId`, or `None()` if the `MsaId` does not exist.
 
 #### get_msa_id(public_key)
@@ -228,7 +185,7 @@ Directly adding a provider, with or without a provider's permission, is not to b
 ## Glossary
 * **Provider**: An `MsaId` that has been granted specific permissions by its Delegator. A company or individual operating an on-chain Provider MSA in order to post Frequency transactions on behalf of other MSAs.
 * **Delegator**: An `MsaId` that has granted specific permissions to a Provider.
-* **MSA**: Message Sourcing Account. A collection of key pairs which can have a specific token balance.
+* **MSA**: Message Source Account. A collection of key pairs which can have a specific token balance.
 * **Public Key**: A 32-byte (u256) number that is used to refer to an on-chain MSA and verify signatures. It is one of the keys of an MSA key pair
 * **MsaId**: An 8-byte (u64) number used as a lookup and storage key for delegations, among other things
 * **End User**: Groups or individuals that own an MSA that is not a Provider MSA.
