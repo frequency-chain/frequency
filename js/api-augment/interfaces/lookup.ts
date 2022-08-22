@@ -1900,6 +1900,9 @@ export default {
         proof: 'SpRuntimeMultiSignature',
         addProviderPayload: 'PalletMsaAddProvider',
       },
+      register_provider: {
+        providerName: 'Vec<u8'
+      },
       add_provider_to_msa: {
         providerKey: 'AccountId32',
         proof: 'SpRuntimeMultiSignature',
