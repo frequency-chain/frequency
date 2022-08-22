@@ -118,6 +118,17 @@ parachain.
    rm -fr /tmp/frequency
    ```
 
+## Run Tests
+
+To execute unit and integration tests run the following:
+
+```sh
+# Activate selected features
+cargo test --features runtime-benchmarks, std
+# Activate all features and test all packages in the workspace
+cargo test --all-features --workspace --release
+```
+
 ## Generate a New Spec File
 
 To build spec against specific chain config specify chain name in the command above.
