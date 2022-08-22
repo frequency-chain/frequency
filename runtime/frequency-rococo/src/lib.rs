@@ -42,8 +42,9 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstU32, EnsureOrigin, EqualPrivilegeOnly, Everything},
 	weights::{
-		constants::WEIGHT_PER_SECOND, ConstantMultiplier, DispatchClass, Weight,
-		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
+		constants::{RocksDbWeight, WEIGHT_PER_SECOND},
+		ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
+		WeightToFeePolynomial,
 	},
 	PalletId,
 };
@@ -63,7 +64,7 @@ pub use pallet_schemas;
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
-use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
+use weights::{BlockExecutionWeight, ExtrinsicBaseWeight};
 
 // XCM Imports
 use xcm::latest::prelude::BodyId;
