@@ -148,8 +148,8 @@ and relay chain to be `rococo_local.json` with `protocol_id:frequency-local`
 Alternatively, run the following to generate plain and raw frequency spec along with
 genesis state and WASM:
 
-- `make specs-local` for Rococo local testnet
-- `make specs-testnet` for Rococo public testnet
+- `make specs-rococo-2000` for Rococo local testnet
+- `make specs-rococo-4044` for Rococo public testnet
 
 # Format and Lint
 
