@@ -8,7 +8,6 @@ members = [
   "node/service",
   "pallets/*",
   "runtime/frequency",
-  "runtime/frequency-local",
   "runtime/frequency-rococo",
   "common/helpers",
 ]

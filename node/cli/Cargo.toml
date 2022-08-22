@@ -1,66 +1,65 @@
 [package]
-name = "frequency-cli"
-version = "0.1.0"
 authors = ["Frequency Team"]
 description = "Substrate cli for frequency node"
-license = "Apache-2.0"
-homepage = "https://unfinishedlabs.io/"
-repository = "https://github.com/LibertyDSNP/frequency/"
 edition = "2021"
+homepage = "https://unfinishedlabs.io/"
+license = "Apache-2.0"
+name = "frequency-cli"
+repository = "https://github.com/LibertyDSNP/frequency/"
+version = "0.1.0"
 
 [dependencies]
-clap = { version = "3.2.5", features = ["derive"] }
+clap = {version = "3.2.5", features = ["derive"]}
+codec = {package = "parity-scale-codec", version = "3.0.0"}
 derive_more = "0.99.2"
-log = "0.4.17"
-codec = { package = "parity-scale-codec", version = "3.0.0" }
-serde = { version = "1.0.137", features = ["derive"] }
 hex-literal = "0.3.4"
-jsonrpsee = { version = "0.14.0", features = ["server"] }
+jsonrpsee = {version = "0.14.0", features = ["server"]}
+log = "0.4.17"
+serde = {version = "1.0.137", features = ["derive"]}
 
 # Frequency Runtime
-frequency-runtime = { path = "../../runtime/frequency" }
-frequency-local-runtime = { path = "../../runtime/frequency-local" }
-frequency-rococo-runtime = { path = "../../runtime/frequency-rococo" }
-frequency-service = { package = "frequency-service", path = "../service", default-features = false, optional = true }
 common-primitives = {default-features = false, path = "../../common/primitives"}
+frequency-rococo-runtime = {path = "../../runtime/frequency-rococo"}
+frequency-runtime = {path = "../../runtime/frequency"}
+frequency-service = {package = "frequency-service", path = "../service", default-features = false, optional = true}
 
 # Substrate
-sc-cli = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "polkadot-v0.9.25", optional = true }
-sc-service = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "polkadot-v0.9.25", optional = true }
-sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25", optional = true }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
-try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25", optional = true }
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25", optional = true }
+frame-benchmarking-cli = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25", optional = true}
+sc-cli = {git = "https://github.com/paritytech/substrate", features = ["wasmtime"], branch = "polkadot-v0.9.25", optional = true}
+sc-service = {git = "https://github.com/paritytech/substrate", features = ["wasmtime"], branch = "polkadot-v0.9.25", optional = true}
+sc-sysinfo = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25"}
+sc-telemetry = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25"}
+sc-tracing = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25"}
+sp-core = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25", optional = true}
+sp-runtime = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25"}
+try-runtime-cli = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25", optional = true}
 
 # Polkadot
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.25" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.25" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.25" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.25" }
+polkadot-cli = {git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.25"}
+polkadot-parachain = {git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.25"}
+polkadot-primitives = {git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.25"}
+polkadot-service = {git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.25"}
 
 # Cumulus
-cumulus-client-cli = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.25" }
-cumulus-client-service = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.25" }
-cumulus-primitives-core ={ git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.25" }
+cumulus-client-cli = {git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.25"}
+cumulus-client-service = {git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.25"}
+cumulus-primitives-core = {git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.25"}
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
+substrate-build-script-utils = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25"}
 
 [features]
-default = [ "wasmtime", "cli"]
-wasmtime = [ "sc-cli/wasmtime" ]
 cli = [
-	"frequency-service",
-	"sp-core",
-	"sc-cli",
-	"sc-service",
-	"frame-benchmarking-cli",
-	"try-runtime-cli",
+  "frequency-service",
+  "sp-core",
+  "sc-cli",
+  "sc-service",
+  "frame-benchmarking-cli",
+  "try-runtime-cli",
 ]
+default = ["wasmtime", "cli"]
 runtime-benchmarks = [
-	"polkadot-cli/runtime-benchmarks",
+  "polkadot-cli/runtime-benchmarks",
 ]
 try-runtime = []
+wasmtime = ["sc-cli/wasmtime"]
