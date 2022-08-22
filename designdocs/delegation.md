@@ -70,8 +70,8 @@ Creates a new MSA on behalf of a delegator and adds the origin held MSA as its p
           * `delegator` - id of the newly created MSA
           * `provider` - id of the MSA help by the provider
 
-#### remove_delegation_by_provider
-Provider removes its relationship from the specified `delegator` in the parameters.  This function allows a provider to control access to its services, for example, in the case of an End User that violates Terms of Service.
+#### revoke_delegation_by_provider
+Provider revokes its relationship from the specified `delegator` in the parameters.  This function allows a provider to control access to its services, for example, in the case of an End User that violates Terms of Service.
 
   * Parameters:
       1. `delegator` - the MSA id of the delegator
