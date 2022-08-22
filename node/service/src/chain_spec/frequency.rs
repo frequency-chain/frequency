@@ -99,13 +99,8 @@ fn frequency_genesis(
 				})
 				.collect(),
 		},
-		//	TODO: define council and democracy in frequency runtime
-		//	democracy: Default::default(),
-		//	council: Default::default(),
-		//	council_membership: CouncilMembershipConfig {
-		//	members: council_members.try_into().expect("error convert to BoundedVec"),
-		//	phantom: Default::default(),
-		//},
+		democracy: Default::default(),
+		council: Default::default(),
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
