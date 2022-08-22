@@ -17,6 +17,7 @@ if [ ! -x "$BUILT_TARGET" ]; then
 fi
 case $build_step in
   rococo-2000)
+    mkdir -p ./res/genesis/local
     echo "Building Spec for  frequency rococo localnet paraid=2000"
     $PWD/target/release/frequency build-spec --disable-default-bootnode > ./res/genesis/local/frequency-spec-rococo.json
     sed -i.bu "s/\"parachainId\": 2000/\"parachainId\": $parachain_id/g" ./res/genesis/local/frequency-spec-rococo.json
@@ -29,6 +30,7 @@ case $build_step in
     $PWD/target/release/frequency export-genesis-wasm --chain ./res/genesis/local/rococo-local-frequency-2000-raw.json > ./res/genesis/local/frequency-rococo-genesis-wasm
     ;;
   rococo-4044)
+    mkdir -p ./res/genesis/testnet
     echo "Building Spec for for frequency rococo testnet paraid=4044"
     $PWD/target/release/frequency build-spec --chain=frequency-rococo --disable-default-bootnode > ./res/genesis/testnet/frequency-spec-rococo-testnet.json
     sed -i.bu "s/\"parachainId\": 4044/\"parachainId\": $parachain_id/g" ./res/genesis/testnet/frequency-spec-rococo-testnet.json
@@ -42,6 +44,7 @@ case $build_step in
     ;;
 
   mainnet)
+    mkdir -p ./res/genesis/mainnet
     echo "Building Spec for frequency mainnet"
     $PWD/target/release/frequency build-spec --chain=frequency --disable-default-bootnode > ./res/genesis/mainnet/frequency.json
     sed -i.bu "s/\"parachainId\": 999/\"parachainId\": $parachain_id/g" ./res/genesis/mainnet/frequency.json
