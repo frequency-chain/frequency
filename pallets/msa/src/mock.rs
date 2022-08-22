@@ -61,7 +61,7 @@ impl system::Config for Test {
 
 parameter_types! {
 	pub const MaxKeys: u32 = 10;
-	pub const MaxProviderNameSize: u32 = 100;
+	pub const MaxProviderNameSize: u32 = 16;
 }
 
 impl pallet_msa::Config for Test {

@@ -322,7 +322,7 @@ impl pallet_msa::Config for Runtime {
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxKeys = ConstU32<25>;
-	type MaxProviderNameSize = ConstU32<100>;
+	type MaxProviderNameSize = ConstU32<16>;
 }
 
 pub use common_primitives::schema::SchemaId;
