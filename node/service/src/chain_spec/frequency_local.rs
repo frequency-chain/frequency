@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 use cumulus_primitives_core::ParaId;
-use frequency_local_runtime::{AccountId, AuraId, SudoConfig, EXISTENTIAL_DEPOSIT};
+use frequency_local_runtime::{AccountId, AuraId, CouncilConfig, SudoConfig, EXISTENTIAL_DEPOSIT};
 use sc_service::ChainType;
 use sp_core::sr25519;
 
@@ -53,6 +53,10 @@ pub fn development_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+				],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
 				],
 				2000.into(),
 			)
@@ -107,6 +111,10 @@ pub fn local_testnet_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+				],
 				2000.into(),
 			)
 		},
@@ -132,6 +140,7 @@ fn testnet_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	root_key: Option<AccountId>,
 	endowed_accounts: Vec<AccountId>,
+	council_members: Vec<AccountId>,
 	id: ParaId,
 ) -> frequency_local_runtime::GenesisConfig {
 	frequency_local_runtime::GenesisConfig {
@@ -175,5 +184,7 @@ fn testnet_genesis(
 		},
 		schemas: Default::default(),
 		vesting: Default::default(),
+		democracy: Default::default(),
+		council: CouncilConfig { phantom: Default::default(), members: council_members },
 	}
 }
