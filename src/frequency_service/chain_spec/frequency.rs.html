@@ -121,11 +121,6 @@
 <span id="115">115</span>
 <span id="116">116</span>
 <span id="117">117</span>
-<span id="118">118</span>
-<span id="119">119</span>
-<span id="120">120</span>
-<span id="121">121</span>
-<span id="122">122</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
 <span class="kw">use</span> <span class="ident">cumulus_primitives_core::ParaId</span>;
 <span class="kw">use</span> <span class="ident">frequency_runtime</span>::{<span class="ident">AccountId</span>, <span class="ident">AuraId</span>, <span class="ident">Balance</span>, <span class="ident">SudoConfig</span>, <span class="ident">EXISTENTIAL_DEPOSIT</span>};
@@ -227,13 +222,8 @@
 				})
 				.<span class="ident">collect</span>(),
 		},
-		<span class="comment">//	TODO: define council and democracy in frequency runtime</span>
-		<span class="comment">//	democracy: Default::default(),</span>
-		<span class="comment">//	council: Default::default(),</span>
-		<span class="comment">//	council_membership: CouncilMembershipConfig {</span>
-		<span class="comment">//	members: council_members.try_into().expect(&quot;error convert to BoundedVec&quot;),</span>
-		<span class="comment">//	phantom: Default::default(),</span>
-		<span class="comment">//},</span>
+		<span class="ident">democracy</span>: <span class="ident">Default::default</span>(),
+		<span class="ident">council</span>: <span class="ident">Default::default</span>(),
 		<span class="ident">aura</span>: <span class="ident">Default::default</span>(),
 		<span class="ident">aura_ext</span>: <span class="ident">Default::default</span>(),
 		<span class="ident">parachain_system</span>: <span class="ident">Default::default</span>(),

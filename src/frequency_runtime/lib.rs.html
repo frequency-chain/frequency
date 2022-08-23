@@ -913,6 +913,109 @@
 <span id="907">907</span>
 <span id="908">908</span>
 <span id="909">909</span>
+<span id="910">910</span>
+<span id="911">911</span>
+<span id="912">912</span>
+<span id="913">913</span>
+<span id="914">914</span>
+<span id="915">915</span>
+<span id="916">916</span>
+<span id="917">917</span>
+<span id="918">918</span>
+<span id="919">919</span>
+<span id="920">920</span>
+<span id="921">921</span>
+<span id="922">922</span>
+<span id="923">923</span>
+<span id="924">924</span>
+<span id="925">925</span>
+<span id="926">926</span>
+<span id="927">927</span>
+<span id="928">928</span>
+<span id="929">929</span>
+<span id="930">930</span>
+<span id="931">931</span>
+<span id="932">932</span>
+<span id="933">933</span>
+<span id="934">934</span>
+<span id="935">935</span>
+<span id="936">936</span>
+<span id="937">937</span>
+<span id="938">938</span>
+<span id="939">939</span>
+<span id="940">940</span>
+<span id="941">941</span>
+<span id="942">942</span>
+<span id="943">943</span>
+<span id="944">944</span>
+<span id="945">945</span>
+<span id="946">946</span>
+<span id="947">947</span>
+<span id="948">948</span>
+<span id="949">949</span>
+<span id="950">950</span>
+<span id="951">951</span>
+<span id="952">952</span>
+<span id="953">953</span>
+<span id="954">954</span>
+<span id="955">955</span>
+<span id="956">956</span>
+<span id="957">957</span>
+<span id="958">958</span>
+<span id="959">959</span>
+<span id="960">960</span>
+<span id="961">961</span>
+<span id="962">962</span>
+<span id="963">963</span>
+<span id="964">964</span>
+<span id="965">965</span>
+<span id="966">966</span>
+<span id="967">967</span>
+<span id="968">968</span>
+<span id="969">969</span>
+<span id="970">970</span>
+<span id="971">971</span>
+<span id="972">972</span>
+<span id="973">973</span>
+<span id="974">974</span>
+<span id="975">975</span>
+<span id="976">976</span>
+<span id="977">977</span>
+<span id="978">978</span>
+<span id="979">979</span>
+<span id="980">980</span>
+<span id="981">981</span>
+<span id="982">982</span>
+<span id="983">983</span>
+<span id="984">984</span>
+<span id="985">985</span>
+<span id="986">986</span>
+<span id="987">987</span>
+<span id="988">988</span>
+<span id="989">989</span>
+<span id="990">990</span>
+<span id="991">991</span>
+<span id="992">992</span>
+<span id="993">993</span>
+<span id="994">994</span>
+<span id="995">995</span>
+<span id="996">996</span>
+<span id="997">997</span>
+<span id="998">998</span>
+<span id="999">999</span>
+<span id="1000">1000</span>
+<span id="1001">1001</span>
+<span id="1002">1002</span>
+<span id="1003">1003</span>
+<span id="1004">1004</span>
+<span id="1005">1005</span>
+<span id="1006">1006</span>
+<span id="1007">1007</span>
+<span id="1008">1008</span>
+<span id="1009">1009</span>
+<span id="1010">1010</span>
+<span id="1011">1011</span>
+<span id="1012">1012</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.</span>
 <span class="attribute">#![<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;256&quot;</span>]</span>
@@ -954,7 +1057,7 @@
 	<span class="ident">construct_runtime</span>,
 	<span class="ident">dispatch::DispatchError</span>,
 	<span class="ident">parameter_types</span>,
-	<span class="ident">traits</span>::{<span class="ident">ConstU32</span>, <span class="ident">EnsureOrigin</span>, <span class="ident">EqualPrivilegeOnly</span>, <span class="ident">Everything</span>},
+	<span class="ident">traits</span>::{<span class="ident">ConstU32</span>, <span class="ident">EitherOfDiverse</span>, <span class="ident">EnsureOrigin</span>, <span class="ident">EqualPrivilegeOnly</span>, <span class="ident">Everything</span>},
 	<span class="ident">weights</span>::{
 		<span class="ident">constants</span>::{<span class="ident">RocksDbWeight</span>, <span class="ident">WEIGHT_PER_SECOND</span>},
 		<span class="ident">ConstantMultiplier</span>, <span class="ident">DispatchClass</span>, <span class="ident">Weight</span>, <span class="ident">WeightToFeeCoefficient</span>, <span class="ident">WeightToFeeCoefficients</span>,
@@ -1354,7 +1457,7 @@
 	<span class="kw">type</span> <span class="ident">PalletsOrigin</span> <span class="op">=</span> <span class="ident">OriginCaller</span>;
 	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
 	<span class="kw">type</span> <span class="ident">MaximumWeight</span> <span class="op">=</span> <span class="ident">MaximumSchedulerWeight</span>;
-	<span class="kw">type</span> <span class="ident">ScheduleOrigin</span> <span class="op">=</span> <span class="ident">frame_system::EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">ScheduleOrigin</span> <span class="op">=</span> <span class="ident">EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">MaxScheduledPerBlock</span> <span class="op">=</span> <span class="ident">MaxScheduledPerBlock</span>;
 	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">pallet_scheduler::weights::SubstrateWeight</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">OriginPrivilegeCmp</span> <span class="op">=</span> <span class="ident">EqualPrivilegeOnly</span>;
@@ -1377,6 +1480,105 @@
 	<span class="kw">type</span> <span class="ident">BaseDeposit</span> <span class="op">=</span> <span class="ident">PreimageBaseDeposit</span>;
 	<span class="kw">type</span> <span class="ident">ByteDeposit</span> <span class="op">=</span> <span class="ident">PreimageByteDeposit</span>;
 }
+
+<span class="macro">parameter_types!</span> {
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CouncilMotionDuration</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">5</span> <span class="op">*</span> <span class="ident">DAYS</span>;
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CouncilMaxProposals</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">25</span>;
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CouncilMaxMembers</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">1</span>;
+}
+
+<span class="kw">type</span> <span class="ident">CouncilCollective</span> <span class="op">=</span> <span class="ident">pallet_collective::Instance1</span>;
+<span class="kw">impl</span> <span class="ident">pallet_collective::Config</span><span class="op">&lt;</span><span class="ident">CouncilCollective</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+	<span class="kw">type</span> <span class="ident">Origin</span> <span class="op">=</span> <span class="ident">Origin</span>;
+	<span class="kw">type</span> <span class="ident">Proposal</span> <span class="op">=</span> <span class="ident">Call</span>;
+	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+	<span class="kw">type</span> <span class="ident">MotionDuration</span> <span class="op">=</span> <span class="ident">CouncilMotionDuration</span>;
+	<span class="kw">type</span> <span class="ident">MaxProposals</span> <span class="op">=</span> <span class="ident">CouncilMaxProposals</span>;
+	<span class="kw">type</span> <span class="ident">MaxMembers</span> <span class="op">=</span> <span class="ident">CouncilMaxMembers</span>;
+	<span class="kw">type</span> <span class="ident">DefaultVote</span> <span class="op">=</span> <span class="ident">pallet_collective::PrimeDefaultVote</span>;
+	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">pallet_collective::weights::SubstrateWeight</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
+}
+
+<span class="comment">// Config from</span>
+<span class="comment">// https://github.com/paritytech/substrate/blob/367dab0d4bd7fd7b6c222dd15c753169c057dd42/bin/node/runtime/src/lib.rs#L880</span>
+<span class="macro">parameter_types!</span> {
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LaunchPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">28</span> <span class="op">*</span> <span class="number">24</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="ident">MINUTES</span>;
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">VotingPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">28</span> <span class="op">*</span> <span class="number">24</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="ident">MINUTES</span>;
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">FastTrackVotingPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">3</span> <span class="op">*</span> <span class="number">24</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="ident">MINUTES</span>;
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinimumDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">100</span> <span class="op">*</span> <span class="ident">UNIT</span>;
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EnactmentPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">30</span> <span class="op">*</span> <span class="number">24</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="ident">MINUTES</span>;
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CooloffPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">28</span> <span class="op">*</span> <span class="number">24</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="ident">MINUTES</span>;
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxProposals</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">50</span>;
+}
+
+<span class="comment">// see https://paritytech.github.io/substrate/master/pallet_democracy/pallet/trait.Config.html</span>
+<span class="comment">// for the definitions of these configs</span>
+<span class="kw">impl</span> <span class="ident">pallet_democracy::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+	<span class="kw">type</span> <span class="ident">CooloffPeriod</span> <span class="op">=</span> <span class="ident">CooloffPeriod</span>;
+	<span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
+	<span class="kw">type</span> <span class="ident">EnactmentPeriod</span> <span class="op">=</span> <span class="ident">EnactmentPeriod</span>;
+	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+	<span class="kw">type</span> <span class="ident">FastTrackVotingPeriod</span> <span class="op">=</span> <span class="ident">FastTrackVotingPeriod</span>;
+	<span class="kw">type</span> <span class="ident">InstantAllowed</span> <span class="op">=</span> <span class="ident">frame_support::traits::ConstBool</span><span class="op">&lt;</span><span class="bool-val">true</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">LaunchPeriod</span> <span class="op">=</span> <span class="ident">LaunchPeriod</span>;
+	<span class="kw">type</span> <span class="ident">MaxProposals</span> <span class="op">=</span> <span class="ident">MaxProposals</span>;
+	<span class="kw">type</span> <span class="ident">MaxVotes</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">100</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">MinimumDeposit</span> <span class="op">=</span> <span class="ident">MinimumDeposit</span>;
+	<span class="kw">type</span> <span class="ident">PreimageByteDeposit</span> <span class="op">=</span> <span class="ident">PreimageByteDeposit</span>;
+	<span class="kw">type</span> <span class="ident">Proposal</span> <span class="op">=</span> <span class="ident">Call</span>;
+	<span class="kw">type</span> <span class="ident">Scheduler</span> <span class="op">=</span> <span class="ident">Scheduler</span>;
+	<span class="kw">type</span> <span class="ident">Slash</span> <span class="op">=</span> (); <span class="comment">// Treasury;</span>
+	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">pallet_democracy::weights::SubstrateWeight</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">VoteLockingPeriod</span> <span class="op">=</span> <span class="ident">EnactmentPeriod</span>; <span class="comment">// Same as EnactmentPeriod</span>
+	<span class="kw">type</span> <span class="ident">VotingPeriod</span> <span class="op">=</span> <span class="ident">VotingPeriod</span>;
+
+	<span class="comment">// See https://paritytech.github.io/substrate/master/pallet_democracy/index.html for</span>
+	<span class="comment">// the descriptions of these origins.</span>
+	<span class="doccomment">/// A unanimous council can have the next scheduled referendum be a straight default-carries</span>
+	<span class="doccomment">/// (NTB) vote.</span>
+	<span class="kw">type</span> <span class="ident">ExternalDefaultOrigin</span> <span class="op">=</span>
+		<span class="ident">pallet_collective::EnsureProportionAtLeast</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">CouncilCollective</span>, <span class="number">1</span>, <span class="number">1</span><span class="op">&gt;</span>;
+
+	<span class="comment">// /// A super-majority can have the next scheduled referendum be a straight majority-carries vote.</span>
+	<span class="kw">type</span> <span class="ident">ExternalMajorityOrigin</span> <span class="op">=</span>
+		<span class="ident">pallet_collective::EnsureProportionAtLeast</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">CouncilCollective</span>, <span class="number">3</span>, <span class="number">4</span><span class="op">&gt;</span>;
+
+	<span class="comment">// /// A straight majority of the council can decide what their next motion is.</span>
+	<span class="kw">type</span> <span class="ident">ExternalOrigin</span> <span class="op">=</span>
+		<span class="ident">pallet_collective::EnsureProportionAtLeast</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">CouncilCollective</span>, <span class="number">1</span>, <span class="number">2</span><span class="op">&gt;</span>;
+
+	<span class="kw">type</span> <span class="ident">FastTrackOrigin</span> <span class="op">=</span> <span class="ident">EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">InstantOrigin</span> <span class="op">=</span> <span class="ident">EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">PalletsOrigin</span> <span class="op">=</span> <span class="ident">OriginCaller</span>;
+
+	<span class="comment">// // To cancel a proposal which has been passed, 2/3 of the council must agree to it.</span>
+	<span class="kw">type</span> <span class="ident">CancellationOrigin</span> <span class="op">=</span>
+		<span class="ident">pallet_collective::EnsureProportionAtLeast</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">CouncilCollective</span>, <span class="number">2</span>, <span class="number">3</span><span class="op">&gt;</span>;
+
+	<span class="comment">// To cancel a proposal before it has been passed, the technical committee must be unanimous or</span>
+	<span class="comment">// Root must agree.</span>
+	<span class="kw">type</span> <span class="ident">CancelProposalOrigin</span> <span class="op">=</span> <span class="ident">EitherOfDiverse</span><span class="op">&lt;</span>
+		<span class="ident">EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
+		<span class="ident">pallet_collective::EnsureProportionAtLeast</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">CouncilCollective</span>, <span class="number">1</span>, <span class="number">1</span><span class="op">&gt;</span>,
+	<span class="op">&gt;</span>;
+
+	<span class="kw">type</span> <span class="ident">BlacklistOrigin</span> <span class="op">=</span> <span class="ident">EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">VetoOrigin</span> <span class="op">=</span> <span class="ident">pallet_collective::EnsureMember</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">CouncilCollective</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">OperationalPreimageOrigin</span> <span class="op">=</span> <span class="ident">pallet_collective::EnsureMember</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">CouncilCollective</span><span class="op">&gt;</span>;
+
+	<span class="comment">// /// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote</span>
+	<span class="comment">// /// be tabled immediately and with a shorter voting/enactment period.</span>
+	<span class="comment">// type FastTrackOrigin = pallet_collective::EnsureProportionAtLeast&lt;AccountId, TechnicalCollective, 2, 3&gt;;</span>
+	<span class="comment">//</span>
+	<span class="comment">// type InstantOrigin = pallet_collective::EnsureProportionAtLeast&lt;AccountId, TechnicalCollective, 1, 1&gt;;</span>
+	<span class="comment">//</span>
+	<span class="comment">// type BlacklistOrigin = EnsureRoot&lt;AccountId&gt;;</span>
+	<span class="comment">//</span>
+	<span class="comment">// // Any single technical committee member may veto a coming council proposal, however they can</span>
+	<span class="comment">// // only do it once and it lasts only for the cool-off period.</span>
+	<span class="comment">// type VetoOrigin = pallet_collective::EnsureMember&lt;AccountId, TechnicalCollective&gt;;</span>
+}
+
 <span class="macro">parameter_types!</span> {
 	<span class="doccomment">/// Relay Chain `TransactionByteFee` / 10</span>
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TransactionByteFee</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">10</span> <span class="op">*</span> <span class="ident">MICROUNIT</span>;
@@ -1530,11 +1732,12 @@
 		<span class="ident">Timestamp</span>: <span class="ident">pallet_timestamp</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Inherent</span>} <span class="op">=</span> <span class="number">2</span>,
 		<span class="ident">ParachainInfo</span>: <span class="ident">parachain_info</span>::{<span class="ident">Pallet</span>, <span class="ident">Storage</span>, <span class="ident">Config</span>} <span class="op">=</span> <span class="number">3</span>,
 		<span class="ident">Sudo</span>: <span class="ident">pallet_sudo</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> }<span class="op">=</span> <span class="number">4</span>,
-		<span class="ident">Scheduler</span>: <span class="ident">pallet_scheduler</span> <span class="op">=</span> <span class="number">5</span>,
-		<span class="ident">Preimage</span>: <span class="ident">pallet_preimage</span> <span class="op">=</span> <span class="number">7</span>,
+		<span class="ident">Preimage</span>: <span class="ident">pallet_preimage</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">5</span>,
+		<span class="ident">Democracy</span>: <span class="ident">pallet_democracy</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> } <span class="op">=</span> <span class="number">6</span>,
+		<span class="ident">Council</span>: <span class="ident">pallet_collective</span>::<span class="op">&lt;</span><span class="ident">Instance1</span><span class="op">&gt;</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span>,<span class="ident">I</span><span class="op">&gt;</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Origin</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">7</span>,
+		<span class="ident">Scheduler</span>: <span class="ident">pallet_scheduler</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> } <span class="op">=</span> <span class="number">8</span>,
 
-		<span class="ident">Utility</span>: <span class="ident">pallet_utility</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Event</span>} <span class="op">=</span> <span class="number">8</span>,
-
+		<span class="ident">Utility</span>: <span class="ident">pallet_utility</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Event</span>} <span class="op">=</span> <span class="number">9</span>,
 		<span class="comment">// Monetary stuff.</span>
 		<span class="ident">Balances</span>: <span class="ident">pallet_balances</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">10</span>,
 		<span class="ident">TransactionPayment</span>: <span class="ident">pallet_transaction_payment</span>::{<span class="ident">Pallet</span>, <span class="ident">Storage</span>} <span class="op">=</span> <span class="number">11</span>,
@@ -1571,6 +1774,9 @@
 	<span class="macro">define_benchmarks!</span>(
 		[<span class="ident">frame_system</span>, <span class="ident">SystemBench</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>]
 		[<span class="ident">pallet_balances</span>, <span class="ident">Balances</span>]
+		[<span class="ident">pallet_collective</span>, <span class="ident">Council</span>]
+		[<span class="ident">pallet_preimage</span>, <span class="ident">Preimage</span>]
+		[<span class="ident">pallet_democracy</span>, <span class="ident">Democracy</span>]
 		[<span class="ident">pallet_scheduler</span>, <span class="ident">Scheduler</span>]
 		[<span class="ident">pallet_session</span>, <span class="ident">SessionBench</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>]
 		[<span class="ident">pallet_timestamp</span>, <span class="ident">Timestamp</span>]
