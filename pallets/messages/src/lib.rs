@@ -183,13 +183,14 @@ pub mod pallet {
 			on_behalf_of: Option<MessageSourceId>,
 			schema_id: SchemaId,
 			cid: Vec<u8>,
-			_payload_length: u32,
+			payload_length: u32,
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
-			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = cid
-				.clone()
-				.try_into()
-				.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
+			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> =
+				(cid.clone(), payload_length)
+					.encode()
+					.try_into()
+					.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
 			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
