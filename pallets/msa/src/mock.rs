@@ -61,6 +61,7 @@ impl system::Config for Test {
 
 parameter_types! {
 	pub const MaxKeys: u32 = 10;
+	pub const MaxSchemas: u32 = 5;
 }
 
 impl pallet_msa::Config for Test {
@@ -68,6 +69,7 @@ impl pallet_msa::Config for Test {
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxKeys = MaxKeys;
+	type MaxSchemaGrants = MaxSchemas;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -100,8 +102,11 @@ pub fn test_create_delegator_msa_with_provider() -> (u8, u64) {
 	let provider_account = key_pair.public();
 	let delegator_msa_id: u8 = 1;
 
-	let add_provider_payload =
-		pallet_msa::AddProvider { authorized_msa_id: delegator_msa_id.into(), permission: 0 };
+	let add_provider_payload = pallet_msa::AddProvider {
+		authorized_msa_id: delegator_msa_id.into(),
+		permission: 0,
+		granted_schemas: vec![],
+	};
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 	let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
