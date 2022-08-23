@@ -911,6 +911,8 @@
 <span id="905">905</span>
 <span id="906">906</span>
 <span id="907">907</span>
+<span id="908">908</span>
+<span id="909">909</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.</span>
 <span class="attribute">#![<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;256&quot;</span>]</span>
@@ -919,7 +921,6 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;OUT_DIR&quot;</span>), <span class="string">&quot;/wasm_binary.rs&quot;</span>));
 
-<span class="kw">mod</span> <span class="ident">weights</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">xcm_config</span>;
 
 <span class="kw">mod</span> <span class="ident">benchmarking</span>;
@@ -977,7 +978,10 @@
 <span class="comment">// Polkadot Imports</span>
 <span class="kw">use</span> <span class="ident">polkadot_runtime_common</span>::{<span class="ident">BlockHashCount</span>, <span class="ident">SlowAdjustingFeeUpdate</span>};
 
-<span class="kw">use</span> <span class="ident">weights</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">common_runtime</span>::{
+	<span class="ident">weights</span>,
+	<span class="ident">weights</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>},
+};
 
 <span class="comment">// XCM Imports</span>
 <span class="kw">use</span> <span class="ident">xcm::latest::prelude::BodyId</span>;
