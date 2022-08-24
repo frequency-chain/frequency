@@ -69,8 +69,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: frequency_binary-${{ github.sha }}.tar
-  build_local_srtool_wasm:
-    name: build_local_srtool_wasm
+  build_rococo_srtool_wasm:
+    name: build_rococo_srtool_wasm
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -98,41 +98,12 @@ jobs:
           RUST_TOOLCHAIN: ${{ env.RUST_TOOLCHAIN  }}
           PACKAGE: frequency-rococo-runtime
           RUNTIME_DIR: runtime/frequency-rococo
-      - name: Create tarball  of deterministic wasm from srtool 📦
+      - name: Create tarball  of deterministic wasm from srtool for local 📦
         run: tar -cvf frequency_wasm_local-${{ github.sha }}.tar ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.compressed.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.wasm
       - name: Upload frequency deterministic wasm to artifacts 📦
         uses: softprops/action-gh-release@v1
         with:
           files: frequency_wasm_local-${{ github.sha }}.tar
-  build_testnet_srtool_wasm:
-    name: build_testnet_srtool_wasm
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        target: [build-node]
-        rust_toolchain: [nightly-2022-06-27]
-    runs-on: ${{ matrix.os }}
-    env:
-      RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
-    steps:
-      - name: Free space on Ubuntu
-        if: ${{ matrix.os }} == 'ubuntu-latest'
-        run: |
-          echo "Pre cleanup"
-          df -h
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          echo "Post cleanup"
-          df -h
-      - name: Check out code
-        uses: actions/checkout@v3
-      - name: Run Srtool For Rococo Wasm
-        run: ./ci/build.sh
-        env:
-          TARGET: build-runtime
-          RUST_TOOLCHAIN: ${{ env.RUST_TOOLCHAIN  }}
-          PACKAGE: frequency-rococo-runtime
-          RUNTIME_DIR: runtime/frequency-rococo
       - name: Create tarball  of deterministic wasm from srtool for rococo📦
         run: tar -cvf frequency_wasm_rococo-${{ github.sha }}.tar ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.compressed.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.wasm
       - name: Upload frequency deterministic wasm to artifacts for rococo 📦
