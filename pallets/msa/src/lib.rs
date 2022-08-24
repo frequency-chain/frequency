@@ -109,7 +109,7 @@ pub mod pallet {
 
 		/// Maximum count of schemas granted for publishing data per Provider
 		#[pallet::constant]
-		type MaxSchemaGrants: Get<u32> + Debug + Clone + TypeInfo;
+		type MaxSchemaGrants: Get<u32>;
 	}
 
 	#[pallet::pallet]
@@ -271,7 +271,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
 			proof: MultiSignature,
-			add_provider_payload: AddProvider<T::MaxSchemaGrants>,
+			add_provider_payload: AddProvider<T::MaxSchemaGrants::get()>,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
@@ -317,7 +317,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
 			proof: MultiSignature,
-			add_provider_payload: AddProvider<T::MaxSchemaGrants>,
+			add_provider_payload: AddProvider<T::MaxSchemaGrants::get()>,
 		) -> DispatchResult {
 			let delegator_key = ensure_signed(origin)?;
 

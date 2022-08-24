@@ -1,11 +1,9 @@
 //! Types for the MSA Pallet
 use super::*;
 use codec::{Decode, Encode};
-pub use common_primitives::{
-	msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider},
-	schema::SchemaId,
-};
+pub use common_primitives::msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider};
 
+use common_primitives::schema::SchemaId;
 use orml_utilities::OrderedSet;
 use scale_info::TypeInfo;
 
@@ -23,11 +21,15 @@ pub struct AddKeyData {
 
 /// Structure that is signed for granting permissions to a Provider
 #[derive(TypeInfo, Clone, Debug, Decode, Encode, PartialEq, Eq)]
-pub struct AddProvider<Size: Get<u32>> {
+#[scale_info(skip_type_params(MaxSchemaGrants))]
+pub struct AddProvider<MaxSchemaGrants>
+where
+	MaxSchemaGrants: Get<u32> + Clone + Eq,
+{
 	/// The provider being granted permissions
 	pub authorized_msa_id: MessageSourceId,
 	/// The permissions granted
 	pub permission: u8,
 	/// Schemas for which publishing grants are authorized.
-	pub granted_schemas: OrderedSet<SchemaId, Size>,
+	pub granted_schemas: OrderedSet<SchemaId, MaxSchemaGrants>,
 }
