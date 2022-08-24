@@ -189,6 +189,14 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       DuplicateProvider: AugmentedError<ApiType>;
       /**
+       * The MSA id submitted for provider creation has already been associated with a provider
+       **/
+      DuplicateProviderMetadata: AugmentedError<ApiType>;
+      /**
+       * The maximum length for a provider name has been exceeded
+       **/
+      ExceedsMaxProviderNameSize: AugmentedError<ApiType>;
+      /**
        * An MSA may not be its own delegate
        **/
       InvalidSelfProvider: AugmentedError<ApiType>;

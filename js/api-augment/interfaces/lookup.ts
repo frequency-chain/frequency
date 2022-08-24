@@ -953,6 +953,9 @@ export default {
         provider: 'u64',
         delegator: 'u64',
       },
+      ProviderRegistered: {
+        providerMsaId: 'u64',
+      },
       DelegatorRevokedDelegation: {
         provider: 'u64',
         delegator: 'u64',
@@ -1289,7 +1292,7 @@ export default {
     }
   },
   /**
-   * Lookup151: frame_support::traits::schedule::MaybeHashed<frequency_runtime::Call, primitive_types::H256>
+   * Lookup151: frame_support::traits::schedule::MaybeHashed<frequency_local_runtime::Call, primitive_types::H256>
    **/
   FrameSupportScheduleMaybeHashed: {
     _enum: {
@@ -1341,7 +1344,7 @@ export default {
         calls: 'Vec<Call>',
       },
       dispatch_as: {
-        asOrigin: 'FrequencyRuntimeOriginCaller',
+        asOrigin: 'FrequencyLocalRuntimeOriginCaller',
         call: 'Call',
       },
       force_batch: {
@@ -1350,9 +1353,9 @@ export default {
     }
   },
   /**
-   * Lookup155: frequency_runtime::OriginCaller
+   * Lookup155: frequency_local_runtime::OriginCaller
    **/
-  FrequencyRuntimeOriginCaller: {
+  FrequencyLocalRuntimeOriginCaller: {
     _enum: {
       system: 'FrameSupportDispatchRawOrigin',
       __Unused1: 'Null',
@@ -1508,16 +1511,16 @@ export default {
         _alias: {
           keys_: 'keys',
         },
-        keys_: 'FrequencyRuntimeSessionKeys',
+        keys_: 'FrequencyLocalRuntimeSessionKeys',
         proof: 'Bytes',
       },
       purge_keys: 'Null'
     }
   },
   /**
-   * Lookup169: frequency_runtime::SessionKeys
+   * Lookup169: frequency_local_runtime::SessionKeys
    **/
-  FrequencyRuntimeSessionKeys: {
+  FrequencyLocalRuntimeSessionKeys: {
     aura: 'SpConsensusAuraSr25519AppSr25519Public'
   },
   /**
@@ -1900,6 +1903,9 @@ export default {
         proof: 'SpRuntimeMultiSignature',
         addProviderPayload: 'PalletMsaAddProvider',
       },
+      register_provider: {
+        providerName: 'Bytes',
+      },
       add_provider_to_msa: {
         providerKey: 'AccountId32',
         proof: 'SpRuntimeMultiSignature',
@@ -2009,14 +2015,14 @@ export default {
     _enum: ['RequireSudo']
   },
   /**
-   * Lookup219: pallet_scheduler::ScheduledV3<frame_support::traits::schedule::MaybeHashed<frequency_runtime::Call, primitive_types::H256>, BlockNumber, frequency_runtime::OriginCaller, sp_core::crypto::AccountId32>
+   * Lookup219: pallet_scheduler::ScheduledV3<frame_support::traits::schedule::MaybeHashed<frequency_local_runtime::Call, primitive_types::H256>, BlockNumber, frequency_local_runtime::OriginCaller, sp_core::crypto::AccountId32>
    **/
   PalletSchedulerScheduledV3: {
     maybeId: 'Option<Bytes>',
     priority: 'u8',
     call: 'FrameSupportScheduleMaybeHashed',
     maybePeriodic: 'Option<(u32,u32)>',
-    origin: 'FrequencyRuntimeOriginCaller'
+    origin: 'FrequencyLocalRuntimeOriginCaller'
   },
   /**
    * Lookup220: pallet_scheduler::pallet::Error<T>
@@ -2219,20 +2225,26 @@ export default {
     expired: 'u32'
   },
   /**
-   * Lookup280: common_primitives::msa::KeyInfo
+   * Lookup280: common_primitives::msa::ProviderMetadata<T>
+   **/
+  CommonPrimitivesMsaProviderMetadata: {
+    providerName: 'Bytes'
+  },
+  /**
+   * Lookup282: common_primitives::msa::KeyInfo
    **/
   CommonPrimitivesMsaKeyInfo: {
     msaId: 'u64',
     nonce: 'u32'
   },
   /**
-   * Lookup282: pallet_msa::pallet::Error<T>
+   * Lookup284: pallet_msa::pallet::Error<T>
    **/
   PalletMsaError: {
-    _enum: ['KeyAlreadyRegistered', 'MsaIdOverflow', 'AddKeySignatureVerificationFailed', 'NotMsaOwner', 'InvalidSignature', 'NotKeyOwner', 'NoKeyExists', 'KeyLimitExceeded', 'InvalidSelfRemoval', 'InvalidSelfProvider', 'DuplicateProvider', 'AddProviderSignatureVerificationFailed', 'UnauthorizedDelegator', 'UnauthorizedProvider', 'DelegationRevoked', 'DelegationNotFound', 'DelegationExpired']
+    _enum: ['KeyAlreadyRegistered', 'MsaIdOverflow', 'AddKeySignatureVerificationFailed', 'NotMsaOwner', 'InvalidSignature', 'NotKeyOwner', 'NoKeyExists', 'KeyLimitExceeded', 'InvalidSelfRemoval', 'InvalidSelfProvider', 'DuplicateProvider', 'AddProviderSignatureVerificationFailed', 'UnauthorizedDelegator', 'UnauthorizedProvider', 'DelegationRevoked', 'DelegationNotFound', 'DelegationExpired', 'DuplicateProviderMetadata', 'ExceedsMaxProviderNameSize']
   },
   /**
-   * Lookup285: pallet_messages::types::Message<MaxDataSize>
+   * Lookup287: pallet_messages::types::Message<MaxDataSize>
    **/
   PalletMessagesMessage: {
     payload: 'Bytes',
@@ -2241,13 +2253,13 @@ export default {
     index: 'u16'
   },
   /**
-   * Lookup291: pallet_messages::pallet::Error<T>
+   * Lookup293: pallet_messages::pallet::Error<T>
    **/
   PalletMessagesError: {
     _enum: ['TooManyMessagesInBlock', 'ExceedsMaxMessagePayloadSizeBytes', 'InvalidPaginationRequest', 'TypeConversionOverflow', 'InvalidMessageSourceAccount', 'InvalidSchemaId', 'UnAuthorizedDelegate', 'InvalidPayloadLocation']
   },
   /**
-   * Lookup292: pallet_schemas::types::Schema<MaxModelSize>
+   * Lookup294: pallet_schemas::types::Schema<MaxModelSize>
    **/
   PalletSchemasSchema: {
     modelType: 'CommonPrimitivesSchemaModelType',
@@ -2255,45 +2267,45 @@ export default {
     payloadLocation: 'CommonPrimitivesSchemaPayloadLocation'
   },
   /**
-   * Lookup293: pallet_schemas::pallet::Error<T>
+   * Lookup295: pallet_schemas::pallet::Error<T>
    **/
   PalletSchemasError: {
     _enum: ['InvalidSchema', 'TooManySchemas', 'ExceedsMaxSchemaModelBytes', 'ExceedsGovernanceSchemaModelMaxValue', 'LessThanMinSchemaModelBytes', 'NoSuchSchema', 'StringConversionError', 'DeserializationError', 'SerializationError', 'SchemaCountOverflow']
   },
   /**
-   * Lookup296: frame_system::extensions::check_non_zero_sender::CheckNonZeroSender<T>
+   * Lookup298: frame_system::extensions::check_non_zero_sender::CheckNonZeroSender<T>
    **/
   FrameSystemExtensionsCheckNonZeroSender: 'Null',
   /**
-   * Lookup297: frame_system::extensions::check_spec_version::CheckSpecVersion<T>
+   * Lookup299: frame_system::extensions::check_spec_version::CheckSpecVersion<T>
    **/
   FrameSystemExtensionsCheckSpecVersion: 'Null',
   /**
-   * Lookup298: frame_system::extensions::check_tx_version::CheckTxVersion<T>
+   * Lookup300: frame_system::extensions::check_tx_version::CheckTxVersion<T>
    **/
   FrameSystemExtensionsCheckTxVersion: 'Null',
   /**
-   * Lookup299: frame_system::extensions::check_genesis::CheckGenesis<T>
+   * Lookup301: frame_system::extensions::check_genesis::CheckGenesis<T>
    **/
   FrameSystemExtensionsCheckGenesis: 'Null',
   /**
-   * Lookup302: frame_system::extensions::check_nonce::CheckNonce<T>
+   * Lookup304: frame_system::extensions::check_nonce::CheckNonce<T>
    **/
   FrameSystemExtensionsCheckNonce: 'Compact<u32>',
   /**
-   * Lookup303: frame_system::extensions::check_weight::CheckWeight<T>
+   * Lookup305: frame_system::extensions::check_weight::CheckWeight<T>
    **/
   FrameSystemExtensionsCheckWeight: 'Null',
   /**
-   * Lookup304: pallet_transaction_payment::ChargeTransactionPayment<T>
+   * Lookup306: pallet_transaction_payment::ChargeTransactionPayment<T>
    **/
   PalletTransactionPaymentChargeTransactionPayment: 'Compact<u128>',
   /**
-   * Lookup305: pallet_msa::CheckFreeExtrinsicUse<T>
+   * Lookup307: pallet_msa::CheckFreeExtrinsicUse<T>
    **/
   PalletMsaCheckFreeExtrinsicUse: 'Null',
   /**
-   * Lookup306: frequency_runtime::Runtime
+   * Lookup308: frequency_local_runtime::Runtime
    **/
-  FrequencyRuntimeRuntime: 'Null'
+  FrequencyLocalRuntimeRuntime: 'Null'
 };

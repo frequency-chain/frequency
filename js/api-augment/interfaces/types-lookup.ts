@@ -1057,6 +1057,10 @@ declare module '@polkadot/types/lookup' {
       readonly provider: u64;
       readonly delegator: u64;
     } & Struct;
+    readonly isProviderRegistered: boolean;
+    readonly asProviderRegistered: {
+      readonly providerMsaId: u64;
+    } & Struct;
     readonly isDelegatorRevokedDelegation: boolean;
     readonly asDelegatorRevokedDelegation: {
       readonly provider: u64;
@@ -1067,7 +1071,7 @@ declare module '@polkadot/types/lookup' {
       readonly provider: u64;
       readonly delegator: u64;
     } & Struct;
-    readonly type: 'MsaCreated' | 'KeyAdded' | 'KeyRemoved' | 'ProviderAdded' | 'DelegatorRevokedDelegation' | 'ProviderRevokedDelegation';
+    readonly type: 'MsaCreated' | 'KeyAdded' | 'KeyRemoved' | 'ProviderAdded' | 'ProviderRegistered' | 'DelegatorRevokedDelegation' | 'ProviderRevokedDelegation';
   }
 
   /** @name PalletMessagesEvent (93) */
@@ -1443,7 +1447,7 @@ declare module '@polkadot/types/lookup' {
     } & Struct;
     readonly isDispatchAs: boolean;
     readonly asDispatchAs: {
-      readonly asOrigin: FrequencyRuntimeOriginCaller;
+      readonly asOrigin: FrequencyLocalRuntimeOriginCaller;
       readonly call: Call;
     } & Struct;
     readonly isForceBatch: boolean;
@@ -1453,8 +1457,8 @@ declare module '@polkadot/types/lookup' {
     readonly type: 'Batch' | 'AsDerivative' | 'BatchAll' | 'DispatchAs' | 'ForceBatch';
   }
 
-  /** @name FrequencyRuntimeOriginCaller (155) */
-  interface FrequencyRuntimeOriginCaller extends Enum {
+  /** @name FrequencyLocalRuntimeOriginCaller (155) */
+  interface FrequencyLocalRuntimeOriginCaller extends Enum {
     readonly isSystem: boolean;
     readonly asSystem: FrameSupportDispatchRawOrigin;
     readonly isVoid: boolean;
@@ -1575,15 +1579,15 @@ declare module '@polkadot/types/lookup' {
   interface PalletSessionCall extends Enum {
     readonly isSetKeys: boolean;
     readonly asSetKeys: {
-      readonly keys_: FrequencyRuntimeSessionKeys;
+      readonly keys_: FrequencyLocalRuntimeSessionKeys;
       readonly proof: Bytes;
     } & Struct;
     readonly isPurgeKeys: boolean;
     readonly type: 'SetKeys' | 'PurgeKeys';
   }
 
-  /** @name FrequencyRuntimeSessionKeys (169) */
-  interface FrequencyRuntimeSessionKeys extends Struct {
+  /** @name FrequencyLocalRuntimeSessionKeys (169) */
+  interface FrequencyLocalRuntimeSessionKeys extends Struct {
     readonly aura: SpConsensusAuraSr25519AppSr25519Public;
   }
 
@@ -1987,6 +1991,10 @@ declare module '@polkadot/types/lookup' {
       readonly proof: SpRuntimeMultiSignature;
       readonly addProviderPayload: PalletMsaAddProvider;
     } & Struct;
+    readonly isRegisterProvider: boolean;
+    readonly asRegisterProvider: {
+      readonly providerName: Bytes;
+    } & Struct;
     readonly isAddProviderToMsa: boolean;
     readonly asAddProviderToMsa: {
       readonly providerKey: AccountId32;
@@ -2011,7 +2019,7 @@ declare module '@polkadot/types/lookup' {
     readonly asRemoveDelegationByProvider: {
       readonly delegator: u64;
     } & Struct;
-    readonly type: 'Create' | 'CreateSponsoredAccountWithDelegation' | 'AddProviderToMsa' | 'RevokeMsaDelegationByDelegator' | 'AddKeyToMsa' | 'DeleteMsaKey' | 'RemoveDelegationByProvider';
+    readonly type: 'Create' | 'CreateSponsoredAccountWithDelegation' | 'RegisterProvider' | 'AddProviderToMsa' | 'RevokeMsaDelegationByDelegator' | 'AddKeyToMsa' | 'DeleteMsaKey' | 'RemoveDelegationByProvider';
   }
 
   /** @name SpRuntimeMultiSignature (203) */
@@ -2105,7 +2113,7 @@ declare module '@polkadot/types/lookup' {
     readonly priority: u8;
     readonly call: FrameSupportScheduleMaybeHashed;
     readonly maybePeriodic: Option<ITuple<[u32, u32]>>;
-    readonly origin: FrequencyRuntimeOriginCaller;
+    readonly origin: FrequencyLocalRuntimeOriginCaller;
   }
 
   /** @name PalletSchedulerError (220) */
@@ -2361,13 +2369,18 @@ declare module '@polkadot/types/lookup' {
     readonly expired: u32;
   }
 
-  /** @name CommonPrimitivesMsaKeyInfo (280) */
+  /** @name CommonPrimitivesMsaProviderMetadata (280) */
+  interface CommonPrimitivesMsaProviderMetadata extends Struct {
+    readonly providerName: Bytes;
+  }
+
+  /** @name CommonPrimitivesMsaKeyInfo (282) */
   interface CommonPrimitivesMsaKeyInfo extends Struct {
     readonly msaId: u64;
     readonly nonce: u32;
   }
 
-  /** @name PalletMsaError (282) */
+  /** @name PalletMsaError (284) */
   interface PalletMsaError extends Enum {
     readonly isKeyAlreadyRegistered: boolean;
     readonly isMsaIdOverflow: boolean;
@@ -2386,10 +2399,12 @@ declare module '@polkadot/types/lookup' {
     readonly isDelegationRevoked: boolean;
     readonly isDelegationNotFound: boolean;
     readonly isDelegationExpired: boolean;
-    readonly type: 'KeyAlreadyRegistered' | 'MsaIdOverflow' | 'AddKeySignatureVerificationFailed' | 'NotMsaOwner' | 'InvalidSignature' | 'NotKeyOwner' | 'NoKeyExists' | 'KeyLimitExceeded' | 'InvalidSelfRemoval' | 'InvalidSelfProvider' | 'DuplicateProvider' | 'AddProviderSignatureVerificationFailed' | 'UnauthorizedDelegator' | 'UnauthorizedProvider' | 'DelegationRevoked' | 'DelegationNotFound' | 'DelegationExpired';
+    readonly isDuplicateProviderMetadata: boolean;
+    readonly isExceedsMaxProviderNameSize: boolean;
+    readonly type: 'KeyAlreadyRegistered' | 'MsaIdOverflow' | 'AddKeySignatureVerificationFailed' | 'NotMsaOwner' | 'InvalidSignature' | 'NotKeyOwner' | 'NoKeyExists' | 'KeyLimitExceeded' | 'InvalidSelfRemoval' | 'InvalidSelfProvider' | 'DuplicateProvider' | 'AddProviderSignatureVerificationFailed' | 'UnauthorizedDelegator' | 'UnauthorizedProvider' | 'DelegationRevoked' | 'DelegationNotFound' | 'DelegationExpired' | 'DuplicateProviderMetadata' | 'ExceedsMaxProviderNameSize';
   }
 
-  /** @name PalletMessagesMessage (285) */
+  /** @name PalletMessagesMessage (287) */
   interface PalletMessagesMessage extends Struct {
     readonly payload: Bytes;
     readonly providerMsaId: u64;
@@ -2397,7 +2412,7 @@ declare module '@polkadot/types/lookup' {
     readonly index: u16;
   }
 
-  /** @name PalletMessagesError (291) */
+  /** @name PalletMessagesError (293) */
   interface PalletMessagesError extends Enum {
     readonly isTooManyMessagesInBlock: boolean;
     readonly isExceedsMaxMessagePayloadSizeBytes: boolean;
@@ -2410,14 +2425,14 @@ declare module '@polkadot/types/lookup' {
     readonly type: 'TooManyMessagesInBlock' | 'ExceedsMaxMessagePayloadSizeBytes' | 'InvalidPaginationRequest' | 'TypeConversionOverflow' | 'InvalidMessageSourceAccount' | 'InvalidSchemaId' | 'UnAuthorizedDelegate' | 'InvalidPayloadLocation';
   }
 
-  /** @name PalletSchemasSchema (292) */
+  /** @name PalletSchemasSchema (294) */
   interface PalletSchemasSchema extends Struct {
     readonly modelType: CommonPrimitivesSchemaModelType;
     readonly model: Bytes;
     readonly payloadLocation: CommonPrimitivesSchemaPayloadLocation;
   }
 
-  /** @name PalletSchemasError (293) */
+  /** @name PalletSchemasError (295) */
   interface PalletSchemasError extends Enum {
     readonly isInvalidSchema: boolean;
     readonly isTooManySchemas: boolean;
@@ -2432,31 +2447,31 @@ declare module '@polkadot/types/lookup' {
     readonly type: 'InvalidSchema' | 'TooManySchemas' | 'ExceedsMaxSchemaModelBytes' | 'ExceedsGovernanceSchemaModelMaxValue' | 'LessThanMinSchemaModelBytes' | 'NoSuchSchema' | 'StringConversionError' | 'DeserializationError' | 'SerializationError' | 'SchemaCountOverflow';
   }
 
-  /** @name FrameSystemExtensionsCheckNonZeroSender (296) */
+  /** @name FrameSystemExtensionsCheckNonZeroSender (298) */
   type FrameSystemExtensionsCheckNonZeroSender = Null;
 
-  /** @name FrameSystemExtensionsCheckSpecVersion (297) */
+  /** @name FrameSystemExtensionsCheckSpecVersion (299) */
   type FrameSystemExtensionsCheckSpecVersion = Null;
 
-  /** @name FrameSystemExtensionsCheckTxVersion (298) */
+  /** @name FrameSystemExtensionsCheckTxVersion (300) */
   type FrameSystemExtensionsCheckTxVersion = Null;
 
-  /** @name FrameSystemExtensionsCheckGenesis (299) */
+  /** @name FrameSystemExtensionsCheckGenesis (301) */
   type FrameSystemExtensionsCheckGenesis = Null;
 
-  /** @name FrameSystemExtensionsCheckNonce (302) */
+  /** @name FrameSystemExtensionsCheckNonce (304) */
   interface FrameSystemExtensionsCheckNonce extends Compact<u32> {}
 
-  /** @name FrameSystemExtensionsCheckWeight (303) */
+  /** @name FrameSystemExtensionsCheckWeight (305) */
   type FrameSystemExtensionsCheckWeight = Null;
 
-  /** @name PalletTransactionPaymentChargeTransactionPayment (304) */
+  /** @name PalletTransactionPaymentChargeTransactionPayment (306) */
   interface PalletTransactionPaymentChargeTransactionPayment extends Compact<u128> {}
 
-  /** @name PalletMsaCheckFreeExtrinsicUse (305) */
+  /** @name PalletMsaCheckFreeExtrinsicUse (307) */
   type PalletMsaCheckFreeExtrinsicUse = Null;
 
-  /** @name FrequencyRuntimeRuntime (306) */
-  type FrequencyRuntimeRuntime = Null;
+  /** @name FrequencyLocalRuntimeRuntime (308) */
+  type FrequencyLocalRuntimeRuntime = Null;
 
 } // declare module
