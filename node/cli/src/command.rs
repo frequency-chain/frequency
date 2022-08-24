@@ -103,7 +103,7 @@ impl SubstrateCli for Cli {
 		match spec.identify() {
 			ChainIdentity::Frequency => &frequency_runtime::VERSION,
 			ChainIdentity::FrequencyRococo => &frequency_rococo_runtime::VERSION,
-			ChainIdentity::FrequencyLocal => &frequency_local_runtime::VERSION,
+			ChainIdentity::FrequencyLocal => &frequency_rococo_runtime::VERSION,
 		}
 	}
 }
@@ -168,7 +168,7 @@ macro_rules! construct_async_run {
 			ChainIdentity::FrequencyLocal => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<
-					frequency_local_runtime::RuntimeApi,
+					frequency_rococo_runtime::RuntimeApi,
 						FrequencyLocalRuntimeExecutor,
 						_
 					>(
@@ -280,7 +280,7 @@ pub fn run() -> Result<()> {
 								)
 							}),
 							ChainIdentity::FrequencyLocal => runner.sync_run(|config| {
-								cmd.run::<frequency_local_runtime::Block, FrequencyLocalRuntimeExecutor>(
+								cmd.run::<frequency_rococo_runtime::Block, FrequencyLocalRuntimeExecutor>(
 									config,
 								)
 							}),
@@ -304,7 +304,7 @@ pub fn run() -> Result<()> {
 					}),
 					ChainIdentity::FrequencyLocal => runner.sync_run(|config| {
 						let partials = new_partial::<
-							frequency_local_runtime::RuntimeApi,
+							frequency_rococo_runtime::RuntimeApi,
 							FrequencyLocalRuntimeExecutor,
 							_,
 						>(&config, parachain_build_import_queue, false)?;
@@ -333,7 +333,7 @@ pub fn run() -> Result<()> {
 					}),
 					ChainIdentity::FrequencyLocal => runner.sync_run(|config| {
 						let partials = new_partial::<
-							frequency_local_runtime::RuntimeApi,
+							frequency_rococo_runtime::RuntimeApi,
 							FrequencyLocalRuntimeExecutor,
 							_,
 						>(&config, parachain_build_import_queue, false)?;
@@ -376,7 +376,7 @@ pub fn run() -> Result<()> {
 					}
 					ChainIdentity::FrequencyLocal => {
 						runner.async_run(|config| {
-							Ok((cmd.run::<frequency_local_runtime::Block, FrequencyLocalRuntimeExecutor>(config), task_manager))
+							Ok((cmd.run::<frequency_rococo_runtime::Block, FrequencyLocalRuntimeExecutor>(config), task_manager))
 						})
 					}							,
 					ChainIdentity::FrequencyRococo => {
@@ -446,7 +446,7 @@ pub fn run() -> Result<()> {
 						.map_err(Into::into),
 					ChainIdentity::FrequencyLocal =>
 						start_parachain_node::<
-							frequency_local_runtime::RuntimeApi,
+							frequency_rococo_runtime::RuntimeApi,
 							FrequencyLocalRuntimeExecutor,
 						>(config, polkadot_config, collator_options, id, hwbench)
 						.await

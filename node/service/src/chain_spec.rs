@@ -1,5 +1,5 @@
 #![allow(missing_docs)]
-use frequency_local_runtime::{AccountId, AuraId, Signature};
+use frequency_rococo_runtime::{AccountId, AuraId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::Properties;
 use serde::{Deserialize, Serialize};
