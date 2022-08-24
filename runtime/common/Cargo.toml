@@ -1,0 +1,39 @@
+[package]
+authors = ["Frequency Team"]
+description = "Common Runtime for Frequency parachain"
+edition = "2021"
+homepage = "https://frequency.xyz"
+license = "Apache-2.0"
+name = "common-runtime"
+repository = "https://github.com/LibertyDSNP/frequency/"
+version = "0.1.0"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[build-dependencies]
+substrate-wasm-builder = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25"}
+
+[dependencies]
+codec = {package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"]}
+scale-info = {version = "2.1.1", default-features = false, features = ["derive"]}
+
+# Substrate
+frame-support = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25"}
+frame-system = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25"}
+sp-core = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25"}
+sp-std = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25"}
+
+# Substrate pallets
+pallet-utility = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25"}
+
+# ORML
+orml-vesting = {git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.25"}
+
+[features]
+default = [
+  "std",
+]
+std = [
+  "frame-support/std",
+]

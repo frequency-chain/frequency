@@ -54,6 +54,10 @@ pub fn development_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+				],
 				2000.into(),
 			)
 		},
@@ -107,6 +111,10 @@ pub fn local_testnet_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+				],
 				2000.into(),
 			)
 		},
@@ -132,6 +140,7 @@ fn testnet_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	root_key: Option<AccountId>,
 	endowed_accounts: Vec<AccountId>,
+	council_members: Vec<AccountId>,
 	id: ParaId,
 ) -> frequency_rococo_runtime::GenesisConfig {
 	frequency_rococo_runtime::GenesisConfig {
@@ -175,5 +184,7 @@ fn testnet_genesis(
 		},
 		schemas: Default::default(),
 		vesting: Default::default(),
+		democracy: Default::default(),
+		council: CouncilConfig { phantom: Default::default(), members: council_members },
 	}
 }
