@@ -22,7 +22,7 @@
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("./res/genesis/frequency-weights.json"), DB CACHE: 1024
 
 // Executed Command:
-// ./target/release/frequency
+// /home/ubuntu/frequency/target/release/frequency
 // benchmark
 // pallet
 // --chain
@@ -33,13 +33,18 @@
 // pallet_msa
 // --extrinsic
 // *
+// --chain=/home/ubuntu/frequency/res/genesis/testnet/frequency-spec-rococo-testnet.json
+// --execution
+// wasm
+// --wasm-execution
+// compiled
 // --steps
-// 20
+// 50
 // --repeat
 // 5
 // --output
-// ./pallets/msa/src/weights.rs
-// --template=./.maintain/frame-weight-template.hbs
+// ./pallet_msa_weights.rs
+// --template=/home/ubuntu/frequency/.maintain/frame-weight-template.hbs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(
