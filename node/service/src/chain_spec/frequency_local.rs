@@ -3,6 +3,7 @@ use cumulus_primitives_core::ParaId;
 use frequency_rococo_runtime::{AccountId, AuraId, SudoConfig, EXISTENTIAL_DEPOSIT};
 use sc_service::ChainType;
 use sp_core::sr25519;
+use frequency_rococo_runtime::CouncilConfig;
 
 use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_properties, Extensions};
 /// Specialized `ChainSpec` for the normal parachain runtime.
