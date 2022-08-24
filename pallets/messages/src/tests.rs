@@ -1,5 +1,6 @@
 use super::{mock::*, Event as MessageEvent};
 use crate::{BlockMessages, Config, Error, Message, Messages};
+use codec::Encode;
 use common_primitives::{
 	messages::{BlockPaginationRequest, MessageResponse},
 	schema::*,
@@ -11,8 +12,17 @@ use frame_support::{
 };
 use sp_std::vec::Vec;
 
-fn populate_messages(schema_id: SchemaId, message_per_block: Vec<u32>) {
-	let payload = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
+fn populate_messages(
+	schema_id: SchemaId,
+	message_per_block: Vec<u32>,
+	payload_location: PayloadLocation,
+) {
+	let mut payload = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
+
+	if payload_location == PayloadLocation::IPFS {
+		payload = ("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq", 1200u32).encode();
+	}
+
 	let mut counter = 0;
 	for (idx, count) in message_per_block.iter().enumerate() {
 		let mut list = BoundedVec::default();
@@ -225,7 +235,7 @@ fn get_messages_by_schema_with_valid_request_should_return_paginated() {
 		let page_size = 3;
 		let from_index = 2;
 		let messages_per_block = vec![10, 0, 5, 2, 0, 3, 9];
-		populate_messages(schema_id, messages_per_block.clone());
+		populate_messages(schema_id, messages_per_block.clone(), PayloadLocation::OnChain);
 		let request = BlockPaginationRequest {
 			page_size,
 			from_block: 0,
@@ -244,14 +254,18 @@ fn get_messages_by_schema_with_valid_request_should_return_paginated() {
 		assert_eq!(pagination_response.has_next, true);
 		assert_eq!(pagination_response.next_block, Some(0));
 		assert_eq!(pagination_response.next_index, Some(from_index + page_size));
+
+		let payload = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
+		let payload_length = payload.len() as u32;
 		assert_eq!(
 			pagination_response.content[0],
 			MessageResponse {
 				msa_id: 10,
-				payload: Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes()),
+				payload,
 				index: from_index as u16,
 				provider_msa_id: 1,
-				block_number: 0
+				block_number: 0,
+				payload_length,
 			}
 		);
 	});
@@ -265,7 +279,7 @@ fn get_messages_by_schema_with_valid_request_should_return_next_block_and_index(
 		let page_size = 7;
 		let from_index = 8;
 		let messages_per_block = vec![10, 0, 5, 2, 0, 3, 9];
-		populate_messages(schema_id, messages_per_block.clone());
+		populate_messages(schema_id, messages_per_block.clone(), PayloadLocation::OnChain);
 		let request = BlockPaginationRequest {
 			page_size,
 			from_block: 0,
@@ -295,7 +309,7 @@ fn get_messages_by_schema_with_less_messages_than_page_size_should_not_has_next(
 		let page_size = 30;
 		let from_index = 0;
 		let messages_per_block = vec![10, 0, 5, 2, 0, 3, 9];
-		populate_messages(schema_id, messages_per_block.clone());
+		populate_messages(schema_id, messages_per_block.clone(), PayloadLocation::OnChain);
 		let request = BlockPaginationRequest {
 			page_size,
 			from_block: 0,
@@ -325,7 +339,7 @@ fn get_messages_by_schema_with_invalid_request_should_panic() {
 		let page_size = 30;
 		let from_index = 0;
 		let messages_per_block = vec![10, 0, 5, 2, 0, 3, 9];
-		populate_messages(schema_id, messages_per_block);
+		populate_messages(schema_id, messages_per_block, PayloadLocation::OnChain);
 		let request =
 			BlockPaginationRequest { page_size, from_block: 22, to_block: 15, from_index };
 
@@ -345,7 +359,7 @@ fn get_messages_by_schema_with_overflowing_input_should_panic() {
 		let page_size = 30;
 		let from_index = 0;
 		let messages_per_block = vec![10, 0, 5, 2, 0, 3, 9];
-		populate_messages(schema_id, messages_per_block);
+		populate_messages(schema_id, messages_per_block, PayloadLocation::OnChain);
 		let request = BlockPaginationRequest {
 			page_size,
 			from_block: 22_343_223_111,
@@ -358,6 +372,48 @@ fn get_messages_by_schema_with_overflowing_input_should_panic() {
 
 		// assert
 		assert_err!(res, Error::<Test>::TypeConversionOverflow);
+	});
+}
+
+#[test]
+fn get_messages_by_schema_with_IPFS_payload_location_should_return_paginated() {
+	new_test_ext().execute_with(|| {
+		let schema_id: SchemaId = IPFS_SCHEMA_ID;
+		let page_size = 3;
+		let from_index = 2;
+		let messages_per_block = vec![10, 0, 5, 2, 0, 3, 9];
+		populate_messages(schema_id, messages_per_block.clone(), PayloadLocation::IPFS);
+		let request = BlockPaginationRequest {
+			page_size,
+			from_block: 0,
+			to_block: messages_per_block.len() as u64,
+			from_index,
+		};
+
+		let res = MessagesPallet::get_messages_by_schema(schema_id, request);
+
+		assert_ok!(&res);
+
+		let pagination_response = res.ok().unwrap();
+		assert_eq!(pagination_response.content.len() as u32, page_size);
+		assert_eq!(pagination_response.has_next, true);
+		assert_eq!(pagination_response.next_block, Some(0));
+		assert_eq!(pagination_response.next_index, Some(from_index + page_size));
+
+		let payload =
+			("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq", 1200u32).encode();
+		let payload_length = 1200u32;
+		assert_eq!(
+			pagination_response.content[0],
+			MessageResponse {
+				msa_id: 10,
+				payload,
+				index: from_index as u16,
+				provider_msa_id: 1,
+				block_number: 0,
+				payload_length,
+			}
+		);
 	});
 }
 
