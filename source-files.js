@@ -4,7 +4,6 @@ sourcesIndex["common_primitives"] = {"name":"","dirs":[{"name":"parquet","files"
 sourcesIndex["common_runtime"] = {"name":"","dirs":[{"name":"weights","files":["block_weights.rs","extrinsic_weights.rs","mod.rs","orml_vesting.rs","utility_weights.rs"]}],"files":["lib.rs"]};
 sourcesIndex["frequency"] = {"name":"","files":["main.rs"]};
 sourcesIndex["frequency_cli"] = {"name":"","files":["cli.rs","command.rs","lib.rs"]};
-sourcesIndex["frequency_local_runtime"] = {"name":"","dirs":[{"name":"weights","files":["block_weights.rs","extrinsic_weights.rs","mod.rs","paritydb_weights.rs","rocksdb_weights.rs","utility_weights.rs"]}],"files":["lib.rs","xcm_config.rs"]};
 sourcesIndex["frequency_rococo_runtime"] = {"name":"","files":["lib.rs","xcm_config.rs"]};
 sourcesIndex["frequency_runtime"] = {"name":"","files":["lib.rs","xcm_config.rs"]};
 sourcesIndex["frequency_service"] = {"name":"","dirs":[{"name":"chain_spec","files":["frequency.rs","frequency_local.rs","frequency_rococo.rs"]}],"files":["chain_spec.rs","lib.rs","rpc.rs","service.rs"]};
