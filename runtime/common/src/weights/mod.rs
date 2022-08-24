@@ -18,8 +18,10 @@
 //! Expose the auto generated weight files.
 
 pub mod block_weights;
+pub mod democracy_weights;
 pub mod extrinsic_weights;
-pub mod orml_vesting;
+pub mod orml_vesting_weights;
+pub mod scheduler_weights;
 pub mod utility_weights;
 
 pub use block_weights::constants::BlockExecutionWeight;
