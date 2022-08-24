@@ -32,6 +32,7 @@ where
 	pub fn map_to_response<BlockNumber>(
 		&self,
 		block_number: BlockNumber,
+		payload_length: u32,
 	) -> MessageResponse<BlockNumber> {
 		MessageResponse {
 			provider_msa_id: self.provider_msa_id,
@@ -39,6 +40,7 @@ where
 			msa_id: self.msa_id,
 			block_number,
 			payload: self.payload.clone().into_inner(),
+			payload_length,
 		}
 	}
 }

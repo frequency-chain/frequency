@@ -52,15 +52,15 @@ use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
 use sp_runtime::{traits::One, DispatchError};
 use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 
-pub use pallet::*;
-pub use types::*;
-pub use weights::*;
-
+use codec::{Decode, Encode};
 use common_primitives::{
 	messages::*,
 	msa::{AccountProvider, Delegator, MessageSourceId, Provider},
 	schema::*,
 };
+pub use pallet::*;
+pub use types::*;
+pub use weights::*;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -346,6 +346,10 @@ impl<T: Config> Pallet<T> {
 	> {
 		ensure!(pagination.validate(), Error::<T>::InvalidPaginationRequest);
 
+		let schema = T::SchemaProvider::get_schema_by_id(schema_id);
+		ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
+
+		let payload_location = schema.unwrap().payload_location;
 		let mut response = BlockPaginationResponse::new();
 		let from: u32 = pagination
 			.from_block
@@ -363,7 +367,17 @@ impl<T: Config> Pallet<T> {
 				list.len().try_into().map_err(|_| Error::<T>::TypeConversionOverflow)?;
 			for i in from_index..list_size {
 				let m = list[i as usize].clone();
-				response.content.push(m.map_to_response(block_number));
+
+				let mut payload_length: u32 = 0;
+				let payload = m.payload.clone().into_inner();
+
+				if payload_location == PayloadLocation::OnChain {
+					payload_length = m.payload.len().try_into().unwrap();
+				} else if payload_location == PayloadLocation::IPFS {
+					type PayloadType = (Vec<u8>, u32);
+					(_, payload_length) = PayloadType::decode(&mut &payload[..]).unwrap();
+				}
+				response.content.push(m.map_to_response(block_number, payload_length));
 
 				if Self::check_end_condition_and_set_next_pagination(
 					block_number,
