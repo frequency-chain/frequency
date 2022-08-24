@@ -129,8 +129,20 @@
 <span id="123">123</span>
 <span id="124">124</span>
 <span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">MaxEncodedLen</span>};
-<span class="kw">use</span> <span class="ident">frame_support::dispatch::DispatchResult</span>;
+<span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">dispatch::DispatchResult</span>, <span class="ident">traits::Get</span>, <span class="ident">BoundedVec</span>};
 <span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
@@ -189,6 +201,18 @@
 <span class="doccomment">/// It is a subset of an MSA</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">PartialEq</span>, <span class="ident">MaxEncodedLen</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Provider</span>(<span class="kw">pub</span> <span class="ident">MessageSourceId</span>);
+
+<span class="doccomment">/// This is the metadata associated with a provider. As of now it is just a</span>
+<span class="doccomment">/// name, but it will likely be expanded in the future</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">MaxEncodedLen</span>, <span class="ident">TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
+<span class="attribute">#[<span class="ident">scale_info</span>(<span class="ident">skip_type_params</span>(<span class="ident">T</span>))]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ProviderMetadata</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+	<span class="ident">T</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
+{
+	<span class="doccomment">/// The provider&#39;s name</span>
+	<span class="kw">pub</span> <span class="ident">provider_name</span>: <span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">T</span><span class="op">&gt;</span>,
+}
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Provider</span> {
 	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">t</span>: <span class="ident">MessageSourceId</span>) -&gt; <span class="self">Self</span> {
