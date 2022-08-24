@@ -96,10 +96,10 @@ jobs:
         env:
           TARGET: build-runtime
           RUST_TOOLCHAIN: ${{ env.RUST_TOOLCHAIN  }}
-          PACKAGE: frequency-local-runtime
-          RUNTIME_DIR: runtime/frequency-local
+          PACKAGE: frequency-rococo-runtime
+          RUNTIME_DIR: runtime/frequency-rococo
       - name: Create tarball  of deterministic wasm from srtool 📦
-        run: tar -cvf frequency_wasm_local-${{ github.sha }}.tar ./runtime/frequency-local/target/srtool/release/wbuild/frequency-local-runtime/frequency_local_runtime.compact.compressed.wasm ./runtime/frequency-local/target/srtool/release/wbuild/frequency-local-runtime/frequency_local_runtime.compact.wasm ./runtime/frequency-local/target/srtool/release/wbuild/frequency-local-runtime/frequency_local_runtime.wasm
+        run: tar -cvf frequency_wasm_local-${{ github.sha }}.tar ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.compressed.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.wasm
       - name: Upload frequency deterministic wasm to artifacts 📦
         uses: softprops/action-gh-release@v1
         with:
