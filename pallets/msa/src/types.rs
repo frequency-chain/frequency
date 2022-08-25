@@ -62,5 +62,6 @@ where
 	/// The permissions granted
 	pub permission: u8,
 	/// Schemas for which publishing grants are authorized.
-	pub granted_schemas: OrderedSetExt<SchemaId, MaxDataSize>,
+	/// This is private intended for internal use only.
+	granted_schemas: OrderedSetExt<SchemaId, MaxDataSize>,
 }
