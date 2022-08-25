@@ -2,8 +2,8 @@
 
 set -eux
 
-PACKAGE="${PACKAGE:-frequency-local-runtime}" #Need to replicate job for all runtimes
-RUNTIME_DIR="${RUNTIME_DIR:-runtime/frequency-local}"
+PACKAGE="${PACKAGE:-frequency-rococo-runtime}" #Need to replicate job for all runtimes
+RUNTIME_DIR="${RUNTIME_DIR:-runtime/frequency-rococo}"
 SRT_TOOL_VERSION="${SRT_TOOL_VERSION:-1.62.0}"
 
 # Enable warnings about unused extern crates

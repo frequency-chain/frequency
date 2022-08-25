@@ -9,7 +9,7 @@ use common_primitives::{
 	utils::wrap_binary_data,
 };
 use frame_support::{
-	assert_noop, assert_ok,
+	assert_err, assert_noop, assert_ok,
 	weights::{DispatchInfo, GetDispatchInfo, Pays},
 };
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
@@ -1178,5 +1178,52 @@ fn add_removed_key_to_msa_pass() {
 			signature,
 			add_new_key_data
 		));
+	});
+}
+
+#[test]
+fn register_provider() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let (_new_msa_id, _) =
+			Msa::create_account(key_pair.public().into(), EMPTY_FUNCTION).unwrap();
+		assert_ok!(Msa::register_provider(
+			Origin::signed(key_pair.public().into()),
+			Vec::from("Foo")
+		));
+	})
+}
+
+#[test]
+fn register_provider_max_size_exceeded() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let (_new_msa_id, _) =
+			Msa::create_account(key_pair.public().into(), EMPTY_FUNCTION).unwrap();
+		assert_err!(
+			Msa::register_provider(
+				Origin::signed(key_pair.public().into()),
+				Vec::from("12345678901234567")
+			),
+			Error::<Test>::ExceedsMaxProviderNameSize
+		);
+	})
+}
+
+#[test]
+fn register_provider_duplicate() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let (_new_msa_id, _) =
+			Msa::create_account(key_pair.public().into(), EMPTY_FUNCTION).unwrap();
+		assert_ok!(Msa::register_provider(
+			Origin::signed(key_pair.public().into()),
+			Vec::from("Foo")
+		));
+
+		assert_err!(
+			Msa::register_provider(Origin::signed(key_pair.public().into()), Vec::from("Foo")),
+			Error::<Test>::DuplicateProviderMetadata
+		)
 	})
 }

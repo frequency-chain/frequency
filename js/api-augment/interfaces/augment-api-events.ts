@@ -137,6 +137,10 @@ declare module '@polkadot/api-base/types/events' {
        **/
       ProviderAdded: AugmentedEvent<ApiType, [provider: u64, delegator: u64], { provider: u64, delegator: u64 }>;
       /**
+       * A Provider-MSA relationship was registered
+       **/
+      ProviderRegistered: AugmentedEvent<ApiType, [providerMsaId: u64], { providerMsaId: u64 }>;
+      /**
        * The Provider revoked itself as delegate for the Delegator
        **/
       ProviderRevokedDelegation: AugmentedEvent<ApiType, [provider: u64, delegator: u64], { provider: u64, delegator: u64 }>;

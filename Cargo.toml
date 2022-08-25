@@ -9,7 +9,6 @@ members = [
   "pallets/*",
   "runtime/common",
   "runtime/frequency",
-  "runtime/frequency-local",
   "runtime/frequency-rococo",
   "common/helpers",
 ]
