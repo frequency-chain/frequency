@@ -98,6 +98,7 @@ pub mod pallet {
 
 	/// A temporary storage of messages, given a schema id, for a duration of block period.
 	/// At the start of the next block this storage is cleared and moved into Messages storage.
+	/// - Value: List of Messages
 	#[pallet::storage]
 	#[pallet::getter(fn get_block_messages)]
 	pub(super) type BlockMessages<T: Config> = StorageValue<
@@ -107,6 +108,8 @@ pub mod pallet {
 	>;
 
 	/// A permanent storage for messages mapped by block number and schema id.
+	/// - Keys: BlockNumber, Schema Id
+	/// - Value: List of Messages
 	#[pallet::storage]
 	#[pallet::getter(fn get_messages)]
 	pub(super) type Messages<T: Config> = StorageDoubleMap<
