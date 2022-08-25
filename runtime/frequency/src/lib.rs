@@ -320,11 +320,38 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
+parameter_types! {
+	pub const MaxSchemaGrants: u32 = 30;
+}
+
+impl Clone for MaxSchemaGrants {
+	fn clone(&self) -> Self {
+		MaxSchemaGrants {}
+	}
+}
+
+impl Eq for MaxSchemaGrants {
+	fn assert_receiver_is_total_eq(&self) -> () {}
+}
+
+impl PartialEq for MaxSchemaGrants {
+	fn eq(&self, _other: &Self) -> bool {
+		true
+	}
+}
+
+impl sp_std::fmt::Debug for MaxSchemaGrants {
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
+}
+
 impl pallet_msa::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxKeys = ConstU32<25>;
+	type MaxSchemaGrants = MaxSchemaGrants;
 }
 
 pub use common_primitives::schema::SchemaId;

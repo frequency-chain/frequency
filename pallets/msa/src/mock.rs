@@ -1,9 +1,11 @@
-use crate as pallet_msa;
-use crate::types::EMPTY_FUNCTION;
+use crate::{
+	self as pallet_msa,
+	types::{OrderedSetExt, EMPTY_FUNCTION},
+};
 use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use frame_support::{
 	assert_ok, parameter_types,
-	traits::{ConstU16, ConstU64},
+	traits::{ConstU16, ConstU64, Get},
 };
 use frame_system as system;
 use sp_core::{sr25519, Encode, Pair, H256};
@@ -64,12 +66,38 @@ parameter_types! {
 	pub const MaxSchemas: u32 = 5;
 }
 
+parameter_types! {
+	pub const MaxSchemaGrants: u32 = 30;
+}
+
+impl Clone for MaxSchemaGrants {
+	fn clone(&self) -> Self {
+		MaxSchemaGrants {}
+	}
+}
+
+impl Eq for MaxSchemaGrants {
+	fn assert_receiver_is_total_eq(&self) -> () {}
+}
+
+impl PartialEq for MaxSchemaGrants {
+	fn eq(&self, _other: &Self) -> bool {
+		true
+	}
+}
+
+impl sp_std::fmt::Debug for MaxSchemaGrants {
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
+}
+
 impl pallet_msa::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxKeys = MaxKeys;
-	type MaxSchemaGrants = MaxSchemas;
+	type MaxSchemaGrants = MaxSchemaGrants;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -105,7 +133,7 @@ pub fn test_create_delegator_msa_with_provider() -> (u8, u64) {
 	let add_provider_payload = pallet_msa::AddProvider {
 		authorized_msa_id: delegator_msa_id.into(),
 		permission: 0,
-		granted_schemas: vec![],
+		granted_schemas: OrderedSetExt::new(),
 	};
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 

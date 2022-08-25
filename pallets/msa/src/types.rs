@@ -1,8 +1,10 @@
 //! Types for the MSA Pallet
+#![cfg_attr(not(feature = "std"), no_std)]
 use super::*;
 use codec::{Decode, Encode};
-pub use common_primitives::msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider};
+use core::fmt::Debug;
 
+pub use common_primitives::msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider};
 use common_primitives::schema::SchemaId;
 use orml_utilities::OrderedSet;
 use scale_info::TypeInfo;
@@ -19,17 +21,46 @@ pub struct AddKeyData {
 	pub nonce: u32,
 }
 
+/// Extending OrderSet and implement struct OrderedSetExt
+#[derive(TypeInfo, Clone, Decode, Encode, PartialEq, Eq)]
+#[scale_info(skip_type_params(T, S))]
+pub struct OrderedSetExt<
+	T: Ord + Encode + Decode + MaxEncodedLen + Clone + Eq + PartialEq,
+	S: Get<u32>,
+>(OrderedSet<T, S>);
+
+impl<T, S> OrderedSetExt<T, S>
+where
+	T: Ord + Encode + Decode + MaxEncodedLen + Clone + Eq + PartialEq + core::fmt::Debug,
+	S: Get<u32>,
+{
+	/// Create new `SignedExtension` to check runtime version.
+	pub fn new() -> Self {
+		Self(OrderedSet::new())
+	}
+}
+
+impl<T, S> core::fmt::Debug for OrderedSetExt<T, S>
+where
+	T: Ord + Encode + Decode + MaxEncodedLen + Clone + Eq + PartialEq + core::fmt::Debug,
+	S: Get<u32>,
+{
+	fn fmt(&self, _f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
+}
+
 /// Structure that is signed for granting permissions to a Provider
 #[derive(TypeInfo, Clone, Debug, Decode, Encode, PartialEq, Eq)]
-#[scale_info(skip_type_params(MaxSchemaGrants))]
-pub struct AddProvider<MaxSchemaGrants>
+#[scale_info(skip_type_params(MaxDataSize))]
+pub struct AddProvider<MaxDataSize>
 where
-	MaxSchemaGrants: Get<u32> + Clone + Eq,
+	MaxDataSize: Get<u32> + Clone + Eq,
 {
 	/// The provider being granted permissions
 	pub authorized_msa_id: MessageSourceId,
 	/// The permissions granted
 	pub permission: u8,
 	/// Schemas for which publishing grants are authorized.
-	pub granted_schemas: OrderedSet<SchemaId, MaxSchemaGrants>,
+	pub granted_schemas: OrderedSetExt<SchemaId, MaxDataSize>,
 }

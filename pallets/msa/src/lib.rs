@@ -83,7 +83,7 @@ pub mod weights;
 pub use weights::*;
 
 pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
-use core::fmt::Debug;
+
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use sp_std::prelude::*;
@@ -109,7 +109,7 @@ pub mod pallet {
 
 		/// Maximum count of schemas granted for publishing data per Provider
 		#[pallet::constant]
-		type MaxSchemaGrants: Get<u32>;
+		type MaxSchemaGrants: Get<u32> + Clone + sp_std::fmt::Debug + Eq;
 	}
 
 	#[pallet::pallet]
@@ -271,7 +271,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
 			proof: MultiSignature,
-			add_provider_payload: AddProvider<T::MaxSchemaGrants::get()>,
+			add_provider_payload: AddProvider<T::MaxSchemaGrants>,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
@@ -317,7 +317,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
 			proof: MultiSignature,
-			add_provider_payload: AddProvider<T::MaxSchemaGrants::get()>,
+			add_provider_payload: AddProvider<T::MaxSchemaGrants>,
 		) -> DispatchResult {
 			let delegator_key = ensure_signed(origin)?;
 
