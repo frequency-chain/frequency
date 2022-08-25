@@ -128,9 +128,9 @@ pub mod pallet {
 	#[pallet::getter(fn get_provider_info_of)]
 	pub type ProviderInfoOf<T: Config> = StorageDoubleMap<
 		_,
-		Blake2_128Concat,
+		Twox64Concat,
 		Delegator,
-		Blake2_128Concat,
+		Twox64Concat,
 		Provider,
 		ProviderInfo<T::BlockNumber>,
 		OptionQuery,
@@ -143,7 +143,7 @@ pub mod pallet {
 	#[pallet::getter(fn get_provider_metadata)]
 	pub type ProviderRegistry<T: Config> = StorageMap<
 		_,
-		Blake2_128Concat,
+		Twox64Concat,
 		MessageSourceId,
 		ProviderMetadata<T::MaxProviderNameSize>,
 		OptionQuery,
@@ -154,8 +154,7 @@ pub mod pallet {
 	/// - Value: [`KeyInfo`](common_primitives::msa::KeyInfo)
 	#[pallet::storage]
 	#[pallet::getter(fn get_key_info)]
-	pub type KeyInfoOf<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::AccountId, KeyInfo, OptionQuery>;
+	pub type KeyInfoOf<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, KeyInfo, OptionQuery>;
 
 	/// Storage for MSA keys
 	/// - Key: MSA Id
@@ -164,7 +163,7 @@ pub mod pallet {
 	#[pallet::getter(fn get_msa_keys)]
 	pub(super) type MsaKeysOf<T: Config> = StorageMap<
 		_,
-		Blake2_128Concat,
+		Twox64Concat,
 		MessageSourceId,
 		BoundedVec<T::AccountId, T::MaxKeys>,
 		ValueQuery,
