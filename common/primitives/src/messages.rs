@@ -28,7 +28,7 @@ pub struct MessageResponse<BlockNumber> {
 	pub index: u16,
 	/// Block-number for which the message was stored.
 	pub block_number: BlockNumber,
-	/// Onchain payload length calculated with `payload.len()`. Offchain payload lengths (IPFS) will
+	/// Onchain payload length is calculated with `payload.len()`. Offchain payload length (IPFS) will
 	/// differ from the length of the payload field.
 	pub payload_length: u32,
 }
