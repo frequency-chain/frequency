@@ -65,3 +65,22 @@ where
 	/// This is private intended for internal use only.
 	granted_schemas: OrderedSetExt<SchemaId, MaxDataSize>,
 }
+
+impl<MaxDataSize> AddProvider<MaxDataSize>
+where
+	MaxDataSize: Get<u32> + Clone + Eq,
+{
+	/// Create new `AddProvider`
+	pub fn new(
+		authorized_msa_id: MessageSourceId,
+		permission: u8,
+		granted_schemas: Option<OrderedSetExt<SchemaId, MaxDataSize>>,
+	) -> Self {
+		let granted_schemas = match granted_schemas {
+			Some(schemas) => schemas,
+			None => OrderedSetExt::new(),
+		};
+
+		Self { authorized_msa_id, permission, granted_schemas }
+	}
+}

@@ -1,7 +1,4 @@
-use crate::{
-	self as pallet_msa,
-	types::{OrderedSetExt, EMPTY_FUNCTION},
-};
+use crate::{self as pallet_msa, types::EMPTY_FUNCTION};
 use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use frame_support::{
 	assert_ok, parameter_types,
@@ -130,11 +127,8 @@ pub fn test_create_delegator_msa_with_provider() -> (u8, u64) {
 	let provider_account = key_pair.public();
 	let delegator_msa_id: u8 = 1;
 
-	let add_provider_payload = pallet_msa::AddProvider {
-		authorized_msa_id: delegator_msa_id.into(),
-		permission: 0,
-		granted_schemas: OrderedSetExt::new(),
-	};
+	let add_provider_payload =
+		pallet_msa::AddProvider::<MaxSchemaGrants>::new(delegator_msa_id.into(), 0, None);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 	let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
