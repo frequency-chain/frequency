@@ -5,7 +5,7 @@ use crate::{
 use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use frame_support::{
 	assert_ok, parameter_types,
-	traits::{ConstU16, ConstU64, Get},
+	traits::{ConstU16, ConstU64},
 };
 use frame_system as system;
 use sp_core::{sr25519, Encode, Pair, H256};
