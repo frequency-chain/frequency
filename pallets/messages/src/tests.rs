@@ -386,7 +386,7 @@ fn get_messages_by_schema_with_overflowing_input_should_panic() {
 
 /// Assert that MessageResponse for IPFS messages returns the payload_length of the offchain message.
 #[test]
-fn get_messages_by_schema_with_IPFS_payload_location_should_return_offchain_payload_length() {
+fn get_messages_by_schema_with_ipfs_payload_location_should_return_offchain_payload_length() {
 	new_test_ext().execute_with(|| {
 		let schema_id: SchemaId = IPFS_SCHEMA_ID;
 		let page_size = 3;
