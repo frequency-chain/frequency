@@ -1064,7 +1064,7 @@ fn signed_extension_validation_on_msa_key_deleted() {
 
 		let (user_key_pair, _) = sr25519::Pair::generate();
 		let user_public_key = user_key_pair.public();
-		let user_account_id = AccountId32::from(user_public_key.clone());
+		let user_account_id = AccountId32::from(user_public_key);
 		assert_ok!(Msa::add_key(owner_msa_id, &user_account_id, EMPTY_FUNCTION));
 
 		let call_delete_msa_key: &<Test as frame_system::Config>::Call =
@@ -1093,7 +1093,7 @@ fn signed_extension_validation_failure_on_msa_key_deleted() {
 
 		let (user_key_pair, _) = sr25519::Pair::generate();
 		let user_public_key = user_key_pair.public();
-		let user_account_id = AccountId32::from(user_public_key.clone());
+		let user_account_id = AccountId32::from(user_public_key);
 		assert_ok!(Msa::add_key(owner_msa_id, &user_account_id, EMPTY_FUNCTION));
 
 		let call_delete_msa_key: &<Test as frame_system::Config>::Call =
