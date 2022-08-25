@@ -1,13 +1,13 @@
 [package]
-name = "frequency"
-version = "0.1.0"
 authors = ["Frequency Team"]
-description = "Substrate node for Frequency"
-license = "Apache-2.0"
-homepage = "https://frequency.xyz"
-repository = "https://github.com/LibertyDSNP/frequency/"
-edition = "2021"
 build = "build.rs"
+description = "Substrate node for Frequency"
+edition = "2021"
+homepage = "https://frequency.xyz"
+license = "Apache-2.0"
+name = "frequency"
+repository = "https://github.com/LibertyDSNP/frequency/"
+version = "0.1.0"
 
 [[bin]]
 name = "frequency"
@@ -15,22 +15,20 @@ path = "src/main.rs"
 
 [dependencies]
 # Frequency Runtime
-frequency-runtime = { path = "../runtime/frequency" }
-frequency-local-runtime = { path = "../runtime/frequency-local" }
-frequency-rococo-runtime = { path = "../runtime/frequency-rococo" }
-frequency-cli = { path = "cli" }
+frequency-cli = {path = "cli"}
+frequency-rococo-runtime = {path = "../runtime/frequency-rococo"}
+frequency-runtime = {path = "../runtime/frequency"}
 
 # Substrate
-sc-cli = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "polkadot-v0.9.25" }
+sc-cli = {git = "https://github.com/paritytech/substrate", features = ["wasmtime"], branch = "polkadot-v0.9.25"}
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
+substrate-build-script-utils = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25"}
 
 [features]
 runtime-benchmarks = [
-	"frequency-runtime/runtime-benchmarks",
-	"frequency-local-runtime/runtime-benchmarks",
-	"frequency-rococo-runtime/runtime-benchmarks",
-	"frequency-cli/runtime-benchmarks",
+  "frequency-runtime/runtime-benchmarks",
+  "frequency-rococo-runtime/runtime-benchmarks",
+  "frequency-cli/runtime-benchmarks",
 ]
-try-runtime = ["frequency-runtime/try-runtime", "frequency-local-runtime/try-runtime", "frequency-rococo-runtime/try-runtime"]
+try-runtime = ["frequency-runtime/try-runtime", "frequency-rococo-runtime/try-runtime"]

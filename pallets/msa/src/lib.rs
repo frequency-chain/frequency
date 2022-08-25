@@ -57,7 +57,7 @@
 
 use codec::{Decode, Encode};
 use common_primitives::msa::{
-	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo,
+	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo, ProviderMetadata,
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 pub use pallet::*;
@@ -110,6 +110,9 @@ pub mod pallet {
 		/// Maximum count of schemas granted for publishing data per Provider
 		#[pallet::constant]
 		type MaxSchemaGrants: Get<u32> + Clone + sp_std::fmt::Debug + Eq;
+		/// Maximum provider name size allowed per MSA association
+		#[pallet::constant]
+		type MaxProviderNameSize: Get<u32>;
 	}
 
 	#[pallet::pallet]
@@ -131,6 +134,17 @@ pub mod pallet {
 		Blake2_128Concat,
 		Provider,
 		ProviderInfo<T::BlockNumber>,
+		OptionQuery,
+	>;
+
+	/// Storage type for MSA key information
+	#[pallet::storage]
+	#[pallet::getter(fn get_provider_metadata)]
+	pub type ProviderRegistry<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		MessageSourceId,
+		ProviderMetadata<T::MaxProviderNameSize>,
 		OptionQuery,
 	>;
 
@@ -179,6 +193,11 @@ pub mod pallet {
 			provider: Provider,
 			/// The Delegator MSA Id
 			delegator: Delegator,
+		},
+		/// A Provider-MSA relationship was registered
+		ProviderRegistered {
+			/// The MSA id associated with the provider
+			provider_msa_id: MessageSourceId,
 		},
 		/// The Delegator revoked its delegation to the Provider
 		DelegatorRevokedDelegation {
@@ -232,6 +251,10 @@ pub mod pallet {
 		DelegationNotFound,
 		/// The operation was attempted with an expired delegation
 		DelegationExpired,
+		/// The MSA id submitted for provider creation has already been associated with a provider
+		DuplicateProviderMetadata,
+		/// The maximum length for a provider name has been exceeded
+		ExceedsMaxProviderNameSize,
 	}
 
 	#[pallet::call]
@@ -299,6 +322,31 @@ pub mod pallet {
 					Ok(())
 				})?;
 
+			Ok(())
+		}
+
+		/// Adds an association between MSA id and ProviderMetadata. As of now, the
+		/// only piece of metadata we are recording is provider name.
+		///
+		/// ## Errors
+		/// - Returns
+		///   [`DuplicateProviderMetadata`](Error::DuplicateProviderMetadata) if there is already a ProviderMetadata associated with the given MSA id.
+		#[pallet::weight(T::WeightInfo::register_provider())]
+		pub fn register_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
+			let provider_key = ensure_signed(origin)?;
+			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
+				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
+
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?.msa_id;
+			ProviderRegistry::<T>::try_mutate(
+				provider_msa_id,
+				|maybe_metadata| -> DispatchResult {
+					ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderMetadata);
+					*maybe_metadata = Some(ProviderMetadata { provider_name: bounded_name });
+					Ok(())
+				},
+			)?;
+			Self::deposit_event(Event::ProviderRegistered { provider_msa_id });
 			Ok(())
 		}
 

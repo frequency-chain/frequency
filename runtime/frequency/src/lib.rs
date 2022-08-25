@@ -352,6 +352,7 @@ impl pallet_msa::Config for Runtime {
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxKeys = ConstU32<25>;
 	type MaxSchemaGrants = MaxSchemaGrants;
+	type MaxProviderNameSize = ConstU32<16>;
 }
 
 pub use common_primitives::schema::SchemaId;

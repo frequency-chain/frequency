@@ -1,13 +1,13 @@
 #![allow(missing_docs)]
 use cumulus_primitives_core::ParaId;
-use frequency_local_runtime::{AccountId, AuraId, CouncilConfig, SudoConfig, EXISTENTIAL_DEPOSIT};
+use frequency_rococo_runtime::{AccountId, AuraId, CouncilConfig, SudoConfig, EXISTENTIAL_DEPOSIT};
 use sc_service::ChainType;
 use sp_core::sr25519;
 
 use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_properties, Extensions};
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
-	sc_service::GenericChainSpec<frequency_local_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<frequency_rococo_runtime::GenesisConfig, Extensions>;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
@@ -15,8 +15,8 @@ const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn template_session_keys(keys: AuraId) -> frequency_local_runtime::SessionKeys {
-	frequency_local_runtime::SessionKeys { aura: keys }
+pub fn template_session_keys(keys: AuraId) -> frequency_rococo_runtime::SessionKeys {
+	frequency_rococo_runtime::SessionKeys { aura: keys }
 }
 
 pub fn development_config() -> ChainSpec {
@@ -142,23 +142,23 @@ fn testnet_genesis(
 	endowed_accounts: Vec<AccountId>,
 	council_members: Vec<AccountId>,
 	id: ParaId,
-) -> frequency_local_runtime::GenesisConfig {
-	frequency_local_runtime::GenesisConfig {
-		system: frequency_local_runtime::SystemConfig {
-			code: frequency_local_runtime::WASM_BINARY
+) -> frequency_rococo_runtime::GenesisConfig {
+	frequency_rococo_runtime::GenesisConfig {
+		system: frequency_rococo_runtime::SystemConfig {
+			code: frequency_rococo_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 		},
-		balances: frequency_local_runtime::BalancesConfig {
+		balances: frequency_rococo_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
-		parachain_info: frequency_local_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: frequency_local_runtime::CollatorSelectionConfig {
+		parachain_info: frequency_rococo_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: frequency_rococo_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
 			..Default::default()
 		},
-		session: frequency_local_runtime::SessionConfig {
+		session: frequency_rococo_runtime::SessionConfig {
 			keys: invulnerables
 				.into_iter()
 				.map(|(acc, aura)| {
@@ -179,7 +179,7 @@ fn testnet_genesis(
 			// Assign network admin rights.
 			key: root_key,
 		},
-		polkadot_xcm: frequency_local_runtime::PolkadotXcmConfig {
+		polkadot_xcm: frequency_rococo_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 		schemas: Default::default(),

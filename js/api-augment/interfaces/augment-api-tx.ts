@@ -9,7 +9,7 @@ import type { ApiTypes, AugmentedSubmittable, SubmittableExtrinsic, SubmittableE
 import type { Bytes, Compact, Option, Vec, bool, u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
 import type { AnyNumber, IMethod, ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, Call, H256, MultiAddress, Perbill } from '@polkadot/types/interfaces/runtime';
-import type { CommonPrimitivesSchemaModelType, CommonPrimitivesSchemaPayloadLocation, CumulusPrimitivesParachainInherentParachainInherentData, FrameSupportScheduleMaybeHashed, FrequencyRuntimeOriginCaller, FrequencyRuntimeSessionKeys, OrmlVestingVestingSchedule, PalletMsaAddKeyData, PalletMsaAddProvider, SpRuntimeHeader, SpRuntimeMultiSignature, XcmV1MultiLocation, XcmV2WeightLimit, XcmVersionedMultiAssets, XcmVersionedMultiLocation, XcmVersionedXcm } from '@polkadot/types/lookup';
+import type { CommonPrimitivesSchemaModelType, CommonPrimitivesSchemaPayloadLocation, CumulusPrimitivesParachainInherentParachainInherentData, FrameSupportScheduleMaybeHashed, FrequencyLocalRuntimeOriginCaller, FrequencyLocalRuntimeSessionKeys, OrmlVestingVestingSchedule, PalletMsaAddKeyData, PalletMsaAddProvider, SpRuntimeHeader, SpRuntimeMultiSignature, XcmV1MultiLocation, XcmV2WeightLimit, XcmVersionedMultiAssets, XcmVersionedMultiLocation, XcmVersionedXcm } from '@polkadot/types/lookup';
 
 export type __AugmentedSubmittable = AugmentedSubmittable<() => unknown>;
 export type __SubmittableExtrinsic<ApiType extends ApiTypes> = SubmittableExtrinsic<ApiType>;
@@ -250,6 +250,15 @@ declare module '@polkadot/api-base/types/submittable' {
        * - The key can be re-added to same or another MSA if needed.
        **/
       deleteMsaKey: AugmentedSubmittable<(key: AccountId32 | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32]>;
+      /**
+       * Adds an association between MSA id and ProviderMetadata. As of now, the
+       * only piece of metadata we are recording is provider name.
+       * 
+       * ## Errors
+       * - Returns
+       * [`DuplicateProviderMetadata`](Error::DuplicateProviderMetadata) if there is already a ProviderMetadata associated with the given MSA id.
+       **/
+      registerProvider: AugmentedSubmittable<(providerName: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Bytes]>;
       /**
        * Provider MSA terminates Delegation with a Delegator MSA by expiring the Delegation at the current block.
        * Returns `Ok(())` on success, otherwise returns an error. Deposits events [`ProviderRevokedDelegation`](Event::ProviderRevokedDelegation).
@@ -544,7 +553,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * - DbWrites per key id: `KeyOwner`
        * # </weight>
        **/
-      setKeys: AugmentedSubmittable<(keys: FrequencyRuntimeSessionKeys | { aura?: any } | string | Uint8Array, proof: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [FrequencyRuntimeSessionKeys, Bytes]>;
+      setKeys: AugmentedSubmittable<(keys: FrequencyLocalRuntimeSessionKeys | { aura?: any } | string | Uint8Array, proof: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [FrequencyLocalRuntimeSessionKeys, Bytes]>;
     };
     sudo: {
       /**
@@ -754,7 +763,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * - Weight of derivative `call` execution + T::WeightInfo::dispatch_as().
        * # </weight>
        **/
-      dispatchAs: AugmentedSubmittable<(asOrigin: FrequencyRuntimeOriginCaller | { system: any } | { Void: any } | { PolkadotXcm: any } | { CumulusXcm: any } | string | Uint8Array, call: Call | IMethod | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [FrequencyRuntimeOriginCaller, Call]>;
+      dispatchAs: AugmentedSubmittable<(asOrigin: FrequencyLocalRuntimeOriginCaller | { system: any } | { Void: any } | { PolkadotXcm: any } | { CumulusXcm: any } | string | Uint8Array, call: Call | IMethod | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [FrequencyLocalRuntimeOriginCaller, Call]>;
       /**
        * Send a batch of dispatch calls.
        * Unlike `batch`, it allows errors and won't interrupt.
