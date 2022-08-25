@@ -66,7 +66,7 @@ where
 	pub granted_schemas: OrderedSetExt<SchemaId, MaxDataSize>,
 }
 
-impl<MaxDataSize> AddProvider<MaxDataSize>
+impl <MaxDataSize> AddProvider<MaxDataSize>
 where
 	MaxDataSize: Get<u32> + Clone + Eq,
 {
@@ -81,6 +81,10 @@ where
 			None => OrderedSetExt::new(),
 		};
 
-		Self { authorized_msa_id, permission, granted_schemas }
+		Self {
+			authorized_msa_id,
+			permission,
+			granted_schemas,
+		}
 	}
 }
