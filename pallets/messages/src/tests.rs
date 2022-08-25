@@ -12,6 +12,13 @@ use frame_support::{
 };
 use sp_std::vec::Vec;
 
+/// Populate mocked Messages storage with message data.
+///
+/// # Arguments
+/// * `schema_id` - Registered schema id to which stored messages should adhere
+/// * `message_per_block` - A signed transaction origin from the provider
+/// * `payload_location` - Determines how a message payload is encoded. PayloadLocation::IPFS
+/// 		will encode (mock CID, IPFS_PAYLOAD_LENGTH) on the message payload.
 fn populate_messages(
 	schema_id: SchemaId,
 	message_per_block: Vec<u32>,
@@ -20,7 +27,9 @@ fn populate_messages(
 	let mut payload = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
 
 	if payload_location == PayloadLocation::IPFS {
-		payload = ("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq", 1200u32).encode();
+		payload =
+			("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq", IPFS_PAYLOAD_LENGTH)
+				.encode();
 	}
 
 	let mut counter = 0;
@@ -375,8 +384,9 @@ fn get_messages_by_schema_with_overflowing_input_should_panic() {
 	});
 }
 
+/// Assert that MessageResponse for IPFS messages returns the payload_length of the offchain message.
 #[test]
-fn get_messages_by_schema_with_IPFS_payload_location_should_return_paginated() {
+fn get_messages_by_schema_with_IPFS_payload_location_should_return_offchain_payload_length() {
 	new_test_ext().execute_with(|| {
 		let schema_id: SchemaId = IPFS_SCHEMA_ID;
 		let page_size = 3;
@@ -401,8 +411,11 @@ fn get_messages_by_schema_with_IPFS_payload_location_should_return_paginated() {
 		assert_eq!(pagination_response.next_index, Some(from_index + page_size));
 
 		let payload =
-			("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq", 1200u32).encode();
-		let payload_length = 1200u32;
+			("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq", IPFS_PAYLOAD_LENGTH)
+				.encode();
+
+		// IPFS messages should return the payload length that was encoded in a tuple along
+		// with the CID: (cid, payload_length).
 		assert_eq!(
 			pagination_response.content[0],
 			MessageResponse {
@@ -411,7 +424,7 @@ fn get_messages_by_schema_with_IPFS_payload_location_should_return_paginated() {
 				index: from_index as u16,
 				provider_msa_id: 1,
 				block_number: 0,
-				payload_length,
+				payload_length: IPFS_PAYLOAD_LENGTH,
 			}
 		);
 	});

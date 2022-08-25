@@ -23,6 +23,8 @@ type Block = frame_system::mocking::MockBlock<Test>;
 pub const INVALID_SCHEMA_ID: SchemaId = 65534;
 pub const IPFS_SCHEMA_ID: SchemaId = 65535;
 
+pub const IPFS_PAYLOAD_LENGTH: u32 = 1200;
+
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
 	pub enum Test where
