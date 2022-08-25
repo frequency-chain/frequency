@@ -34,9 +34,9 @@ where
 	T: Ord + Encode + Decode + MaxEncodedLen + Clone + Eq + PartialEq + core::fmt::Debug,
 	S: Get<u32>,
 {
-	/// Create new `SignedExtension` to check runtime version.
+	/// Create a new empty set
 	pub fn new() -> Self {
-		Self(OrderedSet::new())
+		Self(OrderedSet::<T, S>::new())
 	}
 }
 
