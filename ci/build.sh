@@ -2,7 +2,7 @@
 
 set -eux
 
-PACKAGE="${PACKAGE:-frequency-rococo-runtime}" #Need to replicate job for all runtimes
+PACKAGE="${PACKAGE:-frequency-rococo-runtime}" # Need to replicate job for all runtimes
 RUNTIME_DIR="${RUNTIME_DIR:-runtime/frequency-rococo}"
 SRT_TOOL_VERSION="${SRT_TOOL_VERSION:-1.62.0}"
 
@@ -16,9 +16,9 @@ rustup --version
 cargo --version
 
 case $TARGET in
-	build-node)
-		cargo build --release "$@"
-		;;
+  build-node)
+    cargo build --release "$@"
+    ;;
 
   build-runtime)
     export RUSTC_VERSION=$SRT_TOOL_VERSION
@@ -32,6 +32,6 @@ case $TARGET in
 
   lint)
     cargo fmt -- --check
-    SKIP_WASM_BUILD=1 cargo clippy --all-targets  -- -A clippy::bool_assert_comparison
+    SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --all-targets
     ;;
 esac

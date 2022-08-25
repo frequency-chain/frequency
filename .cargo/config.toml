@@ -1,0 +1,34 @@
+# Global lint rules. This will keep rust analyser in sync with the clippy
+# lints so every tool has the same view.
+#
+# Rustc Lints: https://doc.rust-lang.org/rustc/lints/index.html
+# Clippy Lints: https://rust-lang.github.io/rust-clippy/master/index.html
+# Substrate flags: https://github.com/paritytech/substrate/blob/master/.cargo/config.toml
+#
+# If you want standard clippy run:
+# RUSTFLAGS= cargo clippy
+[target.'cfg(feature = "cargo-clippy")']
+rustflags = [
+  "-Aclippy::all", # activate default groups with default levels
+  "-Dclippy::complexity", # deny all in complexity group
+  "-Dclippy::correctness", # deny all in correctness group
+  "-Aclippy::if_same_then_else",
+  "-Aclippy::clone_double_ref",
+  "-Aclippy::zero_prefixed_literal",     # 00_1000_000
+  "-Aclippy::type_complexity",           # raison d'etre
+  "-Aclippy::nonminimal_bool",           # maybe
+  "-Aclippy::borrowed-box",              # Reasonable to fix this one
+  "-Aclippy::too_many_arguments",        # (Turning this on would lead to)
+  "-Aclippy::unnecessary_cast",          # Types may change
+  "-Aclippy::identity_op",               # One case where we do 0 +
+  "-Aclippy::useless_conversion",        # Types may change
+  "-Aclippy::unit_arg",                  # styalistic
+  "-Aclippy::option_map_unit_fn",        # styalistic
+  "-Aclippy::bind_instead_of_map",       # styalistic
+  "-Aclippy::erasing_op",                # E.g. 0 * DOLLARS
+  "-Aclippy::eq_op",                     # In tests we test equality.
+  "-Aclippy::while_immutable_condition", # false positives
+  "-Aclippy::needless_option_as_deref",  # false positives
+  "-Aclippy::derivable_impls",           # false positives
+  "-Aclippy::bool_assert_comparison",    # boolean comparisons in assert-like macros
+]
