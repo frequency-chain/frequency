@@ -30,7 +30,8 @@ fn create_msa<T: Config>(n: u32) -> DispatchResult {
 	Msa::<T>::create(RawOrigin::Signed(acc.clone()).into())
 }
 
-fn create_payload_and_signature<T: Config>() -> (AddProvider, MultiSignature, T::AccountId) {
+fn create_payload_and_signature<T: Config>(
+) -> (AddProvider<T::MaxSchemaGrants>, MultiSignature, T::AccountId) {
 	let delegator_account = SignerId::generate_pair(None);
 	let add_provider_payload = AddProvider { authorized_msa_id: 1u64.into(), permission: 0 };
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
