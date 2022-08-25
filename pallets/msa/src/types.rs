@@ -63,7 +63,7 @@ where
 	pub permission: u8,
 	/// Schemas for which publishing grants are authorized.
 	/// This is private intended for internal use only.
-	granted_schemas: OrderedSetExt<SchemaId, MaxDataSize>,
+	pub granted_schemas: OrderedSetExt<SchemaId, MaxDataSize>,
 }
 
 impl<MaxDataSize> AddProvider<MaxDataSize>
