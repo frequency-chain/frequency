@@ -1,6 +1,8 @@
 use crate as pallet_messages;
 use common_primitives::{
-	msa::{AccountProvider, Delegator, KeyInfo, MessageSourceId, Provider, ProviderInfo},
+	msa::{
+		AccountProvider, Delegator, KeyInfo, MessageSourceId, OrderedSetExt, Provider, ProviderInfo,
+	},
 	schema::*,
 };
 use frame_support::{
@@ -114,6 +116,7 @@ pub struct AccountHandler;
 impl AccountProvider for AccountHandler {
 	type AccountId = u64;
 	type BlockNumber = u64;
+	type MaxSchemaGrants = MaxSchemaGrants;
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
 		if *key == 1000 {
 			return None
@@ -130,7 +133,7 @@ impl AccountProvider for AccountHandler {
 		if provider == Provider(2000) {
 			return None
 		};
-		Some(ProviderInfo { permission: 0, expired: 100, schemas: None })
+		Some(ProviderInfo { permission: 0, expired: 100, schemas: OrderedSetExt::new() })
 	}
 
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<KeyInfo, DispatchError> {

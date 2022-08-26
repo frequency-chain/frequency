@@ -65,7 +65,7 @@ parameter_types! {
 }
 
 parameter_types! {
-	pub const MaxSchemaGrants: u32 = 30;
+	pub const MaxSchemaGrants: u32 = 2;
 }
 
 impl Clone for MaxSchemaGrants {

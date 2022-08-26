@@ -53,7 +53,7 @@ impl KeyInfo {
 #[scale_info(skip_type_params(MaxSchemaGrants))]
 pub struct ProviderInfo<BlockNumber, MaxSchemaGrants>
 where
-	MaxSchemaGrants: Get<u32> + Clone + Eq,
+	MaxSchemaGrants: Get<u32>,
 {
 	/// Specifies a permission granted by the delegator to the provider.
 	pub permission: u8,

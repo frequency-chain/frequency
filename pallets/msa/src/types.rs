@@ -26,7 +26,7 @@ pub struct AddKeyData {
 #[scale_info(skip_type_params(MaxDataSize))]
 pub struct AddProvider<MaxDataSize>
 where
-	MaxDataSize: Get<u32> + Clone + Eq,
+	MaxDataSize: Get<u32>,
 {
 	/// The provider being granted permissions
 	pub authorized_msa_id: MessageSourceId,
@@ -39,7 +39,7 @@ where
 
 impl<MaxDataSize> AddProvider<MaxDataSize>
 where
-	MaxDataSize: Get<u32> + Clone + Eq,
+	MaxDataSize: Get<u32>,
 {
 	/// Create new `AddProvider`
 	pub fn new(
