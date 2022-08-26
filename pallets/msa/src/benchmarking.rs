@@ -62,7 +62,7 @@ fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSource
 }
 
 fn add_delegation<T: Config>(delegator: Delegator, provider: Provider) {
-	assert_ok!(Msa::<T>::add_provider(provider, delegator));
+	assert_ok!(Msa::<T>::add_provider(provider, delegator, BoundedVec::default()));
 }
 
 benchmarks! {

@@ -155,6 +155,14 @@ impl AccountProvider for AccountHandler {
 
 		Ok(())
 	}
+
+	fn ensure_valid_schema(
+		provider: Provider,
+		delegator: Delegator,
+		schema_id: SchemaId,
+	) -> DispatchResult {
+		todo!()
+	}
 }
 
 pub struct SchemaHandler;

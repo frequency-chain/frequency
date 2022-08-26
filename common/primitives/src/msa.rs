@@ -133,6 +133,19 @@ pub trait AccountProvider {
 	/// # Returns
 	/// * [DispatchResult](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResult.html) The return type of a Dispatchable in frame.
 	fn ensure_valid_delegation(provider: Provider, delegator: Delegator) -> DispatchResult;
+
+	/// Validates if the provider is allowed to use the schema
+	/// # Arguments
+	/// * `provider` - The `MessageSourceId` that has been delegated to
+	/// * `delegator` - The `MessageSourceId` that delegated to the provider
+	/// * `schema_id` - The `SchemaId` that the provider is trying to use
+	/// # Returns
+	/// * [DispatchResult](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResult.html) The return type of a Dispatchable in frame.
+	fn ensure_valid_schema(
+		provider: Provider,
+		delegator: Delegator,
+		schema_id: SchemaId,
+	) -> DispatchResult;
 }
 
 /// RPC Response form of [`KeyInfo`]

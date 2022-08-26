@@ -792,6 +792,14 @@ impl<T: Config> AccountProvider for Pallet<T> {
 		}
 		Ok(result.unwrap())
 	}
+
+	fn ensure_valid_schema(
+		provider: Provider,
+		delegator: Delegator,
+		schema_id: SchemaId,
+	) -> DispatchResult {
+		todo!()
+	}
 }
 
 /// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate that a provider
