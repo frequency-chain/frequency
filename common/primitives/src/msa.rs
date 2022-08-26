@@ -164,6 +164,11 @@ where
 	pub fn new() -> Self {
 		Self(OrderedSet::<T, S>::new())
 	}
+	/// Create a set from a `Vec`.
+	/// `v` will be sorted and dedup first.
+	pub fn from(bv: BoundedVec<T, S>) -> Self {
+		Self(OrderedSet::<T, S>::from(bv))
+	}
 }
 
 impl<T, S> core::fmt::Debug for OrderedSetExt<T, S>

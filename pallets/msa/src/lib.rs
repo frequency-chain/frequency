@@ -634,11 +634,10 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		ProviderInfoOf::<T>::try_mutate(delegator, provider, |maybe_info| -> DispatchResult {
 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
-
 			let info = ProviderInfo {
 				permission: Default::default(),
 				expired: Default::default(),
-				schemas: OrderedSetExt::new(),
+				schemas: OrderedSetExt::<SchemaId, T::MaxSchemaGrants>::from(schemas),
 			};
 
 			*maybe_info = Some(info);
