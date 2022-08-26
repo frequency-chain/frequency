@@ -144,7 +144,7 @@ pub mod pallet {
 	pub type ProviderRegistry<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
-		MessageSourceId,
+		Provider,
 		ProviderMetadata<T::MaxProviderNameSize>,
 		OptionQuery,
 	>;
@@ -343,7 +343,7 @@ pub mod pallet {
 
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?.msa_id;
 			ProviderRegistry::<T>::try_mutate(
-				provider_msa_id,
+				Provider(provider_msa_id),
 				|maybe_metadata| -> DispatchResult {
 					ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderMetadata);
 					*maybe_metadata = Some(ProviderMetadata { provider_name: bounded_name });
