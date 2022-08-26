@@ -1,9 +1,12 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{dispatch::DispatchResult, traits::Get, BoundedVec};
+use orml_utilities::OrderedSet;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::DispatchError;
+
+use crate::schema::SchemaId;
 
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
 pub type MessageSourceId = u64;
@@ -47,11 +50,17 @@ impl KeyInfo {
 
 /// Struct for the information of the relationship between an MSA and a Provider
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
-pub struct ProviderInfo<BlockNumber> {
+#[scale_info(skip_type_params(MaxSchemaGrants))]
+pub struct ProviderInfo<BlockNumber, MaxSchemaGrants>
+where
+	MaxSchemaGrants: Get<u32> + Clone + Eq,
+{
 	/// Specifies a permission granted by the delegator to the provider.
 	pub permission: u8,
 	/// Block number the grant will be revoked.
 	pub expired: BlockNumber,
+	/// Schemas that the provider is allowed to use for a delegated message.
+	pub schemas: OrderedSetExt<SchemaId, MaxSchemaGrants>,
 }
 
 /// Provider is the recipient of a delegation.
@@ -89,6 +98,8 @@ pub trait AccountProvider {
 	type AccountId;
 	/// Type for block number.
 	type BlockNumber;
+	/// Type for maximum number of schemas that can be granted to a provider.
+	type MaxSchemaGrants: Get<u32> + Clone + Eq;
 
 	/// Gets the MSA Id associated with this `AccountId` if any
 	/// # Arguments
@@ -106,7 +117,7 @@ pub trait AccountProvider {
 	fn get_provider_info_of(
 		delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber>>;
+	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>>;
 	/// Check that a key is associated to an MSA and returns key information.
 	/// Returns a `[DispatchError`] if there is no MSA associated with the key
 	/// # Arguments
@@ -134,4 +145,33 @@ pub struct KeyInfoResponse<AccountId> {
 	pub msa_id: MessageSourceId,
 	/// The nonce value for signed updates to this data
 	pub nonce: u32,
+}
+
+/// Extending OrderSet and implement struct OrderedSetExt
+#[derive(TypeInfo, Clone, Decode, Encode, PartialEq, Eq, MaxEncodedLen, Default)]
+#[scale_info(skip_type_params(T, S))]
+pub struct OrderedSetExt<
+	T: Ord + Encode + Decode + MaxEncodedLen + Clone + Eq + PartialEq,
+	S: Get<u32>,
+>(OrderedSet<T, S>);
+
+impl<T, S> OrderedSetExt<T, S>
+where
+	T: Ord + Encode + Decode + MaxEncodedLen + Clone + Eq + PartialEq + core::fmt::Debug,
+	S: Get<u32>,
+{
+	/// Create a new empty set
+	pub fn new() -> Self {
+		Self(OrderedSet::<T, S>::new())
+	}
+}
+
+impl<T, S> core::fmt::Debug for OrderedSetExt<T, S>
+where
+	T: Ord + Encode + Decode + MaxEncodedLen + Clone + Eq + PartialEq + core::fmt::Debug,
+	S: Get<u32>,
+{
+	fn fmt(&self, _f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
 }

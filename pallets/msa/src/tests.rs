@@ -300,7 +300,7 @@ pub fn add_provider_to_msa_is_success() {
 
 		assert_eq!(
 			Msa::get_provider_info_of(delegator, provider),
-			Some(ProviderInfo { permission: 0, expired: 0 })
+			Some(ProviderInfo { permission: 0, expired: 0, schemas: None })
 		);
 
 		System::assert_last_event(
@@ -717,7 +717,7 @@ pub fn revoke_provider_is_successful() {
 
 		assert_eq!(
 			Msa::get_provider_info_of(delegator, provider).unwrap(),
-			ProviderInfo { expired: 1, permission: 0 },
+			ProviderInfo { expired: 1, permission: 0, schemas: None },
 		);
 	});
 }
@@ -862,7 +862,7 @@ pub fn remove_delegation_by_provider_happy_path() {
 
 		// 6. verify that the provider is revoked
 		let provider_info = Msa::get_provider_info_of(Delegator(2), Provider(1));
-		assert_eq!(provider_info, Some(ProviderInfo { permission: 0, expired: 26 }));
+		assert_eq!(provider_info, Some(ProviderInfo { permission: 0, expired: 26, schemas: None }));
 
 		// 7. verify the event
 		System::assert_last_event(

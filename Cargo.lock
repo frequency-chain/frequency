@@ -1164,6 +1164,7 @@ version = "0.1.0"
 dependencies = [
  "frame-support",
  "impl-serde",
+ "orml-utilities",
  "parity-scale-codec",
  "scale-info",
  "serde",

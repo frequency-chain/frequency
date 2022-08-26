@@ -65,6 +65,29 @@ impl system::Config for Test {
 parameter_types! {
 	pub const MaxMessagesPerBlock: u32 = 500;
 	pub const MaxMessagePayloadSizeBytes: u32 = 100;
+	pub const MaxSchemaGrants: u32 = 30;
+}
+
+impl Clone for MaxSchemaGrants {
+	fn clone(&self) -> Self {
+		MaxSchemaGrants {}
+	}
+}
+
+impl Eq for MaxSchemaGrants {
+	fn assert_receiver_is_total_eq(&self) -> () {}
+}
+
+impl PartialEq for MaxSchemaGrants {
+	fn eq(&self, _other: &Self) -> bool {
+		true
+	}
+}
+
+impl sp_std::fmt::Debug for MaxSchemaGrants {
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
 }
 
 impl std::fmt::Debug for MaxMessagePayloadSizeBytes {
@@ -103,11 +126,11 @@ impl AccountProvider for AccountHandler {
 	fn get_provider_info_of(
 		_delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber>> {
+	) -> Option<ProviderInfo<Self::BlockNumber, MaxSchemaGrants>> {
 		if provider == Provider(2000) {
 			return None
 		};
-		Some(ProviderInfo { permission: 0, expired: 100 })
+		Some(ProviderInfo { permission: 0, expired: 100, schemas: None })
 	}
 
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<KeyInfo, DispatchError> {

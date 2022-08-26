@@ -6,7 +6,7 @@ use core::fmt::Debug;
 
 pub use common_primitives::msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider};
 use common_primitives::schema::SchemaId;
-use orml_utilities::OrderedSet;
+
 use scale_info::TypeInfo;
 
 /// Dispatch Empty
@@ -19,35 +19,6 @@ pub struct AddKeyData {
 	pub msa_id: MessageSourceId,
 	/// A cryptographic nonce.
 	pub nonce: u32,
-}
-
-/// Extending OrderSet and implement struct OrderedSetExt
-#[derive(TypeInfo, Clone, Decode, Encode, PartialEq, Eq)]
-#[scale_info(skip_type_params(T, S))]
-pub struct OrderedSetExt<
-	T: Ord + Encode + Decode + MaxEncodedLen + Clone + Eq + PartialEq,
-	S: Get<u32>,
->(OrderedSet<T, S>);
-
-impl<T, S> OrderedSetExt<T, S>
-where
-	T: Ord + Encode + Decode + MaxEncodedLen + Clone + Eq + PartialEq + core::fmt::Debug,
-	S: Get<u32>,
-{
-	/// Create a new empty set
-	pub fn new() -> Self {
-		Self(OrderedSet::<T, S>::new())
-	}
-}
-
-impl<T, S> core::fmt::Debug for OrderedSetExt<T, S>
-where
-	T: Ord + Encode + Decode + MaxEncodedLen + Clone + Eq + PartialEq + core::fmt::Debug,
-	S: Get<u32>,
-{
-	fn fmt(&self, _f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
-	}
 }
 
 /// Structure that is signed for granting permissions to a Provider
@@ -63,7 +34,7 @@ where
 	pub permission: u8,
 	/// Schemas for which publishing grants are authorized.
 	/// This is private intended for internal use only.
-	pub granted_schemas: OrderedSetExt<SchemaId, MaxDataSize>,
+	pub granted_schemas: BoundedVec<SchemaId, MaxDataSize>,
 }
 
 impl<MaxDataSize> AddProvider<MaxDataSize>
@@ -74,11 +45,11 @@ where
 	pub fn new(
 		authorized_msa_id: MessageSourceId,
 		permission: u8,
-		granted_schemas: Option<OrderedSetExt<SchemaId, MaxDataSize>>,
+		granted_schemas: Option<BoundedVec<SchemaId, MaxDataSize>>,
 	) -> Self {
 		let granted_schemas = match granted_schemas {
 			Some(schemas) => schemas,
-			None => OrderedSetExt::new(),
+			None => BoundedVec::default(),
 		};
 
 		Self { authorized_msa_id, permission, granted_schemas }

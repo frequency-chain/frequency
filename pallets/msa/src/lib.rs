@@ -57,7 +57,8 @@
 
 use codec::{Decode, Encode};
 use common_primitives::msa::{
-	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo, ProviderMetadata,
+	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, OrderedSetExt, Provider, ProviderInfo,
+	ProviderMetadata,
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 pub use pallet::*;
@@ -133,7 +134,7 @@ pub mod pallet {
 		Delegator,
 		Blake2_128Concat,
 		Provider,
-		ProviderInfo<T::BlockNumber>,
+		ProviderInfo<T::BlockNumber, T::MaxSchemaGrants>,
 		OptionQuery,
 	>;
 
@@ -614,7 +615,11 @@ impl<T: Config> Pallet<T> {
 		ProviderInfoOf::<T>::try_mutate(delegator, provider, |maybe_info| -> DispatchResult {
 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
 
-			let info = ProviderInfo { permission: Default::default(), expired: Default::default() };
+			let info = ProviderInfo {
+				permission: Default::default(),
+				expired: Default::default(),
+				schemas: OrderedSetExt::new(),
+			};
 
 			*maybe_info = Some(info);
 
@@ -732,6 +737,7 @@ impl<T: Config> Pallet<T> {
 impl<T: Config> AccountProvider for Pallet<T> {
 	type AccountId = T::AccountId;
 	type BlockNumber = T::BlockNumber;
+	type MaxSchemaGrants = T::MaxSchemaGrants;
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
 		Self::get_owner_of(key)
 	}
@@ -739,7 +745,7 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	fn get_provider_info_of(
 		delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber>> {
+	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>> {
 		Self::get_provider_info_of(delegator, provider)
 	}
 
