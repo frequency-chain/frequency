@@ -18,12 +18,14 @@ path = "src/main.rs"
 frequency-cli = {path = "cli"}
 frequency-rococo-runtime = {path = "../runtime/frequency-rococo"}
 frequency-runtime = {path = "../runtime/frequency"}
+zstd = "0.11"
+
 
 # Substrate
-sc-cli = {git = "https://github.com/paritytech/substrate", features = ["wasmtime"], branch = "polkadot-v0.9.25"}
+sc-cli = {git = "https://github.com/paritytech/substrate", features = ["wasmtime"], rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
 
 [build-dependencies]
-substrate-build-script-utils = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25"}
+substrate-build-script-utils = {git = "https://github.com/paritytech/substrate", rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
 
 [features]
 runtime-benchmarks = [

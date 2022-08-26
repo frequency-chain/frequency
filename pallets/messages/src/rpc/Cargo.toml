@@ -18,9 +18,9 @@ pallet-messages-runtime-api = {default-features = false, path = "../runtime-api"
 common-primitives = {default-features = false, path = "../../../../common/primitives" }
 common-helpers = {default-features = false, path = "../../../../common/helpers" }
 # Substrate packages
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b" }
 
 [features]
 default = ["std"]

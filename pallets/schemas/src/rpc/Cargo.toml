@@ -19,13 +19,13 @@ common-primitives = { path = '../../../../common/primitives', default-features =
 common-helpers = { path = '../../../../common/helpers', default-features = false }
 
 # Substrate
-frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
-sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
-sp-rpc = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25" }
-sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
+frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b" }
+sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"  }
+sp-rpc = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"  }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"  }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"  }
+sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b" }
 
 [features]
 default = ["std"]

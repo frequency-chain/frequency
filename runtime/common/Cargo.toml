@@ -19,13 +19,13 @@ codec = {package = "parity-scale-codec", version = "3.0.0", default-features = f
 scale-info = {version = "2.1.1", default-features = false, features = ["derive"]}
 
 # Substrate
-frame-support = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25"}
-frame-system = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25"}
-sp-core = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25"}
-sp-std = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25"}
+frame-support = {git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
+frame-system = {git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
+sp-core = {git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
+sp-std = {git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
 
 # Substrate pallets
-pallet-utility = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.25"}
+pallet-utility = {git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
 
 # ORML
 orml-vesting = {git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.25"}

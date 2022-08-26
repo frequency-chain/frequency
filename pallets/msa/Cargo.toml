@@ -16,20 +16,20 @@ targets = ["x86_64-unknown-linux-gnu"]
 codec = {package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
   "derive",
 ]}
-frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25", optional = true}
-frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
-frame-system = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
+frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b", optional = true}
+frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
+frame-system = {default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
 scale-info = {version = "2.0.0", default-features = false, features = ["derive"]}
-sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
-sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
-sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
+sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
+sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
+sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
 
 # Frequency related dependencies
 common-primitives = {default-features = false, path = "../../common/primitives"}
 
 [dev-dependencies]
-sp-io = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
-sp-keystore = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25"}
+sp-io = {default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
+sp-keystore = { default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
 
 [features]
 default = ["std"]
