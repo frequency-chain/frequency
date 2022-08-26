@@ -44,6 +44,7 @@
 //! ### Assumptions
 //!
 //! * Total MSA keys should be less than the constant `Config::MSA::MaxKeys`.
+//! * Maximum schemas, for which provider has publishing rights, be less than `Config::MSA::MaxSchemaGrants`
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
