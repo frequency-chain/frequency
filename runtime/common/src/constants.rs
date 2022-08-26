@@ -23,8 +23,8 @@ impl PartialEq for MaxDataSize {
 
 impl sp_std::fmt::Debug for MaxDataSize {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		write!(f, "MaxDataSize<{:?}>", self)
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
 	}
 
 	#[cfg(not(feature = "std"))]
