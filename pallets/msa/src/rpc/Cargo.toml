@@ -20,10 +20,10 @@ common-primitives = {default-features = false, path = "../../../../common/primit
 common-helpers = {default-features = false, path = "../../../../common/helpers" }
 
 # Substrate packages
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.26" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.26" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.26" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.26" }
 
 [features]
 default = ["std"]

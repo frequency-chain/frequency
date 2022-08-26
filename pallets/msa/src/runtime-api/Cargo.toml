@@ -14,9 +14,9 @@ edition = "2021"
 codec = {package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"]}
 
 # Substrate
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.26" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.26" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.26" }
 
 # Frequency related dependencies
 common-primitives = {default-features = false, path = "../../../../common/primitives" }

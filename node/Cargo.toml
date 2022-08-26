@@ -22,10 +22,10 @@ zstd = "0.11"
 
 
 # Substrate
-sc-cli = {git = "https://github.com/paritytech/substrate", features = ["wasmtime"], rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
+sc-cli = {git = "https://github.com/paritytech/substrate", features = ["wasmtime"], branch = "polkadot-v0.9.26" }
 
 [build-dependencies]
-substrate-build-script-utils = {git = "https://github.com/paritytech/substrate", rev = "e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"}
+substrate-build-script-utils = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.26" }
 
 [features]
 runtime-benchmarks = [
