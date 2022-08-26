@@ -16,23 +16,12 @@
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use sp_std::marker::PhantomData;
 
-/// Weight functions needed for {{pallet}}.
-pub trait WeightInfo {
-	{{#each benchmarks as |benchmark|}}
-	fn {{benchmark.name~}}
-	(
-		{{~#each benchmark.components as |c| ~}}
-		{{c.name}}: u32, {{/each~}}
-	) -> Weight;
-	{{/each}}
-}
-
 /// Weights for {{pallet}} using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 {{#if (eq pallet "frame_system")}}
 impl<T: crate::Config> {{pallet}}::WeightInfo for SubstrateWeight<T> {
 {{else}}
-impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
+impl<T: frame_system::Config> {{pallet}}::WeightInfo for SubstrateWeight<T> {
 {{/if}}
 	{{#each benchmarks as |benchmark|}}
 	{{#each benchmark.comments as |comment|}}
