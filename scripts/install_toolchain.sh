@@ -6,6 +6,7 @@ RUST_TOOLCHAIN="${RUST_TOOLCHAIN:-nightly}"
 echo "Using rust toolchain: ${RUST_TOOLCHAIN}"
 
 echo "*** Initializing WASM build environment"
+
 rustup update $RUST_TOOLCHAIN
 
 rustup toolchain install $RUST_TOOLCHAIN
