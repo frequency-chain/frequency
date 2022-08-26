@@ -1,0 +1,34 @@
+use frame_support::parameter_types;
+
+parameter_types! {
+	/// Clone + Debug + Eq  implementation for u32 types
+	pub const MaxDataSize: u32 = 30;
+}
+
+impl Clone for MaxDataSize {
+	fn clone(&self) -> Self {
+		MaxDataSize {}
+	}
+}
+
+impl Eq for MaxDataSize {
+	fn assert_receiver_is_total_eq(&self) {}
+}
+
+impl PartialEq for MaxDataSize {
+	fn eq(&self, other: &Self) -> bool {
+		self == other
+	}
+}
+
+impl sp_std::fmt::Debug for MaxDataSize {
+	#[cfg(feature = "std")]
+	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		write!(f, "MaxDataSize<{:?}>", self)
+	}
+
+	#[cfg(not(feature = "std"))]
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
+}
