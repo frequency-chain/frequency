@@ -57,9 +57,12 @@
 )]
 
 use codec::{Decode, Encode};
-use common_primitives::msa::{
-	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, OrderedSetExt, Provider, ProviderInfo,
-	ProviderMetadata,
+use common_primitives::{
+	msa::{
+		AccountProvider, Delegator, KeyInfo, KeyInfoResponse, OrderedSetExt, Provider,
+		ProviderInfo, ProviderMetadata,
+	},
+	schema::SchemaId,
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 pub use pallet::*;
@@ -257,6 +260,8 @@ pub mod pallet {
 		DuplicateProviderMetadata,
 		/// The maximum length for a provider name has been exceeded
 		ExceedsMaxProviderNameSize,
+		/// The maximum number of schema grants has been exceeded
+		ExceedsMaxSchemaGrants,
 	}
 
 	#[pallet::call]
@@ -308,9 +313,14 @@ pub mod pallet {
 				Error::<T>::UnauthorizedProvider
 			);
 
+			let granted_schemas = add_provider_payload.schema_ids;
+			ensure!(
+				granted_schemas.len() <= T::MaxSchemaGrants::get().try_into().unwrap(),
+				Error::<T>::ExceedsMaxSchemaGrants
+			);
 			let (_, _) =
 				Self::create_account(delegator_key.clone(), |new_msa_id| -> DispatchResult {
-					Self::add_provider(provider_msa_id.into(), new_msa_id.into())?;
+					Self::add_provider(provider_msa_id.into(), new_msa_id.into(), granted_schemas)?;
 
 					Self::deposit_event(Event::MsaCreated {
 						msa_id: new_msa_id,
@@ -381,8 +391,13 @@ pub mod pallet {
 				&provider_key,
 				payload_authorized_msa_id,
 			)?;
+			let granted_schemas = add_provider_payload.schema_ids;
+			ensure!(
+				granted_schemas.len() <= T::MaxSchemaGrants::get().try_into().unwrap(),
+				Error::<T>::ExceedsMaxSchemaGrants
+			);
 
-			Self::add_provider(provider_msa_id, delegator_msa_id)?;
+			Self::add_provider(provider_msa_id, delegator_msa_id, granted_schemas)?;
 
 			Self::deposit_event(Event::ProviderAdded {
 				delegator: delegator_msa_id,
@@ -612,7 +627,11 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Add a provider to a delegator with the default permissions
-	pub fn add_provider(provider: Provider, delegator: Delegator) -> DispatchResult {
+	pub fn add_provider(
+		provider: Provider,
+		delegator: Delegator,
+		schemas: BoundedVec<SchemaId, T::MaxSchemaGrants>,
+	) -> DispatchResult {
 		ProviderInfoOf::<T>::try_mutate(delegator, provider, |maybe_info| -> DispatchResult {
 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
 

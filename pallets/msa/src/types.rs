@@ -34,7 +34,7 @@ where
 	pub permission: u8,
 	/// Schemas for which publishing grants are authorized.
 	/// This is private intended for internal use only.
-	pub granted_schemas: BoundedVec<SchemaId, MaxDataSize>,
+	pub schema_ids: BoundedVec<SchemaId, MaxDataSize>,
 }
 
 impl<MaxDataSize> AddProvider<MaxDataSize>
@@ -45,13 +45,13 @@ where
 	pub fn new(
 		authorized_msa_id: MessageSourceId,
 		permission: u8,
-		granted_schemas: Option<BoundedVec<SchemaId, MaxDataSize>>,
+		schema_ids: Option<BoundedVec<SchemaId, MaxDataSize>>,
 	) -> Self {
-		let granted_schemas = match granted_schemas {
+		let schema_ids = match schema_ids {
 			Some(schemas) => schemas,
 			None => BoundedVec::default(),
 		};
 
-		Self { authorized_msa_id, permission, granted_schemas }
+		Self { authorized_msa_id, permission, schema_ids }
 	}
 }
