@@ -141,6 +141,11 @@ cargo test --features runtime-benchmarks, std
 cargo test --all-features --workspace --release
 ```
 
+## Run Benchmarks
+   ```sh
+   make benchmarks
+   ```
+
 ## Generate a New Spec File
 
 To build spec against specific chain config specify chain name in the command above.
@@ -178,10 +183,10 @@ in `rustfmt.toml`.
    TARGET=build-runtime RUST_TOOLCHAIN=nightly ./ci/build.sh
    ```
 
-# Runtime Upgrade
+# Runtime Upgrade (local only)
 
 1. Runtime upgrade enables upgrading running chain to a new runtime.
-2. To upgrade the runtime, current scripts does following step process:
+2. To upgrade the runtime, current scripts follow this process:
    1. Build new runtime and generate the compressed wasm
    2. Call ```authorizeUpgrade``` extrinsic from parachain system to initate the upgrade.
    3. Call ```enactAuthorizedUpgrade``` extrinsic from parachain system to enact the upgrade.

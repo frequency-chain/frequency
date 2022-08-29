@@ -378,7 +378,7 @@ impl orml_vesting::Config for Runtime {
 	type Currency = Balances;
 	type MinVestedTransfer = MinVestedTransfer;
 	type VestedTransferOrigin = RootAsVestingPallet;
-	type WeightInfo = ();
+	type WeightInfo = weights::orml_vesting::SubstrateWeight<Runtime>;
 	type MaxVestingSchedules = MaxVestingSchedules;
 	type BlockNumberProvider = RelaychainBlockNumberProvider<Runtime>;
 }
@@ -444,7 +444,7 @@ impl pallet_scheduler::Config for Runtime {
 	type MaximumWeight = MaximumSchedulerWeight;
 	type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
 	type MaxScheduledPerBlock = MaxScheduledPerBlock;
-	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
 	type OriginPrivilegeCmp = EqualPrivilegeOnly;
 	type PreimageProvider = Preimage;
 	type NoPreimagePostponement = NoPreimagePostponement;
@@ -457,7 +457,7 @@ parameter_types! {
 }
 
 impl pallet_preimage::Config for Runtime {
-	type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_preimage::SubstrateWeight<Runtime>;
 	type Event = Event;
 	type Currency = Balances;
 	type ManagerOrigin = EnsureRoot<AccountId>;
@@ -481,6 +481,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MaxProposals = CouncilMaxProposals;
 	type MaxMembers = CouncilMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	// TODO: this uses default but we don't have weights yet
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
@@ -513,7 +514,7 @@ impl pallet_democracy::Config for Runtime {
 	type Proposal = Call;
 	type Scheduler = Scheduler;
 	type Slash = (); // Treasury;
-	type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_democracy::SubstrateWeight<Runtime>;
 	type VoteLockingPeriod = EnactmentPeriod; // Same as EnactmentPeriod
 	type VotingPeriod = VotingPeriod;
 
@@ -699,7 +700,7 @@ impl pallet_utility::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
 	type PalletsOrigin = OriginCaller;
-	type WeightInfo = weights::utility_weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

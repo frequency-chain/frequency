@@ -143,18 +143,23 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
-	/// Storage type for max bytes for schema model
+	/// Storage for the Governance managed max bytes for schema model
+	/// Allows for altering the max bytes without a full chain upgrade
+	/// - Value: Max Bytes
 	#[pallet::storage]
 	#[pallet::getter(fn get_schema_model_max_bytes)]
 	pub(super) type GovernanceSchemaModelMaxBytes<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	/// Storage type for current number of schemas
 	/// Useful for retrieving latest schema id
+	/// - Value: Last Schema Id
 	#[pallet::storage]
 	#[pallet::getter(fn schema_count)]
 	pub(super) type SchemaCount<T: Config> = StorageValue<_, SchemaId, ValueQuery>;
 
-	/// Storage for message schemas hashes
+	/// Storage for message schema struct data
+	/// - Key: Schema Id
+	/// - Value: [`Schema`](Schema)
 	#[pallet::storage]
 	#[pallet::getter(fn get_schema)]
 	pub(super) type Schemas<T: Config> = StorageMap<

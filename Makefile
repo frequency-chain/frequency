@@ -58,3 +58,12 @@ format-lint: format lint
 .PHONY: upgrade
 upgrade-local:
 	./scripts/init.sh upgrade-frequency
+
+
+.PHONY: benchmarks
+benchmarks:
+	./scripts/run_all_benchmarks.sh
+
+.PHONY: docs
+docs:
+	./scripts/frequency_docs.sh
