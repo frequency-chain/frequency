@@ -46,11 +46,11 @@ specs-mainnet:
 
 .PHONY: format
 format:
-	cargo +nightly fmt
+	cargo fmt -- --check
 
 .PHONY: lint
 lint:
-	SKIP_WASM_BUILD=1 cargo clippy --all-targets  -- -A clippy::bool_assert_comparison
+	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --all-targets
 
 .PHONY: format-lint
 format-lint: format lint
