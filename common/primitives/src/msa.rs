@@ -1,10 +1,11 @@
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, Encode, EncodeLike, Error, MaxEncodedLen};
 use frame_support::{dispatch::DispatchResult, traits::Get, BoundedVec};
 use orml_utilities::OrderedSet;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::DispatchError;
+use sp_std::prelude::Vec;
 
 use crate::schema::SchemaId;
 
@@ -13,8 +14,25 @@ pub type MessageSourceId = u64;
 
 /// A Delegator is a role for an MSA to play.
 /// Delegators delegate to Providers.
-#[derive(TypeInfo, Debug, Clone, Copy, Decode, Encode, PartialEq, MaxEncodedLen, Eq)]
+#[derive(TypeInfo, Debug, Clone, Copy, PartialEq, MaxEncodedLen, Eq)]
 pub struct Delegator(pub MessageSourceId);
+
+impl EncodeLike for Delegator {}
+
+impl Encode for Delegator {
+	fn encode(&self) -> Vec<u8> {
+		self.0.encode()
+	}
+}
+
+impl Decode for Delegator {
+	fn decode<I: codec::Input>(input: &mut I) -> Result<Self, codec::Error> {
+		match <u64>::decode(input) {
+			Ok(x) => Ok(Delegator(x)),
+			_ => Err(Error::from("Could not decode Delegator")),
+		}
+	}
+}
 
 impl From<MessageSourceId> for Delegator {
 	fn from(t: MessageSourceId) -> Self {
@@ -65,8 +83,25 @@ where
 
 /// Provider is the recipient of a delegation.
 /// It is a subset of an MSA
-#[derive(TypeInfo, Debug, Clone, Copy, Decode, Encode, PartialEq, MaxEncodedLen, Eq)]
+#[derive(TypeInfo, Debug, Clone, Copy, PartialEq, MaxEncodedLen, Eq)]
 pub struct Provider(pub MessageSourceId);
+
+impl EncodeLike for Provider {}
+
+impl Encode for Provider {
+	fn encode(&self) -> Vec<u8> {
+		self.0.encode()
+	}
+}
+
+impl Decode for Provider {
+	fn decode<I: codec::Input>(input: &mut I) -> Result<Self, codec::Error> {
+		match <u64>::decode(input) {
+			Ok(x) => Ok(Provider(x)),
+			_ => Err(Error::from("Could not decode Provider")),
+		}
+	}
+}
 
 /// This is the metadata associated with a provider. As of now it is just a
 /// name, but it will likely be expanded in the future
