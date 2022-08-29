@@ -262,6 +262,8 @@ pub mod pallet {
 		ExceedsMaxProviderNameSize,
 		/// The maximum number of schema grants has been exceeded
 		ExceedsMaxSchemaGrants,
+		/// Provider is not permitted to publish for given schema_id
+		SchemaNotGranted,
 	}
 
 	#[pallet::call]
@@ -793,12 +795,56 @@ impl<T: Config> AccountProvider for Pallet<T> {
 		Ok(result.unwrap())
 	}
 
-	fn ensure_valid_schema(
+	/// Check if provider is allowed to publish for a given schema_id for a given delegator
+	/// # Arguments
+	/// * `provider` - The provider account
+	/// * `delegator` - The delegator account
+	/// * `schema_id` - The schema id
+	/// # Returns
+	/// * [`DispatchResult`]
+	/// # Errors
+	/// * [`Error::DelegationNotFound`]
+	/// * [`Error::SchemaNotGranted`]
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	fn ensure_valid_schema_grant(
 		provider: Provider,
 		delegator: Delegator,
 		schema_id: SchemaId,
 	) -> DispatchResult {
-		todo!()
+		let provider_info = Self::get_provider_info_of(delegator, provider)
+			.ok_or(Error::<T>::DelegationNotFound)?;
+
+		ensure!(provider_info.schemas.0.contains(&schema_id), Error::<T>::SchemaNotGranted);
+		Ok(())
+	}
+
+	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
+	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
+	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
+	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
+	/// would like to avoid.
+	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
+	/// this method to return a dummy account in case it does not exist
+	/// # Arguments
+	/// * `provider` - The provider account
+	/// * `delegator` - The delegator account
+	/// * `schema_id` - The schema id
+	/// # Returns
+	/// * [`DispatchResult`]
+	/// # Errors
+	/// * [`Error::DelegationNotFound`]
+	/// * [`Error::SchemaNotGranted`]
+	#[cfg(feature = "runtime-benchmarks")]
+	fn ensure_valid_schema_grant(
+		provider: Provider,
+		delegator: Delegator,
+		_schema_id: SchemaId,
+	) -> DispatchResult {
+		let provider_info = Self::get_provider_info_of(delegator, provider);
+		if provider_info.is_none() {
+			return Ok(())
+		}
+		Ok(())
 	}
 }
 

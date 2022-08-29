@@ -141,7 +141,7 @@ pub trait AccountProvider {
 	/// * `schema_id` - The `SchemaId` that the provider is trying to use
 	/// # Returns
 	/// * [DispatchResult](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResult.html) The return type of a Dispatchable in frame.
-	fn ensure_valid_schema(
+	fn ensure_valid_schema_grant(
 		provider: Provider,
 		delegator: Delegator,
 		schema_id: SchemaId,
@@ -166,7 +166,7 @@ pub struct KeyInfoResponse<AccountId> {
 pub struct OrderedSetExt<
 	T: Ord + Encode + Decode + MaxEncodedLen + Clone + Eq + PartialEq,
 	S: Get<u32>,
->(OrderedSet<T, S>);
+>(pub OrderedSet<T, S>);
 
 impl<T, S> OrderedSetExt<T, S>
 where
