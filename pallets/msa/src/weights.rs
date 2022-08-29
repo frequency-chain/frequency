@@ -56,7 +56,7 @@ use sp_std::marker::PhantomData;
 pub trait WeightInfo {
 	fn create(s: u32, ) -> Weight;
 	fn create_sponsored_account_with_delegation() -> Weight;
-	fn remove_delegation_by_provider(s: u32, ) -> Weight;
+	fn revoke_delegation_by_provider(s: u32, ) -> Weight;
 	fn add_key_to_msa() -> Weight;
 	fn delete_msa_key() -> Weight;
 	fn add_provider_to_msa() -> Weight;
@@ -88,7 +88,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
-	fn remove_delegation_by_provider(s: u32, ) -> Weight {
+	fn revoke_delegation_by_provider(s: u32, ) -> Weight {
 		(20_180_000 as Weight)
 			// Standard Error: 0
 			.saturating_add((6_000 as Weight).saturating_mul(s as Weight))
@@ -155,7 +155,7 @@ impl WeightInfo for () {
 	}
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
-	fn remove_delegation_by_provider(s: u32, ) -> Weight {
+	fn revoke_delegation_by_provider(s: u32, ) -> Weight {
 		(20_180_000 as Weight)
 			// Standard Error: 0
 			.saturating_add((6_000 as Weight).saturating_mul(s as Weight))
