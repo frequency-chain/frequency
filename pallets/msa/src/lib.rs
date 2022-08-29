@@ -125,11 +125,14 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	/// Storage type for MSA identifier
+	/// - Value: The current maximum MSA Id
 	#[pallet::storage]
 	#[pallet::getter(fn get_identifier)]
 	pub type MsaIdentifier<T> = StorageValue<_, MessageSourceId, ValueQuery>;
 
 	/// Storage type for mapping the relationship between a Delegator and its Provider.
+	/// - Keys: Delegator MSA, Provider MSA
+	/// - Value: [`ProviderInfo`](common_primitives::msa::ProviderInfo)
 	#[pallet::storage]
 	#[pallet::getter(fn get_provider_info_of)]
 	pub type ProviderInfoOf<T: Config> = StorageDoubleMap<
@@ -142,7 +145,9 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
-	/// Storage type for MSA key information
+	/// Provider registration information
+	/// - Key: Provider MSA Id
+	/// - Value: [`ProviderMetadata`](common_primitives::msa::ProviderMetadata)
 	#[pallet::storage]
 	#[pallet::getter(fn get_provider_metadata)]
 	pub type ProviderRegistry<T: Config> = StorageMap<
@@ -153,13 +158,17 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
-	/// Storage type for MSA key information
+	/// Storage type for key to MSA information
+	/// - Key: AccountId
+	/// - Value: [`KeyInfo`](common_primitives::msa::KeyInfo)
 	#[pallet::storage]
 	#[pallet::getter(fn get_key_info)]
 	pub type KeyInfoOf<T: Config> =
 		StorageMap<_, Blake2_128Concat, T::AccountId, KeyInfo, OptionQuery>;
 
-	/// Storage type for MSA keys
+	/// Storage for MSA keys
+	/// - Key: MSA Id
+	/// - Value: List of Keys
 	#[pallet::storage]
 	#[pallet::getter(fn get_msa_keys)]
 	pub(super) type MsaKeysOf<T: Config> = StorageMap<
