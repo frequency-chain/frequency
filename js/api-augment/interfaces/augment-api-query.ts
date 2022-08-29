@@ -8,8 +8,8 @@ import '@polkadot/api-base/types/storage';
 import type { ApiTypes, AugmentedQuery, QueryableStorageEntry } from '@polkadot/api-base/types';
 import type { BTreeMap, Bytes, Option, Vec, bool, u128, u16, u32, u64 } from '@polkadot/types-codec';
 import type { AnyNumber, ITuple } from '@polkadot/types-codec/types';
-import type { AccountId32, H256 } from '@polkadot/types/interfaces/runtime';
-import type { CommonPrimitivesMsaKeyInfo, CommonPrimitivesMsaProviderInfo, CommonPrimitivesMsaProviderMetadata, CumulusPalletDmpQueueConfigData, CumulusPalletDmpQueuePageIndexData, CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot, CumulusPalletXcmpQueueInboundChannelDetails, CumulusPalletXcmpQueueOutboundChannelDetails, CumulusPalletXcmpQueueQueueConfigData, FrameSupportWeightsPerDispatchClassU64, FrameSystemAccountInfo, FrameSystemEventRecord, FrameSystemLastRuntimeUpgradeInfo, FrameSystemPhase, FrequencyLocalRuntimeSessionKeys, OrmlVestingVestingSchedule, PalletAuthorshipUncleEntryItem, PalletBalancesAccountData, PalletBalancesBalanceLock, PalletBalancesReleases, PalletBalancesReserveData, PalletCollatorSelectionCandidateInfo, PalletMessagesMessage, PalletPreimageRequestStatus, PalletSchedulerScheduledV3, PalletSchemasSchema, PalletTransactionPaymentReleases, PolkadotCorePrimitivesOutboundHrmpMessage, PolkadotPrimitivesV2AbridgedHostConfiguration, PolkadotPrimitivesV2PersistedValidationData, PolkadotPrimitivesV2UpgradeRestriction, SpConsensusAuraSr25519AppSr25519Public, SpCoreCryptoKeyTypeId, SpRuntimeDigest, SpTrieStorageProof } from '@polkadot/types/lookup';
+import type { AccountId32, Call, H256 } from '@polkadot/types/interfaces/runtime';
+import type { CommonPrimitivesMsaKeyInfo, CommonPrimitivesMsaProviderInfo, CommonPrimitivesMsaProviderMetadata, CumulusPalletDmpQueueConfigData, CumulusPalletDmpQueuePageIndexData, CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot, CumulusPalletXcmpQueueInboundChannelDetails, CumulusPalletXcmpQueueOutboundChannelDetails, CumulusPalletXcmpQueueQueueConfigData, FrameSupportWeightsPerDispatchClassU64, FrameSystemAccountInfo, FrameSystemEventRecord, FrameSystemLastRuntimeUpgradeInfo, FrameSystemPhase, FrequencyRococoRuntimeSessionKeys, OrmlVestingVestingSchedule, PalletAuthorshipUncleEntryItem, PalletBalancesAccountData, PalletBalancesBalanceLock, PalletBalancesReleases, PalletBalancesReserveData, PalletCollatorSelectionCandidateInfo, PalletCollectiveVotes, PalletDemocracyPreimageStatus, PalletDemocracyReferendumInfo, PalletDemocracyReleases, PalletDemocracyVoteThreshold, PalletDemocracyVoteVoting, PalletMessagesMessage, PalletPreimageRequestStatus, PalletSchedulerScheduledV3, PalletSchemasSchema, PalletTransactionPaymentReleases, PolkadotCorePrimitivesOutboundHrmpMessage, PolkadotPrimitivesV2AbridgedHostConfiguration, PolkadotPrimitivesV2PersistedValidationData, PolkadotPrimitivesV2UpgradeRestriction, SpConsensusAuraSr25519AppSr25519Public, SpCoreCryptoKeyTypeId, SpRuntimeDigest, SpTrieStorageProof } from '@polkadot/types/lookup';
 import type { Observable } from '@polkadot/types/types';
 
 export type __AugmentedQuery<ApiType extends ApiTypes> = AugmentedQuery<ApiType, () => unknown>;
@@ -127,6 +127,102 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       lastAuthoredBlock: AugmentedQuery<ApiType, (arg: AccountId32 | string | Uint8Array) => Observable<u32>, [AccountId32]>;
     };
+    council: {
+      /**
+       * The current members of the collective. This is stored sorted (just by value).
+       **/
+      members: AugmentedQuery<ApiType, () => Observable<Vec<AccountId32>>, []>;
+      /**
+       * The prime member that helps determine the default vote behavior in case of absentations.
+       **/
+      prime: AugmentedQuery<ApiType, () => Observable<Option<AccountId32>>, []>;
+      /**
+       * Proposals so far.
+       **/
+      proposalCount: AugmentedQuery<ApiType, () => Observable<u32>, []>;
+      /**
+       * Actual proposal for a given hash, if it's current.
+       **/
+      proposalOf: AugmentedQuery<ApiType, (arg: H256 | string | Uint8Array) => Observable<Option<Call>>, [H256]>;
+      /**
+       * The hashes of the active proposals.
+       **/
+      proposals: AugmentedQuery<ApiType, () => Observable<Vec<H256>>, []>;
+      /**
+       * Votes on a given proposal, if it is ongoing.
+       **/
+      voting: AugmentedQuery<ApiType, (arg: H256 | string | Uint8Array) => Observable<Option<PalletCollectiveVotes>>, [H256]>;
+    };
+    democracy: {
+      /**
+       * A record of who vetoed what. Maps proposal hash to a possible existent block number
+       * (until when it may not be resubmitted) and who vetoed it.
+       **/
+      blacklist: AugmentedQuery<ApiType, (arg: H256 | string | Uint8Array) => Observable<Option<ITuple<[u32, Vec<AccountId32>]>>>, [H256]>;
+      /**
+       * Record of all proposals that have been subject to emergency cancellation.
+       **/
+      cancellations: AugmentedQuery<ApiType, (arg: H256 | string | Uint8Array) => Observable<bool>, [H256]>;
+      /**
+       * Those who have locked a deposit.
+       * 
+       * TWOX-NOTE: Safe, as increasing integer keys are safe.
+       **/
+      depositOf: AugmentedQuery<ApiType, (arg: u32 | AnyNumber | Uint8Array) => Observable<Option<ITuple<[Vec<AccountId32>, u128]>>>, [u32]>;
+      /**
+       * True if the last referendum tabled was submitted externally. False if it was a public
+       * proposal.
+       **/
+      lastTabledWasExternal: AugmentedQuery<ApiType, () => Observable<bool>, []>;
+      /**
+       * The lowest referendum index representing an unbaked referendum. Equal to
+       * `ReferendumCount` if there isn't a unbaked referendum.
+       **/
+      lowestUnbaked: AugmentedQuery<ApiType, () => Observable<u32>, []>;
+      /**
+       * The referendum to be tabled whenever it would be valid to table an external proposal.
+       * This happens when a referendum needs to be tabled and one of two conditions are met:
+       * - `LastTabledWasExternal` is `false`; or
+       * - `PublicProps` is empty.
+       **/
+      nextExternal: AugmentedQuery<ApiType, () => Observable<Option<ITuple<[H256, PalletDemocracyVoteThreshold]>>>, []>;
+      /**
+       * Map of hashes to the proposal preimage, along with who registered it and their deposit.
+       * The block number is the block at which it was deposited.
+       **/
+      preimages: AugmentedQuery<ApiType, (arg: H256 | string | Uint8Array) => Observable<Option<PalletDemocracyPreimageStatus>>, [H256]>;
+      /**
+       * The number of (public) proposals that have been made so far.
+       **/
+      publicPropCount: AugmentedQuery<ApiType, () => Observable<u32>, []>;
+      /**
+       * The public proposals. Unsorted. The second item is the proposal's hash.
+       **/
+      publicProps: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[u32, H256, AccountId32]>>>, []>;
+      /**
+       * The next free referendum index, aka the number of referenda started so far.
+       **/
+      referendumCount: AugmentedQuery<ApiType, () => Observable<u32>, []>;
+      /**
+       * Information concerning any given referendum.
+       * 
+       * TWOX-NOTE: SAFE as indexes are not under an attacker’s control.
+       **/
+      referendumInfoOf: AugmentedQuery<ApiType, (arg: u32 | AnyNumber | Uint8Array) => Observable<Option<PalletDemocracyReferendumInfo>>, [u32]>;
+      /**
+       * Storage version of the pallet.
+       * 
+       * New networks start with last version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Option<PalletDemocracyReleases>>, []>;
+      /**
+       * All votes for a particular voter. We store the balance for the number of votes that we
+       * have recorded. The second item is the total amount of delegations, that will be added.
+       * 
+       * TWOX-NOTE: SAFE as `AccountId`s are crypto hashes anyway.
+       **/
+      votingOf: AugmentedQuery<ApiType, (arg: AccountId32 | string | Uint8Array) => Observable<PalletDemocracyVoteVoting>, [AccountId32]>;
+    };
     dmpQueue: {
       /**
        * The configuration.
@@ -149,32 +245,44 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * A temporary storage of messages, given a schema id, for a duration of block period.
        * At the start of the next block this storage is cleared and moved into Messages storage.
+       * - Value: List of Messages
        **/
       blockMessages: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[PalletMessagesMessage, u16]>>>, []>;
       /**
        * A permanent storage for messages mapped by block number and schema id.
+       * - Keys: BlockNumber, Schema Id
+       * - Value: List of Messages
        **/
       messages: AugmentedQuery<ApiType, (arg1: u32 | AnyNumber | Uint8Array, arg2: u16 | AnyNumber | Uint8Array) => Observable<Vec<PalletMessagesMessage>>, [u32, u16]>;
     };
     msa: {
       /**
-       * Storage type for MSA key information
+       * Storage type for key to MSA information
+       * - Key: AccountId
+       * - Value: [`KeyInfo`](common_primitives::msa::KeyInfo)
        **/
       keyInfoOf: AugmentedQuery<ApiType, (arg: AccountId32 | string | Uint8Array) => Observable<Option<CommonPrimitivesMsaKeyInfo>>, [AccountId32]>;
       /**
        * Storage type for MSA identifier
+       * - Value: The current maximum MSA Id
        **/
       msaIdentifier: AugmentedQuery<ApiType, () => Observable<u64>, []>;
       /**
-       * Storage type for MSA keys
+       * Storage for MSA keys
+       * - Key: MSA Id
+       * - Value: List of Keys
        **/
       msaKeysOf: AugmentedQuery<ApiType, (arg: u64 | AnyNumber | Uint8Array) => Observable<Vec<AccountId32>>, [u64]>;
       /**
        * Storage type for mapping the relationship between a Delegator and its Provider.
+       * - Keys: Delegator MSA, Provider MSA
+       * - Value: [`ProviderInfo`](common_primitives::msa::ProviderInfo)
        **/
       providerInfoOf: AugmentedQuery<ApiType, (arg1: u64 | AnyNumber | Uint8Array, arg2: u64 | AnyNumber | Uint8Array) => Observable<Option<CommonPrimitivesMsaProviderInfo>>, [u64, u64]>;
       /**
-       * Storage type for MSA key information
+       * Provider registration information
+       * - Key: Provider MSA Id
+       * - Value: [`ProviderMetadata`](common_primitives::msa::ProviderMetadata)
        **/
       providerRegistry: AugmentedQuery<ApiType, (arg: u64 | AnyNumber | Uint8Array) => Observable<Option<CommonPrimitivesMsaProviderMetadata>>, [u64]>;
     };
@@ -341,16 +449,21 @@ declare module '@polkadot/api-base/types/storage' {
     };
     schemas: {
       /**
-       * Storage type for max bytes for schema model
+       * Storage for the Governance managed max bytes for schema model
+       * Allows for altering the max bytes without a full chain upgrade
+       * - Value: Max Bytes
        **/
       governanceSchemaModelMaxBytes: AugmentedQuery<ApiType, () => Observable<u32>, []>;
       /**
        * Storage type for current number of schemas
        * Useful for retrieving latest schema id
+       * - Value: Last Schema Id
        **/
       schemaCount: AugmentedQuery<ApiType, () => Observable<u16>, []>;
       /**
-       * Storage for message schemas hashes
+       * Storage for message schema struct data
+       * - Key: Schema Id
+       * - Value: [`Schema`](Schema)
        **/
       schemas: AugmentedQuery<ApiType, (arg: u16 | AnyNumber | Uint8Array) => Observable<Option<PalletSchemasSchema>>, [u16]>;
     };
@@ -374,7 +487,7 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * The next session keys for a validator.
        **/
-      nextKeys: AugmentedQuery<ApiType, (arg: AccountId32 | string | Uint8Array) => Observable<Option<FrequencyLocalRuntimeSessionKeys>>, [AccountId32]>;
+      nextKeys: AugmentedQuery<ApiType, (arg: AccountId32 | string | Uint8Array) => Observable<Option<FrequencyRococoRuntimeSessionKeys>>, [AccountId32]>;
       /**
        * True if the underlying economic identities or weighting behind the validators
        * has changed in the queued validator set.
@@ -384,7 +497,7 @@ declare module '@polkadot/api-base/types/storage' {
        * The queued keys for the next session. When the next session begins, these keys
        * will be used to determine the validator's session keys.
        **/
-      queuedKeys: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[AccountId32, FrequencyLocalRuntimeSessionKeys]>>>, []>;
+      queuedKeys: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[AccountId32, FrequencyRococoRuntimeSessionKeys]>>>, []>;
       /**
        * The current set of validators.
        **/

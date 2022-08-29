@@ -117,7 +117,164 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       ValidatorNotRegistered: AugmentedError<ApiType>;
     };
+    council: {
+      /**
+       * Members are already initialized!
+       **/
+      AlreadyInitialized: AugmentedError<ApiType>;
+      /**
+       * Duplicate proposals not allowed
+       **/
+      DuplicateProposal: AugmentedError<ApiType>;
+      /**
+       * Duplicate vote ignored
+       **/
+      DuplicateVote: AugmentedError<ApiType>;
+      /**
+       * Account is not a member
+       **/
+      NotMember: AugmentedError<ApiType>;
+      /**
+       * Proposal must exist
+       **/
+      ProposalMissing: AugmentedError<ApiType>;
+      /**
+       * The close call was made too early, before the end of the voting.
+       **/
+      TooEarly: AugmentedError<ApiType>;
+      /**
+       * There can only be a maximum of `MaxProposals` active proposals.
+       **/
+      TooManyProposals: AugmentedError<ApiType>;
+      /**
+       * Mismatched index
+       **/
+      WrongIndex: AugmentedError<ApiType>;
+      /**
+       * The given length bound for the proposal was too low.
+       **/
+      WrongProposalLength: AugmentedError<ApiType>;
+      /**
+       * The given weight bound for the proposal was too low.
+       **/
+      WrongProposalWeight: AugmentedError<ApiType>;
+    };
     cumulusXcm: {
+    };
+    democracy: {
+      /**
+       * Cannot cancel the same proposal twice
+       **/
+      AlreadyCanceled: AugmentedError<ApiType>;
+      /**
+       * The account is already delegating.
+       **/
+      AlreadyDelegating: AugmentedError<ApiType>;
+      /**
+       * Identity may not veto a proposal twice
+       **/
+      AlreadyVetoed: AugmentedError<ApiType>;
+      /**
+       * Preimage already noted
+       **/
+      DuplicatePreimage: AugmentedError<ApiType>;
+      /**
+       * Proposal already made
+       **/
+      DuplicateProposal: AugmentedError<ApiType>;
+      /**
+       * Imminent
+       **/
+      Imminent: AugmentedError<ApiType>;
+      /**
+       * The instant referendum origin is currently disallowed.
+       **/
+      InstantNotAllowed: AugmentedError<ApiType>;
+      /**
+       * Too high a balance was provided that the account cannot afford.
+       **/
+      InsufficientFunds: AugmentedError<ApiType>;
+      /**
+       * Invalid hash
+       **/
+      InvalidHash: AugmentedError<ApiType>;
+      /**
+       * Maximum number of votes reached.
+       **/
+      MaxVotesReached: AugmentedError<ApiType>;
+      /**
+       * No proposals waiting
+       **/
+      NoneWaiting: AugmentedError<ApiType>;
+      /**
+       * Delegation to oneself makes no sense.
+       **/
+      Nonsense: AugmentedError<ApiType>;
+      /**
+       * The actor has no permission to conduct the action.
+       **/
+      NoPermission: AugmentedError<ApiType>;
+      /**
+       * No external proposal
+       **/
+      NoProposal: AugmentedError<ApiType>;
+      /**
+       * The account is not currently delegating.
+       **/
+      NotDelegating: AugmentedError<ApiType>;
+      /**
+       * Not imminent
+       **/
+      NotImminent: AugmentedError<ApiType>;
+      /**
+       * Next external proposal not simple majority
+       **/
+      NotSimpleMajority: AugmentedError<ApiType>;
+      /**
+       * The given account did not vote on the referendum.
+       **/
+      NotVoter: AugmentedError<ApiType>;
+      /**
+       * Invalid preimage
+       **/
+      PreimageInvalid: AugmentedError<ApiType>;
+      /**
+       * Preimage not found
+       **/
+      PreimageMissing: AugmentedError<ApiType>;
+      /**
+       * Proposal still blacklisted
+       **/
+      ProposalBlacklisted: AugmentedError<ApiType>;
+      /**
+       * Proposal does not exist
+       **/
+      ProposalMissing: AugmentedError<ApiType>;
+      /**
+       * Vote given for invalid referendum
+       **/
+      ReferendumInvalid: AugmentedError<ApiType>;
+      /**
+       * Too early
+       **/
+      TooEarly: AugmentedError<ApiType>;
+      /**
+       * Maximum number of proposals reached.
+       **/
+      TooManyProposals: AugmentedError<ApiType>;
+      /**
+       * Value too low
+       **/
+      ValueLow: AugmentedError<ApiType>;
+      /**
+       * The account currently has votes attached to it and the operation cannot succeed until
+       * these are removed, either through `unvote` or `reap_vote`.
+       **/
+      VotesExist: AugmentedError<ApiType>;
+      /**
+       * Invalid upper bound.
+       **/
+      WrongUpperBound: AugmentedError<ApiType>;
     };
     dmpQueue: {
       /**
@@ -197,6 +354,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       ExceedsMaxProviderNameSize: AugmentedError<ApiType>;
       /**
+       * The maximum number of schema grants has been exceeded
+       **/
+      ExceedsMaxSchemaGrants: AugmentedError<ApiType>;
+      /**
        * An MSA may not be its own delegate
        **/
       InvalidSelfProvider: AugmentedError<ApiType>;
@@ -232,6 +393,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Ony the MSA Owner may perform the operation
        **/
       NotMsaOwner: AugmentedError<ApiType>;
+      /**
+       * Provider is not permitted to publish for given schema_id
+       **/
+      SchemaNotGranted: AugmentedError<ApiType>;
       /**
        * Origin attempted to add a delegate for someone else's MSA
        **/

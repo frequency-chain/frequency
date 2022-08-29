@@ -6,7 +6,7 @@
 import '@polkadot/api-base/types/consts';
 
 import type { ApiTypes, AugmentedConst } from '@polkadot/api-base/types';
-import type { u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
+import type { bool, u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
 import type { FrameSupportWeightsRuntimeDbWeight, FrameSystemLimitsBlockLength, FrameSystemLimitsBlockWeights, SpVersionRuntimeVersion } from '@polkadot/types/lookup';
 
 export type __AugmentedConst<ApiType extends ApiTypes> = AugmentedConst<ApiType>;
@@ -36,6 +36,64 @@ declare module '@polkadot/api-base/types/consts' {
        **/
       maxReserves: u32 & AugmentedConst<ApiType>;
     };
+    democracy: {
+      /**
+       * Period in blocks where an external proposal may not be re-submitted after being vetoed.
+       **/
+      cooloffPeriod: u32 & AugmentedConst<ApiType>;
+      /**
+       * The period between a proposal being approved and enacted.
+       * 
+       * It should generally be a little more than the unstake period to ensure that
+       * voting stakers have an opportunity to remove themselves from the system in the case
+       * where they are on the losing side of a vote.
+       **/
+      enactmentPeriod: u32 & AugmentedConst<ApiType>;
+      /**
+       * Minimum voting period allowed for a fast-track referendum.
+       **/
+      fastTrackVotingPeriod: u32 & AugmentedConst<ApiType>;
+      /**
+       * Indicator for whether an emergency origin is even allowed to happen. Some chains may
+       * want to set this permanently to `false`, others may want to condition it on things such
+       * as an upgrade having happened recently.
+       **/
+      instantAllowed: bool & AugmentedConst<ApiType>;
+      /**
+       * How often (in blocks) new public referenda are launched.
+       **/
+      launchPeriod: u32 & AugmentedConst<ApiType>;
+      /**
+       * The maximum number of public proposals that can exist at any time.
+       **/
+      maxProposals: u32 & AugmentedConst<ApiType>;
+      /**
+       * The maximum number of votes for an account.
+       * 
+       * Also used to compute weight, an overly big value can
+       * lead to extrinsic with very big weight: see `delegate` for instance.
+       **/
+      maxVotes: u32 & AugmentedConst<ApiType>;
+      /**
+       * The minimum amount to be used as a deposit for a public referendum proposal.
+       **/
+      minimumDeposit: u128 & AugmentedConst<ApiType>;
+      /**
+       * The amount of balance that must be deposited per byte of preimage stored.
+       **/
+      preimageByteDeposit: u128 & AugmentedConst<ApiType>;
+      /**
+       * The minimum period of vote locking.
+       * 
+       * It should be no shorter than enactment period to ensure that in the case of an approval,
+       * those successful voters are locked into the consequences that their votes entail.
+       **/
+      voteLockingPeriod: u32 & AugmentedConst<ApiType>;
+      /**
+       * How often (in blocks) to check for new votes.
+       **/
+      votingPeriod: u32 & AugmentedConst<ApiType>;
+    };
     messages: {
       /**
        * The maximum size of a message payload bytes.
@@ -55,6 +113,10 @@ declare module '@polkadot/api-base/types/consts' {
        * Maximum provider name size allowed per MSA association
        **/
       maxProviderNameSize: u32 & AugmentedConst<ApiType>;
+      /**
+       * Maximum count of schemas granted for publishing data per Provider
+       **/
+      maxSchemaGrants: u32 & AugmentedConst<ApiType>;
     };
     scheduler: {
       /**
