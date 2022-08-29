@@ -37,7 +37,7 @@
 //! - `add_provider_to_msa` - Creates a delegation relationship between a `Provider` and MSA.
 //! - `create` - Creates an MSA for the `Origin`.
 //! - `create_sponsored_account_with_delegation` - `Origin` creates an account for a given `AccountId` and sets themselves as a `Provider`.
-//! - `remove_delegation_by_provider` - `Provider` MSA terminates a Delegation with Delegator MSA by expiring it.
+//! - `revoke_delegation_by_provider` - `Provider` MSA terminates a Delegation with Delegator MSA by expiring it.
 //! - `revoke_msa_delegation_by_delegator` - Delegator MSA terminates a Delegation with the `Provider` MSA by expiring it.
 //! - `delete_msa_key` - Removes the given key by from storage against respective MSA.
 //!
@@ -493,8 +493,8 @@ pub mod pallet {
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if `provider_key` does not have an MSA key.
 		/// - Returns [`DelegationNotFound`](Error::DelegationNotFound) if there is no Delegation between origin MSA and provider MSA.
 		///
-		#[pallet::weight((T::WeightInfo::remove_delegation_by_provider(20_000), DispatchClass::Normal, Pays::No))]
-		pub fn remove_delegation_by_provider(
+		#[pallet::weight((T::WeightInfo::revoke_delegation_by_provider(20_000), DispatchClass::Normal, Pays::No))]
+		pub fn revoke_delegation_by_provider(
 			origin: OriginFor<T>,
 			delegator: MessageSourceId,
 		) -> DispatchResult {
