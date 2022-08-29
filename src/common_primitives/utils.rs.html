@@ -72,7 +72,7 @@
 
 	<span class="doccomment">/// Deserializes a hexadecimal string into a `Vec&lt;u8&gt;`</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span>, <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">D::Error</span><span class="op">&gt;</span> {
-		<span class="prelude-val">Ok</span>(<span class="ident">impl_serde::serialize::deserialize</span>(<span class="ident">deserializer</span>)<span class="question-mark">?</span>)
+		<span class="ident">impl_serde::serialize::deserialize</span>(<span class="ident">deserializer</span>)
 	}
 }
 
