@@ -928,7 +928,7 @@
 <span class="doccomment">//! - `add_provider_to_msa` - Creates a delegation relationship between a `Provider` and MSA.</span>
 <span class="doccomment">//! - `create` - Creates an MSA for the `Origin`.</span>
 <span class="doccomment">//! - `create_sponsored_account_with_delegation` - `Origin` creates an account for a given `AccountId` and sets themselves as a `Provider`.</span>
-<span class="doccomment">//! - `remove_delegation_by_provider` - `Provider` MSA terminates a Delegation with Delegator MSA by expiring it.</span>
+<span class="doccomment">//! - `revoke_delegation_by_provider` - `Provider` MSA terminates a Delegation with Delegator MSA by expiring it.</span>
 <span class="doccomment">//! - `revoke_msa_delegation_by_delegator` - Delegator MSA terminates a Delegation with the `Provider` MSA by expiring it.</span>
 <span class="doccomment">//! - `delete_msa_key` - Removes the given key by from storage against respective MSA.</span>
 <span class="doccomment">//!</span>
@@ -1384,8 +1384,8 @@
 		<span class="doccomment">/// - Returns [`NoKeyExists`](Error::NoKeyExists) if `provider_key` does not have an MSA key.</span>
 		<span class="doccomment">/// - Returns [`DelegationNotFound`](Error::DelegationNotFound) if there is no Delegation between origin MSA and provider MSA.</span>
 		<span class="doccomment">///</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>((<span class="ident">T::WeightInfo::remove_delegation_by_provider</span>(<span class="number">20_000</span>), <span class="ident">DispatchClass::Normal</span>, <span class="ident">Pays::No</span>))]</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">remove_delegation_by_provider</span>(
+		<span class="attribute">#[<span class="ident">pallet::weight</span>((<span class="ident">T::WeightInfo::revoke_delegation_by_provider</span>(<span class="number">20_000</span>), <span class="ident">DispatchClass::Normal</span>, <span class="ident">Pays::No</span>))]</span>
+		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">revoke_delegation_by_provider</span>(
 			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
 			<span class="ident">delegator</span>: <span class="ident">MessageSourceId</span>,
 		) -&gt; <span class="ident">DispatchResult</span> {

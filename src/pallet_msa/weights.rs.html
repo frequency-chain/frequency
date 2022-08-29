@@ -262,7 +262,7 @@
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">WeightInfo</span> {
 	<span class="kw">fn</span> <span class="ident">create</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span>;
 	<span class="kw">fn</span> <span class="ident">create_sponsored_account_with_delegation</span>() -&gt; <span class="ident">Weight</span>;
-	<span class="kw">fn</span> <span class="ident">remove_delegation_by_provider</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span>;
+	<span class="kw">fn</span> <span class="ident">revoke_delegation_by_provider</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span>;
 	<span class="kw">fn</span> <span class="ident">add_key_to_msa</span>() -&gt; <span class="ident">Weight</span>;
 	<span class="kw">fn</span> <span class="ident">delete_msa_key</span>() -&gt; <span class="ident">Weight</span>;
 	<span class="kw">fn</span> <span class="ident">add_provider_to_msa</span>() -&gt; <span class="ident">Weight</span>;
@@ -294,7 +294,7 @@
 	}
 	<span class="comment">// Storage: Msa KeyInfoOf (r:1 w:0)</span>
 	<span class="comment">// Storage: Msa ProviderInfoOf (r:1 w:1)</span>
-	<span class="kw">fn</span> <span class="ident">remove_delegation_by_provider</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
+	<span class="kw">fn</span> <span class="ident">revoke_delegation_by_provider</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
 		(<span class="number">20_180_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			<span class="comment">// Standard Error: 0</span>
 			.<span class="ident">saturating_add</span>((<span class="number">6_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
@@ -361,7 +361,7 @@
 	}
 	<span class="comment">// Storage: Msa KeyInfoOf (r:1 w:0)</span>
 	<span class="comment">// Storage: Msa ProviderInfoOf (r:1 w:1)</span>
-	<span class="kw">fn</span> <span class="ident">remove_delegation_by_provider</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
+	<span class="kw">fn</span> <span class="ident">revoke_delegation_by_provider</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
 		(<span class="number">20_180_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			<span class="comment">// Standard Error: 0</span>
 			.<span class="ident">saturating_add</span>((<span class="number">6_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
