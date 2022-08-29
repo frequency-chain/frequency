@@ -316,7 +316,7 @@ pub fn add_provider_to_msa_throws_add_provider_verification_failed() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let account = key_pair.public();
-		let add_provider_payload = AddProvider::<MaxSchemaGrants>::new(2, 0, None);
+		let add_provider_payload = AddProvider::new(2, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
