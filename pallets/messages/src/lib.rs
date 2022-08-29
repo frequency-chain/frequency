@@ -368,16 +368,19 @@ impl<T: Config> Pallet<T> {
 			for i in from_index..list_size {
 				let m = list[i as usize].clone();
 
-				let mut payload_length: u32 = 0;
-				let payload = m.payload.clone().into_inner();
+				let mut payload_length: Option<u32> = None;
+				let mut payload: Vec<u8> = Default::default();
 
 				if payload_location == PayloadLocation::OnChain {
-					payload_length = m.payload.len().try_into().unwrap();
+					payload = m.payload.clone().into_inner();
 				} else if payload_location == PayloadLocation::IPFS {
-					type PayloadType = (Vec<u8>, u32);
-					(_, payload_length) = PayloadType::decode(&mut &payload[..]).unwrap();
+					let decoded_payload_length: u32;
+					(payload, decoded_payload_length) =
+						OffchainPayloadType::decode(&mut &m.payload[..]).unwrap();
+					payload_length = Some(decoded_payload_length);
 				}
-				response.content.push(m.map_to_response(block_number, payload_length));
+
+				response.content.push(m.map_to_response(block_number, payload, payload_length));
 
 				if Self::check_end_condition_and_set_next_pagination(
 					block_number,

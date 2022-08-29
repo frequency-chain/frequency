@@ -27,9 +27,11 @@ fn populate_messages(
 	let mut payload = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
 
 	if payload_location == PayloadLocation::IPFS {
-		payload =
-			("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq", IPFS_PAYLOAD_LENGTH)
-				.encode();
+		payload = (
+			Vec::from("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes()),
+			IPFS_PAYLOAD_LENGTH,
+		)
+			.encode();
 	}
 
 	let mut counter = 0;
@@ -265,7 +267,6 @@ fn get_messages_by_schema_with_valid_request_should_return_paginated() {
 		assert_eq!(pagination_response.next_index, Some(from_index + page_size));
 
 		let payload = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
-		let payload_length = payload.len() as u32;
 		assert_eq!(
 			pagination_response.content[0],
 			MessageResponse {
@@ -274,7 +275,7 @@ fn get_messages_by_schema_with_valid_request_should_return_paginated() {
 				index: from_index as u16,
 				provider_msa_id: 1,
 				block_number: 0,
-				payload_length,
+				payload_length: None,
 			}
 		);
 	});
@@ -410,9 +411,8 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_return_offchain_payl
 		assert_eq!(pagination_response.next_block, Some(0));
 		assert_eq!(pagination_response.next_index, Some(from_index + page_size));
 
-		let payload =
-			("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq", IPFS_PAYLOAD_LENGTH)
-				.encode();
+		let cid =
+			Vec::from("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes());
 
 		// IPFS messages should return the payload length that was encoded in a tuple along
 		// with the CID: (cid, payload_length).
@@ -420,11 +420,11 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_return_offchain_payl
 			pagination_response.content[0],
 			MessageResponse {
 				msa_id: 10,
-				payload,
+				payload: cid,
 				index: from_index as u16,
 				provider_msa_id: 1,
 				block_number: 0,
-				payload_length: IPFS_PAYLOAD_LENGTH,
+				payload_length: Some(IPFS_PAYLOAD_LENGTH),
 			}
 		);
 	});
