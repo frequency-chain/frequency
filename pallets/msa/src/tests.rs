@@ -6,6 +6,7 @@ use crate::{
 };
 use common_primitives::{
 	msa::{Delegator, KeyInfo, KeyInfoResponse, OrderedSetExt, Provider, ProviderInfo},
+	schema::SchemaId,
 	utils::wrap_binary_data,
 };
 use frame_support::{
@@ -1227,5 +1228,19 @@ fn register_provider_duplicate() {
 			Msa::register_provider(Origin::signed(key_pair.public().into()), Vec::from("Foo")),
 			Error::<Test>::DuplicateProviderMetadata
 		)
+	})
+}
+
+#[test]
+pub fn valid_schema_grant() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		let schemas: Vec<SchemaId> = vec![1, 2, 3];
+		assert_ok!(Msa::add_provider(provider, delegator, schemas));
+
+		System::set_block_number(System::block_number() + 1);
+
+		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 1_u16));
 	})
 }

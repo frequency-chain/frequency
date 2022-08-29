@@ -311,7 +311,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
 			proof: MultiSignature,
-			add_provider_payload: AddProvider<T::MaxSchemaGrants>,
+			add_provider_payload: AddProvider,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
@@ -387,7 +387,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
 			proof: MultiSignature,
-			add_provider_payload: AddProvider<T::MaxSchemaGrants>,
+			add_provider_payload: AddProvider,
 		) -> DispatchResult {
 			let delegator_key = ensure_signed(origin)?;
 
@@ -640,14 +640,16 @@ impl<T: Config> Pallet<T> {
 	pub fn add_provider(
 		provider: Provider,
 		delegator: Delegator,
-		schemas: BoundedVec<SchemaId, T::MaxSchemaGrants>,
+		schemas: Vec<SchemaId>,
 	) -> DispatchResult {
 		ProviderInfoOf::<T>::try_mutate(delegator, provider, |maybe_info| -> DispatchResult {
 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
+			let granted_schemas = BoundedVec::<SchemaId, T::MaxSchemaGrants>::try_from(schemas)
+				.map_err(|_| Error::<T>::ExceedsMaxSchemaGrants)?;
 			let info = ProviderInfo {
 				permission: Default::default(),
 				expired: Default::default(),
-				schemas: OrderedSetExt::<SchemaId, T::MaxSchemaGrants>::from(schemas),
+				schemas: OrderedSetExt::<SchemaId, T::MaxSchemaGrants>::from(granted_schemas),
 			};
 
 			*maybe_info = Some(info);
@@ -761,6 +763,28 @@ impl<T: Config> Pallet<T> {
 
 		Ok(info)
 	}
+
+	/// Check if provider is allowed to publish for a given schema_id for a given delegator
+	/// # Arguments
+	/// * `provider` - The provider account
+	/// * `delegator` - The delegator account
+	/// * `schema_id` - The schema id
+	/// # Returns
+	/// * [`DispatchResult`]
+	/// # Errors
+	/// * [`Error::DelegationNotFound`]
+	/// * [`Error::SchemaNotGranted`]
+	pub fn ensure_valid_schema_grant(
+		provider: Provider,
+		delegator: Delegator,
+		schema_id: SchemaId,
+	) -> DispatchResult {
+		let provider_info = Self::get_provider_info_of(delegator, provider)
+			.ok_or(Error::<T>::DelegationNotFound)?;
+
+		ensure!(provider_info.schemas.0.contains(&schema_id), Error::<T>::SchemaNotGranted);
+		Ok(())
+	}
 }
 
 impl<T: Config> AccountProvider for Pallet<T> {
@@ -819,11 +843,7 @@ impl<T: Config> AccountProvider for Pallet<T> {
 		delegator: Delegator,
 		schema_id: SchemaId,
 	) -> DispatchResult {
-		let provider_info = Self::get_provider_info_of(delegator, provider)
-			.ok_or(Error::<T>::DelegationNotFound)?;
-
-		ensure!(provider_info.schemas.0.contains(&schema_id), Error::<T>::SchemaNotGranted);
-		Ok(())
+		Self::ensure_valid_schema_grant(provider, delegator, schema_id)
 	}
 
 	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded

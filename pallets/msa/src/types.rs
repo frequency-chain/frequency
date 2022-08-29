@@ -23,33 +23,26 @@ pub struct AddKeyData {
 
 /// Structure that is signed for granting permissions to a Provider
 #[derive(TypeInfo, Clone, Debug, Decode, Encode, PartialEq, Eq)]
-#[scale_info(skip_type_params(MaxDataSize))]
-pub struct AddProvider<MaxDataSize>
-where
-	MaxDataSize: Get<u32>,
-{
+pub struct AddProvider {
 	/// The provider being granted permissions
 	pub authorized_msa_id: MessageSourceId,
 	/// The permissions granted
 	pub permission: u8,
 	/// Schemas for which publishing grants are authorized.
 	/// This is private intended for internal use only.
-	pub schema_ids: BoundedVec<SchemaId, MaxDataSize>,
+	pub schema_ids: Vec<SchemaId>,
 }
 
-impl<MaxDataSize> AddProvider<MaxDataSize>
-where
-	MaxDataSize: Get<u32>,
-{
+impl AddProvider {
 	/// Create new `AddProvider`
 	pub fn new(
 		authorized_msa_id: MessageSourceId,
 		permission: u8,
-		schema_ids: Option<BoundedVec<SchemaId, MaxDataSize>>,
+		schema_ids: Option<Vec<SchemaId>>,
 	) -> Self {
 		let schema_ids = match schema_ids {
 			Some(schemas) => schemas,
-			None => BoundedVec::default(),
+			None => Vec::default(),
 		};
 
 		Self { authorized_msa_id, permission, schema_ids }

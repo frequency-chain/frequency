@@ -129,8 +129,7 @@ pub fn test_create_delegator_msa_with_provider() -> (u8, u64) {
 	let provider_account = key_pair.public();
 	let delegator_msa_id: u8 = 1;
 
-	let add_provider_payload =
-		pallet_msa::AddProvider::<MaxSchemaGrants>::new(delegator_msa_id.into(), 0, None);
+	let add_provider_payload = pallet_msa::AddProvider::new(delegator_msa_id.into(), 0, None);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 	let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();

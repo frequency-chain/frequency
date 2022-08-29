@@ -30,13 +30,10 @@ fn create_msa<T: Config>(n: u32) -> DispatchResult {
 	Msa::<T>::create(RawOrigin::Signed(acc.clone()).into())
 }
 
-fn create_payload_and_signature<T: Config>(
-) -> (AddProvider<T::MaxSchemaGrants>, MultiSignature, T::AccountId) {
+fn create_payload_and_signature<T: Config>() -> (AddProvider, MultiSignature, T::AccountId) {
 	let delegator_account = SignerId::generate_pair(None);
 	let schemas: Vec<SchemaId> = vec![1, 2, 3];
-	let granted_schemas: BoundedVec<SchemaId, T::MaxSchemaGrants> =
-		BoundedVec::try_from(schemas).unwrap();
-	let add_provider_payload = AddProvider::new(1u64, 0, Some(granted_schemas));
+	let add_provider_payload = AddProvider::new(1u64, 0, Some(schemas));
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 	let signature = delegator_account.sign(&encode_add_provider_data).unwrap();
