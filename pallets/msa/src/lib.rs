@@ -128,9 +128,9 @@ pub mod pallet {
 	#[pallet::getter(fn get_provider_info_of)]
 	pub type ProviderInfoOf<T: Config> = StorageDoubleMap<
 		_,
-		Blake2_128Concat,
+		Twox64Concat,
 		Delegator,
-		Blake2_128Concat,
+		Twox64Concat,
 		Provider,
 		ProviderInfo<T::BlockNumber>,
 		OptionQuery,
@@ -143,8 +143,8 @@ pub mod pallet {
 	#[pallet::getter(fn get_provider_metadata)]
 	pub type ProviderRegistry<T: Config> = StorageMap<
 		_,
-		Blake2_128Concat,
-		MessageSourceId,
+		Twox64Concat,
+		Provider,
 		ProviderMetadata<T::MaxProviderNameSize>,
 		OptionQuery,
 	>;
@@ -154,8 +154,7 @@ pub mod pallet {
 	/// - Value: [`KeyInfo`](common_primitives::msa::KeyInfo)
 	#[pallet::storage]
 	#[pallet::getter(fn get_key_info)]
-	pub type KeyInfoOf<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::AccountId, KeyInfo, OptionQuery>;
+	pub type KeyInfoOf<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, KeyInfo, OptionQuery>;
 
 	/// Storage for MSA keys
 	/// - Key: MSA Id
@@ -164,7 +163,7 @@ pub mod pallet {
 	#[pallet::getter(fn get_msa_keys)]
 	pub(super) type MsaKeysOf<T: Config> = StorageMap<
 		_,
-		Blake2_128Concat,
+		Twox64Concat,
 		MessageSourceId,
 		BoundedVec<T::AccountId, T::MaxKeys>,
 		ValueQuery,
@@ -344,7 +343,7 @@ pub mod pallet {
 
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?.msa_id;
 			ProviderRegistry::<T>::try_mutate(
-				provider_msa_id,
+				Provider(provider_msa_id),
 				|maybe_metadata| -> DispatchResult {
 					ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderMetadata);
 					*maybe_metadata = Some(ProviderMetadata { provider_name: bounded_name });
