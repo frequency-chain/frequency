@@ -167,13 +167,12 @@ genesis state and WASM:
 - `make specs-rococo-2000` for Rococo local testnet
 - `make specs-rococo-4044` for Rococo public testnet
 
-# Format and Lint
+# Format, Lint and Audit Source Code
 
-- Format code with `make format`  according to style guidelines and configurations
-in `rustfmt.toml`.
-- Lint code with with `make lint` to catch common mistakes and improve your
-[Rust](https://github.com/rust-lang/rust) code.
+- Format code with `make format` according to style guidelines and configurations in `rustfmt.toml`.
+- Lint code with with `make lint` to catch common mistakes and improve your [Rust](https://github.com/rust-lang/rust) code.
 - Alternatively, run `make format-lint` to run both at the same time.
+- Run `cargo-audit` to audit Cargo.lock files for crates with security vulnerabilities reported to the RustSec Advisory Database. [See cargo-audit installation instructions](https://github.com/RustSec/rustsec/tree/main/cargo-audit)
 
 # Verify Runtime
 
