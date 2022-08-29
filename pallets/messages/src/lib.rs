@@ -189,11 +189,11 @@ pub mod pallet {
 			payload_length: u32,
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
-			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> =
-				(cid.clone(), payload_length)
-					.encode()
-					.try_into()
-					.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
+			let payload_tuple: OffchainPayloadType = (cid.clone(), payload_length);
+			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = payload_tuple
+				.encode()
+				.try_into()
+				.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
 			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
