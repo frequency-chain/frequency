@@ -1922,7 +1922,7 @@ export default {
       delete_msa_key: {
         key: 'AccountId32',
       },
-      remove_delegation_by_provider: {
+      revoke_delegation_by_provider: {
         delegator: 'u64'
       }
     }
