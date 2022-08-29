@@ -36,7 +36,7 @@ where
 		&self,
 		block_number: BlockNumber,
 		payload: Vec<u8>,
-		payload_length: Option<u32>,
+		payload_length: u32,
 	) -> MessageResponse<BlockNumber> {
 		MessageResponse {
 			provider_msa_id: self.provider_msa_id,

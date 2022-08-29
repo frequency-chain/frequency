@@ -24,15 +24,15 @@ fn populate_messages(
 	message_per_block: Vec<u32>,
 	payload_location: PayloadLocation,
 ) {
-	let mut payload = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
-
-	if payload_location == PayloadLocation::IPFS {
-		payload = (
+	let payload = match payload_location {
+		PayloadLocation::OnChain =>
+			Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes()),
+		PayloadLocation::IPFS => (
 			Vec::from("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes()),
 			IPFS_PAYLOAD_LENGTH,
 		)
-			.encode();
-	}
+			.encode(),
+	};
 
 	let mut counter = 0;
 	for (idx, count) in message_per_block.iter().enumerate() {
@@ -271,11 +271,11 @@ fn get_messages_by_schema_with_valid_request_should_return_paginated() {
 			pagination_response.content[0],
 			MessageResponse {
 				msa_id: 10,
-				payload,
+				payload: payload.clone(),
 				index: from_index as u16,
 				provider_msa_id: 1,
 				block_number: 0,
-				payload_length: None,
+				payload_length: payload.len().try_into().unwrap(),
 			}
 		);
 	});
@@ -424,7 +424,7 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_return_offchain_payl
 				index: from_index as u16,
 				provider_msa_id: 1,
 				block_number: 0,
-				payload_length: Some(IPFS_PAYLOAD_LENGTH),
+				payload_length: IPFS_PAYLOAD_LENGTH,
 			}
 		);
 	});

@@ -29,7 +29,7 @@ pub struct MessageResponse<BlockNumber> {
 	/// Block-number for which the message was stored.
 	pub block_number: BlockNumber,
 	///  Offchain payload length (IPFS).
-	pub payload_length: Option<u32>,
+	pub payload_length: u32,
 }
 
 /// A type for requesting paginated messages.
