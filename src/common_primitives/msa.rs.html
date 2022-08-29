@@ -141,20 +141,73 @@
 <span id="135">135</span>
 <span id="136">136</span>
 <span id="137">137</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">MaxEncodedLen</span>};
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">EncodeLike</span>, <span class="ident">Error</span>, <span class="ident">MaxEncodedLen</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">dispatch::DispatchResult</span>, <span class="ident">traits::Get</span>, <span class="ident">BoundedVec</span>};
 <span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime::DispatchError</span>;
+<span class="kw">use</span> <span class="ident">sp_std::prelude::Vec</span>;
 
 <span class="doccomment">/// Message Source Id or msaId is the unique identifier for Message Source Accounts</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">MessageSourceId</span> <span class="op">=</span> <span class="ident">u64</span>;
 
 <span class="doccomment">/// A Delegator is a role for an MSA to play.</span>
 <span class="doccomment">/// Delegators delegate to Providers.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">PartialEq</span>, <span class="ident">MaxEncodedLen</span>, <span class="ident">Eq</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">MaxEncodedLen</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Delegator</span>(<span class="kw">pub</span> <span class="ident">MessageSourceId</span>);
+
+<span class="kw">impl</span> <span class="ident">EncodeLike</span> <span class="kw">for</span> <span class="ident">Delegator</span> {}
+
+<span class="kw">impl</span> <span class="ident">Encode</span> <span class="kw">for</span> <span class="ident">Delegator</span> {
+	<span class="kw">fn</span> <span class="ident">encode</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+		<span class="self">self</span>.<span class="number">0</span>.<span class="ident">encode</span>()
+	}
+}
+
+<span class="kw">impl</span> <span class="ident">Decode</span> <span class="kw">for</span> <span class="ident">Delegator</span> {
+	<span class="kw">fn</span> <span class="ident">decode</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">codec::Input</span><span class="op">&gt;</span>(<span class="ident">input</span>: <span class="kw-2">&amp;mut</span> <span class="ident">I</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">codec::Error</span><span class="op">&gt;</span> {
+		<span class="kw">match</span> <span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::decode</span>(<span class="ident">input</span>) {
+			<span class="prelude-val">Ok</span>(<span class="ident">x</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Delegator</span>(<span class="ident">x</span>)),
+			<span class="kw">_</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">Error::from</span>(<span class="string">&quot;Could not decode Delegator&quot;</span>)),
+		}
+	}
+}
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Delegator</span> {
 	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">t</span>: <span class="ident">MessageSourceId</span>) -&gt; <span class="self">Self</span> {
@@ -199,8 +252,25 @@
 
 <span class="doccomment">/// Provider is the recipient of a delegation.</span>
 <span class="doccomment">/// It is a subset of an MSA</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">PartialEq</span>, <span class="ident">MaxEncodedLen</span>, <span class="ident">Eq</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">MaxEncodedLen</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Provider</span>(<span class="kw">pub</span> <span class="ident">MessageSourceId</span>);
+
+<span class="kw">impl</span> <span class="ident">EncodeLike</span> <span class="kw">for</span> <span class="ident">Provider</span> {}
+
+<span class="kw">impl</span> <span class="ident">Encode</span> <span class="kw">for</span> <span class="ident">Provider</span> {
+	<span class="kw">fn</span> <span class="ident">encode</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+		<span class="self">self</span>.<span class="number">0</span>.<span class="ident">encode</span>()
+	}
+}
+
+<span class="kw">impl</span> <span class="ident">Decode</span> <span class="kw">for</span> <span class="ident">Provider</span> {
+	<span class="kw">fn</span> <span class="ident">decode</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">codec::Input</span><span class="op">&gt;</span>(<span class="ident">input</span>: <span class="kw-2">&amp;mut</span> <span class="ident">I</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">codec::Error</span><span class="op">&gt;</span> {
+		<span class="kw">match</span> <span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::decode</span>(<span class="ident">input</span>) {
+			<span class="prelude-val">Ok</span>(<span class="ident">x</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Provider</span>(<span class="ident">x</span>)),
+			<span class="kw">_</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">Error::from</span>(<span class="string">&quot;Could not decode Provider&quot;</span>)),
+		}
+	}
+}
 
 <span class="doccomment">/// This is the metadata associated with a provider. As of now it is just a</span>
 <span class="doccomment">/// name, but it will likely be expanded in the future</span>
