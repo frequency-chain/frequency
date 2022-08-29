@@ -33,7 +33,10 @@ fn create_msa<T: Config>(n: u32) -> DispatchResult {
 fn create_payload_and_signature<T: Config>(
 ) -> (AddProvider<T::MaxSchemaGrants>, MultiSignature, T::AccountId) {
 	let delegator_account = SignerId::generate_pair(None);
-	let add_provider_payload = AddProvider::new(1u64, 0, None);
+	let schemas: Vec<SchemaId> = vec![1, 2, 3];
+	let granted_schemas: BoundedVec<SchemaId, T::MaxSchemaGrants> =
+		BoundedVec::try_from(schemas).unwrap();
+	let add_provider_payload = AddProvider::new(1u64, 0, Some(granted_schemas));
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 	let signature = delegator_account.sign(&encode_add_provider_data).unwrap();
@@ -62,7 +65,10 @@ fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSource
 }
 
 fn add_delegation<T: Config>(delegator: Delegator, provider: Provider) {
-	assert_ok!(Msa::<T>::add_provider(provider, delegator, BoundedVec::default()));
+	let schemas: Vec<SchemaId> = vec![1, 2, 3];
+	let granted_schemas: BoundedVec<SchemaId, T::MaxSchemaGrants> =
+		BoundedVec::try_from(schemas).unwrap();
+	assert_ok!(Msa::<T>::add_provider(provider, delegator, granted_schemas));
 }
 
 benchmarks! {
