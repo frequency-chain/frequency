@@ -12,7 +12,6 @@ use common_primitives::{
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	weights::{DispatchInfo, GetDispatchInfo, Pays},
-	BoundedVec,
 };
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::{traits::SignedExtension, MultiSignature};
@@ -919,7 +918,7 @@ pub fn remove_delegation_by_provider_errors_when_no_delegator_msa_id() {
 			Error::<Test>::DelegationNotFound
 		);
 
-		assert_ok!(Msa::add_provider(Provider(1), Delegator(2), BoundedVec::default()));
+		assert_ok!(Msa::add_provider(Provider(1), Delegator(2), Vec::default()));
 		assert_ok!(Msa::revoke_provider(Provider(1), Delegator(2)));
 		// 3. when_delegation_expired
 		assert_noop!(
@@ -935,7 +934,7 @@ pub fn valid_delegation() {
 		let provider = Provider(1);
 		let delegator = Delegator(2);
 
-		assert_ok!(Msa::add_provider(provider, delegator, BoundedVec::default()));
+		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
 
 		System::set_block_number(System::block_number() + 1);
 
@@ -962,7 +961,7 @@ pub fn delegation_expired() {
 		let provider = Provider(1);
 		let delegator = Delegator(2);
 
-		assert_ok!(Msa::add_provider(provider, delegator, BoundedVec::default()));
+		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
 
 		System::set_block_number(System::block_number() + 1);
 		assert_ok!(Msa::ensure_valid_delegation(provider, delegator));
@@ -1236,11 +1235,41 @@ pub fn valid_schema_grant() {
 	new_test_ext().execute_with(|| {
 		let provider = Provider(1);
 		let delegator = Delegator(2);
-		let schemas: Vec<SchemaId> = vec![1, 2, 3];
+		let schemas: Vec<SchemaId> = vec![1, 2];
 		assert_ok!(Msa::add_provider(provider, delegator, schemas));
 
 		System::set_block_number(System::block_number() + 1);
 
 		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 1_u16));
+	})
+}
+
+#[test]
+pub fn error_exceeding_max_schema_grants() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		let schemas: Vec<SchemaId> = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+		assert_err!(
+			Msa::add_provider(provider, delegator, schemas),
+			Error::<Test>::ExceedsMaxSchemaGrants
+		);
+	})
+}
+
+#[test]
+pub fn error_schema_not_granted() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		let schemas: Vec<SchemaId> = vec![1, 2];
+		assert_ok!(Msa::add_provider(provider, delegator, schemas));
+
+		System::set_block_number(System::block_number() + 1);
+
+		assert_err!(
+			Msa::ensure_valid_schema_grant(provider, delegator, 3_u16),
+			Error::<Test>::SchemaNotGranted
+		);
 	})
 }
