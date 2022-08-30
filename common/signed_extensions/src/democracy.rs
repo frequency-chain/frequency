@@ -1,16 +1,13 @@
 use std::marker::PhantomData;
 
-use codec::{Codec, Decode, Encode, Error, Input};
+use codec::{ Decode, Encode, };
 use frame_support::{traits::IsSubType, weights::DispatchInfo};
 use pallet_democracy::{Call, Config};
-use scale_info::{StaticTypeInfo, Type, TypeInfo};
-use sp_runtime::{
-	traits::{DispatchInfoOf, Dispatchable, SignedExtension},
-	transaction_validity::{
-		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransaction,
-	},
-	DispatchError,
-};
+use scale_info::{TypeInfo};
+use sp_runtime::{BoundedVec, traits::{DispatchInfoOf, Dispatchable, SignedExtension}, transaction_validity::{
+	InvalidTransaction, TransactionValidity, TransactionValidityError,
+}};
+use sp_runtime::transaction_validity::ValidTransaction;
 
 /// VerifyVoter is a SignedExtension that checks to see if the account casting a vote
 /// may vote based on predetermined qualifications, such as being a Major Token
@@ -29,11 +26,16 @@ enum VoterValidityError {
 
 /// VerifyVoter validation helper functions
 impl<T: Config + Send + Sync> VerifyVoter<T> {
+
 	/// validate_voter_is_not_mth checks that `account_id` is not a Major Token Holder
-	pub fn validate_voter_is_not_mth(_account_id: &T::AccountId) -> TransactionValidity {
-		const TAG_PREFIX: &str = "MTHMembership";
-		return TransactionValidity::from(InvalidTransaction::Call)
-		// return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build();
+	pub fn validate_voter_is_not_mth(account_id: &T::AccountId) -> TransactionValidity {
+		const TAG_PREFIX: &'static str = "MTHMembership";
+		let voter_ids: Vec<u64> = vec![1,2];
+
+		if !voter_ids.contains(account_id.into()) {
+			return TransactionValidity::from(InvalidTransaction::Call);
+		};
+		ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}
 }
 

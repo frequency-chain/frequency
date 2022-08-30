@@ -1,3 +1,4 @@
+#![feature(inherent_associated_types)]
 //! # Frequency Primitives
 //!
 //! Primitives package contains many of the structs and trait implementations

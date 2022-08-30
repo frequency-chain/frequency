@@ -1,25 +1,21 @@
 use frame_support::{
-	assert_err, assert_ok,
-	dispatch::DispatchResult,
 	ord_parameter_types, parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64, EqualPrivilegeOnly, Get},
+	traits::{ConstU32, ConstU64, EqualPrivilegeOnly, Get},
 };
 use frame_system as system;
-use frame_system::{ensure_signed, EnsureRoot, EnsureSignedBy};
+use frame_system::{EnsureRoot, EnsureSignedBy};
 use pallet_balances;
 use pallet_democracy;
+pub use pallet_democracy::Call as DemocracyCall;
+
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentifyAccount, IdentityLookup, SignedExtension, Verify},
-	DispatchError, MultiSignature,
+	traits::{BlakeTwo256, IdentityLookup, SignedExtension}, MultiSignature,
 };
 
-use crate as signed_extensions;
-use crate::democracy::VerifyVoter;
-
 pub type BlockNumber = u64;
-pub type AccountId = u32;
+pub type AccountId = u64;
 pub type Block = frame_system::mocking::MockBlock<Test>;
 pub type Signature = MultiSignature;
 
@@ -34,16 +30,16 @@ frame_support::construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system,
-		Balances: pallet_balances,
-		Democracy: pallet_democracy,
 		Preimage: pallet_preimage,
-		Scheduler: pallet_scheduler,
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>},
+		Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>},
 	}
 );
 
 impl system::Config for Test {
-	type AccountId = u64;
+	type AccountId = AccountId;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
@@ -82,14 +78,11 @@ pub const UNIT: Balance = 1_000_000_000_000;
 pub const MICROUNIT: Balance = 1_000_000;
 
 parameter_types! {
-	pub const PreimageByteDeposit: Balance = 1 * MICROUNIT;
-	pub const LaunchPeriod: BlockNumber = 28 * 24 * 60 * MINUTES;
-	pub const VotingPeriod: BlockNumber = 28 * 24 * 60 * MINUTES;
-	pub const FastTrackVotingPeriod: BlockNumber = 3 * 24 * 60 * MINUTES;
-	pub const MinimumDeposit: Balance = 100 * UNIT;
 	pub const EnactmentPeriod: BlockNumber = 30 * 24 * 60 * MINUTES;
-	pub const CooloffPeriod: BlockNumber = 28 * 24 * 60 * MINUTES;
-	pub const MaxProposals: u32 = 50;
+	pub const LaunchPeriod: BlockNumber = 28 * 24 * 60 * MINUTES;
+	pub const PreimageByteDeposit: Balance = 1 * MICROUNIT;
+	pub const VotingPeriod: BlockNumber = 28 * 24 * 60 * MINUTES;
+	pub const MinimumDeposit: Balance = 100 * UNIT;
 }
 
 impl pallet_democracy::Config for Test {
@@ -98,10 +91,14 @@ impl pallet_democracy::Config for Test {
 	type Currency = Balances;
 	type EnactmentPeriod = EnactmentPeriod;
 	type LaunchPeriod = LaunchPeriod;
-	type VotingPeriod = VotingPeriod;
-	type VoteLockingPeriod = VotingPeriod;
-	type FastTrackVotingPeriod = VotingPeriod;
 	type MinimumDeposit = MinimumDeposit;
+	type PreimageByteDeposit = PreimageByteDeposit;
+	type CooloffPeriod = VotingPeriod;
+	type FastTrackVotingPeriod = VotingPeriod;
+	type VoteLockingPeriod = VotingPeriod;
+	type VotingPeriod = VotingPeriod;
+	type MaxVotes = ConstU32<100>;
+	type MaxProposals = ConstU32<100>;
 	type ExternalOrigin = EnsureSignedBy<Two, u64>;
 	type ExternalMajorityOrigin = EnsureSignedBy<Two, u64>;
 	type ExternalDefaultOrigin = EnsureSignedBy<Two, u64>;
@@ -110,17 +107,13 @@ impl pallet_democracy::Config for Test {
 	type BlacklistOrigin = EnsureRoot<u64>;
 	type CancelProposalOrigin = EnsureRoot<u64>;
 	type VetoOrigin = EnsureSignedBy<Two, u64>;
-	type CooloffPeriod = ConstU64<2>;
-	type PreimageByteDeposit = PreimageByteDeposit;
 	type Slash = ();
 	type InstantOrigin = EnsureSignedBy<Two, u64>;
 	type InstantAllowed = frame_support::traits::ConstBool<true>;
 	type Scheduler = Scheduler;
-	type MaxVotes = ConstU32<100>;
 	type OperationalPreimageOrigin = EnsureSignedBy<Two, u64>;
 	type PalletsOrigin = OriginCaller;
 	type WeightInfo = ();
-	type MaxProposals = ConstU32<100>;
 }
 
 impl pallet_preimage::Config for Test {
