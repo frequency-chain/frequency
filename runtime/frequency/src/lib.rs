@@ -64,7 +64,7 @@ pub use pallet_schemas;
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
 pub use common_runtime::{
-	weights,
+	extensions, weights,
 	weights::{BlockExecutionWeight, ExtrinsicBaseWeight},
 };
 
@@ -113,7 +113,7 @@ pub type SignedExtra = (
 	frame_system::CheckTxVersion<Runtime>,
 	frame_system::CheckGenesis<Runtime>,
 	frame_system::CheckEra<Runtime>,
-	frame_system::CheckNonce<Runtime>,
+	extensions::check_nonce::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
