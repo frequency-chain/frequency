@@ -145,6 +145,8 @@
 <span id="139">139</span>
 <span id="140">140</span>
 <span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::msa::MessageSourceId</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>;
@@ -175,6 +177,8 @@
 	<span class="kw">pub</span> <span class="ident">index</span>: <span class="ident">u16</span>,
 	<span class="doccomment">/// Block-number for which the message was stored.</span>
 	<span class="kw">pub</span> <span class="ident">block_number</span>: <span class="ident">BlockNumber</span>,
+	<span class="doccomment">///  Offchain payload length (IPFS).</span>
+	<span class="kw">pub</span> <span class="ident">payload_length</span>: <span class="ident">u32</span>,
 }
 
 <span class="doccomment">/// A type for requesting paginated messages.</span>

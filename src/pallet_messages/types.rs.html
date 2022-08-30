@@ -48,11 +48,20 @@
 <span id="42">42</span>
 <span id="43">43</span>
 <span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">common_primitives</span>::{<span class="ident">messages::MessageResponse</span>, <span class="ident">msa::MessageSourceId</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">traits::Get</span>, <span class="ident">BoundedVec</span>};
 <span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
 <span class="kw">use</span> <span class="ident">sp_std::prelude</span>::<span class="kw-2">*</span>;
+
+<span class="doccomment">/// Payloads stored offchain contain a tuple of (bytes(the payload reference), payload length).</span>
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">OffchainPayloadType</span> <span class="op">=</span> (<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">u32</span>);
 
 <span class="doccomment">/// A single message type definition.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>)]</span>
@@ -82,13 +91,16 @@
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">map_to_response</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">block_number</span>: <span class="ident">BlockNumber</span>,
+		<span class="ident">payload</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+		<span class="ident">payload_length</span>: <span class="ident">u32</span>,
 	) -&gt; <span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> {
 		<span class="ident">MessageResponse</span> {
 			<span class="ident">provider_msa_id</span>: <span class="self">self</span>.<span class="ident">provider_msa_id</span>,
 			<span class="ident">index</span>: <span class="self">self</span>.<span class="ident">index</span>,
 			<span class="ident">msa_id</span>: <span class="self">self</span>.<span class="ident">msa_id</span>,
 			<span class="ident">block_number</span>,
-			<span class="ident">payload</span>: <span class="self">self</span>.<span class="ident">payload</span>.<span class="ident">clone</span>().<span class="ident">into_inner</span>(),
+			<span class="ident">payload</span>,
+			<span class="ident">payload_length</span>,
 		}
 	}
 }
