@@ -371,9 +371,7 @@ impl<T: Config> Pallet<T> {
 			for i in from_index..list_size {
 				let m = list[i as usize].clone();
 
-				let payload: Vec<u8>;
-				let payload_length: u32;
-				(payload, payload_length) = match payload_location {
+				let (payload, payload_length): OffchainPayloadType = match payload_location {
 					PayloadLocation::OnChain =>
 						(m.payload.clone().into_inner(), m.payload.len().try_into().unwrap()),
 					PayloadLocation::IPFS =>
