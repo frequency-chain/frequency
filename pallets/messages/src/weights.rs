@@ -34,7 +34,7 @@
 // --extrinsic
 // *
 // --steps
-// 50
+// 20
 // --repeat
 // 10
 // --output

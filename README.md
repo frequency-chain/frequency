@@ -167,13 +167,12 @@ genesis state and WASM:
 - `make specs-rococo-2000` for Rococo local testnet
 - `make specs-rococo-4044` for Rococo public testnet
 
-# Format and Lint
+# Format, Lint and Audit Source Code
 
-- Format code with `make format`  according to style guidelines and configurations
-in `rustfmt.toml`.
-- Lint code with with `make lint` to catch common mistakes and improve your
-[Rust](https://github.com/rust-lang/rust) code.
+- Format code with `make format` according to style guidelines and configurations in `rustfmt.toml`.
+- Lint code with with `make lint` to catch common mistakes and improve your [Rust](https://github.com/rust-lang/rust) code.
 - Alternatively, run `make format-lint` to run both at the same time.
+- Run `cargo-audit` to audit Cargo.lock files for crates with security vulnerabilities reported to the RustSec Advisory Database. [See cargo-audit installation instructions](https://github.com/RustSec/rustsec/tree/main/cargo-audit)
 
 # Verify Runtime
 
@@ -188,7 +187,7 @@ in `rustfmt.toml`.
 1. Runtime upgrade enables upgrading running chain to a new runtime.
 2. To upgrade the runtime, current scripts follow this process:
    1. Build new runtime and generate the compressed wasm
-   2. Call ```authorizeUpgrade``` extrinsic from parachain system to initate the upgrade.
+   2. Call ```authorizeUpgrade``` extrinsic from parachain system to initiate the upgrade.
    3. Call ```enactAuthorizedUpgrade``` extrinsic from parachain system to enact the upgrade.
    4. For testnet and mainnet, the upgrade is done slightly differently using ```scheduler``` and enactment is scheduled for a specific block number in the future.
 3. To upgrade the runtime, run the following command:

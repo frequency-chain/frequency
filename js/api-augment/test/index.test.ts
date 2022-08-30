@@ -1,8 +1,8 @@
 import assert from "assert";
+import { options } from "../index";
 import { ApiPromise } from '@polkadot/api';
 import { MockProvider } from '@polkadot/rpc-provider/mock';
 import { Metadata, TypeRegistry } from "@polkadot/types";
-import { options } from "../index";
 import { result as rpcMetadata } from "../metadata.json";
 
 describe("index", function () {

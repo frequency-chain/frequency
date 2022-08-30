@@ -56,7 +56,7 @@ use sp_std::marker::PhantomData;
 pub trait WeightInfo {
 	fn create(s: u32, ) -> Weight;
 	fn create_sponsored_account_with_delegation() -> Weight;
-	fn remove_delegation_by_provider(s: u32, ) -> Weight;
+	fn revoke_delegation_by_provider(s: u32, ) -> Weight;
 	fn add_key_to_msa() -> Weight;
 	fn delete_msa_key() -> Weight;
 	fn add_provider_to_msa() -> Weight;

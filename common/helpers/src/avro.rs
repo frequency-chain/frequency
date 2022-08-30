@@ -141,7 +141,7 @@ pub fn translate_schemas(serialized_schema: Vec<Vec<u8>>) -> Result<Vec<Schema>,
 /// let avro_schema = schema_result.unwrap().0;
 /// let schema_writer = avro::get_schema_data_writer(&avro_schema);
 /// ```
-pub fn get_schema_data_writer<'a>(schema: &'a Schema) -> Writer<'a, Vec<u8>> {
+pub fn get_schema_data_writer(schema: &Schema) -> Writer<Vec<u8>> {
 	Writer::with_codec(schema, Vec::new(), Codec::Snappy)
 }
 

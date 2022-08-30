@@ -15,12 +15,12 @@
     "clean": "rm -Rf dist",
     "build": "npm run clean && npm run generate:defs && npm run generate:meta && npm run build:js && npm run build:copy && npm run build:package",
     "build:package": "node scripts/package.js",
-    "build:copy": "cp CONTRIBUTING.md README.md ../../LICENSE ./dist",
-    "build:js": "tsc -p tsconfig.json",
+    "build:copy": "cp CONTRIBUTING.md README.md ../../LICENSE ./index.cjs ./dist",
+    "build:js": "tsc -b --verbose",
     "fetch:local": "curl -H \"Content-Type: application/json\" -d '{\"id\":\"1\", \"jsonrpc\":\"2.0\", \"method\": \"state_getMetadata\", \"params\":[]}' http://localhost:9933 -o ./metadata.json",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package @dsnp/frequency-api-augment --input ./interfaces --endpoint ./metadata.json",
-    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package @dsnp/frequency-api-augment --endpoint ./metadata.json --output ./interfaces --strict",
-    "test": "mocha --require ts-node/register ./test/**/*.test.ts",
+    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package @dsnp/frequency-api-augment --endpoint ./metadata.json --output ./interfaces",
+    "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --require ts-node/register  ./test/**/*.test.ts",
     "test:only": "mocha --require ts-node/register",
     "format": "tsc --noEmit --pretty && eslint --fix \"**/*.ts\"",
     "lint": "tsc --noEmit --pretty && eslint \"**/*.ts\""
@@ -28,13 +28,14 @@
   "author": "LibertyDSNP",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@polkadot/rpc-provider": "9.2.2",
-    "@polkadot/typegen": "9.2.2",
-    "@polkadot/types": "9.2.2",
+    "@polkadot/api": "^9.2.4",
+    "@polkadot/rpc-provider": "^9.2.4",
+    "@polkadot/typegen": "^9.2.4",
+    "@polkadot/types": "^9.2.4",
     "@types/mocha": "^9.1.1",
-    "@typescript-eslint/eslint-plugin": "^5.33.1",
-    "@typescript-eslint/parser": "^5.33.1",
-    "eslint": "^8.22.0",
+    "@typescript-eslint/eslint-plugin": "^5.36.0",
+    "@typescript-eslint/parser": "^5.36.0",
+    "eslint": "^8.23.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-mocha": "^10.1.0",
@@ -43,8 +44,5 @@
     "prettier": "2.7.1",
     "ts-node": "^10.9.1",
     "typescript": "^4.7.4"
-  },
-  "dependencies": {
-    "@polkadot/api": "9.2.2"
   }
 }
