@@ -19,7 +19,7 @@
 
 # Frequency Custom RPC and Types for Polkadot JS API
 
-An easy way to get all the custom rpc and types config to be able to easily use [Frequency](https://github.com/LibertyDSNP/frequency/) with the [Polkadot JS API library](https://www.npmjs.com/package/@polkadot/api).
+An easy way to get all the custom rpc and types config to be able to easily use [Frequency](https://github.com/LibertyDSNP/frequency/) with the [Polkadot JS API library](https://www.npmjs.com/package/@polkadot/api) with TypeScript.
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -31,22 +31,9 @@ An easy way to get all the custom rpc and types config to be able to easily use 
 
 For details on use, see the [Polkadot API library documentation](https://polkadot.js.org/docs/api).
 
-```javascript
-// es6 style imports
+```typescript
 import { options } from "@dsnp/frequency-api-augment";
 import { ApiPromise } from '@polkadot/api';
-// ...
-
-const api = await ApiPromise.create({
-    ...options,
-    // ...
-});
-```
-
-```javascript
-// commonjs require
-const { options } = require("@dsnp/frequency-api-augment");
-const { ApiPromise } = require('@polkadot/api');
 // ...
 
 const api = await ApiPromise.create({
@@ -65,10 +52,29 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 1. Update `./definitions`
 2. Build and start the chain (does not need to be on-boarded)
 3. Run `npm run fetch:local`
-4. Commit changes
+4. Run `npm run build`
+5. Commit changes
 
 
 ## Helpful Notes
+
+### Fails to Resolve Custom RPCs
+
+The api augmentation declares the modules used by `@polkadot/api`.
+Thus the import for `@dsnp/frequency-api-augment` must come before any `@polkadot/api` so that the Frequency declarations resolve first.
+
+```typescript
+import { options } from "@dsnp/frequency-api-augment";
+// Or
+import "@dsnp/frequency-api-augment";
+// Must come BEFORE any imports from @polkadot/api
+import { ApiPromise } from '@polkadot/api';
+```
+
+Caches can also wreck this even if you reorder, so watch out.
+
+- Yarn cache can sometimes cause issues (if you are using yarn): `yarn cache clear`
+- Sometimes I have found blowing away the `node_modules` helps as well: `rm -Rf node_modules`
 
 ### Option<T>
 
