@@ -8,6 +8,8 @@ members = [
   "runtime/frequency",
   "runtime/frequency-rococo",
   "common/helpers",
+  "common/primitives",  # needed?
+  "common/signed_extensions",
 ]
 
 [profile.release]
