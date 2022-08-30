@@ -17,8 +17,16 @@ delete rootPackage["jest"];
 delete rootPackage["scripts"];
 
 // Setup the main and types correctly
-rootPackage["main"] = "index.js";
+rootPackage["main"] = "index.cjs";
+rootPackage["module"] = "index.js";
 rootPackage["types"] = "index.d.ts";
+rootPackage["exports"] = {
+  ".": {
+    "types": "./index.d.ts",
+    "require": "./index.cjs",
+    "default": "./index.js"
+  },
+},
 
 // Write it out
 fs.writeFileSync(`${path.join(__dirname, "../dist", "package.json")}`, JSON.stringify(rootPackage, null, 2), (err) => {

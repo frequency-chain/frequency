@@ -3,7 +3,7 @@
         "allowSyntheticDefaultImports": true,
         "declaration": true,
         "esModuleInterop": true,
-        "module": "commonjs",
+        "module": "esnext",
         "moduleResolution": "node",
         "noEmit": false,
         "noImplicitAny": true,
@@ -12,7 +12,7 @@
         "sourceMap": false,
         "strict": true,
         "skipLibCheck": true,
-        "target": "ESNext",
+        "target": "esnext",
         "watch": false,
         "typeRoots": [
             "node_modules/@types",
@@ -20,7 +20,10 @@
         "paths": {
             "@dsnp/frequency-api-augment/*": [
                 "./interfaces/*"
-            ]
+            ],
+            "@polkadot/api/augment": ["./interfaces/augment-api.ts"],
+            "@polkadot/types/augment": ["./interfaces/augment-types.ts"],
+            "@polkadot/types/lookup": ["./interfaces/types-lookup.ts"]
         }
     },
     "exclude": ["node_modules/**", "./test/**", "./scripts/**", "**/*.test.ts", "./dist/**"],
