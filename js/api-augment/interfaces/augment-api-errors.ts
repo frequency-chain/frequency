@@ -40,6 +40,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Uncles already set in the block.
        **/
       UnclesAlreadySet: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     balances: {
       /**
@@ -74,6 +78,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Vesting balance too high to send value
        **/
       VestingBalance: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     collatorSelection: {
       /**
@@ -116,8 +124,181 @@ declare module '@polkadot/api-base/types/errors' {
        * Validator ID is not yet registered
        **/
       ValidatorNotRegistered: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
+    };
+    council: {
+      /**
+       * Members are already initialized!
+       **/
+      AlreadyInitialized: AugmentedError<ApiType>;
+      /**
+       * Duplicate proposals not allowed
+       **/
+      DuplicateProposal: AugmentedError<ApiType>;
+      /**
+       * Duplicate vote ignored
+       **/
+      DuplicateVote: AugmentedError<ApiType>;
+      /**
+       * Account is not a member
+       **/
+      NotMember: AugmentedError<ApiType>;
+      /**
+       * Proposal must exist
+       **/
+      ProposalMissing: AugmentedError<ApiType>;
+      /**
+       * The close call was made too early, before the end of the voting.
+       **/
+      TooEarly: AugmentedError<ApiType>;
+      /**
+       * There can only be a maximum of `MaxProposals` active proposals.
+       **/
+      TooManyProposals: AugmentedError<ApiType>;
+      /**
+       * Mismatched index
+       **/
+      WrongIndex: AugmentedError<ApiType>;
+      /**
+       * The given length bound for the proposal was too low.
+       **/
+      WrongProposalLength: AugmentedError<ApiType>;
+      /**
+       * The given weight bound for the proposal was too low.
+       **/
+      WrongProposalWeight: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     cumulusXcm: {
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
+    };
+    democracy: {
+      /**
+       * Cannot cancel the same proposal twice
+       **/
+      AlreadyCanceled: AugmentedError<ApiType>;
+      /**
+       * The account is already delegating.
+       **/
+      AlreadyDelegating: AugmentedError<ApiType>;
+      /**
+       * Identity may not veto a proposal twice
+       **/
+      AlreadyVetoed: AugmentedError<ApiType>;
+      /**
+       * Preimage already noted
+       **/
+      DuplicatePreimage: AugmentedError<ApiType>;
+      /**
+       * Proposal already made
+       **/
+      DuplicateProposal: AugmentedError<ApiType>;
+      /**
+       * Imminent
+       **/
+      Imminent: AugmentedError<ApiType>;
+      /**
+       * The instant referendum origin is currently disallowed.
+       **/
+      InstantNotAllowed: AugmentedError<ApiType>;
+      /**
+       * Too high a balance was provided that the account cannot afford.
+       **/
+      InsufficientFunds: AugmentedError<ApiType>;
+      /**
+       * Invalid hash
+       **/
+      InvalidHash: AugmentedError<ApiType>;
+      /**
+       * Maximum number of votes reached.
+       **/
+      MaxVotesReached: AugmentedError<ApiType>;
+      /**
+       * No proposals waiting
+       **/
+      NoneWaiting: AugmentedError<ApiType>;
+      /**
+       * Delegation to oneself makes no sense.
+       **/
+      Nonsense: AugmentedError<ApiType>;
+      /**
+       * The actor has no permission to conduct the action.
+       **/
+      NoPermission: AugmentedError<ApiType>;
+      /**
+       * No external proposal
+       **/
+      NoProposal: AugmentedError<ApiType>;
+      /**
+       * The account is not currently delegating.
+       **/
+      NotDelegating: AugmentedError<ApiType>;
+      /**
+       * Not imminent
+       **/
+      NotImminent: AugmentedError<ApiType>;
+      /**
+       * Next external proposal not simple majority
+       **/
+      NotSimpleMajority: AugmentedError<ApiType>;
+      /**
+       * The given account did not vote on the referendum.
+       **/
+      NotVoter: AugmentedError<ApiType>;
+      /**
+       * Invalid preimage
+       **/
+      PreimageInvalid: AugmentedError<ApiType>;
+      /**
+       * Preimage not found
+       **/
+      PreimageMissing: AugmentedError<ApiType>;
+      /**
+       * Proposal still blacklisted
+       **/
+      ProposalBlacklisted: AugmentedError<ApiType>;
+      /**
+       * Proposal does not exist
+       **/
+      ProposalMissing: AugmentedError<ApiType>;
+      /**
+       * Vote given for invalid referendum
+       **/
+      ReferendumInvalid: AugmentedError<ApiType>;
+      /**
+       * Too early
+       **/
+      TooEarly: AugmentedError<ApiType>;
+      /**
+       * Maximum number of proposals reached.
+       **/
+      TooManyProposals: AugmentedError<ApiType>;
+      /**
+       * Value too low
+       **/
+      ValueLow: AugmentedError<ApiType>;
+      /**
+       * The account currently has votes attached to it and the operation cannot succeed until
+       * these are removed, either through `unvote` or `reap_vote`.
+       **/
+      VotesExist: AugmentedError<ApiType>;
+      /**
+       * Invalid upper bound.
+       **/
+      WrongUpperBound: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     dmpQueue: {
       /**
@@ -128,6 +309,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The message index given is unknown.
        **/
       Unknown: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     messages: {
       /**
@@ -162,6 +347,10 @@ declare module '@polkadot/api-base/types/errors' {
        * UnAuthorizedDelegate
        **/
       UnAuthorizedDelegate: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     msa: {
       /**
@@ -240,6 +429,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Origin attempted to add a different delegate than what was in the payload
        **/
       UnauthorizedProvider: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     parachainSystem: {
       /**
@@ -275,6 +468,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The inherent which supplies the validation data did not run this block
        **/
       ValidationDataNotAvailable: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     polkadotXcm: {
       /**
@@ -332,6 +529,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The message's weight could not be determined.
        **/
       UnweighableMessage: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     preimage: {
       /**
@@ -358,6 +559,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Preimage is too large to store on-chain.
        **/
       TooLarge: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     scheduler: {
       /**
@@ -376,6 +581,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Given target block number is in the past.
        **/
       TargetBlockNumberInPast: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     schemas: {
       /**
@@ -418,6 +627,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The maximum number of schemas is stored in the database.
        **/
       TooManySchemas: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     session: {
       /**
@@ -440,12 +653,20 @@ declare module '@polkadot/api-base/types/errors' {
        * No keys are associated with this account.
        **/
       NoKeys: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     sudo: {
       /**
        * Sender must be the Sudo account
        **/
       RequireSudo: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     system: {
       /**
@@ -476,12 +697,20 @@ declare module '@polkadot/api-base/types/errors' {
        * and the new runtime.
        **/
       SpecVersionNeedsToIncrease: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     utility: {
       /**
        * Too many calls batched.
        **/
       TooManyCalls: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     vesting: {
       /**
@@ -508,6 +737,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Number of vests is zero
        **/
       ZeroVestingPeriodCount: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
     xcmpQueue: {
       /**
@@ -530,6 +763,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Provided weight is possibly not enough to execute the message.
        **/
       WeightOverLimit: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
     };
   } // AugmentedErrors
 } // declare module
