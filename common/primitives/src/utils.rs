@@ -15,7 +15,7 @@ pub mod as_hex {
 
 	/// Deserializes a hexadecimal string into a `Vec<u8>`
 	pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
-		Ok(impl_serde::serialize::deserialize(deserializer)?)
+		impl_serde::serialize::deserialize(deserializer)
 	}
 }
 

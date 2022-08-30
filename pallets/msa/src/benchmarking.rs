@@ -83,7 +83,7 @@ benchmarks! {
 
 	}: _ (RawOrigin::Signed(caller), key, signature, payload)
 
-	remove_delegation_by_provider {
+	revoke_delegation_by_provider {
 		let s in 5 .. 1005;
 
 		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);

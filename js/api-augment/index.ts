@@ -1,6 +1,7 @@
 import "./interfaces/types-lookup";
 import "./interfaces/augment-api";
 import "./interfaces/augment-types";
+import "./interfaces/index";
 import * as definitions from "./interfaces/definitions";
 
 /**

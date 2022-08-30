@@ -4,6 +4,9 @@ use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 use sp_std::prelude::*;
 
+/// Payloads stored offchain contain a tuple of (bytes(the payload reference), payload length).
+pub type OffchainPayloadType = (Vec<u8>, u32);
+
 /// A single message type definition.
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 #[scale_info(skip_type_params(MaxDataSize))]
@@ -32,13 +35,16 @@ where
 	pub fn map_to_response<BlockNumber>(
 		&self,
 		block_number: BlockNumber,
+		payload: Vec<u8>,
+		payload_length: u32,
 	) -> MessageResponse<BlockNumber> {
 		MessageResponse {
 			provider_msa_id: self.provider_msa_id,
 			index: self.index,
 			msa_id: self.msa_id,
 			block_number,
-			payload: self.payload.clone().into_inner(),
+			payload,
+			payload_length,
 		}
 	}
 }

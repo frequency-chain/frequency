@@ -22,16 +22,13 @@ export default {
       to_block: "BlockNumber", // exclusive
       page_size: "u32",
     },
-    IPFSPayload: {
-      cid: "Vec<u8>", // An IPFS content address (https://proto.school/anatomy-of-a-cid)
-      payload_length: "u32",
-    },
     MessageResponse: {
       payload: "Vec<u8>", //  Serialized data in a user-defined schema format
       provider_msa_id: "MessageSourceId", //  Message source account id of the Provider
       msa_id: "MessageSourceId", //  Message source account id (the original source)
       index: "u16", // index in block to get total order
       block_number: "BlockNumber",
+      payload_length: "u32",
     },
     BlockPaginationResponseMessage: {
       content: "Vec<MessageResponse>",

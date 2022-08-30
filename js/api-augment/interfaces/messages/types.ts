@@ -21,12 +21,6 @@ export interface BlockPaginationResponseMessage extends Struct {
   readonly next_index: Option<u32>;
 }
 
-/** @name IPFSPayload */
-export interface IPFSPayload extends Struct {
-  readonly cid: Bytes;
-  readonly payload_length: u32;
-}
-
 /** @name MessageResponse */
 export interface MessageResponse extends Struct {
   readonly payload: Bytes;
@@ -34,6 +28,7 @@ export interface MessageResponse extends Struct {
   readonly msa_id: MessageSourceId;
   readonly index: u16;
   readonly block_number: BlockNumber;
+  readonly payload_length: u32;
 }
 
 export type PHANTOM_MESSAGES = 'messages';
