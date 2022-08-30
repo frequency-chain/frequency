@@ -16,7 +16,7 @@
 // limitations under the License.
 
 use codec::{Decode, Encode};
-use frame_support::weights::DispatchInfo;
+use frame_support::weights::{DispatchInfo, Pays};
 use frame_system::Config;
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -76,7 +76,7 @@ where
 		self,
 		who: &Self::AccountId,
 		_call: &Self::Call,
-		_info: &DispatchInfoOf<Self::Call>,
+		info: &DispatchInfoOf<Self::Call>,
 		_len: usize,
 	) -> Result<(), TransactionValidityError> {
 		let mut account = frame_system::Account::<T>::get(who);
@@ -88,8 +88,13 @@ where
 			}
 			.into())
 		}
+
 		account.nonce += T::Index::one();
-		frame_system::Account::<T>::insert(who, account);
+
+		if info.pays_fee != Pays::No {
+			frame_system::Account::<T>::insert(who, account);
+		}
+
 		Ok(())
 	}
 
