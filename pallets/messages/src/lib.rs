@@ -52,15 +52,15 @@ use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
 use sp_runtime::{traits::One, DispatchError};
 use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 
-pub use pallet::*;
-pub use types::*;
-pub use weights::*;
-
+use codec::{Decode, Encode};
 use common_primitives::{
 	messages::*,
 	msa::{AccountProvider, Delegator, MessageSourceId, Provider},
 	schema::*,
 };
+pub use pallet::*;
+pub use types::*;
+pub use weights::*;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -186,11 +186,12 @@ pub mod pallet {
 			on_behalf_of: Option<MessageSourceId>,
 			schema_id: SchemaId,
 			cid: Vec<u8>,
-			_payload_length: u32,
+			payload_length: u32,
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
-			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = cid
-				.clone()
+			let payload_tuple: OffchainPayloadType = (cid.clone(), payload_length);
+			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = payload_tuple
+				.encode()
 				.try_into()
 				.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
@@ -348,6 +349,10 @@ impl<T: Config> Pallet<T> {
 	> {
 		ensure!(pagination.validate(), Error::<T>::InvalidPaginationRequest);
 
+		let schema = T::SchemaProvider::get_schema_by_id(schema_id);
+		ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
+
+		let payload_location = schema.unwrap().payload_location;
 		let mut response = BlockPaginationResponse::new();
 		let from: u32 = pagination
 			.from_block
@@ -365,7 +370,15 @@ impl<T: Config> Pallet<T> {
 				list.len().try_into().map_err(|_| Error::<T>::TypeConversionOverflow)?;
 			for i in from_index..list_size {
 				let m = list[i as usize].clone();
-				response.content.push(m.map_to_response(block_number));
+
+				let (payload, payload_length): OffchainPayloadType = match payload_location {
+					PayloadLocation::OnChain =>
+						(m.payload.clone().into_inner(), m.payload.len().try_into().unwrap()),
+					PayloadLocation::IPFS =>
+						OffchainPayloadType::decode(&mut &m.payload[..]).unwrap(),
+				};
+
+				response.content.push(m.map_to_response(block_number, payload, payload_length));
 
 				if Self::check_end_condition_and_set_next_pagination(
 					block_number,
