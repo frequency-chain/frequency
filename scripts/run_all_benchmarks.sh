@@ -5,9 +5,10 @@ THIS_DIR=$( dirname -- "$0"; )
 PROJECT=${1:-$THIS_DIR/..}
 RUNTIME=$PROJECT/target/release/frequency
 BENCHMARK="$RUNTIME benchmark pallet "
-OUTPUT_DIR=
 SPECS=specs-rococo-4044
 CHAIN=$PROJECT/res/genesis/testnet/frequency-spec-rococo-testnet.json
+EXTERNAL_PALLETS=(orml_vesting pallet_scheduler pallet_democracy pallet_preimage pallet_utility)
+CUSTOM_PALLETS=(messages msa schemas)
 
 function exit_err() { echo "❌ 💔" ; exit 1; }
 
@@ -29,13 +30,13 @@ function run_benchmark() {
 cargo build --release --features runtime-benchmarks --workspace || exit_err
 make $SPECS || exit_err
 
-for external_pallet in orml_vesting pallet_scheduler pallet_democracy pallet_preimage pallet_utility; do
+for external_pallet in "${EXTERNAL_PALLETS[@]}"; do
   output=${PROJECT}/runtime/common/src/weights/${external_pallet}.rs
   template=${PROJECT}/.maintain/runtime-weight-template.hbs
   run_benchmark ${external_pallet} ${output} ${template} || exit_err
 done
 
-for pallet_name in messages msa schemas; do
+for pallet_name in "${CUSTOM_PALLETS[@]}"; do
   output=${PROJECT}/pallets/${pallet_name}/src/weights.rs
   template=${PROJECT}/.maintain/frame-weight-template.hbs
   run_benchmark pallet_${pallet_name} ${output} ${template} || exit_err
