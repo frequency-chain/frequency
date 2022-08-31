@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 use cumulus_primitives_core::ParaId;
-use frequency_rococo_runtime::{AccountId, AuraId, SudoConfig, EXISTENTIAL_DEPOSIT};
+use frequency_rococo_runtime::{AccountId, AuraId, SudoConfig, CouncilConfig, TechnicalCommitteeConfig, EXISTENTIAL_DEPOSIT};
 use hex::FromHex;
 use sc_service::ChainType;
 use sp_core::ByteArray;
@@ -77,6 +77,8 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 					// 5CntRvAGYzzorsvN3UKotz5gpFd5BgMwUzALKtbWGn3JsQAu
 					public_testnet_keys::COLLATOR_2_SR25519.parse::<AccountId>().unwrap().into(),
 				],
+				Default::default(),
+				Default::default(),
 				para_id,
 			)
 		},
@@ -102,6 +104,8 @@ fn frequency_rococo_genesis(
 	initial_authorities: Vec<(AccountId, AuraId)>,
 	root_key: Option<AccountId>,
 	endowed_accounts: Vec<AccountId>,
+	council_members: Vec<AccountId>,
+	technical_committee_members: Vec<AccountId>,
 	id: ParaId,
 ) -> frequency_rococo_runtime::GenesisConfig {
 	frequency_rococo_runtime::GenesisConfig {
@@ -146,6 +150,7 @@ fn frequency_rococo_genesis(
 		schemas: Default::default(),
 		vesting: Default::default(),
 		democracy: Default::default(),
-		council: Default::default(),
+		council: CouncilConfig { phantom: Default::default(), members: council_members },
+		technical_committee: TechnicalCommitteeConfig { phantom: Default::default(), members: technical_committee_members },
 	}
 }

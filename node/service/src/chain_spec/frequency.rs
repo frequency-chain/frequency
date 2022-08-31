@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 use cumulus_primitives_core::ParaId;
-use frequency_runtime::{AccountId, AuraId, Balance, SudoConfig, EXISTENTIAL_DEPOSIT};
+use frequency_runtime::{AccountId, AuraId, Balance, SudoConfig, CouncilConfig, TechnicalCommitteeConfig, EXISTENTIAL_DEPOSIT};
 use sc_service::ChainType;
 use sp_core::sr25519;
 
@@ -40,6 +40,10 @@ pub fn frequency() -> ChainSpec {
 				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				// TODO:: endowed accounts with initial balance.
 				vec![(get_account_id_from_seed::<sr25519::Public>("Alice"), 1 << 60)],
+				// TODO: initial council members
+				Default::default(),
+				// TODO: initial technical committee members
+				Default::default(),
 				// TODO: candidacy bond (if needed)
 				EXISTENTIAL_DEPOSIT * 16,
 				// TODO: include council/democracy/staking related inputs
@@ -69,8 +73,8 @@ fn frequency_genesis(
 	initial_authorities: Vec<(AccountId, AuraId)>,
 	root_key: Option<AccountId>,
 	endowed_accounts: Vec<(AccountId, Balance)>,
-	//council_members: Vec<AccountId>,
-	//technical_committee_members: Vec<AccountId>,
+	council_members: Vec<AccountId>,
+	technical_committee_members: Vec<AccountId>,
 	candidacy_bond: Balance,
 	id: ParaId,
 ) -> frequency_runtime::GenesisConfig {
@@ -99,8 +103,6 @@ fn frequency_genesis(
 				})
 				.collect(),
 		},
-		democracy: Default::default(),
-		council: Default::default(),
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
@@ -113,5 +115,8 @@ fn frequency_genesis(
 		},
 		schemas: Default::default(),
 		vesting: Default::default(),
+		democracy: Default::default(),
+		council: CouncilConfig { phantom: Default::default(), members: council_members },
+		technical_committee: TechnicalCommitteeConfig { phantom: Default::default(), members: technical_committee_members },
 	}
 }
