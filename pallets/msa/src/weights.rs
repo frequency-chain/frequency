@@ -88,7 +88,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
-	fn remove_delegation_by_provider(s: u32, ) -> Weight {
+	fn revoke_delegation_by_provider(s: u32, ) -> Weight {
 		(74_032_000 as Weight)
 			// Standard Error: 2_000
 			.saturating_add((5_000 as Weight).saturating_mul(s as Weight))
@@ -155,7 +155,7 @@ impl WeightInfo for () {
 	}
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
-	fn remove_delegation_by_provider(s: u32, ) -> Weight {
+	fn revoke_delegation_by_provider(s: u32, ) -> Weight {
 		(74_032_000 as Weight)
 			// Standard Error: 2_000
 			.saturating_add((5_000 as Weight).saturating_mul(s as Weight))
