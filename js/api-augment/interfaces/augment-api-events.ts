@@ -110,38 +110,6 @@ declare module '@polkadot/api-base/types/events' {
        **/
       [key: string]: AugmentedEvent<ApiType>;
     };
-    council: {
-      /**
-       * A motion was approved by the required threshold.
-       **/
-      Approved: AugmentedEvent<ApiType, [proposalHash: H256], { proposalHash: H256 }>;
-      /**
-       * A proposal was closed because its threshold was reached or after its duration was up.
-       **/
-      Closed: AugmentedEvent<ApiType, [proposalHash: H256, yes: u32, no: u32], { proposalHash: H256, yes: u32, no: u32 }>;
-      /**
-       * A motion was not approved by the required threshold.
-       **/
-      Disapproved: AugmentedEvent<ApiType, [proposalHash: H256], { proposalHash: H256 }>;
-      /**
-       * A motion was executed; result will be `Ok` if it returned without error.
-       **/
-      Executed: AugmentedEvent<ApiType, [proposalHash: H256, result: Result<Null, SpRuntimeDispatchError>], { proposalHash: H256, result: Result<Null, SpRuntimeDispatchError> }>;
-      /**
-       * A single member did some action; result will be `Ok` if it returned without error.
-       **/
-      MemberExecuted: AugmentedEvent<ApiType, [proposalHash: H256, result: Result<Null, SpRuntimeDispatchError>], { proposalHash: H256, result: Result<Null, SpRuntimeDispatchError> }>;
-      /**
-       * A motion (given hash) has been proposed (by given account) with a threshold (given
-       * `MemberCount`).
-       **/
-      Proposed: AugmentedEvent<ApiType, [account: AccountId32, proposalIndex: u32, proposalHash: H256, threshold: u32], { account: AccountId32, proposalIndex: u32, proposalHash: H256, threshold: u32 }>;
-      /**
-       * A motion (given hash) has been voted on by given account, leaving
-       * a tally (yes votes and no votes given respectively as `MemberCount`).
-       **/
-      Voted: AugmentedEvent<ApiType, [account: AccountId32, proposalHash: H256, voted: bool, yes: u32, no: u32], { account: AccountId32, proposalHash: H256, voted: bool, yes: u32, no: u32 }>;
-    };
     cumulusXcm: {
       /**
        * Downward message executed with the given outcome.
@@ -248,88 +216,6 @@ declare module '@polkadot/api-base/types/events' {
        * Generic event
        **/
       [key: string]: AugmentedEvent<ApiType>;
-    };
-    democracy: {
-      /**
-       * A proposal_hash has been blacklisted permanently.
-       **/
-      Blacklisted: AugmentedEvent<ApiType, [proposalHash: H256], { proposalHash: H256 }>;
-      /**
-       * A referendum has been cancelled.
-       **/
-      Cancelled: AugmentedEvent<ApiType, [refIndex: u32], { refIndex: u32 }>;
-      /**
-       * An account has delegated their vote to another account.
-       **/
-      Delegated: AugmentedEvent<ApiType, [who: AccountId32, target: AccountId32], { who: AccountId32, target: AccountId32 }>;
-      /**
-       * A proposal has been enacted.
-       **/
-      Executed: AugmentedEvent<ApiType, [refIndex: u32, result: Result<Null, SpRuntimeDispatchError>], { refIndex: u32, result: Result<Null, SpRuntimeDispatchError> }>;
-      /**
-       * An external proposal has been tabled.
-       **/
-      ExternalTabled: AugmentedEvent<ApiType, []>;
-      /**
-       * A proposal has been rejected by referendum.
-       **/
-      NotPassed: AugmentedEvent<ApiType, [refIndex: u32], { refIndex: u32 }>;
-      /**
-       * A proposal has been approved by referendum.
-       **/
-      Passed: AugmentedEvent<ApiType, [refIndex: u32], { refIndex: u32 }>;
-      /**
-       * A proposal could not be executed because its preimage was invalid.
-       **/
-      PreimageInvalid: AugmentedEvent<ApiType, [proposalHash: H256, refIndex: u32], { proposalHash: H256, refIndex: u32 }>;
-      /**
-       * A proposal could not be executed because its preimage was missing.
-       **/
-      PreimageMissing: AugmentedEvent<ApiType, [proposalHash: H256, refIndex: u32], { proposalHash: H256, refIndex: u32 }>;
-      /**
-       * A proposal's preimage was noted, and the deposit taken.
-       **/
-      PreimageNoted: AugmentedEvent<ApiType, [proposalHash: H256, who: AccountId32, deposit: u128], { proposalHash: H256, who: AccountId32, deposit: u128 }>;
-      /**
-       * A registered preimage was removed and the deposit collected by the reaper.
-       **/
-      PreimageReaped: AugmentedEvent<ApiType, [proposalHash: H256, provider: AccountId32, deposit: u128, reaper: AccountId32], { proposalHash: H256, provider: AccountId32, deposit: u128, reaper: AccountId32 }>;
-      /**
-       * A proposal preimage was removed and used (the deposit was returned).
-       **/
-      PreimageUsed: AugmentedEvent<ApiType, [proposalHash: H256, provider: AccountId32, deposit: u128], { proposalHash: H256, provider: AccountId32, deposit: u128 }>;
-      /**
-       * A proposal got canceled.
-       **/
-      ProposalCanceled: AugmentedEvent<ApiType, [propIndex: u32], { propIndex: u32 }>;
-      /**
-       * A motion has been proposed by a public account.
-       **/
-      Proposed: AugmentedEvent<ApiType, [proposalIndex: u32, deposit: u128], { proposalIndex: u32, deposit: u128 }>;
-      /**
-       * An account has secconded a proposal
-       **/
-      Seconded: AugmentedEvent<ApiType, [seconder: AccountId32, propIndex: u32], { seconder: AccountId32, propIndex: u32 }>;
-      /**
-       * A referendum has begun.
-       **/
-      Started: AugmentedEvent<ApiType, [refIndex: u32, threshold: PalletDemocracyVoteThreshold], { refIndex: u32, threshold: PalletDemocracyVoteThreshold }>;
-      /**
-       * A public proposal has been tabled for referendum vote.
-       **/
-      Tabled: AugmentedEvent<ApiType, [proposalIndex: u32, deposit: u128, depositors: Vec<AccountId32>], { proposalIndex: u32, deposit: u128, depositors: Vec<AccountId32> }>;
-      /**
-       * An account has cancelled a previous delegation operation.
-       **/
-      Undelegated: AugmentedEvent<ApiType, [account: AccountId32], { account: AccountId32 }>;
-      /**
-       * An external proposal has been vetoed.
-       **/
-      Vetoed: AugmentedEvent<ApiType, [who: AccountId32, proposalHash: H256, until: u32], { who: AccountId32, proposalHash: H256, until: u32 }>;
-      /**
-       * An account has voted in a referendum
-       **/
-      Voted: AugmentedEvent<ApiType, [voter: AccountId32, refIndex: u32, vote: PalletDemocracyVoteAccountVote], { voter: AccountId32, refIndex: u32, vote: PalletDemocracyVoteAccountVote }>;
     };
     dmpQueue: {
       /**
