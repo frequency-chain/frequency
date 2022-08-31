@@ -70,6 +70,9 @@ impl frame_system::Config for Test {
 pub const CALL: &<Test as Config>::Call =
 	&Call::System(frame_system::Call::set_heap_pages { pages: 0u64 });
 
+// pub const CALL: &<Test as Config>::Call =
+// 	&Call::Msa(frame_system::Call::{ });
+
 /// Create new externalities for `System` module tests.
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into()

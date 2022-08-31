@@ -138,6 +138,7 @@ mod tests {
 	#[test]
 	fn signed_ext_check_nonce_works() {
 		new_test_ext().execute_with(|| {
+			// populating an account directly into storage
 			frame_system::Account::<Test>::insert(
 				1,
 				frame_system::AccountInfo {
@@ -148,13 +149,22 @@ mod tests {
 					data: 0,
 				},
 			);
+
+			// using defaults for dispatchIfo
+			// take a look at the trait
 			let info = DispatchInfo::default();
+
+			// setting the lenght of an extrinsic
 			let len = 0_usize;
 			// stale
+
+			// assertion that it errors with invalid trasaction
+			// assert_noop is short
 			assert_noop!(
 				CheckNonce::<Test>(0).validate(&1, CALL, &info, len),
 				InvalidTransaction::Stale
 			);
+
 			assert_noop!(
 				CheckNonce::<Test>(0).pre_dispatch(&1, CALL, &info, len),
 				InvalidTransaction::Stale
@@ -168,6 +178,8 @@ mod tests {
 				CheckNonce::<Test>(5).pre_dispatch(&1, CALL, &info, len),
 				InvalidTransaction::Future
 			);
+
+			//
 		})
 	}
 }
