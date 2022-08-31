@@ -357,7 +357,8 @@ pub fn run() -> Result<()> {
 				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
 				BenchmarkCmd::Machine(cmd) =>
 					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
-				BenchmarkCmd::Extrinsic(_cmd) => Err("Benchmarking command not implemented.".into()),
+				BenchmarkCmd::Extrinsic(_cmd) =>
+					Err("Benchmarking command not implemented.".into()),
 			}
 		},
 		Some(Subcommand::TryRuntime(cmd)) => {
@@ -552,7 +553,7 @@ impl CliConfiguration<Self> for RelayChainCli {
 		self.base.base.role(is_dev)
 	}
 
-	fn transaction_pool(&self, is_dev:bool) -> Result<sc_service::config::TransactionPoolOptions> {
+	fn transaction_pool(&self, is_dev: bool) -> Result<sc_service::config::TransactionPoolOptions> {
 		self.base.base.transaction_pool(is_dev)
 	}
 
