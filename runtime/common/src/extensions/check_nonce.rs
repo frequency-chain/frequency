@@ -27,7 +27,6 @@ use sp_runtime::{
 	},
 };
 use sp_std::vec;
-
 /// Nonce check and increment to give replay protection for transactions.
 ///
 /// # Transaction Validity
@@ -58,7 +57,7 @@ impl<T: Config> sp_std::fmt::Debug for CheckNonce<T> {
 	}
 }
 
-impl<T: Config> SignedExtension for CheckNonce<T>
+impl<T: frame_system::Config> SignedExtension for CheckNonce<T>
 where
 	T::Call: Dispatchable<Info = DispatchInfo>,
 {
@@ -130,9 +129,11 @@ where
 
 #[cfg(test)]
 mod tests {
+	use crate::extensions::mock;
+
 	use super::*;
 	use frame_support::{assert_noop, assert_ok};
-	use frame_system::mock::{new_test_ext, Test, CALL};
+	use mock::{new_test_ext, Test, CALL};
 
 	#[test]
 	fn signed_ext_check_nonce_works() {
