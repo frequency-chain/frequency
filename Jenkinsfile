@@ -4,4 +4,5 @@ node {
         checkout scm
         sh 'make benchmarks'
      }
+    }
 }
