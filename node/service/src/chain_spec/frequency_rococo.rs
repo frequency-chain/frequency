@@ -1,6 +1,8 @@
 #![allow(missing_docs)]
 use cumulus_primitives_core::ParaId;
-use frequency_rococo_runtime::{AccountId, AuraId, SudoConfig, CouncilConfig, TechnicalCommitteeConfig, EXISTENTIAL_DEPOSIT};
+use frequency_rococo_runtime::{
+	AccountId, AuraId, CouncilConfig, SudoConfig, TechnicalCommitteeConfig, EXISTENTIAL_DEPOSIT,
+};
 use hex::FromHex;
 use sc_service::ChainType;
 use sp_core::ByteArray;
@@ -151,6 +153,9 @@ fn frequency_rococo_genesis(
 		vesting: Default::default(),
 		democracy: Default::default(),
 		council: CouncilConfig { phantom: Default::default(), members: council_members },
-		technical_committee: TechnicalCommitteeConfig { phantom: Default::default(), members: technical_committee_members },
+		technical_committee: TechnicalCommitteeConfig {
+			phantom: Default::default(),
+			members: technical_committee_members,
+		},
 	}
 }

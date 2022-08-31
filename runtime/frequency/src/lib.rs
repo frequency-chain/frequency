@@ -551,12 +551,14 @@ impl pallet_democracy::Config for Runtime {
 
 	/// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
 	/// be tabled immediately and with a shorter voting/enactment period.
-	type FastTrackOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 2, 3>;
+	type FastTrackOrigin =
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 2, 3>;
 
 	/// Origin from which the next majority-carries (or more permissive) referendum may be tabled to
 	/// vote immediately and asynchronously in a similar manner to the emergency origin.
 	/// Requires TechnicalCommittee to be unanimous.
-	type InstantOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 1, 1>;
+	type InstantOrigin =
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 1, 1>;
 
 	/// Overarching type of all pallets origins
 	type PalletsOrigin = OriginCaller;

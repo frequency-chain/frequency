@@ -552,15 +552,17 @@ impl pallet_democracy::Config for Runtime {
 
 	/// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
 	/// be tabled immediately and with a shorter voting/enactment period.
-	type FastTrackOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 2, 3>;
+	type FastTrackOrigin =
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 2, 3>;
 
-	type InstantOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 1, 1>;
+	type InstantOrigin =
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 1, 1>;
 
 	type PalletsOrigin = OriginCaller;
 
 	/// To cancel a proposal which has been passed, 2/3 of the council must agree to it.
 	type CancellationOrigin =
-	pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>;
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>;
 
 	/// To cancel a proposal before it has been passed, the technical committee must be unanimous or
 	/// Root must agree.
