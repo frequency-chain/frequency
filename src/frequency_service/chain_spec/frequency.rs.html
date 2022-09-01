@@ -121,9 +121,23 @@
 <span id="115">115</span>
 <span id="116">116</span>
 <span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
 <span class="kw">use</span> <span class="ident">cumulus_primitives_core::ParaId</span>;
-<span class="kw">use</span> <span class="ident">frequency_runtime</span>::{<span class="ident">AccountId</span>, <span class="ident">AuraId</span>, <span class="ident">Balance</span>, <span class="ident">SudoConfig</span>, <span class="ident">EXISTENTIAL_DEPOSIT</span>};
+<span class="kw">use</span> <span class="ident">frequency_runtime</span>::{
+	<span class="ident">AccountId</span>, <span class="ident">AuraId</span>, <span class="ident">Balance</span>, <span class="ident">CouncilConfig</span>, <span class="ident">SudoConfig</span>, <span class="ident">TechnicalCommitteeConfig</span>,
+	<span class="ident">EXISTENTIAL_DEPOSIT</span>,
+};
 <span class="kw">use</span> <span class="ident">sc_service::ChainType</span>;
 <span class="kw">use</span> <span class="ident">sp_core::sr25519</span>;
 
@@ -163,6 +177,10 @@
 				<span class="prelude-val">Some</span>(<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>)),
 				<span class="comment">// TODO:: endowed accounts with initial balance.</span>
 				<span class="macro">vec!</span>[(<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>), <span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">60</span>)],
+				<span class="comment">// TODO: initial council members</span>
+				<span class="ident">Default::default</span>(),
+				<span class="comment">// TODO: initial technical committee members</span>
+				<span class="ident">Default::default</span>(),
 				<span class="comment">// TODO: candidacy bond (if needed)</span>
 				<span class="ident">EXISTENTIAL_DEPOSIT</span> <span class="op">*</span> <span class="number">16</span>,
 				<span class="comment">// TODO: include council/democracy/staking related inputs</span>
@@ -192,8 +210,8 @@
 	<span class="ident">initial_authorities</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">AuraId</span>)<span class="op">&gt;</span>,
 	<span class="ident">root_key</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
 	<span class="ident">endowed_accounts</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">Balance</span>)<span class="op">&gt;</span>,
-	<span class="comment">//council_members: Vec&lt;AccountId&gt;,</span>
-	<span class="comment">//technical_committee_members: Vec&lt;AccountId&gt;,</span>
+	<span class="ident">council_members</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
+	<span class="ident">technical_committee_members</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
 	<span class="ident">candidacy_bond</span>: <span class="ident">Balance</span>,
 	<span class="ident">id</span>: <span class="ident">ParaId</span>,
 ) -&gt; <span class="ident">frequency_runtime::GenesisConfig</span> {
@@ -222,8 +240,6 @@
 				})
 				.<span class="ident">collect</span>(),
 		},
-		<span class="ident">democracy</span>: <span class="ident">Default::default</span>(),
-		<span class="ident">council</span>: <span class="ident">Default::default</span>(),
 		<span class="ident">aura</span>: <span class="ident">Default::default</span>(),
 		<span class="ident">aura_ext</span>: <span class="ident">Default::default</span>(),
 		<span class="ident">parachain_system</span>: <span class="ident">Default::default</span>(),
@@ -236,6 +252,12 @@
 		},
 		<span class="ident">schemas</span>: <span class="ident">Default::default</span>(),
 		<span class="ident">vesting</span>: <span class="ident">Default::default</span>(),
+		<span class="ident">democracy</span>: <span class="ident">Default::default</span>(),
+		<span class="ident">council</span>: <span class="ident">CouncilConfig</span> { <span class="ident">phantom</span>: <span class="ident">Default::default</span>(), <span class="ident">members</span>: <span class="ident">council_members</span> },
+		<span class="ident">technical_committee</span>: <span class="ident">TechnicalCommitteeConfig</span> {
+			<span class="ident">phantom</span>: <span class="ident">Default::default</span>(),
+			<span class="ident">members</span>: <span class="ident">technical_committee_members</span>,
+		},
 	}
 }
 </code></pre></div>

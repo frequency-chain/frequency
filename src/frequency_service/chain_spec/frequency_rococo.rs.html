@@ -155,9 +155,21 @@
 <span id="149">149</span>
 <span id="150">150</span>
 <span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
 <span class="kw">use</span> <span class="ident">cumulus_primitives_core::ParaId</span>;
-<span class="kw">use</span> <span class="ident">frequency_rococo_runtime</span>::{<span class="ident">AccountId</span>, <span class="ident">AuraId</span>, <span class="ident">SudoConfig</span>, <span class="ident">EXISTENTIAL_DEPOSIT</span>};
+<span class="kw">use</span> <span class="ident">frequency_rococo_runtime</span>::{
+	<span class="ident">AccountId</span>, <span class="ident">AuraId</span>, <span class="ident">CouncilConfig</span>, <span class="ident">SudoConfig</span>, <span class="ident">TechnicalCommitteeConfig</span>, <span class="ident">EXISTENTIAL_DEPOSIT</span>,
+};
 <span class="kw">use</span> <span class="ident">hex::FromHex</span>;
 <span class="kw">use</span> <span class="ident">sc_service::ChainType</span>;
 <span class="kw">use</span> <span class="ident">sp_core::ByteArray</span>;
@@ -234,6 +246,8 @@
 					<span class="comment">// 5CntRvAGYzzorsvN3UKotz5gpFd5BgMwUzALKtbWGn3JsQAu</span>
 					<span class="ident">public_testnet_keys::COLLATOR_2_SR25519</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>().<span class="ident">unwrap</span>().<span class="ident">into</span>(),
 				],
+				<span class="ident">Default::default</span>(),
+				<span class="ident">Default::default</span>(),
 				<span class="ident">para_id</span>,
 			)
 		},
@@ -259,6 +273,8 @@
 	<span class="ident">initial_authorities</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">AuraId</span>)<span class="op">&gt;</span>,
 	<span class="ident">root_key</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
 	<span class="ident">endowed_accounts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
+	<span class="ident">council_members</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
+	<span class="ident">technical_committee_members</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
 	<span class="ident">id</span>: <span class="ident">ParaId</span>,
 ) -&gt; <span class="ident">frequency_rococo_runtime::GenesisConfig</span> {
 	<span class="ident">frequency_rococo_runtime::GenesisConfig</span> {
@@ -303,7 +319,11 @@
 		<span class="ident">schemas</span>: <span class="ident">Default::default</span>(),
 		<span class="ident">vesting</span>: <span class="ident">Default::default</span>(),
 		<span class="ident">democracy</span>: <span class="ident">Default::default</span>(),
-		<span class="ident">council</span>: <span class="ident">Default::default</span>(),
+		<span class="ident">council</span>: <span class="ident">CouncilConfig</span> { <span class="ident">phantom</span>: <span class="ident">Default::default</span>(), <span class="ident">members</span>: <span class="ident">council_members</span> },
+		<span class="ident">technical_committee</span>: <span class="ident">TechnicalCommitteeConfig</span> {
+			<span class="ident">phantom</span>: <span class="ident">Default::default</span>(),
+			<span class="ident">members</span>: <span class="ident">technical_committee_members</span>,
+		},
 	}
 }
 </code></pre></div>

@@ -194,9 +194,26 @@
 <span id="188">188</span>
 <span id="189">189</span>
 <span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
 <span class="kw">use</span> <span class="ident">cumulus_primitives_core::ParaId</span>;
-<span class="kw">use</span> <span class="ident">frequency_rococo_runtime</span>::{<span class="ident">AccountId</span>, <span class="ident">AuraId</span>, <span class="ident">CouncilConfig</span>, <span class="ident">SudoConfig</span>, <span class="ident">EXISTENTIAL_DEPOSIT</span>};
+<span class="kw">use</span> <span class="ident">frequency_rococo_runtime</span>::{
+	<span class="ident">AccountId</span>, <span class="ident">AuraId</span>, <span class="ident">CouncilConfig</span>, <span class="ident">SudoConfig</span>, <span class="ident">TechnicalCommitteeConfig</span>, <span class="ident">EXISTENTIAL_DEPOSIT</span>,
+};
 <span class="kw">use</span> <span class="ident">sc_service::ChainType</span>;
 <span class="kw">use</span> <span class="ident">sp_core::sr25519</span>;
 
@@ -254,6 +271,10 @@
 					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>),
 					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Bob&quot;</span>),
 				],
+				<span class="macro">vec!</span>[
+					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Charlie&quot;</span>),
+					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Dave&quot;</span>),
+				],
 				<span class="number">2000</span>.<span class="ident">into</span>(),
 			)
 		},
@@ -309,7 +330,11 @@
 				],
 				<span class="macro">vec!</span>[
 					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>),
+					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Charlie&quot;</span>),
+				],
+				<span class="macro">vec!</span>[
 					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Bob&quot;</span>),
+					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Dave&quot;</span>),
 				],
 				<span class="number">2000</span>.<span class="ident">into</span>(),
 			)
@@ -337,6 +362,7 @@
 	<span class="ident">root_key</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
 	<span class="ident">endowed_accounts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
 	<span class="ident">council_members</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
+	<span class="ident">technical_committee_members</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
 	<span class="ident">id</span>: <span class="ident">ParaId</span>,
 ) -&gt; <span class="ident">frequency_rococo_runtime::GenesisConfig</span> {
 	<span class="ident">frequency_rococo_runtime::GenesisConfig</span> {
@@ -382,6 +408,10 @@
 		<span class="ident">vesting</span>: <span class="ident">Default::default</span>(),
 		<span class="ident">democracy</span>: <span class="ident">Default::default</span>(),
 		<span class="ident">council</span>: <span class="ident">CouncilConfig</span> { <span class="ident">phantom</span>: <span class="ident">Default::default</span>(), <span class="ident">members</span>: <span class="ident">council_members</span> },
+		<span class="ident">technical_committee</span>: <span class="ident">TechnicalCommitteeConfig</span> {
+			<span class="ident">phantom</span>: <span class="ident">Default::default</span>(),
+			<span class="ident">members</span>: <span class="ident">technical_committee_members</span>,
+		},
 	}
 }
 </code></pre></div>
