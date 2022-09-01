@@ -1,6 +1,8 @@
 #![allow(missing_docs)]
 use cumulus_primitives_core::ParaId;
-use frequency_rococo_runtime::{AccountId, AuraId, CouncilConfig, SudoConfig, EXISTENTIAL_DEPOSIT};
+use frequency_rococo_runtime::{
+	AccountId, AuraId, CouncilConfig, SudoConfig, TechnicalCommitteeConfig, EXISTENTIAL_DEPOSIT,
+};
 use sc_service::ChainType;
 use sp_core::sr25519;
 
@@ -58,6 +60,10 @@ pub fn development_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
 				],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+				],
 				2000.into(),
 			)
 		},
@@ -113,7 +119,11 @@ pub fn local_testnet_config() -> ChainSpec {
 				],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+				],
+				vec![
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
 				],
 				2000.into(),
 			)
@@ -141,6 +151,7 @@ fn testnet_genesis(
 	root_key: Option<AccountId>,
 	endowed_accounts: Vec<AccountId>,
 	council_members: Vec<AccountId>,
+	technical_committee_members: Vec<AccountId>,
 	id: ParaId,
 ) -> frequency_rococo_runtime::GenesisConfig {
 	frequency_rococo_runtime::GenesisConfig {
@@ -186,5 +197,9 @@ fn testnet_genesis(
 		vesting: Default::default(),
 		democracy: Default::default(),
 		council: CouncilConfig { phantom: Default::default(), members: council_members },
+		technical_committee: TechnicalCommitteeConfig {
+			phantom: Default::default(),
+			members: technical_committee_members,
+		},
 	}
 }
