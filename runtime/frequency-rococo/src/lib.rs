@@ -779,6 +779,7 @@ mod benches {
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_balances, Balances]
 		[pallet_collective, Council]
+		[pallet_collective, TechnicalCommittee]
 		[pallet_preimage, Preimage]
 		[pallet_democracy, Democracy]
 		[pallet_scheduler, Scheduler]
