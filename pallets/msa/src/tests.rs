@@ -5,7 +5,7 @@ use crate::{
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
-	msa::{Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo},
+	msa::{Delegator, KeyInfoResponse, Provider, ProviderInfo, MessageSourceId},
 	utils::wrap_binary_data,
 };
 use frame_support::{
@@ -20,7 +20,7 @@ fn it_creates_an_msa_account() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::create(test_origin_signed(1)));
 
-		assert_eq!(Msa::get_key_info(test_public(1)), Some(KeyInfo { msa_id: 1, nonce: 0 }));
+		assert_eq!(Msa::get_key_info(test_public(1)), Some(1 as MessageSourceId));
 
 		assert_eq!(Msa::get_identifier(), 1);
 
@@ -248,9 +248,9 @@ pub fn test_delete_key() {
 
 		let info = Msa::get_key_info(&test_public(1));
 
-		assert_eq!(info, Some(KeyInfo { msa_id: 1, nonce: 0 }));
+		assert_eq!(info, Some(1 as MessageSourceId));
 
-		assert_ok!(Msa::delete_key_for_msa(info.unwrap().msa_id, &test_public(1)));
+		assert_ok!(Msa::delete_key_for_msa(info.unwrap(), &test_public(1)));
 	});
 }
 
@@ -507,7 +507,7 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 
 		// assert
 		let key_info = Msa::get_key_info(AccountId32::new(delegator_account.0));
-		assert_eq!(key_info.unwrap().msa_id, 2);
+		assert_eq!(key_info.unwrap(), 2);
 
 		let provider_info = Msa::get_provider_info_of(Delegator(2), Provider(1));
 		assert_eq!(provider_info.is_some(), true);

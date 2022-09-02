@@ -304,8 +304,7 @@ impl<T: Config> Pallet<T> {
 		on_behalf_of: Option<MessageSourceId>,
 	) -> Result<MessageSourceId, DispatchError> {
 		let sender_msa_id = T::AccountProvider::ensure_valid_msa_key(key)
-			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?
-			.msa_id;
+			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
 		let message_source_id = match on_behalf_of {
 			Some(delegator) =>

@@ -43,25 +43,25 @@ impl From<Delegator> for MessageSourceId {
 	}
 }
 
-/// KeyInfo holds the information on the relationship between a key and an MSA
-#[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
-pub struct KeyInfo {
-	/// The Message Source Account that this key is associated with
-	pub msa_id: MessageSourceId,
-	/// Prevent key addition replays
-	pub nonce: u32,
-}
+// /// KeyInfo holds the information on the relationship between a key and an MSA
+// #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
+// pub struct KeyInfo {
+// 	/// The Message Source Account that this key is associated with
+// 	pub msa_id: MessageSourceId,
+// 	/// Prevent key addition replays
+// 	pub nonce: u32,
+// }
 
-impl KeyInfo {
-	/// Convert `KeyInfo` into `KeyInfoResponse`
-	/// # Arguments
-	/// * `key` - The `AccountId` for self
-	/// # Returns
-	/// * `KeyInfoResponse<AccountId, BlockNumber>`
-	pub fn map_to_response<AccountId: Clone>(&self, key: AccountId) -> KeyInfoResponse<AccountId> {
-		KeyInfoResponse { key, msa_id: self.msa_id, nonce: self.nonce }
-	}
-}
+// impl KeyInfo {
+// 	/// Convert `KeyInfo` into `KeyInfoResponse`
+// 	/// # Arguments
+// 	/// * `key` - The `AccountId` for self
+// 	/// # Returns
+// 	/// * `KeyInfoResponse<AccountId, BlockNumber>`
+// 	pub fn map_to_response<AccountId: Clone>(&self, key: AccountId) -> KeyInfoResponse<AccountId> {
+// 		KeyInfoResponse { key, msa_id: self.msa_id, nonce: self.nonce }
+// 	}
+// }
 
 /// Struct for the information of the relationship between an MSA and a Provider
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
@@ -147,8 +147,8 @@ pub trait AccountProvider {
 	/// # Arguments
 	/// * `key` - The `AccountId` to lookup
 	/// # Returns
-	/// * `Result<KeyInfo, DispatchError>`
-	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<KeyInfo, DispatchError>;
+	/// * `Result<MessageSourceId, DispatchError>`
+	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError>;
 
 	/// Validates that the delegator and provider have a relationship at this point
 	/// # Arguments

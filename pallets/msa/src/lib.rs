@@ -57,7 +57,7 @@
 
 use codec::{Decode, Encode};
 use common_primitives::msa::{
-	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo, ProviderMetadata,
+	AccountProvider, Delegator, KeyInfoResponse, Provider, ProviderInfo, ProviderMetadata,
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 pub use pallet::*;
@@ -151,10 +151,10 @@ pub mod pallet {
 
 	/// Storage type for key to MSA information
 	/// - Key: AccountId
-	/// - Value: [`KeyInfo`](common_primitives::msa::KeyInfo)
+	/// - Value: [`MessageSourceId`]()
 	#[pallet::storage]
 	#[pallet::getter(fn get_key_info)]
-	pub type KeyInfoOf<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, KeyInfo, OptionQuery>;
+	pub type KeyInfoOf<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
 
 	/// Storage for MSA keys
 	/// - Key: MSA Id
@@ -304,7 +304,7 @@ pub mod pallet {
 
 			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())?;
 
-			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?.msa_id;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			ensure!(
 				add_provider_payload.authorized_msa_id == provider_msa_id,
 				Error::<T>::UnauthorizedProvider
@@ -341,7 +341,7 @@ pub mod pallet {
 			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
 				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
-			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?.msa_id;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			ProviderRegistry::<T>::try_mutate(
 				Provider(provider_msa_id),
 				|maybe_metadata| -> DispatchResult {
@@ -411,7 +411,7 @@ pub mod pallet {
 			let delegator_key = ensure_signed(origin)?;
 
 			let delegator_msa_id: Delegator =
-				Self::ensure_valid_msa_key(&delegator_key)?.msa_id.into();
+				Self::ensure_valid_msa_key(&delegator_key)?.into();
 			let provider_msa_id = Provider(provider_msa_id);
 
 			Self::revoke_provider(provider_msa_id, delegator_msa_id)?;
@@ -476,9 +476,9 @@ pub mod pallet {
 
 			let who = Self::try_get_key_info(&who)?;
 			let key_info = Self::try_get_key_info(&key)?;
-			ensure!(who.msa_id == key_info.msa_id, Error::<T>::NotKeyOwner);
+			ensure!(who == key_info, Error::<T>::NotKeyOwner);
 
-			Self::delete_key_for_msa(who.msa_id, &key)?;
+			Self::delete_key_for_msa(who, &key)?;
 
 			Self::deposit_event(Event::KeyRemoved { key });
 
@@ -503,7 +503,7 @@ pub mod pallet {
 			// Remover should have valid keys (non expired and exists)
 			let key_info = Self::ensure_valid_msa_key(&provider_key)?;
 
-			let provider_msa_id = Provider(key_info.msa_id);
+			let provider_msa_id = Provider(key_info);
 			let delegator_msa_id = Delegator(delegator);
 
 			Self::revoke_provider(provider_msa_id, delegator_msa_id)?;
@@ -556,7 +556,7 @@ impl<T: Config> Pallet<T> {
 		KeyInfoOf::<T>::try_mutate(key, |maybe_key_info| {
 			ensure!(maybe_key_info.is_none(), Error::<T>::KeyAlreadyRegistered);
 
-			*maybe_key_info = Some(KeyInfo { msa_id, nonce: Zero::zero() });
+			*maybe_key_info = Some(msa_id);
 
 			// adding reverse lookup
 			<MsaKeysOf<T>>::try_mutate(msa_id, |key_list| {
@@ -580,8 +580,8 @@ impl<T: Config> Pallet<T> {
 		provider_key: &T::AccountId,
 		authorized_msa_id: MessageSourceId,
 	) -> Result<(Provider, Delegator), DispatchError> {
-		let provider_msa_id = Self::ensure_valid_msa_key(provider_key)?.msa_id;
-		let delegator_msa_id = Self::ensure_valid_msa_key(delegator_key)?.msa_id;
+		let provider_msa_id = Self::ensure_valid_msa_key(provider_key)?;
+		let delegator_msa_id = Self::ensure_valid_msa_key(delegator_key)?;
 
 		ensure!(authorized_msa_id == delegator_msa_id, Error::<T>::UnauthorizedDelegator);
 
@@ -697,8 +697,8 @@ impl<T: Config> Pallet<T> {
 	/// # Arguments
 	/// * `key` - The `AccountId` you want to attempt to get information on
 	/// # Returns
-	/// * [`KeyInfo`]
-	pub fn try_get_key_info(key: &T::AccountId) -> Result<KeyInfo, DispatchError> {
+	/// * [`MessageSourceId`]
+	pub fn try_get_key_info(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		let info = Self::get_key_info(key).ok_or(Error::<T>::NoKeyExists)?;
 		Ok(info)
 	}
@@ -709,7 +709,7 @@ impl<T: Config> Pallet<T> {
 	/// # Returns
 	/// * [`MessageSourceId`]
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
-		Self::get_key_info(&key).map(|info| info.msa_id)
+		Self::get_key_info(&key).map(|info| info)
 	}
 
 	/// Fetches all the keys associated with a message Source Account
@@ -718,7 +718,7 @@ impl<T: Config> Pallet<T> {
 		let mut response = Vec::new();
 		for key in Self::get_msa_keys(msa_id) {
 			if let Ok(info) = Self::try_get_key_info(&key) {
-				response.push(info.map_to_response(key));
+				response.push(KeyInfoResponse {key: key, msa_id: msa_id, nonce: 0});
 			}
 		}
 
@@ -726,7 +726,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Checks that a key is associated to an MSA and has not been revoked.
-	pub fn ensure_valid_msa_key(key: &T::AccountId) -> Result<KeyInfo, DispatchError> {
+	pub fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		let info = Self::try_get_key_info(key)?;
 
 		Ok(info)
@@ -752,7 +752,7 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	}
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<KeyInfo, DispatchError> {
+	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		Self::ensure_valid_msa_key(key)
 	}
 
@@ -764,10 +764,10 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
 	/// this method to return a dummy account in case it does not exist
 	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<KeyInfo, DispatchError> {
+	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		let result = Self::ensure_valid_msa_key(key);
 		if result.is_err() {
-			return Ok(KeyInfo { msa_id: 1 as MessageSourceId, nonce: 0 })
+			return Ok(1 as MessageSourceId)
 		}
 		Ok(result.unwrap())
 	}
@@ -790,7 +790,6 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 		const TAG_PREFIX: &str = "DelegationRevocation";
 		let delegator_msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(account_id)
 			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
-			.msa_id
 			.into();
 		let provider_msa_id = Provider(*provider_msa_id);
 
@@ -807,7 +806,6 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 		const TAG_PREFIX: &str = "KeyRevocation";
 		let _msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(key)
 			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
-			.msa_id
 			.into();
 		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}

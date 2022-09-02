@@ -1,6 +1,6 @@
 use crate as pallet_messages;
 use common_primitives::{
-	msa::{AccountProvider, Delegator, KeyInfo, MessageSourceId, Provider, ProviderInfo},
+	msa::{AccountProvider, Delegator, MessageSourceId, Provider, ProviderInfo},
 	schema::*,
 };
 use frame_support::{
@@ -112,16 +112,15 @@ impl AccountProvider for AccountHandler {
 		Some(ProviderInfo { permission: 0, expired: 100 })
 	}
 
-	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<KeyInfo, DispatchError> {
+	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError> {
 		if *key == 1000 {
 			return Err(DispatchError::Other("some error"))
 		}
 		if *key == 2000 {
-			return Ok(KeyInfo { msa_id: 2000, nonce: 0 })
+			return Ok(2000)
 		}
 
-		let info = KeyInfo { msa_id: get_msa_from_account(*key), nonce: 0 };
-		Ok(info)
+		Ok(get_msa_from_account(*key))
 	}
 
 	fn ensure_valid_delegation(provider: Provider, _delegator: Delegator) -> DispatchResult {
