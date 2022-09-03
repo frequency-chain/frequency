@@ -135,6 +135,7 @@ declare module '@polkadot/types/types/registry' {
     PalletSudoEvent: PalletSudoEvent;
     PalletTimestampCall: PalletTimestampCall;
     PalletTransactionPaymentChargeTransactionPayment: PalletTransactionPaymentChargeTransactionPayment;
+    PalletTransactionPaymentEvent: PalletTransactionPaymentEvent;
     PalletTransactionPaymentReleases: PalletTransactionPaymentReleases;
     PalletUtilityCall: PalletUtilityCall;
     PalletUtilityError: PalletUtilityError;
