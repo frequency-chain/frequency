@@ -154,7 +154,8 @@ pub mod pallet {
 	/// - Value: [`MessageSourceId`]()
 	#[pallet::storage]
 	#[pallet::getter(fn get_key_info)]
-	pub type KeyInfoOf<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
+	pub type KeyInfoOf<T: Config> =
+		StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
 
 	/// Storage for MSA keys
 	/// - Key: MSA Id
@@ -410,8 +411,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let delegator_key = ensure_signed(origin)?;
 
-			let delegator_msa_id: Delegator =
-				Self::ensure_valid_msa_key(&delegator_key)?.into();
+			let delegator_msa_id: Delegator = Self::ensure_valid_msa_key(&delegator_key)?.into();
 			let provider_msa_id = Provider(provider_msa_id);
 
 			Self::revoke_provider(provider_msa_id, delegator_msa_id)?;
@@ -698,7 +698,9 @@ impl<T: Config> Pallet<T> {
 	/// * `key` - The `AccountId` you want to attempt to get information on
 	/// # Returns
 	/// * [`MessageSourceId`]
-	pub fn try_get_msa_from_account_id(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
+	pub fn try_get_msa_from_account_id(
+		key: &T::AccountId,
+	) -> Result<MessageSourceId, DispatchError> {
 		let info = Self::get_key_info(key).ok_or(Error::<T>::NoKeyExists)?;
 		Ok(info)
 	}
@@ -709,7 +711,7 @@ impl<T: Config> Pallet<T> {
 	/// # Returns
 	/// * [`MessageSourceId`]
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
-		Self::get_key_info(&key).map(|info| info)
+		Self::get_key_info(&key)
 	}
 
 	/// Fetches all the keys associated with a message Source Account
@@ -718,7 +720,7 @@ impl<T: Config> Pallet<T> {
 		let mut response = Vec::new();
 		for key in Self::get_msa_keys(msa_id) {
 			if let Ok(_info) = Self::try_get_msa_from_account_id(&key) {
-				response.push(KeyInfoResponse {key: key, msa_id: msa_id, nonce: 0});
+				response.push(KeyInfoResponse { key, msa_id, nonce: 0 });
 			}
 		}
 

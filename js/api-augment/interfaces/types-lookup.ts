@@ -2865,13 +2865,7 @@ declare module '@polkadot/types/lookup' {
     readonly providerName: Bytes;
   }
 
-  /** @name CommonPrimitivesMsaKeyInfo (318) */
-  interface CommonPrimitivesMsaKeyInfo extends Struct {
-    readonly msaId: u64;
-    readonly nonce: u32;
-  }
-
-  /** @name PalletMsaError (320) */
+  /** @name PalletMsaError (319) */
   interface PalletMsaError extends Enum {
     readonly isKeyAlreadyRegistered: boolean;
     readonly isMsaIdOverflow: boolean;
@@ -2895,7 +2889,7 @@ declare module '@polkadot/types/lookup' {
     readonly type: 'KeyAlreadyRegistered' | 'MsaIdOverflow' | 'AddKeySignatureVerificationFailed' | 'NotMsaOwner' | 'InvalidSignature' | 'NotKeyOwner' | 'NoKeyExists' | 'KeyLimitExceeded' | 'InvalidSelfRemoval' | 'InvalidSelfProvider' | 'DuplicateProvider' | 'AddProviderSignatureVerificationFailed' | 'UnauthorizedDelegator' | 'UnauthorizedProvider' | 'DelegationRevoked' | 'DelegationNotFound' | 'DelegationExpired' | 'DuplicateProviderMetadata' | 'ExceedsMaxProviderNameSize';
   }
 
-  /** @name PalletMessagesMessage (323) */
+  /** @name PalletMessagesMessage (322) */
   interface PalletMessagesMessage extends Struct {
     readonly payload: Bytes;
     readonly providerMsaId: u64;
@@ -2903,7 +2897,7 @@ declare module '@polkadot/types/lookup' {
     readonly index: u16;
   }
 
-  /** @name PalletMessagesError (329) */
+  /** @name PalletMessagesError (328) */
   interface PalletMessagesError extends Enum {
     readonly isTooManyMessagesInBlock: boolean;
     readonly isExceedsMaxMessagePayloadSizeBytes: boolean;
@@ -2916,14 +2910,14 @@ declare module '@polkadot/types/lookup' {
     readonly type: 'TooManyMessagesInBlock' | 'ExceedsMaxMessagePayloadSizeBytes' | 'InvalidPaginationRequest' | 'TypeConversionOverflow' | 'InvalidMessageSourceAccount' | 'InvalidSchemaId' | 'UnAuthorizedDelegate' | 'InvalidPayloadLocation';
   }
 
-  /** @name PalletSchemasSchema (330) */
+  /** @name PalletSchemasSchema (329) */
   interface PalletSchemasSchema extends Struct {
     readonly modelType: CommonPrimitivesSchemaModelType;
     readonly model: Bytes;
     readonly payloadLocation: CommonPrimitivesSchemaPayloadLocation;
   }
 
-  /** @name PalletSchemasError (331) */
+  /** @name PalletSchemasError (330) */
   interface PalletSchemasError extends Enum {
     readonly isInvalidSchema: boolean;
     readonly isTooManySchemas: boolean;
@@ -2938,31 +2932,31 @@ declare module '@polkadot/types/lookup' {
     readonly type: 'InvalidSchema' | 'TooManySchemas' | 'ExceedsMaxSchemaModelBytes' | 'ExceedsGovernanceSchemaModelMaxValue' | 'LessThanMinSchemaModelBytes' | 'NoSuchSchema' | 'StringConversionError' | 'DeserializationError' | 'SerializationError' | 'SchemaCountOverflow';
   }
 
-  /** @name FrameSystemExtensionsCheckNonZeroSender (334) */
+  /** @name FrameSystemExtensionsCheckNonZeroSender (333) */
   type FrameSystemExtensionsCheckNonZeroSender = Null;
 
-  /** @name FrameSystemExtensionsCheckSpecVersion (335) */
+  /** @name FrameSystemExtensionsCheckSpecVersion (334) */
   type FrameSystemExtensionsCheckSpecVersion = Null;
 
-  /** @name FrameSystemExtensionsCheckTxVersion (336) */
+  /** @name FrameSystemExtensionsCheckTxVersion (335) */
   type FrameSystemExtensionsCheckTxVersion = Null;
 
-  /** @name FrameSystemExtensionsCheckGenesis (337) */
+  /** @name FrameSystemExtensionsCheckGenesis (336) */
   type FrameSystemExtensionsCheckGenesis = Null;
 
-  /** @name FrameSystemExtensionsCheckNonce (340) */
+  /** @name FrameSystemExtensionsCheckNonce (339) */
   interface FrameSystemExtensionsCheckNonce extends Compact<u32> {}
 
-  /** @name FrameSystemExtensionsCheckWeight (341) */
+  /** @name FrameSystemExtensionsCheckWeight (340) */
   type FrameSystemExtensionsCheckWeight = Null;
 
-  /** @name PalletTransactionPaymentChargeTransactionPayment (342) */
+  /** @name PalletTransactionPaymentChargeTransactionPayment (341) */
   interface PalletTransactionPaymentChargeTransactionPayment extends Compact<u128> {}
 
-  /** @name PalletMsaCheckFreeExtrinsicUse (343) */
+  /** @name PalletMsaCheckFreeExtrinsicUse (342) */
   type PalletMsaCheckFreeExtrinsicUse = Null;
 
-  /** @name FrequencyRococoRuntimeRuntime (344) */
+  /** @name FrequencyRococoRuntimeRuntime (343) */
   type FrequencyRococoRuntimeRuntime = Null;
 
 } // declare module

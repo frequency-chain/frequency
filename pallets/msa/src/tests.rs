@@ -5,7 +5,7 @@ use crate::{
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
-	msa::{Delegator, KeyInfoResponse, Provider, ProviderInfo, MessageSourceId},
+	msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider, ProviderInfo},
 	utils::wrap_binary_data,
 };
 use frame_support::{
