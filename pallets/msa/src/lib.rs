@@ -475,8 +475,8 @@ pub mod pallet {
 			ensure!(who != key, Error::<T>::InvalidSelfRemoval);
 
 			let who = Self::try_get_msa_from_account_id(&who)?;
-			let key_info = Self::try_get_msa_from_account_id(&key)?;
-			ensure!(who == key_info, Error::<T>::NotKeyOwner);
+			let account_msa_id = Self::try_get_msa_from_account_id(&key)?;
+			ensure!(who == account_msa_id, Error::<T>::NotKeyOwner);
 
 			Self::delete_key_for_msa(who, &key)?;
 
@@ -717,7 +717,7 @@ impl<T: Config> Pallet<T> {
 	pub fn fetch_msa_keys(msa_id: MessageSourceId) -> Vec<KeyInfoResponse<T::AccountId>> {
 		let mut response = Vec::new();
 		for key in Self::get_msa_keys(msa_id) {
-			if let Ok(info) = Self::try_get_msa_from_account_id(&key) {
+			if let Ok(_info) = Self::try_get_msa_from_account_id(&key) {
 				response.push(KeyInfoResponse {key: key, msa_id: msa_id, nonce: 0});
 			}
 		}
@@ -727,9 +727,9 @@ impl<T: Config> Pallet<T> {
 
 	/// Checks that a key is associated to an MSA and has not been revoked.
 	pub fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
-		let info = Self::try_get_msa_from_account_id(key)?;
+		let msa_id = Self::try_get_msa_from_account_id(key)?;
 
-		Ok(info)
+		Ok(msa_id)
 	}
 }
 
