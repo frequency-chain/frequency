@@ -474,8 +474,8 @@ pub mod pallet {
 
 			ensure!(who != key, Error::<T>::InvalidSelfRemoval);
 
-			let who = Self::try_get_key_info(&who)?;
-			let key_info = Self::try_get_key_info(&key)?;
+			let who = Self::try_get_msa_from_account_id(&who)?;
+			let key_info = Self::try_get_msa_from_account_id(&key)?;
 			ensure!(who == key_info, Error::<T>::NotKeyOwner);
 
 			Self::delete_key_for_msa(who, &key)?;
@@ -693,12 +693,12 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Attempts to retrieve the key information for an account
+	/// Attempts to retrieve the MSA id for an account
 	/// # Arguments
 	/// * `key` - The `AccountId` you want to attempt to get information on
 	/// # Returns
 	/// * [`MessageSourceId`]
-	pub fn try_get_key_info(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
+	pub fn try_get_msa_from_account_id(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		let info = Self::get_key_info(key).ok_or(Error::<T>::NoKeyExists)?;
 		Ok(info)
 	}
@@ -717,7 +717,7 @@ impl<T: Config> Pallet<T> {
 	pub fn fetch_msa_keys(msa_id: MessageSourceId) -> Vec<KeyInfoResponse<T::AccountId>> {
 		let mut response = Vec::new();
 		for key in Self::get_msa_keys(msa_id) {
-			if let Ok(info) = Self::try_get_key_info(&key) {
+			if let Ok(info) = Self::try_get_msa_from_account_id(&key) {
 				response.push(KeyInfoResponse {key: key, msa_id: msa_id, nonce: 0});
 			}
 		}
@@ -727,7 +727,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Checks that a key is associated to an MSA and has not been revoked.
 	pub fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
-		let info = Self::try_get_key_info(key)?;
+		let info = Self::try_get_msa_from_account_id(key)?;
 
 		Ok(info)
 	}
