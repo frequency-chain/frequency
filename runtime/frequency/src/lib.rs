@@ -106,16 +106,24 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
 
+/// Basefilter to only allow specified transactions call to be executed
 pub struct BaseCallFilter;
 impl Contains<Call> for BaseCallFilter {
 	fn contains(call: &Call) -> bool {
-		matches!(
-			call,
-			// These calls are allowed to be dispatched by normal transactions.
-			Call::Sudo(..) | Call::Democracy(_) | Call::Council(_) | Call::TechnicalCommittee(_)
-		)
+		let core_calls = match call {
+			Call::System(..) => true,
+			Call::Timestamp(..) => true,
+			Call::ParachainSystem(..) => true,
+			Call::Sudo(..) => true,
+			Call::TechnicalCommittee(..) => true,
+			Call::Council(..) => true,
+			Call::Democracy(..) => true,
+			_ => false,
+		};
+		core_calls
 	}
 }
+
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
 	frame_system::CheckNonZeroSender<Runtime>,
