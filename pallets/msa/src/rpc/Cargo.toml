@@ -10,9 +10,9 @@ repository = "https://github.com/LibertyDSNP/frequency/"
 edition = "2021"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.0.0" }
+codec = { package = "parity-scale-codec", version = "3.1.5" }
 jsonrpsee = { version = "0.14.0", features = ["server", "macros"] }
-rayon = "1.5"
+rayon = "1.5.3"
 
 # unfinished
 pallet-msa-runtime-api = {default-features = false, path = "../runtime-api" }

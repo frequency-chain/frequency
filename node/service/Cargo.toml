@@ -9,15 +9,15 @@ repository = "https://github.com/LibertyDSNP/frequency/"
 version = "0.1.0"
 
 [dependencies]
-clap = {version = "3.2.5", features = ["derive"]}
-codec = {package = "parity-scale-codec", version = "3.0.0"}
-derive_more = "0.99.2"
-futures = "0.3.21"
-hex = "0.4.0"
+clap = {version = "3.2.20", features = ["derive"]}
+codec = {package = "parity-scale-codec", version = "3.1.5"}
+derive_more = "0.99.17"
+futures = "0.3.24"
+hex = "0.4.3"
 hex-literal = "0.3.4"
 jsonrpsee = {version = "0.14.0", features = ["server"]}
 log = "0.4.17"
-serde = {version = "1.0.137", features = ["derive"]}
+serde = {version = "1.0.144", features = ["derive"]}
 
 # Frequency Runtime
 frequency-rococo-runtime = {path = "../../runtime/frequency-rococo"}
