@@ -30,8 +30,7 @@ case $TARGET in
     cargo test --all-features --workspace --release
     ;;
 
-  lint)
-    cargo fmt +nightly
+  lint) 
     cargo fmt -- --check
     SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --all-targets
     ;;
