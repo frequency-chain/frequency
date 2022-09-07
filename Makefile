@@ -67,3 +67,8 @@ benchmarks:
 .PHONY: docs
 docs:
 	./scripts/frequency_docs.sh
+
+# Cleans unused docker resources and artifacts
+.PHONY: docs
+docker-prune:
+	./scripts/prune_all.sh
