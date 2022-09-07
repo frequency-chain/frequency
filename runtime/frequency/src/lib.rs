@@ -106,10 +106,14 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
 
-pub struct BaseFilter;
-impl Contains<Call> for BaseFilter {
+pub struct BaseCallFilter;
+impl Contains<Call> for BaseCallFilter {
 	fn contains(call: &Call) -> bool {
-		true
+		matches!(
+			call,
+			// These calls are allowed to be dispatched by normal transactions.
+			Call::Sudo(..) | Call::Democracy(_) | Call::Council(_) | Call::TechnicalCommittee(_)
+		)
 	}
 }
 /// The SignedExtension to the basic transaction logic.
@@ -280,7 +284,7 @@ impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// Base call filter to use in dispatchable.
-	type BaseCallFilter = BaseFilter;
+	type BaseCallFilter = BaseCallFilter;
 	/// The aggregated dispatch type that is available for extrinsics.
 	type Call = Call;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
