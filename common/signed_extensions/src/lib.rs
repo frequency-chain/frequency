@@ -15,5 +15,9 @@
 
 /// SignedExtenions for pallet_democracy
 pub mod democracy;
+
+#[cfg(test)]
 mod mock;
+
+#[cfg(test)]
 mod tests;

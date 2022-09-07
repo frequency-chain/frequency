@@ -1,10 +1,8 @@
-use std::marker::PhantomData;
-
 use codec::{ Decode, Encode, };
 use frame_support::{traits::IsSubType, weights::DispatchInfo};
 use pallet_democracy::{Call, Config};
 use scale_info::{TypeInfo};
-use sp_runtime::{BoundedVec, traits::{DispatchInfoOf, Dispatchable, SignedExtension}, transaction_validity::{
+use sp_runtime::{traits::{DispatchInfoOf, Dispatchable, SignedExtension}, transaction_validity::{
 	InvalidTransaction, TransactionValidity, TransactionValidityError,
 }};
 use sp_runtime::transaction_validity::ValidTransaction;
@@ -14,10 +12,12 @@ use sp_runtime::transaction_validity::ValidTransaction;
 /// Holder that has not fully vested.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct VerifyVoter<T: Config + Send + Sync>(PhantomData<T>);
+pub struct VerifyVoter<T: Config + Send + Sync> {
+	blacklist: Vec<T::AccountId>
+}
 
 /// Errors raised when vote attempt fails validity check
-enum VoterValidityError {
+pub enum VoterValidityError {
 	/// MTH accounts may not vote
 	VotingNotPermittedForMTH,
 	/// Origin is not permitted to vote for some other reason
@@ -28,13 +28,15 @@ enum VoterValidityError {
 impl<T: Config + Send + Sync> VerifyVoter<T> {
 
 	/// validate_voter_is_not_mth checks that `account_id` is not a Major Token Holder
-	pub fn validate_voter_is_not_mth(account_id: &T::AccountId) -> TransactionValidity {
+	pub fn validate_voter_is_not_mth(&self, account_id: &T::AccountId) -> TransactionValidity {
 		const TAG_PREFIX: &'static str = "MTHMembership";
-		let voter_ids: Vec<u64> = vec![1,2];
 
-		if !voter_ids.contains(account_id.into()) {
-			return TransactionValidity::from(InvalidTransaction::Call);
+		if self.blacklist.contains(account_id) {
+			let err: InvalidTransaction = InvalidTransaction::Custom(VoterValidityError::VotingNotPermittedForMTH as u8);
+			// let err: InvalidTransaction = InvalidTransaction::BadSigner;
+			return TransactionValidity::from(err);
 		};
+
 		ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}
 }
@@ -42,8 +44,8 @@ impl<T: Config + Send + Sync> VerifyVoter<T> {
 /// VerifyVoter constructor
 impl<T: Config + Send + Sync> VerifyVoter<T> {
 	/// Create new `VerifyVoter` `SignedExtension` .
-	pub fn new() -> Self {
-		Self(PhantomData)
+	pub fn new(blacklist: Vec<T::AccountId>) -> Self {
+		Self { blacklist: blacklist.clone() }
 	}
 }
 
@@ -51,7 +53,7 @@ impl<T: Config + Send + Sync> VerifyVoter<T> {
 impl<T: Config + Send + Sync> sp_std::fmt::Debug for VerifyVoter<T> {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		write!(f, "VerifyVoter<{:?}>", self.0)
+		write!(f, "VerifyVoter<{:?}>", self.blacklist)
 	}
 	#[cfg(not(feature = "std"))]
 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
@@ -93,7 +95,7 @@ where
 		_len: usize,
 	) -> TransactionValidity {
 		match call.is_sub_type() {
-			Some(Call::vote { .. }) => VerifyVoter::<T>::validate_voter_is_not_mth(who),
+			Some(Call::vote { .. }) => VerifyVoter::<T>::validate_voter_is_not_mth(self,who),
 			_ => return Ok(Default::default()),
 		}
 	}

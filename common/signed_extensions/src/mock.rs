@@ -1,25 +1,27 @@
 use frame_support::{
 	ord_parameter_types, parameter_types,
-	traits::{ConstU32, ConstU64, EqualPrivilegeOnly, Get},
+	traits::{ConstU32, ConstU64, EqualPrivilegeOnly},
 };
+use frame_support::dispatch::RawOrigin;
+use frame_support::traits::EnsureOrigin;
 use frame_system as system;
-use frame_system::{EnsureRoot, EnsureSignedBy};
+use frame_system::{EnsureRoot};
 use pallet_balances;
 use pallet_democracy;
 pub use pallet_democracy::Call as DemocracyCall;
-
+use sp_core::crypto::AccountId32;
+use sp_std::convert::From;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup, SignedExtension}, MultiSignature,
+	traits::{BlakeTwo256, IdentityLookup, },
 };
 
 pub type BlockNumber = u64;
-pub type AccountId = u64;
-pub type Block = frame_system::mocking::MockBlock<Test>;
-pub type Signature = MultiSignature;
+pub type AccountId = AccountId32;
 
-// pub type SignedExtra = signed_extensions::democracy::VerifyVoter<Test>;
+pub type Block = frame_system::mocking::MockBlock<Test>;
+
 // pub type UncheckedExtrinsic = sp_runtime::generic::UncheckedExtrinsic<AccountId, Call, Signature, SignedExtra>;
 //pub type UncheckedExtrinsic = sp_runtime::generic::UncheckedExtrinsic<u32, u64, Call, ()>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -56,7 +58,7 @@ impl system::Config for Test {
 	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = pallet_balances::AccountData<u64>;
+	type AccountData = pallet_balances::AccountData<Balance>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -85,6 +87,18 @@ parameter_types! {
 	pub const MinimumDeposit: Balance = 100 * UNIT;
 }
 
+pub struct StupidOrigin {}
+impl EnsureOrigin<Origin> for StupidOrigin {
+	type Success = AccountId;
+
+	fn try_origin(o: Origin) -> Result<Self::Success, Origin> {
+		Into::<Result<RawOrigin<AccountId>, Origin>>::into(o).and_then(|o| match o {
+			RawOrigin::Root => Ok(AccountId32::new([1;32])),
+			r => Err(Origin::from(r)),
+		})
+	}
+}
+
 impl pallet_democracy::Config for Test {
 	type Proposal = Call;
 	type Event = Event;
@@ -99,19 +113,19 @@ impl pallet_democracy::Config for Test {
 	type VotingPeriod = VotingPeriod;
 	type MaxVotes = ConstU32<100>;
 	type MaxProposals = ConstU32<100>;
-	type ExternalOrigin = EnsureSignedBy<Two, u64>;
-	type ExternalMajorityOrigin = EnsureSignedBy<Two, u64>;
-	type ExternalDefaultOrigin = EnsureSignedBy<Two, u64>;
-	type FastTrackOrigin = EnsureSignedBy<Two, u64>;
-	type CancellationOrigin = EnsureSignedBy<Two, u64>;
-	type BlacklistOrigin = EnsureRoot<u64>;
-	type CancelProposalOrigin = EnsureRoot<u64>;
-	type VetoOrigin = EnsureSignedBy<Two, u64>;
+	type ExternalOrigin = StupidOrigin;
+	type ExternalMajorityOrigin = StupidOrigin;
+	type ExternalDefaultOrigin = StupidOrigin;
+	type FastTrackOrigin = StupidOrigin;
+	type CancellationOrigin = StupidOrigin;
+	type BlacklistOrigin = EnsureRoot<AccountId>;
+	type CancelProposalOrigin = EnsureRoot<AccountId>;
+	type VetoOrigin = StupidOrigin;
 	type Slash = ();
-	type InstantOrigin = EnsureSignedBy<Two, u64>;
+	type InstantOrigin = StupidOrigin;
 	type InstantAllowed = frame_support::traits::ConstBool<true>;
 	type Scheduler = Scheduler;
-	type OperationalPreimageOrigin = EnsureSignedBy<Two, u64>;
+	type OperationalPreimageOrigin = StupidOrigin;
 	type PalletsOrigin = OriginCaller;
 	type WeightInfo = ();
 }
@@ -120,7 +134,7 @@ impl pallet_preimage::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type Currency = ();
-	type ManagerOrigin = EnsureRoot<u64>;
+	type ManagerOrigin = EnsureRoot<AccountId>;
 	type MaxSize = ConstU32<1024>;
 	type BaseDeposit = ();
 	type ByteDeposit = ();
@@ -132,7 +146,7 @@ impl pallet_scheduler::Config for Test {
 	type PalletsOrigin = OriginCaller;
 	type Call = Call;
 	type MaximumWeight = ConstU64<2_000_000_000_000>;
-	type ScheduleOrigin = EnsureRoot<u64>;
+	type ScheduleOrigin = EnsureRoot<AccountId>;
 	type MaxScheduledPerBlock = ConstU32<100>;
 	type WeightInfo = ();
 	type OriginPrivilegeCmp = EqualPrivilegeOnly;
@@ -151,6 +165,9 @@ impl pallet_balances::Config for Test {
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
 }
+
+// I tried a mock democracy pallet but there were too many dependencies from the democracy pallet
+// needed to get the test running.
 
 // pub fn new_test_ext() -> sp_io::TestExternalities {
 // 	let mut ext: sp_io::TestExternalities = GenesisConfig {
