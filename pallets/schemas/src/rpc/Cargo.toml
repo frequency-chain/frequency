@@ -10,7 +10,7 @@ repository = "https://github.com/libertyDSNP/frequency/"
 edition = "2021"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.0.0" }
+codec = { package = "parity-scale-codec", version = "3.1.5" }
 jsonrpsee = { version = "0.14.0", features = ["server", "macros"] }
 
 # unfinished
