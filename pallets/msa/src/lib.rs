@@ -151,10 +151,10 @@ pub mod pallet {
 
 	/// Storage type for key to MSA information
 	/// - Key: AccountId
-	/// - Value: [`MessageSourceId`]()
+	/// - Value: [`MessageSourceId`]
 	#[pallet::storage]
 	#[pallet::getter(fn get_key_info)]
-	pub type KeyInfoOf<T: Config> =
+	pub type MessageSourceIdOf<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
 
 	/// Storage for MSA keys
@@ -553,7 +553,7 @@ impl<T: Config> Pallet<T> {
 	where
 		F: FnOnce(MessageSourceId) -> DispatchResult,
 	{
-		KeyInfoOf::<T>::try_mutate(key, |maybe_key_info| {
+		MessageSourceIdOf::<T>::try_mutate(key, |maybe_key_info| {
 			ensure!(maybe_key_info.is_none(), Error::<T>::KeyAlreadyRegistered);
 
 			*maybe_key_info = Some(msa_id);
@@ -653,7 +653,7 @@ impl<T: Config> Pallet<T> {
 			let index = key_list.binary_search(key);
 			ensure!(index.is_ok(), Error::<T>::NoKeyExists);
 			key_list.remove(index.unwrap());
-			KeyInfoOf::<T>::remove(key);
+			MessageSourceIdOf::<T>::remove(key);
 			Ok(())
 		})
 	}
@@ -720,7 +720,7 @@ impl<T: Config> Pallet<T> {
 		let mut response = Vec::new();
 		for key in Self::get_msa_keys(msa_id) {
 			if let Ok(_info) = Self::try_get_msa_from_account_id(&key) {
-				response.push(KeyInfoResponse { key, msa_id, nonce: 0 });
+				response.push(KeyInfoResponse { key, msa_id });
 			}
 		}
 

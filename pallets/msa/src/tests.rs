@@ -209,7 +209,7 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 		// assert
 		let keys = Msa::fetch_msa_keys(new_msa_id);
 		assert_eq!(keys.len(), 2);
-		assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id, nonce: 0}), true}
+		assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id}), true}
 		System::assert_last_event(Event::KeyAdded { msa_id: 1, key: new_key.into() }.into());
 	});
 }

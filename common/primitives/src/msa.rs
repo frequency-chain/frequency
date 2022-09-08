@@ -147,6 +147,4 @@ pub struct KeyInfoResponse<AccountId> {
 	pub key: AccountId,
 	/// The MSA associated with the `key`
 	pub msa_id: MessageSourceId,
-	/// The nonce value for signed updates to this data
-	pub nonce: u32,
 }
