@@ -26,7 +26,7 @@ pipeline {
       steps {
         deleteDir()
         checkout scm
-        sh 'env'
+        sh 'make benchmarks'
       }
     }
 
