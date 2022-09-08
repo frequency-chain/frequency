@@ -1,4 +1,10 @@
 node {
+         properties([
+    pipelineTriggers([
+        issueCommentTrigger('.*release.*')
+    ])
+])
+
     stage('Build') {
      node("benchmark") {
         checkout scm
@@ -6,3 +12,4 @@ node {
      }
     }
 }
+
