@@ -204,7 +204,7 @@ Please check out [the information here](./CONTRIBUTING.md).
 # Additional Resources
 - [Cumulus Project](https://github.com/paritytech/cumulus)
 - [Cumulus Tutorials](https://docs.substrate.io/tutorials/)
-- (more to come...)
+- [Prep Substrate environment for development](https://docs.substrate.io/install/)
 
 # Misc
 

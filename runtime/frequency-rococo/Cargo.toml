@@ -15,13 +15,13 @@ targets = ["x86_64-unknown-linux-gnu"]
 substrate-wasm-builder = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 
 [dependencies]
-codec = {package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"]}
-getrandom = {version = "0.2", default-features = false, features = ["js"]}
+codec = {package = "parity-scale-codec", version = "3.1.5", default-features = false, features = ["derive"]}
+getrandom = {version = "0.2.7", default-features = false, features = ["js"]}
 hex-literal = {version = "0.3.4", optional = true}
 log = {version = "0.4.17", default-features = false}
-scale-info = {version = "2.1.1", default-features = false, features = ["derive"]}
-serde = {version = "1.0.137", optional = true, features = ["derive"]}
-smallvec = "1.6.1"
+scale-info = {version = "2.1.2", default-features = false, features = ["derive"]}
+serde = {version = "1.0.144", optional = true, features = ["derive"]}
+smallvec = "1.9.0"
 
 # Substrate
 frame-benchmarking = {git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.27" }

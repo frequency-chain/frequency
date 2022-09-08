@@ -39,7 +39,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly, Everything},
+	traits::{ConstU32, Contains, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
 	weights::{
 		constants::{RocksDbWeight, WEIGHT_PER_SECOND},
 		ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -106,6 +106,24 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
+
+/// Basefilter to only allow specified transactions call to be executed
+pub struct BaseCallFilter;
+impl Contains<Call> for BaseCallFilter {
+	fn contains(call: &Call) -> bool {
+		let core_calls = match call {
+			Call::System(..) => true,
+			Call::Timestamp(..) => true,
+			Call::ParachainSystem(..) => true,
+			Call::Sudo(..) => true,
+			Call::TechnicalCommittee(..) => true,
+			Call::Council(..) => true,
+			Call::Democracy(..) => true,
+			_ => false,
+		};
+		core_calls
+	}
+}
 
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
@@ -274,6 +292,8 @@ parameter_types! {
 impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
+	/// Base call filter to use in dispatchable.
+	type BaseCallFilter = BaseCallFilter;
 	/// The aggregated dispatch type that is available for extrinsics.
 	type Call = Call;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
@@ -306,8 +326,6 @@ impl frame_system::Config for Runtime {
 	type OnKilledAccount = ();
 	/// The weight of database operations that the runtime can invoke.
 	type DbWeight = RocksDbWeight;
-	/// The basic call filter to use in dispatchable.
-	type BaseCallFilter = Everything;
 	/// Weight information for the extrinsics of this pallet.
 	type SystemWeightInfo = ();
 	/// Block & extrinsics weights: base values and limits.
