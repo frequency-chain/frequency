@@ -139,7 +139,7 @@ pub trait AccountProvider {
 	fn ensure_valid_delegation(provider: Provider, delegator: Delegator) -> DispatchResult;
 }
 
-/// RPC Response form of [`KeyInfo`]
+/// RPC Response for getting getting MSA ids
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 pub struct KeyInfoResponse<AccountId> {
