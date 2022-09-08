@@ -15,9 +15,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::alloc::System;
+
 use codec::{Decode, Encode};
-use frame_support::weights::{DispatchInfo, Pays};
-use frame_system::Config;
+use frame_support::{
+	traits::IsSubType,
+	weights::{DispatchInfo, Pays},
+};
+use frame_system::{self, Config};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, One, SignedExtension},
@@ -27,6 +32,8 @@ use sp_runtime::{
 	},
 };
 use sp_std::vec;
+
+type CallOf<T> = <T as frame_system::Config>::Call;
 /// Nonce check and increment to give replay protection for transactions.
 ///
 /// # Transaction Validity
@@ -59,7 +66,9 @@ impl<T: Config> sp_std::fmt::Debug for CheckNonce<T> {
 
 impl<T: frame_system::Config> SignedExtension for CheckNonce<T>
 where
-	T::Call: Dispatchable<Info = DispatchInfo>,
+	// T::Call: Dispatchable<Info = DispatchInfo> + IsSubType<Call>,
+	T::Call: Dispatchable<Info = DispatchInfo> + IsSubType<frame_system::Call<T>>,
+	// CallOf<T>: Dispatchable<Info = DispatchInfo>,
 {
 	type AccountId = T::AccountId;
 	type Call = T::Call;
@@ -74,10 +83,27 @@ where
 	fn pre_dispatch(
 		self,
 		who: &Self::AccountId,
-		_call: &Self::Call,
+		call: &Self::Call,
 		info: &DispatchInfoOf<Self::Call>,
 		_len: usize,
 	) -> Result<(), TransactionValidityError> {
+		// match call.is_sub_type() {
+		// 	_ => 1,
+		// };
+
+		match call.is_sub_type() {
+			Some(frame_system::Call::set_heap_pages { .. }) => {
+				println!("hello i matched")
+			},
+			_ => println!("{:?}", call),
+		};
+		// match call.function {
+		// 	Call::System(Call::set_heap_pages { .. }) => {
+		// 		println!("hello i matched")
+		// 	},
+		// 	_ => println!("{:?}", call),
+		// };
+
 		let mut account = frame_system::Account::<T>::get(who);
 		if self.0 != account.nonce {
 			return Err(if self.0 < account.nonce {
