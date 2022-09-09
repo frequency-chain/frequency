@@ -26,7 +26,7 @@ pipeline {
       steps {
         deleteDir()
         checkout scm
-        sh 'make benchmarks'
+        sh "sudo -H -u ubuntu bash -c 'make benchmarks'"
       }
     }
 
