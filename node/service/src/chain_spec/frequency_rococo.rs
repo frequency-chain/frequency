@@ -78,6 +78,8 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 					public_testnet_keys::COLLATOR_1_SR25519.parse::<AccountId>().unwrap().into(),
 					// 5CntRvAGYzzorsvN3UKotz5gpFd5BgMwUzALKtbWGn3JsQAu
 					public_testnet_keys::COLLATOR_2_SR25519.parse::<AccountId>().unwrap().into(),
+					// 5FnjAszaYTVfEFDooTN37DCBinQyw4dvsZDr7PbYovmAhEqn
+					public_testnet_keys::ROCOCO_FRQ_SUDO.parse::<AccountId>().unwrap().into(),
 				],
 				Default::default(),
 				Default::default(),
