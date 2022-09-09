@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 use sp_runtime::DispatchError;
 use sp_std::prelude::Vec;
 
-/// The maximum number of future blocks that a proof expiration can be valid.
-pub const PROOF_VALID_BLOCKS: u32 = 128;
+/// The gap between the current block and a future expiring block allowed when validating signature proofs.
+pub const EXPIRATION_BLOCK_VALIDITY_GAP: u32 = 128;
 
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
 pub type MessageSourceId = u64;

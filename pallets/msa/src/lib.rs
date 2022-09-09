@@ -59,7 +59,7 @@ use codec::{Decode, Encode};
 use common_primitives::{
 	msa::{
 		AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo,
-		ProviderMetadata, PROOF_VALID_BLOCKS,
+		ProviderMetadata, EXPIRATION_BLOCK_VALIDITY_GAP,
 	},
 	node::BlockNumber,
 };
@@ -441,7 +441,7 @@ pub mod pallet {
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if the MSA id for the account in `add_key_payload` does not exist.
 		/// - Returns ['NotMsaOwner'](Error::NotMsaOwner) if Origin's MSA is not the same as 'add_key_payload` MSA. Essentially you can only add a key to your own MSA.
 		/// - Returns ['ProofHasExpired'](Error::ProofHasExpired) if the current block is less than the `expired` bock number set in `AddKeyData`.
-		/// - Returns ['ProofNotYetValid'](Error::ProofNotYetValid) if the `expired` bock number set in `AddKeyData` is greater than the current block number plus PROOF_VALID_BLOCKS.
+		/// - Returns ['ProofNotYetValid'](Error::ProofNotYetValid) if the `expired` bock number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.
 		///
 		///
 		#[pallet::weight(T::WeightInfo::add_key_to_msa())]
@@ -636,16 +636,19 @@ impl<T: Config> Pallet<T> {
 	///
 	/// # Errors
 	/// * [Error::ProofHasExpired] - If the current block is less than the `expired` bock number set in `AddKeyData`.
-	/// * [Error::ProofNotYetValid] - If the `expired` bock number set in `AddKeyData` is greater than the current block number plus PROOF_VALID_BLOCKS.
+	/// * [Error::ProofNotYetValid] - If the `expired` bock number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.
 	pub fn ensure_block_is_valid(expiration: BlockNumber) -> DispatchResult {
 		let current_block: BlockNumber =
 			frame_system::Pallet::<T>::block_number().try_into().ok().unwrap();
 		ensure!(current_block < expiration.into(), Error::<T>::ProofHasExpired);
 
-		// If gap between the current block and the expiration block is larger than PROOF_VALID_BLOCKS,
+		// If gap between the current block and the expiration block is larger than EXPIRATION_BLOCK_VALIDITY_GAP,
 		// the proof is too var into the future and return Error::<T>::ProofNotYetValid.
 		let blocks_until_expiration: BlockNumber = expiration - current_block;
-		ensure!(blocks_until_expiration < PROOF_VALID_BLOCKS, Error::<T>::ProofNotYetValid);
+		ensure!(
+			blocks_until_expiration < EXPIRATION_BLOCK_VALIDITY_GAP,
+			Error::<T>::ProofNotYetValid
+		);
 
 		Ok(())
 	}

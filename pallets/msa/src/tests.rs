@@ -5,7 +5,9 @@ use crate::{
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
-	msa::{Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo, PROOF_VALID_BLOCKS},
+	msa::{
+		Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo, EXPIRATION_BLOCK_VALIDITY_GAP,
+	},
 	utils::wrap_binary_data,
 };
 use frame_support::{
@@ -259,11 +261,14 @@ fn add_key_with_proof_too_far_into_future_fails() {
 
 		let new_key = key_pair_2.public();
 
-		// The current block is 1, therefore setting the proof expiration to PROOF_VALID_BLOCKS + 1
-		// shoud cause the extrinsic to fail because the proof is only valid for PROOF_VALID_BLOCKS
+		// The current block is 1, therefore setting the proof expiration to EXPIRATION_BLOCK_VALIDITY_GAP + 1
+		// shoud cause the extrinsic to fail because the proof is only valid for EXPIRATION_BLOCK_VALIDITY_GAP
 		// more blocks.
-		let add_new_key_data =
-			AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: PROOF_VALID_BLOCKS + 1 };
+		let add_new_key_data = AddKeyData {
+			nonce: 1,
+			msa_id: new_msa_id,
+			expiration: EXPIRATION_BLOCK_VALIDITY_GAP + 1,
+		};
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
