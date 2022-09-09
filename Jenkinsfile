@@ -17,7 +17,7 @@ pipeline {
       steps {
         deleteDir()
         checkout scm
-        sh 'mkdir -p /data/tmp && export TMPDIR=/data/tmp &&  export PATH="/data/.cargo/bin:$PATH" && ln -snf /data/.cargo /home/ubuntu/.cargo && rustup install nightly && rustup default nightly && rustup target add wasm32-unknown-unknown --toolchain nightly'
+        sh 'mkdir -p /data/tmp && export TMPDIR=/data/tmp &&  export PATH="/data/.cargo/bin:$PATH" && ln -snf /data/.cargo /home/ubuntu/.cargo && rustup install nightly && rustup default nightly && rustup target add wasm32-unknown-unknown --toolchain nightly && make benchmarks'
       }
     }
 
@@ -26,7 +26,7 @@ pipeline {
       steps {
         deleteDir()
         checkout scm
-        sh 'sudo make benchmarks'
+        sh 'env'
       }
     }
 
