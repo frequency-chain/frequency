@@ -42,7 +42,7 @@ fn create_payload_and_signature<T: Config>() -> (AddProvider, MultiSignature, T:
 
 fn add_key_payload_and_signature<T: Config>() -> (AddKeyData, MultiSignature, T::AccountId) {
 	let account = SignerId::generate_pair(None);
-	let add_key_payload = AddKeyData { msa_id: 1u64.into(), nonce: 0 };
+	let add_key_payload = AddKeyData { msa_id: 1u64.into(), nonce: 0, expiration: 10 };
 	let encode_add_provider_data = wrap_binary_data(add_key_payload.encode());
 
 	let signature = account.sign(&encode_add_provider_data).unwrap();
