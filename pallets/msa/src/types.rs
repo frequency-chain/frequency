@@ -8,13 +8,18 @@ use codec::{Decode, Encode};
 /// Dispatch Empty
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 
+/// The maximum number of future blocks that a proof expiration can be valid.
+pub const PROOF_VALID_BLOCKS: u32 = 128;
+
 /// A type definition for the payload of adding an MSA key - `pallet_msa::add_key_to_msa`
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
-pub struct AddKeyData {
+pub struct AddKeyData<BlockNumber> {
 	/// Message Source Account identifier
 	pub msa_id: MessageSourceId,
 	/// A cryptographic nonce.
 	pub nonce: u32,
+	/// The block number at which the signed proof for add_key_to_msa expires.
+	pub expiration: BlockNumber,
 }
 
 /// Structure that is signed for granting permissions to a Provider

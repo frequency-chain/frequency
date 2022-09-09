@@ -69,7 +69,7 @@ use sp_runtime::{
 
 use sp_core::crypto::AccountId32;
 pub mod types;
-pub use types::{AddKeyData, AddProvider};
+pub use types::{AddKeyData, AddProvider, PROOF_VALID_BLOCKS};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -259,6 +259,10 @@ pub mod pallet {
 		DuplicateProviderMetadata,
 		/// The maximum length for a provider name has been exceeded
 		ExceedsMaxProviderNameSize,
+		/// The submited proof has expired; the current block is less the expiration block
+		ProofHasExpired,
+		/// The submitted proof expiration block is too far in the future
+		ProofNotYetValid,
 	}
 
 	#[pallet::call]
@@ -432,18 +436,23 @@ pub mod pallet {
 		/// - Returns [`AddKeySignatureVerificationFailed`](Error::AddKeySignatureVerificationFailed) if `key` is not a valid signer of the provided `add_key_payload`.
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if the MSA id for the account in `add_key_payload` does not exist.
 		/// - Returns ['NotMsaOwner'](Error::NotMsaOwner) if Origin's MSA is not the same as 'add_key_payload` MSA. Essentially you can only add a key to your own MSA.
+		/// - Returns ['ProofHasExpired'](Error::ProofHasExpired) if the current block is less than the `expired` bock number set in `AddKeyData`.
+		/// - Returns ['ProofNotYetValid'](Error::ProofNotYetValid) if the `expired` bock number set in `AddKeyData` is greater than the current block number plus PROOF_VALID_BLOCKS.
+		///
 		///
 		#[pallet::weight(T::WeightInfo::add_key_to_msa())]
 		pub fn add_key_to_msa(
 			origin: OriginFor<T>,
 			key: T::AccountId,
 			proof: MultiSignature,
-			add_key_payload: AddKeyData,
+			add_key_payload: AddKeyData<T::BlockNumber>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
 			Self::verify_signature(proof, key.clone(), add_key_payload.encode())
 				.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
+
+			Self::ensure_block_is_valid(add_key_payload.expiration)?;
 
 			let msa_id = add_key_payload.msa_id;
 
@@ -609,6 +618,28 @@ impl<T: Config> Pallet<T> {
 		let key = T::ConvertIntoAccountId32::convert(signer);
 		let wrapped_payload = wrap_binary_data(payload);
 		ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
+
+		Ok(())
+	}
+
+	/// Ensure that the expiration block number has not already passed and is also not too far into the future.
+	///
+	/// # Arguments
+	/// * `expiration` - A block number that which validity or expiration is being checked.
+	///
+	/// # Returns
+	/// * [`DispatchResult`]
+	///
+	/// # Errors
+	/// * [Error::ProofHasExpired] - If the current block is less than the `expired` bock number set in `AddKeyData`.
+	/// * [Error::ProofNotYetValid] - If the `expired` bock number set in `AddKeyData` is greater than the current block number plus PROOF_VALID_BLOCKS.
+	pub fn ensure_block_is_valid(expiration: T::BlockNumber) -> DispatchResult {
+		let current_block = frame_system::Pallet::<T>::block_number();
+		ensure!(current_block <= expiration, Error::<T>::ProofHasExpired);
+		ensure!(
+			current_block > expiration + PROOF_VALID_BLOCKS.into(),
+			Error::<T>::ProofNotYetValid
+		);
 
 		Ok(())
 	}
