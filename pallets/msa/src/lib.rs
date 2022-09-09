@@ -134,7 +134,7 @@ pub mod pallet {
 	/// - Keys: Delegator MSA, Provider MSA
 	/// - Value: [`ProviderInfo`](common_primitives::msa::ProviderInfo)
 	#[pallet::storage]
-	#[pallet::getter(fn get_provider_info_of)]
+	#[pallet::getter(fn get_provider_info)]
 	pub type ProviderInfoOf<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
@@ -799,7 +799,7 @@ impl<T: Config> AccountProvider for Pallet<T> {
 		delegator: Delegator,
 		provider: Provider,
 	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>> {
-		Self::get_provider_info_of(delegator, provider)
+		Self::get_provider_info(delegator, provider)
 	}
 
 	fn ensure_valid_delegation(provider: Provider, delegation: Delegator) -> DispatchResult {
