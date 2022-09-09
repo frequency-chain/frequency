@@ -5,7 +5,7 @@ use crate::{
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
-	msa::{Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo},
+	msa::{Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo, PROOF_VALID_BLOCKS},
 	utils::wrap_binary_data,
 };
 use frame_support::{
@@ -212,6 +212,72 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 		assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id, nonce: 0}), true}
 		System::assert_last_event(Event::KeyAdded { msa_id: 1, key: new_key.into() }.into());
 	});
+}
+
+/// Assert that when attempting to add a key to an MSA with an expired proof that the key is NOT added.
+/// Expected error: ProofHasExpired
+#[test]
+fn add_key_with_expired_proof_fails() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let (key_pair_2, _) = sr25519::Pair::generate();
+
+		let account = key_pair.public();
+		let (new_msa_id, _) = Msa::create_account(account.into(), EMPTY_FUNCTION).unwrap();
+
+		let new_key = key_pair_2.public();
+
+		// The current block is 1, therefore setting the proof expiration to 1 shoud cause
+		// the extrinsic to fail because the proof has expired.
+		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 1 };
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
+		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
+
+		assert_noop!(
+			Msa::add_key_to_msa(
+				Origin::signed(account.into()),
+				new_key.into(),
+				signature,
+				add_new_key_data
+			),
+			Error::<Test>::ProofHasExpired
+		);
+	})
+}
+
+/// Assert that when attempting to add a key to an MSA with a proof expiration too far into the future the key is NOT added.
+/// Expected error: ProofNotYetValid
+#[test]
+fn add_key_with_proof_too_far_into_future_fails() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let (key_pair_2, _) = sr25519::Pair::generate();
+
+		let account = key_pair.public();
+		let (new_msa_id, _) = Msa::create_account(account.into(), EMPTY_FUNCTION).unwrap();
+
+		let new_key = key_pair_2.public();
+
+		// The current block is 1, therefore setting the proof expiration to PROOF_VALID_BLOCKS + 1
+		// shoud cause the extrinsic to fail because the proof is only valid for PROOF_VALID_BLOCKS
+		// more blocks.
+		let add_new_key_data =
+			AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: PROOF_VALID_BLOCKS + 1 };
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
+		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
+
+		assert_noop!(
+			Msa::add_key_to_msa(
+				Origin::signed(account.into()),
+				new_key.into(),
+				signature,
+				add_new_key_data
+			),
+			Error::<Test>::ProofNotYetValid
+		);
+	})
 }
 
 #[test]
