@@ -1,19 +1,16 @@
 //! Types for the MSA Pallet
 use super::*;
-pub use common_primitives::msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider};
-use scale_info::TypeInfo;
-
 use codec::{Decode, Encode};
+pub use common_primitives::msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider};
+use common_primitives::node::BlockNumber;
+use scale_info::TypeInfo;
 
 /// Dispatch Empty
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 
-/// The maximum number of future blocks that a proof expiration can be valid.
-pub const PROOF_VALID_BLOCKS: u32 = 128;
-
 /// A type definition for the payload of adding an MSA key - `pallet_msa::add_key_to_msa`
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
-pub struct AddKeyData<BlockNumber> {
+pub struct AddKeyData {
 	/// Message Source Account identifier
 	pub msa_id: MessageSourceId,
 	/// A cryptographic nonce.

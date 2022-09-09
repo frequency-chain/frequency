@@ -56,8 +56,12 @@
 )]
 
 use codec::{Decode, Encode};
-use common_primitives::msa::{
-	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo, ProviderMetadata,
+use common_primitives::{
+	msa::{
+		AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo,
+		ProviderMetadata, PROOF_VALID_BLOCKS,
+	},
+	node::BlockNumber,
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 pub use pallet::*;
@@ -69,7 +73,7 @@ use sp_runtime::{
 
 use sp_core::crypto::AccountId32;
 pub mod types;
-pub use types::{AddKeyData, AddProvider, PROOF_VALID_BLOCKS};
+pub use types::{AddKeyData, AddProvider};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -445,7 +449,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			key: T::AccountId,
 			proof: MultiSignature,
-			add_key_payload: AddKeyData<T::BlockNumber>,
+			add_key_payload: AddKeyData,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -633,13 +637,15 @@ impl<T: Config> Pallet<T> {
 	/// # Errors
 	/// * [Error::ProofHasExpired] - If the current block is less than the `expired` bock number set in `AddKeyData`.
 	/// * [Error::ProofNotYetValid] - If the `expired` bock number set in `AddKeyData` is greater than the current block number plus PROOF_VALID_BLOCKS.
-	pub fn ensure_block_is_valid(expiration: T::BlockNumber) -> DispatchResult {
-		let current_block = frame_system::Pallet::<T>::block_number();
-		ensure!(current_block <= expiration, Error::<T>::ProofHasExpired);
-		ensure!(
-			current_block > expiration + PROOF_VALID_BLOCKS.into(),
-			Error::<T>::ProofNotYetValid
-		);
+	pub fn ensure_block_is_valid(expiration: BlockNumber) -> DispatchResult {
+		let current_block: BlockNumber =
+			frame_system::Pallet::<T>::block_number().try_into().ok().unwrap();
+		ensure!(current_block < expiration.into(), Error::<T>::ProofHasExpired);
+
+		// If gap between the current block and the expiration block is larger than PROOF_VALID_BLOCKS,
+		// the proof is too var into the future and return Error::<T>::ProofNotYetValid.
+		let blocks_until_expiration: BlockNumber = expiration - current_block;
+		ensure!(blocks_until_expiration < PROOF_VALID_BLOCKS, Error::<T>::ProofNotYetValid);
 
 		Ok(())
 	}
