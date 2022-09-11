@@ -802,8 +802,28 @@ impl<T: Config> AccountProvider for Pallet<T> {
 		Self::get_provider_info(delegator, provider)
 	}
 
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_delegation(provider: Provider, delegation: Delegator) -> DispatchResult {
 		Self::ensure_valid_delegation(provider, delegation)
+	}
+
+	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
+	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
+	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
+	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
+	/// would like to avoid.
+	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
+	/// this method to return a dummy account in case it does not exist
+	#[cfg(feature = "runtime-benchmarks")]
+	fn ensure_valid_delegation(provider: Provider, delegation: Delegator) -> DispatchResult {
+		let validation_check = Self::ensure_valid_delegation(provider, delegation);
+		if validation_check.is_err() {
+			// If the delegation does not exist, we return a ok
+			// This is only used for benchmarks, so it is safe to return a dummy account
+			// in case the delegation does not exist
+			return Ok(())
+		}
+		Ok(())
 	}
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
