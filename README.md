@@ -1,37 +1,61 @@
 Frequency is a Polkadot parachain designed to run Decentralized Social Network Protocol
 (DSNP), but it could run other things.
 
+# Table of Contents
+* [Prerequisites](#prerequisites)
+* [Build](#build)
+  * [Local desktop](#local-desktop)
+  * [Remote instance](#remote-instance)
+* [Run](#run)
+  * [Local Testnet With Instant Sealing](#local-testnet-with-instant-sealing)
+  * [Run in Docker Container](#run-in-docker-container)
+  * [Local Testnet with One Collator and Relay Chain Nodes](#local-testnet-with-one-collator-and-relay-chain-nodes)
+* [Stop and Clean Environment](#stop-and-clean-environment)
+* [Run Tests](#run-tests)
+* [Run Benchmarks](#run-benchmarks)
+* [Generate Specs](#generate-specs)
+* [Format, Lint and Audit Source Code](#format-lint-and-audit-source-code)
+* [Verify Runtime](#verify-runtime)
+* [Local Runtime Upgrade](#local-runtime-upgrade)
+* [Contributing](#contributing)
+* [Additional Resources](#additional-resources)
+* [Miscellaneous helpful commands](#miscellaneous-helpful-commands)
+
 # Prerequisites
 
 1. [Docker Engine](https://docs.docker.com/engine/install/)*
 1. [Docker Compose](https://docs.docker.com/compose/install/)
 
-
 ---
 * For Mac users, [Docker Desktop](https://docs.docker.com/desktop/mac/install/) engine also installs docker compose environment, so no need to install it separately.
 
-# Build
+## Hardware
+We run benchmarks with and recommend the same [reference hardware specified by Parity](https://wiki.polkadot.network/docs/maintain-guides-how-to-validate-polkadot#reference-hardware).
 
+# Install and Build
 ## Local desktop
 1. Install Rust using the [official instructions](https://www.rust-lang.org/tools/install).
-1. Initialize your Wasm Build environment.
+2. Check out this repository
+3. Initialize your Wasm Build environment:
    ```sh
-   cd [path/to/repo/root]
+   cd [path/to/frequency]
    ./scripts/init.sh install-toolchain
    ```
-1. Build Wasm and native code. *Note, if you get errors complaining about missing
-dependencies (cmake, yarn, node, jq, etc.) install them with your favorite package
-manager(e.g. Homebrew on Mac) and re-run the command again.*
-   ```sh
-   cargo build --release
-   ```
-   Alternatively you may run `TARGET=build-node ./ci/build.sh`
+4. Build Wasm and native code.
+
+   *Note, if you get errors complaining about missing
+   dependencies (cmake, yarn, node, jq, etc.) install them with your favorite package
+   manager(e.g. Homebrew on Mac) and re-run the command again.*
+      ```sh
+      cargo build --release
+      ```
+      Alternatively you may run `TARGET=build-node ./ci/build.sh`
 
 At this point you should have `./target/release` directory generated locally with compiled
 project files.
 
 ## Remote instance such as AWS EC2
-For remote instances running Linux, if you want to check out and build such as on an AWS EC2 instance, the process is slightly different to what is in the Substrate documents.
+For remote instances running Linux, if you want to check out and build such as on an AWS EC2 instance, the process is slightly different to what is in the [Substrate documentation](https://docs.substrate.io/main-docs/install/linux/).
 ### Ubuntu
 1. Upgrade the instance and install missing packages with `apt`:
 ```bash
@@ -46,10 +70,12 @@ sudo apt install --assume-yes clang curl libssl-dev cmake
 4. Proceed with checking out and building frequency as above.
 
 # Run
+### There are 3 options to run the chain locally
+* in terminal with instant sealing,
+* in terminal relay + parachain,
+* or in a docker container.
 
-There are 2 options to run the chain locally:
-
-## (Option 1) Local Testnet with Instant Sealing
+## Local Testnet with Instant Sealing
 
 ![](docs/images/local-dev-env-option-1.png)
 
@@ -68,8 +94,19 @@ To stop running chain hit [Ctrl+C] in terminal where the chain was started.
 | ---- | ---- | --- |
 | Frequency Collator Node | ws:`9944`, rpc`:9933`, p2p:`3033` | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
 
+## Run in Docker Container
+There is an alternative way to start Frequency in a docker container
+(:exclamation: currently works on Linux only):
+```sh
+# Start Frequency in docker
+cargo build --release
+make start-frequency-docker
 
-## (Option 2) Local Testnet with One Collator and Relay Chain Nodes
+# Stop Frequency in docker
+make stop-frequency-docker
+```
+
+## Local Testnet with One Collator and Relay Chain Nodes
 
 ![](docs/images/local-dev-env-option-2.png)
 
@@ -112,31 +149,20 @@ parachain.
 
 ## Stop and Clean Environment
 
-1. Off-board Frequency from relay chain.
-   ```sh
-   make offboard
-   ```
-1. [Ctrl+C] to stop Frequency running in the terminal.
-1. Stop the relay chain.
-   ```bash
-   make stop-relay
-   ```
-1. Run to remove unused volumes.
-   ```sh
-   docker volume prune
-   ```
-1. Clean up temporary directory to avoid any conflicts with next onboarding
-   ```sh
-   rm -fr /tmp/frequency
-   ```
+1. Off-board Frequency from relay chain.: `make offboard`
+2. to stop Frequency running in the terminal: `[Ctrl+C] `
+3. Stop the relay chain. `make stop-relay`
+4. Run to remove unused volumes. `make docker-prune`
+5. Clean up temporary directory to avoid any conflicts with next onboarding:
+
+    `rm -fr /tmp/frequency`
 
 ## Run Tests
-
-To execute unit and integration tests run the following:
 
 ```sh
 # Activate selected features
 cargo test --features runtime-benchmarks, std
+
 # Activate all features and test all packages in the workspace
 cargo test --all-features --workspace --release
 ```
@@ -146,7 +172,7 @@ cargo test --all-features --workspace --release
    make benchmarks
    ```
 
-## Generate a New Spec File
+## Generate Specs
 
 To build spec against specific chain config specify chain name in the command above.
 
@@ -182,18 +208,16 @@ genesis state and WASM:
    TARGET=build-runtime RUST_TOOLCHAIN=nightly ./ci/build.sh
    ```
 
-# Runtime Upgrade (local only)
-
-1. Runtime upgrade enables upgrading running chain to a new runtime.
-2. To upgrade the runtime, current scripts follow this process:
-   1. Build new runtime and generate the compressed wasm
-   2. Call ```authorizeUpgrade``` extrinsic from parachain system to initiate the upgrade.
-   3. Call ```enactAuthorizedUpgrade``` extrinsic from parachain system to enact the upgrade.
-   4. For testnet and mainnet, the upgrade is done slightly differently using ```scheduler``` and enactment is scheduled for a specific block number in the future.
-3. To upgrade the runtime, run the following command:
+# Local Runtime Upgrade
+To upgrade the runtime, run the following command:
    ```sh
    make upgrade-local
    ```
+The current scripts follow this process for upgrading locally:
+1. Build new runtime and generate the compressed wasm
+2. Call ```authorizeUpgrade``` extrinsic from parachain system to initiate the upgrade.
+3. Call ```enactAuthorizedUpgrade``` extrinsic from parachain system to enact the upgrade.
+4. For testnet and mainnet, the upgrade is done slightly differently using ```scheduler``` and enactment is scheduled for a specific block number in the future.
 
 # Contributing
 
@@ -207,20 +231,6 @@ Please check out [the information here](./CONTRIBUTING.md).
 - [Prep Substrate environment for development](https://docs.substrate.io/install/)
 
 # Misc
-
-## Run Frequency in Docker Container
-There is an alternative way to start Frequency in a docker container
-(:exclamation: currently works on Linux only):
-```sh
-# Start Frequency in docker
-cargo build --release
-make start-frequency-docker
-
-# Stop Frequency in docker
-make stop-frequency-docker
-```
-
-## Helpers
 ```sh
 # View all listening ports
 lsof -i -P | grep -i "listen"

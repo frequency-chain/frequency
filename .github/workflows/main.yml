@@ -1,6 +1,7 @@
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 name: Build Main
 jobs:
@@ -67,15 +68,15 @@ jobs:
         if: matrix.target == 'build-node'
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME_FC }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_FC }}
       - name: Get the tag name
         if: matrix.target == 'build-node'
         run: |
           date_tag=$(date +'%Y%m%d-%H%M')
           echo ${date_tag}
           echo "TAG=${date_tag}" >> $GITHUB_ENV
-      - name: Build and push dsnp/frequency
+      - name: Build and push Frequency image
         if: matrix.target == 'build-node'
         id: docker_build_frequency
         uses: docker/build-push-action@v3
@@ -84,5 +85,16 @@ jobs:
           push: true
           file: Dockerfile
           tags: |
-            dsnp/frequency:${{ env.TAG }}
-            dsnp/frequency:latest
+            frequencychain/frequency:${{ env.TAG }}
+            frequencychain/frequency:latest
+      - name: Build and push Frequency image in instant seal mode
+        if: matrix.target == 'build-node'
+        id: docker_build_instant_seal_node
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          file: ./docker/instant-seal-node.dockerfile
+          tags: |
+            frequencychain/instant-seal-node:${{env.TAG}}
+            frequencychain/instant-seal-node:latest
