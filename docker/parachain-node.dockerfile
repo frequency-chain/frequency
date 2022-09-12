@@ -28,7 +28,8 @@ COPY --chown=frequency target/release/frequency ./frequency/
 # 9933 P2P port
 # 9944 for RPC call
 # 30333 for Websocket
-EXPOSE 9933 9944 30333
+# 9615 for Telemetry (prometheus)
+EXPOSE 9933 9944 30333 9615
 
 VOLUME ["/data"]
 

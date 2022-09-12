@@ -80,7 +80,7 @@ jobs:
       - name: Generate Frequency local chain spec
         if: matrix.target == 'build-node'
         run: ./scripts/generate_specs.sh 2000 rococo-2000
-      - name: Build and push Frequency local collator image
+      - name: Build and push collator image for local relay chain
         if: matrix.target == 'build-node'
         env:
           IMAGE_NAME: collator-node-local
@@ -92,7 +92,15 @@ jobs:
           tags: |
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}:${{ env.TAG }}
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}:latest
-      - name: Build and push Frequency local collator image in instant seal mode
+      - name: Update DockerHub description for collator image for local relay chain
+        if: matrix.target == 'build-node'
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME_FC }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_FC }}
+          repository: ${{env.DOCKER_HUB_PROFILE}}/collator-node-local
+          readme-filepath: docker/collator-node-local.overview.md
+      - name: Build and push collator image in instant seal mode
         if: matrix.target == 'build-node'
         env:
           IMAGE_NAME: instant-seal-node
@@ -104,7 +112,15 @@ jobs:
           tags: |
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}:${{env.TAG}}
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}:latest
-      - name: Build and push Frequency parachain image for Rococo testnet and Mainnet
+      - name: Update DockerHub description for collator image in instant seal mode
+        if: matrix.target == 'build-node'
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME_FC }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_FC }}
+          repository: ${{env.DOCKER_HUB_PROFILE}}/instant-seal-node
+          readme-filepath: docker/instant-seal-node.overview.md
+      - name: Build and push parachain image
         if: matrix.target == 'build-node'
         env:
           IMAGE_NAME: parachain-node
@@ -116,3 +132,11 @@ jobs:
           tags: |
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}:${{ env.TAG }}
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}:latest
+      - name: Update DockerHub description for parachain image
+        if: matrix.target == 'build-node'
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME_FC }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_FC }}
+          repository: ${{env.DOCKER_HUB_PROFILE}}/parachain-node
+          readme-filepath: docker/parachain-node.overview.md
