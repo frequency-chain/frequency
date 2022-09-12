@@ -51,7 +51,6 @@ export default {
   },
   types: {
     MessageSourceId: "u64",
-    SchemaId: "u16",
     KeyInfoResponse: {
       key: "AccountId",
       msaId: "MessageSourceId",

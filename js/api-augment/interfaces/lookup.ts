@@ -2624,12 +2624,12 @@ export default {
   CommonPrimitivesMsaProviderInfo: {
     permission: 'u8',
     expired: 'u32',
-    schemas: 'CommonPrimitivesMsaOrderedSetExt'
+    schemas: 'CommonPrimitivesDsOrderedSetExt'
   },
   /**
-   * Lookup317: common_primitives::msa::OrderedSetExt<T, S>
+   * Lookup317: common_primitives::ds::OrderedSetExt<T, S>
    **/
-  CommonPrimitivesMsaOrderedSetExt: 'OrmlUtilitiesOrderedSet',
+  CommonPrimitivesDsOrderedSetExt: 'OrmlUtilitiesOrderedSet',
   /**
    * Lookup318: orml_utilities::ordered_set::OrderedSet<T, S>
    **/

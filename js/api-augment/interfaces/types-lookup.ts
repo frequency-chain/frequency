@@ -2859,11 +2859,11 @@ declare module '@polkadot/types/lookup' {
   interface CommonPrimitivesMsaProviderInfo extends Struct {
     readonly permission: u8;
     readonly expired: u32;
-    readonly schemas: CommonPrimitivesMsaOrderedSetExt;
+    readonly schemas: CommonPrimitivesDsOrderedSetExt;
   }
 
-  /** @name CommonPrimitivesMsaOrderedSetExt (317) */
-  interface CommonPrimitivesMsaOrderedSetExt extends OrmlUtilitiesOrderedSet {}
+  /** @name CommonPrimitivesDsOrderedSetExt (317) */
+  interface CommonPrimitivesDsOrderedSetExt extends OrmlUtilitiesOrderedSet {}
 
   /** @name OrmlUtilitiesOrderedSet (318) */
   interface OrmlUtilitiesOrderedSet extends Vec<u16> {}
