@@ -1,6 +1,6 @@
 # Node Key Alice: `subkey inspect //Alice`
 # Node Key Bob: `subkey inspect //Bob`
-version: '3'
+version: "3"
 services:
   relay_alice:
     container_name: alice
@@ -12,7 +12,7 @@ services:
       - "9946:9944" # ws port
     volumes:
       - type: bind
-        source: ./res/rococo-local.json
+        source: ../res/rococo-local.json
         target: /chainspec.json
         read_only: true
     command: >
@@ -41,7 +41,7 @@ services:
       - "9947:9944" # ws port
     volumes:
       - type: bind
-        source: ./res/rococo-local.json
+        source: ../res/rococo-local.json
         target: /chainspec.json
         read_only: true
     command: >
@@ -62,9 +62,11 @@ services:
 
   collator_frequency:
     container_name: frequency
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: frequencychain/collator-node-local:latest
+    # Replace image with build if you want to build locally instead of pulling
+    # build:
+    #   context: .
+    #   dockerfile: collator-node-local.dockerfile
     environment:
       - HOST_ALICE=relay_alice
       - HOST_BOB=relay_bob
