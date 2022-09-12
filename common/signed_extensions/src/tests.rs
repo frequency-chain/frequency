@@ -38,7 +38,7 @@ fn signed_extension_validate_voter() {
 		assert_err!(
 			VerifyVoter::<Test>::new(blacklist.clone()).validate(
 			&test_account, &call_vote, &info, len),
-			TransactionValidityError::Invalid(InvalidTransaction::Custom(VoterValidityError::VotingNotPermittedForMTH as u8))
+			TransactionValidityError::Invalid(InvalidTransaction::Custom(VoterValidityError::VotingNotPermitted as u8))
 		)
 	})
 }

@@ -1,5 +1,6 @@
 use codec::{ Decode, Encode, };
 use frame_support::{traits::IsSubType, weights::DispatchInfo};
+use frame_support::traits::EnsureOrigin;
 use pallet_democracy::{Call, Config};
 use scale_info::{TypeInfo};
 use sp_runtime::{traits::{DispatchInfoOf, Dispatchable, SignedExtension}, transaction_validity::{
@@ -12,40 +13,42 @@ use sp_runtime::transaction_validity::ValidTransaction;
 /// Holder that has not fully vested.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct VerifyVoter<T: Config + Send + Sync> {
-	blacklist: Vec<T::AccountId>
+pub struct VerifyVoter<OuterOrigin> {
+	member_ensurer: &'static EnsureOrigin<OuterOrigin, Success = OuterOrigin>
 }
 
 /// Errors raised when vote attempt fails validity check
 pub enum VoterValidityError {
 	/// MTH accounts may not vote
-	VotingNotPermittedForMTH,
+	VotingNotPermitted,
 	/// Origin is not permitted to vote for some other reason
 	VotingNotPermittedOther,
 }
 
 /// VerifyVoter validation helper functions
-impl<T: Config + Send + Sync> VerifyVoter<T> {
+impl<OuterOrigin> VerifyVoter<OuterOrigin> {
 
-	/// validate_voter_is_not_mth checks that `account_id` is not a Major Token Holder
-	pub fn validate_voter_is_not_mth(&self, account_id: &T::AccountId) -> TransactionValidity {
+	/// Checks that `account_id` is not on the blocklist
+	/// If try_origin succeeds then an error is returned.
+	/// If it fails then the transaction may proceed.
+	pub fn validate_is_not_blocklisted(&self, account_id: OuterOrigin) -> TransactionValidity {
 		const TAG_PREFIX: &'static str = "MTHMembership";
 
-		if self.blacklist.contains(account_id) {
-			let err: InvalidTransaction = InvalidTransaction::Custom(VoterValidityError::VotingNotPermittedForMTH as u8);
-			// let err: InvalidTransaction = InvalidTransaction::BadSigner;
-			return TransactionValidity::from(err);
+		match self.member_ensurer.try_origin(account_id) {
+			Ok(_) => {
+				let err: InvalidTransaction = InvalidTransaction::Custom(VoterValidityError::VotingNotPermitted as u8);
+				return TransactionValidity::from(err);
+			},
+			Err(_) => return  ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id.clone()).build(),
 		};
-
-		ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}
 }
 
 /// VerifyVoter constructor
-impl<T: Config + Send + Sync> VerifyVoter<T> {
+impl<OuterOrigin> VerifyVoter<OuterOrigin> {
 	/// Create new `VerifyVoter` `SignedExtension` .
-	pub fn new(blacklist: Vec<T::AccountId>) -> Self {
-		Self { blacklist: blacklist.clone() }
+	pub fn new(member_ensurer: &impl EnsureOrigin<OuterOrigin>) -> Self {
+		Self { member_ensurer: member_ensurer.clone() }
 	}
 }
 
@@ -95,7 +98,7 @@ where
 		_len: usize,
 	) -> TransactionValidity {
 		match call.is_sub_type() {
-			Some(Call::vote { .. }) => VerifyVoter::<T>::validate_voter_is_not_mth(self,who),
+			Some(Call::vote { .. }) => VerifyVoter::<T>::validate_voter_is_not_blacklisted(self,who),
 			_ => return Ok(Default::default()),
 		}
 	}

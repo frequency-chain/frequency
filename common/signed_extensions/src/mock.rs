@@ -5,26 +5,32 @@ use frame_support::{
 use frame_support::dispatch::RawOrigin;
 use frame_support::traits::EnsureOrigin;
 use frame_system as system;
-use frame_system::{EnsureRoot};
+use frame_system::{Account, EnsureRoot};
 use pallet_balances;
 use pallet_democracy;
-pub use pallet_democracy::Call as DemocracyCall;
+use pallet_collective;
+use pallet_collective::EnsureMember;
 use sp_core::crypto::AccountId32;
 use sp_std::convert::From;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup, },
+	traits::{BlakeTwo256, IdentityLookup, SignedExtension },
+	transaction_validity::TransactionValidity
 };
+use crate::democracy::VerifyVoter;
 
 pub type BlockNumber = u64;
 pub type AccountId = AccountId32;
 
 pub type Block = frame_system::mocking::MockBlock<Test>;
+pub type MemberEnsurer = EnsureMember<AccountId, MTHolders>;
 
-// pub type UncheckedExtrinsic = sp_runtime::generic::UncheckedExtrinsic<AccountId, Call, Signature, SignedExtra>;
-//pub type UncheckedExtrinsic = sp_runtime::generic::UncheckedExtrinsic<u32, u64, Call, ()>;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+pub type SignedExtra = (VerifyVoter.new(&MemberEnsurer));
+
+pub type UncheckedExtrinsic = sp_runtime::generic::UncheckedExtrinsic<AccountId, Call, Signature, SignedExtra>;
+// //pub type UncheckedExtrinsic = sp_runtime::generic::UncheckedExtrinsic<u32, u64, Call, ()>;
+// type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
 frame_support::construct_runtime!(
 	pub enum Test where
@@ -36,6 +42,8 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>},
+		DefaultCollective: pallet_collective::{Pallet, Call, Event<T>, Origin<T>, Config<T>},
+		MTHolders: pallet_collective::<Instance1>::{Pallet, Call, Event<T>, Origin<T>, Config<T>},
 		Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>},
 	}
 );
@@ -87,8 +95,8 @@ parameter_types! {
 	pub const MinimumDeposit: Balance = 100 * UNIT;
 }
 
-pub struct StupidOrigin {}
-impl EnsureOrigin<Origin> for StupidOrigin {
+pub struct DummyOrigin {}
+impl EnsureOrigin<Origin> for DummyOrigin {
 	type Success = AccountId;
 
 	fn try_origin(o: Origin) -> Result<Self::Success, Origin> {
@@ -113,19 +121,19 @@ impl pallet_democracy::Config for Test {
 	type VotingPeriod = VotingPeriod;
 	type MaxVotes = ConstU32<100>;
 	type MaxProposals = ConstU32<100>;
-	type ExternalOrigin = StupidOrigin;
-	type ExternalMajorityOrigin = StupidOrigin;
-	type ExternalDefaultOrigin = StupidOrigin;
-	type FastTrackOrigin = StupidOrigin;
-	type CancellationOrigin = StupidOrigin;
+	type ExternalOrigin = DummyOrigin;
+	type ExternalMajorityOrigin = DummyOrigin;
+	type ExternalDefaultOrigin = DummyOrigin;
+	type FastTrackOrigin = DummyOrigin;
+	type CancellationOrigin = DummyOrigin;
 	type BlacklistOrigin = EnsureRoot<AccountId>;
 	type CancelProposalOrigin = EnsureRoot<AccountId>;
-	type VetoOrigin = StupidOrigin;
+	type VetoOrigin = DummyOrigin;
 	type Slash = ();
-	type InstantOrigin = StupidOrigin;
+	type InstantOrigin = DummyOrigin;
 	type InstantAllowed = frame_support::traits::ConstBool<true>;
 	type Scheduler = Scheduler;
-	type OperationalPreimageOrigin = StupidOrigin;
+	type OperationalPreimageOrigin = DummyOrigin;
 	type PalletsOrigin = OriginCaller;
 	type WeightInfo = ();
 }
@@ -166,27 +174,44 @@ impl pallet_balances::Config for Test {
 	type ReserveIdentifier = [u8; 8];
 }
 
+parameter_types! {
+	pub const MTHoldersMotionDuration: BlockNumber = 1;
+	pub const MTHoldersMaxProposals: u32 = 0;
+	pub const MTHoldersMaxMembers: u32 = 2;
+}
+
+type MTHoldersInstance = pallet_collective::Instance1;
+impl pallet_collective::Config<MTHoldersInstance> for Test {
+	type Origin = Origin;
+	type Proposal = Call;
+	type Event = Event;
+	type MotionDuration = MTHoldersMotionDuration;
+	type MaxProposals = MTHoldersMaxProposals;
+	type MaxMembers = MTHoldersMaxMembers;
+	type DefaultVote = ();
+	type WeightInfo = ();
+}
+
 // I tried a mock democracy pallet but there were too many dependencies from the democracy pallet
 // needed to get the test running.
-
-// pub fn new_test_ext() -> sp_io::TestExternalities {
-// 	let mut ext: sp_io::TestExternalities = GenesisConfig {
-// 		collective: pallet_collective::GenesisConfig {
-// 			members: vec![1, 2, 3],
-// 			phantom: Default::default(),
-// 		},
-// 		default_collective: Default::default(),
-// 	}
-// 		.build_storage()
-// 		.unwrap()
-// 		.into();
-// 	ext.execute_with(|| System::set_block_number(1));
-// 	ext
-// }
-
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	let mut ext = sp_io::TestExternalities::new(t);
+	let mut ext: sp_io::TestExternalities = GenesisConfig {
+		mt_holders: pallet_collective::GenesisConfig {
+			members: vec![1, 2],
+			phantom: Default::default(),
+		},
+		default_collective: Default::default(),
+	}
+		.build_storage()
+		.unwrap()
+		.into();
 	ext.execute_with(|| System::set_block_number(1));
 	ext
 }
+//
+// pub fn new_test_ext() -> sp_io::TestExternalities {
+// 	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+// 	let mut ext = sp_io::TestExternalities::new(t);
+// 	ext.execute_with(|| System::set_block_number(1));
+// 	ext
+// }
