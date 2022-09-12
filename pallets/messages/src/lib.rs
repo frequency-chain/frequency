@@ -204,6 +204,7 @@ pub mod pallet {
 
 			let provider_msa_id = Self::find_msa_id(&provider_key, None)?;
 			let msa_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
+			Self::ensure_valid_schema_grant(provider_msa_id.into(), on_behalf_of, schema_id)?;
 
 			let message = Self::add_message(provider_msa_id, msa_id, bounded_payload, schema_id)?;
 
@@ -239,6 +240,7 @@ pub mod pallet {
 
 			let provider_msa_id = Self::find_msa_id(&provider_key, None)?;
 			let msa_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
+			Self::ensure_valid_schema_grant(provider_msa_id.into(), on_behalf_of, schema_id)?;
 
 			let message = Self::add_message(provider_msa_id, msa_id, bounded_payload, schema_id)?;
 
@@ -330,6 +332,31 @@ impl<T: Config> Pallet<T> {
 			.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
 
 		Ok((provider.into(), delegator.into()))
+	}
+
+	/// Check if provider is granted permission to publish on behalf of delegator.
+	/// # Arguments
+	/// * `provider` - An MSA of the provider.
+	/// * `delegator` - An MSA of the delegator.
+	/// * `schema_id` - Schema id of the message.
+	/// # Returns
+	/// * Result<(MessageSourceId, MessageSourceId, SchemaId), DispatchError> - Returns an error if the provider is not granted permission to publish on behalf of delegator.
+	pub fn ensure_valid_schema_grant(
+		provider: Provider,
+		delegator: Option<MessageSourceId>,
+		schema_id: SchemaId,
+	) -> Result<(MessageSourceId, MessageSourceId, SchemaId), DispatchError> {
+		match delegator {
+			Some(delegator) => {
+				T::AccountProvider::ensure_valid_schema_grant(
+					provider,
+					delegator.into(),
+					schema_id,
+				)?;
+				Ok((provider.into(), delegator.into(), schema_id))
+			},
+			None => Ok((provider.into(), provider.into(), schema_id)),
+		}
 	}
 
 	/// Gets a messages for a given schema-id and block-number.

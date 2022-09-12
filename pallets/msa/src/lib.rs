@@ -44,6 +44,7 @@
 //! ### Assumptions
 //!
 //! * Total MSA keys should be less than the constant `Config::MSA::MaxKeys`.
+//! * Maximum schemas, for which provider has publishing rights, be less than `Config::MSA::MaxSchemaGrants`
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -56,8 +57,12 @@
 )]
 
 use codec::{Decode, Encode};
-use common_primitives::msa::{
-	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo, ProviderMetadata,
+use common_primitives::{
+	msa::{
+		AccountProvider, Delegator, KeyInfo, KeyInfoResponse, OrderedSetExt, Provider,
+		ProviderInfo, ProviderMetadata,
+	},
+	schema::SchemaId,
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 pub use pallet::*;
@@ -83,6 +88,7 @@ pub mod weights;
 pub use weights::*;
 
 pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
+
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use sp_std::prelude::*;
@@ -106,6 +112,9 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxKeys: Get<u32>;
 
+		/// Maximum count of schemas granted for publishing data per Provider
+		#[pallet::constant]
+		type MaxSchemaGrants: Get<u32> + Clone + sp_std::fmt::Debug + Eq;
 		/// Maximum provider name size allowed per MSA association
 		#[pallet::constant]
 		type MaxProviderNameSize: Get<u32>;
@@ -125,14 +134,14 @@ pub mod pallet {
 	/// - Keys: Delegator MSA, Provider MSA
 	/// - Value: [`ProviderInfo`](common_primitives::msa::ProviderInfo)
 	#[pallet::storage]
-	#[pallet::getter(fn get_provider_info_of)]
+	#[pallet::getter(fn get_provider_info)]
 	pub type ProviderInfoOf<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
 		Delegator,
 		Twox64Concat,
 		Provider,
-		ProviderInfo<T::BlockNumber>,
+		ProviderInfo<T::BlockNumber, T::MaxSchemaGrants>,
 		OptionQuery,
 	>;
 
@@ -259,6 +268,10 @@ pub mod pallet {
 		DuplicateProviderMetadata,
 		/// The maximum length for a provider name has been exceeded
 		ExceedsMaxProviderNameSize,
+		/// The maximum number of schema grants has been exceeded
+		ExceedsMaxSchemaGrants,
+		/// Provider is not permitted to publish for given schema_id
+		SchemaNotGranted,
 	}
 
 	#[pallet::call]
@@ -310,9 +323,14 @@ pub mod pallet {
 				Error::<T>::UnauthorizedProvider
 			);
 
+			let granted_schemas = add_provider_payload.schema_ids;
+			ensure!(
+				granted_schemas.len() <= T::MaxSchemaGrants::get().try_into().unwrap(),
+				Error::<T>::ExceedsMaxSchemaGrants
+			);
 			let (_, _) =
 				Self::create_account(delegator_key.clone(), |new_msa_id| -> DispatchResult {
-					Self::add_provider(provider_msa_id.into(), new_msa_id.into())?;
+					Self::add_provider(provider_msa_id.into(), new_msa_id.into(), granted_schemas)?;
 
 					Self::deposit_event(Event::MsaCreated {
 						msa_id: new_msa_id,
@@ -383,8 +401,13 @@ pub mod pallet {
 				&provider_key,
 				payload_authorized_msa_id,
 			)?;
+			let granted_schemas = add_provider_payload.schema_ids;
+			ensure!(
+				granted_schemas.len() <= T::MaxSchemaGrants::get().try_into().unwrap(),
+				Error::<T>::ExceedsMaxSchemaGrants
+			);
 
-			Self::add_provider(provider_msa_id, delegator_msa_id)?;
+			Self::add_provider(provider_msa_id, delegator_msa_id, granted_schemas)?;
 
 			Self::deposit_event(Event::ProviderAdded {
 				delegator: delegator_msa_id,
@@ -614,11 +637,20 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Add a provider to a delegator with the default permissions
-	pub fn add_provider(provider: Provider, delegator: Delegator) -> DispatchResult {
+	pub fn add_provider(
+		provider: Provider,
+		delegator: Delegator,
+		schemas: Vec<SchemaId>,
+	) -> DispatchResult {
 		ProviderInfoOf::<T>::try_mutate(delegator, provider, |maybe_info| -> DispatchResult {
 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
-
-			let info = ProviderInfo { permission: Default::default(), expired: Default::default() };
+			let granted_schemas = BoundedVec::<SchemaId, T::MaxSchemaGrants>::try_from(schemas)
+				.map_err(|_| Error::<T>::ExceedsMaxSchemaGrants)?;
+			let info = ProviderInfo {
+				permission: Default::default(),
+				expired: Default::default(),
+				schemas: OrderedSetExt::<SchemaId, T::MaxSchemaGrants>::from(granted_schemas),
+			};
 
 			*maybe_info = Some(info);
 
@@ -731,11 +763,34 @@ impl<T: Config> Pallet<T> {
 
 		Ok(info)
 	}
+
+	/// Check if provider is allowed to publish for a given schema_id for a given delegator
+	/// # Arguments
+	/// * `provider` - The provider account
+	/// * `delegator` - The delegator account
+	/// * `schema_id` - The schema id
+	/// # Returns
+	/// * [`DispatchResult`]
+	/// # Errors
+	/// * [`Error::DelegationNotFound`]
+	/// * [`Error::SchemaNotGranted`]
+	pub fn ensure_valid_schema_grant(
+		provider: Provider,
+		delegator: Delegator,
+		schema_id: SchemaId,
+	) -> DispatchResult {
+		let provider_info = Self::get_provider_info_of(delegator, provider)
+			.ok_or(Error::<T>::DelegationNotFound)?;
+
+		ensure!(provider_info.schemas.0.contains(&schema_id), Error::<T>::SchemaNotGranted);
+		Ok(())
+	}
 }
 
 impl<T: Config> AccountProvider for Pallet<T> {
 	type AccountId = T::AccountId;
 	type BlockNumber = T::BlockNumber;
+	type MaxSchemaGrants = T::MaxSchemaGrants;
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
 		Self::get_owner_of(key)
 	}
@@ -743,12 +798,32 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	fn get_provider_info_of(
 		delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber>> {
-		Self::get_provider_info_of(delegator, provider)
+	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>> {
+		Self::get_provider_info(delegator, provider)
 	}
 
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_delegation(provider: Provider, delegation: Delegator) -> DispatchResult {
 		Self::ensure_valid_delegation(provider, delegation)
+	}
+
+	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
+	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
+	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
+	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
+	/// would like to avoid.
+	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
+	/// this method to return a dummy account in case it does not exist
+	#[cfg(feature = "runtime-benchmarks")]
+	fn ensure_valid_delegation(provider: Provider, delegation: Delegator) -> DispatchResult {
+		let validation_check = Self::ensure_valid_delegation(provider, delegation);
+		if validation_check.is_err() {
+			// If the delegation does not exist, we return a ok
+			// This is only used for benchmarks, so it is safe to return a dummy account
+			// in case the delegation does not exist
+			return Ok(())
+		}
+		Ok(())
 	}
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
@@ -770,6 +845,54 @@ impl<T: Config> AccountProvider for Pallet<T> {
 			return Ok(KeyInfo { msa_id: 1 as MessageSourceId, nonce: 0 })
 		}
 		Ok(result.unwrap())
+	}
+
+	/// Check if provider is allowed to publish for a given schema_id for a given delegator
+	/// # Arguments
+	/// * `provider` - The provider account
+	/// * `delegator` - The delegator account
+	/// * `schema_id` - The schema id
+	/// # Returns
+	/// * [`DispatchResult`]
+	/// # Errors
+	/// * [`Error::DelegationNotFound`]
+	/// * [`Error::SchemaNotGranted`]
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	fn ensure_valid_schema_grant(
+		provider: Provider,
+		delegator: Delegator,
+		schema_id: SchemaId,
+	) -> DispatchResult {
+		Self::ensure_valid_schema_grant(provider, delegator, schema_id)
+	}
+
+	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
+	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
+	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
+	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
+	/// would like to avoid.
+	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
+	/// this method to return a dummy account in case it does not exist
+	/// # Arguments
+	/// * `provider` - The provider account
+	/// * `delegator` - The delegator account
+	/// * `schema_id` - The schema id
+	/// # Returns
+	/// * [`DispatchResult`]
+	/// # Errors
+	/// * [`Error::DelegationNotFound`]
+	/// * [`Error::SchemaNotGranted`]
+	#[cfg(feature = "runtime-benchmarks")]
+	fn ensure_valid_schema_grant(
+		provider: Provider,
+		delegator: Delegator,
+		_schema_id: SchemaId,
+	) -> DispatchResult {
+		let provider_info = Self::get_provider_info_of(delegator, provider);
+		if provider_info.is_none() {
+			return Ok(())
+		}
+		Ok(())
 	}
 }
 

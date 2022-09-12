@@ -390,6 +390,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       ExceedsMaxProviderNameSize: AugmentedError<ApiType>;
       /**
+       * The maximum number of schema grants has been exceeded
+       **/
+      ExceedsMaxSchemaGrants: AugmentedError<ApiType>;
+      /**
        * An MSA may not be its own delegate
        **/
       InvalidSelfProvider: AugmentedError<ApiType>;
@@ -425,6 +429,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Ony the MSA Owner may perform the operation
        **/
       NotMsaOwner: AugmentedError<ApiType>;
+      /**
+       * Provider is not permitted to publish for given schema_id
+       **/
+      SchemaNotGranted: AugmentedError<ApiType>;
       /**
        * Origin attempted to add a delegate for someone else's MSA
        **/

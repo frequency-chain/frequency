@@ -25,6 +25,9 @@ smallvec = "1.9.0"
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
 
+#ORML
+orml-utilities = {git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.27"}
+
 [features]
 default = ['std']
 std = [

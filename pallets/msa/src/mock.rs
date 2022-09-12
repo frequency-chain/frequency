@@ -1,5 +1,4 @@
-use crate as pallet_msa;
-use crate::types::EMPTY_FUNCTION;
+use crate::{self as pallet_msa, types::EMPTY_FUNCTION};
 use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use frame_support::{
 	assert_ok, parameter_types,
@@ -62,6 +61,33 @@ impl system::Config for Test {
 parameter_types! {
 	pub const MaxKeys: u32 = 10;
 	pub const MaxProviderNameSize: u32 = 16;
+	pub const MaxSchemas: u32 = 5;
+}
+
+parameter_types! {
+	pub const MaxSchemaGrants: u32 = 2;
+}
+
+impl Clone for MaxSchemaGrants {
+	fn clone(&self) -> Self {
+		MaxSchemaGrants {}
+	}
+}
+
+impl Eq for MaxSchemaGrants {
+	fn assert_receiver_is_total_eq(&self) -> () {}
+}
+
+impl PartialEq for MaxSchemaGrants {
+	fn eq(&self, _other: &Self) -> bool {
+		true
+	}
+}
+
+impl sp_std::fmt::Debug for MaxSchemaGrants {
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
 }
 
 impl pallet_msa::Config for Test {
@@ -69,6 +95,7 @@ impl pallet_msa::Config for Test {
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxKeys = MaxKeys;
+	type MaxSchemaGrants = MaxSchemaGrants;
 	type MaxProviderNameSize = MaxProviderNameSize;
 }
 
@@ -102,8 +129,7 @@ pub fn test_create_delegator_msa_with_provider() -> (u8, u64) {
 	let provider_account = key_pair.public();
 	let delegator_msa_id: u8 = 1;
 
-	let add_provider_payload =
-		pallet_msa::AddProvider { authorized_msa_id: delegator_msa_id.into(), permission: 0 };
+	let add_provider_payload = pallet_msa::AddProvider::new(delegator_msa_id.into(), 0, None);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 	let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
