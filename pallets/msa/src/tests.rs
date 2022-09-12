@@ -1273,3 +1273,25 @@ pub fn error_schema_not_granted() {
 		);
 	})
 }
+
+#[test]
+pub fn error_not_delegated_rpc() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		assert_err!(
+			Msa::get_granted_schemas(delegator, provider),
+			Error::<Test>::DelegationNotFound
+		);
+	})
+}
+
+#[test]
+pub fn error_schema_not_granted_rpc() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		assert_ok!(Msa::add_provider(provider, delegator, vec![]));
+		assert_err!(Msa::get_granted_schemas(delegator, provider), Error::<Test>::SchemaNotGranted);
+	})
+}
