@@ -1295,3 +1295,14 @@ pub fn error_schema_not_granted_rpc() {
 		assert_err!(Msa::get_granted_schemas(delegator, provider), Error::<Test>::SchemaNotGranted);
 	})
 }
+
+#[test]
+pub fn schema_granted_success_rpc() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		let schemas: Vec<SchemaId> = vec![1, 2];
+		assert_ok!(Msa::add_provider(provider, delegator, schemas));
+		assert_ok!(Msa::get_granted_schemas(delegator, provider));
+	})
+}
