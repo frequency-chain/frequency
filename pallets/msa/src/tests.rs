@@ -20,7 +20,7 @@ fn it_creates_an_msa_account() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::create(test_origin_signed(1)));
 
-		assert_eq!(Msa::get_key_info(test_public(1)), Some(1 as MessageSourceId));
+		assert_eq!(Msa::get_msa_by_account_id(test_public(1)), Some(1 as MessageSourceId));
 
 		assert_eq!(Msa::get_identifier(), 1);
 
@@ -222,7 +222,7 @@ fn it_revokes_msa_key_successfully() {
 
 		assert_ok!(Msa::delete_msa_key(test_origin_signed(1), test_public(2)));
 
-		let info = Msa::get_key_info(&test_public(2));
+		let info = Msa::get_msa_by_account_id(&test_public(2));
 
 		assert_eq!(info, None);
 
@@ -246,7 +246,7 @@ pub fn test_delete_key() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
 
-		let info = Msa::get_key_info(&test_public(1));
+		let info = Msa::get_msa_by_account_id(&test_public(1));
 
 		assert_eq!(info, Some(1 as MessageSourceId));
 
@@ -506,7 +506,7 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		));
 
 		// assert
-		let key_info = Msa::get_key_info(AccountId32::new(delegator_account.0));
+		let key_info = Msa::get_msa_by_account_id(AccountId32::new(delegator_account.0));
 		assert_eq!(key_info.unwrap(), 2);
 
 		let provider_info = Msa::get_provider_info_of(Delegator(2), Provider(1));
@@ -635,7 +635,7 @@ pub fn add_key_with_panic_in_on_success_should_revert_everything() {
 		);
 
 		// assert
-		assert_eq!(Msa::get_key_info(&key), None);
+		assert_eq!(Msa::get_msa_by_account_id(&key), None);
 
 		assert_eq!(Msa::get_msa_keys(msa_id).into_inner(), vec![])
 	});

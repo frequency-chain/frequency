@@ -153,7 +153,7 @@ pub mod pallet {
 	/// - Key: AccountId
 	/// - Value: [`MessageSourceId`]
 	#[pallet::storage]
-	#[pallet::getter(fn get_key_info)]
+	#[pallet::getter(fn get_msa_by_account_id)]
 	pub type MessageSourceIdOf<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
 
@@ -701,7 +701,7 @@ impl<T: Config> Pallet<T> {
 	pub fn try_get_msa_from_account_id(
 		key: &T::AccountId,
 	) -> Result<MessageSourceId, DispatchError> {
-		let info = Self::get_key_info(key).ok_or(Error::<T>::NoKeyExists)?;
+		let info = Self::get_msa_by_account_id(key).ok_or(Error::<T>::NoKeyExists)?;
 		Ok(info)
 	}
 
@@ -711,7 +711,7 @@ impl<T: Config> Pallet<T> {
 	/// # Returns
 	/// * [`MessageSourceId`]
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
-		Self::get_key_info(&key)
+		Self::get_msa_by_account_id(&key)
 	}
 
 	/// Fetches all the keys associated with a message Source Account
