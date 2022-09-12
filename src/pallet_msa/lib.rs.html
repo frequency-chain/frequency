@@ -889,6 +889,129 @@
 <span id="883">883</span>
 <span id="884">884</span>
 <span id="885">885</span>
+<span id="886">886</span>
+<span id="887">887</span>
+<span id="888">888</span>
+<span id="889">889</span>
+<span id="890">890</span>
+<span id="891">891</span>
+<span id="892">892</span>
+<span id="893">893</span>
+<span id="894">894</span>
+<span id="895">895</span>
+<span id="896">896</span>
+<span id="897">897</span>
+<span id="898">898</span>
+<span id="899">899</span>
+<span id="900">900</span>
+<span id="901">901</span>
+<span id="902">902</span>
+<span id="903">903</span>
+<span id="904">904</span>
+<span id="905">905</span>
+<span id="906">906</span>
+<span id="907">907</span>
+<span id="908">908</span>
+<span id="909">909</span>
+<span id="910">910</span>
+<span id="911">911</span>
+<span id="912">912</span>
+<span id="913">913</span>
+<span id="914">914</span>
+<span id="915">915</span>
+<span id="916">916</span>
+<span id="917">917</span>
+<span id="918">918</span>
+<span id="919">919</span>
+<span id="920">920</span>
+<span id="921">921</span>
+<span id="922">922</span>
+<span id="923">923</span>
+<span id="924">924</span>
+<span id="925">925</span>
+<span id="926">926</span>
+<span id="927">927</span>
+<span id="928">928</span>
+<span id="929">929</span>
+<span id="930">930</span>
+<span id="931">931</span>
+<span id="932">932</span>
+<span id="933">933</span>
+<span id="934">934</span>
+<span id="935">935</span>
+<span id="936">936</span>
+<span id="937">937</span>
+<span id="938">938</span>
+<span id="939">939</span>
+<span id="940">940</span>
+<span id="941">941</span>
+<span id="942">942</span>
+<span id="943">943</span>
+<span id="944">944</span>
+<span id="945">945</span>
+<span id="946">946</span>
+<span id="947">947</span>
+<span id="948">948</span>
+<span id="949">949</span>
+<span id="950">950</span>
+<span id="951">951</span>
+<span id="952">952</span>
+<span id="953">953</span>
+<span id="954">954</span>
+<span id="955">955</span>
+<span id="956">956</span>
+<span id="957">957</span>
+<span id="958">958</span>
+<span id="959">959</span>
+<span id="960">960</span>
+<span id="961">961</span>
+<span id="962">962</span>
+<span id="963">963</span>
+<span id="964">964</span>
+<span id="965">965</span>
+<span id="966">966</span>
+<span id="967">967</span>
+<span id="968">968</span>
+<span id="969">969</span>
+<span id="970">970</span>
+<span id="971">971</span>
+<span id="972">972</span>
+<span id="973">973</span>
+<span id="974">974</span>
+<span id="975">975</span>
+<span id="976">976</span>
+<span id="977">977</span>
+<span id="978">978</span>
+<span id="979">979</span>
+<span id="980">980</span>
+<span id="981">981</span>
+<span id="982">982</span>
+<span id="983">983</span>
+<span id="984">984</span>
+<span id="985">985</span>
+<span id="986">986</span>
+<span id="987">987</span>
+<span id="988">988</span>
+<span id="989">989</span>
+<span id="990">990</span>
+<span id="991">991</span>
+<span id="992">992</span>
+<span id="993">993</span>
+<span id="994">994</span>
+<span id="995">995</span>
+<span id="996">996</span>
+<span id="997">997</span>
+<span id="998">998</span>
+<span id="999">999</span>
+<span id="1000">1000</span>
+<span id="1001">1001</span>
+<span id="1002">1002</span>
+<span id="1003">1003</span>
+<span id="1004">1004</span>
+<span id="1005">1005</span>
+<span id="1006">1006</span>
+<span id="1007">1007</span>
+<span id="1008">1008</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The MSA pallet provides functionality for handling Message Source Accounts.</span>
@@ -935,6 +1058,7 @@
 <span class="doccomment">//! ### Assumptions</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! * Total MSA keys should be less than the constant `Config::MSA::MaxKeys`.</span>
+<span class="doccomment">//! * Maximum schemas, for which provider has publishing rights, be less than `Config::MSA::MaxSchemaGrants`</span>
 <span class="doccomment">//!</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -947,8 +1071,12 @@
 )]</span>
 
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">use</span> <span class="ident">common_primitives::msa</span>::{
-	<span class="ident">AccountProvider</span>, <span class="ident">Delegator</span>, <span class="ident">KeyInfo</span>, <span class="ident">KeyInfoResponse</span>, <span class="ident">Provider</span>, <span class="ident">ProviderInfo</span>, <span class="ident">ProviderMetadata</span>,
+<span class="kw">use</span> <span class="ident">common_primitives</span>::{
+	<span class="ident">msa</span>::{
+		<span class="ident">AccountProvider</span>, <span class="ident">Delegator</span>, <span class="ident">KeyInfo</span>, <span class="ident">KeyInfoResponse</span>, <span class="ident">OrderedSetExt</span>, <span class="ident">Provider</span>,
+		<span class="ident">ProviderInfo</span>, <span class="ident">ProviderMetadata</span>,
+	},
+	<span class="ident">schema::SchemaId</span>,
 };
 <span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">dispatch::DispatchResult</span>, <span class="ident">ensure</span>, <span class="ident">traits::IsSubType</span>, <span class="ident">weights::DispatchInfo</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pallet</span>::<span class="kw-2">*</span>;
@@ -974,6 +1102,7 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">weights</span>::<span class="kw-2">*</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">common_primitives</span>::{<span class="ident">msa::MessageSourceId</span>, <span class="ident">utils::wrap_binary_data</span>};
+
 <span class="kw">use</span> <span class="ident">frame_support::pallet_prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">frame_system::pallet_prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">sp_std::prelude</span>::<span class="kw-2">*</span>;
@@ -997,6 +1126,9 @@
 		<span class="attribute">#[<span class="ident">pallet::constant</span>]</span>
 		<span class="kw">type</span> <span class="ident">MaxKeys</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
 
+		<span class="doccomment">/// Maximum count of schemas granted for publishing data per Provider</span>
+		<span class="attribute">#[<span class="ident">pallet::constant</span>]</span>
+		<span class="kw">type</span> <span class="ident">MaxSchemaGrants</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">sp_std::fmt::Debug</span> <span class="op">+</span> <span class="ident">Eq</span>;
 		<span class="doccomment">/// Maximum provider name size allowed per MSA association</span>
 		<span class="attribute">#[<span class="ident">pallet::constant</span>]</span>
 		<span class="kw">type</span> <span class="ident">MaxProviderNameSize</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
@@ -1016,14 +1148,14 @@
 	<span class="doccomment">/// - Keys: Delegator MSA, Provider MSA</span>
 	<span class="doccomment">/// - Value: [`ProviderInfo`](common_primitives::msa::ProviderInfo)</span>
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">get_provider_info_of</span>)]</span>
+	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">get_provider_info</span>)]</span>
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ProviderInfoOf</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageDoubleMap</span><span class="op">&lt;</span>
 		<span class="kw">_</span>,
 		<span class="ident">Twox64Concat</span>,
 		<span class="ident">Delegator</span>,
 		<span class="ident">Twox64Concat</span>,
 		<span class="ident">Provider</span>,
-		<span class="ident">ProviderInfo</span><span class="op">&lt;</span><span class="ident">T::BlockNumber</span><span class="op">&gt;</span>,
+		<span class="ident">ProviderInfo</span><span class="op">&lt;</span><span class="ident">T::BlockNumber</span>, <span class="ident">T::MaxSchemaGrants</span><span class="op">&gt;</span>,
 		<span class="ident">OptionQuery</span>,
 	<span class="op">&gt;</span>;
 
@@ -1150,6 +1282,10 @@
 		<span class="ident">DuplicateProviderMetadata</span>,
 		<span class="doccomment">/// The maximum length for a provider name has been exceeded</span>
 		<span class="ident">ExceedsMaxProviderNameSize</span>,
+		<span class="doccomment">/// The maximum number of schema grants has been exceeded</span>
+		<span class="ident">ExceedsMaxSchemaGrants</span>,
+		<span class="doccomment">/// Provider is not permitted to publish for given schema_id</span>
+		<span class="ident">SchemaNotGranted</span>,
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::call</span>]</span>
@@ -1201,9 +1337,14 @@
 				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::UnauthorizedProvider</span>
 			);
 
+			<span class="kw">let</span> <span class="ident">granted_schemas</span> <span class="op">=</span> <span class="ident">add_provider_payload</span>.<span class="ident">schema_ids</span>;
+			<span class="macro">ensure!</span>(
+				<span class="ident">granted_schemas</span>.<span class="ident">len</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">T::MaxSchemaGrants::get</span>().<span class="ident">try_into</span>().<span class="ident">unwrap</span>(),
+				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ExceedsMaxSchemaGrants</span>
+			);
 			<span class="kw">let</span> (<span class="kw">_</span>, <span class="kw">_</span>) <span class="op">=</span>
 				<span class="ident"><span class="self">Self</span>::create_account</span>(<span class="ident">delegator_key</span>.<span class="ident">clone</span>(), <span class="op">|</span><span class="ident">new_msa_id</span><span class="op">|</span> -&gt; <span class="ident">DispatchResult</span> {
-					<span class="ident"><span class="self">Self</span>::add_provider</span>(<span class="ident">provider_msa_id</span>.<span class="ident">into</span>(), <span class="ident">new_msa_id</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
+					<span class="ident"><span class="self">Self</span>::add_provider</span>(<span class="ident">provider_msa_id</span>.<span class="ident">into</span>(), <span class="ident">new_msa_id</span>.<span class="ident">into</span>(), <span class="ident">granted_schemas</span>)<span class="question-mark">?</span>;
 
 					<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::MsaCreated</span> {
 						<span class="ident">msa_id</span>: <span class="ident">new_msa_id</span>,
@@ -1274,8 +1415,13 @@
 				<span class="kw-2">&amp;</span><span class="ident">provider_key</span>,
 				<span class="ident">payload_authorized_msa_id</span>,
 			)<span class="question-mark">?</span>;
+			<span class="kw">let</span> <span class="ident">granted_schemas</span> <span class="op">=</span> <span class="ident">add_provider_payload</span>.<span class="ident">schema_ids</span>;
+			<span class="macro">ensure!</span>(
+				<span class="ident">granted_schemas</span>.<span class="ident">len</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">T::MaxSchemaGrants::get</span>().<span class="ident">try_into</span>().<span class="ident">unwrap</span>(),
+				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ExceedsMaxSchemaGrants</span>
+			);
 
-			<span class="ident"><span class="self">Self</span>::add_provider</span>(<span class="ident">provider_msa_id</span>, <span class="ident">delegator_msa_id</span>)<span class="question-mark">?</span>;
+			<span class="ident"><span class="self">Self</span>::add_provider</span>(<span class="ident">provider_msa_id</span>, <span class="ident">delegator_msa_id</span>, <span class="ident">granted_schemas</span>)<span class="question-mark">?</span>;
 
 			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::ProviderAdded</span> {
 				<span class="ident">delegator</span>: <span class="ident">delegator_msa_id</span>,
@@ -1505,11 +1651,20 @@
 	}
 
 	<span class="doccomment">/// Add a provider to a delegator with the default permissions</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_provider</span>(<span class="ident">provider</span>: <span class="ident">Provider</span>, <span class="ident">delegator</span>: <span class="ident">Delegator</span>) -&gt; <span class="ident">DispatchResult</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_provider</span>(
+		<span class="ident">provider</span>: <span class="ident">Provider</span>,
+		<span class="ident">delegator</span>: <span class="ident">Delegator</span>,
+		<span class="ident">schemas</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SchemaId</span><span class="op">&gt;</span>,
+	) -&gt; <span class="ident">DispatchResult</span> {
 		<span class="ident">ProviderInfoOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::try_mutate</span>(<span class="ident">delegator</span>, <span class="ident">provider</span>, <span class="op">|</span><span class="ident">maybe_info</span><span class="op">|</span> -&gt; <span class="ident">DispatchResult</span> {
 			<span class="macro">ensure!</span>(<span class="ident">maybe_info</span>.<span class="ident">take</span>() <span class="op">==</span> <span class="prelude-val">None</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::DuplicateProvider</span>);
-
-			<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">ProviderInfo</span> { <span class="ident">permission</span>: <span class="ident">Default::default</span>(), <span class="ident">expired</span>: <span class="ident">Default::default</span>() };
+			<span class="kw">let</span> <span class="ident">granted_schemas</span> <span class="op">=</span> <span class="ident">BoundedVec</span>::<span class="op">&lt;</span><span class="ident">SchemaId</span>, <span class="ident">T::MaxSchemaGrants</span><span class="op">&gt;</span><span class="ident">::try_from</span>(<span class="ident">schemas</span>)
+				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ExceedsMaxSchemaGrants</span>)<span class="question-mark">?</span>;
+			<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">ProviderInfo</span> {
+				<span class="ident">permission</span>: <span class="ident">Default::default</span>(),
+				<span class="ident">expired</span>: <span class="ident">Default::default</span>(),
+				<span class="ident">schemas</span>: <span class="ident">OrderedSetExt</span>::<span class="op">&lt;</span><span class="ident">SchemaId</span>, <span class="ident">T::MaxSchemaGrants</span><span class="op">&gt;</span><span class="ident">::from</span>(<span class="ident">granted_schemas</span>),
+			};
 
 			<span class="kw-2">*</span><span class="ident">maybe_info</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">info</span>);
 
@@ -1622,11 +1777,34 @@
 
 		<span class="prelude-val">Ok</span>(<span class="ident">info</span>)
 	}
+
+	<span class="doccomment">/// Check if provider is allowed to publish for a given schema_id for a given delegator</span>
+	<span class="doccomment">/// # Arguments</span>
+	<span class="doccomment">/// * `provider` - The provider account</span>
+	<span class="doccomment">/// * `delegator` - The delegator account</span>
+	<span class="doccomment">/// * `schema_id` - The schema id</span>
+	<span class="doccomment">/// # Returns</span>
+	<span class="doccomment">/// * [`DispatchResult`]</span>
+	<span class="doccomment">/// # Errors</span>
+	<span class="doccomment">/// * [`Error::DelegationNotFound`]</span>
+	<span class="doccomment">/// * [`Error::SchemaNotGranted`]</span>
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_valid_schema_grant</span>(
+		<span class="ident">provider</span>: <span class="ident">Provider</span>,
+		<span class="ident">delegator</span>: <span class="ident">Delegator</span>,
+		<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>,
+	) -&gt; <span class="ident">DispatchResult</span> {
+		<span class="kw">let</span> <span class="ident">provider_info</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::get_provider_info_of</span>(<span class="ident">delegator</span>, <span class="ident">provider</span>)
+			.<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::DelegationNotFound</span>)<span class="question-mark">?</span>;
+
+		<span class="macro">ensure!</span>(<span class="ident">provider_info</span>.<span class="ident">schemas</span>.<span class="number">0</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">schema_id</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::SchemaNotGranted</span>);
+		<span class="prelude-val">Ok</span>(())
+	}
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">AccountProvider</span> <span class="kw">for</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 	<span class="kw">type</span> <span class="ident">AccountId</span> <span class="op">=</span> <span class="ident">T::AccountId</span>;
 	<span class="kw">type</span> <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">T::BlockNumber</span>;
+	<span class="kw">type</span> <span class="ident">MaxSchemaGrants</span> <span class="op">=</span> <span class="ident">T::MaxSchemaGrants</span>;
 	<span class="kw">fn</span> <span class="ident">get_msa_id</span>(<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::AccountId</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span><span class="op">&gt;</span> {
 		<span class="ident"><span class="self">Self</span>::get_owner_of</span>(<span class="ident">key</span>)
 	}
@@ -1634,12 +1812,32 @@
 	<span class="kw">fn</span> <span class="ident">get_provider_info_of</span>(
 		<span class="ident">delegator</span>: <span class="ident">Delegator</span>,
 		<span class="ident">provider</span>: <span class="ident">Provider</span>,
-	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ProviderInfo</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="ident"><span class="self">Self</span>::get_provider_info_of</span>(<span class="ident">delegator</span>, <span class="ident">provider</span>)
+	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ProviderInfo</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::BlockNumber</span>, <span class="ident"><span class="self">Self</span>::MaxSchemaGrants</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+		<span class="ident"><span class="self">Self</span>::get_provider_info</span>(<span class="ident">delegator</span>, <span class="ident">provider</span>)
 	}
 
+	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>))]</span>
 	<span class="kw">fn</span> <span class="ident">ensure_valid_delegation</span>(<span class="ident">provider</span>: <span class="ident">Provider</span>, <span class="ident">delegation</span>: <span class="ident">Delegator</span>) -&gt; <span class="ident">DispatchResult</span> {
 		<span class="ident"><span class="self">Self</span>::ensure_valid_delegation</span>(<span class="ident">provider</span>, <span class="ident">delegation</span>)
+	}
+
+	<span class="doccomment">/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded</span>
+	<span class="doccomment">/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet</span>
+	<span class="doccomment">/// that has dependencies on this one, we would need to define msa accounts on those pallets&#39;</span>
+	<span class="doccomment">/// benchmarks, but this will introduce direct dependencies between these pallets, which we</span>
+	<span class="doccomment">/// would like to avoid.</span>
+	<span class="doccomment">/// To successfully run benchmarks without adding dependencies between pallets we re-defined</span>
+	<span class="doccomment">/// this method to return a dummy account in case it does not exist</span>
+	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>)]</span>
+	<span class="kw">fn</span> <span class="ident">ensure_valid_delegation</span>(<span class="ident">provider</span>: <span class="ident">Provider</span>, <span class="ident">delegation</span>: <span class="ident">Delegator</span>) -&gt; <span class="ident">DispatchResult</span> {
+		<span class="kw">let</span> <span class="ident">validation_check</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::ensure_valid_delegation</span>(<span class="ident">provider</span>, <span class="ident">delegation</span>);
+		<span class="kw">if</span> <span class="ident">validation_check</span>.<span class="ident">is_err</span>() {
+			<span class="comment">// If the delegation does not exist, we return a ok</span>
+			<span class="comment">// This is only used for benchmarks, so it is safe to return a dummy account</span>
+			<span class="comment">// in case the delegation does not exist</span>
+			<span class="kw">return</span> <span class="prelude-val">Ok</span>(())
+		}
+		<span class="prelude-val">Ok</span>(())
 	}
 
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>))]</span>
@@ -1661,6 +1859,54 @@
 			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">KeyInfo</span> { <span class="ident">msa_id</span>: <span class="number">1</span> <span class="kw">as</span> <span class="ident">MessageSourceId</span>, <span class="ident">nonce</span>: <span class="number">0</span> })
 		}
 		<span class="prelude-val">Ok</span>(<span class="ident">result</span>.<span class="ident">unwrap</span>())
+	}
+
+	<span class="doccomment">/// Check if provider is allowed to publish for a given schema_id for a given delegator</span>
+	<span class="doccomment">/// # Arguments</span>
+	<span class="doccomment">/// * `provider` - The provider account</span>
+	<span class="doccomment">/// * `delegator` - The delegator account</span>
+	<span class="doccomment">/// * `schema_id` - The schema id</span>
+	<span class="doccomment">/// # Returns</span>
+	<span class="doccomment">/// * [`DispatchResult`]</span>
+	<span class="doccomment">/// # Errors</span>
+	<span class="doccomment">/// * [`Error::DelegationNotFound`]</span>
+	<span class="doccomment">/// * [`Error::SchemaNotGranted`]</span>
+	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>))]</span>
+	<span class="kw">fn</span> <span class="ident">ensure_valid_schema_grant</span>(
+		<span class="ident">provider</span>: <span class="ident">Provider</span>,
+		<span class="ident">delegator</span>: <span class="ident">Delegator</span>,
+		<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>,
+	) -&gt; <span class="ident">DispatchResult</span> {
+		<span class="ident"><span class="self">Self</span>::ensure_valid_schema_grant</span>(<span class="ident">provider</span>, <span class="ident">delegator</span>, <span class="ident">schema_id</span>)
+	}
+
+	<span class="doccomment">/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded</span>
+	<span class="doccomment">/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet</span>
+	<span class="doccomment">/// that has dependencies on this one, we would need to define msa accounts on those pallets&#39;</span>
+	<span class="doccomment">/// benchmarks, but this will introduce direct dependencies between these pallets, which we</span>
+	<span class="doccomment">/// would like to avoid.</span>
+	<span class="doccomment">/// To successfully run benchmarks without adding dependencies between pallets we re-defined</span>
+	<span class="doccomment">/// this method to return a dummy account in case it does not exist</span>
+	<span class="doccomment">/// # Arguments</span>
+	<span class="doccomment">/// * `provider` - The provider account</span>
+	<span class="doccomment">/// * `delegator` - The delegator account</span>
+	<span class="doccomment">/// * `schema_id` - The schema id</span>
+	<span class="doccomment">/// # Returns</span>
+	<span class="doccomment">/// * [`DispatchResult`]</span>
+	<span class="doccomment">/// # Errors</span>
+	<span class="doccomment">/// * [`Error::DelegationNotFound`]</span>
+	<span class="doccomment">/// * [`Error::SchemaNotGranted`]</span>
+	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>)]</span>
+	<span class="kw">fn</span> <span class="ident">ensure_valid_schema_grant</span>(
+		<span class="ident">provider</span>: <span class="ident">Provider</span>,
+		<span class="ident">delegator</span>: <span class="ident">Delegator</span>,
+		<span class="ident">_schema_id</span>: <span class="ident">SchemaId</span>,
+	) -&gt; <span class="ident">DispatchResult</span> {
+		<span class="kw">let</span> <span class="ident">provider_info</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::get_provider_info_of</span>(<span class="ident">delegator</span>, <span class="ident">provider</span>);
+		<span class="kw">if</span> <span class="ident">provider_info</span>.<span class="ident">is_none</span>() {
+			<span class="kw">return</span> <span class="prelude-val">Ok</span>(())
+		}
+		<span class="prelude-val">Ok</span>(())
 	}
 }
 

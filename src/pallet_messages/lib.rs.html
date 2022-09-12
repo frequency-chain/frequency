@@ -470,6 +470,33 @@
 <span id="464">464</span>
 <span id="465">465</span>
 <span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # Messages pallet</span>
 <span class="doccomment">//! A pallet for storing messages.</span>
 <span class="doccomment">//!</span>
@@ -676,6 +703,7 @@
 
 			<span class="kw">let</span> <span class="ident">provider_msa_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::find_msa_id</span>(<span class="kw-2">&amp;</span><span class="ident">provider_key</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
 			<span class="kw">let</span> <span class="ident">msa_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::find_msa_id</span>(<span class="kw-2">&amp;</span><span class="ident">provider_key</span>, <span class="ident">on_behalf_of</span>)<span class="question-mark">?</span>;
+			<span class="ident"><span class="self">Self</span>::ensure_valid_schema_grant</span>(<span class="ident">provider_msa_id</span>.<span class="ident">into</span>(), <span class="ident">on_behalf_of</span>, <span class="ident">schema_id</span>)<span class="question-mark">?</span>;
 
 			<span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::add_message</span>(<span class="ident">provider_msa_id</span>, <span class="ident">msa_id</span>, <span class="ident">bounded_payload</span>, <span class="ident">schema_id</span>)<span class="question-mark">?</span>;
 
@@ -711,6 +739,7 @@
 
 			<span class="kw">let</span> <span class="ident">provider_msa_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::find_msa_id</span>(<span class="kw-2">&amp;</span><span class="ident">provider_key</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
 			<span class="kw">let</span> <span class="ident">msa_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::find_msa_id</span>(<span class="kw-2">&amp;</span><span class="ident">provider_key</span>, <span class="ident">on_behalf_of</span>)<span class="question-mark">?</span>;
+			<span class="ident"><span class="self">Self</span>::ensure_valid_schema_grant</span>(<span class="ident">provider_msa_id</span>.<span class="ident">into</span>(), <span class="ident">on_behalf_of</span>, <span class="ident">schema_id</span>)<span class="question-mark">?</span>;
 
 			<span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::add_message</span>(<span class="ident">provider_msa_id</span>, <span class="ident">msa_id</span>, <span class="ident">bounded_payload</span>, <span class="ident">schema_id</span>)<span class="question-mark">?</span>;
 
@@ -802,6 +831,31 @@
 			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::UnAuthorizedDelegate</span>)<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>((<span class="ident">provider</span>.<span class="ident">into</span>(), <span class="ident">delegator</span>.<span class="ident">into</span>()))
+	}
+
+	<span class="doccomment">/// Check if provider is granted permission to publish on behalf of delegator.</span>
+	<span class="doccomment">/// # Arguments</span>
+	<span class="doccomment">/// * `provider` - An MSA of the provider.</span>
+	<span class="doccomment">/// * `delegator` - An MSA of the delegator.</span>
+	<span class="doccomment">/// * `schema_id` - Schema id of the message.</span>
+	<span class="doccomment">/// # Returns</span>
+	<span class="doccomment">/// * Result&lt;(MessageSourceId, MessageSourceId, SchemaId), DispatchError&gt; - Returns an error if the provider is not granted permission to publish on behalf of delegator.</span>
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_valid_schema_grant</span>(
+		<span class="ident">provider</span>: <span class="ident">Provider</span>,
+		<span class="ident">delegator</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span><span class="op">&gt;</span>,
+		<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>,
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">MessageSourceId</span>, <span class="ident">MessageSourceId</span>, <span class="ident">SchemaId</span>), <span class="ident">DispatchError</span><span class="op">&gt;</span> {
+		<span class="kw">match</span> <span class="ident">delegator</span> {
+			<span class="prelude-val">Some</span>(<span class="ident">delegator</span>) =&gt; {
+				<span class="ident">T::AccountProvider::ensure_valid_schema_grant</span>(
+					<span class="ident">provider</span>,
+					<span class="ident">delegator</span>.<span class="ident">into</span>(),
+					<span class="ident">schema_id</span>,
+				)<span class="question-mark">?</span>;
+				<span class="prelude-val">Ok</span>((<span class="ident">provider</span>.<span class="ident">into</span>(), <span class="ident">delegator</span>.<span class="ident">into</span>(), <span class="ident">schema_id</span>))
+			},
+			<span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>((<span class="ident">provider</span>.<span class="ident">into</span>(), <span class="ident">provider</span>.<span class="ident">into</span>(), <span class="ident">schema_id</span>)),
+		}
 	}
 
 	<span class="doccomment">/// Gets a messages for a given schema-id and block-number.</span>

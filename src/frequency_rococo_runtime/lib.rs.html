@@ -1039,6 +1039,8 @@
 <span id="1033">1033</span>
 <span id="1034">1034</span>
 <span id="1035">1035</span>
+<span id="1036">1036</span>
+<span id="1037">1037</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.</span>
 <span class="attribute">#![<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;256&quot;</span>]</span>
@@ -1105,6 +1107,7 @@
 <span class="kw">use</span> <span class="ident">polkadot_runtime_common</span>::{<span class="ident">BlockHashCount</span>, <span class="ident">SlowAdjustingFeeUpdate</span>};
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">common_runtime</span>::{
+	<span class="ident">constants::MaxDataSize</span>,
 	<span class="ident">weights</span>,
 	<span class="ident">weights</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>},
 };
@@ -1366,6 +1369,7 @@
 	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">pallet_msa::weights::SubstrateWeight</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">ConvertIntoAccountId32</span> <span class="op">=</span> <span class="ident">ConvertInto</span>;
 	<span class="kw">type</span> <span class="ident">MaxKeys</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">25</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">MaxSchemaGrants</span> <span class="op">=</span> <span class="ident">MaxDataSize</span>;
 	<span class="kw">type</span> <span class="ident">MaxProviderNameSize</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">16</span><span class="op">&gt;</span>;
 }
 

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["MaxDataSize","Clone + Debug + Eq  implementation for u32 types"]]};
