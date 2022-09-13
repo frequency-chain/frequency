@@ -544,7 +544,6 @@ fn valid_payload_location() {
 		let schema_id_1: SchemaId = IPFS_SCHEMA_ID;
 		let info_result = MessagesPallet::add_ipfs_message(
 			Origin::signed(caller_1),
-			None,
 			schema_id_1,
 			Vec::from("foo"),
 			1,
@@ -567,7 +566,6 @@ fn invalid_payload_location_ipfs() {
 		assert_noop!(
 			MessagesPallet::add_ipfs_message(
 				Origin::signed(caller_1),
-				None,
 				schema_id_1,
 				Vec::from("foo"),
 				1
