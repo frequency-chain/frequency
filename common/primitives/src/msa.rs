@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use sp_runtime::DispatchError;
 use sp_std::prelude::Vec;
 
+pub use crate::{ds::OrderedSetExt, schema::SchemaId};
+
 /// The gap between the current block and a future expiring block allowed when validating signature proofs.
 pub const EXPIRATION_BLOCK_VALIDITY_GAP: u32 = 128;
 
@@ -46,33 +48,19 @@ impl From<Delegator> for MessageSourceId {
 	}
 }
 
-/// KeyInfo holds the information on the relationship between a key and an MSA
-#[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
-pub struct KeyInfo {
-	/// The Message Source Account that this key is associated with
-	pub msa_id: MessageSourceId,
-	/// Prevent key addition replays
-	pub nonce: u32,
-}
-
-impl KeyInfo {
-	/// Convert `KeyInfo` into `KeyInfoResponse`
-	/// # Arguments
-	/// * `key` - The `AccountId` for self
-	/// # Returns
-	/// * `KeyInfoResponse<AccountId, BlockNumber>`
-	pub fn map_to_response<AccountId: Clone>(&self, key: AccountId) -> KeyInfoResponse<AccountId> {
-		KeyInfoResponse { key, msa_id: self.msa_id, nonce: self.nonce }
-	}
-}
-
 /// Struct for the information of the relationship between an MSA and a Provider
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
-pub struct ProviderInfo<BlockNumber> {
+#[scale_info(skip_type_params(MaxSchemaGrants))]
+pub struct ProviderInfo<BlockNumber, MaxSchemaGrants>
+where
+	MaxSchemaGrants: Get<u32>,
+{
 	/// Specifies a permission granted by the delegator to the provider.
 	pub permission: u8,
 	/// Block number the grant will be revoked.
 	pub expired: BlockNumber,
+	/// Schemas that the provider is allowed to use for a delegated message.
+	pub schemas: OrderedSetExt<SchemaId, MaxSchemaGrants>,
 }
 
 /// Provider is the recipient of a delegation.
@@ -127,6 +115,8 @@ pub trait AccountProvider {
 	type AccountId;
 	/// Type for block number.
 	type BlockNumber;
+	/// Type for maximum number of schemas that can be granted to a provider.
+	type MaxSchemaGrants: Get<u32> + Clone + Eq;
 
 	/// Gets the MSA Id associated with this `AccountId` if any
 	/// # Arguments
@@ -144,14 +134,14 @@ pub trait AccountProvider {
 	fn get_provider_info_of(
 		delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber>>;
+	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>>;
 	/// Check that a key is associated to an MSA and returns key information.
 	/// Returns a `[DispatchError`] if there is no MSA associated with the key
 	/// # Arguments
 	/// * `key` - The `AccountId` to lookup
 	/// # Returns
-	/// * `Result<KeyInfo, DispatchError>`
-	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<KeyInfo, DispatchError>;
+	/// * `Result<MessageSourceId, DispatchError>`
+	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError>;
 
 	/// Validates that the delegator and provider have a relationship at this point
 	/// # Arguments
@@ -160,9 +150,22 @@ pub trait AccountProvider {
 	/// # Returns
 	/// * [DispatchResult](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResult.html) The return type of a Dispatchable in frame.
 	fn ensure_valid_delegation(provider: Provider, delegator: Delegator) -> DispatchResult;
+
+	/// Validates if the provider is allowed to use the schema
+	/// # Arguments
+	/// * `provider` - The `MessageSourceId` that has been delegated to
+	/// * `delegator` - The `MessageSourceId` that delegated to the provider
+	/// * `schema_id` - The `SchemaId` that the provider is trying to use
+	/// # Returns
+	/// * [DispatchResult](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResult.html) The return type of a Dispatchable in frame.
+	fn ensure_valid_schema_grant(
+		provider: Provider,
+		delegator: Delegator,
+		schema_id: SchemaId,
+	) -> DispatchResult;
 }
 
-/// RPC Response form of [`KeyInfo`]
+/// RPC Response for getting getting MSA ids
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 pub struct KeyInfoResponse<AccountId> {
@@ -170,6 +173,4 @@ pub struct KeyInfoResponse<AccountId> {
 	pub key: AccountId,
 	/// The MSA associated with the `key`
 	pub msa_id: MessageSourceId,
-	/// The nonce value for signed updates to this data
-	pub nonce: u32,
 }

@@ -39,7 +39,7 @@ fn populate_messages(
 		let mut list = BoundedVec::default();
 		for _ in 0..*count {
 			list.try_push(Message {
-				msa_id: 10,
+				msa_id: Some(10),
 				payload: payload.clone().try_into().unwrap(),
 				index: counter,
 				provider_msa_id: 1,
@@ -84,7 +84,7 @@ fn add_message_should_store_message_on_temp_storage() {
 			list[0],
 			(
 				Message {
-					msa_id: get_msa_from_account(caller_1),
+					msa_id: Some(get_msa_from_account(caller_1)),
 					payload: message_payload_1.try_into().unwrap(),
 					index: 0,
 					provider_msa_id: get_msa_from_account(caller_1)
@@ -97,7 +97,7 @@ fn add_message_should_store_message_on_temp_storage() {
 			list[1],
 			(
 				Message {
-					msa_id: get_msa_from_account(caller_2),
+					msa_id: Some(get_msa_from_account(caller_2)),
 					payload: message_payload_2.try_into().unwrap(),
 					index: 1,
 					provider_msa_id: get_msa_from_account(caller_2)
@@ -464,7 +464,7 @@ fn add_message_via_valid_delegate_should_pass() {
 			list[0],
 			(
 				Message {
-					msa_id: message_producer,
+					msa_id: Some(message_producer),
 					payload: message_payload_1.try_into().unwrap(),
 					index: 0,
 					provider_msa_id: get_msa_from_account(caller_1)
@@ -477,7 +477,7 @@ fn add_message_via_valid_delegate_should_pass() {
 			list[1],
 			(
 				Message {
-					msa_id: message_producer,
+					msa_id: Some(message_producer),
 					payload: message_payload_2.try_into().unwrap(),
 					index: 1,
 					provider_msa_id: get_msa_from_account(caller_2)
@@ -544,7 +544,6 @@ fn valid_payload_location() {
 		let schema_id_1: SchemaId = IPFS_SCHEMA_ID;
 		let info_result = MessagesPallet::add_ipfs_message(
 			Origin::signed(caller_1),
-			None,
 			schema_id_1,
 			Vec::from("foo"),
 			1,
@@ -567,7 +566,6 @@ fn invalid_payload_location_ipfs() {
 		assert_noop!(
 			MessagesPallet::add_ipfs_message(
 				Origin::signed(caller_1),
-				None,
 				schema_id_1,
 				Vec::from("foo"),
 				1
