@@ -6,7 +6,7 @@ pipeline {
         label 'benchmark'
       }
    triggers {
-        issueCommentTrigger('^run-benchmark*')
+        issueCommentTrigger('^\\/run-benchmark.*')
     }
   stages {
     // node configuration
