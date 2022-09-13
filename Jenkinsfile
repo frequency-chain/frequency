@@ -14,7 +14,16 @@ pipeline {
       steps {
         deleteDir()
         checkout scm
-        sh 'mkdir -p /data/tmp && export TMPDIR=/data/tmp &&  export PATH="/data/.cargo/bin:$PATH" && ln -snf /data/.cargo /home/ubuntu/.cargo && rustup install nightly && rustup default nightly && rustup target add wasm32-unknown-unknown --toolchain nightly && make benchmarks'
+        sh '''
+                      export GIT_COMMENT=$(git log -1 --pretty=%B)
+                      case "$GIT_COMMENT" in
+                      '^runtime-benchmarks*') echo "performing build ..."
+                        mkdir -p /data/tmp && export TMPDIR=/data/tmp &&  export PATH="/data/.cargo/bin:$PATH" && ln -snf /data/.cargo /home/ubuntu/.cargo && rustup install nightly && rustup default nightly && rustup target add wasm32-unknown-unknown --toolchain nightly && make benchmarks'
+                                                           ;;
+                                          *) echo "no commit message found aborting build"
+                                                           ;;
+                                        esac
+          '''
         sh "git config user.email \"jenkins@frequency.xyz\""
         sh "git config user.name \"Jenkins\""
          sshagent(credentials: ['jenkins-2022-03-01']) {
