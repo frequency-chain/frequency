@@ -1381,3 +1381,99 @@ pub fn schema_granted_success_rpc() {
 		assert_eq!(output_schemas, expected_schemas_granted);
 	})
 }
+
+// This scenario must fail:
+// 1. User creates MSA and delegates to provider
+// 2. User revokes msa delegation
+// 3. User successfully calls "create_sponsored_account_with_delgation"
+//      OR
+// 3. User successfully calls "add_provider_to_msa"
+#[test]
+pub fn replaying_create_sponsored_account_with_delegation_fails() {
+	new_test_ext().execute_with(|| {
+
+		let (key_pair, _) = sr25519::Pair::generate();
+		let provider_account = key_pair.public();
+
+		let (key_pair_delegator, _) = sr25519::Pair::generate();
+		let delegator_account = key_pair_delegator.public();
+
+		let add_provider_payload = AddProvider::new(1u64, 0, None);
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
+
+		// create MSA for provider.
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+
+		// use sponsorship to create msa for delegator
+		assert_ok!(Msa::create_sponsored_account_with_delegation(
+			Origin::signed(provider_account.into()),
+			delegator_account.into(),
+			signature.clone(),
+			add_provider_payload.clone()
+		));
+
+		assert_ok!(Msa::revoke_msa_delegation_by_delegator(Origin::signed(delegator_account.into()), 1));
+
+		// expect call create with same signature to fail
+		assert_err!(Msa::create_sponsored_account_with_delegation(
+			Origin::signed(provider_account.into()),
+			delegator_account.into(),
+			signature.clone(),
+			add_provider_payload.clone(),
+		), Error::<Test>::KeyAlreadyRegistered);
+
+		// expect this to fail because it has to be signed by the provider
+		assert_err!(Msa::add_provider_to_msa(
+			Origin::signed(delegator_account.into()),
+			provider_account.into(),
+			signature.clone(),
+			add_provider_payload.clone(),
+		), Error::<Test>::AddProviderSignatureVerificationFailed);
+
+	})
+}
+
+/// This scenario should fail:
+///   1. provider authorizes being added as provider to MSA and MSA account adds them.
+///   2. provider removes them as MSA (say by quickly discovering MSA is undesirable)
+///   3. MSA account replays the add, using the previous signed payload + signature.
+#[test]
+fn replaying_add_provider_to_msa_fails() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let provider_account = key_pair.public();
+
+		let (key_pair_delegator, _) = sr25519::Pair::generate();
+		let delegator_account = key_pair_delegator.public();
+
+		// add_provider_payload in this case has delegator's msa_id as authorized_msa_id
+		let add_provider_payload = AddProvider::new(2u64, 0, None);
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
+
+		// create MSA for provider.
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+		// create MSA for delegator
+		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
+
+		assert_ok!(Msa::add_provider_to_msa(
+			Origin::signed(delegator_account.into()),
+			provider_account.into(),
+			signature.clone(),
+			add_provider_payload.clone(),
+		));
+
+		// provider revokes the delegation.
+		assert_ok!(Msa::revoke_delegation_by_provider(Origin::signed(provider_account.into()), 2));
+		System::set_block_number(System::block_number() + 1);
+
+		// Expected to fail because revoking the delegation just expires it at a given block number.
+		assert_err!(Msa::add_provider_to_msa(
+			Origin::signed(delegator_account.into()),
+			provider_account.into(),
+			signature.clone(),
+			add_provider_payload.clone(),
+		), Error::<Test>::DuplicateProvider);
+	})
+}
