@@ -78,7 +78,7 @@
 	<span class="doccomment">/// its behalf.</span>
 	<span class="kw">pub</span> <span class="ident">provider_msa_id</span>: <span class="ident">MessageSourceId</span>,
 	<span class="doccomment">///  Message source account id (the original source).</span>
-	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>,
+	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span><span class="op">&gt;</span>,
 	<span class="doccomment">///  Stores index of message in block to keep total order.</span>
 	<span class="kw">pub</span> <span class="ident">index</span>: <span class="ident">u16</span>,
 }
@@ -97,7 +97,7 @@
 		<span class="ident">MessageResponse</span> {
 			<span class="ident">provider_msa_id</span>: <span class="self">self</span>.<span class="ident">provider_msa_id</span>,
 			<span class="ident">index</span>: <span class="self">self</span>.<span class="ident">index</span>,
-			<span class="ident">msa_id</span>: <span class="self">self</span>.<span class="ident">msa_id</span>,
+			<span class="ident">msa_id</span>: <span class="self">self</span>.<span class="ident">msa_id</span>.<span class="ident">unwrap_or_default</span>(),
 			<span class="ident">block_number</span>,
 			<span class="ident">payload</span>,
 			<span class="ident">payload_length</span>,
