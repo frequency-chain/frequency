@@ -787,6 +787,28 @@ impl<T: Config> Pallet<T> {
 		ensure!(provider_info.schemas.0.contains(&schema_id), Error::<T>::SchemaNotGranted);
 		Ok(())
 	}
+
+	/// Get a list of ```schema_id```s that a provider has been granted access to
+	/// # Arguments
+	/// * `provider` - The provider account
+	/// * `delegator` - The delegator account
+	/// # Returns
+	/// * [`Vec<SchemaId>`]
+	/// # Errors
+	/// * [`Error::DelegationNotFound`]
+	/// * [`Error::SchemaNotGranted`]
+	pub fn get_granted_schemas(
+		delegator: Delegator,
+		provider: Provider,
+	) -> Result<Option<Vec<SchemaId>>, DispatchError> {
+		let provider_info = Self::get_provider_info_of(delegator, provider)
+			.ok_or(Error::<T>::DelegationNotFound)?;
+		let schemas = provider_info.schemas.0;
+		if schemas.0.is_empty() {
+			return Err(Error::<T>::SchemaNotGranted.into())
+		}
+		Ok(Some(schemas.0.into()))
+	}
 }
 
 impl<T: Config> AccountProvider for Pallet<T> {
