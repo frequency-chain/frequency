@@ -66,9 +66,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn register_schema(m: u32, n: u32, ) -> Weight {
 		(0 as Weight)
 			// Standard Error: 0
-			.saturating_add((38_000 as Weight).saturating_mul(m as Weight))
+			.saturating_add((39_000 as Weight).saturating_mul(m as Weight))
 			// Standard Error: 4_000
-			.saturating_add((95_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add((93_000 as Weight).saturating_mul(n as Weight))
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
@@ -82,9 +82,9 @@ impl WeightInfo for () {
 	fn register_schema(m: u32, n: u32, ) -> Weight {
 		(0 as Weight)
 			// Standard Error: 0
-			.saturating_add((38_000 as Weight).saturating_mul(m as Weight))
+			.saturating_add((39_000 as Weight).saturating_mul(m as Weight))
 			// Standard Error: 4_000
-			.saturating_add((95_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add((93_000 as Weight).saturating_mul(n as Weight))
 			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
 	}
