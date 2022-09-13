@@ -2267,7 +2267,6 @@ export default {
   PalletMessagesCall: {
     _enum: {
       add_ipfs_message: {
-        onBehalfOf: 'Option<u64>',
         schemaId: 'u16',
         cid: 'Bytes',
         payloadLength: 'u32',
@@ -2659,7 +2658,7 @@ export default {
   PalletMessagesMessage: {
     payload: 'Bytes',
     providerMsaId: 'u64',
-    msaId: 'u64',
+    msaId: 'Option<u64>',
     index: 'u16'
   },
   /**

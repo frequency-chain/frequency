@@ -680,7 +680,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Returns
        * * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html)
        **/
-      addIpfsMessage: AugmentedSubmittable<(onBehalfOf: Option<u64> | null | Uint8Array | u64 | AnyNumber, schemaId: u16 | AnyNumber | Uint8Array, cid: Bytes | string | Uint8Array, payloadLength: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [Option<u64>, u16, Bytes, u32]>;
+      addIpfsMessage: AugmentedSubmittable<(schemaId: u16 | AnyNumber | Uint8Array, cid: Bytes | string | Uint8Array, payloadLength: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [u16, Bytes, u32]>;
       /**
        * Add an on-chain message for a given schema-id.
        * # Arguments

@@ -2415,7 +2415,6 @@ declare module '@polkadot/types/lookup' {
   interface PalletMessagesCall extends Enum {
     readonly isAddIpfsMessage: boolean;
     readonly asAddIpfsMessage: {
-      readonly onBehalfOf: Option<u64>;
       readonly schemaId: u16;
       readonly cid: Bytes;
       readonly payloadLength: u32;
@@ -2909,7 +2908,7 @@ declare module '@polkadot/types/lookup' {
   interface PalletMessagesMessage extends Struct {
     readonly payload: Bytes;
     readonly providerMsaId: u64;
-    readonly msaId: u64;
+    readonly msaId: Option<u64>;
     readonly index: u16;
   }
 
