@@ -131,6 +131,10 @@ declare module '@polkadot/api-base/types/consts' {
        **/
       maxProviderNameSize: u32 & AugmentedConst<ApiType>;
       /**
+       * Maximum count of schemas granted for publishing data per Provider
+       **/
+      maxSchemaGrants: u32 & AugmentedConst<ApiType>;
+      /**
        * Generic const
        **/
       [key: string]: Codec;

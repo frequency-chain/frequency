@@ -292,6 +292,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       VotesExist: AugmentedError<ApiType>;
       /**
+       * Voting period too low
+       **/
+      VotingPeriodLow: AugmentedError<ApiType>;
+      /**
        * Invalid upper bound.
        **/
       WrongUpperBound: AugmentedError<ApiType>;
@@ -386,6 +390,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       ExceedsMaxProviderNameSize: AugmentedError<ApiType>;
       /**
+       * The maximum number of schema grants has been exceeded
+       **/
+      ExceedsMaxSchemaGrants: AugmentedError<ApiType>;
+      /**
        * An MSA may not be its own delegate
        **/
       InvalidSelfProvider: AugmentedError<ApiType>;
@@ -421,6 +429,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Ony the MSA Owner may perform the operation
        **/
       NotMsaOwner: AugmentedError<ApiType>;
+      /**
+       * Provider is not permitted to publish for given schema_id
+       **/
+      SchemaNotGranted: AugmentedError<ApiType>;
       /**
        * Origin attempted to add a delegate for someone else's MSA
        **/
@@ -697,6 +709,52 @@ declare module '@polkadot/api-base/types/errors' {
        * and the new runtime.
        **/
       SpecVersionNeedsToIncrease: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
+    };
+    technicalCommittee: {
+      /**
+       * Members are already initialized!
+       **/
+      AlreadyInitialized: AugmentedError<ApiType>;
+      /**
+       * Duplicate proposals not allowed
+       **/
+      DuplicateProposal: AugmentedError<ApiType>;
+      /**
+       * Duplicate vote ignored
+       **/
+      DuplicateVote: AugmentedError<ApiType>;
+      /**
+       * Account is not a member
+       **/
+      NotMember: AugmentedError<ApiType>;
+      /**
+       * Proposal must exist
+       **/
+      ProposalMissing: AugmentedError<ApiType>;
+      /**
+       * The close call was made too early, before the end of the voting.
+       **/
+      TooEarly: AugmentedError<ApiType>;
+      /**
+       * There can only be a maximum of `MaxProposals` active proposals.
+       **/
+      TooManyProposals: AugmentedError<ApiType>;
+      /**
+       * Mismatched index
+       **/
+      WrongIndex: AugmentedError<ApiType>;
+      /**
+       * The given length bound for the proposal was too low.
+       **/
+      WrongProposalLength: AugmentedError<ApiType>;
+      /**
+       * The given weight bound for the proposal was too low.
+       **/
+      WrongProposalWeight: AugmentedError<ApiType>;
       /**
        * Generic error
        **/

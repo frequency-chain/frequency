@@ -5,7 +5,8 @@ use crate::{
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
-	msa::{Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo},
+	msa::{Delegator, KeyInfo, KeyInfoResponse, OrderedSetExt, Provider, ProviderInfo},
+	schema::SchemaId,
 	utils::wrap_binary_data,
 };
 use frame_support::{
@@ -280,7 +281,7 @@ pub fn add_provider_to_msa_is_success() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
 
-		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
+		let add_provider_payload = AddProvider::new(1, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -299,8 +300,8 @@ pub fn add_provider_to_msa_is_success() {
 		let delegator = Delegator(1);
 
 		assert_eq!(
-			Msa::get_provider_info_of(delegator, provider),
-			Some(ProviderInfo { permission: 0, expired: 0 })
+			Msa::get_provider_info(delegator, provider),
+			Some(ProviderInfo { permission: 0, expired: 0, schemas: OrderedSetExt::new() })
 		);
 
 		System::assert_last_event(
@@ -314,13 +315,12 @@ pub fn add_provider_to_msa_throws_add_provider_verification_failed() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let account = key_pair.public();
-
-		let add_provider_payload = AddProvider { authorized_msa_id: 2, permission: 0 };
+		let add_provider_payload = AddProvider::new(2, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
-		let fake_provider_payload = AddProvider { authorized_msa_id: 3, permission: 0 };
+		let fake_provider_payload = AddProvider::new(3, 0, None);
 
 		assert_noop!(
 			Msa::add_provider_to_msa(
@@ -340,7 +340,7 @@ pub fn add_provider_to_msa_throws_no_key_exist_error() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
 
-		let add_provider_payload = AddProvider { authorized_msa_id: 2, permission: 0 };
+		let add_provider_payload = AddProvider::new(2, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -363,7 +363,7 @@ pub fn add_provider_to_msa_throws_key_revoked_error() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
 
-		let add_provider_payload = AddProvider { authorized_msa_id: 2, permission: 0 };
+		let add_provider_payload = AddProvider::new(2, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -390,8 +390,7 @@ pub fn add_provider_to_msa_throws_invalid_self_provider_error() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
 
-		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
-
+		let add_provider_payload = AddProvider::new(1, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -416,7 +415,7 @@ pub fn add_provider_to_msa_throws_unauthorized_delegator_error() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
 
-		let add_provider_payload = AddProvider { authorized_msa_id: 2, permission: 0 };
+		let add_provider_payload = AddProvider::new(2, 0, None);
 
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
@@ -442,7 +441,7 @@ pub fn add_provider_to_msa_throws_duplicate_provider_error() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
 
-		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
+		let add_provider_payload = AddProvider::new(1, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -490,7 +489,7 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
 		let delegator_account = key_pair_delegator.public();
 
-		let add_provider_payload = AddProvider { authorized_msa_id: 1u64, permission: 0 };
+		let add_provider_payload = AddProvider::new(1u64, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
@@ -509,7 +508,7 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		let key_info = Msa::get_key_info(AccountId32::new(delegator_account.0));
 		assert_eq!(key_info.unwrap().msa_id, 2);
 
-		let provider_info = Msa::get_provider_info_of(Delegator(2), Provider(1));
+		let provider_info = Msa::get_provider_info(Delegator(2), Provider(1));
 		assert_eq!(provider_info.is_some(), true);
 
 		let events_occured = System::events();
@@ -537,7 +536,7 @@ fn create_sponsored_account_with_delegation_with_invalid_signature_should_fail()
 
 		let (signer_pair, _) = sr25519::Pair::generate();
 
-		let add_provider_payload = AddProvider { authorized_msa_id: 1u64, permission: 0 };
+		let add_provider_payload = AddProvider::new(1u64, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = signer_pair.sign(&encode_add_provider_data).into();
@@ -567,7 +566,7 @@ pub fn create_sponsored_account_with_delegation_with_invalid_add_provider_should
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
 		let delegator_account = key_pair_delegator.public();
 
-		let add_provider_payload = AddProvider { authorized_msa_id: 1u64, permission: 0 };
+		let add_provider_payload = AddProvider::new(1u64, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
@@ -598,7 +597,7 @@ pub fn create_sponsored_account_with_delegation_with_different_authorized_msa_id
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
 		let delegator_account = key_pair_delegator.public();
 
-		let add_provider_payload = AddProvider { authorized_msa_id: 3u64, permission: 0 };
+		let add_provider_payload = AddProvider::new(3u64, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
@@ -669,7 +668,7 @@ pub fn revoke_msa_delegation_by_delegator_is_successfull() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
 
-		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
+		let add_provider_payload = AddProvider::new(1, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -698,7 +697,7 @@ pub fn revoke_provider_is_successful() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
 
-		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
+		let add_provider_payload = AddProvider::new(1, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -718,8 +717,8 @@ pub fn revoke_provider_is_successful() {
 		assert_ok!(Msa::revoke_provider(provider, delegator));
 
 		assert_eq!(
-			Msa::get_provider_info_of(delegator, provider).unwrap(),
-			ProviderInfo { expired: 1, permission: 0 },
+			Msa::get_provider_info(delegator, provider).unwrap(),
+			ProviderInfo { expired: 1, permission: 0, schemas: OrderedSetExt::new() },
 		);
 	});
 }
@@ -730,7 +729,7 @@ fn revoke_provider_throws_errors() {
 		let (key_pair, _) = sr25519::Pair::generate();
 
 		let provider_account = key_pair.public();
-		let add_provider_payload = AddProvider { authorized_msa_id: 2, permission: 0 };
+		let add_provider_payload = AddProvider::new(2, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -783,7 +782,7 @@ pub fn revoke_provider_call_has_no_cost() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
 
-		let add_provider_payload = AddProvider { authorized_msa_id: 1, permission: 0 };
+		let add_provider_payload = AddProvider::new(1, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -845,7 +844,7 @@ pub fn revoke_delegation_by_provider_happy_path() {
 		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
 
 		// 3. create delegator MSA and provider to provider
-		let add_provider_payload = AddProvider { authorized_msa_id: 1u64, permission: 0 };
+		let add_provider_payload = AddProvider::new(1u64, 0, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 		let signature: MultiSignature = user_pair.sign(&encode_add_provider_data).into();
 		// 3.5 create the user's MSA + add provider as provider
@@ -863,8 +862,11 @@ pub fn revoke_delegation_by_provider_happy_path() {
 		assert_ok!(Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64));
 
 		// 6. verify that the provider is revoked
-		let provider_info = Msa::get_provider_info_of(Delegator(2), Provider(1));
-		assert_eq!(provider_info, Some(ProviderInfo { permission: 0, expired: 26 }));
+		let provider_info = Msa::get_provider_info(Delegator(2), Provider(1));
+		assert_eq!(
+			provider_info,
+			Some(ProviderInfo { permission: 0, expired: 26, schemas: OrderedSetExt::new() })
+		);
 
 		// 7. verify the event
 		System::assert_last_event(
@@ -916,7 +918,7 @@ pub fn revoke_delegation_by_provider_errors_when_no_delegator_msa_id() {
 			Error::<Test>::DelegationNotFound
 		);
 
-		assert_ok!(Msa::add_provider(Provider(1), Delegator(2)));
+		assert_ok!(Msa::add_provider(Provider(1), Delegator(2), Vec::default()));
 		assert_ok!(Msa::revoke_provider(Provider(1), Delegator(2)));
 		// 3. when_delegation_expired
 		assert_noop!(
@@ -932,7 +934,7 @@ pub fn valid_delegation() {
 		let provider = Provider(1);
 		let delegator = Delegator(2);
 
-		assert_ok!(Msa::add_provider(provider, delegator));
+		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
 
 		System::set_block_number(System::block_number() + 1);
 
@@ -959,7 +961,7 @@ pub fn delegation_expired() {
 		let provider = Provider(1);
 		let delegator = Delegator(2);
 
-		assert_ok!(Msa::add_provider(provider, delegator));
+		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
 
 		System::set_block_number(System::block_number() + 1);
 		assert_ok!(Msa::ensure_valid_delegation(provider, delegator));
@@ -1225,5 +1227,49 @@ fn register_provider_duplicate() {
 			Msa::register_provider(Origin::signed(key_pair.public().into()), Vec::from("Foo")),
 			Error::<Test>::DuplicateProviderMetadata
 		)
+	})
+}
+
+#[test]
+pub fn valid_schema_grant() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		let schemas: Vec<SchemaId> = vec![1, 2];
+		assert_ok!(Msa::add_provider(provider, delegator, schemas));
+
+		System::set_block_number(System::block_number() + 1);
+
+		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 1_u16));
+	})
+}
+
+#[test]
+pub fn error_exceeding_max_schema_grants() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		let schemas: Vec<SchemaId> = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+		assert_err!(
+			Msa::add_provider(provider, delegator, schemas),
+			Error::<Test>::ExceedsMaxSchemaGrants
+		);
+	})
+}
+
+#[test]
+pub fn error_schema_not_granted() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		let schemas: Vec<SchemaId> = vec![1, 2];
+		assert_ok!(Msa::add_provider(provider, delegator, schemas));
+
+		System::set_block_number(System::block_number() + 1);
+
+		assert_err!(
+			Msa::ensure_valid_schema_grant(provider, delegator, 3_u16),
+			Error::<Test>::SchemaNotGranted
+		);
 	})
 }
