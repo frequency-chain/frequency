@@ -5,12 +5,13 @@ pipeline {
   agent {
         label 'benchmark'
       }
+  options { disableConcurrentBuilds() }
    triggers {
         issueCommentTrigger('^\\/run-benchmark.*')
     }
   stages {
     // node configuration
-    stage('node rust config') {
+    stage('Run Benchmarks') {
       steps {
         deleteDir()
         checkout scm
