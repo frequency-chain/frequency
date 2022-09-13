@@ -36,26 +36,26 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_utility::WeightInfo for SubstrateWeight<T> {
 	/// The range of component `c` is `[0, 1000]`.
 	fn batch(c: u32, ) -> Weight {
-		(21_188_000 as Weight)
+		(24_274_000 as Weight)
 			// Standard Error: 2_000
-			.saturating_add((5_291_000 as Weight).saturating_mul(c as Weight))
+			.saturating_add((5_218_000 as Weight).saturating_mul(c as Weight))
 	}
 	fn as_derivative() -> Weight {
-		(7_472_000 as Weight)
+		(7_366_000 as Weight)
 	}
 	/// The range of component `c` is `[0, 1000]`.
 	fn batch_all(c: u32, ) -> Weight {
-		(24_710_000 as Weight)
-			// Standard Error: 2_000
-			.saturating_add((5_575_000 as Weight).saturating_mul(c as Weight))
+		(20_220_000 as Weight)
+			// Standard Error: 3_000
+			.saturating_add((5_483_000 as Weight).saturating_mul(c as Weight))
 	}
 	fn dispatch_as() -> Weight {
-		(17_382_000 as Weight)
+		(17_127_000 as Weight)
 	}
 	/// The range of component `c` is `[0, 1000]`.
 	fn force_batch(c: u32, ) -> Weight {
-		(20_707_000 as Weight)
+		(19_982_000 as Weight)
 			// Standard Error: 2_000
-			.saturating_add((5_287_000 as Weight).saturating_mul(c as Weight))
+			.saturating_add((5_221_000 as Weight).saturating_mul(c as Weight))
 	}
 }

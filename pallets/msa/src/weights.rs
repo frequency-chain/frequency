@@ -71,9 +71,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa KeyInfoOf (r:1 w:1)
 	// Storage: Msa MsaKeysOf (r:1 w:1)
 	fn create(s: u32, ) -> Weight {
-		(56_416_000 as Weight)
+		(55_403_000 as Weight)
 			// Standard Error: 2_000
-			.saturating_add((12_000 as Weight).saturating_mul(s as Weight))
+			.saturating_add((19_000 as Weight).saturating_mul(s as Weight))
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(3 as Weight))
 	}
@@ -82,51 +82,51 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa MsaKeysOf (r:1 w:1)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn create_sponsored_account_with_delegation() -> Weight {
-		(104_483_000 as Weight)
+		(105_164_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(5 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn revoke_delegation_by_provider(s: u32, ) -> Weight {
-		(59_482_000 as Weight)
-			// Standard Error: 2_000
-			.saturating_add((7_000 as Weight).saturating_mul(s as Weight))
+		(48_414_000 as Weight)
+			// Standard Error: 1_000
+			.saturating_add((27_000 as Weight).saturating_mul(s as Weight))
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:2 w:1)
 	// Storage: Msa MsaKeysOf (r:1 w:1)
 	fn add_key_to_msa() -> Weight {
-		(91_874_000 as Weight)
+		(92_529_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:2 w:1)
 	// Storage: Msa MsaKeysOf (r:1 w:1)
 	fn delete_msa_key() -> Weight {
-		(33_510_000 as Weight)
+		(33_618_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:2 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn add_provider_to_msa() -> Weight {
-		(90_273_000 as Weight)
+		(92_611_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn revoke_msa_delegation_by_delegator() -> Weight {
-		(26_327_000 as Weight)
+		(26_140_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Msa ProviderRegistry (r:1 w:1)
 	fn register_provider() -> Weight {
-		(23_168_000 as Weight)
+		(23_003_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
@@ -138,9 +138,9 @@ impl WeightInfo for () {
 	// Storage: Msa KeyInfoOf (r:1 w:1)
 	// Storage: Msa MsaKeysOf (r:1 w:1)
 	fn create(s: u32, ) -> Weight {
-		(56_416_000 as Weight)
+		(55_403_000 as Weight)
 			// Standard Error: 2_000
-			.saturating_add((12_000 as Weight).saturating_mul(s as Weight))
+			.saturating_add((19_000 as Weight).saturating_mul(s as Weight))
 			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
 	}
@@ -149,51 +149,51 @@ impl WeightInfo for () {
 	// Storage: Msa MsaKeysOf (r:1 w:1)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn create_sponsored_account_with_delegation() -> Weight {
-		(104_483_000 as Weight)
+		(105_164_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn revoke_delegation_by_provider(s: u32, ) -> Weight {
-		(59_482_000 as Weight)
-			// Standard Error: 2_000
-			.saturating_add((7_000 as Weight).saturating_mul(s as Weight))
+		(48_414_000 as Weight)
+			// Standard Error: 1_000
+			.saturating_add((27_000 as Weight).saturating_mul(s as Weight))
 			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:2 w:1)
 	// Storage: Msa MsaKeysOf (r:1 w:1)
 	fn add_key_to_msa() -> Weight {
-		(91_874_000 as Weight)
+		(92_529_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:2 w:1)
 	// Storage: Msa MsaKeysOf (r:1 w:1)
 	fn delete_msa_key() -> Weight {
-		(33_510_000 as Weight)
+		(33_618_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:2 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn add_provider_to_msa() -> Weight {
-		(90_273_000 as Weight)
+		(92_611_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn revoke_msa_delegation_by_delegator() -> Weight {
-		(26_327_000 as Weight)
+		(26_140_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	// Storage: Msa KeyInfoOf (r:1 w:0)
 	// Storage: Msa ProviderRegistry (r:1 w:1)
 	fn register_provider() -> Weight {
-		(23_168_000 as Weight)
+		(23_003_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
