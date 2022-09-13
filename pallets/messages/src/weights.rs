@@ -67,11 +67,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa ProviderInfoOf (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add_onchain_message(n: u32, m: u32, ) -> Weight {
-		(11_628_000 as Weight)
+		(8_541_000 as Weight)
 			// Standard Error: 0
 			.saturating_add((1_000 as Weight).saturating_mul(n as Weight))
 			// Standard Error: 2_000
-			.saturating_add((352_000 as Weight).saturating_mul(m as Weight))
+			.saturating_add((354_000 as Weight).saturating_mul(m as Weight))
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
@@ -80,11 +80,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa ProviderInfoOf (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add_ipfs_message(n: u32, m: u32, ) -> Weight {
-		(13_581_000 as Weight)
+		(18_385_000 as Weight)
 			// Standard Error: 0
 			.saturating_add((1_000 as Weight).saturating_mul(n as Weight))
-			// Standard Error: 2_000
-			.saturating_add((303_000 as Weight).saturating_mul(m as Weight))
+			// Standard Error: 1_000
+			.saturating_add((299_000 as Weight).saturating_mul(m as Weight))
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
@@ -93,9 +93,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn on_initialize(m: u32, s: u32, ) -> Weight {
 		(0 as Weight)
 			// Standard Error: 11_000
-			.saturating_add((612_000 as Weight).saturating_mul(m as Weight))
-			// Standard Error: 120_000
-			.saturating_add((7_651_000 as Weight).saturating_mul(s as Weight))
+			.saturating_add((603_000 as Weight).saturating_mul(m as Weight))
+			// Standard Error: 123_000
+			.saturating_add((7_785_000 as Weight).saturating_mul(s as Weight))
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(s as Weight)))
 	}
@@ -108,11 +108,11 @@ impl WeightInfo for () {
 	// Storage: Msa ProviderInfoOf (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add_onchain_message(n: u32, m: u32, ) -> Weight {
-		(11_628_000 as Weight)
+		(8_541_000 as Weight)
 			// Standard Error: 0
 			.saturating_add((1_000 as Weight).saturating_mul(n as Weight))
 			// Standard Error: 2_000
-			.saturating_add((352_000 as Weight).saturating_mul(m as Weight))
+			.saturating_add((354_000 as Weight).saturating_mul(m as Weight))
 			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
@@ -121,11 +121,11 @@ impl WeightInfo for () {
 	// Storage: Msa ProviderInfoOf (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add_ipfs_message(n: u32, m: u32, ) -> Weight {
-		(13_581_000 as Weight)
+		(18_385_000 as Weight)
 			// Standard Error: 0
 			.saturating_add((1_000 as Weight).saturating_mul(n as Weight))
-			// Standard Error: 2_000
-			.saturating_add((303_000 as Weight).saturating_mul(m as Weight))
+			// Standard Error: 1_000
+			.saturating_add((299_000 as Weight).saturating_mul(m as Weight))
 			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
@@ -134,9 +134,9 @@ impl WeightInfo for () {
 	fn on_initialize(m: u32, s: u32, ) -> Weight {
 		(0 as Weight)
 			// Standard Error: 11_000
-			.saturating_add((612_000 as Weight).saturating_mul(m as Weight))
-			// Standard Error: 120_000
-			.saturating_add((7_651_000 as Weight).saturating_mul(s as Weight))
+			.saturating_add((603_000 as Weight).saturating_mul(m as Weight))
+			// Standard Error: 123_000
+			.saturating_add((7_785_000 as Weight).saturating_mul(s as Weight))
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(s as Weight)))
 	}
