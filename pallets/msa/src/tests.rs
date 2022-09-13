@@ -1303,6 +1303,8 @@ pub fn schema_granted_success_rpc() {
 		let delegator = Delegator(2);
 		let schemas: Vec<SchemaId> = vec![1, 2];
 		assert_ok!(Msa::add_provider(provider, delegator, schemas));
-		assert_ok!(Msa::get_granted_schemas(delegator, provider));
+		let schemas_granted = Msa::get_granted_schemas(delegator, provider);
+		assert_ok!(schemas_granted);
+		assert_eq!(schemas_granted.unwrap(), schemas);
 	})
 }
