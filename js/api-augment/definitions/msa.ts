@@ -40,7 +40,6 @@ export default {
     KeyInfoResponse: {
       key: "AccountId",
       msaId: "MessageSourceId",
-      nonce: "u32",
     },
   },
 };

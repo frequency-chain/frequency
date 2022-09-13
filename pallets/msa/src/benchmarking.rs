@@ -56,9 +56,9 @@ fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSource
 
 	assert_ok!(Msa::<T>::create(RawOrigin::Signed(provider.clone()).into()));
 
-	let key_info = Msa::<T>::try_get_key_info(&provider).unwrap();
+	let msa_id = Msa::<T>::try_get_msa_from_account_id(&provider).unwrap();
 
-	(provider.clone(), key_info.msa_id)
+	(provider.clone(), msa_id)
 }
 
 fn add_delegation<T: Config>(delegator: Delegator, provider: Provider) {
