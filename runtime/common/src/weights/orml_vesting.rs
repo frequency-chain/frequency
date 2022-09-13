@@ -39,7 +39,7 @@ impl<T: frame_system::Config> orml_vesting::WeightInfo for SubstrateWeight<T> {
 	// Storage: System Account (r:2 w:2)
 	// Storage: Balances Locks (r:1 w:1)
 	fn vested_transfer() -> Weight {
-		(76_003_000 as Weight)
+		(87_943_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(5 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
@@ -48,9 +48,9 @@ impl<T: frame_system::Config> orml_vesting::WeightInfo for SubstrateWeight<T> {
 	// Storage: Balances Locks (r:1 w:1)
 	/// The range of component `i` is `[1, 50]`.
 	fn claim(i: u32, ) -> Weight {
-		(40_616_000 as Weight)
-			// Standard Error: 3_000
-			.saturating_add((118_000 as Weight).saturating_mul(i as Weight))
+		(40_185_000 as Weight)
+			// Standard Error: 5_000
+			.saturating_add((127_000 as Weight).saturating_mul(i as Weight))
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
@@ -59,9 +59,9 @@ impl<T: frame_system::Config> orml_vesting::WeightInfo for SubstrateWeight<T> {
 	// Storage: Vesting VestingSchedules (r:0 w:1)
 	/// The range of component `i` is `[1, 50]`.
 	fn update_vesting_schedules(i: u32, ) -> Weight {
-		(38_314_000 as Weight)
+		(38_294_000 as Weight)
 			// Standard Error: 3_000
-			.saturating_add((98_000 as Weight).saturating_mul(i as Weight))
+			.saturating_add((90_000 as Weight).saturating_mul(i as Weight))
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(3 as Weight))
 	}
