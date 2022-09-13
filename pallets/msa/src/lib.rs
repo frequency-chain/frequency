@@ -59,8 +59,8 @@
 use codec::{Decode, Encode};
 use common_primitives::{
 	msa::{
-		AccountProvider, Delegator, KeyInfoResponse, OrderedSetExt, Provider,
-		ProviderInfo, ProviderMetadata,
+		AccountProvider, Delegator, KeyInfoResponse, OrderedSetExt, Provider, ProviderInfo,
+		ProviderMetadata,
 	},
 	schema::SchemaId,
 };
