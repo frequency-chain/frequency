@@ -5,7 +5,7 @@ use crate::{
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
-	msa::{Delegator, KeyInfo, KeyInfoResponse, OrderedSetExt, Provider, ProviderInfo},
+	msa::{Delegator, KeyInfoResponse, MessageSourceId, OrderedSetExt, Provider, ProviderInfo},
 	schema::SchemaId,
 	utils::wrap_binary_data,
 };
@@ -21,7 +21,7 @@ fn it_creates_an_msa_account() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::create(test_origin_signed(1)));
 
-		assert_eq!(Msa::get_key_info(test_public(1)), Some(KeyInfo { msa_id: 1, nonce: 0 }));
+		assert_eq!(Msa::get_msa_by_account_id(test_public(1)), Some(1 as MessageSourceId));
 
 		assert_eq!(Msa::get_identifier(), 1);
 
@@ -210,7 +210,7 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 		// assert
 		let keys = Msa::fetch_msa_keys(new_msa_id);
 		assert_eq!(keys.len(), 2);
-		assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id, nonce: 0}), true}
+		assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id}), true}
 		System::assert_last_event(Event::KeyAdded { msa_id: 1, key: new_key.into() }.into());
 	});
 }
@@ -223,7 +223,7 @@ fn it_revokes_msa_key_successfully() {
 
 		assert_ok!(Msa::delete_msa_key(test_origin_signed(1), test_public(2)));
 
-		let info = Msa::get_key_info(&test_public(2));
+		let info = Msa::get_msa_by_account_id(&test_public(2));
 
 		assert_eq!(info, None);
 
@@ -247,11 +247,11 @@ pub fn test_delete_key() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
 
-		let info = Msa::get_key_info(&test_public(1));
+		let info = Msa::get_msa_by_account_id(&test_public(1));
 
-		assert_eq!(info, Some(KeyInfo { msa_id: 1, nonce: 0 }));
+		assert_eq!(info, Some(1 as MessageSourceId));
 
-		assert_ok!(Msa::delete_key_for_msa(info.unwrap().msa_id, &test_public(1)));
+		assert_ok!(Msa::delete_key_for_msa(info.unwrap(), &test_public(1)));
 	});
 }
 
@@ -505,8 +505,8 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		));
 
 		// assert
-		let key_info = Msa::get_key_info(AccountId32::new(delegator_account.0));
-		assert_eq!(key_info.unwrap().msa_id, 2);
+		let key_info = Msa::get_msa_by_account_id(AccountId32::new(delegator_account.0));
+		assert_eq!(key_info.unwrap(), 2);
 
 		let provider_info = Msa::get_provider_info(Delegator(2), Provider(1));
 		assert_eq!(provider_info.is_some(), true);
@@ -634,7 +634,7 @@ pub fn add_key_with_panic_in_on_success_should_revert_everything() {
 		);
 
 		// assert
-		assert_eq!(Msa::get_key_info(&key), None);
+		assert_eq!(Msa::get_msa_by_account_id(&key), None);
 
 		assert_eq!(Msa::get_msa_keys(msa_id).into_inner(), vec![])
 	});
