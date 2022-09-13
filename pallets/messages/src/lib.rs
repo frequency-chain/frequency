@@ -183,7 +183,6 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() as u32, 1_000))]
 		pub fn add_ipfs_message(
 			origin: OriginFor<T>,
-			on_behalf_of: Option<MessageSourceId>,
 			schema_id: SchemaId,
 			cid: Vec<u8>,
 			payload_length: u32,
@@ -203,10 +202,7 @@ pub mod pallet {
 			);
 
 			let provider_msa_id = Self::find_msa_id(&provider_key, None)?;
-			let msa_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
-			Self::ensure_valid_schema_grant(provider_msa_id.into(), on_behalf_of, schema_id)?;
-
-			let message = Self::add_message(provider_msa_id, msa_id, bounded_payload, schema_id)?;
+			let message = Self::add_message(provider_msa_id, None, bounded_payload, schema_id)?;
 
 			Ok(Some(T::WeightInfo::add_ipfs_message(cid.len() as u32, message.index as u32)).into())
 		}
@@ -242,7 +238,8 @@ pub mod pallet {
 			let msa_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
 			Self::ensure_valid_schema_grant(provider_msa_id.into(), on_behalf_of, schema_id)?;
 
-			let message = Self::add_message(provider_msa_id, msa_id, bounded_payload, schema_id)?;
+			let message =
+				Self::add_message(provider_msa_id, Some(msa_id), bounded_payload, schema_id)?;
 
 			Ok(Some(T::WeightInfo::add_onchain_message(
 				message.payload.len() as u32,
@@ -264,7 +261,7 @@ impl<T: Config> Pallet<T> {
 	/// * Result<Message<T::MaxMessagePayloadSizeBytes> - Returns the message stored.
 	pub fn add_message(
 		provider_msa_id: MessageSourceId,
-		msa_id: MessageSourceId,
+		msa_id: Option<MessageSourceId>,
 		payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes>,
 		schema_id: SchemaId,
 	) -> Result<Message<T::MaxMessagePayloadSizeBytes>, DispatchError> {

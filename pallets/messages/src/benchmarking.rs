@@ -28,10 +28,8 @@ fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo
 /// Helper function to call MessagesPallet::<T>::add_ipfs_message
 fn ipfs_message<T: Config>(schema_id: SchemaId) -> DispatchResultWithPostInfo {
 	let acc: T::AccountId = whitelisted_caller();
-	let message_producer = 1;
 	MessagesPallet::<T>::add_ipfs_message(
 		RawOrigin::Signed(acc.clone()).into(),
-		Some(message_producer),
 		schema_id,
 		Vec::from("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes()),
 		IPFS_PAYLOAD_LENGTH,
@@ -55,7 +53,6 @@ benchmarks! {
 	add_ipfs_message {
 		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - IPFS_PAYLOAD_LENGTH;
 		let m in 1 .. MESSAGES;
-		let message_producer = 1;
 		let caller: T::AccountId = whitelisted_caller();
 		let cid = vec![1; n as usize];
 
@@ -63,7 +60,7 @@ benchmarks! {
 			let schema_id = IPFS_SCHEMA_ID;
 			assert_ok!(ipfs_message::<T>(schema_id.try_into().unwrap()));
 		}
-	}: _ (RawOrigin::Signed(caller), Some(message_producer), IPFS_SCHEMA_ID, cid, IPFS_PAYLOAD_LENGTH)
+	}: _ (RawOrigin::Signed(caller),IPFS_SCHEMA_ID, cid, IPFS_PAYLOAD_LENGTH)
 
 	on_initialize {
 		let m in 1 .. MESSAGES;
