@@ -430,6 +430,14 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       NotMsaOwner: AugmentedError<ApiType>;
       /**
+       * The submited proof has expired; the current block is less the expiration block
+       **/
+      ProofHasExpired: AugmentedError<ApiType>;
+      /**
+       * The submitted proof expiration block is too far in the future
+       **/
+      ProofNotYetValid: AugmentedError<ApiType>;
+      /**
        * Provider is not permitted to publish for given schema_id
        **/
       SchemaNotGranted: AugmentedError<ApiType>;
