@@ -64,6 +64,7 @@ pub use pallet_schemas;
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
 pub use common_runtime::{
+	constants::MaxDataSize,
 	weights,
 	weights::{BlockExecutionWeight, ExtrinsicBaseWeight},
 };
@@ -343,6 +344,7 @@ impl pallet_msa::Config for Runtime {
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxKeys = ConstU32<25>;
+	type MaxSchemaGrants = MaxDataSize;
 	type MaxProviderNameSize = ConstU32<16>;
 }
 

@@ -22,7 +22,7 @@ where
 	/// its behalf.
 	pub provider_msa_id: MessageSourceId,
 	///  Message source account id (the original source).
-	pub msa_id: MessageSourceId,
+	pub msa_id: Option<MessageSourceId>,
 	///  Stores index of message in block to keep total order.
 	pub index: u16,
 }
@@ -41,7 +41,7 @@ where
 		MessageResponse {
 			provider_msa_id: self.provider_msa_id,
 			index: self.index,
-			msa_id: self.msa_id,
+			msa_id: self.msa_id.unwrap_or_default(),
 			block_number,
 			payload,
 			payload_length,

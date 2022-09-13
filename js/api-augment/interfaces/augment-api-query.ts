@@ -295,9 +295,9 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * Storage type for key to MSA information
        * - Key: AccountId
-       * - Value: [`MessageSourceId`]()
+       * - Value: [`MessageSourceId`]
        **/
-      keyInfoOf: AugmentedQuery<ApiType, (arg: AccountId32 | string | Uint8Array) => Observable<Option<u64>>, [AccountId32]> & QueryableStorageEntry<ApiType, [AccountId32]>;
+      messageSourceIdOf: AugmentedQuery<ApiType, (arg: AccountId32 | string | Uint8Array) => Observable<Option<u64>>, [AccountId32]> & QueryableStorageEntry<ApiType, [AccountId32]>;
       /**
        * Storage type for MSA identifier
        * - Value: The current maximum MSA Id

@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use sp_runtime::DispatchError;
 use sp_std::prelude::Vec;
 
+pub use crate::{ds::OrderedSetExt, schema::SchemaId};
+
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
 pub type MessageSourceId = u64;
 
@@ -45,11 +47,17 @@ impl From<Delegator> for MessageSourceId {
 
 /// Struct for the information of the relationship between an MSA and a Provider
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
-pub struct ProviderInfo<BlockNumber> {
+#[scale_info(skip_type_params(MaxSchemaGrants))]
+pub struct ProviderInfo<BlockNumber, MaxSchemaGrants>
+where
+	MaxSchemaGrants: Get<u32>,
+{
 	/// Specifies a permission granted by the delegator to the provider.
 	pub permission: u8,
 	/// Block number the grant will be revoked.
 	pub expired: BlockNumber,
+	/// Schemas that the provider is allowed to use for a delegated message.
+	pub schemas: OrderedSetExt<SchemaId, MaxSchemaGrants>,
 }
 
 /// Provider is the recipient of a delegation.
@@ -104,6 +112,8 @@ pub trait AccountProvider {
 	type AccountId;
 	/// Type for block number.
 	type BlockNumber;
+	/// Type for maximum number of schemas that can be granted to a provider.
+	type MaxSchemaGrants: Get<u32> + Clone + Eq;
 
 	/// Gets the MSA Id associated with this `AccountId` if any
 	/// # Arguments
@@ -121,7 +131,7 @@ pub trait AccountProvider {
 	fn get_provider_info_of(
 		delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber>>;
+	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>>;
 	/// Check that a key is associated to an MSA and returns key information.
 	/// Returns a `[DispatchError`] if there is no MSA associated with the key
 	/// # Arguments
@@ -137,6 +147,19 @@ pub trait AccountProvider {
 	/// # Returns
 	/// * [DispatchResult](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResult.html) The return type of a Dispatchable in frame.
 	fn ensure_valid_delegation(provider: Provider, delegator: Delegator) -> DispatchResult;
+
+	/// Validates if the provider is allowed to use the schema
+	/// # Arguments
+	/// * `provider` - The `MessageSourceId` that has been delegated to
+	/// * `delegator` - The `MessageSourceId` that delegated to the provider
+	/// * `schema_id` - The `SchemaId` that the provider is trying to use
+	/// # Returns
+	/// * [DispatchResult](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResult.html) The return type of a Dispatchable in frame.
+	fn ensure_valid_schema_grant(
+		provider: Provider,
+		delegator: Delegator,
+		schema_id: SchemaId,
+	) -> DispatchResult;
 }
 
 /// RPC Response for getting getting MSA ids

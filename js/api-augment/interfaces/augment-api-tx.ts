@@ -680,7 +680,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Returns
        * * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html)
        **/
-      addIpfsMessage: AugmentedSubmittable<(onBehalfOf: Option<u64> | null | Uint8Array | u64 | AnyNumber, schemaId: u16 | AnyNumber | Uint8Array, cid: Bytes | string | Uint8Array, payloadLength: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [Option<u64>, u16, Bytes, u32]>;
+      addIpfsMessage: AugmentedSubmittable<(schemaId: u16 | AnyNumber | Uint8Array, cid: Bytes | string | Uint8Array, payloadLength: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [u16, Bytes, u32]>;
       /**
        * Add an on-chain message for a given schema-id.
        * # Arguments
@@ -723,7 +723,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`
        * - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
        **/
-      addProviderToMsa: AugmentedSubmittable<(providerKey: AccountId32 | string | Uint8Array, proof: SpRuntimeMultiSignature | { Ed25519: any } | { Sr25519: any } | { Ecdsa: any } | string | Uint8Array, addProviderPayload: PalletMsaAddProvider | { authorizedMsaId?: any; permission?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, SpRuntimeMultiSignature, PalletMsaAddProvider]>;
+      addProviderToMsa: AugmentedSubmittable<(providerKey: AccountId32 | string | Uint8Array, proof: SpRuntimeMultiSignature | { Ed25519: any } | { Sr25519: any } | { Ecdsa: any } | string | Uint8Array, addProviderPayload: PalletMsaAddProvider | { authorizedMsaId?: any; permission?: any; schemaIds?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, SpRuntimeMultiSignature, PalletMsaAddProvider]>;
       /**
        * Creates an MSA for the Origin (sender of the transaction).  Origin is assigned an MSA ID.
        * Deposits [`MsaCreated`](Event::MsaCreated) event, and returns `Ok(())` on success, otherwise returns an error.
@@ -747,7 +747,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * - Returns [`KeyAlreadyRegistered`](Error::KeyAlreadyRegistered) if there is already an MSA for `delegator_key`.
        * 
        **/
-      createSponsoredAccountWithDelegation: AugmentedSubmittable<(delegatorKey: AccountId32 | string | Uint8Array, proof: SpRuntimeMultiSignature | { Ed25519: any } | { Sr25519: any } | { Ecdsa: any } | string | Uint8Array, addProviderPayload: PalletMsaAddProvider | { authorizedMsaId?: any; permission?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, SpRuntimeMultiSignature, PalletMsaAddProvider]>;
+      createSponsoredAccountWithDelegation: AugmentedSubmittable<(delegatorKey: AccountId32 | string | Uint8Array, proof: SpRuntimeMultiSignature | { Ed25519: any } | { Sr25519: any } | { Ecdsa: any } | string | Uint8Array, addProviderPayload: PalletMsaAddProvider | { authorizedMsaId?: any; permission?: any; schemaIds?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, SpRuntimeMultiSignature, PalletMsaAddProvider]>;
       /**
        * Remove a key associated with an MSA by expiring it at the current block.
        * Returns `Ok(())` on success, otherwise returns an error. Deposits event [`KeyRemoved`](Event::KeyRemoved).

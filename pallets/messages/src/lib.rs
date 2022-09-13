@@ -183,7 +183,6 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() as u32, 1_000))]
 		pub fn add_ipfs_message(
 			origin: OriginFor<T>,
-			on_behalf_of: Option<MessageSourceId>,
 			schema_id: SchemaId,
 			cid: Vec<u8>,
 			payload_length: u32,
@@ -203,9 +202,7 @@ pub mod pallet {
 			);
 
 			let provider_msa_id = Self::find_msa_id(&provider_key, None)?;
-			let msa_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
-
-			let message = Self::add_message(provider_msa_id, msa_id, bounded_payload, schema_id)?;
+			let message = Self::add_message(provider_msa_id, None, bounded_payload, schema_id)?;
 
 			Ok(Some(T::WeightInfo::add_ipfs_message(cid.len() as u32, message.index as u32)).into())
 		}
@@ -239,8 +236,10 @@ pub mod pallet {
 
 			let provider_msa_id = Self::find_msa_id(&provider_key, None)?;
 			let msa_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
+			Self::ensure_valid_schema_grant(provider_msa_id.into(), on_behalf_of, schema_id)?;
 
-			let message = Self::add_message(provider_msa_id, msa_id, bounded_payload, schema_id)?;
+			let message =
+				Self::add_message(provider_msa_id, Some(msa_id), bounded_payload, schema_id)?;
 
 			Ok(Some(T::WeightInfo::add_onchain_message(
 				message.payload.len() as u32,
@@ -262,7 +261,7 @@ impl<T: Config> Pallet<T> {
 	/// * Result<Message<T::MaxMessagePayloadSizeBytes> - Returns the message stored.
 	pub fn add_message(
 		provider_msa_id: MessageSourceId,
-		msa_id: MessageSourceId,
+		msa_id: Option<MessageSourceId>,
 		payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes>,
 		schema_id: SchemaId,
 	) -> Result<Message<T::MaxMessagePayloadSizeBytes>, DispatchError> {
@@ -329,6 +328,31 @@ impl<T: Config> Pallet<T> {
 			.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
 
 		Ok((provider.into(), delegator.into()))
+	}
+
+	/// Check if provider is granted permission to publish on behalf of delegator.
+	/// # Arguments
+	/// * `provider` - An MSA of the provider.
+	/// * `delegator` - An MSA of the delegator.
+	/// * `schema_id` - Schema id of the message.
+	/// # Returns
+	/// * Result<(MessageSourceId, MessageSourceId, SchemaId), DispatchError> - Returns an error if the provider is not granted permission to publish on behalf of delegator.
+	pub fn ensure_valid_schema_grant(
+		provider: Provider,
+		delegator: Option<MessageSourceId>,
+		schema_id: SchemaId,
+	) -> Result<(MessageSourceId, MessageSourceId, SchemaId), DispatchError> {
+		match delegator {
+			Some(delegator) => {
+				T::AccountProvider::ensure_valid_schema_grant(
+					provider,
+					delegator.into(),
+					schema_id,
+				)?;
+				Ok((provider.into(), delegator.into(), schema_id))
+			},
+			None => Ok((provider.into(), provider.into(), schema_id)),
+		}
 	}
 
 	/// Gets a messages for a given schema-id and block-number.
