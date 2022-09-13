@@ -6,7 +6,7 @@ pipeline {
         label 'benchmark'
       }
    triggers {
-        issueCommentTrigger('.*release-benchmark*')
+        issueCommentTrigger('^release-benchmark*')
     }
   stages {
     // node configuration
