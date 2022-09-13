@@ -493,7 +493,6 @@
 <span id="487">487</span>
 <span id="488">488</span>
 <span id="489">489</span>
-<span id="490">490</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # Messages pallet</span>
 <span class="doccomment">//! A pallet for storing messages.</span>
 <span class="doccomment">//!</span>
@@ -799,8 +798,7 @@
 		<span class="ident">on_behalf_of</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span><span class="op">&gt;</span>,
 	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">sender_msa_id</span> <span class="op">=</span> <span class="ident">T::AccountProvider::ensure_valid_msa_key</span>(<span class="ident">key</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidMessageSourceAccount</span>)<span class="question-mark">?</span>
-			.<span class="ident">msa_id</span>;
+			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidMessageSourceAccount</span>)<span class="question-mark">?</span>;
 
 		<span class="kw">let</span> <span class="ident">message_source_id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">on_behalf_of</span> {
 			<span class="prelude-val">Some</span>(<span class="ident">delegator</span>) =&gt;

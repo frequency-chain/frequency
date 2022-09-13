@@ -177,28 +177,6 @@
 <span id="171">171</span>
 <span id="172">172</span>
 <span id="173">173</span>
-<span id="174">174</span>
-<span id="175">175</span>
-<span id="176">176</span>
-<span id="177">177</span>
-<span id="178">178</span>
-<span id="179">179</span>
-<span id="180">180</span>
-<span id="181">181</span>
-<span id="182">182</span>
-<span id="183">183</span>
-<span id="184">184</span>
-<span id="185">185</span>
-<span id="186">186</span>
-<span id="187">187</span>
-<span id="188">188</span>
-<span id="189">189</span>
-<span id="190">190</span>
-<span id="191">191</span>
-<span id="192">192</span>
-<span id="193">193</span>
-<span id="194">194</span>
-<span id="195">195</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">EncodeLike</span>, <span class="ident">Error</span>, <span class="ident">MaxEncodedLen</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">dispatch::DispatchResult</span>, <span class="ident">traits::Get</span>, <span class="ident">BoundedVec</span>};
 <span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
@@ -243,26 +221,6 @@
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Delegator</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">MessageSourceId</span> {
 	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">t</span>: <span class="ident">Delegator</span>) -&gt; <span class="ident">MessageSourceId</span> {
 		<span class="ident">t</span>.<span class="number">0</span>
-	}
-}
-
-<span class="doccomment">/// KeyInfo holds the information on the relationship between a key and an MSA</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">PartialEq</span>, <span class="ident">Default</span>, <span class="ident">MaxEncodedLen</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">KeyInfo</span> {
-	<span class="doccomment">/// The Message Source Account that this key is associated with</span>
-	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>,
-	<span class="doccomment">/// Prevent key addition replays</span>
-	<span class="kw">pub</span> <span class="ident">nonce</span>: <span class="ident">u32</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">KeyInfo</span> {
-	<span class="doccomment">/// Convert `KeyInfo` into `KeyInfoResponse`</span>
-	<span class="doccomment">/// # Arguments</span>
-	<span class="doccomment">/// * `key` - The `AccountId` for self</span>
-	<span class="doccomment">/// # Returns</span>
-	<span class="doccomment">/// * `KeyInfoResponse&lt;AccountId, BlockNumber&gt;`</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">map_to_response</span><span class="op">&lt;</span><span class="ident">AccountId</span>: <span class="ident">Clone</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key</span>: <span class="ident">AccountId</span>) -&gt; <span class="ident">KeyInfoResponse</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span> {
-		<span class="ident">KeyInfoResponse</span> { <span class="ident">key</span>, <span class="ident">msa_id</span>: <span class="self">self</span>.<span class="ident">msa_id</span>, <span class="ident">nonce</span>: <span class="self">self</span>.<span class="ident">nonce</span> }
 	}
 }
 
@@ -358,8 +316,8 @@
 	<span class="doccomment">/// # Arguments</span>
 	<span class="doccomment">/// * `key` - The `AccountId` to lookup</span>
 	<span class="doccomment">/// # Returns</span>
-	<span class="doccomment">/// * `Result&lt;KeyInfo, DispatchError&gt;`</span>
-	<span class="kw">fn</span> <span class="ident">ensure_valid_msa_key</span>(<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::AccountId</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">KeyInfo</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// * `Result&lt;MessageSourceId, DispatchError&gt;`</span>
+	<span class="kw">fn</span> <span class="ident">ensure_valid_msa_key</span>(<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::AccountId</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span>;
 
 	<span class="doccomment">/// Validates that the delegator and provider have a relationship at this point</span>
 	<span class="doccomment">/// # Arguments</span>
@@ -383,7 +341,7 @@
 	) -&gt; <span class="ident">DispatchResult</span>;
 }
 
-<span class="doccomment">/// RPC Response form of [`KeyInfo`]</span>
+<span class="doccomment">/// RPC Response for getting getting MSA ids</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">PartialEq</span>, <span class="ident">Default</span>, <span class="ident">MaxEncodedLen</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">KeyInfoResponse</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span> {
@@ -391,8 +349,6 @@
 	<span class="kw">pub</span> <span class="ident">key</span>: <span class="ident">AccountId</span>,
 	<span class="doccomment">/// The MSA associated with the `key`</span>
 	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>,
-	<span class="doccomment">/// The nonce value for signed updates to this data</span>
-	<span class="kw">pub</span> <span class="ident">nonce</span>: <span class="ident">u32</span>,
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_primitives" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (848090dcd 2022-07-22)" ></div>
