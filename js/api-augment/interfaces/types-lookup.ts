@@ -2415,7 +2415,6 @@ declare module '@polkadot/types/lookup' {
   interface PalletMessagesCall extends Enum {
     readonly isAddIpfsMessage: boolean;
     readonly asAddIpfsMessage: {
-      readonly onBehalfOf: Option<u64>;
       readonly schemaId: u16;
       readonly cid: Bytes;
       readonly payloadLength: u32;
@@ -2859,11 +2858,11 @@ declare module '@polkadot/types/lookup' {
   interface CommonPrimitivesMsaProviderInfo extends Struct {
     readonly permission: u8;
     readonly expired: u32;
-    readonly schemas: CommonPrimitivesMsaOrderedSetExt;
+    readonly schemas: CommonPrimitivesDsOrderedSetExt;
   }
 
-  /** @name CommonPrimitivesMsaOrderedSetExt (317) */
-  interface CommonPrimitivesMsaOrderedSetExt extends OrmlUtilitiesOrderedSet {}
+  /** @name CommonPrimitivesDsOrderedSetExt (317) */
+  interface CommonPrimitivesDsOrderedSetExt extends OrmlUtilitiesOrderedSet {}
 
   /** @name OrmlUtilitiesOrderedSet (318) */
   interface OrmlUtilitiesOrderedSet extends Vec<u16> {}
@@ -2909,7 +2908,7 @@ declare module '@polkadot/types/lookup' {
   interface PalletMessagesMessage extends Struct {
     readonly payload: Bytes;
     readonly providerMsaId: u64;
-    readonly msaId: u64;
+    readonly msaId: Option<u64>;
     readonly index: u16;
   }
 

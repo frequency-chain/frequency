@@ -2267,7 +2267,6 @@ export default {
   PalletMessagesCall: {
     _enum: {
       add_ipfs_message: {
-        onBehalfOf: 'Option<u64>',
         schemaId: 'u16',
         cid: 'Bytes',
         payloadLength: 'u32',
@@ -2624,12 +2623,12 @@ export default {
   CommonPrimitivesMsaProviderInfo: {
     permission: 'u8',
     expired: 'u32',
-    schemas: 'CommonPrimitivesMsaOrderedSetExt'
+    schemas: 'CommonPrimitivesDsOrderedSetExt'
   },
   /**
-   * Lookup317: common_primitives::msa::OrderedSetExt<T, S>
+   * Lookup317: common_primitives::ds::OrderedSetExt<T, S>
    **/
-  CommonPrimitivesMsaOrderedSetExt: 'OrmlUtilitiesOrderedSet',
+  CommonPrimitivesDsOrderedSetExt: 'OrmlUtilitiesOrderedSet',
   /**
    * Lookup318: orml_utilities::ordered_set::OrderedSet<T, S>
    **/
@@ -2659,7 +2658,7 @@ export default {
   PalletMessagesMessage: {
     payload: 'Bytes',
     providerMsaId: 'u64',
-    msaId: 'u64',
+    msaId: 'Option<u64>',
     index: 'u16'
   },
   /**
