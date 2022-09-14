@@ -198,58 +198,58 @@
 	<span class="comment">// Storage: Preimage StatusFor (r:1 w:1)</span>
 	<span class="comment">// Storage: Preimage PreimageFor (r:0 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">unnote_preimage</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">61_901_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">64_118_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Preimage StatusFor (r:1 w:1)</span>
 	<span class="comment">// Storage: Preimage PreimageFor (r:0 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">unnote_no_deposit_preimage</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">47_713_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">47_785_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Preimage StatusFor (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">request_preimage</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">59_317_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">68_408_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Preimage StatusFor (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">request_no_deposit_preimage</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">43_916_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">45_803_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Preimage StatusFor (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">request_unnoted_preimage</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">31_351_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">32_584_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Preimage StatusFor (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">request_requested_preimage</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">14_844_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">14_462_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Preimage StatusFor (r:1 w:1)</span>
 	<span class="comment">// Storage: Preimage PreimageFor (r:0 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">unrequest_preimage</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">47_518_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">46_610_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Preimage StatusFor (r:1 w:1)</span>
 	<span class="comment">// Storage: Preimage PreimageFor (r:0 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">unrequest_unnoted_preimage</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">35_816_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">33_560_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Preimage StatusFor (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">unrequest_multi_referenced_preimage</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">16_815_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">14_196_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}

@@ -103,27 +103,27 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">frame_system::Config</span><span class="op">&gt;</span> <span class="ident">pallet_utility::WeightInfo</span> <span class="kw">for</span> <span class="ident">SubstrateWeight</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 	<span class="doccomment">/// The range of component `c` is `[0, 1000]`.</span>
 	<span class="kw">fn</span> <span class="ident">batch</span>(<span class="ident">c</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">18_783_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 3_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">5_214_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">c</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">30_675_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 2_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">5_075_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">c</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="kw">fn</span> <span class="ident">as_derivative</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">7_933_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">7_292_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 	}
 	<span class="doccomment">/// The range of component `c` is `[0, 1000]`.</span>
 	<span class="kw">fn</span> <span class="ident">batch_all</span>(<span class="ident">c</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">21_949_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 3_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">5_460_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">c</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">26_216_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 2_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">5_325_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">c</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="kw">fn</span> <span class="ident">dispatch_as</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">17_851_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">17_693_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 	}
 	<span class="doccomment">/// The range of component `c` is `[0, 1000]`.</span>
 	<span class="kw">fn</span> <span class="ident">force_batch</span>(<span class="ident">c</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">23_835_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 4_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">5_196_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">c</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">30_507_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 3_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">5_104_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">c</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 }
 </code></pre></div>

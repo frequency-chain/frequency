@@ -243,9 +243,9 @@
 	<span class="comment">// Storage: Scheduler Lookup (r:0 w:1)</span>
 	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
 	<span class="kw">fn</span> <span class="ident">on_initialize_periodic_named_resolved</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">10_522_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 26_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">32_710_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">10_950_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 28_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">32_858_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">3</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>)))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
@@ -257,9 +257,9 @@
 	<span class="comment">// Storage: Scheduler Lookup (r:0 w:1)</span>
 	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
 	<span class="kw">fn</span> <span class="ident">on_initialize_named_resolved</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">6_281_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 28_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">26_039_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">9_000_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 27_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">25_838_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>)))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
@@ -270,9 +270,9 @@
 	<span class="comment">// Storage: Preimage StatusFor (r:1 w:1)</span>
 	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
 	<span class="kw">fn</span> <span class="ident">on_initialize_periodic_resolved</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">7_955_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">7_338_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			<span class="comment">// Standard Error: 30_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">28_277_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+			.<span class="ident">saturating_add</span>((<span class="number">28_387_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">3</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>)))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
@@ -283,9 +283,9 @@
 	<span class="comment">// Storage: Preimage StatusFor (r:1 w:1)</span>
 	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
 	<span class="kw">fn</span> <span class="ident">on_initialize_resolved</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">8_803_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 23_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">23_938_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">8_490_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 24_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">23_989_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>)))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
@@ -296,9 +296,9 @@
 	<span class="comment">// Storage: Scheduler Lookup (r:0 w:1)</span>
 	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
 	<span class="kw">fn</span> <span class="ident">on_initialize_named_aborted</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">8_500_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 14_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">9_673_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">9_633_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 15_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">9_697_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>)))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
@@ -308,9 +308,9 @@
 	<span class="comment">// Storage: Preimage PreimageFor (r:1 w:0)</span>
 	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
 	<span class="kw">fn</span> <span class="ident">on_initialize_aborted</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">7_709_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 9_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">5_623_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">9_399_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 11_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">5_591_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>)))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
@@ -319,9 +319,9 @@
 	<span class="comment">// Storage: Scheduler Lookup (r:0 w:1)</span>
 	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
 	<span class="kw">fn</span> <span class="ident">on_initialize_periodic_named</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">17_184_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 20_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">17_064_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">16_393_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 22_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">17_238_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>)))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
@@ -330,9 +330,9 @@
 	<span class="comment">// Storage: Scheduler Agenda (r:2 w:2)</span>
 	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
 	<span class="kw">fn</span> <span class="ident">on_initialize_periodic</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">14_827_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 18_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">12_819_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">14_897_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 20_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">12_796_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>)))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
@@ -342,9 +342,9 @@
 	<span class="comment">// Storage: Scheduler Lookup (r:0 w:1)</span>
 	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
 	<span class="kw">fn</span> <span class="ident">on_initialize_named</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">16_119_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 16_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">10_363_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">15_993_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 15_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">10_303_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>((<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>)))
@@ -352,18 +352,18 @@
 	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)</span>
 	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
 	<span class="kw">fn</span> <span class="ident">on_initialize</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">15_657_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 13_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">8_609_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">16_097_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 15_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">8_527_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)</span>
 	<span class="doccomment">/// The range of component `s` is `[0, 50]`.</span>
 	<span class="kw">fn</span> <span class="ident">schedule</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">23_987_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 2_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">82_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">24_300_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 3_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">94_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
@@ -371,9 +371,9 @@
 	<span class="comment">// Storage: Scheduler Lookup (r:0 w:1)</span>
 	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
 	<span class="kw">fn</span> <span class="ident">cancel</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">23_640_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 3_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">1_050_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">23_550_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 4_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">1_052_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
@@ -381,9 +381,9 @@
 	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)</span>
 	<span class="doccomment">/// The range of component `s` is `[0, 50]`.</span>
 	<span class="kw">fn</span> <span class="ident">schedule_named</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">28_681_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 3_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">115_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">28_446_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 4_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">136_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
@@ -391,9 +391,9 @@
 	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)</span>
 	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
 	<span class="kw">fn</span> <span class="ident">cancel_named</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">25_946_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">26_741_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			<span class="comment">// Standard Error: 6_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">1_070_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+			.<span class="ident">saturating_add</span>((<span class="number">1_039_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}

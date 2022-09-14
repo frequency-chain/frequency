@@ -277,9 +277,9 @@
 	<span class="comment">// Storage: Msa MessageSourceIdOf (r:1 w:1)</span>
 	<span class="comment">// Storage: Msa MsaKeysOf (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">create</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">55_861_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">55_788_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			<span class="comment">// Standard Error: 2_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">16_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+			.<span class="ident">saturating_add</span>((<span class="number">17_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">3</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">3</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
@@ -288,51 +288,51 @@
 	<span class="comment">// Storage: Msa MsaKeysOf (r:1 w:1)</span>
 	<span class="comment">// Storage: Msa ProviderInfoOf (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">create_sponsored_account_with_delegation</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">103_848_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">105_321_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">5</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">4</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Msa MessageSourceIdOf (r:1 w:0)</span>
 	<span class="comment">// Storage: Msa ProviderInfoOf (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">revoke_delegation_by_provider</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">54_741_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 2_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">14_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">51_411_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 1_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">17_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Msa MessageSourceIdOf (r:2 w:1)</span>
 	<span class="comment">// Storage: Msa MsaKeysOf (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">add_key_to_msa</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">92_158_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">92_022_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">3</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Msa MessageSourceIdOf (r:2 w:1)</span>
 	<span class="comment">// Storage: Msa MsaKeysOf (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">delete_msa_key</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">33_652_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">34_563_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">3</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Msa MessageSourceIdOf (r:2 w:0)</span>
 	<span class="comment">// Storage: Msa ProviderInfoOf (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">add_provider_to_msa</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">91_333_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">90_859_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">3</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Msa MessageSourceIdOf (r:1 w:0)</span>
 	<span class="comment">// Storage: Msa ProviderInfoOf (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">revoke_msa_delegation_by_delegator</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">26_233_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">27_140_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Msa MessageSourceIdOf (r:1 w:0)</span>
 	<span class="comment">// Storage: Msa ProviderRegistry (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">register_provider</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">22_983_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">23_971_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
@@ -344,9 +344,9 @@
 	<span class="comment">// Storage: Msa MessageSourceIdOf (r:1 w:1)</span>
 	<span class="comment">// Storage: Msa MsaKeysOf (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">create</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">55_861_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">55_788_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			<span class="comment">// Standard Error: 2_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">16_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+			.<span class="ident">saturating_add</span>((<span class="number">17_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">reads</span>(<span class="number">3</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">writes</span>(<span class="number">3</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
@@ -355,51 +355,51 @@
 	<span class="comment">// Storage: Msa MsaKeysOf (r:1 w:1)</span>
 	<span class="comment">// Storage: Msa ProviderInfoOf (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">create_sponsored_account_with_delegation</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">103_848_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">105_321_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">reads</span>(<span class="number">5</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">writes</span>(<span class="number">4</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Msa MessageSourceIdOf (r:1 w:0)</span>
 	<span class="comment">// Storage: Msa ProviderInfoOf (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">revoke_delegation_by_provider</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		(<span class="number">54_741_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
-			<span class="comment">// Standard Error: 2_000</span>
-			.<span class="ident">saturating_add</span>((<span class="number">14_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
+		(<span class="number">51_411_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+			<span class="comment">// Standard Error: 1_000</span>
+			.<span class="ident">saturating_add</span>((<span class="number">17_000</span> <span class="kw">as</span> <span class="ident">Weight</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">reads</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Msa MessageSourceIdOf (r:2 w:1)</span>
 	<span class="comment">// Storage: Msa MsaKeysOf (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">add_key_to_msa</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">92_158_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">92_022_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">reads</span>(<span class="number">3</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Msa MessageSourceIdOf (r:2 w:1)</span>
 	<span class="comment">// Storage: Msa MsaKeysOf (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">delete_msa_key</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">33_652_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">34_563_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">reads</span>(<span class="number">3</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Msa MessageSourceIdOf (r:2 w:0)</span>
 	<span class="comment">// Storage: Msa ProviderInfoOf (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">add_provider_to_msa</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">91_333_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">90_859_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">reads</span>(<span class="number">3</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Msa MessageSourceIdOf (r:1 w:0)</span>
 	<span class="comment">// Storage: Msa ProviderInfoOf (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">revoke_msa_delegation_by_delegator</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">26_233_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">27_140_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">reads</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
 	<span class="comment">// Storage: Msa MessageSourceIdOf (r:1 w:0)</span>
 	<span class="comment">// Storage: Msa ProviderRegistry (r:1 w:1)</span>
 	<span class="kw">fn</span> <span class="ident">register_provider</span>() -&gt; <span class="ident">Weight</span> {
-		(<span class="number">22_983_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
+		(<span class="number">23_971_000</span> <span class="kw">as</span> <span class="ident">Weight</span>)
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">reads</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 			.<span class="ident">saturating_add</span>(<span class="ident">RocksDbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">Weight</span>))
 	}
