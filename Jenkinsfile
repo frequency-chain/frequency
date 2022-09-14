@@ -2,15 +2,27 @@
 
 pipeline {
 
-  agent {
-        label 'benchmark'
-      }
+  agent
+      {
+     label 'benchmark'
+     }
    triggers {
         issueCommentTrigger('^\\/run-benchmark.*')
     }
   stages {
-    // node configuration
+    // checking git comment
+    stage ('checking git comment') {
+         steps {  
+             script {
+                 deleteDir()
+             checkout scm
+             env.GIT_COMMENT = sh(script:'git log -1 HEAD --pretty=format:%s', returnStdout: true).trim()
+
+}
+}
+}
     stage('node rust config') {
+      when { expression { return env.GIT_COMMENT == 'run-benchmark'} }
       steps {
         deleteDir()
         checkout scm
@@ -25,16 +37,5 @@ pipeline {
     }
 
   }
-	    // Post-build actions
-    post {
-        always {
-            script {
-                BUILD_USER = getBuildUser()
-            }
-            echo 'I will always say hello in the console.'
-            slackSend channel: '#slack-test-channel',
-                color: COLOR_MAP[currentBuild.currentResult],
-                message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} by ${BUILD_USER}\n More info at: ${env.BUILD_URL}"
-        }
-    }
 }
+
