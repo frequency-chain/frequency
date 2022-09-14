@@ -54,6 +54,20 @@ We run benchmarks with and recommend the same [reference hardware specified by P
 At this point you should have `./target/release` directory generated locally with compiled
 project files.
 
+### asdf Support:
+Install the required plugins for asdf:
+```sh
+asdf plugin-add rust
+asdf plugin-add make
+asdf plugin-add cmake [https://github.com/srivathsanmurali/asdf-cmake.git](https://github.com/srivathsanmurali/asdf-cmake.git)
+```
+Install the dependency versions declared in `.tool-versions`
+```shell
+asdf install
+```
+
+NOTE: I could find no clang plugin that worked so your system still needs clang to be installed.
+
 ## Remote instance such as AWS EC2
 For remote instances running Linux, if you want to check out and build such as on an AWS EC2 instance, the process is slightly different to what is in the [Substrate documentation](https://docs.substrate.io/main-docs/install/linux/).
 ### Ubuntu
