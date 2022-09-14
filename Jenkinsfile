@@ -22,7 +22,7 @@ pipeline {
 }
 }
     stage('node rust config') {
-      when { expression { return env.GIT_COMMENT == '\\/run-benchmark.*'} }
+      when { expression { return env.GIT_COMMENT == 'run-benchmark'} }
       steps {
         deleteDir()
         checkout scm
