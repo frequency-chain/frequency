@@ -398,6 +398,10 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        * Fetch Keys for an MSA Id
        **/
       getMsaKeys: AugmentedRpc<(msa_id: MessageSourceId | AnyNumber | Uint8Array) => Observable<Vec<KeyInfoResponse>>>;
+      /**
+       * Fetch the list of schema ids that a delegator has granted to provider
+       **/
+      grantedSchemaIds: AugmentedRpc<(delegator_msa_id: MessageSourceId | AnyNumber | Uint8Array, provider_msa_id: MessageSourceId | AnyNumber | Uint8Array) => Observable<Vec<SchemaId>>>;
     };
     net: {
       /**

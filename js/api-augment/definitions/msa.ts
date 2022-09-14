@@ -34,6 +34,20 @@ export default {
       ],
       type: "Vec<(MessageSourceId, bool)>",
     },
+    grantedSchemaIds: {
+      description: "Fetch the list of schema ids that a delegator has granted to provider",
+      params: [
+        {
+          name: "delegator_msa_id",
+          type: "MessageSourceId",
+        },
+        {
+          name: "provider_msa_id",
+          type: "MessageSourceId",
+        },
+      ],
+      type: "Vec<SchemaId>",
+    },
   },
   types: {
     MessageSourceId: "u64",

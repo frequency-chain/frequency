@@ -935,6 +935,10 @@ impl_runtime_apis! {
 				Err(_) => Err(sp_runtime::DispatchError::Other("Invalid Delegation")),
 			}
 		}
+
+		fn get_granted_schemas(delegator: Delegator, provider: Provider) -> Result<Option<Vec<SchemaId>>, DispatchError> {
+			Msa::get_granted_schemas(delegator, provider)
+		}
 	}
 
 	#[cfg(feature = "try-runtime")]
