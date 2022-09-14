@@ -49,7 +49,7 @@ pipeline {
                  // first of all, notify the team
            slackSend (color: "${env.SLACK_COLOR_INFO}",
                    channel: "${params.SLACK_CHANNEL_1}",
-                   message: "*STARTED:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} by ${env.USER_ID}\n More info at: (<${env.BUILD_URL}|Open>)")
+                   message: "*STARTED:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} by ${env.BUILD_USER_ID}\n More info at: (<${env.BUILD_URL}|Open>)")
 
         sh 'mkdir -p /data/tmp && export TMPDIR=/data/tmp &&  export PATH="/data/.cargo/bin:$PATH" && ln -snf /data/.cargo /home/ubuntu/.cargo && rustup install nightly && rustup default nightly && rustup target add wasm32-unknown-unknown --toolchain nightly && make benchmarks'
         sh "git config user.email \"jenkins@frequency.xyz\""
