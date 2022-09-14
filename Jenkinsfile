@@ -9,13 +9,17 @@ pipeline {
    triggers {
         issueCommentTrigger('^\\/run-benchmark.*')
     }
-    parameters {
-
-    string(name: 'SLACK_CHANNEL_1',
-           description: 'Default Slack channel to send messages to',
-           defaultValue: '#jenkins-job-notification')
-
-  } 
+  options {
+        timestamps ()
+        timeout(time: 3, unit: 'HOURS')   // timeout on whole pipeline job
+    }
+//    parameters {
+//
+//    string(name: 'SLACK_CHANNEL_1',
+//           description: 'Default Slack channel to send messages to',
+//           defaultValue: '#jenkins-job-notification')
+//
+//  } 
   environment {
 
     // Slack configuration
@@ -25,6 +29,8 @@ pipeline {
     SLACK_COLOR_GOOD    = '#3EB991'
     // String comparision
     GIT_CMP = '/run-benchmark'
+    //Slack channel send notification
+    SLACK_CHANNEL_1 = '#jenkins-job-notification'
   } 
 
   stages {
@@ -68,7 +74,7 @@ post {
 
       echo "Sending message to Slack"
       slackSend (color: "${env.SLACK_COLOR_WARNING}",
-                 channel: "${params.SLACK_CHANNEL_1}",
+                 channel: "${env.SLACK_CHANNEL_1}",
                  message: "*ABORTED:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} by ${env.USER_ID}\n More info at: ${env.BUILD_URL}")
     } // aborted
 
@@ -76,14 +82,14 @@ post {
 
       echo "Sending message to Slack"
       slackSend (color: "${env.SLACK_COLOR_DANGER}",
-                 channel: "${params.SLACK_CHANNEL_1}",
+                 channel: "${env.SLACK_CHANNEL_1}",
                  message: "*FAILED:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} by ${env.USER_ID}\n More info at: ${env.BUILD_URL}")
     } // failure
 
     success {
       echo "Sending message to Slack"
       slackSend (color: "${env.SLACK_COLOR_GOOD}",
-                 channel: "${params.SLACK_CHANNEL_1}",
+                 channel: "${env.SLACK_CHANNEL_1}",
                  message: "*SUCCESS:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} by ${env.USER_ID}\n More info at: ${env.BUILD_URL}")
     } // success
 
