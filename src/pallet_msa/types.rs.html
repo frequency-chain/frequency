@@ -54,14 +54,18 @@
 <span id="48">48</span>
 <span id="49">49</span>
 <span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Types for the MSA Pallet</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
+
 <span class="kw">use</span> <span class="ident">core::fmt::Debug</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">common_primitives::msa</span>::{<span class="ident">Delegator</span>, <span class="ident">KeyInfoResponse</span>, <span class="ident">MessageSourceId</span>, <span class="ident">Provider</span>};
-<span class="kw">use</span> <span class="ident">common_primitives::schema::SchemaId</span>;
+<span class="kw">use</span> <span class="ident">common_primitives</span>::{<span class="ident">node::BlockNumber</span>, <span class="ident">schema::SchemaId</span>};
 
 <span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
 
@@ -75,6 +79,8 @@
 	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>,
 	<span class="doccomment">/// A cryptographic nonce.</span>
 	<span class="kw">pub</span> <span class="ident">nonce</span>: <span class="ident">u32</span>,
+	<span class="doccomment">/// The block number at which the signed proof for add_key_to_msa expires.</span>
+	<span class="kw">pub</span> <span class="ident">expiration</span>: <span class="ident">BlockNumber</span>,
 }
 
 <span class="doccomment">/// Structure that is signed for granting permissions to a Provider</span>

@@ -1034,6 +1034,43 @@
 <span id="1028">1028</span>
 <span id="1029">1029</span>
 <span id="1030">1030</span>
+<span id="1031">1031</span>
+<span id="1032">1032</span>
+<span id="1033">1033</span>
+<span id="1034">1034</span>
+<span id="1035">1035</span>
+<span id="1036">1036</span>
+<span id="1037">1037</span>
+<span id="1038">1038</span>
+<span id="1039">1039</span>
+<span id="1040">1040</span>
+<span id="1041">1041</span>
+<span id="1042">1042</span>
+<span id="1043">1043</span>
+<span id="1044">1044</span>
+<span id="1045">1045</span>
+<span id="1046">1046</span>
+<span id="1047">1047</span>
+<span id="1048">1048</span>
+<span id="1049">1049</span>
+<span id="1050">1050</span>
+<span id="1051">1051</span>
+<span id="1052">1052</span>
+<span id="1053">1053</span>
+<span id="1054">1054</span>
+<span id="1055">1055</span>
+<span id="1056">1056</span>
+<span id="1057">1057</span>
+<span id="1058">1058</span>
+<span id="1059">1059</span>
+<span id="1060">1060</span>
+<span id="1061">1061</span>
+<span id="1062">1062</span>
+<span id="1063">1063</span>
+<span id="1064">1064</span>
+<span id="1065">1065</span>
+<span id="1066">1066</span>
+<span id="1067">1067</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The MSA pallet provides functionality for handling Message Source Accounts.</span>
@@ -1096,8 +1133,9 @@
 <span class="kw">use</span> <span class="ident">common_primitives</span>::{
 	<span class="ident">msa</span>::{
 		<span class="ident">AccountProvider</span>, <span class="ident">Delegator</span>, <span class="ident">KeyInfoResponse</span>, <span class="ident">OrderedSetExt</span>, <span class="ident">Provider</span>, <span class="ident">ProviderInfo</span>,
-		<span class="ident">ProviderMetadata</span>,
+		<span class="ident">ProviderMetadata</span>, <span class="ident">EXPIRATION_BLOCK_VALIDITY_GAP</span>,
 	},
+	<span class="ident">node::BlockNumber</span>,
 	<span class="ident">schema::SchemaId</span>,
 };
 <span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">dispatch::DispatchResult</span>, <span class="ident">ensure</span>, <span class="ident">traits::IsSubType</span>, <span class="ident">weights::DispatchInfo</span>};
@@ -1309,6 +1347,10 @@
 		<span class="ident">ExceedsMaxSchemaGrants</span>,
 		<span class="doccomment">/// Provider is not permitted to publish for given schema_id</span>
 		<span class="ident">SchemaNotGranted</span>,
+		<span class="doccomment">/// The submited proof has expired; the current block is less the expiration block</span>
+		<span class="ident">ProofHasExpired</span>,
+		<span class="doccomment">/// The submitted proof expiration block is too far in the future</span>
+		<span class="ident">ProofNotYetValid</span>,
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::call</span>]</span>
@@ -1491,6 +1533,9 @@
 		<span class="doccomment">/// - Returns [`AddKeySignatureVerificationFailed`](Error::AddKeySignatureVerificationFailed) if `key` is not a valid signer of the provided `add_key_payload`.</span>
 		<span class="doccomment">/// - Returns [`NoKeyExists`](Error::NoKeyExists) if the MSA id for the account in `add_key_payload` does not exist.</span>
 		<span class="doccomment">/// - Returns [&#39;NotMsaOwner&#39;](Error::NotMsaOwner) if Origin&#39;s MSA is not the same as &#39;add_key_payload` MSA. Essentially you can only add a key to your own MSA.</span>
+		<span class="doccomment">/// - Returns [&#39;ProofHasExpired&#39;](Error::ProofHasExpired) if the current block is less than the `expired` bock number set in `AddKeyData`.</span>
+		<span class="doccomment">/// - Returns [&#39;ProofNotYetValid&#39;](Error::ProofNotYetValid) if the `expired` bock number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.</span>
+		<span class="doccomment">///</span>
 		<span class="doccomment">///</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="ident">T::WeightInfo::add_key_to_msa</span>())]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_key_to_msa</span>(
@@ -1503,6 +1548,8 @@
 
 			<span class="ident"><span class="self">Self</span>::verify_signature</span>(<span class="ident">proof</span>, <span class="ident">key</span>.<span class="ident">clone</span>(), <span class="ident">add_key_payload</span>.<span class="ident">encode</span>())
 				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AddKeySignatureVerificationFailed</span>)<span class="question-mark">?</span>;
+
+			<span class="ident"><span class="self">Self</span>::ensure_block_is_valid</span>(<span class="ident">add_key_payload</span>.<span class="ident">expiration</span>)<span class="question-mark">?</span>;
 
 			<span class="kw">let</span> <span class="ident">msa_id</span> <span class="op">=</span> <span class="ident">add_key_payload</span>.<span class="ident">msa_id</span>;
 
@@ -1668,6 +1715,33 @@
 		<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">T::ConvertIntoAccountId32::convert</span>(<span class="ident">signer</span>);
 		<span class="kw">let</span> <span class="ident">wrapped_payload</span> <span class="op">=</span> <span class="ident">wrap_binary_data</span>(<span class="ident">payload</span>);
 		<span class="macro">ensure!</span>(<span class="ident">signature</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">wrapped_payload</span>[..], <span class="kw-2">&amp;</span><span class="ident">key</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidSignature</span>);
+
+		<span class="prelude-val">Ok</span>(())
+	}
+
+	<span class="doccomment">/// Ensure that the expiration block number has not already passed and is also not too far into the future.</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// # Arguments</span>
+	<span class="doccomment">/// * `expiration` - A block number that which validity or expiration is being checked.</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// # Returns</span>
+	<span class="doccomment">/// * [`DispatchResult`]</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// # Errors</span>
+	<span class="doccomment">/// * [Error::ProofHasExpired] - If the current block is less than the `expired` bock number set in `AddKeyData`.</span>
+	<span class="doccomment">/// * [Error::ProofNotYetValid] - If the `expired` bock number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.</span>
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_block_is_valid</span>(<span class="ident">expiration</span>: <span class="ident">BlockNumber</span>) -&gt; <span class="ident">DispatchResult</span> {
+		<span class="kw">let</span> <span class="ident">current_block</span>: <span class="ident">BlockNumber</span> <span class="op">=</span>
+			<span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::block_number</span>().<span class="ident">try_into</span>().<span class="ident">ok</span>().<span class="ident">unwrap</span>();
+		<span class="macro">ensure!</span>(<span class="ident">current_block</span> <span class="op">&lt;</span> <span class="ident">expiration</span>.<span class="ident">into</span>(), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProofHasExpired</span>);
+
+		<span class="comment">// If gap between the current block and the expiration block is larger than EXPIRATION_BLOCK_VALIDITY_GAP,</span>
+		<span class="comment">// the proof is too var into the future and return Error::&lt;T&gt;::ProofNotYetValid.</span>
+		<span class="kw">let</span> <span class="ident">blocks_until_expiration</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">expiration</span> <span class="op">-</span> <span class="ident">current_block</span>;
+		<span class="macro">ensure!</span>(
+			<span class="ident">blocks_until_expiration</span> <span class="op">&lt;</span> <span class="ident">EXPIRATION_BLOCK_VALIDITY_GAP</span>,
+			<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProofNotYetValid</span>
+		);
 
 		<span class="prelude-val">Ok</span>(())
 	}

@@ -177,6 +177,10 @@
 <span id="171">171</span>
 <span id="172">172</span>
 <span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">EncodeLike</span>, <span class="ident">Error</span>, <span class="ident">MaxEncodedLen</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">dispatch::DispatchResult</span>, <span class="ident">traits::Get</span>, <span class="ident">BoundedVec</span>};
 <span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
@@ -186,6 +190,10 @@
 <span class="kw">use</span> <span class="ident">sp_std::prelude::Vec</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">ds::OrderedSetExt</span>, <span class="ident">schema::SchemaId</span>};
+
+<span class="doccomment">/// The gap between the current block and a future expiring block allowed when validating signature proofs.</span>
+<span class="doccomment">/// 150 blocks at 6 seconds per block would equate to a 15 minute gap.</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EXPIRATION_BLOCK_VALIDITY_GAP</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">150</span>;
 
 <span class="doccomment">/// Message Source Id or msaId is the unique identifier for Message Source Accounts</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">MessageSourceId</span> <span class="op">=</span> <span class="ident">u64</span>;
