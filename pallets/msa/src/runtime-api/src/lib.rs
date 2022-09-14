@@ -18,5 +18,7 @@ sp_api::decl_runtime_apis! {
 		fn get_msa_id(key: AccountId) -> Result<Option<MessageSourceId>, DispatchError>;
 
 		fn has_delegation(delegator: Delegator, provider: Provider) -> Result<bool, DispatchError>;
+
+		fn get_granted_schemas(delegator: Delegator, provider: Provider) -> Result<Option<Vec<SchemaId>>, DispatchError>;
 	}
 }

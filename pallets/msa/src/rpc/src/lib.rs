@@ -1,6 +1,9 @@
 use codec::Codec;
 use common_helpers::rpc::*;
-use common_primitives::msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider};
+use common_primitives::{
+	msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider},
+	schema::SchemaId,
+};
 
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
@@ -27,6 +30,13 @@ pub trait MsaApi<BlockHash, AccountId> {
 		delegator_msa_ids: Vec<MessageSourceId>,
 		provider_msa_id: MessageSourceId,
 	) -> RpcResult<Vec<(MessageSourceId, bool)>>;
+
+	#[method(name = "msa_grantedSchemaIds")]
+	fn get_granted_schemas(
+		&self,
+		delegator_msa_id: MessageSourceId,
+		provider_msa_id: MessageSourceId,
+	) -> RpcResult<Option<Vec<SchemaId>>>;
 }
 
 /// A struct that implements the `MessagesApi`.
@@ -83,5 +93,18 @@ where
 				(id, map_rpc_result(api.has_delegation(&at, delegator, provider)).unwrap())
 			})
 			.collect())
+	}
+
+	fn get_granted_schemas(
+		&self,
+		delegator_msa_id: MessageSourceId,
+		provider_msa_id: MessageSourceId,
+	) -> RpcResult<Option<Vec<SchemaId>>> {
+		let api = self.client.runtime_api();
+		let at = BlockId::hash(self.client.info().best_hash);
+		let delegator = Delegator(delegator_msa_id);
+		let provider = Provider(provider_msa_id);
+		let runtime_api_result = api.get_granted_schemas(&at, delegator, provider);
+		map_rpc_result(runtime_api_result)
 	}
 }
