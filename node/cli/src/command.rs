@@ -100,6 +100,14 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		#[cfg(feature = "frequency-rococo-testnet")]
 		"frequency-rococo" | "rococo" | "testnet" =>
 			Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet()),
+		#[cfg(feature = "frequency")]
+		path => Box::new(chain_spec::frequency::ChainSpec::from_json_file(std::path::PathBuf::from(
+			path,
+		))?),
+		#[cfg(not(feature = "frequency-rococo-testnet"))]
+		path => Box::new(chain_spec::frequency_rococo::ChainSpec::from_json_file(
+			std::path::PathBuf::from(path),
+		)?),
 		#[cfg(feature = "frequency-rococo-local")]
 		path => Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(
 			std::path::PathBuf::from(path),
