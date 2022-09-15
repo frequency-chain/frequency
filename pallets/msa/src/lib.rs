@@ -60,8 +60,9 @@ use codec::{Decode, Encode};
 use common_primitives::{
 	msa::{
 		AccountProvider, Delegator, KeyInfoResponse, OrderedSetExt, Provider, ProviderInfo,
-		ProviderMetadata,
+		ProviderMetadata, EXPIRATION_BLOCK_VALIDITY_GAP,
 	},
+	node::BlockNumber,
 	schema::SchemaId,
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
@@ -275,6 +276,10 @@ pub mod pallet {
 		SchemaNotGranted,
 		/// The operation was attempted with a non-provider MSA
 		ProviderNotRegistered,
+		/// The submited proof has expired; the current block is less the expiration block
+		ProofHasExpired,
+		/// The submitted proof expiration block is too far in the future
+		ProofNotYetValid,
 	}
 
 	#[pallet::call]
@@ -473,6 +478,9 @@ pub mod pallet {
 		/// - Returns [`AddKeySignatureVerificationFailed`](Error::AddKeySignatureVerificationFailed) if `key` is not a valid signer of the provided `add_key_payload`.
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if the MSA id for the account in `add_key_payload` does not exist.
 		/// - Returns ['NotMsaOwner'](Error::NotMsaOwner) if Origin's MSA is not the same as 'add_key_payload` MSA. Essentially you can only add a key to your own MSA.
+		/// - Returns ['ProofHasExpired'](Error::ProofHasExpired) if the current block is less than the `expired` bock number set in `AddKeyData`.
+		/// - Returns ['ProofNotYetValid'](Error::ProofNotYetValid) if the `expired` bock number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.
+		///
 		///
 		#[pallet::weight(T::WeightInfo::add_key_to_msa())]
 		pub fn add_key_to_msa(
@@ -485,6 +493,8 @@ pub mod pallet {
 
 			Self::verify_signature(proof, key.clone(), add_key_payload.encode())
 				.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
+
+			Self::ensure_block_is_valid(add_key_payload.expiration)?;
 
 			let msa_id = add_key_payload.msa_id;
 
@@ -650,6 +660,33 @@ impl<T: Config> Pallet<T> {
 		let key = T::ConvertIntoAccountId32::convert(signer);
 		let wrapped_payload = wrap_binary_data(payload);
 		ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
+
+		Ok(())
+	}
+
+	/// Ensure that the expiration block number has not already passed and is also not too far into the future.
+	///
+	/// # Arguments
+	/// * `expiration` - A block number that which validity or expiration is being checked.
+	///
+	/// # Returns
+	/// * [`DispatchResult`]
+	///
+	/// # Errors
+	/// * [Error::ProofHasExpired] - If the current block is less than the `expired` bock number set in `AddKeyData`.
+	/// * [Error::ProofNotYetValid] - If the `expired` bock number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.
+	pub fn ensure_block_is_valid(expiration: BlockNumber) -> DispatchResult {
+		let current_block: BlockNumber =
+			frame_system::Pallet::<T>::block_number().try_into().ok().unwrap();
+		ensure!(current_block < expiration.into(), Error::<T>::ProofHasExpired);
+
+		// If gap between the current block and the expiration block is larger than EXPIRATION_BLOCK_VALIDITY_GAP,
+		// the proof is too var into the future and return Error::<T>::ProofNotYetValid.
+		let blocks_until_expiration: BlockNumber = expiration - current_block;
+		ensure!(
+			blocks_until_expiration < EXPIRATION_BLOCK_VALIDITY_GAP,
+			Error::<T>::ProofNotYetValid
+		);
 
 		Ok(())
 	}
