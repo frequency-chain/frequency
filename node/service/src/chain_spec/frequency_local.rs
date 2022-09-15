@@ -27,9 +27,9 @@ pub fn local_testnet_config() -> ChainSpec {
 
 	ChainSpec::from_genesis(
 		// Name
-		"Local Testnet",
+		"Frequency Local Testnet",
 		// ID
-		"local_testnet",
+		"frequency-local",
 		ChainType::Local,
 		move || {
 			testnet_genesis(

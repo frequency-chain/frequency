@@ -2655,8 +2655,6 @@ dependencies = [
  "cumulus-primitives-core",
  "derive_more",
  "frame-benchmarking-cli",
- "frequency-rococo-runtime",
- "frequency-runtime",
  "frequency-service",
  "hex-literal",
  "log",

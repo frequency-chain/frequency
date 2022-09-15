@@ -18,8 +18,6 @@ serde = {version = "1.0.144", features = ["derive"]}
 
 # Frequency Runtime
 common-primitives = {default-features = false, path = "../../common/primitives"}
-frequency-rococo-runtime = {path = "../../runtime/frequency-rococo", optional = true}
-frequency-runtime = {path = "../../runtime/frequency", optional = true}
 frequency-service = {package = "frequency-service", path = "../service", default-features = false, optional = true}
 
 # Substrate

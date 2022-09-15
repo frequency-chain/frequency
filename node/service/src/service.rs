@@ -1,6 +1,5 @@
 #![allow(unused_imports)]
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
-
 // std
 use std::{sync::Arc, time::Duration};
 
@@ -26,6 +25,8 @@ use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayC
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 
 // Substrate Imports
+pub use futures::stream::StreamExt;
+use polkadot_service::CollatorPair;
 use sc_client_api::ExecutorProvider;
 use sc_consensus::LongestChain;
 use sc_executor::NativeElseWasmExecutor;
@@ -34,13 +35,10 @@ use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, Ta
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::ConstructRuntimeApi;
 use sp_blockchain::HeaderBackend;
+pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::BlakeTwo256;
 use substrate_prometheus_endpoint::Registry;
-
-pub use futures::stream::StreamExt;
-use polkadot_service::CollatorPair;
-pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
 type FullBackend = TFullBackend<Block>;
 
@@ -48,54 +46,72 @@ type MaybeFullSelectChain = Option<LongestChain<FullBackend, Block>>;
 
 /// Native executor instance for frequency mainnet.
 #[cfg(feature = "frequency")]
-pub struct FrequencyRuntimeExecutor;
+pub mod frequency_executor {
+	pub use frequency_runtime;
 
-#[cfg(feature = "frequency")]
-impl sc_executor::NativeExecutionDispatch for FrequencyRuntimeExecutor {
-	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+	/// Native executor instance for frequency mainnet.
+	pub struct FrequencyRuntimeExecutor;
 
-	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		frequency_runtime::api::dispatch(method, data)
-	}
+	impl sc_executor::NativeExecutionDispatch for FrequencyRuntimeExecutor {
+		type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
-	fn native_version() -> sc_executor::NativeVersion {
-		frequency_runtime::native_version()
+		fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+			frequency_runtime::api::dispatch(method, data)
+		}
+
+		fn native_version() -> sc_executor::NativeVersion {
+			frequency_runtime::native_version()
+		}
 	}
 }
-
 /// Native executor instance for frequency local.
 #[cfg(feature = "frequency-rococo-local")]
-pub struct FrequencyLocalRuntimeExecutor;
+pub mod frequency_local_executor {
+	pub use frequency_rococo_runtime;
 
-#[cfg(feature = "frequency-rococo-local")]
-impl sc_executor::NativeExecutionDispatch for FrequencyLocalRuntimeExecutor {
-	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+	/// Native executor instance for frequency local.
+	pub struct FrequencyLocalRuntimeExecutor;
 
-	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		frequency_rococo_runtime::api::dispatch(method, data)
-	}
+	impl sc_executor::NativeExecutionDispatch for FrequencyLocalRuntimeExecutor {
+		type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
-	fn native_version() -> sc_executor::NativeVersion {
-		frequency_rococo_runtime::native_version()
+		fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+			frequency_rococo_runtime::api::dispatch(method, data)
+		}
+
+		fn native_version() -> sc_executor::NativeVersion {
+			frequency_rococo_runtime::native_version()
+		}
 	}
 }
-
 /// Native executor instance for frequency rococo testnet
 #[cfg(feature = "frequency-rococo-testnet")]
-pub struct FrequencyRococoRuntimeExecutor;
+pub mod frequency_rococo_executor {
+	pub use frequency_rococo_runtime;
 
-#[cfg(feature = "frequency-rococo-testnet")]
-impl sc_executor::NativeExecutionDispatch for FrequencyRococoRuntimeExecutor {
-	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+	/// Native executor instance for frequency rococo testnet
+	pub struct FrequencyRococoRuntimeExecutor;
 
-	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		frequency_rococo_runtime::api::dispatch(method, data)
-	}
+	impl sc_executor::NativeExecutionDispatch for FrequencyRococoRuntimeExecutor {
+		type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
-	fn native_version() -> sc_executor::NativeVersion {
-		frequency_rococo_runtime::native_version()
+		fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+			frequency_rococo_runtime::api::dispatch(method, data)
+		}
+
+		fn native_version() -> sc_executor::NativeVersion {
+			frequency_rococo_runtime::native_version()
+		}
 	}
 }
+#[cfg(feature = "frequency")]
+pub use frequency_executor::*;
+
+#[cfg(feature = "frequency-rococo-local")]
+pub use frequency_local_executor::*;
+
+#[cfg(feature = "frequency-rococo-testnet")]
+pub use frequency_rococo_executor::*;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///

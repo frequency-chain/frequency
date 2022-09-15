@@ -1,10 +1,19 @@
 #![allow(missing_docs)]
-use common_primitives::node::{AccountId, AuraId, Signature};
+use common_primitives::node::{AccountId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::Properties;
 use serde::{Deserialize, Serialize};
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
+
+#[cfg(feature = "frequency")]
+use frequency_runtime::AuraId;
+
+#[cfg(feature = "frequency-rococo-local")]
+use frequency_rococo_runtime::AuraId;
+
+#[cfg(feature = "frequency-rococo-testnet")]
+use frequency_rococo_runtime::AuraId;
 
 #[cfg(feature = "frequency")]
 pub mod frequency;
