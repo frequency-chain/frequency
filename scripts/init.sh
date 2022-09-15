@@ -32,12 +32,14 @@ stop-relay-chain)
 
 start-frequency-docker)
   echo "Starting frequency container with Alice..."
+  cd docker
   docker-compose up --build collator_frequency
   ;;
 
 stop-frequency-docker)
   echo "Stopping frequency container with Alice..."
-  docker-compose down collator_frequency
+  cd docker
+  docker-compose down
   ;;
 
 start-frequency)
@@ -175,7 +177,7 @@ upgrade-frequency)
   wasm_location=$root_dir/target/upgrade/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.compressed.wasm
 
   ./scripts/runtime-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
-  
+
   ./scripts/enact-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
 
   ;;
