@@ -921,9 +921,10 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_msa_runtime_api::MsaApi<Block, AccountId> for Runtime {
-		fn get_msa_keys(msa_id: MessageSourceId) -> Result<Vec<KeyInfoResponse<AccountId>>, DispatchError> {
-			Ok(Msa::fetch_msa_keys(msa_id))
-		}
+		// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
+		// fn get_msa_keys(msa_id: MessageSourceId) -> Result<Vec<KeyInfoResponse<AccountId>>, DispatchError> {
+		// 	Ok(Msa::fetch_msa_keys(msa_id))
+		// }
 
 		fn get_msa_id(key: AccountId) -> Result<Option<MessageSourceId>, DispatchError> {
 			Ok(Msa::get_owner_of(&key))

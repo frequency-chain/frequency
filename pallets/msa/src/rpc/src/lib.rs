@@ -18,9 +18,6 @@ use std::sync::Arc;
 
 #[rpc(client, server)]
 pub trait MsaApi<BlockHash, AccountId> {
-	#[method(name = "msa_getMsaKeys")]
-	fn get_msa_keys(&self, msa_id: MessageSourceId) -> RpcResult<Vec<KeyInfoResponse<AccountId>>>;
-
 	#[method(name = "msa_getMsaId")]
 	fn get_msa_id(&self, key: AccountId) -> RpcResult<Option<MessageSourceId>>;
 
@@ -62,12 +59,13 @@ where
 	C::Api: MsaRuntimeApi<Block, AccountId>,
 	AccountId: Codec,
 {
-	fn get_msa_keys(&self, msa_id: MessageSourceId) -> RpcResult<Vec<KeyInfoResponse<AccountId>>> {
-		let api = self.client.runtime_api();
-		let at = BlockId::hash(self.client.info().best_hash);
-		let runtime_api_result = api.get_msa_keys(&at, msa_id);
-		map_rpc_result(runtime_api_result)
-	}
+	// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
+	// fn get_msa_keys(&self, msa_id: MessageSourceId) -> RpcResult<Vec<KeyInfoResponse<AccountId>>> {
+	// 	let api = self.client.runtime_api();
+	// 	let at = BlockId::hash(self.client.info().best_hash);
+	// 	let runtime_api_result = api.get_msa_keys(&at, msa_id);
+	// 	map_rpc_result(runtime_api_result)
+	// }
 
 	fn get_msa_id(&self, key: AccountId) -> RpcResult<Option<MessageSourceId>> {
 		let api = self.client.runtime_api();
