@@ -11,7 +11,7 @@ pipeline {
     }
   stages {
     // node configuration
-    stage('Run Benchmarks') {
+    stage('Run Benchmark test') {
       steps {
         deleteDir()
         checkout scm
