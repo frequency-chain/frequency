@@ -688,7 +688,7 @@ parameter_types! {
 	pub const MaxCandidates: u32 = 0;
 	pub const MinCandidates: u32 = 0;
 	pub const SessionLength: BlockNumber = 6 * HOURS;
-	pub const MaxInvulnerables: u32 = 2;
+	pub const MaxInvulnerables: u32 = 10;
 	pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
