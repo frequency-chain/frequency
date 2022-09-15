@@ -131,15 +131,10 @@ pub fn frequency() -> ChainSpec {
 				],
 				Some(frequency_mainnet_keys::MAINNET_FRQ_SUDO.parse::<AccountId>().unwrap().into()),
 				// TODO:: endowed accounts with initial balance.
-				vec![
-					(
-						frequency_mainnet_keys::MAINNET_FRQ_SUDO
-							.parse::<AccountId>()
-							.unwrap()
-							.into(),
-						1 << 60,
-					),
-				],
+				vec![(
+					frequency_mainnet_keys::MAINNET_FRQ_SUDO.parse::<AccountId>().unwrap().into(),
+					1 << 60,
+				)],
 				// TODO: initial council members
 				Default::default(),
 				// TODO: initial technical committee members
