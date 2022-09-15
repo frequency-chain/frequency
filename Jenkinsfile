@@ -1,3 +1,4 @@
+
 #!groovy
 
 pipeline {
@@ -19,7 +20,7 @@ pipeline {
 //           description: 'Default Slack channel to send messages to',
 //           defaultValue: '#jenkins-job-notification')
 //
-//  } 
+//  }
   environment {
 
     // Slack configuration
@@ -31,12 +32,12 @@ pipeline {
     GIT_CMP = '/run-benchmark'
     //Slack channel send notification
     SLACK_CHANNEL_1 = '#jenkins-job-notification'
-  } 
+  }
 
   stages {
     // checking git comment
     stage ('checking git comment') {
-         steps {  
+         steps {
              script {
                  deleteDir()
              checkout scm
@@ -46,8 +47,11 @@ pipeline {
 }
 }
     stage('node rust config') {
-      when { expression { return env.GIT_COMMENT == env.GIT_CMP } }
+  //    when { expression { return env.GIT_COMMENT == env.GIT_CMP } }
       steps {
+	    script {
+		     if (env.GIT_COMMENT == env.GIT_CMP)
+			      {
         deleteDir()
         checkout scm
                // get user that has started the build
@@ -62,8 +66,14 @@ pipeline {
         sh "git config user.name \"Jenkins\""
          sshagent(credentials: ['jenkins-2022-03-01']) {
              sh ' git fetch && git checkout -b $CHANGE_BRANCH && git add . && git commit -am"Updating Benchmark Files" && git push origin HEAD'
+			 }
+			 else
+			        {
+                        currentBuild.result = 'ABORTED'
+						echo "condition not met aborting the build.."
+                    }
             }
-
+}
       }
     }
 
