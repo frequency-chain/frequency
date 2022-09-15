@@ -6,9 +6,9 @@ pipeline {
         label 'benchmark'
       }
   options { disableConcurrentBuilds() }
-   triggers {
-        issueCommentTrigger('^\\/run-benchmark.*')
-    }
+//   triggers {
+//        issueCommentTrigger('^\\/run-benchmark.*')
+//    }
   stages {
     // node configuration
     stage('Run Benchmark test') {
