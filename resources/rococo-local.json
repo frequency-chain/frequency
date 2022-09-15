@@ -6,11 +6,10 @@
   "telemetryEndpoints": null,
   "protocolId": "dot",
   "properties": null,
-  "forkBlocks": null,
-  "badBlocks": null,
-  "lightSyncState": null,
   "consensusEngine": null,
   "codeSubstitutes": {},
+  "relay_chain": "rococo-local",
+  "para_id": 2000,
   "genesis": {
     "raw": {
       "top": {
