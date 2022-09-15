@@ -70,7 +70,7 @@ asdf plugin-add cmake [https://github.com/srivathsanmurali/asdf-cmake.git](https
 
 Install the dependency versions declared in `.tool-versions`
 
-```shell
+```sh
 asdf install
 ```
 
@@ -124,8 +124,8 @@ docker run --rm -p 9944:9944 -p 9933:9944 -p 30333:30333 frequencychain/instant-
 
 To stop running chain hit [Ctrl+C] in terminal where the chain was started.
 
-| **Host**                | **Ports**                         | **Dashboard URL**                                                                         |
-| ----------------------- | --------------------------------- | ----------------------------------------------------------------------------------------- |
+| **Node**                |             **Ports**             | **Explorer URL**                                                                          |
+| ----------------------- | :-------------------------------: | ----------------------------------------------------------------------------------------- |
 | Frequency Collator Node | ws:`9944`, rpc`:9933`, p2p:`3033` | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
 
 ## 2. Collator Node with Local Relay Chain
@@ -176,7 +176,7 @@ This option runs one collator node as local host process and two relay chain val
 
 ### All in Docker Container
 
-:exclamation: Currently does not work on M\* series MacOs laptops. See https://github.com/LibertyDSNP/frequency/issues/432
+:exclamation: Currently does not work on M\* series MacOS laptops. See https://github.com/LibertyDSNP/frequency/issues/432
 
 Start:
 
@@ -190,7 +190,7 @@ Stop:
 make stop-frequency-docker
 ```
 
-| **Host**             | **Ports**                           | **Dashboard URL**                                                                         |
+| **Node**             | **Ports**                           | **Explorer URL**                                                                          |
 | -------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------- |
 | Frequency Relay Node | ws:`9944`, rpc`:9933`, p2p:`30333`  | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
 | Alice Relay Node     | ws:`:9946`, rpc`:9935`, p2p:`30335` | [127.0.0.1:9946](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9946#/explorer) |
