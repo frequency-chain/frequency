@@ -139,41 +139,6 @@ pub fn frequency() -> ChainSpec {
 							.into(),
 						1 << 60,
 					),
-					(
-						frequency_mainnet_keys::COLLATOR_1_SR25519
-							.parse::<AccountId>()
-							.unwrap()
-							.into(),
-						1 << 60,
-					),
-					(
-						frequency_mainnet_keys::COLLATOR_2_SR25519
-							.parse::<AccountId>()
-							.unwrap()
-							.into(),
-						1 << 60,
-					),
-					(
-						frequency_mainnet_keys::COLLATOR_3_SR25519
-							.parse::<AccountId>()
-							.unwrap()
-							.into(),
-						1 << 60,
-					),
-					(
-						frequency_mainnet_keys::COLLATOR_4_SR25519
-							.parse::<AccountId>()
-							.unwrap()
-							.into(),
-						1 << 60,
-					),
-					(
-						frequency_mainnet_keys::COLLATOR_5_SR25519
-							.parse::<AccountId>()
-							.unwrap()
-							.into(),
-						1 << 60,
-					),
 				],
 				// TODO: initial council members
 				Default::default(),
