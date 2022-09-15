@@ -273,6 +273,8 @@ pub mod pallet {
 		ExceedsMaxSchemaGrants,
 		/// Provider is not permitted to publish for given schema_id
 		SchemaNotGranted,
+		/// The operation was attempted with a non-provider MSA
+		ProviderNotRegistered,
 	}
 
 	#[pallet::call]
@@ -306,6 +308,7 @@ pub mod pallet {
 		/// - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
 		/// - Returns [`KeyAlreadyRegistered`](Error::KeyAlreadyRegistered) if there is already an MSA for `delegator_key`.
+		/// - Returns [`ProviderNotRegistered`](Error::ProviderNotRegistered) if the a non-provider MSA is used as the provider
 		///
 		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation())]
 		pub fn create_sponsored_account_with_delegation(
@@ -322,6 +325,12 @@ pub mod pallet {
 			ensure!(
 				add_provider_payload.authorized_msa_id == provider_msa_id,
 				Error::<T>::UnauthorizedProvider
+			);
+
+			// Verify that the provider is a registered provider
+			ensure!(
+				Self::get_provider_metadata(Provider(provider_msa_id)).is_some(),
+				Error::<T>::ProviderNotRegistered
 			);
 
 			let granted_schemas = add_provider_payload.schema_ids;
@@ -383,6 +392,7 @@ pub mod pallet {
 		/// - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if `add_provider_payload.authorized_msa_id`  does not match MSA ID of `provider_key`.
 		/// - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
+		/// - Returns [`ProviderNotRegistered`](Error::ProviderNotRegistered) if the a non-provider MSA is used as the provider
 		#[pallet::weight(T::WeightInfo::add_provider_to_msa())]
 		pub fn add_provider_to_msa(
 			origin: OriginFor<T>,
@@ -391,6 +401,13 @@ pub mod pallet {
 			add_provider_payload: AddProvider,
 		) -> DispatchResult {
 			let delegator_key = ensure_signed(origin)?;
+
+			// Verify that the provider is a registered provider
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			ensure!(
+				Self::get_provider_metadata(Provider(provider_msa_id)).is_some(),
+				Error::<T>::ProviderNotRegistered
+			);
 
 			Self::verify_signature(proof, provider_key.clone(), add_provider_payload.encode())
 				.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
@@ -402,6 +419,7 @@ pub mod pallet {
 				&provider_key,
 				payload_authorized_msa_id,
 			)?;
+
 			let granted_schemas = add_provider_payload.schema_ids;
 			ensure!(
 				granted_schemas.len() <= T::MaxSchemaGrants::get().try_into().unwrap(),

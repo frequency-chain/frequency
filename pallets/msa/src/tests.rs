@@ -436,6 +436,59 @@ pub fn add_provider_to_msa_throws_unauthorized_delegator_error() {
 }
 
 #[test]
+pub fn add_provider_to_msa_throws_provider_not_registered_error() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let provider_key = key_pair.public();
+
+		let (_new_msa_id, _) = Msa::create_account(provider_key.into(), EMPTY_FUNCTION).unwrap();
+
+		let add_provider_payload = AddProvider::new(_new_msa_id, 0, None);
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+
+		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
+
+		assert_err!(
+			Msa::add_provider_to_msa(
+				test_origin_signed(1),
+				provider_key.into(),
+				signature,
+				add_provider_payload
+			),
+			Error::<Test>::ProviderNotRegistered
+		);
+	});
+}
+
+#[test]
+pub fn create_sponsored_account_with_delegation_throws_provider_not_registered_error() {
+	new_test_ext().execute_with(|| {
+		let (key_pair_provider, _) = sr25519::Pair::generate();
+		let provider_key = key_pair_provider.public();
+
+		let (key_pair_delegator, _) = sr25519::Pair::generate();
+		let delegator_key = key_pair_delegator.public();
+
+		let (_new_msa_id, _) = Msa::create_account(provider_key.into(), EMPTY_FUNCTION).unwrap();
+
+		let add_provider_payload = AddProvider::new(_new_msa_id, 0, None);
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+
+		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
+
+		assert_err!(
+			Msa::create_sponsored_account_with_delegation(
+				Origin::signed(provider_key.into()),
+				delegator_key.into(),
+				signature,
+				add_provider_payload
+			),
+			Error::<Test>::ProviderNotRegistered
+		);
+	});
+}
+
+#[test]
 pub fn add_provider_to_msa_throws_duplicate_provider_error() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
