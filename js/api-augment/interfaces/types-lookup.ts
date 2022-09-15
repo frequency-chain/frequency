@@ -2409,6 +2409,7 @@ declare module '@polkadot/types/lookup' {
   interface PalletMsaAddKeyData extends Struct {
     readonly msaId: u64;
     readonly nonce: u32;
+    readonly expiration: u32;
   }
 
   /** @name PalletMessagesCall (226) */
@@ -2895,7 +2896,9 @@ declare module '@polkadot/types/lookup' {
     readonly isExceedsMaxProviderNameSize: boolean;
     readonly isExceedsMaxSchemaGrants: boolean;
     readonly isSchemaNotGranted: boolean;
-    readonly type: 'KeyAlreadyRegistered' | 'MsaIdOverflow' | 'AddKeySignatureVerificationFailed' | 'NotMsaOwner' | 'InvalidSignature' | 'NotKeyOwner' | 'NoKeyExists' | 'KeyLimitExceeded' | 'InvalidSelfRemoval' | 'InvalidSelfProvider' | 'DuplicateProvider' | 'AddProviderSignatureVerificationFailed' | 'UnauthorizedDelegator' | 'UnauthorizedProvider' | 'DelegationRevoked' | 'DelegationNotFound' | 'DelegationExpired' | 'DuplicateProviderMetadata' | 'ExceedsMaxProviderNameSize' | 'ExceedsMaxSchemaGrants' | 'SchemaNotGranted';
+    readonly isProofHasExpired: boolean;
+    readonly isProofNotYetValid: boolean;
+    readonly type: 'KeyAlreadyRegistered' | 'MsaIdOverflow' | 'AddKeySignatureVerificationFailed' | 'NotMsaOwner' | 'InvalidSignature' | 'NotKeyOwner' | 'NoKeyExists' | 'KeyLimitExceeded' | 'InvalidSelfRemoval' | 'InvalidSelfProvider' | 'DuplicateProvider' | 'AddProviderSignatureVerificationFailed' | 'UnauthorizedDelegator' | 'UnauthorizedProvider' | 'DelegationRevoked' | 'DelegationNotFound' | 'DelegationExpired' | 'DuplicateProviderMetadata' | 'ExceedsMaxProviderNameSize' | 'ExceedsMaxSchemaGrants' | 'SchemaNotGranted' | 'ProofHasExpired' | 'ProofNotYetValid';
   }
 
   /** @name PalletMessagesMessage (326) */
