@@ -8,6 +8,10 @@ use sp_std::prelude::Vec;
 
 pub use crate::{ds::OrderedSetExt, schema::SchemaId};
 
+/// The gap between the current block and a future expiring block allowed when validating signature proofs.
+/// 150 blocks at 6 seconds per block would equate to a 15 minute gap.
+pub const EXPIRATION_BLOCK_VALIDITY_GAP: u32 = 150;
+
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
 pub type MessageSourceId = u64;
 

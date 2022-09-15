@@ -1,0 +1,5 @@
+rust 1.62.0
+make 4.3
+cmake 3.24.1
+# clang 14.0.6 # only plugin I could find for clang and not some subset of clang did not work, it was located here https://github.com/srivathsanmurali/asdf-clang.git
+

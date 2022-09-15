@@ -2,10 +2,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 use super::*;
 use codec::{Decode, Encode};
+
 use core::fmt::Debug;
 
 pub use common_primitives::msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider};
-use common_primitives::schema::SchemaId;
+use common_primitives::{node::BlockNumber, schema::SchemaId};
 
 use scale_info::TypeInfo;
 
@@ -19,6 +20,8 @@ pub struct AddKeyData {
 	pub msa_id: MessageSourceId,
 	/// A cryptographic nonce.
 	pub nonce: u32,
+	/// The block number at which the signed proof for add_key_to_msa expires.
+	pub expiration: BlockNumber,
 }
 
 /// Structure that is signed for granting permissions to a Provider
