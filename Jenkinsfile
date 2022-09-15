@@ -70,7 +70,7 @@ pipeline {
                          else
                                 {
                         currentBuild.result = 'ABORTED'
-                        echo "run-benchmark not found in comment aborting the build.."
+                        echo "run-benchmark not found in comment aborting the build..."
                     }
             }
 }
