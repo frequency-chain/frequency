@@ -1,3 +1,4 @@
+#![allow(unused_imports)]
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 // std
@@ -46,8 +47,10 @@ type FullBackend = TFullBackend<Block>;
 type MaybeFullSelectChain = Option<LongestChain<FullBackend, Block>>;
 
 /// Native executor instance for frequency mainnet.
+#[cfg(feature = "frequency")]
 pub struct FrequencyRuntimeExecutor;
 
+#[cfg(feature = "frequency")]
 impl sc_executor::NativeExecutionDispatch for FrequencyRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -61,8 +64,10 @@ impl sc_executor::NativeExecutionDispatch for FrequencyRuntimeExecutor {
 }
 
 /// Native executor instance for frequency local.
+#[cfg(feature = "frequency-rococo-local")]
 pub struct FrequencyLocalRuntimeExecutor;
 
+#[cfg(feature = "frequency-rococo-local")]
 impl sc_executor::NativeExecutionDispatch for FrequencyLocalRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -76,8 +81,10 @@ impl sc_executor::NativeExecutionDispatch for FrequencyLocalRuntimeExecutor {
 }
 
 /// Native executor instance for frequency rococo testnet
+#[cfg(feature = "frequency-rococo-testnet")]
 pub struct FrequencyRococoRuntimeExecutor;
 
+#[cfg(feature = "frequency-rococo-testnet")]
 impl sc_executor::NativeExecutionDispatch for FrequencyRococoRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -617,6 +624,8 @@ where
 	)
 	.await
 }
+
+#[cfg(feature = "frequency-rococo-local")]
 fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_service::error::Error> {
 	let parachain_config = prepare_node_config(config);
 
@@ -781,6 +790,7 @@ fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_servic
 /// Function to start frequency parachain with instant sealing in dev mode.
 /// This function is called when --chain dev --instant-sealing is passed.
 /// This function is called when --chain frequency_dev --instant-sealing is passed.
+#[cfg(feature = "frequency-rococo-local")]
 pub fn frequency_dev_instant_sealing(
 	config: Configuration,
 ) -> Result<TaskManager, sc_service::error::Error> {

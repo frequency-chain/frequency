@@ -2639,6 +2639,7 @@ dependencies = [
  "frequency-cli",
  "frequency-rococo-runtime",
  "frequency-runtime",
+ "frequency-service",
  "sc-cli",
  "substrate-build-script-utils",
 ]
@@ -2658,7 +2659,6 @@ dependencies = [
  "frequency-runtime",
  "frequency-service",
  "hex-literal",
- "jsonrpsee",
  "log",
  "parity-scale-codec",
  "polkadot-cli",

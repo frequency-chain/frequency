@@ -1,13 +1,18 @@
 #![allow(missing_docs)]
-use frequency_rococo_runtime::{AccountId, AuraId, Signature};
+use common_primitives::node::{AccountId, AuraId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::Properties;
 use serde::{Deserialize, Serialize};
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
+#[cfg(feature = "frequency")]
 pub mod frequency;
+
+#[cfg(feature = "frequency-rococo-local")]
 pub mod frequency_local;
+
+#[cfg(feature = "frequency-rococo-testnet")]
 pub mod frequency_rococo;
 
 /// Helper function to generate a crypto pair from seed

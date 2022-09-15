@@ -13,14 +13,13 @@ clap = {version = "3.2.20", features = ["derive"]}
 codec = {package = "parity-scale-codec", version = "3.1.5"}
 derive_more = "0.99.17"
 hex-literal = "0.3.4"
-jsonrpsee = {version = "0.14.0", features = ["server"]}
 log = "0.4.17"
 serde = {version = "1.0.144", features = ["derive"]}
 
 # Frequency Runtime
 common-primitives = {default-features = false, path = "../../common/primitives"}
-frequency-rococo-runtime = {path = "../../runtime/frequency-rococo"}
-frequency-runtime = {path = "../../runtime/frequency"}
+frequency-rococo-runtime = {path = "../../runtime/frequency-rococo", optional = true}
+frequency-runtime = {path = "../../runtime/frequency", optional = true}
 frequency-service = {package = "frequency-service", path = "../service", default-features = false, optional = true}
 
 # Substrate
@@ -63,3 +62,6 @@ runtime-benchmarks = [
 ]
 try-runtime = []
 wasmtime = ["sc-cli/wasmtime"]
+frequency = ["frequency-service/frequency"]
+frequency-rococo-local = ["frequency-service/frequency-rococo-local"]
+frequency-rococo-testnet = ["frequency-service/frequency-rococo-testnet"]

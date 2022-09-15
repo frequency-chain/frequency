@@ -50,15 +50,18 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	Ok(match id {
+		#[cfg(feature = "frequency-runtime")]
 		"frequency" => Box::new(chain_spec::frequency::frequency()),
-		"frequency-dev" | "dev" => Box::new(chain_spec::frequency_local::development_config()),
-		"frequency-local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
+		#[cfg(feature = "frequency-rococo-local")]
+		"frequency-local" | "dev" => Box::new(chain_spec::frequency_local::local_testnet_config()),
+		#[cfg(feature = "frequency-rococo-testnet")]
 		"frequency-rococo" | "rococo" | "testnet" =>
 			Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet()),
-		"" | "local" => Box::new(chain_spec::frequency_local::local_testnet_config()),
+		#[cfg(feature = "frequency-rococo-local")]
 		path => Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(
 			std::path::PathBuf::from(path),
 		)?),
+		_ => return Err(format!("Invalid chain specification: {}", id)),
 	})
 }
 
