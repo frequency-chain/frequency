@@ -66,6 +66,7 @@ pipeline {
          sshagent(credentials: ['jenkins-2022-03-01']) {
              sh ' git fetch && git checkout -b $CHANGE_BRANCH && git add . && git commit -am"Updating Benchmark Files" && git push origin HEAD'
 			 }
+			 }
 			 else
 			        {
                         currentBuild.result = 'ABORTED'
