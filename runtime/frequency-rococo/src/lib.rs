@@ -39,7 +39,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly, Everything},
+	traits::{ConstU8, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly, Everything},
 	weights::{
 		constants::{RocksDbWeight, WEIGHT_PER_SECOND},
 		ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -325,7 +325,7 @@ impl pallet_msa::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 	type ConvertIntoAccountId32 = ConvertInto;
-	type MaxKeys = ConstU32<25>;
+	type MaxKeys = ConstU8<25>;
 	type MaxSchemaGrants = MaxDataSize;
 	type MaxProviderNameSize = ConstU32<16>;
 }

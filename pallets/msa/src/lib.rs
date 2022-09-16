@@ -111,7 +111,7 @@ pub mod pallet {
 
 		/// Maximum count of keys allowed per MSA
 		#[pallet::constant]
-		type MaxKeys: Get<u32>;
+		type MaxKeys: Get<u8>;
 
 		/// Maximum count of schemas granted for publishing data per Provider
 		#[pallet::constant]
