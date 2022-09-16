@@ -103,6 +103,34 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"frequency-rococo" | "rococo" | "testnet" =>
 			Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet()),
 		path => {
+			if path.is_empty() {
+				if cfg!(feature = "frequency") {
+					#[cfg(feature = "frequency")]
+					{
+						return Ok(Box::new(chain_spec::frequency::frequency()))
+					}
+					#[cfg(not(feature = "frequency"))]
+					return Err("Frequency runtime is not available.".into())
+				} else if cfg!(feature = "frequency-rococo-local") {
+					#[cfg(feature = "frequency-rococo-local")]
+					{
+						return Ok(Box::new(chain_spec::frequency_local::local_testnet_config()))
+					}
+					#[cfg(not(feature = "frequency-rococo-local"))]
+					return Err("Frequency Local runtime is not available.".into())
+				} else if cfg!(feature = "frequency-rococo-testnet") {
+					#[cfg(feature = "frequency-rococo-testnet")]
+					{
+						return Ok(
+							Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet()),
+						)
+					}
+					#[cfg(not(feature = "frequency-rococo-testnet"))]
+					return Err("Frequency Rococo runtime is not available.".into())
+				} else {
+					return Err("No chain spec is available.".into())
+				}
+			}
 			let path_buf = std::path::PathBuf::from(path);
 			let spec = Box::new(chain_spec::DummyChainSpec::from_json_file(path_buf.clone())?)
 				as Box<dyn ChainSpec>;
