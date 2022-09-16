@@ -347,16 +347,6 @@ pub fn test_ensure_msa_owner() {
 	});
 }
 
-fn create_and_sign_add_provider_payload(
-	delegator_pair: sr25519::Pair,
-	provider_msa: MessageSourceId,
-) -> (MultiSignature, AddProvider) {
-	let add_provider_payload = AddProvider::new(provider_msa, 0, None);
-	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
-	let signature: MultiSignature = delegator_pair.sign(&encode_add_provider_data).into();
-	(signature, add_provider_payload)
-}
-
 #[test]
 pub fn add_provider_to_msa_is_success() {
 	new_test_ext().execute_with(|| {
@@ -811,8 +801,11 @@ pub fn revoke_provider_is_successful() {
 			add_provider_payload
 		));
 
-		let provider = Provider(2);
-		let delegator = Delegator(1);
+		let delegator_msa =
+			Msa::try_get_msa_from_account_id(&AccountId32::new(delegator_account.0)).unwrap();
+
+		let provider = Provider(provider_msa);
+		let delegator = Delegator(delegator_msa);
 
 		assert_ok!(Msa::revoke_provider(provider, delegator));
 
@@ -935,14 +928,14 @@ pub fn revoke_provider_throws_delegation_not_found_error() {
 		let delegator_key = user_pair.public();
 
 		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
-		// 1. when delegator msa_id not found
+		// 1. error when delegator msa_id not found
 		assert_noop!(
 			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64),
 			Error::<Test>::DelegationNotFound
 		);
 
 		assert_ok!(Msa::create(Origin::signed(delegator_key.into())));
-		// 2. when no delegation relationship
+		// 2. error when no delegation relationship
 		assert_noop!(
 			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64),
 			Error::<Test>::DelegationNotFound
@@ -963,7 +956,7 @@ pub fn revoke_delegation_by_provider_happy_path() {
 		let delegator_key = user_pair.public();
 
 		// 2. create provider MSA
-		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_key.into()))); // MSA = 1
 
 		// 3. create delegator MSA and provider to provider
 		let add_provider_payload = AddProvider::new(1u64, 0, None);

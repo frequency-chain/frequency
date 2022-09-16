@@ -106,14 +106,20 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	ext
 }
 
+/// Create and return a simple test AccountId32 constructed with the desired integer.
 pub fn test_public(n: u8) -> AccountId32 {
 	AccountId32::new([n; 32])
 }
 
+/// Create and return a simple signed origin from a test_public constructed with the desired integer,
+/// for passing to an extrinsic call
 pub fn test_origin_signed(n: u8) -> Origin {
 	Origin::signed(test_public(n))
 }
 
+/// Create a new keypair and an MSA associated with its public key.
+/// # Returns
+/// (MessageSourceId, AccountId32) - a tuple wiht the MSA and the new Account public key.
 pub fn create_account() -> (MessageSourceId, AccountId32) {
 	let (key_pair, _) = sr25519::Pair::generate();
 	let result_key = Msa::create_account(AccountId32::from(key_pair.public()), EMPTY_FUNCTION);
@@ -121,7 +127,10 @@ pub fn create_account() -> (MessageSourceId, AccountId32) {
 	result_key.unwrap()
 }
 
-fn create_and_sign_add_provider_payload(
+/// Creates and signs an `AddProvider` struct using the provided delegator keypair and provider MSA
+/// # Returns
+/// (MultiSignature, AddProvider) - Returns a tuple with the signature and the AddProvider struct
+pub fn create_and_sign_add_provider_payload(
 	delegator_pair: sr25519::Pair,
 	provider_msa: MessageSourceId,
 ) -> (MultiSignature, AddProvider) {
@@ -133,7 +142,7 @@ fn create_and_sign_add_provider_payload(
 
 /// Creates a provider and delegator MSA and sets the delegation relationship.
 /// # Returns
-/// * (u8, u64) - Returns a delegator_msa_id and provider_msa_id.
+/// * (u8, Public) - Returns a provider_msa_id and a delegator account.
 pub fn test_create_delegator_msa_with_provider() -> (u64, Public) {
 	let (key_pair, _) = sr25519::Pair::generate();
 
