@@ -142,8 +142,8 @@ pub fn test_create_delegator_msa_with_provider() -> (u64, Public) {
 
 	let delegator_account = delegator_key_pair.public();
 
-	assert_ok!(Msa::create(Origin::signed(provider_account.into())));  // MSA = 1
-	assert_ok!(Msa::create(Origin::signed(delegator_account.into()))); // MSA = 2
+	assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+	assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
 
 	let provider_msa_id = Msa::try_get_msa_from_account_id(
 		&AccountId32::new(provider_account.0)).unwrap();
