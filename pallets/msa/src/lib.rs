@@ -59,7 +59,7 @@
 use codec::{Decode, Encode};
 use common_primitives::{
 	msa::{
-		AccountProvider, Delegator, KeyInfoResponse, OrderedSetExt, Provider, ProviderInfo,
+		AccountProvider, Delegator, OrderedSetExt, Provider, ProviderInfo,
 		ProviderMetadata, EXPIRATION_BLOCK_VALIDITY_GAP,
 	},
 	node::BlockNumber,

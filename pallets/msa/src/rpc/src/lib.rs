@@ -1,7 +1,7 @@
 use codec::Codec;
 use common_helpers::rpc::*;
 use common_primitives::{
-	msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider},
+	msa::{Delegator, MessageSourceId, Provider},
 	schema::SchemaId,
 };
 
