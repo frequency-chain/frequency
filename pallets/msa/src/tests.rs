@@ -18,7 +18,6 @@ use frame_support::{
 };
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::{traits::SignedExtension, MultiSignature};
-use common_primitives::msa::MessageSourceId;
 
 #[test]
 fn it_creates_an_msa_account() {
@@ -365,11 +364,11 @@ pub fn add_provider_to_msa_is_success() {
 		let (delegator_pair, _) = sr25519::Pair::generate();
 		let delegator_account = delegator_pair.public();
 
-		assert_ok!(Msa::create(Origin::signed(provider_account.into()))); // MSA = 2
-		let provider_msa = Msa::get_key_info(AccountId32::new(provider_account.0)).unwrap().msa_id;
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+		let provider_msa = Msa::try_get_msa_from_account_id(&AccountId32::new(provider_account.0)).unwrap();
 
-		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));  // MSA = 1
-		let delegator_msa = Msa::get_key_info(AccountId32::new(delegator_account.0)).unwrap().msa_id;
+		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
+		let delegator_msa = Msa::try_get_msa_from_account_id(&AccountId32::new(delegator_account.0)).unwrap();
 
 		let (delegator_signature, add_provider_payload) = create_and_sign_add_provider_payload(delegator_pair, provider_msa);
 
@@ -589,7 +588,7 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		));
 
 		// assert
-		let key_info = Msa::get_msa_by_account_id(AccountId32::new(delegator_account.0));
+		let key_info = Msa::get_msa_by_account_id(&AccountId32::new(delegator_account.0));
 		assert_eq!(key_info.unwrap(), 2);
 
 		let provider_info = Msa::get_provider_info(Delegator(2), Provider(1));
@@ -755,10 +754,10 @@ pub fn revoke_msa_delegation_by_delegator_is_successful() {
 		let (delegator_pair, _) = sr25519::Pair::generate();
 		let delegator_account = delegator_pair.public();
 
-		assert_ok!(Msa::create(Origin::signed(delegator_account.into()))); // MSA 1
-		assert_ok!(Msa::create(Origin::signed(provider_account.into())));  // MSA 2
+		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
-		let provider_msa = Msa::get_key_info(AccountId32::new(provider_account.0)).unwrap().msa_id;
+		let provider_msa = Msa::try_get_msa_from_account_id(&AccountId32::new(provider_account.0)).unwrap();
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
@@ -786,10 +785,10 @@ pub fn revoke_provider_is_successful() {
 		let (delegator_pair, _) = sr25519::Pair::generate();
 		let delegator_account = delegator_pair.public();
 
-		assert_ok!(Msa::create(Origin::signed(delegator_account.into()))); // MSA 1
-		assert_ok!(Msa::create(Origin::signed(provider_account.into())));  // MSA 2
+		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
-		let provider_msa = Msa::get_key_info(AccountId32::new(provider_account.0)).unwrap().msa_id;
+		let provider_msa = Msa::try_get_msa_from_account_id(&AccountId32::new(provider_account.0)).unwrap();
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
@@ -826,7 +825,7 @@ fn revoke_msa_delegation_by_delegator_fails_when_no_msa() {
 #[test]
 pub fn revoke_msa_delegation_fails_if_only_key_is_revoked () {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Msa::create(test_origin_signed(2)));  // MSA = 1
+		assert_ok!(Msa::create(test_origin_signed(2)));
 		assert_ok!(Msa::delete_key_for_msa(1, &test_public(2)));
 		assert_noop!(
 			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(2), 1),
@@ -838,8 +837,8 @@ pub fn revoke_msa_delegation_fails_if_only_key_is_revoked () {
 #[test]
 pub fn revoke_msa_delegation_by_delegator_fails_if_has_msa_but_no_delegation () {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Msa::create(test_origin_signed(1))); // MSA = 1
-		assert_ok!(Msa::create(test_origin_signed(2))); // MSA = 2
+		assert_ok!(Msa::create(test_origin_signed(1)));
+		assert_ok!(Msa::create(test_origin_signed(2)));
 		assert_noop!(
 			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 2),
 			Error::<Test>::DelegationNotFound
@@ -856,10 +855,10 @@ fn revoke_provider_throws_error_when_delegation_already_revoked() {
 		let (delegator_pair, _) = sr25519::Pair::generate();
 		let delegator_account = delegator_pair.public();
 
-		assert_ok!(Msa::create(Origin::signed(delegator_account.into()))); // MSA 1
-		assert_ok!(Msa::create(Origin::signed(provider_account.into())));  // MSA 2
+		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
-		let provider_msa = Msa::get_key_info(AccountId32::new(provider_account.0)).unwrap().msa_id;
+		let provider_msa = Msa::try_get_msa_from_account_id(&AccountId32::new(provider_account.0)).unwrap();
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
@@ -1458,7 +1457,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 		let (key_pair_delegator2, _) = sr25519::Pair::generate();
 		let delegator_account2 = key_pair_delegator2.public();
 
-		let add_key_payload: AddKeyData = AddKeyData { msa_id: 2, nonce: 0 };
+		let add_key_payload: AddKeyData = AddKeyData { msa_id: 2, nonce: 0, expiration: 200 };
 		let encode_add_key_data = wrap_binary_data(add_key_payload.encode());
 		let add_key_signature = key_pair_delegator2.sign(&encode_add_key_data);
 

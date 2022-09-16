@@ -1,11 +1,12 @@
 use crate::{self as pallet_msa, AddProvider, types::EMPTY_FUNCTION};
-use common_primitives::{msa::{MessageSourceId}, utils::wrap_binary_data};
+use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use frame_support::{
 	assert_ok, parameter_types,
 	traits::{ConstU16, ConstU64},
 };
 use frame_system as system;
 use sp_core::{sr25519, Encode, Pair, H256};
+use sp_core::sr25519::Public;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, ConvertInto, IdentifyAccount, IdentityLookup, Verify},
@@ -132,17 +133,20 @@ fn create_and_sign_add_provider_payload(delegator_pair: sr25519::Pair, provider_
 /// Creates a provider and delegator MSA and sets the delegation relationship.
 /// # Returns
 /// * (u8, u64) - Returns a delegator_msa_id and provider_msa_id.
-pub fn test_create_delegator_msa_with_provider() -> (u64, sr25519::Public) {
+pub fn test_create_delegator_msa_with_provider() -> (u64, Public) {
 	let (key_pair, _) = sr25519::Pair::generate();
+
 	let provider_account = key_pair.public();
 
 	let (delegator_key_pair, _) = sr25519::Pair::generate();
+
 	let delegator_account = delegator_key_pair.public();
 
 	assert_ok!(Msa::create(Origin::signed(provider_account.into())));  // MSA = 1
 	assert_ok!(Msa::create(Origin::signed(delegator_account.into()))); // MSA = 2
 
-	let provider_msa_id = Msa::get_key_info(AccountId32::new(provider_account.0)).unwrap().msa_id;
+	let provider_msa_id = Msa::try_get_msa_from_account_id(
+		&AccountId32::new(provider_account.0)).unwrap();
 
 	let (delegator_signature, add_provider_payload) =
 		create_and_sign_add_provider_payload(delegator_key_pair, provider_msa_id);
