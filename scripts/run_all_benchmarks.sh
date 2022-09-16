@@ -17,7 +17,7 @@ function run_benchmark() {
   $BENCHMARK \
   --pallet $1 \
   --extrinsic "*" \
-  --chain="frequency-rococo" \
+  --chain="frequency" \
   --execution wasm \
   --wasm-execution compiled \
   --steps 50 \
