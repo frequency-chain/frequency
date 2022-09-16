@@ -28,6 +28,7 @@ start-relay-chain)
 
 stop-relay-chain)
   echo "Stopping relay chain..."
+  cd docker
   docker-compose down
   ;;
 
