@@ -96,13 +96,11 @@ build-local:
 build-rococo:
 	cargo build --locked --release --features  frequency-rococo-testnet
 
-build-rococo-release:
-	cargo build --locked --release --features  frequency-rococo-testnet --profile production
-
 build-mainnet:
-	cargo build --locked --release --features  frequency --profile production
+	cargo build --locked --release --features  frequency
 
+build-rococo-release:
+	cargo build --locked --features  frequency-rococo-testnet --profile production
 
-
-
-
+build-mainnet-release:
+	cargo build --locked --features  frequency --profile production
