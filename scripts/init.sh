@@ -144,11 +144,11 @@ onboard-frequency)
 
    wasm_location="$onboard_dir/${parachain}-${para_id}.wasm"
     if [ "$docker_onboard" == "true" ]; then
-      genesis=$(docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-state --chain="${chain_spec}")
-      docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-wasm --chain="${chain_spec}" > $wasm_location
+      genesis=$(docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-state --chain="frequency-local")
+      docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-wasm --chain="frequency-local" > $wasm_location
     else
-      genesis=$(./target/release/frequency export-genesis-state --chain="${chain_spec}")
-      ./target/release/frequency export-genesis-wasm --chain="${chain_spec}" > $wasm_location
+      genesis=$(./target/release/frequency export-genesis-state --chain="frequency-local")
+      ./target/release/frequency export-genesis-wasm --chain="frequency-local" > $wasm_location
     fi
 
   echo "WASM path:" "${parachain}-${para_id}.wasm"
