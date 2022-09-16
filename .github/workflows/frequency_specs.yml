@@ -42,7 +42,7 @@ jobs:
       - name: Run build rococo binary
         run: make build-rococo-release
       - name: Build frequency rococo related specs and wasm 📝
-        run: ./scripts/generate_specs.sh 4044 rococo-4044
+        run: ./scripts/generate_specs.sh 4044 rococo-4044 production
       - name: Create tarball of rococo spec and wasm 📦
         run: tar -cvf frequency_specs_rococo_testnet-${{ github.sha }}.tar ./res/genesis/testnet
       - name: Upload frequency rococo spec and wasm artifacts 📦
@@ -58,7 +58,7 @@ jobs:
       - name: Run build mainnet binary
         run: make build-mainnet-release
       - name: Build frequency mainnet related specs and wasm 📝
-        run: ./scripts/generate_specs.sh 999 mainnet
+        run: ./scripts/generate_specs.sh 999 mainnet production
       - name: Create tarball of frequency spec and wasm 📦
         run: tar -cvf frequency_specs_main-${{ github.sha }}.tar ./res/genesis/mainnet
       - name: Upload frequency spec and wasm artifacts 📦

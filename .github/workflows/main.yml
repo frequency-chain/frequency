@@ -79,7 +79,7 @@ jobs:
           echo "TAG=${date_tag}" >> $GITHUB_ENV
       - name: Generate Frequency local chain spec
         if: matrix.target == 'build-node'
-        run: ./scripts/generate_specs.sh 2000 rococo-2000
+        run: ./scripts/generate_specs.sh 2000 rococo-2000 release
       - name: Build and push collator image for local relay chain
         if: matrix.target == 'build-node'
         env:
