@@ -22,6 +22,7 @@ install-toolchain)
 
 start-relay-chain)
   echo "Starting local relay chain with Alice and Bob..."
+  cd docker
   docker-compose up -d relay_alice relay_bob
   ;;
 
