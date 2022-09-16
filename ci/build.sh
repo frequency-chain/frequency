@@ -23,7 +23,7 @@ case $TARGET in
   build-runtime)
     export RUSTC_VERSION=$SRT_TOOL_VERSION
     echo "Building runtime with rustc version $RUSTC_VERSION"
-    docker run --rm -e PACKAGE=$PACKAGE -e RUNTIME_DIR=$RUNTIME_DIR -v $PWD:/build -v /tmp/cargo:/cargo-home paritytech/srtool:$RUSTC_VERSION build
+    docker run --rm -e PACKAGE=$PACKAGE -e RUNTIME_DIR=$RUNTIME_DIR -e PROFILE=$PROFILE -e BUILD_OPTS=$BUILD_OPTS -v $PWD:/build -v /tmp/cargo:/cargo-home paritytech/srtool:$RUSTC_VERSION build
     ;;
 
   tests)
