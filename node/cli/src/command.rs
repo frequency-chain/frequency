@@ -196,7 +196,7 @@ impl SubstrateCli for Cli {
 			}
 		} else if spec.id() == "frequency-local" {
 			if cfg!(feature = "frequency-rococo-local") {
-				#[cfg(feature = "frequency-roccoco-local")]
+				#[cfg(feature = "frequency-rococo-local")]
 				{
 					return &service::frequency_rococo_runtime::VERSION
 				}
