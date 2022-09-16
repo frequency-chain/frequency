@@ -58,7 +58,7 @@ start-frequency)
 
   ./scripts/run_collator.sh \
     --chain="frequency-local" --alice \
-    --base-path=$parachain_dir/data \
+    --base-path=$parachain_dir/chain-data \
     --wasm-execution=compiled \
     --execution=wasm \
     --force-authoring \
@@ -115,7 +115,7 @@ start-frequency-container)
 
   ./scripts/run_collator.sh \
     --chain="frequency-local" --alice \
-    --base-path=$parachain_dir/data \
+    --base-path=$parachain_dir/chain-data \
     --wasm-execution=compiled \
     --execution=wasm \
     --force-authoring \
