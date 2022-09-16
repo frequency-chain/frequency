@@ -176,7 +176,7 @@ impl SubstrateCli for Cli {
 			if cfg!(feature = "frequency") {
 				#[cfg(feature = "frequency")]
 				{
-					let _ = &service::frequency_runtime::VERSION;
+					return &service::frequency_runtime::VERSION
 				}
 				#[cfg(not(feature = "frequency"))]
 				panic!("Frequency runtime is not compiled!");
@@ -187,7 +187,7 @@ impl SubstrateCli for Cli {
 			if cfg!(feature = "frequency-rococo-testnet") {
 				#[cfg(feature = "frequency-rococo-testnet")]
 				{
-					let _ = &service::frequency_rococo_runtime::VERSION;
+					return &service::frequency_rococo_runtime::VERSION
 				}
 				#[cfg(not(feature = "frequency-rococo-testnet"))]
 				panic!("Frequency Rococo runtime is not compiled!");
@@ -198,7 +198,7 @@ impl SubstrateCli for Cli {
 			if cfg!(feature = "frequency-rococo-local") {
 				#[cfg(feature = "frequency-roccoco-local")]
 				{
-					let _ = &service::frequency_rococo_runtime::VERSION;
+					return &service::frequency_rococo_runtime::VERSION
 				}
 				#[cfg(not(feature = "frequency-rococo-local"))]
 				panic!("Frequency Local runtime is not compiled!");

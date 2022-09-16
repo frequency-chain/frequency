@@ -44,7 +44,7 @@ stop-frequency-docker)
 
 start-frequency)
   printf "\nBuilding frequency with runtime '$parachain' and id '$para_id'...\n"
-  cargo build --release
+  cargo build --release --features frequency-rococo-local
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
@@ -55,7 +55,7 @@ start-frequency)
   fi
 
   ./scripts/run_collator.sh \
-    --chain="${chain_spec}" --alice \
+    --chain="frequency-local" --alice \
     --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
     --execution=wasm \
@@ -72,7 +72,7 @@ start-frequency)
 
 start-frequency-instant)
   printf "\nBuilding frequency with runtime instant sealing ...\n"
-  cargo build --release
+  cargo build --release --features frequency-rococo-local
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
@@ -112,7 +112,7 @@ start-frequency-container)
   frequency_ws_port="${Frequency_WS_PORT:-$frequency_default_ws_port}"
 
   ./scripts/run_collator.sh \
-    --chain="${chain_spec}" --alice \
+    --chain="frequency-local" --alice \
     --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
     --execution=wasm \
