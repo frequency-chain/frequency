@@ -404,21 +404,20 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::add_provider_to_msa())]
 		pub fn add_provider_to_msa(
 			origin: OriginFor<T>,
-			provider_key: T::AccountId,
+			delegator_key: T::AccountId,
 			proof: MultiSignature,
 			add_provider_payload: AddProvider,
 		) -> DispatchResult {
-			let delegator_key = ensure_signed(origin)?;
+			let provider_key = ensure_signed(origin)?;
 
-			Self::verify_signature(proof, provider_key.clone(), add_provider_payload.encode())
+			// delegator must have signed the payload.
+			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())
 				.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
-
-			let payload_authorized_msa_id = add_provider_payload.authorized_msa_id;
 
 			let (provider_msa_id, delegator_msa_id) = Self::ensure_valid_provider(
 				&delegator_key,
 				&provider_key,
-				payload_authorized_msa_id,
+				add_provider_payload.authorized_msa_id,
 			)?;
 			let granted_schemas = add_provider_payload.schema_ids;
 			ensure!(
@@ -629,7 +628,7 @@ impl<T: Config> Pallet<T> {
 		let provider_msa_id = Self::ensure_valid_msa_key(provider_key)?;
 		let delegator_msa_id = Self::ensure_valid_msa_key(delegator_key)?;
 
-		ensure!(authorized_msa_id == delegator_msa_id, Error::<T>::UnauthorizedDelegator);
+		ensure!(authorized_msa_id == provider_msa_id, Error::<T>::UnauthorizedDelegator);
 
 		ensure!(delegator_msa_id != provider_msa_id, Error::<T>::InvalidSelfProvider);
 
