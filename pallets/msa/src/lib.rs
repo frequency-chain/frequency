@@ -93,7 +93,6 @@ pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use sp_std::prelude::*;
-// use common_primitives::msa::MsaInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -167,18 +166,6 @@ pub mod pallet {
 	#[pallet::getter(fn get_msa_by_account_id)]
 	pub type MessageSourceIdOf<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
-
-	/// Storage type for Msa to Key information
-	/// - Key: MessageSourceId
-	/// - Value: [`MsaInfo`](common_primitives::msa::MsaInfo)
-	// #[pallet::storage]
-	// #[pallet::getter(fn get_msa_info)]
-	// pub type MsaInfoOf<T: Config> = StorageMap<
-	// 	_,
-	// 	Twox64Concat,
-	// 	MessageSourceId,
-	// 	MsaInfo<T::AccountId>,
-	// 	OptionQuery>;
 
 	/// Storage for MSA keys
 	/// - Key: MSA Id
