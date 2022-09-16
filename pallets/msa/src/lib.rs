@@ -786,12 +786,6 @@ impl<T: Config> Pallet<T> {
 		Ok(info)
 	}
 
-	// pub fn try_get_msa_info(msa: MessageSourceId)
-	// 	-> Result<MsaInfo<T::AccountId>, DispatchError> {
-	// 	let info = Self::get_msa_info(msa).ok_or(Error::<T>::NoMsaExists)?;
-	// 	Ok(info);
-	// }
-
 	/// Retrieves the MSA Id for a given `AccountId`
 	/// # Arguments
 	/// * `key` - The `AccountId` you want to attempt to get information on
