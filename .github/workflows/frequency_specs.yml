@@ -50,7 +50,7 @@ jobs:
         with:
           files: frequency_specs_rococo_testnet-${{ github.sha }}.tar
       - name: Create tarball of frequency rococo binary 📦
-        run: tar -cvf frequency_rococo_binary-${{ github.sha }}.tar ./target/release/frequency
+        run: tar -cvf frequency_rococo_binary-${{ github.sha }}.tar ./target/production/frequency
       - name: Upload frequency binary artifacts 📦
         uses: softprops/action-gh-release@v1
         with:
@@ -66,7 +66,7 @@ jobs:
         with:
           files: frequency_specs_main-${{ github.sha }}.tar
       - name: Create tarball of frequency binary 📦
-        run: tar -cvf frequency_mainnet_binary-${{ github.sha }}.tar ./target/release/frequency
+        run: tar -cvf frequency_mainnet_binary-${{ github.sha }}.tar ./target/production/frequency
       - name: Upload frequency binary artifacts 📦
         uses: softprops/action-gh-release@v1
         with:
@@ -103,13 +103,13 @@ jobs:
           PROFILE: production
           BUILD_OPTS: --features on-chain-release-build,no-metadata-docs
       - name: Create tarball  of deterministic wasm from srtool for local 📦
-        run: tar -cvf frequency_wasm_local-${{ github.sha }}.tar ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.compressed.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.wasm
+        run: tar -cvf frequency_wasm_local-${{ github.sha }}.tar ./runtime/frequency-rococo/target/srtool/production/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.compressed.wasm ./runtime/frequency-rococo/target/srtool/production/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.wasm ./runtime/frequency-rococo/target/srtool/production/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.wasm
       - name: Upload frequency deterministic wasm to artifacts 📦
         uses: softprops/action-gh-release@v1
         with:
           files: frequency_wasm_local-${{ github.sha }}.tar
       - name: Create tarball  of deterministic wasm from srtool for rococo📦
-        run: tar -cvf frequency_wasm_rococo-${{ github.sha }}.tar ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.compressed.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.wasm ./runtime/frequency-rococo/target/srtool/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.wasm
+        run: tar -cvf frequency_wasm_rococo-${{ github.sha }}.tar ./runtime/frequency-rococo/target/srtool/production/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.compressed.wasm ./runtime/frequency-rococo/target/srtool/production/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.wasm ./runtime/frequency-rococo/target/srtool/production/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.wasm
       - name: Upload frequency deterministic wasm to artifacts for rococo 📦
         uses: softprops/action-gh-release@v1
         with:
@@ -146,7 +146,7 @@ jobs:
           PROFILE: production
           BUILD_OPTS: --features on-chain-release-build,no-metadata-docs
       - name: Create tarball  of deterministic wasm from srtool for mainnet
-        run: tar -cvf frequency_wasm_main-${{ github.sha }}.tar ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.compact.wasm ./runtime/frequency/target/srtool/release/wbuild/frequency-runtime/frequency_runtime.wasm
+        run: tar -cvf frequency_wasm_main-${{ github.sha }}.tar ./runtime/frequency/target/srtool/production/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm ./runtime/frequency/target/srtool/production/wbuild/frequency-runtime/frequency_runtime.compact.wasm ./runtime/frequency/target/srtool/production/wbuild/frequency-runtime/frequency_runtime.wasm
       - name: Upload frequency deterministic wasm to artifacts for mainnet 📦
         uses: softprops/action-gh-release@v1
         with:
