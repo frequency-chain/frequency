@@ -72,3 +72,17 @@ docs:
 .PHONY: docs
 docker-prune:
 	./scripts/prune_all.sh
+
+.PHONY: check
+check:
+	SKIP_WASM_BUILD= cargo check --all-features
+
+check-local:
+	SKIP_WASM_BUILD= cargo check --features  frequency-rococo-local
+
+check-rococo:
+	SKIP_WASM_BUILD= cargo check --features  frequency-rococo-testnet
+
+check-mainnet:
+	SKIP_WASM_BUILD= cargo check --features  frequency
+

@@ -70,20 +70,20 @@ macro_rules! with_runtime_or_err {
 			#[cfg(not(feature = "frequency"))]
 			return Err("Frequency runtime is not available.".into());
 		} else if ChainIdentity::FrequencyRococo == $chain_spec.identify() {
-			#[cfg(feature = "frequency-rococo")]
+			#[cfg(feature = "frequency-rococo-testnet")]
 			#[allow(unused_imports)]
 			use service::{frequency_rococo_runtime::{ RuntimeApi, VERSION }, FrequencyRococoRuntimeExecutor as Executor};
-			#[cfg(feature = "frequency-rococo")]
+			#[cfg(feature = "frequency-rococo-testnet")]
 			$( $code )*
-			#[cfg(not(feature = "frequency-rococo"))]
+			#[cfg(not(feature = "frequency-rococo-testnet"))]
 			return Err("Frequency Rococo runtime is not available.".into());
 		} else if ChainIdentity::FrequencyLocal == $chain_spec.identify() {
-			#[cfg(feature = "frequency-local")]
+			#[cfg(feature = "frequency-rococo-local")]
 			#[allow(unused_imports)]
-			use service::{frequency_local_runtime::{ RuntimeApi, VERSION }, FrequencyLocalRuntimeExecutor as Executor};
-			#[cfg(feature = "frequency-local")]
+			use service::{frequency_rococo_runtime::{ RuntimeApi, VERSION }, FrequencyLocalRuntimeExecutor as Executor};
+			#[cfg(feature = "frequency-rococo-local")]
 			$( $code )*
-			#[cfg(not(feature = "frequency-local"))]
+			#[cfg(not(feature = "frequency-rococo-local"))]
 			return Err("Frequency Local runtime is not available.".into());
 		} else {
 			panic!("Unknown chain spec.");
@@ -104,7 +104,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		path => Box::new(chain_spec::frequency::ChainSpec::from_json_file(std::path::PathBuf::from(
 			path,
 		))?),
-		#[cfg(not(feature = "frequency-rococo-testnet"))]
+		#[cfg(feature = "frequency-rococo-testnet")]
 		path => Box::new(chain_spec::frequency_rococo::ChainSpec::from_json_file(
 			std::path::PathBuf::from(path),
 		)?),
@@ -112,7 +112,12 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		path => Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(
 			std::path::PathBuf::from(path),
 		)?),
-		_ => return Err(format!("Invalid chain specification: {}", id)),
+		#[cfg(not(any(
+			feature = "frequency",
+			feature = "frequency-rococo-local",
+			feature = "frequency-rococo-testnet",
+		)))]
+		path => Box::new(chain_spec::DummyChainSpec::from_json_file(std::path::PathBuf::from(path))?),
 	})
 }
 
@@ -166,23 +171,23 @@ impl SubstrateCli for Cli {
 				panic!("Frequency runtime is not compiled!");
 			}
 		} else if spec.id() == "frequency-rococo" {
-			if cfg!(feature = "frequency-rococo") {
-				#[cfg(feature = "frequency-rococo")]
+			if cfg!(feature = "frequency-rococo-testnet") {
+				#[cfg(feature = "frequency-rococo-testnet")]
 				{
 					let _ = &service::frequency_rococo_runtime::VERSION;
 				}
-				#[cfg(not(feature = "frequency-rococo"))]
+				#[cfg(not(feature = "frequency-rococo-testnet"))]
 				panic!("Frequency Rococo runtime is not compiled!");
 			} else {
 				panic!("Frequency Rococo runtime is not compiled!");
 			}
 		} else if spec.id() == "frequency-local" {
-			if cfg!(feature = "frequency-local") {
-				#[cfg(feature = "frequency-local")]
+			if cfg!(feature = "frequency-rococo-local") {
+				#[cfg(feature = "frequency-roccoco-local")]
 				{
 					let _ = &service::frequency_rococo_runtime::VERSION;
 				}
-				#[cfg(not(feature = "frequency-local"))]
+				#[cfg(not(feature = "frequency-rococo-local"))]
 				panic!("Frequency Local runtime is not compiled!");
 			} else {
 				panic!("Frequency Local runtime is not compiled!");
@@ -401,7 +406,7 @@ pub fn run() -> Result<()> {
 
 				#[cfg(feature = "frequency-rococo-local")]
 				if cli.instant_sealing {
-					return frequency_dev_instant_sealing(config).map_err(Into::into)
+					return service::frequency_dev_instant_sealing(config).map_err(Into::into)
 				}
 
 				let polkadot_cli = RelayChainCli::new(

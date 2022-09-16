@@ -3,17 +3,12 @@ use common_primitives::node::{AccountId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::Properties;
 use serde::{Deserialize, Serialize};
+pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
-#[cfg(feature = "frequency")]
-use frequency_runtime::AuraId;
-
-#[cfg(feature = "frequency-rococo-local")]
-use frequency_rococo_runtime::AuraId;
-
-#[cfg(feature = "frequency-rococo-testnet")]
-use frequency_rococo_runtime::AuraId;
+/// Dummy chain spec for building and checking
+pub type DummyChainSpec = sc_service::GenericChainSpec<(), Extensions>;
 
 #[cfg(feature = "frequency")]
 pub mod frequency;
