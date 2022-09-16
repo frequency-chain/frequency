@@ -111,4 +111,9 @@ frequency-rococo-local = [
 frequency-rococo-testnet = [
   "frequency-rococo-runtime",
 ]
+all-frequency-features = [
+  "frequency",
+  "frequency-rococo-local",
+  "frequency-rococo-testnet"
+]
 try-runtime = ["frequency-runtime/try-runtime", "frequency-rococo-runtime/try-runtime"]

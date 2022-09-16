@@ -35,4 +35,5 @@ runtime-benchmarks = [
 frequency = ["frequency-service/frequency", "frequency-cli/frequency"]
 frequency-rococo-local = ["frequency-service/frequency-rococo-local", "frequency-cli/frequency-rococo-local"]
 frequency-rococo-testnet = ["frequency-service/frequency-rococo-testnet", "frequency-cli/frequency-rococo-testnet"]
+all-frequency-features =["frequency-service/all-frequency-features", "frequency-cli/all-frequency-features"]
 try-runtime = ["frequency-runtime/try-runtime", "frequency-rococo-runtime/try-runtime"]
