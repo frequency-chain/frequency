@@ -46,6 +46,7 @@ cumulus-primitives-core = {git = "https://github.com/paritytech/cumulus", branch
 substrate-build-script-utils = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 
 [features]
+std = []
 cli = [
   "frequency-service",
   "sp-core",
@@ -54,7 +55,7 @@ cli = [
   "frame-benchmarking-cli",
   "try-runtime-cli",
 ]
-default = ["wasmtime", "cli"]
+default = ["std", "wasmtime", "cli", "all-frequency-features"]
 runtime-benchmarks = [
   "polkadot-cli/runtime-benchmarks",
 ]
