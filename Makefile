@@ -86,3 +86,23 @@ check-rococo:
 check-mainnet:
 	SKIP_WASM_BUILD= cargo check --features  frequency
 
+.PHONY: build
+build:
+	cargo build --locked --release --features all-frequency-features
+
+build-local:
+	cargo build --locked --release --features  frequency-rococo-local
+
+build-rococo:
+	cargo build --locked --release --features  frequency-rococo-testnet
+
+build-rococo-release:
+	cargo build --locked --release --features  frequency-rococo-testnet --profile production
+
+build-mainnet:
+	cargo build --locked --release --features  frequency --profile production
+
+
+
+
+
