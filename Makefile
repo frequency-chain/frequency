@@ -46,7 +46,7 @@ specs-mainnet:
 
 .PHONY: format
 format:
-	cargo fmt -- --check
+	cargo fmt
 
 .PHONY: lint
 lint:
