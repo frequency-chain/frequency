@@ -23,6 +23,32 @@ pub mod public_testnet_keys {
 		"0x58025fbd92bcc65fc2e054b623d10a8558662ae545a9718e26815024a2433545";
 	pub const ROCOCO_FRQ_SUDO: &str =
 		"0xa4c16e3ce8b11a0e43102bc4a718e9f031df2d0f61b1b03031b2f45ed664f853";
+	pub const TECH_COUNCIL1: &str =
+		"0x847c1ac02474b90cf1e9d8e722318b75fd56d370e6f35e9c983fe671e788d23a";
+	pub const TECH_COUNCIL2: &str =
+		"0x52b580c22c5ff6f586a0966fbd2373de279d1aa1b2d05dff47616b5a338fce27";
+	pub const TECH_COUNCIL3: &str =
+		"0x6a13f08b279cb33b249954190bcee832747b9aa9dc14cc290f82d73d496cfc0a";
+	pub const FRQ_COUNCIL1: &str =
+		"0xa608f3e0030c157b6e2a540c5f0c7dbd6004793813cad2c9fbda0c84c093c301";
+	pub const FRQ_COUNCIL2: &str =
+		"0x52d76db441043a5d47d9bf83e6fd2d5acb86b8547062571ee7b68255b6bada10";
+	pub const FRQ_COUNCIL3: &str =
+		"0x809d0a4e6683ebff9d74c7f6ba9fe504a64a7227d74eb45ee85556cc01013a63";
+	pub const FRQ_COUNCIL4: &str =
+		"0x8e47c13fd0f028f56378e202523fa44508fd64df89fddb482fc0b128989e9f0b";
+	pub const FRQ_COUNCIL5: &str =
+		"0xf23d555b95ca8c752b531e48848bfb4d3aa2b4eea407484ccee947501e77d04f";
+	pub const FRQ_COUNCIL6: &str =
+		"0xe87a126794cb727b5a7760922f81fbf0f80fd64b7e86e6ae4fee0be4289c7512";
+	pub const FRQ_COUNCIL7: &str =
+		"0x14a6bff08e9637457a165779765417feca01a2119dec98ec134f8ae470111318";
+	pub const FRQ_COUNCIL8: &str =
+		"0x140c17ced6e4fba8b62a6935052cfb7c5a8ad8ecc43dee1f4fc7c30c1ca3cb14";
+	pub const FRQ_COUNCIL9: &str =
+		"0xfc61655783e14b361d2b9601c657c3c5361a2cf32aa1a448fc83b1a356808a1a";
+	pub const FRQ_COUNCIL10: &str =
+		"0x1caccabbe8095a35292782cffc29145030264f9706753923a5c237e8f5aceb1a";
 }
 
 // pub fn load_frequency_rococo_spec() -> Result<ChainSpec, String> {
@@ -76,9 +102,50 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 				vec![
 					// 5FnjAszaYTVfEFDooTN37DCBinQyw4dvsZDr7PbYovmAhEqn
 					public_testnet_keys::ROCOCO_FRQ_SUDO.parse::<AccountId>().unwrap().into(),
+					// 5E46myWYmywo8cF9Wk77NZM7TqLqVG7uMYjGuyyfrve9waa9
+					public_testnet_keys::TECH_COUNCIL1.parse::<AccountId>().unwrap().into(),
+					// 5Dw9hdb8Wy3cMFf1ZpQh5HuK2GvMNMcxfka4JsM2GRpjqHSA
+					public_testnet_keys::TECH_COUNCIL2.parse::<AccountId>().unwrap().into(),
+					// 5ETnrcfDwCTKZt5pLoKcLNbbwUcddkDAxEjtcgibAtkDhBBe
+					public_testnet_keys::TECH_COUNCIL3.parse::<AccountId>().unwrap().into(),
+					// 5FpQTxEFHAdF2hpkA89qKenSjGQBAHi8uCo8F6fJ5RxnR1sn
+					public_testnet_keys::FRQ_COUNCIL1.parse::<AccountId>().unwrap().into(),
+					// 5DwKn9yg7Kqa71qTaZVfoigwtzyPgBp23wzJKmGiUr8S3j7A
+					public_testnet_keys::FRQ_COUNCIL2.parse::<AccountId>().unwrap().into(),
+					// 5EyLduUEpNfUox5HuogrhbKugAdHnsLHrysKSWL6u4TQFAra
+					public_testnet_keys::FRQ_COUNCIL3.parse::<AccountId>().unwrap().into(),
+					// 5FHFyMYQH39mq3FA2a5ZcDe275K7RZs3zi76gsQb2TE1PF7i
+					public_testnet_keys::FRQ_COUNCIL4.parse::<AccountId>().unwrap().into(),
+					// 5HYKfXdGi2GUupHksmQLtHoWtwH3wPkJRSr3RpbKivTovpqX
+					public_testnet_keys::FRQ_COUNCIL5.parse::<AccountId>().unwrap().into(),
+					// 5HKXEFkNLeutZ2yZ9mbG2v5AbTDMXhza9VEfeDCiJGGBUyi3
+					public_testnet_keys::FRQ_COUNCIL6.parse::<AccountId>().unwrap().into(),
+					// 5CXnMFFgruHxAFtvCogwm8TFygWg1MWd9KhMnfEPbRdCpf74
+					public_testnet_keys::FRQ_COUNCIL7.parse::<AccountId>().unwrap().into(),
+					// 5CWzQaAJFqYoF1bZWsvEnzMQDGokk2csTFBwfPpo1oNfBGkn
+					public_testnet_keys::FRQ_COUNCIL8.parse::<AccountId>().unwrap().into(),
+					// 5HmcreGLq25iA7fiyb6An4YVWC3k1Cq8SQgYn2Qpeepq24nV
+					public_testnet_keys::FRQ_COUNCIL9.parse::<AccountId>().unwrap().into(),
+					// 5CiJXZxsko8YZGhTZAwrhREUzjCVEGwNE7Fgrf1twbt8WsmY
+					public_testnet_keys::FRQ_COUNCIL10.parse::<AccountId>().unwrap().into(),
 				],
-				Default::default(),
-				Default::default(),
+				vec![
+					public_testnet_keys::FRQ_COUNCIL1.parse::<AccountId>().unwrap().into(),
+					public_testnet_keys::FRQ_COUNCIL2.parse::<AccountId>().unwrap().into(),
+					public_testnet_keys::FRQ_COUNCIL3.parse::<AccountId>().unwrap().into(),
+					public_testnet_keys::FRQ_COUNCIL4.parse::<AccountId>().unwrap().into(),
+					public_testnet_keys::FRQ_COUNCIL5.parse::<AccountId>().unwrap().into(),
+					public_testnet_keys::FRQ_COUNCIL6.parse::<AccountId>().unwrap().into(),
+					public_testnet_keys::FRQ_COUNCIL7.parse::<AccountId>().unwrap().into(),
+					public_testnet_keys::FRQ_COUNCIL8.parse::<AccountId>().unwrap().into(),
+					public_testnet_keys::FRQ_COUNCIL9.parse::<AccountId>().unwrap().into(),
+					public_testnet_keys::FRQ_COUNCIL10.parse::<AccountId>().unwrap().into(),
+				],
+				vec![
+					public_testnet_keys::TECH_COUNCIL1.parse::<AccountId>().unwrap().into(),
+					public_testnet_keys::TECH_COUNCIL2.parse::<AccountId>().unwrap().into(),
+					public_testnet_keys::TECH_COUNCIL3.parse::<AccountId>().unwrap().into(),
+				],
 				para_id,
 			)
 		},
