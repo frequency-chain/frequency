@@ -36,8 +36,10 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 			ChainIdentity::Frequency
 		} else if self.id() == "frequency-rococo" {
 			ChainIdentity::FrequencyRococo
-		} else {
+		} else if self.id() == "frequency-local" {
 			ChainIdentity::FrequencyLocal
+		} else {
+			panic!("Unknown chain identity")
 		}
 	}
 }
@@ -100,24 +102,35 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		#[cfg(feature = "frequency-rococo-testnet")]
 		"frequency-rococo" | "rococo" | "testnet" =>
 			Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet()),
-		#[cfg(feature = "frequency")]
-		path => Box::new(chain_spec::frequency::ChainSpec::from_json_file(std::path::PathBuf::from(
-			path,
-		))?),
-		#[cfg(feature = "frequency-rococo-testnet")]
-		path => Box::new(chain_spec::frequency_rococo::ChainSpec::from_json_file(
-			std::path::PathBuf::from(path),
-		)?),
-		#[cfg(feature = "frequency-rococo-local")]
-		path => Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(
-			std::path::PathBuf::from(path),
-		)?),
-		#[cfg(not(any(
-			feature = "frequency",
-			feature = "frequency-rococo-local",
-			feature = "frequency-rococo-testnet",
-		)))]
-		path => Box::new(chain_spec::DummyChainSpec::from_json_file(std::path::PathBuf::from(path))?),
+		path => {
+			let path_buf = std::path::PathBuf::from(path);
+			let spec = Box::new(chain_spec::DummyChainSpec::from_json_file(path_buf.clone())?)
+				as Box<dyn ChainSpec>;
+			if ChainIdentity::Frequency == spec.identify() {
+				#[cfg(feature = "frequency")]
+				{
+					Box::new(chain_spec::frequency::ChainSpec::from_json_file(path_buf)?)
+				}
+				#[cfg(not(feature = "frequency"))]
+				return Err("Frequency runtime is not available.".into())
+			} else if ChainIdentity::FrequencyRococo == spec.identify() {
+				#[cfg(feature = "frequency-rococo-testnet")]
+				{
+					Box::new(chain_spec::frequency_rococo::ChainSpec::from_json_file(path_buf)?)
+				}
+				#[cfg(not(feature = "frequency-rococo-testnet"))]
+				return Err("Frequency Rococo runtime is not available.".into())
+			} else if ChainIdentity::FrequencyLocal == spec.identify() {
+				#[cfg(feature = "frequency-rococo-local")]
+				{
+					Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(path_buf)?)
+				}
+				#[cfg(not(feature = "frequency-rococo-local"))]
+				return Err("Frequency Local runtime is not available.".into())
+			} else {
+				panic!("Unknown chain spec.");
+			}
+		},
 	})
 }
 
