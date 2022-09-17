@@ -17,7 +17,7 @@ cargo --version
 
 case $TARGET in
   build-node)
-    cargo build --release "$@"
+    cargo build --release --features all-frequency-features "$@" 
     ;;
 
   build-runtime)
