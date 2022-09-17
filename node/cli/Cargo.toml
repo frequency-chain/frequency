@@ -55,7 +55,7 @@ cli = [
   "frame-benchmarking-cli",
   "try-runtime-cli",
 ]
-default = ["std", "wasmtime", "cli", "all-frequency-features"]
+default = ["std", "wasmtime", "cli"]
 runtime-benchmarks = [
   "polkadot-cli/runtime-benchmarks",
 ]

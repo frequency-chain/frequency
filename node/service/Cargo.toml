@@ -95,7 +95,7 @@ pallet-schemas-runtime-api = {path = "../../pallets/schemas/src/runtime-api"}
 substrate-build-script-utils = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 
 [features]
-default = ["std", "all-frequency-features"]
+default = ["std"]
 std = []
 runtime-benchmarks = [
   "frequency-runtime/runtime-benchmarks",
