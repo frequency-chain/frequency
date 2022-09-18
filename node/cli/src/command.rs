@@ -411,13 +411,14 @@ pub fn run() -> Result<()> {
 			if cfg!(feature = "try-runtime") {
 				let runner = cli.create_runner(cmd)?;
 				let chain_spec = &runner.config().chain_spec;
-				// grab the task manager.
-				let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
-				let task_manager =
-					TaskManager::new(runner.config().tokio_handle.clone(), *registry)
-						.map_err(|e| format!("Error: {:?}", e))?;
 				with_runtime_or_err!(chain_spec, {
 					{
+						// grab the task manager.
+						let registry =
+							&runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
+						let task_manager =
+							TaskManager::new(runner.config().tokio_handle.clone(), *registry)
+								.map_err(|e| format!("Error: {:?}", e))?;
 						runner.async_run(|config| {
 							Ok((cmd.run::<Block, Executor>(config), task_manager))
 						})
