@@ -13,9 +13,9 @@ RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificat
 FROM --platform=linux/amd64 ubuntu:focal
 
 RUN useradd -m -u 1000 -U -s /bin/sh -d /frequency frequency && \
-	mkdir -p /data /frequency/.local/share && \
-	chown -R frequency:frequency /data && \
-	ln -s /data /frequency/.local/share/frequency && \
+	mkdir -p /chain-data /frequency/.local/share && \
+	chown -R frequency:frequency /chain-data && \
+	ln -s /chain-data /frequency/.local/share/frequency && \
 	rm -rf /usr/bin /usr/sbin
 
 USER frequency
@@ -25,27 +25,17 @@ COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificat
 # COPY --chown=frequency target/release/frequency.amd64 ./frequency/frequency
 COPY --chown=frequency target/release/frequency ./frequency/
 
-# 9933 P2P port
-# 9944 for RPC call
-# 30333 for Websocket
+# 9933 for RPC call
+# 9944 for Websocket
+# 30333 for P2P
 # 9615 for Telemetry (prometheus)
 EXPOSE 9933 9944 30333 9615
 
-VOLUME ["/data"]
+VOLUME ["/chain-data"]
 
-ARG FREQUENCY_CHAIN_SPEC
-ENV FREQUENCY_CHAIN_SPEC=frequency-rococo
-ENTRYPOINT ["/frequency/frequency", \
-	# Required params for starting the chain
-	"--base-path=/data", \
-	"--port=30333", \
-	"--rpc-port=9933", \
-	"--ws-port=9944", \
-	"--rpc-external", \
-	"--rpc-cors=all", \
-	"--ws-external", \
-	"--rpc-methods=safe" \
-	]
+ENTRYPOINT ["/frequency/frequency"]
 
 # Params which can be overriden from CLI
-CMD ["--chain=frequency"]
+# CMD ["", "", ...]
+
+

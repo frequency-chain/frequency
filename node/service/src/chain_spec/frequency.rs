@@ -28,7 +28,7 @@ pub mod frequency_mainnet_keys {
 	pub const COLLATOR_2_SR25519: &str =
 		"0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"; // Bob
 	pub const COLLATOR_3_SR25519: &str =
-		"0x306721211d5404bd9da88e0204360a1a9ab8b87c66c1bc2fcdd37f3c2222cc20"; // Charlie
+		"0x90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22"; // Charlie
 	pub const COLLATOR_4_SR25519: &str =
 		"0x306721211d5404bd9da88e0204360a1a9ab8b87c66c1bc2fcdd37f3c2222cc20"; // Dave
 	pub const COLLATOR_5_SR25519: &str =
@@ -131,50 +131,10 @@ pub fn frequency() -> ChainSpec {
 				],
 				Some(frequency_mainnet_keys::MAINNET_FRQ_SUDO.parse::<AccountId>().unwrap().into()),
 				// TODO:: endowed accounts with initial balance.
-				vec![
-					(
-						frequency_mainnet_keys::MAINNET_FRQ_SUDO
-							.parse::<AccountId>()
-							.unwrap()
-							.into(),
-						1 << 60,
-					),
-					(
-						frequency_mainnet_keys::COLLATOR_1_SR25519
-							.parse::<AccountId>()
-							.unwrap()
-							.into(),
-						1 << 60,
-					),
-					(
-						frequency_mainnet_keys::COLLATOR_2_SR25519
-							.parse::<AccountId>()
-							.unwrap()
-							.into(),
-						1 << 60,
-					),
-					(
-						frequency_mainnet_keys::COLLATOR_3_SR25519
-							.parse::<AccountId>()
-							.unwrap()
-							.into(),
-						1 << 60,
-					),
-					(
-						frequency_mainnet_keys::COLLATOR_4_SR25519
-							.parse::<AccountId>()
-							.unwrap()
-							.into(),
-						1 << 60,
-					),
-					(
-						frequency_mainnet_keys::COLLATOR_5_SR25519
-							.parse::<AccountId>()
-							.unwrap()
-							.into(),
-						1 << 60,
-					),
-				],
+				vec![(
+					frequency_mainnet_keys::MAINNET_FRQ_SUDO.parse::<AccountId>().unwrap().into(),
+					1 << 60,
+				)],
 				// TODO: initial council members
 				Default::default(),
 				// TODO: initial technical committee members
