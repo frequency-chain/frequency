@@ -103,7 +103,6 @@ jobs:
           PACKAGE: frequency-rococo-runtime
           RUNTIME_DIR: runtime/frequency-rococo
           PROFILE: production
-          BUILD_OPTS: "--features on-chain-release-build,no-metadata-docs"
       - name: Create tarball  of deterministic wasm from srtool for local 📦
         run: tar -cvf frequency_wasm_local-${{ github.sha }}.tar ./runtime/frequency-rococo/target/srtool/production/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.compressed.wasm ./runtime/frequency-rococo/target/srtool/production/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.wasm ./runtime/frequency-rococo/target/srtool/production/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.wasm
       - name: Upload frequency deterministic wasm to artifacts 📦
@@ -146,7 +145,6 @@ jobs:
           PACKAGE: frequency-runtime
           RUNTIME_DIR: runtime/frequency
           PROFILE: production
-          BUILD_OPTS: "--features on-chain-release-build,no-metadata-docs"
       - name: Create tarball  of deterministic wasm from srtool for mainnet
         run: tar -cvf frequency_wasm_main-${{ github.sha }}.tar ./runtime/frequency/target/srtool/production/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm ./runtime/frequency/target/srtool/production/wbuild/frequency-runtime/frequency_runtime.compact.wasm ./runtime/frequency/target/srtool/production/wbuild/frequency-runtime/frequency_runtime.wasm
       - name: Upload frequency deterministic wasm to artifacts for mainnet 📦
