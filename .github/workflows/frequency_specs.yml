@@ -39,6 +39,8 @@ jobs:
         uses: Swatinem/rust-cache@v1
         with:
           key: ${{ env.RUST_TOOLCHAIN }}
+      - name: Install toolchain for frequency
+        run: make install-toolchain
       - name: Run build rococo binary
         run: make build-rococo-release
       - name: Build frequency rococo related specs and wasm 📝
