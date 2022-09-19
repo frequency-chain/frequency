@@ -20,8 +20,8 @@ log = "0.4.17"
 serde = {version = "1.0.144", features = ["derive"]}
 
 # Frequency Runtime
-frequency-rococo-runtime = {path = "../../runtime/frequency-rococo"}
-frequency-runtime = {path = "../../runtime/frequency"}
+frequency-rococo-runtime = {path = "../../runtime/frequency-rococo", optional = true}
+frequency-runtime = {path = "../../runtime/frequency", optional = true}
 
 # Substrate
 frame-benchmarking = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
@@ -96,10 +96,24 @@ substrate-build-script-utils = {git = "https://github.com/paritytech/substrate",
 
 [features]
 default = ["std"]
+std = []
 runtime-benchmarks = [
   "frequency-runtime/runtime-benchmarks",
   "frequency-rococo-runtime/runtime-benchmarks",
   "polkadot-service/runtime-benchmarks",
 ]
-std = []
+frequency = [
+  "frequency-runtime",
+]
+frequency-rococo-local = [
+  "frequency-rococo-runtime",
+]
+frequency-rococo-testnet = [
+  "frequency-rococo-runtime",
+]
+all-frequency-features = [
+  "frequency",
+  "frequency-rococo-local",
+  "frequency-rococo-testnet"
+]
 try-runtime = ["frequency-runtime/try-runtime", "frequency-rococo-runtime/try-runtime"]

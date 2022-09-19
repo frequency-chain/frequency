@@ -69,7 +69,8 @@ pub struct Cli {
 
 	/// Instant block sealing
 	///
-	/// Can only be used with `--dev`
+	/// Can only be used with `--dev` and turned on with frequency-rococo-local feature flag
+	#[cfg(feature = "frequency-rococo-local")]
 	#[clap(long = "instant-sealing", requires = "dev")]
 	pub instant_sealing: bool,
 }
