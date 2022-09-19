@@ -197,7 +197,7 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 
 		let new_key = key_pair_2.public();
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration:10 };
+		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();

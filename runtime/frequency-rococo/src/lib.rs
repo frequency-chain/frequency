@@ -39,7 +39,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU8, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly, Everything},
+	traits::{ConstU32, ConstU8, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly, Everything},
 	weights::{
 		constants::{RocksDbWeight, WEIGHT_PER_SECOND},
 		ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
