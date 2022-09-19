@@ -2353,7 +2353,7 @@ declare module '@polkadot/types/lookup' {
     } & Struct;
     readonly isAddProviderToMsa: boolean;
     readonly asAddProviderToMsa: {
-      readonly providerKey: AccountId32;
+      readonly delegatorKey: AccountId32;
       readonly proof: SpRuntimeMultiSignature;
       readonly addProviderPayload: PalletMsaAddProvider;
     } & Struct;
