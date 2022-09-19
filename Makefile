@@ -44,6 +44,9 @@ specs-rococo-4044:
 specs-mainnet:
 	./scripts/generate_specs.sh 999 mainnet
 
+specs-rococo-local:
+	./scripts/generate_relay_specs.sh
+
 .PHONY: format
 format:
 	cargo fmt -- --check
