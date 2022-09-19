@@ -716,12 +716,8 @@ impl<T: Config> Pallet<T> {
 			// Delete the key if it exists
 			*maybe_msa_id = None;
 
-			// Decrement the key counter
-			<MsaInfoOf<T>>::try_mutate_exists(msa_id, |key_count| {
-				let decremented_key_count: u8 = key_count.unwrap() - 1;
-
-				// Delete the key if its count is 0
-				if decremented_key_count == 0 { *key_count = None }
+			<MsaInfoOf<T>>::try_mutate(msa_id, |key_count| {
+				*key_count = *key_count - 1u8;
 				Ok(())
 			})
 		})
