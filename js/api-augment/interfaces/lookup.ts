@@ -2204,7 +2204,7 @@ export default {
         providerName: 'Bytes',
       },
       add_provider_to_msa: {
-        providerKey: 'AccountId32',
+        delegatorKey: 'AccountId32',
         proof: 'SpRuntimeMultiSignature',
         addProviderPayload: 'PalletMsaAddProvider',
       },

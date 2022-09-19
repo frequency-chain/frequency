@@ -36,21 +36,21 @@ install-toolchain:
 
 .PHONY: specs
 specs-rococo-2000:
-	./scripts/generate_specs.sh 2000 rococo-2000
+	./scripts/generate_specs.sh 2000 rococo-2000 release
 
 specs-rococo-4044:
-	./scripts/generate_specs.sh 4044 rococo-4044
+	./scripts/generate_specs.sh 4044 rococo-4044 release
 
 specs-mainnet:
-	./scripts/generate_specs.sh 999 mainnet
+	./scripts/generate_specs.sh 999 mainnet release
 
 .PHONY: format
 format:
-	cargo fmt -- --check
+	cargo fmt
 
 .PHONY: lint
 lint:
-	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --all-targets
+	cargo fmt --check && SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features all-frequency-features -- -D warnings
 
 .PHONY: format-lint
 format-lint: format lint
@@ -72,3 +72,35 @@ docs:
 .PHONY: docs
 docker-prune:
 	./scripts/prune_all.sh
+
+.PHONY: check
+check:
+	SKIP_WASM_BUILD= cargo check --features all-frequency-features
+
+check-local:
+	SKIP_WASM_BUILD= cargo check --features  frequency-rococo-local
+
+check-rococo:
+	SKIP_WASM_BUILD= cargo check --features  frequency-rococo-testnet
+
+check-mainnet:
+	SKIP_WASM_BUILD= cargo check --features  frequency
+
+.PHONY: build
+build:
+	cargo build --locked --release --features all-frequency-features
+
+build-local:
+	cargo build --locked --release --features  frequency-rococo-local
+
+build-rococo:
+	cargo build --locked --release --features  frequency-rococo-testnet
+
+build-mainnet:
+	cargo build --locked --release --features  frequency
+
+build-rococo-release:
+	cargo build --locked --features  frequency-rococo-testnet --profile production
+
+build-mainnet-release:
+	cargo build --locked --features  frequency --profile production

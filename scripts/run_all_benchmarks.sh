@@ -3,10 +3,9 @@
 export RUST_LOG=info
 THIS_DIR=$( dirname -- "$0"; )
 PROJECT=${1:-$THIS_DIR/..}
-RUNTIME=$PROJECT/target/release/frequency
+RUNTIME=$PROJECT/target/production/frequency
 BENCHMARK="$RUNTIME benchmark pallet "
 SPECS=specs-rococo-4044
-CHAIN=$PROJECT/res/genesis/testnet/frequency-spec-rococo-testnet.json
 EXTERNAL_PALLETS=(orml_vesting pallet_scheduler pallet_democracy pallet_preimage pallet_utility)
 CUSTOM_PALLETS=(messages msa schemas)
 
@@ -18,7 +17,7 @@ function run_benchmark() {
   $BENCHMARK \
   --pallet $1 \
   --extrinsic "*" \
-  --chain="$CHAIN" \
+  --chain="frequency" \
   --execution wasm \
   --wasm-execution compiled \
   --steps 50 \
@@ -27,7 +26,7 @@ function run_benchmark() {
   --template=$3
 }
 
-cargo build --release --features runtime-benchmarks --workspace || exit_err
+cargo build --profile production --features runtime-benchmarks --features frequency --workspace || exit_err
 make $SPECS || exit_err
 
 for external_pallet in "${EXTERNAL_PALLETS[@]}"; do

@@ -1,11 +1,11 @@
-use crate::{self as pallet_msa, types::EMPTY_FUNCTION};
+use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
 use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use frame_support::{
 	assert_ok, parameter_types,
 	traits::{ConstU16, ConstU64},
 };
 use frame_system as system;
-use sp_core::{sr25519, Encode, Pair, H256};
+use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, ConvertInto, IdentifyAccount, IdentityLookup, Verify},
@@ -106,14 +106,20 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	ext
 }
 
+/// Create and return a simple test AccountId32 constructed with the desired integer.
 pub fn test_public(n: u8) -> AccountId32 {
 	AccountId32::new([n; 32])
 }
 
+/// Create and return a simple signed origin from a test_public constructed with the desired integer,
+/// for passing to an extrinsic call
 pub fn test_origin_signed(n: u8) -> Origin {
 	Origin::signed(test_public(n))
 }
 
+/// Create a new keypair and an MSA associated with its public key.
+/// # Returns
+/// (MessageSourceId, AccountId32) - a tuple wiht the MSA and the new Account public key.
 pub fn create_account() -> (MessageSourceId, AccountId32) {
 	let (key_pair, _) = sr25519::Pair::generate();
 	let result_key = Msa::create_account(AccountId32::from(key_pair.public()), EMPTY_FUNCTION);
@@ -121,30 +127,48 @@ pub fn create_account() -> (MessageSourceId, AccountId32) {
 	result_key.unwrap()
 }
 
+/// Creates and signs an `AddProvider` struct using the provided delegator keypair and provider MSA
+/// # Returns
+/// (MultiSignature, AddProvider) - Returns a tuple with the signature and the AddProvider struct
+pub fn create_and_sign_add_provider_payload(
+	delegator_pair: sr25519::Pair,
+	provider_msa: MessageSourceId,
+) -> (MultiSignature, AddProvider) {
+	let add_provider_payload = AddProvider::new(provider_msa, 0, None);
+	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+	let signature: MultiSignature = delegator_pair.sign(&encode_add_provider_data).into();
+	(signature, add_provider_payload)
+}
+
 /// Creates a provider and delegator MSA and sets the delegation relationship.
 /// # Returns
-/// * (u8, u64) - Returns a delegator_msa_id and provider_msa_id.
-pub fn test_create_delegator_msa_with_provider() -> (u8, u64) {
+/// * (u8, Public) - Returns a provider_msa_id and a delegator account.
+pub fn test_create_delegator_msa_with_provider() -> (u64, Public) {
 	let (key_pair, _) = sr25519::Pair::generate();
+
 	let provider_account = key_pair.public();
-	let delegator_msa_id: u8 = 1;
 
-	let add_provider_payload = pallet_msa::AddProvider::new(delegator_msa_id.into(), 0, None);
-	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+	let (delegator_key_pair, _) = sr25519::Pair::generate();
 
-	let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
+	let delegator_account = delegator_key_pair.public();
 
-	assert_ok!(Msa::create(test_origin_signed(delegator_msa_id)));
 	assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+	assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
+
+	let provider_msa_id =
+		Msa::try_get_msa_from_account_id(&AccountId32::new(provider_account.0)).unwrap();
+
+	let (delegator_signature, add_provider_payload) =
+		create_and_sign_add_provider_payload(delegator_key_pair, provider_msa_id);
+
 	assert_ok!(Msa::add_provider_to_msa(
-		test_origin_signed(delegator_msa_id),
-		provider_account.into(),
-		signature,
+		Origin::signed(provider_account.into()),
+		delegator_account.into(),
+		delegator_signature,
 		add_provider_payload
 	));
 
-	let provider_msa_id: MessageSourceId = 2;
-	(delegator_msa_id, provider_msa_id)
+	(provider_msa_id, delegator_account)
 }
 
 #[cfg(feature = "runtime-benchmarks")]

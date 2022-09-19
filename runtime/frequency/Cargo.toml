@@ -190,3 +190,9 @@ try-runtime = [
   "frame-try-runtime",
   "orml-vesting/try-runtime",
 ]
+
+# Following features are used in generating lean wasms
+no-metadata-docs = ["frame-support/no-metadata-docs"]
+on-chain-release-build = [
+	"sp-api/disable-logging",
+]

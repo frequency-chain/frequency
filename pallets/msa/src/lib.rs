@@ -373,34 +373,34 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Creates a new Delegation for an existing MSA, with `origin` as the Delegator and `provider_key` as the Provider.  Requires the Provider to authorize the new Delegation.
+		/// Creates a new Delegation for an existing MSA, with `origin` as the Provider and `delegator_key` is the delegator.
+		/// Since it is being sent on the Delegator's behalf, it requires the Delegator to authorize the new Delegation.
 		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`ProviderAdded`](Event::ProviderAdded).
 		///
 		/// ## Errors
-		/// - Returns [`AddProviderSignatureVerificationFailed`](Error::AddProviderSignatureVerificationFailed) if `provider_key`'s MSA ID does not equal `add_provider_payload.authorized_msa_id`.
-		/// - Returns [`DuplicateProvider`](Error::DuplicateProvider) if there is already a Delegation for `origin` MSA and `provider_key` MSA.
+		/// - Returns [`AddProviderSignatureVerificationFailed`](Error::AddProviderSignatureVerificationFailed) if `origin`'s MSA ID does not equal `add_provider_payload.authorized_msa_id`.
+		/// - Returns [`DuplicateProvider`](Error::DuplicateProvider) if there is already a Delegation for `origin` MSA and `delegator_key` MSA.
 		/// ## Errors
-		/// - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if `add_provider_payload.authorized_msa_id`  does not match MSA ID of `provider_key`.
+		/// - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if `add_provider_payload.authorized_msa_id`  does not match MSA ID of `delegator_key`.
 		/// - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
 		#[pallet::weight(T::WeightInfo::add_provider_to_msa())]
 		pub fn add_provider_to_msa(
 			origin: OriginFor<T>,
-			provider_key: T::AccountId,
+			delegator_key: T::AccountId,
 			proof: MultiSignature,
 			add_provider_payload: AddProvider,
 		) -> DispatchResult {
-			let delegator_key = ensure_signed(origin)?;
+			let provider_key = ensure_signed(origin)?;
 
-			Self::verify_signature(proof, provider_key.clone(), add_provider_payload.encode())
+			// delegator must have signed the payload.
+			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())
 				.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
-
-			let payload_authorized_msa_id = add_provider_payload.authorized_msa_id;
 
 			let (provider_msa_id, delegator_msa_id) = Self::ensure_valid_provider(
 				&delegator_key,
 				&provider_key,
-				payload_authorized_msa_id,
+				add_provider_payload.authorized_msa_id,
 			)?;
 			let granted_schemas = add_provider_payload.schema_ids;
 			ensure!(
@@ -608,7 +608,7 @@ impl<T: Config> Pallet<T> {
 		let provider_msa_id = Self::ensure_valid_msa_key(provider_key)?;
 		let delegator_msa_id = Self::ensure_valid_msa_key(delegator_key)?;
 
-		ensure!(authorized_msa_id == delegator_msa_id, Error::<T>::UnauthorizedDelegator);
+		ensure!(authorized_msa_id == provider_msa_id, Error::<T>::UnauthorizedDelegator);
 
 		ensure!(delegator_msa_id != provider_msa_id, Error::<T>::InvalidSelfProvider);
 
