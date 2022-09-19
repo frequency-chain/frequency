@@ -1451,34 +1451,34 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Creates a new Delegation for an existing MSA, with `origin` as the Delegator and `provider_key` as the Provider.  Requires the Provider to authorize the new Delegation.</span>
+		<span class="doccomment">/// Creates a new Delegation for an existing MSA, with `origin` as the Provider and `delegator_key` is the delegator.</span>
+		<span class="doccomment">/// Since it is being sent on the Delegator&#39;s behalf, it requires the Delegator to authorize the new Delegation.</span>
 		<span class="doccomment">/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`ProviderAdded`](Event::ProviderAdded).</span>
 		<span class="doccomment">///</span>
 		<span class="doccomment">/// ## Errors</span>
-		<span class="doccomment">/// - Returns [`AddProviderSignatureVerificationFailed`](Error::AddProviderSignatureVerificationFailed) if `provider_key`&#39;s MSA ID does not equal `add_provider_payload.authorized_msa_id`.</span>
-		<span class="doccomment">/// - Returns [`DuplicateProvider`](Error::DuplicateProvider) if there is already a Delegation for `origin` MSA and `provider_key` MSA.</span>
+		<span class="doccomment">/// - Returns [`AddProviderSignatureVerificationFailed`](Error::AddProviderSignatureVerificationFailed) if `origin`&#39;s MSA ID does not equal `add_provider_payload.authorized_msa_id`.</span>
+		<span class="doccomment">/// - Returns [`DuplicateProvider`](Error::DuplicateProvider) if there is already a Delegation for `origin` MSA and `delegator_key` MSA.</span>
 		<span class="doccomment">/// ## Errors</span>
-		<span class="doccomment">/// - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if `add_provider_payload.authorized_msa_id`  does not match MSA ID of `provider_key`.</span>
+		<span class="doccomment">/// - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if `add_provider_payload.authorized_msa_id`  does not match MSA ID of `delegator_key`.</span>
 		<span class="doccomment">/// - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`</span>
 		<span class="doccomment">/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="ident">T::WeightInfo::add_provider_to_msa</span>())]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_provider_to_msa</span>(
 			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-			<span class="ident">provider_key</span>: <span class="ident">T::AccountId</span>,
+			<span class="ident">delegator_key</span>: <span class="ident">T::AccountId</span>,
 			<span class="ident">proof</span>: <span class="ident">MultiSignature</span>,
 			<span class="ident">add_provider_payload</span>: <span class="ident">AddProvider</span>,
 		) -&gt; <span class="ident">DispatchResult</span> {
-			<span class="kw">let</span> <span class="ident">delegator_key</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
+			<span class="kw">let</span> <span class="ident">provider_key</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 
-			<span class="ident"><span class="self">Self</span>::verify_signature</span>(<span class="ident">proof</span>, <span class="ident">provider_key</span>.<span class="ident">clone</span>(), <span class="ident">add_provider_payload</span>.<span class="ident">encode</span>())
+			<span class="comment">// delegator must have signed the payload.</span>
+			<span class="ident"><span class="self">Self</span>::verify_signature</span>(<span class="ident">proof</span>, <span class="ident">delegator_key</span>.<span class="ident">clone</span>(), <span class="ident">add_provider_payload</span>.<span class="ident">encode</span>())
 				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AddProviderSignatureVerificationFailed</span>)<span class="question-mark">?</span>;
-
-			<span class="kw">let</span> <span class="ident">payload_authorized_msa_id</span> <span class="op">=</span> <span class="ident">add_provider_payload</span>.<span class="ident">authorized_msa_id</span>;
 
 			<span class="kw">let</span> (<span class="ident">provider_msa_id</span>, <span class="ident">delegator_msa_id</span>) <span class="op">=</span> <span class="ident"><span class="self">Self</span>::ensure_valid_provider</span>(
 				<span class="kw-2">&amp;</span><span class="ident">delegator_key</span>,
 				<span class="kw-2">&amp;</span><span class="ident">provider_key</span>,
-				<span class="ident">payload_authorized_msa_id</span>,
+				<span class="ident">add_provider_payload</span>.<span class="ident">authorized_msa_id</span>,
 			)<span class="question-mark">?</span>;
 			<span class="kw">let</span> <span class="ident">granted_schemas</span> <span class="op">=</span> <span class="ident">add_provider_payload</span>.<span class="ident">schema_ids</span>;
 			<span class="macro">ensure!</span>(
@@ -1689,7 +1689,7 @@
 		<span class="kw">let</span> <span class="ident">provider_msa_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::ensure_valid_msa_key</span>(<span class="ident">provider_key</span>)<span class="question-mark">?</span>;
 		<span class="kw">let</span> <span class="ident">delegator_msa_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::ensure_valid_msa_key</span>(<span class="ident">delegator_key</span>)<span class="question-mark">?</span>;
 
-		<span class="macro">ensure!</span>(<span class="ident">authorized_msa_id</span> <span class="op">==</span> <span class="ident">delegator_msa_id</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::UnauthorizedDelegator</span>);
+		<span class="macro">ensure!</span>(<span class="ident">authorized_msa_id</span> <span class="op">==</span> <span class="ident">provider_msa_id</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::UnauthorizedDelegator</span>);
 
 		<span class="macro">ensure!</span>(<span class="ident">delegator_msa_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">provider_msa_id</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidSelfProvider</span>);
 

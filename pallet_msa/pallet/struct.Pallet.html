@@ -30,16 +30,17 @@ only piece of metadata we are recording is provider name.</p>
 <li>Returns
 <a href="enum.Error.html#variant.DuplicateProviderMetadata"><code>DuplicateProviderMetadata</code></a> if there is already a ProviderMetadata associated with the given MSA id.</li>
 </ul>
-</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.add_provider_to_msa" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/pallet_msa/lib.rs.html#392-424">source</a></span><h4 class="code-header">pub fn <a href="#method.add_provider_to_msa" class="fnname">add_provider_to_msa</a>(<br>&nbsp;&nbsp;&nbsp;&nbsp;origin: OriginFor&lt;T&gt;,<br>&nbsp;&nbsp;&nbsp;&nbsp;provider_key: T::AccountId,<br>&nbsp;&nbsp;&nbsp;&nbsp;proof: MultiSignature,<br>&nbsp;&nbsp;&nbsp;&nbsp;add_provider_payload: <a class="struct" href="../types/struct.AddProvider.html" title="struct pallet_msa::types::AddProvider">AddProvider</a><br>) -&gt; DispatchResult</h4></section></summary><div class="docblock"><p>Creates a new Delegation for an existing MSA, with <code>origin</code> as the Delegator and <code>provider_key</code> as the Provider.  Requires the Provider to authorize the new Delegation.
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.add_provider_to_msa" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/pallet_msa/lib.rs.html#393-424">source</a></span><h4 class="code-header">pub fn <a href="#method.add_provider_to_msa" class="fnname">add_provider_to_msa</a>(<br>&nbsp;&nbsp;&nbsp;&nbsp;origin: OriginFor&lt;T&gt;,<br>&nbsp;&nbsp;&nbsp;&nbsp;delegator_key: T::AccountId,<br>&nbsp;&nbsp;&nbsp;&nbsp;proof: MultiSignature,<br>&nbsp;&nbsp;&nbsp;&nbsp;add_provider_payload: <a class="struct" href="../types/struct.AddProvider.html" title="struct pallet_msa::types::AddProvider">AddProvider</a><br>) -&gt; DispatchResult</h4></section></summary><div class="docblock"><p>Creates a new Delegation for an existing MSA, with <code>origin</code> as the Provider and <code>delegator_key</code> is the delegator.
+Since it is being sent on the Delegator’s behalf, it requires the Delegator to authorize the new Delegation.
 Returns <code>Ok(())</code> on success, otherwise returns an error. Deposits event <a href="enum.Event.html#variant.ProviderAdded"><code>ProviderAdded</code></a>.</p>
 <h6 id="errors-3"><a href="#errors-3">Errors</a></h6>
 <ul>
-<li>Returns <a href="enum.Error.html#variant.AddProviderSignatureVerificationFailed"><code>AddProviderSignatureVerificationFailed</code></a> if <code>provider_key</code>’s MSA ID does not equal <code>add_provider_payload.authorized_msa_id</code>.</li>
-<li>Returns <a href="enum.Error.html#variant.DuplicateProvider"><code>DuplicateProvider</code></a> if there is already a Delegation for <code>origin</code> MSA and <code>provider_key</code> MSA.</li>
+<li>Returns <a href="enum.Error.html#variant.AddProviderSignatureVerificationFailed"><code>AddProviderSignatureVerificationFailed</code></a> if <code>origin</code>’s MSA ID does not equal <code>add_provider_payload.authorized_msa_id</code>.</li>
+<li>Returns <a href="enum.Error.html#variant.DuplicateProvider"><code>DuplicateProvider</code></a> if there is already a Delegation for <code>origin</code> MSA and <code>delegator_key</code> MSA.</li>
 </ul>
 <h6 id="errors-4"><a href="#errors-4">Errors</a></h6>
 <ul>
-<li>Returns <a href="enum.Error.html#variant.UnauthorizedProvider"><code>UnauthorizedProvider</code></a> if <code>add_provider_payload.authorized_msa_id</code>  does not match MSA ID of <code>provider_key</code>.</li>
+<li>Returns <a href="enum.Error.html#variant.UnauthorizedProvider"><code>UnauthorizedProvider</code></a> if <code>add_provider_payload.authorized_msa_id</code>  does not match MSA ID of <code>delegator_key</code>.</li>
 <li>Returns <a href="enum.Error.html#variant.InvalidSignature"><code>InvalidSignature</code></a> if <code>proof</code> verification fails; <code>delegator_key</code> must have signed <code>add_provider_payload</code></li>
 <li>Returns <a href="enum.Error.html#variant.NoKeyExists"><code>NoKeyExists</code></a> if there is no MSA for <code>origin</code>.</li>
 </ul>
