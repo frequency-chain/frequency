@@ -2,7 +2,7 @@ use super::{mock::*, Event as MessageEvent};
 use crate::{BlockMessages, Config, Error, Message, Messages};
 use codec::Encode;
 use common_primitives::{
-	messages::{BlockPaginationRequest, MessageResponse},
+	messages::{BlockPaginationRequest, MessageResponse, MessageResponseOnChain, MessageResponseIPFS},
 	schema::*,
 };
 use frame_support::{
@@ -418,9 +418,40 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_return_offchain_payl
 		// with the CID: (cid, payload_length).
 		assert_eq!(
 			pagination_response.content[0],
-			MessageResponse {
-				msa_id: 10,
+			MessageResponse<MessageResponseIPFS> {
 				payload: cid,
+				index: from_index as u16,
+				provider_msa_id: 1,
+				block_number: 0,
+				payload_length: IPFS_PAYLOAD_LENGTH,
+			}
+		);
+	});
+}
+
+#[test]
+fn get_messages_by_schema_returns_ipfs_cid_required_fields() {
+	new_test_ext().execute_with(|| {
+		let schema_id: SchemaId = IPFS_SCHEMA_ID;
+		let page_size = 3;
+		let from_index = 2;
+		let messages_per_block = vec![10, 0, 5, 2, 0, 3, 9];
+		populate_messages(schema_id, messages_per_block.clone(), PayloadLocation::IPFS);
+		let request = BlockPaginationRequest {
+			page_size,
+			from_block: 0,
+			to_block: messages_per_block.len() as u64,
+			from_index,
+
+		};
+
+		let cid =
+			Vec::from("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes());
+
+		assert_eq!(
+			pagination_response.content[0],
+			MessageResponse<MessageResponseIPFS> {
+				cid: cid,
 				index: from_index as u16,
 				provider_msa_id: 1,
 				block_number: 0,
