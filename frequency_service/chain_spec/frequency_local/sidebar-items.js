@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":[["development_config",""],["local_testnet_config",""],["template_session_keys","Generate the session keys from individual elements."]],"type":[["ChainSpec","Specialized `ChainSpec` for the normal parachain runtime."]]};

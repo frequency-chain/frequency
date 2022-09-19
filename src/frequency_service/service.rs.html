@@ -792,8 +792,34 @@
 <span id="786">786</span>
 <span id="787">787</span>
 <span id="788">788</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
-
+<span id="789">789</span>
+<span id="790">790</span>
+<span id="791">791</span>
+<span id="792">792</span>
+<span id="793">793</span>
+<span id="794">794</span>
+<span id="795">795</span>
+<span id="796">796</span>
+<span id="797">797</span>
+<span id="798">798</span>
+<span id="799">799</span>
+<span id="800">800</span>
+<span id="801">801</span>
+<span id="802">802</span>
+<span id="803">803</span>
+<span id="804">804</span>
+<span id="805">805</span>
+<span id="806">806</span>
+<span id="807">807</span>
+<span id="808">808</span>
+<span id="809">809</span>
+<span id="810">810</span>
+<span id="811">811</span>
+<span id="812">812</span>
+<span id="813">813</span>
+<span id="814">814</span>
+</pre><pre class="rust"><code><span class="attribute">#![<span class="ident">allow</span>(<span class="ident">unused_imports</span>)]</span>
+<span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 <span class="comment">// std</span>
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">sync::Arc</span>, <span class="ident">time::Duration</span>};
 
@@ -819,6 +845,8 @@
 <span class="kw">use</span> <span class="ident">cumulus_relay_chain_rpc_interface::RelayChainRPCInterface</span>;
 
 <span class="comment">// Substrate Imports</span>
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">futures::stream::StreamExt</span>;
+<span class="kw">use</span> <span class="ident">polkadot_service::CollatorPair</span>;
 <span class="kw">use</span> <span class="ident">sc_client_api::ExecutorProvider</span>;
 <span class="kw">use</span> <span class="ident">sc_consensus::LongestChain</span>;
 <span class="kw">use</span> <span class="ident">sc_executor::NativeElseWasmExecutor</span>;
@@ -827,62 +855,83 @@
 <span class="kw">use</span> <span class="ident">sc_telemetry</span>::{<span class="ident">Telemetry</span>, <span class="ident">TelemetryHandle</span>, <span class="ident">TelemetryWorker</span>, <span class="ident">TelemetryWorkerHandle</span>};
 <span class="kw">use</span> <span class="ident">sp_api::ConstructRuntimeApi</span>;
 <span class="kw">use</span> <span class="ident">sp_blockchain::HeaderBackend</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_consensus_aura::sr25519::AuthorityId</span> <span class="kw">as</span> <span class="ident">AuraId</span>;
 <span class="kw">use</span> <span class="ident">sp_keystore::SyncCryptoStorePtr</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime::traits::BlakeTwo256</span>;
 <span class="kw">use</span> <span class="ident">substrate_prometheus_endpoint::Registry</span>;
-
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">futures::stream::StreamExt</span>;
-<span class="kw">use</span> <span class="ident">polkadot_service::CollatorPair</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_consensus_aura::sr25519::AuthorityId</span> <span class="kw">as</span> <span class="ident">AuraId</span>;
 
 <span class="kw">type</span> <span class="ident">FullBackend</span> <span class="op">=</span> <span class="ident">TFullBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>;
 
 <span class="kw">type</span> <span class="ident">MaybeFullSelectChain</span> <span class="op">=</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LongestChain</span><span class="op">&lt;</span><span class="ident">FullBackend</span>, <span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// Native executor instance for frequency mainnet.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FrequencyRuntimeExecutor</span>;
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frequency&quot;</span>)]</span>
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">frequency_executor</span> {
+	<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">frequency_runtime</span>;
 
-<span class="kw">impl</span> <span class="ident">sc_executor::NativeExecutionDispatch</span> <span class="kw">for</span> <span class="ident">FrequencyRuntimeExecutor</span> {
-	<span class="kw">type</span> <span class="ident">ExtendHostFunctions</span> <span class="op">=</span> <span class="ident">frame_benchmarking::benchmarking::HostFunctions</span>;
+	<span class="doccomment">/// Native executor instance for frequency mainnet.</span>
+	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FrequencyRuntimeExecutor</span>;
 
-	<span class="kw">fn</span> <span class="ident">dispatch</span>(<span class="ident">method</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="ident">frequency_runtime::api::dispatch</span>(<span class="ident">method</span>, <span class="ident">data</span>)
-	}
+	<span class="kw">impl</span> <span class="ident">sc_executor::NativeExecutionDispatch</span> <span class="kw">for</span> <span class="ident">FrequencyRuntimeExecutor</span> {
+		<span class="kw">type</span> <span class="ident">ExtendHostFunctions</span> <span class="op">=</span> <span class="ident">frame_benchmarking::benchmarking::HostFunctions</span>;
 
-	<span class="kw">fn</span> <span class="ident">native_version</span>() -&gt; <span class="ident">sc_executor::NativeVersion</span> {
-		<span class="ident">frequency_runtime::native_version</span>()
+		<span class="kw">fn</span> <span class="ident">dispatch</span>(<span class="ident">method</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+			<span class="ident">frequency_runtime::api::dispatch</span>(<span class="ident">method</span>, <span class="ident">data</span>)
+		}
+
+		<span class="kw">fn</span> <span class="ident">native_version</span>() -&gt; <span class="ident">sc_executor::NativeVersion</span> {
+			<span class="ident">frequency_runtime::native_version</span>()
+		}
 	}
 }
-
 <span class="doccomment">/// Native executor instance for frequency local.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FrequencyLocalRuntimeExecutor</span>;
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frequency-rococo-local&quot;</span>)]</span>
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">frequency_local_executor</span> {
+	<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">frequency_rococo_runtime</span>;
 
-<span class="kw">impl</span> <span class="ident">sc_executor::NativeExecutionDispatch</span> <span class="kw">for</span> <span class="ident">FrequencyLocalRuntimeExecutor</span> {
-	<span class="kw">type</span> <span class="ident">ExtendHostFunctions</span> <span class="op">=</span> <span class="ident">frame_benchmarking::benchmarking::HostFunctions</span>;
+	<span class="doccomment">/// Native executor instance for frequency local.</span>
+	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FrequencyLocalRuntimeExecutor</span>;
 
-	<span class="kw">fn</span> <span class="ident">dispatch</span>(<span class="ident">method</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="ident">frequency_rococo_runtime::api::dispatch</span>(<span class="ident">method</span>, <span class="ident">data</span>)
-	}
+	<span class="kw">impl</span> <span class="ident">sc_executor::NativeExecutionDispatch</span> <span class="kw">for</span> <span class="ident">FrequencyLocalRuntimeExecutor</span> {
+		<span class="kw">type</span> <span class="ident">ExtendHostFunctions</span> <span class="op">=</span> <span class="ident">frame_benchmarking::benchmarking::HostFunctions</span>;
 
-	<span class="kw">fn</span> <span class="ident">native_version</span>() -&gt; <span class="ident">sc_executor::NativeVersion</span> {
-		<span class="ident">frequency_rococo_runtime::native_version</span>()
+		<span class="kw">fn</span> <span class="ident">dispatch</span>(<span class="ident">method</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+			<span class="ident">frequency_rococo_runtime::api::dispatch</span>(<span class="ident">method</span>, <span class="ident">data</span>)
+		}
+
+		<span class="kw">fn</span> <span class="ident">native_version</span>() -&gt; <span class="ident">sc_executor::NativeVersion</span> {
+			<span class="ident">frequency_rococo_runtime::native_version</span>()
+		}
 	}
 }
-
 <span class="doccomment">/// Native executor instance for frequency rococo testnet</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FrequencyRococoRuntimeExecutor</span>;
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frequency-rococo-testnet&quot;</span>)]</span>
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">frequency_rococo_executor</span> {
+	<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">frequency_rococo_runtime</span>;
 
-<span class="kw">impl</span> <span class="ident">sc_executor::NativeExecutionDispatch</span> <span class="kw">for</span> <span class="ident">FrequencyRococoRuntimeExecutor</span> {
-	<span class="kw">type</span> <span class="ident">ExtendHostFunctions</span> <span class="op">=</span> <span class="ident">frame_benchmarking::benchmarking::HostFunctions</span>;
+	<span class="doccomment">/// Native executor instance for frequency rococo testnet</span>
+	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FrequencyRococoRuntimeExecutor</span>;
 
-	<span class="kw">fn</span> <span class="ident">dispatch</span>(<span class="ident">method</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="ident">frequency_rococo_runtime::api::dispatch</span>(<span class="ident">method</span>, <span class="ident">data</span>)
-	}
+	<span class="kw">impl</span> <span class="ident">sc_executor::NativeExecutionDispatch</span> <span class="kw">for</span> <span class="ident">FrequencyRococoRuntimeExecutor</span> {
+		<span class="kw">type</span> <span class="ident">ExtendHostFunctions</span> <span class="op">=</span> <span class="ident">frame_benchmarking::benchmarking::HostFunctions</span>;
 
-	<span class="kw">fn</span> <span class="ident">native_version</span>() -&gt; <span class="ident">sc_executor::NativeVersion</span> {
-		<span class="ident">frequency_rococo_runtime::native_version</span>()
+		<span class="kw">fn</span> <span class="ident">dispatch</span>(<span class="ident">method</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+			<span class="ident">frequency_rococo_runtime::api::dispatch</span>(<span class="ident">method</span>, <span class="ident">data</span>)
+		}
+
+		<span class="kw">fn</span> <span class="ident">native_version</span>() -&gt; <span class="ident">sc_executor::NativeVersion</span> {
+			<span class="ident">frequency_rococo_runtime::native_version</span>()
+		}
 	}
 }
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frequency&quot;</span>)]</span>
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">frequency_executor</span>::<span class="kw-2">*</span>;
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frequency-rococo-local&quot;</span>)]</span>
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">frequency_local_executor</span>::<span class="kw-2">*</span>;
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frequency-rococo-testnet&quot;</span>)]</span>
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">frequency_rococo_executor</span>::<span class="kw-2">*</span>;
 
 <span class="doccomment">/// Starts a `ServiceBuilder` for a full service.</span>
 <span class="doccomment">///</span>
@@ -1411,6 +1460,8 @@
 	)
 	.<span class="kw">await</span>
 }
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frequency-rococo-local&quot;</span>)]</span>
 <span class="kw">fn</span> <span class="ident">frequency_dev_instant</span>(<span class="ident">config</span>: <span class="ident">Configuration</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TaskManager</span>, <span class="ident">sc_service::error::Error</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="ident">parachain_config</span> <span class="op">=</span> <span class="ident">prepare_node_config</span>(<span class="ident">config</span>);
 
@@ -1575,6 +1626,7 @@
 <span class="doccomment">/// Function to start frequency parachain with instant sealing in dev mode.</span>
 <span class="doccomment">/// This function is called when --chain dev --instant-sealing is passed.</span>
 <span class="doccomment">/// This function is called when --chain frequency_dev --instant-sealing is passed.</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frequency-rococo-local&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">frequency_dev_instant_sealing</span>(
 	<span class="ident">config</span>: <span class="ident">Configuration</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TaskManager</span>, <span class="ident">sc_service::error::Error</span><span class="op">&gt;</span> {

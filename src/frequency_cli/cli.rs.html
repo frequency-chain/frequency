@@ -105,6 +105,7 @@
 <span id="99">99</span>
 <span id="100">100</span>
 <span id="101">101</span>
+<span id="102">102</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Frequency CLI library.</span>
 <span class="kw">use</span> <span class="ident">std::path::PathBuf</span>;
 
@@ -176,7 +177,8 @@
 
 	<span class="doccomment">/// Instant block sealing</span>
 	<span class="doccomment">///</span>
-	<span class="doccomment">/// Can only be used with `--dev`</span>
+	<span class="doccomment">/// Can only be used with `--dev` and turned on with frequency-rococo-local feature flag</span>
+	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frequency-rococo-local&quot;</span>)]</span>
 	<span class="attribute">#[<span class="ident">clap</span>(<span class="ident">long</span> <span class="op">=</span> <span class="string">&quot;instant-sealing&quot;</span>, <span class="ident">requires</span> <span class="op">=</span> <span class="string">&quot;dev&quot;</span>)]</span>
 	<span class="kw">pub</span> <span class="ident">instant_sealing</span>: <span class="ident">bool</span>,
 }

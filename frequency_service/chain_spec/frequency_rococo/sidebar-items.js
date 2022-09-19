@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":[["frequency_rococo_testnet",""]],"mod":[["public_testnet_keys",""]],"type":[["ChainSpec","Specialized `ChainSpec` for the normal parachain runtime."]]};

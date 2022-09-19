@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":[["frequency",""]],"mod":[["frequency_mainnet_keys",""]],"type":[["ChainSpec","Specialized `ChainSpec` for the normal parachain runtime."]]};
