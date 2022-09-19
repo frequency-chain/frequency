@@ -307,9 +307,6 @@ declare module '@polkadot/api-base/types/storage' {
        * Storage type for Msa to Key information
        * - Key: MessageSourceId
        * - Value: [`MsaInfo`](common_primitives::msa::MsaInfo)
-       * Storage for MSA keys
-       * - Key: MSA Id
-       * - Value: List of Keys
        **/
       msaKeysOf: AugmentedQuery<ApiType, (arg: u64 | AnyNumber | Uint8Array) => Observable<Vec<AccountId32>>, [u64]> & QueryableStorageEntry<ApiType, [u64]>;
       /**
