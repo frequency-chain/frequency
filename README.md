@@ -2,22 +2,31 @@ Frequency is a Polkadot parachain designed to run Decentralized Social Network P
 
 # Table of Contents
 
--   [Prerequisites](#prerequisites)
--   [Build](#build)
-    -   [Local desktop](#local-desktop)
-    -   [Remote Instance](#remote-instance-such-as-aws-ec2)
--   [Run](#run)
-    -   [Collator Node in Instant Sealing Mode](#1-collator-node-in-instant-sealing-mode)
-    -   [Collator Node with Local Relay Chain](#2-collator-node-with-local-relay-chain)
--   [Run Tests](#run-tests)
--   [Run Benchmarks](#run-benchmarks)
--   [Generate Specs](#generate-specs)
--   [Format, Lint and Audit Source Code](#format-lint-and-audit-source-code)
--   [Verify Runtime](#verify-runtime)
--   [Local Runtime Upgrade](#local-runtime-upgrade)
--   [Contributing](#contributing)
--   [Additional Resources](#additional-resources)
--   [Miscellaneous helpful commands](#miscellaneous)
+- [Table of Contents](#table-of-contents)
+- [Prerequisites](#prerequisites)
+  - [Hardware](#hardware)
+- [Build](#build)
+  - [Local Desktop](#local-desktop)
+    - [asdf Support](#asdf-support)
+  - [Remote Instance such as AWS EC2](#remote-instance-such-as-aws-ec2)
+    - [Ubuntu](#ubuntu)
+- [Run](#run)
+  - [1. Collator Node in Instant Sealing Mode](#1-collator-node-in-instant-sealing-mode)
+    - [In Terminal](#in-terminal)
+    - [In Docker Container](#in-docker-container)
+  - [2. Collator Node with Local Relay Chain](#2-collator-node-with-local-relay-chain)
+    - [Mixed Terminal/Docker](#mixed-terminaldocker)
+      - [Stop and Clean Environment](#stop-and-clean-environment)
+    - [All in Docker Container](#all-in-docker-container)
+  - [Run Tests](#run-tests)
+  - [Run Benchmarks](#run-benchmarks)
+  - [Generate Specs](#generate-specs)
+- [Format, Lint and Audit Source Code](#format-lint-and-audit-source-code)
+- [Verify Runtime](#verify-runtime)
+- [Local Runtime Upgrade](#local-runtime-upgrade)
+- [Contributing](#contributing)
+- [Additional Resources](#additional-resources)
+- [Miscellaneous](#miscellaneous)
 
 # Prerequisites
 
@@ -39,21 +48,39 @@ We run benchmarks with and recommend the same [reference hardware specified by P
 1. Install Rust using the [official instructions](https://www.rust-lang.org/tools/install).
 2. Check out this repository
 3. Initialize your Wasm Build environment:
+
     ```sh
     cd [path/to/frequency]
     ./scripts/init.sh install-toolchain
     ```
-4. Build Wasm and native code.
+
+4. Running ``` make check ``` will run cargo checks for all frequency features. This is the recommended way to check your code before committing. Alternatively, you can run following for specific features:
+
+    ```sh
+    make check-local
+    make check-rococo
+    make check-mainnet
+    ```
+
+5. Build Wasm and native code.
 
     _Note, if you get errors complaining about missing
     dependencies (cmake, yarn, node, jq, etc.) install them with your favorite package
     manager(e.g. Homebrew on Mac) and re-run the command again._
 
     ```sh
-    cargo build --release
+    make  build  
     ```
 
-    Alternatively you may run `TARGET=build-node ./ci/build.sh`
+    Above will build frequency with all frequency features. Alternatively you may run following command to build with specific features:
+
+    ```sh
+    make build-local
+    make build-rococo
+    make build-mainne
+    ```
+
+    To build local, rococo or mainnet features respectively.
 
 At this point you should have `./target/release` directory generated locally with compiled
 project files.
@@ -99,8 +126,10 @@ sudo apt install --assume-yes clang curl libssl-dev cmake
 
 There are 2 options to run the chain locally:
 
+_Note, Running frequency via following options does not require binary to be built or chain specs to be generated separately, and is programmed within the scripts for simplicity._
+
 1.  Collator Node in Instant Sealing Mode,
-1.  Collator Node with Local Relay Chain
+2.  Collator Node with Local Relay Chain
 
 ## 1. Collator Node in Instant Sealing Mode
 
