@@ -726,7 +726,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`
        * - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
        **/
-      addProviderToMsa: AugmentedSubmittable<(providerKey: AccountId32 | string | Uint8Array, proof: SpRuntimeMultiSignature | { Ed25519: any } | { Sr25519: any } | { Ecdsa: any } | string | Uint8Array, addProviderPayload: PalletMsaAddProvider | { authorizedMsaId?: any; permission?: any; schemaIds?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, SpRuntimeMultiSignature, PalletMsaAddProvider]>;
+      addProviderToMsa: AugmentedSubmittable<(delegatorKey: AccountId32 | string | Uint8Array, proof: SpRuntimeMultiSignature | { Ed25519: any } | { Sr25519: any } | { Ecdsa: any } | string | Uint8Array, addProviderPayload: PalletMsaAddProvider | { authorizedMsaId?: any; permission?: any; schemaIds?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, SpRuntimeMultiSignature, PalletMsaAddProvider]>;
       /**
        * Creates an MSA for the Origin (sender of the transaction).  Origin is assigned an MSA ID.
        * Deposits [`MsaCreated`](Event::MsaCreated) event, and returns `Ok(())` on success, otherwise returns an error.

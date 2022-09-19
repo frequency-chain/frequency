@@ -49,11 +49,11 @@ specs-rococo-local:
 
 .PHONY: format
 format:
-	cargo fmt -- --check
+	cargo fmt
 
 .PHONY: lint
 lint:
-	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features all-frequency-features -- -D warnings
+	cargo fmt --check && SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features all-frequency-features -- -D warnings
 
 .PHONY: format-lint
 format-lint: format lint
