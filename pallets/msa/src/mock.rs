@@ -59,7 +59,7 @@ impl system::Config for Test {
 }
 
 parameter_types! {
-	pub const MaxKeys: u32 = 10;
+	pub const MaxKeys: u8 = 10;
 	pub const MaxProviderNameSize: u32 = 16;
 	pub const MaxSchemas: u32 = 5;
 }

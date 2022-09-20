@@ -39,7 +39,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU32, Contains, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
+	traits::{ConstU32, ConstU8, Contains, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
 	weights::{
 		constants::{RocksDbWeight, WEIGHT_PER_SECOND},
 		ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -343,7 +343,7 @@ impl pallet_msa::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 	type ConvertIntoAccountId32 = ConvertInto;
-	type MaxKeys = ConstU32<25>;
+	type MaxKeys = ConstU8<25>;
 	type MaxSchemaGrants = MaxDataSize;
 	type MaxProviderNameSize = ConstU32<16>;
 }
@@ -944,9 +944,10 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_msa_runtime_api::MsaApi<Block, AccountId> for Runtime {
-		fn get_msa_keys(msa_id: MessageSourceId) -> Result<Vec<KeyInfoResponse<AccountId>>, DispatchError> {
-			Ok(Msa::fetch_msa_keys(msa_id))
-		}
+		// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
+		// fn get_msa_keys(msa_id: MessageSourceId) -> Result<Vec<KeyInfoResponse<AccountId>>, DispatchError> {
+		// 	Ok(Msa::fetch_msa_keys(msa_id))
+		// }
 
 		fn get_msa_id(key: AccountId) -> Result<Option<MessageSourceId>, DispatchError> {
 			Ok(Msa::get_owner_of(&key))

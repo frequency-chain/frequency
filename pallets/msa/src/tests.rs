@@ -197,7 +197,7 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 
 		let new_key = key_pair_2.public();
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration:10 };
+		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
@@ -211,9 +211,13 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 		));
 
 		// assert
-		let keys = Msa::fetch_msa_keys(new_msa_id);
-		assert_eq!(keys.len(), 2);
-		assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id}), true}
+		// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418
+		// let keys = Msa::fetch_msa_keys(new_msa_id);
+		// assert_eq!(keys.len(), 2);
+		// assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id}), true}
+
+		let keys_count = Msa::get_msa_key_count(new_msa_id);
+		assert_eq!(keys_count, 2);
 		System::assert_last_event(Event::KeyAdded { msa_id: 1, key: new_key.into() }.into());
 	});
 }
@@ -750,7 +754,8 @@ pub fn add_key_with_panic_in_on_success_should_revert_everything() {
 		// assert
 		assert_eq!(Msa::get_msa_by_account_id(&key), None);
 
-		assert_eq!(Msa::get_msa_keys(msa_id).into_inner(), vec![])
+		// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
+		// assert_eq!(Msa::get_msa_keys(msa_id).into_inner(), vec![])
 	});
 }
 
