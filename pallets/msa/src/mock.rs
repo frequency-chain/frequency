@@ -161,6 +161,9 @@ pub fn test_create_delegator_msa_with_provider() -> (u64, Public) {
 	let (delegator_signature, add_provider_payload) =
 		create_and_sign_add_provider_payload(delegator_key_pair, provider_msa_id);
 
+	// Register provider
+	assert_ok!(Msa::register_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
+
 	assert_ok!(Msa::add_provider_to_msa(
 		Origin::signed(provider_account.into()),
 		delegator_account.into(),
