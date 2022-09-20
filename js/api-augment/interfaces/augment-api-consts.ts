@@ -125,7 +125,7 @@ declare module '@polkadot/api-base/types/consts' {
       /**
        * Maximum count of keys allowed per MSA
        **/
-      maxKeys: u32 & AugmentedConst<ApiType>;
+      maxKeys: u8 & AugmentedConst<ApiType>;
       /**
        * Maximum provider name size allowed per MSA association
        **/

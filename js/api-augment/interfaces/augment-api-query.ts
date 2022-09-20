@@ -6,7 +6,7 @@
 import '@polkadot/api-base/types/storage';
 
 import type { ApiTypes, AugmentedQuery, QueryableStorageEntry } from '@polkadot/api-base/types';
-import type { BTreeMap, Bytes, Option, Vec, bool, u128, u16, u32, u64 } from '@polkadot/types-codec';
+import type { BTreeMap, Bytes, Option, Vec, bool, u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
 import type { AnyNumber, ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, Call, H256 } from '@polkadot/types/interfaces/runtime';
 import type { CommonPrimitivesMsaProviderInfo, CommonPrimitivesMsaProviderMetadata, CumulusPalletDmpQueueConfigData, CumulusPalletDmpQueuePageIndexData, CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot, CumulusPalletXcmpQueueInboundChannelDetails, CumulusPalletXcmpQueueOutboundChannelDetails, CumulusPalletXcmpQueueQueueConfigData, FrameSupportWeightsPerDispatchClassU64, FrameSystemAccountInfo, FrameSystemEventRecord, FrameSystemLastRuntimeUpgradeInfo, FrameSystemPhase, FrequencyRococoRuntimeSessionKeys, OrmlVestingVestingSchedule, PalletAuthorshipUncleEntryItem, PalletBalancesAccountData, PalletBalancesBalanceLock, PalletBalancesReleases, PalletBalancesReserveData, PalletCollatorSelectionCandidateInfo, PalletCollectiveVotes, PalletDemocracyPreimageStatus, PalletDemocracyReferendumInfo, PalletDemocracyReleases, PalletDemocracyVoteThreshold, PalletDemocracyVoteVoting, PalletMessagesMessage, PalletPreimageRequestStatus, PalletSchedulerScheduledV3, PalletSchemasSchema, PalletTransactionPaymentReleases, PolkadotCorePrimitivesOutboundHrmpMessage, PolkadotPrimitivesV2AbridgedHostConfiguration, PolkadotPrimitivesV2PersistedValidationData, PolkadotPrimitivesV2UpgradeRestriction, SpConsensusAuraSr25519AppSr25519Public, SpCoreCryptoKeyTypeId, SpRuntimeDigest, SpTrieStorageProof } from '@polkadot/types/lookup';
@@ -304,11 +304,11 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       msaIdentifier: AugmentedQuery<ApiType, () => Observable<u64>, []> & QueryableStorageEntry<ApiType, []>;
       /**
-       * Storage type for Msa to Key information
-       * - Key: MessageSourceId
-       * - Value: [`MsaInfo`](common_primitives::msa::MsaInfo)
+       * Storage type for a reference counter of the number of keys assocaited to an MSA
+       * - Key: MSA Id
+       * - Value: [`u8`] Counter of Keys associated with the MSA
        **/
-      msaKeysOf: AugmentedQuery<ApiType, (arg: u64 | AnyNumber | Uint8Array) => Observable<Vec<AccountId32>>, [u64]> & QueryableStorageEntry<ApiType, [u64]>;
+      msaInfoOf: AugmentedQuery<ApiType, (arg: u64 | AnyNumber | Uint8Array) => Observable<u8>, [u64]> & QueryableStorageEntry<ApiType, [u64]>;
       /**
        * Storage type for mapping the relationship between a Delegator and its Provider.
        * - Keys: Delegator MSA, Provider MSA

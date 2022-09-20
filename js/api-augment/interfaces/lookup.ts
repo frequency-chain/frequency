@@ -2641,13 +2641,13 @@ export default {
     providerName: 'Bytes'
   },
   /**
-   * Lookup323: pallet_msa::pallet::Error<T>
+   * Lookup322: pallet_msa::pallet::Error<T>
    **/
   PalletMsaError: {
     _enum: ['KeyAlreadyRegistered', 'MsaIdOverflow', 'AddKeySignatureVerificationFailed', 'NotMsaOwner', 'InvalidSignature', 'NotKeyOwner', 'NoKeyExists', 'KeyLimitExceeded', 'InvalidSelfRemoval', 'InvalidSelfProvider', 'DuplicateProvider', 'AddProviderSignatureVerificationFailed', 'UnauthorizedDelegator', 'UnauthorizedProvider', 'DelegationRevoked', 'DelegationNotFound', 'DelegationExpired', 'DuplicateProviderMetadata', 'ExceedsMaxProviderNameSize', 'ExceedsMaxSchemaGrants', 'SchemaNotGranted', 'ProofHasExpired', 'ProofNotYetValid']
   },
   /**
-   * Lookup326: pallet_messages::types::Message<MaxDataSize>
+   * Lookup325: pallet_messages::types::Message<MaxDataSize>
    **/
   PalletMessagesMessage: {
     payload: 'Bytes',
@@ -2656,13 +2656,13 @@ export default {
     index: 'u16'
   },
   /**
-   * Lookup332: pallet_messages::pallet::Error<T>
+   * Lookup331: pallet_messages::pallet::Error<T>
    **/
   PalletMessagesError: {
     _enum: ['TooManyMessagesInBlock', 'ExceedsMaxMessagePayloadSizeBytes', 'InvalidPaginationRequest', 'TypeConversionOverflow', 'InvalidMessageSourceAccount', 'InvalidSchemaId', 'UnAuthorizedDelegate', 'InvalidPayloadLocation']
   },
   /**
-   * Lookup333: pallet_schemas::types::Schema<MaxModelSize>
+   * Lookup332: pallet_schemas::types::Schema<MaxModelSize>
    **/
   PalletSchemasSchema: {
     modelType: 'CommonPrimitivesSchemaModelType',
@@ -2670,45 +2670,45 @@ export default {
     payloadLocation: 'CommonPrimitivesSchemaPayloadLocation'
   },
   /**
-   * Lookup334: pallet_schemas::pallet::Error<T>
+   * Lookup333: pallet_schemas::pallet::Error<T>
    **/
   PalletSchemasError: {
     _enum: ['InvalidSchema', 'TooManySchemas', 'ExceedsMaxSchemaModelBytes', 'ExceedsGovernanceSchemaModelMaxValue', 'LessThanMinSchemaModelBytes', 'NoSuchSchema', 'StringConversionError', 'DeserializationError', 'SerializationError', 'SchemaCountOverflow']
   },
   /**
-   * Lookup337: frame_system::extensions::check_non_zero_sender::CheckNonZeroSender<T>
+   * Lookup336: frame_system::extensions::check_non_zero_sender::CheckNonZeroSender<T>
    **/
   FrameSystemExtensionsCheckNonZeroSender: 'Null',
   /**
-   * Lookup338: frame_system::extensions::check_spec_version::CheckSpecVersion<T>
+   * Lookup337: frame_system::extensions::check_spec_version::CheckSpecVersion<T>
    **/
   FrameSystemExtensionsCheckSpecVersion: 'Null',
   /**
-   * Lookup339: frame_system::extensions::check_tx_version::CheckTxVersion<T>
+   * Lookup338: frame_system::extensions::check_tx_version::CheckTxVersion<T>
    **/
   FrameSystemExtensionsCheckTxVersion: 'Null',
   /**
-   * Lookup340: frame_system::extensions::check_genesis::CheckGenesis<T>
+   * Lookup339: frame_system::extensions::check_genesis::CheckGenesis<T>
    **/
   FrameSystemExtensionsCheckGenesis: 'Null',
   /**
-   * Lookup343: frame_system::extensions::check_nonce::CheckNonce<T>
+   * Lookup342: frame_system::extensions::check_nonce::CheckNonce<T>
    **/
   FrameSystemExtensionsCheckNonce: 'Compact<u32>',
   /**
-   * Lookup344: frame_system::extensions::check_weight::CheckWeight<T>
+   * Lookup343: frame_system::extensions::check_weight::CheckWeight<T>
    **/
   FrameSystemExtensionsCheckWeight: 'Null',
   /**
-   * Lookup345: pallet_transaction_payment::ChargeTransactionPayment<T>
+   * Lookup344: pallet_transaction_payment::ChargeTransactionPayment<T>
    **/
   PalletTransactionPaymentChargeTransactionPayment: 'Compact<u128>',
   /**
-   * Lookup346: pallet_msa::CheckFreeExtrinsicUse<T>
+   * Lookup345: pallet_msa::CheckFreeExtrinsicUse<T>
    **/
   PalletMsaCheckFreeExtrinsicUse: 'Null',
   /**
-   * Lookup347: frequency_rococo_runtime::Runtime
+   * Lookup346: frequency_rococo_runtime::Runtime
    **/
   FrequencyRococoRuntimeRuntime: 'Null'
 };

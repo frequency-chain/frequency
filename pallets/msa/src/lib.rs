@@ -59,8 +59,8 @@
 use codec::{Decode, Encode};
 use common_primitives::{
 	msa::{
-		AccountProvider, Delegator, KeyInfoResponse, OrderedSetExt, Provider, ProviderInfo,
-		ProviderMetadata, EXPIRATION_BLOCK_VALIDITY_GAP,
+		AccountProvider, Delegator, OrderedSetExt, Provider, ProviderInfo, ProviderMetadata,
+		EXPIRATION_BLOCK_VALIDITY_GAP,
 	},
 	node::BlockNumber,
 	schema::SchemaId,
@@ -111,7 +111,7 @@ pub mod pallet {
 
 		/// Maximum count of keys allowed per MSA
 		#[pallet::constant]
-		type MaxKeys: Get<u32>;
+		type MaxKeys: Get<u8>;
 
 		/// Maximum count of schemas granted for publishing data per Provider
 		#[pallet::constant]
@@ -167,18 +167,13 @@ pub mod pallet {
 	pub type MessageSourceIdOf<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
 
-	/// Storage for MSA keys
+	/// Storage type for a reference counter of the number of keys assocaited to an MSA
 	/// - Key: MSA Id
-	/// - Value: List of Keys
+	/// - Value: [`u8`] Counter of Keys associated with the MSA
 	#[pallet::storage]
-	#[pallet::getter(fn get_msa_keys)]
-	pub(super) type MsaKeysOf<T: Config> = StorageMap<
-		_,
-		Twox64Concat,
-		MessageSourceId,
-		BoundedVec<T::AccountId, T::MaxKeys>,
-		ValueQuery,
-	>;
+	#[pallet::getter(fn get_msa_key_count)]
+	pub(super) type MsaInfoOf<T: Config> =
+		StorageMap<_, Twox64Concat, MessageSourceId, u8, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -586,20 +581,17 @@ impl<T: Config> Pallet<T> {
 	where
 		F: FnOnce(MessageSourceId) -> DispatchResult,
 	{
-		MessageSourceIdOf::<T>::try_mutate(key, |maybe_key_info| {
-			ensure!(maybe_key_info.is_none(), Error::<T>::KeyAlreadyRegistered);
+		MessageSourceIdOf::<T>::try_mutate(key, |maybe_msa_id| {
+			ensure!(maybe_msa_id.is_none(), Error::<T>::KeyAlreadyRegistered);
+			*maybe_msa_id = Some(msa_id);
 
-			*maybe_key_info = Some(msa_id);
+			// Incremement the key counter
+			<MsaInfoOf<T>>::try_mutate(msa_id, |key_count| {
+				// key_count:u8 should default to 0 if it does not exist
+				let incremented_key_count: u8 = *key_count + 1;
+				ensure!(incremented_key_count <= T::MaxKeys::get(), Error::<T>::KeyLimitExceeded);
 
-			// adding reverse lookup
-			<MsaKeysOf<T>>::try_mutate(msa_id, |key_list| {
-				let index =
-					key_list.binary_search(key).err().ok_or(Error::<T>::KeyAlreadyRegistered)?;
-
-				key_list
-					.try_insert(index, key.clone())
-					.map_err(|_| Error::<T>::KeyLimitExceeded)?;
-
+				*key_count = incremented_key_count;
 				on_success(msa_id)
 			})
 		})
@@ -718,12 +710,16 @@ impl<T: Config> Pallet<T> {
 	/// # Errors
 	/// * [`Error::<T>::NoKeyExists`] - If the key does not exist in the MSA
 	pub fn delete_key_for_msa(msa_id: MessageSourceId, key: &T::AccountId) -> DispatchResult {
-		<MsaKeysOf<T>>::try_mutate(msa_id, |key_list| {
-			let index = key_list.binary_search(key);
-			ensure!(index.is_ok(), Error::<T>::NoKeyExists);
-			key_list.remove(index.unwrap());
-			MessageSourceIdOf::<T>::remove(key);
-			Ok(())
+		MessageSourceIdOf::<T>::try_mutate_exists(key, |maybe_msa_id| {
+			ensure!(maybe_msa_id.is_some(), Error::<T>::NoKeyExists);
+
+			// Delete the key if it exists
+			*maybe_msa_id = None;
+
+			<MsaInfoOf<T>>::try_mutate(msa_id, |key_count| {
+				*key_count = *key_count - 1u8;
+				Ok(())
+			})
 		})
 	}
 
@@ -783,18 +779,20 @@ impl<T: Config> Pallet<T> {
 		Self::get_msa_by_account_id(&key)
 	}
 
-	/// Fetches all the keys associated with a message Source Account
-	/// NOTE: This should only be called from RPC due to heavy database reads
-	pub fn fetch_msa_keys(msa_id: MessageSourceId) -> Vec<KeyInfoResponse<T::AccountId>> {
-		let mut response = Vec::new();
-		for key in Self::get_msa_keys(msa_id) {
-			if let Ok(_info) = Self::try_get_msa_from_account_id(&key) {
-				response.push(KeyInfoResponse { key, msa_id });
-			}
-		}
+	// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418
+	//
+	// Fetches all the keys associated with a message Source Account
+	// NOTE: This should only be called from RPC due to heavy database reads
+	// pub fn fetch_msa_keys(msa_id: MessageSourceId) -> Vec<KeyInfoResponse<T::AccountId>> {
+	// 	let mut response = Vec::new();
+	// 	for key in Self::get_msa_keys(msa_id) {
+	// 		if let Ok(_info) = Self::try_get_msa_from_account_id(&key) {
+	// 			response.push(KeyInfoResponse { key, msa_id });
+	// 		}
+	// 	}
 
-		response
-	}
+	// 	response
+	// }
 
 	/// Checks that a key is associated to an MSA and has not been revoked.
 	pub fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {

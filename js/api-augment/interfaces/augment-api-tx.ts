@@ -715,14 +715,15 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       addKeyToMsa: AugmentedSubmittable<(key: AccountId32 | string | Uint8Array, proof: SpRuntimeMultiSignature | { Ed25519: any } | { Sr25519: any } | { Ecdsa: any } | string | Uint8Array, addKeyPayload: PalletMsaAddKeyData | { msaId?: any; nonce?: any; expiration?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, SpRuntimeMultiSignature, PalletMsaAddKeyData]>;
       /**
-       * Creates a new Delegation for an existing MSA, with `origin` as the Delegator and `provider_key` as the Provider.  Requires the Provider to authorize the new Delegation.
+       * Creates a new Delegation for an existing MSA, with `origin` as the Provider and `delegator_key` is the delegator.
+       * Since it is being sent on the Delegator's behalf, it requires the Delegator to authorize the new Delegation.
        * Returns `Ok(())` on success, otherwise returns an error. Deposits event [`ProviderAdded`](Event::ProviderAdded).
        * 
        * ## Errors
-       * - Returns [`AddProviderSignatureVerificationFailed`](Error::AddProviderSignatureVerificationFailed) if `provider_key`'s MSA ID does not equal `add_provider_payload.authorized_msa_id`.
-       * - Returns [`DuplicateProvider`](Error::DuplicateProvider) if there is already a Delegation for `origin` MSA and `provider_key` MSA.
+       * - Returns [`AddProviderSignatureVerificationFailed`](Error::AddProviderSignatureVerificationFailed) if `origin`'s MSA ID does not equal `add_provider_payload.authorized_msa_id`.
+       * - Returns [`DuplicateProvider`](Error::DuplicateProvider) if there is already a Delegation for `origin` MSA and `delegator_key` MSA.
        * ## Errors
-       * - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if `add_provider_payload.authorized_msa_id`  does not match MSA ID of `provider_key`.
+       * - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if `add_provider_payload.authorized_msa_id`  does not match MSA ID of `delegator_key`.
        * - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`
        * - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
        **/
