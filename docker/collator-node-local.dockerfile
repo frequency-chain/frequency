@@ -36,7 +36,7 @@ ENV Frequency_BINARY_PATH=./target/release/frequency
 HEALTHCHECK --interval=300s --timeout=75s --start-period=30s --retries=3 \
 	CMD ["./scripts/healthcheck.sh"]
 
-VOLUME ["/chain-data"]
+VOLUME ["/data"]
 
 # 9933 p2p port
 # 9944 rpc port

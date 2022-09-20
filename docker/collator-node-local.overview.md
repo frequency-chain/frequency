@@ -12,13 +12,6 @@ Runs one collator node that connects to the local relay chain consisting of two 
     git clone git@github.com:LibertyDSNP/frequency.git
     ```
 
-1.  Generate chain specs
-
-    ```
-    cd frequency
-    make specs-rococo-2000
-    ```
-
 1.  Start relay chain and collator node
 
     ```sh
