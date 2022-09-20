@@ -1069,6 +1069,23 @@
 <span id="1063">1063</span>
 <span id="1064">1064</span>
 <span id="1065">1065</span>
+<span id="1066">1066</span>
+<span id="1067">1067</span>
+<span id="1068">1068</span>
+<span id="1069">1069</span>
+<span id="1070">1070</span>
+<span id="1071">1071</span>
+<span id="1072">1072</span>
+<span id="1073">1073</span>
+<span id="1074">1074</span>
+<span id="1075">1075</span>
+<span id="1076">1076</span>
+<span id="1077">1077</span>
+<span id="1078">1078</span>
+<span id="1079">1079</span>
+<span id="1080">1080</span>
+<span id="1081">1081</span>
+<span id="1082">1082</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The MSA pallet provides functionality for handling Message Source Accounts.</span>
@@ -1340,6 +1357,8 @@
 		<span class="ident">ExceedsMaxSchemaGrants</span>,
 		<span class="doccomment">/// Provider is not permitted to publish for given schema_id</span>
 		<span class="ident">SchemaNotGranted</span>,
+		<span class="doccomment">/// The operation was attempted with a non-provider MSA</span>
+		<span class="ident">ProviderNotRegistered</span>,
 		<span class="doccomment">/// The submited proof has expired; the current block is less the expiration block</span>
 		<span class="ident">ProofHasExpired</span>,
 		<span class="doccomment">/// The submitted proof expiration block is too far in the future</span>
@@ -1377,6 +1396,7 @@
 		<span class="doccomment">/// - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`</span>
 		<span class="doccomment">/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.</span>
 		<span class="doccomment">/// - Returns [`KeyAlreadyRegistered`](Error::KeyAlreadyRegistered) if there is already an MSA for `delegator_key`.</span>
+		<span class="doccomment">/// - Returns [`ProviderNotRegistered`](Error::ProviderNotRegistered) if the a non-provider MSA is used as the provider</span>
 		<span class="doccomment">///</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="ident">T::WeightInfo::create_sponsored_account_with_delegation</span>())]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_sponsored_account_with_delegation</span>(
@@ -1393,6 +1413,12 @@
 			<span class="macro">ensure!</span>(
 				<span class="ident">add_provider_payload</span>.<span class="ident">authorized_msa_id</span> <span class="op">==</span> <span class="ident">provider_msa_id</span>,
 				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::UnauthorizedProvider</span>
+			);
+
+			<span class="comment">// Verify that the provider is a registered provider</span>
+			<span class="macro">ensure!</span>(
+				<span class="ident"><span class="self">Self</span>::is_registered_provider</span>(<span class="ident">provider_msa_id</span>),
+				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProviderNotRegistered</span>
 			);
 
 			<span class="kw">let</span> <span class="ident">granted_schemas</span> <span class="op">=</span> <span class="ident">add_provider_payload</span>.<span class="ident">schema_ids</span>;
@@ -1455,6 +1481,8 @@
 		<span class="doccomment">/// - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if `add_provider_payload.authorized_msa_id`  does not match MSA ID of `delegator_key`.</span>
 		<span class="doccomment">/// - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`</span>
 		<span class="doccomment">/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.</span>
+		<span class="doccomment">/// - Returns [`ProviderNotRegistered`](Error::ProviderNotRegistered) if the a non-provider MSA is used as the provider</span>
+		<span class="doccomment">/// - Returns [`UnauthorizedDelegator`](Error::UnauthorizedDelegator) if Origin attempted to add a delegate for someone else&#39;s MSA</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="ident">T::WeightInfo::add_provider_to_msa</span>())]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_provider_to_msa</span>(
 			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
@@ -1468,23 +1496,23 @@
 			<span class="ident"><span class="self">Self</span>::verify_signature</span>(<span class="ident">proof</span>, <span class="ident">delegator_key</span>.<span class="ident">clone</span>(), <span class="ident">add_provider_payload</span>.<span class="ident">encode</span>())
 				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AddProviderSignatureVerificationFailed</span>)<span class="question-mark">?</span>;
 
-			<span class="kw">let</span> (<span class="ident">provider_msa_id</span>, <span class="ident">delegator_msa_id</span>) <span class="op">=</span> <span class="ident"><span class="self">Self</span>::ensure_valid_provider</span>(
-				<span class="kw-2">&amp;</span><span class="ident">delegator_key</span>,
-				<span class="kw-2">&amp;</span><span class="ident">provider_key</span>,
-				<span class="ident">add_provider_payload</span>.<span class="ident">authorized_msa_id</span>,
-			)<span class="question-mark">?</span>;
+			<span class="kw">let</span> (<span class="ident">provider</span>, <span class="ident">delegator</span>) <span class="op">=</span>
+				<span class="ident"><span class="self">Self</span>::ensure_valid_registered_provider</span>(<span class="kw-2">&amp;</span><span class="ident">delegator_key</span>, <span class="kw-2">&amp;</span><span class="ident">provider_key</span>)<span class="question-mark">?</span>;
+
+			<span class="macro">ensure!</span>(
+				<span class="ident">add_provider_payload</span>.<span class="ident">authorized_msa_id</span> <span class="op">==</span> <span class="ident">provider</span>.<span class="number">0</span>,
+				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::UnauthorizedDelegator</span>
+			);
+
 			<span class="kw">let</span> <span class="ident">granted_schemas</span> <span class="op">=</span> <span class="ident">add_provider_payload</span>.<span class="ident">schema_ids</span>;
 			<span class="macro">ensure!</span>(
 				<span class="ident">granted_schemas</span>.<span class="ident">len</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">T::MaxSchemaGrants::get</span>().<span class="ident">try_into</span>().<span class="ident">unwrap</span>(),
 				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ExceedsMaxSchemaGrants</span>
 			);
 
-			<span class="ident"><span class="self">Self</span>::add_provider</span>(<span class="ident">provider_msa_id</span>, <span class="ident">delegator_msa_id</span>, <span class="ident">granted_schemas</span>)<span class="question-mark">?</span>;
+			<span class="ident"><span class="self">Self</span>::add_provider</span>(<span class="ident">provider</span>, <span class="ident">delegator</span>, <span class="ident">granted_schemas</span>)<span class="question-mark">?</span>;
 
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::ProviderAdded</span> {
-				<span class="ident">delegator</span>: <span class="ident">delegator_msa_id</span>,
-				<span class="ident">provider</span>: <span class="ident">provider_msa_id</span>,
-			});
+			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::ProviderAdded</span> { <span class="ident">delegator</span>, <span class="ident">provider</span> });
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -1528,8 +1556,6 @@
 		<span class="doccomment">/// - Returns [&#39;NotMsaOwner&#39;](Error::NotMsaOwner) if Origin&#39;s MSA is not the same as &#39;add_key_payload` MSA. Essentially you can only add a key to your own MSA.</span>
 		<span class="doccomment">/// - Returns [&#39;ProofHasExpired&#39;](Error::ProofHasExpired) if the current block is less than the `expired` bock number set in `AddKeyData`.</span>
 		<span class="doccomment">/// - Returns [&#39;ProofNotYetValid&#39;](Error::ProofNotYetValid) if the `expired` bock number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.</span>
-		<span class="doccomment">///</span>
-		<span class="doccomment">///</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="ident">T::WeightInfo::add_key_to_msa</span>())]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_key_to_msa</span>(
 			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
@@ -1668,20 +1694,28 @@
 		})
 	}
 
+	<span class="doccomment">/// Returns if provider is registered by checking if the [`ProviderRegistry`] contains the MSA id</span>
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_registered_provider</span>(<span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>) -&gt; <span class="ident">bool</span> {
+		<span class="ident">ProviderRegistry</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="ident">Provider</span>(<span class="ident">msa_id</span>))
+	}
+
 	<span class="doccomment">/// Checks that a provider and delegator keys are valid</span>
 	<span class="doccomment">/// and that a provider and delegator are not the same</span>
 	<span class="doccomment">/// and that a provider has authorized a delegator to create a delegation relationship.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_valid_provider</span>(
+	<span class="doccomment">/// - Returns [`ProviderNotRegistered`](Error::ProviderNotRegistered) if the a non-provider MSA is used as the provider</span>
+	<span class="doccomment">/// - Returns [`InvalidSelfProvider`](Error::InvalidSelfProvider) if the delegator is the provider</span>
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_valid_registered_provider</span>(
 		<span class="ident">delegator_key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>,
 		<span class="ident">provider_key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>,
-		<span class="ident">authorized_msa_id</span>: <span class="ident">MessageSourceId</span>,
 	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Provider</span>, <span class="ident">Delegator</span>), <span class="ident">DispatchError</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">provider_msa_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::ensure_valid_msa_key</span>(<span class="ident">provider_key</span>)<span class="question-mark">?</span>;
 		<span class="kw">let</span> <span class="ident">delegator_msa_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::ensure_valid_msa_key</span>(<span class="ident">delegator_key</span>)<span class="question-mark">?</span>;
 
-		<span class="macro">ensure!</span>(<span class="ident">authorized_msa_id</span> <span class="op">==</span> <span class="ident">provider_msa_id</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::UnauthorizedDelegator</span>);
-
+		<span class="comment">// Ensure that the delegator is not the provider.  You cannot delegate to yourself.</span>
 		<span class="macro">ensure!</span>(<span class="ident">delegator_msa_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">provider_msa_id</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidSelfProvider</span>);
+
+		<span class="comment">// Verify that the provider is a registered provider</span>
+		<span class="macro">ensure!</span>(<span class="ident"><span class="self">Self</span>::is_registered_provider</span>(<span class="ident">provider_msa_id</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProviderNotRegistered</span>);
 
 		<span class="prelude-val">Ok</span>((<span class="ident">provider_msa_id</span>.<span class="ident">into</span>(), <span class="ident">delegator_msa_id</span>.<span class="ident">into</span>()))
 	}
