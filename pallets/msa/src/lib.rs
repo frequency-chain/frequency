@@ -334,7 +334,7 @@ pub mod pallet {
 
 			// Verify that the provider is a registered provider
 			ensure!(
-				!Self::get_provider_metadata(Provider(provider_msa_id)).is_none(),
+				Self::is_registered_provider(provider_msa_id),
 				Error::<T>::ProviderNotRegistered
 			);
 
@@ -627,8 +627,6 @@ impl<T: Config> Pallet<T> {
 	pub fn ensure_valid_registered_provider(
 		delegator_key: &T::AccountId,
 		provider_key: &T::AccountId,
-		// TODO: Move testing payload validity
-		//      authorized_msa_id: MessageSourceId,
 	) -> Result<(Provider, Delegator), DispatchError> {
 		let provider_msa_id = Self::ensure_valid_msa_key(provider_key)?;
 		let delegator_msa_id = Self::ensure_valid_msa_key(delegator_key)?;
