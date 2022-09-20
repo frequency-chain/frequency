@@ -13,7 +13,8 @@ sp_api::decl_runtime_apis! {
 	pub trait MsaApi<AccountId> where
 		AccountId: Codec,
 	{
-		fn get_msa_keys(msa_id: MessageSourceId) ->	Result<Vec<KeyInfoResponse<AccountId>>, DispatchError>;
+		// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
+		// fn get_msa_keys(msa_id: MessageSourceId) ->	Result<Vec<KeyInfoResponse<AccountId>>, DispatchError>;
 
 		fn get_msa_id(key: AccountId) -> Result<Option<MessageSourceId>, DispatchError>;
 
