@@ -12,7 +12,7 @@ services:
       - "9946:9944" # ws port
     volumes:
       - type: bind
-        source: ../res/rococo-local.json
+        source: ../resources/rococo-local.json
         target: /chainspec.json
         read_only: true
     command: >
@@ -41,7 +41,7 @@ services:
       - "9947:9944" # ws port
     volumes:
       - type: bind
-        source: ../res/rococo-local.json
+        source: ../resources/rococo-local.json
         target: /chainspec.json
         read_only: true
     command: >
