@@ -5795,6 +5795,7 @@ name = "pallet-msa"
 version = "0.1.0"
 dependencies = [
  "common-primitives",
+ "common-runtime",
  "frame-benchmarking",
  "frame-support",
  "frame-system",

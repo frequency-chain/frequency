@@ -26,6 +26,7 @@ sp-std = {default-features = false, git = "https://github.com/paritytech/substra
 
 # Frequency related dependencies
 common-primitives = {default-features = false, path = "../../common/primitives"}
+common-runtime = {path = '../../runtime/common', default-features = false}
 
 #ORML
 orml-utilities = {git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.27"}

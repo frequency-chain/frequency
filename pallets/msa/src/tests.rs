@@ -6,12 +6,13 @@ use crate::{
 };
 use common_primitives::{
 	msa::{
-		Delegator, KeyInfoResponse, MessageSourceId, OrderedSetExt, Provider, ProviderInfo,
+		Delegator, MessageSourceId, OrderedSetExt, Provider, ProviderInfo,
 		EXPIRATION_BLOCK_VALIDITY_GAP,
 	},
 	schema::SchemaId,
 	utils::wrap_binary_data,
 };
+use common_runtime::extensions::check_nonce::CheckNonce;
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	weights::{DispatchInfo, GetDispatchInfo, Pays},
@@ -1618,5 +1619,102 @@ fn replaying_add_provider_to_msa_fails() {
 			),
 			Error::<Test>::DuplicateProvider
 		);
+	})
+}
+
+// Assert that check nonce validation does not create a token account for delete_msa_key call.
+#[test]
+fn signed_ext_check_nonce_delete_msa_key() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let new_key = key_pair.public();
+
+		let len = 0_usize;
+
+		let call_delete_msa_key: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::delete_msa_key { key: AccountId32::from(new_key) });
+		let info = call_delete_msa_key.get_dispatch_info();
+
+		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(
+			&test_public(1),
+			call_delete_msa_key,
+			&info,
+			len
+		));
+	})
+}
+
+// Assert that check nonce validation does not create a token account for revoke_msa_delegation_by_delegator call.
+#[test]
+fn signed_ext_check_nonce_revoke_msa_delegation_by_delegator() {
+	new_test_ext().execute_with(|| {
+		let (provider_msa_id, _) = test_create_delegator_msa_with_provider();
+
+		// We are testing the revoke_msa_delegation_by_delegator call.
+		let call_revoke_msa_delegation_by_delegator: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
+
+		let len = 0_usize;
+
+		// Get the dispatch info for the call.
+		let info = call_revoke_msa_delegation_by_delegator.get_dispatch_info();
+
+		// 1.  Test that revoke_msa_delegation_by_delegator() does not generate token account
+		let who = test_public(1);
+
+		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(
+			&who,
+			call_revoke_msa_delegation_by_delegator,
+			&info,
+			len
+		));
+
+		let mut created_token_account: bool;
+		match frame_system::Account::<Test>::try_get(who) {
+			Ok(_) => {
+				created_token_account = true;
+			},
+			Err(_) => {
+				created_token_account = false;
+			},
+		};
+		assert_eq!(created_token_account, false);
+	})
+}
+
+// Assert that check nonce validation does create a token account for a paying call.
+#[test]
+fn signed_ext_check_nonce_creates_token_account_if_paying() {
+	new_test_ext().execute_with(|| {
+		let (provider_msa_id, _) = test_create_delegator_msa_with_provider();
+
+		let len = 0_usize;
+
+		//  Test that a  "pays" extrinsic creates a token account
+		let who = test_public(1);
+
+		let pays_call_should_pass: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::create {});
+
+		// Get the dispatch info for the call.
+		let pays_call_should_pass_info = pays_call_should_pass.get_dispatch_info();
+
+		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(
+			&who,
+			pays_call_should_pass,
+			&pays_call_should_pass_info,
+			len
+		));
+
+		let mut created_token_account: bool;
+		match frame_system::Account::<Test>::try_get(who) {
+			Ok(_) => {
+				created_token_account = true;
+			},
+			Err(_) => {
+				created_token_account = false;
+			},
+		};
+		assert_eq!(created_token_account, true);
 	})
 }
