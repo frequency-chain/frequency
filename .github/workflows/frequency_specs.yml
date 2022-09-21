@@ -1,13 +1,16 @@
-name: Build Frequency Binary and Specs
+name: Publish Frequency Artifacts
 
 on:
   push:
     tags:
-      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9][0-9]'
+      - "[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9][0-9]"
+
+env:
+  DOCKER_HUB_PROFILE: frequencychain
 
 jobs:
-  build_binary_and_specs:
-    name: build_binary_and_specs
+  build_publish_for_rococo:
+    name: Publish for Rococo
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -29,7 +32,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
-      # Rust
+      # RUST TOOLCHAIN
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
@@ -41,6 +44,24 @@ jobs:
           key: ${{ env.RUST_TOOLCHAIN }}
       - name: Install toolchain for frequency
         run: make install-toolchain
+
+      # PREP DOCKER
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME_FC }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_FC }}
+      - name: Get the tag name
+        run: |
+          date_tag=$(date +'%Y%m%d-%H%M')
+          echo ${date_tag}
+          echo "TAG=${date_tag}" >> $GITHUB_ENV
+
+      # BUILD AND PUBLISH
       - name: Run build rococo binary
         run: make build-rococo-release
       - name: Build frequency rococo related specs and wasm 📝
@@ -57,6 +78,82 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: frequency_rococo_binary-${{ github.sha }}.tar
+      - name: Build and push parachain image for Rococo
+        env:
+          IMAGE_NAME: parachain-node
+          NETWORK_NAME: rococo
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          file: ./docker/${{env.IMAGE_NAME}}.dockerfile
+          tags: |
+            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{env.NETWORK_NAME}}:${{ env.TAG }}
+            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{env.NETWORK_NAME}}:latest
+      - name: Update DockerHub description for parachain image
+        env:
+          IMAGE_NAME: parachain-node
+          NETWORK_NAME: rococo
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME_FC }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_FC }}
+          repository: ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{env.NETWORK_NAME}}
+          readme-filepath: docker/${{env.IMAGE_NAME}}-${{env.NETWORK_NAME}}.overview.md
+
+  build_publish_for_mainnet:
+    name: Publish for Mainnet
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        target: [build-node]
+        rust_toolchain: [nightly-2022-07-23]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
+    steps:
+      - name: Free space on Ubuntu
+        if: ${{ matrix.os }} == 'ubuntu-latest'
+        run: |
+          echo "Pre cleanup"
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Post cleanup"
+          df -h
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      # RUST TOOLCHAIN
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          default: true
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ env.RUST_TOOLCHAIN }}
+      - name: Install toolchain for frequency
+        run: make install-toolchain
+
+      # PREP DOCKER
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME_FC }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_FC }}
+      - name: Get the tag name
+        run: |
+          date_tag=$(date +'%Y%m%d-%H%M')
+          echo ${date_tag}
+          echo "TAG=${date_tag}" >> $GITHUB_ENV
+
+      # BUILD AND PUBLISH
       - name: Run build mainnet binary
         run: make build-mainnet-release
       - name: Build frequency mainnet related specs and wasm 📝
@@ -73,6 +170,29 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: frequency_mainnet_binary-${{ github.sha }}.tar
+      - name: Build and push parachain image for Mainnet
+        env:
+          IMAGE_NAME: parachain-node
+          NETWORK_NAME: mainnet
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          file: ./docker/${{env.IMAGE_NAME}}.dockerfile
+          tags: |
+            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{env.NETWORK_NAME}}:${{ env.TAG }}
+            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{env.NETWORK_NAME}}:latest
+      - name: Update DockerHub description for parachain image
+        env:
+          IMAGE_NAME: parachain-node
+          NETWORK_NAME: mainnet
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME_FC }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_FC }}
+          repository: ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{env.NETWORK_NAME}}
+          readme-filepath: docker/${{env.IMAGE_NAME}}-${{env.NETWORK_NAME}}.overview.md
+
   build_rococo_srtool_wasm:
     name: build_rococo_srtool_wasm
     strategy:
@@ -115,6 +235,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: frequency_wasm_rococo-${{ github.sha }}.tar
+
   build_mainnet_srtool_wasm:
     name: build_mainnet_srtool_wasm
     strategy:

@@ -120,23 +120,3 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN_FC }}
           repository: ${{env.DOCKER_HUB_PROFILE}}/instant-seal-node
           readme-filepath: docker/instant-seal-node.overview.md
-      - name: Build and push parachain image
-        if: matrix.target == 'build-node'
-        env:
-          IMAGE_NAME: parachain-node
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          push: true
-          file: ./docker/${{env.IMAGE_NAME}}.dockerfile
-          tags: |
-            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}:${{ env.TAG }}
-            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}:latest
-      - name: Update DockerHub description for parachain image
-        if: matrix.target == 'build-node'
-        uses: peter-evans/dockerhub-description@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME_FC }}
-          password: ${{ secrets.DOCKERHUB_TOKEN_FC }}
-          repository: ${{env.DOCKER_HUB_PROFILE}}/parachain-node
-          readme-filepath: docker/parachain-node.overview.md
