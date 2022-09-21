@@ -201,7 +201,7 @@ pub mod pallet {
 				Error::<T>::InvalidPayloadLocation
 			);
 
-			let provider_msa_id = Self::find_msa_id(&provider_key, None)?;
+			let provider_msa_id = Self::find_msa_id(&provider_key)?;
 			let message = Self::add_message(provider_msa_id, None, bounded_payload, schema_id)?;
 
 			Ok(Some(T::WeightInfo::add_ipfs_message(cid.len() as u32, message.index as u32)).into())
@@ -234,7 +234,7 @@ pub mod pallet {
 				Error::<T>::InvalidPayloadLocation
 			);
 
-			let provider_msa_id = Self::find_msa_id(&provider_key, None)?;
+			let provider_msa_id = Self::find_msa_id(&provider_key)?;
 
 			// On-chain messages either are sent from the user themselves, or on behalf of another MSA Id
 			let maybe_delegator = match on_behalf_of {
@@ -303,33 +303,18 @@ impl<T: Config> Pallet<T> {
 		)
 	}
 
-	/// Resolve an MSA from an account key(key) and an optional MSA Id (on_behalf_of).
-	/// If a delegation relationship exists between an MSA held by the account key and the optional
-	/// MSA, the MSA Id associated with the optional MSA is returned. Otherwise an MSA Id associated
-	/// with the account key is returned, if one exists.
+	/// Resolve an MSA from an account key(key)
+	/// An MSA Id associated with the account key is returned, if one exists.
 	///
 	/// # Arguments
 	/// * `key` - An MSA key for lookup.
-	/// * `on_behalf_of` - Optional. The msa id of delegate.
 	/// # Returns
 	/// * Result<MessageSourceId, DispatchError> - Returns an MSA Id for storing a message.
 	pub fn find_msa_id(
 		key: &T::AccountId,
-		on_behalf_of: Option<MessageSourceId>,
 	) -> Result<MessageSourceId, DispatchError> {
-		let sender_msa_id = T::AccountProvider::ensure_valid_msa_key(key)
-			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
-
-		let message_source_id = match on_behalf_of {
-			Some(delegator) => {
-				T::AccountProvider::ensure_valid_delegation(Provider(sender_msa_id), Delegator(delegator))
-					.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
-				delegator
-			},
-			None => sender_msa_id,
-		};
-
-		Ok(message_source_id)
+		Ok(T::AccountProvider::ensure_valid_msa_key(key)
+			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?)
 	}
 
 	/// Gets a messages for a given schema-id and block-number.
