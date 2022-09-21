@@ -367,7 +367,7 @@ impl<T: Config> Pallet<T> {
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest<T::BlockNumber>,
 	) -> Result<
-		BlockPaginationResponse<T::BlockNumber, MessageResponse<T::BlockNumber>>,
+		BlockPaginationResponse<T::BlockNumber, MessageResponse<T::BlockNumber, T>>,
 		DispatchError,
 	> {
 		ensure!(pagination.validate(), Error::<T>::InvalidPaginationRequest);
@@ -396,12 +396,12 @@ impl<T: Config> Pallet<T> {
 
 				let (payload, payload_length): OffchainPayloadType = match payload_location {
 					PayloadLocation::OnChain =>
-						(m.payload.clone().into_inner(), m.payload.len().try_into().unwrap()),
+						{(m.payload.clone().into_inner(), m.payload.len().try_into().unwrap());
+							response.content.push(m.map_to_respons_on_chain(block_number, payload))},
 					PayloadLocation::IPFS =>
-						OffchainPayloadType::decode(&mut &m.payload[..]).unwrap(),
+						{(OffchainPayloadType::decode(&mut &m.cid[..]).unwrap());
+							response.content.push(m.map_to_response_ipfs(block_number, payload, payload_length))}
 				};
-
-				response.content.push(m.map_to_response(block_number, payload, payload_length));
 
 				if Self::check_end_condition_and_set_next_pagination(
 					block_number,
