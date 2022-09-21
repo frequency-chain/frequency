@@ -1637,12 +1637,7 @@ fn signed_ext_check_nonce_delete_msa_key() {
 
 		let who = test_public(1);
 
-		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(
-			&who,
-			call_delete_msa_key,
-			&info,
-			len
-		));
+		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(&who, call_delete_msa_key, &info, len));
 
 		let created_token_account: bool;
 		match frame_system::Account::<Test>::try_get(who) {
@@ -1699,7 +1694,6 @@ fn signed_ext_check_nonce_revoke_msa_delegation_by_delegator() {
 #[test]
 fn signed_ext_check_nonce_creates_token_account_if_paying() {
 	new_test_ext().execute_with(|| {
-
 		//  Test that a  "pays" extrinsic creates a token account
 		let who = test_public(1);
 		let len = 0_usize;
