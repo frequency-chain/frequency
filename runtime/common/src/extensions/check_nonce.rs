@@ -20,7 +20,6 @@ use frame_system::Config;
 
 use frame_support::{
 	sp_runtime,
-	traits::IsSubType,
 	weights::{DispatchInfo, Pays},
 };
 use scale_info::TypeInfo;
