@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        rust_toolchain: [nightly-2022-06-27]
+        rust_toolchain: [nightly-2022-07-23]
     runs-on: ${{ matrix.os }}
     env:
       RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}

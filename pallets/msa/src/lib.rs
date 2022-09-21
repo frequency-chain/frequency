@@ -44,6 +44,7 @@
 //! ### Assumptions
 //!
 //! * Total MSA keys should be less than the constant `Config::MSA::MaxKeys`.
+//! * Maximum schemas, for which provider has publishing rights, be less than `Config::MSA::MaxSchemaGrants`
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -56,8 +57,13 @@
 )]
 
 use codec::{Decode, Encode};
-use common_primitives::msa::{
-	AccountProvider, Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo, ProviderMetadata,
+use common_primitives::{
+	msa::{
+		AccountProvider, Delegator, OrderedSetExt, Provider, ProviderInfo, ProviderMetadata,
+		EXPIRATION_BLOCK_VALIDITY_GAP,
+	},
+	node::BlockNumber,
+	schema::SchemaId,
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 pub use pallet::*;
@@ -83,6 +89,7 @@ pub mod weights;
 pub use weights::*;
 
 pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
+
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use sp_std::prelude::*;
@@ -104,8 +111,11 @@ pub mod pallet {
 
 		/// Maximum count of keys allowed per MSA
 		#[pallet::constant]
-		type MaxKeys: Get<u32>;
+		type MaxKeys: Get<u8>;
 
+		/// Maximum count of schemas granted for publishing data per Provider
+		#[pallet::constant]
+		type MaxSchemaGrants: Get<u32> + Clone + sp_std::fmt::Debug + Eq;
 		/// Maximum provider name size allowed per MSA association
 		#[pallet::constant]
 		type MaxProviderNameSize: Get<u32>;
@@ -125,14 +135,14 @@ pub mod pallet {
 	/// - Keys: Delegator MSA, Provider MSA
 	/// - Value: [`ProviderInfo`](common_primitives::msa::ProviderInfo)
 	#[pallet::storage]
-	#[pallet::getter(fn get_provider_info_of)]
+	#[pallet::getter(fn get_provider_info)]
 	pub type ProviderInfoOf<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
 		Delegator,
 		Twox64Concat,
 		Provider,
-		ProviderInfo<T::BlockNumber>,
+		ProviderInfo<T::BlockNumber, T::MaxSchemaGrants>,
 		OptionQuery,
 	>;
 
@@ -151,23 +161,19 @@ pub mod pallet {
 
 	/// Storage type for key to MSA information
 	/// - Key: AccountId
-	/// - Value: [`KeyInfo`](common_primitives::msa::KeyInfo)
+	/// - Value: [`MessageSourceId`]
 	#[pallet::storage]
-	#[pallet::getter(fn get_key_info)]
-	pub type KeyInfoOf<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, KeyInfo, OptionQuery>;
+	#[pallet::getter(fn get_msa_by_account_id)]
+	pub type MessageSourceIdOf<T: Config> =
+		StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
 
-	/// Storage for MSA keys
+	/// Storage type for a reference counter of the number of keys assocaited to an MSA
 	/// - Key: MSA Id
-	/// - Value: List of Keys
+	/// - Value: [`u8`] Counter of Keys associated with the MSA
 	#[pallet::storage]
-	#[pallet::getter(fn get_msa_keys)]
-	pub(super) type MsaKeysOf<T: Config> = StorageMap<
-		_,
-		Twox64Concat,
-		MessageSourceId,
-		BoundedVec<T::AccountId, T::MaxKeys>,
-		ValueQuery,
-	>;
+	#[pallet::getter(fn get_msa_key_count)]
+	pub(super) type MsaInfoOf<T: Config> =
+		StorageMap<_, Twox64Concat, MessageSourceId, u8, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -259,6 +265,16 @@ pub mod pallet {
 		DuplicateProviderMetadata,
 		/// The maximum length for a provider name has been exceeded
 		ExceedsMaxProviderNameSize,
+		/// The maximum number of schema grants has been exceeded
+		ExceedsMaxSchemaGrants,
+		/// Provider is not permitted to publish for given schema_id
+		SchemaNotGranted,
+		/// The operation was attempted with a non-provider MSA
+		ProviderNotRegistered,
+		/// The submited proof has expired; the current block is less the expiration block
+		ProofHasExpired,
+		/// The submitted proof expiration block is too far in the future
+		ProofNotYetValid,
 	}
 
 	#[pallet::call]
@@ -292,6 +308,7 @@ pub mod pallet {
 		/// - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
 		/// - Returns [`KeyAlreadyRegistered`](Error::KeyAlreadyRegistered) if there is already an MSA for `delegator_key`.
+		/// - Returns [`ProviderNotRegistered`](Error::ProviderNotRegistered) if the a non-provider MSA is used as the provider
 		///
 		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation())]
 		pub fn create_sponsored_account_with_delegation(
@@ -304,15 +321,26 @@ pub mod pallet {
 
 			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())?;
 
-			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?.msa_id;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			ensure!(
 				add_provider_payload.authorized_msa_id == provider_msa_id,
 				Error::<T>::UnauthorizedProvider
 			);
 
+			// Verify that the provider is a registered provider
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+
+			let granted_schemas = add_provider_payload.schema_ids;
+			ensure!(
+				granted_schemas.len() <= T::MaxSchemaGrants::get().try_into().unwrap(),
+				Error::<T>::ExceedsMaxSchemaGrants
+			);
 			let (_, _) =
 				Self::create_account(delegator_key.clone(), |new_msa_id| -> DispatchResult {
-					Self::add_provider(provider_msa_id.into(), new_msa_id.into())?;
+					Self::add_provider(provider_msa_id.into(), new_msa_id.into(), granted_schemas)?;
 
 					Self::deposit_event(Event::MsaCreated {
 						msa_id: new_msa_id,
@@ -341,7 +369,7 @@ pub mod pallet {
 			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
 				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
-			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?.msa_id;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			ProviderRegistry::<T>::try_mutate(
 				Provider(provider_msa_id),
 				|maybe_metadata| -> DispatchResult {
@@ -354,42 +382,49 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Creates a new Delegation for an existing MSA, with `origin` as the Delegator and `provider_key` as the Provider.  Requires the Provider to authorize the new Delegation.
+		/// Creates a new Delegation for an existing MSA, with `origin` as the Provider and `delegator_key` is the delegator.
+		/// Since it is being sent on the Delegator's behalf, it requires the Delegator to authorize the new Delegation.
 		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`ProviderAdded`](Event::ProviderAdded).
 		///
 		/// ## Errors
-		/// - Returns [`AddProviderSignatureVerificationFailed`](Error::AddProviderSignatureVerificationFailed) if `provider_key`'s MSA ID does not equal `add_provider_payload.authorized_msa_id`.
-		/// - Returns [`DuplicateProvider`](Error::DuplicateProvider) if there is already a Delegation for `origin` MSA and `provider_key` MSA.
+		/// - Returns [`AddProviderSignatureVerificationFailed`](Error::AddProviderSignatureVerificationFailed) if `origin`'s MSA ID does not equal `add_provider_payload.authorized_msa_id`.
+		/// - Returns [`DuplicateProvider`](Error::DuplicateProvider) if there is already a Delegation for `origin` MSA and `delegator_key` MSA.
 		/// ## Errors
-		/// - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if `add_provider_payload.authorized_msa_id`  does not match MSA ID of `provider_key`.
+		/// - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if `add_provider_payload.authorized_msa_id`  does not match MSA ID of `delegator_key`.
 		/// - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
+		/// - Returns [`ProviderNotRegistered`](Error::ProviderNotRegistered) if the a non-provider MSA is used as the provider
+		/// - Returns [`UnauthorizedDelegator`](Error::UnauthorizedDelegator) if Origin attempted to add a delegate for someone else's MSA
 		#[pallet::weight(T::WeightInfo::add_provider_to_msa())]
 		pub fn add_provider_to_msa(
 			origin: OriginFor<T>,
-			provider_key: T::AccountId,
+			delegator_key: T::AccountId,
 			proof: MultiSignature,
 			add_provider_payload: AddProvider,
 		) -> DispatchResult {
-			let delegator_key = ensure_signed(origin)?;
+			let provider_key = ensure_signed(origin)?;
 
-			Self::verify_signature(proof, provider_key.clone(), add_provider_payload.encode())
+			// delegator must have signed the payload.
+			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())
 				.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
 
-			let payload_authorized_msa_id = add_provider_payload.authorized_msa_id;
+			let (provider, delegator) =
+				Self::ensure_valid_registered_provider(&delegator_key, &provider_key)?;
 
-			let (provider_msa_id, delegator_msa_id) = Self::ensure_valid_provider(
-				&delegator_key,
-				&provider_key,
-				payload_authorized_msa_id,
-			)?;
+			ensure!(
+				add_provider_payload.authorized_msa_id == provider.0,
+				Error::<T>::UnauthorizedDelegator
+			);
 
-			Self::add_provider(provider_msa_id, delegator_msa_id)?;
+			let granted_schemas = add_provider_payload.schema_ids;
+			ensure!(
+				granted_schemas.len() <= T::MaxSchemaGrants::get().try_into().unwrap(),
+				Error::<T>::ExceedsMaxSchemaGrants
+			);
 
-			Self::deposit_event(Event::ProviderAdded {
-				delegator: delegator_msa_id,
-				provider: provider_msa_id,
-			});
+			Self::add_provider(provider, delegator, granted_schemas)?;
+
+			Self::deposit_event(Event::ProviderAdded { delegator, provider });
 
 			Ok(())
 		}
@@ -410,8 +445,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let delegator_key = ensure_signed(origin)?;
 
-			let delegator_msa_id: Delegator =
-				Self::ensure_valid_msa_key(&delegator_key)?.msa_id.into();
+			let delegator_msa_id: Delegator = Self::ensure_valid_msa_key(&delegator_key)?.into();
 			let provider_msa_id = Provider(provider_msa_id);
 
 			Self::revoke_provider(provider_msa_id, delegator_msa_id)?;
@@ -432,7 +466,8 @@ pub mod pallet {
 		/// - Returns [`AddKeySignatureVerificationFailed`](Error::AddKeySignatureVerificationFailed) if `key` is not a valid signer of the provided `add_key_payload`.
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if the MSA id for the account in `add_key_payload` does not exist.
 		/// - Returns ['NotMsaOwner'](Error::NotMsaOwner) if Origin's MSA is not the same as 'add_key_payload` MSA. Essentially you can only add a key to your own MSA.
-		///
+		/// - Returns ['ProofHasExpired'](Error::ProofHasExpired) if the current block is less than the `expired` bock number set in `AddKeyData`.
+		/// - Returns ['ProofNotYetValid'](Error::ProofNotYetValid) if the `expired` bock number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.
 		#[pallet::weight(T::WeightInfo::add_key_to_msa())]
 		pub fn add_key_to_msa(
 			origin: OriginFor<T>,
@@ -444,6 +479,8 @@ pub mod pallet {
 
 			Self::verify_signature(proof, key.clone(), add_key_payload.encode())
 				.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
+
+			Self::ensure_block_is_valid(add_key_payload.expiration)?;
 
 			let msa_id = add_key_payload.msa_id;
 
@@ -474,11 +511,11 @@ pub mod pallet {
 
 			ensure!(who != key, Error::<T>::InvalidSelfRemoval);
 
-			let who = Self::try_get_key_info(&who)?;
-			let key_info = Self::try_get_key_info(&key)?;
-			ensure!(who.msa_id == key_info.msa_id, Error::<T>::NotKeyOwner);
+			let who = Self::try_get_msa_from_account_id(&who)?;
+			let account_msa_id = Self::try_get_msa_from_account_id(&key)?;
+			ensure!(who == account_msa_id, Error::<T>::NotKeyOwner);
 
-			Self::delete_key_for_msa(who.msa_id, &key)?;
+			Self::delete_key_for_msa(who, &key)?;
 
 			Self::deposit_event(Event::KeyRemoved { key });
 
@@ -503,7 +540,7 @@ pub mod pallet {
 			// Remover should have valid keys (non expired and exists)
 			let key_info = Self::ensure_valid_msa_key(&provider_key)?;
 
-			let provider_msa_id = Provider(key_info.msa_id);
+			let provider_msa_id = Provider(key_info);
 			let delegator_msa_id = Delegator(delegator);
 
 			Self::revoke_provider(provider_msa_id, delegator_msa_id)?;
@@ -553,39 +590,44 @@ impl<T: Config> Pallet<T> {
 	where
 		F: FnOnce(MessageSourceId) -> DispatchResult,
 	{
-		KeyInfoOf::<T>::try_mutate(key, |maybe_key_info| {
-			ensure!(maybe_key_info.is_none(), Error::<T>::KeyAlreadyRegistered);
+		MessageSourceIdOf::<T>::try_mutate(key, |maybe_msa_id| {
+			ensure!(maybe_msa_id.is_none(), Error::<T>::KeyAlreadyRegistered);
+			*maybe_msa_id = Some(msa_id);
 
-			*maybe_key_info = Some(KeyInfo { msa_id, nonce: Zero::zero() });
+			// Incremement the key counter
+			<MsaInfoOf<T>>::try_mutate(msa_id, |key_count| {
+				// key_count:u8 should default to 0 if it does not exist
+				let incremented_key_count: u8 = *key_count + 1;
+				ensure!(incremented_key_count <= T::MaxKeys::get(), Error::<T>::KeyLimitExceeded);
 
-			// adding reverse lookup
-			<MsaKeysOf<T>>::try_mutate(msa_id, |key_list| {
-				let index =
-					key_list.binary_search(key).err().ok_or(Error::<T>::KeyAlreadyRegistered)?;
-
-				key_list
-					.try_insert(index, key.clone())
-					.map_err(|_| Error::<T>::KeyLimitExceeded)?;
-
+				*key_count = incremented_key_count;
 				on_success(msa_id)
 			})
 		})
 	}
 
+	/// Returns if provider is registered by checking if the [`ProviderRegistry`] contains the MSA id
+	pub fn is_registered_provider(msa_id: MessageSourceId) -> bool {
+		ProviderRegistry::<T>::contains_key(Provider(msa_id))
+	}
+
 	/// Checks that a provider and delegator keys are valid
 	/// and that a provider and delegator are not the same
 	/// and that a provider has authorized a delegator to create a delegation relationship.
-	pub fn ensure_valid_provider(
+	/// - Returns [`ProviderNotRegistered`](Error::ProviderNotRegistered) if the a non-provider MSA is used as the provider
+	/// - Returns [`InvalidSelfProvider`](Error::InvalidSelfProvider) if the delegator is the provider
+	pub fn ensure_valid_registered_provider(
 		delegator_key: &T::AccountId,
 		provider_key: &T::AccountId,
-		authorized_msa_id: MessageSourceId,
 	) -> Result<(Provider, Delegator), DispatchError> {
-		let provider_msa_id = Self::ensure_valid_msa_key(provider_key)?.msa_id;
-		let delegator_msa_id = Self::ensure_valid_msa_key(delegator_key)?.msa_id;
+		let provider_msa_id = Self::ensure_valid_msa_key(provider_key)?;
+		let delegator_msa_id = Self::ensure_valid_msa_key(delegator_key)?;
 
-		ensure!(authorized_msa_id == delegator_msa_id, Error::<T>::UnauthorizedDelegator);
-
+		// Ensure that the delegator is not the provider.  You cannot delegate to yourself.
 		ensure!(delegator_msa_id != provider_msa_id, Error::<T>::InvalidSelfProvider);
+
+		// Verify that the provider is a registered provider
+		ensure!(Self::is_registered_provider(provider_msa_id), Error::<T>::ProviderNotRegistered);
 
 		Ok((provider_msa_id.into(), delegator_msa_id.into()))
 	}
@@ -613,12 +655,48 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Ensure that the expiration block number has not already passed and is also not too far into the future.
+	///
+	/// # Arguments
+	/// * `expiration` - A block number that which validity or expiration is being checked.
+	///
+	/// # Returns
+	/// * [`DispatchResult`]
+	///
+	/// # Errors
+	/// * [Error::ProofHasExpired] - If the current block is less than the `expired` bock number set in `AddKeyData`.
+	/// * [Error::ProofNotYetValid] - If the `expired` bock number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.
+	pub fn ensure_block_is_valid(expiration: BlockNumber) -> DispatchResult {
+		let current_block: BlockNumber =
+			frame_system::Pallet::<T>::block_number().try_into().ok().unwrap();
+		ensure!(current_block < expiration.into(), Error::<T>::ProofHasExpired);
+
+		// If gap between the current block and the expiration block is larger than EXPIRATION_BLOCK_VALIDITY_GAP,
+		// the proof is too var into the future and return Error::<T>::ProofNotYetValid.
+		let blocks_until_expiration: BlockNumber = expiration - current_block;
+		ensure!(
+			blocks_until_expiration < EXPIRATION_BLOCK_VALIDITY_GAP,
+			Error::<T>::ProofNotYetValid
+		);
+
+		Ok(())
+	}
+
 	/// Add a provider to a delegator with the default permissions
-	pub fn add_provider(provider: Provider, delegator: Delegator) -> DispatchResult {
+	pub fn add_provider(
+		provider: Provider,
+		delegator: Delegator,
+		schemas: Vec<SchemaId>,
+	) -> DispatchResult {
 		ProviderInfoOf::<T>::try_mutate(delegator, provider, |maybe_info| -> DispatchResult {
 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
-
-			let info = ProviderInfo { permission: Default::default(), expired: Default::default() };
+			let granted_schemas = BoundedVec::<SchemaId, T::MaxSchemaGrants>::try_from(schemas)
+				.map_err(|_| Error::<T>::ExceedsMaxSchemaGrants)?;
+			let info = ProviderInfo {
+				permission: Default::default(),
+				expired: Default::default(),
+				schemas: OrderedSetExt::<SchemaId, T::MaxSchemaGrants>::from(granted_schemas),
+			};
 
 			*maybe_info = Some(info);
 
@@ -649,12 +727,16 @@ impl<T: Config> Pallet<T> {
 	/// # Errors
 	/// * [`Error::<T>::NoKeyExists`] - If the key does not exist in the MSA
 	pub fn delete_key_for_msa(msa_id: MessageSourceId, key: &T::AccountId) -> DispatchResult {
-		<MsaKeysOf<T>>::try_mutate(msa_id, |key_list| {
-			let index = key_list.binary_search(key);
-			ensure!(index.is_ok(), Error::<T>::NoKeyExists);
-			key_list.remove(index.unwrap());
-			KeyInfoOf::<T>::remove(key);
-			Ok(())
+		MessageSourceIdOf::<T>::try_mutate_exists(key, |maybe_msa_id| {
+			ensure!(maybe_msa_id.is_some(), Error::<T>::NoKeyExists);
+
+			// Delete the key if it exists
+			*maybe_msa_id = None;
+
+			<MsaInfoOf<T>>::try_mutate(msa_id, |key_count| {
+				*key_count = *key_count - 1u8;
+				Ok(())
+			})
 		})
 	}
 
@@ -693,13 +775,15 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Attempts to retrieve the key information for an account
+	/// Attempts to retrieve the MSA id for an account
 	/// # Arguments
 	/// * `key` - The `AccountId` you want to attempt to get information on
 	/// # Returns
-	/// * [`KeyInfo`]
-	pub fn try_get_key_info(key: &T::AccountId) -> Result<KeyInfo, DispatchError> {
-		let info = Self::get_key_info(key).ok_or(Error::<T>::NoKeyExists)?;
+	/// * [`MessageSourceId`]
+	pub fn try_get_msa_from_account_id(
+		key: &T::AccountId,
+	) -> Result<MessageSourceId, DispatchError> {
+		let info = Self::get_msa_by_account_id(key).ok_or(Error::<T>::NoKeyExists)?;
 		Ok(info)
 	}
 
@@ -709,33 +793,80 @@ impl<T: Config> Pallet<T> {
 	/// # Returns
 	/// * [`MessageSourceId`]
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
-		Self::get_key_info(&key).map(|info| info.msa_id)
+		Self::get_msa_by_account_id(&key)
 	}
 
-	/// Fetches all the keys associated with a message Source Account
-	/// NOTE: This should only be called from RPC due to heavy database reads
-	pub fn fetch_msa_keys(msa_id: MessageSourceId) -> Vec<KeyInfoResponse<T::AccountId>> {
-		let mut response = Vec::new();
-		for key in Self::get_msa_keys(msa_id) {
-			if let Ok(info) = Self::try_get_key_info(&key) {
-				response.push(info.map_to_response(key));
-			}
-		}
+	// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418
+	//
+	// Fetches all the keys associated with a message Source Account
+	// NOTE: This should only be called from RPC due to heavy database reads
+	// pub fn fetch_msa_keys(msa_id: MessageSourceId) -> Vec<KeyInfoResponse<T::AccountId>> {
+	// 	let mut response = Vec::new();
+	// 	for key in Self::get_msa_keys(msa_id) {
+	// 		if let Ok(_info) = Self::try_get_msa_from_account_id(&key) {
+	// 			response.push(KeyInfoResponse { key, msa_id });
+	// 		}
+	// 	}
 
-		response
-	}
+	// 	response
+	// }
 
 	/// Checks that a key is associated to an MSA and has not been revoked.
-	pub fn ensure_valid_msa_key(key: &T::AccountId) -> Result<KeyInfo, DispatchError> {
-		let info = Self::try_get_key_info(key)?;
+	pub fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
+		let msa_id = Self::try_get_msa_from_account_id(key)?;
 
-		Ok(info)
+		Ok(msa_id)
+	}
+
+	/// Check if provider is allowed to publish for a given schema_id for a given delegator
+	/// # Arguments
+	/// * `provider` - The provider account
+	/// * `delegator` - The delegator account
+	/// * `schema_id` - The schema id
+	/// # Returns
+	/// * [`DispatchResult`]
+	/// # Errors
+	/// * [`Error::DelegationNotFound`]
+	/// * [`Error::SchemaNotGranted`]
+	pub fn ensure_valid_schema_grant(
+		provider: Provider,
+		delegator: Delegator,
+		schema_id: SchemaId,
+	) -> DispatchResult {
+		let provider_info = Self::get_provider_info_of(delegator, provider)
+			.ok_or(Error::<T>::DelegationNotFound)?;
+
+		ensure!(provider_info.schemas.0.contains(&schema_id), Error::<T>::SchemaNotGranted);
+		Ok(())
+	}
+
+	/// Get a list of ```schema_id```s that a provider has been granted access to
+	/// # Arguments
+	/// * `provider` - The provider account
+	/// * `delegator` - The delegator account
+	/// # Returns
+	/// * [`Vec<SchemaId>`]
+	/// # Errors
+	/// * [`Error::DelegationNotFound`]
+	/// * [`Error::SchemaNotGranted`]
+	pub fn get_granted_schemas(
+		delegator: Delegator,
+		provider: Provider,
+	) -> Result<Option<Vec<SchemaId>>, DispatchError> {
+		let provider_info = Self::get_provider_info_of(delegator, provider)
+			.ok_or(Error::<T>::DelegationNotFound)?;
+		let schemas = provider_info.schemas.0;
+		if schemas.0.is_empty() {
+			return Err(Error::<T>::SchemaNotGranted.into())
+		}
+		Ok(Some(schemas.0.into()))
 	}
 }
 
 impl<T: Config> AccountProvider for Pallet<T> {
 	type AccountId = T::AccountId;
 	type BlockNumber = T::BlockNumber;
+	type MaxSchemaGrants = T::MaxSchemaGrants;
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
 		Self::get_owner_of(key)
 	}
@@ -743,16 +874,36 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	fn get_provider_info_of(
 		delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber>> {
-		Self::get_provider_info_of(delegator, provider)
+	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>> {
+		Self::get_provider_info(delegator, provider)
 	}
 
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_delegation(provider: Provider, delegation: Delegator) -> DispatchResult {
 		Self::ensure_valid_delegation(provider, delegation)
 	}
 
+	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
+	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
+	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
+	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
+	/// would like to avoid.
+	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
+	/// this method to return a dummy account in case it does not exist
+	#[cfg(feature = "runtime-benchmarks")]
+	fn ensure_valid_delegation(provider: Provider, delegation: Delegator) -> DispatchResult {
+		let validation_check = Self::ensure_valid_delegation(provider, delegation);
+		if validation_check.is_err() {
+			// If the delegation does not exist, we return a ok
+			// This is only used for benchmarks, so it is safe to return a dummy account
+			// in case the delegation does not exist
+			return Ok(())
+		}
+		Ok(())
+	}
+
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<KeyInfo, DispatchError> {
+	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		Self::ensure_valid_msa_key(key)
 	}
 
@@ -764,12 +915,60 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
 	/// this method to return a dummy account in case it does not exist
 	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<KeyInfo, DispatchError> {
+	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		let result = Self::ensure_valid_msa_key(key);
 		if result.is_err() {
-			return Ok(KeyInfo { msa_id: 1 as MessageSourceId, nonce: 0 })
+			return Ok(1 as MessageSourceId)
 		}
 		Ok(result.unwrap())
+	}
+
+	/// Check if provider is allowed to publish for a given schema_id for a given delegator
+	/// # Arguments
+	/// * `provider` - The provider account
+	/// * `delegator` - The delegator account
+	/// * `schema_id` - The schema id
+	/// # Returns
+	/// * [`DispatchResult`]
+	/// # Errors
+	/// * [`Error::DelegationNotFound`]
+	/// * [`Error::SchemaNotGranted`]
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	fn ensure_valid_schema_grant(
+		provider: Provider,
+		delegator: Delegator,
+		schema_id: SchemaId,
+	) -> DispatchResult {
+		Self::ensure_valid_schema_grant(provider, delegator, schema_id)
+	}
+
+	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
+	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
+	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
+	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
+	/// would like to avoid.
+	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
+	/// this method to return a dummy account in case it does not exist
+	/// # Arguments
+	/// * `provider` - The provider account
+	/// * `delegator` - The delegator account
+	/// * `schema_id` - The schema id
+	/// # Returns
+	/// * [`DispatchResult`]
+	/// # Errors
+	/// * [`Error::DelegationNotFound`]
+	/// * [`Error::SchemaNotGranted`]
+	#[cfg(feature = "runtime-benchmarks")]
+	fn ensure_valid_schema_grant(
+		provider: Provider,
+		delegator: Delegator,
+		_schema_id: SchemaId,
+	) -> DispatchResult {
+		let provider_info = Self::get_provider_info_of(delegator, provider);
+		if provider_info.is_none() {
+			return Ok(())
+		}
+		Ok(())
 	}
 }
 
@@ -790,7 +989,6 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 		const TAG_PREFIX: &str = "DelegationRevocation";
 		let delegator_msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(account_id)
 			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
-			.msa_id
 			.into();
 		let provider_msa_id = Provider(*provider_msa_id);
 
@@ -807,7 +1005,6 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 		const TAG_PREFIX: &str = "KeyRevocation";
 		let _msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(key)
 			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
-			.msa_id
 			.into();
 		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}

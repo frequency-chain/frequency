@@ -1,12 +1,13 @@
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 name: Build Main
 jobs:
   build_prep:
     name: build-prep
-    runs-on: 'ubuntu-latest'
+    runs-on: "ubuntu-latest"
     outputs:
       matrix: ${{ steps.set-build-param.outputs.matrix }}
     steps:
@@ -15,9 +16,9 @@ jobs:
       - id: set-build-param
         uses: JoshuaTheMiller/conditional-build-matrix@b9af2b1b137d7bd7818c1233ef830b326809a7cc
         with:
-          inputFile: '.github/workflows/build-params.json'
+          inputFile: ".github/workflows/build-params.json"
           # we run build-node on every workflow but build-runtime only on pushes to branches
-          filter: '[?run_on_event==`any` || run_on_event==`${{ github.event_name }}`]'
+          filter: "[?run_on_event==`any` || run_on_event==`${{ github.event_name }}`]"
   build:
     needs: build_prep
     strategy:
@@ -26,6 +27,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
+      DOCKER_HUB_PROFILE: frequencychain
     steps:
       - name: Free space on Ubuntu
         if: ${{ matrix.os }} == 'ubuntu-latest'
@@ -46,8 +48,8 @@ jobs:
       - if: matrix.target == 'build-runtime' || matrix.target == 'build-runtime-rococo'
         uses: Swatinem/rust-cache@v1
         with: # cache the runtime target instead of root target for build-runtime
-          working-directory: './runtime'
-          target-dir: './target/frequency'
+          working-directory: "./runtime"
+          target-dir: "./target/frequency"
       - if: matrix.target == 'build-node'
         uses: Swatinem/rust-cache@v1
       - name: ${{ matrix.target }}
@@ -67,22 +69,54 @@ jobs:
         if: matrix.target == 'build-node'
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME_FC }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_FC }}
       - name: Get the tag name
         if: matrix.target == 'build-node'
         run: |
           date_tag=$(date +'%Y%m%d-%H%M')
           echo ${date_tag}
           echo "TAG=${date_tag}" >> $GITHUB_ENV
-      - name: Build and push dsnp/frequency
+      - name: Generate Frequency local chain spec
         if: matrix.target == 'build-node'
-        id: docker_build_frequency
+        run: ./scripts/generate_specs.sh 2000 rococo-2000 release
+      - name: Build and push collator image for local relay chain
+        if: matrix.target == 'build-node'
+        env:
+          IMAGE_NAME: collator-node-local
         uses: docker/build-push-action@v3
         with:
           context: .
           push: true
-          file: Dockerfile
+          file: docker/${{env.IMAGE_NAME}}.dockerfile
           tags: |
-            dsnp/frequency:${{ env.TAG }}
-            dsnp/frequency:latest
+            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}:${{ env.TAG }}
+            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}:latest
+      - name: Update DockerHub description for collator image for local relay chain
+        if: matrix.target == 'build-node'
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME_FC }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_FC }}
+          repository: ${{env.DOCKER_HUB_PROFILE}}/collator-node-local
+          readme-filepath: docker/collator-node-local.overview.md
+      - name: Build and push collator image in instant seal mode
+        if: matrix.target == 'build-node'
+        env:
+          IMAGE_NAME: instant-seal-node
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          file: ./docker/${{env.IMAGE_NAME}}.dockerfile
+          tags: |
+            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}:${{env.TAG}}
+            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}:latest
+      - name: Update DockerHub description for collator image in instant seal mode
+        if: matrix.target == 'build-node'
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME_FC }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_FC }}
+          repository: ${{env.DOCKER_HUB_PROFILE}}/instant-seal-node
+          readme-filepath: docker/instant-seal-node.overview.md

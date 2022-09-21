@@ -1,6 +1,6 @@
 use crate as pallet_messages;
 use common_primitives::{
-	msa::{AccountProvider, Delegator, KeyInfo, MessageSourceId, Provider, ProviderInfo},
+	msa::{AccountProvider, Delegator, MessageSourceId, OrderedSetExt, Provider, ProviderInfo},
 	schema::*,
 };
 use frame_support::{
@@ -67,6 +67,29 @@ impl system::Config for Test {
 parameter_types! {
 	pub const MaxMessagesPerBlock: u32 = 500;
 	pub const MaxMessagePayloadSizeBytes: u32 = 100;
+	pub const MaxSchemaGrants: u32 = 30;
+}
+
+impl Clone for MaxSchemaGrants {
+	fn clone(&self) -> Self {
+		MaxSchemaGrants {}
+	}
+}
+
+impl Eq for MaxSchemaGrants {
+	fn assert_receiver_is_total_eq(&self) -> () {}
+}
+
+impl PartialEq for MaxSchemaGrants {
+	fn eq(&self, _other: &Self) -> bool {
+		true
+	}
+}
+
+impl sp_std::fmt::Debug for MaxSchemaGrants {
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
 }
 
 impl std::fmt::Debug for MaxMessagePayloadSizeBytes {
@@ -93,6 +116,7 @@ pub struct AccountHandler;
 impl AccountProvider for AccountHandler {
 	type AccountId = u64;
 	type BlockNumber = u64;
+	type MaxSchemaGrants = MaxSchemaGrants;
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
 		if *key == 1000 {
 			return None
@@ -105,23 +129,22 @@ impl AccountProvider for AccountHandler {
 	fn get_provider_info_of(
 		_delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber>> {
+	) -> Option<ProviderInfo<Self::BlockNumber, MaxSchemaGrants>> {
 		if provider == Provider(2000) {
 			return None
 		};
-		Some(ProviderInfo { permission: 0, expired: 100 })
+		Some(ProviderInfo { permission: 0, expired: 100, schemas: OrderedSetExt::new() })
 	}
 
-	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<KeyInfo, DispatchError> {
+	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError> {
 		if *key == 1000 {
 			return Err(DispatchError::Other("some error"))
 		}
 		if *key == 2000 {
-			return Ok(KeyInfo { msa_id: 2000, nonce: 0 })
+			return Ok(2000)
 		}
 
-		let info = KeyInfo { msa_id: get_msa_from_account(*key), nonce: 0 };
-		Ok(info)
+		Ok(get_msa_from_account(*key))
 	}
 
 	fn ensure_valid_delegation(provider: Provider, _delegator: Delegator) -> DispatchResult {
@@ -129,6 +152,14 @@ impl AccountProvider for AccountHandler {
 			return Err(DispatchError::Other("some delegation error"))
 		};
 
+		Ok(())
+	}
+
+	fn ensure_valid_schema_grant(
+		_provider: Provider,
+		_delegator: Delegator,
+		_schema_id: SchemaId,
+	) -> DispatchResult {
 		Ok(())
 	}
 }

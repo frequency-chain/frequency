@@ -1,8 +1,12 @@
 #![allow(missing_docs)]
 use cumulus_primitives_core::ParaId;
-use frequency_runtime::{AccountId, AuraId, Balance, SudoConfig, EXISTENTIAL_DEPOSIT};
+use frequency_runtime::{
+	AccountId, AuraId, Balance, CouncilConfig, SudoConfig, TechnicalCommitteeConfig,
+	EXISTENTIAL_DEPOSIT,
+};
+use hex::FromHex;
 use sc_service::ChainType;
-use sp_core::sr25519;
+use sp_core::ByteArray;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConfig, Extensions>;
@@ -10,10 +14,26 @@ pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConf
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
-use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_properties, Extensions};
+use super::{get_properties, Extensions};
 
-//TODO: Define various keys for frequency mainnet
-pub mod frequency_mainnet_keys {}
+//TODO: Define FINAL keys for frequency mainnet
+pub mod frequency_mainnet_keys {
+	//TODO: final sudo key(s) for mainnet
+	pub const MAINNET_FRQ_SUDO: &str =
+		"0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"; // Alice
+
+	//TODO: final collator key(s) for mainnet
+	pub const COLLATOR_1_SR25519: &str =
+		"0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"; // Alice
+	pub const COLLATOR_2_SR25519: &str =
+		"0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"; // Bob
+	pub const COLLATOR_3_SR25519: &str =
+		"0x90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22"; // Charlie
+	pub const COLLATOR_4_SR25519: &str =
+		"0x306721211d5404bd9da88e0204360a1a9ab8b87c66c1bc2fcdd37f3c2222cc20"; // Dave
+	pub const COLLATOR_5_SR25519: &str =
+		"0xe659a7a1628cdd93febc04a4e0646ea20e9f5f0ce097d9a05290d4a9e054df4e"; // Eve
+}
 
 // pub fn load_frequency_spec() -> Result<ChainSpec, String> {
 // 	ChainSpec::from_json_bytes(&include_bytes!("../../specs/frequency.json")[..])
@@ -32,14 +52,93 @@ pub fn frequency() -> ChainSpec {
 		move || {
 			frequency_genesis(
 				// TODO: initial collators.
-				vec![(
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_collator_keys_from_seed("Alice"),
-				)],
-				//TODO: sudo key(s) for mainnet
-				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+				vec![
+					(
+						frequency_mainnet_keys::COLLATOR_1_SR25519
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						AuraId::from_slice(
+							&<[u8; 32]>::from_hex(
+								frequency_mainnet_keys::COLLATOR_1_SR25519
+									.strip_prefix("0x")
+									.unwrap(),
+							)
+							.unwrap(),
+						)
+						.unwrap(),
+					),
+					(
+						frequency_mainnet_keys::COLLATOR_2_SR25519
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						AuraId::from_slice(
+							&<[u8; 32]>::from_hex(
+								frequency_mainnet_keys::COLLATOR_2_SR25519
+									.strip_prefix("0x")
+									.unwrap(),
+							)
+							.unwrap(),
+						)
+						.unwrap(),
+					),
+					(
+						frequency_mainnet_keys::COLLATOR_3_SR25519
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						AuraId::from_slice(
+							&<[u8; 32]>::from_hex(
+								frequency_mainnet_keys::COLLATOR_3_SR25519
+									.strip_prefix("0x")
+									.unwrap(),
+							)
+							.unwrap(),
+						)
+						.unwrap(),
+					),
+					(
+						frequency_mainnet_keys::COLLATOR_4_SR25519
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						AuraId::from_slice(
+							&<[u8; 32]>::from_hex(
+								frequency_mainnet_keys::COLLATOR_4_SR25519
+									.strip_prefix("0x")
+									.unwrap(),
+							)
+							.unwrap(),
+						)
+						.unwrap(),
+					),
+					(
+						frequency_mainnet_keys::COLLATOR_5_SR25519
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						AuraId::from_slice(
+							&<[u8; 32]>::from_hex(
+								frequency_mainnet_keys::COLLATOR_5_SR25519
+									.strip_prefix("0x")
+									.unwrap(),
+							)
+							.unwrap(),
+						)
+						.unwrap(),
+					),
+				],
+				Some(frequency_mainnet_keys::MAINNET_FRQ_SUDO.parse::<AccountId>().unwrap().into()),
 				// TODO:: endowed accounts with initial balance.
-				vec![(get_account_id_from_seed::<sr25519::Public>("Alice"), 1 << 60)],
+				vec![(
+					frequency_mainnet_keys::MAINNET_FRQ_SUDO.parse::<AccountId>().unwrap().into(),
+					1 << 60,
+				)],
+				// TODO: initial council members
+				Default::default(),
+				// TODO: initial technical committee members
+				Default::default(),
 				// TODO: candidacy bond (if needed)
 				EXISTENTIAL_DEPOSIT * 16,
 				// TODO: include council/democracy/staking related inputs
@@ -69,8 +168,8 @@ fn frequency_genesis(
 	initial_authorities: Vec<(AccountId, AuraId)>,
 	root_key: Option<AccountId>,
 	endowed_accounts: Vec<(AccountId, Balance)>,
-	//council_members: Vec<AccountId>,
-	//technical_committee_members: Vec<AccountId>,
+	council_members: Vec<AccountId>,
+	technical_committee_members: Vec<AccountId>,
 	candidacy_bond: Balance,
 	id: ParaId,
 ) -> frequency_runtime::GenesisConfig {
@@ -99,8 +198,6 @@ fn frequency_genesis(
 				})
 				.collect(),
 		},
-		democracy: Default::default(),
-		council: Default::default(),
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
@@ -113,5 +210,11 @@ fn frequency_genesis(
 		},
 		schemas: Default::default(),
 		vesting: Default::default(),
+		democracy: Default::default(),
+		council: CouncilConfig { phantom: Default::default(), members: council_members },
+		technical_committee: TechnicalCommitteeConfig {
+			phantom: Default::default(),
+			members: technical_committee_members,
+		},
 	}
 }

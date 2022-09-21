@@ -32,7 +32,8 @@ fn create_msa<T: Config>(n: u32) -> DispatchResult {
 
 fn create_payload_and_signature<T: Config>() -> (AddProvider, MultiSignature, T::AccountId) {
 	let delegator_account = SignerId::generate_pair(None);
-	let add_provider_payload = AddProvider { authorized_msa_id: 1u64.into(), permission: 0 };
+	let schemas: Vec<SchemaId> = vec![1, 2];
+	let add_provider_payload = AddProvider::new(1u64, 0, Some(schemas));
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 	let signature = delegator_account.sign(&encode_add_provider_data).unwrap();
@@ -42,7 +43,7 @@ fn create_payload_and_signature<T: Config>() -> (AddProvider, MultiSignature, T:
 
 fn add_key_payload_and_signature<T: Config>() -> (AddKeyData, MultiSignature, T::AccountId) {
 	let account = SignerId::generate_pair(None);
-	let add_key_payload = AddKeyData { msa_id: 1u64.into(), nonce: 0 };
+	let add_key_payload = AddKeyData { msa_id: 1u64.into(), nonce: 0, expiration: 10 };
 	let encode_add_provider_data = wrap_binary_data(add_key_payload.encode());
 
 	let signature = account.sign(&encode_add_provider_data).unwrap();
@@ -55,13 +56,14 @@ fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSource
 
 	assert_ok!(Msa::<T>::create(RawOrigin::Signed(provider.clone()).into()));
 
-	let key_info = Msa::<T>::try_get_key_info(&provider).unwrap();
+	let msa_id = Msa::<T>::try_get_msa_from_account_id(&provider).unwrap();
 
-	(provider.clone(), key_info.msa_id)
+	(provider.clone(), msa_id)
 }
 
 fn add_delegation<T: Config>(delegator: Delegator, provider: Provider) {
-	assert_ok!(Msa::<T>::add_provider(provider, delegator));
+	let schemas: Vec<SchemaId> = vec![1, 2];
+	assert_ok!(Msa::<T>::add_provider(provider, delegator, schemas));
 }
 
 benchmarks! {
@@ -77,6 +79,8 @@ benchmarks! {
 	create_sponsored_account_with_delegation {
 		let caller: T::AccountId = whitelisted_caller();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
+		assert_ok!(Msa::<T>::register_provider(RawOrigin::Signed(caller.clone()).into(),Vec::from("Foo")));
+
 		let (payload, signature, key) = create_payload_and_signature::<T>();
 
 	}: _ (RawOrigin::Signed(caller), key, signature, payload)
@@ -113,7 +117,9 @@ benchmarks! {
 	add_provider_to_msa {
 		let caller: T::AccountId = whitelisted_caller();
 		let (payload, signature, key) = create_payload_and_signature::<T>();
+
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
+		assert_ok!(Msa::<T>::register_provider(RawOrigin::Signed(caller.clone()).into(),Vec::from("Foo")));
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(key.clone()).into()));
 
 	}: _ (RawOrigin::Signed(caller), key, signature, payload)

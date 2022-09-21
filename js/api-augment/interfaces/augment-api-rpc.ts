@@ -6,7 +6,7 @@
 import '@polkadot/rpc-core/types/jsonrpc';
 
 import type { BlockPaginationRequest, BlockPaginationResponseMessage } from '@dsnp/frequency-api-augment/messages';
-import type { KeyInfoResponse, MessageSourceId } from '@dsnp/frequency-api-augment/msa';
+import type { MessageSourceId } from '@dsnp/frequency-api-augment/msa';
 import type { SchemaId, SchemaModel, SchemaResponse } from '@dsnp/frequency-api-augment/schemas';
 import type { AugmentedRpc } from '@polkadot/rpc-core/types';
 import type { Metadata, StorageKey } from '@polkadot/types';
@@ -395,9 +395,9 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        **/
       getMsaId: AugmentedRpc<(key: AccountId | string | Uint8Array) => Observable<Option<MessageSourceId>>>;
       /**
-       * Fetch Keys for an MSA Id
+       * Fetch the list of schema ids that a delegator has granted to provider
        **/
-      getMsaKeys: AugmentedRpc<(msa_id: MessageSourceId | AnyNumber | Uint8Array) => Observable<Vec<KeyInfoResponse>>>;
+      grantedSchemaIds: AugmentedRpc<(delegator_msa_id: MessageSourceId | AnyNumber | Uint8Array, provider_msa_id: MessageSourceId | AnyNumber | Uint8Array) => Observable<Vec<SchemaId>>>;
     };
     net: {
       /**

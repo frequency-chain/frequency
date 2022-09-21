@@ -1,10 +1,10 @@
 # Node Key Alice: `subkey inspect //Alice`
 # Node Key Bob: `subkey inspect //Bob`
-version: '3'
+version: "3"
 services:
   relay_alice:
     container_name: alice
-    image: "centrifugeio/polkadot:verify-qemu-fix"
+    image: "parity/polkadot:v0.9.27"
     hostname: relay_alice
     ports:
       - "30335:30335" # p2p port
@@ -12,7 +12,7 @@ services:
       - "9946:9944" # ws port
     volumes:
       - type: bind
-        source: ./res/rococo-local.json
+        source: ../resources/rococo-local.json
         target: /chainspec.json
         read_only: true
     command: >
@@ -21,11 +21,11 @@ services:
       --wasm-execution=compiled
       --execution=wasm
       --base-path=/data
-      --port 30335
-      --rpc-port 9933
-      --ws-port 9944
+      --port=30335
+      --rpc-port=9933
+      --ws-port=9944
       --rpc-external
-      --rpc-cors all
+      --rpc-cors=all
       --ws-external
       --rpc-methods=Unsafe
       --alice
@@ -33,7 +33,7 @@ services:
 
   relay_bob:
     container_name: bob
-    image: "centrifugeio/polkadot:verify-qemu-fix"
+    image: "parity/polkadot:v0.9.27"
     hostname: relay_bob
     ports:
       - "30336:30336" # p2p port
@@ -41,7 +41,7 @@ services:
       - "9947:9944" # ws port
     volumes:
       - type: bind
-        source: ./res/rococo-local.json
+        source: ../resources/rococo-local.json
         target: /chainspec.json
         read_only: true
     command: >
@@ -50,21 +50,23 @@ services:
       --base-path=/data
       --wasm-execution=compiled
       --execution=wasm
-      --port 30336
-      --rpc-port 9933
-      --ws-port 9944
+      --port=30336
+      --rpc-port=9933
+      --ws-port=9944
       --rpc-external
       --ws-external
-      --rpc-cors all
+      --rpc-cors=all
       --rpc-methods=Unsafe
       --bob
       --log="main,info"
 
   collator_frequency:
     container_name: frequency
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: frequencychain/collator-node-local:latest
+    # Replace image with build if you want to build locally instead of pulling
+    # build:
+    #   context: ..
+    #   dockerfile: docker/collator-node-local.dockerfile
     environment:
       - HOST_ALICE=relay_alice
       - HOST_BOB=relay_bob

@@ -17,13 +17,13 @@ cargo --version
 
 case $TARGET in
   build-node)
-    cargo build --release "$@"
+    cargo build --release --features all-frequency-features "$@" 
     ;;
 
   build-runtime)
     export RUSTC_VERSION=$SRT_TOOL_VERSION
     echo "Building runtime with rustc version $RUSTC_VERSION"
-    docker run --rm -e PACKAGE=$PACKAGE -e RUNTIME_DIR=$RUNTIME_DIR -v $PWD:/build -v /tmp/cargo:/cargo-home paritytech/srtool:$RUSTC_VERSION build
+    docker run --rm -e PACKAGE=$PACKAGE -e RUNTIME_DIR=$RUNTIME_DIR -e PROFILE=$PROFILE -e BUILD_OPTS="--features on-chain-release-build,no-metadata-docs" -v $PWD:/build -v /tmp/cargo:/cargo-home paritytech/srtool:$RUSTC_VERSION build
     ;;
 
   tests)
@@ -32,6 +32,6 @@ case $TARGET in
 
   lint)
     cargo fmt -- --check
-    SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --all-targets
+    SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features all-frequency-features -- -D warnings
     ;;
 esac

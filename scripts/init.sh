@@ -13,7 +13,7 @@ base_dir=/tmp/frequency
 # Option to use the Docker image to export state & wasm
 docker_onboard="${DOCKER_ONBOARD:-false}"
 frequency_docker_image_tag="${PARA_DOCKER_IMAGE_TAG:-frequency-latest}"
-chain="${RELAY_CHAIN_SPEC:-./res/rococo-local.json}"
+chain="${RELAY_CHAIN_SPEC:-./resources/rococo-local.json}"
 
 case $cmd in
 install-toolchain)
@@ -22,27 +22,31 @@ install-toolchain)
 
 start-relay-chain)
   echo "Starting local relay chain with Alice and Bob..."
+  cd docker
   docker-compose up -d relay_alice relay_bob
   ;;
 
 stop-relay-chain)
   echo "Stopping relay chain..."
+  cd docker
   docker-compose down
   ;;
 
 start-frequency-docker)
   echo "Starting frequency container with Alice..."
+  cd docker
   docker-compose up --build collator_frequency
   ;;
 
 stop-frequency-docker)
   echo "Stopping frequency container with Alice..."
-  docker-compose down collator_frequency
+  cd docker
+  docker-compose down
   ;;
 
 start-frequency)
   printf "\nBuilding frequency with runtime '$parachain' and id '$para_id'...\n"
-  cargo build --release
+  cargo build --release --features frequency-rococo-local
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
@@ -53,7 +57,7 @@ start-frequency)
   fi
 
   ./scripts/run_collator.sh \
-    --chain="${chain_spec}" --alice \
+    --chain="frequency-local" --alice \
     --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
     --execution=wasm \
@@ -70,7 +74,7 @@ start-frequency)
 
 start-frequency-instant)
   printf "\nBuilding frequency with runtime instant sealing ...\n"
-  cargo build --release
+  cargo build --release --features frequency-rococo-local
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
@@ -110,7 +114,7 @@ start-frequency-container)
   frequency_ws_port="${Frequency_WS_PORT:-$frequency_default_ws_port}"
 
   ./scripts/run_collator.sh \
-    --chain="${chain_spec}" --alice \
+    --chain="frequency-local" --alice \
     --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
     --execution=wasm \
@@ -140,11 +144,11 @@ onboard-frequency)
 
    wasm_location="$onboard_dir/${parachain}-${para_id}.wasm"
     if [ "$docker_onboard" == "true" ]; then
-      genesis=$(docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-state --chain="${chain_spec}")
-      docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-wasm --chain="${chain_spec}" > $wasm_location
+      genesis=$(docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-state --chain="frequency-local")
+      docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-wasm --chain="frequency-local" > $wasm_location
     else
-      genesis=$(./target/release/frequency export-genesis-state --chain="${chain_spec}")
-      ./target/release/frequency export-genesis-wasm --chain="${chain_spec}" > $wasm_location
+      genesis=$(./target/release/frequency export-genesis-state --chain="frequency-local")
+      ./target/release/frequency export-genesis-wasm --chain="frequency-local" > $wasm_location
     fi
 
   echo "WASM path:" "${parachain}-${para_id}.wasm"
@@ -175,7 +179,7 @@ upgrade-frequency)
   wasm_location=$root_dir/target/upgrade/release/wbuild/frequency-rococo-runtime/frequency_rococo_runtime.compact.compressed.wasm
 
   ./scripts/runtime-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
-  
+
   ./scripts/enact-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
 
   ;;
