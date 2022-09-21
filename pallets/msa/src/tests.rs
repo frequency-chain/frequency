@@ -407,12 +407,12 @@ pub fn add_provider_to_msa_throws_add_provider_verification_failed() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let account = key_pair.public();
-		let add_provider_payload = AddProvider::new(2, 0, None);
+		let add_provider_payload = AddProvider::new(2, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
-		let fake_provider_payload = AddProvider::new(3, 0, None);
+		let fake_provider_payload = AddProvider::new(3, None);
 
 		assert_noop!(
 			Msa::add_provider_to_msa(
@@ -432,7 +432,7 @@ pub fn add_provider_to_msa_throws_no_key_exist_error() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
 
-		let add_provider_payload = AddProvider::new(2, 0, None);
+		let add_provider_payload = AddProvider::new(2, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -455,7 +455,7 @@ pub fn add_provider_to_msa_throws_key_revoked_error() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
 
-		let add_provider_payload = AddProvider::new(2, 0, None);
+		let add_provider_payload = AddProvider::new(2, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -482,7 +482,7 @@ pub fn add_provider_to_msa_throws_invalid_self_provider_error() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
 
-		let add_provider_payload = AddProvider::new(1, 0, None);
+		let add_provider_payload = AddProvider::new(1, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
@@ -514,7 +514,7 @@ pub fn add_provider_to_msa_throws_unauthorized_delegator_error() {
 		let delegator_msa_id =
 			Msa::try_get_msa_from_account_id(&AccountId32::new(delegator_account.0)).unwrap();
 
-		let add_provider_payload = AddProvider::new(delegator_msa_id, 0, None);
+		let add_provider_payload = AddProvider::new(delegator_msa_id, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 		let signature: MultiSignature = delegator_key_pair.sign(&encode_add_provider_data).into();
 
@@ -544,7 +544,7 @@ pub fn add_provider_to_msa_throws_duplicate_provider_error() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
 
-		let add_provider_payload = AddProvider::new(1, 0, None);
+		let add_provider_payload = AddProvider::new(1, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -595,7 +595,7 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
 		let delegator_account = key_pair_delegator.public();
 
-		let add_provider_payload = AddProvider::new(1u64, 0, None);
+		let add_provider_payload = AddProvider::new(1u64, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
@@ -649,7 +649,7 @@ fn create_sponsored_account_with_delegation_with_invalid_signature_should_fail()
 
 		let (signer_pair, _) = sr25519::Pair::generate();
 
-		let add_provider_payload = AddProvider::new(1u64, 0, None);
+		let add_provider_payload = AddProvider::new(1u64, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = signer_pair.sign(&encode_add_provider_data).into();
@@ -679,7 +679,7 @@ pub fn create_sponsored_account_with_delegation_with_invalid_add_provider_should
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
 		let delegator_account = key_pair_delegator.public();
 
-		let add_provider_payload = AddProvider::new(1u64, 0, None);
+		let add_provider_payload = AddProvider::new(1u64, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
@@ -716,7 +716,7 @@ pub fn create_sponsored_account_with_delegation_with_different_authorized_msa_id
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
 		let delegator_account = key_pair_delegator.public();
 
-		let add_provider_payload = AddProvider::new(3u64, 0, None);
+		let add_provider_payload = AddProvider::new(3u64, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
@@ -956,7 +956,7 @@ pub fn revoke_provider_call_has_no_cost() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
 
-		let add_provider_payload = AddProvider::new(1, 0, None);
+		let add_provider_payload = AddProvider::new(1, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -1025,7 +1025,7 @@ pub fn revoke_delegation_by_provider_happy_path() {
 		assert_ok!(Msa::register_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
 
 		// 3. create delegator MSA and provider to provider
-		let add_provider_payload = AddProvider::new(1u64, 0, None);
+		let add_provider_payload = AddProvider::new(1u64, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 		let signature: MultiSignature = user_pair.sign(&encode_add_provider_data).into();
 		// 3.5 create the user's MSA + add provider as provider
@@ -1511,7 +1511,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
 		let delegator_account = key_pair_delegator.public();
 
-		let add_provider_payload = AddProvider::new(1u64, 0, None);
+		let add_provider_payload = AddProvider::new(1u64, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
 
@@ -1589,7 +1589,7 @@ fn replaying_add_provider_to_msa_fails() {
 		let delegator_account = key_pair_delegator.public();
 
 		// add_provider_payload in this case has delegator's msa_id as authorized_msa_id
-		let add_provider_payload = AddProvider::new(2u64, 0, None);
+		let add_provider_payload = AddProvider::new(2u64, None);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 

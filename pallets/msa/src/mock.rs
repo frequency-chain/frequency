@@ -135,7 +135,7 @@ pub fn create_and_sign_add_provider_payload(
 	delegator_pair: sr25519::Pair,
 	provider_msa: MessageSourceId,
 ) -> (MultiSignature, AddProvider) {
-	let add_provider_payload = AddProvider::new(provider_msa, 0, None);
+	let add_provider_payload = AddProvider::new(provider_msa, None);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 	let signature: MultiSignature = delegator_pair.sign(&encode_add_provider_data).into();
 	(signature, add_provider_payload)

@@ -2251,7 +2251,6 @@ export default {
    **/
   PalletMsaAddProvider: {
     authorizedMsaId: 'u64',
-    permission: 'u8',
     schemaIds: 'Vec<u16>'
   },
   /**
