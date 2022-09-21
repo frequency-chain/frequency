@@ -156,11 +156,14 @@ impl AccountProvider for AccountHandler {
 	}
 
 	fn ensure_valid_schema_grant(
-		_provider: Provider,
-		_delegator: Delegator,
+		provider: Provider,
+		delegator: Delegator,
 		_schema_id: SchemaId,
 	) -> DispatchResult {
-		Ok(())
+		match Self::get_provider_info_of(delegator, provider) {
+			Some(_) => Ok(()),
+			None => Err(DispatchError::Other("no schema grant or delegation"))
+		}
 	}
 }
 
