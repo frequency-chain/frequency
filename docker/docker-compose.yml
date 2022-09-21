@@ -12,7 +12,7 @@ services:
       - "9946:9944" # ws port
     volumes:
       - type: bind
-        source: ../res/rococo-local.json
+        source: ../resources/rococo-local.json
         target: /chainspec.json
         read_only: true
     command: >
@@ -20,12 +20,12 @@ services:
       --node-key=e5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a
       --wasm-execution=compiled
       --execution=wasm
-      --base-path=/chain-data
-      --port 30335
-      --rpc-port 9933
-      --ws-port 9944
+      --base-path=/data
+      --port=30335
+      --rpc-port=9933
+      --ws-port=9944
       --rpc-external
-      --rpc-cors all
+      --rpc-cors=all
       --ws-external
       --rpc-methods=Unsafe
       --alice
@@ -41,21 +41,21 @@ services:
       - "9947:9944" # ws port
     volumes:
       - type: bind
-        source: ../res/rococo-local.json
+        source: ../resources/rococo-local.json
         target: /chainspec.json
         read_only: true
     command: >
       --chain=/chainspec.json
       --node-key=398f0c28f98885e046333d4a41c19cee4c37368a9832c6502f6cfd182e2aef89
-      --base-path=/chain-data
+      --base-path=/data
       --wasm-execution=compiled
       --execution=wasm
-      --port 30336
-      --rpc-port 9933
-      --ws-port 9944
+      --port=30336
+      --rpc-port=9933
+      --ws-port=9944
       --rpc-external
       --ws-external
-      --rpc-cors all
+      --rpc-cors=all
       --rpc-methods=Unsafe
       --bob
       --log="main,info"
@@ -65,8 +65,8 @@ services:
     image: frequencychain/collator-node-local:latest
     # Replace image with build if you want to build locally instead of pulling
     # build:
-    #   context: .
-    #   dockerfile: collator-node-local.dockerfile
+    #   context: ..
+    #   dockerfile: docker/collator-node-local.dockerfile
     environment:
       - HOST_ALICE=relay_alice
       - HOST_BOB=relay_bob

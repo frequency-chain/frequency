@@ -13,7 +13,7 @@ base_dir=/tmp/frequency
 # Option to use the Docker image to export state & wasm
 docker_onboard="${DOCKER_ONBOARD:-false}"
 frequency_docker_image_tag="${PARA_DOCKER_IMAGE_TAG:-frequency-latest}"
-chain="${RELAY_CHAIN_SPEC:-./res/rococo-local.json}"
+chain="${RELAY_CHAIN_SPEC:-./resources/rococo-local.json}"
 
 case $cmd in
 install-toolchain)
@@ -58,7 +58,7 @@ start-frequency)
 
   ./scripts/run_collator.sh \
     --chain="frequency-local" --alice \
-    --base-path=$parachain_dir/chain-data \
+    --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
     --execution=wasm \
     --force-authoring \
@@ -115,7 +115,7 @@ start-frequency-container)
 
   ./scripts/run_collator.sh \
     --chain="frequency-local" --alice \
-    --base-path=$parachain_dir/chain-data \
+    --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
     --execution=wasm \
     --force-authoring \

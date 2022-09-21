@@ -13,9 +13,9 @@ RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificat
 FROM --platform=linux/amd64 ubuntu:focal
 
 RUN useradd -m -u 1000 -U -s /bin/sh -d /frequency frequency && \
-	mkdir -p /chain-data /frequency/.local/share && \
-	chown -R frequency:frequency /chain-data && \
-	ln -s /chain-data /frequency/.local/share/frequency
+	mkdir -p /data /frequency/.local/share && \
+	chown -R frequency:frequency /data && \
+	ln -s /data /frequency/.local/share/frequency
 
 USER frequency
 
@@ -29,7 +29,7 @@ COPY --chown=frequency target/release/frequency ./frequency/
 # 30333 for Websocket
 EXPOSE 9933 9944 30333
 
-VOLUME ["/chain-data"]
+VOLUME ["/data"]
 
 ENTRYPOINT ["/frequency/frequency", \
 	# Required params for starting the chain
