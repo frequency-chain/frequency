@@ -16,6 +16,8 @@ pub fn test_public(n: u8) -> AccountId32 {
 	AccountId32::new([n; 32])
 }
 
+
+
 #[test]
 fn signed_extension_validate_voter() {
 	new_test_ext().execute_with(|| {
@@ -33,7 +35,7 @@ fn signed_extension_validate_voter() {
 			&Call::Democracy(DemocracyCall::vote { ref_index, vote });
 
 		assert_ok!(
-			VerifyVoter::<Test, DummyOrigin<Test>>::new().validate(&test_account2, &call_vote, &info, len)
+			VerifyVoter::<Test, MTHoldersInstance>::new().validate(&test_account2, &call_vote, &info, len)
 		);
 		// assert_err!(
 		// 	VerifyVoter::<Test, DummyOrigin<Test>>::new().validate(&test_account, &call_vote, &info, len),

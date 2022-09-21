@@ -21,7 +21,6 @@ use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
-use crate::tests::test_public;
 
 pub type BlockNumber = u64;
 pub type AccountId = AccountId32;
@@ -194,7 +193,20 @@ impl pallet_collective::Config<MTHoldersInstance> for Test {
 	type DefaultVote = PrimeDefaultVote;
 	type WeightInfo = ();
 }
-
+// pub fn new_test_ext() -> sp_io::TestExternalities {
+// 	let mut ext: sp_io::TestExternalities = GenesisConfig {
+// 		mt_holders: pallet_collective::GenesisConfig {
+// 			members: vec![1, 2],
+// 			phantom: Default::default(),
+// 		},
+// 		default_collective: Default::default(),
+// 	}
+// 		.build_storage()
+// 		.unwrap()
+// 		.into();
+// 	ext.execute_with(|| System::set_block_number(1));
+// 	ext
+// }
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
