@@ -102,6 +102,9 @@ check-mainnet:
 build:
 	cargo build --locked --release --features all-frequency-features
 
+build-benchmarks:
+	cargo build --profile production --features runtime-benchmarks --features all-frequency-features --workspace
+
 build-local:
 	cargo build --locked --release --features  frequency-rococo-local
 
