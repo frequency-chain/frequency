@@ -67,6 +67,15 @@ upgrade-local:
 benchmarks:
 	./scripts/run_all_benchmarks.sh
 
+benchmarks-msa:
+	./scripts/run_benchmark.sh -p msa
+
+benchmarks-messages:
+	./scripts/run_benchmark.sh -p messages
+
+benchmarks-schemas:
+	./scripts/run_benchmark.sh -p schemas
+
 .PHONY: docs
 docs:
 	./scripts/frequency_docs.sh
