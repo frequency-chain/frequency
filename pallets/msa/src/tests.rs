@@ -1635,4 +1635,36 @@ fn replaying_add_provider_to_msa_fails() {
 			Error::<Test>::DuplicateProvider
 		);
 	})
+	
+}
+
+#[test]
+pub fn add_provider_expired() {
+	new_test_ext().execute_with(|| {
+		// 1. create two key pairs
+		let (provider_pair, _) = sr25519::Pair::generate();
+		let (user_pair, _) = sr25519::Pair::generate();
+
+		let provider_key = provider_pair.public();
+		let delegator_key = user_pair.public();
+
+		// 2. create provider MSA
+		assert_ok!(Msa::create(Origin::signed(provider_key.into()))); // MSA = 1
+
+		// Register provider
+		assert_ok!(Msa::register_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
+
+		// 3. create delegator MSA and provider to provider
+		let expiration: BlockNumber = 0;
+		let add_provider_payload = AddProvider::new(1u64, 0, None, expiration);
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+		let signature: MultiSignature = user_pair.sign(&encode_add_provider_data).into();
+		// 3.5 create the user's MSA + add provider as provider
+		assert_err!(Msa::add_provider_to_msa(
+			test_origin_signed(1),
+			delegator_key.into(),
+			signature,
+			add_provider_payload
+		), Error::<Test>::ProofHasExpired);
+	})
 }
