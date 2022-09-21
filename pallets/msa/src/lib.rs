@@ -407,7 +407,7 @@ pub mod pallet {
 			// delegator must have signed the payload.
 			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())
 				.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
-			
+
 			Self::ensure_block_is_valid(add_provider_payload.expiration)?;
 
 			let (provider, delegator) =

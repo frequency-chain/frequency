@@ -1,5 +1,5 @@
 use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
-use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data, node::BlockNumber};
+use common_primitives::{msa::MessageSourceId, node::BlockNumber, utils::wrap_binary_data};
 use frame_support::{
 	assert_ok, parameter_types,
 	traits::{ConstU16, ConstU64},
