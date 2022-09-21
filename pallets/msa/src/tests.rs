@@ -1635,12 +1635,25 @@ fn signed_ext_check_nonce_delete_msa_key() {
 			&Call::Msa(MsaCall::delete_msa_key { key: AccountId32::from(new_key) });
 		let info = call_delete_msa_key.get_dispatch_info();
 
+		let who = test_public(1);
+
 		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(
-			&test_public(1),
+			&who,
 			call_delete_msa_key,
 			&info,
 			len
 		));
+
+		let created_token_account: bool;
+		match frame_system::Account::<Test>::try_get(who) {
+			Ok(_) => {
+				created_token_account = true;
+			},
+			Err(_) => {
+				created_token_account = false;
+			},
+		};
+		assert_eq!(created_token_account, false);
 	})
 }
 
@@ -1669,7 +1682,7 @@ fn signed_ext_check_nonce_revoke_msa_delegation_by_delegator() {
 			len
 		));
 
-		let mut created_token_account: bool;
+		let created_token_account: bool;
 		match frame_system::Account::<Test>::try_get(who) {
 			Ok(_) => {
 				created_token_account = true;
@@ -1686,13 +1699,10 @@ fn signed_ext_check_nonce_revoke_msa_delegation_by_delegator() {
 #[test]
 fn signed_ext_check_nonce_creates_token_account_if_paying() {
 	new_test_ext().execute_with(|| {
-		let (provider_msa_id, _) = test_create_delegator_msa_with_provider();
-
-		let len = 0_usize;
 
 		//  Test that a  "pays" extrinsic creates a token account
 		let who = test_public(1);
-
+		let len = 0_usize;
 		let pays_call_should_pass: &<Test as frame_system::Config>::Call =
 			&Call::Msa(MsaCall::create {});
 
@@ -1706,7 +1716,7 @@ fn signed_ext_check_nonce_creates_token_account_if_paying() {
 			len
 		));
 
-		let mut created_token_account: bool;
+		let created_token_account: bool;
 		match frame_system::Account::<Test>::try_get(who) {
 			Ok(_) => {
 				created_token_account = true;
