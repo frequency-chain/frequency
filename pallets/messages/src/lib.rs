@@ -240,10 +240,11 @@ pub mod pallet {
 			let maybe_delegator = match on_behalf_of {
 				Some(delegator) => {
 					T::AccountProvider::ensure_valid_schema_grant(
-						provider_msa_id.into(),
-						delegator.into(),
+						Provider(provider_msa_id),
+						Delegator(delegator),
 						schema_id,
-					).map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
+					)
+					.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
 					Delegator(delegator)
 				},
 				None => Delegator(provider_msa_id), // Delegate is also the Provider
@@ -310,9 +311,7 @@ impl<T: Config> Pallet<T> {
 	/// * `key` - An MSA key for lookup.
 	/// # Returns
 	/// * Result<MessageSourceId, DispatchError> - Returns an MSA Id for storing a message.
-	pub fn find_msa_id(
-		key: &T::AccountId,
-	) -> Result<MessageSourceId, DispatchError> {
+	pub fn find_msa_id(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		Ok(T::AccountProvider::ensure_valid_msa_key(key)
 			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?)
 	}

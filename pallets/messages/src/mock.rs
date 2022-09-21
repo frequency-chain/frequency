@@ -162,7 +162,7 @@ impl AccountProvider for AccountHandler {
 	) -> DispatchResult {
 		match Self::get_provider_info_of(delegator, provider) {
 			Some(_) => Ok(()),
-			None => Err(DispatchError::Other("no schema grant or delegation"))
+			None => Err(DispatchError::Other("no schema grant or delegation")),
 		}
 	}
 }
