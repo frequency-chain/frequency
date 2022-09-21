@@ -306,28 +306,15 @@ impl<T: Config> Pallet<T> {
 			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
 		let message_source_id = match on_behalf_of {
-			Some(delegator) =>
-				Self::ensure_valid_delegation(Provider(sender_msa_id), Delegator(delegator))?.1,
+			Some(delegator) => {
+				T::AccountProvider::ensure_valid_delegation(Provider(sender_msa_id), Delegator(delegator))
+					.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
+				delegator
+			},
 			None => sender_msa_id,
 		};
 
 		Ok(message_source_id)
-	}
-
-	/// Check for delegation between Delegator and Provider
-	/// # Arguments
-	/// * `provider` - An MSA of the provider.
-	/// * `delegator` - An MSA of the delegator.
-	/// # Returns
-	/// * Result<MessageSourceId, MessageSourceId> - Returns MessageSourceId mapping of provider and delegator.
-	pub fn ensure_valid_delegation(
-		provider: Provider,
-		delegator: Delegator,
-	) -> Result<(MessageSourceId, MessageSourceId), DispatchError> {
-		T::AccountProvider::ensure_valid_delegation(provider, delegator)
-			.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
-
-		Ok((provider.into(), delegator.into()))
 	}
 
 	/// Check if provider is granted permission to publish on behalf of delegator.
