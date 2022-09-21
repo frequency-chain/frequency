@@ -27,7 +27,6 @@ function run_benchmark() {
 }
 
 cargo build --profile production --features runtime-benchmarks --features all-frequency-features --workspace || exit_err
-make $SPECS || exit_err
 
 for external_pallet in "${EXTERNAL_PALLETS[@]}"; do
   output=${PROJECT}/runtime/common/src/weights/${external_pallet}.rs
