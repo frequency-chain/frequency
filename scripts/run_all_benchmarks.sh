@@ -26,7 +26,7 @@ function run_benchmark() {
   --template=$3
 }
 
-cargo build --profile production --features runtime-benchmarks --features frequency --workspace || exit_err
+cargo build --profile production --features runtime-benchmarks --features all-frequency-features --workspace || exit_err
 make $SPECS || exit_err
 
 for external_pallet in "${EXTERNAL_PALLETS[@]}"; do
