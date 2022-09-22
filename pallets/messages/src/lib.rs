@@ -328,7 +328,7 @@ impl<T: Config> Pallet<T> {
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest<T::BlockNumber>,
 	) -> Result<
-		BlockPaginationResponse<T::BlockNumber, MessageResponse<T::BlockNumber, T>>,
+		BlockPaginationResponse<T::BlockNumber, MessageResponse<T::BlockNumber>>,
 		DispatchError,
 	> {
 		ensure!(pagination.validate(), Error::<T>::InvalidPaginationRequest);
@@ -354,14 +354,19 @@ impl<T: Config> Pallet<T> {
 				list.len().try_into().map_err(|_| Error::<T>::TypeConversionOverflow)?;
 			for i in from_index..list_size {
 				let m = list[i as usize].clone();
-
-				let (payload, payload_length): OffchainPayloadType = match payload_location {
-					PayloadLocation::OnChain =>
-						{(m.payload.clone().into_inner(), m.payload.len().try_into().unwrap());
-							response.content.push(m.map_to_respons_on_chain(block_number, payload))},
-					PayloadLocation::IPFS =>
-						{(OffchainPayloadType::decode(&mut &m.cid[..]).unwrap());
-							response.content.push(m.map_to_response_ipfs(block_number, payload, payload_length))}
+				match payload_location {
+						PayloadLocation::OnChain =>
+							m.map_to_response_on_chain(
+								block_number,
+								m.payload.clone().into_inner()
+							),
+						PayloadLocation::IPFS => {
+							let (cid, payload_length) = OffchainPayloadType::decode(&mut &m.payload[..]).unwrap();
+							m.map_to_response_ipfs(
+								block_number,
+								cid,
+								payload_length
+							)}
 				};
 
 				if Self::check_end_condition_and_set_next_pagination(
