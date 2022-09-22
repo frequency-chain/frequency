@@ -1086,6 +1086,30 @@
 <span id="1080">1080</span>
 <span id="1081">1081</span>
 <span id="1082">1082</span>
+<span id="1083">1083</span>
+<span id="1084">1084</span>
+<span id="1085">1085</span>
+<span id="1086">1086</span>
+<span id="1087">1087</span>
+<span id="1088">1088</span>
+<span id="1089">1089</span>
+<span id="1090">1090</span>
+<span id="1091">1091</span>
+<span id="1092">1092</span>
+<span id="1093">1093</span>
+<span id="1094">1094</span>
+<span id="1095">1095</span>
+<span id="1096">1096</span>
+<span id="1097">1097</span>
+<span id="1098">1098</span>
+<span id="1099">1099</span>
+<span id="1100">1100</span>
+<span id="1101">1101</span>
+<span id="1102">1102</span>
+<span id="1103">1103</span>
+<span id="1104">1104</span>
+<span id="1105">1105</span>
+<span id="1106">1106</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The MSA pallet provides functionality for handling Message Source Accounts.</span>
@@ -1795,15 +1819,26 @@
 	}
 
 	<span class="doccomment">/// Check that the delegator has an active delegation to the provider</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_valid_delegation</span>(<span class="ident">provider</span>: <span class="ident">Provider</span>, <span class="ident">delegator</span>: <span class="ident">Delegator</span>) -&gt; <span class="ident">DispatchResult</span> {
-		<span class="kw">let</span> <span class="ident">current_block</span> <span class="op">=</span> <span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::block_number</span>();
+	<span class="doccomment">/// # Arguments</span>
+	<span class="doccomment">/// * `provider`</span>
+	<span class="doccomment">/// * `delegate`</span>
+	<span class="doccomment">/// # Returns</span>
+	<span class="doccomment">/// * [`ProviderInfo`]</span>
+	<span class="doccomment">/// # Errors</span>
+	<span class="doccomment">/// * [`Error::&lt;T&gt;::DelegationNotFound`] - If no delegation</span>
+	<span class="doccomment">/// * [`Error::&lt;T&gt;::DelegationExpired`] - If delegation revoked</span>
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_valid_delegation</span>(
+		<span class="ident">provider</span>: <span class="ident">Provider</span>,
+		<span class="ident">delegator</span>: <span class="ident">Delegator</span>,
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ProviderInfo</span><span class="op">&lt;</span><span class="ident">T::BlockNumber</span>, <span class="ident">T::MaxSchemaGrants</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::get_provider_info_of</span>(<span class="ident">delegator</span>, <span class="ident">provider</span>)
 			.<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::DelegationNotFound</span>)<span class="question-mark">?</span>;
 		<span class="kw">if</span> <span class="ident">info</span>.<span class="ident">expired</span> <span class="op">==</span> <span class="ident">T::BlockNumber::zero</span>() {
-			<span class="kw">return</span> <span class="prelude-val">Ok</span>(())
+			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">info</span>)
 		}
+		<span class="kw">let</span> <span class="ident">current_block</span> <span class="op">=</span> <span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::block_number</span>();
 		<span class="macro">ensure!</span>(<span class="ident">info</span>.<span class="ident">expired</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">current_block</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::DelegationExpired</span>);
-		<span class="prelude-val">Ok</span>(())
+		<span class="prelude-val">Ok</span>(<span class="ident">info</span>)
 	}
 
 	<span class="doccomment">/// Deletes a key associated with a given MSA</span>
@@ -1914,15 +1949,14 @@
 	<span class="doccomment">/// # Returns</span>
 	<span class="doccomment">/// * [`DispatchResult`]</span>
 	<span class="doccomment">/// # Errors</span>
-	<span class="doccomment">/// * [`Error::DelegationNotFound`]</span>
+	<span class="doccomment">/// * [`Self::ensure_valid_delegation`] Errors</span>
 	<span class="doccomment">/// * [`Error::SchemaNotGranted`]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_valid_schema_grant</span>(
 		<span class="ident">provider</span>: <span class="ident">Provider</span>,
 		<span class="ident">delegator</span>: <span class="ident">Delegator</span>,
 		<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>,
 	) -&gt; <span class="ident">DispatchResult</span> {
-		<span class="kw">let</span> <span class="ident">provider_info</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::get_provider_info_of</span>(<span class="ident">delegator</span>, <span class="ident">provider</span>)
-			.<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::DelegationNotFound</span>)<span class="question-mark">?</span>;
+		<span class="kw">let</span> <span class="ident">provider_info</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::ensure_valid_delegation</span>(<span class="ident">provider</span>, <span class="ident">delegator</span>)<span class="question-mark">?</span>;
 
 		<span class="macro">ensure!</span>(<span class="ident">provider_info</span>.<span class="ident">schemas</span>.<span class="number">0</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">schema_id</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::SchemaNotGranted</span>);
 		<span class="prelude-val">Ok</span>(())
@@ -1967,7 +2001,10 @@
 	}
 
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>))]</span>
-	<span class="kw">fn</span> <span class="ident">ensure_valid_delegation</span>(<span class="ident">provider</span>: <span class="ident">Provider</span>, <span class="ident">delegation</span>: <span class="ident">Delegator</span>) -&gt; <span class="ident">DispatchResult</span> {
+	<span class="kw">fn</span> <span class="ident">ensure_valid_delegation</span>(
+		<span class="ident">provider</span>: <span class="ident">Provider</span>,
+		<span class="ident">delegation</span>: <span class="ident">Delegator</span>,
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ProviderInfo</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::BlockNumber</span>, <span class="ident"><span class="self">Self</span>::MaxSchemaGrants</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
 		<span class="ident"><span class="self">Self</span>::ensure_valid_delegation</span>(<span class="ident">provider</span>, <span class="ident">delegation</span>)
 	}
 
@@ -1979,15 +2016,26 @@
 	<span class="doccomment">/// To successfully run benchmarks without adding dependencies between pallets we re-defined</span>
 	<span class="doccomment">/// this method to return a dummy account in case it does not exist</span>
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>)]</span>
-	<span class="kw">fn</span> <span class="ident">ensure_valid_delegation</span>(<span class="ident">provider</span>: <span class="ident">Provider</span>, <span class="ident">delegation</span>: <span class="ident">Delegator</span>) -&gt; <span class="ident">DispatchResult</span> {
+	<span class="kw">fn</span> <span class="ident">ensure_valid_delegation</span>(
+		<span class="ident">provider</span>: <span class="ident">Provider</span>,
+		<span class="ident">delegation</span>: <span class="ident">Delegator</span>,
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ProviderInfo</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::BlockNumber</span>, <span class="ident"><span class="self">Self</span>::MaxSchemaGrants</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">validation_check</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::ensure_valid_delegation</span>(<span class="ident">provider</span>, <span class="ident">delegation</span>);
 		<span class="kw">if</span> <span class="ident">validation_check</span>.<span class="ident">is_err</span>() {
 			<span class="comment">// If the delegation does not exist, we return a ok</span>
 			<span class="comment">// This is only used for benchmarks, so it is safe to return a dummy account</span>
 			<span class="comment">// in case the delegation does not exist</span>
-			<span class="kw">return</span> <span class="prelude-val">Ok</span>(())
+			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">ProviderInfo</span> {
+				<span class="ident">schemas</span>: <span class="ident">OrderedSetExt::new</span>(),
+				<span class="ident">permission</span>: <span class="ident">Default::default</span>(),
+				<span class="ident">expired</span>: <span class="ident">Default::default</span>(),
+			})
 		}
-		<span class="prelude-val">Ok</span>(())
+		<span class="prelude-val">Ok</span>(<span class="ident">ProviderInfo</span> {
+			<span class="ident">schemas</span>: <span class="ident">OrderedSetExt::new</span>(),
+			<span class="ident">permission</span>: <span class="ident">Default::default</span>(),
+			<span class="ident">expired</span>: <span class="ident">Default::default</span>(),
+		})
 	}
 
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>))]</span>

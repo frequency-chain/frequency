@@ -49,13 +49,13 @@
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 <span class="kw">use</span> <span class="ident">sp_std::prelude</span>::<span class="kw-2">*</span>;
 
-<span class="doccomment">/// Parquet temporal types: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md</span>
+<span class="doccomment">/// Parquet temporal types: &lt;https://github.com/apache/parquet-format/blob/master/LogicalTypes.md&gt;</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;UPPERCASE&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ParquetTemporalType</span> {
 	<span class="doccomment">/// Parquet dates</span>
 	<span class="ident">Date</span>,
-	<span class="doccomment">/// Parquet intervals: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#interval</span>
+	<span class="doccomment">/// Parquet intervals: &lt;https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#interval&gt;</span>
 	<span class="ident">Interval</span>,
 	<span class="doccomment">/// Time</span>
 	<span class="ident">Time</span>(<span class="ident">ParquetTime</span>),
@@ -63,14 +63,14 @@
 	<span class="ident">Timestamp</span>(<span class="ident">ParquetTimestamp</span>),
 }
 
-<span class="doccomment">/// Parquet time: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md</span>
+<span class="doccomment">/// Parquet time: &lt;https://github.com/apache/parquet-format/blob/master/LogicalTypes.md&gt;</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ParquetTime</span> {
 	<span class="ident">is_adjusted_to_utc</span>: <span class="ident">bool</span>,
 	<span class="ident">unit</span>: <span class="ident">ParquetTimeUnit</span>,
 }
 
-<span class="doccomment">/// Parquet timestamps: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md</span>
+<span class="doccomment">/// Parquet timestamps: &lt;https://github.com/apache/parquet-format/blob/master/LogicalTypes.md&gt;</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ParquetTimestamp</span> {
 	<span class="ident">is_adjusted_to_utc</span>: <span class="ident">bool</span>,
@@ -81,11 +81,11 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;UPPERCASE&quot;</span>)]</span>
 <span class="kw">enum</span> <span class="ident">ParquetTimeUnit</span> {
-	<span class="doccomment">/// Millisecond precision for time: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#time</span>
+	<span class="doccomment">/// Millisecond precision for time: &lt;https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#time&gt;</span>
 	<span class="ident">Millis</span>,
-	<span class="doccomment">/// Microsecond precision for time: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#time</span>
+	<span class="doccomment">/// Microsecond precision for time: &lt;https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#time&gt;</span>
 	<span class="ident">Micros</span>,
-	<span class="doccomment">/// Manosecond precision for time: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#time</span>
+	<span class="doccomment">/// Manosecond precision for time: &lt;https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#time&gt;</span>
 	<span class="ident">Nanos</span>,
 }
 </code></pre></div>

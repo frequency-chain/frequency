@@ -41,7 +41,7 @@
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 <span class="kw">use</span> <span class="ident">sp_std::prelude</span>::<span class="kw-2">*</span>;
 
-<span class="doccomment">/// Compression codecs: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md</span>
+<span class="doccomment">/// Compression codecs: &lt;https://github.com/apache/parquet-format/blob/master/LogicalTypes.md&gt;</span>
 <span class="attribute">#[<span class="ident">derive</span>(
 	<span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>, <span class="ident">MaxEncodedLen</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>,
 )]</span>
@@ -53,11 +53,11 @@
 	<span class="ident">Snappy</span>,
 	<span class="doccomment">/// Gzip compression</span>
 	<span class="ident">Gzip</span>,
-	<span class="doccomment">/// Lempel-Zip-Obenhumer compression: https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Oberhumer</span>
+	<span class="doccomment">/// Lempel-Zip-Obenhumer compression: &lt;https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Oberhumer&gt;</span>
 	<span class="ident">Lzo</span>,
 	<span class="doccomment">/// Brotli compression</span>
 	<span class="ident">Brotli</span>,
-	<span class="doccomment">/// Zstandard compression: https://en.wikipedia.org/wiki/Zstd</span>
+	<span class="doccomment">/// Zstandard compression: &lt;https://en.wikipedia.org/wiki/Zstd&gt;</span>
 	<span class="ident">ZSTD</span>,
 	<span class="doccomment">/// Lz4 compression without block headers</span>
 	<span class="ident">Lz4Raw</span>,

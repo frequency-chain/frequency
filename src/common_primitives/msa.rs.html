@@ -181,6 +181,9 @@
 <span id="175">175</span>
 <span id="176">176</span>
 <span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">EncodeLike</span>, <span class="ident">Error</span>, <span class="ident">MaxEncodedLen</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">dispatch::DispatchResult</span>, <span class="ident">traits::Get</span>, <span class="ident">BoundedVec</span>};
 <span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
@@ -333,7 +336,10 @@
 	<span class="doccomment">/// * `delegator` - The `MessageSourceId` that delegated to the provider</span>
 	<span class="doccomment">/// # Returns</span>
 	<span class="doccomment">/// * [DispatchResult](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResult.html) The return type of a Dispatchable in frame.</span>
-	<span class="kw">fn</span> <span class="ident">ensure_valid_delegation</span>(<span class="ident">provider</span>: <span class="ident">Provider</span>, <span class="ident">delegator</span>: <span class="ident">Delegator</span>) -&gt; <span class="ident">DispatchResult</span>;
+	<span class="kw">fn</span> <span class="ident">ensure_valid_delegation</span>(
+		<span class="ident">provider</span>: <span class="ident">Provider</span>,
+		<span class="ident">delegator</span>: <span class="ident">Delegator</span>,
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ProviderInfo</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::BlockNumber</span>, <span class="ident"><span class="self">Self</span>::MaxSchemaGrants</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span>;
 
 	<span class="doccomment">/// Validates if the provider is allowed to use the schema</span>
 	<span class="doccomment">/// # Arguments</span>
