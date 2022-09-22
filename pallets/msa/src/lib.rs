@@ -847,7 +847,7 @@ impl<T: Config> Pallet<T> {
 	/// # Returns
 	/// * [`DispatchResult`]
 	/// # Errors
-	/// * [`ensure_valid_schema_grant`] Errors
+	/// * [`Self::ensure_valid_delegation`] Errors
 	/// * [`Error::SchemaNotGranted`]
 	pub fn ensure_valid_schema_grant(
 		provider: Provider,
