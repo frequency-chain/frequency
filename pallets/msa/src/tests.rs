@@ -775,12 +775,15 @@ pub fn create_sponsored_account_with_delegation_expired() {
 		));
 
 		// act
-		assert_err!(Msa::create_sponsored_account_with_delegation(
-			Origin::signed(provider_account.into()),
-			delegator_account.into(),
-			signature,
-			add_provider_payload
-		), Error::<Test>::ProofHasExpired);
+		assert_err!(
+			Msa::create_sponsored_account_with_delegation(
+				Origin::signed(provider_account.into()),
+				delegator_account.into(),
+				signature,
+				add_provider_payload
+			),
+			Error::<Test>::ProofHasExpired
+		);
 	});
 }
 
