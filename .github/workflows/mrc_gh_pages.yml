@@ -11,7 +11,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         target: [docs]
-        rust_toolchain: [nightly-2022-07-23]
+        rust_toolchain: [nightly-2022-09-21]
     runs-on: ${{ matrix.os }}
     env:
       RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
@@ -34,8 +34,10 @@ jobs:
           default: true
       - name: Setup Cache 📦
         uses: Swatinem/rust-cache@v1
+      - name: Install toolchain for frequency
+        run: make install-toolchain
       - name: Build Frequency related documentation 📝
-        run: ./scripts/frequency_docs.sh
+        run: make docs
       - name: Deploy Frequency docs to gh-pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4.4.0
         with:
