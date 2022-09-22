@@ -150,7 +150,10 @@ pub trait AccountProvider {
 	/// * `delegator` - The `MessageSourceId` that delegated to the provider
 	/// # Returns
 	/// * [DispatchResult](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResult.html) The return type of a Dispatchable in frame.
-	fn ensure_valid_delegation(provider: Provider, delegator: Delegator) -> DispatchResult;
+	fn ensure_valid_delegation(
+		provider: Provider,
+		delegator: Delegator,
+	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError>;
 
 	/// Validates if the provider is allowed to use the schema
 	/// # Arguments

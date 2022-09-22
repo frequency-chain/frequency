@@ -147,20 +147,30 @@ impl AccountProvider for AccountHandler {
 		Ok(get_msa_from_account(*key))
 	}
 
-	fn ensure_valid_delegation(provider: Provider, _delegator: Delegator) -> DispatchResult {
+	fn ensure_valid_delegation(
+		provider: Provider,
+		_delegator: Delegator,
+	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError> {
 		if provider == Provider(2000) {
 			return Err(DispatchError::Other("some delegation error"))
 		};
 
-		Ok(())
+		Ok(ProviderInfo {
+			schemas: OrderedSetExt::new(),
+			permission: Default::default(),
+			expired: Default::default(),
+		})
 	}
 
 	fn ensure_valid_schema_grant(
-		_provider: Provider,
-		_delegator: Delegator,
+		provider: Provider,
+		delegator: Delegator,
 		_schema_id: SchemaId,
 	) -> DispatchResult {
-		Ok(())
+		match Self::get_provider_info_of(delegator, provider) {
+			Some(_) => Ok(()),
+			None => Err(DispatchError::Other("no schema grant or delegation")),
+		}
 	}
 }
 
