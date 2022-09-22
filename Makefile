@@ -98,6 +98,10 @@ check-rococo:
 check-mainnet:
 	SKIP_WASM_BUILD= cargo check --features  frequency
 
+.PHONY: js
+js:
+	./scripts/generate_js_definitions.sh
+
 .PHONY: build
 build:
 	cargo build --locked --release --features all-frequency-features
