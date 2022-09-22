@@ -707,15 +707,26 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Check that the delegator has an active delegation to the provider
-	pub fn ensure_valid_delegation(provider: Provider, delegator: Delegator) -> DispatchResult {
-		let current_block = frame_system::Pallet::<T>::block_number();
+	/// # Arguments
+	/// * `provider`
+	/// * `delegate`
+	/// # Returns
+	/// * [`ProviderInfo`]
+	/// # Errors
+	/// * [`Error::<T>::DelegationNotFound`] - If no delegation
+	/// * [`Error::<T>::DelegationExpired`] - If delegation revoked
+	pub fn ensure_valid_delegation(
+		provider: Provider,
+		delegator: Delegator,
+	) -> Result<ProviderInfo<T::BlockNumber, T::MaxSchemaGrants>, DispatchError> {
 		let info = Self::get_provider_info_of(delegator, provider)
 			.ok_or(Error::<T>::DelegationNotFound)?;
 		if info.expired == T::BlockNumber::zero() {
-			return Ok(())
+			return Ok(info)
 		}
+		let current_block = frame_system::Pallet::<T>::block_number();
 		ensure!(info.expired >= current_block, Error::<T>::DelegationExpired);
-		Ok(())
+		Ok(info)
 	}
 
 	/// Deletes a key associated with a given MSA
@@ -826,15 +837,14 @@ impl<T: Config> Pallet<T> {
 	/// # Returns
 	/// * [`DispatchResult`]
 	/// # Errors
-	/// * [`Error::DelegationNotFound`]
+	/// * [`ensure_valid_delegation`] Errors
 	/// * [`Error::SchemaNotGranted`]
 	pub fn ensure_valid_schema_grant(
 		provider: Provider,
 		delegator: Delegator,
 		schema_id: SchemaId,
 	) -> DispatchResult {
-		let provider_info = Self::get_provider_info_of(delegator, provider)
-			.ok_or(Error::<T>::DelegationNotFound)?;
+		let provider_info = Self::ensure_valid_delegation(provider, delegator)?;
 
 		ensure!(provider_info.schemas.0.contains(&schema_id), Error::<T>::SchemaNotGranted);
 		Ok(())
@@ -879,7 +889,10 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	}
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	fn ensure_valid_delegation(provider: Provider, delegation: Delegator) -> DispatchResult {
+	fn ensure_valid_delegation(
+		provider: Provider,
+		delegation: Delegator,
+	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError> {
 		Self::ensure_valid_delegation(provider, delegation)
 	}
 
@@ -891,15 +904,26 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
 	/// this method to return a dummy account in case it does not exist
 	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_valid_delegation(provider: Provider, delegation: Delegator) -> DispatchResult {
+	fn ensure_valid_delegation(
+		provider: Provider,
+		delegation: Delegator,
+	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError> {
 		let validation_check = Self::ensure_valid_delegation(provider, delegation);
 		if validation_check.is_err() {
 			// If the delegation does not exist, we return a ok
 			// This is only used for benchmarks, so it is safe to return a dummy account
 			// in case the delegation does not exist
-			return Ok(())
+			return Ok(ProviderInfo {
+				schemas: OrderedSetExt::new(),
+				permission: Default::default(),
+				expired: Default::default(),
+			})
 		}
-		Ok(())
+		Ok(ProviderInfo {
+			schemas: OrderedSetExt::new(),
+			permission: Default::default(),
+			expired: Default::default(),
+		})
 	}
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
