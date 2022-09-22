@@ -3,7 +3,7 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
 
-/// Compression codecs: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md
+/// Compression codecs: <https://github.com/apache/parquet-format/blob/master/LogicalTypes.md>
 #[derive(
 	Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize,
 )]
@@ -15,11 +15,11 @@ pub enum ColumnCompressionCodec {
 	Snappy,
 	/// Gzip compression
 	Gzip,
-	/// Lempel-Zip-Obenhumer compression: https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Oberhumer
+	/// Lempel-Zip-Obenhumer compression: <https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Oberhumer>
 	Lzo,
 	/// Brotli compression
 	Brotli,
-	/// Zstandard compression: https://en.wikipedia.org/wiki/Zstd
+	/// Zstandard compression: <https://en.wikipedia.org/wiki/Zstd>
 	ZSTD,
 	/// Lz4 compression without block headers
 	Lz4Raw,

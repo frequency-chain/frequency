@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
 
-/// Parquet numeric types: https://github.com/apache/parquet-format/blob/master/LogicalTypes.md
+/// Parquet numeric types: <https://github.com/apache/parquet-format/blob/master/LogicalTypes.md>
 #[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum ParquetNumericType {
