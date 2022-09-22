@@ -11,7 +11,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         target: [docs]
-        rust_toolchain: [nightly-2022-09-21]
+        rust_toolchain: [nightly-2022-07-23]  # Needs nightly for docs
     runs-on: ${{ matrix.os }}
     env:
       RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}
