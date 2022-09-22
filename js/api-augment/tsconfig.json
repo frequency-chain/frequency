@@ -18,7 +18,7 @@
             "node_modules/@types",
         ],
         "paths": {
-            "@dsnp/frequency-api-augment/*": [
+            "@frequency-chain/api-augment/*": [
                 "./interfaces/*"
             ],
             "@polkadot/api/augment": ["./interfaces/augment-api.ts"],

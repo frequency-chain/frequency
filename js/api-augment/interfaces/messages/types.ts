@@ -1,7 +1,7 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import type { MessageSourceId } from '@dsnp/frequency-api-augment/msa';
+import type { MessageSourceId } from '@frequency-chain/api-augment/msa';
 import type { Bytes, Option, Struct, Vec, bool, u16, u32 } from '@polkadot/types-codec';
 import type { BlockNumber } from '@polkadot/types/interfaces/runtime';
 
