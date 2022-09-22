@@ -5,7 +5,6 @@ THIS_DIR=$( dirname -- "$0"; )
 PROJECT=${1:-$THIS_DIR/..}
 RUNTIME=$PROJECT/target/production/frequency
 BENCHMARK="$RUNTIME benchmark pallet "
-SPECS=specs-rococo-4044
 EXTERNAL_PALLETS=(orml_vesting pallet_scheduler pallet_democracy pallet_preimage pallet_utility)
 CUSTOM_PALLETS=(messages msa schemas)
 
