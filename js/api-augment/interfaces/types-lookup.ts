@@ -2896,9 +2896,10 @@ declare module '@polkadot/types/lookup' {
     readonly isExceedsMaxProviderNameSize: boolean;
     readonly isExceedsMaxSchemaGrants: boolean;
     readonly isSchemaNotGranted: boolean;
+    readonly isProviderNotRegistered: boolean;
     readonly isProofHasExpired: boolean;
     readonly isProofNotYetValid: boolean;
-    readonly type: 'KeyAlreadyRegistered' | 'MsaIdOverflow' | 'AddKeySignatureVerificationFailed' | 'NotMsaOwner' | 'InvalidSignature' | 'NotKeyOwner' | 'NoKeyExists' | 'KeyLimitExceeded' | 'InvalidSelfRemoval' | 'InvalidSelfProvider' | 'DuplicateProvider' | 'AddProviderSignatureVerificationFailed' | 'UnauthorizedDelegator' | 'UnauthorizedProvider' | 'DelegationRevoked' | 'DelegationNotFound' | 'DelegationExpired' | 'DuplicateProviderMetadata' | 'ExceedsMaxProviderNameSize' | 'ExceedsMaxSchemaGrants' | 'SchemaNotGranted' | 'ProofHasExpired' | 'ProofNotYetValid';
+    readonly type: 'KeyAlreadyRegistered' | 'MsaIdOverflow' | 'AddKeySignatureVerificationFailed' | 'NotMsaOwner' | 'InvalidSignature' | 'NotKeyOwner' | 'NoKeyExists' | 'KeyLimitExceeded' | 'InvalidSelfRemoval' | 'InvalidSelfProvider' | 'DuplicateProvider' | 'AddProviderSignatureVerificationFailed' | 'UnauthorizedDelegator' | 'UnauthorizedProvider' | 'DelegationRevoked' | 'DelegationNotFound' | 'DelegationExpired' | 'DuplicateProviderMetadata' | 'ExceedsMaxProviderNameSize' | 'ExceedsMaxSchemaGrants' | 'SchemaNotGranted' | 'ProviderNotRegistered' | 'ProofHasExpired' | 'ProofNotYetValid';
   }
 
   /** @name PalletMessagesMessage (325) */

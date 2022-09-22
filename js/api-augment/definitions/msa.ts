@@ -32,6 +32,10 @@ export default {
           name: "provider_msa_id",
           type: "MessageSourceId",
         },
+        {
+          name: "block_number",
+          type: "Option<BlockNumber>",
+        }
       ],
       type: "Vec<(MessageSourceId, bool)>",
     },
