@@ -1641,5 +1641,9 @@ pub fn delegation_expired_long_back() {
 			Error::<Test>::DelegationExpired
 		);
 		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, Some(6)));
+		assert_noop!(
+			Msa::ensure_valid_delegation(provider, delegator, Some(1000)),
+			Error::<Test>::DelegationNotFound
+		);
 	})
 }
