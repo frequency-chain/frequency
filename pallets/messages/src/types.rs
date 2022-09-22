@@ -1,5 +1,5 @@
 use codec::{Decode, Encode};
-use common_primitives::{messages::{MessageResponse, MessageResponseIPFS}, msa::MessageSourceId};
+use common_primitives::{messages::{MessageResponse}, msa::MessageSourceId};
 use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 use sp_std::prelude::*;
@@ -32,31 +32,39 @@ where
 	MaxDataSize: Get<u32> + Clone,
 {
 	/// Helper function to handle response type [`MessageResponse`] for RPC.
-	pub fn map_to_respons_ipfs<BlockNumber>(
+	///
+	pub fn map_to_response_ipfs<BlockNumber>(
 		&self,
 		block_number: BlockNumber,
-		payload: Vec<u8>,
+		cid: Vec<u8>,
 		payload_length: u32,
-	) -> MessageResponse<BlockNumber, MessageResponseIPFS> {
+	) -> MessageResponse<BlockNumber> {
 		MessageResponse {
 			provider_msa_id: self.provider_msa_id,
 			index: self.index,
 			block_number,
-			message_info: {payload; payload_length}
+			cid: Some(cid),
+			payload_length: Some(payload_length),
+			msa_id: None,
+			payload: None,
 		}
 	}
 
 	/// Helper function to handle response type [`MessageResponse`] for PRC
-	pub fn map_to_respons_on_chain<BlockNumber>(
+	pub fn map_to_response_on_chain<BlockNumber>(
 		&self,
 		block_number: BlockNumber,
 		payload: Vec<u8>
-	) -> MessageResponse<BlockNumber, MessaageResponseOnChain> {
+	) -> MessageResponse<BlockNumber> {
 		MessageResponse {
 			provider_msa_id: self.provider_msa_id,
 			index: self.index,
 			block_number,
-			message_info: {	self.msa_id.unwrap_or_default(); payload}
+			msa_id: Some(self.msa_id.unwrap_or_default()),
+			payload: Some(payload),
+			cid: None,
+			payload_length: None,
 		}
 	}
 }
+
