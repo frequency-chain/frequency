@@ -53,7 +53,9 @@ format:
 
 .PHONY: lint
 lint:
-	cargo fmt --check && SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features all-frequency-features -- -D warnings
+	cargo fmt --check
+	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features all-frequency-features -- -D warnings
+	RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps
 
 .PHONY: format-lint
 format-lint: format lint
@@ -78,7 +80,7 @@ benchmarks-schemas:
 
 .PHONY: docs
 docs:
-	./scripts/frequency_docs.sh
+	RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps
 
 # Cleans unused docker resources and artifacts
 .PHONY: docs
