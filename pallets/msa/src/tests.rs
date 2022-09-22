@@ -1638,7 +1638,6 @@ fn replaying_add_provider_to_msa_fails() {
 			Error::<Test>::DuplicateProvider
 		);
 	})
-	
 }
 
 #[test]
@@ -1663,11 +1662,14 @@ pub fn add_provider_expired() {
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 		let signature: MultiSignature = user_pair.sign(&encode_add_provider_data).into();
 		// 3.5 create the user's MSA + add provider as provider
-		assert_err!(Msa::add_provider_to_msa(
-			test_origin_signed(1),
-			delegator_key.into(),
-			signature,
-			add_provider_payload
-		), Error::<Test>::ProofHasExpired);
+		assert_err!(
+			Msa::add_provider_to_msa(
+				test_origin_signed(1),
+				delegator_key.into(),
+				signature,
+				add_provider_payload
+			),
+			Error::<Test>::ProofHasExpired
+		);
 	})
 }
