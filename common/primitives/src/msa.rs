@@ -153,6 +153,7 @@ pub trait AccountProvider {
 	fn ensure_valid_delegation(
 		provider: Provider,
 		delegator: Delegator,
+		block_number: Option<Self::BlockNumber>,
 	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError>;
 
 	/// Validates if the provider is allowed to use the schema

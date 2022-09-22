@@ -1118,7 +1118,7 @@ pub fn valid_delegation() {
 
 		System::set_block_number(System::block_number() + 1);
 
-		assert_ok!(Msa::ensure_valid_delegation(provider, delegator));
+		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, None));
 	})
 }
 
@@ -1129,7 +1129,7 @@ pub fn delegation_not_found() {
 		let delegator = Delegator(2);
 
 		assert_noop!(
-			Msa::ensure_valid_delegation(provider, delegator),
+			Msa::ensure_valid_delegation(provider, delegator, None),
 			Error::<Test>::DelegationNotFound
 		);
 	})
@@ -1151,7 +1151,7 @@ pub fn delegation_expired() {
 		System::set_block_number(System::block_number() + 1);
 
 		assert_noop!(
-			Msa::ensure_valid_delegation(provider, delegator),
+			Msa::ensure_valid_delegation(provider, delegator, None),
 			Error::<Test>::DelegationExpired
 		);
 	})
