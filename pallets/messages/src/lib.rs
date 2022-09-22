@@ -201,7 +201,7 @@ pub mod pallet {
 				Error::<T>::InvalidPayloadLocation
 			);
 
-			let provider_msa_id = Self::find_msa_id(&provider_key, None)?;
+			let provider_msa_id = Self::find_msa_id(&provider_key)?;
 			let message = Self::add_message(provider_msa_id, None, bounded_payload, schema_id)?;
 
 			Ok(Some(T::WeightInfo::add_ipfs_message(cid.len() as u32, message.index as u32)).into())
@@ -234,12 +234,28 @@ pub mod pallet {
 				Error::<T>::InvalidPayloadLocation
 			);
 
-			let provider_msa_id = Self::find_msa_id(&provider_key, None)?;
-			let msa_id = Self::find_msa_id(&provider_key, on_behalf_of)?;
-			Self::ensure_valid_schema_grant(provider_msa_id.into(), on_behalf_of, schema_id)?;
+			let provider_msa_id = Self::find_msa_id(&provider_key)?;
 
-			let message =
-				Self::add_message(provider_msa_id, Some(msa_id), bounded_payload, schema_id)?;
+			// On-chain messages either are sent from the user themselves, or on behalf of another MSA Id
+			let maybe_delegator = match on_behalf_of {
+				Some(delegator) => {
+					T::AccountProvider::ensure_valid_schema_grant(
+						Provider(provider_msa_id),
+						Delegator(delegator),
+						schema_id,
+					)
+					.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
+					Delegator(delegator)
+				},
+				None => Delegator(provider_msa_id), // Delegate is also the Provider
+			};
+
+			let message = Self::add_message(
+				provider_msa_id,
+				Some(maybe_delegator.into()),
+				bounded_payload,
+				schema_id,
+			)?;
 
 			Ok(Some(T::WeightInfo::add_onchain_message(
 				message.payload.len() as u32,
@@ -288,71 +304,16 @@ impl<T: Config> Pallet<T> {
 		)
 	}
 
-	/// Resolve an MSA from an account key(key) and an optional MSA Id (on_behalf_of).
-	/// If a delegation relationship exists between an MSA held by the account key and the optional
-	/// MSA, the MSA Id associated with the optional MSA is returned. Otherwise an MSA Id associated
-	/// with the account key is returned, if one exists.
+	/// Resolve an MSA from an account key(key)
+	/// An MSA Id associated with the account key is returned, if one exists.
 	///
 	/// # Arguments
 	/// * `key` - An MSA key for lookup.
-	/// * `on_behalf_of` - Optional. The msa id of delegate.
 	/// # Returns
 	/// * Result<MessageSourceId, DispatchError> - Returns an MSA Id for storing a message.
-	pub fn find_msa_id(
-		key: &T::AccountId,
-		on_behalf_of: Option<MessageSourceId>,
-	) -> Result<MessageSourceId, DispatchError> {
-		let sender_msa_id = T::AccountProvider::ensure_valid_msa_key(key)
-			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
-
-		let message_source_id = match on_behalf_of {
-			Some(delegator) =>
-				Self::ensure_valid_delegation(Provider(sender_msa_id), Delegator(delegator))?.1,
-			None => sender_msa_id,
-		};
-
-		Ok(message_source_id)
-	}
-
-	/// Check for delegation between Delegator and Provider
-	/// # Arguments
-	/// * `provider` - An MSA of the provider.
-	/// * `delegator` - An MSA of the delegator.
-	/// # Returns
-	/// * Result<MessageSourceId, MessageSourceId> - Returns MessageSourceId mapping of provider and delegator.
-	pub fn ensure_valid_delegation(
-		provider: Provider,
-		delegator: Delegator,
-	) -> Result<(MessageSourceId, MessageSourceId), DispatchError> {
-		T::AccountProvider::ensure_valid_delegation(provider, delegator)
-			.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
-
-		Ok((provider.into(), delegator.into()))
-	}
-
-	/// Check if provider is granted permission to publish on behalf of delegator.
-	/// # Arguments
-	/// * `provider` - An MSA of the provider.
-	/// * `delegator` - An MSA of the delegator.
-	/// * `schema_id` - Schema id of the message.
-	/// # Returns
-	/// * Result<(MessageSourceId, MessageSourceId, SchemaId), DispatchError> - Returns an error if the provider is not granted permission to publish on behalf of delegator.
-	pub fn ensure_valid_schema_grant(
-		provider: Provider,
-		delegator: Option<MessageSourceId>,
-		schema_id: SchemaId,
-	) -> Result<(MessageSourceId, MessageSourceId, SchemaId), DispatchError> {
-		match delegator {
-			Some(delegator) => {
-				T::AccountProvider::ensure_valid_schema_grant(
-					provider,
-					delegator.into(),
-					schema_id,
-				)?;
-				Ok((provider.into(), delegator.into(), schema_id))
-			},
-			None => Ok((provider.into(), provider.into(), schema_id)),
-		}
+	pub fn find_msa_id(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
+		Ok(T::AccountProvider::ensure_valid_msa_key(key)
+			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?)
 	}
 
 	/// Gets a messages for a given schema-id and block-number.

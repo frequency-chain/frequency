@@ -6,7 +6,7 @@ use crate::{
 };
 use common_primitives::{
 	msa::{
-		Delegator, KeyInfoResponse, MessageSourceId, OrderedSetExt, Provider, ProviderInfo,
+		Delegator, MessageSourceId, OrderedSetExt, Provider, ProviderInfo,
 		EXPIRATION_BLOCK_VALIDITY_GAP,
 	},
 	schema::SchemaId,
