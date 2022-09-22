@@ -1620,3 +1620,26 @@ fn replaying_add_provider_to_msa_fails() {
 		);
 	})
 }
+
+#[test]
+pub fn delegation_expired_long_back() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+
+		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
+
+		System::set_block_number(System::block_number() + 100);
+		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, None));
+
+		assert_ok!(Msa::revoke_provider(provider, delegator));
+
+		System::set_block_number(System::block_number() + 150);
+
+		assert_noop!(
+			Msa::ensure_valid_delegation(provider, delegator, Some(151)),
+			Error::<Test>::DelegationExpired
+		);
+		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, Some(6)));
+	})
+}

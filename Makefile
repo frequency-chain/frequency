@@ -107,3 +107,7 @@ build-rococo-release:
 
 build-mainnet-release:
 	cargo build --locked --features  frequency --profile production
+
+PHONY: test
+test:
+	cargo test --all --locked --features all-frequency-features
