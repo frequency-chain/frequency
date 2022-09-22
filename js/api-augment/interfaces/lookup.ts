@@ -2252,7 +2252,8 @@ export default {
   PalletMsaAddProvider: {
     authorizedMsaId: 'u64',
     permission: 'u8',
-    schemaIds: 'Vec<u16>'
+    schemaIds: 'Vec<u16>',
+    expiration: 'u32'
   },
   /**
    * Lookup225: pallet_msa::types::AddKeyData
@@ -2644,7 +2645,7 @@ export default {
    * Lookup322: pallet_msa::pallet::Error<T>
    **/
   PalletMsaError: {
-    _enum: ['KeyAlreadyRegistered', 'MsaIdOverflow', 'AddKeySignatureVerificationFailed', 'NotMsaOwner', 'InvalidSignature', 'NotKeyOwner', 'NoKeyExists', 'KeyLimitExceeded', 'InvalidSelfRemoval', 'InvalidSelfProvider', 'DuplicateProvider', 'AddProviderSignatureVerificationFailed', 'UnauthorizedDelegator', 'UnauthorizedProvider', 'DelegationRevoked', 'DelegationNotFound', 'DelegationExpired', 'DuplicateProviderMetadata', 'ExceedsMaxProviderNameSize', 'ExceedsMaxSchemaGrants', 'SchemaNotGranted', 'ProofHasExpired', 'ProofNotYetValid']
+    _enum: ['KeyAlreadyRegistered', 'MsaIdOverflow', 'AddKeySignatureVerificationFailed', 'NotMsaOwner', 'InvalidSignature', 'NotKeyOwner', 'NoKeyExists', 'KeyLimitExceeded', 'InvalidSelfRemoval', 'InvalidSelfProvider', 'DuplicateProvider', 'AddProviderSignatureVerificationFailed', 'UnauthorizedDelegator', 'UnauthorizedProvider', 'DelegationRevoked', 'DelegationNotFound', 'DelegationExpired', 'DuplicateProviderMetadata', 'ExceedsMaxProviderNameSize', 'ExceedsMaxSchemaGrants', 'SchemaNotGranted', 'ProviderNotRegistered', 'ProofHasExpired', 'ProofNotYetValid']
   },
   /**
    * Lookup325: pallet_messages::types::Message<MaxDataSize>

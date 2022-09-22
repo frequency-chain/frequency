@@ -710,8 +710,6 @@ declare module '@polkadot/api-base/types/submittable' {
        * - Returns ['NotMsaOwner'](Error::NotMsaOwner) if Origin's MSA is not the same as 'add_key_payload` MSA. Essentially you can only add a key to your own MSA.
        * - Returns ['ProofHasExpired'](Error::ProofHasExpired) if the current block is less than the `expired` bock number set in `AddKeyData`.
        * - Returns ['ProofNotYetValid'](Error::ProofNotYetValid) if the `expired` bock number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.
-       * 
-       * 
        **/
       addKeyToMsa: AugmentedSubmittable<(key: AccountId32 | string | Uint8Array, proof: SpRuntimeMultiSignature | { Ed25519: any } | { Sr25519: any } | { Ecdsa: any } | string | Uint8Array, addKeyPayload: PalletMsaAddKeyData | { msaId?: any; nonce?: any; expiration?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, SpRuntimeMultiSignature, PalletMsaAddKeyData]>;
       /**
@@ -726,8 +724,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if `add_provider_payload.authorized_msa_id`  does not match MSA ID of `delegator_key`.
        * - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`
        * - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
+       * - Returns [`ProviderNotRegistered`](Error::ProviderNotRegistered) if the a non-provider MSA is used as the provider
+       * - Returns [`UnauthorizedDelegator`](Error::UnauthorizedDelegator) if Origin attempted to add a delegate for someone else's MSA
        **/
-      addProviderToMsa: AugmentedSubmittable<(delegatorKey: AccountId32 | string | Uint8Array, proof: SpRuntimeMultiSignature | { Ed25519: any } | { Sr25519: any } | { Ecdsa: any } | string | Uint8Array, addProviderPayload: PalletMsaAddProvider | { authorizedMsaId?: any; permission?: any; schemaIds?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, SpRuntimeMultiSignature, PalletMsaAddProvider]>;
+      addProviderToMsa: AugmentedSubmittable<(delegatorKey: AccountId32 | string | Uint8Array, proof: SpRuntimeMultiSignature | { Ed25519: any } | { Sr25519: any } | { Ecdsa: any } | string | Uint8Array, addProviderPayload: PalletMsaAddProvider | { authorizedMsaId?: any; permission?: any; schemaIds?: any; expiration?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, SpRuntimeMultiSignature, PalletMsaAddProvider]>;
       /**
        * Creates an MSA for the Origin (sender of the transaction).  Origin is assigned an MSA ID.
        * Deposits [`MsaCreated`](Event::MsaCreated) event, and returns `Ok(())` on success, otherwise returns an error.
@@ -749,9 +749,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`
        * - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
        * - Returns [`KeyAlreadyRegistered`](Error::KeyAlreadyRegistered) if there is already an MSA for `delegator_key`.
+       * - Returns [`ProviderNotRegistered`](Error::ProviderNotRegistered) if the a non-provider MSA is used as the provider
        * 
        **/
-      createSponsoredAccountWithDelegation: AugmentedSubmittable<(delegatorKey: AccountId32 | string | Uint8Array, proof: SpRuntimeMultiSignature | { Ed25519: any } | { Sr25519: any } | { Ecdsa: any } | string | Uint8Array, addProviderPayload: PalletMsaAddProvider | { authorizedMsaId?: any; permission?: any; schemaIds?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, SpRuntimeMultiSignature, PalletMsaAddProvider]>;
+      createSponsoredAccountWithDelegation: AugmentedSubmittable<(delegatorKey: AccountId32 | string | Uint8Array, proof: SpRuntimeMultiSignature | { Ed25519: any } | { Sr25519: any } | { Ecdsa: any } | string | Uint8Array, addProviderPayload: PalletMsaAddProvider | { authorizedMsaId?: any; permission?: any; schemaIds?: any; expiration?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, SpRuntimeMultiSignature, PalletMsaAddProvider]>;
       /**
        * Remove a key associated with an MSA by expiring it at the current block.
        * Returns `Ok(())` on success, otherwise returns an error. Deposits event [`KeyRemoved`](Event::KeyRemoved).
