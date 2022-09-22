@@ -1144,7 +1144,7 @@ pub fn delegation_expired() {
 		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
 
 		System::set_block_number(System::block_number() + 1);
-		assert_ok!(Msa::ensure_valid_delegation(provider, delegator));
+		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, None));
 
 		assert_ok!(Msa::revoke_provider(provider, delegator));
 
