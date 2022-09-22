@@ -722,10 +722,13 @@ impl<T: Config> Pallet<T> {
 	) -> Result<ProviderInfo<T::BlockNumber, T::MaxSchemaGrants>, DispatchError> {
 		let info = Self::get_provider_info_of(delegator, provider)
 			.ok_or(Error::<T>::DelegationNotFound)?;
+		let current_block = match block_number {
+			Some(block_number) => block_number,
+			None => frame_system::Pallet::<T>::block_number(),
+		};
 		if info.expired == T::BlockNumber::zero() {
 			return Ok(info)
 		}
-		let current_block = frame_system::Pallet::<T>::block_number();
 		ensure!(info.expired >= current_block, Error::<T>::DelegationExpired);
 		Ok(info)
 	}
