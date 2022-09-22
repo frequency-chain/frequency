@@ -67,6 +67,15 @@ upgrade-local:
 benchmarks:
 	./scripts/run_all_benchmarks.sh
 
+benchmarks-msa:
+	./scripts/run_benchmark.sh -p msa
+
+benchmarks-messages:
+	./scripts/run_benchmark.sh -p messages
+
+benchmarks-schemas:
+	./scripts/run_benchmark.sh -p schemas
+
 .PHONY: docs
 docs:
 	./scripts/frequency_docs.sh
@@ -92,6 +101,9 @@ check-mainnet:
 .PHONY: build
 build:
 	cargo build --locked --release --features all-frequency-features
+
+build-benchmarks:
+	cargo build --profile production --features runtime-benchmarks --features all-frequency-features --workspace
 
 build-local:
 	cargo build --locked --release --features  frequency-rococo-local
