@@ -1739,7 +1739,7 @@ fn signed_ext_check_nonce_creates_token_account_if_paying() {
 			},
 		};
 		assert_eq!(created_token_account, true);
-  })
+	})
 }
 
 #[test]
