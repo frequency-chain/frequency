@@ -25,15 +25,30 @@
 // --template=./.maintain/runtime-weight-template.hbs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
-#![allow(unused_parens)]
-#![allow(unused_imports)]
+#![allow(
+	rustdoc::all,
+	missing_docs,
+	unused_parens,
+	unused_imports
+)]
 
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use sp_std::marker::PhantomData;
 
+pub trait WeightInfo {
+	fn create(s: u32, ) -> Weight;
+	fn create_sponsored_account_with_delegation() -> Weight;
+	fn revoke_delegation_by_provider(s: u32, ) -> Weight;
+	fn add_key_to_msa() -> Weight;
+	fn delete_msa_key() -> Weight;
+	fn add_provider_to_msa() -> Weight;
+	fn revoke_msa_delegation_by_delegator() -> Weight;
+	fn register_provider() -> Weight;
+}
+
 /// Weights for pallet_msa using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> pallet_msa::WeightInfo for SubstrateWeight<T> {
+impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa MsaIdentifier (r:1 w:1)
 	// Storage: Msa MessageSourceIdOf (r:1 w:1)
 	// Storage: Msa MsaInfoOf (r:1 w:1)
