@@ -2252,7 +2252,8 @@ export default {
   PalletMsaAddProvider: {
     authorizedMsaId: 'u64',
     permission: 'u8',
-    schemaIds: 'Vec<u16>'
+    schemaIds: 'Vec<u16>',
+    expiration: 'u32'
   },
   /**
    * Lookup225: pallet_msa::types::AddKeyData

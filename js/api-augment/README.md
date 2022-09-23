@@ -49,12 +49,12 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
 ### Updating Definitions
 
-1. Update `./definitions`
-2. Build and start the chain (does not need to be on-boarded)
-3. Run `npm run fetch:local`
-4. Run `npm run build`
-5. Commit changes
+To generate the JS api definitions, run
+```
+make js
+```
 
+This command will start a Frequency node in the background and fetch API definitions from it. To stop the Frequency process, use the PID output by the command.
 
 ## Helpful Notes
 
