@@ -33,7 +33,8 @@ fn create_msa<T: Config>(n: u32) -> DispatchResult {
 fn create_payload_and_signature<T: Config>() -> (AddProvider, MultiSignature, T::AccountId) {
 	let delegator_account = SignerId::generate_pair(None);
 	let schemas: Vec<SchemaId> = vec![1, 2];
-	let add_provider_payload = AddProvider::new(1u64, Some(schemas));
+	let expiration: BlockNumber = 10;
+	let add_provider_payload = AddProvider::new(1u64, Some(schemas), expiration);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 	let signature = delegator_account.sign(&encode_add_provider_data).unwrap();

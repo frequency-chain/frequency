@@ -32,16 +32,22 @@ pub struct AddProvider {
 	/// Schemas for which publishing grants are authorized.
 	/// This is private intended for internal use only.
 	pub schema_ids: Vec<SchemaId>,
+	/// The block number at which the proof for add_provider_to_msa expires.
+	pub expiration: BlockNumber,
 }
 
 impl AddProvider {
 	/// Create new `AddProvider`
-	pub fn new(authorized_msa_id: MessageSourceId, schema_ids: Option<Vec<SchemaId>>) -> Self {
+	pub fn new(
+		authorized_msa_id: MessageSourceId,
+		schema_ids: Option<Vec<SchemaId>>,
+		expiration: BlockNumber,
+	) -> Self {
 		let schema_ids = match schema_ids {
 			Some(schemas) => schemas,
 			None => Vec::default(),
 		};
 
-		Self { authorized_msa_id, schema_ids }
+		Self { authorized_msa_id, schema_ids, expiration }
 	}
 }

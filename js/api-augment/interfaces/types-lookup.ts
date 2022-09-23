@@ -2402,6 +2402,7 @@ declare module '@polkadot/types/lookup' {
   interface PalletMsaAddProvider extends Struct {
     readonly authorizedMsaId: u64;
     readonly schemaIds: Vec<u16>;
+    readonly expiration: u32;
   }
 
   /** @name PalletMsaAddKeyData (225) */
