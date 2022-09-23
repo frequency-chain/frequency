@@ -49,6 +49,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
 ### Updating Definitions
 
+Update `./definitions` if you have changed any types or RPC calls.
+
 To generate the JS api definitions, run
 ```
 make js
