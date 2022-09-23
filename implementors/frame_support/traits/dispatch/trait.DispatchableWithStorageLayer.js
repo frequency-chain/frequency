@@ -1,4 +1,0 @@
-(function() {var implementors = {};
-implementors["frequency_rococo_runtime"] = [{"text":"impl DispatchableWithStorageLayer for <a class=\"enum\" href=\"frequency_rococo_runtime/enum.Call.html\" title=\"enum frequency_rococo_runtime::Call\">Call</a>","synthetic":false,"types":["frequency_rococo_runtime::Call"]}];
-implementors["frequency_runtime"] = [{"text":"impl DispatchableWithStorageLayer for <a class=\"enum\" href=\"frequency_runtime/enum.Call.html\" title=\"enum frequency_runtime::Call\">Call</a>","synthetic":false,"types":["frequency_runtime::Call"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

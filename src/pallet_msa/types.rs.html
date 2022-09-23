@@ -57,6 +57,9 @@
 <span id="51">51</span>
 <span id="52">52</span>
 <span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Types for the MSA Pallet</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
@@ -93,6 +96,8 @@
 	<span class="doccomment">/// Schemas for which publishing grants are authorized.</span>
 	<span class="doccomment">/// This is private intended for internal use only.</span>
 	<span class="kw">pub</span> <span class="ident">schema_ids</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SchemaId</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// The block number at which the proof for add_provider_to_msa expires.</span>
+	<span class="kw">pub</span> <span class="ident">expiration</span>: <span class="ident">BlockNumber</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">AddProvider</span> {
@@ -101,13 +106,14 @@
 		<span class="ident">authorized_msa_id</span>: <span class="ident">MessageSourceId</span>,
 		<span class="ident">permission</span>: <span class="ident">u8</span>,
 		<span class="ident">schema_ids</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SchemaId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+		<span class="ident">expiration</span>: <span class="ident">BlockNumber</span>,
 	) -&gt; <span class="self">Self</span> {
 		<span class="kw">let</span> <span class="ident">schema_ids</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">schema_ids</span> {
 			<span class="prelude-val">Some</span>(<span class="ident">schemas</span>) =&gt; <span class="ident">schemas</span>,
 			<span class="prelude-val">None</span> =&gt; <span class="ident">Vec::default</span>(),
 		};
 
-		<span class="self">Self</span> { <span class="ident">authorized_msa_id</span>, <span class="ident">permission</span>, <span class="ident">schema_ids</span> }
+		<span class="self">Self</span> { <span class="ident">authorized_msa_id</span>, <span class="ident">permission</span>, <span class="ident">schema_ids</span>, <span class="ident">expiration</span> }
 	}
 }
 </code></pre></div>

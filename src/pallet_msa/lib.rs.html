@@ -1110,6 +1110,8 @@
 <span id="1104">1104</span>
 <span id="1105">1105</span>
 <span id="1106">1106</span>
+<span id="1107">1107</span>
+<span id="1108">1108</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The MSA pallet provides functionality for handling Message Source Accounts.</span>
@@ -1519,6 +1521,8 @@
 			<span class="comment">// delegator must have signed the payload.</span>
 			<span class="ident"><span class="self">Self</span>::verify_signature</span>(<span class="ident">proof</span>, <span class="ident">delegator_key</span>.<span class="ident">clone</span>(), <span class="ident">add_provider_payload</span>.<span class="ident">encode</span>())
 				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AddProviderSignatureVerificationFailed</span>)<span class="question-mark">?</span>;
+
+			<span class="ident"><span class="self">Self</span>::ensure_block_is_valid</span>(<span class="ident">add_provider_payload</span>.<span class="ident">expiration</span>)<span class="question-mark">?</span>;
 
 			<span class="kw">let</span> (<span class="ident">provider</span>, <span class="ident">delegator</span>) <span class="op">=</span>
 				<span class="ident"><span class="self">Self</span>::ensure_valid_registered_provider</span>(<span class="kw-2">&amp;</span><span class="ident">delegator_key</span>, <span class="kw-2">&amp;</span><span class="ident">provider_key</span>)<span class="question-mark">?</span>;
