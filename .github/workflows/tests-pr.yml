@@ -11,7 +11,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         target: [tests, lint]
-        rust_toolchain: [nightly-2022-07-23]
+        rust_toolchain: [nightly-2022-07-23] # Needs nightly for clippy and docs check
     runs-on: ${{ matrix.os }}
     env:
       RUST_TOOLCHAIN: ${{ matrix.rust_toolchain }}

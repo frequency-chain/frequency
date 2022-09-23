@@ -2958,8 +2958,8 @@ declare module '@polkadot/types/lookup' {
   /** @name FrameSystemExtensionsCheckGenesis (339) */
   type FrameSystemExtensionsCheckGenesis = Null;
 
-  /** @name FrameSystemExtensionsCheckNonce (342) */
-  interface FrameSystemExtensionsCheckNonce extends Compact<u32> {}
+  /** @name CommonRuntimeExtensionsCheckNonce (342) */
+  interface CommonRuntimeExtensionsCheckNonce extends Compact<u32> {}
 
   /** @name FrameSystemExtensionsCheckWeight (343) */
   type FrameSystemExtensionsCheckWeight = Null;

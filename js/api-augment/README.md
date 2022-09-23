@@ -24,7 +24,7 @@ An easy way to get all the custom rpc and types config to be able to easily use 
 <!-- GETTING STARTED -->
 ## Getting Started
 
-- `npm install @dsnp/frequency-api-augment` (API Augmentation Library)
+- `npm install @frequency-chain/api-augment` (API Augmentation Library)
 - `npm install @polkadot/api` (Polkadot API Library)
 
 ### Usage
@@ -32,7 +32,7 @@ An easy way to get all the custom rpc and types config to be able to easily use 
 For details on use, see the [Polkadot API library documentation](https://polkadot.js.org/docs/api).
 
 ```typescript
-import { options } from "@dsnp/frequency-api-augment";
+import { options } from "@frequency-chain/api-augment";
 import { ApiPromise } from '@polkadot/api';
 // ...
 
@@ -61,12 +61,12 @@ This command will start a Frequency node in the background and fetch API definit
 ### Fails to Resolve Custom RPCs
 
 The api augmentation declares the modules used by `@polkadot/api`.
-Thus the import for `@dsnp/frequency-api-augment` must come before any `@polkadot/api` so that the Frequency declarations resolve first.
+Thus the import for `@frequency-chain/api-augment` must come before any `@polkadot/api` so that the Frequency declarations resolve first.
 
 ```typescript
-import { options } from "@dsnp/frequency-api-augment";
+import { options } from "@frequency-chain/api-augment";
 // Or
-import "@dsnp/frequency-api-augment";
+import "@frequency-chain/api-augment";
 // Must come BEFORE any imports from @polkadot/api
 import { ApiPromise } from '@polkadot/api';
 ```
@@ -114,7 +114,7 @@ Distributed under the Apache 2.0 License. See `LICENSE` for more information.
 [issues-url]: https://github.com/LibertyDSNP/frequency/issues
 [license-shield]: https://img.shields.io/github/license/LibertyDSNP/frequency.svg?style=for-the-badge
 [license-url]: https://github.com/LibertyDSNP/frequency/blob/master/LICENSE
-[npm-shield]: https://img.shields.io/npm/v/@dsnp/frequency-api-augment?label=npm%20%40latest&style=for-the-badge
-[npm-url]: https://www.npmjs.com/package/@dsnp/frequency-api-augment
-[npm-next-shield]: https://img.shields.io/npm/v/@dsnp/frequency-api-augment/next?label=npm%20%40next&style=for-the-badge
-[npm-next-url]: https://www.npmjs.com/package/@dsnp/frequency-api-augment
+[npm-shield]: https://img.shields.io/npm/v/@frequency-chain/api-augment?label=npm%20%40latest&style=for-the-badge
+[npm-url]: https://www.npmjs.com/package/@frequency-chain/api-augment
+[npm-next-shield]: https://img.shields.io/npm/v/@frequency-chain/api-augment/next?label=npm%20%40next&style=for-the-badge
+[npm-next-url]: https://www.npmjs.com/package/@frequency-chain/api-augment
