@@ -5,9 +5,9 @@
 // this is required to allow for ambient/previous definitions
 import '@polkadot/rpc-core/types/jsonrpc';
 
-import type { BlockPaginationRequest, BlockPaginationResponseMessage } from '@dsnp/frequency-api-augment/messages';
-import type { MessageSourceId } from '@dsnp/frequency-api-augment/msa';
-import type { SchemaId, SchemaModel, SchemaResponse } from '@dsnp/frequency-api-augment/schemas';
+import type { BlockPaginationRequest, BlockPaginationResponseMessage } from '@frequency-chain/api-augment/messages';
+import type { MessageSourceId } from '@frequency-chain/api-augment/msa';
+import type { SchemaId, SchemaModel, SchemaResponse } from '@frequency-chain/api-augment/schemas';
 import type { AugmentedRpc } from '@polkadot/rpc-core/types';
 import type { Metadata, StorageKey } from '@polkadot/types';
 import type { Bytes, HashMap, Json, Null, Option, Text, U256, U64, Vec, bool, f64, u32, u64 } from '@polkadot/types-codec';
