@@ -433,7 +433,7 @@ pub fn add_provider_to_msa_throws_no_key_exist_error() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
-    
+
 		let expiration: BlockNumber = 10;
 		let add_provider_payload = AddProvider::new(2, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
