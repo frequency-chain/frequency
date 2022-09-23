@@ -43,7 +43,7 @@ where
 	AccountPublic::from(get_public_from_seed::<TPublic>(seed)).into_account()
 }
 
-/// The extensions for the [`ChainSpec`].
+/// The extensions for the [`sc_service::ChainSpec`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
 #[serde(deny_unknown_fields)]
 pub struct Extensions {

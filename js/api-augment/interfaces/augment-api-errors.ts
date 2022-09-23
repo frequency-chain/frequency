@@ -438,6 +438,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       ProofNotYetValid: AugmentedError<ApiType>;
       /**
+       * The operation was attempted with a non-provider MSA
+       **/
+      ProviderNotRegistered: AugmentedError<ApiType>;
+      /**
        * Provider is not permitted to publish for given schema_id
        **/
       SchemaNotGranted: AugmentedError<ApiType>;

@@ -2643,7 +2643,7 @@ export default {
    * Lookup322: pallet_msa::pallet::Error<T>
    **/
   PalletMsaError: {
-    _enum: ['KeyAlreadyRegistered', 'MsaIdOverflow', 'AddKeySignatureVerificationFailed', 'NotMsaOwner', 'InvalidSignature', 'NotKeyOwner', 'NoKeyExists', 'KeyLimitExceeded', 'InvalidSelfRemoval', 'InvalidSelfProvider', 'DuplicateProvider', 'AddProviderSignatureVerificationFailed', 'UnauthorizedDelegator', 'UnauthorizedProvider', 'DelegationRevoked', 'DelegationNotFound', 'DelegationExpired', 'DuplicateProviderMetadata', 'ExceedsMaxProviderNameSize', 'ExceedsMaxSchemaGrants', 'SchemaNotGranted', 'ProofHasExpired', 'ProofNotYetValid']
+    _enum: ['KeyAlreadyRegistered', 'MsaIdOverflow', 'AddKeySignatureVerificationFailed', 'NotMsaOwner', 'InvalidSignature', 'NotKeyOwner', 'NoKeyExists', 'KeyLimitExceeded', 'InvalidSelfRemoval', 'InvalidSelfProvider', 'DuplicateProvider', 'AddProviderSignatureVerificationFailed', 'UnauthorizedDelegator', 'UnauthorizedProvider', 'DelegationRevoked', 'DelegationNotFound', 'DelegationExpired', 'DuplicateProviderMetadata', 'ExceedsMaxProviderNameSize', 'ExceedsMaxSchemaGrants', 'SchemaNotGranted', 'ProviderNotRegistered', 'ProofHasExpired', 'ProofNotYetValid']
   },
   /**
    * Lookup325: pallet_messages::types::Message<MaxDataSize>
@@ -2691,9 +2691,9 @@ export default {
    **/
   FrameSystemExtensionsCheckGenesis: 'Null',
   /**
-   * Lookup342: frame_system::extensions::check_nonce::CheckNonce<T>
+   * Lookup342: common_runtime::extensions::check_nonce::CheckNonce<T>
    **/
-  FrameSystemExtensionsCheckNonce: 'Compact<u32>',
+  CommonRuntimeExtensionsCheckNonce: 'Compact<u32>',
   /**
    * Lookup343: frame_system::extensions::check_weight::CheckWeight<T>
    **/

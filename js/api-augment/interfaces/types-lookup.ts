@@ -2896,9 +2896,10 @@ declare module '@polkadot/types/lookup' {
     readonly isExceedsMaxProviderNameSize: boolean;
     readonly isExceedsMaxSchemaGrants: boolean;
     readonly isSchemaNotGranted: boolean;
+    readonly isProviderNotRegistered: boolean;
     readonly isProofHasExpired: boolean;
     readonly isProofNotYetValid: boolean;
-    readonly type: 'KeyAlreadyRegistered' | 'MsaIdOverflow' | 'AddKeySignatureVerificationFailed' | 'NotMsaOwner' | 'InvalidSignature' | 'NotKeyOwner' | 'NoKeyExists' | 'KeyLimitExceeded' | 'InvalidSelfRemoval' | 'InvalidSelfProvider' | 'DuplicateProvider' | 'AddProviderSignatureVerificationFailed' | 'UnauthorizedDelegator' | 'UnauthorizedProvider' | 'DelegationRevoked' | 'DelegationNotFound' | 'DelegationExpired' | 'DuplicateProviderMetadata' | 'ExceedsMaxProviderNameSize' | 'ExceedsMaxSchemaGrants' | 'SchemaNotGranted' | 'ProofHasExpired' | 'ProofNotYetValid';
+    readonly type: 'KeyAlreadyRegistered' | 'MsaIdOverflow' | 'AddKeySignatureVerificationFailed' | 'NotMsaOwner' | 'InvalidSignature' | 'NotKeyOwner' | 'NoKeyExists' | 'KeyLimitExceeded' | 'InvalidSelfRemoval' | 'InvalidSelfProvider' | 'DuplicateProvider' | 'AddProviderSignatureVerificationFailed' | 'UnauthorizedDelegator' | 'UnauthorizedProvider' | 'DelegationRevoked' | 'DelegationNotFound' | 'DelegationExpired' | 'DuplicateProviderMetadata' | 'ExceedsMaxProviderNameSize' | 'ExceedsMaxSchemaGrants' | 'SchemaNotGranted' | 'ProviderNotRegistered' | 'ProofHasExpired' | 'ProofNotYetValid';
   }
 
   /** @name PalletMessagesMessage (325) */
@@ -2956,8 +2957,8 @@ declare module '@polkadot/types/lookup' {
   /** @name FrameSystemExtensionsCheckGenesis (339) */
   type FrameSystemExtensionsCheckGenesis = Null;
 
-  /** @name FrameSystemExtensionsCheckNonce (342) */
-  interface FrameSystemExtensionsCheckNonce extends Compact<u32> {}
+  /** @name CommonRuntimeExtensionsCheckNonce (342) */
+  interface CommonRuntimeExtensionsCheckNonce extends Compact<u32> {}
 
   /** @name FrameSystemExtensionsCheckWeight (343) */
   type FrameSystemExtensionsCheckWeight = Null;
