@@ -56,8 +56,6 @@ pub struct ProviderInfo<BlockNumber, MaxSchemaGrants>
 where
 	MaxSchemaGrants: Get<u32>,
 {
-	/// Specifies a permission granted by the delegator to the provider.
-	pub permission: u8,
 	/// Block number the grant will be revoked.
 	pub expired: BlockNumber,
 	/// Schemas that the provider is allowed to use for a delegated message.

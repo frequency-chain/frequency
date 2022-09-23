@@ -58,7 +58,6 @@ Creates a new MSA on behalf of a delegator and adds the origin held MSA as its p
   * Parameters:
       1. `add_provider_payload` - this is what the holder of delegator_key must sign and provide to the provider beforehand.
           * `authorized_msa_id` - the provider, of type `MessageSourceId`
-          * `permission` a value indicating the permission to be given to the provider
       2. `delegator_key` - The authorizing key used to create `proof`
       3. `proof` - The signature of the hash of `add_provider_payload` by the delgator
 

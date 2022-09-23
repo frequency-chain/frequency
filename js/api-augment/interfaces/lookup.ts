@@ -2621,7 +2621,6 @@ export default {
    * Lookup316: common_primitives::msa::ProviderInfo<BlockNumber, MaxSchemaGrants>
    **/
   CommonPrimitivesMsaProviderInfo: {
-    permission: 'u8',
     expired: 'u32',
     schemas: 'CommonPrimitivesDsOrderedSetExt'
   },

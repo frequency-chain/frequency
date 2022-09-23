@@ -133,7 +133,7 @@ impl AccountProvider for AccountHandler {
 		if provider == Provider(2000) {
 			return None
 		};
-		Some(ProviderInfo { permission: 0, expired: 100, schemas: OrderedSetExt::new() })
+		Some(ProviderInfo { expired: 100, schemas: OrderedSetExt::new() })
 	}
 
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError> {
@@ -155,11 +155,7 @@ impl AccountProvider for AccountHandler {
 			return Err(DispatchError::Other("some delegation error"))
 		};
 
-		Ok(ProviderInfo {
-			schemas: OrderedSetExt::new(),
-			permission: Default::default(),
-			expired: Default::default(),
-		})
+		Ok(ProviderInfo { schemas: OrderedSetExt::new(), expired: Default::default() })
 	}
 
 	fn ensure_valid_schema_grant(

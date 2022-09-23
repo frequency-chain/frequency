@@ -693,7 +693,6 @@ impl<T: Config> Pallet<T> {
 			let granted_schemas = BoundedVec::<SchemaId, T::MaxSchemaGrants>::try_from(schemas)
 				.map_err(|_| Error::<T>::ExceedsMaxSchemaGrants)?;
 			let info = ProviderInfo {
-				permission: Default::default(),
 				expired: Default::default(),
 				schemas: OrderedSetExt::<SchemaId, T::MaxSchemaGrants>::from(granted_schemas),
 			};
@@ -913,17 +912,9 @@ impl<T: Config> AccountProvider for Pallet<T> {
 			// If the delegation does not exist, we return a ok
 			// This is only used for benchmarks, so it is safe to return a dummy account
 			// in case the delegation does not exist
-			return Ok(ProviderInfo {
-				schemas: OrderedSetExt::new(),
-				permission: Default::default(),
-				expired: Default::default(),
-			})
+			return Ok(ProviderInfo { schemas: OrderedSetExt::new(), expired: Default::default() })
 		}
-		Ok(ProviderInfo {
-			schemas: OrderedSetExt::new(),
-			permission: Default::default(),
-			expired: Default::default(),
-		})
+		Ok(ProviderInfo { schemas: OrderedSetExt::new(), expired: Default::default() })
 	}
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
