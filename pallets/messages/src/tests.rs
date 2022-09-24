@@ -2,7 +2,7 @@ use super::{mock::*, Event as MessageEvent};
 use crate::{BlockMessages, Config, Error, Message, Messages};
 use codec::Encode;
 use common_primitives::{
-	messages::{BlockPaginationRequest, MessageResponse, MessageResponseOnChain, MessageResponseIPFS},
+	messages::{BlockPaginationRequest, MessageResponse},
 	schema::*,
 };
 use frame_support::{
@@ -270,12 +270,13 @@ fn get_messages_by_schema_with_valid_request_should_return_paginated() {
 		assert_eq!(
 			pagination_response.content[0],
 			MessageResponse {
-				msa_id: 10,
-				payload: payload.clone(),
+				msa_id: Some(10),
+				payload: Some(payload.clone()),
 				index: from_index as u16,
 				provider_msa_id: 1,
 				block_number: 0,
-				payload_length: payload.len().try_into().unwrap(),
+				payload_length: None,
+				cid: None
 			}
 		);
 	});
@@ -418,12 +419,14 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_return_offchain_payl
 		// with the CID: (cid, payload_length).
 		assert_eq!(
 			pagination_response.content[0],
-			MessageResponse<MessageResponseIPFS> {
-				payload: cid,
+			MessageResponse {
+				payload: None,
 				index: from_index as u16,
 				provider_msa_id: 1,
 				block_number: 0,
-				payload_length: IPFS_PAYLOAD_LENGTH,
+				payload_length: Some(IPFS_PAYLOAD_LENGTH),
+				msa_id: None,
+				cid: Some(cid)
 			}
 		);
 	});
@@ -442,20 +445,24 @@ fn get_messages_by_schema_returns_ipfs_cid_required_fields() {
 			from_block: 0,
 			to_block: messages_per_block.len() as u64,
 			from_index,
-
 		};
+
+		let res = MessagesPallet::get_messages_by_schema(schema_id, request);
+		let pagination_response = res.ok().unwrap();
 
 		let cid =
 			Vec::from("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes());
 
 		assert_eq!(
 			pagination_response.content[0],
-			MessageResponse<MessageResponseIPFS> {
-				cid: cid,
+			MessageResponse {
+				payload: None,
 				index: from_index as u16,
 				provider_msa_id: 1,
 				block_number: 0,
-				payload_length: IPFS_PAYLOAD_LENGTH,
+				payload_length: Some(IPFS_PAYLOAD_LENGTH),
+				msa_id: None,
+				cid: Some(cid)
 			}
 		);
 	});

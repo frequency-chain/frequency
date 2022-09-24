@@ -1,5 +1,5 @@
 use codec::{Decode, Encode};
-use common_primitives::{messages::{MessageResponse}, msa::MessageSourceId};
+use common_primitives::{messages::MessageResponse, msa::MessageSourceId};
 use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 use sp_std::prelude::*;
@@ -31,8 +31,7 @@ impl<MaxDataSize> Message<MaxDataSize>
 where
 	MaxDataSize: Get<u32> + Clone,
 {
-	/// Helper function to handle response type [`MessageResponse`] for RPC.
-	///
+	/// Helper function to handle response type [`MessageResponse`] for rpc with payload location IPFS
 	pub fn map_to_response_ipfs<BlockNumber>(
 		&self,
 		block_number: BlockNumber,
@@ -50,11 +49,11 @@ where
 		}
 	}
 
-	/// Helper function to handle response type [`MessageResponse`] for PRC
+	/// Helper function to handle response type [`MessageResponse`] for PRC with payload location on-chain
 	pub fn map_to_response_on_chain<BlockNumber>(
 		&self,
 		block_number: BlockNumber,
-		payload: Vec<u8>
+		payload: Vec<u8>,
 	) -> MessageResponse<BlockNumber> {
 		MessageResponse {
 			provider_msa_id: self.provider_msa_id,
@@ -67,4 +66,3 @@ where
 		}
 	}
 }
-
