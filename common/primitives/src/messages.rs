@@ -1,6 +1,6 @@
-use crate::{msa::MessageSourceId, node::BlockNumber};
 #[cfg(feature = "std")]
 use crate::utils;
+use crate::{msa::MessageSourceId, node::BlockNumber};
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
@@ -36,7 +36,6 @@ pub struct MessageResponse<BlockNumber> {
 	///  Offchain payload length (IPFS).
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
 	pub payload_length: Option<u32>,
-
 }
 /// A type for requesting paginated messages.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

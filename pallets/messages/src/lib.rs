@@ -394,18 +394,13 @@ impl<T: Config> Pallet<T> {
 			for i in from_index..list_size {
 				let m = list[i as usize].clone();
 				match payload_location {
-						PayloadLocation::OnChain =>
-							m.map_to_response_on_chain(
-								block_number,
-								m.payload.clone().into_inner()
-							),
-						PayloadLocation::IPFS => {
-							let (cid, payload_length) = OffchainPayloadType::decode(&mut &m.payload[..]).unwrap();
-							m.map_to_response_ipfs(
-								block_number,
-								cid,
-								payload_length
-							)}
+					PayloadLocation::OnChain =>
+						response.content.push(m.map_to_response_on_chain(block_number, m.payload.clone().into_inner())),
+					PayloadLocation::IPFS => {
+						let (cid, payload_length) =
+							OffchainPayloadType::decode(&mut &m.payload[..]).unwrap();
+							response.content.push(m.map_to_response_ipfs(block_number, cid, payload_length))
+					},
 				};
 
 				if Self::check_end_condition_and_set_next_pagination(
