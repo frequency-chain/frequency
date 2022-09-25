@@ -1,4 +1,5 @@
-// This file is part of Substrate.
+// This file overrides the default Substrate CheckNonce for Frequency.
+// It only creates the token account for paid extrinsics.
 
 // Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
@@ -99,8 +100,6 @@ where
 
 		// Increment account nonce by 1
 		account.nonce += T::Index::one();
-		#[cfg(test)]
-		println!("\tAfter increment, account.nonce = {}", account.nonce);
 
 		// Only create or update the token account if the caller is paying
 		if info.pays_fee == Pays::Yes {
