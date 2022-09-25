@@ -1645,19 +1645,22 @@ fn replaying_add_provider_to_msa_fails() {
 #[test]
 fn signed_ext_check_nonce_delete_msa_key() {
 	new_test_ext().execute_with(|| {
-		let (key_pair, _) = sr25519::Pair::generate();
-		let new_key = key_pair.public();
+		// Generate a key pair for MSA account
+		let (msa_key_pair, _) = sr25519::Pair::generate();
+		let msa_new_key = key_pair.public();
 
 		let len = 0_usize;
 
+		// Test the delete_msa_key() call
 		let call_delete_msa_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_key { key: AccountId32::from(new_key) });
+			&Call::Msa(MsaCall::delete_msa_key { key: AccountId32::from(msa_new_key) });
 		let info = call_delete_msa_key.get_dispatch_info();
 
+		// Call delete_msa_key() using the Alice account
 		let who = test_public(1);
-
 		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(&who, call_delete_msa_key, &info, len));
 
+		// Did the call create a token account?
 		let created_token_account: bool;
 		match frame_system::Account::<Test>::try_get(who) {
 			Ok(_) => {
@@ -1667,6 +1670,8 @@ fn signed_ext_check_nonce_delete_msa_key() {
 				created_token_account = false;
 			},
 		};
+
+		// Assert that the call did not create a token account
 		assert_eq!(created_token_account, false);
 	})
 }
@@ -1677,7 +1682,7 @@ fn signed_ext_check_nonce_revoke_msa_delegation_by_delegator() {
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, _) = test_create_delegator_msa_with_provider();
 
-		// We are testing the revoke_msa_delegation_by_delegator call.
+		// We are testing the revoke_msa_delegation_by_delegator() call.
 		let call_revoke_msa_delegation_by_delegator: &<Test as frame_system::Config>::Call =
 			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
 
@@ -1686,9 +1691,8 @@ fn signed_ext_check_nonce_revoke_msa_delegation_by_delegator() {
 		// Get the dispatch info for the call.
 		let info = call_revoke_msa_delegation_by_delegator.get_dispatch_info();
 
-		// 1.  Test that revoke_msa_delegation_by_delegator() does not generate token account
+		// Call revoke_msa_delegation_by_delegator() using the Alice account
 		let who = test_public(1);
-
 		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(
 			&who,
 			call_revoke_msa_delegation_by_delegator,
@@ -1696,6 +1700,7 @@ fn signed_ext_check_nonce_revoke_msa_delegation_by_delegator() {
 			len
 		));
 
+		// Did the call create a token account?
 		let created_token_account: bool;
 		match frame_system::Account::<Test>::try_get(who) {
 			Ok(_) => {
@@ -1705,6 +1710,8 @@ fn signed_ext_check_nonce_revoke_msa_delegation_by_delegator() {
 				created_token_account = false;
 			},
 		};
+
+		// Assert that the call did not create a token account
 		assert_eq!(created_token_account, false);
 	})
 }
@@ -1719,9 +1726,10 @@ fn signed_ext_check_nonce_creates_token_account_if_paying() {
 		let pays_call_should_pass: &<Test as frame_system::Config>::Call =
 			&Call::Msa(MsaCall::create {});
 
-		// Get the dispatch info for the call.
+		// Get the dispatch info for the create() call.
 		let pays_call_should_pass_info = pays_call_should_pass.get_dispatch_info();
 
+		// Call create() using the Alice account
 		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(
 			&who,
 			pays_call_should_pass,
@@ -1729,6 +1737,7 @@ fn signed_ext_check_nonce_creates_token_account_if_paying() {
 			len
 		));
 
+		// Did the call create a token account?
 		let created_token_account: bool;
 		match frame_system::Account::<Test>::try_get(who) {
 			Ok(_) => {
@@ -1738,6 +1747,7 @@ fn signed_ext_check_nonce_creates_token_account_if_paying() {
 				created_token_account = false;
 			},
 		};
+		// Assert that the call created a token account
 		assert_eq!(created_token_account, true);
 	})
 }
