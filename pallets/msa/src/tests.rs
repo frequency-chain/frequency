@@ -1647,7 +1647,7 @@ fn signed_ext_check_nonce_delete_msa_key() {
 	new_test_ext().execute_with(|| {
 		// Generate a key pair for MSA account
 		let (msa_key_pair, _) = sr25519::Pair::generate();
-		let msa_new_key = key_pair.public();
+		let msa_new_key = msa_key_pair.public();
 
 		let len = 0_usize;
 
