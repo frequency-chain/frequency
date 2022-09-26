@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":[["constants",""],["weights","Expose the auto generated weight files."]]};
+window.SIDEBAR_ITEMS = {"mod":[["constants",""],["extensions",""],["weights","Expose the auto generated weight files."]]};
