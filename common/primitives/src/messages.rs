@@ -27,7 +27,10 @@ pub struct MessageResponse<BlockNumber> {
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
 	pub msa_id: Option<MessageSourceId>,
 	/// Serialized data in a the schemas.
-	#[cfg_attr(feature = "std", serde(with = "as_hex_option", skip_serializing_if = "Option::is_none"))]
+	#[cfg_attr(
+		feature = "std",
+		serde(with = "as_hex_option", skip_serializing_if = "Option::is_none")
+	)]
 	pub payload: Option<Vec<u8>>,
 	/// The content address for an IPFS payload
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]

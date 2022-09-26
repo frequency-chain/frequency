@@ -30,7 +30,7 @@ pub mod as_hex_option {
 	{
 		match bytes {
 			Some(bytes) => impl_serde::serialize::serialize(bytes.as_slice(), serializer),
-			_ => unreachable!()
+			_ => unreachable!(),
 		}
 	}
 
@@ -38,7 +38,7 @@ pub mod as_hex_option {
 	pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
 		impl_serde::serialize::deserialize(deserializer)
 	}
-
+}
 /// Handle serializing and deserializing from `Vec<u8>` to a UTF-8 string
 #[cfg(feature = "std")]
 pub mod as_string {
