@@ -69,7 +69,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
     manager(e.g. Homebrew on Mac) and re-run the command again._
 
     ```sh
-    make  build
+    make build
     ```
 
     Above will build frequency with all frequency features. Alternatively you may run following command to build with specific features:
@@ -77,7 +77,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
     ```sh
     make build-local
     make build-rococo
-    make build-mainne
+    make build-mainnet
     ```
 
     To build local, rococo or mainnet features respectively.
