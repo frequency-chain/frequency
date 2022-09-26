@@ -712,7 +712,7 @@ impl<T: Config> Pallet<T> {
 	/// # Arguments
 	/// * `provider` - The provider to check delegation for
 	/// * `delegate` - The delegator to check delegation from
-	/// * `Option<T::BlockNumber>` - Optional: check delegation at specific block in past
+	/// * `block_number` - Optional: check delegation at specific block in past
 	/// # Returns
 	/// * [`ProviderInfo`]
 	/// # Errors
