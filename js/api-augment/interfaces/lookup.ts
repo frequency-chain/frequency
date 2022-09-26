@@ -2251,7 +2251,6 @@ export default {
    **/
   PalletMsaAddProvider: {
     authorizedMsaId: 'u64',
-    permission: 'u8',
     schemaIds: 'Vec<u16>',
     expiration: 'u32'
   },
@@ -2623,7 +2622,6 @@ export default {
    * Lookup316: common_primitives::msa::ProviderInfo<BlockNumber, MaxSchemaGrants>
    **/
   CommonPrimitivesMsaProviderInfo: {
-    permission: 'u8',
     expired: 'u32',
     schemas: 'CommonPrimitivesDsOrderedSetExt'
   },

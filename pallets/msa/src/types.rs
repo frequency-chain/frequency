@@ -29,8 +29,6 @@ pub struct AddKeyData {
 pub struct AddProvider {
 	/// The provider being granted permissions
 	pub authorized_msa_id: MessageSourceId,
-	/// The permissions granted
-	pub permission: u8,
 	/// Schemas for which publishing grants are authorized.
 	/// This is private intended for internal use only.
 	pub schema_ids: Vec<SchemaId>,
@@ -42,7 +40,6 @@ impl AddProvider {
 	/// Create new `AddProvider`
 	pub fn new(
 		authorized_msa_id: MessageSourceId,
-		permission: u8,
 		schema_ids: Option<Vec<SchemaId>>,
 		expiration: BlockNumber,
 	) -> Self {
@@ -51,6 +48,6 @@ impl AddProvider {
 			None => Vec::default(),
 		};
 
-		Self { authorized_msa_id, permission, schema_ids, expiration }
+		Self { authorized_msa_id, schema_ids, expiration }
 	}
 }
