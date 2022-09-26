@@ -1,5 +1,8 @@
 use frame_support::parameter_types;
 
+pub const FREQUENCY_ROCOCO_TOKEN: &str = "XRQCY";
+pub const FREQUENCY_TOKEN: &str = "FRQCY";
+
 parameter_types! {
 	/// Clone + Debug + Eq  implementation for u32 types
 	pub const MaxDataSize: u32 = 30;
