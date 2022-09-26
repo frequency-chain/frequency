@@ -389,7 +389,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
       /**
        * Test a list of MSAs to see if they have delegated to the provider MSA
        **/
-      checkDelegations: AugmentedRpc<(delegator_msa_ids: Vec<MessageSourceId> | (MessageSourceId | AnyNumber | Uint8Array)[], provider_msa_id: MessageSourceId | AnyNumber | Uint8Array) => Observable<Vec<ITuple<[MessageSourceId, bool]>>>>;
+      checkDelegations: AugmentedRpc<(delegator_msa_ids: Vec<MessageSourceId> | (MessageSourceId | AnyNumber | Uint8Array)[], provider_msa_id: MessageSourceId | AnyNumber | Uint8Array, block_number: Option<BlockNumber> | null | Uint8Array | BlockNumber | AnyNumber) => Observable<Vec<ITuple<[MessageSourceId, bool]>>>>;
       /**
        * Fetch MSA Id by Key
        **/
