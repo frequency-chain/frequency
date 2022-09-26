@@ -114,7 +114,7 @@ For remote instances running Linux, if you want to check out and build such as o
 ```bash
 sudo apt upgrade
 sudo apt upgrade git
-sudo apt install —assume-yes build-essential
+sudo apt install —-assume-yes build-essential
 sudo apt install --assume-yes clang curl libssl-dev cmake
 ```
 
