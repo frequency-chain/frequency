@@ -183,8 +183,6 @@
 <span id="177">177</span>
 <span id="178">178</span>
 <span id="179">179</span>
-<span id="180">180</span>
-<span id="181">181</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">EncodeLike</span>, <span class="ident">Error</span>, <span class="ident">MaxEncodedLen</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">dispatch::DispatchResult</span>, <span class="ident">traits::Get</span>, <span class="ident">BoundedVec</span>};
 <span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
@@ -243,8 +241,6 @@
 <span class="kw">where</span>
 	<span class="ident">MaxSchemaGrants</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
 {
-	<span class="doccomment">/// Specifies a permission granted by the delegator to the provider.</span>
-	<span class="kw">pub</span> <span class="ident">permission</span>: <span class="ident">u8</span>,
 	<span class="doccomment">/// Block number the grant will be revoked.</span>
 	<span class="kw">pub</span> <span class="ident">expired</span>: <span class="ident">BlockNumber</span>,
 	<span class="doccomment">/// Schemas that the provider is allowed to use for a delegated message.</span>
