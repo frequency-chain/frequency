@@ -36,5 +36,5 @@ $BENCHMARK \
   --steps 50 \
   --repeat 10 \
   --output=$weights_file \
-  --template=./.maintain/runtime-weight-template.hbs
+  --template=./.maintain/frame-weight-template.hbs
 
