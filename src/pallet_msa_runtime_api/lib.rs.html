@@ -34,7 +34,7 @@
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::unnecessary_mut_passed</span>)]</span>
 
 <span class="kw">use</span> <span class="ident">codec::Codec</span>;
-<span class="kw">use</span> <span class="ident">common_primitives::msa</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">common_primitives</span>::{<span class="ident">msa</span>::<span class="kw-2">*</span>, <span class="ident">node::BlockNumber</span>};
 <span class="kw">use</span> <span class="ident">frame_support::dispatch::DispatchError</span>;
 <span class="kw">use</span> <span class="ident">sp_std::vec::Vec</span>;
 
@@ -49,7 +49,7 @@
 
 		<span class="kw">fn</span> <span class="ident">get_msa_id</span>(<span class="ident">key</span>: <span class="ident">AccountId</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span>;
 
-		<span class="kw">fn</span> <span class="ident">has_delegation</span>(<span class="ident">delegator</span>: <span class="ident">Delegator</span>, <span class="ident">provider</span>: <span class="ident">Provider</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span>;
+		<span class="kw">fn</span> <span class="ident">has_delegation</span>(<span class="ident">delegator</span>: <span class="ident">Delegator</span>, <span class="ident">provider</span>: <span class="ident">Provider</span>, <span class="ident">block_number</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span>;
 
 		<span class="kw">fn</span> <span class="ident">get_granted_schemas</span>(<span class="ident">delegator</span>: <span class="ident">Delegator</span>, <span class="ident">provider</span>: <span class="ident">Provider</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SchemaId</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span>;
 	}
