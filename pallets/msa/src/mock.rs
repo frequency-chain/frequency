@@ -1,5 +1,5 @@
 use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
-use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
+use common_primitives::{msa::MessageSourceId, node::BlockNumber, utils::wrap_binary_data};
 use frame_support::{
 	assert_ok, parameter_types,
 	traits::{ConstU16, ConstU64},
@@ -134,7 +134,8 @@ pub fn create_and_sign_add_provider_payload(
 	delegator_pair: sr25519::Pair,
 	provider_msa: MessageSourceId,
 ) -> (MultiSignature, AddProvider) {
-	let add_provider_payload = AddProvider::new(provider_msa, 0, None);
+	let expiration: BlockNumber = 10;
+	let add_provider_payload = AddProvider::new(provider_msa, 0, None, expiration);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 	let signature: MultiSignature = delegator_pair.sign(&encode_add_provider_data).into();
 	(signature, add_provider_payload)

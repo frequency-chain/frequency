@@ -408,6 +408,8 @@ pub mod pallet {
 			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())
 				.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
 
+			Self::ensure_block_is_valid(add_provider_payload.expiration)?;
+
 			let (provider, delegator) =
 				Self::ensure_valid_registered_provider(&delegator_key, &provider_key)?;
 
@@ -708,8 +710,9 @@ impl<T: Config> Pallet<T> {
 
 	/// Check that the delegator has an active delegation to the provider
 	/// # Arguments
-	/// * `provider`
-	/// * `delegate`
+	/// * `provider` - The provider to check delegation for
+	/// * `delegate` - The delegator to check delegation from
+	/// * `Option<T::BlockNumber>` - Optional: check delegation at specific block in past
 	/// # Returns
 	/// * [`ProviderInfo`]
 	/// # Errors
@@ -725,7 +728,7 @@ impl<T: Config> Pallet<T> {
 		let current_block = frame_system::Pallet::<T>::block_number();
 		let requested_block = match block_number {
 			Some(block_number) => {
-				ensure!(block_number > current_block, Error::<T>:: DelegationNotFound);
+				ensure!(block_number > current_block, Error::<T>::DelegationNotFound);
 				block_number
 			},
 			None => current_block,

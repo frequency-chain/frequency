@@ -2403,6 +2403,7 @@ declare module '@polkadot/types/lookup' {
     readonly authorizedMsaId: u64;
     readonly permission: u8;
     readonly schemaIds: Vec<u16>;
+    readonly expiration: u32;
   }
 
   /** @name PalletMsaAddKeyData (225) */
