@@ -761,7 +761,7 @@ pub fn create_sponsored_account_with_delegation_expired() {
 
 		let expiration: BlockNumber = 0;
 
-		let add_provider_payload = AddProvider::new(1u64, 0, None, expiration);
+		let add_provider_payload = AddProvider::new(1u64, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
