@@ -2,6 +2,7 @@ use codec::Codec;
 use common_helpers::rpc::*;
 use common_primitives::{
 	msa::{Delegator, MessageSourceId, Provider},
+	node::BlockNumber,
 	schema::SchemaId,
 };
 
@@ -26,6 +27,7 @@ pub trait MsaApi<BlockHash, AccountId> {
 		&self,
 		delegator_msa_ids: Vec<MessageSourceId>,
 		provider_msa_id: MessageSourceId,
+		block_number: Option<BlockNumber>,
 	) -> RpcResult<Vec<(MessageSourceId, bool)>>;
 
 	#[method(name = "msa_grantedSchemaIds")]
@@ -78,6 +80,7 @@ where
 		&self,
 		delegator_msa_ids: Vec<MessageSourceId>,
 		provider_msa_id: MessageSourceId,
+		block_number: Option<BlockNumber>,
 	) -> RpcResult<Vec<(MessageSourceId, bool)>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
@@ -88,7 +91,11 @@ where
 			.par_iter()
 			.map(|&id| {
 				let delegator = Delegator(id);
-				(id, map_rpc_result(api.has_delegation(&at, delegator, provider)).unwrap())
+				(
+					id,
+					map_rpc_result(api.has_delegation(&at, delegator, provider, block_number))
+						.unwrap(),
+				)
 			})
 			.collect())
 	}

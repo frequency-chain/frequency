@@ -2693,9 +2693,9 @@ export default {
    **/
   FrameSystemExtensionsCheckGenesis: 'Null',
   /**
-   * Lookup342: common_runtime::extensions::check_nonce::CheckNonce<T>
+   * Lookup342: frame_system::extensions::check_nonce::CheckNonce<T>
    **/
-  CommonRuntimeExtensionsCheckNonce: 'Compact<u32>',
+  FrameSystemExtensionsCheckNonce: 'Compact<u32>',
   /**
    * Lookup343: frame_system::extensions::check_weight::CheckWeight<T>
    **/

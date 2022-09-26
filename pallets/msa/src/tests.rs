@@ -1136,7 +1136,7 @@ pub fn valid_delegation() {
 
 		System::set_block_number(System::block_number() + 1);
 
-		assert_ok!(Msa::ensure_valid_delegation(provider, delegator));
+		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, None));
 	})
 }
 
@@ -1147,7 +1147,7 @@ pub fn delegation_not_found() {
 		let delegator = Delegator(2);
 
 		assert_noop!(
-			Msa::ensure_valid_delegation(provider, delegator),
+			Msa::ensure_valid_delegation(provider, delegator, None),
 			Error::<Test>::DelegationNotFound
 		);
 	})
@@ -1162,14 +1162,14 @@ pub fn delegation_expired() {
 		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
 
 		System::set_block_number(System::block_number() + 1);
-		assert_ok!(Msa::ensure_valid_delegation(provider, delegator));
+		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, None));
 
 		assert_ok!(Msa::revoke_provider(provider, delegator));
 
 		System::set_block_number(System::block_number() + 1);
 
 		assert_noop!(
-			Msa::ensure_valid_delegation(provider, delegator),
+			Msa::ensure_valid_delegation(provider, delegator, None),
 			Error::<Test>::DelegationExpired
 		);
 	})
@@ -1782,6 +1782,33 @@ pub fn add_provider_expired() {
 				add_provider_payload
 			),
 			Error::<Test>::ProofHasExpired
+		);
+	})
+}
+
+#[test]
+pub fn delegation_expired_long_back() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+
+		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
+
+		System::set_block_number(System::block_number() + 100);
+		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, None));
+
+		assert_ok!(Msa::revoke_provider(provider, delegator));
+
+		System::set_block_number(System::block_number() + 150);
+
+		assert_noop!(
+			Msa::ensure_valid_delegation(provider, delegator, Some(151)),
+			Error::<Test>::DelegationExpired
+		);
+		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, Some(6)));
+		assert_noop!(
+			Msa::ensure_valid_delegation(provider, delegator, Some(1000)),
+			Error::<Test>::DelegationNotFound
 		);
 	})
 }
