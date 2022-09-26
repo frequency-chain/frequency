@@ -355,12 +355,17 @@ impl<T: Config> Pallet<T> {
 			for i in from_index..list_size {
 				let m = list[i as usize].clone();
 				match payload_location {
-					PayloadLocation::OnChain =>
-						response.content.push(m.map_to_response_on_chain(block_number, m.payload.clone().into_inner())),
+					PayloadLocation::OnChain => response.content.push(
+						m.map_to_response_on_chain(block_number, m.payload.clone().into_inner()),
+					),
 					PayloadLocation::IPFS => {
 						let (cid, payload_length) =
 							OffchainPayloadType::decode(&mut &m.payload[..]).unwrap();
-							response.content.push(m.map_to_response_ipfs(block_number, cid, payload_length))
+						response.content.push(m.map_to_response_ipfs(
+							block_number,
+							cid,
+							payload_length,
+						))
 					},
 				};
 

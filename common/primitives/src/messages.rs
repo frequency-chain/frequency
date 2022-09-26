@@ -1,6 +1,6 @@
+use crate::msa::MessageSourceId;
 #[cfg(feature = "std")]
 use crate::utils;
-use crate::{msa::MessageSourceId, node::BlockNumber};
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
@@ -14,7 +14,6 @@ use utils::*;
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct MessageResponse<BlockNumber> {
-	#[cfg_attr(feature = "std", serde(with = "as_hex"))]
 	/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
 	/// indicating that the original source MSA is acting as its own provider. An id differing from that
 	/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
@@ -28,7 +27,7 @@ pub struct MessageResponse<BlockNumber> {
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
 	pub msa_id: Option<MessageSourceId>,
 	/// Serialized data in a the schemas.
-	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
+	#[cfg_attr(feature = "std", serde(with = "as_hex_option", skip_serializing_if = "Option::is_none"))]
 	pub payload: Option<Vec<u8>>,
 	/// The content address for an IPFS payload
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
