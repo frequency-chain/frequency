@@ -709,8 +709,9 @@ impl<T: Config> Pallet<T> {
 
 	/// Check that the delegator has an active delegation to the provider
 	/// # Arguments
-	/// * `provider`
-	/// * `delegate`
+	/// * `provider` - The provider to check delegation for
+	/// * `delegate` - The delegator to check delegation from
+	/// * `block_number` - Optional: check delegation at specific block in past
 	/// # Returns
 	/// * [`ProviderInfo`]
 	/// # Errors
@@ -719,14 +720,22 @@ impl<T: Config> Pallet<T> {
 	pub fn ensure_valid_delegation(
 		provider: Provider,
 		delegator: Delegator,
+		block_number: Option<T::BlockNumber>,
 	) -> Result<ProviderInfo<T::BlockNumber, T::MaxSchemaGrants>, DispatchError> {
 		let info = Self::get_provider_info_of(delegator, provider)
 			.ok_or(Error::<T>::DelegationNotFound)?;
+		let current_block = frame_system::Pallet::<T>::block_number();
+		let requested_block = match block_number {
+			Some(block_number) => {
+				ensure!(current_block >= block_number, Error::<T>::DelegationNotFound);
+				block_number
+			},
+			None => current_block,
+		};
 		if info.expired == T::BlockNumber::zero() {
 			return Ok(info)
 		}
-		let current_block = frame_system::Pallet::<T>::block_number();
-		ensure!(info.expired >= current_block, Error::<T>::DelegationExpired);
+		ensure!(info.expired >= requested_block, Error::<T>::DelegationExpired);
 		Ok(info)
 	}
 
@@ -845,7 +854,7 @@ impl<T: Config> Pallet<T> {
 		delegator: Delegator,
 		schema_id: SchemaId,
 	) -> DispatchResult {
-		let provider_info = Self::ensure_valid_delegation(provider, delegator)?;
+		let provider_info = Self::ensure_valid_delegation(provider, delegator, None)?;
 
 		ensure!(provider_info.schemas.0.contains(&schema_id), Error::<T>::SchemaNotGranted);
 		Ok(())
@@ -893,8 +902,9 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	fn ensure_valid_delegation(
 		provider: Provider,
 		delegation: Delegator,
+		block_number: Option<T::BlockNumber>,
 	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError> {
-		Self::ensure_valid_delegation(provider, delegation)
+		Self::ensure_valid_delegation(provider, delegation, block_number)
 	}
 
 	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
@@ -908,8 +918,9 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	fn ensure_valid_delegation(
 		provider: Provider,
 		delegation: Delegator,
+		block_number: Option<T::BlockNumber>,
 	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError> {
-		let validation_check = Self::ensure_valid_delegation(provider, delegation);
+		let validation_check = Self::ensure_valid_delegation(provider, delegation, block_number);
 		if validation_check.is_err() {
 			// If the delegation does not exist, we return a ok
 			// This is only used for benchmarks, so it is safe to return a dummy account
@@ -1009,7 +1020,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			.into();
 		let provider_msa_id = Provider(*provider_msa_id);
 
-		Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id)
+		Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id, None)
 			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidDelegation as u8))?;
 		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}

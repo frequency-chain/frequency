@@ -150,6 +150,7 @@ impl AccountProvider for AccountHandler {
 	fn ensure_valid_delegation(
 		provider: Provider,
 		_delegator: Delegator,
+		_block_number: Option<Self::BlockNumber>,
 	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError> {
 		if provider == Provider(2000) {
 			return Err(DispatchError::Other("some delegation error"))
