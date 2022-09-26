@@ -1114,6 +1114,8 @@
 <span id="1108">1108</span>
 <span id="1109">1109</span>
 <span id="1110">1110</span>
+<span id="1111">1111</span>
+<span id="1112">1112</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The MSA pallet provides functionality for handling Message Source Accounts.</span>
@@ -1436,6 +1438,8 @@
 			<span class="kw">let</span> <span class="ident">provider_key</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 
 			<span class="ident"><span class="self">Self</span>::verify_signature</span>(<span class="ident">proof</span>, <span class="ident">delegator_key</span>.<span class="ident">clone</span>(), <span class="ident">add_provider_payload</span>.<span class="ident">encode</span>())<span class="question-mark">?</span>;
+
+			<span class="ident"><span class="self">Self</span>::ensure_block_is_valid</span>(<span class="ident">add_provider_payload</span>.<span class="ident">expiration</span>)<span class="question-mark">?</span>;
 
 			<span class="kw">let</span> <span class="ident">provider_msa_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::ensure_valid_msa_key</span>(<span class="kw-2">&amp;</span><span class="ident">provider_key</span>)<span class="question-mark">?</span>;
 			<span class="macro">ensure!</span>(
