@@ -17,6 +17,7 @@ pub use pallet_msa::Call as MsaCall;
 pub type AccountId = <<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
@@ -135,7 +136,7 @@ pub fn create_and_sign_add_provider_payload(
 	provider_msa: MessageSourceId,
 ) -> (MultiSignature, AddProvider) {
 	let expiration: BlockNumber = 10;
-	let add_provider_payload = AddProvider::new(provider_msa, 0, None, expiration);
+	let add_provider_payload = AddProvider::new(provider_msa, None, expiration);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 	let signature: MultiSignature = delegator_pair.sign(&encode_add_provider_data).into();
 	(signature, add_provider_payload)

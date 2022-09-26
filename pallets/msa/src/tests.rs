@@ -395,7 +395,7 @@ pub fn add_provider_to_msa_is_success() {
 
 		assert_eq!(
 			Msa::get_provider_info(delegator, provider),
-			Some(ProviderInfo { permission: 0, expired: 0, schemas: OrderedSetExt::new() })
+			Some(ProviderInfo { expired: 0, schemas: OrderedSetExt::new() })
 		);
 
 		System::assert_last_event(
@@ -411,13 +411,11 @@ pub fn add_provider_to_msa_throws_add_provider_verification_failed() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let account = key_pair.public();
 		let expiration: BlockNumber = 10;
-		let add_provider_payload = AddProvider::new(2, 0, None, expiration);
+		let add_provider_payload = AddProvider::new(2, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
-
-		let fake_provider_payload = AddProvider::new(3, 0, None, expiration);
-
+		let fake_provider_payload = AddProvider::new(3, None, expiration);
 		assert_noop!(
 			Msa::add_provider_to_msa(
 				Origin::signed(account.into()),
@@ -437,7 +435,7 @@ pub fn add_provider_to_msa_throws_no_key_exist_error() {
 		let provider_account = key_pair.public();
 
 		let expiration: BlockNumber = 10;
-		let add_provider_payload = AddProvider::new(2, 0, None, expiration);
+		let add_provider_payload = AddProvider::new(2, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -461,7 +459,7 @@ pub fn add_provider_to_msa_throws_key_revoked_error() {
 		let provider_account = key_pair.public();
 
 		let expiration: BlockNumber = 10;
-		let add_provider_payload = AddProvider::new(2, 0, None, expiration);
+		let add_provider_payload = AddProvider::new(2, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -489,7 +487,7 @@ pub fn add_provider_to_msa_throws_invalid_self_provider_error() {
 		let provider_account = key_pair.public();
 
 		let expiration: BlockNumber = 10;
-		let add_provider_payload = AddProvider::new(1, 0, None, expiration);
+		let add_provider_payload = AddProvider::new(1, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
@@ -522,7 +520,7 @@ pub fn add_provider_to_msa_throws_unauthorized_delegator_error() {
 			Msa::try_get_msa_from_account_id(&AccountId32::new(delegator_account.0)).unwrap();
 
 		let expiration: BlockNumber = 10;
-		let add_provider_payload = AddProvider::new(delegator_msa_id, 0, None, expiration);
+		let add_provider_payload = AddProvider::new(delegator_msa_id, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 		let signature: MultiSignature = delegator_key_pair.sign(&encode_add_provider_data).into();
 
@@ -553,7 +551,7 @@ pub fn add_provider_to_msa_throws_duplicate_provider_error() {
 		let provider_account = key_pair.public();
 		let expiration: BlockNumber = 10;
 
-		let add_provider_payload = AddProvider::new(1, 0, None, expiration);
+		let add_provider_payload = AddProvider::new(1, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -606,7 +604,7 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 
 		let expiration: BlockNumber = 10;
 
-		let add_provider_payload = AddProvider::new(1u64, 0, None, expiration);
+		let add_provider_payload = AddProvider::new(1u64, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
@@ -661,7 +659,7 @@ fn create_sponsored_account_with_delegation_with_invalid_signature_should_fail()
 		let (signer_pair, _) = sr25519::Pair::generate();
 
 		let expiration: BlockNumber = 10;
-		let add_provider_payload = AddProvider::new(1u64, 0, None, expiration);
+		let add_provider_payload = AddProvider::new(1u64, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = signer_pair.sign(&encode_add_provider_data).into();
@@ -692,7 +690,7 @@ pub fn create_sponsored_account_with_delegation_with_invalid_add_provider_should
 		let delegator_account = key_pair_delegator.public();
 
 		let expiration: BlockNumber = 10;
-		let add_provider_payload = AddProvider::new(1u64, 0, None, expiration);
+		let add_provider_payload = AddProvider::new(1u64, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
@@ -730,7 +728,7 @@ pub fn create_sponsored_account_with_delegation_with_different_authorized_msa_id
 		let delegator_account = key_pair_delegator.public();
 
 		let expiration: BlockNumber = 10;
-		let add_provider_payload = AddProvider::new(3u64, 0, None, expiration);
+		let add_provider_payload = AddProvider::new(3u64, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
@@ -878,7 +876,7 @@ pub fn revoke_provider_is_successful() {
 
 		assert_eq!(
 			Msa::get_provider_info(delegator, provider).unwrap(),
-			ProviderInfo { expired: 1, permission: 0, schemas: OrderedSetExt::new() },
+			ProviderInfo { expired: 1, schemas: OrderedSetExt::new() },
 		);
 	});
 }
@@ -971,7 +969,7 @@ pub fn revoke_provider_call_has_no_cost() {
 		let provider_account = key_pair.public();
 
 		let expiration: BlockNumber = 10;
-		let add_provider_payload = AddProvider::new(1, 0, None, expiration);
+		let add_provider_payload = AddProvider::new(1, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
@@ -1041,7 +1039,7 @@ pub fn revoke_delegation_by_provider_happy_path() {
 
 		// 3. create delegator MSA and provider to provider
 		let expiration: BlockNumber = 10;
-		let add_provider_payload = AddProvider::new(1u64, 0, None, expiration);
+		let add_provider_payload = AddProvider::new(1u64, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 		let signature: MultiSignature = user_pair.sign(&encode_add_provider_data).into();
 		// 3.5 create the user's MSA + add provider as provider
@@ -1062,7 +1060,7 @@ pub fn revoke_delegation_by_provider_happy_path() {
 		let provider_info = Msa::get_provider_info(Delegator(2), Provider(1));
 		assert_eq!(
 			provider_info,
-			Some(ProviderInfo { permission: 0, expired: 26, schemas: OrderedSetExt::new() })
+			Some(ProviderInfo { expired: 26, schemas: OrderedSetExt::new() })
 		);
 
 		// 7. verify the event
@@ -1528,7 +1526,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 		let delegator_account = key_pair_delegator.public();
 
 		let expiration: BlockNumber = 10;
-		let add_provider_payload = AddProvider::new(1u64, 0, None, expiration);
+		let add_provider_payload = AddProvider::new(1u64, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
 
@@ -1607,7 +1605,7 @@ fn replaying_add_provider_to_msa_fails() {
 
 		// add_provider_payload in this case has delegator's msa_id as authorized_msa_id
 		let expiration: BlockNumber = 10;
-		let add_provider_payload = AddProvider::new(2u64, 0, None, expiration);
+		let add_provider_payload = AddProvider::new(2u64, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
@@ -1658,7 +1656,8 @@ pub fn add_provider_expired() {
 
 		// 3. create delegator MSA and provider to provider
 		let expiration: BlockNumber = 0;
-		let add_provider_payload = AddProvider::new(1u64, 0, None, expiration);
+
+		let add_provider_payload = AddProvider::new(1u64, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 		let signature: MultiSignature = user_pair.sign(&encode_add_provider_data).into();
 		// 3.5 create the user's MSA + add provider as provider

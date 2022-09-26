@@ -2401,7 +2401,6 @@ declare module '@polkadot/types/lookup' {
   /** @name PalletMsaAddProvider (223) */
   interface PalletMsaAddProvider extends Struct {
     readonly authorizedMsaId: u64;
-    readonly permission: u8;
     readonly schemaIds: Vec<u16>;
     readonly expiration: u32;
   }
@@ -2858,7 +2857,6 @@ declare module '@polkadot/types/lookup' {
 
   /** @name CommonPrimitivesMsaProviderInfo (316) */
   interface CommonPrimitivesMsaProviderInfo extends Struct {
-    readonly permission: u8;
     readonly expired: u32;
     readonly schemas: CommonPrimitivesDsOrderedSetExt;
   }
