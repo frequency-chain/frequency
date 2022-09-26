@@ -728,7 +728,7 @@ impl<T: Config> Pallet<T> {
 		let current_block = frame_system::Pallet::<T>::block_number();
 		let requested_block = match block_number {
 			Some(block_number) => {
-				ensure!(block_number > current_block, Error::<T>::DelegationNotFound);
+				ensure!(current_block >= block_number, Error::<T>::DelegationNotFound);
 				block_number
 			},
 			None => current_block,
