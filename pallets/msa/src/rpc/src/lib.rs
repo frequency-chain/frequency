@@ -66,13 +66,6 @@ where
 	// 	map_rpc_result(runtime_api_result)
 	// }
 
-	fn get_msa_id(&self, key: AccountId) -> RpcResult<Option<MessageSourceId>> {
-		let api = self.client.runtime_api();
-		let at = BlockId::hash(self.client.info().best_hash);
-		let runtime_api_result = api.get_msa_id(&at, key);
-		map_rpc_result(runtime_api_result)
-	}
-
 	fn check_delegations(
 		&self,
 		delegator_msa_ids: Vec<MessageSourceId>,
