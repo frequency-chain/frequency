@@ -43,6 +43,13 @@ pub mod as_hex_option {
 	{
 		let r  = impl_serde::serialize::deserialize(deserializer)?;
 		Ok(Some(r))
+		// under what condition do we return none? ex: vec is empty
+		// which other errors that we return none for...
+		// match r {
+		// 	Ok(v) => if (v.isempty) None else Some(v)
+		//  CustommErr(e) => None
+		// 	Err(e) => Err(e)
+		// }
 	}
 }
 /// Handle serializing and deserializing from `Vec<u8>` to a UTF-8 string
