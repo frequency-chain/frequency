@@ -19,6 +19,7 @@ pub mod as_hex {
 	}
 }
 
+/// Handle serializing and deserializing from `Option<Vec<u8>>` to hexadecimal
 #[cfg(feature = "std")]
 pub mod as_hex_option {
 	use serde::{Deserializer, Serializer};
@@ -30,13 +31,18 @@ pub mod as_hex_option {
 	{
 		match bytes {
 			Some(bytes) => impl_serde::serialize::serialize(bytes.as_slice(), serializer),
-			_ => unreachable!(),
+    		None => None,
+			Err(e) => Err(e)
 		}
 	}
 
 	/// Deserializes a hexadecimal string into a `Vec<u8>`
-	pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
-		impl_serde::serialize::deserialize(deserializer)
+	pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result< Option<Vec<u8>> , D::Error>
+	where
+		D: Deserializer<'de>
+	{
+		let r  = impl_serde::serialize::deserialize(deserializer)?;
+		Ok(Some(r))
 	}
 }
 /// Handle serializing and deserializing from `Vec<u8>` to a UTF-8 string
