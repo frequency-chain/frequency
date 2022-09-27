@@ -91,35 +91,6 @@
 <span id="85">85</span>
 <span id="86">86</span>
 <span id="87">87</span>
-<span id="88">88</span>
-<span id="89">89</span>
-<span id="90">90</span>
-<span id="91">91</span>
-<span id="92">92</span>
-<span id="93">93</span>
-<span id="94">94</span>
-<span id="95">95</span>
-<span id="96">96</span>
-<span id="97">97</span>
-<span id="98">98</span>
-<span id="99">99</span>
-<span id="100">100</span>
-<span id="101">101</span>
-<span id="102">102</span>
-<span id="103">103</span>
-<span id="104">104</span>
-<span id="105">105</span>
-<span id="106">106</span>
-<span id="107">107</span>
-<span id="108">108</span>
-<span id="109">109</span>
-<span id="110">110</span>
-<span id="111">111</span>
-<span id="112">112</span>
-<span id="113">113</span>
-<span id="114">114</span>
-<span id="115">115</span>
-<span id="116">116</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">common_helpers</span>::{<span class="ident">avro</span>, <span class="ident">rpc</span>::<span class="kw-2">*</span>};
 <span class="kw">use</span> <span class="ident">common_primitives::schema</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">jsonrpsee</span>::{
@@ -157,14 +128,6 @@
 <span class="doccomment">/// Frequency Schema API</span>
 <span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">client</span>, <span class="ident">server</span>)]</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">SchemasApi</span><span class="op">&lt;</span><span class="ident">BlockHash</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// returns the latest registered schema id</span>
-	<span class="doccomment">///</span>
-	<span class="doccomment">/// `at`: block number to query. If it&#39;s `None` will use the latest block number.</span>
-	<span class="doccomment">///</span>
-	<span class="doccomment">/// Returns schema id.</span>
-	<span class="attribute">#[<span class="ident">method</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;schemas_getLatestSchemaId&quot;</span>)]</span>
-	<span class="kw">fn</span> <span class="ident">get_latest_schema_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">at</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockHash</span><span class="op">&gt;</span>) -&gt; <span class="ident">RpcResult</span><span class="op">&lt;</span><span class="ident">u16</span><span class="op">&gt;</span>;
-
 	<span class="doccomment">/// retrieving schema by schema id</span>
 	<span class="attribute">#[<span class="ident">method</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;schemas_getBySchemaId&quot;</span>)]</span>
 	<span class="kw">fn</span> <span class="ident">get_by_schema_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">schema_id</span>: <span class="ident">SchemaId</span>) -&gt; <span class="ident">RpcResult</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SchemaResponse</span><span class="op">&gt;</span><span class="op">&gt;</span>;
@@ -192,27 +155,6 @@
 	<span class="ident">C</span>: <span class="lifetime">&#39;static</span> <span class="op">+</span> <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
 	<span class="ident">C::Api</span>: <span class="ident">SchemasRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
 {
-	<span class="kw">fn</span> <span class="ident">get_latest_schema_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">at</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Hash</span><span class="op">&gt;</span>) -&gt; <span class="ident">RpcResult</span><span class="op">&lt;</span><span class="ident">u16</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">runtime_api</span>();
-		<span class="kw">let</span> <span class="ident">at</span> <span class="op">=</span> <span class="ident">BlockId::hash</span>(<span class="ident">at</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>));
-		<span class="kw">let</span> <span class="ident">schema_api_result</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">get_latest_schema_id</span>(<span class="kw-2">&amp;</span><span class="ident">at</span>);
-		<span class="kw">match</span> <span class="ident">schema_api_result</span> {
-			<span class="prelude-val">Ok</span>(<span class="ident">schema_id</span>) =&gt; <span class="kw">match</span> <span class="ident">schema_id</span> {
-				<span class="prelude-val">Some</span>(<span class="ident">id</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">id</span>),
-				<span class="prelude-val">None</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">RpcError::Call</span>(<span class="ident">CallError::Custom</span>(<span class="ident">ErrorObject::owned</span>(
-					<span class="ident">Error::SchemaNotFound</span>.<span class="ident">into</span>(),
-					<span class="string">&quot;No schema found for given id&quot;</span>,
-					<span class="prelude-val">None</span>::<span class="op">&lt;</span>()<span class="op">&gt;</span>,
-				)))),
-			},
-			<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; <span class="prelude-val">Err</span>(<span class="ident">RpcError::Call</span>(<span class="ident">CallError::Custom</span>(<span class="ident">ErrorObject::owned</span>(
-				<span class="ident">Error::SchemaSearchError</span>.<span class="ident">into</span>(),
-				<span class="string">&quot;Unable to get latest schema&quot;</span>,
-				<span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>)),
-			)))),
-		}
-	}
-
 	<span class="kw">fn</span> <span class="ident">check_schema_validity</span>(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">model</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,

@@ -17,7 +17,6 @@
 <span id="11">11</span>
 <span id="12">12</span>
 <span id="13">13</span>
-<span id="14">14</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::too_many_arguments</span>)]</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::unnecessary_mut_passed</span>)]</span>
@@ -28,7 +27,6 @@
 <span class="macro">sp_api::decl_runtime_apis!</span> {
 	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">SchemasRuntimeApi</span>
 	{
-		<span class="kw">fn</span> <span class="ident">get_latest_schema_id</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SchemaId</span><span class="op">&gt;</span>;
 		<span class="kw">fn</span> <span class="ident">get_by_schema_id</span>(<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SchemaResponse</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span>;
 	}
 }
