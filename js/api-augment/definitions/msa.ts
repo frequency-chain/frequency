@@ -1,15 +1,5 @@
 export default {
   rpc: {
-    getMsaId: {
-      description: "Fetch MSA Id by Key",
-      params: [
-        {
-          name: "key",
-          type: "AccountId",
-        },
-      ],
-      type: "Option<MessageSourceId>",
-    },
     // // *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418
     // getMsaKeys: {
     //   description: "Fetch Keys for an MSA Id",

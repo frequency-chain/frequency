@@ -35,14 +35,6 @@ impl From<Error> for i32 {
 /// Frequency Schema API
 #[rpc(client, server)]
 pub trait SchemasApi<BlockHash> {
-	/// returns the latest registered schema id
-	///
-	/// `at`: block number to query. If it's `None` will use the latest block number.
-	///
-	/// Returns schema id.
-	#[method(name = "schemas_getLatestSchemaId")]
-	fn get_latest_schema_id(&self, at: Option<BlockHash>) -> RpcResult<u16>;
-
 	/// retrieving schema by schema id
 	#[method(name = "schemas_getBySchemaId")]
 	fn get_by_schema_id(&self, schema_id: SchemaId) -> RpcResult<Option<SchemaResponse>>;

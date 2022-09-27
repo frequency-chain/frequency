@@ -19,9 +19,6 @@ use std::sync::Arc;
 
 #[rpc(client, server)]
 pub trait MsaApi<BlockHash, AccountId> {
-	#[method(name = "msa_getMsaId")]
-	fn get_msa_id(&self, key: AccountId) -> RpcResult<Option<MessageSourceId>>;
-
 	#[method(name = "msa_checkDelegations")]
 	fn check_delegations(
 		&self,

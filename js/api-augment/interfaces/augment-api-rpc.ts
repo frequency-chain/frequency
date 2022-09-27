@@ -391,10 +391,6 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        **/
       checkDelegations: AugmentedRpc<(delegator_msa_ids: Vec<MessageSourceId> | (MessageSourceId | AnyNumber | Uint8Array)[], provider_msa_id: MessageSourceId | AnyNumber | Uint8Array, block_number: Option<BlockNumber> | null | Uint8Array | BlockNumber | AnyNumber) => Observable<Vec<ITuple<[MessageSourceId, bool]>>>>;
       /**
-       * Fetch MSA Id by Key
-       **/
-      getMsaId: AugmentedRpc<(key: AccountId | string | Uint8Array) => Observable<Option<MessageSourceId>>>;
-      /**
        * Fetch the list of schema ids that a delegator has granted to provider
        **/
       grantedSchemaIds: AugmentedRpc<(delegator_msa_id: MessageSourceId | AnyNumber | Uint8Array, provider_msa_id: MessageSourceId | AnyNumber | Uint8Array) => Observable<Vec<SchemaId>>>;
@@ -448,10 +444,6 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        * Get a Schema by Id
        **/
       getBySchemaId: AugmentedRpc<(schema_id: SchemaId | AnyNumber | Uint8Array) => Observable<Option<SchemaResponse>>>;
-      /**
-       * Get the most recent (aka highest) Schema Id. Useful for then retrieving a list of all Schemas (1-[result])
-       **/
-      getLatestSchemaId: AugmentedRpc<(at?: BlockHash | string | Uint8Array) => Observable<SchemaId>>;
     };
     state: {
       /**

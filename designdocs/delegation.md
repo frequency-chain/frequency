@@ -107,12 +107,6 @@ Retrieve a list of public keys of up to `MaxKeys` size for the provided MSA id, 
 * Parameters:
     1. `msa_id`: the MSA id of which associated keys are to be retrieved
 
-#### get_msa_id(key)
-Retrieve the MSA id for the provided public key `key`.
-
-* Parameters:
-    1. `key`: the public key of of which an associated MSA id is to be retrieved
-
 #### check_delegations
 Validate that a provider can delegate for a list of MSA ids.
 This call is intended for validating messages in a batch, so this function would be an all-or-nothing check.
