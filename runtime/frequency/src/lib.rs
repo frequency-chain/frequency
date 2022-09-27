@@ -935,9 +935,6 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
-		fn get_latest_schema_id() -> Option<u16> {
-			Schemas::get_latest_schema_id()
-		}
 		fn get_by_schema_id(schema_id: SchemaId) -> Result<Option<SchemaResponse>, DispatchError> {
 			Ok(Schemas::get_schema_by_id(schema_id))
 		}
@@ -948,10 +945,6 @@ impl_runtime_apis! {
 		// fn get_msa_keys(msa_id: MessageSourceId) -> Result<Vec<KeyInfoResponse<AccountId>>, DispatchError> {
 		// 	Ok(Msa::fetch_msa_keys(msa_id))
 		// }
-
-		fn get_msa_id(key: AccountId) -> Result<Option<MessageSourceId>, DispatchError> {
-			Ok(Msa::get_owner_of(&key))
-		}
 
 		fn has_delegation(delegator: Delegator, provider: Provider, block_number: Option<BlockNumber>) -> Result<bool, DispatchError> {
 			match Msa::ensure_valid_delegation(provider, delegator, block_number) {
