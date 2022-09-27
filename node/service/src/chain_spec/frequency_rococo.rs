@@ -222,5 +222,6 @@ fn frequency_rococo_genesis(
 			phantom: Default::default(),
 			members: technical_committee_members,
 		},
+		graph: Default::default(),
 	}
 }

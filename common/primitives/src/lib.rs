@@ -14,6 +14,8 @@
 
 /// Data structures for the generic use.
 pub mod ds;
+/// Structs and traits for graph
+pub mod graph;
 /// Structs and traits for the Messages pallet.
 pub mod messages;
 /// Structs and traits for the MSA pallet.

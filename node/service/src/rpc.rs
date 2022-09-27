@@ -50,12 +50,14 @@ where
 	C::Api: pallet_messages_runtime_api::MessagesApi<Block, BlockNumber>,
 	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block>,
 	C::Api: pallet_msa_runtime_api::MsaApi<Block, AccountId>,
+	C::Api: pallet_graph_runtime_api::GraphApi<Block>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 
 	// Unfinished RPCs
+	use pallet_graph_rpc::{GraphApiServer, GraphHandler};
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
 	use pallet_schemas_rpc::{SchemasApiServer, SchemasHandler};
@@ -67,6 +69,7 @@ where
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 	module.merge(MessagesHandler::new(client.clone()).into_rpc())?;
 	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;
+	module.merge(GraphHandler::new(client.clone()).into_rpc())?;
 	module.merge(MsaHandler::new(client).into_rpc())?;
 	if let Some(command_sink) = command_sink {
 		module.merge(

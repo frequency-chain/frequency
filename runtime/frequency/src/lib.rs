@@ -58,11 +58,13 @@ use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
+pub use pallet_graph;
 pub use pallet_msa;
 pub use pallet_schemas;
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
+use common_primitives::graph::*;
 pub use common_runtime::{
 	constants::MaxDataSize,
 	weights,
@@ -712,6 +714,18 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 parameter_types! {
+	pub const MaxNodes: u32 = 100000000;  // 100M
+	pub const MaxFollows: u32 = 20000; // per user
+}
+
+impl pallet_graph::Config for Runtime {
+	type Event = Event;
+	type MaxNodes = MaxNodes;
+	type MaxFollows = MaxFollows;
+	type WeightInfo = pallet_graph::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
 	pub const MaxMessagesPerBlock: u32 = 7000;
 	pub const MaxMessagePayloadSizeBytes: u32 = 1024 * 50; // 50K
 }
@@ -791,6 +805,7 @@ construct_runtime!(
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 62,
+		Graph: pallet_graph::{Pallet, Call, Storage, Event<T>, Config} = 63,
 	}
 );
 
@@ -815,7 +830,8 @@ mod benches {
 		[pallet_msa, Msa]
 		[pallet_schemas, Schemas]
 		[pallet_messages, Messages]
-		[pallet_utility, Utility]
+		[pallet_utility, Utility],
+		[pallet_graph, Graph]
 	);
 }
 
@@ -962,6 +978,16 @@ impl_runtime_apis! {
 
 		fn get_granted_schemas(delegator: Delegator, provider: Provider) -> Result<Option<Vec<SchemaId>>, DispatchError> {
 			Msa::get_granted_schemas(delegator, provider)
+		}
+	}
+
+	impl pallet_graph_runtime_api::GraphApi<Block> for Runtime {
+		fn get_private_graph(msa_id: MessageSourceId) ->
+			Result<
+				Vec<(GraphKey, PrivatePage)>,
+				DispatchError,
+			> {
+			Ok(Graph::read_private_graph(msa_id))
 		}
 	}
 

@@ -2712,6 +2712,8 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
+ "pallet-graph",
+ "pallet-graph-runtime-api",
  "pallet-messages",
  "pallet-messages-runtime-api",
  "pallet-msa",
@@ -2785,6 +2787,8 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
+ "pallet-graph",
+ "pallet-graph-runtime-api",
  "pallet-messages",
  "pallet-messages-runtime-api",
  "pallet-msa",
@@ -2852,6 +2856,8 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "log",
+ "pallet-graph-rpc",
+ "pallet-graph-runtime-api",
  "pallet-messages-rpc",
  "pallet-messages-runtime-api",
  "pallet-msa-rpc",
@@ -5653,6 +5659,48 @@ dependencies = [
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.28)",
  "sp-session",
  "sp-staking",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.28)",
+]
+
+[[package]]
+name = "pallet-graph"
+version = "0.1.0"
+dependencies = [
+ "common-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.28)",
+ "sp-io 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.28)",
+ "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.28)",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.28)",
+]
+
+[[package]]
+name = "pallet-graph-rpc"
+version = "0.1.0"
+dependencies = [
+ "common-helpers",
+ "common-primitives",
+ "jsonrpsee",
+ "pallet-graph-runtime-api",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.28)",
+]
+
+[[package]]
+name = "pallet-graph-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "common-primitives",
+ "frame-support",
+ "parity-scale-codec",
+ "sp-api",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.28)",
 ]
 
