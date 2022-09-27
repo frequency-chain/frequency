@@ -83,7 +83,7 @@ Caches can also wreck this even if you reorder, so watch out.
 Optional responses are not mapped to `null` and instead return an object with a few properties.
 For more details see the [code for the Option class](https://github.com/polkadot-js/api/blob/master/packages/types-codec/src/base/Option.ts).
 ```javascript
-const optionalExample = await api.rpc.msa.getMsaId(account);
+const optionalExample = await api.rpc.schemas.getBySchemaId(1);
 // Does the Option have a value?
 if (!optionalExample.isEmpty) {
     // Get the value

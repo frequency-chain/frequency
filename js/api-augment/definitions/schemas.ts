@@ -1,17 +1,5 @@
 export default {
   rpc: {
-    getLatestSchemaId: {
-      description:
-        "Get the most recent (aka highest) Schema Id. Useful for then retrieving a list of all Schemas (1-[result])",
-      params: [
-        {
-          name: "at",
-          type: "BlockHash",
-          isOptional: true,
-        },
-      ],
-      type: "SchemaId",
-    },
     getBySchemaId: {
       description: "Get a Schema by Id",
       params: [

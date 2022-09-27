@@ -35,14 +35,6 @@ impl From<Error> for i32 {
 /// Frequency Schema API
 #[rpc(client, server)]
 pub trait SchemasApi<BlockHash> {
-	/// returns the latest registered schema id
-	///
-	/// `at`: block number to query. If it's `None` will use the latest block number.
-	///
-	/// Returns schema id.
-	#[method(name = "schemas_getLatestSchemaId")]
-	fn get_latest_schema_id(&self, at: Option<BlockHash>) -> RpcResult<u16>;
-
 	/// retrieving schema by schema id
 	#[method(name = "schemas_getBySchemaId")]
 	fn get_by_schema_id(&self, schema_id: SchemaId) -> RpcResult<Option<SchemaResponse>>;
@@ -70,27 +62,6 @@ where
 	C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
 	C::Api: SchemasRuntimeApi<Block>,
 {
-	fn get_latest_schema_id(&self, at: Option<<Block as BlockT>::Hash>) -> RpcResult<u16> {
-		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		let schema_api_result = api.get_latest_schema_id(&at);
-		match schema_api_result {
-			Ok(schema_id) => match schema_id {
-				Some(id) => Ok(id),
-				None => Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
-					Error::SchemaNotFound.into(),
-					"No schema found for given id",
-					None::<()>,
-				)))),
-			},
-			Err(e) => Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
-				Error::SchemaSearchError.into(),
-				"Unable to get latest schema",
-				Some(format!("{:?}", e)),
-			)))),
-		}
-	}
-
 	fn check_schema_validity(
 		&self,
 		model: Vec<u8>,
