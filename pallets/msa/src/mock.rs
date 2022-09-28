@@ -14,8 +14,7 @@ use sp_runtime::{
 
 pub use pallet_msa::Call as MsaCall;
 
-pub type AccountId = <<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId;
-
+use common_primitives::node::AccountId;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
 type Block = frame_system::mocking::MockBlock<Test>;

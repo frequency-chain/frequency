@@ -1,10 +1,11 @@
 #![allow(missing_docs)]
+use common_primitives::node::{AccountId, Balance};
 use common_runtime::constants::FREQUENCY_TOKEN;
 use cumulus_primitives_core::ParaId;
 use frequency_runtime::{
-	AccountId, AuraId, Balance, CouncilConfig, SudoConfig, TechnicalCommitteeConfig,
-	EXISTENTIAL_DEPOSIT,
+	AuraId, CouncilConfig, SudoConfig, TechnicalCommitteeConfig, EXISTENTIAL_DEPOSIT,
 };
+
 use hex::FromHex;
 use sc_service::ChainType;
 use sp_core::ByteArray;
