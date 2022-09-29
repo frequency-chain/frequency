@@ -23,12 +23,13 @@ export interface BlockPaginationResponseMessage extends Struct {
 
 /** @name MessageResponse */
 export interface MessageResponse extends Struct {
-  readonly payload: Bytes;
+  readonly payload: Option<Bytes>;
+  readonly cid: Option<Bytes>;
   readonly provider_msa_id: MessageSourceId;
-  readonly msa_id: MessageSourceId;
+  readonly msa_id: Option<MessageSourceId>;
   readonly index: u16;
   readonly block_number: BlockNumber;
-  readonly payload_length: u32;
+  readonly payload_length: Option<u32>;
 }
 
 export type PHANTOM_MESSAGES = 'messages';
