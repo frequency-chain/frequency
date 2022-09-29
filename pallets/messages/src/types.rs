@@ -35,7 +35,6 @@ where
 	pub fn map_to_response<BlockNumber>(
 		&self,
 		block_number: BlockNumber,
-		payload: Vec<u8>,
 		payload_location: &PayloadLocation,
 	) -> MessageResponse<BlockNumber> {
 		return match payload_location {
@@ -44,12 +43,12 @@ where
 				index: self.index,
 				block_number,
 				msa_id: Some(self.msa_id.unwrap_or_default()),
-				payload: Some(payload.clone()),
+				payload: Some(self.payload.to_vec()),
 				cid: None,
 				payload_length: None,
 			},
 			PayloadLocation::IPFS => {
-				let (cid, payload_length) = OffchainPayloadType::decode(&mut &payload[..]).unwrap();
+				let (cid, payload_length) = OffchainPayloadType::decode(&mut &self.payload[..]).unwrap();
 				MessageResponse {
 					provider_msa_id: self.provider_msa_id,
 					index: self.index,

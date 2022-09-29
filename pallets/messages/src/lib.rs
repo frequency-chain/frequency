@@ -356,7 +356,6 @@ impl<T: Config> Pallet<T> {
 				let m = list[i as usize].clone();
 				response.content.push(m.map_to_response(
 					block_number,
-					m.payload.to_vec(),
 					&payload_location,
 				));
 
