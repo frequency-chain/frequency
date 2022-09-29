@@ -24,19 +24,18 @@ pub struct MessageResponse<BlockNumber> {
 	/// Block-number for which the message was stored.
 	pub block_number: BlockNumber,
 	///  Message source account id (the original source).
-	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
 	pub msa_id: Option<MessageSourceId>,
 	/// Serialized data in a the schemas.
 	#[cfg_attr(
 		feature = "std",
-		serde(with = "as_hex_option", skip_serializing_if = "Option::is_none")
-	)]
+		serde(with = "as_hex_option", skip_serializing_if = "Option::is_none", default))]
 	pub payload: Option<Vec<u8>>,
 	/// The content address for an IPFS payload
-	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
 	pub cid: Option<Vec<u8>>,
 	///  Offchain payload length (IPFS).
-	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
 	pub payload_length: Option<u32>,
 }
 /// A type for requesting paginated messages.
@@ -111,6 +110,15 @@ mod tests {
 		input: BlockPaginationRequest<u32>,
 		expected: T,
 		message: String,
+	}
+
+	#[test]
+	fn as_hex_option_msg_deserialize_test() {
+		let msg = MessageResponse { payload: None, msa_id: None, provider_msa_id: 1, index: 1, block_number: 1, cid: Some(vec![0, 1, 2, 3]), payload_length: Some(42) };
+		let serialized = serde_json::to_string(&msg).unwrap();
+		assert_eq!(serialized, "{\"provider_msa_id\":1,\"index\":1,\"block_number\":1,\"cid\":[0,1,2,3],\"payload_length\":42}");
+		let deserialized: MessageResponse<BlockNumber> = serde_json::from_str(&serialized).unwrap();
+		assert_eq!(deserialized, msg);
 	}
 
 	#[test]

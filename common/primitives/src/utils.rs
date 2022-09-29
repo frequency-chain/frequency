@@ -31,8 +31,7 @@ pub mod as_hex_option {
 	{
 		match bytes {
 			Some(bytes) => impl_serde::serialize::serialize(bytes.as_slice(), serializer),
-    		None => None,
-			Err(e) => Err(e)
+    		None => serializer.serialize_none()
 		}
 	}
 
@@ -41,15 +40,7 @@ pub mod as_hex_option {
 	where
 		D: Deserializer<'de>
 	{
-		let r  = impl_serde::serialize::deserialize(deserializer)?;
-		Ok(Some(r))
-		// under what condition do we return none? ex: vec is empty
-		// which other errors that we return none for...
-		// match r {
-		// 	Ok(v) => if (v.isempty) None else Some(v)
-		//  CustommErr(e) => None
-		// 	Err(e) => Err(e)
-		// }
+		impl_serde::serialize::deserialize(deserializer).map(|r| Some(r))
 	}
 }
 /// Handle serializing and deserializing from `Vec<u8>` to a UTF-8 string

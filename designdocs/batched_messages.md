@@ -188,15 +188,20 @@ of the `MessageResponse` to be more like the following:
 
 ```rust
 pub struct MessageResponse<AccountId, BlockNumber> {
-	#[cfg_attr(feature = "std", serde(with = "as_hex"))]
 	/// Serialized data in a the schemas.
-	pub payload: Payload,
-  /// Payload location
-  pub payload_location: PayloadLocation,
-	/// The public key of the provider and the signer of the transaction.
-	pub provider_key: AccountId,
-	/// Message source account id (the original source).
-	pub msa_id: MessageSourceId,
+	#[cfg_attr(feature = "std", serde(with = "as_hex_option", skip_serializing_if = "Option::is_none", default))]
+	pub payload: Option<Vec<u8>>,
+  /// The content address for an IPFS payload
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
+	pub cid: Option<Vec<u8>>,
+  ///  Offchain payload length (IPFS).
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
+	pub payload_length: Option<u32>,
+	/// Message source account id of the Provider.
+	pub provider_msa_id: MessageSourceId,
+	///  Message source account id (the original source).
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
+	pub msa_id: Option<MessageSourceId>,
 	/// Index in block to get total order
 	pub index: u16,
 	/// Block-number for which the message was stored.

@@ -24,6 +24,7 @@ export default {
     },
     MessageResponse: {
       payload: "Vec<u8>", //  Serialized data in a user-defined schema format
+      cid: "Vec<u8>", // The content address for an IPFS payload
       provider_msa_id: "MessageSourceId", //  Message source account id of the Provider
       msa_id: "MessageSourceId", //  Message source account id (the original source)
       index: "u16", // index in block to get total order
