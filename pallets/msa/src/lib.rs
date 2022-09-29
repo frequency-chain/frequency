@@ -84,6 +84,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+pub mod migrations;
 pub mod weights;
 
 pub use weights::*;
@@ -97,6 +98,10 @@ use sp_std::prelude::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use frame_support::traits::StorageVersion;
+
+	// Upgrade storage version from 0 to 1
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -123,6 +128,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
 	/// Storage type for MSA identifier
@@ -163,8 +169,15 @@ pub mod pallet {
 	/// - Key: AccountId
 	/// - Value: [`MessageSourceId`]
 	#[pallet::storage]
-	#[pallet::getter(fn get_msa_by_account_id)]
 	pub type MessageSourceIdOf<T: Config> =
+		StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
+
+	/// Migrated Storage type for key to MSA information
+	/// - Key: AccountId
+	/// - Value: [`MessageSourceId`]
+	#[pallet::storage]
+	#[pallet::getter(fn get_msa_by_account_id)]
+	pub type MessageSourceMigratedIdOf<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
 
 	/// Storage for MSA keys
