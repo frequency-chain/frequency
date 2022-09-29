@@ -321,6 +321,8 @@ pub mod pallet {
 
 			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())?;
 
+			Self::ensure_block_is_valid(add_provider_payload.expiration)?;
+
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			ensure!(
 				add_provider_payload.authorized_msa_id == provider_msa_id,

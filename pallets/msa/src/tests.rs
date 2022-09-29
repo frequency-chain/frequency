@@ -750,6 +750,44 @@ pub fn create_sponsored_account_with_delegation_with_different_authorized_msa_id
 }
 
 #[test]
+pub fn create_sponsored_account_with_delegation_expired() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (key_pair, _) = sr25519::Pair::generate();
+		let provider_account = key_pair.public();
+
+		let (key_pair_delegator, _) = sr25519::Pair::generate();
+		let delegator_account = key_pair_delegator.public();
+
+		let expiration: BlockNumber = 0;
+
+		let add_provider_payload = AddProvider::new(1u64, None, expiration);
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+
+		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
+
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+
+		// Register provider
+		assert_ok!(Msa::register_provider(
+			Origin::signed(provider_account.into()),
+			Vec::from("Foo")
+		));
+
+		// act
+		assert_err!(
+			Msa::create_sponsored_account_with_delegation(
+				Origin::signed(provider_account.into()),
+				delegator_account.into(),
+				signature,
+				add_provider_payload
+			),
+			Error::<Test>::ProofHasExpired
+		);
+	});
+}
+
+#[test]
 pub fn add_key_with_panic_in_on_success_should_revert_everything() {
 	new_test_ext().execute_with(|| {
 		// arrange
