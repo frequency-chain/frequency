@@ -16,7 +16,7 @@ use common_primitives::{
 use common_runtime::extensions::check_nonce::CheckNonce;
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
-	weights::{DispatchInfo, GetDispatchInfo, Pays},
+	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 };
 use sp_core::{
 	crypto::{AccountId32, ExposeSecret},
@@ -64,7 +64,7 @@ fn it_create_has_weight() {
 		let call = MsaCall::<Test>::create {};
 		let dispatch_info = call.get_dispatch_info();
 
-		assert!(dispatch_info.weight > 10_000);
+		assert!(dispatch_info.weight > Weight::from_ref_time(10_000 as u64));
 	});
 }
 
