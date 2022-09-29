@@ -1,6 +1,7 @@
 #![allow(missing_docs)]
 use common_primitives::node::{AccountId, Balance};
 use common_runtime::constants::FREQUENCY_TOKEN;
+// use common_runtime::constants::EXISTENTIAL_DEPOSIT;
 use cumulus_primitives_core::ParaId;
 use frequency_runtime::{
 	AuraId, CouncilConfig, SudoConfig, TechnicalCommitteeConfig, EXISTENTIAL_DEPOSIT,
