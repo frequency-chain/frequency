@@ -105,6 +105,8 @@ impl<BlockNumber, T> BlockPaginationResponse<BlockNumber, T> {
 #[cfg(test)]
 mod tests {
 	use crate::messages::BlockPaginationRequest;
+	use crate::messages::MessageResponse;
+	use crate::node::BlockNumber;
 
 	struct TestCase<T> {
 		input: BlockPaginationRequest<u32>,
