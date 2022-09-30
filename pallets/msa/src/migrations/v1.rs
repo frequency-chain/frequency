@@ -6,7 +6,10 @@ use crate::*;
 use frame_support::{migration::StorageKeyIterator, traits::OnRuntimeUpgrade, weights::Weight};
 use log;
 
+/// Struct on which to implement OnRuntimeUpgrade trait
 pub struct MigrateToV1<T>(sp_std::marker::PhantomData<T>);
+
+/// Version 1
 pub mod v1 {
 	use super::*;
 	impl<T: Config> OnRuntimeUpgrade for MigrateToV1<T> {
@@ -30,15 +33,17 @@ pub mod v1 {
 
 			// Execute the migration when upgrading MSA storage version from version 0 to version 1
 			if current == 1 && onchain == 0 {
+				// TODO: Iterate through AccountId in MessageSourceIdOf and
+				// copy the key/value pair to MessageSourceMigratedIdOf
+
 				// put the current storage version into storage
 				current.put::<Pallet<T>>();
 				log::info!("Migrated MessageSourceIdOf storage to MessageSourceMigratedIdOf");
-				T::DbWeight::get().reads(1 as Weight)
-			} else if onchain > 0 {
+				T::DbWeight::get().reads(1)
+			} else {
 				log::info!("MigrateToV1 has already been completed and can be removed.");
-				T::DbWeight::get().reads(1 as Weight)
+				T::DbWeight::get().reads(1)
 			}
-			0
 		}
 
 		/// Execute some pre-checks prior to a runtime upgrade.

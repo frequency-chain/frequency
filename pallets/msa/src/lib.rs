@@ -84,7 +84,9 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+/// Import migrations module which executes migrations when the runtime is upgraded.
 pub mod migrations;
+
 pub mod weights;
 
 pub use weights::*;
