@@ -39,9 +39,14 @@ pub mod v1 {
 				// put the current storage version into storage
 				current.put::<Pallet<T>>();
 				log::info!("Migrated MessageSourceIdOf storage to MessageSourceMigratedIdOf");
+
+				// TODO: Update the returned weight to reflect the cost of iterating through MessageSourceIdOf
+				// writing to MessageSourceMigratedIdOf, read the on chain storage version, and update the on chain storage version
 				T::DbWeight::get().reads(1)
 			} else {
 				log::info!("MigrateToV1 has already been completed and can be removed.");
+
+				// The weight cost to read the on chain storage version
 				T::DbWeight::get().reads(1)
 			}
 		}
