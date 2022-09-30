@@ -56,7 +56,7 @@ pub mod public_testnet_keys {
 // }
 
 pub fn frequency_rococo_testnet() -> ChainSpec {
-	let properties = get_properties(FREQUENCY_ROCOCO_TOKEN, 12, 42);
+	let properties = get_properties(FREQUENCY_ROCOCO_TOKEN, 8, 42);
 	let para_id: ParaId = 4044.into();
 	ChainSpec::from_genesis(
 		// Name

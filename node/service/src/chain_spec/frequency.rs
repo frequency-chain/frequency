@@ -41,7 +41,7 @@ pub mod frequency_mainnet_keys {
 // }
 
 pub fn frequency() -> ChainSpec {
-	let properties = get_properties(FREQUENCY_TOKEN, 12, 42);
+	let properties = get_properties(FREQUENCY_TOKEN, 8, 42);
 	// TODO need a paraid here for the frequency chain
 	let para_id: ParaId = 999.into();
 	ChainSpec::from_genesis(
