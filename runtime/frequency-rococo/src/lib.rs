@@ -938,10 +938,19 @@ impl_runtime_apis! {
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
 		fn on_runtime_upgrade() -> (Weight, Weight) {
-			todo!()
+			log::info!("try-runtime::on_runtime_upgrade frequency-rococo.");
+			let weight = Executive::try_runtime_upgrade().unwrap();
+			(weight, RuntimeBlockWeights::get().max_block)
 		}
 		fn execute_block(_: Block, _: bool, _: frame_try_runtime::TryStateSelect) -> Weight {
-			todo!()
+			log::info!(
+				target: "runtime::frequency-rococo", "try-runtime: executing block #{} ({:?}) / root checks: {:?} / sanity-checks: {:?}",
+				block.header.number,
+				block.header.hash(),
+				state_root_check,
+				select,
+			);
+			Executive::try_execute_block(block, state_root_check, select).expect("try_execute_block failed")
 		}
 	}
 
