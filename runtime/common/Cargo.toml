@@ -33,9 +33,6 @@ pallet-preimage = { git = "https://github.com/paritytech/substrate", default-fea
 pallet-scheduler = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.28" }
 pallet-utility = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.28" }
 
-# XCM
-xcm = {git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.28"}
-
 # ORML
 orml-vesting = {git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.28" }
 

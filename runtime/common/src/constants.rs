@@ -9,7 +9,6 @@ use frame_support::{
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 	PalletId,
 };
-use xcm::latest::prelude::BodyId;
 
 pub const FREQUENCY_ROCOCO_TOKEN: &str = "XRQCY";
 pub const FREQUENCY_TOKEN: &str = "FRQCY";
@@ -175,8 +174,6 @@ pub type CollatorMinCandidates = ZERO;
 
 parameter_types! {
 	pub const CollatorPotId: PalletId = PalletId(*b"PotStake");
-	// pub const CollatorSessionLength: BlockNumber = 6 * HOURS;
-	pub const CollatorExecutiveBody: BodyId = BodyId::Executive;
 	pub const MessagesMaxPayloadSizeBytes: u32 = 1024 * 50; // 50K
 }
 
