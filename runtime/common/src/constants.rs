@@ -87,7 +87,7 @@ pub type ZERO = ConstU32<0>;
 pub type FIFTY = ConstU32<50>;
 
 pub type FrameSystemMaxConsumers = ConstU32<16>;
-pub type MsaMaxKeys = ConstU32<25>;
+pub type MsaMaxKeys = ConstU8<25>;
 pub type MsaMaxProviderNameSize = ConstU32<16>;
 
 parameter_types! {
