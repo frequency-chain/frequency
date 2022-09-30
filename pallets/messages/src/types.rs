@@ -37,7 +37,7 @@ where
 		block_number: BlockNumber,
 		payload_location: &PayloadLocation,
 	) -> MessageResponse<BlockNumber> {
-		return match payload_location {
+		match payload_location {
 			PayloadLocation::OnChain => MessageResponse {
 				provider_msa_id: self.provider_msa_id,
 				index: self.index,
