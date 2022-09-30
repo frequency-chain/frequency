@@ -64,7 +64,7 @@ runtime_benchmarks! {
 	}
 
 	claim {
-		let i in 1 .. MaxVestingSchedules::get();
+		let i in 1 .. ORMLMaxVestingSchedules::get();
 
 		let mut schedule = Schedule {
 			start: 0,
@@ -93,7 +93,7 @@ runtime_benchmarks! {
 	}
 
 	update_vesting_schedules {
-		let i in 1 .. MaxVestingSchedules::get();
+		let i in 1 .. ORMLMaxVestingSchedules::get();
 
 		let mut schedule = Schedule {
 			start: 0,
