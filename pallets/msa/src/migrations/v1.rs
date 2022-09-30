@@ -1,13 +1,9 @@
 /// Trivial migration which moves MessageSourceIdOf -> MessageSourceMigratedIdOf
 ///
 /// Note: The depositor is not optional since he can never change.
-use crate::{Config, Pallet};
+use crate::*;
 
-use frame_support::{
-	migration::StorageKeyIterator,
-	traits::{OnRuntimeUpgrade, StorageVersion},
-	weights::Weight,
-};
+use frame_support::{migration::StorageKeyIterator, traits::OnRuntimeUpgrade, weights::Weight};
 use log;
 
 pub struct MigrateToV1<T>(sp_std::marker::PhantomData<T>);
