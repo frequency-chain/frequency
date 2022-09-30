@@ -354,10 +354,7 @@ impl<T: Config> Pallet<T> {
 				list.len().try_into().map_err(|_| Error::<T>::TypeConversionOverflow)?;
 			for i in from_index..list_size {
 				let m = list[i as usize].clone();
-				response.content.push(m.map_to_response(
-					block_number,
-					&payload_location,
-				));
+				response.content.push(m.map_to_response(block_number, &payload_location));
 
 				if Self::check_end_condition_and_set_next_pagination(
 					block_number,

@@ -48,7 +48,8 @@ where
 				payload_length: None,
 			},
 			PayloadLocation::IPFS => {
-				let (cid, payload_length) = OffchainPayloadType::decode(&mut &self.payload[..]).unwrap();
+				let (cid, payload_length) =
+					OffchainPayloadType::decode(&mut &self.payload[..]).unwrap();
 				MessageResponse {
 					provider_msa_id: self.provider_msa_id,
 					index: self.index,

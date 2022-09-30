@@ -29,7 +29,8 @@ pub struct MessageResponse<BlockNumber> {
 	/// Serialized data in a the schemas.
 	#[cfg_attr(
 		feature = "std",
-		serde(with = "as_hex_option", skip_serializing_if = "Option::is_none", default))]
+		serde(with = "as_hex_option", skip_serializing_if = "Option::is_none", default)
+	)]
 	pub payload: Option<Vec<u8>>,
 	/// The content address for an IPFS payload
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
@@ -104,9 +105,10 @@ impl<BlockNumber, T> BlockPaginationResponse<BlockNumber, T> {
 
 #[cfg(test)]
 mod tests {
-	use crate::messages::BlockPaginationRequest;
-	use crate::messages::MessageResponse;
-	use crate::node::BlockNumber;
+	use crate::{
+		messages::{BlockPaginationRequest, MessageResponse},
+		node::BlockNumber,
+	};
 
 	struct TestCase<T> {
 		input: BlockPaginationRequest<u32>,
@@ -116,7 +118,15 @@ mod tests {
 
 	#[test]
 	fn as_hex_option_msg_deserialize_test() {
-		let msg = MessageResponse { payload: None, msa_id: None, provider_msa_id: 1, index: 1, block_number: 1, cid: Some(vec![0, 1, 2, 3]), payload_length: Some(42) };
+		let msg = MessageResponse {
+			payload: None,
+			msa_id: None,
+			provider_msa_id: 1,
+			index: 1,
+			block_number: 1,
+			cid: Some(vec![0, 1, 2, 3]),
+			payload_length: Some(42),
+		};
 		let serialized = serde_json::to_string(&msg).unwrap();
 		assert_eq!(serialized, "{\"provider_msa_id\":1,\"index\":1,\"block_number\":1,\"cid\":[0,1,2,3],\"payload_length\":42}");
 		let deserialized: MessageResponse<BlockNumber> = serde_json::from_str(&serialized).unwrap();

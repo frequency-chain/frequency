@@ -31,14 +31,16 @@ pub mod as_hex_option {
 	{
 		match bytes {
 			Some(bytes) => impl_serde::serialize::serialize(bytes.as_slice(), serializer),
-    		None => serializer.serialize_none()
+			None => serializer.serialize_none(),
 		}
 	}
 
 	/// Deserializes a hexadecimal string into a `Vec<u8>`
-	pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result< Option<Vec<u8>> , D::Error>
+	pub fn deserialize<'de, D: Deserializer<'de>>(
+		deserializer: D,
+	) -> Result<Option<Vec<u8>>, D::Error>
 	where
-		D: Deserializer<'de>
+		D: Deserializer<'de>,
 	{
 		impl_serde::serialize::deserialize(deserializer).map(|r| Some(r))
 	}
