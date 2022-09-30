@@ -23,7 +23,7 @@ pub fn template_session_keys(keys: AuraId) -> frequency_rococo_runtime::SessionK
 
 pub fn local_testnet_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
-	let properties = get_properties("UNIT", 12, 42);
+	let properties = get_properties("UNIT", 8, 42);
 
 	ChainSpec::from_genesis(
 		// Name
