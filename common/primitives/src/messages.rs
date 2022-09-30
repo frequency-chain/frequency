@@ -117,7 +117,8 @@ mod tests {
 	}
 
 	#[test]
-	fn as_hex_option_msg_deserialize_test() {
+	fn as_hex_option_msg_ipfs_serialize_deserialize_test() {
+		// skip deserialize if Option::none works
 		let msg = MessageResponse {
 			payload: None,
 			msa_id: None,
@@ -129,8 +130,28 @@ mod tests {
 		};
 		let serialized = serde_json::to_string(&msg).unwrap();
 		assert_eq!(serialized, "{\"provider_msa_id\":1,\"index\":1,\"block_number\":1,\"cid\":[0,1,2,3],\"payload_length\":42}");
+
 		let deserialized: MessageResponse<BlockNumber> = serde_json::from_str(&serialized).unwrap();
 		assert_eq!(deserialized, msg);
+	}
+
+	#[test]
+	fn as_hex_option_empty_payload_deserialize_as_default_value() {
+		let expected_msg = MessageResponse {
+			payload: None,
+			msa_id: Some(1),
+			provider_msa_id: 1,
+			index: 1,
+			block_number: 1,
+			cid: None,
+			payload_length: None
+		};
+
+		// Notice Payload field is missing
+		let serialized_msg_without_payload = "{\"provider_msa_id\":1,\"index\":1,\"block_number\":1,\"msa_id\":1}";
+
+		let deserialized_result: MessageResponse<BlockNumber> = serde_json::from_str(&serialized_msg_without_payload).unwrap();
+		assert_eq!(deserialized_result, expected_msg);
 	}
 
 	#[test]
