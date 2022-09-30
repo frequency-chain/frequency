@@ -1,5 +1,5 @@
 use crate::{
-	AccountId, Balance, Balances, BlockNumber, MaxVestingSchedules, Runtime, System, Vesting,
+	AccountId, Balance, Balances, BlockNumber, ORMLMaxVestingSchedules, Runtime, System, Vesting,
 };
 
 pub const UNITS: Balance = 1_000_000_000_000;
