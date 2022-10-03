@@ -103,7 +103,7 @@ parameter_types! {
 	pub const MinVestedTransfer: Balance = 0;
 }
 
-pub type ORMLMaxVestingSchedules = FIFTY;
+pub const ORML_MAX_VESTING_SCHEDULES: u32 = 50;
 
 parameter_types! {
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;

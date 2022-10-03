@@ -312,13 +312,18 @@ impl EnsureOrigin<Origin> for RootAsVestingPallet {
 	}
 }
 
+parameter_types! {
+	/// Need this declaration method for use + type safety in benchmarks
+	pub const MaxVestingSchedules: u32 = ORML_MAX_VESTING_SCHEDULES;
+}
+
 impl orml_vesting::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
 	type MinVestedTransfer = MinVestedTransfer;
 	type VestedTransferOrigin = RootAsVestingPallet;
 	type WeightInfo = ();
-	type MaxVestingSchedules = ORMLMaxVestingSchedules;
+	type MaxVestingSchedules = MaxVestingSchedules;
 	type BlockNumberProvider = RelaychainBlockNumberProvider<Runtime>;
 }
 

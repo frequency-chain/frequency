@@ -1,5 +1,5 @@
 use crate::{
-	AccountId, Balance, Balances, BlockNumber, ORMLMaxVestingSchedules, Runtime, System, Vesting,
+	AccountId, Balance, Balances, BlockNumber, MaxVestingSchedules, Runtime, System, Vesting,
 };
 
 pub const UNITS: Balance = 1_000_000_000_000;
@@ -64,7 +64,7 @@ runtime_benchmarks! {
 	}
 
 	claim {
-		let i in 1 .. ORMLMaxVestingSchedules::get();
+		let i in 1 .. MaxVestingSchedules::get();
 
 		let mut schedule = Schedule {
 			start: 0,
@@ -93,7 +93,7 @@ runtime_benchmarks! {
 	}
 
 	update_vesting_schedules {
-		let i in 1 .. ORMLMaxVestingSchedules::get();
+		let i in 1 .. MaxVestingSchedules::get();
 
 		let mut schedule = Schedule {
 			start: 0,
