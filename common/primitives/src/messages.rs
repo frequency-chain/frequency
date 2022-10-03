@@ -144,13 +144,15 @@ mod tests {
 			index: 1,
 			block_number: 1,
 			cid: None,
-			payload_length: None
+			payload_length: None,
 		};
 
 		// Notice Payload field is missing
-		let serialized_msg_without_payload = "{\"provider_msa_id\":1,\"index\":1,\"block_number\":1,\"msa_id\":1}";
+		let serialized_msg_without_payload =
+			"{\"provider_msa_id\":1,\"index\":1,\"block_number\":1,\"msa_id\":1}";
 
-		let deserialized_result: MessageResponse<BlockNumber> = serde_json::from_str(&serialized_msg_without_payload).unwrap();
+		let deserialized_result: MessageResponse<BlockNumber> =
+			serde_json::from_str(&serialized_msg_without_payload).unwrap();
 		assert_eq!(deserialized_result, expected_msg);
 	}
 
