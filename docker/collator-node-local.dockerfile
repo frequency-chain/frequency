@@ -23,8 +23,7 @@ RUN file ./target/release/frequency && \
 	./target/release/frequency --version
 
 # Add chain resources to image
-COPY res ./res/
-
+COPY resources ./resources/
 COPY scripts ./scripts/
 
 RUN chmod +x ./scripts/run_collator.sh
