@@ -1,6 +1,7 @@
 use crate::{
 	ensure,
 	mock::*,
+	nonce_bucket::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
@@ -1974,4 +1975,12 @@ pub fn delegation_expired_long_back() {
 			Error::<Test>::DelegationNotFound
 		);
 	})
+}
+
+#[test]
+pub fn can_instantiate_a_bucket() {
+	new_test_ext().execute_with(|| {
+		let bucket = NonceBucket::<Test>::new(5);
+		assert_eq!(bucket.mortality_block, 5)
+	});
 }
