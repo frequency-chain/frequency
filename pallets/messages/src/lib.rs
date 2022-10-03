@@ -52,7 +52,7 @@ use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
 use sp_runtime::{traits::One, DispatchError};
 use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 
-use codec::{Decode, Encode};
+use codec::Encode;
 use common_primitives::{
 	messages::*,
 	msa::{AccountProvider, Delegator, MessageSourceId, Provider},
