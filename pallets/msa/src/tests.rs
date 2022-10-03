@@ -18,10 +18,7 @@ use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	weights::{DispatchInfo, GetDispatchInfo, Pays},
 };
-use sp_core::{
-	crypto::{AccountId32, ExposeSecret},
-	sr25519, Encode, Pair,
-};
+use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::{traits::SignedExtension, MultiSignature};
 
 #[test]

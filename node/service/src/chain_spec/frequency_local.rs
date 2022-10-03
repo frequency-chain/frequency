@@ -1,7 +1,8 @@
 #![allow(missing_docs)]
+use common_primitives::node::AccountId;
 use cumulus_primitives_core::ParaId;
 use frequency_rococo_runtime::{
-	AccountId, AuraId, CouncilConfig, SudoConfig, TechnicalCommitteeConfig, EXISTENTIAL_DEPOSIT,
+	AuraId, CouncilConfig, SudoConfig, TechnicalCommitteeConfig, EXISTENTIAL_DEPOSIT,
 };
 use sc_service::ChainType;
 use sp_core::sr25519;

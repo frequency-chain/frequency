@@ -8,14 +8,13 @@ use frame_system as system;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, ConvertInto, IdentifyAccount, IdentityLookup, Verify},
+	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
 	AccountId32, MultiSignature,
 };
 
 pub use pallet_msa::Call as MsaCall;
 
-pub type AccountId = <<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId;
-
+use common_primitives::node::AccountId;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
 type Block = frame_system::mocking::MockBlock<Test>;
