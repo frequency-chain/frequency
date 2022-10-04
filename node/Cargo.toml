@@ -14,20 +14,27 @@ name = "frequency"
 path = "src/main.rs"
 
 [build-dependencies]
-substrate-build-script-utils = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.29" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.29" }
 
 [dependencies]
 # Frequency Runtime
-frequency-cli = {path = "cli"}
-frequency-service = {path = "service"}
+frequency-cli = { path = "cli" }
+frequency-service = { path = "service" }
 
 [features]
 std = []
 default = []
-runtime-benchmarks = [
-  "frequency-cli/runtime-benchmarks",
-]
+runtime-benchmarks = ["frequency-cli/runtime-benchmarks"]
 frequency = ["frequency-service/frequency", "frequency-cli/frequency"]
-frequency-rococo-local = ["frequency-service/frequency-rococo-local", "frequency-cli/frequency-rococo-local"]
-frequency-rococo-testnet = ["frequency-service/frequency-rococo-testnet", "frequency-cli/frequency-rococo-testnet"]
-all-frequency-features =["frequency-service/all-frequency-features", "frequency-cli/all-frequency-features"]
+frequency-rococo-local = [
+  "frequency-service/frequency-rococo-local",
+  "frequency-cli/frequency-rococo-local"
+]
+frequency-rococo-testnet = [
+  "frequency-service/frequency-rococo-testnet",
+  "frequency-cli/frequency-rococo-testnet"
+]
+all-frequency-features = [
+  "frequency-service/all-frequency-features",
+  "frequency-cli/all-frequency-features"
+]

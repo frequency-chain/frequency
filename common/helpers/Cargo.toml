@@ -18,7 +18,7 @@ thiserror = "1.0.34"
 sha2 = "0.10.5"
 rayon = "1.5.3"
 jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
-sp-runtime = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 
 [dev-dependencies]
@@ -26,7 +26,4 @@ proptest = "1.0.0"
 
 [features]
 default = ['std']
-std = [
-  'sp-runtime/std',
-  'sp-api/std',
-]
+std = ['sp-runtime/std', 'sp-api/std']
