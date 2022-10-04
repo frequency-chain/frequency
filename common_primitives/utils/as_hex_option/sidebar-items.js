@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["deserialize","Deserializes a hexadecimal string into a `Vec<u8>`"],["serialize","Serializes a `Vec<u8>` into a hexadecimal string"]]};

@@ -147,6 +147,58 @@
 <span id="141">141</span>
 <span id="142">142</span>
 <span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::msa::MessageSourceId</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>;
@@ -159,28 +211,37 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">utils</span>::<span class="kw-2">*</span>;
 
-<span class="doccomment">/// A type for responding with an single Message in an RPC-call.</span>
+<span class="doccomment">/// A type for responding with an single Message in an RPC-call dependent on schema model</span>
+<span class="doccomment">/// IPFS, Parquet: { index, block_number, provider_msa_id, cid, payload_length }</span>
+<span class="doccomment">/// Avro, OnChain: { index, block_number, provider_msa_id, msa_id, payload }</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> {
-	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">serde</span>(<span class="ident">with</span> <span class="op">=</span> <span class="string">&quot;as_hex&quot;</span>))]</span>
-	<span class="doccomment">/// Serialized data in a the schemas.</span>
-	<span class="kw">pub</span> <span class="ident">payload</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,</span>
 	<span class="doccomment">/// indicating that the original source MSA is acting as its own provider. An id differing from that</span>
 	<span class="doccomment">/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on</span>
 	<span class="doccomment">/// its behalf.</span>
 	<span class="kw">pub</span> <span class="ident">provider_msa_id</span>: <span class="ident">MessageSourceId</span>,
-	<span class="doccomment">///  Message source account id (the original source).</span>
-	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>,
 	<span class="doccomment">/// Index in block to get total order.</span>
 	<span class="kw">pub</span> <span class="ident">index</span>: <span class="ident">u16</span>,
 	<span class="doccomment">/// Block-number for which the message was stored.</span>
 	<span class="kw">pub</span> <span class="ident">block_number</span>: <span class="ident">BlockNumber</span>,
+	<span class="doccomment">///  Message source account id (the original source).</span>
+	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>, <span class="ident">default</span>))]</span>
+	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// Serialized data in a the schemas.</span>
+	<span class="attribute">#[<span class="ident">cfg_attr</span>(
+		<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>,
+		<span class="ident">serde</span>(<span class="ident">with</span> <span class="op">=</span> <span class="string">&quot;as_hex_option&quot;</span>, <span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>, <span class="ident">default</span>)
+	)]</span>
+	<span class="kw">pub</span> <span class="ident">payload</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// The content address for an IPFS payload</span>
+	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>, <span class="ident">default</span>))]</span>
+	<span class="kw">pub</span> <span class="ident">cid</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="doccomment">///  Offchain payload length (IPFS).</span>
-	<span class="kw">pub</span> <span class="ident">payload_length</span>: <span class="ident">u32</span>,
+	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>, <span class="ident">default</span>))]</span>
+	<span class="kw">pub</span> <span class="ident">payload_length</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
 }
-
 <span class="doccomment">/// A type for requesting paginated messages.</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>)]</span>
@@ -247,12 +308,55 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
-	<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::messages::BlockPaginationRequest</span>;
+	<span class="kw">use</span> <span class="kw">crate</span>::{
+		<span class="ident">messages</span>::{<span class="ident">BlockPaginationRequest</span>, <span class="ident">MessageResponse</span>},
+		<span class="ident">node::BlockNumber</span>,
+	};
 
 	<span class="kw">struct</span> <span class="ident">TestCase</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 		<span class="ident">input</span>: <span class="ident">BlockPaginationRequest</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
 		<span class="ident">expected</span>: <span class="ident">T</span>,
 		<span class="ident">message</span>: <span class="ident">String</span>,
+	}
+
+	<span class="attribute">#[<span class="ident">test</span>]</span>
+	<span class="kw">fn</span> <span class="ident">as_hex_option_msg_ipfs_serialize_deserialize_test</span>() {
+		<span class="comment">// skip deserialize if Option::none works</span>
+		<span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">MessageResponse</span> {
+			<span class="ident">payload</span>: <span class="prelude-val">None</span>,
+			<span class="ident">msa_id</span>: <span class="prelude-val">None</span>,
+			<span class="ident">provider_msa_id</span>: <span class="number">1</span>,
+			<span class="ident">index</span>: <span class="number">1</span>,
+			<span class="ident">block_number</span>: <span class="number">1</span>,
+			<span class="ident">cid</span>: <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]),
+			<span class="ident">payload_length</span>: <span class="prelude-val">Some</span>(<span class="number">42</span>),
+		};
+		<span class="kw">let</span> <span class="ident">serialized</span> <span class="op">=</span> <span class="ident">serde_json::to_string</span>(<span class="kw-2">&amp;</span><span class="ident">msg</span>).<span class="ident">unwrap</span>();
+		<span class="macro">assert_eq!</span>(<span class="ident">serialized</span>, <span class="string">&quot;{\&quot;provider_msa_id\&quot;:1,\&quot;index\&quot;:1,\&quot;block_number\&quot;:1,\&quot;cid\&quot;:[0,1,2,3],\&quot;payload_length\&quot;:42}&quot;</span>);
+
+		<span class="kw">let</span> <span class="ident">deserialized</span>: <span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="kw-2">&amp;</span><span class="ident">serialized</span>).<span class="ident">unwrap</span>();
+		<span class="macro">assert_eq!</span>(<span class="ident">deserialized</span>, <span class="ident">msg</span>);
+	}
+
+	<span class="attribute">#[<span class="ident">test</span>]</span>
+	<span class="kw">fn</span> <span class="ident">as_hex_option_empty_payload_deserialize_as_default_value</span>() {
+		<span class="kw">let</span> <span class="ident">expected_msg</span> <span class="op">=</span> <span class="ident">MessageResponse</span> {
+			<span class="ident">payload</span>: <span class="prelude-val">None</span>,
+			<span class="ident">msa_id</span>: <span class="prelude-val">Some</span>(<span class="number">1</span>),
+			<span class="ident">provider_msa_id</span>: <span class="number">1</span>,
+			<span class="ident">index</span>: <span class="number">1</span>,
+			<span class="ident">block_number</span>: <span class="number">1</span>,
+			<span class="ident">cid</span>: <span class="prelude-val">None</span>,
+			<span class="ident">payload_length</span>: <span class="prelude-val">None</span>,
+		};
+
+		<span class="comment">// Notice Payload field is missing</span>
+		<span class="kw">let</span> <span class="ident">serialized_msg_without_payload</span> <span class="op">=</span>
+			<span class="string">&quot;{\&quot;provider_msa_id\&quot;:1,\&quot;index\&quot;:1,\&quot;block_number\&quot;:1,\&quot;msa_id\&quot;:1}&quot;</span>;
+
+		<span class="kw">let</span> <span class="ident">deserialized_result</span>: <span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> <span class="op">=</span>
+			<span class="ident">serde_json::from_str</span>(<span class="kw-2">&amp;</span><span class="ident">serialized_msg_without_payload</span>).<span class="ident">unwrap</span>();
+		<span class="macro">assert_eq!</span>(<span class="ident">deserialized_result</span>, <span class="ident">expected_msg</span>);
 	}
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
