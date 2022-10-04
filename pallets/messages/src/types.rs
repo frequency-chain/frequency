@@ -1,5 +1,5 @@
 use codec::{Decode, Encode};
-use common_primitives::{messages::MessageResponse, msa::MessageSourceId};
+use common_primitives::{messages::MessageResponse, msa::MessageSourceId, schema::PayloadLocation};
 use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 use sp_std::prelude::*;
@@ -31,20 +31,35 @@ impl<MaxDataSize> Message<MaxDataSize>
 where
 	MaxDataSize: Get<u32> + Clone,
 {
-	/// Helper function to handle response type [`MessageResponse`] for RPC.
+	/// Helper function to handle response type [`MessageResponse`] depending on the Payload Location (on chain or IPFS)
 	pub fn map_to_response<BlockNumber>(
 		&self,
 		block_number: BlockNumber,
-		payload: Vec<u8>,
-		payload_length: u32,
+		payload_location: &PayloadLocation,
 	) -> MessageResponse<BlockNumber> {
-		MessageResponse {
-			provider_msa_id: self.provider_msa_id,
-			index: self.index,
-			msa_id: self.msa_id.unwrap_or_default(),
-			block_number,
-			payload,
-			payload_length,
+		match payload_location {
+			PayloadLocation::OnChain => MessageResponse {
+				provider_msa_id: self.provider_msa_id,
+				index: self.index,
+				block_number,
+				msa_id: Some(self.msa_id.unwrap_or_default()),
+				payload: Some(self.payload.to_vec()),
+				cid: None,
+				payload_length: None,
+			},
+			PayloadLocation::IPFS => {
+				let (cid, payload_length) =
+					OffchainPayloadType::decode(&mut &self.payload[..]).unwrap();
+				MessageResponse {
+					provider_msa_id: self.provider_msa_id,
+					index: self.index,
+					block_number,
+					cid: Some(cid),
+					payload_length: Some(payload_length),
+					msa_id: None,
+					payload: None,
+				}
+			},
 		}
 	}
 }
