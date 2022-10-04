@@ -117,4 +117,4 @@ all-frequency-features = [
   "frequency-rococo-local",
   "frequency-rococo-testnet"
 ]
-try-runtime = ["frequency-runtime/try-runtime", "frequency-rococo-runtime/try-runtime"]
+try-runtime = ["frequency-runtime/try-runtime", "frequency-rococo-runtime/try-runtime", "polkadot-service/try-runtime"]

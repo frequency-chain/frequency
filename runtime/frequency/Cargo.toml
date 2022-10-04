@@ -208,6 +208,11 @@ try-runtime = [
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",
   "orml-vesting/try-runtime",
+  "pallet-scheduler/try-runtime",
+  "pallet-collective/try-runtime",
+  "pallet-preimage/try-runtime",
+  "pallet-democracy/try-runtime",
+  "pallet-utility/try-runtime",
 ]
 
 # Following features are used in generating lean wasms

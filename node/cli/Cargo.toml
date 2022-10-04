@@ -59,7 +59,7 @@ default = ["std", "wasmtime", "cli"]
 runtime-benchmarks = [
   "polkadot-cli/runtime-benchmarks",
 ]
-try-runtime = []
+try-runtime = ["frequency-service/try-runtime", "try-runtime-cli"]
 wasmtime = ["sc-cli/wasmtime"]
 frequency = ["frequency-service/frequency"]
 frequency-rococo-local = ["frequency-service/frequency-rococo-local"]
