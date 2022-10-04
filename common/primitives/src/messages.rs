@@ -10,7 +10,9 @@ use sp_std::{prelude::*, vec};
 #[cfg(feature = "std")]
 use utils::*;
 
-/// A type for responding with an single Message in an RPC-call.
+/// A type for responding with an single Message in an RPC-call dependent on schema model
+/// IPFS, Parquet: { index, block_number, provider_msa_id, cid, payload_length }
+/// Avro, OnChain: { index, block_number, provider_msa_id, msa_id, payload }
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct MessageResponse<BlockNumber> {
