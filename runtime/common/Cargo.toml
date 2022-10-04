@@ -15,6 +15,9 @@ targets = ["x86_64-unknown-linux-gnu"]
 substrate-wasm-builder = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
 
 [dependencies]
+# Unfinished
+common-primitives = {default-features = false, path = "../../common/primitives"}
+
 codec = {package = "parity-scale-codec", version = "3.1.5", default-features = false, features = ["derive"]}
 scale-info = {version = "2.1.2", default-features = false, features = ["derive"]}
 
@@ -29,6 +32,7 @@ pallet-democracy = {git = "https://github.com/paritytech/substrate", default-fea
 pallet-preimage = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.28" }
 pallet-scheduler = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.28" }
 pallet-utility = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.28" }
+
 # ORML
 orml-vesting = {git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.28" }
 

@@ -1,8 +1,9 @@
 #![allow(missing_docs)]
+use common_primitives::node::AccountId;
 use common_runtime::constants::FREQUENCY_ROCOCO_TOKEN;
 use cumulus_primitives_core::ParaId;
 use frequency_rococo_runtime::{
-	AccountId, AuraId, CouncilConfig, SudoConfig, TechnicalCommitteeConfig, EXISTENTIAL_DEPOSIT,
+	AuraId, CouncilConfig, SudoConfig, TechnicalCommitteeConfig, EXISTENTIAL_DEPOSIT,
 };
 use hex::FromHex;
 use sc_service::ChainType;
@@ -56,7 +57,7 @@ pub mod public_testnet_keys {
 // }
 
 pub fn frequency_rococo_testnet() -> ChainSpec {
-	let properties = get_properties(FREQUENCY_ROCOCO_TOKEN, 12, 42);
+	let properties = get_properties(FREQUENCY_ROCOCO_TOKEN, 8, 42);
 	let para_id: ParaId = 4044.into();
 	ChainSpec::from_genesis(
 		// Name

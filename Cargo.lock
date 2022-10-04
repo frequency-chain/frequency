@@ -1045,6 +1045,7 @@ dependencies = [
 name = "common-runtime"
 version = "0.1.0"
 dependencies = [
+ "common-primitives",
  "frame-support",
  "frame-system",
  "orml-vesting",
