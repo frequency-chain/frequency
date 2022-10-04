@@ -52,7 +52,7 @@ use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
 use sp_runtime::{traits::One, DispatchError};
 use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 
-use codec::{Decode, Encode};
+use codec::Encode;
 use common_primitives::{
 	messages::*,
 	msa::{AccountProvider, Delegator, MessageSourceId, Provider},
@@ -354,15 +354,7 @@ impl<T: Config> Pallet<T> {
 				list.len().try_into().map_err(|_| Error::<T>::TypeConversionOverflow)?;
 			for i in from_index..list_size {
 				let m = list[i as usize].clone();
-
-				let (payload, payload_length): OffchainPayloadType = match payload_location {
-					PayloadLocation::OnChain =>
-						(m.payload.clone().into_inner(), m.payload.len().try_into().unwrap()),
-					PayloadLocation::IPFS =>
-						OffchainPayloadType::decode(&mut &m.payload[..]).unwrap(),
-				};
-
-				response.content.push(m.map_to_response(block_number, payload, payload_length));
+				response.content.push(m.map_to_response(block_number, &payload_location));
 
 				if Self::check_end_condition_and_set_next_pagination(
 					block_number,

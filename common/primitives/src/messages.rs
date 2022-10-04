@@ -10,28 +10,37 @@ use sp_std::{prelude::*, vec};
 #[cfg(feature = "std")]
 use utils::*;
 
-/// A type for responding with an single Message in an RPC-call.
+/// A type for responding with an single Message in an RPC-call dependent on schema model
+/// IPFS, Parquet: { index, block_number, provider_msa_id, cid, payload_length }
+/// Avro, OnChain: { index, block_number, provider_msa_id, msa_id, payload }
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct MessageResponse<BlockNumber> {
-	#[cfg_attr(feature = "std", serde(with = "as_hex"))]
-	/// Serialized data in a the schemas.
-	pub payload: Vec<u8>,
 	/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
 	/// indicating that the original source MSA is acting as its own provider. An id differing from that
 	/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
 	/// its behalf.
 	pub provider_msa_id: MessageSourceId,
-	///  Message source account id (the original source).
-	pub msa_id: MessageSourceId,
 	/// Index in block to get total order.
 	pub index: u16,
 	/// Block-number for which the message was stored.
 	pub block_number: BlockNumber,
+	///  Message source account id (the original source).
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
+	pub msa_id: Option<MessageSourceId>,
+	/// Serialized data in a the schemas.
+	#[cfg_attr(
+		feature = "std",
+		serde(with = "as_hex_option", skip_serializing_if = "Option::is_none", default)
+	)]
+	pub payload: Option<Vec<u8>>,
+	/// The content address for an IPFS payload
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
+	pub cid: Option<Vec<u8>>,
 	///  Offchain payload length (IPFS).
-	pub payload_length: u32,
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
+	pub payload_length: Option<u32>,
 }
-
 /// A type for requesting paginated messages.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
@@ -98,12 +107,55 @@ impl<BlockNumber, T> BlockPaginationResponse<BlockNumber, T> {
 
 #[cfg(test)]
 mod tests {
-	use crate::messages::BlockPaginationRequest;
+	use crate::{
+		messages::{BlockPaginationRequest, MessageResponse},
+		node::BlockNumber,
+	};
 
 	struct TestCase<T> {
 		input: BlockPaginationRequest<u32>,
 		expected: T,
 		message: String,
+	}
+
+	#[test]
+	fn as_hex_option_msg_ipfs_serialize_deserialize_test() {
+		// skip deserialize if Option::none works
+		let msg = MessageResponse {
+			payload: None,
+			msa_id: None,
+			provider_msa_id: 1,
+			index: 1,
+			block_number: 1,
+			cid: Some(vec![0, 1, 2, 3]),
+			payload_length: Some(42),
+		};
+		let serialized = serde_json::to_string(&msg).unwrap();
+		assert_eq!(serialized, "{\"provider_msa_id\":1,\"index\":1,\"block_number\":1,\"cid\":[0,1,2,3],\"payload_length\":42}");
+
+		let deserialized: MessageResponse<BlockNumber> = serde_json::from_str(&serialized).unwrap();
+		assert_eq!(deserialized, msg);
+	}
+
+	#[test]
+	fn as_hex_option_empty_payload_deserialize_as_default_value() {
+		let expected_msg = MessageResponse {
+			payload: None,
+			msa_id: Some(1),
+			provider_msa_id: 1,
+			index: 1,
+			block_number: 1,
+			cid: None,
+			payload_length: None,
+		};
+
+		// Notice Payload field is missing
+		let serialized_msg_without_payload =
+			"{\"provider_msa_id\":1,\"index\":1,\"block_number\":1,\"msa_id\":1}";
+
+		let deserialized_result: MessageResponse<BlockNumber> =
+			serde_json::from_str(&serialized_msg_without_payload).unwrap();
+		assert_eq!(deserialized_result, expected_msg);
 	}
 
 	#[test]
