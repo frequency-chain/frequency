@@ -50,6 +50,9 @@
 <span id="44">44</span>
 <span id="45">45</span>
 <span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
 </pre><pre class="rust"><code><span class="comment">// This file is part of Substrate.</span>
 
 <span class="comment">// Copyright (C) 2022 Parity Technologies (UK) Ltd.</span>
@@ -75,7 +78,7 @@
 
 	<span class="macro">parameter_types!</span> {
 		<span class="doccomment">/// Executing a NO-OP `System::remarks` Extrinsic.</span>
-		<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ExtrinsicBaseWeight</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="number">125_000</span> <span class="op">*</span> <span class="ident">constants::WEIGHT_PER_NANOS</span>;
+		<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ExtrinsicBaseWeight</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">constants::WEIGHT_PER_NANOS</span>.<span class="ident">saturating_mul</span>(<span class="number">125_000</span>);
 	}
 
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
@@ -90,7 +93,10 @@
 			<span class="kw">let</span> <span class="ident">w</span> <span class="op">=</span> <span class="ident"><span class="kw">super</span>::constants::ExtrinsicBaseWeight::get</span>();
 
 			<span class="comment">// At least 10 µs.</span>
-			<span class="macro">assert!</span>(<span class="ident">w</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">10</span> <span class="op">*</span> <span class="ident">constants::WEIGHT_PER_MICROS</span>, <span class="string">&quot;Weight should be at least 10 µs.&quot;</span>);
+			<span class="macro">assert!</span>(
+				<span class="ident">w</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">constants::WEIGHT_PER_MICROS</span>.<span class="ident">saturating_mul</span>(<span class="number">10</span>),
+				<span class="string">&quot;Weight should be at least 10 µs.&quot;</span>
+			);
 			<span class="comment">// At most 1 ms.</span>
 			<span class="macro">assert!</span>(<span class="ident">w</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">constants::WEIGHT_PER_MILLIS</span>, <span class="string">&quot;Weight should be at most 1 ms.&quot;</span>);
 		}

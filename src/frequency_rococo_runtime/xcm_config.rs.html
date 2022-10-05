@@ -156,7 +156,6 @@
 <span id="150">150</span>
 <span id="151">151</span>
 <span id="152">152</span>
-<span id="153">153</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">super</span>::{
 	<span class="ident">AccountId</span>, <span class="ident">Balances</span>, <span class="ident">Call</span>, <span class="ident">Event</span>, <span class="ident">Origin</span>, <span class="ident">ParachainInfo</span>, <span class="ident">ParachainSystem</span>, <span class="ident">PolkadotXcm</span>, <span class="ident">Runtime</span>,
 	<span class="ident">WeightToFee</span>, <span class="ident">XcmpQueue</span>,
@@ -164,12 +163,11 @@
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
 	<span class="ident">match_types</span>, <span class="ident">parameter_types</span>,
 	<span class="ident">traits</span>::{<span class="ident">Everything</span>, <span class="ident">Nothing</span>},
-	<span class="ident">weights::Weight</span>,
 };
 <span class="kw">use</span> <span class="ident">pallet_xcm::XcmPassthrough</span>;
 <span class="kw">use</span> <span class="ident">polkadot_parachain::primitives::Sibling</span>;
 <span class="kw">use</span> <span class="ident">polkadot_runtime_common::impls::ToAuthor</span>;
-<span class="kw">use</span> <span class="ident">xcm::latest::prelude</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">xcm::latest</span>::{<span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">Weight</span> <span class="kw">as</span> <span class="ident">XCMWeight</span>};
 <span class="kw">use</span> <span class="ident">xcm_builder</span>::{
 	<span class="ident">AccountId32Aliases</span>, <span class="ident">AllowTopLevelPaidExecutionFrom</span>, <span class="ident">AllowUnpaidExecutionFrom</span>, <span class="ident">CurrencyAdapter</span>,
 	<span class="ident">EnsureXcmOrigin</span>, <span class="ident">FixedWeightBounds</span>, <span class="ident">IsConcrete</span>, <span class="ident">LocationInverter</span>, <span class="ident">NativeAsset</span>, <span class="ident">ParentIsPreset</span>,
@@ -235,7 +233,7 @@
 
 <span class="macro">parameter_types!</span> {
 	<span class="comment">// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.</span>
-	<span class="kw">pub</span> <span class="ident">UnitWeightCost</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="number">1_000_000_000</span>;
+	<span class="kw">pub</span> <span class="ident">UnitWeightCost</span>: <span class="ident">XCMWeight</span> <span class="op">=</span> <span class="number">1_000_000_000</span>;
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxInstructions</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">100</span>;
 }
 
