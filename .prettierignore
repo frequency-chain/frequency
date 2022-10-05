@@ -1,0 +1,9 @@
+/target
+**/artifacts
+**/coverage
+node_modules
+*-lock.*
+cache
+logs
+log
+CODEOWNERS
