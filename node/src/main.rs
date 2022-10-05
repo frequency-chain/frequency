@@ -2,6 +2,6 @@
 
 #![warn(missing_docs)]
 
-fn main() -> sc_cli::Result<()> {
+fn main() -> frequency_cli::Result<()> {
 	frequency_cli::run()
 }
