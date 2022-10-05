@@ -5798,6 +5798,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "log",
  "orml-utilities",
  "parity-scale-codec",
  "scale-info",
