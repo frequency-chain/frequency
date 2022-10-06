@@ -16,6 +16,9 @@ use sp_runtime::{
 };
 use std::sync::Arc;
 
+#[cfg(test)]
+mod tests;
+
 #[rpc(client, server)]
 pub trait MessagesApi<BlockNumber> {
 	#[method(name = "messages_getBySchema")]
