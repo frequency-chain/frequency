@@ -21,6 +21,7 @@ common-helpers = {default-features = false, path = "../../../../common/helpers" 
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
 
 [features]
 default = ["std"]
@@ -28,6 +29,7 @@ std = [
 	'codec/std',
 	"sp-api/std",
 	"sp-runtime/std",
+	'frame-support/std',
 	"pallet-messages-runtime-api/std",
 	'common-primitives/std',
 ]
