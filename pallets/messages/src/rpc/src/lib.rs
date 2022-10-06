@@ -50,8 +50,6 @@ pub enum MessageRpcError {
 	TypeConversionOverflow,
 	/// Schema Id doesn't exist or errored when retrieving from state
 	InvalidSchemaId,
-	/// Something errored when trying to get the messages from state
-	MessageRetrievalFailure,
 }
 
 impl From<MessageRpcError> for RpcError {
@@ -99,16 +97,14 @@ where
 
 		'loops: for bid in from..to {
 			let block_number: BlockNumber = bid.into();
-			let list: Vec<MessageResponse<BlockNumber>> = match api
+			let list: Vec<MessageResponse<BlockNumber>> = api
 				.get_messages_by_schema_and_block(
 					&at,
 					schema.schema_id,
 					schema.payload_location,
 					block_number,
-				) {
-				Ok(x) => x,
-				_ => return fail!(MessageRpcError::MessageRetrievalFailure),
-			};
+				)
+				.unwrap();
 
 			let list_size: u32 =
 				list.len().try_into().map_err(|_| MessageRpcError::TypeConversionOverflow)?;
