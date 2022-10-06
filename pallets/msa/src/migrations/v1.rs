@@ -30,14 +30,19 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV1<T> {
 		if current == 1 && onchain == 0 {
 			// TODO: Iterate through AccountId in MessageSourceIdOf and
 			// copy the key/value pair to MessageSourceMigratedIdOf
+			let mut count = 0;
+			for (AccountId, MessageSourceId) in MessageSourceIdOf::<T>::iter() {
+				MessageSourceMigratedIdOf::<T>::insert(AccountId, MessageSourceId);
+				count += 1;
+			}
 
 			// put the current storage version into storage
 			current.put::<Pallet<T>>();
 			log::info!("Migrated MessageSourceIdOf storage to MessageSourceMigratedIdOf");
 
-			// TODO: Update the returned weight to reflect the cost of iterating through MessageSourceIdOf
+			// Return the weight to reflect the cost of iterating through MessageSourceIdOf
 			// writing to MessageSourceMigratedIdOf, read the on chain storage version, and update the on chain storage version
-			T::DbWeight::get().reads(1)
+			T::DbWeight::get().reads_writes(count + 1, count + 1)
 		} else {
 			log::info!("MigrateToV1 has already been completed and can be removed.");
 
