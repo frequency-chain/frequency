@@ -6,6 +6,16 @@ use jsonrpsee::{
 use sp_api::ApiError;
 use sp_runtime::DispatchError;
 
+use std::fmt::Debug;
+
+pub fn map_rpc_error<E: Debug, T>(e: E) -> RpcResult<T> {
+	Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
+		ErrorCode::ServerError(300).code(), // No real reason for this value
+		"Api Error",
+		Some(format!("{:?}", e)),
+	))))
+}
+
 /// Converts CoreResult to Result for RPC calls
 /// # Arguments
 /// * `response` - The response to map to an RPC response
