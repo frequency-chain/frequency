@@ -1,10 +1,7 @@
 use super::{mock::*, Event as MessageEvent};
 use crate::{BlockMessages, Config, Error, Message, Messages};
 use codec::Encode;
-use common_primitives::{
-	messages::MessageResponse,
-	schema::*,
-};
+use common_primitives::{messages::MessageResponse, schema::*};
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	weights::{Pays, PostDispatchInfo},
@@ -210,9 +207,17 @@ fn on_initialize_should_add_messages_into_storage_and_clean_temp() {
 		// assert
 		assert_eq!(BlockMessages::<Test>::get().len(), 0);
 
-		let list_1 = MessagesPallet::get_messages_by_schema_and_block(schema_id_1, PayloadLocation::OnChain, current_block);
+		let list_1 = MessagesPallet::get_messages_by_schema_and_block(
+			schema_id_1,
+			PayloadLocation::OnChain,
+			current_block,
+		);
 		assert_eq!(list_1.len(), 2);
-		let list_2 = MessagesPallet::get_messages_by_schema_and_block(schema_id_2, PayloadLocation::OnChain, current_block);
+		let list_2 = MessagesPallet::get_messages_by_schema_and_block(
+			schema_id_2,
+			PayloadLocation::OnChain,
+			current_block,
+		);
 		assert_eq!(list_2.len(), 1);
 
 		let events_occured = System::events();
@@ -252,7 +257,8 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_return_offchain_payl
 		// Run to the block +
 		run_to_block(current_block + 1);
 
-		let list = MessagesPallet::get_messages_by_schema_and_block(schema_id, PayloadLocation::IPFS, 0);
+		let list =
+			MessagesPallet::get_messages_by_schema_and_block(schema_id, PayloadLocation::IPFS, 0);
 
 		let cid =
 			Vec::from("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes());

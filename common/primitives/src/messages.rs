@@ -141,7 +141,7 @@ where
 #[cfg(test)]
 mod tests {
 	use crate::{
-		messages::{BlockPaginationRequest, MessageResponse, BlockPaginationResponse},
+		messages::{BlockPaginationRequest, BlockPaginationResponse, MessageResponse},
 		node::BlockNumber,
 	};
 
@@ -250,7 +250,12 @@ mod tests {
 		let current_index = total_data_length - 1;
 		// Critical Bit: NO more data than index
 		let list_size = current_index;
-		let is_full = resp.check_end_condition_and_set_next_pagination(current_block, current_index, list_size, &request);
+		let is_full = resp.check_end_condition_and_set_next_pagination(
+			current_block,
+			current_index,
+			list_size,
+			&request,
+		);
 		// NOT FULL
 		assert_eq!(false, is_full);
 		// NOTHING MORE
@@ -283,12 +288,17 @@ mod tests {
 		let current_index = total_data_length - 1;
 		// Critical Bit: MORE Data to go in length than page_size
 		let list_size = total_data_length + 1;
-		let is_full = resp.check_end_condition_and_set_next_pagination(current_block, current_index, list_size, &request);
+		let is_full = resp.check_end_condition_and_set_next_pagination(
+			current_block,
+			current_index,
+			list_size,
+			&request,
+		);
 		assert_eq!(true, is_full);
 		assert_eq!(true, resp.has_next);
 		// SAME block
 		assert_eq!(Some(1), resp.next_block);
-		 // NEXT index
+		// NEXT index
 		assert_eq!(Some(current_index + 1), resp.next_index);
 	}
 
@@ -315,12 +325,17 @@ mod tests {
 		let current_index = total_data_length - 1;
 		// SAME in length than page_size
 		let list_size = total_data_length;
-		let is_full = resp.check_end_condition_and_set_next_pagination(current_block, current_index, list_size, &request);
+		let is_full = resp.check_end_condition_and_set_next_pagination(
+			current_block,
+			current_index,
+			list_size,
+			&request,
+		);
 		assert_eq!(true, is_full);
 		assert_eq!(true, resp.has_next);
 		// NEXT block
 		assert_eq!(Some(current_block + 1), resp.next_block);
-		 // ZERO index
+		// ZERO index
 		assert_eq!(Some(0), resp.next_index);
 	}
 }

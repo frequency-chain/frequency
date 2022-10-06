@@ -31,7 +31,12 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use common_primitives::{messages::*, msa::*, node::*, schema::{SchemaResponse, PayloadLocation}};
+use common_primitives::{
+	messages::*,
+	msa::*,
+	node::*,
+	schema::{PayloadLocation, SchemaResponse},
+};
 pub use common_runtime::constants::*;
 
 use frame_support::{

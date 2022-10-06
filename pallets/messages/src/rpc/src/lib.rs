@@ -99,11 +99,16 @@ where
 
 		'loops: for bid in from..to {
 			let block_number: BlockNumber = bid.into();
-			let list: Vec<MessageResponse<BlockNumber>> =
-				match api.get_messages_by_schema_and_block(&at, schema.schema_id, schema.payload_location, block_number) {
-					Ok(x) => x,
-					_ => return fail!(MessageRpcError::MessageRetrievalFailure),
-				};
+			let list: Vec<MessageResponse<BlockNumber>> = match api
+				.get_messages_by_schema_and_block(
+					&at,
+					schema.schema_id,
+					schema.payload_location,
+					block_number,
+				) {
+				Ok(x) => x,
+				_ => return fail!(MessageRpcError::MessageRetrievalFailure),
+			};
 
 			let list_size: u32 =
 				list.len().try_into().map_err(|_| MessageRpcError::TypeConversionOverflow)?;

@@ -1,9 +1,11 @@
-use substrate_test_runtime_client::runtime::Block;
 use sp_api::{ApiRef, ProvideRuntimeApi};
+use substrate_test_runtime_client::runtime::Block;
 
-use sp_runtime::traits::{Block as BlockT, Zero, NumberFor};
-use sp_runtime::generic::BlockId;
 use sp_blockchain::HeaderBackend;
+use sp_runtime::{
+	generic::BlockId,
+	traits::{Block as BlockT, NumberFor, Zero},
+};
 
 pub struct TestApi {}
 
@@ -13,8 +15,7 @@ impl ProvideRuntimeApi<Block> for TestApi {
 	type Api = TestRuntimeApi;
 
 	fn runtime_api<'a>(&'a self) -> ApiRef<'a, Self::Api> {
-		TestRuntimeApi {}
-		.into()
+		TestRuntimeApi {}.into()
 	}
 }
 
