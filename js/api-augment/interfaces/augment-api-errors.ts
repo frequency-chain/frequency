@@ -328,10 +328,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidMessageSourceAccount: AugmentedError<ApiType>;
       /**
-       * Invalid Pagination Request
-       **/
-      InvalidPaginationRequest: AugmentedError<ApiType>;
-      /**
        * Invalid payload location
        **/
       InvalidPayloadLocation: AugmentedError<ApiType>;

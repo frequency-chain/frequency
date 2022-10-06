@@ -2913,13 +2913,12 @@ declare module '@polkadot/types/lookup' {
   interface PalletMessagesError extends Enum {
     readonly isTooManyMessagesInBlock: boolean;
     readonly isExceedsMaxMessagePayloadSizeBytes: boolean;
-    readonly isInvalidPaginationRequest: boolean;
     readonly isTypeConversionOverflow: boolean;
     readonly isInvalidMessageSourceAccount: boolean;
     readonly isInvalidSchemaId: boolean;
     readonly isUnAuthorizedDelegate: boolean;
     readonly isInvalidPayloadLocation: boolean;
-    readonly type: 'TooManyMessagesInBlock' | 'ExceedsMaxMessagePayloadSizeBytes' | 'InvalidPaginationRequest' | 'TypeConversionOverflow' | 'InvalidMessageSourceAccount' | 'InvalidSchemaId' | 'UnAuthorizedDelegate' | 'InvalidPayloadLocation';
+    readonly type: 'TooManyMessagesInBlock' | 'ExceedsMaxMessagePayloadSizeBytes' | 'TypeConversionOverflow' | 'InvalidMessageSourceAccount' | 'InvalidSchemaId' | 'UnAuthorizedDelegate' | 'InvalidPayloadLocation';
   }
 
   /** @name PalletSchemasSchema (334) */

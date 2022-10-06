@@ -2658,7 +2658,7 @@ export default {
    * Lookup333: pallet_messages::pallet::Error<T>
    **/
   PalletMessagesError: {
-    _enum: ['TooManyMessagesInBlock', 'ExceedsMaxMessagePayloadSizeBytes', 'InvalidPaginationRequest', 'TypeConversionOverflow', 'InvalidMessageSourceAccount', 'InvalidSchemaId', 'UnAuthorizedDelegate', 'InvalidPayloadLocation']
+    _enum: ['TooManyMessagesInBlock', 'ExceedsMaxMessagePayloadSizeBytes', 'TypeConversionOverflow', 'InvalidMessageSourceAccount', 'InvalidSchemaId', 'UnAuthorizedDelegate', 'InvalidPayloadLocation']
   },
   /**
    * Lookup334: pallet_schemas::types::Schema<MaxModelSize>

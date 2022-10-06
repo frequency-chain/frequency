@@ -128,8 +128,6 @@ pub mod pallet {
 		TooManyMessagesInBlock,
 		/// Message payload size is too large
 		ExceedsMaxMessagePayloadSizeBytes,
-		/// Invalid Pagination Request
-		InvalidPaginationRequest,
 		/// Type Conversion Overflow
 		TypeConversionOverflow,
 		/// Invalid Message Source Account
