@@ -13,7 +13,7 @@ pub type SchemaId = u16;
 
 /// Types of modeling in which a message payload may be defined
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+#[derive(Copy, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 pub enum ModelType {
 	/// Message payload modeled with Apache Avro: <https://avro.apache.org/docs/current/spec.html>
 	AvroBinary,
@@ -29,7 +29,7 @@ impl Default for ModelType {
 
 /// Types of payload locations
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+#[derive(Copy, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 pub enum PayloadLocation {
 	/// Message payload is located on chain
 	OnChain,

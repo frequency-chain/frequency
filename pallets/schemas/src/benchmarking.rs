@@ -55,7 +55,7 @@ benchmarks! {
 		let payload_location = PayloadLocation::default();
 		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
 		for j in 0..(n) {
-			assert_ok!(register_some_schema::<T>(sender.clone(), model_type.clone(), payload_location.clone()));
+			assert_ok!(register_some_schema::<T>(sender.clone(), model_type, payload_location));
 		}
 		let schema_input = generate_schema::<T>(m as usize);
 	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location)
