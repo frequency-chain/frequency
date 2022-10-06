@@ -318,7 +318,8 @@ impl<T: Config> Pallet<T> {
 
 	/// Gets a messages for a given schema-id and block-number.
 	/// # Arguments
-	/// * `schema` - Registered schema for current message.
+	/// * `schema_id` - Registered schema id for current message.
+	/// * `schema_payload_location` - Payload location to map to correct response (To avoid fetching the schema in this method)
 	/// * `block_number` - Block number to fetch messages from.
 	/// # Returns
 	/// * `Vec<MessageResponse<T::BlockNumber>>`
