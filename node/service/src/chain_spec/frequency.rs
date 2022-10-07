@@ -173,8 +173,7 @@ pub fn frequency() -> ChainSpec {
 		Some(properties),
 		// Extensions
 		Extensions {
-			//TODO: set the correct network
-			relay_chain: "TODO".into(),
+			relay_chain: "polkadot".into(),
 			para_id: para_id.into(),
 		},
 	)
