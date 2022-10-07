@@ -32,6 +32,7 @@ sp-std = { git = "https://github.com/paritytech/substrate", default-features = f
 pallet-democracy = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 pallet-preimage = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 pallet-scheduler = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
+pallet-treasury = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 # ORML
 orml-vesting = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.29" }
@@ -45,6 +46,7 @@ try-runtime = [
   "pallet-democracy/try-runtime",
   "pallet-preimage/try-runtime",
   "pallet-scheduler/try-runtime",
+  "pallet-treasury/try-runtime",
   "pallet-utility/try-runtime",
   "orml-vesting/try-runtime",
 ]

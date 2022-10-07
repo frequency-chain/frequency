@@ -5,7 +5,7 @@ THIS_DIR=$( dirname -- "$0"; )
 PROJECT=${1:-$THIS_DIR/..}
 RUNTIME=$PROJECT/target/production/frequency
 BENCHMARK="$RUNTIME benchmark pallet "
-EXTERNAL_PALLETS=(orml_vesting pallet_scheduler pallet_democracy pallet_preimage pallet_utility)
+EXTERNAL_PALLETS=(orml_vesting pallet_scheduler pallet_democracy pallet_treasury pallet_preimage pallet_utility)
 CUSTOM_PALLETS=(messages msa schemas)
 
 function exit_err() { echo "❌ 💔" ; exit 1; }

@@ -37,7 +37,7 @@ use common_primitives::{
 	node::*,
 	schema::{PayloadLocation, SchemaResponse},
 };
-pub use common_runtime::constants::*;
+pub use common_runtime::{constants::*, prod_or_local_or_env};
 
 use frame_support::{
 	construct_runtime,
@@ -462,6 +462,73 @@ impl pallet_democracy::Config for Runtime {
 	type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
 }
 
+parameter_types! {
+	/// The time proposals are collected before payout
+	/// as well as when the burn of left over funds happens (if any)
+	/// Setup on a 1-week scheduled for Rococo
+	pub const SpendPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 10 * MINUTES);
+}
+
+impl pallet_treasury::Config for Runtime {
+	/// Treasury Account: 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z
+	type PalletId = TreasuryPalletId;
+	type Currency = Balances;
+	type Event = Event;
+	type WeightInfo = weights::pallet_treasury::WeightInfo<Runtime>;
+
+	/// Who approves treasury proposals?
+	/// - Root (sudo or governance)
+	/// - 3/5ths of the Frequency Council
+	type ApproveOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
+	>;
+
+	/// Who rejects treasury proposals?
+	/// - Root (sudo or governance)
+	/// - 3/5ths of the Frequency Council
+	type RejectOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
+	>;
+
+	/// Who can spend funds without proposals?
+	/// Nobody
+	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+
+	/// Rejected proposals lose their bond
+	/// This takes the slashed amount and is often set to the Treasury
+	/// We burn it so there is no incentive to the treasury to reject to enrich itself
+	type OnSlash = ();
+
+	/// Bond 5% of a treasury proposal
+	type ProposalBond = ProposalBondPercent;
+
+	/// Minimum bond of 100 Tokens
+	type ProposalBondMinimum = ProposalBondMinimum;
+
+	/// Max bond of 1_000 Tokens
+	type ProposalBondMaximum = ProposalBondMaximum;
+
+	/// Pay out on a 4-week basis
+	type SpendPeriod = SpendPeriod;
+
+	/// Do not burn any unused funds
+	type Burn = ();
+
+	/// Where should tokens burned from the treasury go?
+	/// Set to go to /dev/null
+	type BurnDestination = ();
+
+	/// Runtime hooks to external pallet using treasury to compute spend funds.
+	/// Set to Bounties often.
+	/// Not currently in use
+	type SpendFunds = ();
+
+	/// 64
+	type MaxApprovals = MaxApprovals;
+}
+
 impl pallet_transaction_payment::Config for Runtime {
 	type Event = Event;
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
@@ -586,8 +653,8 @@ construct_runtime!(
 		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 5,
 		Democracy: pallet_democracy::{Pallet, Call, Config<T>, Storage, Event<T> } = 6,
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T> } = 8,
-
 		Utility: pallet_utility::{Pallet, Call, Event} = 9,
+
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
@@ -595,6 +662,9 @@ construct_runtime!(
 		// Collectives
 		Council: pallet_collective::<Instance1>::{Pallet, Call, Config<T,I>, Storage, Event<T>, Origin<T>} = 12,
 		TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Config<T,I>, Storage, Event<T>, Origin<T>} = 13,
+
+		// Treasury
+		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 14,
 
 		// Collator support. The order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -626,21 +696,25 @@ extern crate frame_benchmarking;
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
 	define_benchmarks!(
+		// Substrate
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_balances, Balances]
 		[pallet_collective, Council]
 		[pallet_collective, TechnicalCommittee]
 		[pallet_preimage, Preimage]
 		[pallet_democracy, Democracy]
+		[pallet_treasury, Treasury]
 		[pallet_scheduler, Scheduler]
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_utility, Utility]
+
+		// Frequency
 		[pallet_msa, Msa]
 		[pallet_schemas, Schemas]
 		[pallet_messages, Messages]
-		[pallet_utility, Utility]
 	);
 }
 
