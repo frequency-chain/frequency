@@ -1,7 +1,9 @@
+use crate::prod_or_local_or_env;
 use common_primitives::{
 	node::{Balance, BlockNumber},
 	schema::SchemaId,
 };
+
 use frame_support::{
 	parameter_types,
 	sp_runtime::{Perbill, Permill},
@@ -141,12 +143,12 @@ parameter_types! {
 // Config from
 // https://github.com/paritytech/substrate/blob/367dab0d4bd7fd7b6c222dd15c753169c057dd42/bin/node/runtime/src/lib.rs#L880
 parameter_types! {
-	pub const LaunchPeriod: BlockNumber = 28 * DAYS;
-	pub const VotingPeriod: BlockNumber = 28 * DAYS;
-	pub const FastTrackVotingPeriod: BlockNumber = 3 * DAYS;
-	pub const EnactmentPeriod: BlockNumber = 30 * DAYS;
-	pub const CooloffPeriod: BlockNumber = 28 * DAYS;
-	pub const MinimumDeposit: Balance = 100 * UNIT;
+	pub LaunchPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 28 * DAYS, "FRQCY_LAUNCH_PERIOD");
+	pub VotingPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 28 * DAYS, "FRQCY_VOTING_PERIOD");
+	pub FastTrackVotingPeriod: BlockNumber = prod_or_local_or_env!(3 * HOURS, 3 * HOURS, "FRQCY_FAST_TRACK_VOTING_PERIOD");
+	pub EnactmentPeriod: BlockNumber = prod_or_local_or_env!(8 * DAYS, 28 * DAYS,  "FRQCY_ENACTMENT_PERIOD");
+	pub CooloffPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 7 * DAYS, "FRQCY_COOLOFF_PERIOD");
+	pub MinimumDeposit: Balance = prod_or_local_or_env!(100 * UNIT, 100 * UNIT, "FRQCY_MINIMUM_DEPOSIT");
 }
 
 pub type DemocracyMaxVotes = ConstU32<100>;
