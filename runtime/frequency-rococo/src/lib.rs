@@ -466,7 +466,7 @@ parameter_types! {
 	/// The time proposals are collected before payout
 	/// as well as when the burn of left over funds happens (if any)
 	/// Setup on a 1-week scheduled for Rococo
-	pub const SpendPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 10 * MINUTES);
+	pub SpendPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 10 * MINUTES, "FRQCY_SPEND_PERIOD");
 }
 
 impl pallet_treasury::Config for Runtime {
