@@ -3,7 +3,7 @@
 /// Note: The depositor is not optional since he can never change.
 use crate::*;
 
-use frame_support::{migration::StorageKeyIterator, traits::OnRuntimeUpgrade, weights::Weight};
+use frame_support::{traits::OnRuntimeUpgrade, weights::Weight};
 use log;
 /// Struct on which to implement OnRuntimeUpgrade trait
 pub struct MigrateToV1<T>(sp_std::marker::PhantomData<T>);
@@ -28,11 +28,11 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV1<T> {
 
 		// Execute the migration when upgrading MSA storage version from version 0 to version 1
 		if current == 1 && onchain == 0 {
-			// TODO: Iterate through AccountId in MessageSourceIdOf and
+			// Iterate through AccountId in MessageSourceIdOf and
 			// copy the key/value pair to MessageSourceMigratedIdOf
 			let mut count = 0;
-			for (AccountId, MessageSourceId) in MessageSourceIdOf::<T>::iter() {
-				MessageSourceMigratedIdOf::<T>::insert(AccountId, MessageSourceId);
+			for (account_id, msa_id) in MessageSourceIdOf::<T>::iter() {
+				MessageSourceMigratedIdOf::<T>::insert(account_id, msa_id);
 				count += 1;
 			}
 
