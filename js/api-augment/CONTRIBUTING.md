@@ -6,20 +6,6 @@ For contributing guidelines see the [Project Liberty Contributing Guidelines](ht
 
 - [Type Definitions](https://github.com/polkadot-js/api/blob/master/packages/types/src/types/definitions.ts)
 
-## How to Release
+## Running Tests
 
-1. Create a New Release on GitHub.com
-2. Set tag to `js-frequency-rpc-v[X.X.X]` following [Semver 2.0](https://semver.org/)
-3. Set title to "js-frequency-rpc-v[version] Major Feature Name"
-4. Set contents to follow [KeepAChangeLog.com 1.0](https://keepachangelog.com/en/1.0.0/), but limited to just the new release information
-    ```markdown
-    ## [0.1.0] - 2017-06-20
-    ### Added
-    - New thing
-    ### Changed
-    - Different thing
-    ### Removed
-    - Not a thing anymore
-    ```
-5. Publish
-6. CI will build and publish to the npm repository
+Tests require running `npm run fetch:local` and then `npm run build` to fetch and generate the needed files.

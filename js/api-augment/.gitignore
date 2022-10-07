@@ -1,3 +1,8 @@
+# Generated Files
+metadata.*
+interfaces/*
+
+
 # Log Files
 *.log
 
