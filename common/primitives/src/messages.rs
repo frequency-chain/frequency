@@ -5,7 +5,7 @@ use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::traits::AtLeast32BitUnsigned;
+use sp_runtime::traits::{AtLeast32BitUnsigned, One};
 use sp_std::{prelude::*, vec};
 #[cfg(feature = "std")]
 use utils::*;
@@ -91,7 +91,10 @@ pub struct BlockPaginationResponse<BlockNumber, T> {
 	pub next_index: Option<u32>,
 }
 
-impl<BlockNumber, T> BlockPaginationResponse<BlockNumber, T> {
+impl<BlockNumber, T> BlockPaginationResponse<BlockNumber, T>
+where
+	BlockNumber: AtLeast32BitUnsigned + Copy + One,
+{
 	/// Generates a new empty Pagination request
 	/// # Returns
 	/// * `BlockPaginationResponse<BlockNumber, T>`
@@ -103,12 +106,42 @@ impl<BlockNumber, T> BlockPaginationResponse<BlockNumber, T> {
 			next_index: None,
 		}
 	}
+
+	/// Checks if we are at the end of the pagination
+	/// if we are, update the response with the correct next information
+	pub fn check_end_condition_and_set_next_pagination(
+		&mut self,
+		block_number: BlockNumber,
+		current_index: u32,
+		list_size: u32,
+		request: &BlockPaginationRequest<BlockNumber>,
+	) -> bool {
+		if self.content.len() as u32 == request.page_size {
+			let mut next_block = block_number;
+			let mut next_index = current_index + 1;
+
+			// checking if it's end of current list
+			if next_index == list_size {
+				next_block = block_number + BlockNumber::one();
+				next_index = 0;
+			}
+
+			if next_block < request.to_block {
+				self.has_next = true;
+				self.next_block = Some(next_block);
+				self.next_index = Some(next_index);
+			}
+			return true
+		}
+
+		false
+	}
 }
 
 #[cfg(test)]
 mod tests {
 	use crate::{
-		messages::{BlockPaginationRequest, MessageResponse},
+		messages::{BlockPaginationRequest, BlockPaginationResponse, MessageResponse},
 		node::BlockNumber,
 	};
 
@@ -191,5 +224,118 @@ mod tests {
 		for tc in test_cases {
 			assert_eq!(tc.expected, tc.input.validate(), "{}", tc.message);
 		}
+	}
+
+	#[test]
+	fn check_end_condition_does_not_mutate_when_at_the_end() {
+		let mut resp = BlockPaginationResponse::<BlockNumber, u32> {
+			content: vec![1, 2, 3],
+			has_next: false,
+			next_block: None,
+			next_index: None,
+		};
+
+		let total_data_length: u32 = resp.content.len() as u32;
+
+		let request = BlockPaginationRequest::<BlockNumber> {
+			from_block: 1 as BlockNumber,
+			from_index: 0,
+			to_block: 5,
+			// Page is LARGER
+			page_size: total_data_length + 10,
+		};
+		// We are at the LAST block
+		let current_block = 5;
+		// Index after content
+		let current_index = total_data_length - 1;
+		// Critical Bit: NO more data than index
+		let list_size = current_index;
+		let is_full = resp.check_end_condition_and_set_next_pagination(
+			current_block,
+			current_index,
+			list_size,
+			&request,
+		);
+		// NOT FULL
+		assert_eq!(false, is_full);
+		// NOTHING MORE
+		assert_eq!(false, resp.has_next);
+		// None
+		assert_eq!(None, resp.next_block);
+		assert_eq!(None, resp.next_index);
+	}
+
+	#[test]
+	fn check_end_condition_mutates_when_more_in_list_than_page() {
+		let mut resp = BlockPaginationResponse::<BlockNumber, u32> {
+			content: vec![1, 2, 3],
+			has_next: false,
+			next_block: None,
+			next_index: None,
+		};
+
+		let total_data_length: u32 = resp.content.len() as u32;
+
+		let request = BlockPaginationRequest::<BlockNumber> {
+			from_block: 1 as BlockNumber,
+			from_index: 0,
+			to_block: 5,
+			page_size: total_data_length,
+		};
+		// We have not completed the block yet
+		let current_block = 1;
+		// End of the Block
+		let current_index = total_data_length - 1;
+		// Critical Bit: MORE Data to go in length than page_size
+		let list_size = total_data_length + 1;
+		let is_full = resp.check_end_condition_and_set_next_pagination(
+			current_block,
+			current_index,
+			list_size,
+			&request,
+		);
+		assert_eq!(true, is_full);
+		assert_eq!(true, resp.has_next);
+		// SAME block
+		assert_eq!(Some(1), resp.next_block);
+		// NEXT index
+		assert_eq!(Some(current_index + 1), resp.next_index);
+	}
+
+	#[test]
+	fn check_end_condition_mutates_when_more_than_page_but_none_left_in_block() {
+		let mut resp = BlockPaginationResponse::<BlockNumber, u32> {
+			content: vec![1, 2, 3],
+			has_next: false,
+			next_block: None,
+			next_index: None,
+		};
+
+		let total_data_length: u32 = resp.content.len() as u32;
+
+		let request = BlockPaginationRequest::<BlockNumber> {
+			from_block: 1 as BlockNumber,
+			from_index: 0,
+			to_block: 5,
+			page_size: total_data_length,
+		};
+		// We have not completed the block yet
+		let current_block = 1;
+		// End of the Block
+		let current_index = total_data_length - 1;
+		// SAME in length than page_size
+		let list_size = total_data_length;
+		let is_full = resp.check_end_condition_and_set_next_pagination(
+			current_block,
+			current_index,
+			list_size,
+			&request,
+		);
+		assert_eq!(true, is_full);
+		assert_eq!(true, resp.has_next);
+		// NEXT block
+		assert_eq!(Some(current_block + 1), resp.next_block);
+		// ZERO index
+		assert_eq!(Some(0), resp.next_index);
 	}
 }

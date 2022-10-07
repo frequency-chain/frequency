@@ -35,7 +35,7 @@ where
 	pub fn map_to_response<BlockNumber>(
 		&self,
 		block_number: BlockNumber,
-		payload_location: &PayloadLocation,
+		payload_location: PayloadLocation,
 	) -> MessageResponse<BlockNumber> {
 		match payload_location {
 			PayloadLocation::OnChain => MessageResponse {

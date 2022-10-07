@@ -31,7 +31,12 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use common_primitives::{messages::*, msa::*, node::*, schema::SchemaResponse};
+use common_primitives::{
+	messages::*,
+	msa::*,
+	node::*,
+	schema::{PayloadLocation, SchemaResponse},
+};
 pub use common_runtime::constants::*;
 
 use frame_support::{
@@ -748,9 +753,13 @@ impl_runtime_apis! {
 
 	// Unfinished runtime APIs
 	impl pallet_messages_runtime_api::MessagesApi<Block, BlockNumber> for Runtime {
-		fn get_messages_by_schema(schema_id: SchemaId, pagination: BlockPaginationRequest<BlockNumber>) ->
-			Result<BlockPaginationResponse<BlockNumber, MessageResponse<BlockNumber>>, DispatchError> {
-			Messages::get_messages_by_schema(schema_id, pagination)
+		fn get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber) ->
+			Vec<MessageResponse<BlockNumber>> {
+			Messages::get_messages_by_schema_and_block(schema_id, schema_payload_location, block_number)
+		}
+
+		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+			Schemas::get_schema_by_id(schema_id)
 		}
 	}
 
