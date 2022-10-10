@@ -230,10 +230,16 @@
 <span id="224">224</span>
 <span id="225">225</span>
 <span id="226">226</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">common_primitives</span>::{
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::prod_or_local_or_env</span>;
+<span class="kw">use</span> <span class="ident">common_primitives</span>::{
 	<span class="ident">node</span>::{<span class="ident">Balance</span>, <span class="ident">BlockNumber</span>},
 	<span class="ident">schema::SchemaId</span>,
 };
+
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
 	<span class="ident">parameter_types</span>,
 	<span class="ident">sp_runtime</span>::{<span class="ident">Perbill</span>, <span class="ident">Permill</span>},
@@ -323,6 +329,7 @@
 
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ZERO</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">0</span><span class="op">&gt;</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">FIFTY</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">50</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">HUNDRED</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">100</span><span class="op">&gt;</span>;
 
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">FrameSystemMaxConsumers</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">16</span><span class="op">&gt;</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">MsaMaxKeys</span> <span class="op">=</span> <span class="ident">ConstU8</span><span class="op">&lt;</span><span class="number">25</span><span class="op">&gt;</span>;
@@ -382,16 +389,17 @@
 <span class="comment">// Config from</span>
 <span class="comment">// https://github.com/paritytech/substrate/blob/367dab0d4bd7fd7b6c222dd15c753169c057dd42/bin/node/runtime/src/lib.rs#L880</span>
 <span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LaunchPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>;
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">VotingPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>;
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">FastTrackVotingPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">3</span> <span class="op">*</span> <span class="ident">DAYS</span>;
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EnactmentPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">30</span> <span class="op">*</span> <span class="ident">DAYS</span>;
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CooloffPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>;
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinimumDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">100</span> <span class="op">*</span> <span class="ident">UNIT</span>;
+	<span class="kw">pub</span> <span class="ident">LaunchPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="string">&quot;FRQCY_LAUNCH_PERIOD&quot;</span>);
+	<span class="kw">pub</span> <span class="ident">VotingPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="string">&quot;FRQCY_VOTING_PERIOD&quot;</span>);
+	<span class="kw">pub</span> <span class="ident">FastTrackVotingPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_local_or_env!</span>(<span class="number">3</span> <span class="op">*</span> <span class="ident">HOURS</span>, <span class="number">3</span> <span class="op">*</span> <span class="ident">HOURS</span>, <span class="string">&quot;FRQCY_FAST_TRACK_VOTING_PERIOD&quot;</span>);
+	<span class="kw">pub</span> <span class="ident">EnactmentPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_local_or_env!</span>(<span class="number">8</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>,  <span class="string">&quot;FRQCY_ENACTMENT_PERIOD&quot;</span>);
+	<span class="kw">pub</span> <span class="ident">CooloffPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="string">&quot;FRQCY_COOLOFF_PERIOD&quot;</span>);
+	<span class="kw">pub</span> <span class="ident">MinimumDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="macro">prod_or_local_or_env!</span>(<span class="number">100</span> <span class="op">*</span> <span class="ident">UNIT</span>, <span class="number">100</span> <span class="op">*</span> <span class="ident">UNIT</span>, <span class="string">&quot;FRQCY_MINIMUM_DEPOSIT&quot;</span>);
+	<span class="kw">pub</span> <span class="ident">SpendPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">10</span> <span class="op">*</span> <span class="ident">MINUTES</span>, <span class="string">&quot;FRQCY_SPEND_PERIOD&quot;</span>);
 }
 
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">DemocracyMaxVotes</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">100</span><span class="op">&gt;</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">DemocracyMaxProposals</span> <span class="op">=</span> <span class="ident">FIFTY</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">DemocracyMaxProposals</span> <span class="op">=</span> <span class="ident">HUNDRED</span>;
 
 <span class="doccomment">/// Generates the pallet &quot;account&quot;</span>
 <span class="doccomment">/// 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z</span>
