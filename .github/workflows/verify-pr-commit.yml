@@ -7,6 +7,7 @@ on:
     branches: [main]
 env:
   RUST_TOOLCHAIN: nightly-2022-07-23
+  BUILD_PROFILE: release
 
 jobs:
   changes:
@@ -19,7 +20,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Check for Changed Files
-        uses: dorny/paths-filter@v2.10.2
+        uses: dorny/paths-filter@v2
         id: filter
         with:
           filters: |
@@ -54,12 +55,12 @@ jobs:
       - name: Cache Frequency Binary
         uses: actions/cache@v3
         with:
-          path: |
-            target/release/frequency
+          path: target/${{env.BUILD_PROFILE}}/frequency
           key: ${{runner.os}}-${{env.RUST_TOOLCHAIN}}-${{github.sha}}
       - name: Compile
         run: |
-          CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release --features  frequency
+          CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release \
+            --features  frequency
 
   check-rust-code-format:
     needs: changes
@@ -96,7 +97,10 @@ jobs:
         uses: actions/checkout@v3
       - name: Lint
         run: |
-          SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features all-frequency-features -- -D warnings
+          SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy \
+            --features all-frequency-features \
+            -- \
+            -D warnings
 
   check-rust-docs:
     needs: changes
@@ -231,7 +235,6 @@ jobs:
           toolchain: ${{env.RUST_TOOLCHAIN}}
           default: true
           profile: minimal
-          # target: wasm32-unknown-unknown
       - name: Restore Dependencies from Cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -239,11 +242,12 @@ jobs:
       - name: Restore Frequency Binary from Cache
         uses: actions/cache@v3
         with:
-          path: |
-            target/release/frequency
+          path: target/${{env.BUILD_PROFILE}}/frequency
           key: ${{runner.os}}-${{env.RUST_TOOLCHAIN}}-${{github.sha}}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
+        with:
+          platforms: "amd64"
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build collator image in instant seal mode
@@ -284,9 +288,9 @@ jobs:
       - name: Restore Frequency Binary from Cache
         uses: actions/cache@v3
         with:
-          path: |
-            target/release/frequency
+          path: target/${{env.BUILD_PROFILE}}/frequency
           key: ${{runner.os}}-${{env.RUST_TOOLCHAIN}}-${{github.sha}}
       - name: Check Binary Version
         run: |
-          file ./target/release/frequency && ./target/release/frequency --version
+          file ./target/${{env.BUILD_PROFILE}}/frequency && \
+            ./target/${{env.BUILD_PROFILE}}/frequency --version

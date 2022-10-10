@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v3
 
       # Skip individual steps if only certain files changed
-      - uses: dorny/paths-filter@v2.10.2
+      - uses: dorny/paths-filter@v2
         id: filter
         with:
           filters: |
@@ -68,7 +68,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Install
         run: npm ci
