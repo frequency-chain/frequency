@@ -888,6 +888,15 @@
 <span id="882">882</span>
 <span id="883">883</span>
 <span id="884">884</span>
+<span id="885">885</span>
+<span id="886">886</span>
+<span id="887">887</span>
+<span id="888">888</span>
+<span id="889">889</span>
+<span id="890">890</span>
+<span id="891">891</span>
+<span id="892">892</span>
+<span id="893">893</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.</span>
 <span class="attribute">#![<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;256&quot;</span>]</span>
@@ -921,7 +930,12 @@
 <span class="kw">use</span> <span class="ident">sp_version::NativeVersion</span>;
 <span class="kw">use</span> <span class="ident">sp_version::RuntimeVersion</span>;
 
-<span class="kw">use</span> <span class="ident">common_primitives</span>::{<span class="ident">messages</span>::<span class="kw-2">*</span>, <span class="ident">msa</span>::<span class="kw-2">*</span>, <span class="ident">node</span>::<span class="kw-2">*</span>, <span class="ident">schema::SchemaResponse</span>};
+<span class="kw">use</span> <span class="ident">common_primitives</span>::{
+	<span class="ident">messages</span>::<span class="kw-2">*</span>,
+	<span class="ident">msa</span>::<span class="kw-2">*</span>,
+	<span class="ident">node</span>::<span class="kw-2">*</span>,
+	<span class="ident">schema</span>::{<span class="ident">PayloadLocation</span>, <span class="ident">SchemaResponse</span>},
+};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">common_runtime::constants</span>::<span class="kw-2">*</span>;
 
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
@@ -1638,9 +1652,13 @@
 
 	<span class="comment">// Unfinished runtime APIs</span>
 	<span class="kw">impl</span> <span class="ident">pallet_messages_runtime_api::MessagesApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">BlockNumber</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-		<span class="kw">fn</span> <span class="ident">get_messages_by_schema</span>(<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>, <span class="ident">pagination</span>: <span class="ident">BlockPaginationRequest</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) -&gt;
-			<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">BlockPaginationResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
-			<span class="ident">Messages::get_messages_by_schema</span>(<span class="ident">schema_id</span>, <span class="ident">pagination</span>)
+		<span class="kw">fn</span> <span class="ident">get_messages_by_schema_and_block</span>(<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>, <span class="ident">schema_payload_location</span>: <span class="ident">PayloadLocation</span>, <span class="ident">block_number</span>: <span class="ident">BlockNumber</span>) -&gt;
+			<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+			<span class="ident">Messages::get_messages_by_schema_and_block</span>(<span class="ident">schema_id</span>, <span class="ident">schema_payload_location</span>, <span class="ident">block_number</span>)
+		}
+
+		<span class="kw">fn</span> <span class="ident">get_schema_by_id</span>(<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SchemaResponse</span><span class="op">&gt;</span> {
+			<span class="ident">Schemas::get_schema_by_id</span>(<span class="ident">schema_id</span>)
 		}
 	}
 

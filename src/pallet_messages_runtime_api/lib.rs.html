@@ -24,15 +24,13 @@
 <span id="18">18</span>
 <span id="19">19</span>
 <span id="20">20</span>
-<span id="21">21</span>
-<span id="22">22</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::too_many_arguments</span>)]</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::unnecessary_mut_passed</span>)]</span>
 
 <span class="kw">use</span> <span class="ident">codec::Codec</span>;
 <span class="kw">use</span> <span class="ident">common_primitives</span>::{<span class="ident">messages</span>::<span class="kw-2">*</span>, <span class="ident">schema</span>::<span class="kw-2">*</span>};
-<span class="kw">use</span> <span class="ident">frame_support::dispatch::DispatchError</span>;
+<span class="kw">use</span> <span class="ident">frame_support::inherent::Vec</span>;
 
 <span class="comment">// Here we declare the runtime API. It is implemented it the `impl` block in</span>
 <span class="comment">// runtime file (the `runtime/src/lib.rs`)</span>
@@ -40,12 +38,10 @@
 	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">MessagesApi</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> <span class="kw">where</span>
 		<span class="ident">BlockNumber</span>: <span class="ident">Codec</span>,
 	{
-		<span class="kw">fn</span> <span class="ident">get_messages_by_schema</span>(<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>,
-			<span class="ident">pagination</span>: <span class="ident">BlockPaginationRequest</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) -&gt;
-		<span class="prelude-ty">Result</span><span class="op">&lt;</span>
-			<span class="ident">BlockPaginationResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-			<span class="ident">DispatchError</span>,
-		<span class="op">&gt;</span>;
+		<span class="kw">fn</span> <span class="ident">get_messages_by_schema_and_block</span>(<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>, <span class="ident">schema_payload_location</span>: <span class="ident">PayloadLocation</span>, <span class="ident">block_number</span>: <span class="ident">BlockNumber</span>) -&gt;
+			<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+
+		<span class="kw">fn</span> <span class="ident">get_schema_by_id</span>(<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SchemaResponse</span><span class="op">&gt;</span>;
 	}
 }
 </code></pre></div>

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["MessagesHandler","A struct that implements the `MessagesApi`."]],"trait":[["MessagesApiClient","Client implementation for the `MessagesApi` RPC API."],["MessagesApiServer","Server trait implementation for the `MessagesApi` RPC API."]]};
+window.SIDEBAR_ITEMS = {"enum":[["MessageRpcError",""]],"struct":[["MessagesHandler","A struct that implements the `MessagesApi`."]],"trait":[["MessagesApiClient","Client implementation for the `MessagesApi` RPC API."],["MessagesApiServer","Server trait implementation for the `MessagesApi` RPC API."]]};

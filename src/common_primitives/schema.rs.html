@@ -90,7 +90,7 @@
 
 <span class="doccomment">/// Types of modeling in which a message payload may be defined</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>, <span class="ident">MaxEncodedLen</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>, <span class="ident">MaxEncodedLen</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ModelType</span> {
 	<span class="doccomment">/// Message payload modeled with Apache Avro: &lt;https://avro.apache.org/docs/current/spec.html&gt;</span>
 	<span class="ident">AvroBinary</span>,
@@ -106,7 +106,7 @@
 
 <span class="doccomment">/// Types of payload locations</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>, <span class="ident">MaxEncodedLen</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>, <span class="ident">MaxEncodedLen</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">PayloadLocation</span> {
 	<span class="doccomment">/// Message payload is located on chain</span>
 	<span class="ident">OnChain</span>,
