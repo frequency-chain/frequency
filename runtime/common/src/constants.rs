@@ -86,6 +86,7 @@ pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_div(2);
 
 pub type ZERO = ConstU32<0>;
 pub type FIFTY = ConstU32<50>;
+pub type HUNDRED = ConstU32<100>;
 
 pub type FrameSystemMaxConsumers = ConstU32<16>;
 pub type MsaMaxKeys = ConstU8<25>;
@@ -149,10 +150,11 @@ parameter_types! {
 	pub EnactmentPeriod: BlockNumber = prod_or_local_or_env!(8 * DAYS, 28 * DAYS,  "FRQCY_ENACTMENT_PERIOD");
 	pub CooloffPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 7 * DAYS, "FRQCY_COOLOFF_PERIOD");
 	pub MinimumDeposit: Balance = prod_or_local_or_env!(100 * UNIT, 100 * UNIT, "FRQCY_MINIMUM_DEPOSIT");
+	pub SpendPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 10 * MINUTES, "FRQCY_SPEND_PERIOD");
 }
 
 pub type DemocracyMaxVotes = ConstU32<100>;
-pub type DemocracyMaxProposals = FIFTY;
+pub type DemocracyMaxProposals = HUNDRED;
 
 /// Generates the pallet "account"
 /// 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z
