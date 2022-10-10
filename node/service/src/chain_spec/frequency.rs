@@ -172,10 +172,7 @@ pub fn frequency() -> ChainSpec {
 		// Properties
 		Some(properties),
 		// Extensions
-		Extensions {
-			relay_chain: "polkadot".into(),
-			para_id: para_id.into(),
-		},
+		Extensions { relay_chain: "polkadot".into(), para_id: para_id.into() },
 	)
 }
 

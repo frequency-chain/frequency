@@ -16,12 +16,13 @@ pub fn map_rpc_result<T>(
 ) -> RpcResult<T> {
 	match response {
 		Ok(Ok(res)) => Ok(res),
-		Ok(Err(DispatchError::Module(e))) =>
+		Ok(Err(DispatchError::Module(e))) => {
 			Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
 				ErrorCode::ServerError(100).code(), // No real reason for this value
 				"Dispatch Module Error",
 				Some(format!("{:?}", e)),
-			)))),
+			))))
+		},
 		Ok(Err(e)) => Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
 			ErrorCode::ServerError(200).code(), // No real reason for this value
 			"Dispatch Error",
