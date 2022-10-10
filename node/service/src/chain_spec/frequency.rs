@@ -159,7 +159,10 @@ pub fn frequency() -> ChainSpec {
 			)
 		},
 		// Bootnodes
-		Vec::new(),
+		vec![
+			"/dns/0.boot.frequency.xyz/tcp/30333/p2p/12D3KooWBd4aEArNvXECtt2JHQACBdFmeafpyfre3q81iM1xCcpP".parse().unwrap(),
+			"/dns/1.boot.frequency.xyz/tcp/30333/p2p/12D3KooWCW8d7Yz2d3Jcb49rWcNppRNEs1K2NZitCpPtrHSQb6dw".parse().unwrap(),
+		],
 		// Telemetry
 		None,
 		// Protocol ID
