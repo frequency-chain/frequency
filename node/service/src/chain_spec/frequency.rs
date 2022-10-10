@@ -9,6 +9,7 @@ use frequency_runtime::{
 use hex::FromHex;
 use sc_service::ChainType;
 use sp_core::ByteArray;
+use sp_runtime::traits::AccountIdConversion;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConfig, Extensions>;
@@ -131,12 +132,22 @@ pub fn frequency() -> ChainSpec {
 						.unwrap(),
 					),
 				],
+				// Sudo Account
 				Some(frequency_mainnet_keys::MAINNET_FRQ_SUDO.parse::<AccountId>().unwrap().into()),
 				// TODO:: endowed accounts with initial balance.
-				vec![(
-					frequency_mainnet_keys::MAINNET_FRQ_SUDO.parse::<AccountId>().unwrap().into(),
-					1 << 60,
-				)],
+				vec![
+					(
+						frequency_mainnet_keys::MAINNET_FRQ_SUDO
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						1 << 60,
+					),
+					(
+						common_runtime::constants::TREASURY_PALLET_ID.into_account_truncating(),
+						EXISTENTIAL_DEPOSIT,
+					),
+				],
 				// TODO: initial council members
 				Default::default(),
 				// TODO: initial technical committee members
@@ -213,6 +224,7 @@ fn frequency_genesis(
 		schemas: Default::default(),
 		vesting: Default::default(),
 		democracy: Default::default(),
+		treasury: Default::default(),
 		council: CouncilConfig { phantom: Default::default(), members: council_members },
 		technical_committee: TechnicalCommitteeConfig {
 			phantom: Default::default(),

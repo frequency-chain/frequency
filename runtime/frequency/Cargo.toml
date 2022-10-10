@@ -46,6 +46,7 @@ pallet-sudo = { git = "https://github.com/paritytech/substrate", default-feature
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
+pallet-treasury = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
@@ -126,6 +127,7 @@ std = [
   "pallet-timestamp/std",
   "pallet-transaction-payment-rpc-runtime-api/std",
   "pallet-transaction-payment/std",
+  "pallet-treasury/std",
   "pallet-utility/std",
   "pallet-xcm/std",
   "pallet-msa/std",
@@ -167,6 +169,7 @@ runtime-benchmarks = [
   "pallet-collator-selection/runtime-benchmarks",
   "pallet-scheduler/runtime-benchmarks",
   "pallet-timestamp/runtime-benchmarks",
+  "pallet-timestamp/runtime-benchmarks",
   "pallet-xcm/runtime-benchmarks",
   'pallet-msa/runtime-benchmarks',
   "pallet-messages/runtime-benchmarks",
@@ -179,6 +182,7 @@ runtime-benchmarks = [
   "pallet-collective/runtime-benchmarks",
   "pallet-preimage/runtime-benchmarks",
   "pallet-democracy/runtime-benchmarks",
+  "pallet-treasury/runtime-benchmarks",
 ]
 try-runtime = [
   "cumulus-pallet-aura-ext/try-runtime",
@@ -200,6 +204,7 @@ try-runtime = [
   "pallet-schemas/try-runtime",
   "pallet-timestamp/try-runtime",
   "pallet-transaction-payment/try-runtime",
+  "pallet-treasury/try-runtime",
   "pallet-xcm/try-runtime",
   "parachain-info/try-runtime",
   "orml-vesting/try-runtime",
@@ -209,6 +214,7 @@ try-runtime = [
   "pallet-democracy/try-runtime",
   "pallet-utility/try-runtime",
 ]
+frequency-rococo-local = ["common-runtime/frequency-rococo-local"]
 # Following features are used in generating lean wasms
 no-metadata-docs = ["frame-support/no-metadata-docs"]
 on-chain-release-build = ["sp-api/disable-logging"]

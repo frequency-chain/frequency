@@ -6,6 +6,7 @@ use frequency_rococo_runtime::{
 };
 use sc_service::ChainType;
 use sp_core::sr25519;
+use sp_runtime::traits::AccountIdConversion;
 
 use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_properties, Extensions};
 /// Specialized `ChainSpec` for the normal parachain runtime.
@@ -45,7 +46,9 @@ pub fn local_testnet_config() -> ChainSpec {
 						get_collator_keys_from_seed("Bob"),
 					),
 				],
+				// Sudo
 				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+				// Endowed Accounts
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -59,15 +62,19 @@ pub fn local_testnet_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+					common_runtime::constants::TREASURY_PALLET_ID.into_account_truncating(),
 				],
+				// Council members
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Charlie"),
 				],
+				// Technical Committee members
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Dave"),
 				],
+				// ParaId
 				2000.into(),
 			)
 		},
@@ -139,6 +146,7 @@ fn testnet_genesis(
 		schemas: Default::default(),
 		vesting: Default::default(),
 		democracy: Default::default(),
+		treasury: Default::default(),
 		council: CouncilConfig { phantom: Default::default(), members: council_members },
 		technical_committee: TechnicalCommitteeConfig {
 			phantom: Default::default(),

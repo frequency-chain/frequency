@@ -18,6 +18,15 @@ stop-relay:
 stop-frequency-docker:
 	./scripts/init.sh stop-frequency-docker
 
+.PHONY: local-block
+local-block:
+	curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d   '{ \
+		"jsonrpc":"2.0", \
+		"id":1, \
+		"method":"engine_createBlock", \
+		"params": [true, true] \
+		}' | jq
+
 .PHONY: register
 register:
 	./scripts/init.sh register-frequency

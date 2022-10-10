@@ -8,6 +8,7 @@ use frequency_rococo_runtime::{
 use hex::FromHex;
 use sc_service::ChainType;
 use sp_core::ByteArray;
+use sp_runtime::traits::AccountIdConversion;
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
 	sc_service::GenericChainSpec<frequency_rococo_runtime::GenesisConfig, Extensions>;
@@ -129,7 +130,10 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 					public_testnet_keys::FRQ_COUNCIL9.parse::<AccountId>().unwrap().into(),
 					// 5CiJXZxsko8YZGhTZAwrhREUzjCVEGwNE7Fgrf1twbt8WsmY
 					public_testnet_keys::FRQ_COUNCIL10.parse::<AccountId>().unwrap().into(),
+					// Treasury $$
+					common_runtime::constants::TREASURY_PALLET_ID.into_account_truncating(),
 				],
+				// Council Members
 				vec![
 					public_testnet_keys::FRQ_COUNCIL1.parse::<AccountId>().unwrap().into(),
 					public_testnet_keys::FRQ_COUNCIL2.parse::<AccountId>().unwrap().into(),
@@ -142,6 +146,7 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 					public_testnet_keys::FRQ_COUNCIL9.parse::<AccountId>().unwrap().into(),
 					public_testnet_keys::FRQ_COUNCIL10.parse::<AccountId>().unwrap().into(),
 				],
+				// Technical Committee Members
 				vec![
 					public_testnet_keys::TECH_COUNCIL1.parse::<AccountId>().unwrap().into(),
 					public_testnet_keys::TECH_COUNCIL2.parse::<AccountId>().unwrap().into(),
@@ -218,6 +223,7 @@ fn frequency_rococo_genesis(
 		schemas: Default::default(),
 		vesting: Default::default(),
 		democracy: Default::default(),
+		treasury: Default::default(),
 		council: CouncilConfig { phantom: Default::default(), members: council_members },
 		technical_committee: TechnicalCommitteeConfig {
 			phantom: Default::default(),

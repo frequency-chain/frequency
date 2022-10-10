@@ -23,6 +23,7 @@ pub mod orml_vesting;
 pub mod pallet_democracy;
 pub mod pallet_preimage;
 pub mod pallet_scheduler;
+pub mod pallet_treasury;
 pub mod pallet_utility;
 
 pub use block_weights::constants::BlockExecutionWeight;
