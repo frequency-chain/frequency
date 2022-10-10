@@ -73,6 +73,13 @@ pub const MICROUNIT: Balance = 1_000_000;
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
 pub const EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
+/// Generates an balance based on amount of items and bytes
+/// Items are each worth 20 Tokens
+/// Bytes each cost 1/1_000 of a Token
+pub const fn deposit(items: u32, bytes: u32) -> Balance {
+	items as Balance * 20 * UNIT + (bytes as Balance) * UNIT / 1_000
+}
+
 /// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is
 /// used to limit the maximal weight of a single extrinsic.
 pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
@@ -122,11 +129,13 @@ pub type BalancesMaxLocks = FIFTY;
 pub type BalancesMaxReserves = FIFTY;
 pub type SchedulerMaxScheduledPerBlock = FIFTY;
 
+/// Preimage maximum size set to 4 MB
+/// Expected to be removed in Polkadot v0.9.31
 pub type PreimageMaxSize = ConstU32<{ 4096 * 1024 }>;
 
 parameter_types! {
-	pub const PreimageBaseDeposit: Balance = 1 * MILLIUNIT;
-	pub const PreimageByteDeposit: Balance = 1 * MICROUNIT;
+	pub const PreimageBaseDeposit: Balance = deposit(10, 64);
+	pub const PreimageByteDeposit: Balance = deposit(0, 1);
 }
 pub type CouncilMaxProposals = ConstU32<25>;
 

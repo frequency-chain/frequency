@@ -7,6 +7,7 @@ use frequency_rococo_runtime::{
 };
 use hex::FromHex;
 use sc_service::ChainType;
+use sc_telemetry::TelemetryEndpoints;
 use sp_core::ByteArray;
 use sp_runtime::traits::AccountIdConversion;
 /// Specialized `ChainSpec` for the normal parachain runtime.
@@ -158,7 +159,7 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 		// Bootnodes
 		Vec::new(),
 		// Telemetry
-		None,
+		TelemetryEndpoints::new(vec![("wss://telemetry.frequency.xyz/submit/".into(), 0)]).ok(),
 		// Protocol ID
 		Some("frequency-rococo"),
 		// Fork ID
