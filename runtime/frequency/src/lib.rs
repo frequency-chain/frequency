@@ -452,7 +452,7 @@ impl pallet_democracy::Config for Runtime {
 		frame_system::EnsureRoot<AccountId>,
 	>;
 
-	/// A super-majority of 75% can have the next scheduled referendum be a straight majority-carries vote.
+	/// A super-majority of 3/5ths can have the next scheduled referendum be a straight majority-carries vote.
 	type ExternalMajorityOrigin = EitherOfDiverse<
 		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
 		frame_system::EnsureRoot<AccountId>,
