@@ -219,8 +219,7 @@ jobs:
         run: npm run lint
         working-directory: js/api-augment
       - name: Output Metadata
-        run: ./target/release/frequency export-metadata > js/api-augment/metadata.json
-        working-directory: js/api-augment
+        run: ./target/release/frequency export-metadata > ./js/api-augment/metadata.json
       - name: Build
         run: npm run build
         working-directory: js/api-augment
