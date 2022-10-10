@@ -145,7 +145,7 @@ pub fn frequency() -> ChainSpec {
 					),
 					(
 						common_runtime::constants::TREASURY_PALLET_ID.into_account_truncating(),
-						1 * frequency_runtime::UNIT,
+						EXISTENTIAL_DEPOSIT,
 					),
 				],
 				// TODO: initial council members

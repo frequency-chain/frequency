@@ -517,7 +517,7 @@ impl pallet_treasury::Config for Runtime {
 
 	/// Who rejects treasury proposals?
 	/// - Root (sudo or governance)
-	/// - 3/5ths of the Frequency Council
+	/// - Simple majority of the Frequency Council
 	type RejectOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,

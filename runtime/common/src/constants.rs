@@ -187,6 +187,37 @@ parameter_types! {
 	pub const MaxApprovals: u32 = 64;
 }
 
+/// Generates the pallet "account"
+/// 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z
+pub const TREASURY_PALLET_ID: PalletId = PalletId(*b"py/trsry");
+
+// Treasury
+// https://wiki.polkadot.network/docs/learn-treasury
+// https://paritytech.github.io/substrate/master/pallet_treasury/pallet/trait.Config.html
+parameter_types! {
+
+	/// Keyless account that holds the money for the treasury
+	pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
+
+	/// Bond amount a treasury request must put up to make the proposal
+	/// This will be transferred to OnSlash if the proposal is rejected
+	pub const ProposalBondPercent: Permill = Permill::from_percent(5);
+
+	/// Minimum bond for a treasury proposal
+	pub const ProposalBondMinimum: Balance = 100 * UNIT;
+
+	/// Minimum bond for a treasury proposal
+	pub const ProposalBondMaximum: Balance = 1_000 * UNIT;
+
+	/// How much of the treasury to burn, if funds remain at the end of the SpendPeriod
+	/// Set to zero until the economic system is setup and stabilized
+	pub const Burn: Permill = Permill::zero();
+
+	/// Maximum number of approved proposals per Spending Period
+	/// Set to 64 or 16 per week
+	pub const MaxApprovals: u32 = 64;
+}
+
 pub type TransactionPaymentOperationalFeeMultiplier = ConstU8<5>;
 
 parameter_types! {
