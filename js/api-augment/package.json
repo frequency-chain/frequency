@@ -13,6 +13,7 @@
   },
   "scripts": {
     "clean": "rm -Rf dist",
+    "clean:generated": "rm -Rf dist metadata.* interfaces",
     "build": "npm run clean && npm run generate:pre && npm run generate:defs && npm run generate:meta && npm run build:js && npm run build:copy && npm run build:package",
     "build:package": "node scripts/package.js",
     "build:copy": "cp CONTRIBUTING.md README.md ../../LICENSE ./index.cjs ./dist",
