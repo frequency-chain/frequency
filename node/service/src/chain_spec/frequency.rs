@@ -8,6 +8,7 @@ use frequency_runtime::{
 
 use hex::FromHex;
 use sc_service::ChainType;
+use sc_telemetry::TelemetryEndpoints;
 use sp_core::ByteArray;
 use sp_runtime::traits::AccountIdConversion;
 
@@ -164,7 +165,7 @@ pub fn frequency() -> ChainSpec {
 			"/dns/1.boot.frequency.xyz/tcp/30333/p2p/12D3KooWCW8d7Yz2d3Jcb49rWcNppRNEs1K2NZitCpPtrHSQb6dw".parse().unwrap(),
 		],
 		// Telemetry
-		None,
+		TelemetryEndpoints::new(vec![("wss://telemetry.polkadot.io/submit/".into(), 0)]).ok(),
 		// Protocol ID
 		Some("frequency"),
 		// Fork ID
