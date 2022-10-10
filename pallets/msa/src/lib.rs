@@ -81,6 +81,8 @@ use sp_runtime::{
 use sp_core::crypto::AccountId32;
 pub mod types;
 pub use types::{AddKeyData, AddProvider};
+
+/// provides the NonceBuckets functionality for preventing relay attacks
 pub mod nonce_bucket;
 
 #[cfg(feature = "runtime-benchmarks")]
