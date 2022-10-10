@@ -32,7 +32,7 @@ jobs:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
             js:
-              - "js/**"
+              - "js/api-augment/**"
               - '**/*.rs'
               - '**/Cargo.toml'
               - '**/Cargo.lock'
@@ -218,6 +218,12 @@ jobs:
       - name: Lint
         run: npm run lint
         working-directory: js/api-augment
+      - name: Restore Frequency Binary from Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            target/release/frequency
+          key: ${{runner.os}}-${{env.RUST_TOOLCHAIN}}-${{github.sha}}
       - name: Output Metadata
         run: ./target/release/frequency export-metadata > ./js/api-augment/metadata.json
       - name: Build
