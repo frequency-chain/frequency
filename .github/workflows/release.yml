@@ -1,39 +1,305 @@
-name: Release JS Frequency API Augment Package
+name: Release
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
 on:
-  release:
-    types: [ released ]
+  push:
     tags:
-      - js-frequency-api-augment-v*
-jobs:
-  publish-to-npm:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - "v[0-9]+.[0-9]+.[0-9]+" # ex. v0.29.9
+      - "v[0-9]+.[0-9]+.[0-9]+-[0-9]+" # ex. v0.29.9-1
+      - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-1-rc1
+env:
+  RUST_TOOLCHAIN: nightly-2022-07-23
+  RELEASE_VERSION: ${{github.ref_name}}
 
-      - name: Use Node.js
+jobs:
+  compile-project:
+    name: Compile ${{matrix.arch}} Binary for ${{matrix.network}}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        network: [local, rococo, mainnet]
+        include:
+          - network: local
+            spec: frequency-rococo-local
+            build-profile: release
+          - network: rococo
+            spec: frequency-rococo-testnet
+            build-profile: production
+          - network: mainnet
+            spec: frequency
+            build-profile: production
+          - os: ubuntu-latest
+            arch: amd64
+          - os: macos-latest
+            arch: arm64
+    runs-on: ${{matrix.os}}
+    steps:
+      - name: "[DEBUG ONLY!!!] Dumping contexts"
+        env:
+          GITHUB_CONTEXT: ${{toJson(github)}}
+        run: |
+          echo "$GITHUB_CONTEXT"
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{env.RUST_TOOLCHAIN}}
+          default: true
+          profile: minimal
+          target: wasm32-unknown-unknown
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Cache Target Dir
+        id: cache-target-dir
+        uses: actions/cache@v3
+        with:
+          path: target/${{matrix.build-profile}}
+          key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.RELEASE_VERSION}}
+      - name: Compile for ${{matrix.network}}
+        run: |
+          CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build \
+            --locked \
+            --features ${{matrix.spec}} \
+            --profile ${{matrix.build-profile}}
+      - name: Run Sanity Checks
+        run: |
+          file ./target/${{matrix.build-profile}}/frequency && \
+            ./target/${{matrix.build-profile}}/frequency --version
+
+  release-binaries:
+    needs: compile-project
+    name: Release ${{matrix.arch}} Binary for ${{matrix.network}}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        network: [rococo, mainnet]
+        include:
+          - network: rococo
+            spec: frequency-rococo-testnet
+            build-profile: production
+          - network: mainnet
+            spec: frequency
+            build-profile: production
+          - os: ubuntu-latest
+            arch: amd64
+          - os: macos-latest
+            arch: arm64
+    runs-on: ${{matrix.os}}
+    steps:
+      - name: Cache target dir
+        id: cache-target-dir
+        uses: actions/cache@v3
+        with:
+          path: target/${{matrix.build-profile}}
+          key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.RELEASE_VERSION}}
+      - name: Create tarball of frequency rococo binary
+        run: |
+          tar -cvf frequency-binary-${{matrix.network}}-${{env.RELEASE_VERSION}}.${{matrix.arch}}.tar \
+            ./target/${{matrix.build-profile}}/frequency
+      - name: Upload frequency binary artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: frequency-binary-${{matrix.network}}-${{env.RELEASE_VERSION}}.${{matrix.arch}}.tar
+
+  release-node-images:
+    needs: compile-project
+    name: Release ${{matrix.arch}} Node Image for ${{matrix.network}}
+    strategy:
+      matrix:
+        arch: [amd64]
+        network: [rococo, mainnet]
+        include:
+          - network: rococo
+            build-profile: production
+          - network: mainnet
+            build-profile: production
+    env:
+      DOCKER_HUB_PROFILE: frequencychain
+      IMAGE_NAME: parachain-node
+    runs-on: ubuntu-latest
+    steps:
+      # BUILD NODE DOCKER IMAGES
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Cache target dir
+        id: cache-target-dir
+        uses: actions/cache@v3
+        with:
+          path: target/${{matrix.build-profile}}
+          key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.RELEASE_VERSION}}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: "amd64"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{secrets.DOCKERHUB_USERNAME_FC}}
+          password: ${{secrets.DOCKERHUB_TOKEN_FC}}
+      - name: Build and Push Parachain Image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          file: ./docker/${{env.IMAGE_NAME}}.dockerfile
+          tags: |
+            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.RELEASE_VERSION}}
+            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:latest
+      - name: Update DockerHub Description
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{secrets.DOCKERHUB_USERNAME_FC}}
+          password: ${{secrets.DOCKERHUB_TOKEN_FC}}
+          repository: ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}
+          readme-filepath: docker/${{env.IMAGE_NAME}}-${{matrix.network}}.overview.md
+
+  release-dev-images:
+    needs: compile-project
+    name: Release Dev Image for ${{matrix.node}}
+    strategy:
+      matrix:
+        network: [local]
+        arch: [amd64]
+        node: [collator-node-local, instant-seal-node]
+        include:
+          - network: local
+            build-profile: release
+    env:
+      DOCKER_HUB_PROFILE: frequencychain
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Cache target dir
+        id: cache-target-dir
+        uses: actions/cache@v3
+        with:
+          path: target/${{matrix.build-profile}}
+          key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.RELEASE_VERSION}}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: "amd64"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{secrets.DOCKERHUB_USERNAME_FC}}
+          password: ${{secrets.DOCKERHUB_TOKEN_FC}}
+      - name: Build and Push Dev Image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          file: ./docker/${{matrix.node}}.dockerfile
+          tags: |
+            ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.RELEASE_VERSION}}
+            ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:latest
+      - name: Update DockerHub Description
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{secrets.DOCKERHUB_USERNAME_FC}}
+          password: ${{secrets.DOCKERHUB_TOKEN_FC}}
+          repository: ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}
+          readme-filepath: docker/${{matrix.node}}.overview.md
+
+  release-wasm:
+    name: Release Deterministic WASM for ${{matrix.network}}
+    strategy:
+      matrix:
+        network: [rococo, mainnet]
+        include:
+          - network: rococo
+            build-profile: production
+            package: frequency-rococo-runtime
+            runtime-dir: runtime/frequency-rococo
+            wasm-file-name-prefix: frequency_rococo_runtime
+          - network: mainnet
+            build-profile: production
+            package: frequency-runtime
+            runtime-dir: runtime/frequency
+            wasm-file-name-prefix: frequency_runtime
+
+    env:
+      SRT_TOOL_VERSION: "1.62.0"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Build Deterministic WASM with srtool
+        run: |
+          docker run --rm -e PACKAGE=${{matrix.package}} \
+            -e RUNTIME_DIR=${{matrix.runtime-dir}} \
+            -e PROFILE=${{matrix.build-profile}} \
+            -e BUILD_OPTS="--features on-chain-release-build,no-metadata-docs" \
+            -v $PWD:/build \
+            -v /tmp/cargo:/cargo-home paritytech/srtool:$SRT_TOOL_VERSION build
+      - name: Create Tarball
+        run: |
+          tar -cvf frequency-wasm-${{matrix.network}}-${{env.RELEASE_VERSION}}.tar \
+            ./${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}/${{matrix.wasm-file-name-prefix}}.compact.compressed.wasm \
+            ./${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}/${{matrix.wasm-file-name-prefix}}.compact.wasm \
+            ./${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}/${{matrix.wasm-file-name-prefix}}.wasm
+      - name: Upload WASM
+        uses: softprops/action-gh-release@v1
+        with:
+          files: frequency-wasm-${{matrix.network}}-${{env.RELEASE_VERSION}}.tar
+
+  release-rust-developer-docs:
+    name: Release Rust Developer Docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{env.RUST_TOOLCHAIN}}
+          default: true
+          profile: minimal
+          target: wasm32-unknown-unknown
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Build Docs
+        run: |
+          RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps
+      - name: Deploy Frequency docs to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4.4.0
+        with:
+          branch: gh-pages
+          folder: ./target/doc
+
+  release-js-api-augment:
+    name: Release JS API Augment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Set up NodeJs
         uses: actions/setup-node@v3
         with:
           node-version: 16
-          cache: 'npm'
-          registry-url: 'https://registry.npmjs.org'
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json
-
-      - name: Install 💾
+      - name: Install
         run: npm ci
-
+        working-directory: js/api-augment
       - name: Build
         run: npm run build
         working-directory: js/api-augment
         env:
-          FULL_SHA: ${{ github.sha }}
-
-      - name: Version ⬆️
-        run: npm version --new-version ${{ github.event.release.tag_name }} --no-git-tag-version
+          FULL_SHA: ${{env.RELEASE_VERSION}}
+      - name: Version Package
+        run: npm version --new-version "${{env.RELEASE_VERSION}}" --no-git-tag-version
         working-directory: js/api-augment/dist
-
-      - name: Publish 🚂
-        run: npm publish --tag latest
+        env:
+          FULL_SHA: ${{env.RELEASE_VERSION}}
+      - name: Release on NPM @latest
+        run: npm publish --tag latest --access public
         working-directory: js/api-augment/dist
         env:
           NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
