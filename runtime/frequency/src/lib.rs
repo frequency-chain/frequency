@@ -439,7 +439,7 @@ impl pallet_democracy::Config for Runtime {
 	type Proposal = Call;
 	type Scheduler = Scheduler;
 	type Slash = (); // Treasury;
-	type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_democracy::SubstrateWeight<Runtime>;
 	type VoteLockingPeriod = EnactmentPeriod; // Same as EnactmentPeriod
 	type VotingPeriod = VotingPeriod;
 
