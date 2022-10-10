@@ -9,11 +9,71 @@
 <span id="3">3</span>
 <span id="4">4</span>
 <span id="5">5</span>
+<span id="6">6</span>
+<span id="7">7</span>
+<span id="8">8</span>
+<span id="9">9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">constants</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">extensions</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">weights</span>;
+
+<span class="doccomment">/// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value</span>
+<span class="doccomment">/// or to an environment variable or testing value (in case the `frequency-rococo-local` feature is selected or in instant-sealing mode).</span>
+<span class="doccomment">/// Note that the environment variable is evaluated _at compile time_.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Usage:</span>
+<span class="doccomment">/// ```Rust</span>
+<span class="doccomment">/// parameter_types! {</span>
+<span class="doccomment">/// 	// Note that the env variable version parameter cannot be const.</span>
+<span class="doccomment">/// 	pub LaunchPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 1 * MINUTES, &quot;FRQCY_LAUNCH_PERIOD&quot;);</span>
+<span class="doccomment">/// 	pub const VotingPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 1 * MINUTES);</span>
+<span class="doccomment">/// }</span>
+<span class="doccomment">/// ```</span>
+<span class="attribute">#[<span class="ident">macro_export</span>]</span>
+<span class="macro">macro_rules!</span> <span class="ident">prod_or_local_or_env</span> {
+	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">prod</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">test</span>:<span class="ident">expr</span>) =&gt; {
+		<span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frequency-rococo-local&quot;</span>) {
+			<span class="macro-nonterminal">$</span><span class="macro-nonterminal">test</span>
+		} <span class="kw">else</span> {
+			<span class="macro-nonterminal">$</span><span class="macro-nonterminal">prod</span>
+		}
+	};
+	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">prod</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">test</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">env</span>:<span class="ident">expr</span>) =&gt; {
+		<span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frequency-rococo-local&quot;</span>) {
+			<span class="macro">core::option_env!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">env</span>).<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">s</span>.<span class="ident">parse</span>().<span class="ident">ok</span>()).<span class="ident">flatten</span>().<span class="ident">unwrap_or</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">test</span>)
+		} <span class="kw">else</span> {
+			<span class="macro-nonterminal">$</span><span class="macro-nonterminal">prod</span>
+		}
+	};
+}
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (848090dcd 2022-07-22)" ></div>
 </body></html>

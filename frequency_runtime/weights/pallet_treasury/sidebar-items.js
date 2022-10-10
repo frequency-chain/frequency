@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["WeightInfo","Weight functions for `pallet_treasury`."]]};
