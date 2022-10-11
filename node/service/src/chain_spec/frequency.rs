@@ -131,6 +131,7 @@ pub fn frequency() -> ChainSpec {
 						)
 						.unwrap(),
 					),
+					100_000 * UNIT,
 				],
 				// Sudo Account
 				Some(frequency_mainnet_keys::MAINNET_FRQ_SUDO.parse::<AccountId>().unwrap().into()),
@@ -196,8 +197,7 @@ fn frequency_genesis(
 		parachain_info: frequency_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: frequency_runtime::CollatorSelectionConfig {
 			invulnerables: initial_authorities.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond = 100_000 * UNIT,
-			desired_candidates = Default::default(),
+			desired_candidates: 0,
 			..Default::default()
 		},
 		session: frequency_runtime::SessionConfig {
