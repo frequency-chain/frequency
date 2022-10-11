@@ -81,7 +81,8 @@ where
 			.iter() // TODO: Change back to par_iter()
 			.map(|&id| {
 				let delegator = Delegator(id);
-				let has_delegation = api.has_delegation(&at, delegator, provider, block_number).unwrap();
+				let has_delegation =
+					api.has_delegation(&at, delegator, provider, block_number).unwrap();
 				(id, has_delegation)
 			})
 			.collect())
