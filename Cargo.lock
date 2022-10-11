@@ -1026,7 +1026,6 @@ dependencies = [
  "jsonrpsee",
  "proptest",
  "rayon",
- "sha2 0.10.6",
  "sp-api",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.29)",
  "thiserror",
