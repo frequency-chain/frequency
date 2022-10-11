@@ -299,6 +299,22 @@ pub mod pallet {
 		ProofNotYetValid,
 	}
 
+	// #[pallet::genesis_config]
+	// pub struct GenesisConfig {}
+	//
+	// #[cfg(feature = "std")]
+	// impl sp_std::default::Default for GenesisConfig {
+	// 	fn default() -> Self {
+	//
+	// 	}
+	// }
+	//
+	// #[pallet::genesis_build]
+	// impl<T: Config> GenesisBuild<T> for GenesisConfig {
+	// 	fn build(&self) {
+	// 	}
+	// }
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Creates an MSA for the Origin (sender of the transaction).  Origin is assigned an MSA ID.

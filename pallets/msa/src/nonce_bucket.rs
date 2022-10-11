@@ -1,4 +1,3 @@
-// use sp_io::hashing::blake2_256;
 use sp_runtime::MultiSignature;
 use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
 
@@ -9,9 +8,10 @@ use crate::nonce_bucket::NonceBucketsError::NoSuchBucket;
 /// NonceBucket stores signatures that expire at BlockNumber `mortality_block`
 #[derive(Clone, Debug, PartialEq)]
 pub struct NonceBucket {
-	/// when this bucket is no longer valid
+	/// when this bucket can be cleared
 	pub mortality_block: BlockNumber,
-	/// signature map that stores the current block number when the signature was provided
+	/// Map that stores the hashes of signatures as keys to an individual block number
+	/// which is the ______ ?
 	pub signature_hashes: BTreeMap<Hash, u32>,
 }
 
@@ -43,6 +43,8 @@ pub struct NonceBuckets {
 pub enum NonceBucketsError {
 	/// Attempted to add a signature when the signature is already in the registry
 	BucketKeyExists,
+	/// Attempted to add a signature with a mortality too far in the future
+	MortalityTooHigh,
 	/// Attempted to retrieve a bucket outside the bounds of storage
 	NoSuchBucket,
 }
@@ -56,8 +58,8 @@ impl NonceBuckets {
 		block_number / MORTALITY_SIZE % NUM_BUCKETS
 	}
 
-	/// hash_multisignature takes a MultiSignature and calls Blakc2Hasher::hash by getting
-	/// its ref
+	/// hash_multisignature takes a MultiSignature and hashes the signature by getting
+	/// it as_ref.
 	pub fn hash_multisignature(signature: &MultiSignature) -> Hash {
 		match signature {
 			MultiSignature::Ed25519(ref signature) =>
@@ -73,27 +75,25 @@ impl NonceBuckets {
 	/// A bucket number is determined by the current block.
 	/// The mortality block is when all the signatures in the bucket will expire.
 	pub fn new(current_block: BlockNumber) -> Self {
-		let mut starting_block = current_block;
-		let mut mortality_block = Self::mortality_block_for(current_block);
+		let mut bucket_mortality_block = (current_block / MORTALITY_SIZE + 1) * MORTALITY_SIZE;
 		let mut buckets: Vec<NonceBucket> =
-			vec![NonceBucket::new(mortality_block); NUM_BUCKETS as usize];
+			vec![NonceBucket::new(bucket_mortality_block); NUM_BUCKETS as usize];
 
 		// cycle through the buckets and set the mortality block
+		// note: bucket_num is not always going to be zero, because it depends on the value
+		// of current_block. So we simply iterate as many times as there are buckets.
+		let mut bucket_num: usize = Self::bucket_for(current_block) as usize;
 		for _i in 0..NUM_BUCKETS {
-			let bucket_num: usize = Self::bucket_for(starting_block) as usize;
 			let bucket = buckets.get_mut(bucket_num).unwrap();
-			bucket.mortality_block = mortality_block;
-			mortality_block += MORTALITY_SIZE;
-			starting_block += MORTALITY_SIZE;
+			bucket.mortality_block = bucket_mortality_block;
+			bucket_mortality_block += MORTALITY_SIZE;
+			if bucket_num == (NUM_BUCKETS - 1) as usize {
+				bucket_num = 0;
+			} else {
+				bucket_num += 1;
+			}
 		}
 		Self { buckets }
-	}
-
-	/// mortality_block_for gets the expected mortality block for `block_number`.
-	/// the mortality block is when a registered signature expires.
-	fn mortality_block_for(block_number: BlockNumber) -> u32 {
-		// stupid computer math tricks
-		(block_number / MORTALITY_SIZE + 1) * MORTALITY_SIZE
 	}
 
 	// Instance fns
@@ -106,24 +106,25 @@ impl NonceBuckets {
 		&mut self,
 		sig: &Signature,
 		current_block: BlockNumber,
+		mortality_block: BlockNumber,
 	) -> Result<BlockNumber, NonceBucketsError> {
 		let key: Hash = Self::hash_multisignature(sig);
 
-		if self.is_signature_live(sig, current_block) {
-			Err(NonceBucketsError::BucketKeyExists)
+		if current_block + MORTALITY_SIZE * NUM_BUCKETS < mortality_block {
+			Err(NonceBucketsError::MortalityTooHigh)
 		} else {
-			let bucket_num = Self::bucket_for(current_block);
+			let bucket_num = Self::bucket_for(mortality_block);
 			if let Some(bucket) = self.buckets.get_mut(bucket_num as usize) {
-				// let mut sig_hashes = bucket.signature_hashes;
-				if Self::mortality_block_for(current_block) != bucket.mortality_block {
+				// check to see if it's time to clear this bucket based on the current block.
+				if current_block > bucket.mortality_block {
 					bucket.signature_hashes.clear();
 				}
-				match bucket.signature_hashes.insert(key, current_block) {
-					// should not happen, for completeness because `try_insert` is experimental
+				match bucket.signature_hashes.insert(key, mortality_block) {
 					Some(_) => Err(NonceBucketsError::BucketKeyExists),
-					None => Ok(Self::bucket_for(current_block)),
+					None => Ok(Self::bucket_for(mortality_block)),
 				}
 			} else {
+				// This shouldn't happen but it's required to make the compiler happy.
 				Err(NoSuchBucket)
 			}
 		}
@@ -133,7 +134,7 @@ impl NonceBuckets {
 	/// Returns: true if the signature is registered and not expired
 	/// Returns false if the signature is expired or isn't registered.
 	pub fn is_signature_live(&self, sig: &Signature, current_block: BlockNumber) -> bool {
-		let bucket = self.get_bucket(Self::bucket_for(current_block)).unwrap();
+		let bucket = self.get_bucket(Self::bucket_for(current_block - MORTALITY_SIZE)).unwrap();
 		let sighash = Self::hash_multisignature(sig);
 		match bucket.signature_hashes.get_key_value(&sighash) {
 			None => false,
@@ -168,7 +169,7 @@ mod test_nonce_buckets {
 	}
 
 	#[test]
-	pub fn instantiate_a_bucket_correctly() {
+	pub fn instantiates_a_bucket_correctly() {
 		new_test_ext().execute_with(|| {
 			let bucket = NonceBucket::new(5);
 			assert_eq!(bucket.mortality_block, 5);
@@ -178,10 +179,10 @@ mod test_nonce_buckets {
 	#[test]
 	pub fn bucket_for_works() {
 		new_test_ext().execute_with(|| {
-			for i in [1, 2, 3, 49, 222, 22200] {
+			for i in [0, 1, 2, 3, 99, 222, 77_400] {
 				assert_eq!(0, NonceBuckets::bucket_for(i));
 			}
-			for j in [333, 1101, 111, 99900, 33300] {
+			for j in [333, 1101, 100, 111, 99_900, 66_700] {
 				assert_eq!(1, NonceBuckets::bucket_for(j));
 			}
 		})
@@ -193,22 +194,22 @@ mod test_nonce_buckets {
 			let buckets = NonceBuckets::new(50_099);
 
 			// The "even" bucket signatures should expire at the hundred block
-			let mut test_bucket = buckets.get_bucket(0).unwrap();
-			assert_eq!(50_100, test_bucket.mortality_block);
+			let test_bucket1 = buckets.get_bucket(0).unwrap();
+			assert_eq!(50_100, test_bucket1.mortality_block);
 
 			// The "odd" bucket signatures should expire at the two-hundred block
-			test_bucket = buckets.get_bucket(1).unwrap();
-			assert_eq!(test_bucket.mortality_block, 50_200);
+			let test_bucket2 = buckets.get_bucket(1).unwrap();
+			assert_eq!(50_200, test_bucket2.mortality_block);
 
 			let result = buckets.get_bucket(2);
 			assert_err!(result, NonceBucketsError::NoSuchBucket);
 
 			// should be bucket 1
 			let buckets2 = NonceBuckets::new(3_333_333);
-			test_bucket = buckets2.get_bucket(1).unwrap();
+			let test_bucket = buckets2.get_bucket(1).unwrap();
 			assert_eq!(3_333_400, test_bucket.mortality_block);
 
-			test_bucket = buckets2.get_bucket(0).unwrap();
+			let test_bucket = buckets2.get_bucket(0).unwrap();
 			assert_eq!(3_333_500, test_bucket.mortality_block);
 		})
 	}
@@ -216,10 +217,13 @@ mod test_nonce_buckets {
 	#[test]
 	pub fn puts_signature_in_correct_bucket() {
 		new_test_ext().execute_with(|| {
-			let mut current_block: BlockNumber = 11_333;
+			let current_block: BlockNumber = 11_233;
+			let mortality_block: BlockNumber = 11_333;
+
 			let buckets = &mut NonceBuckets::new(current_block);
+
 			let sig1 = &generate_test_signature();
-			assert_ok!(buckets.push_signature(sig1, current_block.clone()));
+			assert_ok!(buckets.push_signature(sig1, current_block.clone(), mortality_block));
 
 			// signature goes in "odd" bucket
 			let test_bucket = buckets.get_bucket(1).unwrap();
@@ -232,18 +236,21 @@ mod test_nonce_buckets {
 
 			let res = test_bucket.signature_hashes.get(&sighash);
 			assert_ne!(None, res);
-			assert_eq!(Some(&current_block), res);
+			assert_eq!(Some(&mortality_block), res);
 		});
 	}
 
 	#[test]
 	pub fn cannot_add_signature_twice() {
 		new_test_ext().execute_with(|| {
-			let current_block: BlockNumber = 11_222;
+			let current_block: BlockNumber = 11_122;
+			let mortality_block: BlockNumber = 11_222;
 			let buckets = &mut NonceBuckets::new(current_block);
+
 			let sig1 = &generate_test_signature();
-			assert_ok!(buckets.push_signature(sig1, current_block.clone()));
-			let mut res = buckets.push_signature(sig1, current_block.clone());
+			assert_ok!(buckets.push_signature(sig1, current_block.clone(), mortality_block));
+
+			let res = buckets.push_signature(sig1, current_block.clone(), mortality_block.clone());
 			assert_eq!(Err(BucketKeyExists), res);
 		})
 	}
@@ -253,7 +260,8 @@ mod test_nonce_buckets {
 		// Test that we put signatures in first bucket when current block > start_block + (mortality size*num buckets)
 		// Test that we clear the bucket before adding new signatures.
 		new_test_ext().execute_with(|| {
-			let mut current_block: BlockNumber = 11_222;
+			let mut current_block: BlockNumber = 11_122;
+			let mut mortality_block: BlockNumber = 11_299;
 			let mut buckets = NonceBuckets::new(current_block);
 
 			let sig1 = &generate_test_signature();
@@ -261,21 +269,23 @@ mod test_nonce_buckets {
 			let sig3 = &generate_test_signature();
 
 			{
-				assert_ok!(buckets.push_signature(sig1, current_block.clone()));
+				assert_ok!(buckets.push_signature(sig1, current_block.clone(), mortality_block));
 				let first_bucket = buckets.get_bucket(0).unwrap();
 				assert_eq!(1, first_bucket.signature_hashes.len());
 			}
 
 			current_block += 100;
+			mortality_block += 100;
 			{
-				assert_ok!(buckets.push_signature(sig2, current_block.clone()));
+				assert_ok!(buckets.push_signature(sig2, current_block.clone(), mortality_block));
 				let last_bucket = buckets.get_bucket(1).unwrap();
 				assert_eq!(1, last_bucket.signature_hashes.len());
 			}
 
 			current_block += 100;
+			mortality_block += 100;
 			{
-				assert_ok!(buckets.push_signature(sig3, current_block.clone()));
+				assert_ok!(buckets.push_signature(sig3, current_block.clone(), mortality_block));
 				// ensure there is only one signature and it's not the old one
 				let first_bucket = buckets.get_bucket(0).unwrap();
 				assert_eq!(1, first_bucket.signature_hashes.len());
@@ -286,18 +296,19 @@ mod test_nonce_buckets {
 				let expected_none = first_bucket.signature_hashes.get(&sighash1);
 				assert_eq!(None, expected_none);
 				let expected_some = first_bucket.signature_hashes.get(&sighash3);
-				assert_eq!(Some(&current_block), expected_some);
+				assert_eq!(Some(&mortality_block), expected_some);
 			}
 		})
 	}
 
 	#[test]
-	pub fn signature_is_valid_when_found_in_correct_bucket_and_before_mortality() {
+	pub fn signature_is_live_when_found_in_correct_bucket_and_before_mortality() {
 		new_test_ext().execute_with(|| {
-			let mut current_block: BlockNumber = 3_838_433;
+			let mut current_block: BlockNumber = 3_838_333;
+			let mortality_block: BlockNumber = 3_838_433;
 			let buckets = &mut NonceBuckets::new(current_block);
 			let sig1 = &generate_test_signature();
-			assert_ok!(buckets.push_signature(sig1, current_block.clone()));
+			assert_ok!(buckets.push_signature(sig1, current_block.clone(), mortality_block));
 
 			// signature goes in "even" bucket
 			let test_bucket = buckets.get_bucket(0).unwrap();
@@ -309,15 +320,14 @@ mod test_nonce_buckets {
 	}
 
 	#[test]
-	pub fn signature_is_invalid_when_not_found_in_correct_bucket() {
+	pub fn signature_is_dead_when_not_found_in_expected_bucket() {
 		new_test_ext().execute_with(|| {
-			let mut current_block: BlockNumber = 3_838_433;
+			let mut current_block: BlockNumber = 3_838_333;
+			let mortality_block: BlockNumber = 3_838_433;
 			let buckets = &mut NonceBuckets::new(current_block);
 			let sig1 = &generate_test_signature();
-			assert_ok!(buckets.push_signature(sig1, current_block.clone()));
+			assert_ok!(buckets.push_signature(sig1, current_block.clone(), mortality_block));
 
-			// signature goes in "even" bucket
-			let test_bucket = buckets.get_bucket(0).unwrap();
 			current_block += MORTALITY_SIZE;
 			assert_eq!(false, buckets.is_signature_live(sig1, current_block));
 
