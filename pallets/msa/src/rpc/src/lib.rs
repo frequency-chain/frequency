@@ -78,14 +78,11 @@ where
 		let provider = Provider(provider_msa_id);
 
 		Ok(delegator_msa_ids
-			.par_iter()
+			.iter() // TODO: Change back to par_iter()
 			.map(|&id| {
 				let delegator = Delegator(id);
-				(
-					id,
-					map_rpc_result(api.has_delegation(&at, delegator, provider, block_number))
-						.unwrap(),
-				)
+				let has_delegation = api.has_delegation(&at, delegator, provider, block_number).unwrap();
+				(id, has_delegation)
 			})
 			.collect())
 	}

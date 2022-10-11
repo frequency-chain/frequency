@@ -893,10 +893,10 @@ impl_runtime_apis! {
 		// 	Ok(Msa::fetch_msa_keys(msa_id))
 		// }
 
-		fn has_delegation(delegator: Delegator, provider: Provider, block_number: Option<BlockNumber>) -> Result<bool, DispatchError> {
+		fn has_delegation(delegator: Delegator, provider: Provider, block_number: Option<BlockNumber>) -> bool {
 			match Msa::ensure_valid_delegation(provider, delegator, block_number) {
-				Ok(_) => Ok(true),
-				Err(_) => Err(sp_runtime::DispatchError::Other("Invalid Delegation")),
+				Ok(_) => true,
+				Err(_) => false,
 			}
 		}
 
