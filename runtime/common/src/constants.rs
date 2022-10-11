@@ -235,13 +235,6 @@ parameter_types! {
 }
 // -end- Transaction Payment Pallet ---
 
-// --- Parachain System Pallet ---
-parameter_types! {
-	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-}
-// -end- Parachain System Pallet ---
-
 // --- Session Pallet ---
 pub type SessionPeriod = ConstU32<{ 6 * HOURS }>;
 pub type SessionOffset = ZERO;

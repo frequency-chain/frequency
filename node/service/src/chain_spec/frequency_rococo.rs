@@ -16,9 +16,6 @@ use sp_runtime::traits::AccountIdConversion;
 pub type ChainSpec =
 	sc_service::GenericChainSpec<frequency_rococo_runtime::GenesisConfig, Extensions>;
 
-/// The default XCM version to set in genesis config.
-const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
-
 use super::{get_properties, Extensions};
 
 pub mod public_testnet_keys {
@@ -220,9 +217,6 @@ fn frequency_rococo_genesis(
 		sudo: SudoConfig {
 			// Assign network admin rights.
 			key: root_key,
-		},
-		polkadot_xcm: frequency_rococo_runtime::PolkadotXcmConfig {
-			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 		schemas: Default::default(),
 		vesting: Default::default(),

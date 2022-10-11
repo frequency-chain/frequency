@@ -72,19 +72,12 @@ pallet-msa-runtime-api = { path = "../../pallets/msa/src/runtime-api", default-f
 pallet-schemas = { path = "../../pallets/schemas", default-features = false }
 pallet-schemas-runtime-api = { path = "../../pallets/schemas/src/runtime-api", default-features = false }
 # Polkadot
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.29" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.29" }
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.29" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.29" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.29" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.29" }
 # Cumulus
 cumulus-pallet-aura-ext = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.29" }
-cumulus-pallet-dmp-queue = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.29" }
 cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.29" }
 cumulus-pallet-session-benchmarking = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.29" }
-cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.29" }
-cumulus-pallet-xcmp-queue = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.29" }
 cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.29" }
 cumulus-primitives-timestamp = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.29" }
 cumulus-primitives-utility = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.29" }
@@ -100,10 +93,7 @@ std = [
   "serde",
   "common-primitives/std",
   "cumulus-pallet-aura-ext/std",
-  "cumulus-pallet-dmp-queue/std",
   "cumulus-pallet-parachain-system/std",
-  "cumulus-pallet-xcm/std",
-  "cumulus-pallet-xcmp-queue/std",
   "cumulus-primitives-core/std",
   "cumulus-primitives-timestamp/std",
   "cumulus-primitives-utility/std",
@@ -127,7 +117,6 @@ std = [
   "pallet-transaction-payment/std",
   "pallet-treasury/std",
   "pallet-utility/std",
-  "pallet-xcm/std",
   "pallet-msa/std",
   "pallet-msa-runtime-api/std",
   "pallet-messages/std",
@@ -151,9 +140,6 @@ std = [
   "sp-std/std",
   "sp-transaction-pool/std",
   "sp-version/std",
-  "xcm-builder/std",
-  "xcm-executor/std",
-  "xcm/std",
 ]
 runtime-benchmarks = [
   "hex-literal",
@@ -168,15 +154,12 @@ runtime-benchmarks = [
   "pallet-scheduler/runtime-benchmarks",
   "pallet-timestamp/runtime-benchmarks",
   "pallet-timestamp/runtime-benchmarks",
-  "pallet-xcm/runtime-benchmarks",
   'pallet-msa/runtime-benchmarks',
   "pallet-messages/runtime-benchmarks",
   "pallet-schemas/runtime-benchmarks",
   "pallet-utility/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
-  "xcm-builder/runtime-benchmarks",
   "cumulus-pallet-session-benchmarking/runtime-benchmarks",
-  "cumulus-pallet-xcmp-queue/runtime-benchmarks",
   "pallet-collective/runtime-benchmarks",
   "pallet-preimage/runtime-benchmarks",
   "pallet-democracy/runtime-benchmarks",
@@ -184,10 +167,7 @@ runtime-benchmarks = [
 ]
 try-runtime = [
   "cumulus-pallet-aura-ext/try-runtime",
-  "cumulus-pallet-dmp-queue/try-runtime",
   "cumulus-pallet-parachain-system/try-runtime",
-  "cumulus-pallet-xcm/try-runtime",
-  "cumulus-pallet-xcmp-queue/try-runtime",
   "frame-executive/try-runtime",
   "frame-system/try-runtime",
   "frame-try-runtime",
@@ -203,7 +183,6 @@ try-runtime = [
   "pallet-timestamp/try-runtime",
   "pallet-transaction-payment/try-runtime",
   "pallet-treasury/try-runtime",
-  "pallet-xcm/try-runtime",
   "parachain-info/try-runtime",
   "orml-vesting/try-runtime",
   "pallet-scheduler/try-runtime",

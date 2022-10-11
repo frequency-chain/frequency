@@ -16,9 +16,6 @@ use sp_runtime::traits::AccountIdConversion;
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConfig, Extensions>;
 
-/// The default XCM version to set in genesis config.
-const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
-
 use super::{get_properties, Extensions};
 
 //TODO: Define FINAL keys for frequency mainnet
@@ -223,9 +220,6 @@ fn frequency_genesis(
 		sudo: SudoConfig {
 			// Assign network admin rights.
 			key: root_key,
-		},
-		polkadot_xcm: frequency_runtime::PolkadotXcmConfig {
-			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 		schemas: Default::default(),
 		vesting: Default::default(),
