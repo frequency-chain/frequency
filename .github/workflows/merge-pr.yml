@@ -36,8 +36,7 @@ jobs:
         with:
           shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Output Metadata
-        run: CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo run --features frequency \
-          export-metadata > ./js/api-augment/metadata.json
+        run: CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo run --features frequency export-metadata > ./js/api-augment/metadata.json
       - name: Set up NodeJs
         uses: actions/setup-node@v3
         with:
