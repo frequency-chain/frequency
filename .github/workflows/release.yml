@@ -144,8 +144,9 @@ jobs:
           path: ./target/doc
           if-no-files-found: error
 
-  build-js-api-augment:
-    name: Build JS API Augment
+  release-js-api-augment:
+    needs: compile-project
+    name: Release JS API Augment
     runs-on: ubuntu-latest
     steps:
       - name: Check Out Repo
@@ -158,8 +159,16 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Install
-        run: npm ci
+        run: npm install # DO NOT use `npm ci` as we want the latest polkadot/api possible
         working-directory: js/api-augment
+      - name: Restore Frequency Binary from Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            target/production/frequency
+          key: ${{runner.os}}-frequency-amd64-${{env.RELEASE_VERSION}}
+      - name: Output Metadata
+        run: target/production/frequency export-metadata > ./js/api-augment/metadata.json
       - name: Build
         run: npm run build
         working-directory: js/api-augment
