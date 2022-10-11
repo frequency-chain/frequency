@@ -11,7 +11,6 @@ use jsonrpsee::{
 	proc_macros::rpc,
 };
 use pallet_msa_runtime_api::MsaApi as MsaRuntimeApi;
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
@@ -78,7 +77,7 @@ where
 		let provider = Provider(provider_msa_id);
 
 		Ok(delegator_msa_ids
-			.iter() // TODO: Change back to par_iter()
+			.iter() // TODO: Change back to par_iter() which has borrow panic
 			.map(|&id| {
 				let delegator = Delegator(id);
 				let has_delegation =
