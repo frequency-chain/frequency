@@ -204,7 +204,7 @@ pub type CollatorMaxCandidates = ZERO;
 pub type CollatorMinCandidates = ZERO;
 
 parameter_types! {
-	pub const CollatorPotId: PalletId = PalletId(*b"PotStake");
+	pub const NeverDepositIntoId: PalletId = PalletId(*b"NeverDep");
 	pub const MessagesMaxPayloadSizeBytes: u32 = 1024 * 50; // 50K
 }
 

@@ -602,7 +602,7 @@ impl pallet_collator_selection::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
 	type UpdateOrigin = CollatorSelectionUpdateOrigin;
-	type PotId = CollatorPotId;
+	type PotId = NeverDepositIntoId;
 	type MaxCandidates = CollatorMaxCandidates;
 	type MinCandidates = CollatorMinCandidates;
 	type MaxInvulnerables = ConstU32<5>;

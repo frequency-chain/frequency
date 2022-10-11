@@ -196,7 +196,8 @@ fn frequency_genesis(
 		parachain_info: frequency_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: frequency_runtime::CollatorSelectionConfig {
 			invulnerables: initial_authorities.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond,
+			candidacy_bond = 100_000 * UNIT,
+			desired_candidates = Default::default(),
 			..Default::default()
 		},
 		session: frequency_runtime::SessionConfig {
