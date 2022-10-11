@@ -369,6 +369,7 @@ parameter_types! {
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(10) * RuntimeBlockWeights::get().max_block;
 	// The maximum number of scheduled calls in the queue for a single block. Not strictly enforced, but used for weight estimation.
 	// Retry a scheduled item every 25 blocks (5 minute) until the preimage exists.
+	// Will be removed in v0.9.30
 	pub const NoPreimagePostponement: Option<u32> = Some(5 * MINUTES);
 }
 
@@ -379,11 +380,17 @@ impl pallet_scheduler::Config for Runtime {
 	type PalletsOrigin = OriginCaller;
 	type Call = Call;
 	type MaximumWeight = MaximumSchedulerWeight;
-	type ScheduleOrigin = EnsureRoot<AccountId>;
+	/// Origin to schedule or cancel calls
+	/// Set to Root or a simple majority of the Frequency Council
+	type ScheduleOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>,
+	>;
 	type MaxScheduledPerBlock = SchedulerMaxScheduledPerBlock;
 	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 	type OriginPrivilegeCmp = EqualPrivilegeOnly;
 	type PreimageProvider = Preimage;
+	// Will be removed in v0.9.30
 	type NoPreimagePostponement = NoPreimagePostponement;
 }
 
@@ -391,7 +398,12 @@ impl pallet_preimage::Config for Runtime {
 	type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
 	type Event = Event;
 	type Currency = Balances;
-	type ManagerOrigin = EnsureRoot<AccountId>;
+	// Allow the Technical council to request preimages without deposit or fees
+	type ManagerOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureMember<AccountId, TechnicalCommitteeInstance>,
+	>;
+	/// Expected to be removed in Polkadot v0.9.31
 	type MaxSize = PreimageMaxSize;
 	type BaseDeposit = PreimageBaseDeposit;
 	type ByteDeposit = PreimageByteDeposit;
@@ -439,7 +451,7 @@ impl pallet_democracy::Config for Runtime {
 	type Proposal = Call;
 	type Scheduler = Scheduler;
 	type Slash = (); // Treasury;
-	type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_democracy::SubstrateWeight<Runtime>;
 	type VoteLockingPeriod = EnactmentPeriod; // Same as EnactmentPeriod
 	type VotingPeriod = VotingPeriod;
 
@@ -447,35 +459,42 @@ impl pallet_democracy::Config for Runtime {
 	// the descriptions of these origins.
 	/// A unanimous council can have the next scheduled referendum be a straight default-carries
 	/// (NTB) vote.
-	type ExternalDefaultOrigin =
-		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>;
+	type ExternalDefaultOrigin = EitherOfDiverse<
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
+		frame_system::EnsureRoot<AccountId>,
+	>;
 
-	/// A super-majority of 75% can have the next scheduled referendum be a straight majority-carries vote.
-	type ExternalMajorityOrigin =
-		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 4>;
-
+	/// A super-majority of 3/5ths can have the next scheduled referendum be a straight majority-carries vote.
+	type ExternalMajorityOrigin = EitherOfDiverse<
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
+		frame_system::EnsureRoot<AccountId>,
+	>;
 	/// A straight majority (at least 50%) of the council can decide what their next motion is.
-	type ExternalOrigin =
-		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>;
-
+	type ExternalOrigin = EitherOfDiverse<
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>,
+		frame_system::EnsureRoot<AccountId>,
+	>;
 	/// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
 	/// be tabled immediately and with a shorter voting/enactment period.
-	type FastTrackOrigin =
-		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 2, 3>;
-
+	type FastTrackOrigin = EitherOfDiverse<
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 2, 3>,
+		frame_system::EnsureRoot<AccountId>,
+	>;
 	/// Origin from which the next majority-carries (or more permissive) referendum may be tabled to
 	/// vote immediately and asynchronously in a similar manner to the emergency origin.
 	/// Requires TechnicalCommittee to be unanimous.
-	type InstantOrigin =
-		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 1, 1>;
-
+	type InstantOrigin = EitherOfDiverse<
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
+		frame_system::EnsureRoot<AccountId>,
+	>;
 	/// Overarching type of all pallets origins
 	type PalletsOrigin = OriginCaller;
 
 	/// To cancel a proposal which has been passed, 2/3 of the council must agree to it.
-	type CancellationOrigin =
-		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>;
-
+	type CancellationOrigin = EitherOfDiverse<
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
+		EnsureRoot<AccountId>,
+	>;
 	/// To cancel a proposal before it has been passed, the technical committee must be unanimous or
 	/// Root must agree.
 	type CancelProposalOrigin = EitherOfDiverse<
@@ -491,13 +510,6 @@ impl pallet_democracy::Config for Runtime {
 	type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCommitteeInstance>;
 
 	type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
-}
-
-parameter_types! {
-	/// The time proposals are collected before payout
-	/// as well as when the burn of left over funds happens (if any)
-	/// Setup on a 4-week scheduled for Mainnet
-	pub const SpendPeriod: BlockNumber = 28 * DAYS;
 }
 
 impl pallet_treasury::Config for Runtime {

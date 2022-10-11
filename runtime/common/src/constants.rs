@@ -1,7 +1,9 @@
+use crate::prod_or_local_or_env;
 use common_primitives::{
 	node::{Balance, BlockNumber},
 	schema::SchemaId,
 };
+
 use frame_support::{
 	parameter_types,
 	sp_runtime::{Perbill, Permill},
@@ -71,6 +73,13 @@ pub const MICROUNIT: Balance = 1_000_000;
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
 pub const EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
+/// Generates an balance based on amount of items and bytes
+/// Items are each worth 20 Tokens
+/// Bytes each cost 1/1_000 of a Token
+pub const fn deposit(items: u32, bytes: u32) -> Balance {
+	items as Balance * 20 * UNIT + (bytes as Balance) * UNIT / 1_000
+}
+
 /// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is
 /// used to limit the maximal weight of a single extrinsic.
 pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
@@ -84,6 +93,7 @@ pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_div(2);
 
 pub type ZERO = ConstU32<0>;
 pub type FIFTY = ConstU32<50>;
+pub type HUNDRED = ConstU32<100>;
 
 pub type FrameSystemMaxConsumers = ConstU32<16>;
 pub type MsaMaxKeys = ConstU8<25>;
@@ -119,11 +129,13 @@ pub type BalancesMaxLocks = FIFTY;
 pub type BalancesMaxReserves = FIFTY;
 pub type SchedulerMaxScheduledPerBlock = FIFTY;
 
+/// Preimage maximum size set to 4 MB
+/// Expected to be removed in Polkadot v0.9.31
 pub type PreimageMaxSize = ConstU32<{ 4096 * 1024 }>;
 
 parameter_types! {
-	pub const PreimageBaseDeposit: Balance = 1 * MILLIUNIT;
-	pub const PreimageByteDeposit: Balance = 1 * MICROUNIT;
+	pub const PreimageBaseDeposit: Balance = deposit(10, 64);
+	pub const PreimageByteDeposit: Balance = deposit(0, 1);
 }
 pub type CouncilMaxProposals = ConstU32<25>;
 
@@ -141,16 +153,17 @@ parameter_types! {
 // Config from
 // https://github.com/paritytech/substrate/blob/367dab0d4bd7fd7b6c222dd15c753169c057dd42/bin/node/runtime/src/lib.rs#L880
 parameter_types! {
-	pub const LaunchPeriod: BlockNumber = 28 * DAYS;
-	pub const VotingPeriod: BlockNumber = 28 * DAYS;
-	pub const FastTrackVotingPeriod: BlockNumber = 3 * DAYS;
-	pub const EnactmentPeriod: BlockNumber = 30 * DAYS;
-	pub const CooloffPeriod: BlockNumber = 28 * DAYS;
-	pub const MinimumDeposit: Balance = 100 * UNIT;
+	pub LaunchPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 28 * DAYS, "FRQCY_LAUNCH_PERIOD");
+	pub VotingPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 28 * DAYS, "FRQCY_VOTING_PERIOD");
+	pub FastTrackVotingPeriod: BlockNumber = prod_or_local_or_env!(3 * HOURS, 3 * HOURS, "FRQCY_FAST_TRACK_VOTING_PERIOD");
+	pub EnactmentPeriod: BlockNumber = prod_or_local_or_env!(8 * DAYS, 28 * DAYS,  "FRQCY_ENACTMENT_PERIOD");
+	pub CooloffPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 7 * DAYS, "FRQCY_COOLOFF_PERIOD");
+	pub MinimumDeposit: Balance = prod_or_local_or_env!(100 * UNIT, 100 * UNIT, "FRQCY_MINIMUM_DEPOSIT");
+	pub SpendPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 10 * MINUTES, "FRQCY_SPEND_PERIOD");
 }
 
 pub type DemocracyMaxVotes = ConstU32<100>;
-pub type DemocracyMaxProposals = FIFTY;
+pub type DemocracyMaxProposals = HUNDRED;
 
 /// Generates the pallet "account"
 /// 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z

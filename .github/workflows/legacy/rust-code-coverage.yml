@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v3
 
       # Skip individual steps if only certain files changed
-      - uses: dorny/paths-filter@v2.10.2
+      - uses: dorny/paths-filter@v2
         id: filter
         with:
           filters: |
@@ -65,10 +65,10 @@ jobs:
         if: ${{ steps.filter.outputs.rust == 'true' }}
         uses: actions-rs/tarpaulin@v0.1
         with:
-          version: '0.20.1'
+          version: "0.20.1"
           # Tarpaulin Docs https://github.com/xd009642/tarpaulin
           # -e for exclude
-          args:  |
+          args: |
             -v --no-fail-fast --workspace
             -e frequency frequency-cli frequency-runtime frequency-rococo-runtime frequency-service
             --exclude-files **/mock.rs **/weights.rs **/weights/*
