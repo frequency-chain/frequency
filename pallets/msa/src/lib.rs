@@ -167,7 +167,7 @@ pub mod pallet {
 	pub type MessageSourceIdOf<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
 
-	/// Storage type for a reference counter of the number of keys assocaited to an MSA
+	/// Storage type for a reference counter of the number of keys associated to an MSA
 	/// - Key: MSA Id
 	/// - Value: [`u8`] Counter of Keys associated with the MSA
 	#[pallet::storage]
@@ -223,6 +223,11 @@ pub mod pallet {
 			/// The Delegator MSA Id
 			delegator: Delegator,
 		},
+		/// The MSA has been retired.
+		MsaRetired {
+			/// The MSA id for the Event
+			msa_id: MessageSourceId,
+		},
 	}
 
 	#[pallet::error]
@@ -243,6 +248,10 @@ pub mod pallet {
 		NoKeyExists,
 		/// The number of key values has reached its maximum
 		KeyLimitExceeded,
+		/// More than one account key exists for the MSA during retire attempt
+		MoreThanOneKeyExists,
+		/// Can't retire a registered provider MSA
+		RegisteredProviderCannotBeRetired,
 		/// A transaction's Origin (AccountId) may not remove itself
 		InvalidSelfRemoval,
 		/// An MSA may not be its own delegate
@@ -534,6 +543,7 @@ pub mod pallet {
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if `provider_key` does not have an MSA key.
 		/// - Returns [`DelegationNotFound`](Error::DelegationNotFound) if there is no Delegation between origin MSA and provider MSA.
 		///
+
 		#[pallet::weight((T::WeightInfo::revoke_delegation_by_provider(20_000), DispatchClass::Normal, Pays::No))]
 		pub fn revoke_delegation_by_provider(
 			origin: OriginFor<T>,
@@ -554,6 +564,37 @@ pub mod pallet {
 				delegator: delegator_msa_id,
 			});
 
+			Ok(())
+		}
+
+		/// Retire a MSA
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1,1).ref_time())]
+		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResult {
+			// Check and get the account id from the origin
+			let who = ensure_signed(origin)?;
+
+			// Get the MSA id of the origin
+			let msa_id = Self::get_owner_of(&who).ok_or(Error::<T>::NoKeyExists)?;
+
+			// Dispatches error "NotMsaOwner" if the origin is not the owner of the MSA id.
+			Self::ensure_msa_owner(&who, msa_id)?;
+
+			// Dispatches error "RegisteredProviderCannotBeRetired" if the MSA id is a registered provider
+			ensure!(
+				Self::is_registered_provider(msa_id),
+				Error::<T>::RegisteredProviderCannotBeRetired,
+			);
+
+			// Dispatches error "MoreThanOneKeyExists" if the MSA has more than one account key.
+			let key_count = Self::get_msa_key_count(msa_id);
+			ensure!(key_count == 1, Error::<T>::MoreThanOneKeyExists);
+
+			// Delete the last and only account key and deposit the "KeyRemoved" event
+			Self::delete_key_for_msa(msa_id, &who);
+			Self::deposit_event(Event::KeyRemoved { key: who });
+
+			// Deposit the "MsaRetired" event
+			Self::deposit_event(Event::MsaRetired { msa_id });
 			Ok(())
 		}
 	}
@@ -598,7 +639,7 @@ impl<T: Config> Pallet<T> {
 			ensure!(maybe_msa_id.is_none(), Error::<T>::KeyAlreadyRegistered);
 			*maybe_msa_id = Some(msa_id);
 
-			// Incremement the key counter
+			// Increment the key counter
 			<MsaInfoOf<T>>::try_mutate(msa_id, |key_count| {
 				// key_count:u8 should default to 0 if it does not exist
 				let incremented_key_count: u8 = *key_count + 1;
@@ -756,8 +797,13 @@ impl<T: Config> Pallet<T> {
 			// Delete the key if it exists
 			*maybe_msa_id = None;
 
-			<MsaInfoOf<T>>::try_mutate(msa_id, |key_count| {
-				*key_count = *key_count - 1u8;
+			<MsaInfoOf<T>>::try_mutate_exists(msa_id, |key_count| {
+				match key_count {
+					Some(1) => *key_count = None,
+					Some(count) => *count = *count - 1u8,
+					None => (),
+				}
+
 				Ok(())
 			})
 		})

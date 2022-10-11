@@ -294,7 +294,7 @@ fn add_key_with_proof_too_far_into_future_fails() {
 }
 
 #[test]
-fn it_revokes_msa_key_successfully() {
+fn it_deletes_msa_key_successfully() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
 		assert_ok!(Msa::add_key(2, &test_public(2), EMPTY_FUNCTION));
@@ -306,6 +306,67 @@ fn it_revokes_msa_key_successfully() {
 		assert_eq!(info, None);
 
 		System::assert_last_event(Event::KeyRemoved { key: test_public(2) }.into());
+	})
+}
+
+#[test]
+fn it_deletes_msa_last_key_successfully() {
+	new_test_ext().execute_with(|| {
+		// Add an account to the MSA (id 2) so it has exactly one account
+		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
+
+		// Delete/remove the account from the MSA
+		assert_ok!(Msa::delete_msa_key(test_origin_signed(1), test_public(2)));
+
+		// Assert that the MSA has no accounts
+		let key_count = Msa::get_msa_key_count(2);
+		assert_eq!(key_count, 0);
+	})
+}
+
+#[test]
+fn test_retire_msa_success() {
+	new_test_ext().execute_with(|| {
+		let msa_id = 2;
+
+		// Add account to MSA
+		assert_ok!(Msa::add_key(msa_id, &test_public(1), EMPTY_FUNCTION));
+
+		// Retire the MSA
+		assert_ok!(Msa::retire_msa(test_origin_signed(1)));
+
+		// Check if MsaRetired event was dispatched.
+		System::assert_last_event(Event::MsaRetired { msa_id }.into());
+	})
+}
+
+#[test]
+fn test_retire_msa_fails_if_registered_provider() {
+	new_test_ext().execute_with(|| {
+		// Add an account to the MSA
+		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
+
+		// Register provider
+		assert_ok!(Msa::register_provider(test_origin_signed(1), Vec::from("Foo")));
+
+		// Retire MSA
+		assert_noop!(
+			Msa::retire_msa(test_origin_signed(1)),
+			Error::<Test>::RegisteredProviderCannotBeRetired
+		);
+	})
+}
+
+#[test]
+fn test_retire_msa_fails_if_more_than_one_account_exists() {
+	new_test_ext().execute_with(|| {
+		// Add an account to the MSA
+		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
+		// Add an account to the MSA
+		assert_ok!(Msa::add_key(2, &test_public(2), EMPTY_FUNCTION));
+
+		// Retire the MSA
+		assert_noop!(Msa::retire_msa(test_origin_signed(1)), Error::<Test>::MoreThanOneKeyExists);
 	})
 }
 

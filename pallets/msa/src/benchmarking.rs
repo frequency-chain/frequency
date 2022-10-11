@@ -115,6 +115,13 @@ benchmarks! {
 
 	}: _(RawOrigin::Signed(caller), key)
 
+	// TODO: Implement actual code
+	retire_msa {
+		let caller: T::AccountId = whitelisted_caller();
+		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
+
+	}: _(RawOrigin::Signed(caller))
+
 	add_provider_to_msa {
 		let caller: T::AccountId = whitelisted_caller();
 		let (payload, signature, key) = create_payload_and_signature::<T>();
