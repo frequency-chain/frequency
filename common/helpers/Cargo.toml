@@ -20,9 +20,6 @@ jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 
-[dev-dependencies]
-proptest = "1.0.0"
-
 [features]
 default = ['std']
 std = ['sp-runtime/std', 'sp-api/std']
