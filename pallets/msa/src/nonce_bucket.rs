@@ -27,7 +27,7 @@ pub const MORTALITY_SIZE: BlockNumber = 100;
 /// Number of buckets to sort signatures into
 const NUM_BUCKETS: BlockNumber = 2;
 /// Limit on number of signatures to store in a bucket
-pub const SIGNATURES_MAX: u32 = 10_000;
+pub const SIGNATURES_MAX: u32 = 50_000;
 
 /// NonceBuckets stores a Vec<NonceBucket> of size NUM_BUCKETS
 /// Used for checking signatures against their mortality block.
@@ -127,18 +127,6 @@ impl NonceBuckets {
 				// This shouldn't happen but it's required to make the compiler happy.
 				Err(NoSuchBucket)
 			}
-		}
-	}
-
-	/// checks that the signature exists and is not expired
-	/// Returns: true if the signature is registered and not expired
-	/// Returns false if the signature is expired or isn't registered.
-	pub fn is_signature_live(&self, sig: &Signature, current_block: BlockNumber) -> bool {
-		let bucket = self.get_bucket(Self::bucket_for(current_block - MORTALITY_SIZE)).unwrap();
-		let sighash = Self::hash_multisignature(sig);
-		match bucket.signature_hashes.get_key_value(&sighash) {
-			None => false,
-			Some(_) => current_block <= bucket.mortality_block,
 		}
 	}
 
@@ -299,40 +287,5 @@ mod test_nonce_buckets {
 				assert_eq!(Some(&mortality_block), expected_some);
 			}
 		})
-	}
-
-	#[test]
-	pub fn signature_is_live_when_found_in_correct_bucket_and_before_mortality() {
-		new_test_ext().execute_with(|| {
-			let mut current_block: BlockNumber = 3_838_333;
-			let mortality_block: BlockNumber = 3_838_433;
-			let buckets = &mut NonceBuckets::new(current_block);
-			let sig1 = &generate_test_signature();
-			assert_ok!(buckets.push_signature(sig1, current_block.clone(), mortality_block));
-
-			// signature goes in "even" bucket
-			let test_bucket = buckets.get_bucket(0).unwrap();
-			assert_eq!(false, test_bucket.signature_hashes.is_empty());
-			assert_eq!(true, buckets.is_signature_live(sig1, current_block));
-			current_block += 10;
-			assert_eq!(true, buckets.is_signature_live(sig1, current_block));
-		});
-	}
-
-	#[test]
-	pub fn signature_is_dead_when_not_found_in_expected_bucket() {
-		new_test_ext().execute_with(|| {
-			let mut current_block: BlockNumber = 3_838_333;
-			let mortality_block: BlockNumber = 3_838_433;
-			let buckets = &mut NonceBuckets::new(current_block);
-			let sig1 = &generate_test_signature();
-			assert_ok!(buckets.push_signature(sig1, current_block.clone(), mortality_block));
-
-			current_block += MORTALITY_SIZE;
-			assert_eq!(false, buckets.is_signature_live(sig1, current_block));
-
-			let sig2 = &generate_test_signature();
-			assert_eq!(false, buckets.is_signature_live(sig2, current_block));
-		});
 	}
 }
