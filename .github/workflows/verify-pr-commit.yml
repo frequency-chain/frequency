@@ -57,7 +57,7 @@ jobs:
         with:
           path: target/${{env.BUILD_PROFILE}}/frequency
           key: ${{runner.os}}-${{env.RUST_TOOLCHAIN}}-${{github.sha}}
-      - name: Compile
+      - name: Compile for ${{matrix.network}}
         run: |
           CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release \
             --features  frequency
