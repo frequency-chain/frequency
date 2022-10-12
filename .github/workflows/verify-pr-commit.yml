@@ -8,6 +8,7 @@ on:
 env:
   RUST_TOOLCHAIN: stable
   BUILD_PROFILE:  release
+  RUST_NIGHTLY_TOOLCHAIN: nightly-2022-07-23
 
 jobs:
   changes:
@@ -72,7 +73,7 @@ jobs:
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly // this need not to change as we check again latest nightly
+          toolchain: ${{env.RUST_NIGHTLY_TOOLCHAIN}}
           default: true
           profile: minimal
           components: rustfmt
@@ -90,7 +91,7 @@ jobs:
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
+          toolchain: ${{env.RUST_NIGHTLY_TOOLCHAIN}}
           default: true
           profile: minimal
           components: clippy
