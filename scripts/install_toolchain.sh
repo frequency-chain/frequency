@@ -2,7 +2,7 @@
 
 set -eux
 
-RUST_TOOLCHAIN="${RUST_TOOLCHAIN:-nightly}"
+RUST_TOOLCHAIN="${RUST_TOOLCHAIN:-stable}"
 echo "Using rust toolchain: ${RUST_TOOLCHAIN}"
 
 echo "*** Initializing WASM build environment"
