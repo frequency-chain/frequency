@@ -84,7 +84,7 @@ pub use types::{AddKeyData, AddProvider};
 
 /// provides the NonceBuckets functionality for preventing relay attacks
 pub mod nonce_bucket;
-pub use nonce_bucket::{hash_multisignature};
+pub use nonce_bucket::hash_multisignature;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -200,7 +200,6 @@ pub mod pallet {
 	#[pallet::getter(fn get_msa_key_count)]
 	pub(super) type MsaInfoOf<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, u8, ValueQuery>;
-
 
 	/// Storage type for mapping a "bucket" number to a mortality block
 	/// Used to know when to clear a virtual "bucket" of stored signatures
@@ -1035,23 +1034,27 @@ impl<T: Config> Pallet<T> {
 			Err(Error::<T>::MortalityTooHigh.into())
 		} else {
 			let bucket_num = Self::bucket_for(mortality_block.into());
-			if <PayloadSignatureRegistry::<T>>::contains_key(bucket_num, signature.clone()) {
+			if <PayloadSignatureRegistry<T>>::contains_key(bucket_num, signature.clone()) {
 				Err(Error::<T>::BucketKeyExists.into())
 			} else {
-				<PayloadSignatureRegistry::<T>>::insert(bucket_num, signature.clone(), mortality_block);
+				<PayloadSignatureRegistry<T>>::insert(
+					bucket_num,
+					signature.clone(),
+					mortality_block,
+				);
 				Ok(bucket_num.into())
 			}
 		}
 	}
 
-	fn clear_signature_hashes_for_bucket(bucket_num: u16, ) -> Result<(), DispatchError>{
+	fn clear_signature_hashes_for_bucket(bucket_num: u16) -> Result<(), DispatchError> {
 		Ok(())
 	}
 
 	fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
 		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
 		let num_buckets: T::BlockNumber = T::NumberOfBuckets::get().into();
-		current_block + bucket_size*num_buckets
+		current_block + bucket_size * num_buckets
 	}
 
 	fn bucket_for(block_number: T::BlockNumber) -> T::BlockNumber {
@@ -1059,7 +1062,6 @@ impl<T: Config> Pallet<T> {
 		let num_buckets: T::BlockNumber = T::NumberOfBuckets::get().into();
 		block_number / bucket_size % num_buckets
 	}
-
 }
 
 impl<T: Config> MsaLookup for Pallet<T> {
