@@ -1,8 +1,13 @@
 #![allow(missing_docs)]
 use common_primitives::node::AccountId;
+
+use common_runtime::constants::{
+	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS,
+};
+
 use cumulus_primitives_core::ParaId;
 use frequency_rococo_runtime::{
-	AuraId, CouncilConfig, SudoConfig, TechnicalCommitteeConfig, EXISTENTIAL_DEPOSIT,
+	AuraId, CouncilConfig, SS58Prefix, SudoConfig, TechnicalCommitteeConfig,
 };
 use sc_service::ChainType;
 use sp_core::sr25519;
@@ -25,7 +30,8 @@ pub fn template_session_keys(keys: AuraId) -> frequency_rococo_runtime::SessionK
 
 pub fn local_testnet_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
-	let properties = get_properties("UNIT", 8, 42);
+	let properties =
+		get_properties(FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS as u32, SS58Prefix::get().into());
 
 	ChainSpec::from_genesis(
 		// Name

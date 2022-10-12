@@ -13,7 +13,9 @@ use frame_support::{
 };
 
 pub const FREQUENCY_ROCOCO_TOKEN: &str = "XRQCY";
+pub const FREQUENCY_LOCAL_TOKEN: &str = "UNIT";
 pub const FREQUENCY_TOKEN: &str = "FRQCY";
+pub const TOKEN_DECIMALS: u8 = 8;
 
 parameter_types! {
 	/// Clone + Debug + Eq  implementation for u32 types
@@ -66,18 +68,23 @@ pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 
 // Unit = the base number of indivisible units for balances
-pub const UNIT: Balance = 100_000_000;
-pub const MILLIUNIT: Balance = 1_000_000_000;
-pub const MICROUNIT: Balance = 1_000_000;
+pub mod currency {
+	use common_primitives::node::Balance;
 
-/// The existential deposit. Set to 1/10 of the Connected Relay Chain.
-pub const EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
+	/// The existential deposit. Set to be 1/100th of a token.
+	pub const EXISTENTIAL_DEPOSIT: Balance = CENTS;
 
-/// Generates an balance based on amount of items and bytes
-/// Items are each worth 20 Tokens
-/// Bytes each cost 1/1_000 of a Token
-pub const fn deposit(items: u32, bytes: u32) -> Balance {
-	items as Balance * 20 * UNIT + (bytes as Balance) * UNIT / 1_000
+	pub const UNITS: Balance = 10u128.saturating_pow(super::TOKEN_DECIMALS as u32);
+	pub const DOLLARS: Balance = UNITS; // 100_000_000
+	pub const CENTS: Balance = DOLLARS / 100; // 1_000_000
+	pub const MILLICENTS: Balance = CENTS / 1_000; // 1_000
+
+	/// Generates an balance based on amount of items and bytes
+	/// Items are each worth 20 Dollars
+	/// Bytes each cost 1/1_000 of a Dollar
+	pub const fn deposit(items: u32, bytes: u32) -> Balance {
+		items as Balance * 20 * DOLLARS + (bytes as Balance) * 100 * MILLICENTS
+	}
 }
 
 /// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is
@@ -121,10 +128,6 @@ parameter_types! {
 
 pub type AuthorshipUncleGenerations = ZERO;
 
-parameter_types! {
-	pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
-}
-
 pub type BalancesMaxLocks = FIFTY;
 pub type BalancesMaxReserves = FIFTY;
 pub type SchedulerMaxScheduledPerBlock = FIFTY;
@@ -134,9 +137,10 @@ pub type SchedulerMaxScheduledPerBlock = FIFTY;
 pub type PreimageMaxSize = ConstU32<{ 4096 * 1024 }>;
 
 parameter_types! {
-	pub const PreimageBaseDeposit: Balance = deposit(10, 64);
-	pub const PreimageByteDeposit: Balance = deposit(0, 1);
+	pub const PreimageBaseDeposit: Balance = currency::deposit(10, 64);
+	pub const PreimageByteDeposit: Balance = currency::deposit(0, 1);
 }
+
 pub type CouncilMaxProposals = ConstU32<25>;
 
 parameter_types! {
@@ -158,7 +162,7 @@ parameter_types! {
 	pub FastTrackVotingPeriod: BlockNumber = prod_or_local_or_env!(3 * HOURS, 3 * HOURS, "FRQCY_FAST_TRACK_VOTING_PERIOD");
 	pub EnactmentPeriod: BlockNumber = prod_or_local_or_env!(8 * DAYS, 28 * DAYS,  "FRQCY_ENACTMENT_PERIOD");
 	pub CooloffPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 7 * DAYS, "FRQCY_COOLOFF_PERIOD");
-	pub MinimumDeposit: Balance = prod_or_local_or_env!(100 * UNIT, 100 * UNIT, "FRQCY_MINIMUM_DEPOSIT");
+	pub MinimumDeposit: Balance = prod_or_local_or_env!(currency::deposit(5, 0), 100 * currency::deposit(5, 0), "FRQCY_MINIMUM_DEPOSIT");
 	pub SpendPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 10 * MINUTES, "FRQCY_SPEND_PERIOD");
 }
 
@@ -182,10 +186,10 @@ parameter_types! {
 	pub const ProposalBondPercent: Permill = Permill::from_percent(5);
 
 	/// Minimum bond for a treasury proposal
-	pub const ProposalBondMinimum: Balance = 100 * UNIT;
+	pub const ProposalBondMinimum: Balance = 100 * currency::DOLLARS;
 
 	/// Minimum bond for a treasury proposal
-	pub const ProposalBondMaximum: Balance = 1_000 * UNIT;
+	pub const ProposalBondMaximum: Balance = 1_000 * currency::DOLLARS;
 
 	/// How much of the treasury to burn, if funds remain at the end of the SpendPeriod
 	/// Set to zero until the economic system is setup and stabilized
@@ -200,12 +204,12 @@ pub type TransactionPaymentOperationalFeeMultiplier = ConstU8<5>;
 
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
-	pub const TransactionByteFee: Balance = 10 * MICROUNIT;
+	pub const TransactionByteFee: Balance = 10 * currency::MILLICENTS;
 }
 
 parameter_types! {
-	pub const ReservedXcmpWeight: Weight =MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-	pub const ReservedDmpWeight: Weight =MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 }
 
 pub type SessionPeriod = ConstU32<{ 6 * HOURS }>;
