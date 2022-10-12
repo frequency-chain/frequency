@@ -1,9 +1,13 @@
 use sp_runtime::MultiSignature;
+use sp_runtime::traits::AtLeast32BitUnsigned;
 use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
 
-use common_primitives::node::{BlockNumber, Hash, Signature};
+use common_primitives::node::{Hash, Signature};
 
 use crate::nonce_bucket::NonceBucketsError::NoSuchBucket;
+
+/// this is a block number :P
+pub type BlockNumber = u32;
 
 /// NonceBucket stores signatures that expire at BlockNumber `mortality_block`
 #[derive(Clone, Debug, PartialEq)]
@@ -23,9 +27,9 @@ impl NonceBucket {
 }
 
 /// Mortality bucket size
-pub const MORTALITY_SIZE: BlockNumber = 100;
+pub const MORTALITY_SIZE: u32 = 100;
 /// Number of buckets to sort signatures into
-const NUM_BUCKETS: BlockNumber = 2;
+const NUM_BUCKETS: u8 = 2;
 /// Limit on number of signatures to store in a bucket
 pub const SIGNATURES_MAX: u32 = 50_000;
 
@@ -36,6 +40,24 @@ pub const SIGNATURES_MAX: u32 = 50_000;
 pub struct NonceBuckets {
 	/// a list of NonceBuckets for storing signatures with their expiration (mortality) block
 	buckets: Vec<NonceBucket>,
+}
+
+/// Get the bucket for a given block
+pub fn bucket_for(block_number: u32) -> u8 {
+	(block_number / MORTALITY_SIZE % (NUM_BUCKETS as u32)) as u8
+}
+
+/// hash_multisignature takes a MultiSignature and hashes the signature by getting
+/// it as_ref.
+pub fn hash_multisignature(signature: &MultiSignature) -> Hash {
+	match signature {
+		MultiSignature::Ed25519(ref signature) =>
+			sp_io::hashing::blake2_256(signature.as_ref()).into(),
+		MultiSignature::Sr25519(ref signature) =>
+			sp_io::hashing::blake2_256(signature.as_ref()).into(),
+		MultiSignature::Ecdsa(ref signature) =>
+			sp_io::hashing::blake2_256(signature.as_ref()).into(),
+	}
 }
 
 /// NonceBucketsError - Error enum for errors when interacting with NonceBuckets.
@@ -53,23 +75,6 @@ pub enum NonceBucketsError {
 impl NonceBuckets {
 	// static fns
 
-	/// Get the bucket for a given block
-	pub fn bucket_for(block_number: BlockNumber) -> BlockNumber {
-		block_number / MORTALITY_SIZE % NUM_BUCKETS
-	}
-
-	/// hash_multisignature takes a MultiSignature and hashes the signature by getting
-	/// it as_ref.
-	pub fn hash_multisignature(signature: &MultiSignature) -> Hash {
-		match signature {
-			MultiSignature::Ed25519(ref signature) =>
-				sp_io::hashing::blake2_256(signature.as_ref()).into(),
-			MultiSignature::Sr25519(ref signature) =>
-				sp_io::hashing::blake2_256(signature.as_ref()).into(),
-			MultiSignature::Ecdsa(ref signature) =>
-				sp_io::hashing::blake2_256(signature.as_ref()).into(),
-		}
-	}
 
 	/// new returns in an instance of NonceBuckets with the provided starting current block
 	/// A bucket number is determined by the current block.
@@ -82,7 +87,7 @@ impl NonceBuckets {
 		// cycle through the buckets and set the mortality block
 		// note: bucket_num is not always going to be zero, because it depends on the value
 		// of current_block. So we simply iterate as many times as there are buckets.
-		let mut bucket_num: usize = Self::bucket_for(current_block) as usize;
+		let mut bucket_num: usize = bucket_for(current_block) as usize;
 		for _i in 0..NUM_BUCKETS {
 			let bucket = buckets.get_mut(bucket_num).unwrap();
 			bucket.mortality_block = bucket_mortality_block;
@@ -108,12 +113,12 @@ impl NonceBuckets {
 		current_block: BlockNumber,
 		mortality_block: BlockNumber,
 	) -> Result<BlockNumber, NonceBucketsError> {
-		let key: Hash = Self::hash_multisignature(sig);
+		let key: Hash = hash_multisignature(sig);
 
-		if current_block + MORTALITY_SIZE * NUM_BUCKETS < mortality_block {
+		if current_block + MORTALITY_SIZE * (NUM_BUCKETS as u32) < mortality_block {
 			Err(NonceBucketsError::MortalityTooHigh)
 		} else {
-			let bucket_num = Self::bucket_for(mortality_block);
+			let bucket_num = bucket_for(mortality_block);
 			if let Some(bucket) = self.buckets.get_mut(bucket_num as usize) {
 				// check to see if it's time to clear this bucket based on the current block.
 				if current_block > bucket.mortality_block {
@@ -121,7 +126,7 @@ impl NonceBuckets {
 				}
 				match bucket.signature_hashes.insert(key, mortality_block) {
 					Some(_) => Err(NonceBucketsError::BucketKeyExists),
-					None => Ok(Self::bucket_for(mortality_block)),
+					None => Ok(bucket_for(mortality_block) as u32),
 				}
 			} else {
 				// This shouldn't happen but it's required to make the compiler happy.
@@ -168,10 +173,10 @@ mod test_nonce_buckets {
 	pub fn bucket_for_works() {
 		new_test_ext().execute_with(|| {
 			for i in [0, 1, 2, 3, 99, 222, 77_400] {
-				assert_eq!(0, NonceBuckets::bucket_for(i));
+				assert_eq!(0, bucket_for(i));
 			}
 			for j in [333, 1101, 100, 111, 99_900, 66_700] {
-				assert_eq!(1, NonceBuckets::bucket_for(j));
+				assert_eq!(1, bucket_for(j));
 			}
 		})
 	}
@@ -220,7 +225,7 @@ mod test_nonce_buckets {
 			// expect signature to expire at 400
 			assert_eq!(11_400, test_bucket.mortality_block);
 
-			let sighash = NonceBuckets::hash_multisignature(&(sig1.clone()));
+			let sighash = hash_multisignature(&(sig1.clone()));
 
 			let res = test_bucket.signature_hashes.get(&sighash);
 			assert_ne!(None, res);
@@ -278,8 +283,8 @@ mod test_nonce_buckets {
 				let first_bucket = buckets.get_bucket(0).unwrap();
 				assert_eq!(1, first_bucket.signature_hashes.len());
 
-				let sighash1 = NonceBuckets::hash_multisignature(&(sig1.clone()));
-				let sighash3 = NonceBuckets::hash_multisignature(&(sig3.clone()));
+				let sighash1 = hash_multisignature(&(sig1.clone()));
+				let sighash3 = hash_multisignature(&(sig3.clone()));
 
 				let expected_none = first_bucket.signature_hashes.get(&sighash1);
 				assert_eq!(None, expected_none);

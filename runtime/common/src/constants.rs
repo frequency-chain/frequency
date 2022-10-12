@@ -11,6 +11,7 @@ use frame_support::{
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 	PalletId,
 };
+use frame_support::traits::ConstU16;
 
 pub const FREQUENCY_ROCOCO_TOKEN: &str = "XRQCY";
 pub const FREQUENCY_LOCAL_TOKEN: &str = "UNIT";
@@ -271,3 +272,7 @@ impl Clone for MessagesMaxPayloadSizeBytes {
 	}
 }
 // -end- Messages Pallet ---
+
+pub type MSAMortalityBucketSize = ConstU16<100>;
+pub type MSAMaxSignaturesPerBucket = ConstU32<50_000>;
+pub type MSANumberOfBuckets = ConstU8<2>;

@@ -11,6 +11,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
 	AccountId32, MultiSignature,
 };
+use sp_runtime::traits::{ConstU32, ConstU8};
 
 pub use pallet_msa::Call as MsaCall;
 
@@ -107,6 +108,9 @@ impl pallet_msa::Config for Test {
 	type MaxSchemaGrants = MaxSchemaGrants;
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
+	type MortalityBucketSize = ConstU16<10>;
+	type MaxSignaturesPerBucket = ConstU32<100>;
+	type NumberOfBuckets = ConstU8<2>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
