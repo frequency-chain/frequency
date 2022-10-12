@@ -628,19 +628,19 @@ impl pallet_collator_selection::Config for Runtime {
 	// Maximum number of candidates that we should have. This is enforced in code.
 	//
 	// This does not take into account the invulnerables.
-	type MaxCandidates = ConstU32<0>;
+	type MaxCandidates = CollatorMaxCandidates;
 
 	// Minimum number of candidates that we should have. This is used for disaster recovery.
 	//
 	// This does not take into account the invulnerables.
-	type MinCandidates = ConstU32<0>;
+	type MinCandidates = CollatorMinCandidates;
 
 	// Maximum number of invulnerables. This is enforced in code.
-	type MaxInvulnerables = ConstU32<16>;
+	type MaxInvulnerables = CollatorMaxInvulnerables;
 
 	// Will be kicked if block is not produced in threshold.
 	// should be a multiple of session or things will get inconsistent
-	type KickThreshold = ConstU32<{ 6 * HOURS }>;
+	type KickThreshold = CollatorKickThreshold;
 
 	/// A stable ID for a validator.
 	type ValidatorId = <Self as frame_system::Config>::AccountId;

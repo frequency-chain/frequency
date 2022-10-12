@@ -39,7 +39,7 @@ use common_primitives::{
 pub use common_runtime::{
 	constants::{currency::EXISTENTIAL_DEPOSIT, *},
 	fee::WeightToFee,
-	prod_or_local_or_env,
+	prod_or_testnet_or_local_or_env,
 };
 
 use frame_support::{
@@ -597,9 +597,9 @@ impl pallet_collator_selection::Config for Runtime {
 	type PotId = NeverDepositIntoId;
 	type MaxCandidates = CollatorMaxCandidates;
 	type MinCandidates = CollatorMinCandidates;
-	type MaxInvulnerables = ConstU32<5>;
+	type MaxInvulnerables = CollatorMaxInvulnerables;
 	// should be a multiple of session or things will get inconsistent
-	type KickThreshold = SessionPeriod;
+	type KickThreshold = CollatorKickThreshold;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;

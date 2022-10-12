@@ -1,4 +1,4 @@
-use crate::prod_or_local_or_env;
+use crate::prod_or_testnet_or_local_or_env;
 use common_primitives::{
 	node::{Balance, BlockNumber},
 	schema::SchemaId,
@@ -102,16 +102,24 @@ pub type ZERO = ConstU32<0>;
 pub type FIFTY = ConstU32<50>;
 pub type HUNDRED = ConstU32<100>;
 
+// --- Frame System Pallet ---
 pub type FrameSystemMaxConsumers = ConstU32<16>;
+// -end- Frame System Pallet ---
+
+// --- MSA Pallet ---
 pub type MsaMaxKeys = ConstU8<25>;
 pub type MsaMaxProviderNameSize = ConstU32<16>;
+// -end- MSA Pallet ---
 
+// --- Schemas Pallet ---
 parameter_types! {
 	pub const SchemasMaxRegistrations: SchemaId = 65_000;
 }
 pub type SchemasMinModelSizeBytes = ConstU32<8>;
 pub type SchemasMaxBytesBoundedVecLimit = ConstU32<65_500>;
+// -end- Schemas Pallet ---
 
+// --- Orml Vesting Pallet ---
 parameter_types! {
 	pub const VestingPalletId: PalletId = PalletId(*b"py/vstng");
 }
@@ -121,17 +129,28 @@ parameter_types! {
 }
 
 pub const ORML_MAX_VESTING_SCHEDULES: u32 = 50;
+// -end- Orml Vesting Pallet ---
 
+// --- Timestamp Pallet ---
 parameter_types! {
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
+// -end- Timestamp Pallet ---
 
+// --- Authorship Pallet ---
 pub type AuthorshipUncleGenerations = ZERO;
+// -end- Authorship Pallet ---
 
+// --- Balances Pallet ---
 pub type BalancesMaxLocks = FIFTY;
 pub type BalancesMaxReserves = FIFTY;
-pub type SchedulerMaxScheduledPerBlock = FIFTY;
+// -end- Balances Pallet ---
 
+// --- Scheduler Pallet ---
+pub type SchedulerMaxScheduledPerBlock = FIFTY;
+// -end- Scheduler Pallet ---
+
+// --- Preimage Pallet ---
 /// Preimage maximum size set to 4 MB
 /// Expected to be removed in Polkadot v0.9.31
 pub type PreimageMaxSize = ConstU32<{ 4096 * 1024 }>;
@@ -140,40 +159,46 @@ parameter_types! {
 	pub const PreimageBaseDeposit: Balance = currency::deposit(10, 64);
 	pub const PreimageByteDeposit: Balance = currency::deposit(0, 1);
 }
+// -end- Preimage Pallet ---
 
+// --- Council ---
 pub type CouncilMaxProposals = ConstU32<25>;
 
 parameter_types! {
 	pub const CouncilMotionDuration: BlockNumber = 5 * DAYS;
 }
+// -end- Council ---
 
+// --- Technical Committee ---
 pub type TCMaxProposals = ConstU32<25>;
 pub type TCMaxMembers = ConstU32<3>;
 
 parameter_types! {
 	pub const TCMotionDuration: BlockNumber = 5 * DAYS;
 }
+// -end- Technical Committee ---
 
+// --- Democracy Pallet ---
 // Config from
 // https://github.com/paritytech/substrate/blob/367dab0d4bd7fd7b6c222dd15c753169c057dd42/bin/node/runtime/src/lib.rs#L880
 parameter_types! {
-	pub LaunchPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 28 * DAYS, "FRQCY_LAUNCH_PERIOD");
-	pub VotingPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 28 * DAYS, "FRQCY_VOTING_PERIOD");
-	pub FastTrackVotingPeriod: BlockNumber = prod_or_local_or_env!(3 * HOURS, 3 * HOURS, "FRQCY_FAST_TRACK_VOTING_PERIOD");
-	pub EnactmentPeriod: BlockNumber = prod_or_local_or_env!(8 * DAYS, 28 * DAYS,  "FRQCY_ENACTMENT_PERIOD");
-	pub CooloffPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 7 * DAYS, "FRQCY_COOLOFF_PERIOD");
-	pub MinimumDeposit: Balance = prod_or_local_or_env!(currency::deposit(5, 0), 100 * currency::deposit(5, 0), "FRQCY_MINIMUM_DEPOSIT");
-	pub SpendPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 10 * MINUTES, "FRQCY_SPEND_PERIOD");
+	pub LaunchPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 28 * DAYS, 28 * DAYS, "FRQCY_LAUNCH_PERIOD");
+	pub VotingPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 28 * DAYS, 28 * DAYS, "FRQCY_VOTING_PERIOD");
+	pub FastTrackVotingPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(3 * HOURS, 3 * HOURS, 3 * HOURS, "FRQCY_FAST_TRACK_VOTING_PERIOD");
+	pub EnactmentPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(8 * DAYS, 28 * DAYS, 28 * DAYS, "FRQCY_ENACTMENT_PERIOD");
+	pub CooloffPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 7 * DAYS, 7 * DAYS, "FRQCY_COOLOFF_PERIOD");
+	pub MinimumDeposit: Balance = prod_or_testnet_or_local_or_env!(currency::deposit(5, 0), 100 * currency::deposit(5, 0), 100 * currency::deposit(5, 0), "FRQCY_MINIMUM_DEPOSIT");
+	pub SpendPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 10 * MINUTES, 10 * MINUTES, "FRQCY_SPEND_PERIOD");
 }
-
 pub type DemocracyMaxVotes = ConstU32<100>;
 pub type DemocracyMaxProposals = HUNDRED;
+// -end- Democracy Pallet ---
 
+// --- Treasury Pallet ---
 /// Generates the pallet "account"
 /// 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z
 pub const TREASURY_PALLET_ID: PalletId = PalletId(*b"py/trsry");
 
-// Treasury
 // https://wiki.polkadot.network/docs/learn-treasury
 // https://paritytech.github.io/substrate/master/pallet_treasury/pallet/trait.Config.html
 parameter_types! {
@@ -199,32 +224,52 @@ parameter_types! {
 	/// Set to 64 or 16 per week
 	pub const MaxApprovals: u32 = 64;
 }
+// -end- Treasury Pallet ---
 
+// --- Transaction Payment Pallet ---
 pub type TransactionPaymentOperationalFeeMultiplier = ConstU8<5>;
 
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
 	pub const TransactionByteFee: Balance = 10 * currency::MILLICENTS;
 }
+// -end- Transaction Payment Pallet ---
 
+// --- Parachain System Pallet ---
 parameter_types! {
 	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 }
+// -end- Parachain System Pallet ---
 
+// --- Session Pallet ---
 pub type SessionPeriod = ConstU32<{ 6 * HOURS }>;
 pub type SessionOffset = ZERO;
+// -end- Session Pallet ---
 
+// --- Aura Pallet ---
 pub type AuraMaxAuthorities = ConstU32<100_000>;
+// -end- Aura Pallet ---
 
-pub type CollatorMaxCandidates = ZERO;
-pub type CollatorMinCandidates = ZERO;
-
+// --- Collator Selection Pallet ---
+// Values for each runtime environment are independently configurable.
+// Example CollatorMaxInvulnerables are 16 in production(mainnet),
+// 5 in rococo testnet and 5 in rococo local
 parameter_types! {
+	pub CollatorMaxCandidates: u32 = prod_or_testnet_or_local_or_env!(0, 0, 0);
+	pub CollatorMinCandidates: u32 = prod_or_testnet_or_local_or_env!(0, 0, 0);
+	pub CollatorMaxInvulnerables: u32 = prod_or_testnet_or_local_or_env!(16, 5, 5);
+	pub CollatorKickThreshold: BlockNumber = prod_or_testnet_or_local_or_env!(
+		6 * HOURS,
+		6 * HOURS,
+		6 * HOURS
+	);
 	pub const NeverDepositIntoId: PalletId = PalletId(*b"NeverDep");
 	pub const MessagesMaxPayloadSizeBytes: u32 = 1024 * 50; // 50K
 }
+// -end- Collator Selection Pallet ---
 
+// --- Messages Pallet ---
 pub type MessagesMaxPerBlock = ConstU32<7000>;
 
 impl Clone for MessagesMaxPayloadSizeBytes {
@@ -232,3 +277,4 @@ impl Clone for MessagesMaxPayloadSizeBytes {
 		MessagesMaxPayloadSizeBytes {}
 	}
 }
+// -end- Messages Pallet ---
