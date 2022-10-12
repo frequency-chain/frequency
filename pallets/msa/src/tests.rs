@@ -3,6 +3,7 @@ use crate::{
 	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
+	nonce_bucket::{bucket_for, hash_multisignature},
 };
 use common_primitives::{
 	msa::{
@@ -18,7 +19,7 @@ use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 };
-use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
+use sp_core::{crypto::AccountId32, sr25519, Encode, Pair, H256};
 use sp_runtime::{traits::SignedExtension, MultiSignature};
 
 #[test]
@@ -1975,5 +1976,21 @@ pub fn delegation_expired_long_back() {
 			Msa::ensure_valid_delegation(provider, delegator, Some(1000)),
 			Error::<Test>::DelegationNotFound
 		);
+	})
+}
+
+fn generate_test_signature() -> MultiSignature {
+	let (key_pair, _) = sr25519::Pair::generate();
+	let fake_data = H256::random();
+	key_pair.sign(fake_data.as_bytes()).into()
+}
+
+#[test]
+pub fn register_signature_works() {
+	new_test_ext().execute_with(|| {
+		let current_block: BlockNumber = 11_233;
+		let mortality_block: BlockNumber = 11_243;
+		let sig1 = &generate_test_signature();
+		assert_ok!(Msa::register_signature(sig1, current_block.into(), mortality_block.into()));
 	})
 }
