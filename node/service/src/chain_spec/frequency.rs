@@ -202,7 +202,6 @@ fn frequency_genesis(
 			invulnerables: initial_authorities.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond,
 			desired_candidates: 0,
-			..Default::default()
 		},
 		session: frequency_runtime::SessionConfig {
 			keys: initial_authorities
