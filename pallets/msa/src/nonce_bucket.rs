@@ -1,5 +1,4 @@
-use sp_runtime::MultiSignature;
-use sp_runtime::traits::AtLeast32BitUnsigned;
+use sp_runtime::{traits::AtLeast32BitUnsigned, MultiSignature};
 use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
 
 use common_primitives::node::{Hash, Signature};
@@ -74,7 +73,6 @@ pub enum NonceBucketsError {
 /// NonceBuckets instance functions
 impl NonceBuckets {
 	// static fns
-
 
 	/// new returns in an instance of NonceBuckets with the provided starting current block
 	/// A bucket number is determined by the current block.

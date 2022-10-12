@@ -8,10 +8,9 @@ use frame_system as system;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
+	traits::{BlakeTwo256, ConstU32, ConstU8, ConvertInto, IdentityLookup},
 	AccountId32, MultiSignature,
 };
-use sp_runtime::traits::{ConstU32, ConstU8};
 
 pub use pallet_msa::Call as MsaCall;
 
