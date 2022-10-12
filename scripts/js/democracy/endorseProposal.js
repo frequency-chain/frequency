@@ -6,7 +6,7 @@ async function endorse(proposalIndex) {
     const keyring = new Keyring({ type: "sr25519" });
     const sudo = keyring.addFromUri("//Alice");
 
-    await api.tx.democracy.second(proposalIndex, 1)
+    return api.tx.democracy.second(proposalIndex, 1)
         .signAndSend(sudo, (result) => {
             console.log("Endorsement made...")
             if (result.status.isFinalized) {

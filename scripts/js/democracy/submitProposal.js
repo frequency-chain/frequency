@@ -6,7 +6,7 @@ async function propose(proposalHash, deposit = 100_000_000_000_000) {
     const keyring = new Keyring({ type: "sr25519" });
     const sudo = keyring.addFromUri("//Alice");
 
-    await api.tx.democracy.propose(proposalHash, deposit)
+    return api.tx.democracy.propose(proposalHash, deposit)
         .signAndSend(sudo, (result) => {
             console.log("Proposal made...")
             if (result.status.isFinalized) {

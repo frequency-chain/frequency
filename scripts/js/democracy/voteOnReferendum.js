@@ -1,11 +1,11 @@
 const { ApiPromise, WsProvider, Keyring } = require("@polkadot/api")
 
 async function aye(referendumIndex, balance = 100) {
-    await vote(true, referendumIndex, balance);
+    return vote(true, referendumIndex, balance);
 }
 
 async function nay(referendumIndex, balance = 100) {
-    await vote(false, referendumIndex, balance);
+    return vote(false, referendumIndex, balance);
 }
 
 async function vote(aye, referendumIndex, balance) {
@@ -14,7 +14,7 @@ async function vote(aye, referendumIndex, balance) {
     const keyring = new Keyring({ type: "sr25519" });
     const sudo = keyring.addFromUri("//Alice");
 
-    await api.tx.democracy.vote(referendumIndex, {
+    return api.tx.democracy.vote(referendumIndex, {
         Standard: {
             vote: {
                 conviction: "None",
