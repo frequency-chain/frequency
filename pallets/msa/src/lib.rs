@@ -84,6 +84,7 @@ pub use types::{AddKeyData, AddProvider};
 
 /// provides the NonceBuckets functionality for preventing relay attacks
 pub mod nonce_bucket;
+pub use nonce_bucket::{hash_multisignature};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -127,6 +128,23 @@ pub mod pallet {
 		/// Maximum provider name size allowed per MSA association
 		#[pallet::constant]
 		type MaxProviderNameSize: Get<u32>;
+
+		/// The number of blocks per virtual "bucket" in the PayloadSignatureRegistry
+		/// Virtual buckets are the first part of the double key in the PayloadSignatureRegistry
+		/// StorageDoubleMap.  This permits a key grouping that enables mass removal
+		/// of stale signatures which are no longer at risk of replay.
+		#[pallet::constant]
+		type MortalityBucketSize: Get<u16>;
+
+		/// The maximum number of signatures that can be assigned to a virtual bucket. In other
+		/// words, no more than this many signatures can be assigned a specific first-key value.
+		#[pallet::constant]
+		type MaxSignaturesPerBucket: Get<u32>;
+
+		/// The total number of virtual buckets
+		/// There are exactly NumberOfBuckets first-key values in PayloadSignatureRegistry.
+		#[pallet::constant]
+		type NumberOfBuckets: Get<u8>;
 	}
 
 	#[pallet::pallet]
@@ -182,6 +200,31 @@ pub mod pallet {
 	#[pallet::getter(fn get_msa_key_count)]
 	pub(super) type MsaInfoOf<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, u8, ValueQuery>;
+
+
+	/// Storage type for mapping a "bucket" number to a mortality block
+	/// Used to know when to clear a virtual "bucket" of stored signatures
+	/// in PayloadSignatureRegistry
+	#[pallet::storage]
+	#[pallet::getter(fn get_mortality_block_of)]
+	pub type MortalityBlockOf<T: Config> =
+		StorageMap<_, Twox64Concat, u8, T::BlockNumber, OptionQuery>;
+
+	/// PayloadSignatureRegistry is used to prevent replay attacks for extrinsics
+	/// that take an externally-signed payload.
+	/// For this to work, the payload must include a mortality block number, which
+	/// is used in lieu of a monotonically increasing nonce.
+	#[pallet::storage]
+	#[pallet::getter(fn get_bucket_signature)]
+	pub(super) type PayloadSignatureRegistry<T: Config> = StorageDoubleMap<
+		_,
+		Twox64Concat,
+		T::BlockNumber,
+		Twox64Concat,
+		MultiSignature,
+		T::BlockNumber,
+		OptionQuery,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -292,6 +335,12 @@ pub mod pallet {
 		ProofHasExpired,
 		/// The submitted proof expiration block is too far in the future
 		ProofNotYetValid,
+		/// Attempted to add a signature when the signature is already in the registry
+		BucketKeyExists,
+		/// Attempted to add a signature with a mortality too far in the future
+		MortalityTooHigh,
+		/// Attempted to retrieve a bucket outside the bounds of storage
+		NoSuchBucket,
 	}
 
 	// #[pallet::genesis_config]
@@ -976,6 +1025,41 @@ impl<T: Config> Pallet<T> {
 		}
 		Ok(Some(schemas.into_inner()))
 	}
+
+	fn register_signature(
+		signature: &MultiSignature,
+		current_block: T::BlockNumber,
+		mortality_block: T::BlockNumber,
+	) -> Result<T::BlockNumber, DispatchError> {
+		if Self::mortality_block_limit(current_block) < mortality_block {
+			Err(Error::<T>::MortalityTooHigh.into())
+		} else {
+			let bucket_num = Self::bucket_for(mortality_block.into());
+			if <PayloadSignatureRegistry::<T>>::contains_key(bucket_num, signature.clone()) {
+				Err(Error::<T>::BucketKeyExists.into())
+			} else {
+				<PayloadSignatureRegistry::<T>>::insert(bucket_num, signature.clone(), mortality_block);
+				Ok(bucket_num.into())
+			}
+		}
+	}
+
+	fn clear_signature_hashes_for_bucket(bucket_num: u16, ) -> Result<(), DispatchError>{
+		Ok(())
+	}
+
+	fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
+		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
+		let num_buckets: T::BlockNumber = T::NumberOfBuckets::get().into();
+		current_block + bucket_size*num_buckets
+	}
+
+	fn bucket_for(block_number: T::BlockNumber) -> T::BlockNumber {
+		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
+		let num_buckets: T::BlockNumber = T::NumberOfBuckets::get().into();
+		block_number / bucket_size % num_buckets
+	}
+
 }
 
 impl<T: Config> MsaLookup for Pallet<T> {
