@@ -13,7 +13,6 @@ mod benchmarking;
 use cumulus_pallet_parachain_system::{
 	RelayNumberStrictlyIncreases, RelaychainBlockNumberProvider,
 };
-use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -37,17 +36,18 @@ use common_primitives::{
 	node::*,
 	schema::{PayloadLocation, SchemaResponse},
 };
-pub use common_runtime::{constants::*, prod_or_local_or_env};
+pub use common_runtime::{
+	constants::{currency::EXISTENTIAL_DEPOSIT, *},
+	fee::WeightToFee,
+	prod_or_local_or_env,
+};
 
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly, Everything},
-	weights::{
-		constants::RocksDbWeight, ConstantMultiplier, DispatchClass, Weight,
-		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
-	},
+	traits::{ConstU128, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly, Everything},
+	weights::{constants::RocksDbWeight, ConstantMultiplier, DispatchClass, Weight},
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -104,32 +104,6 @@ pub type Executive = frame_executive::Executive<
 	AllPalletsWithSystem,
 >;
 
-/// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
-/// node's balance type.
-///
-/// This should typically create a mapping between the following ranges:
-///   - `[0, MAXIMUM_BLOCK_WEIGHT]`
-///   - `[Balance::min, Balance::max]`
-///
-/// Yet, it can be used for any other sort of change to weight-fee. Some examples being:
-///   - Setting it to `0` will essentially disable the weight fee.
-///   - Setting it to `1` will cause the literal `#[weight = x]` values to be charged.
-pub struct WeightToFee;
-impl WeightToFeePolynomial for WeightToFee {
-	type Balance = Balance;
-	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		// in Rococo, extrinsic base weight (smallest non-zero weight) is mapped to 1 MILLIUNIT:
-		// in our template, we map to 1/10 of that, or 1/10 MILLIUNIT
-		let p = MILLIUNIT / 10;
-		let q = 100 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
-		smallvec![WeightToFeeCoefficient {
-			degree: 1,
-			negative: false,
-			coeff_frac: Perbill::from_rational(p % q, q),
-			coeff_integer: p / q,
-		}]
-	}
-}
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 
@@ -332,7 +306,7 @@ impl pallet_balances::Config for Runtime {
 	/// The ubiquitous event type.
 	type Event = Event;
 	type DustRemoval = ();
-	type ExistentialDeposit = ExistentialDeposit;
+	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
 	type AccountStore = System;
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 	type MaxReserves = BalancesMaxReserves;
@@ -867,10 +841,10 @@ impl_runtime_apis! {
 		// 	Ok(Msa::fetch_msa_keys(msa_id))
 		// }
 
-		fn has_delegation(delegator: Delegator, provider: Provider, block_number: Option<BlockNumber>) -> Result<bool, DispatchError> {
+		fn has_delegation(delegator: Delegator, provider: Provider, block_number: Option<BlockNumber>) -> bool {
 			match Msa::ensure_valid_delegation(provider, delegator, block_number) {
-				Ok(_) => Ok(true),
-				Err(_) => Err(sp_runtime::DispatchError::Other("Invalid Delegation")),
+				Ok(_) => true,
+				Err(_) => false,
 			}
 		}
 

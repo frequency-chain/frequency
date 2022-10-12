@@ -2,9 +2,8 @@ use crate::{
 	AccountId, Balance, Balances, BlockNumber, MaxVestingSchedules, Runtime, System, Vesting,
 };
 
-pub const UNITS: Balance = 1_000_000_000_000;
-pub const DOLLARS: Balance = UNITS * 100;
-pub const CENTS: Balance = DOLLARS / 100;
+pub use common_runtime::constants::currency::{CENTS, UNITS};
+
 pub const NATIVE_EXISTENTIAL_DEPOSIT: Balance = CENTS;
 
 use frame_benchmarking::{account, whitelisted_caller};
