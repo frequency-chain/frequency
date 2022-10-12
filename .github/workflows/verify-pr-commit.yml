@@ -172,7 +172,7 @@ jobs:
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
+          toolchain: ${{env.RUST_NIGHTLY_TOOLCHAIN}}
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
