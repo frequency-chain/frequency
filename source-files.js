@@ -1,7 +1,7 @@
 var sourcesIndex = {};
 sourcesIndex["common_helpers"] = {"name":"","files":["avro.rs","lib.rs","rpc.rs","types.rs"]};
 sourcesIndex["common_primitives"] = {"name":"","dirs":[{"name":"parquet","files":["base.rs","column.rs","column_compression_codec.rs","numeric.rs","string.rs","temporal.rs","types.rs"]}],"files":["ds.rs","lib.rs","messages.rs","msa.rs","node.rs","parquet.rs","schema.rs","utils.rs"]};
-sourcesIndex["common_runtime"] = {"name":"","dirs":[{"name":"extensions","files":["check_nonce.rs","mod.rs"]},{"name":"weights","files":["block_weights.rs","extrinsic_weights.rs","mod.rs","orml_vesting.rs","pallet_democracy.rs","pallet_preimage.rs","pallet_scheduler.rs","pallet_treasury.rs","pallet_utility.rs"]}],"files":["constants.rs","lib.rs"]};
+sourcesIndex["common_runtime"] = {"name":"","dirs":[{"name":"extensions","files":["check_nonce.rs","mod.rs"]},{"name":"weights","files":["block_weights.rs","extrinsic_weights.rs","mod.rs","orml_vesting.rs","pallet_democracy.rs","pallet_preimage.rs","pallet_scheduler.rs","pallet_treasury.rs","pallet_utility.rs"]}],"files":["constants.rs","fee.rs","lib.rs"]};
 sourcesIndex["frequency"] = {"name":"","files":["main.rs"]};
 sourcesIndex["frequency_cli"] = {"name":"","files":["cli.rs","command.rs","lib.rs"]};
 sourcesIndex["frequency_rococo_runtime"] = {"name":"","files":["lib.rs","xcm_config.rs"]};

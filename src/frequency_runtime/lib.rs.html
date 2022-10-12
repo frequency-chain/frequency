@@ -986,35 +986,6 @@
 <span id="980">980</span>
 <span id="981">981</span>
 <span id="982">982</span>
-<span id="983">983</span>
-<span id="984">984</span>
-<span id="985">985</span>
-<span id="986">986</span>
-<span id="987">987</span>
-<span id="988">988</span>
-<span id="989">989</span>
-<span id="990">990</span>
-<span id="991">991</span>
-<span id="992">992</span>
-<span id="993">993</span>
-<span id="994">994</span>
-<span id="995">995</span>
-<span id="996">996</span>
-<span id="997">997</span>
-<span id="998">998</span>
-<span id="999">999</span>
-<span id="1000">1000</span>
-<span id="1001">1001</span>
-<span id="1002">1002</span>
-<span id="1003">1003</span>
-<span id="1004">1004</span>
-<span id="1005">1005</span>
-<span id="1006">1006</span>
-<span id="1007">1007</span>
-<span id="1008">1008</span>
-<span id="1009">1009</span>
-<span id="1010">1010</span>
-<span id="1011">1011</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.</span>
 <span class="attribute">#![<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;256&quot;</span>]</span>
@@ -1030,7 +1001,6 @@
 <span class="kw">use</span> <span class="ident">cumulus_pallet_parachain_system</span>::{
 	<span class="ident">RelayNumberStrictlyIncreases</span>, <span class="ident">RelaychainBlockNumberProvider</span>,
 };
-<span class="kw">use</span> <span class="ident">smallvec::smallvec</span>;
 <span class="kw">use</span> <span class="ident">sp_api::impl_runtime_apis</span>;
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">crypto::KeyTypeId</span>, <span class="ident">OpaqueMetadata</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
@@ -1054,17 +1024,18 @@
 	<span class="ident">node</span>::<span class="kw-2">*</span>,
 	<span class="ident">schema</span>::{<span class="ident">PayloadLocation</span>, <span class="ident">SchemaResponse</span>},
 };
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">common_runtime::constants</span>::<span class="kw-2">*</span>;
+
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">common_runtime</span>::{
+	<span class="ident">constants</span>::{<span class="ident">currency::EXISTENTIAL_DEPOSIT</span>, <span class="kw-2">*</span>},
+	<span class="ident">fee::WeightToFee</span>,
+};
 
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
 	<span class="ident">construct_runtime</span>,
 	<span class="ident">dispatch::DispatchError</span>,
 	<span class="ident">parameter_types</span>,
-	<span class="ident">traits</span>::{<span class="ident">ConstU32</span>, <span class="ident">Contains</span>, <span class="ident">EitherOfDiverse</span>, <span class="ident">EnsureOrigin</span>, <span class="ident">EqualPrivilegeOnly</span>},
-	<span class="ident">weights</span>::{
-		<span class="ident">constants::RocksDbWeight</span>, <span class="ident">ConstantMultiplier</span>, <span class="ident">DispatchClass</span>, <span class="ident">Weight</span>,
-		<span class="ident">WeightToFeeCoefficient</span>, <span class="ident">WeightToFeeCoefficients</span>, <span class="ident">WeightToFeePolynomial</span>,
-	},
+	<span class="ident">traits</span>::{<span class="ident">ConstU128</span>, <span class="ident">ConstU32</span>, <span class="ident">Contains</span>, <span class="ident">EitherOfDiverse</span>, <span class="ident">EnsureOrigin</span>, <span class="ident">EqualPrivilegeOnly</span>},
+	<span class="ident">weights</span>::{<span class="ident">constants::RocksDbWeight</span>, <span class="ident">ConstantMultiplier</span>, <span class="ident">DispatchClass</span>, <span class="ident">Weight</span>},
 };
 <span class="kw">use</span> <span class="ident">frame_system</span>::{
 	<span class="ident">limits</span>::{<span class="ident">BlockLength</span>, <span class="ident">BlockWeights</span>},
@@ -1145,33 +1116,6 @@
 	<span class="ident">AllPalletsWithSystem</span>,
 <span class="op">&gt;</span>;
 
-<span class="doccomment">/// Handles converting a weight scalar to a fee value, based on the scale and granularity of the</span>
-<span class="doccomment">/// node&#39;s balance type.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// This should typically create a mapping between the following ranges:</span>
-<span class="doccomment">///   - `[0, MAXIMUM_BLOCK_WEIGHT]`</span>
-<span class="doccomment">///   - `[Balance::min, Balance::max]`</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Yet, it can be used for any other sort of change to weight-fee. Some examples being:</span>
-<span class="doccomment">///   - Setting it to `0` will essentially disable the weight fee.</span>
-<span class="doccomment">///   - Setting it to `1` will cause the literal `#[weight = x]` values to be charged.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">WeightToFee</span>;
-<span class="kw">impl</span> <span class="ident">WeightToFeePolynomial</span> <span class="kw">for</span> <span class="ident">WeightToFee</span> {
-	<span class="kw">type</span> <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">Balance</span>;
-	<span class="kw">fn</span> <span class="ident">polynomial</span>() -&gt; <span class="ident">WeightToFeeCoefficients</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Balance</span><span class="op">&gt;</span> {
-		<span class="comment">// in Rococo, extrinsic base weight (smallest non-zero weight) is mapped to 1 MILLIUNIT:</span>
-		<span class="comment">// in our template, we map to 1/10 of that, or 1/10 MILLIUNIT</span>
-		<span class="kw">let</span> <span class="ident">p</span> <span class="op">=</span> <span class="ident">MILLIUNIT</span> <span class="op">/</span> <span class="number">10</span>;
-		<span class="kw">let</span> <span class="ident">q</span> <span class="op">=</span> <span class="number">100</span> <span class="op">*</span> <span class="ident">Balance::from</span>(<span class="ident">ExtrinsicBaseWeight::get</span>().<span class="ident">ref_time</span>());
-		<span class="macro">smallvec!</span>[<span class="ident">WeightToFeeCoefficient</span> {
-			<span class="ident">degree</span>: <span class="number">1</span>,
-			<span class="ident">negative</span>: <span class="bool-val">false</span>,
-			<span class="ident">coeff_frac</span>: <span class="ident">Perbill::from_rational</span>(<span class="ident">p</span> <span class="op">%</span> <span class="ident">q</span>, <span class="ident">q</span>),
-			<span class="ident">coeff_integer</span>: <span class="ident">p</span> <span class="op">/</span> <span class="ident">q</span>,
-		}]
-	}
-}
-
 <span class="doccomment">/// Opaque types. These are used by the CLI to instantiate machinery that don&#39;t need to know</span>
 <span class="doccomment">/// the specifics of the runtime. They can then be made to be agnostic over specific formats</span>
 <span class="doccomment">/// of data like extrinsics, allowing for them to continue syncing the network through upgrades</span>
@@ -1222,6 +1166,7 @@
 	<span class="comment">// the lazy contract deletion.</span>
 	<span class="kw">pub</span> <span class="ident">RuntimeBlockLength</span>: <span class="ident">BlockLength</span> <span class="op">=</span>
 		<span class="ident">BlockLength::max_with_normal_ratio</span>(<span class="number">5</span> <span class="op">*</span> <span class="number">1024</span> <span class="op">*</span> <span class="number">1024</span>, <span class="ident">NORMAL_DISPATCH_RATIO</span>);
+
 	<span class="kw">pub</span> <span class="ident">RuntimeBlockWeights</span>: <span class="ident">BlockWeights</span> <span class="op">=</span> <span class="ident">BlockWeights::builder</span>()
 		.<span class="ident">base_block</span>(<span class="ident">BlockExecutionWeight::get</span>())
 		.<span class="ident">for_class</span>(<span class="ident">DispatchClass::all</span>(), <span class="op">|</span><span class="ident">weights</span><span class="op">|</span> {
@@ -1240,6 +1185,7 @@
 		})
 		.<span class="ident">avg_block_initialization</span>(<span class="ident">AVERAGE_ON_INITIALIZE_RATIO</span>)
 		.<span class="ident">build_or_panic</span>();
+
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SS58Prefix</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="number">42</span>;
 }
 
@@ -1364,10 +1310,6 @@
 	<span class="kw">type</span> <span class="ident">EventHandler</span> <span class="op">=</span> (<span class="ident">CollatorSelection</span>,);
 }
 
-<span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ExistentialDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">EXISTENTIAL_DEPOSIT</span>;
-}
-
 <span class="kw">impl</span> <span class="ident">pallet_balances::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">MaxLocks</span> <span class="op">=</span> <span class="ident">BalancesMaxLocks</span>;
 	<span class="doccomment">/// The type for recording an account&#39;s balance.</span>
@@ -1375,7 +1317,7 @@
 	<span class="doccomment">/// The ubiquitous event type.</span>
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 	<span class="kw">type</span> <span class="ident">DustRemoval</span> <span class="op">=</span> ();
-	<span class="kw">type</span> <span class="ident">ExistentialDeposit</span> <span class="op">=</span> <span class="ident">ExistentialDeposit</span>;
+	<span class="kw">type</span> <span class="ident">ExistentialDeposit</span> <span class="op">=</span> <span class="ident">ConstU128</span><span class="op">&lt;</span><span class="ident">EXISTENTIAL_DEPOSIT</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">AccountStore</span> <span class="op">=</span> <span class="ident">System</span>;
 	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">pallet_balances::weights::SubstrateWeight</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">MaxReserves</span> <span class="op">=</span> <span class="ident">BalancesMaxReserves</span>;
@@ -1910,10 +1852,10 @@
 		<span class="comment">// 	Ok(Msa::fetch_msa_keys(msa_id))</span>
 		<span class="comment">// }</span>
 
-		<span class="kw">fn</span> <span class="ident">has_delegation</span>(<span class="ident">delegator</span>: <span class="ident">Delegator</span>, <span class="ident">provider</span>: <span class="ident">Provider</span>, <span class="ident">block_number</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
+		<span class="kw">fn</span> <span class="ident">has_delegation</span>(<span class="ident">delegator</span>: <span class="ident">Delegator</span>, <span class="ident">provider</span>: <span class="ident">Provider</span>, <span class="ident">block_number</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) -&gt; <span class="ident">bool</span> {
 			<span class="kw">match</span> <span class="ident">Msa::ensure_valid_delegation</span>(<span class="ident">provider</span>, <span class="ident">delegator</span>, <span class="ident">block_number</span>) {
-				<span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>),
-				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(<span class="ident">sp_runtime::DispatchError::Other</span>(<span class="string">&quot;Invalid Delegation&quot;</span>)),
+				<span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="bool-val">true</span>,
+				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="bool-val">false</span>,
 			}
 		}
 

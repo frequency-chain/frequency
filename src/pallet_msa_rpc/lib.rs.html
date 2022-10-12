@@ -106,9 +106,6 @@
 <span id="100">100</span>
 <span id="101">101</span>
 <span id="102">102</span>
-<span id="103">103</span>
-<span id="104">104</span>
-<span id="105">105</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">codec::Codec</span>;
 <span class="kw">use</span> <span class="ident">common_helpers::rpc</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">common_primitives</span>::{
@@ -122,7 +119,6 @@
 	<span class="ident">proc_macros::rpc</span>,
 };
 <span class="kw">use</span> <span class="ident">pallet_msa_runtime_api::MsaApi</span> <span class="kw">as</span> <span class="ident">MsaRuntimeApi</span>;
-<span class="kw">use</span> <span class="ident">rayon::iter</span>::{<span class="ident">IntoParallelRefIterator</span>, <span class="ident">ParallelIterator</span>};
 <span class="kw">use</span> <span class="ident">sp_api::ProvideRuntimeApi</span>;
 <span class="kw">use</span> <span class="ident">sp_blockchain::HeaderBackend</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">generic::BlockId</span>, <span class="ident">traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>};
@@ -189,14 +185,12 @@
 		<span class="kw">let</span> <span class="ident">provider</span> <span class="op">=</span> <span class="ident">Provider</span>(<span class="ident">provider_msa_id</span>);
 
 		<span class="prelude-val">Ok</span>(<span class="ident">delegator_msa_ids</span>
-			.<span class="ident">par_iter</span>()
+			.<span class="ident">iter</span>() <span class="comment">// TODO: Change back to par_iter() which has borrow panic</span>
 			.<span class="ident">map</span>(<span class="op">|</span><span class="kw-2">&amp;</span><span class="ident">id</span><span class="op">|</span> {
 				<span class="kw">let</span> <span class="ident">delegator</span> <span class="op">=</span> <span class="ident">Delegator</span>(<span class="ident">id</span>);
-				(
-					<span class="ident">id</span>,
-					<span class="ident">map_rpc_result</span>(<span class="ident">api</span>.<span class="ident">has_delegation</span>(<span class="kw-2">&amp;</span><span class="ident">at</span>, <span class="ident">delegator</span>, <span class="ident">provider</span>, <span class="ident">block_number</span>))
-						.<span class="ident">unwrap</span>(),
-				)
+				<span class="kw">let</span> <span class="ident">has_delegation</span> <span class="op">=</span>
+					<span class="ident">api</span>.<span class="ident">has_delegation</span>(<span class="kw-2">&amp;</span><span class="ident">at</span>, <span class="ident">delegator</span>, <span class="ident">provider</span>, <span class="ident">block_number</span>).<span class="ident">unwrap</span>();
+				(<span class="ident">id</span>, <span class="ident">has_delegation</span>)
 			})
 			.<span class="ident">collect</span>())
 	}

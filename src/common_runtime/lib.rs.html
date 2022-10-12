@@ -39,10 +39,12 @@
 <span id="33">33</span>
 <span id="34">34</span>
 <span id="35">35</span>
+<span id="36">36</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">constants</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">extensions</span>;
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">fee</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">weights</span>;
 
 <span class="doccomment">/// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value</span>
