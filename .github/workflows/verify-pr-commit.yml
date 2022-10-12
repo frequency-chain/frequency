@@ -72,7 +72,7 @@ jobs:
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
+          toolchain: nightly // this need not to change as we check again latest nightly
           default: true
           profile: minimal
           components: rustfmt
