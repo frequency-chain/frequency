@@ -7,11 +7,10 @@ use common_primitives::{
 use frame_support::{
 	parameter_types,
 	sp_runtime::{Perbill, Permill},
-	traits::{ConstU32, ConstU8},
+	traits::{ConstU16, ConstU32, ConstU8},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 	PalletId,
 };
-use frame_support::traits::ConstU16;
 
 pub const FREQUENCY_ROCOCO_TOKEN: &str = "XRQCY";
 pub const FREQUENCY_LOCAL_TOKEN: &str = "UNIT";
