@@ -1,4 +1,4 @@
-use sp_runtime::{traits::AtLeast32BitUnsigned, MultiSignature};
+use sp_runtime::MultiSignature;
 use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
 
 use common_primitives::node::{Hash, Signature};
