@@ -1,7 +1,7 @@
 use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
 use common_primitives::{msa::MessageSourceId, node::BlockNumber, utils::wrap_binary_data};
 use frame_support::{
-	assert_ok, parameter_types,
+	assert_ok, pallet, parameter_types,
 	traits::{ConstU16, ConstU64},
 };
 use frame_system as system;
@@ -97,13 +97,13 @@ impl pallet_msa::Config for Test {
 	type MaxKeys = MaxKeys;
 	type MaxSchemaGrants = MaxSchemaGrants;
 	type MaxProviderNameSize = MaxProviderNameSize;
-	type MortalityBucketSize = ConstU16<10>;
-	type MaxSignaturesPerBucket = ConstU32<100>;
+	type MortalityBucketSize = ConstU16<100>;
+	type MaxSignaturesPerBucket = ConstU32<10>;
 	type NumberOfBuckets = ConstU8<2>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let mut t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
