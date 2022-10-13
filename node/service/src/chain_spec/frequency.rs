@@ -1,6 +1,9 @@
 #![allow(missing_docs)]
 use common_primitives::node::{AccountId, Balance};
-use common_runtime::constants::{currency::EXISTENTIAL_DEPOSIT, FREQUENCY_TOKEN, TOKEN_DECIMALS};
+use common_runtime::constants::{
+	currency::{EXISTENTIAL_DEPOSIT, UNITS},
+	FREQUENCY_TOKEN, TOKEN_DECIMALS,
+};
 use cumulus_primitives_core::ParaId;
 use frequency_runtime::{AuraId, CouncilConfig, SS58Prefix, SudoConfig, TechnicalCommitteeConfig};
 
@@ -152,8 +155,8 @@ pub fn frequency() -> ChainSpec {
 				Default::default(),
 				// TODO: initial technical committee members
 				Default::default(),
-				// TODO: candidacy bond (if needed)
-				EXISTENTIAL_DEPOSIT * 16,
+				//candidacy bond
+				100_000 * UNITS,
 				// TODO: include council/democracy/staking related inputs
 				para_id,
 			)
@@ -200,7 +203,7 @@ fn frequency_genesis(
 		collator_selection: frequency_runtime::CollatorSelectionConfig {
 			invulnerables: initial_authorities.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond,
-			..Default::default()
+			desired_candidates: 0,
 		},
 		session: frequency_runtime::SessionConfig {
 			keys: initial_authorities
