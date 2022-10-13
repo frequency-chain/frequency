@@ -460,7 +460,7 @@ impl pallet_treasury::Config for Runtime {
 	type PalletId = TreasuryPalletId;
 	type Currency = Balances;
 	type Event = Event;
-	type WeightInfo = weights::pallet_treasury::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
 
 	/// Who approves treasury proposals?
 	/// - Root (sudo or governance)
