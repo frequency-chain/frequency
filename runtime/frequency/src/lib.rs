@@ -590,9 +590,6 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
 
-// We allow root only to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
-
 impl pallet_session::Config for Runtime {
 	type Event = Event;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
@@ -616,16 +613,46 @@ impl pallet_aura::Config for Runtime {
 impl pallet_collator_selection::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
-	type UpdateOrigin = CollatorSelectionUpdateOrigin;
-	type PotId = CollatorPotId;
+
+	// Origin that can dictate updating parameters of this pallet.
+	// Currently only root or a 3/5ths council vote.
+	type UpdateOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
+	>;
+
+	// Account Identifier from which the internal Pot is generated.
+	// Set to something that NEVER gets a balance i.e. No block rewards.
+	type PotId = NeverDepositIntoId;
+
+	// Maximum number of candidates that we should have. This is enforced in code.
+	//
+	// This does not take into account the invulnerables.
 	type MaxCandidates = CollatorMaxCandidates;
+
+	// Minimum number of candidates that we should have. This is used for disaster recovery.
+	//
+	// This does not take into account the invulnerables.
 	type MinCandidates = CollatorMinCandidates;
-	type MaxInvulnerables = ConstU32<10>;
+
+	// Maximum number of invulnerables. This is enforced in code.
+	type MaxInvulnerables = CollatorMaxInvulnerables;
+
+	// Will be kicked if block is not produced in threshold.
 	// should be a multiple of session or things will get inconsistent
-	type KickThreshold = SessionPeriod;
+	type KickThreshold = CollatorKickThreshold;
+
+	/// A stable ID for a validator.
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
+
+	// A conversion from account ID to validator ID.
+	//
+	// Its cost must be at most one storage read.
 	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
+
+	// Validate a user is registered
 	type ValidatorRegistration = Session;
+
 	type WeightInfo = ();
 }
 
