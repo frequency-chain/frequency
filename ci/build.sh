@@ -9,8 +9,6 @@ SRT_TOOL_VERSION="${SRT_TOOL_VERSION:-1.62.0}"
 # Enable warnings about unused extern crates
 export RUSTFLAGS=" -W unused-extern-crates"
 
-./scripts/init.sh install-toolchain
-
 rustc --version
 rustup --version
 cargo --version

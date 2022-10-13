@@ -9,8 +9,8 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+-[0-9]+" # ex. v0.29.9-1
       - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-1-rc1
 env:
-  RUST_TOOLCHAIN: nightly-2022-07-23
   RELEASE_VERSION: ${{github.ref_name}}
+  RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
 
 jobs:
   build-binaries:
@@ -35,13 +35,6 @@ jobs:
             arch: arm64
     runs-on: ${{matrix.os}}
     steps:
-      - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
       - name: Check Out Repo
         uses: actions/checkout@v3
       # Test only. Let's you skip full binary build during development
@@ -56,6 +49,13 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: ${{env.RUST_TOOLCHAIN}}
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          default: true
+          profile: minimal
+          target: wasm32-unknown-unknown
+          toolchain: stable
       - name: Compile for ${{matrix.network}}
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
@@ -125,15 +125,15 @@ jobs:
     name: Build Rust Developer Docs
     runs-on: ubuntu-latest
     steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
+          toolchain: stable
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
-      - name: Check Out Repo
-        uses: actions/checkout@v3
       - name: Build Docs
         run: |
           RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps
@@ -145,7 +145,7 @@ jobs:
           if-no-files-found: error
 
   build-js-api-augment:
-    needs: compile-project
+    needs: build-binaries
     name: Build JS API Augment
     strategy:
       matrix:
