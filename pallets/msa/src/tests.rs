@@ -1,9 +1,9 @@
 use crate::{
 	ensure,
 	mock::*,
-	nonce_bucket::{bucket_for, hash_multisignature},
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
-	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
+	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MortalityBlockOf, MsaIdentifier,
+	PayloadSignatureRegistry,
 };
 use common_primitives::{
 	msa::{Delegator, MessageSourceId, Provider, ProviderInfo, EXPIRATION_BLOCK_VALIDITY_GAP},
@@ -1983,12 +1983,167 @@ fn generate_test_signature() -> MultiSignature {
 	key_pair.sign(fake_data.as_bytes()).into()
 }
 
+fn set_bucket_mortalities() {
+	<MortalityBlockOf<Test>>::insert(0, 0);
+	<MortalityBlockOf<Test>>::insert(1, 0);
+}
+
 #[test]
 pub fn register_signature_works() {
 	new_test_ext().execute_with(|| {
+		set_bucket_mortalities();
+
 		let current_block: BlockNumber = 11_233;
 		let mortality_block: BlockNumber = 11_243;
 		let sig1 = &generate_test_signature();
 		assert_ok!(Msa::register_signature(sig1, current_block.into(), mortality_block.into()));
+	})
+}
+
+#[test]
+pub fn stores_signature_with_correct_key() {
+	struct TestCase {
+		current_block: BlockNumber,
+		mortality_block: BlockNumber,
+		expected_bucket_number: u64,
+	}
+
+	new_test_ext().execute_with(|| {
+		set_bucket_mortalities();
+
+		let test_cases: Vec<TestCase> = vec![
+			TestCase { current_block: 0, mortality_block: 99, expected_bucket_number: 0 },
+			TestCase { current_block: 33_111, mortality_block: 33_260, expected_bucket_number: 0 },
+			TestCase { current_block: 199, mortality_block: 299, expected_bucket_number: 0 },
+			TestCase {
+				current_block: 4_294_967_195,
+				mortality_block: 4_294_967_295,
+				expected_bucket_number: 0,
+			},
+			TestCase { current_block: 640, mortality_block: 740, expected_bucket_number: 1 },
+			TestCase { current_block: 33, mortality_block: 133, expected_bucket_number: 1 },
+			TestCase {
+				current_block: 999_899,
+				mortality_block: 999_999,
+				expected_bucket_number: 1,
+			},
+			TestCase {
+				current_block: 128_999_899,
+				mortality_block: 128_999_999,
+				expected_bucket_number: 1,
+			},
+		];
+		for tc in test_cases {
+			let sig1 = &generate_test_signature();
+			assert_ok!(Msa::register_signature(
+				sig1,
+				tc.current_block.into(),
+				tc.mortality_block.into()
+			));
+			assert_eq!(
+				true,
+				<PayloadSignatureRegistry<Test>>::contains_key(tc.expected_bucket_number, sig1)
+			);
+		}
+	})
+}
+
+#[test]
+pub fn adds_new_bucket_number_mortality_to_store() {
+	struct TestCase {
+		current_block: BlockNumber,
+		mortality_block: BlockNumber,
+		expected_bucket: u64,
+		// this difference is because of the conflict between BlockNumber and Header in mock;
+		// BlockNumber has to be u64 so that Header will work, but BlockNumber is u32 in the other
+		// configs.
+		expected_mortality: u64,
+	}
+
+	new_test_ext().execute_with(|| {
+		set_bucket_mortalities();
+
+		let test_cases: Vec<TestCase> = vec![
+			TestCase {
+				current_block: 0,
+				mortality_block: 99,
+				expected_bucket: 0,
+				expected_mortality: 100,
+			},
+			TestCase {
+				current_block: 33_111,
+				mortality_block: 33_260,
+				expected_bucket: 0,
+				expected_mortality: 33_300,
+			},
+			TestCase {
+				current_block: 299,
+				mortality_block: 399,
+				expected_bucket: 1,
+				expected_mortality: 400,
+			},
+			TestCase {
+				current_block: 1222,
+				mortality_block: 1322,
+				expected_bucket: 1,
+				expected_mortality: 1400,
+			},
+		];
+		for tc in test_cases {
+			let sig1 = &generate_test_signature();
+			assert_ok!(Msa::register_signature(
+				sig1,
+				tc.current_block.into(),
+				tc.mortality_block.into()
+			));
+			assert_eq!(
+				Some(tc.expected_mortality),
+				Msa::get_mortality_block_of(tc.expected_bucket)
+			);
+		}
+	})
+}
+
+#[test]
+pub fn clears_stale_signatures_after_mortality_limit() {
+	new_test_ext().execute_with(|| {
+		set_bucket_mortalities();
+
+		let mut current_block: BlockNumber = 78_667;
+		let mut mortality_block: BlockNumber = 78_777;
+	})
+}
+
+#[test]
+pub fn cannot_add_signature_twice() {
+	new_test_ext().execute_with(|| {
+		set_bucket_mortalities();
+
+		let current_block: BlockNumber = 11_122;
+		let mortality_block: BlockNumber = 11_321;
+
+		let sig1 = &generate_test_signature();
+		assert_ok!(Msa::register_signature(sig1, current_block.into(), mortality_block.into()));
+
+		assert_noop!(
+			Msa::register_signature(sig1, current_block.into(), mortality_block.into()),
+			Error::<Test>::BucketKeyExists
+		);
+	})
+}
+
+#[test]
+pub fn cannot_add_signature_with_mortality_block_too_high() {
+	new_test_ext().execute_with(|| {
+		set_bucket_mortalities();
+
+		let current_block: BlockNumber = 11_122;
+		let mortality_block: BlockNumber = 11_323;
+
+		let sig1 = &generate_test_signature();
+		assert_noop!(
+			Msa::register_signature(sig1, current_block.into(), mortality_block.into()),
+			Error::<Test>::MortalityTooHigh
+		);
 	})
 }

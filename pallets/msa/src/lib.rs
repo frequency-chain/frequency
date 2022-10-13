@@ -77,6 +77,7 @@ use sp_runtime::{
 	traits::{Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, Zero},
 	DispatchError, MultiSignature,
 };
+use std::ops::Div;
 
 use sp_core::crypto::AccountId32;
 pub mod types;
@@ -207,7 +208,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_mortality_block_of)]
 	pub type MortalityBlockOf<T: Config> =
-		StorageMap<_, Twox64Concat, u8, T::BlockNumber, OptionQuery>;
+		StorageMap<_, Twox64Concat, T::BlockNumber, T::BlockNumber, OptionQuery>;
 
 	/// PayloadSignatureRegistry is used to prevent replay attacks for extrinsics
 	/// that take an externally-signed payload.
@@ -342,21 +343,29 @@ pub mod pallet {
 		NoSuchBucket,
 	}
 
-	// #[pallet::genesis_config]
-	// pub struct GenesisConfig {}
-	//
-	// #[cfg(feature = "std")]
-	// impl sp_std::default::Default for GenesisConfig {
-	// 	fn default() -> Self {
-	//
-	// 	}
-	// }
-	//
-	// #[pallet::genesis_build]
-	// impl<T: Config> GenesisBuild<T> for GenesisConfig {
-	// 	fn build(&self) {
-	// 	}
-	// }
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config> {
+		phantom: PhantomData<T>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config> Default for GenesisConfig<T> {
+		fn default() -> Self {
+			Self { phantom: Default::default() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+		fn build(&self) {
+			//insert the values into MortalityBlockOf here
+			let num_buckets = T::NumberOfBuckets::get() - 1;
+			for i in 1..num_buckets - 1 {
+				let bucket_num = T::BlockNumber::from(i);
+				<MortalityBlockOf<T>>::insert(bucket_num, T::BlockNumber::default());
+			}
+		}
+	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -1037,6 +1046,7 @@ impl<T: Config> Pallet<T> {
 			if <PayloadSignatureRegistry<T>>::contains_key(bucket_num, signature.clone()) {
 				Err(Error::<T>::BucketKeyExists.into())
 			} else {
+				Self::reset_virtual_bucket_if_needed(mortality_block, bucket_num)?;
 				<PayloadSignatureRegistry<T>>::insert(
 					bucket_num,
 					signature.clone(),
@@ -1047,20 +1057,61 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn clear_signature_hashes_for_bucket(bucket_num: u16) -> Result<(), DispatchError> {
+	/// Check if enough blocks have passed to reset bucket mortality storage.
+	/// If so:
+	///     1. delete all the stored bucket/signature alues with key1 = bucket num
+	///     2. set the bucket's mortality block to the new value
+	/// If not, don't do anything.
+	fn reset_virtual_bucket_if_needed(
+		mortality_block: T::BlockNumber,
+		bucket_num: T::BlockNumber,
+	) -> DispatchResult {
+		<MortalityBlockOf<T>>::try_mutate(bucket_num, |maybe_mortality_block| -> DispatchResult {
+			let bucket_mortality_block = Self::bucket_mortality_block(mortality_block);
+
+			match maybe_mortality_block {
+				None => Err(Error::<T>::NoSuchBucket.into()),
+
+				Some(mortality_block_for_bucket) => {
+					if mortality_block > *mortality_block_for_bucket {
+						Self::delete_signatures_for_bucket(bucket_num)?;
+						*maybe_mortality_block = Some(bucket_mortality_block);
+					} else if *mortality_block_for_bucket == T::BlockNumber::default() {
+						*maybe_mortality_block = Some(bucket_mortality_block);
+					}
+					Ok(())
+				},
+			}
+		})
+	}
+
+	// delete signatures with the given bucket number since they have existed past the mortality
+	// block limit.
+	fn delete_signatures_for_bucket(bucket_num: T::BlockNumber) -> Result<(), DispatchError> {
+		// use drain_prefix
+		// https://paritytech.github.io/substrate/master/frame_support/pallet_prelude/struct.StorageDoubleMap.html#method.drain_prefix
 		Ok(())
 	}
 
+	fn bucket_mortality_block(for_block: T::BlockNumber) -> T::BlockNumber {
+		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
+		(for_block / bucket_size + T::BlockNumber::from(1u32)) * bucket_size
+	}
+
+	// The furthest in the future a mortality_block value is allowed
+	// to be for current_block
+	// This is calculated to be past the risk of a replay attack
 	fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
 		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
 		let num_buckets: T::BlockNumber = T::NumberOfBuckets::get().into();
 		current_block + bucket_size * num_buckets
 	}
 
+	// calculate the virtual bucket number for the provided block number
 	fn bucket_for(block_number: T::BlockNumber) -> T::BlockNumber {
 		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
 		let num_buckets: T::BlockNumber = T::NumberOfBuckets::get().into();
-		block_number / bucket_size % num_buckets
+		(block_number / bucket_size % num_buckets).into()
 	}
 }
 
