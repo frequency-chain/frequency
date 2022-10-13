@@ -1,10 +1,10 @@
-use crate::{
-	ensure,
-	mock::*,
-	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
-	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MortalityBlockOf, MsaIdentifier,
-	PayloadSignatureRegistry,
+use frame_support::{
+	assert_err, assert_noop, assert_ok,
+	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 };
+use sp_core::{crypto::AccountId32, sr25519, Encode, Pair, H256};
+use sp_runtime::{traits::SignedExtension, MultiSignature};
+
 use common_primitives::{
 	msa::{Delegator, MessageSourceId, Provider, ProviderInfo, EXPIRATION_BLOCK_VALIDITY_GAP},
 	node::BlockNumber,
@@ -12,9 +12,13 @@ use common_primitives::{
 	utils::wrap_binary_data,
 };
 use common_runtime::extensions::check_nonce::CheckNonce;
-use frame_support::{
-	assert_err, assert_noop, assert_ok,
-	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
+
+use crate::{
+	ensure,
+	mock::*,
+	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
+	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MortalityBlockOf, MsaIdentifier,
+	PayloadSignatureRegistry,
 };
 use orml_utilities::OrderedSet;
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair, H256};
@@ -1004,6 +1008,7 @@ pub fn revoke_msa_delegation_by_delegator_is_successful() {
 		);
 	});
 }
+
 #[test]
 pub fn revoke_provider_is_successful() {
 	new_test_ext().execute_with(|| {
@@ -2004,7 +2009,6 @@ pub fn register_signature_works() {
 pub fn stores_signature_with_correct_key() {
 	struct TestCase {
 		current_block: BlockNumber,
-		mortality_block: BlockNumber,
 		expected_bucket_number: u64,
 	}
 
@@ -2012,37 +2016,19 @@ pub fn stores_signature_with_correct_key() {
 		set_bucket_mortalities();
 
 		let test_cases: Vec<TestCase> = vec![
-			TestCase { current_block: 0, mortality_block: 99, expected_bucket_number: 0 },
-			TestCase { current_block: 33_111, mortality_block: 33_260, expected_bucket_number: 0 },
-			TestCase { current_block: 199, mortality_block: 299, expected_bucket_number: 0 },
-			TestCase {
-				current_block: 4_294_967_195,
-				mortality_block: 4_294_967_295,
-				expected_bucket_number: 0,
-			},
-			TestCase { current_block: 640, mortality_block: 740, expected_bucket_number: 1 },
-			TestCase { current_block: 33, mortality_block: 133, expected_bucket_number: 1 },
-			TestCase {
-				current_block: 999_899,
-				mortality_block: 999_999,
-				expected_bucket_number: 1,
-			},
-			TestCase {
-				current_block: 128_999_899,
-				mortality_block: 128_999_999,
-				expected_bucket_number: 1,
-			},
+			TestCase { current_block: 129, expected_bucket_number: 0 },
+			TestCase { current_block: 999_899, expected_bucket_number: 0 },
+			TestCase { current_block: 4_294_965_098, expected_bucket_number: 0 },
+			TestCase { current_block: 0, expected_bucket_number: 1 },
+			TestCase { current_block: 640, expected_bucket_number: 1 },
+			TestCase { current_block: 128_999_799, expected_bucket_number: 1 },
 		];
 		for tc in test_cases {
-			let sig1 = &generate_test_signature();
-			assert_ok!(Msa::register_signature(
-				sig1,
-				tc.current_block.into(),
-				tc.mortality_block.into()
-			));
-			assert_eq!(
-				true,
-				<PayloadSignatureRegistry<Test>>::contains_key(tc.expected_bucket_number, sig1)
+			// mortality block is current_block + 111 in this function.
+			register_signature_and_validate(
+				tc.current_block,
+				tc.expected_bucket_number,
+				&generate_test_signature(),
 			);
 		}
 	})
@@ -2053,10 +2039,9 @@ pub fn adds_new_bucket_number_mortality_to_store() {
 	struct TestCase {
 		current_block: BlockNumber,
 		mortality_block: BlockNumber,
+		// u64 instead of BlockNUmber is because of the conflict between BlockNumber and Header in mock;
+		// BlockNumber has to be u64 so that Header will work, but BlockNumber is u32 in Msa Config
 		expected_bucket: u64,
-		// this difference is because of the conflict between BlockNumber and Header in mock;
-		// BlockNumber has to be u64 so that Header will work, but BlockNumber is u32 in the other
-		// configs.
 		expected_mortality: u64,
 	}
 
@@ -2090,9 +2075,9 @@ pub fn adds_new_bucket_number_mortality_to_store() {
 			},
 		];
 		for tc in test_cases {
-			let sig1 = &generate_test_signature();
+			let sig = &generate_test_signature();
 			assert_ok!(Msa::register_signature(
-				sig1,
+				sig,
 				tc.current_block.into(),
 				tc.mortality_block.into()
 			));
@@ -2104,13 +2089,46 @@ pub fn adds_new_bucket_number_mortality_to_store() {
 	})
 }
 
+fn register_signature_and_validate(
+	current_block: BlockNumber,
+	expected_bucket: u64,
+	signature: &MultiSignature,
+) {
+	let mortality_block = current_block + 111;
+	assert_ok!(Msa::register_signature(signature, current_block.into(), mortality_block.into()));
+
+	let actual = <PayloadSignatureRegistry<Test>>::get(expected_bucket, signature);
+	assert_eq!(Some(mortality_block as u64), actual);
+}
+
 #[test]
 pub fn clears_stale_signatures_after_mortality_limit() {
 	new_test_ext().execute_with(|| {
 		set_bucket_mortalities();
+		let sig1 = &generate_test_signature();
+		let sig2 = &generate_test_signature();
+		let sig3 = &generate_test_signature();
 
-		let mut current_block: BlockNumber = 78_667;
-		let mut mortality_block: BlockNumber = 78_777;
+		let mut current_block: BlockNumber = 667;
+		register_signature_and_validate(current_block, 1u64, sig1);
+		register_signature_and_validate(current_block, 1u64, sig2);
+
+		current_block += 100;
+		register_signature_and_validate(current_block, 0u64, sig2);
+
+		current_block += 100;
+		let mortality_block = current_block + 111;
+		// the old signature can't be re-registered, and does not trigger a clear.
+		assert_noop!(
+			Msa::register_signature(sig1, current_block.into(), mortality_block as u64),
+			Error::<Test>::BucketKeyExists
+		);
+
+		// a new signature triggers a clear.
+		register_signature_and_validate(current_block, 1u64, sig3);
+		// 1_sig1 and 1_sig2 should no longer be there
+		assert_eq!(false, <PayloadSignatureRegistry<Test>>::contains_key(1u64, sig1));
+		assert_eq!(false, <PayloadSignatureRegistry<Test>>::contains_key(1u64, sig2));
 	})
 }
 

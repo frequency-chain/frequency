@@ -77,7 +77,6 @@ use sp_runtime::{
 	traits::{Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, Zero},
 	DispatchError, MultiSignature,
 };
-use std::ops::Div;
 
 use sp_core::crypto::AccountId32;
 pub mod types;
@@ -215,14 +214,13 @@ pub mod pallet {
 	/// For this to work, the payload must include a mortality block number, which
 	/// is used in lieu of a monotonically increasing nonce.
 	#[pallet::storage]
-	#[pallet::getter(fn get_bucket_signature)]
 	pub(super) type PayloadSignatureRegistry<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
-		T::BlockNumber,
+		T::BlockNumber, // Bucket number. Stored as BlockNumber because I'm done arguing with rust about it.
 		Twox64Concat,
-		MultiSignature,
-		T::BlockNumber,
+		MultiSignature, // An externally-created Signature for an external payload, provided by an extrinsic
+		T::BlockNumber, // An actual flipping block number.
 		OptionQuery,
 	>;
 
@@ -1034,34 +1032,36 @@ impl<T: Config> Pallet<T> {
 		Ok(Some(schemas.into_inner()))
 	}
 
-	fn register_signature(
+	/// Add a signature to the PayloadSignatureRegistry based on a virtual "bucket" grouping.
+	/// First reset the virtual bucket if necessary, then add the new entry.
+	pub fn register_signature(
 		signature: &MultiSignature,
 		current_block: T::BlockNumber,
 		mortality_block: T::BlockNumber,
-	) -> Result<T::BlockNumber, DispatchError> {
+	) -> DispatchResult {
 		if Self::mortality_block_limit(current_block) < mortality_block {
 			Err(Error::<T>::MortalityTooHigh.into())
 		} else {
 			let bucket_num = Self::bucket_for(mortality_block.into());
-			if <PayloadSignatureRegistry<T>>::contains_key(bucket_num, signature.clone()) {
-				Err(Error::<T>::BucketKeyExists.into())
-			} else {
-				Self::reset_virtual_bucket_if_needed(mortality_block, bucket_num)?;
-				<PayloadSignatureRegistry<T>>::insert(
-					bucket_num,
-					signature.clone(),
-					mortality_block,
-				);
-				Ok(bucket_num.into())
-			}
+			<PayloadSignatureRegistry<T>>::try_mutate(
+				bucket_num,
+				signature,
+				|maybe_mortality_block| -> DispatchResult {
+					ensure!(maybe_mortality_block.is_none(), Error::<T>::BucketKeyExists);
+
+					Self::reset_virtual_bucket_if_needed(mortality_block, bucket_num)?;
+					*maybe_mortality_block = Some(mortality_block);
+					Ok(())
+				},
+			)
 		}
 	}
 
-	/// Check if enough blocks have passed to reset bucket mortality storage.
-	/// If so:
-	///     1. delete all the stored bucket/signature alues with key1 = bucket num
-	///     2. set the bucket's mortality block to the new value
-	/// If not, don't do anything.
+	// Check if enough blocks have passed to reset bucket mortality storage.
+	// If so:
+	//     1. delete all the stored bucket/signature alues with key1 = bucket num
+	//     2. set the bucket's mortality block to the new value
+	// If not, don't do anything.
 	fn reset_virtual_bucket_if_needed(
 		mortality_block: T::BlockNumber,
 		bucket_num: T::BlockNumber,
@@ -1071,7 +1071,6 @@ impl<T: Config> Pallet<T> {
 
 			match maybe_mortality_block {
 				None => Err(Error::<T>::NoSuchBucket.into()),
-
 				Some(mortality_block_for_bucket) => {
 					if mortality_block > *mortality_block_for_bucket {
 						Self::delete_signatures_for_bucket(bucket_num)?;
@@ -1090,9 +1089,12 @@ impl<T: Config> Pallet<T> {
 	fn delete_signatures_for_bucket(bucket_num: T::BlockNumber) -> Result<(), DispatchError> {
 		// use drain_prefix
 		// https://paritytech.github.io/substrate/master/frame_support/pallet_prelude/struct.StorageDoubleMap.html#method.drain_prefix
+		// we dont' need the value; it's just to finalize the drain.
+		<PayloadSignatureRegistry<T>>::drain_prefix(bucket_num).count();
 		Ok(())
 	}
 
+	// Virtual bucket mortalities are increasing multiples of MortalityBucketSize.
 	fn bucket_mortality_block(for_block: T::BlockNumber) -> T::BlockNumber {
 		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
 		(for_block / bucket_size + T::BlockNumber::from(1u32)) * bucket_size
