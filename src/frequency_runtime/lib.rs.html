@@ -986,6 +986,33 @@
 <span id="980">980</span>
 <span id="981">981</span>
 <span id="982">982</span>
+<span id="983">983</span>
+<span id="984">984</span>
+<span id="985">985</span>
+<span id="986">986</span>
+<span id="987">987</span>
+<span id="988">988</span>
+<span id="989">989</span>
+<span id="990">990</span>
+<span id="991">991</span>
+<span id="992">992</span>
+<span id="993">993</span>
+<span id="994">994</span>
+<span id="995">995</span>
+<span id="996">996</span>
+<span id="997">997</span>
+<span id="998">998</span>
+<span id="999">999</span>
+<span id="1000">1000</span>
+<span id="1001">1001</span>
+<span id="1002">1002</span>
+<span id="1003">1003</span>
+<span id="1004">1004</span>
+<span id="1005">1005</span>
+<span id="1006">1006</span>
+<span id="1007">1007</span>
+<span id="1008">1008</span>
+<span id="1009">1009</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.</span>
 <span class="attribute">#![<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;256&quot;</span>]</span>
@@ -1578,9 +1605,6 @@
 	<span class="kw">type</span> <span class="ident">ExecuteOverweightOrigin</span> <span class="op">=</span> <span class="ident">EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
 }
 
-<span class="comment">// We allow root only to execute privileged collator selection operations.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CollatorSelectionUpdateOrigin</span> <span class="op">=</span> <span class="ident">EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
-
 <span class="kw">impl</span> <span class="ident">pallet_session::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 	<span class="kw">type</span> <span class="ident">ValidatorId</span> <span class="op">=</span> <span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span>;
@@ -1604,16 +1628,46 @@
 <span class="kw">impl</span> <span class="ident">pallet_collator_selection::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 	<span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
-	<span class="kw">type</span> <span class="ident">UpdateOrigin</span> <span class="op">=</span> <span class="ident">CollatorSelectionUpdateOrigin</span>;
-	<span class="kw">type</span> <span class="ident">PotId</span> <span class="op">=</span> <span class="ident">CollatorPotId</span>;
+
+	<span class="comment">// Origin that can dictate updating parameters of this pallet.</span>
+	<span class="comment">// Currently only root or a 3/5ths council vote.</span>
+	<span class="kw">type</span> <span class="ident">UpdateOrigin</span> <span class="op">=</span> <span class="ident">EitherOfDiverse</span><span class="op">&lt;</span>
+		<span class="ident">EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
+		<span class="ident">pallet_collective::EnsureProportionAtLeast</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">CouncilCollective</span>, <span class="number">3</span>, <span class="number">5</span><span class="op">&gt;</span>,
+	<span class="op">&gt;</span>;
+
+	<span class="comment">// Account Identifier from which the internal Pot is generated.</span>
+	<span class="comment">// Set to something that NEVER gets a balance i.e. No block rewards.</span>
+	<span class="kw">type</span> <span class="ident">PotId</span> <span class="op">=</span> <span class="ident">NeverDepositIntoId</span>;
+
+	<span class="comment">// Maximum number of candidates that we should have. This is enforced in code.</span>
+	<span class="comment">//</span>
+	<span class="comment">// This does not take into account the invulnerables.</span>
 	<span class="kw">type</span> <span class="ident">MaxCandidates</span> <span class="op">=</span> <span class="ident">CollatorMaxCandidates</span>;
+
+	<span class="comment">// Minimum number of candidates that we should have. This is used for disaster recovery.</span>
+	<span class="comment">//</span>
+	<span class="comment">// This does not take into account the invulnerables.</span>
 	<span class="kw">type</span> <span class="ident">MinCandidates</span> <span class="op">=</span> <span class="ident">CollatorMinCandidates</span>;
-	<span class="kw">type</span> <span class="ident">MaxInvulnerables</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">10</span><span class="op">&gt;</span>;
+
+	<span class="comment">// Maximum number of invulnerables. This is enforced in code.</span>
+	<span class="kw">type</span> <span class="ident">MaxInvulnerables</span> <span class="op">=</span> <span class="ident">CollatorMaxInvulnerables</span>;
+
+	<span class="comment">// Will be kicked if block is not produced in threshold.</span>
 	<span class="comment">// should be a multiple of session or things will get inconsistent</span>
-	<span class="kw">type</span> <span class="ident">KickThreshold</span> <span class="op">=</span> <span class="ident">SessionPeriod</span>;
+	<span class="kw">type</span> <span class="ident">KickThreshold</span> <span class="op">=</span> <span class="ident">CollatorKickThreshold</span>;
+
+	<span class="doccomment">/// A stable ID for a validator.</span>
 	<span class="kw">type</span> <span class="ident">ValidatorId</span> <span class="op">=</span> <span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span>;
+
+	<span class="comment">// A conversion from account ID to validator ID.</span>
+	<span class="comment">//</span>
+	<span class="comment">// Its cost must be at most one storage read.</span>
 	<span class="kw">type</span> <span class="ident">ValidatorIdOf</span> <span class="op">=</span> <span class="ident">pallet_collator_selection::IdentityCollator</span>;
+
+	<span class="comment">// Validate a user is registered</span>
 	<span class="kw">type</span> <span class="ident">ValidatorRegistration</span> <span class="op">=</span> <span class="ident">Session</span>;
+
 	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> ();
 }
 

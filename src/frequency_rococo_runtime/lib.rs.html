@@ -1004,7 +1004,7 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">common_runtime</span>::{
 	<span class="ident">constants</span>::{<span class="ident">currency::EXISTENTIAL_DEPOSIT</span>, <span class="kw-2">*</span>},
 	<span class="ident">fee::WeightToFee</span>,
-	<span class="ident">prod_or_local_or_env</span>,
+	<span class="ident">prod_or_testnet_or_local_or_env</span>,
 };
 
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
@@ -1559,12 +1559,12 @@
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 	<span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
 	<span class="kw">type</span> <span class="ident">UpdateOrigin</span> <span class="op">=</span> <span class="ident">CollatorSelectionUpdateOrigin</span>;
-	<span class="kw">type</span> <span class="ident">PotId</span> <span class="op">=</span> <span class="ident">CollatorPotId</span>;
+	<span class="kw">type</span> <span class="ident">PotId</span> <span class="op">=</span> <span class="ident">NeverDepositIntoId</span>;
 	<span class="kw">type</span> <span class="ident">MaxCandidates</span> <span class="op">=</span> <span class="ident">CollatorMaxCandidates</span>;
 	<span class="kw">type</span> <span class="ident">MinCandidates</span> <span class="op">=</span> <span class="ident">CollatorMinCandidates</span>;
-	<span class="kw">type</span> <span class="ident">MaxInvulnerables</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">5</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">MaxInvulnerables</span> <span class="op">=</span> <span class="ident">CollatorMaxInvulnerables</span>;
 	<span class="comment">// should be a multiple of session or things will get inconsistent</span>
-	<span class="kw">type</span> <span class="ident">KickThreshold</span> <span class="op">=</span> <span class="ident">SessionPeriod</span>;
+	<span class="kw">type</span> <span class="ident">KickThreshold</span> <span class="op">=</span> <span class="ident">CollatorKickThreshold</span>;
 	<span class="kw">type</span> <span class="ident">ValidatorId</span> <span class="op">=</span> <span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span>;
 	<span class="kw">type</span> <span class="ident">ValidatorIdOf</span> <span class="op">=</span> <span class="ident">pallet_collator_selection::IdentityCollator</span>;
 	<span class="kw">type</span> <span class="ident">ValidatorRegistration</span> <span class="op">=</span> <span class="ident">Session</span>;

@@ -238,7 +238,53 @@
 <span id="232">232</span>
 <span id="233">233</span>
 <span id="234">234</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::prod_or_local_or_env</span>;
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::prod_or_testnet_or_local_or_env</span>;
 <span class="kw">use</span> <span class="ident">common_primitives</span>::{
 	<span class="ident">node</span>::{<span class="ident">Balance</span>, <span class="ident">BlockNumber</span>},
 	<span class="ident">schema::SchemaId</span>,
@@ -342,16 +388,24 @@
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">FIFTY</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">50</span><span class="op">&gt;</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">HUNDRED</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">100</span><span class="op">&gt;</span>;
 
+<span class="comment">// --- Frame System Pallet ---</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">FrameSystemMaxConsumers</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">16</span><span class="op">&gt;</span>;
+<span class="comment">// -end- Frame System Pallet ---</span>
+
+<span class="comment">// --- MSA Pallet ---</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">MsaMaxKeys</span> <span class="op">=</span> <span class="ident">ConstU8</span><span class="op">&lt;</span><span class="number">25</span><span class="op">&gt;</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">MsaMaxProviderNameSize</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">16</span><span class="op">&gt;</span>;
+<span class="comment">// -end- MSA Pallet ---</span>
 
+<span class="comment">// --- Schemas Pallet ---</span>
 <span class="macro">parameter_types!</span> {
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SchemasMaxRegistrations</span>: <span class="ident">SchemaId</span> <span class="op">=</span> <span class="number">65_000</span>;
 }
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SchemasMinModelSizeBytes</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">8</span><span class="op">&gt;</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SchemasMaxBytesBoundedVecLimit</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">65_500</span><span class="op">&gt;</span>;
+<span class="comment">// -end- Schemas Pallet ---</span>
 
+<span class="comment">// --- Orml Vesting Pallet ---</span>
 <span class="macro">parameter_types!</span> {
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">VestingPalletId</span>: <span class="ident">PalletId</span> <span class="op">=</span> <span class="ident">PalletId</span>(<span class="kw-2">*</span><span class="string">b&quot;py/vstng&quot;</span>);
 }
@@ -361,17 +415,28 @@
 }
 
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ORML_MAX_VESTING_SCHEDULES</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">50</span>;
+<span class="comment">// -end- Orml Vesting Pallet ---</span>
 
+<span class="comment">// --- Timestamp Pallet ---</span>
 <span class="macro">parameter_types!</span> {
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinimumPeriod</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">SLOT_DURATION</span> <span class="op">/</span> <span class="number">2</span>;
 }
+<span class="comment">// -end- Timestamp Pallet ---</span>
 
+<span class="comment">// --- Authorship Pallet ---</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">AuthorshipUncleGenerations</span> <span class="op">=</span> <span class="ident">ZERO</span>;
+<span class="comment">// -end- Authorship Pallet ---</span>
 
+<span class="comment">// --- Balances Pallet ---</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BalancesMaxLocks</span> <span class="op">=</span> <span class="ident">FIFTY</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BalancesMaxReserves</span> <span class="op">=</span> <span class="ident">FIFTY</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SchedulerMaxScheduledPerBlock</span> <span class="op">=</span> <span class="ident">FIFTY</span>;
+<span class="comment">// -end- Balances Pallet ---</span>
 
+<span class="comment">// --- Scheduler Pallet ---</span>
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SchedulerMaxScheduledPerBlock</span> <span class="op">=</span> <span class="ident">FIFTY</span>;
+<span class="comment">// -end- Scheduler Pallet ---</span>
+
+<span class="comment">// --- Preimage Pallet ---</span>
 <span class="doccomment">/// Preimage maximum size set to 4 MB</span>
 <span class="doccomment">/// Expected to be removed in Polkadot v0.9.31</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">PreimageMaxSize</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span>{ <span class="number">4096</span> <span class="op">*</span> <span class="number">1024</span> }<span class="op">&gt;</span>;
@@ -380,40 +445,46 @@
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PreimageBaseDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">currency::deposit</span>(<span class="number">10</span>, <span class="number">64</span>);
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PreimageByteDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">currency::deposit</span>(<span class="number">0</span>, <span class="number">1</span>);
 }
+<span class="comment">// -end- Preimage Pallet ---</span>
 
+<span class="comment">// --- Council ---</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CouncilMaxProposals</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">25</span><span class="op">&gt;</span>;
 
 <span class="macro">parameter_types!</span> {
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CouncilMotionDuration</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">5</span> <span class="op">*</span> <span class="ident">DAYS</span>;
 }
+<span class="comment">// -end- Council ---</span>
 
+<span class="comment">// --- Technical Committee ---</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">TCMaxProposals</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">25</span><span class="op">&gt;</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">TCMaxMembers</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">3</span><span class="op">&gt;</span>;
 
 <span class="macro">parameter_types!</span> {
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TCMotionDuration</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">5</span> <span class="op">*</span> <span class="ident">DAYS</span>;
 }
+<span class="comment">// -end- Technical Committee ---</span>
 
+<span class="comment">// --- Democracy Pallet ---</span>
 <span class="comment">// Config from</span>
 <span class="comment">// https://github.com/paritytech/substrate/blob/367dab0d4bd7fd7b6c222dd15c753169c057dd42/bin/node/runtime/src/lib.rs#L880</span>
 <span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="ident">LaunchPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="string">&quot;FRQCY_LAUNCH_PERIOD&quot;</span>);
-	<span class="kw">pub</span> <span class="ident">VotingPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="string">&quot;FRQCY_VOTING_PERIOD&quot;</span>);
-	<span class="kw">pub</span> <span class="ident">FastTrackVotingPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_local_or_env!</span>(<span class="number">3</span> <span class="op">*</span> <span class="ident">HOURS</span>, <span class="number">3</span> <span class="op">*</span> <span class="ident">HOURS</span>, <span class="string">&quot;FRQCY_FAST_TRACK_VOTING_PERIOD&quot;</span>);
-	<span class="kw">pub</span> <span class="ident">EnactmentPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_local_or_env!</span>(<span class="number">8</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>,  <span class="string">&quot;FRQCY_ENACTMENT_PERIOD&quot;</span>);
-	<span class="kw">pub</span> <span class="ident">CooloffPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="string">&quot;FRQCY_COOLOFF_PERIOD&quot;</span>);
-	<span class="kw">pub</span> <span class="ident">MinimumDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="macro">prod_or_local_or_env!</span>(<span class="ident">currency::deposit</span>(<span class="number">5</span>, <span class="number">0</span>), <span class="number">100</span> <span class="op">*</span> <span class="ident">currency::deposit</span>(<span class="number">5</span>, <span class="number">0</span>), <span class="string">&quot;FRQCY_MINIMUM_DEPOSIT&quot;</span>);
-	<span class="kw">pub</span> <span class="ident">SpendPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">10</span> <span class="op">*</span> <span class="ident">MINUTES</span>, <span class="string">&quot;FRQCY_SPEND_PERIOD&quot;</span>);
+	<span class="kw">pub</span> <span class="ident">LaunchPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="string">&quot;FRQCY_LAUNCH_PERIOD&quot;</span>);
+	<span class="kw">pub</span> <span class="ident">VotingPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="string">&quot;FRQCY_VOTING_PERIOD&quot;</span>);
+	<span class="kw">pub</span> <span class="ident">FastTrackVotingPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">3</span> <span class="op">*</span> <span class="ident">HOURS</span>, <span class="number">3</span> <span class="op">*</span> <span class="ident">HOURS</span>, <span class="number">3</span> <span class="op">*</span> <span class="ident">HOURS</span>, <span class="string">&quot;FRQCY_FAST_TRACK_VOTING_PERIOD&quot;</span>);
+	<span class="kw">pub</span> <span class="ident">EnactmentPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">8</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="string">&quot;FRQCY_ENACTMENT_PERIOD&quot;</span>);
+	<span class="kw">pub</span> <span class="ident">CooloffPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="string">&quot;FRQCY_COOLOFF_PERIOD&quot;</span>);
+	<span class="kw">pub</span> <span class="ident">MinimumDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="ident">currency::deposit</span>(<span class="number">5</span>, <span class="number">0</span>), <span class="number">100</span> <span class="op">*</span> <span class="ident">currency::deposit</span>(<span class="number">5</span>, <span class="number">0</span>), <span class="number">100</span> <span class="op">*</span> <span class="ident">currency::deposit</span>(<span class="number">5</span>, <span class="number">0</span>), <span class="string">&quot;FRQCY_MINIMUM_DEPOSIT&quot;</span>);
+	<span class="kw">pub</span> <span class="ident">SpendPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">10</span> <span class="op">*</span> <span class="ident">MINUTES</span>, <span class="number">10</span> <span class="op">*</span> <span class="ident">MINUTES</span>, <span class="string">&quot;FRQCY_SPEND_PERIOD&quot;</span>);
 }
-
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">DemocracyMaxVotes</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">100</span><span class="op">&gt;</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">DemocracyMaxProposals</span> <span class="op">=</span> <span class="ident">HUNDRED</span>;
+<span class="comment">// -end- Democracy Pallet ---</span>
 
+<span class="comment">// --- Treasury Pallet ---</span>
 <span class="doccomment">/// Generates the pallet &quot;account&quot;</span>
 <span class="doccomment">/// 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TREASURY_PALLET_ID</span>: <span class="ident">PalletId</span> <span class="op">=</span> <span class="ident">PalletId</span>(<span class="kw-2">*</span><span class="string">b&quot;py/trsry&quot;</span>);
 
-<span class="comment">// Treasury</span>
 <span class="comment">// https://wiki.polkadot.network/docs/learn-treasury</span>
 <span class="comment">// https://paritytech.github.io/substrate/master/pallet_treasury/pallet/trait.Config.html</span>
 <span class="macro">parameter_types!</span> {
@@ -439,32 +510,52 @@
 	<span class="doccomment">/// Set to 64 or 16 per week</span>
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxApprovals</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">64</span>;
 }
+<span class="comment">// -end- Treasury Pallet ---</span>
 
+<span class="comment">// --- Transaction Payment Pallet ---</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">TransactionPaymentOperationalFeeMultiplier</span> <span class="op">=</span> <span class="ident">ConstU8</span><span class="op">&lt;</span><span class="number">5</span><span class="op">&gt;</span>;
 
 <span class="macro">parameter_types!</span> {
 	<span class="doccomment">/// Relay Chain `TransactionByteFee` / 10</span>
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TransactionByteFee</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">10</span> <span class="op">*</span> <span class="ident">currency::MILLICENTS</span>;
 }
+<span class="comment">// -end- Transaction Payment Pallet ---</span>
 
+<span class="comment">// --- Parachain System Pallet ---</span>
 <span class="macro">parameter_types!</span> {
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ReservedXcmpWeight</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">MAXIMUM_BLOCK_WEIGHT</span>.<span class="ident">saturating_div</span>(<span class="number">4</span>);
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ReservedDmpWeight</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">MAXIMUM_BLOCK_WEIGHT</span>.<span class="ident">saturating_div</span>(<span class="number">4</span>);
 }
+<span class="comment">// -end- Parachain System Pallet ---</span>
 
+<span class="comment">// --- Session Pallet ---</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SessionPeriod</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span>{ <span class="number">6</span> <span class="op">*</span> <span class="ident">HOURS</span> }<span class="op">&gt;</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SessionOffset</span> <span class="op">=</span> <span class="ident">ZERO</span>;
+<span class="comment">// -end- Session Pallet ---</span>
 
+<span class="comment">// --- Aura Pallet ---</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">AuraMaxAuthorities</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">100_000</span><span class="op">&gt;</span>;
+<span class="comment">// -end- Aura Pallet ---</span>
 
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CollatorMaxCandidates</span> <span class="op">=</span> <span class="ident">ZERO</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CollatorMinCandidates</span> <span class="op">=</span> <span class="ident">ZERO</span>;
-
+<span class="comment">// --- Collator Selection Pallet ---</span>
+<span class="comment">// Values for each runtime environment are independently configurable.</span>
+<span class="comment">// Example CollatorMaxInvulnerables are 16 in production(mainnet),</span>
+<span class="comment">// 5 in rococo testnet and 5 in rococo local</span>
 <span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CollatorPotId</span>: <span class="ident">PalletId</span> <span class="op">=</span> <span class="ident">PalletId</span>(<span class="kw-2">*</span><span class="string">b&quot;PotStake&quot;</span>);
+	<span class="kw">pub</span> <span class="ident">CollatorMaxCandidates</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);
+	<span class="kw">pub</span> <span class="ident">CollatorMinCandidates</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);
+	<span class="kw">pub</span> <span class="ident">CollatorMaxInvulnerables</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">16</span>, <span class="number">5</span>, <span class="number">5</span>);
+	<span class="kw">pub</span> <span class="ident">CollatorKickThreshold</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(
+		<span class="number">6</span> <span class="op">*</span> <span class="ident">HOURS</span>,
+		<span class="number">6</span> <span class="op">*</span> <span class="ident">HOURS</span>,
+		<span class="number">6</span> <span class="op">*</span> <span class="ident">HOURS</span>
+	);
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NeverDepositIntoId</span>: <span class="ident">PalletId</span> <span class="op">=</span> <span class="ident">PalletId</span>(<span class="kw-2">*</span><span class="string">b&quot;NeverDep&quot;</span>);
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MessagesMaxPayloadSizeBytes</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">1024</span> <span class="op">*</span> <span class="number">50</span>; <span class="comment">// 50K</span>
 }
+<span class="comment">// -end- Collator Selection Pallet ---</span>
 
+<span class="comment">// --- Messages Pallet ---</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">MessagesMaxPerBlock</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">7000</span><span class="op">&gt;</span>;
 
 <span class="kw">impl</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">MessagesMaxPayloadSizeBytes</span> {
@@ -472,6 +563,7 @@
 		<span class="ident">MessagesMaxPayloadSizeBytes</span> {}
 	}
 }
+<span class="comment">// -end- Messages Pallet ---</span>
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (848090dcd 2022-07-22)" ></div>
 </body></html>
