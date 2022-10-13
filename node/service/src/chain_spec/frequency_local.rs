@@ -18,9 +18,6 @@ use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_propertie
 pub type ChainSpec =
 	sc_service::GenericChainSpec<frequency_rococo_runtime::GenesisConfig, Extensions>;
 
-/// The default XCM version to set in genesis config.
-const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
-
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
@@ -145,9 +142,6 @@ fn testnet_genesis(
 		sudo: SudoConfig {
 			// Assign network admin rights.
 			key: root_key,
-		},
-		polkadot_xcm: frequency_rococo_runtime::PolkadotXcmConfig {
-			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 		schemas: Default::default(),
 		vesting: Default::default(),

@@ -17,9 +17,7 @@ use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
-use cumulus_primitives_parachain_inherent::{
-	MockValidationDataInherentDataProvider, MockXcmConfig,
-};
+use cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider;
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayChainRpcInterface};
@@ -737,18 +735,12 @@ fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_servic
 						.number(block)
 						.expect("Header lookup should succeed")
 						.expect("Header passed in as parent should be present in backend.");
-					let client_for_xcm = client_for_cidp.clone();
 					async move {
 						let mocked_parachain = MockValidationDataInherentDataProvider {
 							current_para_block,
 							relay_offset: 1000,
 							relay_blocks_per_para_block: 2,
-							xcm_config: MockXcmConfig::new(
-								&*client_for_xcm,
-								block,
-								Default::default(),
-								Default::default(),
-							),
+							xcm_config: Default::default(),
 							raw_downward_messages: vec![],
 							raw_horizontal_messages: vec![],
 						};
