@@ -402,6 +402,14 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
+			let current_block: BlockNumber =
+				frame_system::Pallet::<T>::block_number().try_into().ok().unwrap();
+			Self::register_signature(
+				&proof,
+				current_block.into(),
+				add_provider_payload.expiration.into(),
+			)?;
+
 			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())?;
 
 			Self::ensure_block_is_valid(add_provider_payload.expiration)?;
@@ -488,9 +496,21 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
+			let current_block: BlockNumber =
+				frame_system::Pallet::<T>::block_number().try_into().ok().unwrap();
+			Self::register_signature(
+				&proof,
+				current_block.into(),
+				add_provider_payload.expiration.into(),
+			)?;
+
 			// delegator must have signed the payload.
-			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())
-				.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
+			Self::verify_signature(
+				proof.clone(),
+				delegator_key.clone(),
+				add_provider_payload.encode(),
+			)
+			.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
 
 			Self::ensure_block_is_valid(add_provider_payload.expiration)?;
 
@@ -835,7 +855,6 @@ impl<T: Config> Pallet<T> {
 				expired: Default::default(),
 				schemas: OrderedSetExt::<SchemaId, T::MaxSchemaGrants>::from(granted_schemas),
 			};
-
 			*maybe_info = Some(info);
 
 			Ok(())

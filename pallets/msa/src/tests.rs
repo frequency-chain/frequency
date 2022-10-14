@@ -1686,76 +1686,77 @@ pub fn schema_granted_success_rpc() {
 // 3. User adds a key to their msa
 // 4. User deletes first key from msa
 // 5. Provider successfully calls "create_sponsored_account_with_delegation"
-#[ignore]
 #[test]
 pub fn replaying_create_sponsored_account_with_delegation_fails() {
 	new_test_ext().execute_with(|| {
+		set_bucket_mortalities();
 		let (key_pair, _) = sr25519::Pair::generate();
-		let provider_account = key_pair.public();
+		let provider_key = key_pair.public();
 
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
-		let delegator_account = key_pair_delegator.public();
+		let delegator_key = key_pair_delegator.public();
 
-		let expiration: BlockNumber = 10;
+		let expiration: BlockNumber = 100;
 		let add_provider_payload = AddProvider::new(1u64, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
 
-		// create MSA for provider.
-		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+		// create MSA for provider and register them
+		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
+		assert_ok!(Msa::register_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
 
 		// Step 1
 		assert_ok!(Msa::create_sponsored_account_with_delegation(
-			Origin::signed(provider_account.into()),
-			delegator_account.into(),
+			Origin::signed(provider_key.into()),
+			delegator_key.into(),
 			signature.clone(),
 			add_provider_payload.clone()
 		));
 
 		// Step 2
 		assert_ok!(Msa::revoke_msa_delegation_by_delegator(
-			Origin::signed(delegator_account.into()),
+			Origin::signed(delegator_key.into()),
 			1
 		));
 		// Step 3
 		let (key_pair_delegator2, _) = sr25519::Pair::generate();
 		let delegator_account2 = key_pair_delegator2.public();
 
-		let add_key_payload: AddKeyData = AddKeyData { msa_id: 2, nonce: 0, expiration: 200 };
+		let add_key_payload: AddKeyData = AddKeyData { msa_id: 2, nonce: 0, expiration: 110 };
 		let encode_add_key_data = wrap_binary_data(add_key_payload.encode());
 		let add_key_signature = key_pair_delegator2.sign(&encode_add_key_data);
 
 		assert_ok!(Msa::add_key_to_msa(
-			Origin::signed(delegator_account.into()),
+			Origin::signed(delegator_key.into()),
 			delegator_account2.into(),
 			add_key_signature.into(),
 			add_key_payload
 		));
 		assert_ok!(Msa::delete_msa_key(
 			Origin::signed(delegator_account2.into()),
-			delegator_account.into(),
+			delegator_key.into(),
 		));
 
 		// expect call create with same signature to fail
 		assert_err!(
 			Msa::create_sponsored_account_with_delegation(
-				Origin::signed(provider_account.into()),
-				delegator_account.into(),
+				Origin::signed(provider_key.into()),
+				delegator_key.into(),
 				signature.clone(),
 				add_provider_payload.clone(),
 			),
-			Error::<Test>::KeyAlreadyRegistered
+			Error::<Test>::BucketKeyExists
 		);
 
-		// expect this to fail because it has to be signed by the provider
+		// expect this to fail for the same reason
 		assert_err!(
 			Msa::add_provider_to_msa(
-				Origin::signed(delegator_account.into()),
-				provider_account.into(),
+				Origin::signed(provider_key.into()),
+				delegator_key.into(),
 				signature.clone(),
 				add_provider_payload.clone(),
 			),
-			Error::<Test>::AddProviderSignatureVerificationFailed
+			Error::<Test>::BucketKeyExists
 		);
 	})
 }
@@ -1768,39 +1769,44 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 #[test]
 fn replaying_add_provider_to_msa_fails() {
 	new_test_ext().execute_with(|| {
+		set_bucket_mortalities();
 		let (key_pair, _) = sr25519::Pair::generate();
-		let provider_account = key_pair.public();
+		let provider_key = key_pair.public();
 
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
-		let delegator_account = key_pair_delegator.public();
+		let delegator_key = key_pair_delegator.public();
 
 		// add_provider_payload in this case has delegator's msa_id as authorized_msa_id
 		let expiration: BlockNumber = 10;
-		let add_provider_payload = AddProvider::new(2u64, None, expiration);
+		let add_provider_payload = AddProvider::new(1u64, None, expiration);
 		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
-		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
-		// create MSA for provider.
-		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+		// DELEGATOR signs to add the provider
+		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
+
+		// create MSA for provider and register them
+		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
+		assert_ok!(Msa::register_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
+
 		// create MSA for delegator
-		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
+		assert_ok!(Msa::create(Origin::signed(delegator_key.into())));
 
 		assert_ok!(Msa::add_provider_to_msa(
-			Origin::signed(delegator_account.into()),
-			provider_account.into(),
+			Origin::signed(provider_key.into()),
+			delegator_key.into(),
 			signature.clone(),
 			add_provider_payload.clone(),
 		));
 
 		// provider revokes the delegation.
-		assert_ok!(Msa::revoke_delegation_by_provider(Origin::signed(provider_account.into()), 2));
+		assert_ok!(Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2));
 		System::set_block_number(System::block_number() + 1);
 
 		// Expected to fail because revoking the delegation just expires it at a given block number.
 		assert_err!(
 			Msa::add_provider_to_msa(
-				Origin::signed(delegator_account.into()),
-				provider_account.into(),
+				Origin::signed(provider_key.into()),
+				delegator_key.into(),
 				signature.clone(),
 				add_provider_payload.clone(),
 			),
