@@ -1,6 +1,12 @@
 use crate as pallet_messages;
 use common_primitives::{
-	msa::{AccountProvider, Delegator, MessageSourceId, OrderedSetExt, Provider, ProviderInfo},
+	msa::{
+		MsaLookup,
+		MsaValidator,
+		ProviderLookup,
+		DelegationValidator,
+		SchemaGrantValidator,
+		Delegator, MessageSourceId, OrderedSetExt, Provider, ProviderInfo},
 	schema::*,
 };
 use frame_support::{
@@ -113,10 +119,9 @@ impl Clone for MaxMessagePayloadSizeBytes {
 }
 
 pub struct AccountHandler;
-impl AccountProvider for AccountHandler {
+impl MsaLookup for AccountHandler {
 	type AccountId = u64;
-	type BlockNumber = u64;
-	type MaxSchemaGrants = MaxSchemaGrants;
+
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
 		if *key == 1000 {
 			return None
@@ -126,15 +131,10 @@ impl AccountProvider for AccountHandler {
 		}
 		Some(get_msa_from_account(*key) as MessageSourceId)
 	}
-	fn get_provider_info_of(
-		_delegator: Delegator,
-		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber, MaxSchemaGrants>> {
-		if provider == Provider(2000) {
-			return None
-		};
-		Some(ProviderInfo { expired: 100, schemas: OrderedSetExt::new() })
-	}
+}
+
+impl MsaValidator for AccountHandler {
+	type AccountId = u64;
 
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError> {
 		if *key == 1000 {
@@ -146,6 +146,24 @@ impl AccountProvider for AccountHandler {
 
 		Ok(get_msa_from_account(*key))
 	}
+}
+impl ProviderLookup for AccountHandler {
+	type BlockNumber = u64;
+	type MaxSchemaGrants = MaxSchemaGrants;
+
+	fn get_provider_info_of(
+		_delegator: Delegator,
+		provider: Provider,
+	) -> Option<ProviderInfo<Self::BlockNumber, MaxSchemaGrants>> {
+		if provider == Provider(2000) {
+			return None
+		};
+		Some(ProviderInfo { expired: 100, schemas: OrderedSetExt::new() })
+	}
+}
+impl DelegationValidator for AccountHandler {
+	type BlockNumber = u64;
+	type MaxSchemaGrants = MaxSchemaGrants;
 
 	fn ensure_valid_delegation(
 		provider: Provider,
@@ -158,7 +176,8 @@ impl AccountProvider for AccountHandler {
 
 		Ok(ProviderInfo { schemas: OrderedSetExt::new(), expired: Default::default() })
 	}
-
+}
+impl SchemaGrantValidator for AccountHandler {
 	fn ensure_valid_schema_grant(
 		provider: Provider,
 		delegator: Delegator,

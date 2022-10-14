@@ -55,7 +55,13 @@ use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 use codec::Encode;
 use common_primitives::{
 	messages::*,
-	msa::{AccountProvider, Delegator, MessageSourceId, Provider},
+	msa::{
+		MsaLookup,
+		MsaValidator,
+		ProviderLookup,
+		DelegationValidator,
+		SchemaGrantValidator,
+		Delegator, MessageSourceId, Provider},
 	schema::*,
 };
 pub use pallet::*;
@@ -77,7 +83,7 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 
 		/// A type that will supply account related information.
-		type AccountProvider: AccountProvider<AccountId = Self::AccountId>;
+		type AccountProvider: MsaLookup + MsaValidator<AccountId = Self::AccountId> + ProviderLookup + DelegationValidator + SchemaGrantValidator;
 
 		/// A type that will supply schema related information.
 		type SchemaProvider: SchemaProvider<SchemaId>;

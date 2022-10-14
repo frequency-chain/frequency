@@ -59,7 +59,12 @@
 use codec::{Decode, Encode};
 use common_primitives::{
 	msa::{
-		AccountProvider, Delegator, OrderedSetExt, Provider, ProviderInfo, ProviderMetadata,
+		MsaLookup,
+		MsaValidator,
+		ProviderLookup,
+		DelegationValidator,
+		SchemaGrantValidator,
+		Delegator, OrderedSetExt, Provider, ProviderInfo, ProviderMetadata,
 		EXPIRATION_BLOCK_VALIDITY_GAP,
 	},
 	node::BlockNumber,
@@ -885,13 +890,43 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-impl<T: Config> AccountProvider for Pallet<T> {
+
+impl<T: Config> MsaLookup for Pallet<T> {
 	type AccountId = T::AccountId;
-	type BlockNumber = T::BlockNumber;
-	type MaxSchemaGrants = T::MaxSchemaGrants;
+
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
 		Self::get_owner_of(key)
 	}
+}
+
+impl<T: Config> MsaValidator for Pallet<T> {
+	type AccountId = T::AccountId;
+
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
+		Self::ensure_valid_msa_key(key)
+	}
+
+	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
+	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
+	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
+	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
+	/// would like to avoid.
+	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
+	/// this method to return a dummy account in case it does not exist
+	#[cfg(feature = "runtime-benchmarks")]
+	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
+		let result = Self::ensure_valid_msa_key(key);
+		if result.is_err() {
+			return Ok(1 as MessageSourceId)
+		}
+		Ok(result.unwrap())
+	}
+}
+
+impl<T: Config> ProviderLookup for Pallet<T> {
+	type BlockNumber = T::BlockNumber;
+	type MaxSchemaGrants = T::MaxSchemaGrants;
 
 	fn get_provider_info_of(
 		delegator: Delegator,
@@ -899,6 +934,11 @@ impl<T: Config> AccountProvider for Pallet<T> {
 	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>> {
 		Self::get_provider_info(delegator, provider)
 	}
+}
+
+impl<T: Config> DelegationValidator for Pallet<T> {
+	type BlockNumber = T::BlockNumber;
+	type MaxSchemaGrants = T::MaxSchemaGrants;
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_delegation(
@@ -931,28 +971,9 @@ impl<T: Config> AccountProvider for Pallet<T> {
 		}
 		Ok(ProviderInfo { schemas: OrderedSetExt::new(), expired: Default::default() })
 	}
+}
 
-	#[cfg(not(feature = "runtime-benchmarks"))]
-	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
-		Self::ensure_valid_msa_key(key)
-	}
-
-	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
-	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
-	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
-	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
-	/// would like to avoid.
-	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
-	/// this method to return a dummy account in case it does not exist
-	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
-		let result = Self::ensure_valid_msa_key(key);
-		if result.is_err() {
-			return Ok(1 as MessageSourceId)
-		}
-		Ok(result.unwrap())
-	}
-
+impl<T: Config> SchemaGrantValidator for Pallet<T> {
 	/// Check if provider is allowed to publish for a given schema_id for a given delegator
 	/// # Arguments
 	/// * `provider` - The provider account
