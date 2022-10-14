@@ -20,7 +20,7 @@ then
     echo "No."
     echo "${NC}"
     echo "${STEP_COLOR}Generating using CLI...${NC}"
-    rm ./js/api-augment/metadata.json
+    rm -f ./js/api-augment/metadata.json
     cargo run --features frequency export-metadata > ./js/api-augment/metadata.json
     # cd into js dir
     cd "js/api-augment"
