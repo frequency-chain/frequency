@@ -27,7 +27,11 @@
 //!
 //! The MSA pallet implements the following traits:
 //!
-//! - [`AccountProvider`](common_primitives::msa::AccountProvider): Functions for accessing and validating MSAs.  This implementation is what is used in the runtime.
+//! - [`MsaLookup`](common_primitives::msa::MsaLookup): Functions for accessing MSAs.
+//! - [`MsaValidator`](common_primitives::msa::MsaValidator): Functions for validating MSAs.
+//! - [`ProviderLookup`](common_primitives::msa::ProviderLookup): Functions for accessing Provider info.
+//! - [`DelegationValidator`](common_primitives::msa::DelegationValidator): Functions for validating delegations.
+//! - [`SchemaGrantValidator`](common_primitives::msa::SchemaGrantValidator): Functions for validating schema grants.
 //!
 //! ## Interface
 //!
