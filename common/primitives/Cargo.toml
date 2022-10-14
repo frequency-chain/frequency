@@ -27,7 +27,7 @@ sp-std = { git = "https://github.com/paritytech/substrate", default-features = f
 smallvec = "1.10.0"
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
-serde_json = { version = "1.0.85", default-features = false, features = [
+serde_json = { version = "1.0.86", default-features = false, features = [
   "alloc"
 ] }
 #ORML
