@@ -19,26 +19,24 @@ then
     echo "${MESSAGE}"
     echo "No."
     echo "${NC}"
-    echo "${STEP_COLOR}Starting Frequency in Instant Sealing Mode...${NC}"
-    make start > /dev/null 2>&1 &
-
-    # Poll for PID
-    while [ -z "$PID" ]
-    do
-        PID=$(lsof -i tcp:9933 | grep frequency | grep -v grep | xargs | awk '{print $2}')
-    done
+    echo "${STEP_COLOR}Generating using CLI...${NC}"
+    rm -f ./js/api-augment/metadata.json
+    cargo run --features frequency export-metadata > ./js/api-augment/metadata.json
+    # cd into js dir
+    cd "js/api-augment"
+    npm run build
 else
     echo "${SUCCESS}"
     echo "Yes. ( You better go catch it ;-) )"
+    echo ""
+    echo "---------------------------------------------"
+    echo "Use this PID to kill the Frequency process:"
+    echo "${BOLD_MESSAGE}PID: ${PID}${SUCCESS}"
+    echo "---------------------------------------------"
+    echo "${NC}"
+
+    # cd into js dir
+    cd "js/api-augment"
+    npm run fetch:local
+    npm run build
 fi
-echo ""
-echo "---------------------------------------------"
-echo "Use this PID to kill the Frequency process:"
-echo "${BOLD_MESSAGE}PID: ${PID}${SUCCESS}"
-echo "---------------------------------------------"
-echo "${NC}"
-
-# cd into js dir
-cd "js/api-augment"
-
-npm run fetch:local && npm run build

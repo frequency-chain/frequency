@@ -2,24 +2,24 @@
 
 For contributing guidelines see the [Project Liberty Contributing Guidelines](https://github.com/LibertyDSNP/meta/blob/main/CONTRIBUTING.md).
 
+## Custom RPC Updates
+
+CI will build everything from metadata except the custom RPCs. These are stored in `js/api-augment/definitions/[pallet].ts`.
+If you add a new pallet, don't forget to also add the new definitions file export to `js/api-augment/definitions/index.ts`.
+
 ## Useful Links
 
 - [Type Definitions](https://github.com/polkadot-js/api/blob/master/packages/types/src/types/definitions.ts)
 
-## How to Release
+## Running Tests
 
-1. Create a New Release on GitHub.com
-2. Set tag to `js-frequency-rpc-v[X.X.X]` following [Semver 2.0](https://semver.org/)
-3. Set title to "js-frequency-rpc-v[version] Major Feature Name"
-4. Set contents to follow [KeepAChangeLog.com 1.0](https://keepachangelog.com/en/1.0.0/), but limited to just the new release information
-    ```markdown
-    ## [0.1.0] - 2017-06-20
-    ### Added
-    - New thing
-    ### Changed
-    - Different thing
-    ### Removed
-    - Not a thing anymore
-    ```
-5. Publish
-6. CI will build and publish to the npm repository
+Tests require getting the metadata and building first.
+
+### Chain is running
+- `js/api-augment` folder
+- `npm run fetch:local` Fetches the metadata from localhost
+- `npm run build`
+
+### From CLI
+- Frequency Project Root
+- `make js`

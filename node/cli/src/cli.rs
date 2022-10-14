@@ -1,6 +1,8 @@
 //! Frequency CLI library.
 use std::path::PathBuf;
 
+use crate::ExportMetadataCmd;
+
 /// Sub-commands supported by the collator.
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
@@ -18,6 +20,9 @@ pub enum Subcommand {
 
 	/// Import blocks.
 	ImportBlocks(sc_cli::ImportBlocksCmd),
+
+	/// Export metadata.
+	ExportMetadata(ExportMetadataCmd),
 
 	/// Revert the chain to a previous state.
 	Revert(sc_cli::RevertCmd),
