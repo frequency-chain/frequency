@@ -55,9 +55,13 @@
 
 use common_primitives::{
 	parquet::ParquetModel,
-	schema::{ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse},
+	schema::{
+		ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaValidator,
+	},
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
+use sp_std::vec::Vec;
+
 #[cfg(test)]
 mod tests;
 
@@ -73,6 +77,7 @@ pub use pallet::*;
 pub mod weights;
 pub use types::*;
 pub use weights::*;
+
 mod serde;
 
 #[frame_support::pallet]
@@ -80,7 +85,6 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use sp_std::vec::Vec;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -154,7 +158,7 @@ pub mod pallet {
 	/// Useful for retrieving latest schema id
 	/// - Value: Last Schema Id
 	#[pallet::storage]
-	#[pallet::getter(fn schema_count)]
+	#[pallet::getter(fn get_schema_count)]
 	pub(super) type SchemaCount<T: Config> = StorageValue<_, SchemaId, ValueQuery>;
 
 	/// Storage for message schema struct data
@@ -251,12 +255,18 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		/// Set the schema count to something in particular.
+		#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
+		pub fn set_schema_count(n: SchemaId) {
+			<SchemaCount<T>>::set(n);
+		}
+
 		fn add_schema(
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
 		) -> Result<SchemaId, DispatchError> {
-			let cur_count = Self::schema_count();
+			let cur_count = Self::get_schema_count();
 			ensure!(cur_count < T::MaxSchemaRegistrations::get(), Error::<T>::TooManySchemas);
 			let schema_id = cur_count.checked_add(1).ok_or(Error::<T>::SchemaCountOverflow)?;
 
@@ -264,11 +274,6 @@ pub mod pallet {
 			<SchemaCount<T>>::set(schema_id);
 			<Schemas<T>>::insert(schema_id, schema);
 			Ok(schema_id)
-		}
-
-		/// Retrieve latest schema id via total count of schemas on chain
-		pub fn get_latest_schema_id() -> Option<SchemaId> {
-			Some(Self::schema_count())
 		}
 
 		/// Retrieve a schema by id
@@ -305,11 +310,24 @@ pub mod pallet {
 	}
 }
 
+impl<T: Config> SchemaValidator<SchemaId> for Pallet<T> {
+	fn are_all_schema_ids_valid(schema_ids: Vec<SchemaId>) -> bool {
+		let latest_issue_schema_id = Self::get_schema_count();
+		schema_ids.into_iter().all(|id| id <= latest_issue_schema_id)
+	}
+
+	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
+	fn set_schema_count(n: SchemaId) {
+		Self::set_schema_count(n);
+	}
+}
+
 impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 		Self::get_schema_by_id(schema_id)
 	}
+
 	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
 	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
 	/// that has dependencies on this one, we would need to define msa accounts on those pallets'

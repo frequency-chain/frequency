@@ -254,6 +254,7 @@ impl pallet_msa::Config for Runtime {
 	type MaxKeys = MsaMaxKeys;
 	type MaxSchemaGrants = MaxDataSize;
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
+	type SchemaValidator = Schemas;
 }
 
 pub use common_primitives::schema::SchemaId;
