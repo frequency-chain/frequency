@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["WeightInfo","Weight functions for `pallet_treasury`."]]};
+window.SIDEBAR_ITEMS = {"struct":[["SubstrateWeight","Weights for pallet_treasury using the Substrate node and recommended hardware."]]};

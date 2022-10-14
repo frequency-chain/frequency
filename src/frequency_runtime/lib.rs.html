@@ -978,41 +978,6 @@
 <span id="972">972</span>
 <span id="973">973</span>
 <span id="974">974</span>
-<span id="975">975</span>
-<span id="976">976</span>
-<span id="977">977</span>
-<span id="978">978</span>
-<span id="979">979</span>
-<span id="980">980</span>
-<span id="981">981</span>
-<span id="982">982</span>
-<span id="983">983</span>
-<span id="984">984</span>
-<span id="985">985</span>
-<span id="986">986</span>
-<span id="987">987</span>
-<span id="988">988</span>
-<span id="989">989</span>
-<span id="990">990</span>
-<span id="991">991</span>
-<span id="992">992</span>
-<span id="993">993</span>
-<span id="994">994</span>
-<span id="995">995</span>
-<span id="996">996</span>
-<span id="997">997</span>
-<span id="998">998</span>
-<span id="999">999</span>
-<span id="1000">1000</span>
-<span id="1001">1001</span>
-<span id="1002">1002</span>
-<span id="1003">1003</span>
-<span id="1004">1004</span>
-<span id="1005">1005</span>
-<span id="1006">1006</span>
-<span id="1007">1007</span>
-<span id="1008">1008</span>
-<span id="1009">1009</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.</span>
 <span class="attribute">#![<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;256&quot;</span>]</span>
@@ -1020,8 +985,6 @@
 <span class="comment">// Make the WASM binary available.</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;OUT_DIR&quot;</span>), <span class="string">&quot;/wasm_binary.rs&quot;</span>));
-
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">xcm_config</span>;
 
 <span class="kw">mod</span> <span class="ident">benchmarking</span>;
 
@@ -1070,7 +1033,6 @@
 };
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_consensus_aura::sr25519::AuthorityId</span> <span class="kw">as</span> <span class="ident">AuraId</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">MultiAddress</span>, <span class="ident">Perbill</span>, <span class="ident">Permill</span>};
-<span class="kw">use</span> <span class="ident">xcm_config</span>::{<span class="ident">XcmConfig</span>, <span class="ident">XcmOriginToTransactDispatchOrigin</span>};
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">test</span>))]</span>
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_runtime::BuildStorage</span>;
@@ -1085,9 +1047,6 @@
 	<span class="ident">weights</span>,
 	<span class="ident">weights</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>},
 };
-
-<span class="comment">// XCM Imports</span>
-<span class="kw">use</span> <span class="ident">xcm_executor::XcmExecutor</span>;
 
 <span class="doccomment">/// Basefilter to only allow specified transactions call to be executed</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BaseCallFilter</span>;
@@ -1503,7 +1462,7 @@
 	<span class="kw">type</span> <span class="ident">PalletId</span> <span class="op">=</span> <span class="ident">TreasuryPalletId</span>;
 	<span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
-	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">weights::pallet_treasury::WeightInfo</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">weights::pallet_treasury::SubstrateWeight</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
 
 	<span class="doccomment">/// Who approves treasury proposals?</span>
 	<span class="doccomment">/// - Root (sudo or governance)</span>
@@ -1567,43 +1526,21 @@
 	<span class="kw">type</span> <span class="ident">OperationalFeeMultiplier</span> <span class="op">=</span> <span class="ident">TransactionPaymentOperationalFeeMultiplier</span>;
 }
 
-<span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ReservedXcmpWeight</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">MAXIMUM_BLOCK_WEIGHT</span>.<span class="ident">saturating_div</span>(<span class="number">4</span>);
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ReservedDmpWeight</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">MAXIMUM_BLOCK_WEIGHT</span>.<span class="ident">saturating_div</span>(<span class="number">4</span>);
-}
-
 <span class="kw">impl</span> <span class="ident">cumulus_pallet_parachain_system::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 	<span class="kw">type</span> <span class="ident">OnSystemEvent</span> <span class="op">=</span> ();
 	<span class="kw">type</span> <span class="ident">SelfParaId</span> <span class="op">=</span> <span class="ident">parachain_info::Pallet</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
-	<span class="kw">type</span> <span class="ident">DmpMessageHandler</span> <span class="op">=</span> <span class="ident">DmpQueue</span>;
-	<span class="kw">type</span> <span class="ident">ReservedDmpWeight</span> <span class="op">=</span> <span class="ident">ReservedDmpWeight</span>;
-	<span class="kw">type</span> <span class="ident">OutboundXcmpMessageSource</span> <span class="op">=</span> <span class="ident">XcmpQueue</span>;
-	<span class="kw">type</span> <span class="ident">XcmpMessageHandler</span> <span class="op">=</span> <span class="ident">XcmpQueue</span>;
-	<span class="kw">type</span> <span class="ident">ReservedXcmpWeight</span> <span class="op">=</span> <span class="ident">ReservedXcmpWeight</span>;
+	<span class="kw">type</span> <span class="ident">DmpMessageHandler</span> <span class="op">=</span> ();
+	<span class="kw">type</span> <span class="ident">ReservedDmpWeight</span> <span class="op">=</span> ();
+	<span class="kw">type</span> <span class="ident">OutboundXcmpMessageSource</span> <span class="op">=</span> ();
+	<span class="kw">type</span> <span class="ident">XcmpMessageHandler</span> <span class="op">=</span> ();
+	<span class="kw">type</span> <span class="ident">ReservedXcmpWeight</span> <span class="op">=</span> ();
 	<span class="kw">type</span> <span class="ident">CheckAssociatedRelayNumber</span> <span class="op">=</span> <span class="ident">RelayNumberStrictlyIncreases</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">parachain_info::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {}
 
 <span class="kw">impl</span> <span class="ident">cumulus_pallet_aura_ext::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {}
-
-<span class="kw">impl</span> <span class="ident">cumulus_pallet_xcmp_queue::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
-	<span class="kw">type</span> <span class="ident">XcmExecutor</span> <span class="op">=</span> <span class="ident">XcmExecutor</span><span class="op">&lt;</span><span class="ident">XcmConfig</span><span class="op">&gt;</span>;
-	<span class="kw">type</span> <span class="ident">ChannelInfo</span> <span class="op">=</span> <span class="ident">ParachainSystem</span>;
-	<span class="kw">type</span> <span class="ident">VersionWrapper</span> <span class="op">=</span> ();
-	<span class="kw">type</span> <span class="ident">ExecuteOverweightOrigin</span> <span class="op">=</span> <span class="ident">EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
-	<span class="kw">type</span> <span class="ident">ControllerOrigin</span> <span class="op">=</span> <span class="ident">EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
-	<span class="kw">type</span> <span class="ident">ControllerOriginConverter</span> <span class="op">=</span> <span class="ident">XcmOriginToTransactDispatchOrigin</span>;
-	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> ();
-}
-
-<span class="kw">impl</span> <span class="ident">cumulus_pallet_dmp_queue::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
-	<span class="kw">type</span> <span class="ident">XcmExecutor</span> <span class="op">=</span> <span class="ident">XcmExecutor</span><span class="op">&lt;</span><span class="ident">XcmConfig</span><span class="op">&gt;</span>;
-	<span class="kw">type</span> <span class="ident">ExecuteOverweightOrigin</span> <span class="op">=</span> <span class="ident">EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
-}
 
 <span class="kw">impl</span> <span class="ident">pallet_session::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
@@ -1730,12 +1667,6 @@
 		<span class="ident">Aura</span>: <span class="ident">pallet_aura</span>::{<span class="ident">Pallet</span>, <span class="ident">Storage</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">23</span>,
 		<span class="ident">AuraExt</span>: <span class="ident">cumulus_pallet_aura_ext</span>::{<span class="ident">Pallet</span>, <span class="ident">Storage</span>, <span class="ident">Config</span>} <span class="op">=</span> <span class="number">24</span>,
 
-		<span class="comment">// XCM helpers.</span>
-		<span class="ident">XcmpQueue</span>: <span class="ident">cumulus_pallet_xcmp_queue</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">30</span>,
-		<span class="ident">PolkadotXcm</span>: <span class="ident">pallet_xcm</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Origin</span>, <span class="ident">Config</span>} <span class="op">=</span> <span class="number">31</span>,
-		<span class="ident">CumulusXcm</span>: <span class="ident">cumulus_pallet_xcm</span>::{<span class="ident">Pallet</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Origin</span>} <span class="op">=</span> <span class="number">32</span>,
-		<span class="ident">DmpQueue</span>: <span class="ident">cumulus_pallet_dmp_queue</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">33</span>,
-
 		<span class="comment">// ORML</span>
 		<span class="ident">Vesting</span>: <span class="ident">orml_vesting</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">40</span>,
 
@@ -1765,7 +1696,6 @@
 		[<span class="ident">pallet_session</span>, <span class="ident">SessionBench</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>]
 		[<span class="ident">pallet_timestamp</span>, <span class="ident">Timestamp</span>]
 		[<span class="ident">pallet_collator_selection</span>, <span class="ident">CollatorSelection</span>]
-		[<span class="ident">cumulus_pallet_xcmp_queue</span>, <span class="ident">XcmpQueue</span>]
 		[<span class="ident">pallet_utility</span>, <span class="ident">Utility</span>]
 
 		<span class="comment">// Frequency</span>

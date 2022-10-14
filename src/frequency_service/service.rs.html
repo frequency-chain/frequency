@@ -811,14 +811,6 @@
 <span id="805">805</span>
 <span id="806">806</span>
 <span id="807">807</span>
-<span id="808">808</span>
-<span id="809">809</span>
-<span id="810">810</span>
-<span id="811">811</span>
-<span id="812">812</span>
-<span id="813">813</span>
-<span id="814">814</span>
-<span id="815">815</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">allow</span>(<span class="ident">unused_imports</span>)]</span>
 <span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 <span class="comment">// std</span>
@@ -838,9 +830,7 @@
 	<span class="ident">prepare_node_config</span>, <span class="ident">start_collator</span>, <span class="ident">start_full_node</span>, <span class="ident">StartCollatorParams</span>, <span class="ident">StartFullNodeParams</span>,
 };
 <span class="kw">use</span> <span class="ident">cumulus_primitives_core::ParaId</span>;
-<span class="kw">use</span> <span class="ident">cumulus_primitives_parachain_inherent</span>::{
-	<span class="ident">MockValidationDataInherentDataProvider</span>, <span class="ident">MockXcmConfig</span>,
-};
+<span class="kw">use</span> <span class="ident">cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider</span>;
 <span class="kw">use</span> <span class="ident">cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain</span>;
 <span class="kw">use</span> <span class="ident">cumulus_relay_chain_interface</span>::{<span class="ident">RelayChainError</span>, <span class="ident">RelayChainInterface</span>, <span class="ident">RelayChainResult</span>};
 <span class="kw">use</span> <span class="ident">cumulus_relay_chain_rpc_interface</span>::{<span class="ident">create_client_and_start_worker</span>, <span class="ident">RelayChainRpcInterface</span>};
@@ -1558,18 +1548,12 @@
 						.<span class="ident">number</span>(<span class="ident">block</span>)
 						.<span class="ident">expect</span>(<span class="string">&quot;Header lookup should succeed&quot;</span>)
 						.<span class="ident">expect</span>(<span class="string">&quot;Header passed in as parent should be present in backend.&quot;</span>);
-					<span class="kw">let</span> <span class="ident">client_for_xcm</span> <span class="op">=</span> <span class="ident">client_for_cidp</span>.<span class="ident">clone</span>();
 					<span class="kw">async</span> <span class="kw">move</span> {
 						<span class="kw">let</span> <span class="ident">mocked_parachain</span> <span class="op">=</span> <span class="ident">MockValidationDataInherentDataProvider</span> {
 							<span class="ident">current_para_block</span>,
 							<span class="ident">relay_offset</span>: <span class="number">1000</span>,
 							<span class="ident">relay_blocks_per_para_block</span>: <span class="number">2</span>,
-							<span class="ident">xcm_config</span>: <span class="ident">MockXcmConfig::new</span>(
-								<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">client_for_xcm</span>,
-								<span class="ident">block</span>,
-								<span class="ident">Default::default</span>(),
-								<span class="ident">Default::default</span>(),
-							),
+							<span class="ident">xcm_config</span>: <span class="ident">Default::default</span>(),
 							<span class="ident">raw_downward_messages</span>: <span class="macro">vec!</span>[],
 							<span class="ident">raw_horizontal_messages</span>: <span class="macro">vec!</span>[],
 						};
