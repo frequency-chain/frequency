@@ -200,7 +200,7 @@ jobs:
     needs:
       - changes
       - compile-project
-    if: ${{needs.changes.outputs.js == 'true'}} ## TODO, we should trigger on rust as well...
+    if: ${{needs.changes.outputs.js == 'true'}}
     name: Verify JS API Augment
     runs-on: ubuntu-latest
     steps:
