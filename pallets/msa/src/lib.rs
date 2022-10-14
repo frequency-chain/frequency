@@ -144,7 +144,7 @@ pub mod pallet {
 		/// The total number of virtual buckets
 		/// There are exactly NumberOfBuckets first-key values in PayloadSignatureRegistry.
 		#[pallet::constant]
-		type NumberOfBuckets: Get<u8>;
+		type NumberOfBuckets: Get<u32>;
 	}
 
 	#[pallet::pallet]
@@ -334,7 +334,7 @@ pub mod pallet {
 		/// The submitted proof expiration block is too far in the future
 		ProofNotYetValid,
 		/// Attempted to add a signature when the signature is already in the registry
-		BucketKeyExists,
+		SignatureAlreadySubmitted,
 		/// Attempted to add a signature with a mortality too far in the future
 		MortalityTooHigh,
 		/// Attempted to retrieve a bucket outside the bounds of storage
@@ -343,13 +343,14 @@ pub mod pallet {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
-		phantom: PhantomData<T>,
+		/// Initial state of mortality buckets
+		pub buckets_mortalities: BoundedVec<T::BlockNumber, T::NumberOfBuckets>,
 	}
 
 	#[cfg(feature = "std")]
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
-			Self { phantom: Default::default() }
+			Self { buckets_mortalities: Default::default() }
 		}
 	}
 
@@ -357,10 +358,9 @@ pub mod pallet {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
 			//insert the values into MortalityBlockOf here
-			let num_buckets = T::NumberOfBuckets::get() - 1;
-			for i in 1..num_buckets - 1 {
-				let bucket_num = T::BlockNumber::from(i);
-				<MortalityBlockOf<T>>::insert(bucket_num, T::BlockNumber::default());
+			let buckets = self.buckets_mortalities.clone();
+			for (i, mortality) in buckets.into_iter().enumerate() {
+				<MortalityBlockOf<T>>::insert(T::BlockNumber::from(i as u8), mortality);
 			}
 		}
 	}
@@ -578,7 +578,7 @@ pub mod pallet {
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if the MSA id for the account in `add_key_payload` does not exist.
 		/// - Returns ['NotMsaOwner'](Error::NotMsaOwner) if Origin's MSA is not the same as 'add_key_payload` MSA. Essentially you can only add a key to your own MSA.
 		/// - Returns ['ProofHasExpired'](Error::ProofHasExpired) if the current block is less than the `expired` bock number set in `AddKeyData`.
-		/// - Returns ['ProofNotYetValid'](Error::ProofNotYetValid) if the `expired` bock number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.
+		/// - Returns ['ProofNotYetValid'](Error::ProofNotYetValid) if the `expired` block number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.
 		#[pallet::weight(T::WeightInfo::add_key_to_msa())]
 		pub fn add_key_to_msa(
 			origin: OriginFor<T>,
@@ -1066,7 +1066,7 @@ impl<T: Config> Pallet<T> {
 				bucket_num,
 				signature,
 				|maybe_mortality_block| -> DispatchResult {
-					ensure!(maybe_mortality_block.is_none(), Error::<T>::BucketKeyExists);
+					ensure!(maybe_mortality_block.is_none(), Error::<T>::SignatureAlreadySubmitted);
 
 					Self::reset_virtual_bucket_if_needed(mortality_block, bucket_num)?;
 					*maybe_mortality_block = Some(mortality_block);
