@@ -323,10 +323,6 @@ fn it_deletes_msa_last_key_self_removal() {
 
 		// Attempt to delete/remove the account from the MSA
 		assert_noop!(Msa::delete_msa_key(origin, test_account), Error::<Test>::InvalidSelfRemoval);
-
-		// // Assert that the MSA has no accounts
-		// let key_count = Msa::get_msa_key_count(msa_id);
-		// assert_eq!(key_count, 0);
 	})
 }
 

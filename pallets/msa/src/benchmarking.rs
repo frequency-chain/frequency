@@ -115,10 +115,19 @@ benchmarks! {
 
 	}: _(RawOrigin::Signed(caller), key)
 
-	// TODO: Implement actual code
 	retire_msa {
 		let caller: T::AccountId = whitelisted_caller();
+		// let (caller_key_pair, _) = sr25519::Pair::generate();
+		// let caller = AccountId32::new(test_account_key_pair.public().into());
+
+		// Create a MSA account
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
+		let msa_id = Msa::<T>::try_get_msa_from_account_id(&caller).unwrap();
+
+		assert_eq!(Msa::<T>::is_registered_provider(msa_id),false);
+
+		// let (add_provider_payload, signature, key) = add_key_payload_and_signature::<T>();
+		// assert_ok!(Msa::<T>::add_key_to_msa(RawOrigin::Signed(caller.clone()).into(), key.clone(), signature, add_provider_payload));
 
 	}: _(RawOrigin::Signed(caller))
 
