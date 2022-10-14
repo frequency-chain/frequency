@@ -63,12 +63,8 @@
 use codec::{Decode, Encode};
 use common_primitives::{
 	msa::{
-		MsaLookup,
-		MsaValidator,
-		ProviderLookup,
-		DelegationValidator,
-		SchemaGrantValidator,
-		Delegator, OrderedSetExt, Provider, ProviderInfo, ProviderMetadata,
+		DelegationValidator, Delegator, MsaLookup, MsaValidator, OrderedSetExt, Provider,
+		ProviderInfo, ProviderLookup, ProviderMetadata, SchemaGrantValidator,
 		EXPIRATION_BLOCK_VALIDITY_GAP,
 	},
 	node::BlockNumber,
@@ -893,7 +889,6 @@ impl<T: Config> Pallet<T> {
 		Ok(Some(schemas.0.into()))
 	}
 }
-
 
 impl<T: Config> MsaLookup for Pallet<T> {
 	type AccountId = T::AccountId;

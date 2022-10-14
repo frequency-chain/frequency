@@ -1,12 +1,9 @@
 use crate as pallet_messages;
 use common_primitives::{
 	msa::{
-		MsaLookup,
-		MsaValidator,
-		ProviderLookup,
-		DelegationValidator,
-		SchemaGrantValidator,
-		Delegator, MessageSourceId, OrderedSetExt, Provider, ProviderInfo},
+		DelegationValidator, Delegator, MessageSourceId, MsaLookup, MsaValidator, OrderedSetExt,
+		Provider, ProviderInfo, ProviderLookup, SchemaGrantValidator,
+	},
 	schema::*,
 };
 use frame_support::{

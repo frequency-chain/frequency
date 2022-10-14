@@ -56,12 +56,9 @@ use codec::Encode;
 use common_primitives::{
 	messages::*,
 	msa::{
-		MsaLookup,
-		MsaValidator,
-		ProviderLookup,
-		DelegationValidator,
-		SchemaGrantValidator,
-		Delegator, MessageSourceId, Provider},
+		DelegationValidator, Delegator, MessageSourceId, MsaLookup, MsaValidator, Provider,
+		ProviderLookup, SchemaGrantValidator,
+	},
 	schema::*,
 };
 pub use pallet::*;
