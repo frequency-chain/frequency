@@ -1,9 +1,11 @@
 #![allow(missing_docs)]
 use common_primitives::node::AccountId;
-use common_runtime::constants::FREQUENCY_ROCOCO_TOKEN;
+use common_runtime::constants::{
+	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_ROCOCO_TOKEN, TOKEN_DECIMALS,
+};
 use cumulus_primitives_core::ParaId;
 use frequency_rococo_runtime::{
-	AuraId, CouncilConfig, SudoConfig, TechnicalCommitteeConfig, EXISTENTIAL_DEPOSIT,
+	AuraId, CouncilConfig, SS58Prefix, SudoConfig, TechnicalCommitteeConfig,
 };
 use hex::FromHex;
 use sc_service::ChainType;
@@ -13,9 +15,6 @@ use sp_runtime::traits::AccountIdConversion;
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
 	sc_service::GenericChainSpec<frequency_rococo_runtime::GenesisConfig, Extensions>;
-
-/// The default XCM version to set in genesis config.
-const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
 use super::{get_properties, Extensions};
 
@@ -59,7 +58,8 @@ pub mod public_testnet_keys {
 // }
 
 pub fn frequency_rococo_testnet() -> ChainSpec {
-	let properties = get_properties(FREQUENCY_ROCOCO_TOKEN, 8, 42);
+	let properties =
+		get_properties(FREQUENCY_ROCOCO_TOKEN, TOKEN_DECIMALS as u32, SS58Prefix::get().into());
 	let para_id: ParaId = 4044.into();
 	ChainSpec::from_genesis(
 		// Name
@@ -217,9 +217,6 @@ fn frequency_rococo_genesis(
 		sudo: SudoConfig {
 			// Assign network admin rights.
 			key: root_key,
-		},
-		polkadot_xcm: frequency_rococo_runtime::PolkadotXcmConfig {
-			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 		schemas: Default::default(),
 		vesting: Default::default(),

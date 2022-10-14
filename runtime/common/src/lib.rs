@@ -2,6 +2,7 @@
 
 pub mod constants;
 pub mod extensions;
+pub mod fee;
 pub mod weights;
 
 /// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value
@@ -12,22 +13,26 @@ pub mod weights;
 /// ```Rust
 /// parameter_types! {
 /// 	// Note that the env variable version parameter cannot be const.
-/// 	pub LaunchPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 1 * MINUTES, "FRQCY_LAUNCH_PERIOD");
-/// 	pub const VotingPeriod: BlockNumber = prod_or_local_or_env!(7 * DAYS, 1 * MINUTES);
+/// 	pub LaunchPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 28 * DAYS, 1 * MINUTES, "FRQCY_LAUNCH_PERIOD");
+/// 	pub const VotingPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 28 * DAYS, 1 * MINUTES);
 /// }
 /// ```
 #[macro_export]
-macro_rules! prod_or_local_or_env {
-	($prod:expr, $test:expr) => {
+macro_rules! prod_or_testnet_or_local_or_env {
+	($prod:expr, $test:expr, $local:expr) => {
 		if cfg!(feature = "frequency-rococo-local") {
+			$local
+		} else if cfg!(feature = "frequency-rococo-testnet") {
 			$test
 		} else {
 			$prod
 		}
 	};
-	($prod:expr, $test:expr, $env:expr) => {
+	($prod:expr, $test:expr, $local:expr, $env:expr) => {
 		if cfg!(feature = "frequency-rococo-local") {
-			core::option_env!($env).map(|s| s.parse().ok()).flatten().unwrap_or($test)
+			core::option_env!($env).map(|s| s.parse().ok()).flatten().unwrap_or($local)
+		} else if cfg!(feature = "frequency-rococo-testnet") {
+			$test
 		} else {
 			$prod
 		}

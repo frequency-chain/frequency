@@ -325,6 +325,26 @@ pub fn run() -> Result<()> {
 				Ok(cmd.run(components.client, components.import_queue))
 			})
 		},
+		Some(Subcommand::ExportMetadata(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			let chain_spec = &runner.config().chain_spec;
+			with_runtime_or_err!(chain_spec, {
+				{
+					runner.async_run(|config| {
+						// grab the task manager.
+						let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+						let task_manager = TaskManager::new(config.tokio_handle.clone(), registry)
+							.map_err(|e| format!("Error: {:?}", e))?;
+						let partials = service::new_partial::<RuntimeApi, Executor, _>(
+							&config,
+							service::parachain_build_import_queue,
+							false,
+						)?;
+						Ok((cmd.run(partials.client), task_manager))
+					})
+				}
+			})
+		},
 		Some(Subcommand::PurgeChain(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 

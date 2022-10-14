@@ -1,8 +1,13 @@
 #![allow(missing_docs)]
 use common_primitives::node::AccountId;
+
+use common_runtime::constants::{
+	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS,
+};
+
 use cumulus_primitives_core::ParaId;
 use frequency_rococo_runtime::{
-	AuraId, CouncilConfig, SudoConfig, TechnicalCommitteeConfig, EXISTENTIAL_DEPOSIT,
+	AuraId, CouncilConfig, SS58Prefix, SudoConfig, TechnicalCommitteeConfig,
 };
 use sc_service::ChainType;
 use sp_core::sr25519;
@@ -13,9 +18,6 @@ use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_propertie
 pub type ChainSpec =
 	sc_service::GenericChainSpec<frequency_rococo_runtime::GenesisConfig, Extensions>;
 
-/// The default XCM version to set in genesis config.
-const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
-
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
@@ -25,7 +27,8 @@ pub fn template_session_keys(keys: AuraId) -> frequency_rococo_runtime::SessionK
 
 pub fn local_testnet_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
-	let properties = get_properties("UNIT", 8, 42);
+	let properties =
+		get_properties(FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS as u32, SS58Prefix::get().into());
 
 	ChainSpec::from_genesis(
 		// Name
@@ -139,9 +142,6 @@ fn testnet_genesis(
 		sudo: SudoConfig {
 			// Assign network admin rights.
 			key: root_key,
-		},
-		polkadot_xcm: frequency_rococo_runtime::PolkadotXcmConfig {
-			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 		schemas: Default::default(),
 		vesting: Default::default(),

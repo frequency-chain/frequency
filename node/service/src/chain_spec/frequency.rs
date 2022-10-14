@@ -1,10 +1,11 @@
 #![allow(missing_docs)]
 use common_primitives::node::{AccountId, Balance};
-use common_runtime::constants::FREQUENCY_TOKEN;
-use cumulus_primitives_core::ParaId;
-use frequency_runtime::{
-	AuraId, CouncilConfig, SudoConfig, TechnicalCommitteeConfig, EXISTENTIAL_DEPOSIT,
+use common_runtime::constants::{
+	currency::{EXISTENTIAL_DEPOSIT, UNITS},
+	FREQUENCY_TOKEN, TOKEN_DECIMALS,
 };
+use cumulus_primitives_core::ParaId;
+use frequency_runtime::{AuraId, CouncilConfig, SS58Prefix, SudoConfig, TechnicalCommitteeConfig};
 
 use hex::FromHex;
 use sc_service::ChainType;
@@ -14,9 +15,6 @@ use sp_runtime::traits::AccountIdConversion;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConfig, Extensions>;
-
-/// The default XCM version to set in genesis config.
-const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
 use super::{get_properties, Extensions};
 
@@ -44,7 +42,8 @@ pub mod frequency_mainnet_keys {
 // }
 
 pub fn frequency() -> ChainSpec {
-	let properties = get_properties(FREQUENCY_TOKEN, 8, 42);
+	let properties =
+		get_properties(FREQUENCY_TOKEN, TOKEN_DECIMALS as u32, SS58Prefix::get().into());
 	// TODO need a paraid here for the frequency chain
 	let para_id: ParaId = 999.into();
 	ChainSpec::from_genesis(
@@ -153,8 +152,8 @@ pub fn frequency() -> ChainSpec {
 				Default::default(),
 				// TODO: initial technical committee members
 				Default::default(),
-				// TODO: candidacy bond (if needed)
-				EXISTENTIAL_DEPOSIT * 16,
+				//candidacy bond
+				100_000 * UNITS,
 				// TODO: include council/democracy/staking related inputs
 				para_id,
 			)
@@ -173,11 +172,7 @@ pub fn frequency() -> ChainSpec {
 		// Properties
 		Some(properties),
 		// Extensions
-		Extensions {
-			//TODO: set the correct network
-			relay_chain: "TODO".into(),
-			para_id: para_id.into(),
-		},
+		Extensions { relay_chain: "polkadot".into(), para_id: para_id.into() },
 	)
 }
 
@@ -201,7 +196,7 @@ fn frequency_genesis(
 		collator_selection: frequency_runtime::CollatorSelectionConfig {
 			invulnerables: initial_authorities.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond,
-			..Default::default()
+			desired_candidates: 0,
 		},
 		session: frequency_runtime::SessionConfig {
 			keys: initial_authorities
@@ -221,9 +216,6 @@ fn frequency_genesis(
 		sudo: SudoConfig {
 			// Assign network admin rights.
 			key: root_key,
-		},
-		polkadot_xcm: frequency_runtime::PolkadotXcmConfig {
-			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 		schemas: Default::default(),
 		vesting: Default::default(),
