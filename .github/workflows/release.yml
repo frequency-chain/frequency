@@ -144,9 +144,9 @@ jobs:
           path: ./target/doc
           if-no-files-found: error
 
-  release-js-api-augment:
+  build-js-api-augment:
     needs: compile-project
-    name: Release JS API Augment
+    name: Build JS API Augment
     strategy:
       matrix:
         os: [ubuntu-latest]
