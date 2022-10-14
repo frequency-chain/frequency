@@ -310,33 +310,107 @@ fn it_deletes_msa_key_successfully() {
 }
 
 #[test]
-fn it_deletes_msa_last_key_successfully() {
+fn it_deletes_msa_last_key_self_removal() {
 	new_test_ext().execute_with(|| {
-		// Add an account to the MSA (id 2) so it has exactly one account
-		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
+		let msa_id = 2;
 
-		// Delete/remove the account from the MSA
-		assert_ok!(Msa::delete_msa_key(test_origin_signed(1), test_public(2)));
+		// Create an account
+		let test_account = test_public(4);
+		let origin = Origin::signed(test_account.clone());
 
-		// Assert that the MSA has no accounts
-		let key_count = Msa::get_msa_key_count(2);
-		assert_eq!(key_count, 0);
+		// Add an account to the MSA so it has exactly one account
+		assert_ok!(Msa::add_key(msa_id, &test_account, EMPTY_FUNCTION));
+
+		// Attempt to delete/remove the account from the MSA
+		assert_noop!(Msa::delete_msa_key(origin, test_account), Error::<Test>::InvalidSelfRemoval);
+
+		// // Assert that the MSA has no accounts
+		// let key_count = Msa::get_msa_key_count(msa_id);
+		// assert_eq!(key_count, 0);
 	})
 }
 
 #[test]
 fn test_retire_msa_success() {
 	new_test_ext().execute_with(|| {
+		let (test_account_key_pair, _) = sr25519::Pair::generate();
 		let msa_id = 2;
 
-		// Add account to MSA
-		assert_ok!(Msa::add_key(msa_id, &test_public(1), EMPTY_FUNCTION));
+		// Create an account
+		let test_account = AccountId32::new(test_account_key_pair.public().into());
+		let origin = Origin::signed(test_account.clone());
+
+		// Add an account to the MSA so it has exactly one account
+		assert_ok!(Msa::add_key(msa_id, &test_account, EMPTY_FUNCTION));
 
 		// Retire the MSA
-		assert_ok!(Msa::retire_msa(test_origin_signed(1)));
+		assert_ok!(Msa::retire_msa(origin));
 
 		// Check if MsaRetired event was dispatched.
 		System::assert_last_event(Event::MsaRetired { msa_id }.into());
+
+		// Assert that the MSA has no accounts
+		let key_count = Msa::get_msa_key_count(msa_id);
+		assert_eq!(key_count, 0);
+
+		// MSA has been retired, perform additional tests
+
+		// [TEST] Adding an account to the retired MSA should fail
+		let (key_pair1, _) = sr25519::Pair::generate();
+		let new_account1 = key_pair1.public();
+		let (key_pair2, _) = sr25519::Pair::generate();
+		let new_account2 = key_pair2.public();
+		let (msa_id2, _) = Msa::create_account(new_account2.into(), EMPTY_FUNCTION).unwrap();
+
+		let add_new_key_data = AddKeyData { nonce: 1, msa_id: msa_id2, expiration: 10 };
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+		let signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
+		assert_noop!(
+			Msa::add_key_to_msa(
+				Origin::signed(test_account.clone()),
+				new_account1.into(),
+				signature,
+				add_new_key_data
+			),
+			Error::<Test>::NoKeyExists
+		);
+
+		// [TEST] Adding a provider to the retired MSA should fail
+		let (provider_key_pair, _) = sr25519::Pair::generate();
+		let provider_account = provider_key_pair.public();
+
+		// Create provider account and get its MSA ID (u64)
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+		let provider_msa_id =
+			Msa::try_get_msa_from_account_id(&AccountId32::new(provider_account.0)).unwrap();
+
+		// Register provider
+		assert_ok!(Msa::register_provider(
+			Origin::signed(provider_account.into()),
+			Vec::from("Foo")
+		));
+
+		let (delegator_signature, add_provider_payload) =
+			create_and_sign_add_provider_payload(test_account_key_pair, provider_msa_id);
+
+		assert_noop!(
+			Msa::add_provider_to_msa(
+				Origin::signed(provider_account.into()),
+				test_account.clone(),
+				delegator_signature,
+				add_provider_payload
+			),
+			Error::<Test>::NoKeyExists
+		);
+
+		// [TEST] Revoking a provider (modifying permissions) should fail
+		assert_noop!(
+			Msa::revoke_msa_delegation_by_delegator(
+				Origin::signed(test_account.clone()),
+				provider_msa_id
+			),
+			Error::<Test>::NoKeyExists
+		);
 	})
 }
 

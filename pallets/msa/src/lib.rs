@@ -400,7 +400,6 @@ pub mod pallet {
 		/// ## Errors
 		/// - Returns [`AddProviderSignatureVerificationFailed`](Error::AddProviderSignatureVerificationFailed) if `origin`'s MSA ID does not equal `add_provider_payload.authorized_msa_id`.
 		/// - Returns [`DuplicateProvider`](Error::DuplicateProvider) if there is already a Delegation for `origin` MSA and `delegator_key` MSA.
-		/// ## Errors
 		/// - Returns [`UnauthorizedProvider`](Error::UnauthorizedProvider) if `add_provider_payload.authorized_msa_id`  does not match MSA ID of `delegator_key`.
 		/// - Returns [`InvalidSignature`](Error::InvalidSignature) if `proof` verification fails; `delegator_key` must have signed `add_provider_payload`
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
@@ -522,14 +521,20 @@ pub mod pallet {
 		pub fn delete_msa_key(origin: OriginFor<T>, key: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			// The calling account can't remove itself
 			ensure!(who != key, Error::<T>::InvalidSelfRemoval);
 
-			let who = Self::try_get_msa_from_account_id(&who)?;
-			let account_msa_id = Self::try_get_msa_from_account_id(&key)?;
-			ensure!(who == account_msa_id, Error::<T>::NotKeyOwner);
+			// Get the MSA id for the calling account
+			let who_msa_id = Self::try_get_msa_from_account_id(&who)?;
+			// Get the MSA id for the account to be removed
+			let account_to_remove_msa_id = Self::try_get_msa_from_account_id(&key)?;
+			// The calling account doesn't own the account that is to be removed
+			ensure!(who_msa_id == account_to_remove_msa_id, Error::<T>::NotKeyOwner);
 
-			Self::delete_key_for_msa(who, &key)?;
+			// Remove the account for the calling MSA id
+			Self::delete_key_for_msa(who_msa_id, &key)?;
 
+			// Deposit the event
 			Self::deposit_event(Event::KeyRemoved { key });
 
 			Ok(())
@@ -568,6 +573,16 @@ pub mod pallet {
 		}
 
 		/// Retire a MSA
+		///
+		/// ### Events
+		/// - Deposits [`MsaRetired`](Event::MsaRetired) when MSA is retired
+		///
+		/// ### Errors
+		///
+		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if `delegator` does not have an MSA key.
+		/// - Returns [`MoreThanOneKeyExists`](Error::MoreThanOneKeyExists) if the MSA has more than one account key.
+		/// - Returns [`RegisteredProviderCannotBeRetired`](Error::RegisteredProviderCannotBeRetired) if the MSA id is a registered provider
+
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1,1).ref_time())]
 		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResult {
 			// Check and get the account id from the origin
@@ -575,13 +590,14 @@ pub mod pallet {
 
 			// Get the MSA id of the origin
 			let msa_id = Self::get_owner_of(&who).ok_or(Error::<T>::NoKeyExists)?;
+			let delegator = Delegator(msa_id);
 
 			// Dispatches error "NotMsaOwner" if the origin is not the owner of the MSA id.
 			Self::ensure_msa_owner(&who, msa_id)?;
 
 			// Dispatches error "RegisteredProviderCannotBeRetired" if the MSA id is a registered provider
 			ensure!(
-				Self::is_registered_provider(msa_id),
+				!Self::is_registered_provider(msa_id),
 				Error::<T>::RegisteredProviderCannotBeRetired,
 			);
 
@@ -589,8 +605,11 @@ pub mod pallet {
 			let key_count = Self::get_msa_key_count(msa_id);
 			ensure!(key_count == 1, Error::<T>::MoreThanOneKeyExists);
 
+			// Remove delegator from all delegator<->provider delegations
+			Self::remove_delegator(delegator)?;
+
 			// Delete the last and only account key and deposit the "KeyRemoved" event
-			Self::delete_key_for_msa(msa_id, &who);
+			Self::delete_key_for_msa(msa_id, &who)?;
 			Self::deposit_event(Event::KeyRemoved { key: who });
 
 			// Deposit the "MsaRetired" event
@@ -695,6 +714,7 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		let key = T::ConvertIntoAccountId32::convert(signer);
 		let wrapped_payload = wrap_binary_data(payload);
+
 		ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
 
 		Ok(())
@@ -841,6 +861,12 @@ impl<T: Config> Pallet<T> {
 			},
 		)?;
 
+		Ok(())
+	}
+
+	/// Removes all delegations from the specified delegator MSA id to providers
+	pub fn remove_delegator(delegator: Delegator) -> DispatchResult {
+		_ = ProviderInfoOf::<T>::clear_prefix(delegator, u32::max_value(), None);
 		Ok(())
 	}
 
