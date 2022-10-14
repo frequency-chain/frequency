@@ -274,4 +274,4 @@ impl Clone for MessagesMaxPayloadSizeBytes {
 
 pub type MSAMortalityBucketSize = ConstU16<100>;
 pub type MSAMaxSignaturesPerBucket = ConstU32<50_000>;
-pub type MSANumberOfBuckets = ConstU8<2>;
+pub type MSANumberOfBuckets = ConstU32<2>;

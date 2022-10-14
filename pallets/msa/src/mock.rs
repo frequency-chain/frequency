@@ -2,19 +2,21 @@ use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
 use common_primitives::{msa::MessageSourceId, node::BlockNumber, utils::wrap_binary_data};
 use frame_support::{
 	assert_ok, parameter_types,
-	traits::{ConstU16, ConstU64},
+	traits::{ConstU16, ConstU64, GenesisBuild},
 };
 use frame_system as system;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, ConstU32, ConstU8, ConvertInto, IdentityLookup},
-	AccountId32, MultiSignature,
+	AccountId32, BoundedVec, MultiSignature,
 };
 
 pub use pallet_msa::Call as MsaCall;
 
 use common_primitives::node::AccountId;
+use common_runtime::constants::MSANumberOfBuckets;
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -99,11 +101,23 @@ impl pallet_msa::Config for Test {
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type MortalityBucketSize = ConstU16<100>;
 	type MaxSignaturesPerBucket = ConstU32<10>;
-	type NumberOfBuckets = ConstU8<2>;
+	type NumberOfBuckets = ConstU32<2>;
 }
 
+// fun set_members() {
+// 	let founders: BoundedVec<_, T::MaxMembersCount> =
+// 	BoundedVec::try_from(vec![founder::<T, I>(1), founder::<T, I>(2)]).unwrap();
+// }
+
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let mut t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let mortalities: BoundedVec<u64, ConstU32<2>> = BoundedVec::try_from(vec![0u64, 0u64]).unwrap();
+	pallet_msa::GenesisConfig::<Test> {
+		buckets_mortalities: mortalities.into(),
+		// phantom: Default::default(),
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
@@ -183,7 +197,7 @@ pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 	use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStorePtr};
 	use sp_std::sync::Arc;
 
-	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.register_extension(KeystoreExt(Arc::new(KeyStore::new()) as SyncCryptoStorePtr));
 

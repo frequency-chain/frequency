@@ -677,43 +677,6 @@ pub fn add_provider_to_msa_throws_unauthorized_delegator_error() {
 }
 
 #[test]
-pub fn add_provider_to_msa_throws_duplicate_provider_error() {
-	new_test_ext().execute_with(|| {
-		let (key_pair, _) = sr25519::Pair::generate();
-		let provider_account = key_pair.public();
-		let expiration: BlockNumber = 10;
-
-		let add_provider_payload = AddProvider::new(1, None, expiration);
-		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
-
-		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
-
-		assert_ok!(Msa::create(test_origin_signed(1)));
-		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
-
-		// Register provider
-		assert_ok!(Msa::register_provider(test_origin_signed(1), Vec::from("Foo")));
-
-		assert_ok!(Msa::add_provider_to_msa(
-			test_origin_signed(1),
-			provider_account.into(),
-			signature.clone(),
-			add_provider_payload.clone()
-		));
-
-		assert_noop!(
-			Msa::add_provider_to_msa(
-				test_origin_signed(1),
-				provider_account.into(),
-				signature,
-				add_provider_payload
-			),
-			Error::<Test>::DuplicateProvider
-		);
-	});
-}
-
-#[test]
 pub fn ensure_valid_msa_key_is_successfull() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(Msa::ensure_valid_msa_key(&test_public(1)), Error::<Test>::NoKeyExists);
@@ -1689,7 +1652,6 @@ pub fn schema_granted_success_rpc() {
 #[test]
 pub fn replaying_create_sponsored_account_with_delegation_fails() {
 	new_test_ext().execute_with(|| {
-		set_bucket_mortalities();
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_key = key_pair.public();
 
@@ -1745,7 +1707,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 				signature.clone(),
 				add_provider_payload.clone(),
 			),
-			Error::<Test>::BucketKeyExists
+			Error::<Test>::SignatureAlreadySubmitted
 		);
 
 		// expect this to fail for the same reason
@@ -1756,7 +1718,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 				signature.clone(),
 				add_provider_payload.clone(),
 			),
-			Error::<Test>::BucketKeyExists
+			Error::<Test>::SignatureAlreadySubmitted
 		);
 	})
 }
@@ -1769,7 +1731,6 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 #[test]
 fn replaying_add_provider_to_msa_fails() {
 	new_test_ext().execute_with(|| {
-		set_bucket_mortalities();
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_key = key_pair.public();
 
@@ -1810,7 +1771,7 @@ fn replaying_add_provider_to_msa_fails() {
 				signature.clone(),
 				add_provider_payload.clone(),
 			),
-			Error::<Test>::DuplicateProvider
+			Error::<Test>::SignatureAlreadySubmitted
 		);
 	})
 }
@@ -1994,16 +1955,9 @@ fn generate_test_signature() -> MultiSignature {
 	key_pair.sign(fake_data.as_bytes()).into()
 }
 
-fn set_bucket_mortalities() {
-	<MortalityBlockOf<Test>>::insert(0, 0);
-	<MortalityBlockOf<Test>>::insert(1, 0);
-}
-
 #[test]
 pub fn register_signature_works() {
 	new_test_ext().execute_with(|| {
-		set_bucket_mortalities();
-
 		let current_block: BlockNumber = 11_233;
 		let mortality_block: BlockNumber = 11_243;
 		let sig1 = &generate_test_signature();
@@ -2019,8 +1973,6 @@ pub fn stores_signature_with_correct_key() {
 	}
 
 	new_test_ext().execute_with(|| {
-		set_bucket_mortalities();
-
 		let test_cases: Vec<TestCase> = vec![
 			TestCase { current_block: 129, expected_bucket_number: 0 },
 			TestCase { current_block: 999_899, expected_bucket_number: 0 },
@@ -2052,8 +2004,6 @@ pub fn adds_new_bucket_number_mortality_to_store() {
 	}
 
 	new_test_ext().execute_with(|| {
-		set_bucket_mortalities();
-
 		let test_cases: Vec<TestCase> = vec![
 			TestCase {
 				current_block: 0,
@@ -2110,7 +2060,6 @@ fn register_signature_and_validate(
 #[test]
 pub fn clears_stale_signatures_after_mortality_limit() {
 	new_test_ext().execute_with(|| {
-		set_bucket_mortalities();
 		let sig1 = &generate_test_signature();
 		let sig2 = &generate_test_signature();
 		let sig3 = &generate_test_signature();
@@ -2127,7 +2076,7 @@ pub fn clears_stale_signatures_after_mortality_limit() {
 		// the old signature can't be re-registered, and does not trigger a clear.
 		assert_noop!(
 			Msa::register_signature(sig1, current_block.into(), mortality_block as u64),
-			Error::<Test>::BucketKeyExists
+			Error::<Test>::SignatureAlreadySubmitted
 		);
 
 		// a new signature triggers a clear.
@@ -2141,8 +2090,6 @@ pub fn clears_stale_signatures_after_mortality_limit() {
 #[test]
 pub fn cannot_add_signature_twice() {
 	new_test_ext().execute_with(|| {
-		set_bucket_mortalities();
-
 		let current_block: BlockNumber = 11_122;
 		let mortality_block: BlockNumber = 11_321;
 
@@ -2151,7 +2098,7 @@ pub fn cannot_add_signature_twice() {
 
 		assert_noop!(
 			Msa::register_signature(sig1, current_block.into(), mortality_block.into()),
-			Error::<Test>::BucketKeyExists
+			Error::<Test>::SignatureAlreadySubmitted
 		);
 	})
 }
@@ -2159,8 +2106,6 @@ pub fn cannot_add_signature_twice() {
 #[test]
 pub fn cannot_add_signature_with_mortality_block_too_high() {
 	new_test_ext().execute_with(|| {
-		set_bucket_mortalities();
-
 		let current_block: BlockNumber = 11_122;
 		let mortality_block: BlockNumber = 11_323;
 
