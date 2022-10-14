@@ -22,6 +22,8 @@ if [ ! -f "$weights_file" ]
     exit 1;
 fi
 
+cargo build --profile production --features runtime-benchmarks --features all-frequency-features --workspace || exit_err
+
 RUNTIME=./target/production/frequency
 BENCHMARK="$RUNTIME benchmark pallet "
 
