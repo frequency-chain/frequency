@@ -2,20 +2,19 @@ use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
 use common_primitives::{msa::MessageSourceId, node::BlockNumber, utils::wrap_binary_data};
 use frame_support::{
 	assert_ok, parameter_types,
-	traits::{ConstU16, ConstU64, GenesisBuild},
+	traits::{ConstU16, ConstU32, ConstU64, GenesisBuild},
 };
 use frame_system as system;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, ConstU32, ConstU8, ConvertInto, IdentityLookup},
+	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
 	AccountId32, BoundedVec, MultiSignature,
 };
 
 pub use pallet_msa::Call as MsaCall;
 
 use common_primitives::node::AccountId;
-use common_runtime::constants::MSANumberOfBuckets;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
@@ -101,6 +100,8 @@ impl sp_std::fmt::Debug for MaxSchemaGrants {
 	}
 }
 
+pub const NUMBER_OF_BUCKETS: u32 = 2; // so this can be used in genesis
+
 impl pallet_msa::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
@@ -111,23 +112,15 @@ impl pallet_msa::Config for Test {
 	type SchemaValidator = Schemas;
 	type MortalityBucketSize = ConstU16<100>;
 	type MaxSignaturesPerBucket = ConstU32<10>;
-	type NumberOfBuckets = ConstU32<2>;
+	type NumberOfBuckets = ConstU32<NUMBER_OF_BUCKETS>;
 }
-
-// fun set_members() {
-// 	let founders: BoundedVec<_, T::MaxMembersCount> =
-// 	BoundedVec::try_from(vec![founder::<T, I>(1), founder::<T, I>(2)]).unwrap();
-// }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	let mortalities: BoundedVec<u64, ConstU32<2>> = BoundedVec::try_from(vec![0u64, 0u64]).unwrap();
-	pallet_msa::GenesisConfig::<Test> {
-		buckets_mortalities: mortalities.into(),
-		// phantom: Default::default(),
-	}
-	.assimilate_storage(&mut t)
-	.unwrap();
+	let mortalities = BoundedVec::try_from(vec![0u64; NUMBER_OF_BUCKETS as usize]).unwrap();
+	pallet_msa::GenesisConfig::<Test> { buckets_mortalities: mortalities.into() }
+		.assimilate_storage(&mut t)
+		.unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext

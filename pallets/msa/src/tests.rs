@@ -23,7 +23,7 @@ use crate::{
 	ensure,
 	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
-	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MortalityBlockOf, MsaIdentifier,
+	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
 	PayloadSignatureRegistry,
 };
 use orml_utilities::OrderedSet;
@@ -251,6 +251,8 @@ fn add_key_with_expired_proof_fails() {
 		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 1 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
+		System::set_block_number(2);
+
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
 
 		assert_noop!(
@@ -278,14 +280,10 @@ fn add_key_with_proof_too_far_into_future_fails() {
 
 		let new_key = key_pair_2.public();
 
-		// The current block is 1, therefore setting the proof expiration to EXPIRATION_BLOCK_VALIDITY_GAP + 1
-		// shoud cause the extrinsic to fail because the proof is only valid for EXPIRATION_BLOCK_VALIDITY_GAP
+		// The current block is 1, therefore setting the proof expiration to  + 1
+		// should cause the extrinsic to fail because the proof is only valid for
 		// more blocks.
-		let add_new_key_data = AddKeyData {
-			nonce: 1,
-			msa_id: new_msa_id,
-			expiration: EXPIRATION_BLOCK_VALIDITY_GAP + 1,
-		};
+		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 202 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
@@ -2024,10 +2022,11 @@ fn generate_test_signature() -> MultiSignature {
 #[test]
 pub fn register_signature_works() {
 	new_test_ext().execute_with(|| {
-		let current_block: BlockNumber = 11_233;
+		System::set_block_number(11_233);
+
 		let mortality_block: BlockNumber = 11_243;
 		let sig1 = &generate_test_signature();
-		assert_ok!(Msa::register_signature(sig1, current_block.into(), mortality_block.into()));
+		assert_ok!(Msa::register_signature(sig1, mortality_block.into()));
 	})
 }
 
@@ -2097,12 +2096,9 @@ pub fn adds_new_bucket_number_mortality_to_store() {
 			},
 		];
 		for tc in test_cases {
+			System::set_block_number(tc.current_block as u64);
 			let sig = &generate_test_signature();
-			assert_ok!(Msa::register_signature(
-				sig,
-				tc.current_block.into(),
-				tc.mortality_block.into()
-			));
+			assert_ok!(Msa::register_signature(sig, tc.mortality_block.into()));
 			assert_eq!(
 				Some(tc.expected_mortality),
 				Msa::get_mortality_block_of(tc.expected_bucket)
@@ -2116,8 +2112,9 @@ fn register_signature_and_validate(
 	expected_bucket: u64,
 	signature: &MultiSignature,
 ) {
+	System::set_block_number(current_block as u64);
 	let mortality_block = current_block + 111;
-	assert_ok!(Msa::register_signature(signature, current_block.into(), mortality_block.into()));
+	assert_ok!(Msa::register_signature(signature, mortality_block.into()));
 
 	let actual = <PayloadSignatureRegistry<Test>>::get(expected_bucket, signature);
 	assert_eq!(Some(mortality_block as u64), actual);
@@ -2139,9 +2136,10 @@ pub fn clears_stale_signatures_after_mortality_limit() {
 
 		current_block += 100;
 		let mortality_block = current_block + 111;
+		System::set_block_number(current_block as u64);
 		// the old signature can't be re-registered, and does not trigger a clear.
 		assert_noop!(
-			Msa::register_signature(sig1, current_block.into(), mortality_block as u64),
+			Msa::register_signature(sig1, mortality_block as u64),
 			Error::<Test>::SignatureAlreadySubmitted
 		);
 
@@ -2156,14 +2154,14 @@ pub fn clears_stale_signatures_after_mortality_limit() {
 #[test]
 pub fn cannot_add_signature_twice() {
 	new_test_ext().execute_with(|| {
-		let current_block: BlockNumber = 11_122;
+		System::set_block_number(11_122);
 		let mortality_block: BlockNumber = 11_321;
 
 		let sig1 = &generate_test_signature();
-		assert_ok!(Msa::register_signature(sig1, current_block.into(), mortality_block.into()));
+		assert_ok!(Msa::register_signature(sig1, mortality_block.into()));
 
 		assert_noop!(
-			Msa::register_signature(sig1, current_block.into(), mortality_block.into()),
+			Msa::register_signature(sig1, mortality_block.into()),
 			Error::<Test>::SignatureAlreadySubmitted
 		);
 	})
@@ -2172,13 +2170,13 @@ pub fn cannot_add_signature_twice() {
 #[test]
 pub fn cannot_add_signature_with_mortality_block_too_high() {
 	new_test_ext().execute_with(|| {
-		let current_block: BlockNumber = 11_122;
+		System::set_block_number(11_122);
 		let mortality_block: BlockNumber = 11_323;
 
 		let sig1 = &generate_test_signature();
 		assert_noop!(
-			Msa::register_signature(sig1, current_block.into(), mortality_block.into()),
-			Error::<Test>::MortalityTooHigh
+			Msa::register_signature(sig1, mortality_block.into()),
+			Error::<Test>::ProofNotYetValid
 		);
 	})
 }
