@@ -12,7 +12,7 @@ on:
       - '**/Cargo.toml'
       - '**/Cargo.lock'
 env:
-  RUST_TOOLCHAIN: nightly-2022-07-23
+  RUST_TOOLCHAIN: nightly-2022-09-22
 
 jobs:
   publish-js-api-augment-rc:
