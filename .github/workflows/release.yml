@@ -9,7 +9,7 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+-[0-9]+" # ex. v0.29.9-1
       - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-1-rc1
 env:
-  RUST_TOOLCHAIN: nightly-2022-07-23
+  RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
   RELEASE_VERSION: ${{github.ref_name}}
 
 jobs:
@@ -35,16 +35,9 @@ jobs:
             arch: arm64
     runs-on: ${{matrix.os}}
     steps:
-      - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
       - name: Check Out Repo
         uses: actions/checkout@v3
-      # Test only. Let's you skip full binary build during development
+      # # Keep it. Let's you skip full binary builds during development.
       # - name: Cache Binary
       #   id: cache-binary
       #   uses: actions/cache@v3
@@ -56,6 +49,13 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: ${{env.RUST_TOOLCHAIN}}
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          default: true
+          profile: minimal
+          target: wasm32-unknown-unknown
       - name: Compile for ${{matrix.network}}
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
@@ -125,15 +125,15 @@ jobs:
     name: Build Rust Developer Docs
     runs-on: ubuntu-latest
     steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
+          toolchain: stable
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
-      - name: Check Out Repo
-        uses: actions/checkout@v3
       - name: Build Docs
         run: |
           RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps
@@ -145,7 +145,7 @@ jobs:
           if-no-files-found: error
 
   build-js-api-augment:
-    needs: compile-project
+    needs: build-binaries
     name: Build JS API Augment
     strategy:
       matrix:
@@ -171,12 +171,15 @@ jobs:
       - name: Install
         run: npm install # DO NOT use `npm ci` as we want the latest polkadot/api possible
         working-directory: js/api-augment
-      - name: Restore Bin from Cache
-        id: cache-target-dir
-        uses: actions/cache@v3
+      - name: Download Binary Artifacts
+        id: download
+        uses: actions/download-artifact@v3
         with:
-          path: target/${{matrix.build-profile}}
-          key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.RELEASE_VERSION}}
+          name: artifacts-${{github.run_id}}
+          path: .
+      - name: Extract Binary
+        run: |
+          tar -xvf frequency-binary-${{matrix.network}}-${{env.RELEASE_VERSION}}.${{matrix.arch}}.tar
       - name: Output Metadata
         run: ./target/${{matrix.build-profile}}/frequency export-metadata > ./js/api-augment/metadata.json
       - name: Build
@@ -190,12 +193,13 @@ jobs:
           if-no-files-found: error
 
   wait-for-all-builds:
-    needs: [build-binaries, build-wasm, build-rust-developer-docs, build-js-api-augment]
+    # needs: [build-binaries, build-wasm, build-rust-developer-docs, build-js-api-augment]
+    needs: [build-binaries, build-js-api-augment]
     name: Wait for All Builds to Finish
     runs-on: ubuntu-latest
     steps:
       - name: Proceed Forward
-        run: echo "All build jobs have finished, proceeding with release"
+        run: echo "All build jobs have finished, proceeding with the release"
 
   release-artifacts:
     needs: wait-for-all-builds
