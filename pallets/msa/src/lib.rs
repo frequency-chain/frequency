@@ -583,7 +583,7 @@ pub mod pallet {
 		/// - Returns [`MoreThanOneKeyExists`](Error::MoreThanOneKeyExists) if the MSA has more than one account key.
 		/// - Returns [`RegisteredProviderCannotBeRetired`](Error::RegisteredProviderCannotBeRetired) if the MSA id is a registered provider
 
-		#[pallet::weight((T::WeightInfo::retire_msa(), DispatchClass::Normal, Pays::No))]
+		#[pallet::weight((T::WeightInfo::retire_msa(), DispatchClass::Normal, Pays::Yes))]
 		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResult {
 			// Check and get the account id from the origin
 			let who = ensure_signed(origin)?;
