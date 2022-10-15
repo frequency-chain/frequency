@@ -1,3 +1,3 @@
-(function() {var implementors = {};
-implementors["frequency_cli"] = [{"text":"impl FromArgMatches for <a class=\"enum\" href=\"frequency_cli/enum.Subcommand.html\" title=\"enum frequency_cli::Subcommand\">Subcommand</a>","synthetic":false,"types":["frequency_cli::cli::Subcommand"]},{"text":"impl FromArgMatches for <a class=\"struct\" href=\"frequency_cli/struct.Cli.html\" title=\"struct frequency_cli::Cli\">Cli</a>","synthetic":false,"types":["frequency_cli::cli::Cli"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"frequency_cli":[["impl FromArgMatches for <a class=\"enum\" href=\"frequency_cli/enum.Subcommand.html\" title=\"enum frequency_cli::Subcommand\">Subcommand</a>"],["impl FromArgMatches for <a class=\"struct\" href=\"frequency_cli/struct.Cli.html\" title=\"struct frequency_cli::Cli\">Cli</a>"],["impl FromArgMatches for <a class=\"struct\" href=\"frequency_cli/struct.ExportMetadataCmd.html\" title=\"struct frequency_cli::ExportMetadataCmd\">ExportMetadataCmd</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

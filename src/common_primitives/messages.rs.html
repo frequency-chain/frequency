@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `common/primitives/src/messages.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>messages.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../common_primitives/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../common_primitives/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../common_primitives/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `common/primitives/src/messages.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>messages.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../common_primitives/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../common_primitives/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../common_primitives/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -345,347 +339,346 @@
 <span id="339">339</span>
 <span id="340">340</span>
 <span id="341">341</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::msa::MessageSourceId</span>;
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>;
-<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
-<span class="kw">use</span> <span class="ident">sp_runtime::traits</span>::{<span class="ident">AtLeast32BitUnsigned</span>, <span class="ident">One</span>};
-<span class="kw">use</span> <span class="ident">sp_std</span>::{<span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">vec</span>};
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">utils</span>::<span class="kw-2">*</span>;
+</pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::msa::MessageSourceId;
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">use </span><span class="kw">crate</span>::utils;
+<span class="kw">use </span>codec::{Decode, Encode};
+<span class="kw">use </span>scale_info::TypeInfo;
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">use </span>serde::{Deserialize, Serialize};
+<span class="kw">use </span>sp_runtime::traits::{AtLeast32BitUnsigned, One};
+<span class="kw">use </span>sp_std::{prelude::<span class="kw-2">*</span>, vec};
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">use </span>utils::<span class="kw-2">*</span>;
 
-<span class="doccomment">/// A type for responding with an single Message in an RPC-call dependent on schema model</span>
-<span class="doccomment">/// IPFS, Parquet: { index, block_number, provider_msa_id, cid, payload_length }</span>
-<span class="doccomment">/// Avro, OnChain: { index, block_number, provider_msa_id, msa_id, payload }</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,</span>
-	<span class="doccomment">/// indicating that the original source MSA is acting as its own provider. An id differing from that</span>
-	<span class="doccomment">/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on</span>
-	<span class="doccomment">/// its behalf.</span>
-	<span class="kw">pub</span> <span class="ident">provider_msa_id</span>: <span class="ident">MessageSourceId</span>,
-	<span class="doccomment">/// Index in block to get total order.</span>
-	<span class="kw">pub</span> <span class="ident">index</span>: <span class="ident">u16</span>,
-	<span class="doccomment">/// Block-number for which the message was stored.</span>
-	<span class="kw">pub</span> <span class="ident">block_number</span>: <span class="ident">BlockNumber</span>,
-	<span class="doccomment">///  Message source account id (the original source).</span>
-	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>, <span class="ident">default</span>))]</span>
-	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// Serialized data in a the schemas.</span>
-	<span class="attribute">#[<span class="ident">cfg_attr</span>(
-		<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>,
-		<span class="ident">serde</span>(<span class="ident">with</span> <span class="op">=</span> <span class="string">&quot;as_hex_option&quot;</span>, <span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>, <span class="ident">default</span>)
-	)]</span>
-	<span class="kw">pub</span> <span class="ident">payload</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// The content address for an IPFS payload</span>
-	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>, <span class="ident">default</span>))]</span>
-	<span class="kw">pub</span> <span class="ident">cid</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	<span class="doccomment">///  Offchain payload length (IPFS).</span>
-	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>, <span class="ident">default</span>))]</span>
-	<span class="kw">pub</span> <span class="ident">payload_length</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
+<span class="doccomment">/// A type for responding with an single Message in an RPC-call dependent on schema model
+/// IPFS, Parquet: { index, block_number, provider_msa_id, cid, payload_length }
+/// Avro, OnChain: { index, block_number, provider_msa_id, msa_id, payload }
+</span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
+#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+</span><span class="kw">pub struct </span>MessageResponse&lt;BlockNumber&gt; {
+	<span class="doccomment">/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
+	/// indicating that the original source MSA is acting as its own provider. An id differing from that
+	/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
+	/// its behalf.
+	</span><span class="kw">pub </span>provider_msa_id: MessageSourceId,
+	<span class="doccomment">/// Index in block to get total order.
+	</span><span class="kw">pub </span>index: u16,
+	<span class="doccomment">/// Block-number for which the message was stored.
+	</span><span class="kw">pub </span>block_number: BlockNumber,
+	<span class="doccomment">///  Message source account id (the original source).
+	</span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>, default))]
+	</span><span class="kw">pub </span>msa_id: <span class="prelude-ty">Option</span>&lt;MessageSourceId&gt;,
+	<span class="doccomment">/// Serialized data in a the schemas.
+	</span><span class="attribute">#[cfg_attr(
+		feature = <span class="string">&quot;std&quot;</span>,
+		serde(with = <span class="string">&quot;as_hex_option&quot;</span>, skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>, default)
+	)]
+	</span><span class="kw">pub </span>payload: <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;,
+	<span class="doccomment">/// The content address for an IPFS payload
+	</span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>, default))]
+	</span><span class="kw">pub </span>cid: <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;,
+	<span class="doccomment">///  Offchain payload length (IPFS).
+	</span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>, default))]
+	</span><span class="kw">pub </span>payload_length: <span class="prelude-ty">Option</span>&lt;u32&gt;,
 }
-<span class="doccomment">/// A type for requesting paginated messages.</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BlockPaginationRequest</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// Starting block-number (inclusive).</span>
-	<span class="kw">pub</span> <span class="ident">from_block</span>: <span class="ident">BlockNumber</span>,
-	<span class="doccomment">/// Current page index starting from 0.</span>
-	<span class="kw">pub</span> <span class="ident">from_index</span>: <span class="ident">u32</span>,
-	<span class="doccomment">/// Ending block-number (exclusive).</span>
-	<span class="kw">pub</span> <span class="ident">to_block</span>: <span class="ident">BlockNumber</span>,
-	<span class="doccomment">/// The number of messages in a single page.</span>
-	<span class="kw">pub</span> <span class="ident">page_size</span>: <span class="ident">u32</span>,
+<span class="doccomment">/// A type for requesting paginated messages.
+</span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
+#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+</span><span class="kw">pub struct </span>BlockPaginationRequest&lt;BlockNumber&gt; {
+	<span class="doccomment">/// Starting block-number (inclusive).
+	</span><span class="kw">pub </span>from_block: BlockNumber,
+	<span class="doccomment">/// Current page index starting from 0.
+	</span><span class="kw">pub </span>from_index: u32,
+	<span class="doccomment">/// Ending block-number (exclusive).
+	</span><span class="kw">pub </span>to_block: BlockNumber,
+	<span class="doccomment">/// The number of messages in a single page.
+	</span><span class="kw">pub </span>page_size: u32,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> <span class="ident">BlockPaginationRequest</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">BlockNumber</span>: <span class="ident">Copy</span> <span class="op">+</span> <span class="ident">AtLeast32BitUnsigned</span>,
+<span class="kw">impl</span>&lt;BlockNumber&gt; BlockPaginationRequest&lt;BlockNumber&gt;
+<span class="kw">where
+	</span>BlockNumber: Copy + AtLeast32BitUnsigned,
 {
-	<span class="doccomment">/// Hard limit on the number of items per page that can be returned</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MAX_PAGE_SIZE</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">10000</span>;
-	<span class="doccomment">/// Hard limit on the block range for a request (~7 days at 12 sec per block)</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MAX_BLOCK_RANGE</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">50000</span>; <span class="comment">// ~3 days (6 sec per block)= ~7 days (12 sec per block)</span>
+	<span class="doccomment">/// Hard limit on the number of items per page that can be returned
+	</span><span class="kw">pub const </span>MAX_PAGE_SIZE: u32 = <span class="number">10000</span>;
+	<span class="doccomment">/// Hard limit on the block range for a request (~7 days at 12 sec per block)
+	</span><span class="kw">pub const </span>MAX_BLOCK_RANGE: u32 = <span class="number">50000</span>; <span class="comment">// ~3 days (6 sec per block)= ~7 days (12 sec per block)
 
-	<span class="doccomment">/// Helper function for request validation.</span>
-	<span class="doccomment">/// * Page size should not exceed MAX_PAGE_SIZE.</span>
-	<span class="doccomment">/// * Block range [from_block:to_block) should not exceed MAX_BLOCK_RANGE.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">validate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
-		<span class="self">self</span>.<span class="ident">page_size</span> <span class="op">&gt;</span> <span class="number">0</span> <span class="op">&amp;&amp;</span>
-			<span class="self">self</span>.<span class="ident">page_size</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident"><span class="self">Self</span>::MAX_PAGE_SIZE</span> <span class="op">&amp;&amp;</span>
-			<span class="self">self</span>.<span class="ident">from_block</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">to_block</span> <span class="op">&amp;&amp;</span>
-			<span class="self">self</span>.<span class="ident">to_block</span>.<span class="ident">sub</span>(<span class="self">self</span>.<span class="ident">from_block</span>) <span class="op">&lt;</span><span class="op">=</span> <span class="ident">BlockNumber::from</span>(<span class="ident"><span class="self">Self</span>::MAX_BLOCK_RANGE</span>)
+	</span><span class="doccomment">/// Helper function for request validation.
+	/// * Page size should not exceed MAX_PAGE_SIZE.
+	/// * Block range [from_block:to_block) should not exceed MAX_BLOCK_RANGE.
+	</span><span class="kw">pub fn </span>validate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+		<span class="self">self</span>.page_size &gt; <span class="number">0 </span>&amp;&amp;
+			<span class="self">self</span>.page_size &lt;= <span class="self">Self</span>::MAX_PAGE_SIZE &amp;&amp;
+			<span class="self">self</span>.from_block &lt; <span class="self">self</span>.to_block &amp;&amp;
+			<span class="self">self</span>.to_block.sub(<span class="self">self</span>.from_block) &lt;= BlockNumber::from(<span class="self">Self</span>::MAX_BLOCK_RANGE)
 	}
 }
 
-<span class="doccomment">/// A type for responding with a collection of paginated messages.</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BlockPaginationResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// Collection of messages for a given [`BlockPaginationRequest`].</span>
-	<span class="kw">pub</span> <span class="ident">content</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// Flag to indicate the end of paginated messages.</span>
-	<span class="kw">pub</span> <span class="ident">has_next</span>: <span class="ident">bool</span>,
-	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>))]</span>
-	<span class="doccomment">/// Flag to indicate the starting block number for the next page.</span>
-	<span class="kw">pub</span> <span class="ident">next_block</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>,
-	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>))]</span>
-	<span class="doccomment">/// Flag to indicate the next index for the following request.</span>
-	<span class="kw">pub</span> <span class="ident">next_index</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
+<span class="doccomment">/// A type for responding with a collection of paginated messages.
+</span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
+#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+</span><span class="kw">pub struct </span>BlockPaginationResponse&lt;BlockNumber, T&gt; {
+	<span class="doccomment">/// Collection of messages for a given [`BlockPaginationRequest`].
+	</span><span class="kw">pub </span>content: Vec&lt;T&gt;,
+	<span class="doccomment">/// Flag to indicate the end of paginated messages.
+	</span><span class="kw">pub </span>has_next: bool,
+	<span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>))]
+	</span><span class="doccomment">/// Flag to indicate the starting block number for the next page.
+	</span><span class="kw">pub </span>next_block: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+	<span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>))]
+	</span><span class="doccomment">/// Flag to indicate the next index for the following request.
+	</span><span class="kw">pub </span>next_index: <span class="prelude-ty">Option</span>&lt;u32&gt;,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">T</span><span class="op">&gt;</span> <span class="ident">BlockPaginationResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">T</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">BlockNumber</span>: <span class="ident">AtLeast32BitUnsigned</span> <span class="op">+</span> <span class="ident">Copy</span> <span class="op">+</span> <span class="ident">One</span>,
+<span class="kw">impl</span>&lt;BlockNumber, T&gt; BlockPaginationResponse&lt;BlockNumber, T&gt;
+<span class="kw">where
+	</span>BlockNumber: AtLeast32BitUnsigned + Copy + One,
 {
-	<span class="doccomment">/// Generates a new empty Pagination request</span>
-	<span class="doccomment">/// # Returns</span>
-	<span class="doccomment">/// * `BlockPaginationResponse&lt;BlockNumber, T&gt;`</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="ident">BlockPaginationResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="ident">BlockPaginationResponse</span> {
-			<span class="ident">content</span>: <span class="macro">vec!</span>[],
-			<span class="ident">has_next</span>: <span class="bool-val">false</span>,
-			<span class="ident">next_block</span>: <span class="prelude-val">None</span>,
-			<span class="ident">next_index</span>: <span class="prelude-val">None</span>,
+	<span class="doccomment">/// Generates a new empty Pagination request
+	/// # Returns
+	/// * `BlockPaginationResponse&lt;BlockNumber, T&gt;`
+	</span><span class="kw">pub const fn </span>new() -&gt; BlockPaginationResponse&lt;BlockNumber, T&gt; {
+		BlockPaginationResponse {
+			content: <span class="macro">vec!</span>[],
+			has_next: <span class="bool-val">false</span>,
+			next_block: <span class="prelude-val">None</span>,
+			next_index: <span class="prelude-val">None</span>,
 		}
 	}
 
-	<span class="doccomment">/// Checks if we are at the end of the pagination</span>
-	<span class="doccomment">/// if we are, update the response with the correct next information</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">check_end_condition_and_set_next_pagination</span>(
-		<span class="kw-2">&amp;mut</span> <span class="self">self</span>,
-		<span class="ident">block_number</span>: <span class="ident">BlockNumber</span>,
-		<span class="ident">current_index</span>: <span class="ident">u32</span>,
-		<span class="ident">list_size</span>: <span class="ident">u32</span>,
-		<span class="ident">request</span>: <span class="kw-2">&amp;</span><span class="ident">BlockPaginationRequest</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>,
-	) -&gt; <span class="ident">bool</span> {
-		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">content</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span> <span class="op">==</span> <span class="ident">request</span>.<span class="ident">page_size</span> {
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">next_block</span> <span class="op">=</span> <span class="ident">block_number</span>;
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">next_index</span> <span class="op">=</span> <span class="ident">current_index</span> <span class="op">+</span> <span class="number">1</span>;
+	<span class="doccomment">/// Checks if we are at the end of the pagination
+	/// if we are, update the response with the correct next information
+	</span><span class="kw">pub fn </span>check_end_condition_and_set_next_pagination(
+		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
+		block_number: BlockNumber,
+		current_index: u32,
+		list_size: u32,
+		request: <span class="kw-2">&amp;</span>BlockPaginationRequest&lt;BlockNumber&gt;,
+	) -&gt; bool {
+		<span class="kw">if </span><span class="self">self</span>.content.len() <span class="kw">as </span>u32 == request.page_size {
+			<span class="kw">let </span><span class="kw-2">mut </span>next_block = block_number;
+			<span class="kw">let </span><span class="kw-2">mut </span>next_index = current_index + <span class="number">1</span>;
 
-			<span class="comment">// checking if it&#39;s end of current list</span>
-			<span class="kw">if</span> <span class="ident">next_index</span> <span class="op">==</span> <span class="ident">list_size</span> {
-				<span class="ident">next_block</span> <span class="op">=</span> <span class="ident">block_number</span> <span class="op">+</span> <span class="ident">BlockNumber::one</span>();
-				<span class="ident">next_index</span> <span class="op">=</span> <span class="number">0</span>;
+			<span class="comment">// checking if it&#39;s end of current list
+			</span><span class="kw">if </span>next_index == list_size {
+				next_block = block_number + BlockNumber::one();
+				next_index = <span class="number">0</span>;
 			}
 
-			<span class="kw">if</span> <span class="ident">next_block</span> <span class="op">&lt;</span> <span class="ident">request</span>.<span class="ident">to_block</span> {
-				<span class="self">self</span>.<span class="ident">has_next</span> <span class="op">=</span> <span class="bool-val">true</span>;
-				<span class="self">self</span>.<span class="ident">next_block</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">next_block</span>);
-				<span class="self">self</span>.<span class="ident">next_index</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">next_index</span>);
+			<span class="kw">if </span>next_block &lt; request.to_block {
+				<span class="self">self</span>.has_next = <span class="bool-val">true</span>;
+				<span class="self">self</span>.next_block = <span class="prelude-val">Some</span>(next_block);
+				<span class="self">self</span>.next_index = <span class="prelude-val">Some</span>(next_index);
 			}
-			<span class="kw">return</span> <span class="bool-val">true</span>
-		}
+			<span class="kw">return </span><span class="bool-val">true
+		</span>}
 
-		<span class="bool-val">false</span>
-	}
+		<span class="bool-val">false
+	</span>}
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-	<span class="kw">use</span> <span class="kw">crate</span>::{
-		<span class="ident">messages</span>::{<span class="ident">BlockPaginationRequest</span>, <span class="ident">BlockPaginationResponse</span>, <span class="ident">MessageResponse</span>},
-		<span class="ident">node::BlockNumber</span>,
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use crate</span>::{
+		messages::{BlockPaginationRequest, BlockPaginationResponse, MessageResponse},
+		node::BlockNumber,
 	};
 
-	<span class="kw">struct</span> <span class="ident">TestCase</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="ident">input</span>: <span class="ident">BlockPaginationRequest</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
-		<span class="ident">expected</span>: <span class="ident">T</span>,
-		<span class="ident">message</span>: <span class="ident">String</span>,
+	<span class="kw">struct </span>TestCase&lt;T&gt; {
+		input: BlockPaginationRequest&lt;u32&gt;,
+		expected: T,
+		message: String,
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">as_hex_option_msg_ipfs_serialize_deserialize_test</span>() {
-		<span class="comment">// skip deserialize if Option::none works</span>
-		<span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">MessageResponse</span> {
-			<span class="ident">payload</span>: <span class="prelude-val">None</span>,
-			<span class="ident">msa_id</span>: <span class="prelude-val">None</span>,
-			<span class="ident">provider_msa_id</span>: <span class="number">1</span>,
-			<span class="ident">index</span>: <span class="number">1</span>,
-			<span class="ident">block_number</span>: <span class="number">1</span>,
-			<span class="ident">cid</span>: <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]),
-			<span class="ident">payload_length</span>: <span class="prelude-val">Some</span>(<span class="number">42</span>),
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>as_hex_option_msg_ipfs_serialize_deserialize_test() {
+		<span class="comment">// skip deserialize if Option::none works
+		</span><span class="kw">let </span>msg = MessageResponse {
+			payload: <span class="prelude-val">None</span>,
+			msa_id: <span class="prelude-val">None</span>,
+			provider_msa_id: <span class="number">1</span>,
+			index: <span class="number">1</span>,
+			block_number: <span class="number">1</span>,
+			cid: <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]),
+			payload_length: <span class="prelude-val">Some</span>(<span class="number">42</span>),
 		};
-		<span class="kw">let</span> <span class="ident">serialized</span> <span class="op">=</span> <span class="ident">serde_json::to_string</span>(<span class="kw-2">&amp;</span><span class="ident">msg</span>).<span class="ident">unwrap</span>();
-		<span class="macro">assert_eq!</span>(<span class="ident">serialized</span>, <span class="string">&quot;{\&quot;provider_msa_id\&quot;:1,\&quot;index\&quot;:1,\&quot;block_number\&quot;:1,\&quot;cid\&quot;:[0,1,2,3],\&quot;payload_length\&quot;:42}&quot;</span>);
+		<span class="kw">let </span>serialized = serde_json::to_string(<span class="kw-2">&amp;</span>msg).unwrap();
+		<span class="macro">assert_eq!</span>(serialized, <span class="string">&quot;{\&quot;provider_msa_id\&quot;:1,\&quot;index\&quot;:1,\&quot;block_number\&quot;:1,\&quot;cid\&quot;:[0,1,2,3],\&quot;payload_length\&quot;:42}&quot;</span>);
 
-		<span class="kw">let</span> <span class="ident">deserialized</span>: <span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="kw-2">&amp;</span><span class="ident">serialized</span>).<span class="ident">unwrap</span>();
-		<span class="macro">assert_eq!</span>(<span class="ident">deserialized</span>, <span class="ident">msg</span>);
+		<span class="kw">let </span>deserialized: MessageResponse&lt;BlockNumber&gt; = serde_json::from_str(<span class="kw-2">&amp;</span>serialized).unwrap();
+		<span class="macro">assert_eq!</span>(deserialized, msg);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">as_hex_option_empty_payload_deserialize_as_default_value</span>() {
-		<span class="kw">let</span> <span class="ident">expected_msg</span> <span class="op">=</span> <span class="ident">MessageResponse</span> {
-			<span class="ident">payload</span>: <span class="prelude-val">None</span>,
-			<span class="ident">msa_id</span>: <span class="prelude-val">Some</span>(<span class="number">1</span>),
-			<span class="ident">provider_msa_id</span>: <span class="number">1</span>,
-			<span class="ident">index</span>: <span class="number">1</span>,
-			<span class="ident">block_number</span>: <span class="number">1</span>,
-			<span class="ident">cid</span>: <span class="prelude-val">None</span>,
-			<span class="ident">payload_length</span>: <span class="prelude-val">None</span>,
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>as_hex_option_empty_payload_deserialize_as_default_value() {
+		<span class="kw">let </span>expected_msg = MessageResponse {
+			payload: <span class="prelude-val">None</span>,
+			msa_id: <span class="prelude-val">Some</span>(<span class="number">1</span>),
+			provider_msa_id: <span class="number">1</span>,
+			index: <span class="number">1</span>,
+			block_number: <span class="number">1</span>,
+			cid: <span class="prelude-val">None</span>,
+			payload_length: <span class="prelude-val">None</span>,
 		};
 
-		<span class="comment">// Notice Payload field is missing</span>
-		<span class="kw">let</span> <span class="ident">serialized_msg_without_payload</span> <span class="op">=</span>
+		<span class="comment">// Notice Payload field is missing
+		</span><span class="kw">let </span>serialized_msg_without_payload =
 			<span class="string">&quot;{\&quot;provider_msa_id\&quot;:1,\&quot;index\&quot;:1,\&quot;block_number\&quot;:1,\&quot;msa_id\&quot;:1}&quot;</span>;
 
-		<span class="kw">let</span> <span class="ident">deserialized_result</span>: <span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> <span class="op">=</span>
-			<span class="ident">serde_json::from_str</span>(<span class="kw-2">&amp;</span><span class="ident">serialized_msg_without_payload</span>).<span class="ident">unwrap</span>();
-		<span class="macro">assert_eq!</span>(<span class="ident">deserialized_result</span>, <span class="ident">expected_msg</span>);
+		<span class="kw">let </span>deserialized_result: MessageResponse&lt;BlockNumber&gt; =
+			serde_json::from_str(<span class="kw-2">&amp;</span>serialized_msg_without_payload).unwrap();
+		<span class="macro">assert_eq!</span>(deserialized_result, expected_msg);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">block_pagination_request_validation_test</span>() {
-		<span class="kw">let</span> <span class="ident">test_cases</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TestCase</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="macro">vec!</span>[
-			<span class="ident">TestCase</span> {
-				<span class="ident">input</span>: <span class="ident">BlockPaginationRequest</span> { <span class="ident">from_block</span>: <span class="number">10</span>, <span class="ident">from_index</span>: <span class="number">0</span>, <span class="ident">to_block</span>: <span class="number">12</span>, <span class="ident">page_size</span>: <span class="number">1</span> },
-				<span class="ident">expected</span>: <span class="bool-val">true</span>,
-				<span class="ident">message</span>: <span class="string">&quot;Should be valid&quot;</span>.<span class="ident">to_string</span>(),
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>block_pagination_request_validation_test() {
+		<span class="kw">let </span>test_cases: Vec&lt;TestCase&lt;bool&gt;&gt; = <span class="macro">vec!</span>[
+			TestCase {
+				input: BlockPaginationRequest { from_block: <span class="number">10</span>, from_index: <span class="number">0</span>, to_block: <span class="number">12</span>, page_size: <span class="number">1 </span>},
+				expected: <span class="bool-val">true</span>,
+				message: <span class="string">&quot;Should be valid&quot;</span>.to_string(),
 			},
-			<span class="ident">TestCase</span> {
-				<span class="ident">input</span>: <span class="ident">BlockPaginationRequest</span> { <span class="ident">from_block</span>: <span class="number">10</span>, <span class="ident">from_index</span>: <span class="number">0</span>, <span class="ident">to_block</span>: <span class="number">12</span>, <span class="ident">page_size</span>: <span class="number">0</span> },
-				<span class="ident">expected</span>: <span class="bool-val">false</span>,
-				<span class="ident">message</span>: <span class="string">&quot;Page with size 0 is invalid&quot;</span>.<span class="ident">to_string</span>(),
+			TestCase {
+				input: BlockPaginationRequest { from_block: <span class="number">10</span>, from_index: <span class="number">0</span>, to_block: <span class="number">12</span>, page_size: <span class="number">0 </span>},
+				expected: <span class="bool-val">false</span>,
+				message: <span class="string">&quot;Page with size 0 is invalid&quot;</span>.to_string(),
 			},
-			<span class="ident">TestCase</span> {
-				<span class="ident">input</span>: <span class="ident">BlockPaginationRequest</span> { <span class="ident">from_block</span>: <span class="number">10</span>, <span class="ident">from_index</span>: <span class="number">0</span>, <span class="ident">to_block</span>: <span class="number">8</span>, <span class="ident">page_size</span>: <span class="number">1</span> },
-				<span class="ident">expected</span>: <span class="bool-val">false</span>,
-				<span class="ident">message</span>: <span class="string">&quot;from_block should be less than to_block&quot;</span>.<span class="ident">to_string</span>(),
+			TestCase {
+				input: BlockPaginationRequest { from_block: <span class="number">10</span>, from_index: <span class="number">0</span>, to_block: <span class="number">8</span>, page_size: <span class="number">1 </span>},
+				expected: <span class="bool-val">false</span>,
+				message: <span class="string">&quot;from_block should be less than to_block&quot;</span>.to_string(),
 			},
-			<span class="ident">TestCase</span> {
-				<span class="ident">input</span>: <span class="ident">BlockPaginationRequest</span> { <span class="ident">from_block</span>: <span class="number">10</span>, <span class="ident">from_index</span>: <span class="number">0</span>, <span class="ident">to_block</span>: <span class="number">8</span>, <span class="ident">page_size</span>: <span class="number">10000</span> <span class="op">+</span> <span class="number">1</span> },
-				<span class="ident">expected</span>: <span class="bool-val">false</span>,
-				<span class="ident">message</span>: <span class="string">&quot;page_size should be less than MAX_PAGE_SIZE&quot;</span>.<span class="ident">to_string</span>(),
+			TestCase {
+				input: BlockPaginationRequest { from_block: <span class="number">10</span>, from_index: <span class="number">0</span>, to_block: <span class="number">8</span>, page_size: <span class="number">10000 </span>+ <span class="number">1 </span>},
+				expected: <span class="bool-val">false</span>,
+				message: <span class="string">&quot;page_size should be less than MAX_PAGE_SIZE&quot;</span>.to_string(),
 			},
-			<span class="ident">TestCase</span> {
-				<span class="ident">input</span>: <span class="ident">BlockPaginationRequest</span> { <span class="ident">from_block</span>: <span class="number">1</span>, <span class="ident">from_index</span>: <span class="number">0</span>, <span class="ident">to_block</span>: <span class="number">50000</span> <span class="op">+</span> <span class="number">2</span>, <span class="ident">page_size</span>: <span class="number">1</span> },
-				<span class="ident">expected</span>: <span class="bool-val">false</span>,
-				<span class="ident">message</span>: <span class="string">&quot;the difference between from_block and to_block should be less than MAX_BLOCK_RANGE&quot;</span>.<span class="ident">to_string</span>(),
+			TestCase {
+				input: BlockPaginationRequest { from_block: <span class="number">1</span>, from_index: <span class="number">0</span>, to_block: <span class="number">50000 </span>+ <span class="number">2</span>, page_size: <span class="number">1 </span>},
+				expected: <span class="bool-val">false</span>,
+				message: <span class="string">&quot;the difference between from_block and to_block should be less than MAX_BLOCK_RANGE&quot;</span>.to_string(),
 			},
 		];
 
-		<span class="kw">for</span> <span class="ident">tc</span> <span class="kw">in</span> <span class="ident">test_cases</span> {
-			<span class="macro">assert_eq!</span>(<span class="ident">tc</span>.<span class="ident">expected</span>, <span class="ident">tc</span>.<span class="ident">input</span>.<span class="ident">validate</span>(), <span class="string">&quot;{}&quot;</span>, <span class="ident">tc</span>.<span class="ident">message</span>);
+		<span class="kw">for </span>tc <span class="kw">in </span>test_cases {
+			<span class="macro">assert_eq!</span>(tc.expected, tc.input.validate(), <span class="string">&quot;{}&quot;</span>, tc.message);
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">check_end_condition_does_not_mutate_when_at_the_end</span>() {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">resp</span> <span class="op">=</span> <span class="ident">BlockPaginationResponse</span>::<span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">u32</span><span class="op">&gt;</span> {
-			<span class="ident">content</span>: <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>],
-			<span class="ident">has_next</span>: <span class="bool-val">false</span>,
-			<span class="ident">next_block</span>: <span class="prelude-val">None</span>,
-			<span class="ident">next_index</span>: <span class="prelude-val">None</span>,
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>check_end_condition_does_not_mutate_when_at_the_end() {
+		<span class="kw">let </span><span class="kw-2">mut </span>resp = BlockPaginationResponse::&lt;BlockNumber, u32&gt; {
+			content: <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>],
+			has_next: <span class="bool-val">false</span>,
+			next_block: <span class="prelude-val">None</span>,
+			next_index: <span class="prelude-val">None</span>,
 		};
 
-		<span class="kw">let</span> <span class="ident">total_data_length</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="ident">resp</span>.<span class="ident">content</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
+		<span class="kw">let </span>total_data_length: u32 = resp.content.len() <span class="kw">as </span>u32;
 
-		<span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">BlockPaginationRequest</span>::<span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> {
-			<span class="ident">from_block</span>: <span class="number">1</span> <span class="kw">as</span> <span class="ident">BlockNumber</span>,
-			<span class="ident">from_index</span>: <span class="number">0</span>,
-			<span class="ident">to_block</span>: <span class="number">5</span>,
-			<span class="comment">// Page is LARGER</span>
-			<span class="ident">page_size</span>: <span class="ident">total_data_length</span> <span class="op">+</span> <span class="number">10</span>,
+		<span class="kw">let </span>request = BlockPaginationRequest::&lt;BlockNumber&gt; {
+			from_block: <span class="number">1 </span><span class="kw">as </span>BlockNumber,
+			from_index: <span class="number">0</span>,
+			to_block: <span class="number">5</span>,
+			<span class="comment">// Page is LARGER
+			</span>page_size: total_data_length + <span class="number">10</span>,
 		};
-		<span class="comment">// We are at the LAST block</span>
-		<span class="kw">let</span> <span class="ident">current_block</span> <span class="op">=</span> <span class="number">5</span>;
-		<span class="comment">// Index after content</span>
-		<span class="kw">let</span> <span class="ident">current_index</span> <span class="op">=</span> <span class="ident">total_data_length</span> <span class="op">-</span> <span class="number">1</span>;
-		<span class="comment">// Critical Bit: NO more data than index</span>
-		<span class="kw">let</span> <span class="ident">list_size</span> <span class="op">=</span> <span class="ident">current_index</span>;
-		<span class="kw">let</span> <span class="ident">is_full</span> <span class="op">=</span> <span class="ident">resp</span>.<span class="ident">check_end_condition_and_set_next_pagination</span>(
-			<span class="ident">current_block</span>,
-			<span class="ident">current_index</span>,
-			<span class="ident">list_size</span>,
-			<span class="kw-2">&amp;</span><span class="ident">request</span>,
+		<span class="comment">// We are at the LAST block
+		</span><span class="kw">let </span>current_block = <span class="number">5</span>;
+		<span class="comment">// Index after content
+		</span><span class="kw">let </span>current_index = total_data_length - <span class="number">1</span>;
+		<span class="comment">// Critical Bit: NO more data than index
+		</span><span class="kw">let </span>list_size = current_index;
+		<span class="kw">let </span>is_full = resp.check_end_condition_and_set_next_pagination(
+			current_block,
+			current_index,
+			list_size,
+			<span class="kw-2">&amp;</span>request,
 		);
-		<span class="comment">// NOT FULL</span>
-		<span class="macro">assert_eq!</span>(<span class="bool-val">false</span>, <span class="ident">is_full</span>);
-		<span class="comment">// NOTHING MORE</span>
-		<span class="macro">assert_eq!</span>(<span class="bool-val">false</span>, <span class="ident">resp</span>.<span class="ident">has_next</span>);
-		<span class="comment">// None</span>
-		<span class="macro">assert_eq!</span>(<span class="prelude-val">None</span>, <span class="ident">resp</span>.<span class="ident">next_block</span>);
-		<span class="macro">assert_eq!</span>(<span class="prelude-val">None</span>, <span class="ident">resp</span>.<span class="ident">next_index</span>);
+		<span class="comment">// NOT FULL
+		</span><span class="macro">assert_eq!</span>(<span class="bool-val">false</span>, is_full);
+		<span class="comment">// NOTHING MORE
+		</span><span class="macro">assert_eq!</span>(<span class="bool-val">false</span>, resp.has_next);
+		<span class="comment">// None
+		</span><span class="macro">assert_eq!</span>(<span class="prelude-val">None</span>, resp.next_block);
+		<span class="macro">assert_eq!</span>(<span class="prelude-val">None</span>, resp.next_index);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">check_end_condition_mutates_when_more_in_list_than_page</span>() {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">resp</span> <span class="op">=</span> <span class="ident">BlockPaginationResponse</span>::<span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">u32</span><span class="op">&gt;</span> {
-			<span class="ident">content</span>: <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>],
-			<span class="ident">has_next</span>: <span class="bool-val">false</span>,
-			<span class="ident">next_block</span>: <span class="prelude-val">None</span>,
-			<span class="ident">next_index</span>: <span class="prelude-val">None</span>,
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>check_end_condition_mutates_when_more_in_list_than_page() {
+		<span class="kw">let </span><span class="kw-2">mut </span>resp = BlockPaginationResponse::&lt;BlockNumber, u32&gt; {
+			content: <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>],
+			has_next: <span class="bool-val">false</span>,
+			next_block: <span class="prelude-val">None</span>,
+			next_index: <span class="prelude-val">None</span>,
 		};
 
-		<span class="kw">let</span> <span class="ident">total_data_length</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="ident">resp</span>.<span class="ident">content</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
+		<span class="kw">let </span>total_data_length: u32 = resp.content.len() <span class="kw">as </span>u32;
 
-		<span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">BlockPaginationRequest</span>::<span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> {
-			<span class="ident">from_block</span>: <span class="number">1</span> <span class="kw">as</span> <span class="ident">BlockNumber</span>,
-			<span class="ident">from_index</span>: <span class="number">0</span>,
-			<span class="ident">to_block</span>: <span class="number">5</span>,
-			<span class="ident">page_size</span>: <span class="ident">total_data_length</span>,
+		<span class="kw">let </span>request = BlockPaginationRequest::&lt;BlockNumber&gt; {
+			from_block: <span class="number">1 </span><span class="kw">as </span>BlockNumber,
+			from_index: <span class="number">0</span>,
+			to_block: <span class="number">5</span>,
+			page_size: total_data_length,
 		};
-		<span class="comment">// We have not completed the block yet</span>
-		<span class="kw">let</span> <span class="ident">current_block</span> <span class="op">=</span> <span class="number">1</span>;
-		<span class="comment">// End of the Block</span>
-		<span class="kw">let</span> <span class="ident">current_index</span> <span class="op">=</span> <span class="ident">total_data_length</span> <span class="op">-</span> <span class="number">1</span>;
-		<span class="comment">// Critical Bit: MORE Data to go in length than page_size</span>
-		<span class="kw">let</span> <span class="ident">list_size</span> <span class="op">=</span> <span class="ident">total_data_length</span> <span class="op">+</span> <span class="number">1</span>;
-		<span class="kw">let</span> <span class="ident">is_full</span> <span class="op">=</span> <span class="ident">resp</span>.<span class="ident">check_end_condition_and_set_next_pagination</span>(
-			<span class="ident">current_block</span>,
-			<span class="ident">current_index</span>,
-			<span class="ident">list_size</span>,
-			<span class="kw-2">&amp;</span><span class="ident">request</span>,
+		<span class="comment">// We have not completed the block yet
+		</span><span class="kw">let </span>current_block = <span class="number">1</span>;
+		<span class="comment">// End of the Block
+		</span><span class="kw">let </span>current_index = total_data_length - <span class="number">1</span>;
+		<span class="comment">// Critical Bit: MORE Data to go in length than page_size
+		</span><span class="kw">let </span>list_size = total_data_length + <span class="number">1</span>;
+		<span class="kw">let </span>is_full = resp.check_end_condition_and_set_next_pagination(
+			current_block,
+			current_index,
+			list_size,
+			<span class="kw-2">&amp;</span>request,
 		);
-		<span class="macro">assert_eq!</span>(<span class="bool-val">true</span>, <span class="ident">is_full</span>);
-		<span class="macro">assert_eq!</span>(<span class="bool-val">true</span>, <span class="ident">resp</span>.<span class="ident">has_next</span>);
-		<span class="comment">// SAME block</span>
-		<span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="number">1</span>), <span class="ident">resp</span>.<span class="ident">next_block</span>);
-		<span class="comment">// NEXT index</span>
-		<span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="ident">current_index</span> <span class="op">+</span> <span class="number">1</span>), <span class="ident">resp</span>.<span class="ident">next_index</span>);
+		<span class="macro">assert_eq!</span>(<span class="bool-val">true</span>, is_full);
+		<span class="macro">assert_eq!</span>(<span class="bool-val">true</span>, resp.has_next);
+		<span class="comment">// SAME block
+		</span><span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="number">1</span>), resp.next_block);
+		<span class="comment">// NEXT index
+		</span><span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(current_index + <span class="number">1</span>), resp.next_index);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">check_end_condition_mutates_when_more_than_page_but_none_left_in_block</span>() {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">resp</span> <span class="op">=</span> <span class="ident">BlockPaginationResponse</span>::<span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">u32</span><span class="op">&gt;</span> {
-			<span class="ident">content</span>: <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>],
-			<span class="ident">has_next</span>: <span class="bool-val">false</span>,
-			<span class="ident">next_block</span>: <span class="prelude-val">None</span>,
-			<span class="ident">next_index</span>: <span class="prelude-val">None</span>,
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>check_end_condition_mutates_when_more_than_page_but_none_left_in_block() {
+		<span class="kw">let </span><span class="kw-2">mut </span>resp = BlockPaginationResponse::&lt;BlockNumber, u32&gt; {
+			content: <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>],
+			has_next: <span class="bool-val">false</span>,
+			next_block: <span class="prelude-val">None</span>,
+			next_index: <span class="prelude-val">None</span>,
 		};
 
-		<span class="kw">let</span> <span class="ident">total_data_length</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="ident">resp</span>.<span class="ident">content</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
+		<span class="kw">let </span>total_data_length: u32 = resp.content.len() <span class="kw">as </span>u32;
 
-		<span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">BlockPaginationRequest</span>::<span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> {
-			<span class="ident">from_block</span>: <span class="number">1</span> <span class="kw">as</span> <span class="ident">BlockNumber</span>,
-			<span class="ident">from_index</span>: <span class="number">0</span>,
-			<span class="ident">to_block</span>: <span class="number">5</span>,
-			<span class="ident">page_size</span>: <span class="ident">total_data_length</span>,
+		<span class="kw">let </span>request = BlockPaginationRequest::&lt;BlockNumber&gt; {
+			from_block: <span class="number">1 </span><span class="kw">as </span>BlockNumber,
+			from_index: <span class="number">0</span>,
+			to_block: <span class="number">5</span>,
+			page_size: total_data_length,
 		};
-		<span class="comment">// We have not completed the block yet</span>
-		<span class="kw">let</span> <span class="ident">current_block</span> <span class="op">=</span> <span class="number">1</span>;
-		<span class="comment">// End of the Block</span>
-		<span class="kw">let</span> <span class="ident">current_index</span> <span class="op">=</span> <span class="ident">total_data_length</span> <span class="op">-</span> <span class="number">1</span>;
-		<span class="comment">// SAME in length than page_size</span>
-		<span class="kw">let</span> <span class="ident">list_size</span> <span class="op">=</span> <span class="ident">total_data_length</span>;
-		<span class="kw">let</span> <span class="ident">is_full</span> <span class="op">=</span> <span class="ident">resp</span>.<span class="ident">check_end_condition_and_set_next_pagination</span>(
-			<span class="ident">current_block</span>,
-			<span class="ident">current_index</span>,
-			<span class="ident">list_size</span>,
-			<span class="kw-2">&amp;</span><span class="ident">request</span>,
+		<span class="comment">// We have not completed the block yet
+		</span><span class="kw">let </span>current_block = <span class="number">1</span>;
+		<span class="comment">// End of the Block
+		</span><span class="kw">let </span>current_index = total_data_length - <span class="number">1</span>;
+		<span class="comment">// SAME in length than page_size
+		</span><span class="kw">let </span>list_size = total_data_length;
+		<span class="kw">let </span>is_full = resp.check_end_condition_and_set_next_pagination(
+			current_block,
+			current_index,
+			list_size,
+			<span class="kw-2">&amp;</span>request,
 		);
-		<span class="macro">assert_eq!</span>(<span class="bool-val">true</span>, <span class="ident">is_full</span>);
-		<span class="macro">assert_eq!</span>(<span class="bool-val">true</span>, <span class="ident">resp</span>.<span class="ident">has_next</span>);
-		<span class="comment">// NEXT block</span>
-		<span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="ident">current_block</span> <span class="op">+</span> <span class="number">1</span>), <span class="ident">resp</span>.<span class="ident">next_block</span>);
-		<span class="comment">// ZERO index</span>
-		<span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="number">0</span>), <span class="ident">resp</span>.<span class="ident">next_index</span>);
+		<span class="macro">assert_eq!</span>(<span class="bool-val">true</span>, is_full);
+		<span class="macro">assert_eq!</span>(<span class="bool-val">true</span>, resp.has_next);
+		<span class="comment">// NEXT block
+		</span><span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(current_block + <span class="number">1</span>), resp.next_block);
+		<span class="comment">// ZERO index
+		</span><span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="number">0</span>), resp.next_index);
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_primitives" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (848090dcd 2022-07-22)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_primitives" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>

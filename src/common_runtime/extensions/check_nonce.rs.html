@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/common/src/extensions/check_nonce.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>check_nonce.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../common_runtime/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/common/src/extensions/check_nonce.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>check_nonce.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../common_runtime/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -144,146 +138,145 @@
 <span id="138">138</span>
 <span id="139">139</span>
 <span id="140">140</span>
-</pre><pre class="rust"><code><span class="comment">// This file overrides the default Substrate CheckNonce for Frequency.</span>
-<span class="comment">// It only creates the token account for paid extrinsics.</span>
+</pre><pre class="rust"><code><span class="comment">// This file overrides the default Substrate CheckNonce for Frequency.
+// It only creates the token account for paid extrinsics.
 
-<span class="comment">// Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
+// Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
 
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">use</span> <span class="ident">frame_system::Config</span>;
+</span><span class="kw">use </span>codec::{Decode, Encode};
+<span class="kw">use </span>frame_system::Config;
 
-<span class="kw">use</span> <span class="ident">frame_support</span>::{
-	<span class="ident">sp_runtime</span>,
-	<span class="ident">weights</span>::{<span class="ident">DispatchInfo</span>, <span class="ident">Pays</span>},
+<span class="kw">use </span>frame_support::{
+	sp_runtime,
+	weights::{DispatchInfo, Pays},
 };
-<span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-	<span class="ident">traits</span>::{<span class="ident">DispatchInfoOf</span>, <span class="ident">Dispatchable</span>, <span class="ident">One</span>, <span class="ident">SignedExtension</span>},
-	<span class="ident">transaction_validity</span>::{
-		<span class="ident">InvalidTransaction</span>, <span class="ident">TransactionLongevity</span>, <span class="ident">TransactionValidity</span>, <span class="ident">TransactionValidityError</span>,
-		<span class="ident">ValidTransaction</span>,
+<span class="kw">use </span>scale_info::TypeInfo;
+<span class="kw">use </span>sp_runtime::{
+	traits::{DispatchInfoOf, Dispatchable, One, SignedExtension},
+	transaction_validity::{
+		InvalidTransaction, TransactionLongevity, TransactionValidity, TransactionValidityError,
+		ValidTransaction,
 	},
 };
-<span class="kw">use</span> <span class="ident">sp_std::vec</span>;
+<span class="kw">use </span>sp_std::vec;
 
-<span class="doccomment">/// Nonce check and increment to give replay protection for transactions.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// # Transaction Validity</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// This extension affects `requires` and `provides` tags of validity, but DOES NOT</span>
-<span class="doccomment">/// set the `priority` field. Make sure that AT LEAST one of the signed extension sets</span>
-<span class="doccomment">/// some kind of priority upon validating transactions.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">TypeInfo</span>)]</span>
-<span class="attribute">#[<span class="ident">scale_info</span>(<span class="ident">skip_type_params</span>(<span class="ident">T</span>))]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CheckNonce</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span>(<span class="attribute">#[<span class="ident">codec</span>(<span class="ident">compact</span>)]</span> <span class="kw">pub</span> <span class="ident">T::Index</span>);
+<span class="doccomment">/// Nonce check and increment to give replay protection for transactions.
+///
+/// # Transaction Validity
+///
+/// This extension affects `requires` and `provides` tags of validity, but DOES NOT
+/// set the `priority` field. Make sure that AT LEAST one of the signed extension sets
+/// some kind of priority upon validating transactions.
+</span><span class="attribute">#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+</span><span class="kw">pub struct </span>CheckNonce&lt;T: Config&gt;(<span class="attribute">#[codec(compact)] </span><span class="kw">pub </span>T::Index);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">CheckNonce</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// utility constructor. Used only in client/factory code.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">nonce</span>: <span class="ident">T::Index</span>) -&gt; <span class="self">Self</span> {
-		<span class="self">Self</span>(<span class="ident">nonce</span>)
+<span class="kw">impl</span>&lt;T: Config&gt; CheckNonce&lt;T&gt; {
+	<span class="doccomment">/// utility constructor. Used only in client/factory code.
+	</span><span class="kw">pub fn </span>from(nonce: T::Index) -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>(nonce)
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">sp_std::fmt::Debug</span> <span class="kw">for</span> <span class="ident">CheckNonce</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-	<span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">sp_std::fmt::Formatter</span>) -&gt; <span class="ident">sp_std::fmt::Result</span> {
-		<span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;CheckNonce({})&quot;</span>, <span class="self">self</span>.<span class="number">0</span>)
+<span class="kw">impl</span>&lt;T: Config&gt; sp_std::fmt::Debug <span class="kw">for </span>CheckNonce&lt;T&gt; {
+	<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>sp_std::fmt::Formatter) -&gt; sp_std::fmt::Result {
+		<span class="macro">write!</span>(f, <span class="string">&quot;CheckNonce({})&quot;</span>, <span class="self">self</span>.<span class="number">0</span>)
 	}
 
-	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>))]</span>
-	<span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="kw-2">&amp;mut</span> <span class="ident">sp_std::fmt::Formatter</span>) -&gt; <span class="ident">sp_std::fmt::Result</span> {
+	<span class="attribute">#[cfg(not(feature = <span class="string">&quot;std&quot;</span>))]
+	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="kw-2">&amp;mut </span>sp_std::fmt::Formatter) -&gt; sp_std::fmt::Result {
 		<span class="prelude-val">Ok</span>(())
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">SignedExtension</span> <span class="kw">for</span> <span class="ident">CheckNonce</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">T::Call</span>: <span class="ident">Dispatchable</span><span class="op">&lt;</span><span class="ident">Info</span> <span class="op">=</span> <span class="ident">DispatchInfo</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;T: Config&gt; SignedExtension <span class="kw">for </span>CheckNonce&lt;T&gt;
+<span class="kw">where
+	</span>T::Call: Dispatchable&lt;Info = DispatchInfo&gt;,
 {
-	<span class="kw">type</span> <span class="ident">AccountId</span> <span class="op">=</span> <span class="ident">T::AccountId</span>;
-	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">T::Call</span>;
-	<span class="kw">type</span> <span class="ident">AdditionalSigned</span> <span class="op">=</span> ();
-	<span class="kw">type</span> <span class="ident">Pre</span> <span class="op">=</span> ();
-	<span class="kw">const</span> <span class="ident">IDENTIFIER</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;CheckNonce&quot;</span>;
+	<span class="kw">type </span>AccountId = T::AccountId;
+	<span class="kw">type </span>Call = T::Call;
+	<span class="kw">type </span>AdditionalSigned = ();
+	<span class="kw">type </span>Pre = ();
+	<span class="kw">const </span>IDENTIFIER: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;CheckNonce&quot;</span>;
 
-	<span class="kw">fn</span> <span class="ident">additional_signed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">sp_std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">TransactionValidityError</span><span class="op">&gt;</span> {
+	<span class="kw">fn </span>additional_signed(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sp_std::result::Result&lt;(), TransactionValidityError&gt; {
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">fn</span> <span class="ident">pre_dispatch</span>(
+	<span class="kw">fn </span>pre_dispatch(
 		<span class="self">self</span>,
-		<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::AccountId</span>,
-		<span class="ident">_call</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::Call</span>,
-		<span class="ident">info</span>: <span class="kw-2">&amp;</span><span class="ident">DispatchInfoOf</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Call</span><span class="op">&gt;</span>,
-		<span class="ident">_len</span>: <span class="ident">usize</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TransactionValidityError</span><span class="op">&gt;</span> {
-		<span class="comment">// Get TOKEN account from &quot;who&quot; key</span>
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">account</span> <span class="op">=</span> <span class="ident">frame_system::Account</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">who</span>);
+		who: <span class="kw-2">&amp;</span><span class="self">Self</span>::AccountId,
+		_call: <span class="kw-2">&amp;</span><span class="self">Self</span>::Call,
+		info: <span class="kw-2">&amp;</span>DispatchInfoOf&lt;<span class="self">Self</span>::Call&gt;,
+		_len: usize,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;(), TransactionValidityError&gt; {
+		<span class="comment">// Get TOKEN account from &quot;who&quot; key
+		</span><span class="kw">let </span><span class="kw-2">mut </span>account = frame_system::Account::&lt;T&gt;::get(who);
 
-		<span class="comment">// The default account (no account) has a nonce of 0.</span>
-		<span class="comment">// If account nonce is not equal to the tx nonce (self.0), the tx is invalid.  Therefore, check if it is a stale or future tx.</span>
-		<span class="kw">if</span> <span class="self">self</span>.<span class="number">0</span> <span class="op">!</span><span class="op">=</span> <span class="ident">account</span>.<span class="ident">nonce</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="kw">if</span> <span class="self">self</span>.<span class="number">0</span> <span class="op">&lt;</span> <span class="ident">account</span>.<span class="ident">nonce</span> {
-				<span class="ident">InvalidTransaction::Stale</span>
-			} <span class="kw">else</span> {
-				<span class="ident">InvalidTransaction::Future</span>
+		<span class="comment">// The default account (no account) has a nonce of 0.
+		// If account nonce is not equal to the tx nonce (self.0), the tx is invalid.  Therefore, check if it is a stale or future tx.
+		</span><span class="kw">if </span><span class="self">self</span>.<span class="number">0 </span>!= account.nonce {
+			<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="kw">if </span><span class="self">self</span>.<span class="number">0 </span>&lt; account.nonce {
+				InvalidTransaction::Stale
+			} <span class="kw">else </span>{
+				InvalidTransaction::Future
 			}
-			.<span class="ident">into</span>())
+			.into())
 		}
 
-		<span class="comment">// Increment account nonce by 1</span>
-		<span class="ident">account</span>.<span class="ident">nonce</span> <span class="op">+</span><span class="op">=</span> <span class="ident">T::Index::one</span>();
+		<span class="comment">// Increment account nonce by 1
+		</span>account.nonce += T::Index::one();
 
-		<span class="comment">// Only create or update the token account if the caller is paying</span>
-		<span class="kw">if</span> <span class="ident">info</span>.<span class="ident">pays_fee</span> <span class="op">==</span> <span class="ident">Pays::Yes</span> {
-			<span class="ident">frame_system::Account</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="ident">who</span>, <span class="ident">account</span>);
+		<span class="comment">// Only create or update the token account if the caller is paying
+		</span><span class="kw">if </span>info.pays_fee == Pays::Yes {
+			frame_system::Account::&lt;T&gt;::insert(who, account);
 		}
 
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">fn</span> <span class="ident">validate</span>(
+	<span class="kw">fn </span>validate(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::AccountId</span>,
-		<span class="ident">_call</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::Call</span>,
-		<span class="ident">_info</span>: <span class="kw-2">&amp;</span><span class="ident">DispatchInfoOf</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Call</span><span class="op">&gt;</span>,
-		<span class="ident">_len</span>: <span class="ident">usize</span>,
-	) -&gt; <span class="ident">TransactionValidity</span> {
-		<span class="comment">// check index</span>
-		<span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="ident">frame_system::Account</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">who</span>);
-		<span class="kw">if</span> <span class="self">self</span>.<span class="number">0</span> <span class="op">&lt;</span> <span class="ident">account</span>.<span class="ident">nonce</span> {
-			<span class="kw">return</span> <span class="ident">InvalidTransaction::Stale</span>.<span class="ident">into</span>()
+		who: <span class="kw-2">&amp;</span><span class="self">Self</span>::AccountId,
+		_call: <span class="kw-2">&amp;</span><span class="self">Self</span>::Call,
+		_info: <span class="kw-2">&amp;</span>DispatchInfoOf&lt;<span class="self">Self</span>::Call&gt;,
+		_len: usize,
+	) -&gt; TransactionValidity {
+		<span class="comment">// check index
+		</span><span class="kw">let </span>account = frame_system::Account::&lt;T&gt;::get(who);
+		<span class="kw">if </span><span class="self">self</span>.<span class="number">0 </span>&lt; account.nonce {
+			<span class="kw">return </span>InvalidTransaction::Stale.into()
 		}
 
-		<span class="kw">let</span> <span class="ident">provides</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">Encode::encode</span>(<span class="kw-2">&amp;</span>(<span class="ident">who</span>, <span class="self">self</span>.<span class="number">0</span>))];
-		<span class="kw">let</span> <span class="ident">requires</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">account</span>.<span class="ident">nonce</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="number">0</span> {
-			<span class="macro">vec!</span>[<span class="ident">Encode::encode</span>(<span class="kw-2">&amp;</span>(<span class="ident">who</span>, <span class="self">self</span>.<span class="number">0</span> <span class="op">-</span> <span class="ident">One::one</span>()))]
-		} <span class="kw">else</span> {
+		<span class="kw">let </span>provides = <span class="macro">vec!</span>[Encode::encode(<span class="kw-2">&amp;</span>(who, <span class="self">self</span>.<span class="number">0</span>))];
+		<span class="kw">let </span>requires = <span class="kw">if </span>account.nonce &lt; <span class="self">self</span>.<span class="number">0 </span>{
+			<span class="macro">vec!</span>[Encode::encode(<span class="kw-2">&amp;</span>(who, <span class="self">self</span>.<span class="number">0 </span>- One::one()))]
+		} <span class="kw">else </span>{
 			<span class="macro">vec!</span>[]
 		};
 
-		<span class="prelude-val">Ok</span>(<span class="ident">ValidTransaction</span> {
-			<span class="ident">priority</span>: <span class="number">0</span>,
-			<span class="ident">requires</span>,
-			<span class="ident">provides</span>,
-			<span class="ident">longevity</span>: <span class="ident">TransactionLongevity::max_value</span>(),
-			<span class="ident">propagate</span>: <span class="bool-val">true</span>,
+		<span class="prelude-val">Ok</span>(ValidTransaction {
+			priority: <span class="number">0</span>,
+			requires,
+			provides,
+			longevity: TransactionLongevity::max_value(),
+			propagate: <span class="bool-val">true</span>,
 		})
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="common_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (848090dcd 2022-07-22)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="common_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>

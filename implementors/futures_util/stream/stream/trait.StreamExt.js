@@ -1,3 +1,3 @@
-(function() {var implementors = {};
-implementors["frequency_service"] = [];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"frequency_service":[]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

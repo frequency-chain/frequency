@@ -1,3 +1,3 @@
-(function() {var implementors = {};
-implementors["frequency_cli"] = [{"text":"impl SubstrateCli for <a class=\"struct\" href=\"frequency_cli/struct.Cli.html\" title=\"struct frequency_cli::Cli\">Cli</a>","synthetic":false,"types":["frequency_cli::cli::Cli"]},{"text":"impl SubstrateCli for <a class=\"struct\" href=\"frequency_cli/struct.RelayChainCli.html\" title=\"struct frequency_cli::RelayChainCli\">RelayChainCli</a>","synthetic":false,"types":["frequency_cli::cli::RelayChainCli"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"frequency_cli":[["impl SubstrateCli for <a class=\"struct\" href=\"frequency_cli/struct.Cli.html\" title=\"struct frequency_cli::Cli\">Cli</a>"],["impl SubstrateCli for <a class=\"struct\" href=\"frequency_cli/struct.RelayChainCli.html\" title=\"struct frequency_cli::RelayChainCli\">RelayChainCli</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

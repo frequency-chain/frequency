@@ -1,3 +1,3 @@
-(function() {var implementors = {};
-implementors["pallet_schemas"] = [{"text":"impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_schemas/pallet/trait.Config.html\" title=\"trait pallet_schemas::pallet::Config\">Config</a>&gt; BuildModuleGenesisStorage&lt;T, <a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/std/primitive.unit.html\">()</a>&gt; for <a class=\"struct\" href=\"pallet_schemas/pallet/struct.GenesisConfig.html\" title=\"struct pallet_schemas::pallet::GenesisConfig\">GenesisConfig</a>","synthetic":false,"types":["pallet_schemas::pallet::GenesisConfig"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"pallet_schemas":[["impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_schemas/pallet/trait.Config.html\" title=\"trait pallet_schemas::pallet::Config\">Config</a>&gt; BuildModuleGenesisStorage&lt;T, <a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/std/primitive.unit.html\">()</a>&gt; for <a class=\"struct\" href=\"pallet_schemas/pallet/struct.GenesisConfig.html\" title=\"struct pallet_schemas::pallet::GenesisConfig\">GenesisConfig</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

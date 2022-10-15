@@ -1,3 +1,3 @@
-(function() {var implementors = {};
-implementors["frequency_cli"] = [{"text":"impl CliConfiguration&lt;<a class=\"struct\" href=\"frequency_cli/struct.RelayChainCli.html\" title=\"struct frequency_cli::RelayChainCli\">RelayChainCli</a>&gt; for <a class=\"struct\" href=\"frequency_cli/struct.RelayChainCli.html\" title=\"struct frequency_cli::RelayChainCli\">RelayChainCli</a>","synthetic":false,"types":["frequency_cli::cli::RelayChainCli"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"frequency_cli":[["impl CliConfiguration&lt;<a class=\"struct\" href=\"frequency_cli/struct.RelayChainCli.html\" title=\"struct frequency_cli::RelayChainCli\">RelayChainCli</a>&gt; for <a class=\"struct\" href=\"frequency_cli/struct.RelayChainCli.html\" title=\"struct frequency_cli::RelayChainCli\">RelayChainCli</a>"],["impl CliConfiguration&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/std/primitive.unit.html\">()</a>&gt; for <a class=\"struct\" href=\"frequency_cli/struct.ExportMetadataCmd.html\" title=\"struct frequency_cli::ExportMetadataCmd\">ExportMetadataCmd</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

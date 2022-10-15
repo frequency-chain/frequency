@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/messages/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_messages/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../pallet_messages/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_messages/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/messages/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_messages/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_messages/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_messages/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -376,378 +370,377 @@
 <span id="370">370</span>
 <span id="371">371</span>
 <span id="372">372</span>
-</pre><pre class="rust"><code><span class="doccomment">//! # Messages pallet</span>
-<span class="doccomment">//! A pallet for storing messages.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This pallet contains functionality for storing, retrieving and eventually removing messages for</span>
-<span class="doccomment">//! registered schemas on chain.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! - [`Config`]</span>
-<span class="doccomment">//! - [`Call`]</span>
-<span class="doccomment">//! - [`Pallet`]</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ## Overview</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! The Messages Pallet provides functions for:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! - Adding a message for given schema.</span>
-<span class="doccomment">//! - Retrieving messages for a given schema.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ### Terminology</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! - **Message:** A message that matches a registered `Schema` (on-chain or off-chain).</span>
-<span class="doccomment">//! - **Payload:** The user data in a `Message` that matches a `Schema`.</span>
-<span class="doccomment">//! - **MSA Id:** The 64 bit unsigned integer associated with an `Message Source Account`.</span>
-<span class="doccomment">//! - **MSA:** Message Source Account. A registered identifier with the MSA pallet.</span>
-<span class="doccomment">//! - **Schema:** A registered data structure and the settings around it.</span>
-<span class="doccomment">//! - **Schema Id:** A U16 bit identifier for a schema stored on-chain.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!</span>
-<span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.</span>
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
-<span class="comment">// Strong Documentation Lints</span>
-<span class="attribute">#![<span class="ident">deny</span>(
-	<span class="ident">rustdoc::broken_intra_doc_links</span>,
-	<span class="ident">rustdoc::missing_crate_level_docs</span>,
-	<span class="ident">rustdoc::invalid_codeblock_attributes</span>,
-	<span class="ident">missing_docs</span>
-)]</span>
+</pre><pre class="rust"><code><span class="doccomment">//! # Messages pallet
+//! A pallet for storing messages.
+//!
+//! This pallet contains functionality for storing, retrieving and eventually removing messages for
+//! registered schemas on chain.
+//!
+//! - [`Config`]
+//! - [`Call`]
+//! - [`Pallet`]
+//!
+//! ## Overview
+//!
+//! The Messages Pallet provides functions for:
+//!
+//! - Adding a message for given schema.
+//! - Retrieving messages for a given schema.
+//!
+//! ### Terminology
+//!
+//! - **Message:** A message that matches a registered `Schema` (on-chain or off-chain).
+//! - **Payload:** The user data in a `Message` that matches a `Schema`.
+//! - **MSA Id:** The 64 bit unsigned integer associated with an `Message Source Account`.
+//! - **MSA:** Message Source Account. A registered identifier with the MSA pallet.
+//! - **Schema:** A registered data structure and the settings around it.
+//! - **Schema Id:** A U16 bit identifier for a schema stored on-chain.
+//!
+//!
+</span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+</span><span class="comment">// Strong Documentation Lints
+</span><span class="attribute">#![deny(
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
+)]
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">mock</span>;
+#[cfg(test)]
+</span><span class="kw">mod </span>mock;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span>;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>)]</span>
-<span class="kw">mod</span> <span class="ident">benchmarking</span>;
+<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+</span><span class="kw">mod </span>benchmarking;
 
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">weights</span>;
+<span class="kw">pub mod </span>weights;
 
-<span class="kw">mod</span> <span class="ident">types</span>;
+<span class="kw">mod </span>types;
 
-<span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">ensure</span>, <span class="ident">pallet_prelude::Weight</span>, <span class="ident">traits::Get</span>, <span class="ident">BoundedVec</span>};
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">traits::One</span>, <span class="ident">DispatchError</span>};
-<span class="kw">use</span> <span class="ident">sp_std</span>::{<span class="ident">collections::btree_map::BTreeMap</span>, <span class="ident">convert::TryInto</span>, <span class="ident">prelude</span>::<span class="kw-2">*</span>};
+<span class="kw">use </span>frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
+<span class="kw">use </span>sp_runtime::{traits::One, DispatchError};
+<span class="kw">use </span>sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::<span class="kw-2">*</span>};
 
-<span class="kw">use</span> <span class="ident">codec::Encode</span>;
-<span class="kw">use</span> <span class="ident">common_primitives</span>::{
-	<span class="ident">messages</span>::<span class="kw-2">*</span>,
-	<span class="ident">msa</span>::{<span class="ident">AccountProvider</span>, <span class="ident">Delegator</span>, <span class="ident">MessageSourceId</span>, <span class="ident">Provider</span>},
-	<span class="ident">schema</span>::<span class="kw-2">*</span>,
+<span class="kw">use </span>codec::Encode;
+<span class="kw">use </span>common_primitives::{
+	messages::<span class="kw-2">*</span>,
+	msa::{AccountProvider, Delegator, MessageSourceId, Provider},
+	schema::<span class="kw-2">*</span>,
 };
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pallet</span>::<span class="kw-2">*</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">types</span>::<span class="kw-2">*</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">weights</span>::<span class="kw-2">*</span>;
+<span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
+<span class="kw">pub use </span>types::<span class="kw-2">*</span>;
+<span class="kw">pub use </span>weights::<span class="kw-2">*</span>;
 
-<span class="attribute">#[<span class="ident">frame_support::pallet</span>]</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">pallet</span> {
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">frame_support::pallet_prelude</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">frame_system::pallet_prelude</span>::<span class="kw-2">*</span>;
+<span class="attribute">#[frame_support::pallet]
+</span><span class="kw">pub mod </span>pallet {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use </span>frame_support::pallet_prelude::<span class="kw-2">*</span>;
+	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 
-	<span class="attribute">#[<span class="ident">pallet::config</span>]</span>
-	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>: <span class="ident">frame_system::Config</span> {
-		<span class="doccomment">/// The overarching event type.</span>
-		<span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">IsType</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::Event</span><span class="op">&gt;</span>;
+	<span class="attribute">#[pallet::config]
+	</span><span class="kw">pub trait </span>Config: frame_system::Config {
+		<span class="doccomment">/// The overarching event type.
+		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
 
-		<span class="doccomment">/// Weight information for extrinsics in this pallet.</span>
-		<span class="kw">type</span> <span class="ident">WeightInfo</span>: <span class="ident">WeightInfo</span>;
+		<span class="doccomment">/// Weight information for extrinsics in this pallet.
+		</span><span class="kw">type </span>WeightInfo: WeightInfo;
 
-		<span class="doccomment">/// A type that will supply account related information.</span>
-		<span class="kw">type</span> <span class="ident">AccountProvider</span>: <span class="ident">AccountProvider</span><span class="op">&lt;</span><span class="ident">AccountId</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::AccountId</span><span class="op">&gt;</span>;
+		<span class="doccomment">/// A type that will supply account related information.
+		</span><span class="kw">type </span>AccountProvider: AccountProvider&lt;AccountId = <span class="self">Self</span>::AccountId&gt;;
 
-		<span class="doccomment">/// A type that will supply schema related information.</span>
-		<span class="kw">type</span> <span class="ident">SchemaProvider</span>: <span class="ident">SchemaProvider</span><span class="op">&lt;</span><span class="ident">SchemaId</span><span class="op">&gt;</span>;
+		<span class="doccomment">/// A type that will supply schema related information.
+		</span><span class="kw">type </span>SchemaProvider: SchemaProvider&lt;SchemaId&gt;;
 
-		<span class="doccomment">/// The maximum number of messages in a block.</span>
-		<span class="attribute">#[<span class="ident">pallet::constant</span>]</span>
-		<span class="kw">type</span> <span class="ident">MaxMessagesPerBlock</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
+		<span class="doccomment">/// The maximum number of messages in a block.
+		</span><span class="attribute">#[pallet::constant]
+		</span><span class="kw">type </span>MaxMessagesPerBlock: Get&lt;u32&gt;;
 
-		<span class="doccomment">/// The maximum size of a message payload bytes.</span>
-		<span class="attribute">#[<span class="ident">pallet::constant</span>]</span>
-		<span class="kw">type</span> <span class="ident">MaxMessagePayloadSizeBytes</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Clone</span>;
+		<span class="doccomment">/// The maximum size of a message payload bytes.
+		</span><span class="attribute">#[pallet::constant]
+		</span><span class="kw">type </span>MaxMessagePayloadSizeBytes: Get&lt;u32&gt; + Clone;
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::pallet</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::generate_store</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait</span> <span class="ident">Store</span>)]</span>
-	<span class="attribute">#[<span class="ident">pallet::without_storage_info</span>]</span>
-	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="kw">_</span>);
+	<span class="attribute">#[pallet::pallet]
+	#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]
+	#[pallet::without_storage_info]
+	</span><span class="kw">pub struct </span>Pallet&lt;T&gt;(<span class="kw">_</span>);
 
-	<span class="doccomment">/// A temporary storage of messages, given a schema id, for a duration of block period.</span>
-	<span class="doccomment">/// At the start of the next block this storage is cleared and moved into Messages storage.</span>
-	<span class="doccomment">/// - Value: List of Messages</span>
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">get_block_messages</span>)]</span>
-	<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type</span> <span class="ident">BlockMessages</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span>
+	<span class="doccomment">/// A temporary storage of messages, given a schema id, for a duration of block period.
+	/// At the start of the next block this storage is cleared and moved into Messages storage.
+	/// - Value: List of Messages
+	</span><span class="attribute">#[pallet::storage]
+	#[pallet::getter(<span class="kw">fn </span>get_block_messages)]
+	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>BlockMessages&lt;T: Config&gt; = StorageValue&lt;
 		<span class="kw">_</span>,
-		<span class="ident">BoundedVec</span><span class="op">&lt;</span>(<span class="ident">Message</span><span class="op">&lt;</span><span class="ident">T::MaxMessagePayloadSizeBytes</span><span class="op">&gt;</span>, <span class="ident">SchemaId</span>), <span class="ident">T::MaxMessagesPerBlock</span><span class="op">&gt;</span>,
-		<span class="ident">ValueQuery</span>,
-	<span class="op">&gt;</span>;
+		BoundedVec&lt;(Message&lt;T::MaxMessagePayloadSizeBytes&gt;, SchemaId), T::MaxMessagesPerBlock&gt;,
+		ValueQuery,
+	&gt;;
 
-	<span class="doccomment">/// A permanent storage for messages mapped by block number and schema id.</span>
-	<span class="doccomment">/// - Keys: BlockNumber, Schema Id</span>
-	<span class="doccomment">/// - Value: List of Messages</span>
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">get_messages</span>)]</span>
-	<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type</span> <span class="ident">Messages</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageDoubleMap</span><span class="op">&lt;</span>
+	<span class="doccomment">/// A permanent storage for messages mapped by block number and schema id.
+	/// - Keys: BlockNumber, Schema Id
+	/// - Value: List of Messages
+	</span><span class="attribute">#[pallet::storage]
+	#[pallet::getter(<span class="kw">fn </span>get_messages)]
+	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>Messages&lt;T: Config&gt; = StorageDoubleMap&lt;
 		<span class="kw">_</span>,
-		<span class="ident">Twox64Concat</span>,
-		<span class="ident">T::BlockNumber</span>,
-		<span class="ident">Twox64Concat</span>,
-		<span class="ident">SchemaId</span>,
-		<span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">Message</span><span class="op">&lt;</span><span class="ident">T::MaxMessagePayloadSizeBytes</span><span class="op">&gt;</span>, <span class="ident">T::MaxMessagesPerBlock</span><span class="op">&gt;</span>,
-		<span class="ident">ValueQuery</span>,
-	<span class="op">&gt;</span>;
+		Twox64Concat,
+		T::BlockNumber,
+		Twox64Concat,
+		SchemaId,
+		BoundedVec&lt;Message&lt;T::MaxMessagePayloadSizeBytes&gt;, T::MaxMessagesPerBlock&gt;,
+		ValueQuery,
+	&gt;;
 
-	<span class="attribute">#[<span class="ident">pallet::error</span>]</span>
-	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// Too many messages are added to existing block</span>
-		<span class="ident">TooManyMessagesInBlock</span>,
-		<span class="doccomment">/// Message payload size is too large</span>
-		<span class="ident">ExceedsMaxMessagePayloadSizeBytes</span>,
-		<span class="doccomment">/// Type Conversion Overflow</span>
-		<span class="ident">TypeConversionOverflow</span>,
-		<span class="doccomment">/// Invalid Message Source Account</span>
-		<span class="ident">InvalidMessageSourceAccount</span>,
-		<span class="doccomment">/// Invalid SchemaId or Schema not found</span>
-		<span class="ident">InvalidSchemaId</span>,
-		<span class="doccomment">/// UnAuthorizedDelegate</span>
-		<span class="ident">UnAuthorizedDelegate</span>,
-		<span class="doccomment">/// Invalid payload location</span>
-		<span class="ident">InvalidPayloadLocation</span>,
+	<span class="attribute">#[pallet::error]
+	</span><span class="kw">pub enum </span>Error&lt;T&gt; {
+		<span class="doccomment">/// Too many messages are added to existing block
+		</span>TooManyMessagesInBlock,
+		<span class="doccomment">/// Message payload size is too large
+		</span>ExceedsMaxMessagePayloadSizeBytes,
+		<span class="doccomment">/// Type Conversion Overflow
+		</span>TypeConversionOverflow,
+		<span class="doccomment">/// Invalid Message Source Account
+		</span>InvalidMessageSourceAccount,
+		<span class="doccomment">/// Invalid SchemaId or Schema not found
+		</span>InvalidSchemaId,
+		<span class="doccomment">/// UnAuthorizedDelegate
+		</span>UnAuthorizedDelegate,
+		<span class="doccomment">/// Invalid payload location
+		</span>InvalidPayloadLocation,
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::event</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::generate_deposit</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">deposit_event</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// Messages are stored for a specified schema id and block number</span>
-		<span class="ident">MessagesStored</span> {
-			<span class="doccomment">/// The schema for these messages</span>
-			<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>,
-			<span class="doccomment">/// The block number for these messages</span>
-			<span class="ident">block_number</span>: <span class="ident">T::BlockNumber</span>,
-			<span class="doccomment">/// Number of messages in this block for this schema</span>
-			<span class="ident">count</span>: <span class="ident">u16</span>,
+	<span class="attribute">#[pallet::event]
+	#[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]
+	</span><span class="kw">pub enum </span>Event&lt;T: Config&gt; {
+		<span class="doccomment">/// Messages are stored for a specified schema id and block number
+		</span>MessagesStored {
+			<span class="doccomment">/// The schema for these messages
+			</span>schema_id: SchemaId,
+			<span class="doccomment">/// The block number for these messages
+			</span>block_number: T::BlockNumber,
+			<span class="doccomment">/// Number of messages in this block for this schema
+			</span>count: u16,
 		},
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::hooks</span>]</span>
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Hooks</span><span class="op">&lt;</span><span class="ident">BlockNumberFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="kw">fn</span> <span class="ident">on_initialize</span>(<span class="ident">current</span>: <span class="ident">T::BlockNumber</span>) -&gt; <span class="ident">Weight</span> {
-			<span class="kw">let</span> <span class="ident">prev_block</span> <span class="op">=</span> <span class="ident">current</span> <span class="op">-</span> <span class="ident">T::BlockNumber::one</span>();
-			<span class="ident"><span class="self">Self</span>::move_messages_into_final_storage</span>(<span class="ident">prev_block</span>)
-			<span class="comment">// TODO: add retention policy execution</span>
-		}
+	<span class="attribute">#[pallet::hooks]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; Hooks&lt;BlockNumberFor&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
+		<span class="kw">fn </span>on_initialize(current: T::BlockNumber) -&gt; Weight {
+			<span class="kw">let </span>prev_block = current - T::BlockNumber::one();
+			<span class="self">Self</span>::move_messages_into_final_storage(prev_block)
+			<span class="comment">// TODO: add retention policy execution
+		</span>}
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::call</span>]</span>
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// Adds a message for a resource hosted on IPFS. The IPFS payload should</span>
-		<span class="doccomment">/// contain both a</span>
-		<span class="doccomment">/// [CID](https://docs.ipfs.io/concepts/content-addressing/#identifier-formats)</span>
-		<span class="doccomment">/// as well as a 32-bit payload length.</span>
+	<span class="attribute">#[pallet::call]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
+		<span class="doccomment">/// Adds a message for a resource hosted on IPFS. The IPFS payload should
+		/// contain both a
+		/// [CID](https://docs.ipfs.io/concepts/content-addressing/#identifier-formats)
+		/// as well as a 32-bit payload length.
 
-		<span class="doccomment">/// # Arguments</span>
-		<span class="doccomment">/// * `origin` - A signed transaction origin from the provider</span>
-		<span class="doccomment">/// * `on_behalf_of` - Optional. The msa id of delegate.</span>
-		<span class="doccomment">/// * `schema_id` - Registered schema id for current message.</span>
-		<span class="doccomment">/// * `cid` - The content address for an IPFS payload</span>
-		<span class="doccomment">/// * `payload_length` - The size of the payload</span>
-		<span class="doccomment">/// * Returns</span>
-		<span class="doccomment">/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html)</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="ident">T::WeightInfo::add_ipfs_message</span>(<span class="ident">cid</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>, <span class="number">1_000</span>))]</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_ipfs_message</span>(
-			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-			<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>,
-			<span class="ident">cid</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-			<span class="ident">payload_length</span>: <span class="ident">u32</span>,
-		) -&gt; <span class="ident">DispatchResultWithPostInfo</span> {
-			<span class="kw">let</span> <span class="ident">provider_key</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
-			<span class="kw">let</span> <span class="ident">payload_tuple</span>: <span class="ident">OffchainPayloadType</span> <span class="op">=</span> (<span class="ident">cid</span>.<span class="ident">clone</span>(), <span class="ident">payload_length</span>);
-			<span class="kw">let</span> <span class="ident">bounded_payload</span>: <span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">T::MaxMessagePayloadSizeBytes</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">payload_tuple</span>
-				.<span class="ident">encode</span>()
-				.<span class="ident">try_into</span>()
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ExceedsMaxMessagePayloadSizeBytes</span>)<span class="question-mark">?</span>;
+		/// # Arguments
+		/// * `origin` - A signed transaction origin from the provider
+		/// * `on_behalf_of` - Optional. The msa id of delegate.
+		/// * `schema_id` - Registered schema id for current message.
+		/// * `cid` - The content address for an IPFS payload
+		/// * `payload_length` - The size of the payload
+		/// * Returns
+		/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html)
+		</span><span class="attribute">#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() <span class="kw">as </span>u32, <span class="number">1_000</span>))]
+		</span><span class="kw">pub fn </span>add_ipfs_message(
+			origin: OriginFor&lt;T&gt;,
+			schema_id: SchemaId,
+			cid: Vec&lt;u8&gt;,
+			payload_length: u32,
+		) -&gt; DispatchResultWithPostInfo {
+			<span class="kw">let </span>provider_key = ensure_signed(origin)<span class="question-mark">?</span>;
+			<span class="kw">let </span>payload_tuple: OffchainPayloadType = (cid.clone(), payload_length);
+			<span class="kw">let </span>bounded_payload: BoundedVec&lt;u8, T::MaxMessagePayloadSizeBytes&gt; = payload_tuple
+				.encode()
+				.try_into()
+				.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::ExceedsMaxMessagePayloadSizeBytes)<span class="question-mark">?</span>;
 
-			<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span> <span class="ident">T::SchemaProvider::get_schema_by_id</span>(<span class="ident">schema_id</span>);
-			<span class="macro">ensure!</span>(<span class="ident">schema</span>.<span class="ident">is_some</span>(), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidSchemaId</span>);
+			<span class="kw">let </span>schema = T::SchemaProvider::get_schema_by_id(schema_id);
+			<span class="macro">ensure!</span>(schema.is_some(), Error::&lt;T&gt;::InvalidSchemaId);
 			<span class="macro">ensure!</span>(
-				<span class="ident">schema</span>.<span class="ident">unwrap</span>().<span class="ident">payload_location</span> <span class="op">==</span> <span class="ident">PayloadLocation::IPFS</span>,
-				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidPayloadLocation</span>
+				schema.unwrap().payload_location == PayloadLocation::IPFS,
+				Error::&lt;T&gt;::InvalidPayloadLocation
 			);
 
-			<span class="kw">let</span> <span class="ident">provider_msa_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::find_msa_id</span>(<span class="kw-2">&amp;</span><span class="ident">provider_key</span>)<span class="question-mark">?</span>;
-			<span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::add_message</span>(<span class="ident">provider_msa_id</span>, <span class="prelude-val">None</span>, <span class="ident">bounded_payload</span>, <span class="ident">schema_id</span>)<span class="question-mark">?</span>;
+			<span class="kw">let </span>provider_msa_id = <span class="self">Self</span>::find_msa_id(<span class="kw-2">&amp;</span>provider_key)<span class="question-mark">?</span>;
+			<span class="kw">let </span>message = <span class="self">Self</span>::add_message(provider_msa_id, <span class="prelude-val">None</span>, bounded_payload, schema_id)<span class="question-mark">?</span>;
 
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">T::WeightInfo::add_ipfs_message</span>(<span class="ident">cid</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>, <span class="ident">message</span>.<span class="ident">index</span> <span class="kw">as</span> <span class="ident">u32</span>)).<span class="ident">into</span>())
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(T::WeightInfo::add_ipfs_message(cid.len() <span class="kw">as </span>u32, message.index <span class="kw">as </span>u32)).into())
 		}
-		<span class="doccomment">/// Add an on-chain message for a given schema-id.</span>
-		<span class="doccomment">/// # Arguments</span>
-		<span class="doccomment">/// * `origin` - A signed transaction origin from the provider</span>
-		<span class="doccomment">/// * `on_behalf_of` - Optional. The msa id of delegate.</span>
-		<span class="doccomment">/// * `schema_id` - Registered schema id for current message.</span>
-		<span class="doccomment">/// * `payload` - Serialized payload data for a given schema.</span>
-		<span class="doccomment">/// # Returns</span>
-		<span class="doccomment">/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html) The return type of a Dispatchable in frame.</span>
-		<span class="doccomment">/// When returned explicitly from a dispatchable function it allows overriding the default PostDispatchInfo returned from a dispatch.</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="ident">T::WeightInfo::add_onchain_message</span>(<span class="ident">payload</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>, <span class="number">1_000</span>))]</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_onchain_message</span>(
-			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-			<span class="ident">on_behalf_of</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span><span class="op">&gt;</span>,
-			<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>,
-			<span class="ident">payload</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-		) -&gt; <span class="ident">DispatchResultWithPostInfo</span> {
-			<span class="kw">let</span> <span class="ident">provider_key</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
+		<span class="doccomment">/// Add an on-chain message for a given schema-id.
+		/// # Arguments
+		/// * `origin` - A signed transaction origin from the provider
+		/// * `on_behalf_of` - Optional. The msa id of delegate.
+		/// * `schema_id` - Registered schema id for current message.
+		/// * `payload` - Serialized payload data for a given schema.
+		/// # Returns
+		/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html) The return type of a Dispatchable in frame.
+		/// When returned explicitly from a dispatchable function it allows overriding the default PostDispatchInfo returned from a dispatch.
+		</span><span class="attribute">#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() <span class="kw">as </span>u32, <span class="number">1_000</span>))]
+		</span><span class="kw">pub fn </span>add_onchain_message(
+			origin: OriginFor&lt;T&gt;,
+			on_behalf_of: <span class="prelude-ty">Option</span>&lt;MessageSourceId&gt;,
+			schema_id: SchemaId,
+			payload: Vec&lt;u8&gt;,
+		) -&gt; DispatchResultWithPostInfo {
+			<span class="kw">let </span>provider_key = ensure_signed(origin)<span class="question-mark">?</span>;
 
-			<span class="kw">let</span> <span class="ident">bounded_payload</span>: <span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">T::MaxMessagePayloadSizeBytes</span><span class="op">&gt;</span> <span class="op">=</span>
-				<span class="ident">payload</span>.<span class="ident">try_into</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ExceedsMaxMessagePayloadSizeBytes</span>)<span class="question-mark">?</span>;
+			<span class="kw">let </span>bounded_payload: BoundedVec&lt;u8, T::MaxMessagePayloadSizeBytes&gt; =
+				payload.try_into().map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::ExceedsMaxMessagePayloadSizeBytes)<span class="question-mark">?</span>;
 
-			<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span> <span class="ident">T::SchemaProvider::get_schema_by_id</span>(<span class="ident">schema_id</span>);
-			<span class="macro">ensure!</span>(<span class="ident">schema</span>.<span class="ident">is_some</span>(), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidSchemaId</span>);
+			<span class="kw">let </span>schema = T::SchemaProvider::get_schema_by_id(schema_id);
+			<span class="macro">ensure!</span>(schema.is_some(), Error::&lt;T&gt;::InvalidSchemaId);
 			<span class="macro">ensure!</span>(
-				<span class="ident">schema</span>.<span class="ident">unwrap</span>().<span class="ident">payload_location</span> <span class="op">==</span> <span class="ident">PayloadLocation::OnChain</span>,
-				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidPayloadLocation</span>
+				schema.unwrap().payload_location == PayloadLocation::OnChain,
+				Error::&lt;T&gt;::InvalidPayloadLocation
 			);
 
-			<span class="kw">let</span> <span class="ident">provider_msa_id</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::find_msa_id</span>(<span class="kw-2">&amp;</span><span class="ident">provider_key</span>)<span class="question-mark">?</span>;
+			<span class="kw">let </span>provider_msa_id = <span class="self">Self</span>::find_msa_id(<span class="kw-2">&amp;</span>provider_key)<span class="question-mark">?</span>;
 
-			<span class="comment">// On-chain messages either are sent from the user themselves, or on behalf of another MSA Id</span>
-			<span class="kw">let</span> <span class="ident">maybe_delegator</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">on_behalf_of</span> {
-				<span class="prelude-val">Some</span>(<span class="ident">delegator</span>) =&gt; {
-					<span class="ident">T::AccountProvider::ensure_valid_schema_grant</span>(
-						<span class="ident">Provider</span>(<span class="ident">provider_msa_id</span>),
-						<span class="ident">Delegator</span>(<span class="ident">delegator</span>),
-						<span class="ident">schema_id</span>,
+			<span class="comment">// On-chain messages either are sent from the user themselves, or on behalf of another MSA Id
+			</span><span class="kw">let </span>maybe_delegator = <span class="kw">match </span>on_behalf_of {
+				<span class="prelude-val">Some</span>(delegator) =&gt; {
+					T::AccountProvider::ensure_valid_schema_grant(
+						Provider(provider_msa_id),
+						Delegator(delegator),
+						schema_id,
 					)
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::UnAuthorizedDelegate</span>)<span class="question-mark">?</span>;
-					<span class="ident">Delegator</span>(<span class="ident">delegator</span>)
+					.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::UnAuthorizedDelegate)<span class="question-mark">?</span>;
+					Delegator(delegator)
 				},
-				<span class="prelude-val">None</span> =&gt; <span class="ident">Delegator</span>(<span class="ident">provider_msa_id</span>), <span class="comment">// Delegate is also the Provider</span>
-			};
+				<span class="prelude-val">None </span>=&gt; Delegator(provider_msa_id), <span class="comment">// Delegate is also the Provider
+			</span>};
 
-			<span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::add_message</span>(
-				<span class="ident">provider_msa_id</span>,
-				<span class="prelude-val">Some</span>(<span class="ident">maybe_delegator</span>.<span class="ident">into</span>()),
-				<span class="ident">bounded_payload</span>,
-				<span class="ident">schema_id</span>,
+			<span class="kw">let </span>message = <span class="self">Self</span>::add_message(
+				provider_msa_id,
+				<span class="prelude-val">Some</span>(maybe_delegator.into()),
+				bounded_payload,
+				schema_id,
 			)<span class="question-mark">?</span>;
 
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">T::WeightInfo::add_onchain_message</span>(
-				<span class="ident">message</span>.<span class="ident">payload</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>,
-				<span class="ident">message</span>.<span class="ident">index</span> <span class="kw">as</span> <span class="ident">u32</span>,
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(T::WeightInfo::add_onchain_message(
+				message.payload.len() <span class="kw">as </span>u32,
+				message.index <span class="kw">as </span>u32,
 			))
-			.<span class="ident">into</span>())
+			.into())
 		}
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// Stores a message for a given schema-id.</span>
-	<span class="doccomment">/// # Arguments</span>
-	<span class="doccomment">/// * `provider_msa_id` - The MSA id of the provider that submitted the transaction.</span>
-	<span class="doccomment">/// * `message_source_id` - The</span>
-	<span class="doccomment">/// * `payload` - Serialized payload data for a given schema.</span>
-	<span class="doccomment">/// * `schema_id` - Registered schema id for current message.</span>
-	<span class="doccomment">/// # Returns</span>
-	<span class="doccomment">/// * Result&lt;Message&lt;T::MaxMessagePayloadSizeBytes&gt; - Returns the message stored.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_message</span>(
-		<span class="ident">provider_msa_id</span>: <span class="ident">MessageSourceId</span>,
-		<span class="ident">msa_id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span><span class="op">&gt;</span>,
-		<span class="ident">payload</span>: <span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">T::MaxMessagePayloadSizeBytes</span><span class="op">&gt;</span>,
-		<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Message</span><span class="op">&lt;</span><span class="ident">T::MaxMessagePayloadSizeBytes</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
-		<span class="op">&lt;</span><span class="ident">BlockMessages</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::try_mutate</span>(
-			<span class="op">|</span><span class="ident">existing_messages</span><span class="op">|</span> -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Message</span><span class="op">&lt;</span><span class="ident">T::MaxMessagePayloadSizeBytes</span><span class="op">&gt;</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
-				<span class="kw">let</span> <span class="ident">current_size</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="ident">existing_messages</span>
-					.<span class="ident">len</span>()
-					.<span class="ident">try_into</span>()
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::TypeConversionOverflow</span>)<span class="question-mark">?</span>;
+<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
+	<span class="doccomment">/// Stores a message for a given schema-id.
+	/// # Arguments
+	/// * `provider_msa_id` - The MSA id of the provider that submitted the transaction.
+	/// * `message_source_id` - The
+	/// * `payload` - Serialized payload data for a given schema.
+	/// * `schema_id` - Registered schema id for current message.
+	/// # Returns
+	/// * Result&lt;Message&lt;T::MaxMessagePayloadSizeBytes&gt; - Returns the message stored.
+	</span><span class="kw">pub fn </span>add_message(
+		provider_msa_id: MessageSourceId,
+		msa_id: <span class="prelude-ty">Option</span>&lt;MessageSourceId&gt;,
+		payload: BoundedVec&lt;u8, T::MaxMessagePayloadSizeBytes&gt;,
+		schema_id: SchemaId,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Message&lt;T::MaxMessagePayloadSizeBytes&gt;, DispatchError&gt; {
+		&lt;BlockMessages&lt;T&gt;&gt;::try_mutate(
+			|existing_messages| -&gt; <span class="prelude-ty">Result</span>&lt;Message&lt;T::MaxMessagePayloadSizeBytes&gt;, DispatchError&gt; {
+				<span class="kw">let </span>current_size: u16 = existing_messages
+					.len()
+					.try_into()
+					.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::TypeConversionOverflow)<span class="question-mark">?</span>;
 
-				<span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">Message</span> {
-					<span class="ident">payload</span>, <span class="comment">// size is checked on top of extrinsic</span>
-					<span class="ident">provider_msa_id</span>,
-					<span class="ident">msa_id</span>,
-					<span class="ident">index</span>: <span class="ident">current_size</span>,
+				<span class="kw">let </span>msg = Message {
+					payload, <span class="comment">// size is checked on top of extrinsic
+					</span>provider_msa_id,
+					msa_id,
+					index: current_size,
 				};
 
-				<span class="ident">existing_messages</span>
-					.<span class="ident">try_push</span>((<span class="ident">msg</span>.<span class="ident">clone</span>(), <span class="ident">schema_id</span>))
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::TooManyMessagesInBlock</span>)<span class="question-mark">?</span>;
+				existing_messages
+					.try_push((msg.clone(), schema_id))
+					.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::TooManyMessagesInBlock)<span class="question-mark">?</span>;
 
-				<span class="prelude-val">Ok</span>(<span class="ident">msg</span>)
+				<span class="prelude-val">Ok</span>(msg)
 			},
 		)
 	}
 
-	<span class="doccomment">/// Resolve an MSA from an account key(key)</span>
-	<span class="doccomment">/// An MSA Id associated with the account key is returned, if one exists.</span>
-	<span class="doccomment">///</span>
-	<span class="doccomment">/// # Arguments</span>
-	<span class="doccomment">/// * `key` - An MSA key for lookup.</span>
-	<span class="doccomment">/// # Returns</span>
-	<span class="doccomment">/// * Result&lt;MessageSourceId, DispatchError&gt; - Returns an MSA Id for storing a message.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_msa_id</span>(<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span>, <span class="ident">DispatchError</span><span class="op">&gt;</span> {
-		<span class="prelude-val">Ok</span>(<span class="ident">T::AccountProvider::ensure_valid_msa_key</span>(<span class="ident">key</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidMessageSourceAccount</span>)<span class="question-mark">?</span>)
+	<span class="doccomment">/// Resolve an MSA from an account key(key)
+	/// An MSA Id associated with the account key is returned, if one exists.
+	///
+	/// # Arguments
+	/// * `key` - An MSA key for lookup.
+	/// # Returns
+	/// * Result&lt;MessageSourceId, DispatchError&gt; - Returns an MSA Id for storing a message.
+	</span><span class="kw">pub fn </span>find_msa_id(key: <span class="kw-2">&amp;</span>T::AccountId) -&gt; <span class="prelude-ty">Result</span>&lt;MessageSourceId, DispatchError&gt; {
+		<span class="prelude-val">Ok</span>(T::AccountProvider::ensure_valid_msa_key(key)
+			.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InvalidMessageSourceAccount)<span class="question-mark">?</span>)
 	}
 
-	<span class="doccomment">/// Gets a messages for a given schema-id and block-number.</span>
-	<span class="doccomment">/// # Arguments</span>
-	<span class="doccomment">/// * `schema_id` - Registered schema id for current message.</span>
-	<span class="doccomment">/// * `schema_payload_location` - Payload location to map to correct response (To avoid fetching the schema in this method)</span>
-	<span class="doccomment">/// * `block_number` - Block number to fetch messages from.</span>
-	<span class="doccomment">/// # Returns</span>
-	<span class="doccomment">/// * `Vec&lt;MessageResponse&lt;T::BlockNumber&gt;&gt;`</span>
-	<span class="doccomment">///</span>
-	<span class="doccomment">/// Result is a vector response of type [`MessageResponse`].</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_messages_by_schema_and_block</span>(
-		<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>,
-		<span class="ident">schema_payload_location</span>: <span class="ident">PayloadLocation</span>,
-		<span class="ident">block_number</span>: <span class="ident">T::BlockNumber</span>,
-	) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">T::BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="op">&lt;</span><span class="ident">Messages</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">block_number</span>, <span class="ident">schema_id</span>)
-			.<span class="ident">into_inner</span>()
-			.<span class="ident">iter</span>()
-			.<span class="ident">map</span>(<span class="op">|</span><span class="ident">msg</span><span class="op">|</span> <span class="ident">msg</span>.<span class="ident">map_to_response</span>(<span class="ident">block_number</span>, <span class="ident">schema_payload_location</span>))
-			.<span class="ident">collect</span>()
+	<span class="doccomment">/// Gets a messages for a given schema-id and block-number.
+	/// # Arguments
+	/// * `schema_id` - Registered schema id for current message.
+	/// * `schema_payload_location` - Payload location to map to correct response (To avoid fetching the schema in this method)
+	/// * `block_number` - Block number to fetch messages from.
+	/// # Returns
+	/// * `Vec&lt;MessageResponse&lt;T::BlockNumber&gt;&gt;`
+	///
+	/// Result is a vector response of type [`MessageResponse`].
+	</span><span class="kw">pub fn </span>get_messages_by_schema_and_block(
+		schema_id: SchemaId,
+		schema_payload_location: PayloadLocation,
+		block_number: T::BlockNumber,
+	) -&gt; Vec&lt;MessageResponse&lt;T::BlockNumber&gt;&gt; {
+		&lt;Messages&lt;T&gt;&gt;::get(block_number, schema_id)
+			.into_inner()
+			.iter()
+			.map(|msg| msg.map_to_response(block_number, schema_payload_location))
+			.collect()
 	}
 
-	<span class="doccomment">/// Moves messages from temporary storage `BlockMessages` into final storage `Messages`</span>
-	<span class="doccomment">/// and calculates execution weight</span>
-	<span class="doccomment">///</span>
-	<span class="doccomment">/// * `block_number`: Target Block Number</span>
-	<span class="doccomment">///</span>
-	<span class="doccomment">/// Returns execution weights</span>
-	<span class="kw">fn</span> <span class="ident">move_messages_into_final_storage</span>(<span class="ident">block_number</span>: <span class="ident">T::BlockNumber</span>) -&gt; <span class="ident">Weight</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">map</span> <span class="op">=</span> <span class="ident">BTreeMap::new</span>();
-		<span class="kw">let</span> <span class="ident">block_messages</span> <span class="op">=</span> <span class="ident">BlockMessages</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>();
-		<span class="kw">let</span> <span class="ident">message_count</span> <span class="op">=</span> <span class="ident">block_messages</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">schema_count</span> <span class="op">=</span> <span class="number">0u32</span>;
+	<span class="doccomment">/// Moves messages from temporary storage `BlockMessages` into final storage `Messages`
+	/// and calculates execution weight
+	///
+	/// * `block_number`: Target Block Number
+	///
+	/// Returns execution weights
+	</span><span class="kw">fn </span>move_messages_into_final_storage(block_number: T::BlockNumber) -&gt; Weight {
+		<span class="kw">let </span><span class="kw-2">mut </span>map = BTreeMap::new();
+		<span class="kw">let </span>block_messages = BlockMessages::&lt;T&gt;::get();
+		<span class="kw">let </span>message_count = block_messages.len() <span class="kw">as </span>u32;
+		<span class="kw">let </span><span class="kw-2">mut </span>schema_count = <span class="number">0u32</span>;
 
-		<span class="kw">if</span> <span class="ident">message_count</span> <span class="op">==</span> <span class="number">0</span> {
-			<span class="kw">return</span> <span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span>)
+		<span class="kw">if </span>message_count == <span class="number">0 </span>{
+			<span class="kw">return </span>T::DbWeight::get().reads(<span class="number">1</span>)
 		}
 
-		<span class="comment">// grouping messages by schema_id</span>
-		<span class="kw">for</span> (<span class="ident">m</span>, <span class="ident">schema_id</span>) <span class="kw">in</span> <span class="ident">block_messages</span> {
-			<span class="kw">let</span> <span class="ident">list</span> <span class="op">=</span> <span class="ident">map</span>.<span class="ident">entry</span>(<span class="ident">schema_id</span>).<span class="ident">or_insert</span>(<span class="macro">vec!</span>[]);
-			<span class="ident">list</span>.<span class="ident">push</span>(<span class="ident">m</span>);
+		<span class="comment">// grouping messages by schema_id
+		</span><span class="kw">for </span>(m, schema_id) <span class="kw">in </span>block_messages {
+			<span class="kw">let </span>list = map.entry(schema_id).or_insert(<span class="macro">vec!</span>[]);
+			list.push(m);
 		}
 
-		<span class="comment">// insert into storage and create events</span>
-		<span class="kw">for</span> (<span class="ident">schema_id</span>, <span class="ident">messages</span>) <span class="kw">in</span> <span class="ident">map</span> {
-			<span class="kw">let</span> <span class="ident">count</span> <span class="op">=</span> <span class="ident">messages</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u16</span>;
-			<span class="kw">let</span> <span class="ident">bounded_vec</span>: <span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">messages</span>.<span class="ident">try_into</span>().<span class="ident">unwrap</span>();
-			<span class="ident">Messages</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="kw-2">&amp;</span><span class="ident">block_number</span>, <span class="ident">schema_id</span>, <span class="kw-2">&amp;</span><span class="ident">bounded_vec</span>);
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::MessagesStored</span> { <span class="ident">schema_id</span>, <span class="ident">block_number</span>, <span class="ident">count</span> });
-			<span class="ident">schema_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+		<span class="comment">// insert into storage and create events
+		</span><span class="kw">for </span>(schema_id, messages) <span class="kw">in </span>map {
+			<span class="kw">let </span>count = messages.len() <span class="kw">as </span>u16;
+			<span class="kw">let </span>bounded_vec: BoundedVec&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt; = messages.try_into().unwrap();
+			Messages::&lt;T&gt;::insert(<span class="kw-2">&amp;</span>block_number, schema_id, <span class="kw-2">&amp;</span>bounded_vec);
+			<span class="self">Self</span>::deposit_event(Event::MessagesStored { schema_id, block_number, count });
+			schema_count += <span class="number">1</span>;
 		}
 
-		<span class="ident">BlockMessages</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::set</span>(<span class="ident">BoundedVec::default</span>());
-		<span class="ident">T::WeightInfo::on_initialize</span>(<span class="ident">message_count</span>, <span class="ident">schema_count</span>)
+		BlockMessages::&lt;T&gt;::set(BoundedVec::default());
+		T::WeightInfo::on_initialize(message_count, schema_count)
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_messages" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (848090dcd 2022-07-22)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_messages" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>

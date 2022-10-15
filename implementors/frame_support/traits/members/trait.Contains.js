@@ -1,3 +1,3 @@
-(function() {var implementors = {};
-implementors["frequency_runtime"] = [{"text":"impl Contains&lt;<a class=\"enum\" href=\"frequency_runtime/enum.Call.html\" title=\"enum frequency_runtime::Call\">Call</a>&gt; for <a class=\"struct\" href=\"frequency_runtime/struct.BaseCallFilter.html\" title=\"struct frequency_runtime::BaseCallFilter\">BaseCallFilter</a>","synthetic":false,"types":["frequency_runtime::BaseCallFilter"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"frequency_runtime":[["impl Contains&lt;<a class=\"enum\" href=\"frequency_runtime/enum.Call.html\" title=\"enum frequency_runtime::Call\">Call</a>&gt; for <a class=\"struct\" href=\"frequency_runtime/struct.BaseCallFilter.html\" title=\"struct frequency_runtime::BaseCallFilter\">BaseCallFilter</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,3 +1,3 @@
-(function() {var implementors = {};
-implementors["common_runtime"] = [{"text":"impl WeightToFeePolynomial for <a class=\"struct\" href=\"common_runtime/fee/struct.WeightToFee.html\" title=\"struct common_runtime::fee::WeightToFee\">WeightToFee</a>","synthetic":false,"types":["common_runtime::fee::WeightToFee"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"common_runtime":[["impl WeightToFeePolynomial for <a class=\"struct\" href=\"common_runtime/fee/struct.WeightToFee.html\" title=\"struct common_runtime::fee::WeightToFee\">WeightToFee</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

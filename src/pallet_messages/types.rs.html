@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/messages/src/types.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>types.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_messages/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../pallet_messages/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_messages/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/messages/src/types.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>types.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_messages/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_messages/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_messages/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -69,71 +63,70 @@
 <span id="63">63</span>
 <span id="64">64</span>
 <span id="65">65</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">use</span> <span class="ident">common_primitives</span>::{<span class="ident">messages::MessageResponse</span>, <span class="ident">msa::MessageSourceId</span>, <span class="ident">schema::PayloadLocation</span>};
-<span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">traits::Get</span>, <span class="ident">BoundedVec</span>};
-<span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
-<span class="kw">use</span> <span class="ident">sp_std::prelude</span>::<span class="kw-2">*</span>;
+</pre><pre class="rust"><code><span class="kw">use </span>codec::{Decode, Encode};
+<span class="kw">use </span>common_primitives::{messages::MessageResponse, msa::MessageSourceId, schema::PayloadLocation};
+<span class="kw">use </span>frame_support::{traits::Get, BoundedVec};
+<span class="kw">use </span>scale_info::TypeInfo;
+<span class="kw">use </span>sp_std::prelude::<span class="kw-2">*</span>;
 
-<span class="doccomment">/// Payloads stored offchain contain a tuple of (bytes(the payload reference), payload length).</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">OffchainPayloadType</span> <span class="op">=</span> (<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">u32</span>);
+<span class="doccomment">/// Payloads stored offchain contain a tuple of (bytes(the payload reference), payload length).
+</span><span class="kw">pub type </span>OffchainPayloadType = (Vec&lt;u8&gt;, u32);
 
-<span class="doccomment">/// A single message type definition.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>)]</span>
-<span class="attribute">#[<span class="ident">scale_info</span>(<span class="ident">skip_type_params</span>(<span class="ident">MaxDataSize</span>))]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Message</span><span class="op">&lt;</span><span class="ident">MaxDataSize</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">MaxDataSize</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Clone</span>,
+<span class="doccomment">/// A single message type definition.
+</span><span class="attribute">#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+#[scale_info(skip_type_params(MaxDataSize))]
+</span><span class="kw">pub struct </span>Message&lt;MaxDataSize&gt;
+<span class="kw">where
+	</span>MaxDataSize: Get&lt;u32&gt; + Clone,
 {
-	<span class="doccomment">///  Data structured by the associated schema&#39;s model.</span>
-	<span class="kw">pub</span> <span class="ident">payload</span>: <span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">MaxDataSize</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,</span>
-	<span class="doccomment">/// indicating that the original source MSA is acting as its own provider. An id differing from that</span>
-	<span class="doccomment">/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on</span>
-	<span class="doccomment">/// its behalf.</span>
-	<span class="kw">pub</span> <span class="ident">provider_msa_id</span>: <span class="ident">MessageSourceId</span>,
-	<span class="doccomment">///  Message source account id (the original source).</span>
-	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">MessageSourceId</span><span class="op">&gt;</span>,
-	<span class="doccomment">///  Stores index of message in block to keep total order.</span>
-	<span class="kw">pub</span> <span class="ident">index</span>: <span class="ident">u16</span>,
+	<span class="doccomment">///  Data structured by the associated schema&#39;s model.
+	</span><span class="kw">pub </span>payload: BoundedVec&lt;u8, MaxDataSize&gt;,
+	<span class="doccomment">/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
+	/// indicating that the original source MSA is acting as its own provider. An id differing from that
+	/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
+	/// its behalf.
+	</span><span class="kw">pub </span>provider_msa_id: MessageSourceId,
+	<span class="doccomment">///  Message source account id (the original source).
+	</span><span class="kw">pub </span>msa_id: <span class="prelude-ty">Option</span>&lt;MessageSourceId&gt;,
+	<span class="doccomment">///  Stores index of message in block to keep total order.
+	</span><span class="kw">pub </span>index: u16,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">MaxDataSize</span><span class="op">&gt;</span> <span class="ident">Message</span><span class="op">&lt;</span><span class="ident">MaxDataSize</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">MaxDataSize</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Clone</span>,
+<span class="kw">impl</span>&lt;MaxDataSize&gt; Message&lt;MaxDataSize&gt;
+<span class="kw">where
+	</span>MaxDataSize: Get&lt;u32&gt; + Clone,
 {
-	<span class="doccomment">/// Helper function to handle response type [`MessageResponse`] depending on the Payload Location (on chain or IPFS)</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">map_to_response</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>(
+	<span class="doccomment">/// Helper function to handle response type [`MessageResponse`] depending on the Payload Location (on chain or IPFS)
+	</span><span class="kw">pub fn </span>map_to_response&lt;BlockNumber&gt;(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">block_number</span>: <span class="ident">BlockNumber</span>,
-		<span class="ident">payload_location</span>: <span class="ident">PayloadLocation</span>,
-	) -&gt; <span class="ident">MessageResponse</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> {
-		<span class="kw">match</span> <span class="ident">payload_location</span> {
-			<span class="ident">PayloadLocation::OnChain</span> =&gt; <span class="ident">MessageResponse</span> {
-				<span class="ident">provider_msa_id</span>: <span class="self">self</span>.<span class="ident">provider_msa_id</span>,
-				<span class="ident">index</span>: <span class="self">self</span>.<span class="ident">index</span>,
-				<span class="ident">block_number</span>,
-				<span class="ident">msa_id</span>: <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">msa_id</span>.<span class="ident">unwrap_or_default</span>()),
-				<span class="ident">payload</span>: <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">payload</span>.<span class="ident">to_vec</span>()),
-				<span class="ident">cid</span>: <span class="prelude-val">None</span>,
-				<span class="ident">payload_length</span>: <span class="prelude-val">None</span>,
+		block_number: BlockNumber,
+		payload_location: PayloadLocation,
+	) -&gt; MessageResponse&lt;BlockNumber&gt; {
+		<span class="kw">match </span>payload_location {
+			PayloadLocation::OnChain =&gt; MessageResponse {
+				provider_msa_id: <span class="self">self</span>.provider_msa_id,
+				index: <span class="self">self</span>.index,
+				block_number,
+				msa_id: <span class="prelude-val">Some</span>(<span class="self">self</span>.msa_id.unwrap_or_default()),
+				payload: <span class="prelude-val">Some</span>(<span class="self">self</span>.payload.to_vec()),
+				cid: <span class="prelude-val">None</span>,
+				payload_length: <span class="prelude-val">None</span>,
 			},
-			<span class="ident">PayloadLocation::IPFS</span> =&gt; {
-				<span class="kw">let</span> (<span class="ident">cid</span>, <span class="ident">payload_length</span>) <span class="op">=</span>
-					<span class="ident">OffchainPayloadType::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">payload</span>[..]).<span class="ident">unwrap</span>();
-				<span class="ident">MessageResponse</span> {
-					<span class="ident">provider_msa_id</span>: <span class="self">self</span>.<span class="ident">provider_msa_id</span>,
-					<span class="ident">index</span>: <span class="self">self</span>.<span class="ident">index</span>,
-					<span class="ident">block_number</span>,
-					<span class="ident">cid</span>: <span class="prelude-val">Some</span>(<span class="ident">cid</span>),
-					<span class="ident">payload_length</span>: <span class="prelude-val">Some</span>(<span class="ident">payload_length</span>),
-					<span class="ident">msa_id</span>: <span class="prelude-val">None</span>,
-					<span class="ident">payload</span>: <span class="prelude-val">None</span>,
+			PayloadLocation::IPFS =&gt; {
+				<span class="kw">let </span>(cid, payload_length) =
+					OffchainPayloadType::decode(<span class="kw-2">&amp;mut &amp;</span><span class="self">self</span>.payload[..]).unwrap();
+				MessageResponse {
+					provider_msa_id: <span class="self">self</span>.provider_msa_id,
+					index: <span class="self">self</span>.index,
+					block_number,
+					cid: <span class="prelude-val">Some</span>(cid),
+					payload_length: <span class="prelude-val">Some</span>(payload_length),
+					msa_id: <span class="prelude-val">None</span>,
+					payload: <span class="prelude-val">None</span>,
 				}
 			},
 		}
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_messages" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (848090dcd 2022-07-22)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_messages" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>

@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/common/src/weights/pallet_scheduler.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>pallet_scheduler.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../common_runtime/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/common/src/weights/pallet_scheduler.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>pallet_scheduler.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../common_runtime/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -201,203 +195,202 @@
 <span id="195">195</span>
 <span id="196">196</span>
 <span id="197">197</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Autogenerated weights for pallet_scheduler</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev</span>
-<span class="doccomment">//! DATE: 2022-10-13, STEPS: `50`, REPEAT: 10, LOW RANGE: `[]`, HIGH RANGE: `[]`</span>
-<span class="doccomment">//! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some(&quot;frequency&quot;), DB CACHE: 1024</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Autogenerated weights for pallet_scheduler
+//!
+//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
+//! DATE: 2022-10-13, STEPS: `50`, REPEAT: 10, LOW RANGE: `[]`, HIGH RANGE: `[]`
+//! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some(&quot;frequency&quot;), DB CACHE: 1024
 
-<span class="comment">// Executed Command:</span>
-<span class="comment">// ./scripts/../target/production/frequency</span>
-<span class="comment">// benchmark</span>
-<span class="comment">// pallet</span>
-<span class="comment">// --pallet</span>
-<span class="comment">// pallet_scheduler</span>
-<span class="comment">// --extrinsic</span>
-<span class="comment">// *</span>
-<span class="comment">// --chain=frequency</span>
-<span class="comment">// --execution</span>
-<span class="comment">// wasm</span>
-<span class="comment">// --wasm-execution</span>
-<span class="comment">// compiled</span>
-<span class="comment">// --steps</span>
-<span class="comment">// 50</span>
-<span class="comment">// --repeat</span>
-<span class="comment">// 10</span>
-<span class="comment">// --output=./scripts/../runtime/common/src/weights/pallet_scheduler.rs</span>
-<span class="comment">// --template=./scripts/../.maintain/runtime-weight-template.hbs</span>
+</span><span class="comment">// Executed Command:
+// ./scripts/../target/production/frequency
+// benchmark
+// pallet
+// --pallet
+// pallet_scheduler
+// --extrinsic
+// *
+// --chain=frequency
+// --execution
+// wasm
+// --wasm-execution
+// compiled
+// --steps
+// 50
+// --repeat
+// 10
+// --output=./scripts/../runtime/common/src/weights/pallet_scheduler.rs
+// --template=./scripts/../.maintain/runtime-weight-template.hbs
 
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">rustfmt</span>, <span class="ident">rustfmt_skip</span>)]</span>
-<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">unused_parens</span>)]</span>
-<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">unused_imports</span>)]</span>
+</span><span class="attribute">#![cfg_attr(rustfmt, rustfmt_skip)]
+#![allow(unused_parens)]
+#![allow(unused_imports)]
 
-<span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">traits::Get</span>, <span class="ident">weights</span>::{<span class="ident">Weight</span>, <span class="ident">constants::RocksDbWeight</span>}};
-<span class="kw">use</span> <span class="ident">sp_std::marker::PhantomData</span>;
+</span><span class="kw">use </span>frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
+<span class="kw">use </span>sp_std::marker::PhantomData;
 
-<span class="doccomment">/// Weights for pallet_scheduler using the Substrate node and recommended hardware.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SubstrateWeight</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>);
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">frame_system::Config</span><span class="op">&gt;</span> <span class="ident">pallet_scheduler::WeightInfo</span> <span class="kw">for</span> <span class="ident">SubstrateWeight</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="comment">// Storage: Scheduler Agenda (r:2 w:2)</span>
-	<span class="comment">// Storage: Preimage PreimageFor (r:1 w:1)</span>
-	<span class="comment">// Storage: Preimage StatusFor (r:1 w:1)</span>
-	<span class="comment">// Storage: Scheduler Lookup (r:0 w:1)</span>
-	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
-	<span class="kw">fn</span> <span class="ident">on_initialize_periodic_named_resolved</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		<span class="ident">Weight::from_ref_time</span>(<span class="number">16_914_000</span> <span class="kw">as</span> <span class="ident">u64</span>)
-			<span class="comment">// Standard Error: 23_000</span>
-			.<span class="ident">saturating_add</span>(<span class="ident">Weight::from_ref_time</span>(<span class="number">20_260_000</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">3</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>((<span class="number">4</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
+<span class="doccomment">/// Weights for pallet_scheduler using the Substrate node and recommended hardware.
+</span><span class="kw">pub struct </span>SubstrateWeight&lt;T&gt;(PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_scheduler::WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
+	<span class="comment">// Storage: Scheduler Agenda (r:2 w:2)
+	// Storage: Preimage PreimageFor (r:1 w:1)
+	// Storage: Preimage StatusFor (r:1 w:1)
+	// Storage: Scheduler Lookup (r:0 w:1)
+	</span><span class="doccomment">/// The range of component `s` is `[1, 50]`.
+	</span><span class="kw">fn </span>on_initialize_periodic_named_resolved(s: u32, ) -&gt; Weight {
+		Weight::from_ref_time(<span class="number">16_914_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 23_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">20_260_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads((<span class="number">3 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes((<span class="number">4 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
 	}
-	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)</span>
-	<span class="comment">// Storage: Preimage PreimageFor (r:1 w:1)</span>
-	<span class="comment">// Storage: Preimage StatusFor (r:1 w:1)</span>
-	<span class="comment">// Storage: Scheduler Lookup (r:0 w:1)</span>
-	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
-	<span class="kw">fn</span> <span class="ident">on_initialize_named_resolved</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		<span class="ident">Weight::from_ref_time</span>(<span class="number">15_350_000</span> <span class="kw">as</span> <span class="ident">u64</span>)
-			<span class="comment">// Standard Error: 25_000</span>
-			.<span class="ident">saturating_add</span>(<span class="ident">Weight::from_ref_time</span>(<span class="number">16_073_000</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">2</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>((<span class="number">3</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
+	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)
+	// Storage: Preimage PreimageFor (r:1 w:1)
+	// Storage: Preimage StatusFor (r:1 w:1)
+	// Storage: Scheduler Lookup (r:0 w:1)
+	</span><span class="doccomment">/// The range of component `s` is `[1, 50]`.
+	</span><span class="kw">fn </span>on_initialize_named_resolved(s: u32, ) -&gt; Weight {
+		Weight::from_ref_time(<span class="number">15_350_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 25_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">16_073_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads((<span class="number">2 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes((<span class="number">3 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
 	}
-	<span class="comment">// Storage: Scheduler Agenda (r:2 w:2)</span>
-	<span class="comment">// Storage: Preimage PreimageFor (r:1 w:1)</span>
-	<span class="comment">// Storage: Preimage StatusFor (r:1 w:1)</span>
-	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
-	<span class="kw">fn</span> <span class="ident">on_initialize_periodic_resolved</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		<span class="ident">Weight::from_ref_time</span>(<span class="number">16_088_000</span> <span class="kw">as</span> <span class="ident">u64</span>)
-			<span class="comment">// Standard Error: 19_000</span>
-			.<span class="ident">saturating_add</span>(<span class="ident">Weight::from_ref_time</span>(<span class="number">17_159_000</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">3</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>((<span class="number">3</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
+	<span class="comment">// Storage: Scheduler Agenda (r:2 w:2)
+	// Storage: Preimage PreimageFor (r:1 w:1)
+	// Storage: Preimage StatusFor (r:1 w:1)
+	</span><span class="doccomment">/// The range of component `s` is `[1, 50]`.
+	</span><span class="kw">fn </span>on_initialize_periodic_resolved(s: u32, ) -&gt; Weight {
+		Weight::from_ref_time(<span class="number">16_088_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 19_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">17_159_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads((<span class="number">3 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes((<span class="number">3 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
 	}
-	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)</span>
-	<span class="comment">// Storage: Preimage PreimageFor (r:1 w:1)</span>
-	<span class="comment">// Storage: Preimage StatusFor (r:1 w:1)</span>
-	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
-	<span class="kw">fn</span> <span class="ident">on_initialize_resolved</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		<span class="ident">Weight::from_ref_time</span>(<span class="number">15_482_000</span> <span class="kw">as</span> <span class="ident">u64</span>)
-			<span class="comment">// Standard Error: 21_000</span>
-			.<span class="ident">saturating_add</span>(<span class="ident">Weight::from_ref_time</span>(<span class="number">14_655_000</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">2</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>((<span class="number">2</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
+	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)
+	// Storage: Preimage PreimageFor (r:1 w:1)
+	// Storage: Preimage StatusFor (r:1 w:1)
+	</span><span class="doccomment">/// The range of component `s` is `[1, 50]`.
+	</span><span class="kw">fn </span>on_initialize_resolved(s: u32, ) -&gt; Weight {
+		Weight::from_ref_time(<span class="number">15_482_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 21_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">14_655_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads((<span class="number">2 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes((<span class="number">2 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
 	}
-	<span class="comment">// Storage: Scheduler Agenda (r:2 w:2)</span>
-	<span class="comment">// Storage: Preimage PreimageFor (r:1 w:0)</span>
-	<span class="comment">// Storage: Scheduler Lookup (r:0 w:1)</span>
-	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
-	<span class="kw">fn</span> <span class="ident">on_initialize_named_aborted</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		<span class="ident">Weight::from_ref_time</span>(<span class="number">8_559_000</span> <span class="kw">as</span> <span class="ident">u64</span>)
-			<span class="comment">// Standard Error: 10_000</span>
-			.<span class="ident">saturating_add</span>(<span class="ident">Weight::from_ref_time</span>(<span class="number">5_339_000</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>((<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
+	<span class="comment">// Storage: Scheduler Agenda (r:2 w:2)
+	// Storage: Preimage PreimageFor (r:1 w:0)
+	// Storage: Scheduler Lookup (r:0 w:1)
+	</span><span class="doccomment">/// The range of component `s` is `[1, 50]`.
+	</span><span class="kw">fn </span>on_initialize_named_aborted(s: u32, ) -&gt; Weight {
+		Weight::from_ref_time(<span class="number">8_559_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 10_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">5_339_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
 	}
-	<span class="comment">// Storage: Scheduler Agenda (r:2 w:2)</span>
-	<span class="comment">// Storage: Preimage PreimageFor (r:1 w:0)</span>
-	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
-	<span class="kw">fn</span> <span class="ident">on_initialize_aborted</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		<span class="ident">Weight::from_ref_time</span>(<span class="number">11_078_000</span> <span class="kw">as</span> <span class="ident">u64</span>)
-			<span class="comment">// Standard Error: 4_000</span>
-			.<span class="ident">saturating_add</span>(<span class="ident">Weight::from_ref_time</span>(<span class="number">2_357_000</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">u64</span>))
+	<span class="comment">// Storage: Scheduler Agenda (r:2 w:2)
+	// Storage: Preimage PreimageFor (r:1 w:0)
+	</span><span class="doccomment">/// The range of component `s` is `[1, 50]`.
+	</span><span class="kw">fn </span>on_initialize_aborted(s: u32, ) -&gt; Weight {
+		Weight::from_ref_time(<span class="number">11_078_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 4_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_357_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
 	}
-	<span class="comment">// Storage: Scheduler Agenda (r:2 w:2)</span>
-	<span class="comment">// Storage: Scheduler Lookup (r:0 w:1)</span>
-	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
-	<span class="kw">fn</span> <span class="ident">on_initialize_periodic_named</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		<span class="ident">Weight::from_ref_time</span>(<span class="number">17_023_000</span> <span class="kw">as</span> <span class="ident">u64</span>)
-			<span class="comment">// Standard Error: 14_000</span>
-			.<span class="ident">saturating_add</span>(<span class="ident">Weight::from_ref_time</span>(<span class="number">9_637_000</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>((<span class="number">2</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
+	<span class="comment">// Storage: Scheduler Agenda (r:2 w:2)
+	// Storage: Scheduler Lookup (r:0 w:1)
+	</span><span class="doccomment">/// The range of component `s` is `[1, 50]`.
+	</span><span class="kw">fn </span>on_initialize_periodic_named(s: u32, ) -&gt; Weight {
+		Weight::from_ref_time(<span class="number">17_023_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 14_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">9_637_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes((<span class="number">2 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
 	}
-	<span class="comment">// Storage: Scheduler Agenda (r:2 w:2)</span>
-	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
-	<span class="kw">fn</span> <span class="ident">on_initialize_periodic</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		<span class="ident">Weight::from_ref_time</span>(<span class="number">15_638_000</span> <span class="kw">as</span> <span class="ident">u64</span>)
-			<span class="comment">// Standard Error: 9_000</span>
-			.<span class="ident">saturating_add</span>(<span class="ident">Weight::from_ref_time</span>(<span class="number">6_651_000</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>((<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>((<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
+	<span class="comment">// Storage: Scheduler Agenda (r:2 w:2)
+	</span><span class="doccomment">/// The range of component `s` is `[1, 50]`.
+	</span><span class="kw">fn </span>on_initialize_periodic(s: u32, ) -&gt; Weight {
+		Weight::from_ref_time(<span class="number">15_638_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 9_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">6_651_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
 	}
-	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)</span>
-	<span class="comment">// Storage: Scheduler Lookup (r:0 w:1)</span>
-	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
-	<span class="kw">fn</span> <span class="ident">on_initialize_named</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		<span class="ident">Weight::from_ref_time</span>(<span class="number">16_736_000</span> <span class="kw">as</span> <span class="ident">u64</span>)
-			<span class="comment">// Standard Error: 7_000</span>
-			.<span class="ident">saturating_add</span>(<span class="ident">Weight::from_ref_time</span>(<span class="number">5_743_000</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>((<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>)))
+	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)
+	// Storage: Scheduler Lookup (r:0 w:1)
+	</span><span class="doccomment">/// The range of component `s` is `[1, 50]`.
+	</span><span class="kw">fn </span>on_initialize_named(s: u32, ) -&gt; Weight {
+		Weight::from_ref_time(<span class="number">16_736_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 7_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">5_743_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
 	}
-	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)</span>
-	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
-	<span class="kw">fn</span> <span class="ident">on_initialize</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		<span class="ident">Weight::from_ref_time</span>(<span class="number">15_754_000</span> <span class="kw">as</span> <span class="ident">u64</span>)
-			<span class="comment">// Standard Error: 3_000</span>
-			.<span class="ident">saturating_add</span>(<span class="ident">Weight::from_ref_time</span>(<span class="number">4_593_000</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
+	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)
+	</span><span class="doccomment">/// The range of component `s` is `[1, 50]`.
+	</span><span class="kw">fn </span>on_initialize(s: u32, ) -&gt; Weight {
+		Weight::from_ref_time(<span class="number">15_754_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 3_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">4_593_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
-	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)</span>
-	<span class="doccomment">/// The range of component `s` is `[0, 50]`.</span>
-	<span class="kw">fn</span> <span class="ident">schedule</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		<span class="ident">Weight::from_ref_time</span>(<span class="number">20_098_000</span> <span class="kw">as</span> <span class="ident">u64</span>)
-			<span class="comment">// Standard Error: 3_000</span>
-			.<span class="ident">saturating_add</span>(<span class="ident">Weight::from_ref_time</span>(<span class="number">113_000</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
+	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)
+	</span><span class="doccomment">/// The range of component `s` is `[0, 50]`.
+	</span><span class="kw">fn </span>schedule(s: u32, ) -&gt; Weight {
+		Weight::from_ref_time(<span class="number">20_098_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 3_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">113_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
-	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)</span>
-	<span class="comment">// Storage: Scheduler Lookup (r:0 w:1)</span>
-	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
-	<span class="kw">fn</span> <span class="ident">cancel</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		<span class="ident">Weight::from_ref_time</span>(<span class="number">19_874_000</span> <span class="kw">as</span> <span class="ident">u64</span>)
-			<span class="comment">// Standard Error: 3_000</span>
-			.<span class="ident">saturating_add</span>(<span class="ident">Weight::from_ref_time</span>(<span class="number">479_000</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">u64</span>))
+	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)
+	// Storage: Scheduler Lookup (r:0 w:1)
+	</span><span class="doccomment">/// The range of component `s` is `[1, 50]`.
+	</span><span class="kw">fn </span>cancel(s: u32, ) -&gt; Weight {
+		Weight::from_ref_time(<span class="number">19_874_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 3_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">479_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
 	}
-	<span class="comment">// Storage: Scheduler Lookup (r:1 w:1)</span>
-	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)</span>
-	<span class="doccomment">/// The range of component `s` is `[0, 50]`.</span>
-	<span class="kw">fn</span> <span class="ident">schedule_named</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		<span class="ident">Weight::from_ref_time</span>(<span class="number">24_217_000</span> <span class="kw">as</span> <span class="ident">u64</span>)
-			<span class="comment">// Standard Error: 5_000</span>
-			.<span class="ident">saturating_add</span>(<span class="ident">Weight::from_ref_time</span>(<span class="number">176_000</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">u64</span>))
+	<span class="comment">// Storage: Scheduler Lookup (r:1 w:1)
+	// Storage: Scheduler Agenda (r:1 w:1)
+	</span><span class="doccomment">/// The range of component `s` is `[0, 50]`.
+	</span><span class="kw">fn </span>schedule_named(s: u32, ) -&gt; Weight {
+		Weight::from_ref_time(<span class="number">24_217_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 5_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">176_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
 	}
-	<span class="comment">// Storage: Scheduler Lookup (r:1 w:1)</span>
-	<span class="comment">// Storage: Scheduler Agenda (r:1 w:1)</span>
-	<span class="doccomment">/// The range of component `s` is `[1, 50]`.</span>
-	<span class="kw">fn</span> <span class="ident">cancel_named</span>(<span class="ident">s</span>: <span class="ident">u32</span>, ) -&gt; <span class="ident">Weight</span> {
-		<span class="ident">Weight::from_ref_time</span>(<span class="number">23_798_000</span> <span class="kw">as</span> <span class="ident">u64</span>)
-			<span class="comment">// Standard Error: 4_000</span>
-			.<span class="ident">saturating_add</span>(<span class="ident">Weight::from_ref_time</span>(<span class="number">531_000</span> <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_mul</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">u64</span>))
-			.<span class="ident">saturating_add</span>(<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">2</span> <span class="kw">as</span> <span class="ident">u64</span>))
+	<span class="comment">// Storage: Scheduler Lookup (r:1 w:1)
+	// Storage: Scheduler Agenda (r:1 w:1)
+	</span><span class="doccomment">/// The range of component `s` is `[1, 50]`.
+	</span><span class="kw">fn </span>cancel_named(s: u32, ) -&gt; Weight {
+		Weight::from_ref_time(<span class="number">23_798_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 4_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">531_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="common_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (848090dcd 2022-07-22)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="common_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>

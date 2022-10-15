@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/common/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../common_runtime/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/common/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../common_runtime/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -44,46 +38,45 @@
 <span id="38">38</span>
 <span id="39">39</span>
 <span id="40">40</span>
-</pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
+</pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">constants</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">extensions</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">fee</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">weights</span>;
+</span><span class="kw">pub mod </span>constants;
+<span class="kw">pub mod </span>extensions;
+<span class="kw">pub mod </span>fee;
+<span class="kw">pub mod </span>weights;
 
-<span class="doccomment">/// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value</span>
-<span class="doccomment">/// or to an environment variable or testing value (in case the `frequency-rococo-local` feature is selected or in instant-sealing mode).</span>
-<span class="doccomment">/// Note that the environment variable is evaluated _at compile time_.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Usage:</span>
-<span class="doccomment">/// ```Rust</span>
-<span class="doccomment">/// parameter_types! {</span>
-<span class="doccomment">/// 	// Note that the env variable version parameter cannot be const.</span>
-<span class="doccomment">/// 	pub LaunchPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 28 * DAYS, 1 * MINUTES, &quot;FRQCY_LAUNCH_PERIOD&quot;);</span>
-<span class="doccomment">/// 	pub const VotingPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 28 * DAYS, 1 * MINUTES);</span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">/// ```</span>
-<span class="attribute">#[<span class="ident">macro_export</span>]</span>
-<span class="macro">macro_rules!</span> <span class="ident">prod_or_testnet_or_local_or_env</span> {
-	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">prod</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">test</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">local</span>:<span class="ident">expr</span>) =&gt; {
-		<span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frequency-rococo-local&quot;</span>) {
-			<span class="macro-nonterminal">$</span><span class="macro-nonterminal">local</span>
-		} <span class="kw">else</span> <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frequency-rococo-testnet&quot;</span>) {
-			<span class="macro-nonterminal">$</span><span class="macro-nonterminal">test</span>
-		} <span class="kw">else</span> {
-			<span class="macro-nonterminal">$</span><span class="macro-nonterminal">prod</span>
-		}
+<span class="doccomment">/// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value
+/// or to an environment variable or testing value (in case the `frequency-rococo-local` feature is selected or in instant-sealing mode).
+/// Note that the environment variable is evaluated _at compile time_.
+///
+/// Usage:
+/// ```Rust
+/// parameter_types! {
+/// 	// Note that the env variable version parameter cannot be const.
+/// 	pub LaunchPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 28 * DAYS, 1 * MINUTES, &quot;FRQCY_LAUNCH_PERIOD&quot;);
+/// 	pub const VotingPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 28 * DAYS, 1 * MINUTES);
+/// }
+/// ```
+</span><span class="attribute">#[macro_export]
+</span><span class="macro">macro_rules! </span>prod_or_testnet_or_local_or_env {
+	(<span class="macro-nonterminal">$prod</span>:expr, <span class="macro-nonterminal">$test</span>:expr, <span class="macro-nonterminal">$local</span>:expr) =&gt; {
+		<span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>) {
+			<span class="macro-nonterminal">$local
+		</span>} <span class="kw">else if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>) {
+			<span class="macro-nonterminal">$test
+		</span>} <span class="kw">else </span>{
+			<span class="macro-nonterminal">$prod
+		</span>}
 	};
-	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">prod</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">test</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">local</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">env</span>:<span class="ident">expr</span>) =&gt; {
-		<span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frequency-rococo-local&quot;</span>) {
-			<span class="macro">core::option_env!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">env</span>).<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">s</span>.<span class="ident">parse</span>().<span class="ident">ok</span>()).<span class="ident">flatten</span>().<span class="ident">unwrap_or</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">local</span>)
-		} <span class="kw">else</span> <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frequency-rococo-testnet&quot;</span>) {
-			<span class="macro-nonterminal">$</span><span class="macro-nonterminal">test</span>
-		} <span class="kw">else</span> {
-			<span class="macro-nonterminal">$</span><span class="macro-nonterminal">prod</span>
-		}
+	(<span class="macro-nonterminal">$prod</span>:expr, <span class="macro-nonterminal">$test</span>:expr, <span class="macro-nonterminal">$local</span>:expr, <span class="macro-nonterminal">$env</span>:expr) =&gt; {
+		<span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>) {
+			<span class="macro">core::option_env!</span>(<span class="macro-nonterminal">$env</span>).map(|s| s.parse().ok()).flatten().unwrap_or(<span class="macro-nonterminal">$local</span>)
+		} <span class="kw">else if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>) {
+			<span class="macro-nonterminal">$test
+		</span>} <span class="kw">else </span>{
+			<span class="macro-nonterminal">$prod
+		</span>}
 	};
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (848090dcd 2022-07-22)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>

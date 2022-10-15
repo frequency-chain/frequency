@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `common/helpers/src/avro.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>avro.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../common_helpers/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../common_helpers/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../common_helpers/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `common/helpers/src/avro.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>avro.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../common_helpers/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../common_helpers/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../common_helpers/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -275,277 +269,276 @@
 <span id="269">269</span>
 <span id="270">270</span>
 <span id="271">271</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::types</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">apache_avro</span>::{<span class="ident">from_avro_datum</span>, <span class="ident">schema::Schema</span>, <span class="ident">to_avro_datum</span>, <span class="ident">types::Record</span>, <span class="ident">Codec</span>, <span class="ident">Writer</span>};
-<span class="kw">use</span> <span class="ident">rayon::iter</span>::{<span class="ident">IntoParallelRefIterator</span>, <span class="ident">ParallelIterator</span>};
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::HashMap</span>, <span class="ident">io::Cursor</span>, <span class="ident">str</span>};
+</pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::types::<span class="kw-2">*</span>;
+<span class="kw">use </span>apache_avro::{from_avro_datum, schema::Schema, to_avro_datum, types::Record, Codec, Writer};
+<span class="kw">use </span>rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+<span class="kw">use </span>std::{collections::HashMap, io::Cursor, str};
 
-<span class="doccomment">/// Represents error types returned by the `avro` module.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">thiserror::Error</span>, <span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">AvroError</span> {
-	<span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;I/O error&quot;</span>)]</span>
-	<span class="ident">Io</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">std::io::Error</span>),
-	<span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;Avro error&quot;</span>)]</span>
-	<span class="ident">Avro</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">apache_avro::Error</span>),
-	<span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;Invalid avro schema: {0}&quot;</span>)]</span>
-	<span class="ident">InvalidSchema</span>(<span class="ident">String</span>),
-	<span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;Invalid avro records&quot;</span>)]</span>
-	<span class="ident">InvalidRecords</span>(),
+<span class="doccomment">/// Represents error types returned by the `avro` module.
+</span><span class="attribute">#[derive(thiserror::Error, Debug)]
+</span><span class="kw">pub enum </span>AvroError {
+	<span class="attribute">#[error(<span class="string">&quot;I/O error&quot;</span>)]
+	</span>Io(<span class="attribute">#[from] </span>std::io::Error),
+	<span class="attribute">#[error(<span class="string">&quot;Avro error&quot;</span>)]
+	</span>Avro(<span class="attribute">#[from] </span>apache_avro::Error),
+	<span class="attribute">#[error(<span class="string">&quot;Invalid avro schema: {0}&quot;</span>)]
+	</span>InvalidSchema(String),
+	<span class="attribute">#[error(<span class="string">&quot;Invalid avro records&quot;</span>)]
+	</span>InvalidRecords(),
 }
 
-<span class="doccomment">/// Function to convert a raw schema into serialized Avro schema.</span>
-<span class="doccomment">/// If schema is malformed or invalid, returns an error.</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `raw_schema` - raw schema to be converted</span>
-<span class="doccomment">/// # Returns</span>
-<span class="doccomment">/// * `Result&lt;(Schema, Vec&lt;u8&gt;), AvroError&gt;` - structured and serialized Avro schema</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use common_helpers::avro;</span>
-<span class="doccomment">/// use common_helpers::types::*;</span>
-<span class="doccomment">/// let raw_schema = r#&quot;{&quot;type&quot;: &quot;record&quot;, &quot;name&quot;: &quot;User&quot;, &quot;fields&quot;: [{&quot;name&quot;: &quot;name&quot;, &quot;type&quot;: &quot;string&quot;}, {&quot;name&quot;: &quot;favorite_number&quot;, &quot;type&quot;: &quot;int&quot;}]}&quot;#;</span>
-<span class="doccomment">/// let schema_result = avro::fingerprint_raw_schema(raw_schema);</span>
-<span class="doccomment">/// assert!(schema_result.is_ok());</span>
-<span class="doccomment">/// let serialized_schema = schema_result.unwrap().1;</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fingerprint_raw_schema</span>(<span class="ident">raw_schema</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Schema</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">AvroError</span><span class="op">&gt;</span> {
-	<span class="kw">let</span> <span class="ident">schema_result</span> <span class="op">=</span> <span class="ident">Schema::parse_str</span>(<span class="ident">raw_schema</span>)<span class="question-mark">?</span>;
-	<span class="kw">let</span> <span class="ident">schema_canonical_form</span> <span class="op">=</span> <span class="ident">schema_result</span>.<span class="ident">canonical_form</span>();
-	<span class="prelude-val">Ok</span>((<span class="ident">schema_result</span>, <span class="ident">schema_canonical_form</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>()))
+<span class="doccomment">/// Function to convert a raw schema into serialized Avro schema.
+/// If schema is malformed or invalid, returns an error.
+/// # Arguments
+/// * `raw_schema` - raw schema to be converted
+/// # Returns
+/// * `Result&lt;(Schema, Vec&lt;u8&gt;), AvroError&gt;` - structured and serialized Avro schema
+/// # Examples
+/// ```
+/// use common_helpers::avro;
+/// use common_helpers::types::*;
+/// let raw_schema = r#&quot;{&quot;type&quot;: &quot;record&quot;, &quot;name&quot;: &quot;User&quot;, &quot;fields&quot;: [{&quot;name&quot;: &quot;name&quot;, &quot;type&quot;: &quot;string&quot;}, {&quot;name&quot;: &quot;favorite_number&quot;, &quot;type&quot;: &quot;int&quot;}]}&quot;#;
+/// let schema_result = avro::fingerprint_raw_schema(raw_schema);
+/// assert!(schema_result.is_ok());
+/// let serialized_schema = schema_result.unwrap().1;
+</span><span class="kw">pub fn </span>fingerprint_raw_schema(raw_schema: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;(Schema, Vec&lt;u8&gt;), AvroError&gt; {
+	<span class="kw">let </span>schema_result = Schema::parse_str(raw_schema)<span class="question-mark">?</span>;
+	<span class="kw">let </span>schema_canonical_form = schema_result.canonical_form();
+	<span class="prelude-val">Ok</span>((schema_result, schema_canonical_form.as_bytes().to_vec()))
 }
 
-<span class="doccomment">/// Function to convert a list of raw schema into serialized Avro schema.</span>
-<span class="doccomment">/// If schema is malformed or invalid, it is set to Null.</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `raw_schema` - raw schema list to be converted</span>
-<span class="doccomment">/// # Returns</span>
-<span class="doccomment">/// * `Result&lt;(Vec&lt;Schema&gt;, Vec&lt;Vec&lt;u8&gt;&gt;), AvroError&gt;` - structured and serialized Avro schemas</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use common_helpers::avro;</span>
-<span class="doccomment">/// use common_helpers::types::*;</span>
-<span class="doccomment">/// let raw_schema = r#&quot;{&quot;type&quot;: &quot;record&quot;, &quot;name&quot;: &quot;User&quot;, &quot;fields&quot;: [{&quot;name&quot;: &quot;name&quot;, &quot;type&quot;: &quot;string&quot;}, {&quot;name&quot;: &quot;favorite_number&quot;, &quot;type&quot;: &quot;int&quot;}]}&quot;#;</span>
-<span class="doccomment">/// let vec_raw_schema: [&amp;str; 1] = [raw_schema];</span>
-<span class="doccomment">/// let schema_result = avro::fingerprint_raw_schema_list(&amp;vec_raw_schema);</span>
-<span class="doccomment">/// assert!(schema_result.is_ok());</span>
-<span class="doccomment">/// let serialized_schemas = schema_result.unwrap().1;</span>
-<span class="doccomment">/// ```</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fingerprint_raw_schema_list</span>(
-	<span class="ident">raw_schema</span>: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">str</span>],
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Schema</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>), <span class="ident">AvroError</span><span class="op">&gt;</span> {
-	<span class="kw">let</span> <span class="ident">schemas</span>: (<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Schema</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">=</span> <span class="ident">raw_schema</span>
-		.<span class="ident">par_iter</span>()
-		.<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> -&gt; (<span class="ident">Schema</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
-			<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span> <span class="ident">fingerprint_raw_schema</span>(<span class="ident">r</span>);
-			<span class="kw">match</span> <span class="ident">schema</span> {
-				<span class="prelude-val">Ok</span>(<span class="ident">schema</span>) =&gt; <span class="ident">schema</span>,
-				<span class="prelude-val">Err</span>(<span class="ident">_error</span>) =&gt; (<span class="ident">Schema::Null</span>, <span class="ident">r</span>.<span class="ident">to_string</span>().<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>()),
+<span class="doccomment">/// Function to convert a list of raw schema into serialized Avro schema.
+/// If schema is malformed or invalid, it is set to Null.
+/// # Arguments
+/// * `raw_schema` - raw schema list to be converted
+/// # Returns
+/// * `Result&lt;(Vec&lt;Schema&gt;, Vec&lt;Vec&lt;u8&gt;&gt;), AvroError&gt;` - structured and serialized Avro schemas
+/// # Examples
+/// ```
+/// use common_helpers::avro;
+/// use common_helpers::types::*;
+/// let raw_schema = r#&quot;{&quot;type&quot;: &quot;record&quot;, &quot;name&quot;: &quot;User&quot;, &quot;fields&quot;: [{&quot;name&quot;: &quot;name&quot;, &quot;type&quot;: &quot;string&quot;}, {&quot;name&quot;: &quot;favorite_number&quot;, &quot;type&quot;: &quot;int&quot;}]}&quot;#;
+/// let vec_raw_schema: [&amp;str; 1] = [raw_schema];
+/// let schema_result = avro::fingerprint_raw_schema_list(&amp;vec_raw_schema);
+/// assert!(schema_result.is_ok());
+/// let serialized_schemas = schema_result.unwrap().1;
+/// ```
+</span><span class="kw">pub fn </span>fingerprint_raw_schema_list(
+	raw_schema: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str],
+) -&gt; <span class="prelude-ty">Result</span>&lt;(Vec&lt;Schema&gt;, Vec&lt;Vec&lt;u8&gt;&gt;), AvroError&gt; {
+	<span class="kw">let </span>schemas: (Vec&lt;Schema&gt;, Vec&lt;Vec&lt;u8&gt;&gt;) = raw_schema
+		.par_iter()
+		.map(|r| -&gt; (Schema, Vec&lt;u8&gt;) {
+			<span class="kw">let </span>schema = fingerprint_raw_schema(r);
+			<span class="kw">match </span>schema {
+				<span class="prelude-val">Ok</span>(schema) =&gt; schema,
+				<span class="prelude-val">Err</span>(_error) =&gt; (Schema::Null, r.to_string().as_bytes().to_vec()),
 			}
 		})
-		.<span class="ident">collect</span>();
+		.collect();
 
-	<span class="prelude-val">Ok</span>(<span class="ident">schemas</span>)
+	<span class="prelude-val">Ok</span>(schemas)
 }
 
-<span class="doccomment">///Function to convert a serialized Avro schema into Avro Schema type.</span>
-<span class="doccomment">/// If schema is malformed or invalid, returns an error.</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `serialized_schema` - serialized Avro schema to be converted</span>
-<span class="doccomment">/// # Returns</span>
-<span class="doccomment">/// * `Result&lt;Schema, AvroError&gt;` - structured Avro schema</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use common_helpers::avro;</span>
-<span class="doccomment">/// use common_helpers::types::*;</span>
-<span class="doccomment">/// let raw_schema = r#&quot;{&quot;type&quot;: &quot;record&quot;, &quot;name&quot;: &quot;User&quot;, &quot;fields&quot;: [{&quot;name&quot;: &quot;name&quot;, &quot;type&quot;: &quot;string&quot;}, {&quot;name&quot;: &quot;favorite_number&quot;, &quot;type&quot;: &quot;int&quot;}]}&quot;#;</span>
-<span class="doccomment">/// let serialized_schema = avro::fingerprint_raw_schema(raw_schema);</span>
-<span class="doccomment">/// assert!(serialized_schema.is_ok());</span>
-<span class="doccomment">/// let schema = serialized_schema.unwrap().1;</span>
-<span class="doccomment">/// let translated_schema = avro::translate_schema(schema);</span>
-<span class="doccomment">/// assert!(translated_schema.is_ok());</span>
-<span class="doccomment">/// ```</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">translate_schema</span>(<span class="ident">serialized_schema</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Schema</span>, <span class="ident">AvroError</span><span class="op">&gt;</span> {
-	<span class="kw">let</span> <span class="ident">schema_str</span> <span class="op">=</span> <span class="ident">str::from_utf8</span>(<span class="kw-2">&amp;</span><span class="ident">serialized_schema</span>);
-	<span class="kw">match</span> <span class="ident">schema_str</span> {
-		<span class="prelude-val">Ok</span>(<span class="ident">schema_str</span>) =&gt; {
-			<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span> <span class="ident">Schema::parse_str</span>(<span class="ident">schema_str</span>)<span class="question-mark">?</span>;
-			<span class="prelude-val">Ok</span>(<span class="ident">schema</span>)
+<span class="doccomment">///Function to convert a serialized Avro schema into Avro Schema type.
+/// If schema is malformed or invalid, returns an error.
+/// # Arguments
+/// * `serialized_schema` - serialized Avro schema to be converted
+/// # Returns
+/// * `Result&lt;Schema, AvroError&gt;` - structured Avro schema
+/// # Examples
+/// ```
+/// use common_helpers::avro;
+/// use common_helpers::types::*;
+/// let raw_schema = r#&quot;{&quot;type&quot;: &quot;record&quot;, &quot;name&quot;: &quot;User&quot;, &quot;fields&quot;: [{&quot;name&quot;: &quot;name&quot;, &quot;type&quot;: &quot;string&quot;}, {&quot;name&quot;: &quot;favorite_number&quot;, &quot;type&quot;: &quot;int&quot;}]}&quot;#;
+/// let serialized_schema = avro::fingerprint_raw_schema(raw_schema);
+/// assert!(serialized_schema.is_ok());
+/// let schema = serialized_schema.unwrap().1;
+/// let translated_schema = avro::translate_schema(schema);
+/// assert!(translated_schema.is_ok());
+/// ```
+</span><span class="kw">pub fn </span>translate_schema(serialized_schema: Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Schema, AvroError&gt; {
+	<span class="kw">let </span>schema_str = str::from_utf8(<span class="kw-2">&amp;</span>serialized_schema);
+	<span class="kw">match </span>schema_str {
+		<span class="prelude-val">Ok</span>(schema_str) =&gt; {
+			<span class="kw">let </span>schema = Schema::parse_str(schema_str)<span class="question-mark">?</span>;
+			<span class="prelude-val">Ok</span>(schema)
 		},
-		<span class="prelude-val">Err</span>(<span class="ident">error</span>) =&gt; <span class="prelude-val">Err</span>(<span class="ident">AvroError::InvalidSchema</span>(<span class="ident">error</span>.<span class="ident">to_string</span>())),
+		<span class="prelude-val">Err</span>(error) =&gt; <span class="prelude-val">Err</span>(AvroError::InvalidSchema(error.to_string())),
 	}
 }
 
-<span class="doccomment">///Function to convert a list of serialized Avro schema into Avro Schema type.</span>
-<span class="doccomment">/// If schema is malformed or invalid, it is set to Null.</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `serialized_schema` - list of serialized Avro schema to be converted</span>
-<span class="doccomment">/// # Returns</span>
-<span class="doccomment">/// * `Result&lt;Vec&lt;Schema&gt;, AvroError&gt;` - structured Avro schema</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use common_helpers::avro;</span>
-<span class="doccomment">/// use common_helpers::types::*;</span>
-<span class="doccomment">/// let raw_schema = r#&quot;{&quot;type&quot;: &quot;record&quot;, &quot;name&quot;: &quot;User&quot;, &quot;fields&quot;: [{&quot;name&quot;: &quot;name&quot;, &quot;type&quot;: &quot;string&quot;}, {&quot;name&quot;: &quot;favorite_number&quot;, &quot;type&quot;: &quot;int&quot;}]}&quot;#;</span>
-<span class="doccomment">/// let serialized_schema = avro::fingerprint_raw_schema(raw_schema);</span>
-<span class="doccomment">/// assert!(serialized_schema.is_ok());</span>
-<span class="doccomment">/// let schema = serialized_schema.unwrap().1;</span>
-<span class="doccomment">/// let vec_schema = vec![schema];</span>
-<span class="doccomment">/// let translated_schema = avro::translate_schemas(vec_schema);</span>
-<span class="doccomment">/// assert!(translated_schema.is_ok());</span>
-<span class="doccomment">/// ```</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">translate_schemas</span>(<span class="ident">serialized_schema</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Schema</span><span class="op">&gt;</span>, <span class="ident">AvroError</span><span class="op">&gt;</span> {
-	<span class="kw">let</span> <span class="ident">schemas</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Schema</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">serialized_schema</span>
-		.<span class="ident">par_iter</span>()
-		.<span class="ident">map</span>(<span class="op">|</span><span class="ident">o</span><span class="op">|</span> -&gt; <span class="ident">Schema</span> {
-			<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span> <span class="ident">translate_schema</span>(<span class="ident">o</span>.<span class="ident">to_vec</span>());
-			<span class="kw">match</span> <span class="ident">schema</span> {
-				<span class="prelude-val">Ok</span>(<span class="ident">schema</span>) =&gt; <span class="ident">schema</span>,
-				<span class="prelude-val">Err</span>(<span class="ident">_error</span>) =&gt; <span class="ident">Schema::Null</span>,
+<span class="doccomment">///Function to convert a list of serialized Avro schema into Avro Schema type.
+/// If schema is malformed or invalid, it is set to Null.
+/// # Arguments
+/// * `serialized_schema` - list of serialized Avro schema to be converted
+/// # Returns
+/// * `Result&lt;Vec&lt;Schema&gt;, AvroError&gt;` - structured Avro schema
+/// # Examples
+/// ```
+/// use common_helpers::avro;
+/// use common_helpers::types::*;
+/// let raw_schema = r#&quot;{&quot;type&quot;: &quot;record&quot;, &quot;name&quot;: &quot;User&quot;, &quot;fields&quot;: [{&quot;name&quot;: &quot;name&quot;, &quot;type&quot;: &quot;string&quot;}, {&quot;name&quot;: &quot;favorite_number&quot;, &quot;type&quot;: &quot;int&quot;}]}&quot;#;
+/// let serialized_schema = avro::fingerprint_raw_schema(raw_schema);
+/// assert!(serialized_schema.is_ok());
+/// let schema = serialized_schema.unwrap().1;
+/// let vec_schema = vec![schema];
+/// let translated_schema = avro::translate_schemas(vec_schema);
+/// assert!(translated_schema.is_ok());
+/// ```
+</span><span class="kw">pub fn </span>translate_schemas(serialized_schema: Vec&lt;Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Schema&gt;, AvroError&gt; {
+	<span class="kw">let </span>schemas: Vec&lt;Schema&gt; = serialized_schema
+		.par_iter()
+		.map(|o| -&gt; Schema {
+			<span class="kw">let </span>schema = translate_schema(o.to_vec());
+			<span class="kw">match </span>schema {
+				<span class="prelude-val">Ok</span>(schema) =&gt; schema,
+				<span class="prelude-val">Err</span>(_error) =&gt; Schema::Null,
 			}
 		})
-		.<span class="ident">collect</span>();
+		.collect();
 
-	<span class="prelude-val">Ok</span>(<span class="ident">schemas</span>)
+	<span class="prelude-val">Ok</span>(schemas)
 }
 
-<span class="doccomment">/// Function to get the schema writer with default container as Vec&lt;u8&gt;</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use common_helpers::avro;</span>
-<span class="doccomment">/// use common_helpers::types::*;</span>
-<span class="doccomment">/// let raw_schema = r#&quot;{&quot;type&quot;: &quot;record&quot;, &quot;name&quot;: &quot;User&quot;, &quot;fields&quot;: [{&quot;name&quot;: &quot;name&quot;, &quot;type&quot;: &quot;string&quot;}, {&quot;name&quot;: &quot;favorite_number&quot;, &quot;type&quot;: &quot;int&quot;}]}&quot;#;</span>
-<span class="doccomment">/// let schema_result = avro::fingerprint_raw_schema(raw_schema);</span>
-<span class="doccomment">/// assert!(schema_result.is_ok());</span>
-<span class="doccomment">/// let avro_schema = schema_result.unwrap().0;</span>
-<span class="doccomment">/// let schema_writer = avro::get_schema_data_writer(&amp;avro_schema);</span>
-<span class="doccomment">/// ```</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_schema_data_writer</span>(<span class="ident">schema</span>: <span class="kw-2">&amp;</span><span class="ident">Schema</span>) -&gt; <span class="ident">Writer</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-	<span class="ident">Writer::with_codec</span>(<span class="ident">schema</span>, <span class="ident">Vec::new</span>(), <span class="ident">Codec::Snappy</span>)
+<span class="doccomment">/// Function to get the schema writer with default container as Vec&lt;u8&gt;
+/// # Examples
+/// ```
+/// use common_helpers::avro;
+/// use common_helpers::types::*;
+/// let raw_schema = r#&quot;{&quot;type&quot;: &quot;record&quot;, &quot;name&quot;: &quot;User&quot;, &quot;fields&quot;: [{&quot;name&quot;: &quot;name&quot;, &quot;type&quot;: &quot;string&quot;}, {&quot;name&quot;: &quot;favorite_number&quot;, &quot;type&quot;: &quot;int&quot;}]}&quot;#;
+/// let schema_result = avro::fingerprint_raw_schema(raw_schema);
+/// assert!(schema_result.is_ok());
+/// let avro_schema = schema_result.unwrap().0;
+/// let schema_writer = avro::get_schema_data_writer(&amp;avro_schema);
+/// ```
+</span><span class="kw">pub fn </span>get_schema_data_writer(schema: <span class="kw-2">&amp;</span>Schema) -&gt; Writer&lt;Vec&lt;u8&gt;&gt; {
+	Writer::with_codec(schema, Vec::new(), Codec::Snappy)
 }
 
-<span class="doccomment">/// Function to populate a given schema with data and return serialized record.</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `schema` - Avro schema</span>
-<span class="doccomment">/// * `record` - record to be written as HashMap&lt;String, SchemaValue&gt; where SchemaValue is common types</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use common_helpers::avro;</span>
-<span class="doccomment">/// use common_helpers::types::*;</span>
-<span class="doccomment">/// use std::{collections::HashMap};</span>
-<span class="doccomment">/// let raw_schema = r#&quot;</span>
-<span class="doccomment">/// {</span>
-<span class="doccomment">///     &quot;type&quot;: &quot;record&quot;,</span>
-<span class="doccomment">///     &quot;name&quot;: &quot;test&quot;,</span>
-<span class="doccomment">///     &quot;fields&quot;: [</span>
-<span class="doccomment">///         {&quot;name&quot;: &quot;a&quot;, &quot;type&quot;: &quot;long&quot;, &quot;default&quot;: 42},</span>
-<span class="doccomment">///         {&quot;name&quot;: &quot;b&quot;, &quot;type&quot;: &quot;string&quot;}</span>
-<span class="doccomment">///     ]</span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">/// &quot;#;</span>
-<span class="doccomment">/// let schema_fingerprint = avro::fingerprint_raw_schema(raw_schema);</span>
-<span class="doccomment">/// let mut hashmap_data = HashMap::new();</span>
-<span class="doccomment">/// let mut name = &quot;name&quot;.to_string();</span>
-<span class="doccomment">/// let mut name_field = SchemaValue::String(&quot;John&quot;.to_string());</span>
-<span class="doccomment">/// hashmap_data.insert(&quot;a&quot;.to_string(), SchemaValue::Long(27i64));</span>
-<span class="doccomment">/// hashmap_data.insert(&quot;b&quot;.to_string(), SchemaValue::String(&quot;foo&quot;.to_string()));</span>
-<span class="doccomment">/// assert!(schema_fingerprint.is_ok());</span>
-<span class="doccomment">/// let data_schema = schema_fingerprint.unwrap().0;</span>
-<span class="doccomment">/// let serialized_record = avro::populate_schema_and_serialize(&amp;data_schema, &amp;hashmap_data);</span>
-<span class="doccomment">/// assert!(serialized_record.is_ok());</span>
-<span class="doccomment">/// ```</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">populate_schema_and_serialize</span>(
-	<span class="ident">schema</span>: <span class="kw-2">&amp;</span><span class="ident">Schema</span>,
-	<span class="ident">records</span>: <span class="kw-2">&amp;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">SchemaValue</span><span class="op">&gt;</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">AvroError</span><span class="op">&gt;</span> {
-	<span class="kw">let</span> <span class="ident">writer</span> <span class="op">=</span> <span class="ident">get_schema_data_writer</span>(<span class="ident">schema</span>);
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">record_list</span> <span class="op">=</span> <span class="ident">Record::new</span>(<span class="ident">writer</span>.<span class="ident">schema</span>()).<span class="ident">unwrap</span>();
-	<span class="kw">for</span> (<span class="ident">field_name</span>, <span class="ident">field_value</span>) <span class="kw">in</span> <span class="ident">records</span>.<span class="ident">iter</span>() {
-		<span class="ident">record_list</span>.<span class="ident">put</span>(<span class="ident">field_name</span>, <span class="ident">field_value</span>.<span class="ident">clone</span>());
+<span class="doccomment">/// Function to populate a given schema with data and return serialized record.
+/// # Arguments
+/// * `schema` - Avro schema
+/// * `record` - record to be written as HashMap&lt;String, SchemaValue&gt; where SchemaValue is common types
+/// # Examples
+/// ```
+/// use common_helpers::avro;
+/// use common_helpers::types::*;
+/// use std::{collections::HashMap};
+/// let raw_schema = r#&quot;
+/// {
+///     &quot;type&quot;: &quot;record&quot;,
+///     &quot;name&quot;: &quot;test&quot;,
+///     &quot;fields&quot;: [
+///         {&quot;name&quot;: &quot;a&quot;, &quot;type&quot;: &quot;long&quot;, &quot;default&quot;: 42},
+///         {&quot;name&quot;: &quot;b&quot;, &quot;type&quot;: &quot;string&quot;}
+///     ]
+/// }
+/// &quot;#;
+/// let schema_fingerprint = avro::fingerprint_raw_schema(raw_schema);
+/// let mut hashmap_data = HashMap::new();
+/// let mut name = &quot;name&quot;.to_string();
+/// let mut name_field = SchemaValue::String(&quot;John&quot;.to_string());
+/// hashmap_data.insert(&quot;a&quot;.to_string(), SchemaValue::Long(27i64));
+/// hashmap_data.insert(&quot;b&quot;.to_string(), SchemaValue::String(&quot;foo&quot;.to_string()));
+/// assert!(schema_fingerprint.is_ok());
+/// let data_schema = schema_fingerprint.unwrap().0;
+/// let serialized_record = avro::populate_schema_and_serialize(&amp;data_schema, &amp;hashmap_data);
+/// assert!(serialized_record.is_ok());
+/// ```
+</span><span class="kw">pub fn </span>populate_schema_and_serialize(
+	schema: <span class="kw-2">&amp;</span>Schema,
+	records: <span class="kw-2">&amp;</span>HashMap&lt;String, SchemaValue&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, AvroError&gt; {
+	<span class="kw">let </span>writer = get_schema_data_writer(schema);
+	<span class="kw">let </span><span class="kw-2">mut </span>record_list = Record::new(writer.schema()).unwrap();
+	<span class="kw">for </span>(field_name, field_value) <span class="kw">in </span>records.iter() {
+		record_list.put(field_name, field_value.clone());
 	}
-	<span class="kw">let</span> <span class="ident">datum_res</span> <span class="op">=</span> <span class="ident">to_avro_datum</span>(<span class="ident">schema</span>, <span class="ident">record_list</span>)<span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(<span class="ident">datum_res</span>)
+	<span class="kw">let </span>datum_res = to_avro_datum(schema, record_list)<span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>(datum_res)
 }
 
-<span class="doccomment">/// Function to get serialized datum data for a given schema into hashmap.</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// *serialized_data* - serialized data to be converted into hashmap</span>
-<span class="doccomment">/// * `schema` - Avro schema</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use common_helpers::avro;</span>
-<span class="doccomment">/// use common_helpers::types::*;</span>
-<span class="doccomment">/// use std::{collections::HashMap};</span>
-<span class="doccomment">/// let raw_schema = r#&quot;</span>
-<span class="doccomment">/// {</span>
-<span class="doccomment">///    &quot;type&quot;: &quot;record&quot;,</span>
-<span class="doccomment">///   &quot;name&quot;: &quot;test&quot;,</span>
-<span class="doccomment">///  &quot;fields&quot;: [</span>
-<span class="doccomment">///    {&quot;name&quot;: &quot;a&quot;, &quot;type&quot;: &quot;long&quot;, &quot;default&quot;: 42},</span>
-<span class="doccomment">///   {&quot;name&quot;: &quot;b&quot;, &quot;type&quot;: &quot;string&quot;}</span>
-<span class="doccomment">/// ]</span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">/// &quot;#;</span>
-<span class="doccomment">/// let schema_fingerprint = avro::fingerprint_raw_schema(raw_schema);</span>
-<span class="doccomment">/// let mut hashmap_data = HashMap::new();</span>
-<span class="doccomment">/// let mut name = &quot;name&quot;.to_string();</span>
-<span class="doccomment">/// let mut name_field = SchemaValue::String(&quot;John&quot;.to_string());</span>
-<span class="doccomment">/// hashmap_data.insert(&quot;a&quot;.to_string(), SchemaValue::Long(27i64));</span>
-<span class="doccomment">/// hashmap_data.insert(&quot;b&quot;.to_string(), SchemaValue::String(&quot;foo&quot;.to_string()));</span>
-<span class="doccomment">/// assert!(schema_fingerprint.is_ok());</span>
-<span class="doccomment">/// let data_schema = schema_fingerprint.unwrap().0;</span>
-<span class="doccomment">/// let serialized_record = avro::populate_schema_and_serialize(&amp;data_schema, &amp;hashmap_data);</span>
-<span class="doccomment">/// assert!(serialized_record.is_ok());</span>
-<span class="doccomment">/// let serialized_data = serialized_record.unwrap();</span>
-<span class="doccomment">/// let deserialized_data = avro::get_schema_data_map(&amp;serialized_data, &amp;data_schema);</span>
-<span class="doccomment">/// assert!(deserialized_data.is_ok());</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_schema_data_map</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(
-	<span class="ident">serialized_data</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-	<span class="ident">schema</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Schema</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">SchemaValue</span><span class="op">&gt;</span>, <span class="ident">AvroError</span><span class="op">&gt;</span> {
-	<span class="kw">let</span> <span class="ident">from_data_datum</span> <span class="op">=</span> <span class="ident">from_avro_datum</span>(<span class="ident">schema</span>, <span class="kw-2">&amp;mut</span> <span class="ident">Cursor::new</span>(<span class="ident">serialized_data</span>), <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result_record</span> <span class="op">=</span> <span class="ident">HashMap</span>::<span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">SchemaValue</span><span class="op">&gt;</span><span class="ident">::new</span>();
+<span class="doccomment">/// Function to get serialized datum data for a given schema into hashmap.
+/// # Arguments
+/// *serialized_data* - serialized data to be converted into hashmap
+/// * `schema` - Avro schema
+/// # Examples
+/// ```
+/// use common_helpers::avro;
+/// use common_helpers::types::*;
+/// use std::{collections::HashMap};
+/// let raw_schema = r#&quot;
+/// {
+///    &quot;type&quot;: &quot;record&quot;,
+///   &quot;name&quot;: &quot;test&quot;,
+///  &quot;fields&quot;: [
+///    {&quot;name&quot;: &quot;a&quot;, &quot;type&quot;: &quot;long&quot;, &quot;default&quot;: 42},
+///   {&quot;name&quot;: &quot;b&quot;, &quot;type&quot;: &quot;string&quot;}
+/// ]
+/// }
+/// &quot;#;
+/// let schema_fingerprint = avro::fingerprint_raw_schema(raw_schema);
+/// let mut hashmap_data = HashMap::new();
+/// let mut name = &quot;name&quot;.to_string();
+/// let mut name_field = SchemaValue::String(&quot;John&quot;.to_string());
+/// hashmap_data.insert(&quot;a&quot;.to_string(), SchemaValue::Long(27i64));
+/// hashmap_data.insert(&quot;b&quot;.to_string(), SchemaValue::String(&quot;foo&quot;.to_string()));
+/// assert!(schema_fingerprint.is_ok());
+/// let data_schema = schema_fingerprint.unwrap().0;
+/// let serialized_record = avro::populate_schema_and_serialize(&amp;data_schema, &amp;hashmap_data);
+/// assert!(serialized_record.is_ok());
+/// let serialized_data = serialized_record.unwrap();
+/// let deserialized_data = avro::get_schema_data_map(&amp;serialized_data, &amp;data_schema);
+/// assert!(deserialized_data.is_ok());
+</span><span class="kw">pub fn </span>get_schema_data_map&lt;<span class="lifetime">&#39;a</span>&gt;(
+	serialized_data: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Vec&lt;u8&gt;,
+	schema: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Schema,
+) -&gt; <span class="prelude-ty">Result</span>&lt;HashMap&lt;String, SchemaValue&gt;, AvroError&gt; {
+	<span class="kw">let </span>from_data_datum = from_avro_datum(schema, <span class="kw-2">&amp;mut </span>Cursor::new(serialized_data), <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+	<span class="kw">let </span><span class="kw-2">mut </span>result_record = HashMap::&lt;String, SchemaValue&gt;::new();
 
-	<span class="kw">match</span> <span class="ident">from_data_datum</span> {
-		<span class="ident">SchemaValue::Record</span>(<span class="ident">record</span>) =&gt;
-			<span class="kw">for</span> (<span class="ident">field_name</span>, <span class="ident">field_value</span>) <span class="kw">in</span> <span class="ident">record</span>.<span class="ident">iter</span>() {
-				<span class="ident">result_record</span>.<span class="ident">insert</span>(<span class="ident">field_name</span>.<span class="ident">clone</span>(), <span class="ident">field_value</span>.<span class="ident">clone</span>());
+	<span class="kw">match </span>from_data_datum {
+		SchemaValue::Record(record) =&gt;
+			<span class="kw">for </span>(field_name, field_value) <span class="kw">in </span>record.iter() {
+				result_record.insert(field_name.clone(), field_value.clone());
 			},
-		<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">AvroError::InvalidRecords</span>()),
+		<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(AvroError::InvalidRecords()),
 	}
 
-	<span class="prelude-val">Ok</span>(<span class="ident">result_record</span>)
+	<span class="prelude-val">Ok</span>(result_record)
 }
 
-<span class="doccomment">/// Function to validate incoming json serialized schema against avro schema.</span>
-<span class="doccomment">/// # Arguments</span>
-<span class="doccomment">/// * `json_schema` - json serialized schema</span>
-<span class="doccomment">/// # Examples</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// use common_helpers::avro;</span>
-<span class="doccomment">/// use common_helpers::types::*;</span>
-<span class="doccomment">/// let raw_schema = r#&quot;</span>
-<span class="doccomment">/// {</span>
-<span class="doccomment">///    &quot;type&quot;: &quot;record&quot;,</span>
-<span class="doccomment">///   &quot;name&quot;: &quot;test&quot;,</span>
-<span class="doccomment">///  &quot;fields&quot;: [</span>
-<span class="doccomment">///    {&quot;name&quot;: &quot;a&quot;, &quot;type&quot;: &quot;long&quot;, &quot;default&quot;: 42},</span>
-<span class="doccomment">///   {&quot;name&quot;: &quot;b&quot;, &quot;type&quot;: &quot;string&quot;}</span>
-<span class="doccomment">/// ]</span>
-<span class="doccomment">/// }</span>
-<span class="doccomment">/// &quot;#;</span>
-<span class="doccomment">/// let schema_fingerprint = avro::fingerprint_raw_schema(raw_schema);</span>
-<span class="doccomment">/// assert!(schema_fingerprint.is_ok());</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">validate_raw_avro_schema</span>(<span class="ident">json_schema</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">AvroError</span><span class="op">&gt;</span> {
-	<span class="kw">let</span> <span class="ident">avro_schema_raw</span> <span class="op">=</span> <span class="ident">String::from_utf8</span>(<span class="ident">json_schema</span>.<span class="ident">clone</span>());
-	<span class="kw">if</span> <span class="ident">avro_schema_raw</span>.<span class="ident">is_err</span>() {
-		<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">AvroError::InvalidSchema</span>(<span class="string">&quot;Invalid schema&quot;</span>.<span class="ident">to_string</span>()))
+<span class="doccomment">/// Function to validate incoming json serialized schema against avro schema.
+/// # Arguments
+/// * `json_schema` - json serialized schema
+/// # Examples
+/// ```
+/// use common_helpers::avro;
+/// use common_helpers::types::*;
+/// let raw_schema = r#&quot;
+/// {
+///    &quot;type&quot;: &quot;record&quot;,
+///   &quot;name&quot;: &quot;test&quot;,
+///  &quot;fields&quot;: [
+///    {&quot;name&quot;: &quot;a&quot;, &quot;type&quot;: &quot;long&quot;, &quot;default&quot;: 42},
+///   {&quot;name&quot;: &quot;b&quot;, &quot;type&quot;: &quot;string&quot;}
+/// ]
+/// }
+/// &quot;#;
+/// let schema_fingerprint = avro::fingerprint_raw_schema(raw_schema);
+/// assert!(schema_fingerprint.is_ok());
+</span><span class="kw">pub fn </span>validate_raw_avro_schema(json_schema: <span class="kw-2">&amp;</span>Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), AvroError&gt; {
+	<span class="kw">let </span>avro_schema_raw = String::from_utf8(json_schema.clone());
+	<span class="kw">if </span>avro_schema_raw.is_err() {
+		<span class="kw">return </span><span class="prelude-val">Err</span>(AvroError::InvalidSchema(<span class="string">&quot;Invalid schema&quot;</span>.to_string()))
 	}
-	<span class="kw">let</span> <span class="ident">avro_schema</span> <span class="op">=</span> <span class="ident">avro_schema_raw</span>.<span class="ident">unwrap</span>();
-	<span class="kw">let</span> <span class="ident">schema_fingerprint</span> <span class="op">=</span> <span class="ident">fingerprint_raw_schema</span>(<span class="kw-2">&amp;</span><span class="ident">avro_schema</span>);
-	<span class="kw">if</span> <span class="ident">schema_fingerprint</span>.<span class="ident">is_err</span>() {
-		<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">AvroError::InvalidSchema</span>(<span class="string">&quot;Invalid schema&quot;</span>.<span class="ident">to_string</span>()))
+	<span class="kw">let </span>avro_schema = avro_schema_raw.unwrap();
+	<span class="kw">let </span>schema_fingerprint = fingerprint_raw_schema(<span class="kw-2">&amp;</span>avro_schema);
+	<span class="kw">if </span>schema_fingerprint.is_err() {
+		<span class="kw">return </span><span class="prelude-val">Err</span>(AvroError::InvalidSchema(<span class="string">&quot;Invalid schema&quot;</span>.to_string()))
 	}
 	<span class="prelude-val">Ok</span>(())
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_helpers" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (848090dcd 2022-07-22)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_helpers" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>

@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/msa/src/types.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>types.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_msa/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../pallet_msa/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_msa/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/msa/src/types.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>types.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_msa/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_msa/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_msa/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -57,59 +51,58 @@
 <span id="51">51</span>
 <span id="52">52</span>
 <span id="53">53</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Types for the MSA Pallet</span>
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
-<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
+</pre><pre class="rust"><code><span class="doccomment">//! Types for the MSA Pallet
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+</span><span class="kw">use super</span>::<span class="kw-2">*</span>;
+<span class="kw">use </span>codec::{Decode, Encode};
 
-<span class="kw">use</span> <span class="ident">core::fmt::Debug</span>;
+<span class="kw">use </span>core::fmt::Debug;
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">common_primitives::msa</span>::{<span class="ident">Delegator</span>, <span class="ident">KeyInfoResponse</span>, <span class="ident">MessageSourceId</span>, <span class="ident">Provider</span>};
-<span class="kw">use</span> <span class="ident">common_primitives</span>::{<span class="ident">node::BlockNumber</span>, <span class="ident">schema::SchemaId</span>};
+<span class="kw">pub use </span>common_primitives::msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider};
+<span class="kw">use </span>common_primitives::{node::BlockNumber, schema::SchemaId};
 
-<span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
+<span class="kw">use </span>scale_info::TypeInfo;
 
-<span class="doccomment">/// Dispatch Empty</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EMPTY_FUNCTION</span>: <span class="kw">fn</span>(<span class="ident">MessageSourceId</span>) -&gt; <span class="ident">DispatchResult</span> <span class="op">=</span> <span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="prelude-val">Ok</span>(());
+<span class="doccomment">/// Dispatch Empty
+</span><span class="kw">pub const </span>EMPTY_FUNCTION: <span class="kw">fn</span>(MessageSourceId) -&gt; DispatchResult = |<span class="kw">_</span>| <span class="prelude-val">Ok</span>(());
 
-<span class="doccomment">/// A type definition for the payload of adding an MSA key - `pallet_msa::add_key_to_msa`</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AddKeyData</span> {
-	<span class="doccomment">/// Message Source Account identifier</span>
-	<span class="kw">pub</span> <span class="ident">msa_id</span>: <span class="ident">MessageSourceId</span>,
-	<span class="doccomment">/// A cryptographic nonce.</span>
-	<span class="kw">pub</span> <span class="ident">nonce</span>: <span class="ident">u32</span>,
-	<span class="doccomment">/// The block number at which the signed proof for add_key_to_msa expires.</span>
-	<span class="kw">pub</span> <span class="ident">expiration</span>: <span class="ident">BlockNumber</span>,
+<span class="doccomment">/// A type definition for the payload of adding an MSA key - `pallet_msa::add_key_to_msa`
+</span><span class="attribute">#[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
+</span><span class="kw">pub struct </span>AddKeyData {
+	<span class="doccomment">/// Message Source Account identifier
+	</span><span class="kw">pub </span>msa_id: MessageSourceId,
+	<span class="doccomment">/// A cryptographic nonce.
+	</span><span class="kw">pub </span>nonce: u32,
+	<span class="doccomment">/// The block number at which the signed proof for add_key_to_msa expires.
+	</span><span class="kw">pub </span>expiration: BlockNumber,
 }
 
-<span class="doccomment">/// Structure that is signed for granting permissions to a Provider</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">TypeInfo</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AddProvider</span> {
-	<span class="doccomment">/// The provider being granted permissions</span>
-	<span class="kw">pub</span> <span class="ident">authorized_msa_id</span>: <span class="ident">MessageSourceId</span>,
-	<span class="doccomment">/// Schemas for which publishing grants are authorized.</span>
-	<span class="doccomment">/// This is private intended for internal use only.</span>
-	<span class="kw">pub</span> <span class="ident">schema_ids</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SchemaId</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// The block number at which the proof for add_provider_to_msa expires.</span>
-	<span class="kw">pub</span> <span class="ident">expiration</span>: <span class="ident">BlockNumber</span>,
+<span class="doccomment">/// Structure that is signed for granting permissions to a Provider
+</span><span class="attribute">#[derive(TypeInfo, Clone, Debug, Decode, Encode, PartialEq, Eq)]
+</span><span class="kw">pub struct </span>AddProvider {
+	<span class="doccomment">/// The provider being granted permissions
+	</span><span class="kw">pub </span>authorized_msa_id: MessageSourceId,
+	<span class="doccomment">/// Schemas for which publishing grants are authorized.
+	/// This is private intended for internal use only.
+	</span><span class="kw">pub </span>schema_ids: Vec&lt;SchemaId&gt;,
+	<span class="doccomment">/// The block number at which the proof for add_provider_to_msa expires.
+	</span><span class="kw">pub </span>expiration: BlockNumber,
 }
 
-<span class="kw">impl</span> <span class="ident">AddProvider</span> {
-	<span class="doccomment">/// Create new `AddProvider`</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
-		<span class="ident">authorized_msa_id</span>: <span class="ident">MessageSourceId</span>,
-		<span class="ident">schema_ids</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SchemaId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-		<span class="ident">expiration</span>: <span class="ident">BlockNumber</span>,
-	) -&gt; <span class="self">Self</span> {
-		<span class="kw">let</span> <span class="ident">schema_ids</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">schema_ids</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">schemas</span>) =&gt; <span class="ident">schemas</span>,
-			<span class="prelude-val">None</span> =&gt; <span class="ident">Vec::default</span>(),
+<span class="kw">impl </span>AddProvider {
+	<span class="doccomment">/// Create new `AddProvider`
+	</span><span class="kw">pub fn </span>new(
+		authorized_msa_id: MessageSourceId,
+		schema_ids: <span class="prelude-ty">Option</span>&lt;Vec&lt;SchemaId&gt;&gt;,
+		expiration: BlockNumber,
+	) -&gt; <span class="self">Self </span>{
+		<span class="kw">let </span>schema_ids = <span class="kw">match </span>schema_ids {
+			<span class="prelude-val">Some</span>(schemas) =&gt; schemas,
+			<span class="prelude-val">None </span>=&gt; Vec::default(),
 		};
 
-		<span class="self">Self</span> { <span class="ident">authorized_msa_id</span>, <span class="ident">schema_ids</span>, <span class="ident">expiration</span> }
+		<span class="self">Self </span>{ authorized_msa_id, schema_ids, expiration }
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_msa" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (848090dcd 2022-07-22)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_msa" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>

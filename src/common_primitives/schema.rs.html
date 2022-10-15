@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `common/primitives/src/schema.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>schema.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../common_primitives/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../common_primitives/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../common_primitives/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `common/primitives/src/schema.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>schema.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../common_primitives/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../common_primitives/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../common_primitives/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -75,77 +69,76 @@
 <span id="69">69</span>
 <span id="70">70</span>
 <span id="71">71</span>
-</pre><pre class="rust"><code><span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>;
-<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">MaxEncodedLen</span>};
-<span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
-<span class="kw">use</span> <span class="ident">sp_std::prelude</span>::<span class="kw-2">*</span>;
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">utils</span>::<span class="kw-2">*</span>;
+</pre><pre class="rust"><code><span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">use </span><span class="kw">crate</span>::utils;
+<span class="kw">use </span>codec::{Decode, Encode, MaxEncodedLen};
+<span class="kw">use </span>scale_info::TypeInfo;
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">use </span>serde::{Deserialize, Serialize};
+<span class="kw">use </span>sp_std::prelude::<span class="kw-2">*</span>;
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">use </span>utils::<span class="kw-2">*</span>;
 
-<span class="doccomment">/// Schema Id is the unique identifier for a Schema</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SchemaId</span> <span class="op">=</span> <span class="ident">u16</span>;
+<span class="doccomment">/// Schema Id is the unique identifier for a Schema
+</span><span class="kw">pub type </span>SchemaId = u16;
 
-<span class="doccomment">/// Types of modeling in which a message payload may be defined</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>, <span class="ident">MaxEncodedLen</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ModelType</span> {
-	<span class="doccomment">/// Message payload modeled with Apache Avro: &lt;https://avro.apache.org/docs/current/spec.html&gt;</span>
-	<span class="ident">AvroBinary</span>,
-	<span class="doccomment">/// Message payload modeled with Apache Parquet: &lt;https://parquet.apache.org/&gt;</span>
-	<span class="ident">Parquet</span>,
+<span class="doccomment">/// Types of modeling in which a message payload may be defined
+</span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
+#[derive(Copy, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+</span><span class="kw">pub enum </span>ModelType {
+	<span class="doccomment">/// Message payload modeled with Apache Avro: &lt;https://avro.apache.org/docs/current/spec.html&gt;
+	</span>AvroBinary,
+	<span class="doccomment">/// Message payload modeled with Apache Parquet: &lt;https://parquet.apache.org/&gt;
+	</span>Parquet,
 }
 
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">ModelType</span> {
-	<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-		<span class="ident"><span class="self">Self</span>::AvroBinary</span>
+<span class="kw">impl </span>Default <span class="kw">for </span>ModelType {
+	<span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>::AvroBinary
 	}
 }
 
-<span class="doccomment">/// Types of payload locations</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>, <span class="ident">MaxEncodedLen</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">PayloadLocation</span> {
-	<span class="doccomment">/// Message payload is located on chain</span>
-	<span class="ident">OnChain</span>,
-	<span class="doccomment">/// Message payload is located on IPFS</span>
-	<span class="ident">IPFS</span>,
+<span class="doccomment">/// Types of payload locations
+</span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
+#[derive(Copy, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+</span><span class="kw">pub enum </span>PayloadLocation {
+	<span class="doccomment">/// Message payload is located on chain
+	</span>OnChain,
+	<span class="doccomment">/// Message payload is located on IPFS
+	</span>IPFS,
 }
 
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">PayloadLocation</span> {
-	<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-		<span class="ident"><span class="self">Self</span>::OnChain</span>
+<span class="kw">impl </span>Default <span class="kw">for </span>PayloadLocation {
+	<span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>::OnChain
 	}
 }
 
-<span class="doccomment">/// RPC Response form for a Schema</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">TypeInfo</span>, <span class="ident">Eq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SchemaResponse</span> {
-	<span class="doccomment">/// The unique identifier for this Schema</span>
-	<span class="kw">pub</span> <span class="ident">schema_id</span>: <span class="ident">SchemaId</span>,
-	<span class="doccomment">/// The data that represents how this schema is structured</span>
-	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">serde</span>(<span class="ident">with</span> <span class="op">=</span> <span class="string">&quot;as_string&quot;</span>))]</span>
-	<span class="kw">pub</span> <span class="ident">model</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// The model format type for how the schema model is represented</span>
-	<span class="kw">pub</span> <span class="ident">model_type</span>: <span class="ident">ModelType</span>,
-	<span class="doccomment">/// The payload location</span>
-	<span class="kw">pub</span> <span class="ident">payload_location</span>: <span class="ident">PayloadLocation</span>,
+<span class="doccomment">/// RPC Response form for a Schema
+</span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
+#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+</span><span class="kw">pub struct </span>SchemaResponse {
+	<span class="doccomment">/// The unique identifier for this Schema
+	</span><span class="kw">pub </span>schema_id: SchemaId,
+	<span class="doccomment">/// The data that represents how this schema is structured
+	</span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, serde(with = <span class="string">&quot;as_string&quot;</span>))]
+	</span><span class="kw">pub </span>model: Vec&lt;u8&gt;,
+	<span class="doccomment">/// The model format type for how the schema model is represented
+	</span><span class="kw">pub </span>model_type: ModelType,
+	<span class="doccomment">/// The payload location
+	</span><span class="kw">pub </span>payload_location: PayloadLocation,
 }
 
-<span class="doccomment">/// This allows other pallets to resolve Schema information. With generic SchemaId</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">SchemaProvider</span><span class="op">&lt;</span><span class="ident">SchemaId</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// Gets the Schema details associated with this `SchemaId` if any</span>
-	<span class="doccomment">/// # Arguments</span>
-	<span class="doccomment">/// * `schema_id` - The `SchemaId` to lookup</span>
-	<span class="doccomment">/// # Returns</span>
-	<span class="doccomment">/// * `Option&lt;SchemaResponse&gt;`</span>
-	<span class="doccomment">/// # Remarks</span>
-	<span class="doccomment">/// This function is used to resolve a Schema from a SchemaId.</span>
-	<span class="kw">fn</span> <span class="ident">get_schema_by_id</span>(<span class="ident">schema_id</span>: <span class="ident">SchemaId</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SchemaResponse</span><span class="op">&gt;</span>;
+<span class="doccomment">/// This allows other pallets to resolve Schema information. With generic SchemaId
+</span><span class="kw">pub trait </span>SchemaProvider&lt;SchemaId&gt; {
+	<span class="doccomment">/// Gets the Schema details associated with this `SchemaId` if any
+	/// # Arguments
+	/// * `schema_id` - The `SchemaId` to lookup
+	/// # Returns
+	/// * `Option&lt;SchemaResponse&gt;`
+	/// # Remarks
+	/// This function is used to resolve a Schema from a SchemaId.
+	</span><span class="kw">fn </span>get_schema_by_id(schema_id: SchemaId) -&gt; <span class="prelude-ty">Option</span>&lt;SchemaResponse&gt;;
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_primitives" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (848090dcd 2022-07-22)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_primitives" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>

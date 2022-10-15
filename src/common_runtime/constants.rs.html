@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/common/src/constants.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>constants.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../common_runtime/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/common/src/constants.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>constants.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../common_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../common_runtime/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -277,279 +271,278 @@
 <span id="271">271</span>
 <span id="272">272</span>
 <span id="273">273</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::prod_or_testnet_or_local_or_env</span>;
-<span class="kw">use</span> <span class="ident">common_primitives</span>::{
-	<span class="ident">node</span>::{<span class="ident">Balance</span>, <span class="ident">BlockNumber</span>},
-	<span class="ident">schema::SchemaId</span>,
+</pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::prod_or_testnet_or_local_or_env;
+<span class="kw">use </span>common_primitives::{
+	node::{Balance, BlockNumber},
+	schema::SchemaId,
 };
 
-<span class="kw">use</span> <span class="ident">frame_support</span>::{
-	<span class="ident">parameter_types</span>,
-	<span class="ident">sp_runtime</span>::{<span class="ident">Perbill</span>, <span class="ident">Permill</span>},
-	<span class="ident">traits</span>::{<span class="ident">ConstU32</span>, <span class="ident">ConstU8</span>},
-	<span class="ident">weights</span>::{<span class="ident">constants::WEIGHT_PER_SECOND</span>, <span class="ident">Weight</span>},
-	<span class="ident">PalletId</span>,
+<span class="kw">use </span>frame_support::{
+	parameter_types,
+	sp_runtime::{Perbill, Permill},
+	traits::{ConstU32, ConstU8},
+	weights::{constants::WEIGHT_PER_SECOND, Weight},
+	PalletId,
 };
 
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">FREQUENCY_ROCOCO_TOKEN</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;XRQCY&quot;</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">FREQUENCY_LOCAL_TOKEN</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;UNIT&quot;</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">FREQUENCY_TOKEN</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;FRQCY&quot;</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TOKEN_DECIMALS</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">8</span>;
+<span class="kw">pub const </span>FREQUENCY_ROCOCO_TOKEN: <span class="kw-2">&amp;</span>str = <span class="string">&quot;XRQCY&quot;</span>;
+<span class="kw">pub const </span>FREQUENCY_LOCAL_TOKEN: <span class="kw-2">&amp;</span>str = <span class="string">&quot;UNIT&quot;</span>;
+<span class="kw">pub const </span>FREQUENCY_TOKEN: <span class="kw-2">&amp;</span>str = <span class="string">&quot;FRQCY&quot;</span>;
+<span class="kw">pub const </span>TOKEN_DECIMALS: u8 = <span class="number">8</span>;
 
-<span class="macro">parameter_types!</span> {
-	<span class="doccomment">/// Clone + Debug + Eq  implementation for u32 types</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxDataSize</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">30</span>;
+<span class="macro">parameter_types! </span>{
+	<span class="doccomment">/// Clone + Debug + Eq  implementation for u32 types
+	</span><span class="kw">pub const </span>MaxDataSize: u32 = <span class="number">30</span>;
 }
 
-<span class="kw">impl</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">MaxDataSize</span> {
-	<span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span> {
-		<span class="ident">MaxDataSize</span> {}
+<span class="kw">impl </span>Clone <span class="kw">for </span>MaxDataSize {
+	<span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+		MaxDataSize {}
 	}
 }
 
-<span class="kw">impl</span> <span class="ident">Eq</span> <span class="kw">for</span> <span class="ident">MaxDataSize</span> {
-	<span class="kw">fn</span> <span class="ident">assert_receiver_is_total_eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {}
+<span class="kw">impl </span>Eq <span class="kw">for </span>MaxDataSize {
+	<span class="kw">fn </span>assert_receiver_is_total_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {}
 }
 
-<span class="kw">impl</span> <span class="ident">PartialEq</span> <span class="kw">for</span> <span class="ident">MaxDataSize</span> {
-	<span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="ident">bool</span> {
-		<span class="self">self</span> <span class="op">==</span> <span class="ident">other</span>
+<span class="kw">impl </span>PartialEq <span class="kw">for </span>MaxDataSize {
+	<span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+		<span class="self">self </span>== other
 	}
 }
 
-<span class="kw">impl</span> <span class="ident">sp_std::fmt::Debug</span> <span class="kw">for</span> <span class="ident">MaxDataSize</span> {
-	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-	<span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="kw-2">&amp;mut</span> <span class="ident">sp_std::fmt::Formatter</span>) -&gt; <span class="ident">sp_std::fmt::Result</span> {
+<span class="kw">impl </span>sp_std::fmt::Debug <span class="kw">for </span>MaxDataSize {
+	<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="kw-2">&amp;mut </span>sp_std::fmt::Formatter) -&gt; sp_std::fmt::Result {
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>))]</span>
-	<span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="kw-2">&amp;mut</span> <span class="ident">sp_std::fmt::Formatter</span>) -&gt; <span class="ident">sp_std::fmt::Result</span> {
+	<span class="attribute">#[cfg(not(feature = <span class="string">&quot;std&quot;</span>))]
+	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="kw-2">&amp;mut </span>sp_std::fmt::Formatter) -&gt; sp_std::fmt::Result {
 		<span class="prelude-val">Ok</span>(())
 	}
 }
 
-<span class="doccomment">/// This determines the average expected block time that we are targeting.</span>
-<span class="doccomment">/// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.</span>
-<span class="doccomment">/// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked</span>
-<span class="doccomment">/// up by `pallet_aura` to implement `fn slot_duration()`.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Change this to adjust the block time.</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MILLISECS_PER_BLOCK</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">12000</span>;
+<span class="doccomment">/// This determines the average expected block time that we are targeting.
+/// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
+/// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked
+/// up by `pallet_aura` to implement `fn slot_duration()`.
+///
+/// Change this to adjust the block time.
+</span><span class="kw">pub const </span>MILLISECS_PER_BLOCK: u64 = <span class="number">12000</span>;
 
-<span class="comment">// NOTE: Currently it is not possible to change the slot duration after the chain has started.</span>
-<span class="comment">//       Attempting to do so will brick block production.</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SLOT_DURATION</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">MILLISECS_PER_BLOCK</span>;
+<span class="comment">// NOTE: Currently it is not possible to change the slot duration after the chain has started.
+//       Attempting to do so will brick block production.
+</span><span class="kw">pub const </span>SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
-<span class="comment">// Time is measured by number of blocks.</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MINUTES</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">60_000</span> <span class="op">/</span> (<span class="ident">MILLISECS_PER_BLOCK</span> <span class="kw">as</span> <span class="ident">BlockNumber</span>);
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">HOURS</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">MINUTES</span> <span class="op">*</span> <span class="number">60</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">DAYS</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">HOURS</span> <span class="op">*</span> <span class="number">24</span>;
+<span class="comment">// Time is measured by number of blocks.
+</span><span class="kw">pub const </span>MINUTES: BlockNumber = <span class="number">60_000 </span>/ (MILLISECS_PER_BLOCK <span class="kw">as </span>BlockNumber);
+<span class="kw">pub const </span>HOURS: BlockNumber = MINUTES * <span class="number">60</span>;
+<span class="kw">pub const </span>DAYS: BlockNumber = HOURS * <span class="number">24</span>;
 
-<span class="comment">// Unit = the base number of indivisible units for balances</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">currency</span> {
-	<span class="kw">use</span> <span class="ident">common_primitives::node::Balance</span>;
+<span class="comment">// Unit = the base number of indivisible units for balances
+</span><span class="kw">pub mod </span>currency {
+	<span class="kw">use </span>common_primitives::node::Balance;
 
-	<span class="doccomment">/// The existential deposit. Set to be 1/100th of a token.</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EXISTENTIAL_DEPOSIT</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">CENTS</span>;
+	<span class="doccomment">/// The existential deposit. Set to be 1/100th of a token.
+	</span><span class="kw">pub const </span>EXISTENTIAL_DEPOSIT: Balance = CENTS;
 
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">UNITS</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">10u128</span>.<span class="ident">saturating_pow</span>(<span class="ident"><span class="kw">super</span>::TOKEN_DECIMALS</span> <span class="kw">as</span> <span class="ident">u32</span>);
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">DOLLARS</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">UNITS</span>; <span class="comment">// 100_000_000</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CENTS</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">DOLLARS</span> <span class="op">/</span> <span class="number">100</span>; <span class="comment">// 1_000_000</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MILLICENTS</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">CENTS</span> <span class="op">/</span> <span class="number">1_000</span>; <span class="comment">// 1_000</span>
+	<span class="kw">pub const </span>UNITS: Balance = <span class="number">10u128</span>.saturating_pow(<span class="kw">super</span>::TOKEN_DECIMALS <span class="kw">as </span>u32);
+	<span class="kw">pub const </span>DOLLARS: Balance = UNITS; <span class="comment">// 100_000_000
+	</span><span class="kw">pub const </span>CENTS: Balance = DOLLARS / <span class="number">100</span>; <span class="comment">// 1_000_000
+	</span><span class="kw">pub const </span>MILLICENTS: Balance = CENTS / <span class="number">1_000</span>; <span class="comment">// 1_000
 
-	<span class="doccomment">/// Generates an balance based on amount of items and bytes</span>
-	<span class="doccomment">/// Items are each worth 20 Dollars</span>
-	<span class="doccomment">/// Bytes each cost 1/1_000 of a Dollar</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">deposit</span>(<span class="ident">items</span>: <span class="ident">u32</span>, <span class="ident">bytes</span>: <span class="ident">u32</span>) -&gt; <span class="ident">Balance</span> {
-		<span class="ident">items</span> <span class="kw">as</span> <span class="ident">Balance</span> <span class="op">*</span> <span class="number">20</span> <span class="op">*</span> <span class="ident">DOLLARS</span> <span class="op">+</span> (<span class="ident">bytes</span> <span class="kw">as</span> <span class="ident">Balance</span>) <span class="op">*</span> <span class="number">100</span> <span class="op">*</span> <span class="ident">MILLICENTS</span>
+	</span><span class="doccomment">/// Generates an balance based on amount of items and bytes
+	/// Items are each worth 20 Dollars
+	/// Bytes each cost 1/1_000 of a Dollar
+	</span><span class="kw">pub const fn </span>deposit(items: u32, bytes: u32) -&gt; Balance {
+		items <span class="kw">as </span>Balance * <span class="number">20 </span>* DOLLARS + (bytes <span class="kw">as </span>Balance) * <span class="number">100 </span>* MILLICENTS
 	}
 }
 
-<span class="doccomment">/// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is</span>
-<span class="doccomment">/// used to limit the maximal weight of a single extrinsic.</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">AVERAGE_ON_INITIALIZE_RATIO</span>: <span class="ident">Perbill</span> <span class="op">=</span> <span class="ident">Perbill::from_percent</span>(<span class="number">5</span>);
+<span class="doccomment">/// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is
+/// used to limit the maximal weight of a single extrinsic.
+</span><span class="kw">pub const </span>AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(<span class="number">5</span>);
 
-<span class="doccomment">/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used by</span>
-<span class="doccomment">/// `Operational` extrinsics.</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NORMAL_DISPATCH_RATIO</span>: <span class="ident">Perbill</span> <span class="op">=</span> <span class="ident">Perbill::from_percent</span>(<span class="number">75</span>);
+<span class="doccomment">/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used by
+/// `Operational` extrinsics.
+</span><span class="kw">pub const </span>NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(<span class="number">75</span>);
 
-<span class="doccomment">/// We allow for 0.5 of a second of compute with a 12 second average block time.</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MAXIMUM_BLOCK_WEIGHT</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">WEIGHT_PER_SECOND</span>.<span class="ident">saturating_div</span>(<span class="number">2</span>);
+<span class="doccomment">/// We allow for 0.5 of a second of compute with a 12 second average block time.
+</span><span class="kw">pub const </span>MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_div(<span class="number">2</span>);
 
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ZERO</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">0</span><span class="op">&gt;</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">FIFTY</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">50</span><span class="op">&gt;</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">HUNDRED</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">100</span><span class="op">&gt;</span>;
+<span class="kw">pub type </span>ZERO = ConstU32&lt;<span class="number">0</span>&gt;;
+<span class="kw">pub type </span>FIFTY = ConstU32&lt;<span class="number">50</span>&gt;;
+<span class="kw">pub type </span>HUNDRED = ConstU32&lt;<span class="number">100</span>&gt;;
 
-<span class="comment">// --- Frame System Pallet ---</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">FrameSystemMaxConsumers</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">16</span><span class="op">&gt;</span>;
-<span class="comment">// -end- Frame System Pallet ---</span>
+<span class="comment">// --- Frame System Pallet ---
+</span><span class="kw">pub type </span>FrameSystemMaxConsumers = ConstU32&lt;<span class="number">16</span>&gt;;
+<span class="comment">// -end- Frame System Pallet ---
 
-<span class="comment">// --- MSA Pallet ---</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">MsaMaxKeys</span> <span class="op">=</span> <span class="ident">ConstU8</span><span class="op">&lt;</span><span class="number">25</span><span class="op">&gt;</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">MsaMaxProviderNameSize</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">16</span><span class="op">&gt;</span>;
-<span class="comment">// -end- MSA Pallet ---</span>
+// --- MSA Pallet ---
+</span><span class="kw">pub type </span>MsaMaxKeys = ConstU8&lt;<span class="number">25</span>&gt;;
+<span class="kw">pub type </span>MsaMaxProviderNameSize = ConstU32&lt;<span class="number">16</span>&gt;;
+<span class="comment">// -end- MSA Pallet ---
 
-<span class="comment">// --- Schemas Pallet ---</span>
-<span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SchemasMaxRegistrations</span>: <span class="ident">SchemaId</span> <span class="op">=</span> <span class="number">65_000</span>;
+// --- Schemas Pallet ---
+</span><span class="macro">parameter_types! </span>{
+	<span class="kw">pub const </span>SchemasMaxRegistrations: SchemaId = <span class="number">65_000</span>;
 }
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SchemasMinModelSizeBytes</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">8</span><span class="op">&gt;</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SchemasMaxBytesBoundedVecLimit</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">65_500</span><span class="op">&gt;</span>;
-<span class="comment">// -end- Schemas Pallet ---</span>
+<span class="kw">pub type </span>SchemasMinModelSizeBytes = ConstU32&lt;<span class="number">8</span>&gt;;
+<span class="kw">pub type </span>SchemasMaxBytesBoundedVecLimit = ConstU32&lt;<span class="number">65_500</span>&gt;;
+<span class="comment">// -end- Schemas Pallet ---
 
-<span class="comment">// --- Orml Vesting Pallet ---</span>
-<span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">VestingPalletId</span>: <span class="ident">PalletId</span> <span class="op">=</span> <span class="ident">PalletId</span>(<span class="kw-2">*</span><span class="string">b&quot;py/vstng&quot;</span>);
-}
-
-<span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinVestedTransfer</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">0</span>;
+// --- Orml Vesting Pallet ---
+</span><span class="macro">parameter_types! </span>{
+	<span class="kw">pub const </span>VestingPalletId: PalletId = PalletId(<span class="kw-2">*</span><span class="string">b&quot;py/vstng&quot;</span>);
 }
 
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ORML_MAX_VESTING_SCHEDULES</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">50</span>;
-<span class="comment">// -end- Orml Vesting Pallet ---</span>
-
-<span class="comment">// --- Timestamp Pallet ---</span>
-<span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinimumPeriod</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">SLOT_DURATION</span> <span class="op">/</span> <span class="number">2</span>;
+<span class="macro">parameter_types! </span>{
+	<span class="kw">pub const </span>MinVestedTransfer: Balance = <span class="number">0</span>;
 }
-<span class="comment">// -end- Timestamp Pallet ---</span>
 
-<span class="comment">// --- Authorship Pallet ---</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">AuthorshipUncleGenerations</span> <span class="op">=</span> <span class="ident">ZERO</span>;
-<span class="comment">// -end- Authorship Pallet ---</span>
+<span class="kw">pub const </span>ORML_MAX_VESTING_SCHEDULES: u32 = <span class="number">50</span>;
+<span class="comment">// -end- Orml Vesting Pallet ---
 
-<span class="comment">// --- Balances Pallet ---</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BalancesMaxLocks</span> <span class="op">=</span> <span class="ident">FIFTY</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BalancesMaxReserves</span> <span class="op">=</span> <span class="ident">FIFTY</span>;
-<span class="comment">// -end- Balances Pallet ---</span>
-
-<span class="comment">// --- Scheduler Pallet ---</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SchedulerMaxScheduledPerBlock</span> <span class="op">=</span> <span class="ident">FIFTY</span>;
-<span class="comment">// -end- Scheduler Pallet ---</span>
-
-<span class="comment">// --- Preimage Pallet ---</span>
-<span class="doccomment">/// Preimage maximum size set to 4 MB</span>
-<span class="doccomment">/// Expected to be removed in Polkadot v0.9.31</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">PreimageMaxSize</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span>{ <span class="number">4096</span> <span class="op">*</span> <span class="number">1024</span> }<span class="op">&gt;</span>;
-
-<span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PreimageBaseDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">currency::deposit</span>(<span class="number">10</span>, <span class="number">64</span>);
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PreimageByteDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">currency::deposit</span>(<span class="number">0</span>, <span class="number">1</span>);
+// --- Timestamp Pallet ---
+</span><span class="macro">parameter_types! </span>{
+	<span class="kw">pub const </span>MinimumPeriod: u64 = SLOT_DURATION / <span class="number">2</span>;
 }
-<span class="comment">// -end- Preimage Pallet ---</span>
+<span class="comment">// -end- Timestamp Pallet ---
 
-<span class="comment">// --- Council ---</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CouncilMaxProposals</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">25</span><span class="op">&gt;</span>;
+// --- Authorship Pallet ---
+</span><span class="kw">pub type </span>AuthorshipUncleGenerations = ZERO;
+<span class="comment">// -end- Authorship Pallet ---
 
-<span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CouncilMotionDuration</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">5</span> <span class="op">*</span> <span class="ident">DAYS</span>;
+// --- Balances Pallet ---
+</span><span class="kw">pub type </span>BalancesMaxLocks = FIFTY;
+<span class="kw">pub type </span>BalancesMaxReserves = FIFTY;
+<span class="comment">// -end- Balances Pallet ---
+
+// --- Scheduler Pallet ---
+</span><span class="kw">pub type </span>SchedulerMaxScheduledPerBlock = FIFTY;
+<span class="comment">// -end- Scheduler Pallet ---
+
+// --- Preimage Pallet ---
+</span><span class="doccomment">/// Preimage maximum size set to 4 MB
+/// Expected to be removed in Polkadot v0.9.31
+</span><span class="kw">pub type </span>PreimageMaxSize = ConstU32&lt;{ <span class="number">4096 </span>* <span class="number">1024 </span>}&gt;;
+
+<span class="macro">parameter_types! </span>{
+	<span class="kw">pub const </span>PreimageBaseDeposit: Balance = currency::deposit(<span class="number">10</span>, <span class="number">64</span>);
+	<span class="kw">pub const </span>PreimageByteDeposit: Balance = currency::deposit(<span class="number">0</span>, <span class="number">1</span>);
 }
-<span class="comment">// -end- Council ---</span>
+<span class="comment">// -end- Preimage Pallet ---
 
-<span class="comment">// --- Technical Committee ---</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">TCMaxProposals</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">25</span><span class="op">&gt;</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">TCMaxMembers</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">3</span><span class="op">&gt;</span>;
+// --- Council ---
+</span><span class="kw">pub type </span>CouncilMaxProposals = ConstU32&lt;<span class="number">25</span>&gt;;
 
-<span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TCMotionDuration</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">5</span> <span class="op">*</span> <span class="ident">DAYS</span>;
+<span class="macro">parameter_types! </span>{
+	<span class="kw">pub const </span>CouncilMotionDuration: BlockNumber = <span class="number">5 </span>* DAYS;
 }
-<span class="comment">// -end- Technical Committee ---</span>
+<span class="comment">// -end- Council ---
 
-<span class="comment">// --- Democracy Pallet ---</span>
-<span class="comment">// Config from</span>
-<span class="comment">// https://github.com/paritytech/substrate/blob/367dab0d4bd7fd7b6c222dd15c753169c057dd42/bin/node/runtime/src/lib.rs#L880</span>
-<span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="ident">LaunchPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="string">&quot;FRQCY_LAUNCH_PERIOD&quot;</span>);
-	<span class="kw">pub</span> <span class="ident">VotingPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="string">&quot;FRQCY_VOTING_PERIOD&quot;</span>);
-	<span class="kw">pub</span> <span class="ident">FastTrackVotingPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">3</span> <span class="op">*</span> <span class="ident">HOURS</span>, <span class="number">3</span> <span class="op">*</span> <span class="ident">HOURS</span>, <span class="number">3</span> <span class="op">*</span> <span class="ident">HOURS</span>, <span class="string">&quot;FRQCY_FAST_TRACK_VOTING_PERIOD&quot;</span>);
-	<span class="kw">pub</span> <span class="ident">EnactmentPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">8</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">28</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="string">&quot;FRQCY_ENACTMENT_PERIOD&quot;</span>);
-	<span class="kw">pub</span> <span class="ident">CooloffPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="string">&quot;FRQCY_COOLOFF_PERIOD&quot;</span>);
-	<span class="kw">pub</span> <span class="ident">MinimumDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="ident">currency::deposit</span>(<span class="number">5</span>, <span class="number">0</span>), <span class="number">100</span> <span class="op">*</span> <span class="ident">currency::deposit</span>(<span class="number">5</span>, <span class="number">0</span>), <span class="number">100</span> <span class="op">*</span> <span class="ident">currency::deposit</span>(<span class="number">5</span>, <span class="number">0</span>), <span class="string">&quot;FRQCY_MINIMUM_DEPOSIT&quot;</span>);
-	<span class="kw">pub</span> <span class="ident">SpendPeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7</span> <span class="op">*</span> <span class="ident">DAYS</span>, <span class="number">10</span> <span class="op">*</span> <span class="ident">MINUTES</span>, <span class="number">10</span> <span class="op">*</span> <span class="ident">MINUTES</span>, <span class="string">&quot;FRQCY_SPEND_PERIOD&quot;</span>);
+// --- Technical Committee ---
+</span><span class="kw">pub type </span>TCMaxProposals = ConstU32&lt;<span class="number">25</span>&gt;;
+<span class="kw">pub type </span>TCMaxMembers = ConstU32&lt;<span class="number">3</span>&gt;;
+
+<span class="macro">parameter_types! </span>{
+	<span class="kw">pub const </span>TCMotionDuration: BlockNumber = <span class="number">5 </span>* DAYS;
 }
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">DemocracyMaxVotes</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">100</span><span class="op">&gt;</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">DemocracyMaxProposals</span> <span class="op">=</span> <span class="ident">HUNDRED</span>;
-<span class="comment">// -end- Democracy Pallet ---</span>
+<span class="comment">// -end- Technical Committee ---
 
-<span class="comment">// --- Treasury Pallet ---</span>
-<span class="doccomment">/// Generates the pallet &quot;account&quot;</span>
-<span class="doccomment">/// 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TREASURY_PALLET_ID</span>: <span class="ident">PalletId</span> <span class="op">=</span> <span class="ident">PalletId</span>(<span class="kw-2">*</span><span class="string">b&quot;py/trsry&quot;</span>);
-
-<span class="comment">// https://wiki.polkadot.network/docs/learn-treasury</span>
-<span class="comment">// https://paritytech.github.io/substrate/master/pallet_treasury/pallet/trait.Config.html</span>
-<span class="macro">parameter_types!</span> {
-
-	<span class="doccomment">/// Keyless account that holds the money for the treasury</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TreasuryPalletId</span>: <span class="ident">PalletId</span> <span class="op">=</span> <span class="ident">TREASURY_PALLET_ID</span>;
-
-	<span class="doccomment">/// Bond amount a treasury request must put up to make the proposal</span>
-	<span class="doccomment">/// This will be transferred to OnSlash if the proposal is rejected</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ProposalBondPercent</span>: <span class="ident">Permill</span> <span class="op">=</span> <span class="ident">Permill::from_percent</span>(<span class="number">5</span>);
-
-	<span class="doccomment">/// Minimum bond for a treasury proposal</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ProposalBondMinimum</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">100</span> <span class="op">*</span> <span class="ident">currency::DOLLARS</span>;
-
-	<span class="doccomment">/// Minimum bond for a treasury proposal</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ProposalBondMaximum</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1_000</span> <span class="op">*</span> <span class="ident">currency::DOLLARS</span>;
-
-	<span class="doccomment">/// How much of the treasury to burn, if funds remain at the end of the SpendPeriod</span>
-	<span class="doccomment">/// Set to zero until the economic system is setup and stabilized</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">Burn</span>: <span class="ident">Permill</span> <span class="op">=</span> <span class="ident">Permill::zero</span>();
-
-	<span class="doccomment">/// Maximum number of approved proposals per Spending Period</span>
-	<span class="doccomment">/// Set to 64 or 16 per week</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxApprovals</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">64</span>;
+// --- Democracy Pallet ---
+// Config from
+// https://github.com/paritytech/substrate/blob/367dab0d4bd7fd7b6c222dd15c753169c057dd42/bin/node/runtime/src/lib.rs#L880
+</span><span class="macro">parameter_types! </span>{
+	<span class="kw">pub </span>LaunchPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7 </span>* DAYS, <span class="number">28 </span>* DAYS, <span class="number">28 </span>* DAYS, <span class="string">&quot;FRQCY_LAUNCH_PERIOD&quot;</span>);
+	<span class="kw">pub </span>VotingPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7 </span>* DAYS, <span class="number">28 </span>* DAYS, <span class="number">28 </span>* DAYS, <span class="string">&quot;FRQCY_VOTING_PERIOD&quot;</span>);
+	<span class="kw">pub </span>FastTrackVotingPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">3 </span>* HOURS, <span class="number">3 </span>* HOURS, <span class="number">3 </span>* HOURS, <span class="string">&quot;FRQCY_FAST_TRACK_VOTING_PERIOD&quot;</span>);
+	<span class="kw">pub </span>EnactmentPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">8 </span>* DAYS, <span class="number">28 </span>* DAYS, <span class="number">28 </span>* DAYS, <span class="string">&quot;FRQCY_ENACTMENT_PERIOD&quot;</span>);
+	<span class="kw">pub </span>CooloffPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7 </span>* DAYS, <span class="number">7 </span>* DAYS, <span class="number">7 </span>* DAYS, <span class="string">&quot;FRQCY_COOLOFF_PERIOD&quot;</span>);
+	<span class="kw">pub </span>MinimumDeposit: Balance = <span class="macro">prod_or_testnet_or_local_or_env!</span>(currency::deposit(<span class="number">5</span>, <span class="number">0</span>), <span class="number">100 </span>* currency::deposit(<span class="number">5</span>, <span class="number">0</span>), <span class="number">100 </span>* currency::deposit(<span class="number">5</span>, <span class="number">0</span>), <span class="string">&quot;FRQCY_MINIMUM_DEPOSIT&quot;</span>);
+	<span class="kw">pub </span>SpendPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7 </span>* DAYS, <span class="number">10 </span>* MINUTES, <span class="number">10 </span>* MINUTES, <span class="string">&quot;FRQCY_SPEND_PERIOD&quot;</span>);
 }
-<span class="comment">// -end- Treasury Pallet ---</span>
+<span class="kw">pub type </span>DemocracyMaxVotes = ConstU32&lt;<span class="number">100</span>&gt;;
+<span class="kw">pub type </span>DemocracyMaxProposals = HUNDRED;
+<span class="comment">// -end- Democracy Pallet ---
 
-<span class="comment">// --- Transaction Payment Pallet ---</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">TransactionPaymentOperationalFeeMultiplier</span> <span class="op">=</span> <span class="ident">ConstU8</span><span class="op">&lt;</span><span class="number">5</span><span class="op">&gt;</span>;
+// --- Treasury Pallet ---
+</span><span class="doccomment">/// Generates the pallet &quot;account&quot;
+/// 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z
+</span><span class="kw">pub const </span>TREASURY_PALLET_ID: PalletId = PalletId(<span class="kw-2">*</span><span class="string">b&quot;py/trsry&quot;</span>);
 
-<span class="macro">parameter_types!</span> {
-	<span class="doccomment">/// Relay Chain `TransactionByteFee` / 10</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TransactionByteFee</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">10</span> <span class="op">*</span> <span class="ident">currency::MILLICENTS</span>;
+<span class="comment">// https://wiki.polkadot.network/docs/learn-treasury
+// https://paritytech.github.io/substrate/master/pallet_treasury/pallet/trait.Config.html
+</span><span class="macro">parameter_types! </span>{
+
+	<span class="doccomment">/// Keyless account that holds the money for the treasury
+	</span><span class="kw">pub const </span>TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
+
+	<span class="doccomment">/// Bond amount a treasury request must put up to make the proposal
+	/// This will be transferred to OnSlash if the proposal is rejected
+	</span><span class="kw">pub const </span>ProposalBondPercent: Permill = Permill::from_percent(<span class="number">5</span>);
+
+	<span class="doccomment">/// Minimum bond for a treasury proposal
+	</span><span class="kw">pub const </span>ProposalBondMinimum: Balance = <span class="number">100 </span>* currency::DOLLARS;
+
+	<span class="doccomment">/// Minimum bond for a treasury proposal
+	</span><span class="kw">pub const </span>ProposalBondMaximum: Balance = <span class="number">1_000 </span>* currency::DOLLARS;
+
+	<span class="doccomment">/// How much of the treasury to burn, if funds remain at the end of the SpendPeriod
+	/// Set to zero until the economic system is setup and stabilized
+	</span><span class="kw">pub const </span>Burn: Permill = Permill::zero();
+
+	<span class="doccomment">/// Maximum number of approved proposals per Spending Period
+	/// Set to 64 or 16 per week
+	</span><span class="kw">pub const </span>MaxApprovals: u32 = <span class="number">64</span>;
 }
-<span class="comment">// -end- Transaction Payment Pallet ---</span>
+<span class="comment">// -end- Treasury Pallet ---
 
-<span class="comment">// --- Session Pallet ---</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SessionPeriod</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span>{ <span class="number">6</span> <span class="op">*</span> <span class="ident">HOURS</span> }<span class="op">&gt;</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SessionOffset</span> <span class="op">=</span> <span class="ident">ZERO</span>;
-<span class="comment">// -end- Session Pallet ---</span>
+// --- Transaction Payment Pallet ---
+</span><span class="kw">pub type </span>TransactionPaymentOperationalFeeMultiplier = ConstU8&lt;<span class="number">5</span>&gt;;
 
-<span class="comment">// --- Aura Pallet ---</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">AuraMaxAuthorities</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">100_000</span><span class="op">&gt;</span>;
-<span class="comment">// -end- Aura Pallet ---</span>
+<span class="macro">parameter_types! </span>{
+	<span class="doccomment">/// Relay Chain `TransactionByteFee` / 10
+	</span><span class="kw">pub const </span>TransactionByteFee: Balance = <span class="number">10 </span>* currency::MILLICENTS;
+}
+<span class="comment">// -end- Transaction Payment Pallet ---
 
-<span class="comment">// --- Collator Selection Pallet ---</span>
-<span class="comment">// Values for each runtime environment are independently configurable.</span>
-<span class="comment">// Example CollatorMaxInvulnerables are 16 in production(mainnet),</span>
-<span class="comment">// 5 in rococo testnet and 5 in rococo local</span>
-<span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="ident">CollatorMaxCandidates</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);
-	<span class="kw">pub</span> <span class="ident">CollatorMinCandidates</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);
-	<span class="kw">pub</span> <span class="ident">CollatorMaxInvulnerables</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">16</span>, <span class="number">5</span>, <span class="number">5</span>);
-	<span class="kw">pub</span> <span class="ident">CollatorKickThreshold</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="macro">prod_or_testnet_or_local_or_env!</span>(
-		<span class="number">6</span> <span class="op">*</span> <span class="ident">HOURS</span>,
-		<span class="number">6</span> <span class="op">*</span> <span class="ident">HOURS</span>,
-		<span class="number">6</span> <span class="op">*</span> <span class="ident">HOURS</span>
+// --- Session Pallet ---
+</span><span class="kw">pub type </span>SessionPeriod = ConstU32&lt;{ <span class="number">6 </span>* HOURS }&gt;;
+<span class="kw">pub type </span>SessionOffset = ZERO;
+<span class="comment">// -end- Session Pallet ---
+
+// --- Aura Pallet ---
+</span><span class="kw">pub type </span>AuraMaxAuthorities = ConstU32&lt;<span class="number">100_000</span>&gt;;
+<span class="comment">// -end- Aura Pallet ---
+
+// --- Collator Selection Pallet ---
+// Values for each runtime environment are independently configurable.
+// Example CollatorMaxInvulnerables are 16 in production(mainnet),
+// 5 in rococo testnet and 5 in rococo local
+</span><span class="macro">parameter_types! </span>{
+	<span class="kw">pub </span>CollatorMaxCandidates: u32 = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);
+	<span class="kw">pub </span>CollatorMinCandidates: u32 = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);
+	<span class="kw">pub </span>CollatorMaxInvulnerables: u32 = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">16</span>, <span class="number">5</span>, <span class="number">5</span>);
+	<span class="kw">pub </span>CollatorKickThreshold: BlockNumber = <span class="macro">prod_or_testnet_or_local_or_env!</span>(
+		<span class="number">6 </span>* HOURS,
+		<span class="number">6 </span>* HOURS,
+		<span class="number">6 </span>* HOURS
 	);
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NeverDepositIntoId</span>: <span class="ident">PalletId</span> <span class="op">=</span> <span class="ident">PalletId</span>(<span class="kw-2">*</span><span class="string">b&quot;NeverDep&quot;</span>);
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MessagesMaxPayloadSizeBytes</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">1024</span> <span class="op">*</span> <span class="number">50</span>; <span class="comment">// 50K</span>
-}
-<span class="comment">// -end- Collator Selection Pallet ---</span>
+	<span class="kw">pub const </span>NeverDepositIntoId: PalletId = PalletId(<span class="kw-2">*</span><span class="string">b&quot;NeverDep&quot;</span>);
+	<span class="kw">pub const </span>MessagesMaxPayloadSizeBytes: u32 = <span class="number">1024 </span>* <span class="number">50</span>; <span class="comment">// 50K
+</span>}
+<span class="comment">// -end- Collator Selection Pallet ---
 
-<span class="comment">// --- Messages Pallet ---</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">MessagesMaxPerBlock</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">7000</span><span class="op">&gt;</span>;
+// --- Messages Pallet ---
+</span><span class="kw">pub type </span>MessagesMaxPerBlock = ConstU32&lt;<span class="number">7000</span>&gt;;
 
-<span class="kw">impl</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">MessagesMaxPayloadSizeBytes</span> {
-	<span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span> {
-		<span class="ident">MessagesMaxPayloadSizeBytes</span> {}
+<span class="kw">impl </span>Clone <span class="kw">for </span>MessagesMaxPayloadSizeBytes {
+	<span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+		MessagesMaxPayloadSizeBytes {}
 	}
 }
-<span class="comment">// -end- Messages Pallet ---</span>
-</code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (848090dcd 2022-07-22)" ></div>
-</body></html>
+<span class="comment">// -end- Messages Pallet ---
+</span></code></pre></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>

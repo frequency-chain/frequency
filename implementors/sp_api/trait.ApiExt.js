@@ -1,4 +1,4 @@
-(function() {var implementors = {};
-implementors["frequency_rococo_runtime"] = [{"text":"impl&lt;Block:&nbsp;BlockT, C:&nbsp;CallApiAt&lt;Block&gt;&gt; ApiExt&lt;Block&gt; for <a class=\"struct\" href=\"frequency_rococo_runtime/struct.RuntimeApiImpl.html\" title=\"struct frequency_rococo_runtime::RuntimeApiImpl\">RuntimeApiImpl</a>&lt;Block, C&gt;","synthetic":false,"types":["frequency_rococo_runtime::RuntimeApiImpl"]}];
-implementors["frequency_runtime"] = [{"text":"impl&lt;Block:&nbsp;BlockT, C:&nbsp;CallApiAt&lt;Block&gt;&gt; ApiExt&lt;Block&gt; for <a class=\"struct\" href=\"frequency_runtime/struct.RuntimeApiImpl.html\" title=\"struct frequency_runtime::RuntimeApiImpl\">RuntimeApiImpl</a>&lt;Block, C&gt;","synthetic":false,"types":["frequency_runtime::RuntimeApiImpl"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"frequency_rococo_runtime":[["impl&lt;Block:&nbsp;BlockT, C:&nbsp;CallApiAt&lt;Block&gt;&gt; ApiExt&lt;Block&gt; for <a class=\"struct\" href=\"frequency_rococo_runtime/struct.RuntimeApiImpl.html\" title=\"struct frequency_rococo_runtime::RuntimeApiImpl\">RuntimeApiImpl</a>&lt;Block, C&gt;"]],
+"frequency_runtime":[["impl&lt;Block:&nbsp;BlockT, C:&nbsp;CallApiAt&lt;Block&gt;&gt; ApiExt&lt;Block&gt; for <a class=\"struct\" href=\"frequency_runtime/struct.RuntimeApiImpl.html\" title=\"struct frequency_runtime::RuntimeApiImpl\">RuntimeApiImpl</a>&lt;Block, C&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
