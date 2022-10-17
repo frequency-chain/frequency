@@ -1,7 +1,7 @@
 use crate as pallet_messages;
 use common_primitives::{
 	msa::{
-		DelegationValidator, Delegator, MessageSourceId, MsaLookup, MsaValidator, OrderedSetExt,
+		DelegationValidator, Delegator, MessageSourceId, MsaLookup, MsaValidator, OrderedSet,
 		Provider, ProviderInfo, ProviderLookup, SchemaGrantValidator,
 	},
 	schema::*,
@@ -13,7 +13,6 @@ use frame_support::{
 	traits::{ConstU16, ConstU64, OnFinalize, OnInitialize},
 };
 use frame_system as system;
-pub use orml_utilities::OrderedSet;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -159,7 +158,7 @@ impl ProviderLookup for DelegationInfoHandler {
 		if provider == Provider(2000) {
 			return None
 		};
-		Some(ProviderInfo { expired: 100, schemas: OrderedSetExt::new() })
+		Some(ProviderInfo { expired: 100, schemas: OrderedSet::new() })
 	}
 }
 impl DelegationValidator for DelegationInfoHandler {

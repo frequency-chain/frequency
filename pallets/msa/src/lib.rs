@@ -63,7 +63,7 @@
 use codec::{Decode, Encode};
 use common_primitives::{
 	msa::{
-		DelegationValidator, Delegator, MsaLookup, MsaValidator, OrderedSetExt, Provider,
+		DelegationValidator, Delegator, MsaLookup, MsaValidator, OrderedSet, Provider,
 		ProviderInfo, ProviderLookup, ProviderMetadata, SchemaGrantValidator,
 		EXPIRATION_BLOCK_VALIDITY_GAP,
 	},
@@ -71,7 +71,6 @@ use common_primitives::{
 	schema::SchemaId,
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
-pub use orml_utilities::OrderedSet;
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
