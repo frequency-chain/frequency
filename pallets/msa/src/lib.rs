@@ -610,7 +610,6 @@ pub mod pallet {
 
 			// Delete the last and only account key and deposit the "KeyRemoved" event
 			Self::delete_key_for_msa(msa_id, &who)?;
-			Self::deposit_event(Event::KeyRemoved { key: who });
 
 			// Deposit the "MsaRetired" event
 			Self::deposit_event(Event::MsaRetired { msa_id });
