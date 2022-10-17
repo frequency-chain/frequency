@@ -342,6 +342,9 @@ fn test_retire_msa_success() {
 		// Retire the MSA
 		assert_ok!(Msa::retire_msa(origin));
 
+		// Check if KeyRemoved event was dispatched.
+		System::assert_has_event(Event::KeyRemoved { key: test_account.clone() }.into());
+
 		// Check if MsaRetired event was dispatched.
 		System::assert_last_event(Event::MsaRetired { msa_id }.into());
 
