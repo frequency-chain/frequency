@@ -16,9 +16,6 @@ frequency_docker_image_tag="${PARA_DOCKER_IMAGE_TAG:-frequency-latest}"
 chain="${RELAY_CHAIN_SPEC:-./resources/rococo-local.json}"
 
 case $cmd in
-install-toolchain)
-  ./scripts/install_toolchain.sh
-  ;;
 
 start-relay-chain)
   echo "Starting local relay chain with Alice and Bob..."

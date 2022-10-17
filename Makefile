@@ -39,10 +39,6 @@ onboard:
 offboard:
 	./scripts/init.sh offboard-frequency
 
-.PHONY: install
-install-toolchain:
-	./scripts/init.sh install-toolchain
-
 .PHONY: specs
 specs-rococo-2000:
 	./scripts/generate_specs.sh 2000 rococo-2000 release

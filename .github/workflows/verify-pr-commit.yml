@@ -6,9 +6,8 @@ on:
   pull_request:
     branches: [main]
 env:
-  RUST_TOOLCHAIN: nightly-2022-07-23
   BUILD_PROFILE: release
-
+  RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
 jobs:
   changes:
     name: Determine Changed Files
@@ -37,19 +36,12 @@ jobs:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
 
-  compile-project:
+  build-binary:
     needs: changes
     if: ${{needs.changes.outputs.rust == 'true'}}
     name: Compile Frequency Project
     runs-on: ubuntu-latest
     steps:
-      - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Save/Restore Dependencies from Cache
@@ -61,10 +53,27 @@ jobs:
         with:
           path: target/${{env.BUILD_PROFILE}}/frequency
           key: ${{runner.os}}-${{env.RUST_TOOLCHAIN}}-${{github.sha}}
-      - name: Compile for ${{matrix.network}}
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          default: true
+          profile: minimal
+          target: wasm32-unknown-unknown
+          toolchain: stable
+      - name: Compile for Mainnet
         run: |
           CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release \
             --features  frequency
+      - name: Archive Artifact
+        run: |
+          tar -cvf frequency-binary-mainnet-${{github.sha}}.amd64.tar \
+            ./target/${{env.BUILD_PROFILE}}/frequency
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts-${{github.run_id}}
+          path: frequency-binary-mainnet-${{github.sha}}.amd64.tar
+          if-no-files-found: error
 
   check-rust-code-format:
     needs: changes
@@ -72,15 +81,15 @@ jobs:
     name: Check Rust Code Format
     runs-on: ubuntu-latest
     steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
           default: true
           profile: minimal
           components: rustfmt
-      - name: Check Out Repo
-        uses: actions/checkout@v3
+          toolchain: stable
       - name: Check
         run: cargo fmt --check
 
@@ -90,15 +99,15 @@ jobs:
     name: Lint Rust Code
     runs-on: ubuntu-latest
     steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
           default: true
           profile: minimal
           components: clippy
-      - name: Check Out Repo
-        uses: actions/checkout@v3
+          toolchain: stable
       - name: Lint
         run: |
           SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy \
@@ -112,16 +121,16 @@ jobs:
     name: Check Rust Docs
     runs-on: ubuntu-latest
     steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
           components: rust-docs
-      - name: Check Out Repo
-        uses: actions/checkout@v3
+          toolchain: stable
       - name: Build Rust Docs
         run: RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps
 
@@ -131,15 +140,15 @@ jobs:
     name: Check Rust Packages and Dependencies
     runs-on: ubuntu-latest
     steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
           default: true
           profile: minimal
           components: rust-docs
-      - name: Check Out Repo
-        uses: actions/checkout@v3
+          toolchain: stable
       - name: Check
         run: SKIP_WASM_BUILD= cargo check --features  frequency
 
@@ -149,15 +158,15 @@ jobs:
     name: Run Rust Tests
     runs-on: ubuntu-latest
     steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
-      - name: Check Out Repo
-        uses: actions/checkout@v3
+          toolchain: stable
       - name: Restore Dependencies from Cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -171,19 +180,20 @@ jobs:
     name: Calculate Code Coverage
     runs-on: ubuntu-latest
     steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
-      - name: Check Out Repo
-        uses: actions/checkout@v3
+          toolchain: stable
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
         with:
           version: "0.20.1"
+          override: true
           # Tarpaulin Docs https://github.com/xd009642/tarpaulin
           # -e for exclude
           args: |
@@ -199,7 +209,7 @@ jobs:
   verify-js-api-augment:
     needs:
       - changes
-      - compile-project
+      - build-binary
     if: ${{needs.changes.outputs.js == 'true'}}
     name: Verify JS API Augment
     runs-on: ubuntu-latest
@@ -218,12 +228,15 @@ jobs:
       - name: Lint
         run: npm run lint
         working-directory: js/api-augment
-      - name: Restore Frequency Binary from Cache
-        uses: actions/cache@v3
+      - name: Download Binary Artifacts
+        id: download
+        uses: actions/download-artifact@v3
         with:
-          path: |
-            target/${{env.BUILD_PROFILE}}/frequency
-          key: ${{runner.os}}-${{env.RUST_TOOLCHAIN}}-${{github.sha}}
+          name: artifacts-${{github.run_id}}
+          path: .
+      - name: Extract Binary
+        run: |
+          tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
       - name: Output Metadata
         run: target/${{env.BUILD_PROFILE}}/frequency export-metadata > ./js/api-augment/metadata.json
       - name: Build
@@ -237,7 +250,7 @@ jobs:
         working-directory: js/api-augment/dist
 
   verify-docker-images:
-    needs: compile-project
+    needs: build-binary
     name: Verify Docker Images
     runs-on: ubuntu-latest
     steps:
@@ -246,18 +259,22 @@ jobs:
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
           default: true
           profile: minimal
+          toolchain: stable
       - name: Restore Dependencies from Cache
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: ${{env.RUST_TOOLCHAIN}}
-      - name: Restore Frequency Binary from Cache
-        uses: actions/cache@v3
+      - name: Download Binary Artifacts
+        id: download
+        uses: actions/download-artifact@v3
         with:
-          path: target/${{env.BUILD_PROFILE}}/frequency
-          key: ${{runner.os}}-${{env.RUST_TOOLCHAIN}}-${{github.sha}}
+          name: artifacts-${{github.run_id}}
+          path: .
+      - name: Extract Binary
+        run: |
+          tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
         with:
@@ -282,7 +299,7 @@ jobs:
           file: docker/${{env.IMAGE_NAME}}.dockerfile
 
   execute-runtime-checks:
-    needs: compile-project
+    needs: build-binary
     name: Execute Runtime Checks
     runs-on: ubuntu-latest
     steps:
@@ -291,19 +308,23 @@ jobs:
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{env.RUST_TOOLCHAIN}}
           default: true
           profile: minimal
+          toolchain: stable
           # target: wasm32-unknown-unknown
       - name: Restore Dependencies from Cache
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: ${{env.RUST_TOOLCHAIN}}
-      - name: Restore Frequency Binary from Cache
-        uses: actions/cache@v3
+      - name: Download Binary Artifacts
+        id: download
+        uses: actions/download-artifact@v3
         with:
-          path: target/${{env.BUILD_PROFILE}}/frequency
-          key: ${{runner.os}}-${{env.RUST_TOOLCHAIN}}-${{github.sha}}
+          name: artifacts-${{github.run_id}}
+          path: .
+      - name: Extract Binary
+        run: |
+          tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
       - name: Check Binary Version
         run: |
           file ./target/${{env.BUILD_PROFILE}}/frequency && \
