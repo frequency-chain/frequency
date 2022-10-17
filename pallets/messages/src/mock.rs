@@ -6,12 +6,14 @@ use common_primitives::{
 	},
 	schema::*,
 };
+
 use frame_support::{
 	dispatch::DispatchResult,
 	parameter_types,
 	traits::{ConstU16, ConstU64, OnFinalize, OnInitialize},
 };
 use frame_system as system;
+pub use orml_utilities::OrderedSet;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -173,7 +175,7 @@ impl DelegationValidator for DelegationInfoHandler {
 			return Err(DispatchError::Other("some delegation error"))
 		};
 
-		Ok(ProviderInfo { schemas: OrderedSetExt::new(), expired: Default::default() })
+		Ok(ProviderInfo { schemas: OrderedSet::new(), expired: Default::default() })
 	}
 }
 impl SchemaGrantValidator for SchemaGrantValidationHandler {

@@ -71,6 +71,7 @@ use common_primitives::{
 	schema::SchemaId,
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
+pub use orml_utilities::OrderedSet;
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -764,7 +765,7 @@ impl<T: Config> Pallet<T> {
 				.map_err(|_| Error::<T>::ExceedsMaxSchemaGrants)?;
 			let info = ProviderInfo {
 				expired: Default::default(),
-				schemas: OrderedSetExt::<SchemaId, T::MaxSchemaGrants>::from(granted_schemas),
+				schemas: OrderedSet::<SchemaId, T::MaxSchemaGrants>::from(granted_schemas),
 			};
 
 			*maybe_info = Some(info);
@@ -955,10 +956,10 @@ impl<T: Config> Pallet<T> {
 		let provider_info = Self::get_provider_info_of(delegator, provider)
 			.ok_or(Error::<T>::DelegationNotFound)?;
 		let schemas = provider_info.schemas.0;
-		if schemas.0.is_empty() {
+		if schemas.is_empty() {
 			return Err(Error::<T>::SchemaNotGranted.into())
 		}
-		Ok(Some(schemas.0.into()))
+		Ok(Some(schemas.into_inner()))
 	}
 }
 
@@ -1038,9 +1039,9 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 			// If the delegation does not exist, we return a ok
 			// This is only used for benchmarks, so it is safe to return a dummy account
 			// in case the delegation does not exist
-			return Ok(ProviderInfo { schemas: OrderedSetExt::new(), expired: Default::default() })
+			return Ok(ProviderInfo { schemas: OrderedSet::new(), expired: Default::default() })
 		}
-		Ok(ProviderInfo { schemas: OrderedSetExt::new(), expired: Default::default() })
+		Ok(ProviderInfo { schemas: OrderedSet::new(), expired: Default::default() })
 	}
 }
 
