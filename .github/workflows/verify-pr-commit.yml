@@ -35,6 +35,9 @@ jobs:
               - '**/*.rs'
               - '**/Cargo.toml'
               - '**/Cargo.lock'
+            cargo-lock:
+              - '**/Cargo.toml'
+              - '**/Cargo.lock'
 
   build-binary:
     needs: changes
@@ -74,6 +77,21 @@ jobs:
           name: artifacts-${{github.run_id}}
           path: frequency-binary-mainnet-${{github.sha}}.amd64.tar
           if-no-files-found: error
+
+  check-for-vulnerable-crates:
+    needs: changes
+    if: ${{needs.changes.outputs.cargo-lock == 'true'}}
+    name: Check for Vulnerable Crates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Set Up Cargo Audit
+        run: |
+          cargo install --force cargo-audit
+          cargo generate-lockfile
+      - name: Run Cargo Audit
+        run: cargo audit
 
   check-rust-code-format:
     needs: changes
@@ -147,7 +165,6 @@ jobs:
         with:
           default: true
           profile: minimal
-          components: rust-docs
           toolchain: stable
       - name: Check
         run: SKIP_WASM_BUILD= cargo check --features  frequency
