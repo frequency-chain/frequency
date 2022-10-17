@@ -1,14 +1,16 @@
 use crate as pallet_messages;
 use common_primitives::{
-	msa::{AccountProvider, Delegator, MessageSourceId, OrderedSetExt, Provider, ProviderInfo},
+	msa::{AccountProvider, Delegator, MessageSourceId, Provider, ProviderInfo},
 	schema::*,
 };
+
 use frame_support::{
 	dispatch::DispatchResult,
 	parameter_types,
 	traits::{ConstU16, ConstU64, OnFinalize, OnInitialize},
 };
 use frame_system as system;
+pub use orml_utilities::OrderedSet;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -133,7 +135,7 @@ impl AccountProvider for AccountHandler {
 		if provider == Provider(2000) {
 			return None
 		};
-		Some(ProviderInfo { expired: 100, schemas: OrderedSetExt::new() })
+		Some(ProviderInfo { expired: 100, schemas: OrderedSet::new() })
 	}
 
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError> {
@@ -156,7 +158,7 @@ impl AccountProvider for AccountHandler {
 			return Err(DispatchError::Other("some delegation error"))
 		};
 
-		Ok(ProviderInfo { schemas: OrderedSetExt::new(), expired: Default::default() })
+		Ok(ProviderInfo { schemas: OrderedSet::new(), expired: Default::default() })
 	}
 
 	fn ensure_valid_schema_grant(

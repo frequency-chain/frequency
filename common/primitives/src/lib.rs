@@ -11,9 +11,6 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
-
-/// Data structures for the generic use.
-pub mod ds;
 /// Structs and traits for the Messages pallet.
 pub mod messages;
 /// Structs and traits for the MSA pallet.
