@@ -395,7 +395,10 @@ pub mod pallet {
 
 			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 
-			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())?;
+			Self::verify_signature(
+				vec![(proof, delegator_key.clone())],
+				add_provider_payload.encode(),
+			)?;
 
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			ensure!(
@@ -483,8 +486,7 @@ pub mod pallet {
 
 			// delegator must have signed the payload.
 			Self::verify_signature(
-				proof.clone(),
-				delegator_key.clone(),
+				vec![(proof.clone(), delegator_key.clone())],
 				add_provider_payload.encode(),
 			)
 			.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
@@ -562,11 +564,8 @@ pub mod pallet {
 
 			Self::register_signature(&new_proof, add_key_payload.expiration.into())?;
 
-			Self::verify_signature(new_proof, new_key.clone(), add_key_payload.encode())
-				.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
 			Self::verify_signature(
-				msa_owner_proof,
-				msa_owner_key.clone(),
+				vec![(msa_owner_proof, msa_owner_key.clone()), (new_proof, new_key.clone())],
 				add_key_payload.encode(),
 			)
 			.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
@@ -785,14 +784,14 @@ impl<T: Config> Pallet<T> {
 	/// Verify the `signature` was signed by `signer` on `payload` by a wallet
 	/// Note the `wrap_binary_data` follows the Polkadot wallet pattern of wrapping with `<Byte>` tags.
 	pub fn verify_signature(
-		signature: MultiSignature,
-		signer: T::AccountId,
+		signer_signature: Vec<(MultiSignature, T::AccountId)>,
 		payload: Vec<u8>,
 	) -> DispatchResult {
-		let key = T::ConvertIntoAccountId32::convert(signer);
-		let wrapped_payload = wrap_binary_data(payload);
-
-		ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
+		for (signature, signer) in signer_signature {
+			let key = T::ConvertIntoAccountId32::convert(signer);
+			let wrapped_payload = wrap_binary_data(payload.clone());
+			ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
+		}
 
 		Ok(())
 	}
