@@ -5,10 +5,7 @@ use crate::{
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
-	msa::{
-		Delegator, MessageSourceId, OrderedSetExt, Provider, ProviderInfo,
-		EXPIRATION_BLOCK_VALIDITY_GAP,
-	},
+	msa::{Delegator, MessageSourceId, Provider, ProviderInfo, EXPIRATION_BLOCK_VALIDITY_GAP},
 	node::BlockNumber,
 	schema::SchemaId,
 	utils::wrap_binary_data,
@@ -18,6 +15,7 @@ use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 };
+use orml_utilities::OrderedSet;
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::{traits::SignedExtension, MultiSignature};
 
@@ -527,7 +525,7 @@ pub fn add_provider_to_msa_is_success() {
 
 		assert_eq!(
 			Msa::get_provider_info(delegator, provider),
-			Some(ProviderInfo { expired: 0, schemas: OrderedSetExt::new() })
+			Some(ProviderInfo { expired: 0, schemas: OrderedSet::new() })
 		);
 
 		System::assert_last_event(
@@ -1046,7 +1044,7 @@ pub fn revoke_provider_is_successful() {
 
 		assert_eq!(
 			Msa::get_provider_info(delegator, provider).unwrap(),
-			ProviderInfo { expired: 1, schemas: OrderedSetExt::new() },
+			ProviderInfo { expired: 1, schemas: OrderedSet::new() },
 		);
 	});
 }
@@ -1228,10 +1226,7 @@ pub fn revoke_delegation_by_provider_happy_path() {
 
 		// 6. verify that the provider is revoked
 		let provider_info = Msa::get_provider_info(Delegator(2), Provider(1));
-		assert_eq!(
-			provider_info,
-			Some(ProviderInfo { expired: 26, schemas: OrderedSetExt::new() })
-		);
+		assert_eq!(provider_info, Some(ProviderInfo { expired: 26, schemas: OrderedSet::new() }));
 
 		// 7. verify the event
 		System::assert_last_event(

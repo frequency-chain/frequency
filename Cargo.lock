@@ -5676,6 +5676,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "orml-utilities",
  "parity-scale-codec",
  "scale-info",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.29)",
