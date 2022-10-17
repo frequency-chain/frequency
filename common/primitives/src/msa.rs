@@ -1,12 +1,13 @@
 use codec::{Decode, Encode, EncodeLike, Error, MaxEncodedLen};
-use frame_support::{dispatch::DispatchResult, traits::Get, BoundedVec};
+use frame_support::{dispatch::DispatchResult, traits::Get, BoundedVec, RuntimeDebug};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::DispatchError;
 use sp_std::prelude::Vec;
 
-pub use crate::{ds::OrderedSetExt, schema::SchemaId};
+pub use crate::schema::SchemaId;
+pub use orml_utilities::OrderedSet;
 
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
 pub type MessageSourceId = u64;
@@ -46,7 +47,7 @@ impl From<Delegator> for MessageSourceId {
 }
 
 /// Struct for the information of the relationship between an MSA and a Provider
-#[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
+#[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxSchemaGrants))]
 pub struct ProviderInfo<BlockNumber, MaxSchemaGrants>
 where
@@ -55,7 +56,7 @@ where
 	/// Block number the grant will be revoked.
 	pub expired: BlockNumber,
 	/// Schemas that the provider is allowed to use for a delegated message.
-	pub schemas: OrderedSetExt<SchemaId, MaxSchemaGrants>,
+	pub schemas: OrderedSet<SchemaId, MaxSchemaGrants>,
 }
 
 /// Provider is the recipient of a delegation.
