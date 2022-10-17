@@ -6,7 +6,7 @@ use sp_core::{crypto::AccountId32, sr25519, Encode, Pair, H256};
 use sp_runtime::{traits::SignedExtension, MultiSignature};
 
 use common_primitives::{
-	msa::{Delegator, MessageSourceId, OrderedSetExt, Provider, ProviderInfo},
+	msa::{Delegator, MessageSourceId, Provider, ProviderInfo},
 	node::BlockNumber,
 	schema::SchemaId,
 	utils::wrap_binary_data,

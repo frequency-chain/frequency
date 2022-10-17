@@ -58,7 +58,7 @@
 
 use codec::{Decode, Encode};
 use common_primitives::{
-	msa::{AccountProvider, Delegator, OrderedSetExt, Provider, ProviderInfo, ProviderMetadata},
+	msa::{AccountProvider, Delegator, Provider, ProviderInfo, ProviderMetadata},
 	schema::SchemaId,
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
@@ -552,22 +552,30 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::add_key_to_msa())]
 		pub fn add_key_to_msa(
 			origin: OriginFor<T>,
-			key: T::AccountId,
-			proof: MultiSignature,
+			msa_owner_key: T::AccountId,
+			msa_owner_proof: MultiSignature,
+			new_key: T::AccountId,
+			new_proof: MultiSignature,
 			add_key_payload: AddKeyData,
 		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
+			let _ = ensure_signed(origin)?;
 
-			Self::register_signature(&proof, add_key_payload.expiration.into())?;
+			Self::register_signature(&new_proof, add_key_payload.expiration.into())?;
 
-			Self::verify_signature(proof, key.clone(), add_key_payload.encode())
+			Self::verify_signature(new_proof, new_key.clone(), add_key_payload.encode())
 				.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
+			Self::verify_signature(
+				msa_owner_proof,
+				msa_owner_key.clone(),
+				add_key_payload.encode(),
+			)
+			.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
 
 			let msa_id = add_key_payload.msa_id;
 
-			Self::ensure_msa_owner(&who, msa_id)?;
+			Self::ensure_msa_owner(msa_owner_key, msa_id)?;
 
-			Self::add_key(msa_id, &key.clone(), |new_msa_id| -> DispatchResult {
+			Self::add_key(msa_id, &new_key.clone(), |new_msa_id| -> DispatchResult {
 				Self::deposit_event(Event::KeyAdded { msa_id: new_msa_id, key });
 				Ok(())
 			})?;
