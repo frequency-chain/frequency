@@ -631,7 +631,9 @@ impl pallet_collator_selection::Config for Runtime {
 impl pallet_messages::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_messages::weights::SubstrateWeight<Runtime>;
-	type AccountProvider = Msa;
+	type MsaInfoProvider = Msa;
+	type DelegationInfoProvider = Msa;
+	type SchemaGrantValidator = Msa;
 	type SchemaProvider = Schemas;
 	type MaxMessagesPerBlock = MessagesMaxPerBlock;
 	type MaxMessagePayloadSizeBytes = MessagesMaxPayloadSizeBytes;

@@ -109,14 +109,10 @@ impl From<Provider> for MessageSourceId {
 	}
 }
 
-/// This allows other pallets to resolve MSA information.
-pub trait AccountProvider {
-	/// Type used to associate a key to an MSA.
+/// A behavior that allows looking up an MSA id
+pub trait MsaLookup {
+	/// The association between key and MSA
 	type AccountId;
-	/// Type for block number.
-	type BlockNumber;
-	/// Type for maximum number of schemas that can be granted to a provider.
-	type MaxSchemaGrants: Get<u32> + Clone + Eq;
 
 	/// Gets the MSA Id associated with this `AccountId` if any
 	/// # Arguments
@@ -124,6 +120,28 @@ pub trait AccountProvider {
 	/// # Returns
 	/// * `Option<MessageSourceId>`
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId>;
+}
+
+/// A behavior that allows for validating an MSA
+pub trait MsaValidator {
+	/// The association between key and MSA
+	type AccountId;
+
+	/// Check that a key is associated to an MSA and returns key information.
+	/// Returns a `[DispatchError`] if there is no MSA associated with the key
+	/// # Arguments
+	/// * `key` - The `AccountId` to lookup
+	/// # Returns
+	/// * `Result<MessageSourceId, DispatchError>`
+	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError>;
+}
+
+/// A behavior that allows for looking up delegator-provider relationships
+pub trait ProviderLookup {
+	/// Type for block number.
+	type BlockNumber;
+	/// Type for maximum number of schemas that can be granted to a provider.
+	type MaxSchemaGrants: Get<u32> + Clone + Eq;
 
 	/// Gets the relationship information for this delegator, provider pair
 	/// # Arguments
@@ -135,13 +153,14 @@ pub trait AccountProvider {
 		delegator: Delegator,
 		provider: Provider,
 	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>>;
-	/// Check that a key is associated to an MSA and returns key information.
-	/// Returns a `[DispatchError`] if there is no MSA associated with the key
-	/// # Arguments
-	/// * `key` - The `AccountId` to lookup
-	/// # Returns
-	/// * `Result<MessageSourceId, DispatchError>`
-	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError>;
+}
+
+/// A behavior that allows for validating a delegator-provider relationship
+pub trait DelegationValidator {
+	/// Type for block number.
+	type BlockNumber;
+	/// Type for maximum number of schemas that can be granted to a provider.
+	type MaxSchemaGrants: Get<u32> + Clone + Eq;
 
 	/// Validates that the delegator and provider have a relationship at this point
 	/// # Arguments
@@ -154,7 +173,10 @@ pub trait AccountProvider {
 		delegator: Delegator,
 		block_number: Option<Self::BlockNumber>,
 	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError>;
+}
 
+/// A behavior that allows for validating a schema grant
+pub trait SchemaGrantValidator {
 	/// Validates if the provider is allowed to use the schema
 	/// # Arguments
 	/// * `provider` - The `MessageSourceId` that has been delegated to
