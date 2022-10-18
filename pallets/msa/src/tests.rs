@@ -5,10 +5,7 @@ use crate::{
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
-	msa::{
-		Delegator, MessageSourceId, OrderedSetExt, Provider, ProviderInfo,
-		EXPIRATION_BLOCK_VALIDITY_GAP,
-	},
+	msa::{Delegator, MessageSourceId, Provider, ProviderInfo, EXPIRATION_BLOCK_VALIDITY_GAP},
 	node::BlockNumber,
 	schema::SchemaId,
 	utils::wrap_binary_data,
@@ -18,6 +15,7 @@ use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 };
+use orml_utilities::OrderedSet;
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::{traits::SignedExtension, MultiSignature};
 
@@ -294,7 +292,7 @@ fn add_key_with_proof_too_far_into_future_fails() {
 }
 
 #[test]
-fn it_revokes_msa_key_successfully() {
+fn it_deletes_msa_key_successfully() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
 		assert_ok!(Msa::add_key(2, &test_public(2), EMPTY_FUNCTION));
@@ -306,6 +304,140 @@ fn it_revokes_msa_key_successfully() {
 		assert_eq!(info, None);
 
 		System::assert_last_event(Event::KeyRemoved { key: test_public(2) }.into());
+	})
+}
+
+#[test]
+fn it_deletes_msa_last_key_self_removal() {
+	new_test_ext().execute_with(|| {
+		let msa_id = 2;
+
+		// Create an account
+		let test_account = test_public(4);
+		let origin = Origin::signed(test_account.clone());
+
+		// Add an account to the MSA so it has exactly one account
+		assert_ok!(Msa::add_key(msa_id, &test_account, EMPTY_FUNCTION));
+
+		// Attempt to delete/remove the account from the MSA
+		assert_noop!(Msa::delete_msa_key(origin, test_account), Error::<Test>::InvalidSelfRemoval);
+	})
+}
+
+#[test]
+fn test_retire_msa_success() {
+	new_test_ext().execute_with(|| {
+		let (test_account_key_pair, _) = sr25519::Pair::generate();
+		let msa_id = 2;
+
+		// Create an account
+		let test_account = AccountId32::new(test_account_key_pair.public().into());
+		let origin = Origin::signed(test_account.clone());
+
+		// Add an account to the MSA so it has exactly one account
+		assert_ok!(Msa::add_key(msa_id, &test_account, EMPTY_FUNCTION));
+
+		// Retire the MSA
+		assert_ok!(Msa::retire_msa(origin));
+
+		// Check if KeyRemoved event was dispatched.
+		System::assert_has_event(Event::KeyRemoved { key: test_account.clone() }.into());
+
+		// Check if MsaRetired event was dispatched.
+		System::assert_last_event(Event::MsaRetired { msa_id }.into());
+
+		// Assert that the MSA has no accounts
+		let key_count = Msa::get_msa_key_count(msa_id);
+		assert_eq!(key_count, 0);
+
+		// MSA has been retired, perform additional tests
+
+		// [TEST] Adding an account to the retired MSA should fail
+		let (key_pair1, _) = sr25519::Pair::generate();
+		let new_account1 = key_pair1.public();
+		let (key_pair2, _) = sr25519::Pair::generate();
+		let new_account2 = key_pair2.public();
+		let (msa_id2, _) = Msa::create_account(new_account2.into(), EMPTY_FUNCTION).unwrap();
+
+		let add_new_key_data = AddKeyData { nonce: 1, msa_id: msa_id2, expiration: 10 };
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+		let signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
+		assert_noop!(
+			Msa::add_key_to_msa(
+				Origin::signed(test_account.clone()),
+				new_account1.into(),
+				signature,
+				add_new_key_data
+			),
+			Error::<Test>::NoKeyExists
+		);
+
+		// [TEST] Adding a provider to the retired MSA should fail
+		let (provider_key_pair, _) = sr25519::Pair::generate();
+		let provider_account = provider_key_pair.public();
+
+		// Create provider account and get its MSA ID (u64)
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+		let provider_msa_id =
+			Msa::try_get_msa_from_account_id(&AccountId32::new(provider_account.0)).unwrap();
+
+		// Register provider
+		assert_ok!(Msa::register_provider(
+			Origin::signed(provider_account.into()),
+			Vec::from("Foo")
+		));
+
+		let (delegator_signature, add_provider_payload) =
+			create_and_sign_add_provider_payload(test_account_key_pair, provider_msa_id);
+
+		assert_noop!(
+			Msa::add_provider_to_msa(
+				Origin::signed(provider_account.into()),
+				test_account.clone(),
+				delegator_signature,
+				add_provider_payload
+			),
+			Error::<Test>::NoKeyExists
+		);
+
+		// [TEST] Revoking a provider (modifying permissions) should fail
+		assert_noop!(
+			Msa::revoke_msa_delegation_by_delegator(
+				Origin::signed(test_account.clone()),
+				provider_msa_id
+			),
+			Error::<Test>::NoKeyExists
+		);
+	})
+}
+
+#[test]
+fn test_retire_msa_fails_if_registered_provider() {
+	new_test_ext().execute_with(|| {
+		// Add an account to the MSA
+		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
+
+		// Register provider
+		assert_ok!(Msa::register_provider(test_origin_signed(1), Vec::from("Foo")));
+
+		// Retire MSA
+		assert_noop!(
+			Msa::retire_msa(test_origin_signed(1)),
+			Error::<Test>::RegisteredProviderCannotBeRetired
+		);
+	})
+}
+
+#[test]
+fn test_retire_msa_fails_if_more_than_one_account_exists() {
+	new_test_ext().execute_with(|| {
+		// Add an account to the MSA
+		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
+		// Add an account to the MSA
+		assert_ok!(Msa::add_key(2, &test_public(2), EMPTY_FUNCTION));
+
+		// Retire the MSA
+		assert_noop!(Msa::retire_msa(test_origin_signed(1)), Error::<Test>::MoreThanOneKeyExists);
 	})
 }
 
@@ -393,7 +525,7 @@ pub fn add_provider_to_msa_is_success() {
 
 		assert_eq!(
 			Msa::get_provider_info(delegator, provider),
-			Some(ProviderInfo { expired: 0, schemas: OrderedSetExt::new() })
+			Some(ProviderInfo { expired: 0, schemas: OrderedSet::new() })
 		);
 
 		System::assert_last_event(
@@ -912,7 +1044,7 @@ pub fn revoke_provider_is_successful() {
 
 		assert_eq!(
 			Msa::get_provider_info(delegator, provider).unwrap(),
-			ProviderInfo { expired: 1, schemas: OrderedSetExt::new() },
+			ProviderInfo { expired: 1, schemas: OrderedSet::new() },
 		);
 	});
 }
@@ -1094,10 +1226,7 @@ pub fn revoke_delegation_by_provider_happy_path() {
 
 		// 6. verify that the provider is revoked
 		let provider_info = Msa::get_provider_info(Delegator(2), Provider(1));
-		assert_eq!(
-			provider_info,
-			Some(ProviderInfo { expired: 26, schemas: OrderedSetExt::new() })
-		);
+		assert_eq!(provider_info, Some(ProviderInfo { expired: 26, schemas: OrderedSet::new() }));
 
 		// 7. verify the event
 		System::assert_last_event(

@@ -6,8 +6,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-pub mod xcm_config;
-
 mod benchmarking;
 
 use cumulus_pallet_parachain_system::{
@@ -55,7 +53,6 @@ use frame_system::{
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
-use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -70,9 +67,6 @@ pub use common_runtime::{
 	weights,
 	weights::{BlockExecutionWeight, ExtrinsicBaseWeight},
 };
-
-// XCM Imports
-use xcm_executor::XcmExecutor;
 
 /// Basefilter to only allow specified transactions call to be executed
 pub struct BaseCallFilter;
@@ -488,7 +482,7 @@ impl pallet_treasury::Config for Runtime {
 	type PalletId = TreasuryPalletId;
 	type Currency = Balances;
 	type Event = Event;
-	type WeightInfo = weights::pallet_treasury::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
 
 	/// Who approves treasury proposals?
 	/// - Root (sudo or governance)
@@ -552,46 +546,21 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OperationalFeeMultiplier = TransactionPaymentOperationalFeeMultiplier;
 }
 
-parameter_types! {
-	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-}
-
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
-	type DmpMessageHandler = DmpQueue;
-	type ReservedDmpWeight = ReservedDmpWeight;
-	type OutboundXcmpMessageSource = XcmpQueue;
-	type XcmpMessageHandler = XcmpQueue;
-	type ReservedXcmpWeight = ReservedXcmpWeight;
+	type DmpMessageHandler = ();
+	type ReservedDmpWeight = ();
+	type OutboundXcmpMessageSource = ();
+	type XcmpMessageHandler = ();
+	type ReservedXcmpWeight = ();
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
-
-impl cumulus_pallet_xcmp_queue::Config for Runtime {
-	type Event = Event;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type ChannelInfo = ParachainSystem;
-	type VersionWrapper = ();
-	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-	type ControllerOrigin = EnsureRoot<AccountId>;
-	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-	type WeightInfo = ();
-}
-
-impl cumulus_pallet_dmp_queue::Config for Runtime {
-	type Event = Event;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-}
-
-// We allow root only to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
 
 impl pallet_session::Config for Runtime {
 	type Event = Event;
@@ -616,23 +585,55 @@ impl pallet_aura::Config for Runtime {
 impl pallet_collator_selection::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
-	type UpdateOrigin = CollatorSelectionUpdateOrigin;
-	type PotId = CollatorPotId;
+
+	// Origin that can dictate updating parameters of this pallet.
+	// Currently only root or a 3/5ths council vote.
+	type UpdateOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
+	>;
+
+	// Account Identifier from which the internal Pot is generated.
+	// Set to something that NEVER gets a balance i.e. No block rewards.
+	type PotId = NeverDepositIntoId;
+
+	// Maximum number of candidates that we should have. This is enforced in code.
+	//
+	// This does not take into account the invulnerables.
 	type MaxCandidates = CollatorMaxCandidates;
+
+	// Minimum number of candidates that we should have. This is used for disaster recovery.
+	//
+	// This does not take into account the invulnerables.
 	type MinCandidates = CollatorMinCandidates;
-	type MaxInvulnerables = ConstU32<10>;
+
+	// Maximum number of invulnerables. This is enforced in code.
+	type MaxInvulnerables = CollatorMaxInvulnerables;
+
+	// Will be kicked if block is not produced in threshold.
 	// should be a multiple of session or things will get inconsistent
-	type KickThreshold = SessionPeriod;
+	type KickThreshold = CollatorKickThreshold;
+
+	/// A stable ID for a validator.
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
+
+	// A conversion from account ID to validator ID.
+	//
+	// Its cost must be at most one storage read.
 	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
+
+	// Validate a user is registered
 	type ValidatorRegistration = Session;
+
 	type WeightInfo = ();
 }
 
 impl pallet_messages::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_messages::weights::SubstrateWeight<Runtime>;
-	type AccountProvider = Msa;
+	type MsaInfoProvider = Msa;
+	type DelegationInfoProvider = Msa;
+	type SchemaGrantValidator = Msa;
 	type SchemaProvider = Schemas;
 	type MaxMessagesPerBlock = MessagesMaxPerBlock;
 	type MaxMessagePayloadSizeBytes = MessagesMaxPayloadSizeBytes;
@@ -688,12 +689,6 @@ construct_runtime!(
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
 
-		// XCM helpers.
-		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Config} = 31,
-		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
-		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
-
 		// ORML
 		Vesting: orml_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 40,
 
@@ -723,7 +718,6 @@ mod benches {
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
-		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_utility, Utility]
 
 		// Frequency
