@@ -597,9 +597,6 @@ pub mod pallet {
 			let msa_id = Self::get_owner_of(&who).ok_or(Error::<T>::NoKeyExists)?;
 			let delegator = Delegator(msa_id);
 
-			// Dispatches error "NotMsaOwner" if the origin is not the owner of the MSA id.
-			Self::ensure_msa_owner(&who, msa_id)?;
-
 			// Dispatches error "RegisteredProviderCannotBeRetired" if the MSA id is a registered provider
 			ensure!(
 				!Self::is_registered_provider(msa_id),
