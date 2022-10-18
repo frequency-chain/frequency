@@ -58,11 +58,10 @@
 
 use codec::{Decode, Encode};
 use common_primitives::{
-	msa::{AccountProvider, Delegator, Provider, ProviderInfo, ProviderMetadata},
+	msa::{AccountProvider, Delegator, OrderedSet, Provider, ProviderInfo, ProviderMetadata},
 	schema::SchemaId,
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
-pub use orml_utilities::OrderedSet;
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -541,9 +540,16 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Adds a given key to Origin's MSA, which must match the MSA in `add_key_payload`. Deposits event [`KeyAdded'](Event::KeyAdded).
+		/// Adds a given `new_key` to `msa_id` of the account signing ```msa_owner_proof```, which must match the MSA in `add_key_payload`.
+		/// The ```new_key``` must sign the ```add_key_payload``` to authorize the addition.
+		/// Deposits event [`KeyAdded'](Event::KeyAdded).
 		/// Returns `Ok(())` on success, otherwise returns an error.
 		///
+		/// ### Arguments
+		/// - `origin` - The account that signs the transaction. Note: can be same as msa owner.
+		/// - `msa_owner_key` - The account that owns the MSA.
+		/// - `msa_owner_proof`: A signature of the MSA owner account, which must match the MSA in `add_key_payload`.
+		/// - `new_proof`: A signature of the new key account, should also sign `add_key_payload`.
 		/// ### Errors
 		///
 		/// - Returns [`AddKeySignatureVerificationFailed`](Error::AddKeySignatureVerificationFailed) if `key` is not a valid signer of the provided `add_key_payload`.
