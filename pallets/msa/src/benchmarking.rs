@@ -36,7 +36,7 @@ fn create_payload_and_signature<T: Config>() -> (AddProvider, MultiSignature, T:
 	let delegator_account = SignerId::generate_pair(None);
 	let schemas: Vec<SchemaId> = vec![1, 2];
 	T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
-	let expiration: BlockNumber = 10;
+	let expiration = 10u32;
 	let add_provider_payload = AddProvider::new(1u64, Some(schemas), expiration);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
