@@ -22,7 +22,7 @@ type SignerId = app_sr25519::Public;
 
 const SEED: u32 = 0;
 
-fn on_initialize_buckets<T: Config>(n: BlockNumber) {
+fn on_initialize_msa<T: Config>(n: BlockNumber) {
 	Msa::<T>::on_initialize(n.into());
 }
 
@@ -88,7 +88,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(caller))
 
 	create_sponsored_account_with_delegation {
-		on_initialize_buckets::<T>(10u32.into());
+		on_initialize_msa::<T>(10u32.into());
 		let caller: T::AccountId = whitelisted_caller();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
 		assert_ok!(Msa::<T>::register_provider(RawOrigin::Signed(caller.clone()).into(),Vec::from("Foo")));
@@ -99,7 +99,7 @@ benchmarks! {
 
 	revoke_delegation_by_provider {
 		let s in 5 .. 1005;
-		on_initialize_buckets::<T>(10u32.into());
+		on_initialize_msa::<T>(10u32.into());
 		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
 		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
 		add_delegation::<T>(Delegator(delegator_msa_id), Provider(provider_msa_id.clone()));
@@ -111,16 +111,15 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(provider), delegator_msa_id)
 
 	add_key_to_msa {
-		on_initialize_buckets::<T>(10u32.into());
-		let caller: T::AccountId = whitelisted_caller();
-		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
+		on_initialize_msa::<T>(10u32.into());
 		let (add_provider_payload, signature, key) = add_key_payload_and_signature::<T>();
+		assert_ok!(Msa::<T>::create(RawOrigin::Signed(key.clone()).into()));
 		let (add_provider_payload, signature_new, key_new) = add_key_payload_and_signature::<T>();
 
-	}: _ (RawOrigin::Signed(caller), key, signature, key_new, signature_new, add_provider_payload)
+	}: _ (RawOrigin::Signed(key.clone()), key.clone(), signature, key_new, signature_new, add_provider_payload)
 
 	delete_msa_key {
-		on_initialize_buckets::<T>(10u32.into());
+		on_initialize_msa::<T>(10u32.into());
 		let (add_provider_payload, signature, caller) = add_key_payload_and_signature::<T>();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
 		let (add_provider_payload, signature_new, key_new) = add_key_payload_and_signature::<T>();
@@ -129,7 +128,7 @@ benchmarks! {
 	}: _(RawOrigin::Signed(caller), key_new)
 
 	retire_msa {
-		on_initialize_buckets::<T>(10u32.into());
+		on_initialize_msa::<T>(10u32.into());
 		let caller: T::AccountId = whitelisted_caller();
 
 		// Create a MSA account
@@ -141,7 +140,7 @@ benchmarks! {
 	}: _(RawOrigin::Signed(caller))
 
 	add_provider_to_msa {
-		on_initialize_buckets::<T>(10u32.into());
+		on_initialize_msa::<T>(10u32.into());
 		let caller: T::AccountId = whitelisted_caller();
 		let (payload, signature, key) = create_payload_and_signature::<T>();
 
@@ -152,7 +151,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(caller), key, signature, payload)
 
 	revoke_msa_delegation_by_delegator {
-		on_initialize_buckets::<T>(10u32.into());
+		on_initialize_msa::<T>(10u32.into());
 		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
 		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
 		add_delegation::<T>(Delegator(delegator_msa_id), Provider(provider_msa_id.clone()));
@@ -161,7 +160,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(delegator), provider_msa_id)
 
 	register_provider {
-		on_initialize_buckets::<T>(10u32.into());
+		on_initialize_msa::<T>(10u32.into());
 		let (provider, _provider_msa_id) = create_account_with_msa_id::<T>(1);
 	}: _ (RawOrigin::Signed(provider), Vec::from("Foo"))
 
