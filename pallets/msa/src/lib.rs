@@ -74,7 +74,7 @@ use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, One, Zero},
+	traits::{Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify, Zero},
 	DispatchError, MultiSignature,
 };
 
@@ -328,8 +328,6 @@ pub mod pallet {
 		ProofNotYetValid,
 		/// Attempted to add a signature when the signature is already in the registry
 		SignatureAlreadySubmitted,
-		/// Attempted to retrieve a bucket outside the bounds of storage
-		NoSuchBucket,
 	}
 
 	#[pallet::hooks]
@@ -338,7 +336,6 @@ pub mod pallet {
 			Self::reset_virtual_bucket_if_needed(current)
 		}
 	}
-
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -1000,7 +997,8 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		let current_block = frame_system::Pallet::<T>::block_number();
 
-		if Self::mortality_block_limit(current_block) < mortality_block {
+		let max_lifetime = Self::mortality_block_limit(current_block);
+		if max_lifetime < mortality_block {
 			Err(Error::<T>::ProofNotYetValid.into())
 		} else if current_block >= mortality_block {
 			Err(Error::<T>::ProofHasExpired.into())
@@ -1023,33 +1021,23 @@ impl<T: Config> Pallet<T> {
 	//     1. delete all the stored bucket/signature alues with key1 = bucket num
 	//     2. set the bucket's mortality block to the new value
 	// If not, don't do anything.
-	fn reset_virtual_bucket_if_needed(current_block: T::BlockNumber, ) -> Weight {
+	fn reset_virtual_bucket_if_needed(current_block: T::BlockNumber) -> Weight {
 		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
 
 		// Now that we're in a "new bucket block set"
-		if current_block  % bucket_size != T::BlockNumber::zero() {
-			return 	T::WeightInfo::on_initialize(0 as u32);
+		if current_block % bucket_size != T::BlockNumber::zero() {
+			return T::WeightInfo::on_initialize(0 as u32)
 		}
 
-		// Clear the previous bucket block set??
+		// Clear the previous bucket block set
 		let bucket_num = Self::bucket_for(current_block - T::BlockNumber::one());
-		let multi_removal_result = <PayloadSignatureRegistry<T>>::clear_prefix(bucket_num, T::MaxSignaturesPerBucket::get(), None);
+		let multi_removal_result = <PayloadSignatureRegistry<T>>::clear_prefix(
+			bucket_num,
+			T::MaxSignaturesPerBucket::get(),
+			None,
+		);
 		T::WeightInfo::on_initialize(multi_removal_result.unique)
 	}
-
-	// delete signatures with the given bucket number since they have existed past the mortality
-	// block limit.
-	// fn delete_signatures_for_bucket(bucket_num: T::BlockNumber) -> Result<(), DispatchError> {
-	// 	// we dont' need the return value
-	// 	<PayloadSignatureRegistry<T>>::clear_prefix(bucket_num, T::MaxSignaturesPerBucket::get(), None);
-	// 	Ok(())
-	// }
-
-	// Virtual bucket mortalities are increasing multiples of MortalityBucketSize.
-	// fn bucket_mortality_block(for_block: T::BlockNumber) -> T::BlockNumber {
-	// 	let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
-	// 	(for_block / bucket_size + T::BlockNumber::one()) * bucket_size
-	// }
 
 	// The furthest in the future a mortality_block value is allowed
 	// to be for current_block
@@ -1057,11 +1045,11 @@ impl<T: Config> Pallet<T> {
 	fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
 		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
 		let num_buckets: T::BlockNumber = T::NumberOfBuckets::get().into();
-		current_block + (bucket_size * num_buckets)
+		current_block + (bucket_size * (num_buckets - T::BlockNumber::one()))
 	}
 
-	// calculate the virtual bucket number for the provided block number
-	fn bucket_for(block_number: T::BlockNumber) -> T::BlockNumber {
+	/// calculate the virtual bucket number for the provided block number
+	pub fn bucket_for(block_number: T::BlockNumber) -> T::BlockNumber {
 		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
 		let num_buckets: T::BlockNumber = T::NumberOfBuckets::get().into();
 		block_number / bucket_size % num_buckets

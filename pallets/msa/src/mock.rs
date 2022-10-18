@@ -108,7 +108,7 @@ impl pallet_msa::Config for Test {
 	type MaxSchemaGrants = MaxSchemaGrants;
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
-	type MortalityBucketSize = ConstU16<100>;
+	type MortalityBucketSize = ConstU16<200>;
 	type MaxSignaturesPerBucket = ConstU32<10>;
 	type NumberOfBuckets = ConstU32<NUMBER_OF_BUCKETS>;
 }
