@@ -33,7 +33,7 @@ fn create_msa<T: Config>(n: u32) -> DispatchResult {
 fn create_payload_and_signature<T: Config>() -> (AddProvider, MultiSignature, T::AccountId) {
 	let delegator_account = SignerId::generate_pair(None);
 	let schemas: Vec<SchemaId> = vec![1, 2];
-	let expiration: BlockNumber = 10;
+	let expiration: T::BlockNumber = 10;
 	let add_provider_payload = AddProvider::new(1u64, Some(schemas), expiration);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
@@ -103,8 +103,10 @@ benchmarks! {
 		let caller: T::AccountId = whitelisted_caller();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
 		let (add_provider_payload, signature, key) = add_key_payload_and_signature::<T>();
+		assert_ok!(Msa::<T>::create(RawOrigin::Signed(key.clone()).into()));
+		let (add_provider_payload, signature_new, key_new) = add_key_payload_and_signature::<T>();
 
-	}: _ (RawOrigin::Signed(caller), key, signature, add_provider_payload)
+	}: _ (RawOrigin::Signed(caller), key, signature, key_new, signature_new add_provider_payload)
 
 	delete_msa_key {
 		let caller: T::AccountId = whitelisted_caller();
