@@ -106,7 +106,7 @@ fn it_throws_error_when_not_msa_owner() {
 		assert_ok!(Msa::create_account(test_public(1), EMPTY_FUNCTION));
 
 		let new_account = key_pair_2.public();
-		assert_ok!(Msa::create_account(test_public(2), EMPTY_FUNCTION));
+		let (_new_msa_id2, _) = Msa::create_account(new_account.into(), EMPTY_FUNCTION).unwrap();
 
 		let add_new_key_data = AddKeyData { nonce: 0, msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
@@ -115,7 +115,7 @@ fn it_throws_error_when_not_msa_owner() {
 
 		assert_noop!(
 			Msa::add_key_to_msa(
-				test_origin_signed(1),
+				Origin::signed(account.into()),
 				new_account.into(),
 				signature.clone(),
 				new_account.into(),
@@ -168,13 +168,15 @@ fn add_key_with_more_than_allowed_should_panic() {
 		for _ in 1..<Test as Config>::MaxKeys::get() {
 			let (new_key_pair, _) = sr25519::Pair::generate();
 			let new_account = new_key_pair.public();
-			let signature: MultiSignature = new_key_pair.sign(&encode_data_new_key_data).into();
+			let signature_owner: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
+			let signature_new_key: MultiSignature =
+				new_key_pair.sign(&encode_data_new_key_data).into();
 			assert_ok!(Msa::add_key_to_msa(
 				Origin::signed(account.into()),
+				account.into(),
+				signature_owner.clone(),
 				new_account.into(),
-				signature.clone(),
-				new_account.into(),
-				signature,
+				signature_new_key,
 				add_new_key_data.clone()
 			));
 		}
@@ -182,12 +184,13 @@ fn add_key_with_more_than_allowed_should_panic() {
 		// act
 		let (final_key_pair, _) = sr25519::Pair::generate();
 		let final_account = final_key_pair.public();
+		let signature_owner: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
 		let signature: MultiSignature = final_key_pair.sign(&encode_data_new_key_data).into();
 		assert_noop!(
 			Msa::add_key_to_msa(
 				Origin::signed(account.into()),
-				final_account.into(),
-				signature.clone(),
+				account.into(),
+				signature_owner.clone(),
 				final_account.into(),
 				signature,
 				add_new_key_data
@@ -211,16 +214,16 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 
 		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
-
-		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
+		let signature_owner: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
+		let signature_new_key: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
 
 		// act
 		assert_ok!(Msa::add_key_to_msa(
 			Origin::signed(account.into()),
+			account.into(),
+			signature_owner,
 			new_key.into(),
-			signature.clone(),
-			new_key.into(),
-			signature,
+			signature_new_key,
 			add_new_key_data,
 		));
 
@@ -1518,13 +1521,14 @@ fn add_removed_key_to_msa_pass() {
 
 		let add_new_key_data = AddKeyData { nonce: 1, msa_id: msa_id2, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
-		let signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
+		let signature_owner: MultiSignature = key_pair2.sign(&encode_data_new_key_data).into();
+		let signature_new_key: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
 		assert_ok!(Msa::add_key_to_msa(
 			Origin::signed(new_account2.into()),
+			new_account2.into(),
+			signature_owner.clone(),
 			new_account1.into(),
-			signature.clone(),
-			new_account1.into(),
-			signature,
+			signature_new_key,
 			add_new_key_data
 		));
 	});
