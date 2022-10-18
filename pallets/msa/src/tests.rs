@@ -1991,56 +1991,6 @@ pub fn stores_signature_with_correct_key() {
 	})
 }
 
-#[test]
-pub fn adds_new_bucket_number_mortality_to_store() {
-	struct TestCase {
-		current_block: BlockNumber,
-		mortality_block: BlockNumber,
-		// u64 instead of BlockNUmber is because of the conflict between BlockNumber and Header in mock;
-		// BlockNumber has to be u64 so that Header will work, but BlockNumber is u32 in Msa Config
-		expected_bucket: u64,
-		expected_mortality: u64,
-	}
-
-	new_test_ext().execute_with(|| {
-		let test_cases: Vec<TestCase> = vec![
-			TestCase {
-				current_block: 0,
-				mortality_block: 99,
-				expected_bucket: 0,
-				expected_mortality: 100,
-			},
-			TestCase {
-				current_block: 33_111,
-				mortality_block: 33_260,
-				expected_bucket: 0,
-				expected_mortality: 33_300,
-			},
-			TestCase {
-				current_block: 299,
-				mortality_block: 399,
-				expected_bucket: 1,
-				expected_mortality: 400,
-			},
-			TestCase {
-				current_block: 1222,
-				mortality_block: 1322,
-				expected_bucket: 1,
-				expected_mortality: 1400,
-			},
-		];
-		for tc in test_cases {
-			System::set_block_number(tc.current_block as u64);
-			let sig = &generate_test_signature();
-			assert_ok!(Msa::register_signature(sig, tc.mortality_block.into()));
-			assert_eq!(
-				Some(tc.expected_mortality),
-				Msa::get_mortality_block_of(tc.expected_bucket)
-			);
-		}
-	})
-}
-
 fn register_signature_and_validate(
 	current_block: BlockNumber,
 	expected_bucket: u64,
@@ -2055,34 +2005,101 @@ fn register_signature_and_validate(
 }
 
 #[test]
+pub fn basic_on_initialize_works() {
+	/// TODO: probably can delete this test
+	new_test_ext().execute_with(|| {
+		let first_sig = &generate_test_signature();
+		let second_sig = &generate_test_signature();
+		let first_mortality = 111u64;
+		let second_mortality = 211u64;
+
+		register_signature_and_validate(1, 1u64, first_sig);
+
+
+		run_to_block(101);
+		register_signature_and_validate(101, 0u64, second_sig);
+		assert_noop!(
+			Msa::register_signature(first_sig, 111),
+			Error::<Test>::SignatureAlreadySubmitted
+		);
+		run_to_block(110);
+		assert_noop!(
+			Msa::register_signature(first_sig, 111),
+			Error::<Test>::SignatureAlreadySubmitted
+		);
+		assert_noop!(
+			Msa::register_signature(second_sig, 211),
+			Error::<Test>::SignatureAlreadySubmitted
+		);
+		run_to_block(200);
+		assert_noop!(
+			Msa::register_signature(second_sig, 211),
+			Error::<Test>::SignatureAlreadySubmitted
+		);
+		register_signature_and_validate(200, 1u64, first_sig);
+		run_to_block(210);
+		assert_noop!(
+			Msa::register_signature(second_sig, 211),
+			Error::<Test>::SignatureAlreadySubmitted
+		);
+
+	})
+}
+
+#[test]
 pub fn clears_stale_signatures_after_mortality_limit() {
 	new_test_ext().execute_with(|| {
 		let sig1 = &generate_test_signature();
 		let sig2 = &generate_test_signature();
-		let sig3 = &generate_test_signature();
 
 		let mut current_block: BlockNumber = 667;
+		let mortality_block = current_block + 111;
 		register_signature_and_validate(current_block, 1u64, sig1);
 		register_signature_and_validate(current_block, 1u64, sig2);
 
-		current_block += 100;
-		register_signature_and_validate(current_block, 0u64, sig2);
-
-		current_block += 100;
-		let mortality_block = current_block + 111;
-		System::set_block_number(current_block as u64);
-		// the old signature can't be re-registered, and does not trigger a clear.
+		current_block = 777;
+		run_to_block(current_block.into());
+		// the old signature should not be able to be registered
 		assert_noop!(
 			Msa::register_signature(sig1, mortality_block as u64),
 			Error::<Test>::SignatureAlreadySubmitted
 		);
 
-		// a new signature triggers a clear.
-		register_signature_and_validate(current_block, 1u64, sig3);
-		// 1_sig1 and 1_sig2 should no longer be there
+		current_block = 876;
+		run_to_block(current_block.into());
+
 		assert_eq!(false, <PayloadSignatureRegistry<Test>>::contains_key(1u64, sig1));
 		assert_eq!(false, <PayloadSignatureRegistry<Test>>::contains_key(1u64, sig2));
 	})
+}
+
+#[test]
+pub fn check_boundaries() {
+	struct TestCase<T> {
+		current: u64,
+		mortality: u64,
+		run_to: u64,
+		expected_err: Error<T>,
+	}
+	new_test_ext().execute_with(|| {
+		// these should all fail replay
+		let test_cases: Vec<TestCase<Test>> = vec![
+			TestCase { current: 10_849u64, mortality: 11_001u64, run_to: 11_000u64, expected_err: Error::<Test>::SignatureAlreadySubmitted }, // fails test
+			// TestCase { current: 1u64, mortality: 3u64, run_to: 2u64, expected_err:  Error::<Test>::SignatureAlreadySubmitted},
+			// TestCase { current: 99u64, mortality: 101u64, run_to: 100u64, expected_err: Error::<Test>::SignatureAlreadySubmitted },
+			// TestCase { current: 1_000u64, mortality: 1_999u64, run_to: 1_999u64, expected_err: Error::<Test>::ProofHasExpired },
+		];
+		for tc in test_cases {
+			System::set_block_number(tc.current);
+			let sig1 = &generate_test_signature();
+			assert_ok!(Msa::register_signature(sig1, tc.mortality));
+			run_to_block(tc.run_to);
+			assert_noop!(
+				Msa::register_signature(sig1, tc.mortality),
+				tc.expected_err
+			);
+		}
+	});
 }
 
 #[test]

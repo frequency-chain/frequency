@@ -74,7 +74,7 @@ use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, Zero},
+	traits::{Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, One, Zero},
 	DispatchError, MultiSignature,
 };
 
@@ -196,14 +196,6 @@ pub mod pallet {
 	#[pallet::getter(fn get_msa_key_count)]
 	pub(super) type MsaInfoOf<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, u8, ValueQuery>;
-
-	/// Storage type for mapping a "bucket" number to a mortality block
-	/// Used to know when to clear a virtual "bucket" of stored signatures
-	/// in PayloadSignatureRegistry
-	#[pallet::storage]
-	#[pallet::getter(fn get_mortality_block_of)]
-	pub type MortalityBlockOf<T: Config> =
-		StorageMap<_, Twox64Concat, T::BlockNumber, T::BlockNumber, OptionQuery>;
 
 	/// PayloadSignatureRegistry is used to prevent replay attacks for extrinsics
 	/// that take an externally-signed payload.
@@ -335,29 +327,13 @@ pub mod pallet {
 		NoSuchBucket,
 	}
 
-	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config> {
-		/// Initial state of mortality buckets
-		pub buckets_mortalities: BoundedVec<T::BlockNumber, T::NumberOfBuckets>,
-	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			Self { buckets_mortalities: Default::default() }
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(current: T::BlockNumber) -> Weight {
+			Self::reset_virtual_bucket_if_needed(current)
 		}
 	}
 
-	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-		fn build(&self) {
-			//insert the values into MortalityBlockOf here
-			let buckets = self.buckets_mortalities.clone();
-			for (i, mortality) in buckets.into_iter().enumerate() {
-				<MortalityBlockOf<T>>::insert(T::BlockNumber::from(i as u8), mortality);
-			}
-		}
-	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -1013,7 +989,7 @@ impl<T: Config> Pallet<T> {
 
 		if Self::mortality_block_limit(current_block) < mortality_block {
 			Err(Error::<T>::ProofNotYetValid.into())
-		} else if current_block > mortality_block {
+		} else if current_block >= mortality_block {
 			Err(Error::<T>::ProofHasExpired.into())
 		} else {
 			let bucket_num = Self::bucket_for(mortality_block.into());
@@ -1022,8 +998,6 @@ impl<T: Config> Pallet<T> {
 				signature,
 				|maybe_mortality_block| -> DispatchResult {
 					ensure!(maybe_mortality_block.is_none(), Error::<T>::SignatureAlreadySubmitted);
-
-					Self::reset_virtual_bucket_if_needed(mortality_block, bucket_num)?;
 					*maybe_mortality_block = Some(mortality_block);
 					Ok(())
 				},
@@ -1036,43 +1010,33 @@ impl<T: Config> Pallet<T> {
 	//     1. delete all the stored bucket/signature alues with key1 = bucket num
 	//     2. set the bucket's mortality block to the new value
 	// If not, don't do anything.
-	fn reset_virtual_bucket_if_needed(
-		mortality_block: T::BlockNumber,
-		bucket_num: T::BlockNumber,
-	) -> DispatchResult {
-		<MortalityBlockOf<T>>::try_mutate(bucket_num, |maybe_mortality_block| -> DispatchResult {
-			let bucket_mortality_block = Self::bucket_mortality_block(mortality_block);
+	fn reset_virtual_bucket_if_needed(current_block: T::BlockNumber, ) -> Weight {
+		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
 
-			match maybe_mortality_block {
-				None => Err(Error::<T>::NoSuchBucket.into()),
-				Some(mortality_block_for_bucket) => {
-					if mortality_block > *mortality_block_for_bucket {
-						Self::delete_signatures_for_bucket(bucket_num)?;
-						*maybe_mortality_block = Some(bucket_mortality_block);
-					} else if *mortality_block_for_bucket == T::BlockNumber::default() {
-						*maybe_mortality_block = Some(bucket_mortality_block);
-					}
-					Ok(())
-				},
-			}
-		})
+		// Now that we're in a "new bucket block set"
+		if current_block  % bucket_size != T::BlockNumber::zero() {
+			return 	T::WeightInfo::on_initialize(0 as u32);
+		}
+
+		// Clear the previous bucket block set??
+		let bucket_num = Self::bucket_for(current_block - T::BlockNumber::one());
+		let multi_removal_result = <PayloadSignatureRegistry<T>>::clear_prefix(bucket_num, T::MaxSignaturesPerBucket::get(), None);
+		T::WeightInfo::on_initialize(multi_removal_result.unique)
 	}
 
 	// delete signatures with the given bucket number since they have existed past the mortality
 	// block limit.
-	fn delete_signatures_for_bucket(bucket_num: T::BlockNumber) -> Result<(), DispatchError> {
-		// use drain_prefix
-		// https://paritytech.github.io/substrate/master/frame_support/pallet_prelude/struct.StorageDoubleMap.html#method.drain_prefix
-		// we dont' need the value; it's just to finalize the drain.
-		<PayloadSignatureRegistry<T>>::drain_prefix(bucket_num).count();
-		Ok(())
-	}
+	// fn delete_signatures_for_bucket(bucket_num: T::BlockNumber) -> Result<(), DispatchError> {
+	// 	// we dont' need the return value
+	// 	<PayloadSignatureRegistry<T>>::clear_prefix(bucket_num, T::MaxSignaturesPerBucket::get(), None);
+	// 	Ok(())
+	// }
 
 	// Virtual bucket mortalities are increasing multiples of MortalityBucketSize.
-	fn bucket_mortality_block(for_block: T::BlockNumber) -> T::BlockNumber {
-		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
-		(for_block / bucket_size + T::BlockNumber::from(1u32)) * bucket_size
-	}
+	// fn bucket_mortality_block(for_block: T::BlockNumber) -> T::BlockNumber {
+	// 	let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
+	// 	(for_block / bucket_size + T::BlockNumber::one()) * bucket_size
+	// }
 
 	// The furthest in the future a mortality_block value is allowed
 	// to be for current_block
@@ -1080,14 +1044,14 @@ impl<T: Config> Pallet<T> {
 	fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
 		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
 		let num_buckets: T::BlockNumber = T::NumberOfBuckets::get().into();
-		current_block + bucket_size * num_buckets
+		current_block + (bucket_size * num_buckets)
 	}
 
 	// calculate the virtual bucket number for the provided block number
 	fn bucket_for(block_number: T::BlockNumber) -> T::BlockNumber {
 		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
 		let num_buckets: T::BlockNumber = T::NumberOfBuckets::get().into();
-		(block_number / bucket_size % num_buckets).into()
+		block_number / bucket_size % num_buckets
 	}
 }
 
