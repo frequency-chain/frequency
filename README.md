@@ -142,7 +142,7 @@ make start
 ### In Docker Container
 
 ```sh
-docker run --rm -p 9944:9944 -p 9933:9944 -p 30333:30333 frequencychain/instant-seal-node
+docker run --rm -p 9944:9944 -p 9933:9933 -p 30333:30333 frequencychain/instant-seal-node
 ```
 
 To stop running chain hit [Ctrl+C] in terminal where the chain was started.
