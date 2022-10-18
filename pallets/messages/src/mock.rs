@@ -1,6 +1,9 @@
 use crate as pallet_messages;
 use common_primitives::{
-	msa::{AccountProvider, Delegator, MessageSourceId, Provider, ProviderInfo},
+	msa::{
+		DelegationValidator, Delegator, MessageSourceId, MsaLookup, MsaValidator, OrderedSet,
+		Provider, ProviderInfo, ProviderLookup, SchemaGrantValidator,
+	},
 	schema::*,
 };
 
@@ -10,7 +13,6 @@ use frame_support::{
 	traits::{ConstU16, ConstU64, OnFinalize, OnInitialize},
 };
 use frame_system as system;
-pub use orml_utilities::OrderedSet;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -114,11 +116,12 @@ impl Clone for MaxMessagePayloadSizeBytes {
 	}
 }
 
-pub struct AccountHandler;
-impl AccountProvider for AccountHandler {
+pub struct MsaInfoHandler;
+pub struct DelegationInfoHandler;
+pub struct SchemaGrantValidationHandler;
+impl MsaLookup for MsaInfoHandler {
 	type AccountId = u64;
-	type BlockNumber = u64;
-	type MaxSchemaGrants = MaxSchemaGrants;
+
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
 		if *key == 1000 {
 			return None
@@ -128,15 +131,10 @@ impl AccountProvider for AccountHandler {
 		}
 		Some(get_msa_from_account(*key) as MessageSourceId)
 	}
-	fn get_provider_info_of(
-		_delegator: Delegator,
-		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber, MaxSchemaGrants>> {
-		if provider == Provider(2000) {
-			return None
-		};
-		Some(ProviderInfo { expired: 100, schemas: OrderedSet::new() })
-	}
+}
+
+impl MsaValidator for MsaInfoHandler {
+	type AccountId = u64;
 
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError> {
 		if *key == 1000 {
@@ -148,6 +146,24 @@ impl AccountProvider for AccountHandler {
 
 		Ok(get_msa_from_account(*key))
 	}
+}
+impl ProviderLookup for DelegationInfoHandler {
+	type BlockNumber = u64;
+	type MaxSchemaGrants = MaxSchemaGrants;
+
+	fn get_provider_info_of(
+		_delegator: Delegator,
+		provider: Provider,
+	) -> Option<ProviderInfo<Self::BlockNumber, MaxSchemaGrants>> {
+		if provider == Provider(2000) {
+			return None
+		};
+		Some(ProviderInfo { expired: 100, schemas: OrderedSet::new() })
+	}
+}
+impl DelegationValidator for DelegationInfoHandler {
+	type BlockNumber = u64;
+	type MaxSchemaGrants = MaxSchemaGrants;
 
 	fn ensure_valid_delegation(
 		provider: Provider,
@@ -160,13 +176,14 @@ impl AccountProvider for AccountHandler {
 
 		Ok(ProviderInfo { schemas: OrderedSet::new(), expired: Default::default() })
 	}
-
+}
+impl SchemaGrantValidator for SchemaGrantValidationHandler {
 	fn ensure_valid_schema_grant(
 		provider: Provider,
 		delegator: Delegator,
 		_schema_id: SchemaId,
 	) -> DispatchResult {
-		match Self::get_provider_info_of(delegator, provider) {
+		match DelegationInfoHandler::get_provider_info_of(delegator, provider) {
 			Some(_) => Ok(()),
 			None => Err(DispatchError::Other("no schema grant or delegation")),
 		}
@@ -199,7 +216,9 @@ impl SchemaProvider<u16> for SchemaHandler {
 
 impl pallet_messages::Config for Test {
 	type Event = Event;
-	type AccountProvider = AccountHandler;
+	type MsaInfoProvider = MsaInfoHandler;
+	type DelegationInfoProvider = DelegationInfoHandler;
+	type SchemaGrantValidator = SchemaGrantValidationHandler;
 	type SchemaProvider = SchemaHandler;
 	type WeightInfo = ();
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
