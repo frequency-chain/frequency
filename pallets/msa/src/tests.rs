@@ -1,7 +1,7 @@
 use crate::{
 	ensure,
 	mock::*,
-	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
+	types::{AddKeyData, AddProvider, EMPTY_FUNCTION, TestCase},
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
@@ -636,11 +636,11 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		let provider_event = &events_occured.as_slice()[3];
 		assert_eq!(
 			created_event.event,
-			Event::MsaCreated { msa_id: 2u64, key: delegator_account.into() }.into()
+			Event::MsaCreated { msa_id: delegator_msa, key: delegator_account.into() }.into()
 		);
 		assert_eq!(
 			provider_event.event,
-			Event::ProviderAdded { provider: 1u64.into(), delegator: 2u64.into() }.into()
+			Event::ProviderAdded { provider: 1u64.into(), delegator:delegator_msa }.into()
 		);
 	});
 }
@@ -1489,6 +1489,22 @@ pub fn error_exceeding_max_schema_grants() {
 			Msa::add_provider(provider, delegator, schemas),
 			Error::<Test>::ExceedsMaxSchemaGrants
 		);
+	})
+}
+
+#[test]
+pub fn error_exceeding_max_schema_grants_table() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		let test_cases: [TestCase<Error<Test>>; 2] = [
+			TestCase { schema: vec![], expected: Error::<Test>::SchemaNotGranted },
+			TestCase { schema: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], Error::Test<ExceedsMaxSchemaGrants},
+		];
+		for tc in test_cases {
+			let err = Msa::add_provider(provider, delegator, tc.schema).unwrap_err();
+			assert_eq!(tc.expected, err)
+		}
 	})
 }
 

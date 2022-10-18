@@ -13,6 +13,12 @@ use scale_info::TypeInfo;
 /// Dispatch Empty
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 
+///For table testing patterns
+pub struct TestCase<T> {
+	schema: Vec<u8>,
+	expected: T,
+}
+
 /// A type definition for the payload of adding an MSA key - `pallet_msa::add_key_to_msa`
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
 pub struct AddKeyData {
