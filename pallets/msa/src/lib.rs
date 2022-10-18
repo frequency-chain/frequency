@@ -568,7 +568,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let _ = ensure_signed(origin)?;
 
-			Self::register_signature(&new_proof, add_key_payload.expiration.into())?;
+			Self::register_signature(&msa_owner_proof, add_key_payload.expiration.into())?;
 
 			Self::verify_signature(
 				vec![(msa_owner_proof, msa_owner_key.clone()), (new_proof, new_key.clone())],
