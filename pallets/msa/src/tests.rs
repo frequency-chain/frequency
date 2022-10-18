@@ -2,11 +2,9 @@ use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 };
-use sp_core::{crypto::AccountId32, sr25519, Encode, Pair, H256};
-use sp_runtime::{traits::SignedExtension, MultiSignature};
 
 use common_primitives::{
-	msa::{Delegator, MessageSourceId, Provider, ProviderInfo, EXPIRATION_BLOCK_VALIDITY_GAP},
+	msa::{Delegator, MessageSourceId, Provider, ProviderInfo},
 	node::BlockNumber,
 	schema::SchemaId,
 	utils::wrap_binary_data,
