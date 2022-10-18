@@ -52,11 +52,12 @@ pub mod public_testnet_keys {
 		"0x1caccabbe8095a35292782cffc29145030264f9706753923a5c237e8f5aceb1a";
 }
 
-// pub fn load_frequency_rococo_spec() -> Result<ChainSpec, String> {
-// 	ChainSpec::from_json_bytes(&include_bytes!("../../specs/frequency_rococo.json")[..])
-// }
+ pub fn load_frequency_rococo_spec() -> Result<ChainSpec, String> {
+ 	ChainSpec::from_json_bytes(&include_bytes!("../../../../resources/frequency_rococo.json")[..])
+ }
 
 pub fn frequency_rococo_testnet() -> ChainSpec {
+	return load_frequency_rococo_spec().unwrap();
 	let properties = get_properties(FREQUENCY_ROCOCO_TOKEN, 8, 42);
 	let para_id: ParaId = 4044.into();
 	ChainSpec::from_genesis(
