@@ -109,14 +109,12 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(caller), key, signature, key_new, signature_new, add_provider_payload)
 
 	delete_msa_key {
-		let caller: T::AccountId = whitelisted_caller();
+		let (add_provider_payload, signature, caller) = add_key_payload_and_signature::<T>();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
-
-		let (add_provider_payload, signature, key) = add_key_payload_and_signature::<T>();
 		let (add_provider_payload, signature_new, key_new) = add_key_payload_and_signature::<T>();
-		assert_ok!(Msa::<T>::add_key_to_msa(RawOrigin::Signed(caller.clone()).into(), key.clone(), signature, key_new.clone(), signature_new, add_provider_payload));
+		assert_ok!(Msa::<T>::add_key_to_msa(RawOrigin::Signed(caller.clone()).into(), caller.clone(), signature, key_new.clone(), signature_new, add_provider_payload));
 
-	}: _(RawOrigin::Signed(caller), key)
+	}: _(RawOrigin::Signed(caller), key_new)
 
 	retire_msa {
 		let caller: T::AccountId = whitelisted_caller();
