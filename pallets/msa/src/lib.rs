@@ -65,7 +65,6 @@ use common_primitives::{
 	msa::{
 		DelegationValidator, Delegator, MsaLookup, MsaValidator, OrderedSet, Provider,
 		ProviderInfo, ProviderLookup, ProviderMetadata, SchemaGrantValidator,
-		EXPIRATION_BLOCK_VALIDITY_GAP,
 	},
 	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
