@@ -158,8 +158,8 @@ pub mod pallet {
 	/// - Keys: Delegator MSA, Provider MSA
 	/// - Value: [`ProviderInfo`](common_primitives::msa::ProviderInfo)
 	#[pallet::storage]
-	#[pallet::getter(fn get_provider_info)]
-	pub type ProviderInfoOf<T: Config> = StorageDoubleMap<
+	#[pallet::getter(fn get_delegation)]
+	pub type DelegatorAndProviderToDelegation<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
 		Delegator,
@@ -805,7 +805,7 @@ impl<T: Config> Pallet<T> {
 
 		Self::ensure_all_schema_ids_are_valid(granted_schemas.clone())?;
 
-		ProviderInfoOf::<T>::try_mutate(delegator, provider, |maybe_info| -> DispatchResult {
+		DelegatorAndProviderToDelegation::<T>::try_mutate(delegator, provider, |maybe_info| -> DispatchResult {
 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
 			let info = ProviderInfo {
 				expired: Default::default(),
@@ -894,7 +894,7 @@ impl<T: Config> Pallet<T> {
 		provider_msa_id: Provider,
 		delegator_msa_id: Delegator,
 	) -> DispatchResult {
-		ProviderInfoOf::<T>::try_mutate_exists(
+		DelegatorAndProviderToDelegation::<T>::try_mutate_exists(
 			delegator_msa_id,
 			provider_msa_id,
 			|maybe_info| -> DispatchResult {
@@ -917,7 +917,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Removes all delegations from the specified delegator MSA id to providers
 	pub fn remove_delegator(delegator: Delegator) -> DispatchResult {
-		_ = ProviderInfoOf::<T>::clear_prefix(delegator, u32::max_value(), None);
+		_ = DelegatorAndProviderToDelegation::<T>::clear_prefix(delegator, u32::max_value(), None);
 		Ok(())
 	}
 
@@ -1114,7 +1114,7 @@ impl<T: Config> ProviderLookup for Pallet<T> {
 		delegator: Delegator,
 		provider: Provider,
 	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>> {
-		Self::get_provider_info(delegator, provider)
+		Self::get_delegation(delegator, provider)
 	}
 }
 
