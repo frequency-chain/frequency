@@ -148,11 +148,13 @@ pub mod pallet {
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
-	/// Storage type for MSA identifier
+	/// Storage type for the current MSA identifier maximum.
+	/// We need to track this value because the identifier maximum
+	/// is incremented each time a new identifier is created.
 	/// - Value: The current maximum MSA Id
 	#[pallet::storage]
-	#[pallet::getter(fn get_identifier)]
-	pub type MsaIdentifier<T> = StorageValue<_, MessageSourceId, ValueQuery>;
+	#[pallet::getter(fn get_current_msa_identifier_maximum)]
+	pub type CurrentMsaIdentifierMaximum<T> = StorageValue<_, MessageSourceId, ValueQuery>;
 
 	/// Storage type for mapping the relationship between a Delegator and its Provider.
 	/// - Keys: Delegator MSA, Provider MSA
@@ -698,14 +700,14 @@ impl<T: Config> Pallet<T> {
 
 	/// Generate the next MSA Id
 	pub fn get_next_msa_id() -> Result<MessageSourceId, DispatchError> {
-		let next = Self::get_identifier().checked_add(1).ok_or(Error::<T>::MsaIdOverflow)?;
+		let next = Self::get_current_msa_identifier_maximum().checked_add(1).ok_or(Error::<T>::MsaIdOverflow)?;
 
 		Ok(next)
 	}
 
 	/// Set the current identifier in storage
 	pub fn set_msa_identifier(identifier: MessageSourceId) -> DispatchResult {
-		MsaIdentifier::<T>::set(identifier);
+		CurrentMsaIdentifierMaximum::<T>::set(identifier);
 
 		Ok(())
 	}
