@@ -1018,7 +1018,7 @@ impl<T: Config> Pallet<T> {
 	// Check if enough blocks have passed to reset bucket mortality storage.
 	// If so:
 	//     1. delete all the stored bucket/signature alues with key1 = bucket num
-	//     2. set the bucket's mortality block to the new value
+	//	   2. add the WeightInfo proportional to the storage read/writes to the block weight
 	// If not, don't do anything.
 	fn reset_virtual_bucket_if_needed(current_block: T::BlockNumber) -> Weight {
 		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
