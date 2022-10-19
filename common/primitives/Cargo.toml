@@ -35,6 +35,7 @@ orml-utilities = {git = "https://github.com/open-web3-stack/open-runtime-module-
 
 [features]
 default = ['std']
+runtime-benchmarks = []
 std = [
   'codec/std',
   'frame-support/std',
