@@ -2064,6 +2064,7 @@ pub fn bucket_for() {
 	new_test_ext().execute_with(|| {
 		let test_cases: Vec<TestCase> = vec![
 			TestCase { block: 1_010, expected_bucket: 1 },
+			TestCase { block: 1_110, expected_bucket: 1 },
 			TestCase { block: 1_201, expected_bucket: 0 },
 			TestCase { block: 1_301, expected_bucket: 0 },
 			TestCase { block: 1_401, expected_bucket: 1 },
