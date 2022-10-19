@@ -1022,25 +1022,23 @@ impl<T: Config> Pallet<T> {
 
 	// Check if enough blocks have passed to reset bucket mortality storage.
 	// If so:
-	//     1. delete all the stored bucket/signature alues with key1 = bucket num
+	//     1. delete all the stored bucket/signature values with key1 = bucket num
 	//	   2. add the WeightInfo proportional to the storage read/writes to the block weight
 	// If not, don't do anything.
 	fn reset_virtual_bucket_if_needed(current_block: T::BlockNumber) -> Weight {
-		let bucket_size: T::BlockNumber = T::MortalityWindowSize::get().into();
+		let current_bucket_num = Self::bucket_for(current_block);
+		let prior_bucket_num = Self::bucket_for(current_block - T::BlockNumber::one());
 
-		// Now that we're in a "new bucket block set"
-		if current_block % bucket_size != T::BlockNumber::zero() {
+		// If we did not cross a bucket boundary block, stop
+		if prior_bucket_num == current_bucket_num {
 			return T::WeightInfo::on_initialize(0 as u32)
 		}
-
 		// Clear the previous bucket block set
-		let bucket_num = Self::bucket_for(current_block - T::BlockNumber::one());
 		let multi_removal_result = <PayloadSignatureRegistry<T>>::clear_prefix(
-			bucket_num,
-			T::MaxSignaturesPerBucket::get().into(),
+			prior_bucket_num,
+			T::MaxSignaturesPerBucket::get(),
 			None,
 		);
-		// I'm not actually sure this is correct
 		T::WeightInfo::on_initialize(multi_removal_result.unique)
 	}
 
