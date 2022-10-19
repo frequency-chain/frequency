@@ -18,16 +18,10 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        network: [local, rococo, mainnet]
+        network: [rococo]
         include:
-          - network: local
-            spec: frequency-rococo-local
-            build-profile: release
           - network: rococo
             spec: frequency-rococo-testnet
-            build-profile: production
-          - network: mainnet
-            spec: frequency
             build-profile: production
           - os: ubuntu-latest
             arch: amd64
@@ -82,18 +76,13 @@ jobs:
     name: Build Deterministic WASM for ${{matrix.network}}
     strategy:
       matrix:
-        network: [rococo, mainnet]
+        network: [rococo]
         include:
           - network: rococo
             build-profile: production
             package: frequency-rococo-runtime
             runtime-dir: runtime/frequency-rococo
             wasm-file-name-prefix: frequency_rococo_runtime
-          - network: mainnet
-            build-profile: production
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            wasm-file-name-prefix: frequency_runtime
     env:
       SRT_TOOL_VERSION: "1.62.0"
     runs-on: ubuntu-latest
@@ -121,80 +110,8 @@ jobs:
           path: frequency-wasm-${{matrix.network}}-${{env.RELEASE_VERSION}}.tar
           if-no-files-found: error
 
-  build-rust-developer-docs:
-    name: Build Rust Developer Docs
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-      - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
-      - name: Build Docs
-        run: |
-          RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps
-      - name: Upload Docs
-        uses: actions/upload-artifact@v3
-        with:
-          name: rust-developer-docs-${{github.run_id}}
-          path: ./target/doc
-          if-no-files-found: error
-
-  build-js-api-augment:
-    needs: build-binaries
-    name: Build JS API Augment
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        network: [mainnet]
-        include:
-          - network: mainnet
-            spec: frequency
-            build-profile: production
-          - os: ubuntu-latest
-            arch: amd64
-    runs-on: ${{matrix.os}}
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-      - name: Set up NodeJs
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: "npm"
-          registry-url: "https://registry.npmjs.org"
-          cache-dependency-path: js/api-augment/package-lock.json
-      - name: Install
-        run: npm install # DO NOT use `npm ci` as we want the latest polkadot/api possible
-        working-directory: js/api-augment
-      - name: Download Binary Artifacts
-        id: download
-        uses: actions/download-artifact@v3
-        with:
-          name: artifacts-${{github.run_id}}
-          path: .
-      - name: Extract Binary
-        run: |
-          tar -xvf frequency-binary-${{matrix.network}}-${{env.RELEASE_VERSION}}.${{matrix.arch}}.tar
-      - name: Output Metadata
-        run: ./target/${{matrix.build-profile}}/frequency export-metadata > ./js/api-augment/metadata.json
-      - name: Build
-        run: npm run build
-        working-directory: js/api-augment
-      - name: Upload Dist Dir
-        uses: actions/upload-artifact@v3
-        with:
-          name: js-api-augment-${{github.run_id}}
-          path: js/api-augment/dist
-          if-no-files-found: error
-
   wait-for-all-builds:
-    # needs: [build-binaries, build-wasm, build-rust-developer-docs, build-js-api-augment]
-    needs: [build-binaries, build-js-api-augment]
+    needs: [build-binaries]
     name: Wait for All Builds to Finish
     runs-on: ubuntu-latest
     steps:
@@ -223,11 +140,9 @@ jobs:
     strategy:
       matrix:
         arch: [amd64]
-        network: [rococo, mainnet]
+        network: [rococo]
         include:
           - network: rococo
-            build-profile: production
-          - network: mainnet
             build-profile: production
           - arch: amd64
             docker-platform: linux/amd64
@@ -265,118 +180,4 @@ jobs:
           platforms: ${{matrix.docker-platform}}
           push: true
           file: ./docker/${{env.IMAGE_NAME}}.dockerfile
-          tags: |
-            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.RELEASE_VERSION}}
-            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:latest
-      - name: Update DockerHub Description
-        uses: peter-evans/dockerhub-description@v3
-        with:
-          username: ${{secrets.DOCKERHUB_USERNAME_FC}}
-          password: ${{secrets.DOCKERHUB_TOKEN_FC}}
-          repository: ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}
-          readme-filepath: docker/${{env.IMAGE_NAME}}-${{matrix.network}}.overview.md
-
-  release-dev-images:
-    needs: wait-for-all-builds
-    name: Release Dev Docker Image for ${{matrix.node}}
-    strategy:
-      matrix:
-        network: [local]
-        arch: [amd64]
-        node: [collator-node-local, instant-seal-node]
-        include:
-          - network: local
-            build-profile: release
-          - arch: amd64
-            docker-platform: linux/amd64
-    env:
-      DOCKER_HUB_PROFILE: frequencychain
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-      - name: Download Binary Artifacts
-        id: download
-        uses: actions/download-artifact@v3
-        with:
-          name: artifacts-${{github.run_id}}
-          path: .
-      - name: Extract Binary
-        run: |
-          tar -xvf frequency-binary-${{matrix.network}}-${{env.RELEASE_VERSION}}.${{matrix.arch}}.tar
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-        with:
-          platforms: ${{matrix.arch}}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{secrets.DOCKERHUB_USERNAME_FC}}
-          password: ${{secrets.DOCKERHUB_TOKEN_FC}}
-      - name: Build and Push Dev Image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          platforms: ${{matrix.docker-platform}}
-          push: true
-          file: ./docker/${{matrix.node}}.dockerfile
-          tags: |
-            ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.RELEASE_VERSION}}
-            ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:latest
-      - name: Update DockerHub Description
-        uses: peter-evans/dockerhub-description@v3
-        with:
-          username: ${{secrets.DOCKERHUB_USERNAME_FC}}
-          password: ${{secrets.DOCKERHUB_TOKEN_FC}}
-          repository: ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}
-          readme-filepath: docker/${{matrix.node}}.overview.md
-
-  release-rust-developer-docs:
-    needs: wait-for-all-builds
-    name: Release Rust Developer Docs
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-      - name: Download Docs
-        id: download
-        uses: actions/download-artifact@v3
-        with:
-          name: rust-developer-docs-${{github.run_id}}
-          path: ./target/doc
-      - name: Deploy Frequency docs to gh-pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages
-          folder: ./target/doc
-
-  release-js-api-augment:
-    needs: wait-for-all-builds
-    name: Release JS API Augment
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-      - name: Set up NodeJs
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: "npm"
-          registry-url: "https://registry.npmjs.org"
-          cache-dependency-path: js/api-augment/package-lock.json
-      - name: Download Dist Dir
-        id: download
-        uses: actions/download-artifact@v3
-        with:
-          name: js-api-augment-${{github.run_id}}
-          path: js/api-augment/dist
-      - name: Version Package
-        run: npm version --new-version "${{env.RELEASE_VERSION}}" --no-git-tag-version
-        working-directory: js/api-augment/dist
-      - name: Release on NPM @latest
-        run: npm publish --tag latest --access public
-        working-directory: ./js/api-augment/dist
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+          tags: ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.RELEASE_VERSION}}
