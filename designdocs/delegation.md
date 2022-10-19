@@ -129,7 +129,7 @@ pub(super) type DelegatorAndProviderToDelegation<T: Config> = StorageDoubleMap<
 		Delegator,
 		Blake2_128Concat,
 		Provider,
-		ProviderInfo<T::BlockNumber>,
+		Delegation<T::BlockNumber>,
 		OptionQuery,
 	>;
 ```

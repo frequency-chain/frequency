@@ -14,7 +14,7 @@ use crate::{
 };
 
 use common_primitives::{
-	msa::{Delegator, MessageSourceId, Provider, ProviderInfo, ProviderMetadata},
+	msa::{Delegation, Delegator, MessageSourceId, Provider, ProviderMetadata},
 	node::BlockNumber,
 	schema::SchemaId,
 	utils::wrap_binary_data,
@@ -553,7 +553,7 @@ pub fn add_provider_to_msa_is_success() {
 
 		assert_eq!(
 			Msa::get_delegation(delegator, provider),
-			Some(ProviderInfo { expired: 0, schemas: OrderedSet::new() })
+			Some(Delegation { expired: 0, schemas: OrderedSet::new() })
 		);
 
 		System::assert_last_event(
@@ -1036,7 +1036,7 @@ pub fn revoke_provider_is_successful() {
 
 		assert_eq!(
 			Msa::get_delegation(delegator, provider).unwrap(),
-			ProviderInfo { expired: 1, schemas: OrderedSet::new() },
+			Delegation { expired: 1, schemas: OrderedSet::new() },
 		);
 	});
 }
@@ -1218,7 +1218,7 @@ pub fn revoke_delegation_by_provider_happy_path() {
 
 		// 6. verify that the provider is revoked
 		let provider_info = Msa::get_delegation(Delegator(2), Provider(1));
-		assert_eq!(provider_info, Some(ProviderInfo { expired: 26, schemas: OrderedSet::new() }));
+		assert_eq!(provider_info, Some(Delegation { expired: 26, schemas: OrderedSet::new() }));
 
 		// 7. verify the event
 		System::assert_last_event(
