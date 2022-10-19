@@ -101,8 +101,6 @@ use sp_std::prelude::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use sp_runtime::{DispatchError, DispatchErrorWithPostInfo};
-
 	use super::*;
 
 	#[pallet::config]
