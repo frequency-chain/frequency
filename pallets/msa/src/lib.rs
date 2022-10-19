@@ -66,7 +66,6 @@ use common_primitives::{
 		DelegationValidator, Delegator, MsaLookup, MsaValidator, OrderedSet, Provider,
 		ProviderInfo, ProviderLookup, ProviderMetadata, SchemaGrantValidator,
 	},
-	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};

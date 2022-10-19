@@ -105,6 +105,7 @@ impl pallet_msa::Config for Test {
 	type MaxKeys = MaxKeys;
 	type MaxSchemaGrants = MaxSchemaGrants;
 	type MaxProviderNameSize = MaxProviderNameSize;
+	type SchemaValidator = Schemas;
 	type MortalityWindowSize = ConstU32<200>;
 	type MaxSignaturesPerBucket = ConstU32<10>;
 	type NumberOfBuckets = ConstU32<2>;
@@ -202,7 +203,7 @@ pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 	use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStorePtr};
 	use sp_std::sync::Arc;
 
-	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.register_extension(KeystoreExt(Arc::new(KeyStore::new()) as SyncCryptoStorePtr));
 

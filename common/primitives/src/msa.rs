@@ -10,6 +10,7 @@ pub use crate::schema::SchemaId;
 pub use orml_utilities::OrderedSet;
 
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
+/// Message Source Id or msaId is the unique identifier for Message Source Accounts
 pub type MessageSourceId = u64;
 
 /// A Delegator is a role for an MSA to play.

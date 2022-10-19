@@ -2,8 +2,8 @@ use crate::{
 	ensure,
 	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
-	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier, ProviderRegistry, MortalityBlockOf,
-	PayloadSignatureRegistry,
+	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
+	PayloadSignatureRegistry, ProviderRegistry,
 };
 
 use common_primitives::{
@@ -13,13 +13,9 @@ use common_primitives::{
 	utils::wrap_binary_data,
 };
 use common_runtime::extensions::check_nonce::CheckNonce;
-
-use crate::{
-	ensure,
-	mock::*,
-	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
-	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
-	PayloadSignatureRegistry,
+use frame_support::{
+	assert_err, assert_noop, assert_ok,
+	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 };
 use orml_utilities::OrderedSet;
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair, H256};
@@ -873,7 +869,7 @@ pub fn create_sponsored_account_with_delegation_expired() {
 		));
 
 		// act
-		assert_err!(
+		assert_noop!(
 			Msa::create_sponsored_account_with_delegation(
 				Origin::signed(provider_account.into()),
 				delegator_account.into(),
@@ -1751,7 +1747,6 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 //   1. provider authorizes being added as provider to MSA and MSA account adds them.
 //   2. provider removes them as MSA (say by quickly discovering MSA is undesirable)
 //   3. MSA account replays the add, using the previous signed payload + signature.
-#[ignore]
 #[test]
 fn replaying_add_provider_to_msa_fails() {
 	new_test_ext().execute_with(|| {
@@ -2006,7 +2001,6 @@ pub fn is_registered_provider_is_true() {
 		assert!(Msa::is_registered_provider(provider.into()));
 	});
 }
-
 
 fn generate_test_signature() -> MultiSignature {
 	let (key_pair, _) = sr25519::Pair::generate();
