@@ -27,6 +27,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
+		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -55,6 +56,14 @@ impl frame_system::Config for Test {
 	type SS58Prefix = ConstU16<42>;
 	type OnSetCode = ();
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
+}
+
+impl pallet_schemas::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type MinSchemaModelSizeBytes = ConstU32<10>;
+	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<10>;
+	type MaxSchemaRegistrations = ConstU16<10>;
 }
 
 parameter_types! {
@@ -101,6 +110,7 @@ impl pallet_msa::Config for Test {
 	type MortalityBucketSize = ConstU16<200>;
 	type MaxSignaturesPerBucket = ConstU32<10>;
 	type NumberOfBuckets = ConstU32<NUMBER_OF_BUCKETS>;
+	type SchemaValidator = Schemas;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

@@ -1,3 +1,5 @@
+#![cfg(feature = "runtime-benchmarks")]
+
 use super::*;
 
 #[allow(unused)]
@@ -38,7 +40,8 @@ fn create_msa<T: Config>(n: u32) -> DispatchResult {
 fn create_payload_and_signature<T: Config>() -> (AddProvider, MultiSignature, T::AccountId) {
 	let delegator_account = SignerId::generate_pair(None);
 	let schemas: Vec<SchemaId> = vec![1, 2];
-	let expiration: BlockNumber = 10u32.into();
+	T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
+	let expiration: BlockNumber = 10;
 	let add_provider_payload = AddProvider::new(1u64, Some(schemas), expiration);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
@@ -69,6 +72,7 @@ fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSource
 
 fn add_delegation<T: Config>(delegator: Delegator, provider: Provider) {
 	let schemas: Vec<SchemaId> = vec![1, 2];
+	T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
 	assert_ok!(Msa::<T>::add_provider(provider, delegator, schemas));
 }
 

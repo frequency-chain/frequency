@@ -257,6 +257,7 @@ impl pallet_msa::Config for Runtime {
 	type MortalityBucketSize = MSAMortalityBucketSize;
 	type MaxSignaturesPerBucket = MSAMaxSignaturesPerBucket;
 	type NumberOfBuckets = MSANumberOfBuckets;
+	type SchemaValidator = Schemas;
 }
 
 pub use common_primitives::schema::SchemaId;

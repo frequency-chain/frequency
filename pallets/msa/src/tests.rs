@@ -535,6 +535,8 @@ pub fn add_provider_to_msa_is_success() {
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
 
+		Schemas::set_schema_count(10);
+
 		assert_ok!(Msa::add_provider_to_msa(
 			Origin::signed(provider_account.into()),
 			delegator_account.into(),
@@ -1588,10 +1590,12 @@ fn register_provider_duplicate() {
 #[test]
 pub fn valid_schema_grant() {
 	new_test_ext().execute_with(|| {
+		Schemas::set_schema_count(2);
+
 		let provider = Provider(1);
 		let delegator = Delegator(2);
-		let schemas: Vec<SchemaId> = vec![1, 2];
-		assert_ok!(Msa::add_provider(provider, delegator, schemas));
+		let schema_grants = vec![1, 2];
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
 
 		System::set_block_number(System::block_number() + 1);
 
@@ -1600,13 +1604,30 @@ pub fn valid_schema_grant() {
 }
 
 #[test]
-pub fn error_exceeding_max_schema_grants() {
+pub fn error_invalid_schema_id() {
 	new_test_ext().execute_with(|| {
+		Schemas::set_schema_count(12);
+
 		let provider = Provider(1);
 		let delegator = Delegator(2);
-		let schemas: Vec<SchemaId> = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+		let schema_grants = vec![15, 16];
 		assert_err!(
-			Msa::add_provider(provider, delegator, schemas),
+			Msa::add_provider(provider, delegator, schema_grants),
+			Error::<Test>::InvalidSchemaId
+		);
+	})
+}
+
+#[test]
+pub fn error_exceeding_max_schema_grants() {
+	new_test_ext().execute_with(|| {
+		Schemas::set_schema_count(16);
+
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		let schema_grants = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+		assert_err!(
+			Msa::add_provider(provider, delegator, schema_grants),
 			Error::<Test>::ExceedsMaxSchemaGrants
 		);
 	})
@@ -1615,10 +1636,12 @@ pub fn error_exceeding_max_schema_grants() {
 #[test]
 pub fn error_schema_not_granted() {
 	new_test_ext().execute_with(|| {
+		Schemas::set_schema_count(2);
+
 		let provider = Provider(1);
 		let delegator = Delegator(2);
-		let schemas: Vec<SchemaId> = vec![1, 2];
-		assert_ok!(Msa::add_provider(provider, delegator, schemas));
+		let schema_grants = vec![1, 2];
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
 
 		System::set_block_number(System::block_number() + 1);
 
@@ -1646,7 +1669,7 @@ pub fn error_schema_not_granted_rpc() {
 	new_test_ext().execute_with(|| {
 		let provider = Provider(1);
 		let delegator = Delegator(2);
-		assert_ok!(Msa::add_provider(provider, delegator, vec![]));
+		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
 		assert_err!(Msa::get_granted_schemas(delegator, provider), Error::<Test>::SchemaNotGranted);
 	})
 }
@@ -1654,10 +1677,12 @@ pub fn error_schema_not_granted_rpc() {
 #[test]
 pub fn schema_granted_success_rpc() {
 	new_test_ext().execute_with(|| {
+		Schemas::set_schema_count(2);
+
 		let provider = Provider(1);
 		let delegator = Delegator(2);
-		let schemas: Vec<SchemaId> = vec![1, 2];
-		assert_ok!(Msa::add_provider(provider, delegator, schemas));
+		let schema_grants = vec![1, 2];
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
 		let schemas_granted = Msa::get_granted_schemas(delegator, provider);
 		let expected_schemas_granted = vec![1, 2];
 		let output_schemas: Vec<SchemaId> = schemas_granted.unwrap().unwrap();

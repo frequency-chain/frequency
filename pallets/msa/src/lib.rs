@@ -66,7 +66,7 @@ use common_primitives::{
 		DelegationValidator, Delegator, MsaLookup, MsaValidator, OrderedSet, Provider,
 		ProviderInfo, ProviderLookup, ProviderMetadata, SchemaGrantValidator,
 	},
-	schema::SchemaId,
+	schema::{SchemaId, SchemaValidator},
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 pub use pallet::*;
@@ -119,9 +119,13 @@ pub mod pallet {
 		/// Maximum count of schemas granted for publishing data per Provider
 		#[pallet::constant]
 		type MaxSchemaGrants: Get<u32> + Clone + sp_std::fmt::Debug + Eq;
+
 		/// Maximum provider name size allowed per MSA association
 		#[pallet::constant]
 		type MaxProviderNameSize: Get<u32>;
+
+		/// A type that will supply schema related information.
+		type SchemaValidator: SchemaValidator<SchemaId>;
 
 		/// The number of blocks per virtual "bucket" in the PayloadSignatureRegistry
 		/// Virtual buckets are the first part of the double key in the PayloadSignatureRegistry
@@ -291,6 +295,8 @@ pub mod pallet {
 		InvalidSelfRemoval,
 		/// An MSA may not be its own delegate
 		InvalidSelfProvider,
+		/// An invalid schema Id was provided
+		InvalidSchemaId,
 		/// The delegation relationship already exists for the given MSA Ids
 		DuplicateProvider,
 		/// Cryptographic signature verification failed for adding the Provider as delegate
@@ -391,14 +397,13 @@ pub mod pallet {
 				Error::<T>::ProviderNotRegistered
 			);
 
-			let granted_schemas = add_provider_payload.schema_ids;
-			ensure!(
-				granted_schemas.len() <= T::MaxSchemaGrants::get().try_into().unwrap(),
-				Error::<T>::ExceedsMaxSchemaGrants
-			);
 			let (_, _) =
 				Self::create_account(delegator_key.clone(), |new_msa_id| -> DispatchResult {
-					Self::add_provider(provider_msa_id.into(), new_msa_id.into(), granted_schemas)?;
+					Self::add_provider(
+						provider_msa_id.into(),
+						new_msa_id.into(),
+						add_provider_payload.schema_ids,
+					)?;
 
 					Self::deposit_event(Event::MsaCreated {
 						msa_id: new_msa_id,
@@ -478,13 +483,7 @@ pub mod pallet {
 				Error::<T>::UnauthorizedDelegator
 			);
 
-			let granted_schemas = add_provider_payload.schema_ids;
-			ensure!(
-				granted_schemas.len() <= T::MaxSchemaGrants::get().try_into().unwrap(),
-				Error::<T>::ExceedsMaxSchemaGrants
-			);
-
-			Self::add_provider(provider, delegator, granted_schemas)?;
+			Self::add_provider(provider, delegator, add_provider_payload.schema_ids)?;
 
 			Self::deposit_event(Event::ProviderAdded { delegator, provider });
 
@@ -729,6 +728,18 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
+	/// Check that schema ids are all valid
+	pub fn ensure_all_schema_ids_are_valid(
+		schema_ids: BoundedVec<SchemaId, T::MaxSchemaGrants>,
+	) -> DispatchResult {
+		let are_schemas_valid =
+			T::SchemaValidator::are_all_schema_ids_valid(schema_ids.into_inner());
+
+		ensure!(are_schemas_valid, Error::<T>::InvalidSchemaId);
+
+		Ok(())
+	}
+
 	/// Returns if provider is registered by checking if the [`ProviderRegistry`] contains the MSA id
 	pub fn is_registered_provider(msa_id: MessageSourceId) -> bool {
 		ProviderRegistry::<T>::contains_key(Provider(msa_id))
@@ -785,10 +796,13 @@ impl<T: Config> Pallet<T> {
 		delegator: Delegator,
 		schemas: Vec<SchemaId>,
 	) -> DispatchResult {
+		let granted_schemas: BoundedVec<SchemaId, T::MaxSchemaGrants> =
+			schemas.try_into().map_err(|_| Error::<T>::ExceedsMaxSchemaGrants)?;
+
+		Self::ensure_all_schema_ids_are_valid(granted_schemas.clone())?;
+
 		ProviderInfoOf::<T>::try_mutate(delegator, provider, |maybe_info| -> DispatchResult {
 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
-			let granted_schemas = BoundedVec::<SchemaId, T::MaxSchemaGrants>::try_from(schemas)
-				.map_err(|_| Error::<T>::ExceedsMaxSchemaGrants)?;
 			let info = ProviderInfo {
 				expired: Default::default(),
 				schemas: OrderedSet::<SchemaId, T::MaxSchemaGrants>::from(granted_schemas),
