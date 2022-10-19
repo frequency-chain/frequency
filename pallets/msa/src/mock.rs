@@ -2,9 +2,8 @@ use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
 use common_primitives::{msa::MessageSourceId, node::BlockNumber, utils::wrap_binary_data};
 use frame_support::{
 	assert_ok, parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64},
+	traits::{ConstU16, ConstU32, ConstU64, OnFinalize, OnInitialize},
 };
-use frame_system as system;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
 	testing::Header,
@@ -15,8 +14,8 @@ use sp_runtime::{
 pub use pallet_msa::Call as MsaCall;
 
 use common_primitives::node::AccountId;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
@@ -32,7 +31,7 @@ frame_support::construct_runtime!(
 	}
 );
 
-impl system::Config for Test {
+impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
@@ -107,13 +106,27 @@ impl pallet_msa::Config for Test {
 	type MaxSchemaGrants = MaxSchemaGrants;
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
+	type MortalityWindowSize = ConstU32<200>;
+	type MaxSignaturesPerBucket = ConstU32<10>;
+	type NumberOfBuckets = ConstU32<2>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
+}
+
+pub fn run_to_block(n: u64) {
+	while System::block_number() < n {
+		if System::block_number() > 1 {
+			System::on_finalize(System::block_number());
+		}
+		System::set_block_number(System::block_number() + 1);
+		System::on_initialize(System::block_number());
+		Msa::on_initialize(System::block_number());
+	}
 }
 
 /// Create and return a simple test AccountId32 constructed with the desired integer.

@@ -65,16 +65,14 @@ use common_primitives::{
 	msa::{
 		DelegationValidator, Delegator, MsaLookup, MsaValidator, OrderedSet, Provider,
 		ProviderInfo, ProviderLookup, ProviderMetadata, SchemaGrantValidator,
-		EXPIRATION_BLOCK_VALIDITY_GAP,
 	},
-	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, Zero},
+	traits::{Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify, Zero},
 	DispatchError, MultiSignature,
 };
 
@@ -127,6 +125,23 @@ pub mod pallet {
 
 		/// A type that will supply schema related information.
 		type SchemaValidator: SchemaValidator<SchemaId>;
+
+		/// The number of blocks per virtual "bucket" in the PayloadSignatureRegistry
+		/// Virtual buckets are the first part of the double key in the PayloadSignatureRegistry
+		/// StorageDoubleMap.  This permits a key grouping that enables mass removal
+		/// of stale signatures which are no longer at risk of replay.
+		#[pallet::constant]
+		type MortalityWindowSize: Get<u32>;
+
+		/// The maximum number of signatures that can be assigned to a virtual bucket. In other
+		/// words, no more than this many signatures can be assigned a specific first-key value.
+		#[pallet::constant]
+		type MaxSignaturesPerBucket: Get<u32>;
+
+		/// The total number of virtual buckets
+		/// There are exactly NumberOfBuckets first-key values in PayloadSignatureRegistry.
+		#[pallet::constant]
+		type NumberOfBuckets: Get<u32>;
 	}
 
 	#[pallet::pallet]
@@ -182,6 +197,21 @@ pub mod pallet {
 	#[pallet::getter(fn get_msa_key_count)]
 	pub(super) type MsaInfoOf<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, u8, ValueQuery>;
+
+	/// PayloadSignatureRegistry is used to prevent replay attacks for extrinsics
+	/// that take an externally-signed payload.
+	/// For this to work, the payload must include a mortality block number, which
+	/// is used in lieu of a monotonically increasing nonce.
+	#[pallet::storage]
+	pub(super) type PayloadSignatureRegistry<T: Config> = StorageDoubleMap<
+		_,
+		Twox64Concat,
+		T::BlockNumber, // Bucket number. Stored as BlockNumber because I'm done arguing with rust about it.
+		Twox64Concat,
+		MultiSignature, // An externally-created Signature for an external payload, provided by an extrinsic
+		T::BlockNumber, // An actual flipping block number.
+		OptionQuery,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -294,6 +324,15 @@ pub mod pallet {
 		ProofHasExpired,
 		/// The submitted proof expiration block is too far in the future
 		ProofNotYetValid,
+		/// Attempted to add a signature when the signature is already in the registry
+		SignatureAlreadySubmitted,
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(current: T::BlockNumber) -> Weight {
+			Self::reset_virtual_bucket_if_needed(current)
+		}
 	}
 
 	#[pallet::call]
@@ -338,9 +377,13 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
-			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())?;
+			Self::verify_signature(
+				proof.clone(),
+				delegator_key.clone(),
+				add_provider_payload.encode(),
+			)?;
 
-			Self::ensure_block_is_valid(add_provider_payload.expiration)?;
+			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			ensure!(
@@ -424,10 +467,14 @@ pub mod pallet {
 			let provider_key = ensure_signed(origin)?;
 
 			// delegator must have signed the payload.
-			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())
-				.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
+			Self::verify_signature(
+				proof.clone(),
+				delegator_key.clone(),
+				add_provider_payload.encode(),
+			)
+			.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
 
-			Self::ensure_block_is_valid(add_provider_payload.expiration)?;
+			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 
 			let (provider, delegator) =
 				Self::ensure_valid_registered_provider(&delegator_key, &provider_key)?;
@@ -482,7 +529,7 @@ pub mod pallet {
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if the MSA id for the account in `add_key_payload` does not exist.
 		/// - Returns ['NotMsaOwner'](Error::NotMsaOwner) if Origin's MSA is not the same as 'add_key_payload` MSA. Essentially you can only add a key to your own MSA.
 		/// - Returns ['ProofHasExpired'](Error::ProofHasExpired) if the current block is less than the `expired` bock number set in `AddKeyData`.
-		/// - Returns ['ProofNotYetValid'](Error::ProofNotYetValid) if the `expired` bock number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.
+		/// - Returns ['ProofNotYetValid'](Error::ProofNotYetValid) if the `expired` block number set in `AddKeyData` is greater than the current block number plus mortality_block_limit().
 		#[pallet::weight(T::WeightInfo::add_key_to_msa())]
 		pub fn add_key_to_msa(
 			origin: OriginFor<T>,
@@ -492,10 +539,10 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			Self::verify_signature(proof, key.clone(), add_key_payload.encode())
+			Self::verify_signature(proof.clone(), key.clone(), add_key_payload.encode())
 				.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
 
-			Self::ensure_block_is_valid(add_key_payload.expiration)?;
+			Self::register_signature(&proof, add_key_payload.expiration.into())?;
 
 			let msa_id = add_key_payload.msa_id;
 
@@ -732,33 +779,6 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Ensure that the expiration block number has not already passed and is also not too far into the future.
-	///
-	/// # Arguments
-	/// * `expiration` - A block number that which validity or expiration is being checked.
-	///
-	/// # Returns
-	/// * [`DispatchResult`]
-	///
-	/// # Errors
-	/// * [Error::ProofHasExpired] - If the current block is less than the `expired` bock number set in `AddKeyData`.
-	/// * [Error::ProofNotYetValid] - If the `expired` bock number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.
-	pub fn ensure_block_is_valid(expiration: BlockNumber) -> DispatchResult {
-		let current_block: BlockNumber =
-			frame_system::Pallet::<T>::block_number().try_into().ok().unwrap();
-		ensure!(current_block < expiration.into(), Error::<T>::ProofHasExpired);
-
-		// If gap between the current block and the expiration block is larger than EXPIRATION_BLOCK_VALIDITY_GAP,
-		// the proof is too var into the future and return Error::<T>::ProofNotYetValid.
-		let blocks_until_expiration: BlockNumber = expiration - current_block;
-		ensure!(
-			blocks_until_expiration < EXPIRATION_BLOCK_VALIDITY_GAP,
-			Error::<T>::ProofNotYetValid
-		);
-
-		Ok(())
-	}
-
 	/// Add a provider to a delegator with the default permissions
 	pub fn add_provider(
 		provider: Provider,
@@ -776,7 +796,6 @@ impl<T: Config> Pallet<T> {
 				expired: Default::default(),
 				schemas: OrderedSet::<SchemaId, T::MaxSchemaGrants>::from(granted_schemas),
 			};
-
 			*maybe_info = Some(info);
 
 			Ok(())
@@ -969,6 +988,71 @@ impl<T: Config> Pallet<T> {
 			return Err(Error::<T>::SchemaNotGranted.into())
 		}
 		Ok(Some(schemas.into_inner()))
+	}
+
+	/// Adds a signature to the PayloadSignatureRegistry based on a virtual "bucket" grouping.
+	/// Check that mortality_block is within bounds. If so, proceed and add the new entry.
+	/// Raises `SignatureAlreadySubmitted` if the bucket-signature double key exists in the
+	/// registry.
+	pub fn register_signature(
+		signature: &MultiSignature,
+		signature_expires_at: T::BlockNumber,
+	) -> DispatchResult {
+		let current_block = frame_system::Pallet::<T>::block_number();
+
+		let max_lifetime = Self::mortality_block_limit(current_block);
+		if max_lifetime <= signature_expires_at {
+			Err(Error::<T>::ProofNotYetValid.into())
+		} else if current_block >= signature_expires_at {
+			Err(Error::<T>::ProofHasExpired.into())
+		} else {
+			let bucket_num = Self::bucket_for(signature_expires_at.into());
+			<PayloadSignatureRegistry<T>>::try_mutate(
+				bucket_num,
+				signature,
+				|maybe_mortality_block| -> DispatchResult {
+					ensure!(maybe_mortality_block.is_none(), Error::<T>::SignatureAlreadySubmitted);
+					*maybe_mortality_block = Some(signature_expires_at);
+					Ok(())
+				},
+			)
+		}
+	}
+
+	// Check if enough blocks have passed to reset bucket mortality storage.
+	// If so:
+	//     1. delete all the stored bucket/signature values with key1 = bucket num
+	//	   2. add the WeightInfo proportional to the storage read/writes to the block weight
+	// If not, don't do anything.
+	fn reset_virtual_bucket_if_needed(current_block: T::BlockNumber) -> Weight {
+		let current_bucket_num = Self::bucket_for(current_block);
+		let prior_bucket_num = Self::bucket_for(current_block - T::BlockNumber::one());
+
+		// If we did not cross a bucket boundary block, stop
+		if prior_bucket_num == current_bucket_num {
+			return T::WeightInfo::on_initialize(0 as u32)
+		}
+		// Clear the previous bucket block set
+		let multi_removal_result = <PayloadSignatureRegistry<T>>::clear_prefix(
+			prior_bucket_num,
+			T::MaxSignaturesPerBucket::get(),
+			None,
+		);
+		T::WeightInfo::on_initialize(multi_removal_result.unique)
+	}
+
+	// The furthest in the future a mortality_block value is allowed
+	// to be for current_block
+	// This is calculated to be past the risk of a replay attack
+	fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
+		let mortality_size = (T::NumberOfBuckets::get() - 1) * T::MortalityWindowSize::get();
+		current_block + T::BlockNumber::from(mortality_size)
+	}
+
+	/// calculate the virtual bucket number for the provided block number
+	pub fn bucket_for(block_number: T::BlockNumber) -> T::BlockNumber {
+		block_number / (T::BlockNumber::from(T::MortalityWindowSize::get())) %
+			T::BlockNumber::from(T::NumberOfBuckets::get())
 	}
 }
 

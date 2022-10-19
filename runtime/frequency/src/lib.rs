@@ -255,6 +255,9 @@ impl pallet_msa::Config for Runtime {
 	type MaxSchemaGrants = MaxDataSize;
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
 	type SchemaValidator = Schemas;
+	type MortalityWindowSize = MSAMortalityWindowSize;
+	type MaxSignaturesPerBucket = MSAMaxSignaturesPerBucket;
+	type NumberOfBuckets = MSANumberOfBuckets;
 }
 
 pub use common_primitives::schema::SchemaId;

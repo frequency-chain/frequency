@@ -19,6 +19,8 @@ rayon = "1.5.3"
 jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
+common-primitives = { path = "../primitives", default-features = false }
 
 [features]
 default = ['std']
