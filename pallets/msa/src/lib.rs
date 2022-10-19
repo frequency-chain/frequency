@@ -582,6 +582,8 @@ pub mod pallet {
 		///  (2) There is only one account key
 		///  (3) The MSA is not a registered provider.
 		///
+		/// This does not currently remove any messages related to the MSA.
+		///
 		/// ### Events
 		/// - Deposits [`MsaRetired`](Event::MsaRetired) when MSA is retired
 		///
