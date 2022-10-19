@@ -55,7 +55,10 @@ use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 use codec::Encode;
 use common_primitives::{
 	messages::*,
-	msa::{AccountProvider, Delegator, MessageSourceId, Provider},
+	msa::{
+		DelegationValidator, Delegator, MessageSourceId, MsaLookup, MsaValidator, Provider,
+		ProviderLookup, SchemaGrantValidator,
+	},
 	schema::*,
 };
 pub use pallet::*;
@@ -76,8 +79,14 @@ pub mod pallet {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
-		/// A type that will supply account related information.
-		type AccountProvider: AccountProvider<AccountId = Self::AccountId>;
+		/// A type that will supply MSA related information
+		type MsaInfoProvider: MsaLookup + MsaValidator<AccountId = Self::AccountId>;
+
+		/// A type that will supply delegation related information
+		type DelegationInfoProvider: ProviderLookup + DelegationValidator;
+
+		/// A type that will validate schema grants
+		type SchemaGrantValidator: SchemaGrantValidator;
 
 		/// A type that will supply schema related information.
 		type SchemaProvider: SchemaProvider<SchemaId>;
@@ -237,7 +246,7 @@ pub mod pallet {
 			// On-chain messages either are sent from the user themselves, or on behalf of another MSA Id
 			let maybe_delegator = match on_behalf_of {
 				Some(delegator) => {
-					T::AccountProvider::ensure_valid_schema_grant(
+					T::SchemaGrantValidator::ensure_valid_schema_grant(
 						Provider(provider_msa_id),
 						Delegator(delegator),
 						schema_id,
@@ -310,7 +319,7 @@ impl<T: Config> Pallet<T> {
 	/// # Returns
 	/// * Result<MessageSourceId, DispatchError> - Returns an MSA Id for storing a message.
 	pub fn find_msa_id(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
-		Ok(T::AccountProvider::ensure_valid_msa_key(key)
+		Ok(T::MsaInfoProvider::ensure_valid_msa_key(key)
 			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?)
 	}
 
