@@ -132,17 +132,17 @@ pub mod pallet {
 		/// StorageDoubleMap.  This permits a key grouping that enables mass removal
 		/// of stale signatures which are no longer at risk of replay.
 		#[pallet::constant]
-		type MortalityBucketSize: Get<u16>;
+		type MortalityBucketSize: Get<u32>;
 
 		/// The maximum number of signatures that can be assigned to a virtual bucket. In other
 		/// words, no more than this many signatures can be assigned a specific first-key value.
 		#[pallet::constant]
-		type MaxSignaturesPerBucket: Get<u16>;
+		type MaxSignaturesPerBucket: Get<u32>;
 
 		/// The total number of virtual buckets
 		/// There are exactly NumberOfBuckets first-key values in PayloadSignatureRegistry.
 		#[pallet::constant]
-		type NumberOfBuckets: Get<u16>;
+		type NumberOfBuckets: Get<u32>;
 	}
 
 	#[pallet::pallet]
@@ -1044,8 +1044,7 @@ impl<T: Config> Pallet<T> {
 	// to be for current_block
 	// This is calculated to be past the risk of a replay attack
 	fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
-		let mortality_size =
-			(T::NumberOfBuckets::get() - 1) as u32 * T::MortalityBucketSize::get() as u32;
+		let mortality_size = (T::NumberOfBuckets::get() - 1) * T::MortalityBucketSize::get();
 		current_block + T::BlockNumber::from(mortality_size)
 	}
 
