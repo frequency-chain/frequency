@@ -12,12 +12,12 @@ use common_primitives::{
 };
 use common_runtime::extensions::check_nonce::CheckNonce;
 use frame_support::{
-	assert_err, assert_noop, assert_ok,
+	assert_err, assert_err_with_weight, assert_noop, assert_ok,
 	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 };
 use orml_utilities::OrderedSet;
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
-use sp_runtime::{traits::SignedExtension, MultiSignature};
+use sp_runtime::{traits::SignedExtension, DispatchError, MultiSignature};
 
 #[test]
 fn it_creates_an_msa_account() {
@@ -338,7 +338,10 @@ fn test_retire_msa_success() {
 		assert_ok!(Msa::add_key(msa_id, &test_account, EMPTY_FUNCTION));
 
 		// Retire the MSA
-		assert_ok!(Msa::retire_msa(origin));
+		let dispatch_info = Msa::retire_msa(origin).unwrap();
+
+		// Check that retirement was free
+		assert_eq!(dispatch_info.pays_fee, Pays::No);
 
 		// Check if KeyRemoved event was dispatched.
 		System::assert_has_event(Event::KeyRemoved { key: test_account.clone() }.into());
@@ -408,6 +411,29 @@ fn test_retire_msa_success() {
 			),
 			Error::<Test>::NoKeyExists
 		);
+	})
+}
+
+#[test]
+fn test_retire_msa_invalid_pays() {
+	new_test_ext().execute_with(|| {
+		let (test_account_key_pair, _) = sr25519::Pair::generate();
+
+		// Create an account
+		let test_account = AccountId32::new(test_account_key_pair.public().into());
+		let origin = Origin::signed(test_account.clone());
+
+		// Invalid attempt to retire the MSA which has no accounts
+		let dispatch_info;
+		match Msa::retire_msa(origin) {
+			Ok(t) => dispatch_info = t,
+			Err(e) => {
+				dispatch_info = e.post_info;
+			},
+		}
+
+		// Check that attempt at retirement was not free
+		assert_eq!(dispatch_info.pays_fee, Pays::Yes);
 	})
 }
 

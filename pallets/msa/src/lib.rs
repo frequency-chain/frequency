@@ -101,6 +101,8 @@ use sp_std::prelude::*;
 
 #[frame_support::pallet]
 pub mod pallet {
+	use sp_runtime::{DispatchError, DispatchErrorWithPostInfo};
+
 	use super::*;
 
 	#[pallet::config]
@@ -579,6 +581,11 @@ pub mod pallet {
 
 		/// Retire a MSA
 		///
+		/// When a user wants to disassociate themselves from Frequency, they can retire their MSA for free provided that:
+		///  (1) They own the MSA
+		///  (2) There is only one account key
+		///  (3) The MSA is not a registered provider.
+		///
 		/// ### Events
 		/// - Deposits [`MsaRetired`](Event::MsaRetired) when MSA is retired
 		///
@@ -589,12 +596,13 @@ pub mod pallet {
 		/// - Returns [`RegisteredProviderCannotBeRetired`](Error::RegisteredProviderCannotBeRetired) if the MSA id is a registered provider
 
 		#[pallet::weight((T::WeightInfo::retire_msa(), DispatchClass::Normal, Pays::Yes))]
-		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResult {
+		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			// Check and get the account id from the origin
 			let who = ensure_signed(origin)?;
 
-			// Get the MSA id of the origin
-			let msa_id = Self::get_owner_of(&who).ok_or(Error::<T>::NoKeyExists)?;
+			// Get the MSA id of the origin which can trigger NoKeyExists error
+			let msa_id = Self::try_get_msa_from_account_id(&who)?;
+
 			let delegator = Delegator(msa_id);
 
 			// Dispatches error "RegisteredProviderCannotBeRetired" if the MSA id is a registered provider
@@ -614,9 +622,10 @@ pub mod pallet {
 			Self::delete_key_for_msa(msa_id, &who)?;
 			Self::deposit_event(Event::KeyRemoved { key: who });
 
-			// Deposit the "MsaRetired" event
 			Self::deposit_event(Event::MsaRetired { msa_id });
-			Ok(())
+
+			// MSA retirement is free
+			Ok(Pays::No.into())
 		}
 	}
 }
