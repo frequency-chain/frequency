@@ -160,7 +160,7 @@ fn add_key_with_more_than_allowed_should_panic() {
 		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
-		for _ in 1..<Test as Config>::MaxKeys::get() {
+		for _ in 1..<Test as Config>::MaxPublicKeysPerMsa::get() {
 			let (new_key_pair, _) = sr25519::Pair::generate();
 			let new_account = new_key_pair.public();
 			let signature: MultiSignature = new_key_pair.sign(&encode_data_new_key_data).into();

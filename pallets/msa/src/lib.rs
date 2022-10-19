@@ -47,7 +47,7 @@
 //!
 //! ### Assumptions
 //!
-//! * Total MSA keys should be less than the constant `Config::MSA::MaxKeys`.
+//! * Total MSA keys should be less than the constant `Config::MSA::MaxPublicKeysPerMsa`.
 //! * Maximum schemas, for which provider has publishing rights, be less than `Config::MSA::MaxSchemaGrants`
 //!
 
@@ -116,7 +116,7 @@ pub mod pallet {
 
 		/// Maximum count of keys allowed per MSA
 		#[pallet::constant]
-		type MaxKeys: Get<u8>;
+		type MaxPublicKeysPerMsa: Get<u8>;
 
 		/// Maximum count of schemas granted for publishing data per Provider
 		#[pallet::constant]
@@ -303,7 +303,7 @@ pub mod pallet {
 		///
 		/// ### Errors
 		///
-		/// - Returns [`KeyLimitExceeded`](Error::KeyLimitExceeded) if MSA has registered `MaxKeys`.
+		/// - Returns [`KeyLimitExceeded`](Error::KeyLimitExceeded) if MSA has registered `MaxPublicKeysPerMsa`.
 		/// - Returns [`KeyAlreadyRegistered`](Error::KeyAlreadyRegistered) if MSA is already registered to the Origin.
 		///
 		#[pallet::weight(T::WeightInfo::create(10_000))]
@@ -662,7 +662,7 @@ impl<T: Config> Pallet<T> {
 			<MsaInfoOf<T>>::try_mutate(msa_id, |key_count| {
 				// key_count:u8 should default to 0 if it does not exist
 				let incremented_key_count: u8 = *key_count + 1;
-				ensure!(incremented_key_count <= T::MaxKeys::get(), Error::<T>::KeyLimitExceeded);
+				ensure!(incremented_key_count <= T::MaxPublicKeysPerMsa::get(), Error::<T>::KeyLimitExceeded);
 
 				*key_count = incremented_key_count;
 				on_success(msa_id)

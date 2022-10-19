@@ -68,7 +68,7 @@ impl pallet_schemas::Config for Test {
 }
 
 parameter_types! {
-	pub const MaxKeys: u8 = 10;
+	pub const MaxPublicKeysPerMsa: u8 = 10;
 	pub const MaxProviderNameSize: u32 = 16;
 	pub const MaxSchemas: u32 = 5;
 }
@@ -103,7 +103,7 @@ impl pallet_msa::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = ConvertInto;
-	type MaxKeys = MaxKeys;
+	type MaxPublicKeysPerMsa = MaxPublicKeysPerMsa;
 	type MaxSchemaGrants = MaxSchemaGrants;
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
