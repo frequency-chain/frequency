@@ -173,8 +173,8 @@ pub mod pallet {
 	/// - Key: Provider MSA Id
 	/// - Value: [`ProviderMetadata`](common_primitives::msa::ProviderMetadata)
 	#[pallet::storage]
-	#[pallet::getter(fn get_provider_metadata)]
-	pub type ProviderRegistry<T: Config> = StorageMap<
+	#[pallet::getter(fn get_provider_registry_entry)]
+	pub type ProviderToRegistryEntry<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
 		Provider,
@@ -429,7 +429,7 @@ pub mod pallet {
 				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			ProviderRegistry::<T>::try_mutate(
+			ProviderToRegistryEntry::<T>::try_mutate(
 				Provider(provider_msa_id),
 				|maybe_metadata| -> DispatchResult {
 					ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderMetadata);
@@ -743,9 +743,9 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Returns if provider is registered by checking if the [`ProviderRegistry`] contains the MSA id
+	/// Returns if provider is registered by checking if the [`ProviderToRegistryEntry`] contains the MSA id
 	pub fn is_registered_provider(msa_id: MessageSourceId) -> bool {
-		ProviderRegistry::<T>::contains_key(Provider(msa_id))
+		ProviderToRegistryEntry::<T>::contains_key(Provider(msa_id))
 	}
 
 	/// Checks that a provider and delegator keys are valid
