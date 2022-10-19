@@ -2,7 +2,7 @@ use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
 use common_primitives::{msa::MessageSourceId, node::BlockNumber, utils::wrap_binary_data};
 use frame_support::{
 	assert_ok, parameter_types,
-	traits::{ConstU16, ConstU64},
+	traits::{ConstU16, ConstU32, ConstU64},
 };
 use frame_system as system;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
@@ -28,6 +28,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
+		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -56,6 +57,14 @@ impl system::Config for Test {
 	type SS58Prefix = ConstU16<42>;
 	type OnSetCode = ();
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
+}
+
+impl pallet_schemas::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type MinSchemaModelSizeBytes = ConstU32<10>;
+	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<10>;
+	type MaxSchemaRegistrations = ConstU16<10>;
 }
 
 parameter_types! {
@@ -97,6 +106,7 @@ impl pallet_msa::Config for Test {
 	type MaxKeys = MaxKeys;
 	type MaxSchemaGrants = MaxSchemaGrants;
 	type MaxProviderNameSize = MaxProviderNameSize;
+	type SchemaValidator = Schemas;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
