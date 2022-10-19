@@ -2120,9 +2120,9 @@ pub fn add_signature_replay_fails() {
 			TestCase { current: 10_849u64, mortality: 11_001u64, run_to: 11_000u64 }, // fails test
 			TestCase { current: 1u64, mortality: 3u64, run_to: 2u64 },
 			TestCase { current: 99u64, mortality: 101u64, run_to: 100u64 },
-			TestCase { current: 1_000u64, mortality: 1_200u64, run_to: 1_199u64 },
+			TestCase { current: 1_000u64, mortality: 1_199u64, run_to: 1_198u64 },
 			TestCase { current: 1_002u64, mortality: 1_201u64, run_to: 1_200u64 },
-			TestCase { current: 999u64, mortality: 1_149u64, run_to: 1_101u64 },
+			TestCase { current: 999u64, mortality: 1_148u64, run_to: 1_101u64 },
 		];
 		for tc in test_cases {
 			System::set_block_number(tc.current);

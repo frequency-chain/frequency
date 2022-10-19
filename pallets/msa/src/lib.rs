@@ -998,7 +998,7 @@ impl<T: Config> Pallet<T> {
 		let current_block = frame_system::Pallet::<T>::block_number();
 
 		let max_lifetime = Self::mortality_block_limit(current_block);
-		if max_lifetime < mortality_block {
+		if max_lifetime <= mortality_block {
 			Err(Error::<T>::ProofNotYetValid.into())
 		} else if current_block >= mortality_block {
 			Err(Error::<T>::ProofHasExpired.into())
@@ -1036,6 +1036,7 @@ impl<T: Config> Pallet<T> {
 			T::MaxSignaturesPerBucket::get(),
 			None,
 		);
+		// I'm not actually sure this is correct
 		T::WeightInfo::on_initialize(multi_removal_result.unique)
 	}
 
