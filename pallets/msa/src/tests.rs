@@ -1583,7 +1583,7 @@ fn register_provider_duplicate() {
 
 		assert_err!(
 			Msa::register_provider(Origin::signed(key_pair.public().into()), Vec::from("Foo")),
-			Error::<Test>::DuplicateProviderMetadata
+			Error::<Test>::DuplicateProviderRegistryEntry
 		)
 	})
 }

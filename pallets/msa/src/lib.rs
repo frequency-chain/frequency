@@ -64,7 +64,7 @@ use codec::{Decode, Encode};
 use common_primitives::{
 	msa::{
 		DelegationValidator, Delegator, MsaLookup, MsaValidator, OrderedSet, Provider,
-		ProviderInfo, ProviderLookup, ProviderMetadata, SchemaGrantValidator,
+		ProviderInfo, ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
 	},
 	schema::{SchemaId, SchemaValidator},
 };
@@ -171,14 +171,14 @@ pub mod pallet {
 
 	/// Provider registration information
 	/// - Key: Provider MSA Id
-	/// - Value: [`ProviderMetadata`](common_primitives::msa::ProviderMetadata)
+	/// - Value: [`ProviderRegistryEntry`](common_primitives::msa::ProviderRegistryEntry)
 	#[pallet::storage]
 	#[pallet::getter(fn get_provider_registry_entry)]
 	pub type ProviderToRegistryEntry<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
 		Provider,
-		ProviderMetadata<T::MaxProviderNameSize>,
+		ProviderRegistryEntry<T::MaxProviderNameSize>,
 		OptionQuery,
 	>;
 
@@ -311,7 +311,7 @@ pub mod pallet {
 		/// The operation was attempted with an expired delegation
 		DelegationExpired,
 		/// The MSA id submitted for provider creation has already been associated with a provider
-		DuplicateProviderMetadata,
+		DuplicateProviderRegistryEntry,
 		/// The maximum length for a provider name has been exceeded
 		ExceedsMaxProviderNameSize,
 		/// The maximum number of schema grants has been exceeded
@@ -416,12 +416,12 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Adds an association between MSA id and ProviderMetadata. As of now, the
+		/// Adds an association between MSA id and ProviderRegistryEntry. As of now, the
 		/// only piece of metadata we are recording is provider name.
 		///
 		/// ## Errors
 		/// - Returns
-		///   [`DuplicateProviderMetadata`](Error::DuplicateProviderMetadata) if there is already a ProviderMetadata associated with the given MSA id.
+		///   [`DuplicateProviderRegistryEntry`](Error::DuplicateProviderRegistryEntry) if there is already a ProviderRegistryEntry associated with the given MSA id.
 		#[pallet::weight(T::WeightInfo::register_provider())]
 		pub fn register_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
@@ -432,8 +432,8 @@ pub mod pallet {
 			ProviderToRegistryEntry::<T>::try_mutate(
 				Provider(provider_msa_id),
 				|maybe_metadata| -> DispatchResult {
-					ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderMetadata);
-					*maybe_metadata = Some(ProviderMetadata { provider_name: bounded_name });
+					ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderRegistryEntry);
+					*maybe_metadata = Some(ProviderRegistryEntry { provider_name: bounded_name });
 					Ok(())
 				},
 			)?;
