@@ -137,12 +137,12 @@ pub mod pallet {
 		/// The maximum number of signatures that can be assigned to a virtual bucket. In other
 		/// words, no more than this many signatures can be assigned a specific first-key value.
 		#[pallet::constant]
-		type MaxSignaturesPerBucket: Get<u32>;
+		type MaxSignaturesPerBucket: Get<u16>;
 
 		/// The total number of virtual buckets
 		/// There are exactly NumberOfBuckets first-key values in PayloadSignatureRegistry.
 		#[pallet::constant]
-		type NumberOfBuckets: Get<u32>;
+		type NumberOfBuckets: Get<u16>;
 	}
 
 	#[pallet::pallet]
@@ -1033,7 +1033,7 @@ impl<T: Config> Pallet<T> {
 		let bucket_num = Self::bucket_for(current_block - T::BlockNumber::one());
 		let multi_removal_result = <PayloadSignatureRegistry<T>>::clear_prefix(
 			bucket_num,
-			T::MaxSignaturesPerBucket::get(),
+			T::MaxSignaturesPerBucket::get().into(),
 			None,
 		);
 		// I'm not actually sure this is correct
@@ -1044,16 +1044,15 @@ impl<T: Config> Pallet<T> {
 	// to be for current_block
 	// This is calculated to be past the risk of a replay attack
 	fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
-		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
-		let num_buckets: T::BlockNumber = T::NumberOfBuckets::get().into();
-		current_block + (bucket_size * (num_buckets - T::BlockNumber::one()))
+		let mortality_size =
+			(T::NumberOfBuckets::get() - 1) as u32 * T::MortalityBucketSize::get() as u32;
+		current_block + T::BlockNumber::from(mortality_size)
 	}
 
 	/// calculate the virtual bucket number for the provided block number
 	pub fn bucket_for(block_number: T::BlockNumber) -> T::BlockNumber {
-		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
-		let num_buckets: T::BlockNumber = T::NumberOfBuckets::get().into();
-		block_number / bucket_size % num_buckets
+		block_number / (T::BlockNumber::from(T::MortalityBucketSize::get())) %
+			T::BlockNumber::from(T::NumberOfBuckets::get())
 	}
 }
 
