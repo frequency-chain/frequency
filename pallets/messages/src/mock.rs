@@ -169,7 +169,8 @@ impl DelegationValidator for DelegationInfoHandler {
 		provider: Provider,
 		_delegator: Delegator,
 		_block_number: Option<Self::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError> {
+	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>
+	{
 		if provider == Provider(2000) {
 			return Err(DispatchError::Other("some delegation error"))
 		};

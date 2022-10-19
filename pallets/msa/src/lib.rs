@@ -662,7 +662,10 @@ impl<T: Config> Pallet<T> {
 			<MsaInfoOf<T>>::try_mutate(msa_id, |key_count| {
 				// key_count:u8 should default to 0 if it does not exist
 				let incremented_key_count: u8 = *key_count + 1;
-				ensure!(incremented_key_count <= T::MaxPublicKeysPerMsa::get(), Error::<T>::KeyLimitExceeded);
+				ensure!(
+					incremented_key_count <= T::MaxPublicKeysPerMsa::get(),
+					Error::<T>::KeyLimitExceeded
+				);
 
 				*key_count = incremented_key_count;
 				on_success(msa_id)
@@ -765,8 +768,9 @@ impl<T: Config> Pallet<T> {
 		delegator: Delegator,
 		schemas: Vec<SchemaId>,
 	) -> DispatchResult {
-		let granted_schemas: BoundedVec<SchemaId, T::MaxSchemaGrantsPerDelegation> =
-			schemas.try_into().map_err(|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegation)?;
+		let granted_schemas: BoundedVec<SchemaId, T::MaxSchemaGrantsPerDelegation> = schemas
+			.try_into()
+			.map_err(|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegation)?;
 
 		Self::ensure_all_schema_ids_are_valid(granted_schemas.clone())?;
 
@@ -774,7 +778,9 @@ impl<T: Config> Pallet<T> {
 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
 			let info = ProviderInfo {
 				expired: Default::default(),
-				schemas: OrderedSet::<SchemaId, T::MaxSchemaGrantsPerDelegation>::from(granted_schemas),
+				schemas: OrderedSet::<SchemaId, T::MaxSchemaGrantsPerDelegation>::from(
+					granted_schemas,
+				),
 			};
 
 			*maybe_info = Some(info);
@@ -1026,7 +1032,8 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		provider: Provider,
 		delegation: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError> {
+	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>
+	{
 		Self::ensure_valid_delegation(provider, delegation, block_number)
 	}
 
@@ -1042,7 +1049,8 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		provider: Provider,
 		delegation: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError> {
+	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>
+	{
 		let validation_check = Self::ensure_valid_delegation(provider, delegation, block_number);
 		if validation_check.is_err() {
 			// If the delegation does not exist, we return a ok
