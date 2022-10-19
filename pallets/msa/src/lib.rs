@@ -48,7 +48,7 @@
 //! ### Assumptions
 //!
 //! * Total MSA keys should be less than the constant `Config::MSA::MaxPublicKeysPerMsa`.
-//! * Maximum schemas, for which provider has publishing rights, be less than `Config::MSA::MaxSchemaGrants`
+//! * Maximum schemas, for which provider has publishing rights, be less than `Config::MSA::MaxSchemaGrantsPerDelegation`
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -120,7 +120,7 @@ pub mod pallet {
 
 		/// Maximum count of schemas granted for publishing data per Provider
 		#[pallet::constant]
-		type MaxSchemaGrants: Get<u32> + Clone + sp_std::fmt::Debug + Eq;
+		type MaxSchemaGrantsPerDelegation: Get<u32> + Clone + sp_std::fmt::Debug + Eq;
 		/// Maximum provider name size allowed per MSA association
 		#[pallet::constant]
 		type MaxProviderNameSize: Get<u32>;
@@ -150,7 +150,7 @@ pub mod pallet {
 		Delegator,
 		Twox64Concat,
 		Provider,
-		ProviderInfo<T::BlockNumber, T::MaxSchemaGrants>,
+		ProviderInfo<T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
 		OptionQuery,
 	>;
 
@@ -285,7 +285,7 @@ pub mod pallet {
 		/// The maximum length for a provider name has been exceeded
 		ExceedsMaxProviderNameSize,
 		/// The maximum number of schema grants has been exceeded
-		ExceedsMaxSchemaGrants,
+		ExceedsMaxSchemaGrantsPerDelegation,
 		/// Provider is not permitted to publish for given schema_id
 		SchemaNotGranted,
 		/// The operation was attempted with a non-provider MSA
@@ -672,7 +672,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Check that schema ids are all valid
 	pub fn ensure_all_schema_ids_are_valid(
-		schema_ids: BoundedVec<SchemaId, T::MaxSchemaGrants>,
+		schema_ids: BoundedVec<SchemaId, T::MaxSchemaGrantsPerDelegation>,
 	) -> DispatchResult {
 		let are_schemas_valid =
 			T::SchemaValidator::are_all_schema_ids_valid(schema_ids.into_inner());
@@ -765,8 +765,8 @@ impl<T: Config> Pallet<T> {
 		delegator: Delegator,
 		schemas: Vec<SchemaId>,
 	) -> DispatchResult {
-		let granted_schemas: BoundedVec<SchemaId, T::MaxSchemaGrants> =
-			schemas.try_into().map_err(|_| Error::<T>::ExceedsMaxSchemaGrants)?;
+		let granted_schemas: BoundedVec<SchemaId, T::MaxSchemaGrantsPerDelegation> =
+			schemas.try_into().map_err(|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegation)?;
 
 		Self::ensure_all_schema_ids_are_valid(granted_schemas.clone())?;
 
@@ -774,7 +774,7 @@ impl<T: Config> Pallet<T> {
 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
 			let info = ProviderInfo {
 				expired: Default::default(),
-				schemas: OrderedSet::<SchemaId, T::MaxSchemaGrants>::from(granted_schemas),
+				schemas: OrderedSet::<SchemaId, T::MaxSchemaGrantsPerDelegation>::from(granted_schemas),
 			};
 
 			*maybe_info = Some(info);
@@ -799,7 +799,7 @@ impl<T: Config> Pallet<T> {
 		provider: Provider,
 		delegator: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<T::BlockNumber, T::MaxSchemaGrants>, DispatchError> {
+	) -> Result<ProviderInfo<T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError> {
 		let info = Self::get_provider_info_of(delegator, provider)
 			.ok_or(Error::<T>::DelegationNotFound)?;
 		let current_block = frame_system::Pallet::<T>::block_number();
@@ -1007,26 +1007,26 @@ impl<T: Config> MsaValidator for Pallet<T> {
 
 impl<T: Config> ProviderLookup for Pallet<T> {
 	type BlockNumber = T::BlockNumber;
-	type MaxSchemaGrants = T::MaxSchemaGrants;
+	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
 
 	fn get_provider_info_of(
 		delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>> {
+	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>> {
 		Self::get_provider_info(delegator, provider)
 	}
 }
 
 impl<T: Config> DelegationValidator for Pallet<T> {
 	type BlockNumber = T::BlockNumber;
-	type MaxSchemaGrants = T::MaxSchemaGrants;
+	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_delegation(
 		provider: Provider,
 		delegation: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError> {
+	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError> {
 		Self::ensure_valid_delegation(provider, delegation, block_number)
 	}
 
@@ -1042,7 +1042,7 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		provider: Provider,
 		delegation: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError> {
+	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError> {
 		let validation_check = Self::ensure_valid_delegation(provider, delegation, block_number);
 		if validation_check.is_err() {
 			// If the delegation does not exist, we return a ok

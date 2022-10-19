@@ -74,26 +74,26 @@ parameter_types! {
 }
 
 parameter_types! {
-	pub const MaxSchemaGrants: u32 = 2;
+	pub const MaxSchemaGrantsPerDelegation: u32 = 2;
 }
 
-impl Clone for MaxSchemaGrants {
+impl Clone for MaxSchemaGrantsPerDelegation {
 	fn clone(&self) -> Self {
-		MaxSchemaGrants {}
+		MaxSchemaGrantsPerDelegation {}
 	}
 }
 
-impl Eq for MaxSchemaGrants {
+impl Eq for MaxSchemaGrantsPerDelegation {
 	fn assert_receiver_is_total_eq(&self) -> () {}
 }
 
-impl PartialEq for MaxSchemaGrants {
+impl PartialEq for MaxSchemaGrantsPerDelegation {
 	fn eq(&self, _other: &Self) -> bool {
 		true
 	}
 }
 
-impl sp_std::fmt::Debug for MaxSchemaGrants {
+impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
 		Ok(())
 	}
@@ -104,7 +104,7 @@ impl pallet_msa::Config for Test {
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxPublicKeysPerMsa = MaxPublicKeysPerMsa;
-	type MaxSchemaGrants = MaxSchemaGrants;
+	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
 }

@@ -52,15 +52,15 @@ impl From<Delegator> for MessageSourceId {
 
 /// Struct for the information of the relationship between an MSA and a Provider
 #[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
-#[scale_info(skip_type_params(MaxSchemaGrants))]
-pub struct ProviderInfo<BlockNumber, MaxSchemaGrants>
+#[scale_info(skip_type_params(MaxSchemaGrantsPerDelegation))]
+pub struct ProviderInfo<BlockNumber, MaxSchemaGrantsPerDelegation>
 where
-	MaxSchemaGrants: Get<u32>,
+	MaxSchemaGrantsPerDelegation: Get<u32>,
 {
 	/// Block number the grant will be revoked.
 	pub expired: BlockNumber,
 	/// Schemas that the provider is allowed to use for a delegated message.
-	pub schemas: OrderedSet<SchemaId, MaxSchemaGrants>,
+	pub schemas: OrderedSet<SchemaId, MaxSchemaGrantsPerDelegation>,
 }
 
 /// Provider is the recipient of a delegation.
@@ -141,7 +141,7 @@ pub trait ProviderLookup {
 	/// Type for block number.
 	type BlockNumber;
 	/// Type for maximum number of schemas that can be granted to a provider.
-	type MaxSchemaGrants: Get<u32> + Clone + Eq;
+	type MaxSchemaGrantsPerDelegation: Get<u32> + Clone + Eq;
 
 	/// Gets the relationship information for this delegator, provider pair
 	/// # Arguments
@@ -152,7 +152,7 @@ pub trait ProviderLookup {
 	fn get_provider_info_of(
 		delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>>;
+	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>>;
 }
 
 /// A behavior that allows for validating a delegator-provider relationship
@@ -160,7 +160,7 @@ pub trait DelegationValidator {
 	/// Type for block number.
 	type BlockNumber;
 	/// Type for maximum number of schemas that can be granted to a provider.
-	type MaxSchemaGrants: Get<u32> + Clone + Eq;
+	type MaxSchemaGrantsPerDelegation: Get<u32> + Clone + Eq;
 
 	/// Validates that the delegator and provider have a relationship at this point
 	/// # Arguments
@@ -172,7 +172,7 @@ pub trait DelegationValidator {
 		provider: Provider,
 		delegator: Delegator,
 		block_number: Option<Self::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError>;
+	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>;
 }
 
 /// A behavior that allows for validating a schema grant

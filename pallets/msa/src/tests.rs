@@ -1640,7 +1640,7 @@ pub fn error_exceeding_max_schema_grants() {
 		let schema_grants = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 		assert_err!(
 			Msa::add_provider(provider, delegator, schema_grants),
-			Error::<Test>::ExceedsMaxSchemaGrants
+			Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation
 		);
 	})
 }

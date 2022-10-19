@@ -231,7 +231,7 @@ impl pallet_msa::Config for Runtime {
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxPublicKeysPerMsa = MsaMaxPublicKeysPerMsa;
-	type MaxSchemaGrants = MaxDataSize;
+	type MaxSchemaGrantsPerDelegation = MaxDataSize;
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
 	type SchemaValidator = Schemas;
 }
