@@ -272,6 +272,6 @@ impl Clone for MessagesMaxPayloadSizeBytes {
 }
 // -end- Messages Pallet ---
 
-pub type MSAMortalityBucketSize = ConstU32<100>;
+pub type MSAMortalityWindowSize = ConstU32<100>;
 pub type MSAMaxSignaturesPerBucket = ConstU32<50_000>;
 pub type MSANumberOfBuckets = ConstU32<2>;

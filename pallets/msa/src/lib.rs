@@ -132,7 +132,7 @@ pub mod pallet {
 		/// StorageDoubleMap.  This permits a key grouping that enables mass removal
 		/// of stale signatures which are no longer at risk of replay.
 		#[pallet::constant]
-		type MortalityBucketSize: Get<u32>;
+		type MortalityWindowSize: Get<u32>;
 
 		/// The maximum number of signatures that can be assigned to a virtual bucket. In other
 		/// words, no more than this many signatures can be assigned a specific first-key value.
@@ -378,9 +378,13 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
-			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
+			Self::verify_signature(
+				proof.clone(),
+				delegator_key.clone(),
+				add_provider_payload.encode(),
+			)?;
 
-			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())?;
+			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			ensure!(
@@ -463,8 +467,6 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
-			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
-
 			// delegator must have signed the payload.
 			Self::verify_signature(
 				proof.clone(),
@@ -472,6 +474,8 @@ pub mod pallet {
 				add_provider_payload.encode(),
 			)
 			.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
+
+			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 
 			let (provider, delegator) =
 				Self::ensure_valid_registered_provider(&delegator_key, &provider_key)?;
@@ -536,10 +540,10 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			Self::register_signature(&proof, add_key_payload.expiration.into())?;
-
-			Self::verify_signature(proof, key.clone(), add_key_payload.encode())
+			Self::verify_signature(proof.clone(), key.clone(), add_key_payload.encode())
 				.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
+
+			Self::register_signature(&proof, add_key_payload.expiration.into())?;
 
 			let msa_id = add_key_payload.msa_id;
 
@@ -993,23 +997,23 @@ impl<T: Config> Pallet<T> {
 	/// registry.
 	pub fn register_signature(
 		signature: &MultiSignature,
-		mortality_block: T::BlockNumber,
+		signature_expires_at: T::BlockNumber,
 	) -> DispatchResult {
 		let current_block = frame_system::Pallet::<T>::block_number();
 
 		let max_lifetime = Self::mortality_block_limit(current_block);
-		if max_lifetime <= mortality_block {
+		if max_lifetime <= signature_expires_at {
 			Err(Error::<T>::ProofNotYetValid.into())
-		} else if current_block >= mortality_block {
+		} else if current_block >= signature_expires_at {
 			Err(Error::<T>::ProofHasExpired.into())
 		} else {
-			let bucket_num = Self::bucket_for(mortality_block.into());
+			let bucket_num = Self::bucket_for(signature_expires_at.into());
 			<PayloadSignatureRegistry<T>>::try_mutate(
 				bucket_num,
 				signature,
 				|maybe_mortality_block| -> DispatchResult {
 					ensure!(maybe_mortality_block.is_none(), Error::<T>::SignatureAlreadySubmitted);
-					*maybe_mortality_block = Some(mortality_block);
+					*maybe_mortality_block = Some(signature_expires_at);
 					Ok(())
 				},
 			)
@@ -1022,7 +1026,7 @@ impl<T: Config> Pallet<T> {
 	//	   2. add the WeightInfo proportional to the storage read/writes to the block weight
 	// If not, don't do anything.
 	fn reset_virtual_bucket_if_needed(current_block: T::BlockNumber) -> Weight {
-		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
+		let bucket_size: T::BlockNumber = T::MortalityWindowSize::get().into();
 
 		// Now that we're in a "new bucket block set"
 		if current_block % bucket_size != T::BlockNumber::zero() {
@@ -1044,13 +1048,13 @@ impl<T: Config> Pallet<T> {
 	// to be for current_block
 	// This is calculated to be past the risk of a replay attack
 	fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
-		let mortality_size = (T::NumberOfBuckets::get() - 1) * T::MortalityBucketSize::get();
+		let mortality_size = (T::NumberOfBuckets::get() - 1) * T::MortalityWindowSize::get();
 		current_block + T::BlockNumber::from(mortality_size)
 	}
 
 	/// calculate the virtual bucket number for the provided block number
 	pub fn bucket_for(block_number: T::BlockNumber) -> T::BlockNumber {
-		block_number / (T::BlockNumber::from(T::MortalityBucketSize::get())) %
+		block_number / (T::BlockNumber::from(T::MortalityWindowSize::get())) %
 			T::BlockNumber::from(T::NumberOfBuckets::get())
 	}
 }

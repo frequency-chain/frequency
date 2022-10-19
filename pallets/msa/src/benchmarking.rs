@@ -166,7 +166,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(provider), Vec::from("Foo"))
 
 	on_initialize {
-		let m in 1 .. 10_000;
+		let m in 1 .. 50_000;
 		for j in 0 .. m {
 			let mortality = 49;
 			register_signature::<T>(mortality as u32);
