@@ -869,8 +869,8 @@ impl_runtime_apis! {
 			}
 		}
 
-		fn get_granted_schemas(delegator: Delegator, provider: Provider) -> Result<Option<Vec<SchemaId>>, DispatchError> {
-			Msa::get_granted_schemas(delegator, provider)
+		fn get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -> Result<Option<Vec<SchemaId>>, DispatchError> {
+			Msa::get_granted_schemas_by_msa_id(delegator, provider)
 		}
 	}
 
