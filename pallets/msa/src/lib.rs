@@ -231,7 +231,7 @@ pub mod pallet {
 			key: T::AccountId,
 		},
 		/// An AccountId had all permissions revoked from its MessageSourceId
-		KeyRemoved {
+		PublicKeyDeleted {
 			/// The key no longer approved for the associated MSA
 			key: T::AccountId,
 		},
@@ -568,7 +568,7 @@ pub mod pallet {
 		}
 
 		/// Remove a key associated with an MSA by expiring it at the current block.
-		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`KeyRemoved`](Event::KeyRemoved).
+		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`PublicKeyDeleted`](Event::PublicKeyDeleted).
 		///
 		/// ### Errors
 		/// - Returns [`InvalidSelfRemoval`](Error::InvalidSelfRemoval) if `origin` and `key` are the same.
@@ -596,7 +596,7 @@ pub mod pallet {
 			Self::delete_key_for_msa(who_msa_id, &key)?;
 
 			// Deposit the event
-			Self::deposit_event(Event::KeyRemoved { key });
+			Self::deposit_event(Event::PublicKeyDeleted { key });
 
 			Ok(())
 		}
@@ -666,9 +666,9 @@ pub mod pallet {
 			// Remove delegator from all delegator<->provider delegations
 			Self::remove_delegator(delegator)?;
 
-			// Delete the last and only account key and deposit the "KeyRemoved" event
+			// Delete the last and only account key and deposit the "PublicKeyDeleted" event
 			Self::delete_key_for_msa(msa_id, &who)?;
-			Self::deposit_event(Event::KeyRemoved { key: who });
+			Self::deposit_event(Event::PublicKeyDeleted { key: who });
 
 			// Deposit the "MsaRetired" event
 			Self::deposit_event(Event::MsaRetired { msa_id });
