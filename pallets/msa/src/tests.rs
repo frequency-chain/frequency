@@ -25,8 +25,6 @@ use frame_support::{
 	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 };
 use orml_utilities::OrderedSet;
-use sp_core::{crypto::AccountId32, sr25519, Encode, Pair, H256};
-use sp_runtime::{traits::SignedExtension, MultiSignature};
 
 #[test]
 fn it_creates_an_msa_account() {
