@@ -10,20 +10,16 @@ use crate::{
 	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
-	PayloadSignatureRegistry, ProviderRegistry,
+	PayloadSignatureRegistry,
 };
 
 use common_primitives::{
-	msa::{Delegator, MessageSourceId, Provider, ProviderInfo, ProviderMetadata},
+	msa::{Delegator, MessageSourceId, Provider, ProviderInfo},
 	node::BlockNumber,
 	schema::SchemaId,
 	utils::wrap_binary_data,
 };
 use common_runtime::extensions::check_nonce::CheckNonce;
-use frame_support::{
-	assert_err, assert_noop, assert_ok,
-	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
-};
 use orml_utilities::OrderedSet;
 
 #[test]
@@ -2072,102 +2068,6 @@ pub fn bucket_for() {
 			assert_eq!(tc.expected_bucket, Msa::bucket_for(tc.block));
 		}
 	});
-}
-
-#[test]
-pub fn clears_stale_signatures_after_mortality_limit() {
-	new_test_ext().execute_with(|| {
-		let sig1 = &generate_test_signature();
-		let sig2 = &generate_test_signature();
-
-		let mut current_block: BlockNumber = 667;
-		let mortality_block = (current_block + 111) as u64;
-		register_signature_and_validate(current_block, 1u64, sig1);
-		register_signature_and_validate(current_block, 1u64, sig2);
-
-		current_block = 777;
-		run_to_block(current_block.into());
-		// the old signature should not be able to be registered
-		assert_noop!(
-			Msa::register_signature(sig1, mortality_block),
-			Error::<Test>::SignatureAlreadySubmitted
-		);
-
-		current_block = 876;
-		run_to_block(current_block.into());
-
-		assert_eq!(false, <PayloadSignatureRegistry<Test>>::contains_key(1u64, sig1));
-		assert_eq!(false, <PayloadSignatureRegistry<Test>>::contains_key(1u64, sig2));
-	})
-}
-
-#[test]
-pub fn add_signature_replay_fails() {
-	struct TestCase {
-		current: u64,
-		mortality: u64,
-		run_to: u64,
-	}
-	new_test_ext().execute_with(|| {
-		// these should all fail replay
-		let test_cases: Vec<TestCase> = vec![
-			TestCase { current: 10_849u64, mortality: 11_001u64, run_to: 11_000u64 }, // fails test
-			TestCase { current: 1u64, mortality: 3u64, run_to: 2u64 },
-			TestCase { current: 99u64, mortality: 101u64, run_to: 100u64 },
-			TestCase { current: 1_000u64, mortality: 1_200u64, run_to: 1_199u64 },
-			TestCase { current: 1_002u64, mortality: 1_201u64, run_to: 1_200u64 },
-			TestCase { current: 999u64, mortality: 1_149u64, run_to: 1_101u64 },
-		];
-		for tc in test_cases {
-			System::set_block_number(tc.current);
-			let sig1 = &generate_test_signature();
-			assert_ok!(Msa::register_signature(sig1, tc.mortality));
-			run_to_block(tc.run_to);
-			assert_noop!(
-				Msa::register_signature(sig1, tc.mortality),
-				Error::<Test>::SignatureAlreadySubmitted,
-			);
-		}
-	});
-}
-
-#[test]
-pub fn cannot_register_signature_with_mortality_out_of_bounds() {
-	new_test_ext().execute_with(|| {
-		System::set_block_number(11_122);
-		let mut mortality_block: BlockNumber = 11_323;
-
-		let sig1 = &generate_test_signature();
-		assert_noop!(
-			Msa::register_signature(sig1, mortality_block.into()),
-			Error::<Test>::ProofNotYetValid
-		);
-
-		mortality_block = 11_122;
-		assert_noop!(
-			Msa::register_signature(sig1, mortality_block.into()),
-			Error::<Test>::ProofHasExpired
-		);
-	})
-}
-
-fn generate_test_signature() -> MultiSignature {
-	let (key_pair, _) = sr25519::Pair::generate();
-	let fake_data = H256::random();
-	key_pair.sign(fake_data.as_bytes()).into()
-}
-
-fn register_signature_and_validate(
-	current_block: BlockNumber,
-	expected_bucket: u64,
-	signature: &MultiSignature,
-) {
-	System::set_block_number(current_block as u64);
-	let mortality_block = current_block + 111;
-	assert_ok!(Msa::register_signature(signature, mortality_block.into()));
-
-	let actual = <PayloadSignatureRegistry<Test>>::get(expected_bucket, signature);
-	assert_eq!(Some(mortality_block as u64), actual);
 }
 
 #[test]
