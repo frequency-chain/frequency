@@ -86,7 +86,7 @@ This is a signed call directly from the caller, so the owner of the new MSA pays
   * Events:
     1. `DelegatorRevokedDelegation`
         * `msa_id` - id of the newly created MSA
-#### revoke_msa_delegation_by_delegator
+#### revoke_delegation_by_delegator
 A delegator removes its relationship from a provider.
 This is a signed call directly from the delegator's MSA.
 This call incurs no fees.
