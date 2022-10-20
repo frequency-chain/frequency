@@ -194,8 +194,8 @@ pub mod pallet {
 	/// - Key: MSA Id
 	/// - Value: [`u8`] Counter of Keys associated with the MSA
 	#[pallet::storage]
-	#[pallet::getter(fn get_msa_key_count)]
-	pub(super) type MsaInfoOf<T: Config> =
+	#[pallet::getter(fn get_public_key_count_by_msa_id)]
+	pub(super) type PublicKeyCountForMsaId<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, u8, ValueQuery>;
 
 	/// PayloadSignatureRegistry is used to prevent replay attacks for extrinsics
@@ -697,7 +697,7 @@ impl<T: Config> Pallet<T> {
 			*maybe_msa_id = Some(msa_id);
 
 			// Increment the key counter
-			<MsaInfoOf<T>>::try_mutate(msa_id, |key_count| {
+			<PublicKeyCountForMsaId<T>>::try_mutate(msa_id, |key_count| {
 				// key_count:u8 should default to 0 if it does not exist
 				let incremented_key_count: u8 = *key_count + 1;
 				ensure!(
@@ -848,7 +848,7 @@ impl<T: Config> Pallet<T> {
 			// Delete the key if it exists
 			*maybe_msa_id = None;
 
-			<MsaInfoOf<T>>::try_mutate_exists(msa_id, |key_count| {
+			<PublicKeyCountForMsaId<T>>::try_mutate_exists(msa_id, |key_count| {
 				match key_count {
 					Some(1) => *key_count = None,
 					Some(count) => *count = *count - 1u8,
