@@ -243,7 +243,7 @@ pub mod pallet {
 			delegator: Delegator,
 		},
 		/// A Provider-MSA relationship was registered
-		ProviderRegistered {
+		ProviderCreated {
 			/// The MSA id associated with the provider
 			provider_msa_id: MessageSourceId,
 		},
@@ -437,7 +437,7 @@ pub mod pallet {
 					Ok(())
 				},
 			)?;
-			Self::deposit_event(Event::ProviderRegistered { provider_msa_id });
+			Self::deposit_event(Event::ProviderCreated { provider_msa_id });
 			Ok(())
 		}
 
