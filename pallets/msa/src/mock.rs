@@ -98,19 +98,17 @@ impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
 	}
 }
 
-pub const NUMBER_OF_BUCKETS: u32 = 2; // so this can be used in genesis
-
 impl pallet_msa::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxPublicKeysPerMsa = MaxPublicKeysPerMsa;
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
-	type SchemaValidator = Schemas;
 	type MaxProviderNameSize = MaxProviderNameSize;
-	type NumberOfBuckets = ConstU32<NUMBER_OF_BUCKETS>;
+	type SchemaValidator = Schemas;
 	type MortalityWindowSize = ConstU32<200>;
 	type MaxSignaturesPerBucket = ConstU32<10>;
+	type NumberOfBuckets = ConstU32<2>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

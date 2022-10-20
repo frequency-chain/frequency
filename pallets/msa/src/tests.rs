@@ -2151,11 +2151,11 @@ pub fn add_signature_replay_fails() {
 		];
 		for tc in test_cases {
 			System::set_block_number(tc.current);
-			let sig1 = &generate_test_signature();
-			assert_ok!(Msa::register_signature(sig1, tc.mortality));
+			let signature_new = &generate_test_signature();
+			assert_ok!(Msa::register_signature(signature_new, tc.mortality));
 			run_to_block(tc.run_to);
 			assert_noop!(
-				Msa::register_signature(sig1, tc.mortality),
+				Msa::register_signature(signature_new, tc.mortality),
 				Error::<Test>::SignatureAlreadySubmitted,
 			);
 		}
@@ -2179,5 +2179,70 @@ pub fn cannot_register_signature_with_mortality_out_of_bounds() {
 			Msa::register_signature(sig1, mortality_block.into()),
 			Error::<Test>::ProofHasExpired
 		);
+	})
+}
+
+#[test]
+pub fn add_msa_key_replay_fails() {
+	struct TestCase {
+		current: u64,
+		mortality: u32,
+		run_to: u64,
+		expected_ok: bool,
+	}
+	new_test_ext().execute_with(|| {
+		// these should all fail replay
+		let test_cases: Vec<TestCase> = vec![
+			TestCase {
+				current: 10_849u64,
+				mortality: 11_001u32,
+				run_to: 10_848u64,
+				expected_ok: true,
+			},
+			TestCase { current: 1u64, mortality: 3u32, run_to: 5u64, expected_ok: false },
+			TestCase { current: 99u64, mortality: 101u32, run_to: 100u64, expected_ok: true },
+			TestCase {
+				current: 1_000u64,
+				mortality: 1_199u32,
+				run_to: 1_198u64,
+				expected_ok: true,
+			},
+			TestCase {
+				current: 1_002u64,
+				mortality: 1_201u32,
+				run_to: 1_200u64,
+				expected_ok: true,
+			},
+			TestCase { current: 999u64, mortality: 1_148u32, run_to: 1_101u64, expected_ok: true },
+		];
+		let (key_pair_provider, _) = sr25519::Pair::generate();
+		let account_provider = key_pair_provider.public();
+		let (new_msa_id, _) = Msa::create_account(account_provider.into(), EMPTY_FUNCTION).unwrap();
+		let nonce = 1u32;
+		for tc in test_cases {
+			System::set_block_number(tc.current);
+			let add_new_key_data =
+				AddKeyData { nonce, msa_id: new_msa_id, expiration: tc.mortality };
+			let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+			let (new_key_pair, _) = sr25519::Pair::generate();
+			let new_delegator_account = new_key_pair.public();
+			let signature_owner: MultiSignature =
+				key_pair_provider.sign(&encode_data_new_key_data).into();
+			let signature_new_key: MultiSignature =
+				new_key_pair.sign(&encode_data_new_key_data).into();
+			run_to_block(tc.run_to);
+			dbg!(&tc.current);
+			let add_key_response: bool = Msa::add_key_to_msa(
+				Origin::signed(account_provider.into()),
+				account_provider.into(),
+				signature_owner.clone(),
+				new_delegator_account.into(),
+				signature_new_key,
+				add_new_key_data.clone(),
+			)
+			.is_ok();
+
+			assert_eq!(add_key_response, tc.expected_ok);
+		}
 	})
 }
