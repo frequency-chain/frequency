@@ -230,8 +230,8 @@ impl pallet_msa::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 	type ConvertIntoAccountId32 = ConvertInto;
-	type MaxKeys = MsaMaxKeys;
-	type MaxSchemaGrants = MaxDataSize;
+	type MaxPublicKeysPerMsa = MsaMaxPublicKeysPerMsa;
+	type MaxSchemaGrantsPerDelegation = MaxDataSize;
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
 	type SchemaValidator = Schemas;
 	type MortalityWindowSize = MSAMortalityWindowSize;
