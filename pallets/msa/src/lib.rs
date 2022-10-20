@@ -378,7 +378,8 @@ pub mod pallet {
 			let provider_key = ensure_signed(origin)?;
 
 			Self::verify_signature(
-				vec![(proof.clone(), delegator_key.clone())],
+				proof.clone(),
+				delegator_key.clone(),
 				add_provider_payload.encode(),
 			)?;
 
@@ -467,7 +468,8 @@ pub mod pallet {
 
 			// delegator must have signed the payload.
 			Self::verify_signature(
-				vec![(proof.clone(), delegator_key.clone())],
+				proof.clone(),
+				delegator_key.clone(),
 				add_provider_payload.encode(),
 			)
 			.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
@@ -538,19 +540,24 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::add_key_to_msa())]
 		pub fn add_key_to_msa(
 			origin: OriginFor<T>,
-			msa_owner_key: T::AccountId,
+			msa_owner_public_key: T::AccountId,
 			msa_owner_proof: MultiSignature,
-			new_key: T::AccountId,
-			new_proof: MultiSignature,
+			new_public_key: T::AccountId,
+			new_key_owner_proof: MultiSignature,
 			add_key_payload: AddKeyData,
 		) -> DispatchResult {
 			let _ = ensure_signed(origin)?;
 
 			Self::verify_signature(
-				vec![
-					(msa_owner_proof.clone(), msa_owner_key.clone()),
-					(new_proof, new_key.clone()),
-				],
+				msa_owner_proof.clone(),
+				msa_owner_public_key.clone(),
+				add_key_payload.encode(),
+			)
+			.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
+
+			Self::verify_signature(
+				new_key_owner_proof.clone(),
+				new_public_key.clone(),
 				add_key_payload.encode(),
 			)
 			.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
@@ -559,10 +566,10 @@ pub mod pallet {
 
 			let msa_id = add_key_payload.msa_id;
 
-			Self::ensure_msa_owner(&msa_owner_key, msa_id)?;
+			Self::ensure_msa_owner(&msa_owner_public_key, msa_id)?;
 
-			Self::add_key(msa_id, &new_key.clone(), |new_msa_id| -> DispatchResult {
-				Self::deposit_event(Event::KeyAdded { msa_id: new_msa_id, key: new_key });
+			Self::add_key(msa_id, &new_public_key.clone(), |new_msa_id| -> DispatchResult {
+				Self::deposit_event(Event::KeyAdded { msa_id: new_msa_id, key: new_public_key });
 				Ok(())
 			})?;
 
@@ -783,14 +790,15 @@ impl<T: Config> Pallet<T> {
 	/// Verify the `signature` was signed by `signer` on `payload` by a wallet
 	/// Note the `wrap_binary_data` follows the Polkadot wallet pattern of wrapping with `<Byte>` tags.
 	pub fn verify_signature(
-		signer_signature: Vec<(MultiSignature, T::AccountId)>,
+		signature: MultiSignature,
+		signer: T::AccountId,
 		payload: Vec<u8>,
 	) -> DispatchResult {
-		let wrapped_payload = wrap_binary_data(payload.clone());
-		for (signature, signer) in signer_signature {
-			let key = T::ConvertIntoAccountId32::convert(signer);
-			ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
-		}
+		let key = T::ConvertIntoAccountId32::convert(signer);
+		let wrapped_payload = wrap_binary_data(payload);
+
+		ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
+
 		Ok(())
 	}
 
