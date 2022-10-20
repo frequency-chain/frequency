@@ -10,11 +10,11 @@ use crate::{
 	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
-	PayloadSignatureRegistry,
+	PayloadSignatureRegistry, ProviderRegistry,
 };
 
 use common_primitives::{
-	msa::{Delegator, MessageSourceId, Provider, ProviderInfo},
+	msa::{Delegator, MessageSourceId, Provider, ProviderInfo, ProviderMetadata},
 	node::BlockNumber,
 	schema::SchemaId,
 	utils::wrap_binary_data,
@@ -1999,6 +1999,40 @@ pub fn delegation_expired_long_back() {
 	})
 }
 
+#[test]
+pub fn ensure_all_schema_ids_are_valid_errors() {
+	new_test_ext().execute_with(|| {
+		let schema_ids = vec![1];
+		assert_noop!(
+			Msa::ensure_all_schema_ids_are_valid(schema_ids.try_into().unwrap()),
+			Error::<Test>::InvalidSchemaId
+		);
+	})
+}
+
+#[test]
+pub fn ensure_all_schema_ids_are_valid_success() {
+	new_test_ext().execute_with(|| {
+		let schema_ids = vec![1];
+		Schemas::set_schema_count(1);
+
+		assert_ok!(Msa::ensure_all_schema_ids_are_valid(schema_ids.try_into().unwrap()));
+	});
+}
+
+#[test]
+pub fn is_registered_provider_is_true() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let provider_name = Vec::from("frequency".as_bytes()).try_into().unwrap();
+
+		let provider_meta = ProviderMetadata { provider_name };
+		ProviderRegistry::<Test>::insert(provider, provider_meta);
+
+		assert!(Msa::is_registered_provider(provider.into()));
+	});
+}
+
 fn generate_test_signature() -> MultiSignature {
 	let (key_pair, _) = sr25519::Pair::generate();
 	let fake_data = H256::random();
@@ -2016,31 +2050,6 @@ fn register_signature_and_validate(
 
 	let actual = <PayloadSignatureRegistry<Test>>::get(expected_bucket, signature);
 	assert_eq!(Some(mortality_block as u64), actual);
-}
-
-#[test]
-// for illustration purposes
-pub fn bucket_for() {
-	struct TestCase {
-		block: u64,
-		expected_bucket: u64,
-	}
-	new_test_ext().execute_with(|| {
-		let test_cases: Vec<TestCase> = vec![
-			TestCase { block: 1_010, expected_bucket: 1 },
-			TestCase { block: 1_201, expected_bucket: 0 },
-			TestCase { block: 1_301, expected_bucket: 0 },
-			TestCase { block: 1_401, expected_bucket: 1 },
-			TestCase { block: 1_501, expected_bucket: 1 },
-			TestCase { block: 1_601, expected_bucket: 0 },
-			TestCase { block: 1_701, expected_bucket: 0 },
-			TestCase { block: 1_801, expected_bucket: 1 },
-			TestCase { block: 1_901, expected_bucket: 1 },
-		];
-		for tc in test_cases {
-			assert_eq!(tc.expected_bucket, Msa::bucket_for(tc.block));
-		}
-	});
 }
 
 #[test]
@@ -2068,6 +2077,31 @@ pub fn stores_signature_in_expected_bucket() {
 			);
 		}
 	})
+}
+
+#[test]
+// for illustration purposes
+pub fn bucket_for() {
+	struct TestCase {
+		block: u64,
+		expected_bucket: u64,
+	}
+	new_test_ext().execute_with(|| {
+		let test_cases: Vec<TestCase> = vec![
+			TestCase { block: 1_010, expected_bucket: 1 },
+			TestCase { block: 1_201, expected_bucket: 0 },
+			TestCase { block: 1_301, expected_bucket: 0 },
+			TestCase { block: 1_401, expected_bucket: 1 },
+			TestCase { block: 1_501, expected_bucket: 1 },
+			TestCase { block: 1_601, expected_bucket: 0 },
+			TestCase { block: 1_701, expected_bucket: 0 },
+			TestCase { block: 1_801, expected_bucket: 1 },
+			TestCase { block: 1_901, expected_bucket: 1 },
+		];
+		for tc in test_cases {
+			assert_eq!(tc.expected_bucket, Msa::bucket_for(tc.block));
+		}
+	});
 }
 
 #[test]
