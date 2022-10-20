@@ -132,7 +132,7 @@ pub mod pallet {
 		/// StorageDoubleMap.  This permits a key grouping that enables mass removal
 		/// of stale signatures which are no longer at risk of replay.
 		#[pallet::constant]
-		type MortalityBucketSize: Get<u16>;
+		type MortalityWindowSize: Get<u32>;
 
 		/// The maximum number of signatures that can be assigned to a virtual bucket. In other
 		/// words, no more than this many signatures can be assigned a specific first-key value.
@@ -1002,27 +1002,28 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Adds a signature to the PayloadSignatureRegistry based on a virtual "bucket" grouping.
-	/// Check that mortality_block is within bounds. If so, proceed.
-	/// Reset the virtual bucket if necessary, then add the new entry.
+	/// Check that mortality_block is within bounds. If so, proceed and add the new entry.
+	/// Raises `SignatureAlreadySubmitted` if the bucket-signature double key exists in the
+	/// registry.
 	pub fn register_signature(
 		signature: &MultiSignature,
-		mortality_block: T::BlockNumber,
+		signature_expires_at: T::BlockNumber,
 	) -> DispatchResult {
 		let current_block = frame_system::Pallet::<T>::block_number();
 
 		let max_lifetime = Self::mortality_block_limit(current_block);
-		if max_lifetime < mortality_block {
+		if max_lifetime <= signature_expires_at {
 			Err(Error::<T>::ProofNotYetValid.into())
-		} else if current_block >= mortality_block {
+		} else if current_block >= signature_expires_at {
 			Err(Error::<T>::ProofHasExpired.into())
 		} else {
-			let bucket_num = Self::bucket_for(mortality_block.into());
+			let bucket_num = Self::bucket_for(signature_expires_at.into());
 			<PayloadSignatureRegistry<T>>::try_mutate(
 				bucket_num,
 				signature,
 				|maybe_mortality_block| -> DispatchResult {
 					ensure!(maybe_mortality_block.is_none(), Error::<T>::SignatureAlreadySubmitted);
-					*maybe_mortality_block = Some(mortality_block);
+					*maybe_mortality_block = Some(signature_expires_at);
 					Ok(())
 				},
 			)
@@ -1031,21 +1032,20 @@ impl<T: Config> Pallet<T> {
 
 	// Check if enough blocks have passed to reset bucket mortality storage.
 	// If so:
-	//     1. delete all the stored bucket/signature alues with key1 = bucket num
+	//     1. delete all the stored bucket/signature values with key1 = bucket num
 	//	   2. add the WeightInfo proportional to the storage read/writes to the block weight
 	// If not, don't do anything.
 	fn reset_virtual_bucket_if_needed(current_block: T::BlockNumber) -> Weight {
-		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
+		let current_bucket_num = Self::bucket_for(current_block);
+		let prior_bucket_num = Self::bucket_for(current_block - T::BlockNumber::one());
 
-		// Now that we're in a "new bucket block set"
-		if current_block % bucket_size != T::BlockNumber::zero() {
+		// If we did not cross a bucket boundary block, stop
+		if prior_bucket_num == current_bucket_num {
 			return T::WeightInfo::on_initialize(0 as u32)
 		}
-
 		// Clear the previous bucket block set
-		let bucket_num = Self::bucket_for(current_block - T::BlockNumber::one());
 		let multi_removal_result = <PayloadSignatureRegistry<T>>::clear_prefix(
-			bucket_num,
+			prior_bucket_num,
 			T::MaxSignaturesPerBucket::get(),
 			None,
 		);
@@ -1056,16 +1056,14 @@ impl<T: Config> Pallet<T> {
 	// to be for current_block
 	// This is calculated to be past the risk of a replay attack
 	fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
-		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
-		let num_buckets: T::BlockNumber = T::NumberOfBuckets::get().into();
-		current_block + (bucket_size * (num_buckets - T::BlockNumber::one()))
+		let mortality_size = (T::NumberOfBuckets::get() - 1) * T::MortalityWindowSize::get();
+		current_block + T::BlockNumber::from(mortality_size)
 	}
 
 	/// calculate the virtual bucket number for the provided block number
 	pub fn bucket_for(block_number: T::BlockNumber) -> T::BlockNumber {
-		let bucket_size: T::BlockNumber = T::MortalityBucketSize::get().into();
-		let num_buckets: T::BlockNumber = T::NumberOfBuckets::get().into();
-		block_number / bucket_size % num_buckets
+		block_number / (T::BlockNumber::from(T::MortalityWindowSize::get())) %
+			T::BlockNumber::from(T::NumberOfBuckets::get())
 	}
 }
 

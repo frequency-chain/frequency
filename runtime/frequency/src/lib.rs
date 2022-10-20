@@ -253,11 +253,11 @@ impl pallet_msa::Config for Runtime {
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxKeys = MsaMaxKeys;
 	type MaxSchemaGrants = MaxDataSize;
+	type SchemaValidator = Schemas;
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
-	type MortalityBucketSize = MSAMortalityBucketSize;
+	type MortalityWindowSize = MSAMortalityWindowSize;
 	type MaxSignaturesPerBucket = MSAMaxSignaturesPerBucket;
 	type NumberOfBuckets = MSANumberOfBuckets;
-	type SchemaValidator = Schemas;
 }
 
 pub use common_primitives::schema::SchemaId;

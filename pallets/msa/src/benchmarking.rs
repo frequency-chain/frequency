@@ -4,7 +4,6 @@ use super::*;
 
 #[allow(unused)]
 use crate::Pallet as Msa;
-use common_primitives::node::BlockNumber;
 use frame_benchmarking::{account, benchmarks, whitelisted_caller};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
@@ -24,10 +23,6 @@ type SignerId = app_sr25519::Public;
 
 const SEED: u32 = 0;
 
-fn on_initialize_msa<T: Config>(n: BlockNumber) {
-	Msa::<T>::on_initialize(n.into());
-}
-
 fn create_account<T: Config>(name: &'static str, index: u32) -> T::AccountId {
 	account(name, index, SEED)
 }
@@ -41,7 +36,7 @@ fn create_payload_and_signature<T: Config>() -> (AddProvider, MultiSignature, T:
 	let delegator_account = SignerId::generate_pair(None);
 	let schemas: Vec<SchemaId> = vec![1, 2];
 	T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
-	let expiration: BlockNumber = 10;
+	let expiration = 10u32;
 	let add_provider_payload = AddProvider::new(1u64, Some(schemas), expiration);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
@@ -76,12 +71,19 @@ fn add_delegation<T: Config>(delegator: Delegator, provider: Provider) {
 	assert_ok!(Msa::<T>::add_provider(provider, delegator, schemas));
 }
 
-benchmarks! {
-	on_initialize {
-	}: {
-		Msa::<T>::on_initialize(10u32.into());
-	}
+pub fn generate_test_signature() -> MultiSignature {
+	let account = SignerId::generate_pair(None);
+	let fake_data = vec![4u8; 32];
+	let signature = account.sign(&fake_data).unwrap();
+	MultiSignature::Sr25519(signature.into())
+}
 
+fn register_signature<T: Config>(mortality_block: u32) {
+	let sig = generate_test_signature();
+	assert_ok!(Msa::<T>::register_signature(&sig, T::BlockNumber::from(mortality_block)));
+}
+
+benchmarks! {
 	create {
 		let s in 1 .. 1000;
 		let caller: T::AccountId = whitelisted_caller();
@@ -92,7 +94,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(caller))
 
 	create_sponsored_account_with_delegation {
-		on_initialize_msa::<T>(10u32.into());
+
 		let caller: T::AccountId = whitelisted_caller();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
 		assert_ok!(Msa::<T>::register_provider(RawOrigin::Signed(caller.clone()).into(),Vec::from("Foo")));
@@ -103,7 +105,7 @@ benchmarks! {
 
 	revoke_delegation_by_provider {
 		let s in 5 .. 1005;
-		on_initialize_msa::<T>(10u32.into());
+
 		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
 		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
 		add_delegation::<T>(Delegator(delegator_msa_id), Provider(provider_msa_id.clone()));
@@ -115,7 +117,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(provider), delegator_msa_id)
 
 	add_key_to_msa {
-		on_initialize_msa::<T>(10u32.into());
+
 		let (add_provider_payload, signature, key) = add_key_payload_and_signature::<T>();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(key.clone()).into()));
 		let (add_provider_payload, signature_new, key_new) = add_key_payload_and_signature::<T>();
@@ -123,7 +125,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(key.clone()), key.clone(), signature, key_new, signature_new, add_provider_payload)
 
 	delete_msa_key {
-		on_initialize_msa::<T>(10u32.into());
+
 		let (add_provider_payload, signature, caller) = add_key_payload_and_signature::<T>();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
 		let (add_provider_payload, signature_new, key_new) = add_key_payload_and_signature::<T>();
@@ -132,7 +134,7 @@ benchmarks! {
 	}: _(RawOrigin::Signed(caller), key_new)
 
 	retire_msa {
-		on_initialize_msa::<T>(10u32.into());
+
 		let caller: T::AccountId = whitelisted_caller();
 
 		// Create a MSA account
@@ -144,7 +146,7 @@ benchmarks! {
 	}: _(RawOrigin::Signed(caller))
 
 	add_provider_to_msa {
-		on_initialize_msa::<T>(10u32.into());
+
 		let caller: T::AccountId = whitelisted_caller();
 		let (payload, signature, key) = create_payload_and_signature::<T>();
 
@@ -155,7 +157,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(caller), key, signature, payload)
 
 	revoke_msa_delegation_by_delegator {
-		on_initialize_msa::<T>(10u32.into());
+
 		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
 		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
 		add_delegation::<T>(Delegator(delegator_msa_id), Provider(provider_msa_id.clone()));
@@ -164,9 +166,21 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(delegator), provider_msa_id)
 
 	register_provider {
-		on_initialize_msa::<T>(10u32.into());
+
 		let (provider, _provider_msa_id) = create_account_with_msa_id::<T>(1);
 	}: _ (RawOrigin::Signed(provider), Vec::from("Foo"))
 
-	impl_benchmark_test_suite!(Msa, crate::mock::new_test_ext_keystore(), crate::mock::Test);
+	on_initialize {
+		let m in 1 .. 50_000;
+		for j in 0 .. m {
+			let mortality = 49;
+			register_signature::<T>(mortality as u32);
+		}
+	}: {
+		Msa::<T>::on_initialize(200u32.into());
+	}
+
+	impl_benchmark_test_suite!(Msa,
+		crate::mock::new_test_ext_keystore(),
+		crate::mock::Test);
 }

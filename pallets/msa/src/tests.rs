@@ -10,16 +10,23 @@ use crate::{
 	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
-	PayloadSignatureRegistry,
+	PayloadSignatureRegistry, ProviderRegistry,
 };
 
 use common_primitives::{
-	msa::{Delegator, MessageSourceId, OrderedSet, Provider, ProviderInfo},
+	msa::{Delegator, MessageSourceId, Provider, ProviderInfo, ProviderMetadata},
 	node::BlockNumber,
 	schema::SchemaId,
 	utils::wrap_binary_data,
 };
 use common_runtime::extensions::check_nonce::CheckNonce;
+use frame_support::{
+	assert_err, assert_noop, assert_ok,
+	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
+};
+use orml_utilities::OrderedSet;
+use sp_core::{crypto::AccountId32, sr25519, Encode, Pair, H256};
+use sp_runtime::{traits::SignedExtension, MultiSignature};
 
 #[test]
 fn it_creates_an_msa_account() {
@@ -891,7 +898,7 @@ pub fn create_sponsored_account_with_delegation_expired() {
 		));
 
 		// act
-		assert_err!(
+		assert_noop!(
 			Msa::create_sponsored_account_with_delegation(
 				Origin::signed(provider_account.into()),
 				delegator_account.into(),
@@ -1777,7 +1784,6 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 //   1. provider authorizes being added as provider to MSA and MSA account adds them.
 //   2. provider removes them as MSA (say by quickly discovering MSA is undesirable)
 //   3. MSA account replays the add, using the previous signed payload + signature.
-#[ignore]
 #[test]
 fn replaying_add_provider_to_msa_fails() {
 	new_test_ext().execute_with(|| {
@@ -2113,6 +2119,155 @@ pub fn add_signature_replay_fails() {
 			TestCase { current: 1_000u64, mortality: 1_200u64, run_to: 1_199u64 },
 			TestCase { current: 1_002u64, mortality: 1_201u64, run_to: 1_200u64 },
 			TestCase { current: 999u64, mortality: 1_149u64, run_to: 1_101u64 },
+		];
+		for tc in test_cases {
+			System::set_block_number(tc.current);
+			let sig1 = &generate_test_signature();
+			assert_ok!(Msa::register_signature(sig1, tc.mortality));
+			run_to_block(tc.run_to);
+			assert_noop!(
+				Msa::register_signature(sig1, tc.mortality),
+				Error::<Test>::SignatureAlreadySubmitted,
+			);
+		}
+	});
+}
+
+#[test]
+pub fn cannot_register_signature_with_mortality_out_of_bounds() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(11_122);
+		let mut mortality_block: BlockNumber = 11_323;
+
+		let sig1 = &generate_test_signature();
+		assert_noop!(
+			Msa::register_signature(sig1, mortality_block.into()),
+			Error::<Test>::ProofNotYetValid
+		);
+
+		mortality_block = 11_122;
+		assert_noop!(
+			Msa::register_signature(sig1, mortality_block.into()),
+			Error::<Test>::ProofHasExpired
+		);
+	})
+}
+
+fn generate_test_signature() -> MultiSignature {
+	let (key_pair, _) = sr25519::Pair::generate();
+	let fake_data = H256::random();
+	key_pair.sign(fake_data.as_bytes()).into()
+}
+
+fn register_signature_and_validate(
+	current_block: BlockNumber,
+	expected_bucket: u64,
+	signature: &MultiSignature,
+) {
+	System::set_block_number(current_block as u64);
+	let mortality_block = current_block + 111;
+	assert_ok!(Msa::register_signature(signature, mortality_block.into()));
+
+	let actual = <PayloadSignatureRegistry<Test>>::get(expected_bucket, signature);
+	assert_eq!(Some(mortality_block as u64), actual);
+}
+
+#[test]
+pub fn stores_signature_in_expected_bucket() {
+	struct TestCase {
+		current_block: BlockNumber,
+		expected_bucket_number: u64,
+	}
+
+	new_test_ext().execute_with(|| {
+		let test_cases: Vec<TestCase> = vec![
+			TestCase { current_block: 999_899, expected_bucket_number: 0 }, // mortality = 1_000_010
+			TestCase { current_block: 4_294_965_098, expected_bucket_number: 0 }, // mortality = 4_294_965_209
+			TestCase { current_block: 0, expected_bucket_number: 0 },       // mortality = 111
+			TestCase { current_block: 129, expected_bucket_number: 1 },     // mortality = 240
+			TestCase { current_block: 640, expected_bucket_number: 1 },     // mortality = 751
+			TestCase { current_block: 128_999_799, expected_bucket_number: 1 }, // mortality = 128_999_910
+		];
+		for tc in test_cases {
+			// mortality block is current_block + 111 in this function.
+			register_signature_and_validate(
+				tc.current_block,
+				tc.expected_bucket_number,
+				&generate_test_signature(),
+			);
+		}
+	})
+}
+
+#[test]
+// for illustration purposes
+pub fn bucket_for() {
+	struct TestCase {
+		block: u64,
+		expected_bucket: u64,
+	}
+	new_test_ext().execute_with(|| {
+		let test_cases: Vec<TestCase> = vec![
+			TestCase { block: 1_010, expected_bucket: 1 },
+			TestCase { block: 1_110, expected_bucket: 1 },
+			TestCase { block: 1_201, expected_bucket: 0 },
+			TestCase { block: 1_301, expected_bucket: 0 },
+			TestCase { block: 1_401, expected_bucket: 1 },
+			TestCase { block: 1_501, expected_bucket: 1 },
+			TestCase { block: 1_601, expected_bucket: 0 },
+			TestCase { block: 1_701, expected_bucket: 0 },
+			TestCase { block: 1_801, expected_bucket: 1 },
+			TestCase { block: 1_901, expected_bucket: 1 },
+		];
+		for tc in test_cases {
+			assert_eq!(tc.expected_bucket, Msa::bucket_for(tc.block));
+		}
+	});
+}
+
+#[test]
+pub fn clears_stale_signatures_after_mortality_limit() {
+	new_test_ext().execute_with(|| {
+		let sig1 = &generate_test_signature();
+		let sig2 = &generate_test_signature();
+
+		let mut current_block: BlockNumber = 667;
+		let mortality_block = (current_block + 111) as u64;
+		register_signature_and_validate(current_block, 1u64, sig1);
+		register_signature_and_validate(current_block, 1u64, sig2);
+
+		current_block = 777;
+		run_to_block(current_block.into());
+		// the old signature should not be able to be registered
+		assert_noop!(
+			Msa::register_signature(sig1, mortality_block),
+			Error::<Test>::SignatureAlreadySubmitted
+		);
+
+		current_block = 876;
+		run_to_block(current_block.into());
+
+		assert_eq!(false, <PayloadSignatureRegistry<Test>>::contains_key(1u64, sig1));
+		assert_eq!(false, <PayloadSignatureRegistry<Test>>::contains_key(1u64, sig2));
+	})
+}
+
+#[test]
+pub fn add_signature_replay_fails() {
+	struct TestCase {
+		current: u64,
+		mortality: u64,
+		run_to: u64,
+	}
+	new_test_ext().execute_with(|| {
+		// these should all fail replay
+		let test_cases: Vec<TestCase> = vec![
+			TestCase { current: 10_849u64, mortality: 11_001u64, run_to: 11_000u64 }, // fails test
+			TestCase { current: 1u64, mortality: 3u64, run_to: 2u64 },
+			TestCase { current: 99u64, mortality: 101u64, run_to: 100u64 },
+			TestCase { current: 1_000u64, mortality: 1_199u64, run_to: 1_198u64 },
+			TestCase { current: 1_002u64, mortality: 1_201u64, run_to: 1_200u64 },
+			TestCase { current: 999u64, mortality: 1_148u64, run_to: 1_101u64 },
 		];
 		for tc in test_cases {
 			System::set_block_number(tc.current);

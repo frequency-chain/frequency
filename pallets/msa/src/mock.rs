@@ -106,11 +106,14 @@ impl pallet_msa::Config for Test {
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxKeys = MaxKeys;
 	type MaxSchemaGrants = MaxSchemaGrants;
+	type SchemaValidator = Schemas;
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type MortalityBucketSize = ConstU16<200>;
 	type MaxSignaturesPerBucket = ConstU32<10>;
 	type NumberOfBuckets = ConstU32<NUMBER_OF_BUCKETS>;
-	type SchemaValidator = Schemas;
+	type MortalityWindowSize = ConstU32<200>;
+	type MaxSignaturesPerBucket = ConstU32<10>;
+	type NumberOfBuckets = ConstU32<2>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
