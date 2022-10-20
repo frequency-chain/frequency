@@ -286,10 +286,6 @@ pub mod pallet {
 		NoKeyExists,
 		/// The number of key values has reached its maximum
 		KeyLimitExceeded,
-		/// More than one account key exists for the MSA during retire attempt
-		MoreThanOneKeyExists,
-		/// Can't retire a registered provider MSA
-		RegisteredProviderCannotBeRetired,
 		/// A transaction's Origin (AccountId) may not remove itself
 		InvalidSelfRemoval,
 		/// An MSA may not be its own delegate
@@ -624,33 +620,29 @@ pub mod pallet {
 
 		/// Retire a MSA
 		///
+		/// When a user wants to disassociate themselves from Frequency, they can retire their MSA for free provided that:
+		///  (1) They own the MSA
+		///  (2) There is only one account key
+		///  (3) The MSA is not a registered provider.
+		///
+		/// This does not currently remove any messages related to the MSA.
+		///
 		/// ### Events
 		/// - Deposits [`MsaRetired`](Event::MsaRetired) when MSA is retired
 		///
 		/// ### Errors
 		///
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if `delegator` does not have an MSA key.
-		/// - Returns [`MoreThanOneKeyExists`](Error::MoreThanOneKeyExists) if the MSA has more than one account key.
-		/// - Returns [`RegisteredProviderCannotBeRetired`](Error::RegisteredProviderCannotBeRetired) if the MSA id is a registered provider
 
-		#[pallet::weight((T::WeightInfo::retire_msa(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((T::WeightInfo::retire_msa(), DispatchClass::Normal, Pays::No))]
 		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResult {
 			// Check and get the account id from the origin
 			let who = ensure_signed(origin)?;
 
-			// Get the MSA id of the origin
-			let msa_id = Self::get_owner_of(&who).ok_or(Error::<T>::NoKeyExists)?;
+			// Get the MSA id of the origin which can trigger NoKeyExists error
+			let msa_id = Self::try_get_msa_from_account_id(&who)?;
+
 			let delegator = Delegator(msa_id);
-
-			// Dispatches error "RegisteredProviderCannotBeRetired" if the MSA id is a registered provider
-			ensure!(
-				!Self::is_registered_provider(msa_id),
-				Error::<T>::RegisteredProviderCannotBeRetired,
-			);
-
-			// Dispatches error "MoreThanOneKeyExists" if the MSA has more than one account key.
-			let key_count = Self::get_msa_key_count(msa_id);
-			ensure!(key_count == 1, Error::<T>::MoreThanOneKeyExists);
 
 			// Remove delegator from all delegator<->provider delegations
 			Self::remove_delegator(delegator)?;
@@ -659,7 +651,6 @@ pub mod pallet {
 			Self::delete_key_for_msa(msa_id, &who)?;
 			Self::deposit_event(Event::KeyRemoved { key: who });
 
-			// Deposit the "MsaRetired" event
 			Self::deposit_event(Event::MsaRetired { msa_id });
 			Ok(())
 		}
@@ -1232,14 +1223,42 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			.into();
 		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}
+
+	/// validates that a MSA being retired is valid
+	pub fn validate_msa_retirement(account_id: &T::AccountId) -> TransactionValidity {
+		const TAG_PREFIX: &str = "MSARetirement";
+		let msa_id = Pallet::<T>::ensure_valid_msa_key(account_id)
+			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
+			.into();
+
+		// Invalid transaction error "InvalidRegisteredProviderCannotBeRetired" if the MSA id is a registered provider
+		ensure!(
+			!Pallet::<T>::is_registered_provider(msa_id),
+			InvalidTransaction::Custom(
+				ValidityError::InvalidRegisteredProviderCannotBeRetired as u8
+			)
+		);
+
+		// Invalid transaction error "MoreThanOneKeyExists" if the MSA has more than one account key.
+		let key_count = Pallet::<T>::get_msa_key_count(msa_id);
+		ensure!(
+			key_count == 1,
+			InvalidTransaction::Custom(ValidityError::InvalidMoreThanOneKeyExists as u8)
+		);
+		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
+	}
 }
 
 /// Errors related to the validity of the CheckFreeExtrinsicUse signed extension.
-enum ValidityError {
+pub enum ValidityError {
 	/// Delegation to provider is not found or expired.
 	InvalidDelegation,
 	/// MSA key as been revoked.
 	InvalidMsaKey,
+	/// Cannot retire a registered provider MSA
+	InvalidRegisteredProviderCannotBeRetired,
+	/// More than one account key exists for the MSA during retire attempt
+	InvalidMoreThanOneKeyExists,
 }
 
 impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
@@ -1300,6 +1319,8 @@ where
 				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id),
 			Some(Call::delete_msa_key { key, .. }) =>
 				CheckFreeExtrinsicUse::<T>::validate_key_revocation(who, key),
+			Some(Call::retire_msa { .. }) =>
+				CheckFreeExtrinsicUse::<T>::validate_msa_retirement(who),
 			_ => return Ok(Default::default()),
 		}
 	}

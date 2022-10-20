@@ -3,7 +3,7 @@ use crate::{
 	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
-	PayloadSignatureRegistry, ProviderRegistry,
+	PayloadSignatureRegistry, ProviderRegistry, ValidityError,
 };
 
 use common_primitives::{
@@ -408,36 +408,6 @@ fn test_retire_msa_success() {
 			),
 			Error::<Test>::NoKeyExists
 		);
-	})
-}
-
-#[test]
-fn test_retire_msa_fails_if_registered_provider() {
-	new_test_ext().execute_with(|| {
-		// Add an account to the MSA
-		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
-
-		// Register provider
-		assert_ok!(Msa::register_provider(test_origin_signed(1), Vec::from("Foo")));
-
-		// Retire MSA
-		assert_noop!(
-			Msa::retire_msa(test_origin_signed(1)),
-			Error::<Test>::RegisteredProviderCannotBeRetired
-		);
-	})
-}
-
-#[test]
-fn test_retire_msa_fails_if_more_than_one_account_exists() {
-	new_test_ext().execute_with(|| {
-		// Add an account to the MSA
-		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
-		// Add an account to the MSA
-		assert_ok!(Msa::add_key(2, &test_public(2), EMPTY_FUNCTION));
-
-		// Retire the MSA
-		assert_noop!(Msa::retire_msa(test_origin_signed(1)), Error::<Test>::MoreThanOneKeyExists);
 	})
 }
 
