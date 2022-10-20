@@ -531,8 +531,11 @@ pub fn add_provider_to_msa_is_success() {
 		);
 
 		System::assert_last_event(
-			Event::ProviderAdded { delegator: delegator_msa.into(), provider: provider_msa.into() }
-				.into(),
+			Event::DelegationGranted {
+				delegator: delegator_msa.into(),
+				provider: provider_msa.into(),
+			}
+			.into(),
 		);
 	});
 }
@@ -737,7 +740,7 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		);
 		assert_eq!(
 			provider_event.event,
-			Event::ProviderAdded { provider: 1u64.into(), delegator: 2u64.into() }.into()
+			Event::DelegationGranted { provider: 1u64.into(), delegator: 2u64.into() }.into()
 		);
 	});
 }
