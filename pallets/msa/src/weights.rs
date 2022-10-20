@@ -71,7 +71,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa MsaIdentifier (r:1 w:1)
-	// Storage: Msa MessageSourceIdOf (r:1 w:1)
+	// Storage: Msa PublicKeyToMsaId (r:1 w:1)
 	// Storage: Msa MsaInfoOf (r:1 w:1)
 	fn create(s: u32) -> Weight {
 		Weight::from_ref_time(22_102_000 as u64)
@@ -81,7 +81,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 	// Storage: Msa PayloadSignatureRegistry (r:1 w:1)
-	// Storage: Msa MessageSourceIdOf (r:2 w:1)
+	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa ProviderRegistry (r:1 w:0)
 	// Storage: Msa MsaIdentifier (r:1 w:1)
 	// Storage: Msa MsaInfoOf (r:1 w:1)
@@ -91,7 +91,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(7 as u64))
 			.saturating_add(T::DbWeight::get().writes(5 as u64))
 	}
-	// Storage: Msa MessageSourceIdOf (r:1 w:0)
+	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn revoke_delegation_by_provider(s: u32) -> Weight {
 		Weight::from_ref_time(20_484_000 as u64)
@@ -101,21 +101,21 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Msa PayloadSignatureRegistry (r:1 w:1)
-	// Storage: Msa MessageSourceIdOf (r:2 w:1)
+	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa MsaInfoOf (r:1 w:1)
 	fn add_key_to_msa() -> Weight {
 		Weight::from_ref_time(55_000_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
-	// Storage: Msa MessageSourceIdOf (r:2 w:1)
+	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa MsaInfoOf (r:1 w:1)
 	fn delete_msa_key() -> Weight {
 		Weight::from_ref_time(18_000_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
-	// Storage: Msa MessageSourceIdOf (r:1 w:1)
+	// Storage: Msa PublicKeyToMsaId (r:1 w:1)
 	// Storage: Msa ProviderRegistry (r:1 w:0)
 	// Storage: Msa MsaInfoOf (r:1 w:1)
 	fn retire_msa() -> Weight {
@@ -124,7 +124,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: Msa PayloadSignatureRegistry (r:1 w:1)
-	// Storage: Msa MessageSourceIdOf (r:2 w:0)
+	// Storage: Msa PublicKeyToMsaId (r:2 w:0)
 	// Storage: Msa ProviderRegistry (r:1 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn add_provider_to_msa() -> Weight {
@@ -132,14 +132,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(5 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
-	// Storage: Msa MessageSourceIdOf (r:1 w:0)
+	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn revoke_msa_delegation_by_delegator() -> Weight {
 		Weight::from_ref_time(15_000_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
-	// Storage: Msa MessageSourceIdOf (r:1 w:0)
+	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa ProviderRegistry (r:1 w:1)
 	fn register_provider() -> Weight {
 		Weight::from_ref_time(13_000_000 as u64)
@@ -157,7 +157,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 // For backwards compatibility and tests
 impl WeightInfo for () {
 	// Storage: Msa MsaIdentifier (r:1 w:1)
-	// Storage: Msa MessageSourceIdOf (r:1 w:1)
+	// Storage: Msa PublicKeyToMsaId (r:1 w:1)
 	// Storage: Msa MsaInfoOf (r:1 w:1)
 	fn create(s: u32) -> Weight {
 		Weight::from_ref_time(22_102_000 as u64)
@@ -167,7 +167,7 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
 	// Storage: Msa PayloadSignatureRegistry (r:1 w:1)
-	// Storage: Msa MessageSourceIdOf (r:2 w:1)
+	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa ProviderRegistry (r:1 w:0)
 	// Storage: Msa MsaIdentifier (r:1 w:1)
 	// Storage: Msa MsaInfoOf (r:1 w:1)
@@ -177,7 +177,7 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(7 as u64))
 			.saturating_add(RocksDbWeight::get().writes(5 as u64))
 	}
-	// Storage: Msa MessageSourceIdOf (r:1 w:0)
+	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn revoke_delegation_by_provider(s: u32, ) -> Weight {
 		Weight::from_ref_time(18_059_000 as u64)
@@ -187,21 +187,21 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: Msa PayloadSignatureRegistry (r:1 w:1)
-	// Storage: Msa MessageSourceIdOf (r:2 w:1)
+	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa MsaInfoOf (r:1 w:1)
 	fn add_key_to_msa() -> Weight {
 		Weight::from_ref_time(55_000_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
-	// Storage: Msa MessageSourceIdOf (r:2 w:1)
+	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa MsaInfoOf (r:1 w:1)
 	fn delete_msa_key() -> Weight {
 		Weight::from_ref_time(18_000_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
-	// Storage: Msa MessageSourceIdOf (r:1 w:1)
+	// Storage: Msa PublicKeyToMsaId (r:1 w:1)
 	// Storage: Msa ProviderRegistry (r:1 w:0)
 	// Storage: Msa MsaInfoOf (r:1 w:1)
 	fn retire_msa() -> Weight {
@@ -210,7 +210,7 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
 	// Storage: Msa PayloadSignatureRegistry (r:1 w:1)
-	// Storage: Msa MessageSourceIdOf (r:2 w:0)
+	// Storage: Msa PublicKeyToMsaId (r:2 w:0)
 	// Storage: Msa ProviderRegistry (r:1 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn add_provider_to_msa() -> Weight {
@@ -218,14 +218,14 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(5 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
-	// Storage: Msa MessageSourceIdOf (r:1 w:0)
+	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
 	fn revoke_msa_delegation_by_delegator() -> Weight {
 		Weight::from_ref_time(15_000_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
-	// Storage: Msa MessageSourceIdOf (r:1 w:0)
+	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa ProviderRegistry (r:1 w:1)
 	fn register_provider() -> Weight {
 		Weight::from_ref_time(13_000_000 as u64)

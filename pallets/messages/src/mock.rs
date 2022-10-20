@@ -71,26 +71,26 @@ impl system::Config for Test {
 parameter_types! {
 	pub const MaxMessagesPerBlock: u32 = 500;
 	pub const MaxMessagePayloadSizeBytes: u32 = 100;
-	pub const MaxSchemaGrants: u32 = 30;
+	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
 }
 
-impl Clone for MaxSchemaGrants {
+impl Clone for MaxSchemaGrantsPerDelegation {
 	fn clone(&self) -> Self {
-		MaxSchemaGrants {}
+		MaxSchemaGrantsPerDelegation {}
 	}
 }
 
-impl Eq for MaxSchemaGrants {
+impl Eq for MaxSchemaGrantsPerDelegation {
 	fn assert_receiver_is_total_eq(&self) -> () {}
 }
 
-impl PartialEq for MaxSchemaGrants {
+impl PartialEq for MaxSchemaGrantsPerDelegation {
 	fn eq(&self, _other: &Self) -> bool {
 		true
 	}
 }
 
-impl sp_std::fmt::Debug for MaxSchemaGrants {
+impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
 		Ok(())
 	}
@@ -149,12 +149,12 @@ impl MsaValidator for MsaInfoHandler {
 }
 impl ProviderLookup for DelegationInfoHandler {
 	type BlockNumber = u64;
-	type MaxSchemaGrants = MaxSchemaGrants;
+	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 
 	fn get_provider_info_of(
 		_delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber, MaxSchemaGrants>> {
+	) -> Option<ProviderInfo<Self::BlockNumber, MaxSchemaGrantsPerDelegation>> {
 		if provider == Provider(2000) {
 			return None
 		};
@@ -163,13 +163,14 @@ impl ProviderLookup for DelegationInfoHandler {
 }
 impl DelegationValidator for DelegationInfoHandler {
 	type BlockNumber = u64;
-	type MaxSchemaGrants = MaxSchemaGrants;
+	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 
 	fn ensure_valid_delegation(
 		provider: Provider,
 		_delegator: Delegator,
 		_block_number: Option<Self::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError> {
+	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>
+	{
 		if provider == Provider(2000) {
 			return Err(DispatchError::Other("some delegation error"))
 		};

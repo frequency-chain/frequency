@@ -67,32 +67,32 @@ impl pallet_schemas::Config for Test {
 }
 
 parameter_types! {
-	pub const MaxKeys: u8 = 10;
+	pub const MaxPublicKeysPerMsa: u8 = 10;
 	pub const MaxProviderNameSize: u32 = 16;
 	pub const MaxSchemas: u32 = 5;
 }
 
 parameter_types! {
-	pub const MaxSchemaGrants: u32 = 2;
+	pub const MaxSchemaGrantsPerDelegation: u32 = 2;
 }
 
-impl Clone for MaxSchemaGrants {
+impl Clone for MaxSchemaGrantsPerDelegation {
 	fn clone(&self) -> Self {
-		MaxSchemaGrants {}
+		MaxSchemaGrantsPerDelegation {}
 	}
 }
 
-impl Eq for MaxSchemaGrants {
+impl Eq for MaxSchemaGrantsPerDelegation {
 	fn assert_receiver_is_total_eq(&self) -> () {}
 }
 
-impl PartialEq for MaxSchemaGrants {
+impl PartialEq for MaxSchemaGrantsPerDelegation {
 	fn eq(&self, _other: &Self) -> bool {
 		true
 	}
 }
 
-impl sp_std::fmt::Debug for MaxSchemaGrants {
+impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
 		Ok(())
 	}
@@ -104,8 +104,9 @@ impl pallet_msa::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = ConvertInto;
-	type MaxKeys = MaxKeys;
-	type MaxSchemaGrants = MaxSchemaGrants;
+	type MaxPublicKeysPerMsa = MaxPublicKeysPerMsa;
+	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type NumberOfBuckets = ConstU32<NUMBER_OF_BUCKETS>;

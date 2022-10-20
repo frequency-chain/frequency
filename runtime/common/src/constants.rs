@@ -107,7 +107,7 @@ pub type FrameSystemMaxConsumers = ConstU32<16>;
 // -end- Frame System Pallet ---
 
 // --- MSA Pallet ---
-pub type MsaMaxKeys = ConstU8<25>;
+pub type MsaMaxPublicKeysPerMsa = ConstU8<25>;
 pub type MsaMaxProviderNameSize = ConstU32<16>;
 // -end- MSA Pallet ---
 

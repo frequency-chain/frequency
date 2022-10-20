@@ -47,8 +47,8 @@
 //!
 //! ### Assumptions
 //!
-//! * Total MSA keys should be less than the constant `Config::MSA::MaxKeys`.
-//! * Maximum schemas, for which provider has publishing rights, be less than `Config::MSA::MaxSchemaGrants`
+//! * Total MSA keys should be less than the constant `Config::MSA::MaxPublicKeysPerMsa`.
+//! * Maximum schemas, for which provider has publishing rights, be less than `Config::MSA::MaxSchemaGrantsPerDelegation`
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -114,12 +114,11 @@ pub mod pallet {
 
 		/// Maximum count of keys allowed per MSA
 		#[pallet::constant]
-		type MaxKeys: Get<u8>;
+		type MaxPublicKeysPerMsa: Get<u8>;
 
 		/// Maximum count of schemas granted for publishing data per Provider
 		#[pallet::constant]
-		type MaxSchemaGrants: Get<u32> + Clone + sp_std::fmt::Debug + Eq;
-
+		type MaxSchemaGrantsPerDelegation: Get<u32> + Clone + sp_std::fmt::Debug + Eq;
 		/// Maximum provider name size allowed per MSA association
 		#[pallet::constant]
 		type MaxProviderNameSize: Get<u32>;
@@ -166,7 +165,7 @@ pub mod pallet {
 		Delegator,
 		Twox64Concat,
 		Provider,
-		ProviderInfo<T::BlockNumber, T::MaxSchemaGrants>,
+		ProviderInfo<T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
 		OptionQuery,
 	>;
 
@@ -187,8 +186,8 @@ pub mod pallet {
 	/// - Key: AccountId
 	/// - Value: [`MessageSourceId`]
 	#[pallet::storage]
-	#[pallet::getter(fn get_msa_by_account_id)]
-	pub type MessageSourceIdOf<T: Config> =
+	#[pallet::getter(fn get_msa_by_public_key)]
+	pub type PublicKeyToMsaId<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
 
 	/// Storage type for a reference counter of the number of keys associated to an MSA
@@ -316,7 +315,7 @@ pub mod pallet {
 		/// The maximum length for a provider name has been exceeded
 		ExceedsMaxProviderNameSize,
 		/// The maximum number of schema grants has been exceeded
-		ExceedsMaxSchemaGrants,
+		ExceedsMaxSchemaGrantsPerDelegation,
 		/// Provider is not permitted to publish for given schema_id
 		SchemaNotGranted,
 		/// The operation was attempted with a non-provider MSA
@@ -343,7 +342,7 @@ pub mod pallet {
 		///
 		/// ### Errors
 		///
-		/// - Returns [`KeyLimitExceeded`](Error::KeyLimitExceeded) if MSA has registered `MaxKeys`.
+		/// - Returns [`KeyLimitExceeded`](Error::KeyLimitExceeded) if MSA has registered `MaxPublicKeysPerMsa`.
 		/// - Returns [`KeyAlreadyRegistered`](Error::KeyAlreadyRegistered) if MSA is already registered to the Origin.
 		///
 		#[pallet::weight(T::WeightInfo::create(10_000))]
@@ -712,7 +711,7 @@ impl<T: Config> Pallet<T> {
 	where
 		F: FnOnce(MessageSourceId) -> DispatchResult,
 	{
-		MessageSourceIdOf::<T>::try_mutate(key, |maybe_msa_id| {
+		PublicKeyToMsaId::<T>::try_mutate(key, |maybe_msa_id| {
 			ensure!(maybe_msa_id.is_none(), Error::<T>::KeyAlreadyRegistered);
 			*maybe_msa_id = Some(msa_id);
 
@@ -720,7 +719,10 @@ impl<T: Config> Pallet<T> {
 			<MsaInfoOf<T>>::try_mutate(msa_id, |key_count| {
 				// key_count:u8 should default to 0 if it does not exist
 				let incremented_key_count: u8 = *key_count + 1;
-				ensure!(incremented_key_count <= T::MaxKeys::get(), Error::<T>::KeyLimitExceeded);
+				ensure!(
+					incremented_key_count <= T::MaxPublicKeysPerMsa::get(),
+					Error::<T>::KeyLimitExceeded
+				);
 
 				*key_count = incremented_key_count;
 				on_success(msa_id)
@@ -730,7 +732,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Check that schema ids are all valid
 	pub fn ensure_all_schema_ids_are_valid(
-		schema_ids: BoundedVec<SchemaId, T::MaxSchemaGrants>,
+		schema_ids: BoundedVec<SchemaId, T::MaxSchemaGrantsPerDelegation>,
 	) -> DispatchResult {
 		let are_schemas_valid =
 			T::SchemaValidator::are_all_schema_ids_valid(schema_ids.into_inner());
@@ -796,8 +798,9 @@ impl<T: Config> Pallet<T> {
 		delegator: Delegator,
 		schemas: Vec<SchemaId>,
 	) -> DispatchResult {
-		let granted_schemas: BoundedVec<SchemaId, T::MaxSchemaGrants> =
-			schemas.try_into().map_err(|_| Error::<T>::ExceedsMaxSchemaGrants)?;
+		let granted_schemas: BoundedVec<SchemaId, T::MaxSchemaGrantsPerDelegation> = schemas
+			.try_into()
+			.map_err(|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegation)?;
 
 		Self::ensure_all_schema_ids_are_valid(granted_schemas.clone())?;
 
@@ -805,7 +808,9 @@ impl<T: Config> Pallet<T> {
 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
 			let info = ProviderInfo {
 				expired: Default::default(),
-				schemas: OrderedSet::<SchemaId, T::MaxSchemaGrants>::from(granted_schemas),
+				schemas: OrderedSet::<SchemaId, T::MaxSchemaGrantsPerDelegation>::from(
+					granted_schemas,
+				),
 			};
 			*maybe_info = Some(info);
 
@@ -829,7 +834,7 @@ impl<T: Config> Pallet<T> {
 		provider: Provider,
 		delegator: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<T::BlockNumber, T::MaxSchemaGrants>, DispatchError> {
+	) -> Result<ProviderInfo<T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError> {
 		let info = Self::get_provider_info_of(delegator, provider)
 			.ok_or(Error::<T>::DelegationNotFound)?;
 		let current_block = frame_system::Pallet::<T>::block_number();
@@ -856,7 +861,7 @@ impl<T: Config> Pallet<T> {
 	/// # Errors
 	/// * [`Error::<T>::NoKeyExists`] - If the key does not exist in the MSA
 	pub fn delete_key_for_msa(msa_id: MessageSourceId, key: &T::AccountId) -> DispatchResult {
-		MessageSourceIdOf::<T>::try_mutate_exists(key, |maybe_msa_id| {
+		PublicKeyToMsaId::<T>::try_mutate_exists(key, |maybe_msa_id| {
 			ensure!(maybe_msa_id.is_some(), Error::<T>::NoKeyExists);
 
 			// Delete the key if it exists
@@ -923,7 +928,7 @@ impl<T: Config> Pallet<T> {
 	pub fn try_get_msa_from_account_id(
 		key: &T::AccountId,
 	) -> Result<MessageSourceId, DispatchError> {
-		let info = Self::get_msa_by_account_id(key).ok_or(Error::<T>::NoKeyExists)?;
+		let info = Self::get_msa_by_public_key(key).ok_or(Error::<T>::NoKeyExists)?;
 		Ok(info)
 	}
 
@@ -933,7 +938,7 @@ impl<T: Config> Pallet<T> {
 	/// # Returns
 	/// * [`MessageSourceId`]
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
-		Self::get_msa_by_account_id(&key)
+		Self::get_msa_by_public_key(&key)
 	}
 
 	// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418
@@ -1102,26 +1107,27 @@ impl<T: Config> MsaValidator for Pallet<T> {
 
 impl<T: Config> ProviderLookup for Pallet<T> {
 	type BlockNumber = T::BlockNumber;
-	type MaxSchemaGrants = T::MaxSchemaGrants;
+	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
 
 	fn get_provider_info_of(
 		delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>> {
+	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>> {
 		Self::get_provider_info(delegator, provider)
 	}
 }
 
 impl<T: Config> DelegationValidator for Pallet<T> {
 	type BlockNumber = T::BlockNumber;
-	type MaxSchemaGrants = T::MaxSchemaGrants;
+	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_delegation(
 		provider: Provider,
 		delegation: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError> {
+	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>
+	{
 		Self::ensure_valid_delegation(provider, delegation, block_number)
 	}
 
@@ -1137,7 +1143,8 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		provider: Provider,
 		delegation: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError> {
+	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>
+	{
 		let validation_check = Self::ensure_valid_delegation(provider, delegation, block_number);
 		if validation_check.is_err() {
 			// If the delegation does not exist, we return a ok
