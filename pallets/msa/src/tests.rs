@@ -3,7 +3,7 @@ use crate::{
 	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
-	PayloadSignatureRegistry, ProviderRegistry, ValidityError,
+	PayloadSignatureRegistry, ProviderRegistry,
 };
 
 use common_primitives::{
