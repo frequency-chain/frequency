@@ -47,8 +47,8 @@
 //!
 //! ### Assumptions
 //!
-//! * Total MSA keys should be less than the constant `Config::MSA::MaxKeys`.
-//! * Maximum schemas, for which provider has publishing rights, be less than `Config::MSA::MaxSchemaGrants`
+//! * Total MSA keys should be less than the constant `Config::MSA::MaxPublicKeysPerMsa`.
+//! * Maximum schemas, for which provider has publishing rights, be less than `Config::MSA::MaxSchemaGrantsPerDelegation`
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -65,16 +65,14 @@ use common_primitives::{
 	msa::{
 		DelegationValidator, Delegator, MsaLookup, MsaValidator, OrderedSet, Provider,
 		ProviderInfo, ProviderLookup, ProviderMetadata, SchemaGrantValidator,
-		EXPIRATION_BLOCK_VALIDITY_GAP,
 	},
-	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, Zero},
+	traits::{Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify, Zero},
 	DispatchError, MultiSignature,
 };
 
@@ -116,17 +114,34 @@ pub mod pallet {
 
 		/// Maximum count of keys allowed per MSA
 		#[pallet::constant]
-		type MaxKeys: Get<u8>;
+		type MaxPublicKeysPerMsa: Get<u8>;
 
 		/// Maximum count of schemas granted for publishing data per Provider
 		#[pallet::constant]
-		type MaxSchemaGrants: Get<u32> + Clone + sp_std::fmt::Debug + Eq;
+		type MaxSchemaGrantsPerDelegation: Get<u32> + Clone + sp_std::fmt::Debug + Eq;
 		/// Maximum provider name size allowed per MSA association
 		#[pallet::constant]
 		type MaxProviderNameSize: Get<u32>;
 
 		/// A type that will supply schema related information.
 		type SchemaValidator: SchemaValidator<SchemaId>;
+
+		/// The number of blocks per virtual "bucket" in the PayloadSignatureRegistry
+		/// Virtual buckets are the first part of the double key in the PayloadSignatureRegistry
+		/// StorageDoubleMap.  This permits a key grouping that enables mass removal
+		/// of stale signatures which are no longer at risk of replay.
+		#[pallet::constant]
+		type MortalityWindowSize: Get<u32>;
+
+		/// The maximum number of signatures that can be assigned to a virtual bucket. In other
+		/// words, no more than this many signatures can be assigned a specific first-key value.
+		#[pallet::constant]
+		type MaxSignaturesPerBucket: Get<u32>;
+
+		/// The total number of virtual buckets
+		/// There are exactly NumberOfBuckets first-key values in PayloadSignatureRegistry.
+		#[pallet::constant]
+		type NumberOfBuckets: Get<u32>;
 	}
 
 	#[pallet::pallet]
@@ -150,7 +165,7 @@ pub mod pallet {
 		Delegator,
 		Twox64Concat,
 		Provider,
-		ProviderInfo<T::BlockNumber, T::MaxSchemaGrants>,
+		ProviderInfo<T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
 		OptionQuery,
 	>;
 
@@ -171,8 +186,8 @@ pub mod pallet {
 	/// - Key: AccountId
 	/// - Value: [`MessageSourceId`]
 	#[pallet::storage]
-	#[pallet::getter(fn get_msa_by_account_id)]
-	pub type MessageSourceIdOf<T: Config> =
+	#[pallet::getter(fn get_msa_by_public_key)]
+	pub type PublicKeyToMsaId<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
 
 	/// Storage type for a reference counter of the number of keys associated to an MSA
@@ -182,6 +197,21 @@ pub mod pallet {
 	#[pallet::getter(fn get_public_key_count_by_msa_id)]
 	pub(super) type PublicKeyCountForMsaId<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, u8, ValueQuery>;
+
+	/// PayloadSignatureRegistry is used to prevent replay attacks for extrinsics
+	/// that take an externally-signed payload.
+	/// For this to work, the payload must include a mortality block number, which
+	/// is used in lieu of a monotonically increasing nonce.
+	#[pallet::storage]
+	pub(super) type PayloadSignatureRegistry<T: Config> = StorageDoubleMap<
+		_,
+		Twox64Concat,
+		T::BlockNumber, // Bucket number. Stored as BlockNumber because I'm done arguing with rust about it.
+		Twox64Concat,
+		MultiSignature, // An externally-created Signature for an external payload, provided by an extrinsic
+		T::BlockNumber, // An actual flipping block number.
+		OptionQuery,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -285,7 +315,7 @@ pub mod pallet {
 		/// The maximum length for a provider name has been exceeded
 		ExceedsMaxProviderNameSize,
 		/// The maximum number of schema grants has been exceeded
-		ExceedsMaxSchemaGrants,
+		ExceedsMaxSchemaGrantsPerDelegation,
 		/// Provider is not permitted to publish for given schema_id
 		SchemaNotGranted,
 		/// The operation was attempted with a non-provider MSA
@@ -294,6 +324,15 @@ pub mod pallet {
 		ProofHasExpired,
 		/// The submitted proof expiration block is too far in the future
 		ProofNotYetValid,
+		/// Attempted to add a signature when the signature is already in the registry
+		SignatureAlreadySubmitted,
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(current: T::BlockNumber) -> Weight {
+			Self::reset_virtual_bucket_if_needed(current)
+		}
 	}
 
 	#[pallet::call]
@@ -303,7 +342,7 @@ pub mod pallet {
 		///
 		/// ### Errors
 		///
-		/// - Returns [`KeyLimitExceeded`](Error::KeyLimitExceeded) if MSA has registered `MaxKeys`.
+		/// - Returns [`KeyLimitExceeded`](Error::KeyLimitExceeded) if MSA has registered `MaxPublicKeysPerMsa`.
 		/// - Returns [`KeyAlreadyRegistered`](Error::KeyAlreadyRegistered) if MSA is already registered to the Origin.
 		///
 		#[pallet::weight(T::WeightInfo::create(10_000))]
@@ -338,9 +377,13 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
-			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())?;
+			Self::verify_signature(
+				proof.clone(),
+				delegator_key.clone(),
+				add_provider_payload.encode(),
+			)?;
 
-			Self::ensure_block_is_valid(add_provider_payload.expiration)?;
+			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			ensure!(
@@ -424,10 +467,14 @@ pub mod pallet {
 			let provider_key = ensure_signed(origin)?;
 
 			// delegator must have signed the payload.
-			Self::verify_signature(proof, delegator_key.clone(), add_provider_payload.encode())
-				.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
+			Self::verify_signature(
+				proof.clone(),
+				delegator_key.clone(),
+				add_provider_payload.encode(),
+			)
+			.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
 
-			Self::ensure_block_is_valid(add_provider_payload.expiration)?;
+			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 
 			let (provider, delegator) =
 				Self::ensure_valid_registered_provider(&delegator_key, &provider_key)?;
@@ -482,7 +529,7 @@ pub mod pallet {
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if the MSA id for the account in `add_key_payload` does not exist.
 		/// - Returns ['NotMsaOwner'](Error::NotMsaOwner) if Origin's MSA is not the same as 'add_key_payload` MSA. Essentially you can only add a key to your own MSA.
 		/// - Returns ['ProofHasExpired'](Error::ProofHasExpired) if the current block is less than the `expired` bock number set in `AddKeyData`.
-		/// - Returns ['ProofNotYetValid'](Error::ProofNotYetValid) if the `expired` bock number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.
+		/// - Returns ['ProofNotYetValid'](Error::ProofNotYetValid) if the `expired` block number set in `AddKeyData` is greater than the current block number plus mortality_block_limit().
 		#[pallet::weight(T::WeightInfo::add_key_to_msa())]
 		pub fn add_key_to_msa(
 			origin: OriginFor<T>,
@@ -492,10 +539,10 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			Self::verify_signature(proof, key.clone(), add_key_payload.encode())
+			Self::verify_signature(proof.clone(), key.clone(), add_key_payload.encode())
 				.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
 
-			Self::ensure_block_is_valid(add_key_payload.expiration)?;
+			Self::register_signature(&proof, add_key_payload.expiration.into())?;
 
 			let msa_id = add_key_payload.msa_id;
 
@@ -654,7 +701,7 @@ impl<T: Config> Pallet<T> {
 	where
 		F: FnOnce(MessageSourceId) -> DispatchResult,
 	{
-		MessageSourceIdOf::<T>::try_mutate(key, |maybe_msa_id| {
+		PublicKeyToMsaId::<T>::try_mutate(key, |maybe_msa_id| {
 			ensure!(maybe_msa_id.is_none(), Error::<T>::KeyAlreadyRegistered);
 			*maybe_msa_id = Some(msa_id);
 
@@ -662,7 +709,10 @@ impl<T: Config> Pallet<T> {
 			<PublicKeyCountForMsaId<T>>::try_mutate(msa_id, |key_count| {
 				// key_count:u8 should default to 0 if it does not exist
 				let incremented_key_count: u8 = *key_count + 1;
-				ensure!(incremented_key_count <= T::MaxKeys::get(), Error::<T>::KeyLimitExceeded);
+				ensure!(
+					incremented_key_count <= T::MaxPublicKeysPerMsa::get(),
+					Error::<T>::KeyLimitExceeded
+				);
 
 				*key_count = incremented_key_count;
 				on_success(msa_id)
@@ -672,7 +722,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Check that schema ids are all valid
 	pub fn ensure_all_schema_ids_are_valid(
-		schema_ids: BoundedVec<SchemaId, T::MaxSchemaGrants>,
+		schema_ids: BoundedVec<SchemaId, T::MaxSchemaGrantsPerDelegation>,
 	) -> DispatchResult {
 		let are_schemas_valid =
 			T::SchemaValidator::are_all_schema_ids_valid(schema_ids.into_inner());
@@ -732,41 +782,15 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Ensure that the expiration block number has not already passed and is also not too far into the future.
-	///
-	/// # Arguments
-	/// * `expiration` - A block number that which validity or expiration is being checked.
-	///
-	/// # Returns
-	/// * [`DispatchResult`]
-	///
-	/// # Errors
-	/// * [Error::ProofHasExpired] - If the current block is less than the `expired` bock number set in `AddKeyData`.
-	/// * [Error::ProofNotYetValid] - If the `expired` bock number set in `AddKeyData` is greater than the current block number plus EXPIRATION_BLOCK_VALIDITY_GAP.
-	pub fn ensure_block_is_valid(expiration: BlockNumber) -> DispatchResult {
-		let current_block: BlockNumber =
-			frame_system::Pallet::<T>::block_number().try_into().ok().unwrap();
-		ensure!(current_block < expiration.into(), Error::<T>::ProofHasExpired);
-
-		// If gap between the current block and the expiration block is larger than EXPIRATION_BLOCK_VALIDITY_GAP,
-		// the proof is too var into the future and return Error::<T>::ProofNotYetValid.
-		let blocks_until_expiration: BlockNumber = expiration - current_block;
-		ensure!(
-			blocks_until_expiration < EXPIRATION_BLOCK_VALIDITY_GAP,
-			Error::<T>::ProofNotYetValid
-		);
-
-		Ok(())
-	}
-
 	/// Add a provider to a delegator with the default permissions
 	pub fn add_provider(
 		provider: Provider,
 		delegator: Delegator,
 		schemas: Vec<SchemaId>,
 	) -> DispatchResult {
-		let granted_schemas: BoundedVec<SchemaId, T::MaxSchemaGrants> =
-			schemas.try_into().map_err(|_| Error::<T>::ExceedsMaxSchemaGrants)?;
+		let granted_schemas: BoundedVec<SchemaId, T::MaxSchemaGrantsPerDelegation> = schemas
+			.try_into()
+			.map_err(|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegation)?;
 
 		Self::ensure_all_schema_ids_are_valid(granted_schemas.clone())?;
 
@@ -774,9 +798,10 @@ impl<T: Config> Pallet<T> {
 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
 			let info = ProviderInfo {
 				expired: Default::default(),
-				schemas: OrderedSet::<SchemaId, T::MaxSchemaGrants>::from(granted_schemas),
+				schemas: OrderedSet::<SchemaId, T::MaxSchemaGrantsPerDelegation>::from(
+					granted_schemas,
+				),
 			};
-
 			*maybe_info = Some(info);
 
 			Ok(())
@@ -799,7 +824,7 @@ impl<T: Config> Pallet<T> {
 		provider: Provider,
 		delegator: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<T::BlockNumber, T::MaxSchemaGrants>, DispatchError> {
+	) -> Result<ProviderInfo<T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError> {
 		let info = Self::get_provider_info_of(delegator, provider)
 			.ok_or(Error::<T>::DelegationNotFound)?;
 		let current_block = frame_system::Pallet::<T>::block_number();
@@ -826,7 +851,7 @@ impl<T: Config> Pallet<T> {
 	/// # Errors
 	/// * [`Error::<T>::NoKeyExists`] - If the key does not exist in the MSA
 	pub fn delete_key_for_msa(msa_id: MessageSourceId, key: &T::AccountId) -> DispatchResult {
-		MessageSourceIdOf::<T>::try_mutate_exists(key, |maybe_msa_id| {
+		PublicKeyToMsaId::<T>::try_mutate_exists(key, |maybe_msa_id| {
 			ensure!(maybe_msa_id.is_some(), Error::<T>::NoKeyExists);
 
 			// Delete the key if it exists
@@ -893,7 +918,7 @@ impl<T: Config> Pallet<T> {
 	pub fn try_get_msa_from_account_id(
 		key: &T::AccountId,
 	) -> Result<MessageSourceId, DispatchError> {
-		let info = Self::get_msa_by_account_id(key).ok_or(Error::<T>::NoKeyExists)?;
+		let info = Self::get_msa_by_public_key(key).ok_or(Error::<T>::NoKeyExists)?;
 		Ok(info)
 	}
 
@@ -903,7 +928,7 @@ impl<T: Config> Pallet<T> {
 	/// # Returns
 	/// * [`MessageSourceId`]
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
-		Self::get_msa_by_account_id(&key)
+		Self::get_msa_by_public_key(&key)
 	}
 
 	// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418
@@ -970,6 +995,71 @@ impl<T: Config> Pallet<T> {
 		}
 		Ok(Some(schemas.into_inner()))
 	}
+
+	/// Adds a signature to the PayloadSignatureRegistry based on a virtual "bucket" grouping.
+	/// Check that mortality_block is within bounds. If so, proceed and add the new entry.
+	/// Raises `SignatureAlreadySubmitted` if the bucket-signature double key exists in the
+	/// registry.
+	pub fn register_signature(
+		signature: &MultiSignature,
+		signature_expires_at: T::BlockNumber,
+	) -> DispatchResult {
+		let current_block = frame_system::Pallet::<T>::block_number();
+
+		let max_lifetime = Self::mortality_block_limit(current_block);
+		if max_lifetime <= signature_expires_at {
+			Err(Error::<T>::ProofNotYetValid.into())
+		} else if current_block >= signature_expires_at {
+			Err(Error::<T>::ProofHasExpired.into())
+		} else {
+			let bucket_num = Self::bucket_for(signature_expires_at.into());
+			<PayloadSignatureRegistry<T>>::try_mutate(
+				bucket_num,
+				signature,
+				|maybe_mortality_block| -> DispatchResult {
+					ensure!(maybe_mortality_block.is_none(), Error::<T>::SignatureAlreadySubmitted);
+					*maybe_mortality_block = Some(signature_expires_at);
+					Ok(())
+				},
+			)
+		}
+	}
+
+	// Check if enough blocks have passed to reset bucket mortality storage.
+	// If so:
+	//     1. delete all the stored bucket/signature values with key1 = bucket num
+	//	   2. add the WeightInfo proportional to the storage read/writes to the block weight
+	// If not, don't do anything.
+	fn reset_virtual_bucket_if_needed(current_block: T::BlockNumber) -> Weight {
+		let current_bucket_num = Self::bucket_for(current_block);
+		let prior_bucket_num = Self::bucket_for(current_block - T::BlockNumber::one());
+
+		// If we did not cross a bucket boundary block, stop
+		if prior_bucket_num == current_bucket_num {
+			return T::WeightInfo::on_initialize(0 as u32)
+		}
+		// Clear the previous bucket block set
+		let multi_removal_result = <PayloadSignatureRegistry<T>>::clear_prefix(
+			prior_bucket_num,
+			T::MaxSignaturesPerBucket::get(),
+			None,
+		);
+		T::WeightInfo::on_initialize(multi_removal_result.unique)
+	}
+
+	// The furthest in the future a mortality_block value is allowed
+	// to be for current_block
+	// This is calculated to be past the risk of a replay attack
+	fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
+		let mortality_size = (T::NumberOfBuckets::get() - 1) * T::MortalityWindowSize::get();
+		current_block + T::BlockNumber::from(mortality_size)
+	}
+
+	/// calculate the virtual bucket number for the provided block number
+	pub fn bucket_for(block_number: T::BlockNumber) -> T::BlockNumber {
+		block_number / (T::BlockNumber::from(T::MortalityWindowSize::get())) %
+			T::BlockNumber::from(T::NumberOfBuckets::get())
+	}
 }
 
 impl<T: Config> MsaLookup for Pallet<T> {
@@ -1007,26 +1097,27 @@ impl<T: Config> MsaValidator for Pallet<T> {
 
 impl<T: Config> ProviderLookup for Pallet<T> {
 	type BlockNumber = T::BlockNumber;
-	type MaxSchemaGrants = T::MaxSchemaGrants;
+	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
 
 	fn get_provider_info_of(
 		delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>> {
+	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>> {
 		Self::get_provider_info(delegator, provider)
 	}
 }
 
 impl<T: Config> DelegationValidator for Pallet<T> {
 	type BlockNumber = T::BlockNumber;
-	type MaxSchemaGrants = T::MaxSchemaGrants;
+	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_delegation(
 		provider: Provider,
 		delegation: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError> {
+	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>
+	{
 		Self::ensure_valid_delegation(provider, delegation, block_number)
 	}
 
@@ -1042,7 +1133,8 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		provider: Provider,
 		delegation: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError> {
+	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>
+	{
 		let validation_check = Self::ensure_valid_delegation(provider, delegation, block_number);
 		if validation_check.is_err() {
 			// If the delegation does not exist, we return a ok
