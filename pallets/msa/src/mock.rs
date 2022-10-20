@@ -99,6 +99,12 @@ impl pallet_msa::Config for Test {
 	type MaxProviderNameSize = MaxProviderNameSize;
 }
 
+///For table testing patterns
+pub struct TestCase<T> {
+	schema: Vec<u8>,
+	expected: T,
+}
+
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);

@@ -1,7 +1,7 @@
 use crate::{
 	ensure,
 	mock::*,
-	types::{AddKeyData, AddProvider, EMPTY_FUNCTION, TestCase},
+	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
 };
 use common_primitives::{
@@ -92,6 +92,31 @@ fn it_throws_error_when_key_verification_fails() {
 }
 
 #[test]
+fn it_throws_error_when_key_verification_fails_using_mock_create_account() {
+	new_test_ext().execute_with(|| {
+		let (new_msa_id, _) = create_account();
+		let (key_pair_2, _) = sr25519::Pair::generate();
+
+		let fake_account = key_pair_2.public();
+
+		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
+		let signature: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
+
+		assert_noop!(
+			Msa::add_key_to_msa(
+				test_origin_signed(1),
+				fake_account.into(),
+				signature,
+				add_new_key_data
+			),
+			Error::<Test>::AddKeySignatureVerificationFailed
+		);
+	});
+}
+
+#[test]
 fn it_throws_error_when_not_msa_owner() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
@@ -100,6 +125,34 @@ fn it_throws_error_when_not_msa_owner() {
 		let account = key_pair.public();
 
 		let (new_msa_id, _) = Msa::create_account(account.into(), EMPTY_FUNCTION).unwrap();
+		assert_ok!(Msa::create_account(test_public(1), EMPTY_FUNCTION));
+
+		let new_account = key_pair_2.public();
+
+		let add_new_key_data = AddKeyData { nonce: 0, msa_id: new_msa_id, expiration: 10 };
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
+		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
+
+		assert_noop!(
+			Msa::add_key_to_msa(
+				test_origin_signed(1),
+				new_account.into(),
+				signature,
+				add_new_key_data
+			),
+			Error::<Test>::NotMsaOwner
+		);
+	});
+}
+
+
+#[test]
+fn it_throws_error_when_not_msa_owner_using_mock_create_account() {
+	new_test_ext().execute_with(|| {
+		let (new_msa_id, _) = create_account();
+		let (key_pair_2, _) = sr25519::Pair::generate();
+
 		assert_ok!(Msa::create_account(test_public(1), EMPTY_FUNCTION));
 
 		let new_account = key_pair_2.public();
@@ -130,6 +183,27 @@ fn it_throws_error_when_for_duplicate_key() {
 
 		let (new_msa_id, _) = Msa::create_account(new_account.into(), EMPTY_FUNCTION).unwrap();
 
+		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
+		let signature: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
+
+		assert_noop!(
+			Msa::add_key_to_msa(
+				Origin::signed(new_account.into()),
+				new_account.into(),
+				signature,
+				add_new_key_data
+			),
+			Error::<Test>::KeyAlreadyRegistered
+		);
+	});
+}
+
+#[test]
+fn it_throws_error_when_for_duplicate_key_using_mock_create_account() {
+	new_test_ext().execute_with(|| {
+		let (new_msa_id, _) = create_account();
 		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
@@ -185,6 +259,42 @@ fn add_key_with_more_than_allowed_should_panic() {
 	});
 }
 
+
+#[test]
+fn add_key_with_more_than_allowed_should_panic_using_mock_create_account() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (new_msa_id, _) = create_account();
+		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
+		for _ in 1..<Test as Config>::MaxKeys::get() {
+			let (new_key_pair, _) = sr25519::Pair::generate();
+			let new_account = new_key_pair.public();
+			let signature: MultiSignature = new_key_pair.sign(&encode_data_new_key_data).into();
+			assert_ok!(Msa::add_key_to_msa(
+				Origin::signed(account.into()),
+				new_account.into(),
+				signature,
+				add_new_key_data.clone()
+			));
+		}
+
+		// act
+		let (final_key_pair, _) = sr25519::Pair::generate();
+		let final_account = final_key_pair.public();
+		let signature: MultiSignature = final_key_pair.sign(&encode_data_new_key_data).into();
+		assert_noop!(
+			Msa::add_key_to_msa(
+				Origin::signed(account.into()),
+				final_account.into(),
+				signature,
+				add_new_key_data
+			),
+			Error::<Test>::KeyLimitExceeded
+		);
+	});
+}
 #[test]
 fn add_key_with_valid_request_should_store_value_and_event() {
 	new_test_ext().execute_with(|| {
@@ -194,6 +304,42 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 
 		let account = key_pair.public();
 		let (new_msa_id, _) = Msa::create_account(account.into(), EMPTY_FUNCTION).unwrap();
+
+		let new_key = key_pair_2.public();
+
+		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
+		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_ok!(Msa::add_key_to_msa(
+			Origin::signed(account.into()),
+			new_key.into(),
+			signature,
+			add_new_key_data,
+		));
+
+		// assert
+		// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418
+		// let keys = Msa::fetch_msa_keys(new_msa_id);
+		// assert_eq!(keys.len(), 2);
+		// assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id}), true}
+
+		let keys_count = Msa::get_public_key_count_by_msa_id(new_msa_id);
+		assert_eq!(keys_count, 2);
+		System::assert_last_event(Event::KeyAdded { msa_id: 1, key: new_key.into() }.into());
+	});
+}
+
+
+#[test]
+fn add_key_with_valid_request_should_store_value_and_event_using_mock_create_account() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (new_msa_id, _) = create_account();
+		let (key_pair_2, _) = sr25519::Pair::generate();
+
 
 		let new_key = key_pair_2.public();
 
@@ -254,6 +400,33 @@ fn add_key_with_expired_proof_fails() {
 	})
 }
 
+#[test]
+fn add_key_with_expired_proof_fails_using_mock_create_account() {
+	new_test_ext().execute_with(|| {
+		let (new_msa_id, _) = create_account();
+		let (key_pair_2, _) = sr25519::Pair::generate();
+
+		let new_key = key_pair_2.public();
+
+		// The current block is 1, therefore setting the proof expiration to 1 shoud cause
+		// the extrinsic to fail because the proof has expired.
+		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 1 };
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
+		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
+
+		assert_noop!(
+			Msa::add_key_to_msa(
+				Origin::signed(account.into()),
+				new_key.into(),
+				signature,
+				add_new_key_data
+			),
+			Error::<Test>::ProofHasExpired
+		);
+	})
+}
+
 /// Assert that when attempting to add a key to an MSA with a proof expiration too far into the future the key is NOT added.
 /// Expected error: ProofNotYetValid
 #[test]
@@ -264,6 +437,37 @@ fn add_key_with_proof_too_far_into_future_fails() {
 
 		let account = key_pair.public();
 		let (new_msa_id, _) = Msa::create_account(account.into(), EMPTY_FUNCTION).unwrap();
+
+		let new_key = key_pair_2.public();
+
+		// The current block is 1, therefore setting the proof expiration to EXPIRATION_BLOCK_VALIDITY_GAP + 1
+		// shoud cause the extrinsic to fail because the proof is only valid for EXPIRATION_BLOCK_VALIDITY_GAP
+		// more blocks.
+		let add_new_key_data = AddKeyData {
+			nonce: 1,
+			msa_id: new_msa_id,
+			expiration: EXPIRATION_BLOCK_VALIDITY_GAP + 1,
+		};
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
+		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
+
+		assert_noop!(
+			Msa::add_key_to_msa(
+				Origin::signed(account.into()),
+				new_key.into(),
+				signature,
+				add_new_key_data
+			),
+			Error::<Test>::ProofNotYetValid
+		);
+	})
+}
+#[test]
+fn add_key_with_proof_too_far_into_future_fails_using_mock_create_account() {
+	new_test_ext().execute_with(|| {
+		let (new_msa_id, _) = create_account();
+		let (key_pair_2, _) = sr25519::Pair::generate();
 
 		let new_key = key_pair_2.public();
 
@@ -1626,9 +1830,10 @@ pub fn error_exceeding_max_schema_grants_table() {
 	new_test_ext().execute_with(|| {
 		let provider = Provider(1);
 		let delegator = Delegator(2);
-		let test_cases: [TestCase<Error<Test>>; 2] = [
+		let test_cases: [TestCase<Error<Test>>; 3] = [
 			TestCase { schema: vec![], expected: Error::<Test>::SchemaNotGranted },
-			TestCase { schema: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], Error::Test<ExceedsMaxSchemaGrants},
+			TestCase { schema: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], Some(Error::Test<ExceedsMaxSchemaGrants) },
+			TestCase { schema: vec![1, 2, 3, 4, 5], Error: Some(Error::<Test>::ExceedsMaxSchemaGrants) },
 		];
 		for tc in test_cases {
 			let err = Msa::add_provider(provider, delegator, tc.schema).unwrap_err();
@@ -1687,6 +1892,21 @@ pub fn schema_granted_success_rpc() {
 		let expected_schemas_granted = vec![1, 2];
 		let output_schemas: Vec<SchemaId> = schemas_granted.unwrap().unwrap();
 		assert_eq!(output_schemas, expected_schemas_granted);
+	})
+}
+
+#[test]
+pub fn schema_granted_success_rpc_table() {
+	new_test_ext().execute_with(|| {
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		let schemas: [vec![]; 2] = [
+			vec![1, 2],
+			vec![1, 2, 3] 
+		];
+		for s in schemas {
+			assert_ok!(Msa::add_provider(provider, delegator, s));
+		}
 	})
 }
 
