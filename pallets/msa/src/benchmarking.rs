@@ -116,7 +116,7 @@ benchmarks! {
 		}
 	}: _ (RawOrigin::Signed(provider), delegator_msa_id)
 
-	add_key_to_msa {
+	add_public_key_to_msa {
 		let caller: T::AccountId = whitelisted_caller();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
 		let (add_provider_payload, signature, key) = add_key_payload_and_signature::<T>();
@@ -128,7 +128,7 @@ benchmarks! {
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
 
 		let (add_provider_payload, signature, key) = add_key_payload_and_signature::<T>();
-		assert_ok!(Msa::<T>::add_key_to_msa(RawOrigin::Signed(caller.clone()).into(), key.clone(), signature, add_provider_payload));
+		assert_ok!(Msa::<T>::add_public_key_to_msa(RawOrigin::Signed(caller.clone()).into(), key.clone(), signature, add_provider_payload));
 
 	}: _(RawOrigin::Signed(caller), key)
 

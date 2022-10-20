@@ -82,7 +82,7 @@ fn it_throws_error_when_key_verification_fails() {
 		let signature: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
 
 		assert_noop!(
-			Msa::add_key_to_msa(
+			Msa::add_public_key_to_msa(
 				test_origin_signed(1),
 				fake_account.into(),
 				signature,
@@ -112,7 +112,7 @@ fn it_throws_error_when_not_msa_owner() {
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
 
 		assert_noop!(
-			Msa::add_key_to_msa(
+			Msa::add_public_key_to_msa(
 				test_origin_signed(1),
 				new_account.into(),
 				signature,
@@ -138,7 +138,7 @@ fn it_throws_error_when_for_duplicate_key() {
 		let signature: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
 
 		assert_noop!(
-			Msa::add_key_to_msa(
+			Msa::add_public_key_to_msa(
 				Origin::signed(new_account.into()),
 				new_account.into(),
 				signature,
@@ -163,7 +163,7 @@ fn add_key_with_more_than_allowed_should_panic() {
 			let (new_key_pair, _) = sr25519::Pair::generate();
 			let new_account = new_key_pair.public();
 			let signature: MultiSignature = new_key_pair.sign(&encode_data_new_key_data).into();
-			assert_ok!(Msa::add_key_to_msa(
+			assert_ok!(Msa::add_public_key_to_msa(
 				Origin::signed(account.into()),
 				new_account.into(),
 				signature,
@@ -176,7 +176,7 @@ fn add_key_with_more_than_allowed_should_panic() {
 		let final_account = final_key_pair.public();
 		let signature: MultiSignature = final_key_pair.sign(&encode_data_new_key_data).into();
 		assert_noop!(
-			Msa::add_key_to_msa(
+			Msa::add_public_key_to_msa(
 				Origin::signed(account.into()),
 				final_account.into(),
 				signature,
@@ -205,7 +205,7 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
 
 		// act
-		assert_ok!(Msa::add_key_to_msa(
+		assert_ok!(Msa::add_public_key_to_msa(
 			Origin::signed(account.into()),
 			new_key.into(),
 			signature,
@@ -247,7 +247,7 @@ fn add_key_with_expired_proof_fails() {
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
 
 		assert_noop!(
-			Msa::add_key_to_msa(
+			Msa::add_public_key_to_msa(
 				Origin::signed(account.into()),
 				new_key.into(),
 				signature,
@@ -280,7 +280,7 @@ fn add_key_with_proof_too_far_into_future_fails() {
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
 
 		assert_noop!(
-			Msa::add_key_to_msa(
+			Msa::add_public_key_to_msa(
 				Origin::signed(account.into()),
 				new_key.into(),
 				signature,
@@ -363,7 +363,7 @@ fn test_retire_msa_success() {
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 		let signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
 		assert_noop!(
-			Msa::add_key_to_msa(
+			Msa::add_public_key_to_msa(
 				Origin::signed(test_account.clone()),
 				new_account1.into(),
 				signature,
@@ -1477,7 +1477,7 @@ fn double_add_key_two_msa_fails() {
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 		let signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
 		assert_noop!(
-			Msa::add_key_to_msa(
+			Msa::add_public_key_to_msa(
 				Origin::signed(new_account2.into()),
 				new_account1.into(),
 				signature,
@@ -1504,7 +1504,7 @@ fn add_removed_key_to_msa_pass() {
 		let add_new_key_data = AddKeyData { nonce: 1, msa_id: msa_id2, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 		let signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
-		assert_ok!(Msa::add_key_to_msa(
+		assert_ok!(Msa::add_public_key_to_msa(
 			Origin::signed(new_account2.into()),
 			new_account1.into(),
 			signature,
@@ -1708,7 +1708,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 		let encode_add_key_data = wrap_binary_data(add_key_payload.encode());
 		let add_key_signature = key_pair_delegator2.sign(&encode_add_key_data);
 
-		assert_ok!(Msa::add_key_to_msa(
+		assert_ok!(Msa::add_public_key_to_msa(
 			Origin::signed(delegator_key.into()),
 			delegator_account2.into(),
 			add_key_signature.into(),
