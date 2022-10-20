@@ -102,7 +102,7 @@ This call incurs no fees.
 
 ### Custom RPC endpoints
 #### get_msa_keys(msa_id) *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
-Retrieve a list of public keys of up to `MaxKeys` size for the provided MSA id, or an empty list if the MSA id does not exist.
+Retrieve a list of public keys of up to `MaxPublicKeysPerMsa` size for the provided MSA id, or an empty list if the MSA id does not exist.
 
 * Parameters:
     1. `msa_id`: the MSA id of which associated keys are to be retrieved

@@ -2,9 +2,8 @@ use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
 use common_primitives::{msa::MessageSourceId, node::BlockNumber, utils::wrap_binary_data};
 use frame_support::{
 	assert_ok, parameter_types,
-	traits::{ConstU16, ConstU64},
+	traits::{ConstU16, ConstU32, ConstU64, OnFinalize, OnInitialize},
 };
-use frame_system as system;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
 	testing::Header,
@@ -15,8 +14,8 @@ use sp_runtime::{
 pub use pallet_msa::Call as MsaCall;
 
 use common_primitives::node::AccountId;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
@@ -28,10 +27,11 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
+		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
-impl system::Config for Test {
+impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
@@ -58,33 +58,41 @@ impl system::Config for Test {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
+impl pallet_schemas::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type MinSchemaModelSizeBytes = ConstU32<10>;
+	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<10>;
+	type MaxSchemaRegistrations = ConstU16<10>;
+}
+
 parameter_types! {
-	pub const MaxKeys: u8 = 10;
+	pub const MaxPublicKeysPerMsa: u8 = 10;
 	pub const MaxProviderNameSize: u32 = 16;
 	pub const MaxSchemas: u32 = 5;
 }
 
 parameter_types! {
-	pub const MaxSchemaGrants: u32 = 2;
+	pub const MaxSchemaGrantsPerDelegation: u32 = 2;
 }
 
-impl Clone for MaxSchemaGrants {
+impl Clone for MaxSchemaGrantsPerDelegation {
 	fn clone(&self) -> Self {
-		MaxSchemaGrants {}
+		MaxSchemaGrantsPerDelegation {}
 	}
 }
 
-impl Eq for MaxSchemaGrants {
+impl Eq for MaxSchemaGrantsPerDelegation {
 	fn assert_receiver_is_total_eq(&self) -> () {}
 }
 
-impl PartialEq for MaxSchemaGrants {
+impl PartialEq for MaxSchemaGrantsPerDelegation {
 	fn eq(&self, _other: &Self) -> bool {
 		true
 	}
 }
 
-impl sp_std::fmt::Debug for MaxSchemaGrants {
+impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
 		Ok(())
 	}
@@ -94,9 +102,13 @@ impl pallet_msa::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = ConvertInto;
-	type MaxKeys = MaxKeys;
-	type MaxSchemaGrants = MaxSchemaGrants;
+	type MaxPublicKeysPerMsa = MaxPublicKeysPerMsa;
+	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 	type MaxProviderNameSize = MaxProviderNameSize;
+	type SchemaValidator = Schemas;
+	type MortalityWindowSize = ConstU32<200>;
+	type MaxSignaturesPerBucket = ConstU32<10>;
+	type NumberOfBuckets = ConstU32<2>;
 }
 
 ///For table testing patterns
@@ -106,10 +118,21 @@ pub struct TestCase<T> {
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
+}
+
+pub fn run_to_block(n: u64) {
+	while System::block_number() < n {
+		if System::block_number() > 1 {
+			System::on_finalize(System::block_number());
+		}
+		System::set_block_number(System::block_number() + 1);
+		System::on_initialize(System::block_number());
+		Msa::on_initialize(System::block_number());
+	}
 }
 
 /// Create and return a simple test AccountId32 constructed with the desired integer.

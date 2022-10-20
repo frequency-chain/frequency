@@ -1,10 +1,10 @@
 [package]
-name = "pallet-schemas"
 authors = ["Frequency Team"]
 description = "Schema operations"
 edition = "2021"
 homepage = "https://frequency.xyz"
 license = "Apache-2.0"
+name = "pallet-schemas"
 publish = false
 repository = "https://github.com/libertyDSNP/frequency/"
 version = "0.1.0"
@@ -14,42 +14,42 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.1.5", default-features = false, features = [
-	"derive",
-] }
+codec = {package = "parity-scale-codec", version = "3.1.5", default-features = false, features = [
+  "derive",
+]}
+frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", optional = true, branch = "polkadot-v0.9.29"}
+frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29"}
+frame-system = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29"}
+numtoa = {default-features = false, version = '0.2.4', optional = true}
+scale-info = {version = "2.1.2", default-features = false, features = [
+  "derive",
+]}
+serde_json = {version = "1.0.86", default-features = false, features = [
+  "alloc",
+]}
 smallvec = "1.10.0"
-frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", optional = true, branch = "polkadot-v0.9.29" }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
-frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
-scale-info = { version = "2.1.2", default-features = false, features = [
-	"derive"
-] }
-sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
-sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
-serde_json = { version = "1.0.86", default-features = false, features = [
-	"alloc"
-] }
-numtoa = { default-features = false, version = '0.2.4', optional = true }
+sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29"}
+sp-io = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29"}
+sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29"}
+sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29"}
 # Frequency related dependencies
-common-primitives = { default-features = false, path = "../../common/primitives" }
+common-primitives = {default-features = false, path = "../../common/primitives"}
 
 [dev-dependencies]
-sp-keyring = { default-features = false, version = '6.0.0' }
-serial_test = { default-features = false, version = '0.9.0' }
+serial_test = {default-features = false, version = '0.9.0'}
+sp-keyring = {default-features = false, version = '6.0.0'}
 
 [features]
 default = ["std"]
-std = [
-	"codec/std",
-	"scale-info/std",
-	"frame-support/std",
-	"frame-system/std",
-	"frame-benchmarking/std",
-	"sp-runtime/std",
-	"sp-std/std",
-	"sp-core/std",
-]
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks", "numtoa"]
+std = [
+  "codec/std",
+  "scale-info/std",
+  "frame-support/std",
+  "frame-system/std",
+  "frame-benchmarking/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  "sp-core/std",
+]
 try-runtime = ["frame-support/try-runtime"]

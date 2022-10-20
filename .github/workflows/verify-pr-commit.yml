@@ -30,11 +30,13 @@ jobs:
               - '.rustfmt.toml'
               - '**/Cargo.toml'
               - '**/Cargo.lock'
+              - '.github/workflows/*'
             js:
               - "js/api-augment/**"
               - '**/*.rs'
               - '**/Cargo.toml'
               - '**/Cargo.lock'
+              - '.github/workflows/*'
             cargo-lock:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
@@ -167,7 +169,7 @@ jobs:
           profile: minimal
           toolchain: stable
       - name: Check
-        run: SKIP_WASM_BUILD= cargo check --features  frequency
+        run: SKIP_WASM_BUILD= cargo check --all-features
 
   run-rust-tests:
     needs: changes
@@ -315,9 +317,9 @@ jobs:
           push: false
           file: docker/${{env.IMAGE_NAME}}.dockerfile
 
-  execute-runtime-checks:
+  execute-binary-checks:
     needs: build-binary
-    name: Execute Runtime Checks
+    name: Execute Binary Checks
     runs-on: ubuntu-latest
     steps:
       - name: Check Out Repo
@@ -328,11 +330,6 @@ jobs:
           default: true
           profile: minimal
           toolchain: stable
-          # target: wasm32-unknown-unknown
-      - name: Restore Dependencies from Cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Download Binary Artifacts
         id: download
         uses: actions/download-artifact@v3
@@ -342,7 +339,7 @@ jobs:
       - name: Extract Binary
         run: |
           tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
-      - name: Check Binary Version
+      - name: Output Binary Version
         run: |
           file ./target/${{env.BUILD_PROFILE}}/frequency && \
             ./target/${{env.BUILD_PROFILE}}/frequency --version

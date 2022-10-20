@@ -69,3 +69,13 @@ pub trait SchemaProvider<SchemaId> {
 	/// This function is used to resolve a Schema from a SchemaId.
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse>;
 }
+
+/// This allows other Pallets to check validity of schema ids.
+pub trait SchemaValidator<SchemaId> {
+	/// Checks that a collection of SchemaIds are all valid
+	fn are_all_schema_ids_valid(schema_ids: Vec<SchemaId>) -> bool;
+
+	/// Set the schema counter for testing purposes.
+	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
+	fn set_schema_count(n: SchemaId);
+}
