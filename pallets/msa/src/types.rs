@@ -4,8 +4,12 @@ use super::*;
 use codec::{Decode, Encode};
 
 use core::fmt::Debug;
+use frame_support::BoundedBTreeMap;
 
-pub use common_primitives::msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider};
+pub use common_primitives::msa::{
+	Delegator, KeyInfoResponse, MessageSourceId, Provider, ProviderInfo,
+};
+
 use common_primitives::{node::BlockNumber, schema::SchemaId};
 
 use scale_info::TypeInfo;
@@ -50,4 +54,13 @@ impl AddProvider {
 
 		Self { authorized_msa_id, schema_ids, expiration }
 	}
+}
+
+#[test]
+
+fn test_permission() {
+	let permissions = BoundedBTreeMap::<SchemaId, Option<BlockNumber>, ConstU32<10>>::new();
+	let delegation_info = ProviderInfo { revoked_at: 0, schema_permissions: permissions };
+
+	assert!(delegation_info.schema_permissions.is_empty());
 }

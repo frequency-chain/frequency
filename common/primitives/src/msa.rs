@@ -1,5 +1,7 @@
 use codec::{Decode, Encode, EncodeLike, Error, MaxEncodedLen};
-use frame_support::{dispatch::DispatchResult, traits::Get, BoundedVec, RuntimeDebug};
+use frame_support::{
+	dispatch::DispatchResult, traits::Get, BoundedBTreeMap, BoundedVec, RuntimeDebug,
+};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -51,16 +53,13 @@ impl From<Delegator> for MessageSourceId {
 }
 
 /// Struct for the information of the relationship between an MSA and a Provider
-#[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
+#[derive(Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug, Clone, PartialEq, Eq)]
 #[scale_info(skip_type_params(MaxSchemaGrants))]
-pub struct ProviderInfo<BlockNumber, MaxSchemaGrants>
-where
-	MaxSchemaGrants: Get<u32>,
-{
+pub struct ProviderInfo<BlockNumber, SchemaId, MaxSchemaGrants: Get<u32>> {
 	/// Block number the grant will be revoked.
-	pub expired: BlockNumber,
+	pub revoked_at: BlockNumber,
 	/// Schemas that the provider is allowed to use for a delegated message.
-	pub schemas: OrderedSet<SchemaId, MaxSchemaGrants>,
+	pub schema_permissions: BoundedBTreeMap<SchemaId, Option<BlockNumber>, MaxSchemaGrants>,
 }
 
 /// Provider is the recipient of a delegation.
@@ -152,7 +151,7 @@ pub trait ProviderLookup {
 	fn get_provider_info_of(
 		delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>>;
+	) -> Option<ProviderInfo<Self::BlockNumber, SchemaId, Self::MaxSchemaGrants>>;
 }
 
 /// A behavior that allows for validating a delegator-provider relationship
@@ -172,7 +171,7 @@ pub trait DelegationValidator {
 		provider: Provider,
 		delegator: Delegator,
 		block_number: Option<Self::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrants>, DispatchError>;
+	) -> Result<ProviderInfo<Self::BlockNumber, SchemaId, Self::MaxSchemaGrants>, DispatchError>;
 }
 
 /// A behavior that allows for validating a schema grant

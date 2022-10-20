@@ -27,8 +27,6 @@ sp-runtime = {default-features = false, git = "https://github.com/paritytech/sub
 sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29"}
 # Frequency related dependencies
 common-primitives = {default-features = false, path = "../../common/primitives"}
-#ORML
-orml-utilities = {git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.29"}
 
 [dev-dependencies]
 common-runtime = {path = '../../runtime/common', default-features = false}
@@ -46,9 +44,9 @@ std = [
   "frame-support/std",
   "frame-system/std",
   "frame-benchmarking/std",
-  "orml-utilities/std",
   "sp-runtime/std",
   "sp-std/std",
   "sp-core/std",
+  "pallet-schemas/std",
 ]
 try-runtime = ["frame-support/try-runtime"]

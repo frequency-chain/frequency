@@ -17,8 +17,8 @@ use common_runtime::extensions::check_nonce::CheckNonce;
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
+	BoundedBTreeMap,
 };
-use orml_utilities::OrderedSet;
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::{traits::SignedExtension, MultiSignature};
 
@@ -530,7 +530,7 @@ pub fn add_provider_to_msa_is_success() {
 
 		assert_eq!(
 			Msa::get_provider_info(delegator, provider),
-			Some(ProviderInfo { expired: 0, schemas: OrderedSet::new() })
+			Some(ProviderInfo { revoked_at: 0, schema_permissions: Default::default() })
 		);
 
 		System::assert_last_event(
@@ -1049,7 +1049,7 @@ pub fn revoke_provider_is_successful() {
 
 		assert_eq!(
 			Msa::get_provider_info(delegator, provider).unwrap(),
-			ProviderInfo { expired: 1, schemas: OrderedSet::new() },
+			ProviderInfo { revoked_at: 1, schema_permissions: Default::default() },
 		);
 	});
 }
@@ -1231,7 +1231,10 @@ pub fn revoke_delegation_by_provider_happy_path() {
 
 		// 6. verify that the provider is revoked
 		let provider_info = Msa::get_provider_info(Delegator(2), Provider(1));
-		assert_eq!(provider_info, Some(ProviderInfo { expired: 26, schemas: OrderedSet::new() }));
+		assert_eq!(
+			provider_info,
+			Some(ProviderInfo { revoked_at: 26, schema_permissions: Default::default() })
+		);
 
 		// 7. verify the event
 		System::assert_last_event(

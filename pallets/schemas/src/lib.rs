@@ -316,7 +316,7 @@ impl<T: Config> SchemaValidator<SchemaId> for Pallet<T> {
 		schema_ids.into_iter().all(|id| id <= latest_issue_schema_id)
 	}
 
-	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
+	#[cfg(any(feature = "runtime-benchmarks"))]
 	fn set_schema_count(n: SchemaId) {
 		Self::set_schema_count(n);
 	}
