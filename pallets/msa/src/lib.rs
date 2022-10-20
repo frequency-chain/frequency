@@ -186,8 +186,8 @@ pub mod pallet {
 	/// - Key: AccountId
 	/// - Value: [`MessageSourceId`]
 	#[pallet::storage]
-	#[pallet::getter(fn get_msa_by_account_id)]
-	pub type MessageSourceIdOf<T: Config> =
+	#[pallet::getter(fn get_msa_by_public_key)]
+	pub type PublicKeyToMsaId<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
 
 	/// Storage type for a reference counter of the number of keys associated to an MSA
@@ -701,7 +701,7 @@ impl<T: Config> Pallet<T> {
 	where
 		F: FnOnce(MessageSourceId) -> DispatchResult,
 	{
-		MessageSourceIdOf::<T>::try_mutate(key, |maybe_msa_id| {
+		PublicKeyToMsaId::<T>::try_mutate(key, |maybe_msa_id| {
 			ensure!(maybe_msa_id.is_none(), Error::<T>::KeyAlreadyRegistered);
 			*maybe_msa_id = Some(msa_id);
 
@@ -851,7 +851,7 @@ impl<T: Config> Pallet<T> {
 	/// # Errors
 	/// * [`Error::<T>::NoKeyExists`] - If the key does not exist in the MSA
 	pub fn delete_key_for_msa(msa_id: MessageSourceId, key: &T::AccountId) -> DispatchResult {
-		MessageSourceIdOf::<T>::try_mutate_exists(key, |maybe_msa_id| {
+		PublicKeyToMsaId::<T>::try_mutate_exists(key, |maybe_msa_id| {
 			ensure!(maybe_msa_id.is_some(), Error::<T>::NoKeyExists);
 
 			// Delete the key if it exists
@@ -918,7 +918,7 @@ impl<T: Config> Pallet<T> {
 	pub fn try_get_msa_from_account_id(
 		key: &T::AccountId,
 	) -> Result<MessageSourceId, DispatchError> {
-		let info = Self::get_msa_by_account_id(key).ok_or(Error::<T>::NoKeyExists)?;
+		let info = Self::get_msa_by_public_key(key).ok_or(Error::<T>::NoKeyExists)?;
 		Ok(info)
 	}
 
@@ -928,7 +928,7 @@ impl<T: Config> Pallet<T> {
 	/// # Returns
 	/// * [`MessageSourceId`]
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
-		Self::get_msa_by_account_id(&key)
+		Self::get_msa_by_public_key(&key)
 	}
 
 	// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418
