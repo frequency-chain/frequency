@@ -65,7 +65,7 @@ Please note:
     paid and their registration was otherwise successful.
 
 ### Extrinsics
-#### register_provider(origin, provider_name)
+#### create_provider(origin, provider_name)
 Creates and posts a `ProviderRegistrationEvent`. The `MsaId`
 included in the registration must already exist.
 

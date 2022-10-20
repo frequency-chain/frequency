@@ -382,10 +382,7 @@ fn test_retire_msa_success() {
 			Msa::try_get_msa_from_account_id(&AccountId32::new(provider_account.0)).unwrap();
 
 		// Register provider
-		assert_ok!(Msa::register_provider(
-			Origin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(test_account_key_pair, provider_msa_id);
@@ -418,7 +415,7 @@ fn test_retire_msa_fails_if_registered_provider() {
 		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
 
 		// Register provider
-		assert_ok!(Msa::register_provider(test_origin_signed(1), Vec::from("Foo")));
+		assert_ok!(Msa::create_provider(test_origin_signed(1), Vec::from("Foo")));
 
 		// Retire MSA
 		assert_noop!(
@@ -505,10 +502,7 @@ pub fn add_provider_to_msa_is_success() {
 			Msa::try_get_msa_from_account_id(&AccountId32::new(delegator_account.0)).unwrap();
 
 		// Register provider
-		assert_ok!(Msa::register_provider(
-			Origin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
@@ -659,10 +653,7 @@ pub fn add_provider_to_msa_throws_unauthorized_delegator_error() {
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		// Register provider
-		assert_ok!(Msa::register_provider(
-			Origin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
 		assert_noop!(
 			Msa::add_provider_to_msa(
@@ -707,10 +698,7 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		// Register provider
-		assert_ok!(Msa::register_provider(
-			Origin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
 		// act
 		assert_ok!(Msa::create_sponsored_account_with_delegation(
@@ -794,10 +782,7 @@ pub fn create_sponsored_account_with_delegation_with_invalid_add_provider_should
 		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
 
 		// Register provider
-		assert_ok!(Msa::register_provider(
-			Origin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
 		// act
 		assert_noop!(
@@ -863,10 +848,7 @@ pub fn create_sponsored_account_with_delegation_expired() {
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		// Register provider
-		assert_ok!(Msa::register_provider(
-			Origin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
 		// act
 		assert_noop!(
@@ -940,10 +922,7 @@ pub fn revoke_msa_delegation_by_delegator_is_successful() {
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		// Register provider
-		assert_ok!(Msa::register_provider(
-			Origin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
 		let provider_msa =
 			Msa::try_get_msa_from_account_id(&AccountId32::new(provider_account.0)).unwrap();
@@ -988,10 +967,7 @@ pub fn revoke_provider_is_successful() {
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
 
 		// Register provider
-		assert_ok!(Msa::register_provider(
-			Origin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
 		assert_ok!(Msa::add_provider_to_msa(
 			Origin::signed(provider_account.into()),
@@ -1068,10 +1044,7 @@ fn revoke_provider_throws_error_when_delegation_already_revoked() {
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
 
 		// Register provider
-		assert_ok!(Msa::register_provider(
-			Origin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
 		assert_ok!(Msa::add_provider_to_msa(
 			Origin::signed(provider_account.into()),
@@ -1112,7 +1085,7 @@ pub fn revoke_provider_call_has_no_cost() {
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		// Register provider
-		assert_ok!(Msa::register_provider(test_origin_signed(1), Vec::from("Foo")));
+		assert_ok!(Msa::create_provider(test_origin_signed(1), Vec::from("Foo")));
 
 		assert_ok!(Msa::add_provider_to_msa(
 			test_origin_signed(1),
@@ -1169,7 +1142,7 @@ pub fn revoke_delegation_by_provider_happy_path() {
 		assert_ok!(Msa::create(Origin::signed(provider_key.into()))); // MSA = 1
 
 		// Register provider
-		assert_ok!(Msa::register_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
+		assert_ok!(Msa::create_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
 
 		// 3. create delegator MSA and provider to provider
 		let expiration: BlockNumber = 10;
@@ -1514,12 +1487,12 @@ fn add_removed_key_to_msa_pass() {
 }
 
 #[test]
-fn register_provider() {
+fn create_provider() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let (_new_msa_id, _) =
 			Msa::create_account(key_pair.public().into(), EMPTY_FUNCTION).unwrap();
-		assert_ok!(Msa::register_provider(
+		assert_ok!(Msa::create_provider(
 			Origin::signed(key_pair.public().into()),
 			Vec::from("Foo")
 		));
@@ -1533,7 +1506,7 @@ fn register_provider_max_size_exceeded() {
 		let (_new_msa_id, _) =
 			Msa::create_account(key_pair.public().into(), EMPTY_FUNCTION).unwrap();
 		assert_err!(
-			Msa::register_provider(
+			Msa::create_provider(
 				Origin::signed(key_pair.public().into()),
 				Vec::from("12345678901234567")
 			),
@@ -1548,13 +1521,13 @@ fn register_provider_duplicate() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let (_new_msa_id, _) =
 			Msa::create_account(key_pair.public().into(), EMPTY_FUNCTION).unwrap();
-		assert_ok!(Msa::register_provider(
+		assert_ok!(Msa::create_provider(
 			Origin::signed(key_pair.public().into()),
 			Vec::from("Foo")
 		));
 
 		assert_err!(
-			Msa::register_provider(Origin::signed(key_pair.public().into()), Vec::from("Foo")),
+			Msa::create_provider(Origin::signed(key_pair.public().into()), Vec::from("Foo")),
 			Error::<Test>::DuplicateProviderMetadata
 		)
 	})
@@ -1685,7 +1658,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 
 		// create MSA for provider and register them
 		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
-		assert_ok!(Msa::register_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
+		assert_ok!(Msa::create_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
 
 		// Step 1
 		assert_ok!(Msa::create_sponsored_account_with_delegation(
@@ -1766,7 +1739,7 @@ fn replaying_add_provider_to_msa_fails() {
 
 		// create MSA for provider and register them
 		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
-		assert_ok!(Msa::register_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
+		assert_ok!(Msa::create_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
 
 		// create MSA for delegator
 		assert_ok!(Msa::create(Origin::signed(delegator_key.into())));
@@ -1920,7 +1893,7 @@ pub fn add_provider_expired() {
 		assert_ok!(Msa::create(Origin::signed(provider_key.into()))); // MSA = 1
 
 		// Register provider
-		assert_ok!(Msa::register_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
+		assert_ok!(Msa::create_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
 
 		// 3. create delegator MSA and provider to provider
 		let expiration: BlockNumber = 0;

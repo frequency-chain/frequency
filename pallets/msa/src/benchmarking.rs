@@ -97,7 +97,7 @@ benchmarks! {
 	create_sponsored_account_with_delegation {
 		let caller: T::AccountId = whitelisted_caller();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
-		assert_ok!(Msa::<T>::register_provider(RawOrigin::Signed(caller.clone()).into(),Vec::from("Foo")));
+		assert_ok!(Msa::<T>::create_provider(RawOrigin::Signed(caller.clone()).into(),Vec::from("Foo")));
 
 		let (payload, signature, key) = create_payload_and_signature::<T>();
 
@@ -148,7 +148,7 @@ benchmarks! {
 		let (payload, signature, key) = create_payload_and_signature::<T>();
 
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
-		assert_ok!(Msa::<T>::register_provider(RawOrigin::Signed(caller.clone()).into(),Vec::from("Foo")));
+		assert_ok!(Msa::<T>::create_provider(RawOrigin::Signed(caller.clone()).into(),Vec::from("Foo")));
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(key.clone()).into()));
 
 	}: _ (RawOrigin::Signed(caller), key, signature, payload)
@@ -161,7 +161,7 @@ benchmarks! {
 
 	}: _ (RawOrigin::Signed(delegator), provider_msa_id)
 
-	register_provider {
+	create_provider {
 		let (provider, _provider_msa_id) = create_account_with_msa_id::<T>(1);
 	}: _ (RawOrigin::Signed(provider), Vec::from("Foo"))
 

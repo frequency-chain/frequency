@@ -62,7 +62,7 @@ pub trait WeightInfo {
 	fn retire_msa() -> Weight;
 	fn add_provider_to_msa() -> Weight;
 	fn revoke_msa_delegation_by_delegator() -> Weight;
-	fn register_provider() -> Weight;
+	fn create_provider() -> Weight;
 	fn on_initialize(m: u32, ) -> Weight;
 }
 
@@ -140,7 +140,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa ProviderRegistry (r:1 w:1)
-	fn register_provider() -> Weight {
+	fn create_provider() -> Weight {
 		Weight::from_ref_time(13_000_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
@@ -225,7 +225,7 @@ impl WeightInfo for () {
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa ProviderRegistry (r:1 w:1)
-	fn register_provider() -> Weight {
+	fn create_provider() -> Weight {
 		Weight::from_ref_time(13_000_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
