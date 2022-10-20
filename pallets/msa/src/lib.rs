@@ -377,12 +377,12 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
-			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
-
 			Self::verify_signature(
-				vec![(proof, delegator_key.clone())],
+				vec![(proof.clone(), delegator_key.clone())],
 				add_provider_payload.encode(),
 			)?;
+
+			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			ensure!(
@@ -465,14 +465,14 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
-			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
-
 			// delegator must have signed the payload.
 			Self::verify_signature(
 				vec![(proof.clone(), delegator_key.clone())],
 				add_provider_payload.encode(),
 			)
 			.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
+
+			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 
 			let (provider, delegator) =
 				Self::ensure_valid_registered_provider(&delegator_key, &provider_key)?;
@@ -546,13 +546,16 @@ pub mod pallet {
 		) -> DispatchResult {
 			let _ = ensure_signed(origin)?;
 
-			Self::register_signature(&msa_owner_proof, add_key_payload.expiration.into())?;
-
 			Self::verify_signature(
-				vec![(msa_owner_proof, msa_owner_key.clone()), (new_proof, new_key.clone())],
+				vec![
+					(msa_owner_proof.clone(), msa_owner_key.clone()),
+					(new_proof, new_key.clone()),
+				],
 				add_key_payload.encode(),
 			)
 			.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
+
+			Self::register_signature(&msa_owner_proof, add_key_payload.expiration.into())?;
 
 			let msa_id = add_key_payload.msa_id;
 
