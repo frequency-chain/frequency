@@ -778,8 +778,8 @@ impl<T: Config> Pallet<T> {
 	/// Verify the `signature` was signed by `signer` on `payload` by a wallet
 	/// Note the `wrap_binary_data` follows the Polkadot wallet pattern of wrapping with `<Byte>` tags.
 	pub fn verify_signature(
-		signature: &MultiSignature,
-		signer: &T::AccountId,
+		signature: MultiSignature,
+		signer: T::AccountId,
 		payload: Vec<u8>,
 	) -> DispatchResult {
 		let key = T::ConvertIntoAccountId32::convert(signer);
