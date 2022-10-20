@@ -557,7 +557,10 @@ pub mod pallet {
 			Self::ensure_msa_owner(&msa_owner_public_key, msa_id)?;
 
 			Self::add_key(msa_id, &new_public_key.clone(), |new_msa_id| -> DispatchResult {
-				Self::deposit_event(Event::KeyAdded { msa_id: new_msa_id, key: new_public_key });
+				Self::deposit_event(Event::KeyAdded {
+					msa_id: new_msa_id,
+					key: new_public_key.clone(),
+				});
 				Ok(())
 			})?;
 
@@ -778,11 +781,11 @@ impl<T: Config> Pallet<T> {
 	/// Verify the `signature` was signed by `signer` on `payload` by a wallet
 	/// Note the `wrap_binary_data` follows the Polkadot wallet pattern of wrapping with `<Byte>` tags.
 	pub fn verify_signature(
-		signature: MultiSignature,
-		signer: T::AccountId,
+		signature: &MultiSignature,
+		signer: &T::AccountId,
 		payload: Vec<u8>,
 	) -> DispatchResult {
-		let key = T::ConvertIntoAccountId32::convert(signer);
+		let key = T::ConvertIntoAccountId32::convert((*signer).clone());
 		let wrapped_payload = wrap_binary_data(payload);
 
 		ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
