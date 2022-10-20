@@ -106,7 +106,6 @@ impl pallet_msa::Config for Test {
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxPublicKeysPerMsa = MaxPublicKeysPerMsa;
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
-	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type NumberOfBuckets = ConstU32<NUMBER_OF_BUCKETS>;
