@@ -107,7 +107,7 @@ pub type FrameSystemMaxConsumers = ConstU32<16>;
 // -end- Frame System Pallet ---
 
 // --- MSA Pallet ---
-pub type MsaMaxKeys = ConstU8<25>;
+pub type MsaMaxPublicKeysPerMsa = ConstU8<25>;
 pub type MsaMaxProviderNameSize = ConstU32<16>;
 // -end- MSA Pallet ---
 
@@ -271,3 +271,7 @@ impl Clone for MessagesMaxPayloadSizeBytes {
 	}
 }
 // -end- Messages Pallet ---
+
+pub type MSAMortalityWindowSize = ConstU32<100>;
+pub type MSAMaxSignaturesPerBucket = ConstU32<50_000>;
+pub type MSANumberOfBuckets = ConstU32<2>;

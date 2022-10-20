@@ -4,6 +4,7 @@ use super::*;
 
 #[allow(unused)]
 use crate::Pallet as Msa;
+
 use frame_benchmarking::{account, benchmarks, whitelisted_caller};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
@@ -36,7 +37,7 @@ fn create_payload_and_signature<T: Config>() -> (AddProvider, MultiSignature, T:
 	let delegator_account = SignerId::generate_pair(None);
 	let schemas: Vec<SchemaId> = vec![1, 2];
 	T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
-	let expiration: BlockNumber = 10;
+	let expiration = 10u32;
 	let add_provider_payload = AddProvider::new(1u64, Some(schemas), expiration);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 
@@ -69,6 +70,18 @@ fn add_delegation<T: Config>(delegator: Delegator, provider: Provider) {
 	let schemas: Vec<SchemaId> = vec![1, 2];
 	T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
 	assert_ok!(Msa::<T>::add_provider(provider, delegator, schemas));
+}
+
+pub fn generate_test_signature() -> MultiSignature {
+	let account = SignerId::generate_pair(None);
+	let fake_data = vec![4u8; 32];
+	let signature = account.sign(&fake_data).unwrap();
+	MultiSignature::Sr25519(signature.into())
+}
+
+fn register_signature<T: Config>(mortality_block: u32) {
+	let sig = generate_test_signature();
+	assert_ok!(Msa::<T>::register_signature(&sig, T::BlockNumber::from(mortality_block)));
 }
 
 benchmarks! {
@@ -152,5 +165,17 @@ benchmarks! {
 		let (provider, _provider_msa_id) = create_account_with_msa_id::<T>(1);
 	}: _ (RawOrigin::Signed(provider), Vec::from("Foo"))
 
-	impl_benchmark_test_suite!(Msa, crate::mock::new_test_ext_keystore(), crate::mock::Test);
+	on_initialize {
+		let m in 1 .. 50_000;
+		for j in 0 .. m {
+			let mortality = 49;
+			register_signature::<T>(mortality as u32);
+		}
+	}: {
+		Msa::<T>::on_initialize(200u32.into());
+	}
+
+	impl_benchmark_test_suite!(Msa,
+		crate::mock::new_test_ext_keystore(),
+		crate::mock::Test);
 }
