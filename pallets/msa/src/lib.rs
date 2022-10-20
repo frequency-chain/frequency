@@ -377,11 +377,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
-			Self::verify_signature(
-				proof.clone(),
-				delegator_key.clone(),
-				add_provider_payload.encode(),
-			)?;
+			Self::verify_signature(&proof, &delegator_key, add_provider_payload.encode())?;
 
 			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 
@@ -467,12 +463,8 @@ pub mod pallet {
 			let provider_key = ensure_signed(origin)?;
 
 			// delegator must have signed the payload.
-			Self::verify_signature(
-				proof.clone(),
-				delegator_key.clone(),
-				add_provider_payload.encode(),
-			)
-			.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
+			Self::verify_signature(&proof, &delegator_key, add_provider_payload.encode())
+				.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
 
 			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 
@@ -549,20 +541,16 @@ pub mod pallet {
 			let _ = ensure_signed(origin)?;
 
 			Self::verify_signature(
-				msa_owner_proof.clone(),
-				msa_owner_public_key.clone(),
+				&msa_owner_proof,
+				&msa_owner_public_key,
 				add_key_payload.encode(),
 			)
 			.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
 
-			Self::verify_signature(
-				new_key_owner_proof.clone(),
-				new_public_key.clone(),
-				add_key_payload.encode(),
-			)
-			.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
+			Self::verify_signature(&new_key_owner_proof, &new_public_key, add_key_payload.encode())
+				.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
 
-			Self::register_signature(&msa_owner_proof, add_key_payload.expiration.into())?;
+			Self::register_signature(&new_key_owner_proof, add_key_payload.expiration.into())?;
 
 			let msa_id = add_key_payload.msa_id;
 
@@ -790,8 +778,8 @@ impl<T: Config> Pallet<T> {
 	/// Verify the `signature` was signed by `signer` on `payload` by a wallet
 	/// Note the `wrap_binary_data` follows the Polkadot wallet pattern of wrapping with `<Byte>` tags.
 	pub fn verify_signature(
-		signature: MultiSignature,
-		signer: T::AccountId,
+		signature: &MultiSignature,
+		signer: &T::AccountId,
 		payload: Vec<u8>,
 	) -> DispatchResult {
 		let key = T::ConvertIntoAccountId32::convert(signer);

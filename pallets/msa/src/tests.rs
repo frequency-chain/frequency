@@ -2237,7 +2237,7 @@ pub fn add_msa_key_replay_fails() {
 			let signature_new_key: MultiSignature =
 				new_key_pair.sign(&encode_data_new_key_data).into();
 			run_to_block(tc.run_to);
-			dbg!(&tc.current);
+
 			let add_key_response: bool = Msa::add_key_to_msa(
 				Origin::signed(account_provider.into()),
 				account_provider.into(),
