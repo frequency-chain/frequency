@@ -2214,6 +2214,12 @@ pub fn add_msa_key_replay_fails() {
 				expected_ok: true,
 			},
 			TestCase { current: 999u64, mortality: 1_148u32, run_to: 1_101u64, expected_ok: true },
+			TestCase {
+				current: 1_000_000u64,
+				mortality: 1_000_000u32,
+				run_to: 1_000_000u64,
+				expected_ok: false,
+			},
 		];
 		let (key_pair_provider, _) = sr25519::Pair::generate();
 		let account_provider = key_pair_provider.public();
