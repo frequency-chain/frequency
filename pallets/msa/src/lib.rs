@@ -373,11 +373,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
-			Self::verify_signature(
-				proof.clone(),
-				delegator_key.clone(),
-				add_provider_payload.encode(),
-			)?;
+			Self::verify_signature(&proof, &delegator_key, add_provider_payload.encode())?;
 
 			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 
@@ -463,12 +459,8 @@ pub mod pallet {
 			let provider_key = ensure_signed(origin)?;
 
 			// delegator must have signed the payload.
-			Self::verify_signature(
-				proof.clone(),
-				delegator_key.clone(),
-				add_provider_payload.encode(),
-			)
-			.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
+			Self::verify_signature(&proof, &delegator_key, add_provider_payload.encode())
+				.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
 
 			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 
@@ -516,9 +508,16 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Adds a given key to Origin's MSA, which must match the MSA in `add_key_payload`. Deposits event [`KeyAdded'](Event::KeyAdded).
+		/// Adds a given `new_key` to `msa_id` of the account signing ```msa_owner_proof```, which must match the MSA in `add_key_payload`.
+		/// The ```new_key``` must sign the ```add_key_payload``` to authorize the addition.
+		/// Deposits event [`KeyAdded'](Event::KeyAdded).
 		/// Returns `Ok(())` on success, otherwise returns an error.
 		///
+		/// ### Arguments
+		/// - `origin` - The account that signs the transaction. Note: can be same as msa owner.
+		/// - `msa_owner_key` - The account that owns the MSA.
+		/// - `msa_owner_proof`: A signature of the MSA owner account, which must match the MSA in `add_key_payload`.
+		/// - `new_proof`: A signature of the new key account, should also sign `add_key_payload`.
 		/// ### Errors
 		///
 		/// - Returns [`AddKeySignatureVerificationFailed`](Error::AddKeySignatureVerificationFailed) if `key` is not a valid signer of the provided `add_key_payload`.
@@ -529,23 +528,35 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::add_key_to_msa())]
 		pub fn add_key_to_msa(
 			origin: OriginFor<T>,
-			key: T::AccountId,
-			proof: MultiSignature,
+			msa_owner_public_key: T::AccountId,
+			msa_owner_proof: MultiSignature,
+			new_public_key: T::AccountId,
+			new_key_owner_proof: MultiSignature,
 			add_key_payload: AddKeyData,
 		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
+			let _ = ensure_signed(origin)?;
 
-			Self::verify_signature(proof.clone(), key.clone(), add_key_payload.encode())
+			Self::verify_signature(
+				&msa_owner_proof,
+				&msa_owner_public_key,
+				add_key_payload.encode(),
+			)
+			.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
+
+			Self::verify_signature(&new_key_owner_proof, &new_public_key, add_key_payload.encode())
 				.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
 
-			Self::register_signature(&proof, add_key_payload.expiration.into())?;
+			Self::register_signature(&new_key_owner_proof, add_key_payload.expiration.into())?;
 
 			let msa_id = add_key_payload.msa_id;
 
-			Self::ensure_msa_owner(&who, msa_id)?;
+			Self::ensure_msa_owner(&msa_owner_public_key, msa_id)?;
 
-			Self::add_key(msa_id, &key.clone(), |new_msa_id| -> DispatchResult {
-				Self::deposit_event(Event::KeyAdded { msa_id: new_msa_id, key });
+			Self::add_key(msa_id, &new_public_key.clone(), |new_msa_id| -> DispatchResult {
+				Self::deposit_event(Event::KeyAdded {
+					msa_id: new_msa_id,
+					key: new_public_key.clone(),
+				});
 				Ok(())
 			})?;
 
@@ -761,11 +772,11 @@ impl<T: Config> Pallet<T> {
 	/// Verify the `signature` was signed by `signer` on `payload` by a wallet
 	/// Note the `wrap_binary_data` follows the Polkadot wallet pattern of wrapping with `<Byte>` tags.
 	pub fn verify_signature(
-		signature: MultiSignature,
-		signer: T::AccountId,
+		signature: &MultiSignature,
+		signer: &T::AccountId,
 		payload: Vec<u8>,
 	) -> DispatchResult {
-		let key = T::ConvertIntoAccountId32::convert(signer);
+		let key = T::ConvertIntoAccountId32::convert((*signer).clone());
 		let wrapped_payload = wrap_binary_data(payload);
 
 		ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);

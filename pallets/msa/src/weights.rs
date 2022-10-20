@@ -43,31 +43,32 @@
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(
-	rustdoc::all,
-	missing_docs,
-	unused_parens,
-	unused_imports
+rustdoc::all,
+missing_docs,
+unused_parens,
+unused_imports
 )]
 
-use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
+use frame_support::{traits::Get, weights::{constants::RocksDbWeight, Weight}};
 use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_msa.
 pub trait WeightInfo {
-	fn create(s: u32, ) -> Weight;
+	fn create(s: u32) -> Weight;
 	fn create_sponsored_account_with_delegation() -> Weight;
-	fn revoke_delegation_by_provider(s: u32, ) -> Weight;
+	fn revoke_delegation_by_provider(s: u32) -> Weight;
 	fn add_key_to_msa() -> Weight;
 	fn delete_msa_key() -> Weight;
 	fn retire_msa() -> Weight;
 	fn add_provider_to_msa() -> Weight;
 	fn revoke_msa_delegation_by_delegator() -> Weight;
 	fn register_provider() -> Weight;
-	fn on_initialize(m: u32, ) -> Weight;
+	fn on_initialize(s: u32) -> Weight;
 }
 
 /// Weights for pallet_msa using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
+
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa MsaIdentifier (r:1 w:1)
 	// Storage: Msa PublicKeyToMsaId (r:1 w:1)
@@ -92,10 +93,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa ProviderInfoOf (r:1 w:1)
-	fn revoke_delegation_by_provider(s: u32, ) -> Weight {
-		Weight::from_ref_time(18_059_000 as u64)
-			// Standard Error: 2_000
-			.saturating_add(Weight::from_ref_time(15_000 as u64).saturating_mul(s as u64))
+	fn revoke_delegation_by_provider(s: u32) -> Weight {
+		Weight::from_ref_time(20_484_000 as u64)
+			// Standard Error: 1_000
+			.saturating_add(Weight::from_ref_time(22_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -145,10 +146,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
-	fn on_initialize(m: u32, ) -> Weight {
-		Weight::from_ref_time(5_599_000 as u64)
-			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(1_000 as u64).saturating_mul(m as u64))
+
+	fn on_initialize(s: u32) -> Weight {
+		Weight::from_ref_time(15_000_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(s as u64))
+			.saturating_mul(2 as u64)
 	}
 }
 
@@ -230,9 +232,10 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
-	fn on_initialize(m: u32, ) -> Weight {
-		Weight::from_ref_time(5_599_000 as u64)
-			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(1_000 as u64).saturating_mul(m as u64))
+
+	fn on_initialize(s: u32) -> Weight {
+		Weight::from_ref_time(15_000_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(s as u64))
+			.saturating_mul(2 as u64)
 	}
 }
