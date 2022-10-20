@@ -57,116 +57,116 @@ pub mod public_testnet_keys {
  }
 
 pub fn frequency_rococo_testnet() -> ChainSpec {
-	return load_frequency_rococo_spec().unwrap();
-	let properties = get_properties(FREQUENCY_ROCOCO_TOKEN, 8, 42);
-	let para_id: ParaId = 4044.into();
-	ChainSpec::from_genesis(
-		// Name
-		"Frequency Rococo",
-		// ID
-		"frequency-rococo",
-		ChainType::Live,
-		move || {
-			frequency_rococo_genesis(
-				// initial collators.
-				vec![
-					(
-						// 5DaTHXTHUckbmLK2mUABQDrbwYKEaCLjKpTRB4VHYEbvF9fp
-						public_testnet_keys::COLLATOR_1_SR25519
-							.parse::<AccountId>()
-							.unwrap()
-							.into(),
-						AuraId::from_slice(
-							&<[u8; 32]>::from_hex(
-								public_testnet_keys::COLLATOR_1_SR25519.strip_prefix("0x").unwrap(),
-							)
-							.unwrap(),
-						)
-						.unwrap(),
-					),
-					(
-						// 5E46myWYmywo8cF9Wk77NZM7TqLqVG7uMYjGuyyfrve9waa9
-						public_testnet_keys::COLLATOR_2_SR25519
-							.parse::<AccountId>()
-							.unwrap()
-							.into(),
-						AuraId::from_slice(
-							&<[u8; 32]>::from_hex(
-								public_testnet_keys::COLLATOR_2_SR25519.strip_prefix("0x").unwrap(),
-							)
-							.unwrap(),
-						)
-						.unwrap(),
-					),
-				],
-				Some(public_testnet_keys::ROCOCO_FRQ_SUDO.parse::<AccountId>().unwrap().into()),
-				// endowed accounts.
-				vec![
-					// 5FnjAszaYTVfEFDooTN37DCBinQyw4dvsZDr7PbYovmAhEqn
-					public_testnet_keys::ROCOCO_FRQ_SUDO.parse::<AccountId>().unwrap().into(),
-					// 5E46myWYmywo8cF9Wk77NZM7TqLqVG7uMYjGuyyfrve9waa9
-					public_testnet_keys::TECH_COUNCIL1.parse::<AccountId>().unwrap().into(),
-					// 5Dw9hdb8Wy3cMFf1ZpQh5HuK2GvMNMcxfka4JsM2GRpjqHSA
-					public_testnet_keys::TECH_COUNCIL2.parse::<AccountId>().unwrap().into(),
-					// 5ETnrcfDwCTKZt5pLoKcLNbbwUcddkDAxEjtcgibAtkDhBBe
-					public_testnet_keys::TECH_COUNCIL3.parse::<AccountId>().unwrap().into(),
-					// 5FpQTxEFHAdF2hpkA89qKenSjGQBAHi8uCo8F6fJ5RxnR1sn
-					public_testnet_keys::FRQ_COUNCIL1.parse::<AccountId>().unwrap().into(),
-					// 5DwKn9yg7Kqa71qTaZVfoigwtzyPgBp23wzJKmGiUr8S3j7A
-					public_testnet_keys::FRQ_COUNCIL2.parse::<AccountId>().unwrap().into(),
-					// 5EyLduUEpNfUox5HuogrhbKugAdHnsLHrysKSWL6u4TQFAra
-					public_testnet_keys::FRQ_COUNCIL3.parse::<AccountId>().unwrap().into(),
-					// 5FHFyMYQH39mq3FA2a5ZcDe275K7RZs3zi76gsQb2TE1PF7i
-					public_testnet_keys::FRQ_COUNCIL4.parse::<AccountId>().unwrap().into(),
-					// 5HYKfXdGi2GUupHksmQLtHoWtwH3wPkJRSr3RpbKivTovpqX
-					public_testnet_keys::FRQ_COUNCIL5.parse::<AccountId>().unwrap().into(),
-					// 5HKXEFkNLeutZ2yZ9mbG2v5AbTDMXhza9VEfeDCiJGGBUyi3
-					public_testnet_keys::FRQ_COUNCIL6.parse::<AccountId>().unwrap().into(),
-					// 5CXnMFFgruHxAFtvCogwm8TFygWg1MWd9KhMnfEPbRdCpf74
-					public_testnet_keys::FRQ_COUNCIL7.parse::<AccountId>().unwrap().into(),
-					// 5CWzQaAJFqYoF1bZWsvEnzMQDGokk2csTFBwfPpo1oNfBGkn
-					public_testnet_keys::FRQ_COUNCIL8.parse::<AccountId>().unwrap().into(),
-					// 5HmcreGLq25iA7fiyb6An4YVWC3k1Cq8SQgYn2Qpeepq24nV
-					public_testnet_keys::FRQ_COUNCIL9.parse::<AccountId>().unwrap().into(),
-					// 5CiJXZxsko8YZGhTZAwrhREUzjCVEGwNE7Fgrf1twbt8WsmY
-					public_testnet_keys::FRQ_COUNCIL10.parse::<AccountId>().unwrap().into(),
-				],
-				vec![
-					public_testnet_keys::FRQ_COUNCIL1.parse::<AccountId>().unwrap().into(),
-					public_testnet_keys::FRQ_COUNCIL2.parse::<AccountId>().unwrap().into(),
-					public_testnet_keys::FRQ_COUNCIL3.parse::<AccountId>().unwrap().into(),
-					public_testnet_keys::FRQ_COUNCIL4.parse::<AccountId>().unwrap().into(),
-					public_testnet_keys::FRQ_COUNCIL5.parse::<AccountId>().unwrap().into(),
-					public_testnet_keys::FRQ_COUNCIL6.parse::<AccountId>().unwrap().into(),
-					public_testnet_keys::FRQ_COUNCIL7.parse::<AccountId>().unwrap().into(),
-					public_testnet_keys::FRQ_COUNCIL8.parse::<AccountId>().unwrap().into(),
-					public_testnet_keys::FRQ_COUNCIL9.parse::<AccountId>().unwrap().into(),
-					public_testnet_keys::FRQ_COUNCIL10.parse::<AccountId>().unwrap().into(),
-				],
-				vec![
-					public_testnet_keys::TECH_COUNCIL1.parse::<AccountId>().unwrap().into(),
-					public_testnet_keys::TECH_COUNCIL2.parse::<AccountId>().unwrap().into(),
-					public_testnet_keys::TECH_COUNCIL3.parse::<AccountId>().unwrap().into(),
-				],
-				para_id,
-			)
-		},
-		// Bootnodes
-		Vec::new(),
-		// Telemetry
-		None,
-		// Protocol ID
-		Some("frequency-rococo"),
-		// Fork ID
-		None,
-		// Properties
-		Some(properties),
-		// Extensions
-		Extensions {
-			relay_chain: "rococo".into(), // You MUST set this to the correct network!
-			para_id: para_id.into(),
-		},
-	)
+	load_frequency_rococo_spec().unwrap()
+//	let properties = get_properties(FREQUENCY_ROCOCO_TOKEN, 8, 42);
+//	let para_id: ParaId = 4044.into();
+//	ChainSpec::from_genesis(
+//		// Name
+//		"Frequency Rococo",
+//		// ID
+//		"frequency-rococo",
+//		ChainType::Live,
+//		move || {
+//			frequency_rococo_genesis(
+//				// initial collators.
+//				vec![
+//					(
+//						// 5DaTHXTHUckbmLK2mUABQDrbwYKEaCLjKpTRB4VHYEbvF9fp
+//						public_testnet_keys::COLLATOR_1_SR25519
+//							.parse::<AccountId>()
+//							.unwrap()
+//							.into(),
+//						AuraId::from_slice(
+//							&<[u8; 32]>::from_hex(
+//								public_testnet_keys::COLLATOR_1_SR25519.strip_prefix("0x").unwrap(),
+//							)
+//							.unwrap(),
+//						)
+//						.unwrap(),
+//					),
+//					(
+//						// 5E46myWYmywo8cF9Wk77NZM7TqLqVG7uMYjGuyyfrve9waa9
+//						public_testnet_keys::COLLATOR_2_SR25519
+//							.parse::<AccountId>()
+//							.unwrap()
+//							.into(),
+//						AuraId::from_slice(
+//							&<[u8; 32]>::from_hex(
+//								public_testnet_keys::COLLATOR_2_SR25519.strip_prefix("0x").unwrap(),
+//							)
+//							.unwrap(),
+//						)
+//						.unwrap(),
+//					),
+//				],
+//				Some(public_testnet_keys::ROCOCO_FRQ_SUDO.parse::<AccountId>().unwrap().into()),
+//				// endowed accounts.
+//				vec![
+//					// 5FnjAszaYTVfEFDooTN37DCBinQyw4dvsZDr7PbYovmAhEqn
+//					public_testnet_keys::ROCOCO_FRQ_SUDO.parse::<AccountId>().unwrap().into(),
+//					// 5E46myWYmywo8cF9Wk77NZM7TqLqVG7uMYjGuyyfrve9waa9
+//					public_testnet_keys::TECH_COUNCIL1.parse::<AccountId>().unwrap().into(),
+//					// 5Dw9hdb8Wy3cMFf1ZpQh5HuK2GvMNMcxfka4JsM2GRpjqHSA
+//					public_testnet_keys::TECH_COUNCIL2.parse::<AccountId>().unwrap().into(),
+//					// 5ETnrcfDwCTKZt5pLoKcLNbbwUcddkDAxEjtcgibAtkDhBBe
+//					public_testnet_keys::TECH_COUNCIL3.parse::<AccountId>().unwrap().into(),
+//					// 5FpQTxEFHAdF2hpkA89qKenSjGQBAHi8uCo8F6fJ5RxnR1sn
+//					public_testnet_keys::FRQ_COUNCIL1.parse::<AccountId>().unwrap().into(),
+//					// 5DwKn9yg7Kqa71qTaZVfoigwtzyPgBp23wzJKmGiUr8S3j7A
+//					public_testnet_keys::FRQ_COUNCIL2.parse::<AccountId>().unwrap().into(),
+//					// 5EyLduUEpNfUox5HuogrhbKugAdHnsLHrysKSWL6u4TQFAra
+//					public_testnet_keys::FRQ_COUNCIL3.parse::<AccountId>().unwrap().into(),
+//					// 5FHFyMYQH39mq3FA2a5ZcDe275K7RZs3zi76gsQb2TE1PF7i
+//					public_testnet_keys::FRQ_COUNCIL4.parse::<AccountId>().unwrap().into(),
+//					// 5HYKfXdGi2GUupHksmQLtHoWtwH3wPkJRSr3RpbKivTovpqX
+//					public_testnet_keys::FRQ_COUNCIL5.parse::<AccountId>().unwrap().into(),
+//					// 5HKXEFkNLeutZ2yZ9mbG2v5AbTDMXhza9VEfeDCiJGGBUyi3
+//					public_testnet_keys::FRQ_COUNCIL6.parse::<AccountId>().unwrap().into(),
+//					// 5CXnMFFgruHxAFtvCogwm8TFygWg1MWd9KhMnfEPbRdCpf74
+//					public_testnet_keys::FRQ_COUNCIL7.parse::<AccountId>().unwrap().into(),
+//					// 5CWzQaAJFqYoF1bZWsvEnzMQDGokk2csTFBwfPpo1oNfBGkn
+//					public_testnet_keys::FRQ_COUNCIL8.parse::<AccountId>().unwrap().into(),
+//					// 5HmcreGLq25iA7fiyb6An4YVWC3k1Cq8SQgYn2Qpeepq24nV
+//					public_testnet_keys::FRQ_COUNCIL9.parse::<AccountId>().unwrap().into(),
+//					// 5CiJXZxsko8YZGhTZAwrhREUzjCVEGwNE7Fgrf1twbt8WsmY
+//					public_testnet_keys::FRQ_COUNCIL10.parse::<AccountId>().unwrap().into(),
+//				],
+//				vec![
+//					public_testnet_keys::FRQ_COUNCIL1.parse::<AccountId>().unwrap().into(),
+//					public_testnet_keys::FRQ_COUNCIL2.parse::<AccountId>().unwrap().into(),
+//					public_testnet_keys::FRQ_COUNCIL3.parse::<AccountId>().unwrap().into(),
+//					public_testnet_keys::FRQ_COUNCIL4.parse::<AccountId>().unwrap().into(),
+//					public_testnet_keys::FRQ_COUNCIL5.parse::<AccountId>().unwrap().into(),
+//					public_testnet_keys::FRQ_COUNCIL6.parse::<AccountId>().unwrap().into(),
+//					public_testnet_keys::FRQ_COUNCIL7.parse::<AccountId>().unwrap().into(),
+//					public_testnet_keys::FRQ_COUNCIL8.parse::<AccountId>().unwrap().into(),
+//					public_testnet_keys::FRQ_COUNCIL9.parse::<AccountId>().unwrap().into(),
+//					public_testnet_keys::FRQ_COUNCIL10.parse::<AccountId>().unwrap().into(),
+//				],
+//				vec![
+//					public_testnet_keys::TECH_COUNCIL1.parse::<AccountId>().unwrap().into(),
+//					public_testnet_keys::TECH_COUNCIL2.parse::<AccountId>().unwrap().into(),
+//					public_testnet_keys::TECH_COUNCIL3.parse::<AccountId>().unwrap().into(),
+//				],
+//				para_id,
+//			)
+//		},
+//		// Bootnodes
+//		Vec::new(),
+//		// Telemetry
+//		None,
+//		// Protocol ID
+//		Some("frequency-rococo"),
+//		// Fork ID
+//		None,
+//		// Properties
+//		Some(properties),
+//		// Extensions
+//		Extensions {
+//			relay_chain: "rococo".into(), // You MUST set this to the correct network!
+//			para_id: para_id.into(),
+//		},
+//	)
 }
 
 fn frequency_rococo_genesis(
