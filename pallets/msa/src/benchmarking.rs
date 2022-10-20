@@ -145,8 +145,7 @@ benchmarks! {
 
 	}: _(RawOrigin::Signed(caller))
 
-	add_provider_to_msa {
-
+	grant_delegation {
 		let caller: T::AccountId = whitelisted_caller();
 		let (payload, signature, key) = create_payload_and_signature::<T>();
 

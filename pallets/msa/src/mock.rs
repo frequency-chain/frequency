@@ -188,7 +188,7 @@ pub fn test_create_delegator_msa_with_provider() -> (u64, Public) {
 	// Register provider
 	assert_ok!(Msa::register_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
-	assert_ok!(Msa::add_provider_to_msa(
+	assert_ok!(Msa::grant_delegation(
 		Origin::signed(provider_account.into()),
 		delegator_account.into(),
 		delegator_signature,
