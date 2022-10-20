@@ -2019,33 +2019,6 @@ fn register_signature_and_validate(
 }
 
 #[test]
-pub fn stores_signature_in_expected_bucket() {
-	struct TestCase {
-		current_block: BlockNumber,
-		expected_bucket_number: u64,
-	}
-
-	new_test_ext().execute_with(|| {
-		let test_cases: Vec<TestCase> = vec![
-			TestCase { current_block: 999_899, expected_bucket_number: 0 }, // mortality = 1_000_010
-			TestCase { current_block: 4_294_965_098, expected_bucket_number: 0 }, // mortality = 4_294_965_209
-			TestCase { current_block: 0, expected_bucket_number: 0 },       // mortality = 111
-			TestCase { current_block: 129, expected_bucket_number: 1 },     // mortality = 240
-			TestCase { current_block: 640, expected_bucket_number: 1 },     // mortality = 751
-			TestCase { current_block: 128_999_799, expected_bucket_number: 1 }, // mortality = 128_999_910
-		];
-		for tc in test_cases {
-			// mortality block is current_block + 111 in this function.
-			register_signature_and_validate(
-				tc.current_block,
-				tc.expected_bucket_number,
-				&generate_test_signature(),
-			);
-		}
-	})
-}
-
-#[test]
 // for illustration purposes
 pub fn bucket_for() {
 	struct TestCase {
@@ -2095,32 +2068,6 @@ pub fn stores_signature_in_expected_bucket() {
 			);
 		}
 	})
-}
-
-#[test]
-// for illustration purposes
-pub fn bucket_for() {
-	struct TestCase {
-		block: u64,
-		expected_bucket: u64,
-	}
-	new_test_ext().execute_with(|| {
-		let test_cases: Vec<TestCase> = vec![
-			TestCase { block: 1_010, expected_bucket: 1 },
-			TestCase { block: 1_110, expected_bucket: 1 },
-			TestCase { block: 1_201, expected_bucket: 0 },
-			TestCase { block: 1_301, expected_bucket: 0 },
-			TestCase { block: 1_401, expected_bucket: 1 },
-			TestCase { block: 1_501, expected_bucket: 1 },
-			TestCase { block: 1_601, expected_bucket: 0 },
-			TestCase { block: 1_701, expected_bucket: 0 },
-			TestCase { block: 1_801, expected_bucket: 1 },
-			TestCase { block: 1_901, expected_bucket: 1 },
-		];
-		for tc in test_cases {
-			assert_eq!(tc.expected_bucket, Msa::bucket_for(tc.block));
-		}
-	});
 }
 
 #[test]
