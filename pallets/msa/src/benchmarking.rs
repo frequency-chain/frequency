@@ -4,7 +4,6 @@ use super::*;
 
 #[allow(unused)]
 use crate::Pallet as Msa;
-
 use frame_benchmarking::{account, benchmarks, whitelisted_caller};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
@@ -95,6 +94,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(caller))
 
 	create_sponsored_account_with_delegation {
+
 		let caller: T::AccountId = whitelisted_caller();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
 		assert_ok!(Msa::<T>::register_provider(RawOrigin::Signed(caller.clone()).into(),Vec::from("Foo")));
@@ -117,22 +117,24 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(provider), delegator_msa_id)
 
 	add_key_to_msa {
-		let caller: T::AccountId = whitelisted_caller();
-		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
-		let (add_provider_payload, signature, key) = add_key_payload_and_signature::<T>();
 
-	}: _ (RawOrigin::Signed(caller), key, signature, add_provider_payload)
+		let (add_provider_payload, signature, key) = add_key_payload_and_signature::<T>();
+		assert_ok!(Msa::<T>::create(RawOrigin::Signed(key.clone()).into()));
+		let (add_provider_payload, signature_new, key_new) = add_key_payload_and_signature::<T>();
+
+	}: _ (RawOrigin::Signed(key.clone()), key.clone(), signature, key_new, signature_new, add_provider_payload)
 
 	delete_msa_key {
-		let caller: T::AccountId = whitelisted_caller();
+
+		let (add_provider_payload, signature, caller) = add_key_payload_and_signature::<T>();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
+		let (add_provider_payload, signature_new, key_new) = add_key_payload_and_signature::<T>();
+		assert_ok!(Msa::<T>::add_key_to_msa(RawOrigin::Signed(caller.clone()).into(), caller.clone(), signature, key_new.clone(), signature_new, add_provider_payload));
 
-		let (add_provider_payload, signature, key) = add_key_payload_and_signature::<T>();
-		assert_ok!(Msa::<T>::add_key_to_msa(RawOrigin::Signed(caller.clone()).into(), key.clone(), signature, add_provider_payload));
-
-	}: _(RawOrigin::Signed(caller), key)
+	}: _(RawOrigin::Signed(caller), key_new)
 
 	retire_msa {
+
 		let caller: T::AccountId = whitelisted_caller();
 
 		// Create a MSA account
@@ -144,6 +146,7 @@ benchmarks! {
 	}: _(RawOrigin::Signed(caller))
 
 	add_provider_to_msa {
+
 		let caller: T::AccountId = whitelisted_caller();
 		let (payload, signature, key) = create_payload_and_signature::<T>();
 
@@ -154,6 +157,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(caller), key, signature, payload)
 
 	revoke_msa_delegation_by_delegator {
+
 		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
 		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
 		add_delegation::<T>(Delegator(delegator_msa_id), Provider(provider_msa_id.clone()));
@@ -162,6 +166,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(delegator), provider_msa_id)
 
 	register_provider {
+
 		let (provider, _provider_msa_id) = create_account_with_msa_id::<T>(1);
 	}: _ (RawOrigin::Signed(provider), Vec::from("Foo"))
 
