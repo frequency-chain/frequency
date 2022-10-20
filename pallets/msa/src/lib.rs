@@ -783,12 +783,11 @@ impl<T: Config> Pallet<T> {
 		signer_signature: Vec<(MultiSignature, T::AccountId)>,
 		payload: Vec<u8>,
 	) -> DispatchResult {
+		let wrapped_payload = wrap_binary_data(payload.clone());
 		for (signature, signer) in signer_signature {
 			let key = T::ConvertIntoAccountId32::convert(signer);
-			let wrapped_payload = wrap_binary_data(payload.clone());
 			ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
 		}
-
 		Ok(())
 	}
 
