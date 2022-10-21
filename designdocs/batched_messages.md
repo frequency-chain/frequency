@@ -181,8 +181,8 @@ parameter also serves as an on-chain declaration that not only allows consumers
 of batches to quickly discover if a batch announcer was honest, but the file
 requestor can know in advance when to stop requesting data.
 
-#### Changes to `get_messages_by_schema`
-The `MessagesPallet::get_messages_by_schema` RPC returns a paginated
+#### Changes to `get_messages_by_schema_id`
+The `MessagesPallet::get_messages_by_schema_id` RPC returns a paginated
 `MessageResponse`. It is possible that this document will change the structure
 of the `MessageResponse` to be more like the following:
 
