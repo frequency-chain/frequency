@@ -14,7 +14,7 @@ use crate::{
 };
 
 use common_primitives::{
-	msa::{Delegator, MessageSourceId, Provider, ProviderInfo, ProviderMetadata},
+	msa::{Delegator, MessageSourceId, Provider, ProviderInfo, ProviderRegistryEntry},
 	node::BlockNumber,
 	schema::SchemaId,
 	utils::wrap_binary_data,
@@ -2034,7 +2034,7 @@ pub fn is_registered_provider_is_true() {
 		let provider = Provider(1);
 		let provider_name = Vec::from("frequency".as_bytes()).try_into().unwrap();
 
-		let provider_meta = ProviderMetadata { provider_name };
+		let provider_meta = ProviderRegistryEntry { provider_name };
 		ProviderRegistry::<Test>::insert(provider, provider_meta);
 
 		assert!(Msa::is_registered_provider(provider.into()));
