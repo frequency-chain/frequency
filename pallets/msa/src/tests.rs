@@ -3,7 +3,7 @@ use frame_support::{
 	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 	BoundedBTreeMap,
 };
-use sp_core::{crypto::AccountId32, sr25519, Encode, Pair, H256};
+use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::{traits::SignedExtension, MultiSignature};
 
 use crate::{
