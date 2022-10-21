@@ -9,7 +9,7 @@ use crate::{
 	ensure,
 	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
-	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, CurrentMsaIdentifierMaximum,
+	CheckFreeExtrinsicUse, Config, CurrentMsaIdentifierMaximum, DispatchResult, Error, Event,
 	PayloadSignatureRegistry, ProviderRegistry,
 };
 

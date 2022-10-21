@@ -700,7 +700,9 @@ impl<T: Config> Pallet<T> {
 
 	/// Generate the next MSA Id
 	pub fn get_next_msa_id() -> Result<MessageSourceId, DispatchError> {
-		let next = Self::get_current_msa_identifier_maximum().checked_add(1).ok_or(Error::<T>::MsaIdOverflow)?;
+		let next = Self::get_current_msa_identifier_maximum()
+			.checked_add(1)
+			.ok_or(Error::<T>::MsaIdOverflow)?;
 
 		Ok(next)
 	}
