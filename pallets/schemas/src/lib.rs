@@ -267,10 +267,7 @@ pub mod pallet {
 			model_type: ModelType,
 			payload_location: PayloadLocation,
 		) -> Result<SchemaId, DispatchError> {
-			let cur_count = Self::get_current_schema_identifier_maximum();
-			ensure!(cur_count < T::MaxSchemaRegistrations::get(), Error::<T>::TooManySchemas);
-			let schema_id = cur_count.checked_add(1).ok_or(Error::<T>::SchemaCountOverflow)?;
-
+			let schema_id = Self::get_next_schema_id()?;
 			let schema = Schema { model_type, model, payload_location };
 			<CurrentSchemaIdentifierMaximum<T>>::set(schema_id);
 			<Schemas<T>>::insert(schema_id, schema);
@@ -307,6 +304,15 @@ pub mod pallet {
 					.map_err(|_| Error::<T>::InvalidSchema)?,
 			};
 			Ok(())
+		}
+
+		/// Get the next available schema id
+		fn get_next_schema_id() -> Result<SchemaId, DispatchError> {
+			let next = Self::get_current_schema_identifier_maximum()
+				.checked_add(1)
+				.ok_or(Error::<T>::SchemaCountOverflow)?;
+
+			Ok(next)
 		}
 	}
 }
