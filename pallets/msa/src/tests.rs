@@ -237,7 +237,7 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 
 		let keys_count = Msa::get_public_key_count_by_msa_id(new_msa_id);
 		assert_eq!(keys_count, 2);
-		System::assert_last_event(Event::KeyAdded { msa_id: 1, key: new_key.into() }.into());
+		System::assert_last_event(Event::PublicKeyAdded { msa_id: 1, key: new_key.into() }.into());
 	});
 }
 
