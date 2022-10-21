@@ -64,7 +64,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas Schemas (r:1 w:0)
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	// Storage: Msa ProviderInfoOf (r:1 w:0)
+	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add_onchain_message(n: u32, m: u32, ) -> Weight {
 		Weight::from_ref_time(3_065_000 as u64)
@@ -104,7 +104,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 impl WeightInfo for () {
 	// Storage: Schemas Schemas (r:1 w:0)
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	// Storage: Msa ProviderInfoOf (r:1 w:0)
+	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add_onchain_message(n: u32, m: u32, ) -> Weight {
 		Weight::from_ref_time(3_065_000 as u64)

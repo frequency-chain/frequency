@@ -14,7 +14,7 @@ use crate::{
 };
 
 use common_primitives::{
-	msa::{Delegator, MessageSourceId, Provider, ProviderInfo, ProviderRegistryEntry},
+	msa::{Delegation, Delegator, MessageSourceId, Provider, ProviderRegistryEntry},
 	node::BlockNumber,
 	schema::SchemaId,
 	utils::wrap_binary_data,
@@ -546,8 +546,8 @@ pub fn add_provider_to_msa_is_success() {
 		let delegator = Delegator(delegator_msa);
 
 		assert_eq!(
-			Msa::get_provider_info(delegator, provider),
-			Some(ProviderInfo { expired: 0, schemas: OrderedSet::new() })
+			Msa::get_delegation(delegator, provider),
+			Some(Delegation { expired: 0, schemas: OrderedSet::new() })
 		);
 
 		System::assert_last_event(
@@ -738,7 +738,7 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		let key_info = Msa::get_msa_by_public_key(&AccountId32::new(delegator_account.0));
 		assert_eq!(key_info.unwrap(), 2);
 
-		let provider_info = Msa::get_provider_info(Delegator(2), Provider(1));
+		let provider_info = Msa::get_delegation(Delegator(2), Provider(1));
 		assert_eq!(provider_info.is_some(), true);
 
 		let events_occured = System::events();
@@ -1011,8 +1011,8 @@ pub fn revoke_provider_is_successful() {
 		assert_ok!(Msa::revoke_provider(provider, delegator));
 
 		assert_eq!(
-			Msa::get_provider_info(delegator, provider).unwrap(),
-			ProviderInfo { expired: 1, schemas: OrderedSet::new() },
+			Msa::get_delegation(delegator, provider).unwrap(),
+			Delegation { expired: 1, schemas: OrderedSet::new() },
 		);
 	});
 }
@@ -1190,8 +1190,8 @@ pub fn revoke_delegation_by_provider_happy_path() {
 		assert_ok!(Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64));
 
 		// 6. verify that the provider is revoked
-		let provider_info = Msa::get_provider_info(Delegator(2), Provider(1));
-		assert_eq!(provider_info, Some(ProviderInfo { expired: 26, schemas: OrderedSet::new() }));
+		let provider_info = Msa::get_delegation(Delegator(2), Provider(1));
+		assert_eq!(provider_info, Some(Delegation { expired: 26, schemas: OrderedSet::new() }));
 
 		// 7. verify the event
 		System::assert_last_event(
