@@ -26,7 +26,7 @@ pub trait MsaApi<BlockHash, AccountId> {
 		block_number: Option<BlockNumber>,
 	) -> RpcResult<Vec<(MessageSourceId, bool)>>;
 
-	#[method(name = "msa_grantedSchemaIds")]
+	#[method(name = "msa_grantedSchemaIdsByMsaId")]
 	fn get_granted_schemas(
 		&self,
 		delegator_msa_id: MessageSourceId,
