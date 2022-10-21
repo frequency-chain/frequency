@@ -994,7 +994,7 @@ impl<T: Config> Pallet<T> {
 	/// # Errors
 	/// * [`Error::DelegationNotFound`]
 	/// * [`Error::SchemaNotGranted`]
-	pub fn get_granted_schemas(
+	pub fn get_granted_schemas_by_msa_id(
 		delegator: Delegator,
 		provider: Provider,
 	) -> Result<Option<Vec<SchemaId>>, DispatchError> {

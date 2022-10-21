@@ -1659,7 +1659,7 @@ pub fn error_not_delegated_rpc() {
 		let provider = Provider(1);
 		let delegator = Delegator(2);
 		assert_err!(
-			Msa::get_granted_schemas(delegator, provider),
+			Msa::get_granted_schemas_by_msa_id(delegator, provider),
 			Error::<Test>::DelegationNotFound
 		);
 	})
@@ -1671,7 +1671,10 @@ pub fn error_schema_not_granted_rpc() {
 		let provider = Provider(1);
 		let delegator = Delegator(2);
 		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
-		assert_err!(Msa::get_granted_schemas(delegator, provider), Error::<Test>::SchemaNotGranted);
+		assert_err!(
+			Msa::get_granted_schemas_by_msa_id(delegator, provider),
+			Error::<Test>::SchemaNotGranted
+		);
 	})
 }
 
@@ -1684,7 +1687,7 @@ pub fn schema_granted_success_rpc() {
 		let delegator = Delegator(2);
 		let schema_grants = vec![1, 2];
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
-		let schemas_granted = Msa::get_granted_schemas(delegator, provider);
+		let schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, provider);
 		let expected_schemas_granted = vec![1, 2];
 		let output_schemas: Vec<SchemaId> = schemas_granted.unwrap().unwrap();
 		assert_eq!(output_schemas, expected_schemas_granted);
