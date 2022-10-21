@@ -337,7 +337,6 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 		let signature_owner: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
 		let signature_new_key: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
-<<<<<<< HEAD
 
 		// act
 		assert_ok!(Msa::add_key_to_msa(
@@ -356,7 +355,6 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 		// assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id}), true}
 
 		let keys_count = Msa::get_public_key_count_by_msa_id(new_msa_id);
-<<<<<<< HEAD
 		assert_eq!(keys_count, 2);
 		System::assert_last_event(Event::KeyAdded { msa_id: 1, key: new_key.into() }.into());
 	});
@@ -377,8 +375,6 @@ fn add_key_with_valid_request_should_store_value_and_event_using_mock_create_acc
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
-=======
->>>>>>> 1d6ec04ad4f8b0b8c534dc64705f2b83eb2866ee
 
 		// act
 		assert_ok!(Msa::add_key_to_msa(
@@ -396,13 +392,7 @@ fn add_key_with_valid_request_should_store_value_and_event_using_mock_create_acc
 		// assert_eq!(keys.len(), 2);
 		// assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id}), true}
 
-<<<<<<< HEAD
-		let keys_count = Msa::get_msa_key_count(new_msa_id);
-=======
->>>>>>> 1d6ec04ad4f8b0b8c534dc64705f2b83eb2866ee
-=======
 		let keys_count = Msa::get_public_key_count_by_msa_id(new_msa_id);
->>>>>>> 1d6ec04ad4f8b0b8c534dc64705f2b83eb2866ee
 		assert_eq!(keys_count, 2);
 		System::assert_last_event(Event::PublicKeyAdded { msa_id: 1, key: new_key.into() }.into());
 	});
@@ -428,7 +418,6 @@ fn add_key_with_expired_proof_fails() {
 
 		System::set_block_number(2);
 
-<<<<<<< HEAD
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
 
 		assert_noop!(
@@ -458,8 +447,6 @@ fn add_key_with_expired_proof_fails_using_mock_create_account() {
 		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 1 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
-=======
->>>>>>> 1d6ec04ad4f8b0b8c534dc64705f2b83eb2866ee
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
 
 		assert_noop!(
@@ -491,7 +478,6 @@ fn add_key_with_proof_too_far_into_future_fails() {
 
 		// The current block is 1, therefore setting the proof expiration to  + 1
 		// should cause the extrinsic to fail because the proof is only valid for
-<<<<<<< HEAD
 		// more blocks.
 		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 202 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
@@ -521,8 +507,6 @@ fn add_key_with_proof_too_far_into_future_fails_using_mock_create_account() {
 
 		// The current block is 1, therefore setting the proof expiration to EXPIRATION_BLOCK_VALIDITY_GAP + 1
 		// shoud cause the extrinsic to fail because the proof is only valid for EXPIRATION_BLOCK_VALIDITY_GAP
-=======
->>>>>>> 1d6ec04ad4f8b0b8c534dc64705f2b83eb2866ee
 		// more blocks.
 		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 202 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
@@ -1869,14 +1853,18 @@ pub fn error_exceeding_max_schema_grants() {
 }
 
 #[test]
-pub fn error_exceeding_max_schema_grants_table() {
+pub fn error_exceeding_max_schema_under_minimum_schema_grants_table() {
+	struct TestCase<T> {
+		schema: Vec<u8>,
+		expected: T,
+	}
 	new_test_ext().execute_with(|| {
 		let provider = Provider(1);
 		let delegator = Delegator(2);
 		let test_cases: [TestCase<Error<Test>>; 3] = [
 			TestCase { schema: vec![], expected: Error::<Test>::SchemaNotGranted },
-			TestCase { schema: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], Some(Error::Test<ExceedsMaxSchemaGrants) },
-			TestCase { schema: vec![1, 2, 3, 4, 5], Error: Some(Error::<Test>::ExceedsMaxSchemaGrants) },
+			TestCase { schema: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], expected: Error::Test<ExceedsMaxSchemaGrants },
+			TestCase { schema: vec![1, 2, 3, 4, 5], expected: Error::<Test>::ExceedsMaxSchemaGrants },
 		];
 		for tc in test_cases {
 			let err = Msa::add_provider(provider, delegator, tc.schema).unwrap_err();
