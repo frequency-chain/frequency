@@ -43,7 +43,7 @@
 //! - `create_sponsored_account_with_delegation` - `Origin` creates an account for a given `AccountId` and sets themselves as a `Provider`.
 //! - `revoke_delegation_by_provider` - `Provider` MSA terminates a Delegation with Delegator MSA by expiring it.
 //! - `revoke_msa_delegation_by_delegator` - Delegator MSA terminates a Delegation with the `Provider` MSA by expiring it.
-//! - `delete_msa_key` - Removes the given key by from storage against respective MSA.
+//! - `delete_msa_public_key` - Removes the given key by from storage against respective MSA.
 //!
 //! ### Assumptions
 //!
@@ -579,8 +579,8 @@ pub mod pallet {
 		/// ### Remarks
 		/// - Removal of key deletes the association of the key with the MSA.
 		/// - The key can be re-added to same or another MSA if needed.
-		#[pallet::weight((T::WeightInfo::delete_msa_key(), DispatchClass::Normal, Pays::No))]
-		pub fn delete_msa_key(origin: OriginFor<T>, key: T::AccountId) -> DispatchResult {
+		#[pallet::weight((T::WeightInfo::delete_msa_public_key(), DispatchClass::Normal, Pays::No))]
+		pub fn delete_msa_public_key(origin: OriginFor<T>, key: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
 			// The calling account can't remove itself
@@ -1310,7 +1310,7 @@ where
 		match call.is_sub_type() {
 			Some(Call::revoke_msa_delegation_by_delegator { provider_msa_id, .. }) =>
 				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id),
-			Some(Call::delete_msa_key { key, .. }) =>
+			Some(Call::delete_msa_public_key { key, .. }) =>
 				CheckFreeExtrinsicUse::<T>::validate_key_revocation(who, key),
 			_ => return Ok(Default::default()),
 		}

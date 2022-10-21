@@ -124,7 +124,7 @@ benchmarks! {
 
 	}: _ (RawOrigin::Signed(key.clone()), key.clone(), signature, key_new, signature_new, add_provider_payload)
 
-	delete_msa_key {
+	delete_msa_public_key {
 
 		let (add_provider_payload, signature, caller) = add_key_payload_and_signature::<T>();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
