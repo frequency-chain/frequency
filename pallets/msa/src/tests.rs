@@ -2246,7 +2246,7 @@ pub fn add_msa_key_replay_fails() {
 				new_key_pair.sign(&encode_data_new_key_data).into();
 			run_to_block(tc.run_to);
 
-			let add_key_response: bool = Msa::add_key_to_msa(
+			let add_key_response: bool = Msa::add_public_key_to_msa(
 				Origin::signed(account_provider.into()),
 				account_provider.into(),
 				signature_owner.clone(),
