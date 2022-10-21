@@ -226,7 +226,7 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	// Storage: Msa ProviderRegistry (r:1 w:1)
+	// Storage: Msa ProviderToRegistryEntry (r:1 w:1)
 	fn register_provider() -> Weight {
 		Weight::from_ref_time(13_000_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
