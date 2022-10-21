@@ -17,7 +17,7 @@ use crate::{
 use common_primitives::{
 	msa::{Delegation, Delegator, MessageSourceId, Provider, ProviderRegistryEntry},
 	node::BlockNumber,
-	schema::SchemaId,
+	schema::{SchemaId, SchemaValidator},
 	utils::wrap_binary_data,
 };
 use common_runtime::extensions::check_nonce::CheckNonce;
@@ -1570,10 +1570,14 @@ fn create_provider_duplicate() {
 	})
 }
 
+fn set_schema_count<T: Config>(n: u16) {
+	<T>::SchemaValidator::set_schema_count(n);
+}
+
 #[test]
 pub fn valid_schema_grant() {
 	new_test_ext().execute_with(|| {
-		Schemas::set_schema_count(2);
+		set_schema_count::<Test>(2);
 
 		let provider = Provider(1);
 		let delegator = Delegator(2);
@@ -1589,7 +1593,7 @@ pub fn valid_schema_grant() {
 #[test]
 pub fn error_invalid_schema_id() {
 	new_test_ext().execute_with(|| {
-		Schemas::set_schema_count(12);
+		set_schema_count::<Test>(12);
 
 		let provider = Provider(1);
 		let delegator = Delegator(2);
@@ -1604,7 +1608,7 @@ pub fn error_invalid_schema_id() {
 #[test]
 pub fn error_exceeding_max_schema_grants() {
 	new_test_ext().execute_with(|| {
-		Schemas::set_schema_count(16);
+		set_schema_count::<Test>(16);
 
 		let provider = Provider(1);
 		let delegator = Delegator(2);
@@ -1619,7 +1623,7 @@ pub fn error_exceeding_max_schema_grants() {
 #[test]
 pub fn error_schema_not_granted() {
 	new_test_ext().execute_with(|| {
-		Schemas::set_schema_count(2);
+		set_schema_count::<Test>(2);
 
 		let provider = Provider(1);
 		let delegator = Delegator(2);
@@ -1663,7 +1667,7 @@ pub fn error_schema_not_granted_rpc() {
 #[test]
 pub fn schema_granted_success_rpc() {
 	new_test_ext().execute_with(|| {
-		Schemas::set_schema_count(2);
+		set_schema_count::<Test>(2);
 
 		let provider = Provider(1);
 		let delegator = Delegator(2);
@@ -2002,12 +2006,11 @@ pub fn ensure_all_schema_ids_are_valid_errors() {
 		);
 	})
 }
-
 #[test]
 pub fn ensure_all_schema_ids_are_valid_success() {
 	new_test_ext().execute_with(|| {
 		let schema_ids = vec![1];
-		Schemas::set_schema_count(1);
+		set_schema_count::<Test>(1);
 
 		assert_ok!(Msa::ensure_all_schema_ids_are_valid(&schema_ids));
 	});
@@ -2024,12 +2027,6 @@ pub fn is_registered_provider_is_true() {
 
 		assert!(Msa::is_registered_provider(provider.into()));
 	});
-}
-
-fn generate_test_signature() -> MultiSignature {
-	let (key_pair, _) = sr25519::Pair::generate();
-	let fake_data = H256::random();
-	key_pair.sign(fake_data.as_bytes()).into()
 }
 
 fn register_signature_and_validate(

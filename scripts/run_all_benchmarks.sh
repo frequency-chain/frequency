@@ -19,7 +19,7 @@ function run_benchmark() {
   --chain="frequency" \
   --execution wasm \
   --wasm-execution compiled \
-  --steps 50 \
+  --steps 20 \
   --repeat 10 \
   --output=$2 \
   --template=$3

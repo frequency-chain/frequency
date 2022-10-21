@@ -89,6 +89,9 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod replay_tests;
+
 pub mod weights;
 
 pub use weights::*;
