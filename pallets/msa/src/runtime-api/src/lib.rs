@@ -18,6 +18,6 @@ sp_api::decl_runtime_apis! {
 
 		fn has_delegation(delegator: Delegator, provider: Provider, block_number: Option<BlockNumber>) -> bool;
 
-		fn get_granted_schemas(delegator: Delegator, provider: Provider) -> Result<Option<Vec<SchemaId>>, DispatchError>;
+		fn get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -> Result<Option<Vec<SchemaId>>, DispatchError>;
 	}
 }

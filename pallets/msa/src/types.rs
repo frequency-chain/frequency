@@ -32,7 +32,7 @@ pub struct AddProvider {
 	/// Schemas for which publishing grants are authorized.
 	/// This is private intended for internal use only.
 	pub schema_ids: Vec<SchemaId>,
-	/// The block number at which the proof for add_provider_to_msa expires.
+	/// The block number at which the proof for grant_delegation expires.
 	pub expiration: BlockNumber,
 }
 

@@ -50,7 +50,7 @@ Please note:
   for each type of error for ease of debugging.
 
 ### Types
-* `ProviderMetadata`
+* `ProviderRegistryEntry`
   * `name`: `Vec<u8>`
 
 #### Events
@@ -59,7 +59,7 @@ Please note:
   * `provider_msa_id`: `MsaId`
 
 #### Storage
-* `ProviderRegistry<T: Config>`: `StorageMap<MsaId, ProviderMetadata>`
+* `ProviderToRegistryEntry<T: Config>`: `StorageMap<MsaId, ProviderRegistryEntry>`
   * Stores registered providers and provides lookup functionality via `MsaId`.
     Existence in this storage structure implies that a provider's fee has been
     paid and their registration was otherwise successful.
@@ -70,7 +70,7 @@ Creates and posts a `ProviderRegistrationEvent`. The `MsaId`
 included in the registration must already exist.
 
 This extrinsic is responsible for storing the registered provider in the
-`ProviderRegistry`.
+`ProviderToRegistryEntry`.
 
 * **Parameters**
   * `origin`: `Origin`  required for all extrinsics, the caller/sender.
