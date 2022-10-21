@@ -63,12 +63,14 @@
 use codec::{Decode, Encode};
 use common_primitives::{
 	msa::{
-		Delegation, DelegationValidator, Delegator, MsaLookup, MsaValidator, OrderedSet, Provider,
+		Delegation, DelegationValidator, Delegator, MsaLookup, MsaValidator, Provider,
 		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
 	},
 	schema::{SchemaId, SchemaValidator},
 };
-use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
+use frame_support::{
+	dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo, BoundedBTreeMap,
+};
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -167,7 +169,7 @@ pub mod pallet {
 		Delegator,
 		Twox64Concat,
 		Provider,
-		Delegation<T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
+		Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
 		OptionQuery,
 	>;
 
@@ -740,11 +742,13 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Check that schema ids are all valid
-	pub fn ensure_all_schema_ids_are_valid(
-		schema_ids: BoundedVec<SchemaId, T::MaxSchemaGrantsPerDelegation>,
-	) -> DispatchResult {
-		let are_schemas_valid =
-			T::SchemaValidator::are_all_schema_ids_valid(schema_ids.into_inner());
+	pub fn ensure_all_schema_ids_are_valid(schema_ids: &Vec<SchemaId>) -> DispatchResult {
+		ensure!(
+			schema_ids.len() <= T::MaxSchemaGrantsPerDelegation::get() as usize,
+			Error::<T>::ExceedsMaxSchemaGrantsPerDelegation
+		);
+
+		let are_schemas_valid = T::SchemaValidator::are_all_schema_ids_valid(schema_ids);
 
 		ensure!(are_schemas_valid, Error::<T>::InvalidSchemaId);
 
@@ -807,23 +811,14 @@ impl<T: Config> Pallet<T> {
 		delegator: Delegator,
 		schemas: Vec<SchemaId>,
 	) -> DispatchResult {
-		let granted_schemas: BoundedVec<SchemaId, T::MaxSchemaGrantsPerDelegation> = schemas
-			.try_into()
-			.map_err(|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegation)?;
-
-		Self::ensure_all_schema_ids_are_valid(granted_schemas.clone())?;
+		let schema_permissions = Self::initialize_schema_permissions(schemas)?;
 
 		DelegatorAndProviderToDelegation::<T>::try_mutate(
 			delegator,
 			provider,
 			|maybe_info| -> DispatchResult {
 				ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
-				let info = Delegation {
-					expired: Default::default(),
-					schemas: OrderedSet::<SchemaId, T::MaxSchemaGrantsPerDelegation>::from(
-						granted_schemas,
-					),
-				};
+				let info = Delegation { revoked_at: Default::default(), schema_permissions };
 				*maybe_info = Some(info);
 
 				Ok(())
@@ -831,6 +826,30 @@ impl<T: Config> Pallet<T> {
 		)?;
 
 		Ok(())
+	}
+
+	/// Initializes the BoundedBTreeMap used to store schema permissions and validates schema ids.
+	pub fn initialize_schema_permissions(
+		schemas: Vec<SchemaId>,
+	) -> Result<
+		BoundedBTreeMap<SchemaId, Option<T::BlockNumber>, T::MaxSchemaGrantsPerDelegation>,
+		DispatchError,
+	> {
+		Self::ensure_all_schema_ids_are_valid(&schemas)?;
+
+		let mut schema_permissions_map = BoundedBTreeMap::<
+			SchemaId,
+			Option<T::BlockNumber>,
+			T::MaxSchemaGrantsPerDelegation,
+		>::new();
+
+		for schema_id in schemas.into_iter() {
+			schema_permissions_map
+				.try_insert(schema_id, Default::default())
+				.map_err(|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegation)?;
+		}
+
+		Ok(schema_permissions_map)
 	}
 
 	/// Check that the delegator has an active delegation to the provider
@@ -847,9 +866,10 @@ impl<T: Config> Pallet<T> {
 		provider: Provider,
 		delegator: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<Delegation<T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError> {
+	) -> Result<Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError>
+	{
 		let info =
-			Self::get_delegation_of(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
+			Self::get_delegation(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
 		let current_block = frame_system::Pallet::<T>::block_number();
 		let requested_block = match block_number {
 			Some(block_number) => {
@@ -858,10 +878,10 @@ impl<T: Config> Pallet<T> {
 			},
 			None => current_block,
 		};
-		if info.expired == T::BlockNumber::zero() {
+		if info.revoked_at == T::BlockNumber::zero() {
 			return Ok(info)
 		}
-		ensure!(info.expired >= requested_block, Error::<T>::DelegationExpired);
+		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationExpired);
 		Ok(info)
 	}
 
@@ -912,11 +932,14 @@ impl<T: Config> Pallet<T> {
 			|maybe_info| -> DispatchResult {
 				let mut info = maybe_info.take().ok_or(Error::<T>::DelegationNotFound)?;
 
-				ensure!(info.expired == T::BlockNumber::default(), Error::<T>::DelegationRevoked);
+				ensure!(
+					info.revoked_at == T::BlockNumber::default(),
+					Error::<T>::DelegationRevoked
+				);
 
 				let current_block = frame_system::Pallet::<T>::block_number();
 
-				info.expired = current_block;
+				info.revoked_at = current_block;
 
 				*maybe_info = Some(info);
 
@@ -993,7 +1016,10 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		let provider_info = Self::ensure_valid_delegation(provider, delegator, None)?;
 
-		ensure!(provider_info.schemas.0.contains(&schema_id), Error::<T>::SchemaNotGranted);
+		ensure!(
+			provider_info.schema_permissions.contains_key(&schema_id),
+			Error::<T>::SchemaNotGranted
+		);
 		Ok(())
 	}
 
@@ -1012,11 +1038,17 @@ impl<T: Config> Pallet<T> {
 	) -> Result<Option<Vec<SchemaId>>, DispatchError> {
 		let provider_info =
 			Self::get_delegation_of(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
-		let schemas = provider_info.schemas.0;
-		if schemas.is_empty() {
+
+		let schema_permissions = provider_info.schema_permissions;
+		if schema_permissions.is_empty() {
 			return Err(Error::<T>::SchemaNotGranted.into())
 		}
-		Ok(Some(schemas.into_inner()))
+
+		let mut schema_list = Vec::new();
+		for (key, _) in schema_permissions {
+			schema_list.push(key);
+		}
+		Ok(Some(schema_list))
 	}
 
 	/// Adds a signature to the PayloadSignatureRegistry based on a virtual "bucket" grouping.
@@ -1121,11 +1153,12 @@ impl<T: Config> MsaValidator for Pallet<T> {
 impl<T: Config> ProviderLookup for Pallet<T> {
 	type BlockNumber = T::BlockNumber;
 	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
+	type SchemaId = SchemaId;
 
 	fn get_delegation_of(
 		delegator: Delegator,
 		provider: Provider,
-	) -> Option<Delegation<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>> {
+	) -> Option<Delegation<SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>> {
 		Self::get_delegation(delegator, provider)
 	}
 }
@@ -1133,13 +1166,17 @@ impl<T: Config> ProviderLookup for Pallet<T> {
 impl<T: Config> DelegationValidator for Pallet<T> {
 	type BlockNumber = T::BlockNumber;
 	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
+	type SchemaId = SchemaId;
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_delegation(
 		provider: Provider,
 		delegation: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<Delegation<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError> {
+	) -> Result<
+		Delegation<SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
+		DispatchError,
+	> {
 		Self::ensure_valid_delegation(provider, delegation, block_number)
 	}
 
@@ -1155,15 +1192,32 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		provider: Provider,
 		delegation: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<Delegation<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError> {
+	) -> Result<
+		Delegation<Self::SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
+		DispatchError,
+	> {
 		let validation_check = Self::ensure_valid_delegation(provider, delegation, block_number);
 		if validation_check.is_err() {
 			// If the delegation does not exist, we return a ok
 			// This is only used for benchmarks, so it is safe to return a dummy account
 			// in case the delegation does not exist
-			return Ok(Delegation { schemas: OrderedSet::new(), expired: Default::default() })
+			return Ok(Delegation {
+				schema_permissions: BoundedBTreeMap::<
+					SchemaId,
+					Option<T::BlockNumber>,
+					T::MaxSchemaGrantsPerDelegation,
+				>::default(),
+				revoked_at: Default::default(),
+			})
 		}
-		Ok(Delegation { schemas: OrderedSet::new(), expired: Default::default() })
+		Ok(Delegation {
+			schema_permissions: BoundedBTreeMap::<
+				SchemaId,
+				Option<T::BlockNumber>,
+				T::MaxSchemaGrantsPerDelegation,
+			>::default(),
+			revoked_at: Default::default(),
+		})
 	}
 }
 

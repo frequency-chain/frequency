@@ -318,9 +318,9 @@ pub mod pallet {
 }
 
 impl<T: Config> SchemaValidator<SchemaId> for Pallet<T> {
-	fn are_all_schema_ids_valid(schema_ids: Vec<SchemaId>) -> bool {
+	fn are_all_schema_ids_valid(schema_ids: &Vec<SchemaId>) -> bool {
 		let latest_issue_schema_id = Self::get_current_schema_identifier_maximum();
-		schema_ids.into_iter().all(|id| id <= latest_issue_schema_id)
+		schema_ids.iter().all(|id| id <= &latest_issue_schema_id)
 	}
 
 	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]

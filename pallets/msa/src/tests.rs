@@ -1,6 +1,7 @@
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
+	BoundedBTreeMap,
 };
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair, H256};
 use sp_runtime::{traits::SignedExtension, MultiSignature};
@@ -20,7 +21,6 @@ use common_primitives::{
 	utils::wrap_binary_data,
 };
 use common_runtime::extensions::check_nonce::CheckNonce;
-use orml_utilities::OrderedSet;
 
 #[test]
 fn it_creates_an_msa_account() {
@@ -547,7 +547,7 @@ pub fn add_provider_to_msa_is_success() {
 
 		assert_eq!(
 			Msa::get_delegation(delegator, provider),
-			Some(Delegation { expired: 0, schemas: OrderedSet::new() })
+			Some(Delegation { revoked_at: 0, schema_permissions: Default::default() })
 		);
 
 		System::assert_last_event(
@@ -1015,7 +1015,7 @@ pub fn revoke_provider_is_successful() {
 
 		assert_eq!(
 			Msa::get_delegation(delegator, provider).unwrap(),
-			Delegation { expired: 1, schemas: OrderedSet::new() },
+			Delegation { revoked_at: 1, schema_permissions: Default::default() },
 		);
 	});
 }
@@ -1194,7 +1194,10 @@ pub fn revoke_delegation_by_provider_happy_path() {
 
 		// 6. verify that the provider is revoked
 		let provider_info = Msa::get_delegation(Delegator(2), Provider(1));
-		assert_eq!(provider_info, Some(Delegation { expired: 26, schemas: OrderedSet::new() }));
+		assert_eq!(
+			provider_info,
+			Some(Delegation { revoked_at: 26, schema_permissions: Default::default() })
+		);
 
 		// 7. verify the event
 		System::assert_last_event(
@@ -1988,8 +1991,14 @@ pub fn ensure_all_schema_ids_are_valid_errors() {
 	new_test_ext().execute_with(|| {
 		let schema_ids = vec![1];
 		assert_noop!(
-			Msa::ensure_all_schema_ids_are_valid(schema_ids.try_into().unwrap()),
+			Msa::ensure_all_schema_ids_are_valid(&schema_ids),
 			Error::<Test>::InvalidSchemaId
+		);
+
+		let schema_ids = vec![1, 2, 3];
+		assert_noop!(
+			Msa::ensure_all_schema_ids_are_valid(&schema_ids),
+			Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation
 		);
 	})
 }
@@ -2000,7 +2009,7 @@ pub fn ensure_all_schema_ids_are_valid_success() {
 		let schema_ids = vec![1];
 		Schemas::set_schema_count(1);
 
-		assert_ok!(Msa::ensure_all_schema_ids_are_valid(schema_ids.try_into().unwrap()));
+		assert_ok!(Msa::ensure_all_schema_ids_are_valid(&schema_ids));
 	});
 }
 
@@ -2235,4 +2244,40 @@ pub fn add_msa_key_replay_fails() {
 			assert_eq!(add_key_response, tc.expected_ok);
 		}
 	})
+}
+
+#[test]
+pub fn initialize_schema_permissions_success() {
+	new_test_ext().execute_with(|| {
+		Schemas::set_schema_count(3);
+		let schema_ids = vec![1];
+		let result = Msa::initialize_schema_permissions(schema_ids);
+
+		let mut expected = BoundedBTreeMap::<
+			SchemaId,
+			Option<<Test as frame_system::Config>::BlockNumber>,
+			<Test as Config>::MaxSchemaGrantsPerDelegation,
+		>::new();
+
+		expected.try_insert(1, None).expect("all good");
+
+		assert_eq!(result.unwrap(), expected);
+	});
+}
+
+#[test]
+pub fn initialize_schema_permissions_error() {
+	new_test_ext().execute_with(|| {
+		let schema_ids = vec![1];
+		let result = Msa::initialize_schema_permissions(schema_ids);
+
+		assert_noop!(result, Error::<Test>::InvalidSchemaId);
+
+		Schemas::set_schema_count(3);
+
+		let schema_ids = vec![1, 2, 3];
+		let result = Msa::initialize_schema_permissions(schema_ids);
+
+		assert_noop!(result, Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation);
+	});
 }

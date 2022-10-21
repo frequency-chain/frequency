@@ -1036,7 +1036,6 @@ version = "0.1.0"
 dependencies = [
  "frame-support",
  "impl-serde 0.4.0",
- "orml-utilities",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -5316,7 +5315,6 @@ dependencies = [
  "frame-support",
  "parity-scale-codec",
  "scale-info",
- "serde",
  "sp-io 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.29)",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.29)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.29)",
@@ -5837,7 +5835,6 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "orml-utilities",
  "pallet-schemas",
  "parity-scale-codec",
  "scale-info",
