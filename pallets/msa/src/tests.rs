@@ -9,7 +9,7 @@ use crate::{
 	ensure,
 	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
-	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
+	CheckFreeExtrinsicUse, Config, CurrentMsaIdentifierMaximum, DispatchResult, Error, Event,
 	PayloadSignatureRegistry, ProviderToRegistryEntry,
 };
 
@@ -29,7 +29,7 @@ fn it_creates_an_msa_account() {
 
 		assert_eq!(Msa::get_msa_by_public_key(test_public(1)), Some(1 as MessageSourceId));
 
-		assert_eq!(Msa::get_identifier(), 1);
+		assert_eq!(Msa::get_current_msa_identifier_maximum(), 1);
 
 		System::assert_last_event(Event::MsaCreated { msa_id: 1, key: test_public(1) }.into());
 	});
@@ -38,7 +38,7 @@ fn it_creates_an_msa_account() {
 #[test]
 fn it_throws_msa_identifier_overflow() {
 	new_test_ext().execute_with(|| {
-		MsaIdentifier::<Test>::set(u64::MAX);
+		CurrentMsaIdentifierMaximum::<Test>::set(u64::MAX);
 
 		assert_noop!(Msa::create(test_origin_signed(1)), Error::<Test>::MsaIdOverflow);
 	});
@@ -52,7 +52,7 @@ fn it_does_not_allow_duplicate_keys() {
 
 		assert_noop!(Msa::create(test_origin_signed(1)), Error::<Test>::KeyAlreadyRegistered);
 
-		assert_eq!(Msa::get_identifier(), 1);
+		assert_eq!(Msa::get_current_msa_identifier_maximum(), 1);
 	});
 }
 
