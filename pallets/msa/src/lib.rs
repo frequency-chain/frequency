@@ -428,7 +428,10 @@ pub mod pallet {
 			ProviderToRegistryEntry::<T>::try_mutate(
 				Provider(provider_msa_id),
 				|maybe_metadata| -> DispatchResult {
-					ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderRegistryEntry);
+					ensure!(
+						maybe_metadata.take().is_none(),
+						Error::<T>::DuplicateProviderRegistryEntry
+					);
 					*maybe_metadata = Some(ProviderRegistryEntry { provider_name: bounded_name });
 					Ok(())
 				},
