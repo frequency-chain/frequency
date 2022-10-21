@@ -50,7 +50,7 @@ fn require_valid_schema_size_errors() {
 		];
 		for tc in test_cases {
 			assert_noop!(
-				SchemasPallet::register_schema(Origin::signed(sender), create_bounded_schema_vec(tc.schema), ModelType::AvroBinary, PayloadLocation::OnChain),
+				SchemasPallet::create_schema(Origin::signed(sender), create_bounded_schema_vec(tc.schema), ModelType::AvroBinary, PayloadLocation::OnChain),
 				tc.expected.0);
 		}
 	})
@@ -61,7 +61,7 @@ fn register_schema_happy_path() {
 	new_test_ext().execute_with(|| {
 		sudo_set_max_schema_size();
 		let sender: AccountId = 1;
-		assert_ok!(SchemasPallet::register_schema(
+		assert_ok!(SchemasPallet::create_schema(
 			Origin::signed(sender),
 			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
 			ModelType::AvroBinary,
@@ -76,7 +76,7 @@ fn register_schema_unhappy_path() {
 		sudo_set_max_schema_size();
 		let sender: AccountId = 1;
 		assert_noop!(
-			SchemasPallet::register_schema(
+			SchemasPallet::create_schema(
 				Origin::signed(sender),
 				// name key does not have a colon
 				create_bounded_schema_vec(r#"{"name", 54, "type": "none"}"#),
@@ -136,7 +136,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 			r#"{"latitude": 48.858093,"longitude": 2.294694}"#,
 		] {
 			let expected_schema_id = last_schema_id + 1;
-			assert_ok!(SchemasPallet::register_schema(
+			assert_ok!(SchemasPallet::create_schema(
 				Origin::signed(sender),
 				create_bounded_schema_vec(fields),
 				ModelType::AvroBinary,
@@ -147,7 +147,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 			);
 			last_schema_id = expected_schema_id;
 		}
-		assert_ok!(SchemasPallet::register_schema(
+		assert_ok!(SchemasPallet::create_schema(
 			Origin::signed(sender),
 			create_bounded_schema_vec(r#"{"account":3050}"#),
 			ModelType::AvroBinary,
@@ -164,7 +164,7 @@ fn get_existing_schema_by_id_should_return_schema() {
 		// arrange
 		let test_str = r#"{"foo": "bar", "bar": "buzz"}"#;
 		let serialized_fields = Vec::from(test_str.as_bytes());
-		assert_ok!(SchemasPallet::register_schema(
+		assert_ok!(SchemasPallet::create_schema(
 			Origin::signed(sender),
 			create_bounded_schema_vec(test_str),
 			ModelType::AvroBinary,
