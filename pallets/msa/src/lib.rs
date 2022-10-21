@@ -63,8 +63,8 @@
 use codec::{Decode, Encode};
 use common_primitives::{
 	msa::{
-		DelegationValidator, Delegator, MsaLookup, MsaValidator, OrderedSet, Provider,
-		ProviderInfo, ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
+		Delegation, DelegationValidator, Delegator, MsaLookup, MsaValidator, OrderedSet, Provider,
+		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
 	},
 	schema::{SchemaId, SchemaValidator},
 };
@@ -148,24 +148,26 @@ pub mod pallet {
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
-	/// Storage type for MSA identifier
+	/// Storage type for the current MSA identifier maximum.
+	/// We need to track this value because the identifier maximum
+	/// is incremented each time a new identifier is created.
 	/// - Value: The current maximum MSA Id
 	#[pallet::storage]
-	#[pallet::getter(fn get_identifier)]
-	pub type MsaIdentifier<T> = StorageValue<_, MessageSourceId, ValueQuery>;
+	#[pallet::getter(fn get_current_msa_identifier_maximum)]
+	pub type CurrentMsaIdentifierMaximum<T> = StorageValue<_, MessageSourceId, ValueQuery>;
 
 	/// Storage type for mapping the relationship between a Delegator and its Provider.
 	/// - Keys: Delegator MSA, Provider MSA
-	/// - Value: [`ProviderInfo`](common_primitives::msa::ProviderInfo)
+	/// - Value: [`Delegation`](common_primitives::msa::Delegation)
 	#[pallet::storage]
-	#[pallet::getter(fn get_provider_info)]
-	pub type ProviderInfoOf<T: Config> = StorageDoubleMap<
+	#[pallet::getter(fn get_delegation)]
+	pub type DelegatorAndProviderToDelegation<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
 		Delegator,
 		Twox64Concat,
 		Provider,
-		ProviderInfo<T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
+		Delegation<T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
 		OptionQuery,
 	>;
 
@@ -422,8 +424,8 @@ pub mod pallet {
 		/// ## Errors
 		/// - Returns
 		///   [`DuplicateProviderRegistryEntry`](Error::DuplicateProviderRegistryEntry) if there is already a ProviderRegistryEntry associated with the given MSA id.
-		#[pallet::weight(T::WeightInfo::register_provider())]
-		pub fn register_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
+		#[pallet::weight(T::WeightInfo::create_provider())]
+		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
 				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
@@ -699,14 +701,16 @@ impl<T: Config> Pallet<T> {
 
 	/// Generate the next MSA Id
 	pub fn get_next_msa_id() -> Result<MessageSourceId, DispatchError> {
-		let next = Self::get_identifier().checked_add(1).ok_or(Error::<T>::MsaIdOverflow)?;
+		let next = Self::get_current_msa_identifier_maximum()
+			.checked_add(1)
+			.ok_or(Error::<T>::MsaIdOverflow)?;
 
 		Ok(next)
 	}
 
 	/// Set the current identifier in storage
 	pub fn set_msa_identifier(identifier: MessageSourceId) -> DispatchResult {
-		MsaIdentifier::<T>::set(identifier);
+		CurrentMsaIdentifierMaximum::<T>::set(identifier);
 
 		Ok(())
 	}
@@ -809,18 +813,22 @@ impl<T: Config> Pallet<T> {
 
 		Self::ensure_all_schema_ids_are_valid(granted_schemas.clone())?;
 
-		ProviderInfoOf::<T>::try_mutate(delegator, provider, |maybe_info| -> DispatchResult {
-			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
-			let info = ProviderInfo {
-				expired: Default::default(),
-				schemas: OrderedSet::<SchemaId, T::MaxSchemaGrantsPerDelegation>::from(
-					granted_schemas,
-				),
-			};
-			*maybe_info = Some(info);
+		DelegatorAndProviderToDelegation::<T>::try_mutate(
+			delegator,
+			provider,
+			|maybe_info| -> DispatchResult {
+				ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
+				let info = Delegation {
+					expired: Default::default(),
+					schemas: OrderedSet::<SchemaId, T::MaxSchemaGrantsPerDelegation>::from(
+						granted_schemas,
+					),
+				};
+				*maybe_info = Some(info);
 
-			Ok(())
-		})?;
+				Ok(())
+			},
+		)?;
 
 		Ok(())
 	}
@@ -831,7 +839,7 @@ impl<T: Config> Pallet<T> {
 	/// * `delegate` - The delegator to check delegation from
 	/// * `block_number` - Optional: check delegation at specific block in past
 	/// # Returns
-	/// * [`ProviderInfo`]
+	/// * [`Delegation`]
 	/// # Errors
 	/// * [`Error::<T>::DelegationNotFound`] - If no delegation
 	/// * [`Error::<T>::DelegationExpired`] - If delegation revoked
@@ -839,9 +847,9 @@ impl<T: Config> Pallet<T> {
 		provider: Provider,
 		delegator: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError> {
-		let info = Self::get_provider_info_of(delegator, provider)
-			.ok_or(Error::<T>::DelegationNotFound)?;
+	) -> Result<Delegation<T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError> {
+		let info =
+			Self::get_delegation_of(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
 		let current_block = frame_system::Pallet::<T>::block_number();
 		let requested_block = match block_number {
 			Some(block_number) => {
@@ -898,7 +906,7 @@ impl<T: Config> Pallet<T> {
 		provider_msa_id: Provider,
 		delegator_msa_id: Delegator,
 	) -> DispatchResult {
-		ProviderInfoOf::<T>::try_mutate_exists(
+		DelegatorAndProviderToDelegation::<T>::try_mutate_exists(
 			delegator_msa_id,
 			provider_msa_id,
 			|maybe_info| -> DispatchResult {
@@ -921,7 +929,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Removes all delegations from the specified delegator MSA id to providers
 	pub fn remove_delegator(delegator: Delegator) -> DispatchResult {
-		_ = ProviderInfoOf::<T>::clear_prefix(delegator, u32::max_value(), None);
+		_ = DelegatorAndProviderToDelegation::<T>::clear_prefix(delegator, u32::max_value(), None);
 		Ok(())
 	}
 
@@ -1002,8 +1010,8 @@ impl<T: Config> Pallet<T> {
 		delegator: Delegator,
 		provider: Provider,
 	) -> Result<Option<Vec<SchemaId>>, DispatchError> {
-		let provider_info = Self::get_provider_info_of(delegator, provider)
-			.ok_or(Error::<T>::DelegationNotFound)?;
+		let provider_info =
+			Self::get_delegation_of(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
 		let schemas = provider_info.schemas.0;
 		if schemas.is_empty() {
 			return Err(Error::<T>::SchemaNotGranted.into())
@@ -1114,11 +1122,11 @@ impl<T: Config> ProviderLookup for Pallet<T> {
 	type BlockNumber = T::BlockNumber;
 	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
 
-	fn get_provider_info_of(
+	fn get_delegation_of(
 		delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>> {
-		Self::get_provider_info(delegator, provider)
+	) -> Option<Delegation<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>> {
+		Self::get_delegation(delegator, provider)
 	}
 }
 
@@ -1131,8 +1139,7 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		provider: Provider,
 		delegation: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>
-	{
+	) -> Result<Delegation<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError> {
 		Self::ensure_valid_delegation(provider, delegation, block_number)
 	}
 
@@ -1148,16 +1155,15 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		provider: Provider,
 		delegation: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>
-	{
+	) -> Result<Delegation<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError> {
 		let validation_check = Self::ensure_valid_delegation(provider, delegation, block_number);
 		if validation_check.is_err() {
 			// If the delegation does not exist, we return a ok
 			// This is only used for benchmarks, so it is safe to return a dummy account
 			// in case the delegation does not exist
-			return Ok(ProviderInfo { schemas: OrderedSet::new(), expired: Default::default() })
+			return Ok(Delegation { schemas: OrderedSet::new(), expired: Default::default() })
 		}
-		Ok(ProviderInfo { schemas: OrderedSet::new(), expired: Default::default() })
+		Ok(Delegation { schemas: OrderedSet::new(), expired: Default::default() })
 	}
 }
 
@@ -1203,7 +1209,7 @@ impl<T: Config> SchemaGrantValidator for Pallet<T> {
 		delegator: Delegator,
 		_schema_id: SchemaId,
 	) -> DispatchResult {
-		let provider_info = Self::get_provider_info_of(delegator, provider);
+		let provider_info = Self::get_delegation_of(delegator, provider);
 		if provider_info.is_none() {
 			return Ok(())
 		}

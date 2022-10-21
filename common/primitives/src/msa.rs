@@ -50,7 +50,7 @@ impl From<Delegator> for MessageSourceId {
 /// Struct for the information of the relationship between an MSA and a Provider
 #[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxSchemaGrantsPerDelegation))]
-pub struct ProviderInfo<BlockNumber, MaxSchemaGrantsPerDelegation>
+pub struct Delegation<BlockNumber, MaxSchemaGrantsPerDelegation>
 where
 	MaxSchemaGrantsPerDelegation: Get<u32>,
 {
@@ -145,11 +145,11 @@ pub trait ProviderLookup {
 	/// * `delegator` - The `MessageSourceId` that delegated to the provider
 	/// * `provider` - The `MessageSourceId` that has been delegated to
 	/// # Returns
-	/// * `Option<ProviderInfo<Self::BlockNumber>>`
-	fn get_provider_info_of(
+	/// * `Option<Delegation<Self::BlockNumber>>`
+	fn get_delegation_of(
 		delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>>;
+	) -> Option<Delegation<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>>;
 }
 
 /// A behavior that allows for validating a delegator-provider relationship
@@ -169,7 +169,7 @@ pub trait DelegationValidator {
 		provider: Provider,
 		delegator: Delegator,
 		block_number: Option<Self::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>;
+	) -> Result<Delegation<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>;
 }
 
 /// A behavior that allows for validating a schema grant
