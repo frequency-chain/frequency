@@ -38,7 +38,7 @@
 //! ### Dispatchable Functions
 //!
 //! - `add_key_to_msa` - Associates a key to an MSA ID in a signed payload.
-//! - `add_provider_to_msa` - Creates a delegation relationship between a `Provider` and MSA.
+//! - `grant_delegation` - Creates a delegation relationship between a `Provider` and MSA.
 //! - `create` - Creates an MSA for the `Origin`.
 //! - `create_sponsored_account_with_delegation` - `Origin` creates an account for a given `AccountId` and sets themselves as a `Provider`.
 //! - `revoke_delegation_by_provider` - `Provider` MSA terminates a Delegation with Delegator MSA by expiring it.
@@ -453,8 +453,8 @@ pub mod pallet {
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
 		/// - Returns [`ProviderNotRegistered`](Error::ProviderNotRegistered) if the a non-provider MSA is used as the provider
 		/// - Returns [`UnauthorizedDelegator`](Error::UnauthorizedDelegator) if Origin attempted to add a delegate for someone else's MSA
-		#[pallet::weight(T::WeightInfo::add_provider_to_msa())]
-		pub fn add_provider_to_msa(
+		#[pallet::weight(T::WeightInfo::grant_delegation())]
+		pub fn grant_delegation(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
 			proof: MultiSignature,

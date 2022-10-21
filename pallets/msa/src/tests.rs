@@ -414,7 +414,7 @@ fn test_retire_msa_success() {
 			create_and_sign_add_provider_payload(test_account_key_pair, provider_msa_id);
 
 		assert_noop!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				Origin::signed(provider_account.into()),
 				test_account.clone(),
 				delegator_signature,
@@ -538,7 +538,7 @@ pub fn add_provider_to_msa_is_success() {
 
 		Schemas::set_schema_count(10);
 
-		assert_ok!(Msa::add_provider_to_msa(
+		assert_ok!(Msa::grant_delegation(
 			Origin::signed(provider_account.into()),
 			delegator_account.into(),
 			delegator_signature,
@@ -561,7 +561,7 @@ pub fn add_provider_to_msa_is_success() {
 }
 
 #[test]
-pub fn add_provider_to_msa_throws_add_provider_verification_failed() {
+pub fn grant_delegation_to_msa_throws_add_provider_verification_failed() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let account = key_pair.public();
@@ -572,7 +572,7 @@ pub fn add_provider_to_msa_throws_add_provider_verification_failed() {
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 		let fake_provider_payload = AddProvider::new(3, None, expiration);
 		assert_noop!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				Origin::signed(account.into()),
 				account.into(),
 				signature,
@@ -584,7 +584,7 @@ pub fn add_provider_to_msa_throws_add_provider_verification_failed() {
 }
 
 #[test]
-pub fn add_provider_to_msa_throws_no_key_exist_error() {
+pub fn grant_delegation_throws_no_key_exist_error() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
@@ -596,7 +596,7 @@ pub fn add_provider_to_msa_throws_no_key_exist_error() {
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
 		assert_noop!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				test_origin_signed(1),
 				provider_account.into(),
 				signature,
@@ -608,7 +608,7 @@ pub fn add_provider_to_msa_throws_no_key_exist_error() {
 }
 
 #[test]
-pub fn add_provider_to_msa_throws_key_revoked_error() {
+pub fn grant_delegation_throws_key_revoked_error() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
@@ -624,7 +624,7 @@ pub fn add_provider_to_msa_throws_key_revoked_error() {
 		assert_ok!(Msa::delete_key_for_msa(1, &test_public(1)));
 
 		assert_noop!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				test_origin_signed(1),
 				provider_account.into(),
 				signature,
@@ -636,7 +636,7 @@ pub fn add_provider_to_msa_throws_key_revoked_error() {
 }
 
 #[test]
-pub fn add_provider_to_msa_throws_invalid_self_provider_error() {
+pub fn grant_delegation_throws_invalid_self_provider_error() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
@@ -649,7 +649,7 @@ pub fn add_provider_to_msa_throws_invalid_self_provider_error() {
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		assert_noop!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				Origin::signed(provider_account.into()),
 				provider_account.into(),
 				signature,
@@ -661,7 +661,7 @@ pub fn add_provider_to_msa_throws_invalid_self_provider_error() {
 }
 
 #[test]
-pub fn add_provider_to_msa_throws_unauthorized_delegator_error() {
+pub fn grant_delegation_throws_unauthorized_delegator_error() {
 	new_test_ext().execute_with(|| {
 		// Generate a key pair for the provider
 		let (provider_key_pair, _) = sr25519::Pair::generate();
@@ -688,7 +688,7 @@ pub fn add_provider_to_msa_throws_unauthorized_delegator_error() {
 		));
 
 		assert_noop!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				Origin::signed(provider_account.into()),
 				delegator_account.into(),
 				signature,
@@ -974,7 +974,7 @@ pub fn revoke_msa_delegation_by_delegator_is_successful() {
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
 
-		assert_ok!(Msa::add_provider_to_msa(
+		assert_ok!(Msa::grant_delegation(
 			Origin::signed(provider_account.into()),
 			delegator_account.into(),
 			delegator_signature,
@@ -1016,7 +1016,7 @@ pub fn revoke_provider_is_successful() {
 			Vec::from("Foo")
 		));
 
-		assert_ok!(Msa::add_provider_to_msa(
+		assert_ok!(Msa::grant_delegation(
 			Origin::signed(provider_account.into()),
 			delegator_account.into(),
 			delegator_signature,
@@ -1096,7 +1096,7 @@ fn revoke_provider_throws_error_when_delegation_already_revoked() {
 			Vec::from("Foo")
 		));
 
-		assert_ok!(Msa::add_provider_to_msa(
+		assert_ok!(Msa::grant_delegation(
 			Origin::signed(provider_account.into()),
 			delegator_account.into(),
 			delegator_signature,
@@ -1137,7 +1137,7 @@ pub fn revoke_provider_call_has_no_cost() {
 		// Register provider
 		assert_ok!(Msa::register_provider(test_origin_signed(1), Vec::from("Foo")));
 
-		assert_ok!(Msa::add_provider_to_msa(
+		assert_ok!(Msa::grant_delegation(
 			test_origin_signed(1),
 			provider_account.into(),
 			signature,
@@ -1763,7 +1763,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 
 		// expect this to fail for the same reason
 		assert_err!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				Origin::signed(provider_key.into()),
 				delegator_key.into(),
 				signature.clone(),
@@ -1779,7 +1779,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 //   2. provider removes them as MSA (say by quickly discovering MSA is undesirable)
 //   3. MSA account replays the add, using the previous signed payload + signature.
 #[test]
-fn replaying_add_provider_to_msa_fails() {
+fn replaying_grant_delegation_fails() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_key = key_pair.public();
@@ -1802,7 +1802,7 @@ fn replaying_add_provider_to_msa_fails() {
 		// create MSA for delegator
 		assert_ok!(Msa::create(Origin::signed(delegator_key.into())));
 
-		assert_ok!(Msa::add_provider_to_msa(
+		assert_ok!(Msa::grant_delegation(
 			Origin::signed(provider_key.into()),
 			delegator_key.into(),
 			signature.clone(),
@@ -1815,7 +1815,7 @@ fn replaying_add_provider_to_msa_fails() {
 
 		// Expected to fail because revoking the delegation just expires it at a given block number.
 		assert_err!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				Origin::signed(provider_key.into()),
 				delegator_key.into(),
 				signature.clone(),
@@ -1961,7 +1961,7 @@ pub fn add_provider_expired() {
 		let signature: MultiSignature = user_pair.sign(&encode_add_provider_data).into();
 		// 3.5 create the user's MSA + add provider as provider
 		assert_err!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				test_origin_signed(1),
 				delegator_key.into(),
 				signature,
