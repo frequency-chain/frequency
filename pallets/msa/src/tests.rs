@@ -1,3 +1,10 @@
+use frame_support::{
+	assert_err, assert_noop, assert_ok,
+	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
+};
+use sp_core::{crypto::AccountId32, sr25519, Encode, Pair, H256};
+use sp_runtime::{traits::SignedExtension, MultiSignature};
+
 use crate::{
 	ensure,
 	mock::*,
@@ -13,13 +20,7 @@ use common_primitives::{
 	utils::wrap_binary_data,
 };
 use common_runtime::extensions::check_nonce::CheckNonce;
-use frame_support::{
-	assert_err, assert_noop, assert_ok,
-	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
-};
 use orml_utilities::OrderedSet;
-use sp_core::{crypto::AccountId32, sr25519, Encode, Pair, H256};
-use sp_runtime::{traits::SignedExtension, MultiSignature};
 
 #[test]
 fn it_creates_an_msa_account() {
@@ -85,6 +86,8 @@ fn it_throws_error_when_key_verification_fails() {
 			Msa::add_key_to_msa(
 				test_origin_signed(1),
 				fake_account.into(),
+				signature.clone(),
+				fake_account.into(),
 				signature,
 				add_new_key_data
 			),
@@ -105,6 +108,7 @@ fn it_throws_error_when_not_msa_owner() {
 		assert_ok!(Msa::create_account(test_public(1), EMPTY_FUNCTION));
 
 		let new_account = key_pair_2.public();
+		let (_new_msa_id2, _) = Msa::create_account(new_account.into(), EMPTY_FUNCTION).unwrap();
 
 		let add_new_key_data = AddKeyData { nonce: 0, msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
@@ -113,7 +117,9 @@ fn it_throws_error_when_not_msa_owner() {
 
 		assert_noop!(
 			Msa::add_key_to_msa(
-				test_origin_signed(1),
+				Origin::signed(account.into()),
+				new_account.into(),
+				signature.clone(),
 				new_account.into(),
 				signature,
 				add_new_key_data
@@ -141,6 +147,8 @@ fn it_throws_error_when_for_duplicate_key() {
 			Msa::add_key_to_msa(
 				Origin::signed(new_account.into()),
 				new_account.into(),
+				signature.clone(),
+				new_account.into(),
 				signature,
 				add_new_key_data
 			),
@@ -162,11 +170,15 @@ fn add_key_with_more_than_allowed_should_panic() {
 		for _ in 1..<Test as Config>::MaxPublicKeysPerMsa::get() {
 			let (new_key_pair, _) = sr25519::Pair::generate();
 			let new_account = new_key_pair.public();
-			let signature: MultiSignature = new_key_pair.sign(&encode_data_new_key_data).into();
+			let signature_owner: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
+			let signature_new_key: MultiSignature =
+				new_key_pair.sign(&encode_data_new_key_data).into();
 			assert_ok!(Msa::add_key_to_msa(
 				Origin::signed(account.into()),
+				account.into(),
+				signature_owner.clone(),
 				new_account.into(),
-				signature,
+				signature_new_key,
 				add_new_key_data.clone()
 			));
 		}
@@ -174,10 +186,13 @@ fn add_key_with_more_than_allowed_should_panic() {
 		// act
 		let (final_key_pair, _) = sr25519::Pair::generate();
 		let final_account = final_key_pair.public();
+		let signature_owner: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
 		let signature: MultiSignature = final_key_pair.sign(&encode_data_new_key_data).into();
 		assert_noop!(
 			Msa::add_key_to_msa(
 				Origin::signed(account.into()),
+				account.into(),
+				signature_owner.clone(),
 				final_account.into(),
 				signature,
 				add_new_key_data
@@ -201,14 +216,16 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 
 		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
-
-		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
+		let signature_owner: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
+		let signature_new_key: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
 
 		// act
 		assert_ok!(Msa::add_key_to_msa(
 			Origin::signed(account.into()),
+			account.into(),
+			signature_owner,
 			new_key.into(),
-			signature,
+			signature_new_key,
 			add_new_key_data,
 		));
 
@@ -220,7 +237,7 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 
 		let keys_count = Msa::get_public_key_count_by_msa_id(new_msa_id);
 		assert_eq!(keys_count, 2);
-		System::assert_last_event(Event::KeyAdded { msa_id: 1, key: new_key.into() }.into());
+		System::assert_last_event(Event::PublicKeyAdded { msa_id: 1, key: new_key.into() }.into());
 	});
 }
 
@@ -249,6 +266,8 @@ fn add_key_with_expired_proof_fails() {
 		assert_noop!(
 			Msa::add_key_to_msa(
 				Origin::signed(account.into()),
+				new_key.into(),
+				signature.clone(),
 				new_key.into(),
 				signature,
 				add_new_key_data
@@ -283,6 +302,8 @@ fn add_key_with_proof_too_far_into_future_fails() {
 			Msa::add_key_to_msa(
 				Origin::signed(account.into()),
 				new_key.into(),
+				signature.clone(),
+				new_key.into(),
 				signature,
 				add_new_key_data
 			),
@@ -297,13 +318,13 @@ fn it_deletes_msa_key_successfully() {
 		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
 		assert_ok!(Msa::add_key(2, &test_public(2), EMPTY_FUNCTION));
 
-		assert_ok!(Msa::delete_msa_key(test_origin_signed(1), test_public(2)));
+		assert_ok!(Msa::delete_msa_public_key(test_origin_signed(1), test_public(2)));
 
 		let info = Msa::get_msa_by_public_key(&test_public(2));
 
 		assert_eq!(info, None);
 
-		System::assert_last_event(Event::KeyRemoved { key: test_public(2) }.into());
+		System::assert_last_event(Event::PublicKeyDeleted { key: test_public(2) }.into());
 	})
 }
 
@@ -320,7 +341,10 @@ fn it_deletes_msa_last_key_self_removal() {
 		assert_ok!(Msa::add_key(msa_id, &test_account, EMPTY_FUNCTION));
 
 		// Attempt to delete/remove the account from the MSA
-		assert_noop!(Msa::delete_msa_key(origin, test_account), Error::<Test>::InvalidSelfRemoval);
+		assert_noop!(
+			Msa::delete_msa_public_key(origin, test_account),
+			Error::<Test>::InvalidSelfRemoval
+		);
 	})
 }
 
@@ -340,8 +364,8 @@ fn test_retire_msa_success() {
 		// Retire the MSA
 		assert_ok!(Msa::retire_msa(origin));
 
-		// Check if KeyRemoved event was dispatched.
-		System::assert_has_event(Event::KeyRemoved { key: test_account.clone() }.into());
+		// Check if PublicKeyDeleted event was dispatched.
+		System::assert_has_event(Event::PublicKeyDeleted { key: test_account.clone() }.into());
 
 		// Check if MsaRetired event was dispatched.
 		System::assert_last_event(Event::MsaRetired { msa_id }.into());
@@ -366,6 +390,8 @@ fn test_retire_msa_success() {
 			Msa::add_key_to_msa(
 				Origin::signed(test_account.clone()),
 				new_account1.into(),
+				signature.clone(),
+				new_account1.into(),
 				signature,
 				add_new_key_data
 			),
@@ -388,7 +414,7 @@ fn test_retire_msa_success() {
 			create_and_sign_add_provider_payload(test_account_key_pair, provider_msa_id);
 
 		assert_noop!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				Origin::signed(provider_account.into()),
 				test_account.clone(),
 				delegator_signature,
@@ -399,7 +425,7 @@ fn test_retire_msa_success() {
 
 		// [TEST] Revoking a provider (modifying permissions) should fail
 		assert_noop!(
-			Msa::revoke_msa_delegation_by_delegator(
+			Msa::revoke_delegation_by_delegator(
 				Origin::signed(test_account.clone()),
 				provider_msa_id
 			),
@@ -509,7 +535,7 @@ pub fn add_provider_to_msa_is_success() {
 
 		Schemas::set_schema_count(10);
 
-		assert_ok!(Msa::add_provider_to_msa(
+		assert_ok!(Msa::grant_delegation(
 			Origin::signed(provider_account.into()),
 			delegator_account.into(),
 			delegator_signature,
@@ -532,7 +558,7 @@ pub fn add_provider_to_msa_is_success() {
 }
 
 #[test]
-pub fn add_provider_to_msa_throws_add_provider_verification_failed() {
+pub fn grant_delegation_to_msa_throws_add_provider_verification_failed() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let account = key_pair.public();
@@ -543,7 +569,7 @@ pub fn add_provider_to_msa_throws_add_provider_verification_failed() {
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 		let fake_provider_payload = AddProvider::new(3, None, expiration);
 		assert_noop!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				Origin::signed(account.into()),
 				account.into(),
 				signature,
@@ -555,7 +581,7 @@ pub fn add_provider_to_msa_throws_add_provider_verification_failed() {
 }
 
 #[test]
-pub fn add_provider_to_msa_throws_no_key_exist_error() {
+pub fn grant_delegation_throws_no_key_exist_error() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
@@ -567,7 +593,7 @@ pub fn add_provider_to_msa_throws_no_key_exist_error() {
 		let signature: MultiSignature = key_pair.sign(&encode_add_provider_data).into();
 
 		assert_noop!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				test_origin_signed(1),
 				provider_account.into(),
 				signature,
@@ -579,7 +605,7 @@ pub fn add_provider_to_msa_throws_no_key_exist_error() {
 }
 
 #[test]
-pub fn add_provider_to_msa_throws_key_revoked_error() {
+pub fn grant_delegation_throws_key_revoked_error() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
@@ -595,7 +621,7 @@ pub fn add_provider_to_msa_throws_key_revoked_error() {
 		assert_ok!(Msa::delete_key_for_msa(1, &test_public(1)));
 
 		assert_noop!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				test_origin_signed(1),
 				provider_account.into(),
 				signature,
@@ -607,7 +633,7 @@ pub fn add_provider_to_msa_throws_key_revoked_error() {
 }
 
 #[test]
-pub fn add_provider_to_msa_throws_invalid_self_provider_error() {
+pub fn grant_delegation_throws_invalid_self_provider_error() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
@@ -620,7 +646,7 @@ pub fn add_provider_to_msa_throws_invalid_self_provider_error() {
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		assert_noop!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				Origin::signed(provider_account.into()),
 				provider_account.into(),
 				signature,
@@ -632,7 +658,7 @@ pub fn add_provider_to_msa_throws_invalid_self_provider_error() {
 }
 
 #[test]
-pub fn add_provider_to_msa_throws_unauthorized_delegator_error() {
+pub fn grant_delegation_throws_unauthorized_delegator_error() {
 	new_test_ext().execute_with(|| {
 		// Generate a key pair for the provider
 		let (provider_key_pair, _) = sr25519::Pair::generate();
@@ -656,7 +682,7 @@ pub fn add_provider_to_msa_throws_unauthorized_delegator_error() {
 		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
 		assert_noop!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				Origin::signed(provider_account.into()),
 				delegator_account.into(),
 				signature,
@@ -910,7 +936,7 @@ pub fn create_account_with_panic_in_on_success_should_revert_everything() {
 }
 
 #[test]
-pub fn revoke_msa_delegation_by_delegator_is_successful() {
+pub fn revoke_delegation_by_delegatoris_successful() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
@@ -930,14 +956,14 @@ pub fn revoke_msa_delegation_by_delegator_is_successful() {
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
 
-		assert_ok!(Msa::add_provider_to_msa(
+		assert_ok!(Msa::grant_delegation(
 			Origin::signed(provider_account.into()),
 			delegator_account.into(),
 			delegator_signature,
 			add_provider_payload
 		));
 
-		assert_ok!(Msa::revoke_msa_delegation_by_delegator(
+		assert_ok!(Msa::revoke_delegation_by_delegator(
 			Origin::signed(delegator_account.into()),
 			2
 		));
@@ -969,7 +995,7 @@ pub fn revoke_provider_is_successful() {
 		// Register provider
 		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
-		assert_ok!(Msa::add_provider_to_msa(
+		assert_ok!(Msa::grant_delegation(
 			Origin::signed(provider_account.into()),
 			delegator_account.into(),
 			delegator_signature,
@@ -992,34 +1018,34 @@ pub fn revoke_provider_is_successful() {
 }
 
 #[test]
-fn revoke_msa_delegation_by_delegator_fails_when_no_msa() {
+fn revoke_delegation_by_delegator_fails_when_no_msa() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(
-			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 1),
+			Msa::revoke_delegation_by_delegator(test_origin_signed(1), 1),
 			Error::<Test>::NoKeyExists
 		);
 	});
 }
 
 #[test]
-pub fn revoke_msa_delegation_fails_if_only_key_is_revoked() {
+pub fn revoke_delegation_fails_if_only_key_is_revoked() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::create(test_origin_signed(2)));
 		assert_ok!(Msa::delete_key_for_msa(1, &test_public(2)));
 		assert_noop!(
-			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(2), 1),
+			Msa::revoke_delegation_by_delegator(test_origin_signed(2), 1),
 			Error::<Test>::NoKeyExists
 		);
 	})
 }
 
 #[test]
-pub fn revoke_msa_delegation_by_delegator_fails_if_has_msa_but_no_delegation() {
+pub fn revoke_delegation_by_delegator_fails_if_has_msa_but_no_delegation() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::create(test_origin_signed(1)));
 		assert_ok!(Msa::create(test_origin_signed(2)));
 		assert_noop!(
-			Msa::revoke_msa_delegation_by_delegator(test_origin_signed(1), 2),
+			Msa::revoke_delegation_by_delegator(test_origin_signed(1), 2),
 			Error::<Test>::DelegationNotFound
 		);
 	})
@@ -1046,20 +1072,20 @@ fn revoke_provider_throws_error_when_delegation_already_revoked() {
 		// Register provider
 		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
-		assert_ok!(Msa::add_provider_to_msa(
+		assert_ok!(Msa::grant_delegation(
 			Origin::signed(provider_account.into()),
 			delegator_account.into(),
 			delegator_signature,
 			add_provider_payload
 		));
 
-		assert_ok!(Msa::revoke_msa_delegation_by_delegator(
+		assert_ok!(Msa::revoke_delegation_by_delegator(
 			Origin::signed(delegator_account.into()),
 			provider_msa
 		));
 
 		assert_noop!(
-			Msa::revoke_msa_delegation_by_delegator(
+			Msa::revoke_delegation_by_delegator(
 				Origin::signed(delegator_account.into()),
 				provider_msa
 			),
@@ -1087,14 +1113,14 @@ pub fn revoke_provider_call_has_no_cost() {
 		// Register provider
 		assert_ok!(Msa::create_provider(test_origin_signed(1), Vec::from("Foo")));
 
-		assert_ok!(Msa::add_provider_to_msa(
+		assert_ok!(Msa::grant_delegation(
 			test_origin_signed(1),
 			provider_account.into(),
 			signature,
 			add_provider_payload
 		));
 
-		let call = MsaCall::<Test>::revoke_msa_delegation_by_delegator { provider_msa_id: 2 };
+		let call = MsaCall::<Test>::revoke_delegation_by_delegator { provider_msa_id: 2 };
 		let dispatch_info = call.get_dispatch_info();
 
 		assert_eq!(dispatch_info.pays_fee, Pays::No);
@@ -1279,11 +1305,11 @@ pub fn delegation_expired() {
 /// Assert that revoking an MSA delegation passes the signed extension CheckFreeExtrinsicUse
 /// validation when a valid delegation exists.
 #[test]
-fn signed_extension_revoke_msa_delegation_by_delegator() {
+fn signed_extension_revoke_delegation_by_delegator() {
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, delegator_account) = test_create_delegator_msa_with_provider();
 		let call_revoke_delegation: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
+			&Call::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
@@ -1303,7 +1329,7 @@ fn signed_extension_validation_failure_on_revoked() {
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, delegator_account) = test_create_delegator_msa_with_provider();
 		let call_revoke_delegation: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
+			&Call::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
@@ -1313,14 +1339,14 @@ fn signed_extension_validation_failure_on_revoked() {
 			len,
 		);
 		assert_ok!(result);
-		assert_ok!(Msa::revoke_msa_delegation_by_delegator(
+		assert_ok!(Msa::revoke_delegation_by_delegator(
 			Origin::signed(delegator_account.into()),
 			provider_msa_id
 		));
 
 		System::set_block_number(System::block_number() + 1);
 		let call_revoke_delegation: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
+			&Call::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result_revoked = CheckFreeExtrinsicUse::<Test>::new().validate(
@@ -1333,7 +1359,7 @@ fn signed_extension_validation_failure_on_revoked() {
 	});
 }
 
-/// Assert that a call that is not revoke_msa_delegation_by_delegator passes the signed extension
+/// Assert that a call that is not revoke_delegation_by_delegator passes the signed extension
 /// CheckFreeExtrinsicUse validaton.
 #[test]
 fn signed_extension_validation_valid_for_others() {
@@ -1351,12 +1377,12 @@ fn signed_extension_validation_valid_for_others() {
 }
 
 #[test]
-pub fn delete_msa_key_call_has_correct_costs() {
+pub fn delete_msa_public_key_call_has_correct_costs() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let new_key = key_pair.public();
 
-		let call = MsaCall::<Test>::delete_msa_key { key: AccountId32::from(new_key) };
+		let call = MsaCall::<Test>::delete_msa_public_key { key: AccountId32::from(new_key) };
 		let dispatch_info = call.get_dispatch_info();
 		assert_eq!(dispatch_info.pays_fee, Pays::No);
 	})
@@ -1372,19 +1398,19 @@ fn signed_extension_validation_on_msa_key_deleted() {
 		let user_account_id = AccountId32::from(user_public_key);
 		assert_ok!(Msa::add_key(owner_msa_id, &user_account_id, EMPTY_FUNCTION));
 
-		let call_delete_msa_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_key { key: owner_key.clone() });
+		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::delete_msa_public_key { key: owner_key.clone() });
 
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
 			&owner_key,
-			call_delete_msa_key,
+			call_delete_msa_public_key,
 			&info,
 			len,
 		);
 		assert_ok!(result);
-		assert_ok!(Msa::delete_msa_key(
+		assert_ok!(Msa::delete_msa_public_key(
 			Origin::signed(AccountId32::from(owner_key.clone())),
 			user_account_id
 		));
@@ -1401,32 +1427,32 @@ fn signed_extension_validation_failure_on_msa_key_deleted() {
 		let user_account_id = AccountId32::from(user_public_key);
 		assert_ok!(Msa::add_key(owner_msa_id, &user_account_id, EMPTY_FUNCTION));
 
-		let call_delete_msa_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_key { key: owner_key.clone() });
+		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::delete_msa_public_key { key: owner_key.clone() });
 
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
 			&owner_key,
-			call_delete_msa_key,
+			call_delete_msa_public_key,
 			&info,
 			len,
 		);
 
 		System::set_block_number(2);
 		assert_ok!(result);
-		assert_ok!(Msa::delete_msa_key(
+		assert_ok!(Msa::delete_msa_public_key(
 			Origin::signed(AccountId32::from(owner_key.clone())),
 			user_account_id.clone()
 		));
 
-		let call_delete_msa_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_key { key: user_account_id.clone() });
+		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::delete_msa_public_key { key: user_account_id.clone() });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result_deleted = CheckFreeExtrinsicUse::<Test>::new().validate(
 			&user_account_id.clone(),
-			call_delete_msa_key,
+			call_delete_msa_public_key,
 			&info,
 			len,
 		);
@@ -1443,15 +1469,17 @@ fn double_add_key_two_msa_fails() {
 		let new_account1 = key_pair1.public();
 		let (key_pair2, _) = sr25519::Pair::generate();
 		let new_account2 = key_pair2.public();
-		let (_msa_id1, _) = Msa::create_account(new_account1.into(), EMPTY_FUNCTION).unwrap();
-		let (msa_id2, _) = Msa::create_account(new_account2.into(), EMPTY_FUNCTION).unwrap();
+		let (msa_id1, _) = Msa::create_account(new_account1.into(), EMPTY_FUNCTION).unwrap();
+		let (_msa_id2, _) = Msa::create_account(new_account2.into(), EMPTY_FUNCTION).unwrap();
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: msa_id2, expiration: 10 };
+		let add_new_key_data = AddKeyData { nonce: 1, msa_id: msa_id1, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 		let signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
 		assert_noop!(
 			Msa::add_key_to_msa(
 				Origin::signed(new_account2.into()),
+				new_account1.into(),
+				signature.clone(),
 				new_account1.into(),
 				signature,
 				add_new_key_data
@@ -1476,11 +1504,14 @@ fn add_removed_key_to_msa_pass() {
 
 		let add_new_key_data = AddKeyData { nonce: 1, msa_id: msa_id2, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
-		let signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
+		let signature_owner: MultiSignature = key_pair2.sign(&encode_data_new_key_data).into();
+		let signature_new_key: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
 		assert_ok!(Msa::add_key_to_msa(
 			Origin::signed(new_account2.into()),
+			new_account2.into(),
+			signature_owner.clone(),
 			new_account1.into(),
-			signature,
+			signature_new_key,
 			add_new_key_data
 		));
 	});
@@ -1528,7 +1559,7 @@ fn create_provider_duplicate() {
 
 		assert_err!(
 			Msa::create_provider(Origin::signed(key_pair.public().into()), Vec::from("Foo")),
-			Error::<Test>::DuplicateProviderMetadata
+			Error::<Test>::DuplicateProviderRegistryEntry
 		)
 	})
 }
@@ -1604,7 +1635,7 @@ pub fn error_not_delegated_rpc() {
 		let provider = Provider(1);
 		let delegator = Delegator(2);
 		assert_err!(
-			Msa::get_granted_schemas(delegator, provider),
+			Msa::get_granted_schemas_by_msa_id(delegator, provider),
 			Error::<Test>::DelegationNotFound
 		);
 	})
@@ -1616,7 +1647,10 @@ pub fn error_schema_not_granted_rpc() {
 		let provider = Provider(1);
 		let delegator = Delegator(2);
 		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
-		assert_err!(Msa::get_granted_schemas(delegator, provider), Error::<Test>::SchemaNotGranted);
+		assert_err!(
+			Msa::get_granted_schemas_by_msa_id(delegator, provider),
+			Error::<Test>::SchemaNotGranted
+		);
 	})
 }
 
@@ -1629,7 +1663,7 @@ pub fn schema_granted_success_rpc() {
 		let delegator = Delegator(2);
 		let schema_grants = vec![1, 2];
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
-		let schemas_granted = Msa::get_granted_schemas(delegator, provider);
+		let schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, provider);
 		let expected_schemas_granted = vec![1, 2];
 		let output_schemas: Vec<SchemaId> = schemas_granted.unwrap().unwrap();
 		assert_eq!(output_schemas, expected_schemas_granted);
@@ -1669,25 +1703,25 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 		));
 
 		// Step 2
-		assert_ok!(Msa::revoke_msa_delegation_by_delegator(
-			Origin::signed(delegator_key.into()),
-			1
-		));
+		assert_ok!(Msa::revoke_delegation_by_delegator(Origin::signed(delegator_key.into()), 1));
 		// Step 3
 		let (key_pair_delegator2, _) = sr25519::Pair::generate();
 		let delegator_account2 = key_pair_delegator2.public();
 
 		let add_key_payload: AddKeyData = AddKeyData { msa_id: 2, nonce: 0, expiration: 110 };
 		let encode_add_key_data = wrap_binary_data(add_key_payload.encode());
-		let add_key_signature = key_pair_delegator2.sign(&encode_add_key_data);
+		let add_key_signature_delegator = key_pair_delegator.sign(&encode_add_key_data);
+		let add_key_signature_new_key = key_pair_delegator2.sign(&encode_add_key_data);
 
 		assert_ok!(Msa::add_key_to_msa(
 			Origin::signed(delegator_key.into()),
+			delegator_key.into(),
+			add_key_signature_delegator.into(),
 			delegator_account2.into(),
-			add_key_signature.into(),
+			add_key_signature_new_key.into(),
 			add_key_payload
 		));
-		assert_ok!(Msa::delete_msa_key(
+		assert_ok!(Msa::delete_msa_public_key(
 			Origin::signed(delegator_account2.into()),
 			delegator_key.into(),
 		));
@@ -1705,7 +1739,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 
 		// expect this to fail for the same reason
 		assert_err!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				Origin::signed(provider_key.into()),
 				delegator_key.into(),
 				signature.clone(),
@@ -1721,7 +1755,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 //   2. provider removes them as MSA (say by quickly discovering MSA is undesirable)
 //   3. MSA account replays the add, using the previous signed payload + signature.
 #[test]
-fn replaying_add_provider_to_msa_fails() {
+fn replaying_grant_delegation_fails() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_key = key_pair.public();
@@ -1744,7 +1778,7 @@ fn replaying_add_provider_to_msa_fails() {
 		// create MSA for delegator
 		assert_ok!(Msa::create(Origin::signed(delegator_key.into())));
 
-		assert_ok!(Msa::add_provider_to_msa(
+		assert_ok!(Msa::grant_delegation(
 			Origin::signed(provider_key.into()),
 			delegator_key.into(),
 			signature.clone(),
@@ -1757,7 +1791,7 @@ fn replaying_add_provider_to_msa_fails() {
 
 		// Expected to fail because revoking the delegation just expires it at a given block number.
 		assert_err!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				Origin::signed(provider_key.into()),
 				delegator_key.into(),
 				signature.clone(),
@@ -1768,9 +1802,9 @@ fn replaying_add_provider_to_msa_fails() {
 	})
 }
 
-// Assert that check nonce validation does not create a token account for delete_msa_key call.
+// Assert that check nonce validation does not create a token account for delete_msa_public_key call.
 #[test]
-fn signed_ext_check_nonce_delete_msa_key() {
+fn signed_ext_check_nonce_delete_msa_public_key() {
 	new_test_ext().execute_with(|| {
 		// Generate a key pair for MSA account
 		let (msa_key_pair, _) = sr25519::Pair::generate();
@@ -1778,14 +1812,19 @@ fn signed_ext_check_nonce_delete_msa_key() {
 
 		let len = 0_usize;
 
-		// Test the delete_msa_key() call
-		let call_delete_msa_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_key { key: AccountId32::from(msa_new_key) });
-		let info = call_delete_msa_key.get_dispatch_info();
+		// Test the delete_msa_public_key() call
+		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::delete_msa_public_key { key: AccountId32::from(msa_new_key) });
+		let info = call_delete_msa_public_key.get_dispatch_info();
 
-		// Call delete_msa_key() using the Alice account
+		// Call delete_msa_public_key() using the Alice account
 		let who = test_public(1);
-		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(&who, call_delete_msa_key, &info, len));
+		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(
+			&who,
+			call_delete_msa_public_key,
+			&info,
+			len
+		));
 
 		// Did the call create a token account?
 		let created_token_account: bool;
@@ -1803,26 +1842,26 @@ fn signed_ext_check_nonce_delete_msa_key() {
 	})
 }
 
-// Assert that check nonce validation does not create a token account for revoke_msa_delegation_by_delegator call.
+// Assert that check nonce validation does not create a token account for revoke_delegation_by_delegator call.
 #[test]
-fn signed_ext_check_nonce_revoke_msa_delegation_by_delegator() {
+fn signed_ext_check_nonce_revoke_delegation_by_delegator() {
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, _) = test_create_delegator_msa_with_provider();
 
-		// We are testing the revoke_msa_delegation_by_delegator() call.
-		let call_revoke_msa_delegation_by_delegator: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
+		// We are testing the revoke_delegation_by_delegator() call.
+		let call_revoke_delegation_by_delegator: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
 
 		let len = 0_usize;
 
 		// Get the dispatch info for the call.
-		let info = call_revoke_msa_delegation_by_delegator.get_dispatch_info();
+		let info = call_revoke_delegation_by_delegator.get_dispatch_info();
 
-		// Call revoke_msa_delegation_by_delegator() using the Alice account
+		// Call revoke_delegation_by_delegator() using the Alice account
 		let who = test_public(1);
 		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(
 			&who,
-			call_revoke_msa_delegation_by_delegator,
+			call_revoke_delegation_by_delegator,
 			&info,
 			len
 		));
@@ -1903,7 +1942,7 @@ pub fn add_provider_expired() {
 		let signature: MultiSignature = user_pair.sign(&encode_add_provider_data).into();
 		// 3.5 create the user's MSA + add provider as provider
 		assert_err!(
-			Msa::add_provider_to_msa(
+			Msa::grant_delegation(
 				test_origin_signed(1),
 				delegator_key.into(),
 				signature,
@@ -2093,11 +2132,11 @@ pub fn add_signature_replay_fails() {
 		];
 		for tc in test_cases {
 			System::set_block_number(tc.current);
-			let sig1 = &generate_test_signature();
-			assert_ok!(Msa::register_signature(sig1, tc.mortality));
+			let signature_new = &generate_test_signature();
+			assert_ok!(Msa::register_signature(signature_new, tc.mortality));
 			run_to_block(tc.run_to);
 			assert_noop!(
-				Msa::register_signature(sig1, tc.mortality),
+				Msa::register_signature(signature_new, tc.mortality),
 				Error::<Test>::SignatureAlreadySubmitted,
 			);
 		}
@@ -2121,5 +2160,76 @@ pub fn cannot_register_signature_with_mortality_out_of_bounds() {
 			Msa::register_signature(sig1, mortality_block.into()),
 			Error::<Test>::ProofHasExpired
 		);
+	})
+}
+
+#[test]
+pub fn add_msa_key_replay_fails() {
+	struct TestCase {
+		current: u64,
+		mortality: u32,
+		run_to: u64,
+		expected_ok: bool,
+	}
+	new_test_ext().execute_with(|| {
+		// these should all fail replay
+		let test_cases: Vec<TestCase> = vec![
+			TestCase {
+				current: 10_849u64,
+				mortality: 11_001u32,
+				run_to: 10_848u64,
+				expected_ok: true,
+			},
+			TestCase { current: 1u64, mortality: 3u32, run_to: 5u64, expected_ok: false },
+			TestCase { current: 99u64, mortality: 101u32, run_to: 100u64, expected_ok: true },
+			TestCase {
+				current: 1_000u64,
+				mortality: 1_199u32,
+				run_to: 1_198u64,
+				expected_ok: true,
+			},
+			TestCase {
+				current: 1_002u64,
+				mortality: 1_201u32,
+				run_to: 1_200u64,
+				expected_ok: true,
+			},
+			TestCase { current: 999u64, mortality: 1_148u32, run_to: 1_101u64, expected_ok: true },
+			TestCase {
+				current: 1_000_000u64,
+				mortality: 1_000_000u32,
+				run_to: 1_000_000u64,
+				expected_ok: false,
+			},
+		];
+		let (key_pair_provider, _) = sr25519::Pair::generate();
+		let account_provider = key_pair_provider.public();
+		let (new_msa_id, _) = Msa::create_account(account_provider.into(), EMPTY_FUNCTION).unwrap();
+		let nonce = 1u32;
+		for tc in test_cases {
+			System::set_block_number(tc.current);
+			let add_new_key_data =
+				AddKeyData { nonce, msa_id: new_msa_id, expiration: tc.mortality };
+			let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+			let (new_key_pair, _) = sr25519::Pair::generate();
+			let new_delegator_account = new_key_pair.public();
+			let signature_owner: MultiSignature =
+				key_pair_provider.sign(&encode_data_new_key_data).into();
+			let signature_new_key: MultiSignature =
+				new_key_pair.sign(&encode_data_new_key_data).into();
+			run_to_block(tc.run_to);
+
+			let add_key_response: bool = Msa::add_key_to_msa(
+				Origin::signed(account_provider.into()),
+				account_provider.into(),
+				signature_owner.clone(),
+				new_delegator_account.into(),
+				signature_new_key,
+				add_new_key_data.clone(),
+			)
+			.is_ok();
+
+			assert_eq!(add_key_response, tc.expected_ok);
+		}
 	})
 }
