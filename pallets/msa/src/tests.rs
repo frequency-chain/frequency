@@ -10,7 +10,7 @@ use crate::{
 	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
-	PayloadSignatureRegistry, ProviderRegistry,
+	PayloadSignatureRegistry, ProviderToRegistryEntry,
 };
 
 use common_primitives::{
@@ -2035,7 +2035,7 @@ pub fn is_registered_provider_is_true() {
 		let provider_name = Vec::from("frequency".as_bytes()).try_into().unwrap();
 
 		let provider_meta = ProviderRegistryEntry { provider_name };
-		ProviderRegistry::<Test>::insert(provider, provider_meta);
+		ProviderToRegistryEntry::<Test>::insert(provider, provider_meta);
 
 		assert!(Msa::is_registered_provider(provider.into()));
 	});
