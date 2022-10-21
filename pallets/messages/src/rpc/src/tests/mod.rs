@@ -71,7 +71,7 @@ async fn get_messages_by_schema_with_invalid_request_should_panic() {
 	let client = Arc::new(TestApi {});
 	let api = MessagesHandler::new(client);
 
-	let result: GetMessagesBySchemaResult = api.get_messages_by_schema(
+	let result: GetMessagesBySchemaResult = api.get_messages_by_schema_id(
 		SCHEMA_ID_EMPTY, // Schema Id
 		BlockPaginationRequest { from_block: 1, to_block: 2, from_index: 0, page_size: 0 },
 	);
@@ -85,7 +85,7 @@ async fn get_messages_by_schema_with_bad_schema_id_should_err() {
 	let client = Arc::new(TestApi {});
 	let api = MessagesHandler::new(client);
 
-	let result: GetMessagesBySchemaResult = api.get_messages_by_schema(
+	let result: GetMessagesBySchemaResult = api.get_messages_by_schema_id(
 		0, // Schema Id
 		BlockPaginationRequest { from_block: 1, to_block: 5, from_index: 0, page_size: 10 },
 	);
@@ -100,7 +100,7 @@ async fn get_messages_by_schema_with_success() {
 	let client = Arc::new(TestApi {});
 	let api = MessagesHandler::new(client);
 
-	let result: GetMessagesBySchemaResult = api.get_messages_by_schema(
+	let result: GetMessagesBySchemaResult = api.get_messages_by_schema_id(
 		SCHEMA_ID_HAS_MESSAGES, // Schema Id
 		BlockPaginationRequest { from_block: 1, to_block: 5, from_index: 0, page_size: 2 },
 	);

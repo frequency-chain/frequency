@@ -38,7 +38,7 @@
 //! ### Dispatchable Functions
 //!
 //! - `add_key_to_msa` - Associates a key to an MSA ID in a signed payload.
-//! - `add_provider_to_msa` - Creates a delegation relationship between a `Provider` and MSA.
+//! - `grant_delegation` - Creates a delegation relationship between a `Provider` and MSA.
 //! - `create` - Creates an MSA for the `Origin`.
 //! - `create_sponsored_account_with_delegation` - `Origin` creates an account for a given `AccountId` and sets themselves as a `Provider`.
 //! - `revoke_delegation_by_provider` - `Provider` MSA terminates a Delegation with Delegator MSA by expiring it.
@@ -64,7 +64,7 @@ use codec::{Decode, Encode};
 use common_primitives::{
 	msa::{
 		DelegationValidator, Delegator, MsaLookup, MsaValidator, OrderedSet, Provider,
-		ProviderInfo, ProviderLookup, ProviderMetadata, SchemaGrantValidator,
+		ProviderInfo, ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
 	},
 	schema::{SchemaId, SchemaValidator},
 };
@@ -171,14 +171,14 @@ pub mod pallet {
 
 	/// Provider registration information
 	/// - Key: Provider MSA Id
-	/// - Value: [`ProviderMetadata`](common_primitives::msa::ProviderMetadata)
+	/// - Value: [`ProviderRegistryEntry`](common_primitives::msa::ProviderRegistryEntry)
 	#[pallet::storage]
-	#[pallet::getter(fn get_provider_metadata)]
-	pub type ProviderRegistry<T: Config> = StorageMap<
+	#[pallet::getter(fn get_provider_registry_entry)]
+	pub type ProviderToRegistryEntry<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
 		Provider,
-		ProviderMetadata<T::MaxProviderNameSize>,
+		ProviderRegistryEntry<T::MaxProviderNameSize>,
 		OptionQuery,
 	>;
 
@@ -231,7 +231,7 @@ pub mod pallet {
 			key: T::AccountId,
 		},
 		/// An AccountId had all permissions revoked from its MessageSourceId
-		KeyRemoved {
+		PublicKeyDeleted {
 			/// The key no longer approved for the associated MSA
 			key: T::AccountId,
 		},
@@ -243,7 +243,7 @@ pub mod pallet {
 			delegator: Delegator,
 		},
 		/// A Provider-MSA relationship was registered
-		ProviderRegistered {
+		ProviderCreated {
 			/// The MSA id associated with the provider
 			provider_msa_id: MessageSourceId,
 		},
@@ -311,7 +311,7 @@ pub mod pallet {
 		/// The operation was attempted with an expired delegation
 		DelegationExpired,
 		/// The MSA id submitted for provider creation has already been associated with a provider
-		DuplicateProviderMetadata,
+		DuplicateProviderRegistryEntry,
 		/// The maximum length for a provider name has been exceeded
 		ExceedsMaxProviderNameSize,
 		/// The maximum number of schema grants has been exceeded
@@ -416,12 +416,12 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Adds an association between MSA id and ProviderMetadata. As of now, the
+		/// Adds an association between MSA id and ProviderRegistryEntry. As of now, the
 		/// only piece of metadata we are recording is provider name.
 		///
 		/// ## Errors
 		/// - Returns
-		///   [`DuplicateProviderMetadata`](Error::DuplicateProviderMetadata) if there is already a ProviderMetadata associated with the given MSA id.
+		///   [`DuplicateProviderRegistryEntry`](Error::DuplicateProviderRegistryEntry) if there is already a ProviderRegistryEntry associated with the given MSA id.
 		#[pallet::weight(T::WeightInfo::register_provider())]
 		pub fn register_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
@@ -429,15 +429,15 @@ pub mod pallet {
 				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			ProviderRegistry::<T>::try_mutate(
+			ProviderToRegistryEntry::<T>::try_mutate(
 				Provider(provider_msa_id),
 				|maybe_metadata| -> DispatchResult {
-					ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderMetadata);
-					*maybe_metadata = Some(ProviderMetadata { provider_name: bounded_name });
+					ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderRegistryEntry);
+					*maybe_metadata = Some(ProviderRegistryEntry { provider_name: bounded_name });
 					Ok(())
 				},
 			)?;
-			Self::deposit_event(Event::ProviderRegistered { provider_msa_id });
+			Self::deposit_event(Event::ProviderCreated { provider_msa_id });
 			Ok(())
 		}
 
@@ -453,8 +453,8 @@ pub mod pallet {
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if there is no MSA for `origin`.
 		/// - Returns [`ProviderNotRegistered`](Error::ProviderNotRegistered) if the a non-provider MSA is used as the provider
 		/// - Returns [`UnauthorizedDelegator`](Error::UnauthorizedDelegator) if Origin attempted to add a delegate for someone else's MSA
-		#[pallet::weight(T::WeightInfo::add_provider_to_msa())]
-		pub fn add_provider_to_msa(
+		#[pallet::weight(T::WeightInfo::grant_delegation())]
+		pub fn grant_delegation(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
 			proof: MultiSignature,
@@ -569,7 +569,7 @@ pub mod pallet {
 		}
 
 		/// Remove a key associated with an MSA by expiring it at the current block.
-		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`KeyRemoved`](Event::KeyRemoved).
+		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`PublicKeyDeleted`](Event::PublicKeyDeleted).
 		///
 		/// ### Errors
 		/// - Returns [`InvalidSelfRemoval`](Error::InvalidSelfRemoval) if `origin` and `key` are the same.
@@ -597,7 +597,7 @@ pub mod pallet {
 			Self::delete_key_for_msa(who_msa_id, &key)?;
 
 			// Deposit the event
-			Self::deposit_event(Event::KeyRemoved { key });
+			Self::deposit_event(Event::PublicKeyDeleted { key });
 
 			Ok(())
 		}
@@ -667,9 +667,9 @@ pub mod pallet {
 			// Remove delegator from all delegator<->provider delegations
 			Self::remove_delegator(delegator)?;
 
-			// Delete the last and only account key and deposit the "KeyRemoved" event
+			// Delete the last and only account key and deposit the "PublicKeyDeleted" event
 			Self::delete_key_for_msa(msa_id, &who)?;
-			Self::deposit_event(Event::KeyRemoved { key: who });
+			Self::deposit_event(Event::PublicKeyDeleted { key: who });
 
 			// Deposit the "MsaRetired" event
 			Self::deposit_event(Event::MsaRetired { msa_id });
@@ -744,9 +744,9 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Returns if provider is registered by checking if the [`ProviderRegistry`] contains the MSA id
+	/// Returns if provider is registered by checking if the [`ProviderToRegistryEntry`] contains the MSA id
 	pub fn is_registered_provider(msa_id: MessageSourceId) -> bool {
-		ProviderRegistry::<T>::contains_key(Provider(msa_id))
+		ProviderToRegistryEntry::<T>::contains_key(Provider(msa_id))
 	}
 
 	/// Checks that a provider and delegator keys are valid
@@ -995,7 +995,7 @@ impl<T: Config> Pallet<T> {
 	/// # Errors
 	/// * [`Error::DelegationNotFound`]
 	/// * [`Error::SchemaNotGranted`]
-	pub fn get_granted_schemas(
+	pub fn get_granted_schemas_by_msa_id(
 		delegator: Delegator,
 		provider: Provider,
 	) -> Result<Option<Vec<SchemaId>>, DispatchError> {
