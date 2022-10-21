@@ -224,7 +224,7 @@ pub mod pallet {
 			key: T::AccountId,
 		},
 		/// An AccountId has been associated with a MessageSourceId
-		KeyAdded {
+		PublicKeyAdded {
 			/// The MSA for the Event
 			msa_id: MessageSourceId,
 			/// The key added to the MSA
@@ -514,7 +514,7 @@ pub mod pallet {
 
 		/// Adds a given `new_key` to `msa_id` of the account signing ```msa_owner_proof```, which must match the MSA in `add_key_payload`.
 		/// The ```new_key``` must sign the ```add_key_payload``` to authorize the addition.
-		/// Deposits event [`KeyAdded'](Event::KeyAdded).
+		/// Deposits event [`PublicKeyAdded'](Event::PublicKeyAdded).
 		/// Returns `Ok(())` on success, otherwise returns an error.
 		///
 		/// ### Arguments
@@ -557,7 +557,7 @@ pub mod pallet {
 			Self::ensure_msa_owner(&msa_owner_public_key, msa_id)?;
 
 			Self::add_key(msa_id, &new_public_key.clone(), |new_msa_id| -> DispatchResult {
-				Self::deposit_event(Event::KeyAdded {
+				Self::deposit_event(Event::PublicKeyAdded {
 					msa_id: new_msa_id,
 					key: new_public_key.clone(),
 				});
