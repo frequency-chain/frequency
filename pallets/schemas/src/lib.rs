@@ -33,7 +33,7 @@
 //!
 //! ### Dispatchable Functions
 //!
-//! - `register_schema` - Registers a new schema after some initial validation.
+//! - `create_schema` - Registers a new schema after some initial validation.
 //! - `set_max_schema_model_bytes` - Sets the maximum schema model size (Bytes) by governance.
 //!
 //! The Schema pallet implements the following traits:
@@ -215,8 +215,8 @@ pub mod pallet {
 		/// * [`Error::<T>::TooManySchemas`] - The maximum number of schemas has been met
 		/// * [`Error::<T>::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		///
-		#[pallet::weight(< T as Config >::WeightInfo::register_schema(model.len() as u32, 1000))]
-		pub fn register_schema(
+		#[pallet::weight(< T as Config >::WeightInfo::create_schema(model.len() as u32, 1000))]
+		pub fn create_schema(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,

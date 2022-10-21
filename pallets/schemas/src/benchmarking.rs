@@ -38,7 +38,7 @@ fn register_some_schema<T: Config>(
 	payload_location: PayloadLocation,
 ) -> DispatchResult {
 	let schema_size: usize = (T::SchemaModelMaxBytesBoundedVecLimit::get() / 2) as usize;
-	SchemasPallet::<T>::register_schema(
+	SchemasPallet::<T>::create_schema(
 		RawOrigin::Signed(sender).into(),
 		generate_schema::<T>(schema_size),
 		model_type,
@@ -47,7 +47,7 @@ fn register_some_schema<T: Config>(
 }
 
 benchmarks! {
-	register_schema {
+	create_schema {
 		let m in (T::MinSchemaModelSizeBytes::get() + 8) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
 		let n in 1 .. SCHEMAS;
 		let sender: T::AccountId = whitelisted_caller();

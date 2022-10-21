@@ -83,7 +83,7 @@ this type of validation is necessary, it should be described elsewhere.
 (See alternatives section for another way to structure payloads)
 
 ### Extrinsics
-#### register_schema(origin, schema_params)
+#### create_schema(origin, schema_params)
 Creates and posts a new schema on chain. The transaction fee is determined in part by the model size.
 
 * **Parameters**
