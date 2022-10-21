@@ -86,7 +86,7 @@ impl Decode for Provider {
 /// name, but it will likely be expanded in the future
 #[derive(MaxEncodedLen, TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
 #[scale_info(skip_type_params(T))]
-pub struct ProviderMetadata<T>
+pub struct ProviderRegistryEntry<T>
 where
 	T: Get<u32>,
 {
