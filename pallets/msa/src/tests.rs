@@ -1500,7 +1500,7 @@ fn create_provider() {
 }
 
 #[test]
-fn register_provider_max_size_exceeded() {
+fn create_provider_max_size_exceeded() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let (_new_msa_id, _) =
@@ -1516,7 +1516,7 @@ fn register_provider_max_size_exceeded() {
 }
 
 #[test]
-fn register_provider_duplicate() {
+fn create_provider_duplicate() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let (_new_msa_id, _) =
