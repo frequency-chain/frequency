@@ -218,7 +218,7 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 		// assert_eq!(keys.len(), 2);
 		// assert_eq!{keys.contains(&KeyInfoResponse {key: AccountId32::from(new_key), msa_id: new_msa_id}), true}
 
-		let keys_count = Msa::get_msa_key_count(new_msa_id);
+		let keys_count = Msa::get_public_key_count_by_msa_id(new_msa_id);
 		assert_eq!(keys_count, 2);
 		System::assert_last_event(Event::KeyAdded { msa_id: 1, key: new_key.into() }.into());
 	});
@@ -347,7 +347,7 @@ fn test_retire_msa_success() {
 		System::assert_last_event(Event::MsaRetired { msa_id }.into());
 
 		// Assert that the MSA has no accounts
-		let key_count = Msa::get_msa_key_count(msa_id);
+		let key_count = Msa::get_public_key_count_by_msa_id(msa_id);
 		assert_eq!(key_count, 0);
 
 		// MSA has been retired, perform additional tests
