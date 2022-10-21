@@ -5,38 +5,83 @@ use frame_support::{assert_err, assert_noop, assert_ok};
 use sp_core::{sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
+fn create_add_provider_payload() -> (AddProvider, Vec<u8>) {
+	let expiration: BlockNumber = 108;
+	let add_provider_payload = AddProvider::new(1u64, None, expiration);
+	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+	(add_provider_payload, encode_add_provider_data)
+}
+
+pub fn user_creates_and_delegates_to_provider(
+	delegator_keypair: sp_core::sr25519::Pair,
+	provider_keypair: sp_core::sr25519::Pair,
+) -> (MultiSignature, AddProvider) {
+	let delegator_key = delegator_keypair.public();
+	let provider_key = provider_keypair.public();
+
+	let (payload, encode_add_provider_data) = create_add_provider_payload();
+
+	let signature: MultiSignature = delegator_keypair.sign(&encode_add_provider_data).into();
+	assert_ok!(Msa::create_sponsored_account_with_delegation(
+		Origin::signed(provider_key.into()),
+		delegator_key.into(),
+		signature.clone(),
+		payload.clone()
+	));
+	(signature.clone(), payload.clone())
+}
+
+pub fn user_adds_key_to_msa(
+	delegator_pair: sp_core::sr25519::Pair,
+	new_pair: sp_core::sr25519::Pair,
+) {
+	let add_key_payload: AddKeyData = AddKeyData { msa_id: 2, nonce: 0, expiration: 109 };
+	let encode_add_key_data = wrap_binary_data(add_key_payload.encode());
+	let add_key_signature_delegator = delegator_pair.sign(&encode_add_key_data);
+	let add_key_signature_new_key = new_pair.sign(&encode_add_key_data);
+
+	assert_ok!(Msa::add_key_to_msa(
+		Origin::signed(delegator_pair.public().into()),
+		delegator_pair.public().into(),
+		add_key_signature_delegator.into(),
+		new_pair.public().into(),
+		add_key_signature_new_key.into(),
+		add_key_payload
+	));
+}
+
+fn create_user_and_provider() -> (sr25519::Pair, sr25519::Pair) {
+	let (provider_keypair, _) = sr25519::Pair::generate();
+
+	let (delegator_keypair, _) = sr25519::Pair::generate();
+
+	// create MSA for provider and register them
+	assert_ok!(Msa::create(Origin::signed(provider_keypair.public().into())));
+	assert_ok!(Msa::register_provider(
+		Origin::signed(provider_keypair.public().into()),
+		Vec::from("Foo")
+	));
+	(delegator_keypair, provider_keypair)
+}
+
 // This scenario must fail:
 // 1. User creates MSA and delegates to provider
 // 2. User revokes msa delegation
 // 3. User adds a key to their msa
 // 4. User deletes first key from msa
 // 5. Provider successfully calls "create_sponsored_account_with_delegation", OR
-//    Provider successfully calls "grant_delegation" with same payload and proof/signature.
+//    Provider successfully calls "grant_delegation" with same payload and proof/signature,
+//      using first (deleted) key
 #[test]
 pub fn replaying_create_sponsored_account_with_delegation_fails() {
 	new_test_ext().execute_with(|| {
-		let (key_pair, _) = sr25519::Pair::generate();
-		let provider_key = key_pair.public();
-
-		let (key_pair_delegator, _) = sr25519::Pair::generate();
-		let delegator_key = key_pair_delegator.public();
-
-		let expiration: BlockNumber = 100;
-		let add_provider_payload = AddProvider::new(1u64, None, expiration);
-		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
-		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
-
-		// create MSA for provider and register them
-		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
-		assert_ok!(Msa::register_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
+		let (delegator_keypair, provider_keypair) = create_user_and_provider();
+		let provider_key = provider_keypair.public();
+		let delegator_key = delegator_keypair.public();
 
 		// Step 1
-		assert_ok!(Msa::create_sponsored_account_with_delegation(
-			Origin::signed(provider_key.into()),
-			delegator_key.into(),
-			signature.clone(),
-			add_provider_payload.clone()
-		));
+		let (signature, add_provider_payload) =
+			user_creates_and_delegates_to_provider(delegator_keypair.clone(), provider_keypair);
 		run_to_block(25);
 
 		// Step 2
@@ -44,28 +89,11 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 		run_to_block(40);
 
 		// Step 3
-		let (key_pair_delegator2, _) = sr25519::Pair::generate();
-		let delegator_account2 = key_pair_delegator2.public();
-
-		let add_key_payload: AddKeyData = AddKeyData { msa_id: 2, nonce: 0, expiration: 110 };
-		let encode_add_key_data = wrap_binary_data(add_key_payload.encode());
-		let add_key_signature_delegator = key_pair_delegator.sign(&encode_add_key_data);
-		let add_key_signature_new_key = key_pair_delegator2.sign(&encode_add_key_data);
-
-		run_to_block(55);
-
-		assert_ok!(Msa::add_key_to_msa(
-			Origin::signed(delegator_key.into()),
-			delegator_key.into(),
-			add_key_signature_delegator.into(),
-			delegator_account2.into(),
-			add_key_signature_new_key.into(),
-			add_key_payload
-		));
-		run_to_block(60);
+		let (new_keypair, _) = sr25519::Pair::generate();
+		user_adds_key_to_msa(delegator_keypair, new_keypair.clone());
 
 		assert_ok!(Msa::delete_msa_public_key(
-			Origin::signed(delegator_account2.into()),
+			Origin::signed(new_keypair.public().into()),
 			delegator_key.into(),
 		));
 		run_to_block(75);
@@ -102,23 +130,15 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 #[test]
 fn replaying_grant_delegation_fails() {
 	new_test_ext().execute_with(|| {
-		let (key_pair, _) = sr25519::Pair::generate();
-		let provider_key = key_pair.public();
-
-		let (key_pair_delegator, _) = sr25519::Pair::generate();
-		let delegator_key = key_pair_delegator.public();
+		let (delegator_keypair, provider_keypair) = create_user_and_provider();
+		let provider_key = provider_keypair.public();
+		let delegator_key = delegator_keypair.public();
 
 		// add_provider_payload in this case has delegator's msa_id as authorized_msa_id
-		let expiration: BlockNumber = 10;
-		let add_provider_payload = AddProvider::new(1u64, None, expiration);
-		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+		let (add_provider_payload, encode_add_provider_data) = create_add_provider_payload();
 
 		// DELEGATOR signs to add the provider
-		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
-
-		// create MSA for provider and register them
-		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
-		assert_ok!(Msa::register_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
+		let signature: MultiSignature = delegator_keypair.sign(&encode_add_provider_data).into();
 
 		// create MSA for delegator
 		assert_ok!(Msa::create(Origin::signed(delegator_key.into())));
@@ -185,27 +205,13 @@ pub fn add_signature_replay_fails() {
 //     4. Transaction 1-3 all executed before Step 1's payload expireBlock
 fn replaying_create_sponsored_account_with_delegation_fails_02() {
 	new_test_ext().execute_with(|| {
-		let (key_pair, _) = sr25519::Pair::generate();
-		let provider_key = key_pair.public();
-
-		let (key_pair_delegator, _) = sr25519::Pair::generate();
-		let delegator_key = key_pair_delegator.public();
-		let expiration: BlockNumber = 100;
-		let add_provider_payload = AddProvider::new(1u64, None, expiration);
-		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
-		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
-
-		// create MSA for provider and register them
-		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
-		assert_ok!(Msa::register_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
+		let (delegator_keypair, provider_keypair) = create_user_and_provider();
+		let provider_key = provider_keypair.public();
+		let delegator_key = delegator_keypair.public();
 
 		// Step 1
-		assert_ok!(Msa::create_sponsored_account_with_delegation(
-			Origin::signed(provider_key.into()),
-			delegator_key.into(),
-			signature.clone(),
-			add_provider_payload.clone()
-		));
+		let (signature, add_provider_payload) =
+			user_creates_and_delegates_to_provider(delegator_keypair.clone(), provider_keypair);
 		run_to_block(2);
 
 		// Step 2
@@ -234,34 +240,22 @@ fn replaying_create_sponsored_account_with_delegation_fails_02() {
 // Transaction 1-4 all executed before Step 1's payload expireBlock
 fn replaying_create_sponsored_account_with_delegation_fails_03() {
 	new_test_ext().execute_with(|| {
-		let (key_pair, _) = sr25519::Pair::generate();
-		let provider_key = key_pair.public();
+		let (delegator_keypair, provider_keypair) = create_user_and_provider();
+		let provider_key = provider_keypair.public();
+		let delegator_key = delegator_keypair.public();
 
-		let (key_pair_delegator, _) = sr25519::Pair::generate();
-		let delegator_key = key_pair_delegator.public();
-		let add_provider_payload = AddProvider::new(1u64, None, 100);
-		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
-		let original_msa_creation_signature: MultiSignature =
-			key_pair_delegator.sign(&encode_add_provider_data).into();
-
-		// create MSA for provider and register them
-		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
-		assert_ok!(Msa::register_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
 		// Step 1
-		assert_ok!(Msa::create_sponsored_account_with_delegation(
-			Origin::signed(provider_key.into()),
-			delegator_key.into(),
-			original_msa_creation_signature.clone(),
-			add_provider_payload.clone()
-		));
+		let (original_msa_creation_signature, add_provider_payload) =
+			user_creates_and_delegates_to_provider(delegator_keypair.clone(), provider_keypair);
 		run_to_block(5);
 
 		let (new_key_pair, _) = sr25519::Pair::generate();
 		let new_public_key = new_key_pair.public();
+
 		let add_new_key_data = AddKeyData { nonce: 1, msa_id: 2, expiration: 10 };
 		let encode_add_key_data = wrap_binary_data(add_new_key_data.encode());
 
-		let add_key_signature_delegator = key_pair_delegator.sign(&encode_add_key_data);
+		let add_key_signature_delegator = delegator_keypair.sign(&encode_add_key_data);
 		let add_key_signature: MultiSignature = new_key_pair.sign(&encode_add_key_data).into();
 
 		// Step 2.
