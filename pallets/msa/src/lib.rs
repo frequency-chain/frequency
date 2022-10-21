@@ -42,8 +42,8 @@
 //! - `create` - Creates an MSA for the `Origin`.
 //! - `create_sponsored_account_with_delegation` - `Origin` creates an account for a given `AccountId` and sets themselves as a `Provider`.
 //! - `revoke_delegation_by_provider` - `Provider` MSA terminates a Delegation with Delegator MSA by expiring it.
-//! - `revoke_msa_delegation_by_delegator` - Delegator MSA terminates a Delegation with the `Provider` MSA by expiring it.
-//! - `delete_msa_key` - Removes the given key by from storage against respective MSA.
+//! - `revoke_delegation_by_delegator` - Delegator MSA terminates a Delegation with the `Provider` MSA by expiring it.
+//! - `delete_msa_public_key` - Removes the given key by from storage against respective MSA.
 //!
 //! ### Assumptions
 //!
@@ -495,8 +495,8 @@ pub mod pallet {
 		/// - Returns [`DelegationNotFound`](Error::DelegationNotFound) if there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
 		/// - May also return []
 		///
-		#[pallet::weight((T::WeightInfo::revoke_msa_delegation_by_delegator(), DispatchClass::Normal, Pays::No))]
-		pub fn revoke_msa_delegation_by_delegator(
+		#[pallet::weight((T::WeightInfo::revoke_delegation_by_delegator(), DispatchClass::Normal, Pays::No))]
+		pub fn revoke_delegation_by_delegator(
 			origin: OriginFor<T>,
 			provider_msa_id: MessageSourceId,
 		) -> DispatchResult {
@@ -582,8 +582,8 @@ pub mod pallet {
 		/// ### Remarks
 		/// - Removal of key deletes the association of the key with the MSA.
 		/// - The key can be re-added to same or another MSA if needed.
-		#[pallet::weight((T::WeightInfo::delete_msa_key(), DispatchClass::Normal, Pays::No))]
-		pub fn delete_msa_key(origin: OriginFor<T>, key: T::AccountId) -> DispatchResult {
+		#[pallet::weight((T::WeightInfo::delete_msa_public_key(), DispatchClass::Normal, Pays::No))]
+		pub fn delete_msa_public_key(origin: OriginFor<T>, key: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
 			// The calling account can't remove itself
@@ -1213,7 +1213,7 @@ impl<T: Config> SchemaGrantValidator for Pallet<T> {
 
 /// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate that a provider
 /// has not already been revoked if the calling extrinsic is revoking a provider to an MSA. The
-/// purpose of this is to ensure that the revoke_msa_delegation_by_delegator extrinsic cannot be
+/// purpose of this is to ensure that the revoke_delegation_by_delegator extrinsic cannot be
 /// repeatedly called and flood the network.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
@@ -1300,7 +1300,7 @@ where
 	}
 
 	/// Frequently called by the transaction queue to ensure that the transaction is valid such that:
-	/// * The calling extrinsic is 'revoke_msa_delegation_by_delegator'.
+	/// * The calling extrinsic is 'revoke_delegation_by_delegator'.
 	/// * The sender key is associated to an MSA and not revoked.
 	/// * The provider MSA is a valid provider to the delegator MSA.
 	fn validate(
@@ -1311,9 +1311,9 @@ where
 		_len: usize,
 	) -> TransactionValidity {
 		match call.is_sub_type() {
-			Some(Call::revoke_msa_delegation_by_delegator { provider_msa_id, .. }) =>
+			Some(Call::revoke_delegation_by_delegator { provider_msa_id, .. }) =>
 				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id),
-			Some(Call::delete_msa_key { key, .. }) =>
+			Some(Call::delete_msa_public_key { key, .. }) =>
 				CheckFreeExtrinsicUse::<T>::validate_key_revocation(who, key),
 			_ => return Ok(Default::default()),
 		}
