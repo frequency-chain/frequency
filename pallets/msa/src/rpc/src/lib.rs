@@ -26,8 +26,8 @@ pub trait MsaApi<BlockHash, AccountId> {
 		block_number: Option<BlockNumber>,
 	) -> RpcResult<Vec<(MessageSourceId, bool)>>;
 
-	#[method(name = "msa_grantedSchemaIds")]
-	fn get_granted_schemas(
+	#[method(name = "msa_grantedSchemaIdsByMsaId")]
+	fn get_granted_schemas_by_msa_id(
 		&self,
 		delegator_msa_id: MessageSourceId,
 		provider_msa_id: MessageSourceId,
@@ -87,7 +87,7 @@ where
 			.collect())
 	}
 
-	fn get_granted_schemas(
+	fn get_granted_schemas_by_msa_id(
 		&self,
 		delegator_msa_id: MessageSourceId,
 		provider_msa_id: MessageSourceId,
@@ -96,7 +96,7 @@ where
 		let at = BlockId::hash(self.client.info().best_hash);
 		let delegator = Delegator(delegator_msa_id);
 		let provider = Provider(provider_msa_id);
-		let runtime_api_result = api.get_granted_schemas(&at, delegator, provider);
+		let runtime_api_result = api.get_granted_schemas_by_msa_id(&at, delegator, provider);
 		map_rpc_result(runtime_api_result)
 	}
 }

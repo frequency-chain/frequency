@@ -21,8 +21,8 @@ mod tests;
 
 #[rpc(client, server)]
 pub trait MessagesApi<BlockNumber> {
-	#[method(name = "messages_getBySchema")]
-	fn get_messages_by_schema(
+	#[method(name = "messages_getBySchemaId")]
+	fn get_messages_by_schema_id(
 		&self,
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest<BlockNumber>,
@@ -66,7 +66,7 @@ where
 	C::Api: MessagesRuntimeApi<Block, BlockNumber>,
 	BlockNumber: Codec + Copy + AtLeast32BitUnsigned,
 {
-	fn get_messages_by_schema(
+	fn get_messages_by_schema_id(
 		&self,
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest<BlockNumber>,
