@@ -519,9 +519,10 @@ pub mod pallet {
 		///
 		/// ### Arguments
 		/// - `origin` - The account that signs the transaction. Note: can be same as msa owner.
-		/// - `msa_owner_key` - The account that owns the MSA.
+		/// - `msa_owner_public_key` - The account that owns the MSA.
 		/// - `msa_owner_proof`: A signature of the MSA owner account, which must match the MSA in `add_key_payload`.
-		/// - `new_proof`: A signature of the new key account, should also sign `add_key_payload`.
+		/// - `new_public_key`: The new public key to add to the MSA.
+		/// - `new_key_owner_proof`: A signature of the new key account, should also sign `add_key_payload`.
 		/// ### Errors
 		///
 		/// - Returns [`AddKeySignatureVerificationFailed`](Error::AddKeySignatureVerificationFailed) if `key` is not a valid signer of the provided `add_key_payload`.
