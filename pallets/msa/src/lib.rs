@@ -1251,7 +1251,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 		);
 
 		// Invalid transaction error "MoreThanOneKeyExists" if the MSA has more than one account key.
-		let key_count = Pallet::<T>::get_msa_key_count(msa_id);
+		let key_count = Pallet::<T>::get_public_key_count_by_msa_id(msa_id);
 		ensure!(
 			key_count == 1,
 			InvalidTransaction::Custom(ValidityError::InvalidMoreThanOneKeyExists as u8)
