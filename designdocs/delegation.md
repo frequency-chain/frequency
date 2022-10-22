@@ -65,7 +65,7 @@ Creates a new MSA on behalf of a delegator and adds the origin held MSA as its p
       1. `MsaCreated`
           * `new_msa_id` - id of the newly created MSA
           * `key` - the `delegator_key`
-      2. `ProviderAdded`
+      2. `DelegationGranted`
           * `delegator` - id of the newly created MSA
           * `provider` - id of the MSA help by the provider
 

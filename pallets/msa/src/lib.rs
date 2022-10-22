@@ -238,7 +238,7 @@ pub mod pallet {
 			key: T::AccountId,
 		},
 		/// A delegation relationship was added with the given provider and delegator
-		ProviderAdded {
+		DelegationGranted {
 			/// The Provider MSA Id
 			provider: Provider,
 			/// The Delegator MSA Id
@@ -359,7 +359,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// `Origin` MSA creates an MSA on behalf of `delegator_key`, creates a Delegation with the `delegator_key`'s MSA as the Delegator and `origin` as `Provider`. Deposits events [`MsaCreated`](Event::MsaCreated) and [`ProviderAdded`](Event::ProviderAdded).
+		/// `Origin` MSA creates an MSA on behalf of `delegator_key`, creates a Delegation with the `delegator_key`'s MSA as the Delegator and `origin` as `Provider`. Deposits events [`MsaCreated`](Event::MsaCreated) and [`DelegationGranted`](Event::DelegationGranted).
 		/// Returns `Ok(())` on success, otherwise returns an error.
 		///
 		/// ## Errors
@@ -408,7 +408,7 @@ pub mod pallet {
 						key: delegator_key.clone(),
 					});
 
-					Self::deposit_event(Event::ProviderAdded {
+					Self::deposit_event(Event::DelegationGranted {
 						delegator: new_msa_id.into(),
 						provider: provider_msa_id.into(),
 					});
@@ -448,7 +448,7 @@ pub mod pallet {
 
 		/// Creates a new Delegation for an existing MSA, with `origin` as the Provider and `delegator_key` is the delegator.
 		/// Since it is being sent on the Delegator's behalf, it requires the Delegator to authorize the new Delegation.
-		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`ProviderAdded`](Event::ProviderAdded).
+		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`DelegationGranted`](Event::DelegationGranted).
 		///
 		/// ## Errors
 		/// - Returns [`AddProviderSignatureVerificationFailed`](Error::AddProviderSignatureVerificationFailed) if `origin`'s MSA ID does not equal `add_provider_payload.authorized_msa_id`.
@@ -483,7 +483,7 @@ pub mod pallet {
 
 			Self::add_provider(provider, delegator, add_provider_payload.schema_ids)?;
 
-			Self::deposit_event(Event::ProviderAdded { delegator, provider });
+			Self::deposit_event(Event::DelegationGranted { delegator, provider });
 
 			Ok(())
 		}
