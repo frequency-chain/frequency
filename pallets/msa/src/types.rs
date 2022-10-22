@@ -13,14 +13,14 @@ use scale_info::TypeInfo;
 /// Dispatch Empty
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 
-/// A type definition for the payload of adding an MSA key - `pallet_msa::add_key_to_msa`
+/// A type definition for the payload of adding an MSA key - `pallet_msa::add_public_key_to_msa`
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
 pub struct AddKeyData {
 	/// Message Source Account identifier
 	pub msa_id: MessageSourceId,
 	/// A cryptographic nonce.
 	pub nonce: u32,
-	/// The block number at which the signed proof for add_key_to_msa expires.
+	/// The block number at which the signed proof for add_public_key_to_msa expires.
 	pub expiration: BlockNumber,
 }
 

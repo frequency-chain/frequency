@@ -37,7 +37,7 @@
 //!
 //! ### Dispatchable Functions
 //!
-//! - `add_key_to_msa` - Associates a key to an MSA ID in a signed payload.
+//! - `add_public_key_to_msa` - Associates a key to an MSA ID in a signed payload.
 //! - `grant_delegation` - Creates a delegation relationship between a `Provider` and MSA.
 //! - `create` - Creates an MSA for the `Origin`.
 //! - `create_sponsored_account_with_delegation` - `Origin` creates an account for a given `AccountId` and sets themselves as a `Provider`.
@@ -535,8 +535,8 @@ pub mod pallet {
 		/// - Returns ['NotMsaOwner'](Error::NotMsaOwner) if Origin's MSA is not the same as 'add_key_payload` MSA. Essentially you can only add a key to your own MSA.
 		/// - Returns ['ProofHasExpired'](Error::ProofHasExpired) if the current block is less than the `expired` bock number set in `AddKeyData`.
 		/// - Returns ['ProofNotYetValid'](Error::ProofNotYetValid) if the `expired` block number set in `AddKeyData` is greater than the current block number plus mortality_block_limit().
-		#[pallet::weight(T::WeightInfo::add_key_to_msa())]
-		pub fn add_key_to_msa(
+		#[pallet::weight(T::WeightInfo::add_public_key_to_msa())]
+		pub fn add_public_key_to_msa(
 			origin: OriginFor<T>,
 			msa_owner_public_key: T::AccountId,
 			msa_owner_proof: MultiSignature,
