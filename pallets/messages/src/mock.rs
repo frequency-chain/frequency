@@ -2,7 +2,7 @@ use crate as pallet_messages;
 use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, Delegator, MessageSourceId, MsaLookup, MsaValidator,
-		OrderedSet, Provider, ProviderLookup, SchemaGrantValidator,
+		Provider, ProviderLookup, SchemaGrantValidator,
 	},
 	schema::*,
 };
@@ -150,31 +150,36 @@ impl MsaValidator for MsaInfoHandler {
 impl ProviderLookup for DelegationInfoHandler {
 	type BlockNumber = u64;
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type SchemaId = SchemaId;
 
 	fn get_delegation_of(
 		_delegator: Delegator,
 		provider: Provider,
-	) -> Option<Delegation<Self::BlockNumber, MaxSchemaGrantsPerDelegation>> {
+	) -> Option<Delegation<SchemaId, Self::BlockNumber, MaxSchemaGrantsPerDelegation>> {
 		if provider == Provider(2000) {
 			return None
 		};
-		Some(Delegation { expired: 100, schemas: OrderedSet::new() })
+		Some(Delegation { revoked_at: 100, schema_permissions: Default::default() })
 	}
 }
 impl DelegationValidator for DelegationInfoHandler {
 	type BlockNumber = u64;
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type SchemaId = SchemaId;
 
 	fn ensure_valid_delegation(
 		provider: Provider,
 		_delegator: Delegator,
 		_block_number: Option<Self::BlockNumber>,
-	) -> Result<Delegation<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError> {
+	) -> Result<
+		Delegation<SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
+		DispatchError,
+	> {
 		if provider == Provider(2000) {
 			return Err(DispatchError::Other("some delegation error"))
 		};
 
-		Ok(Delegation { schemas: OrderedSet::new(), expired: Default::default() })
+		Ok(Delegation { schema_permissions: Default::default(), revoked_at: Default::default() })
 	}
 }
 impl SchemaGrantValidator for SchemaGrantValidationHandler {

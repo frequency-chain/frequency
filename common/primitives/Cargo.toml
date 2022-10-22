@@ -30,8 +30,6 @@ sp-api = {git = "https://github.com/paritytech/substrate", default-features = fa
 sp-core = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
 sp-runtime = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
 sp-std = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
-#ORML
-orml-utilities = {git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.29"}
 
 [features]
 default = ['std']
@@ -42,5 +40,4 @@ std = [
   'sp-std/std',
   'sp-runtime/std',
   'sp-api/std',
-  "orml-utilities/std",
 ]
