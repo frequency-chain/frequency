@@ -198,6 +198,12 @@ pub fn test_create_delegator_msa_with_provider() -> (u64, Public) {
 	(provider_msa_id, delegator_account)
 }
 
+pub fn generate_test_signature() -> MultiSignature {
+	let (key_pair, _) = sr25519::Pair::generate();
+	let fake_data = H256::random();
+	key_pair.sign(fake_data.as_bytes()).into()
+}
+
 #[cfg(feature = "runtime-benchmarks")]
 pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 	use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStorePtr};
