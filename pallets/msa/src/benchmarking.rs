@@ -167,7 +167,9 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(provider), Vec::from("Foo"))
 
 	on_initialize {
-		let m in 1 .. 50_000;
+		// we should not need to max out storage for this benchmark, see:
+		// https://substrate.stackexchange.com/a/4430/2060
+		let m in 1 .. 5_000;
 		for j in 0 .. m {
 			let mortality = 49;
 			register_signature::<T>(mortality as u32);
