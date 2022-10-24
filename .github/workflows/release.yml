@@ -193,8 +193,7 @@ jobs:
           if-no-files-found: error
 
   wait-for-all-builds:
-    # needs: [build-binaries, build-wasm, build-rust-developer-docs, build-js-api-augment]
-    needs: [build-binaries, build-js-api-augment]
+    needs: [build-binaries, build-wasm, build-rust-developer-docs, build-js-api-augment]
     name: Wait for All Builds to Finish
     runs-on: ubuntu-latest
     steps:
