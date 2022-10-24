@@ -1,0 +1,10 @@
+{# This release contains the changes from `{{ env.REF1 | replace(from="refs/tags/", to="") }}`
+to `{{ env.REF2 | replace(from="refs/tags/", to="") }}`. #}
+
+## Rust compiler versions
+
+This release was built and tested against the following versions of `rustc`.
+Other versions may work.
+
+- Rust Stable: `{{ RUSTC_STABLE }}`
+- Rust Nightly: `{{ RUSTC_NIGHTLY }}`
