@@ -40,7 +40,7 @@ pub fn user_adds_key_to_msa(
 	let add_key_signature_delegator = delegator_pair.sign(&encode_add_key_data);
 	let add_key_signature_new_key = new_pair.sign(&encode_add_key_data);
 
-	assert_ok!(Msa::add_key_to_msa(
+	assert_ok!(Msa::add_public_key_to_msa(
 		Origin::signed(delegator_pair.public().into()),
 		delegator_pair.public().into(),
 		add_key_signature_delegator.into(),
@@ -57,7 +57,7 @@ fn create_user_and_provider() -> (sr25519::Pair, sr25519::Pair) {
 
 	// create MSA for provider and register them
 	assert_ok!(Msa::create(Origin::signed(provider_keypair.public().into())));
-	assert_ok!(Msa::register_provider(
+	assert_ok!(Msa::create_provider(
 		Origin::signed(provider_keypair.public().into()),
 		Vec::from("Foo")
 	));
@@ -234,7 +234,7 @@ fn replaying_create_sponsored_account_with_delegation_fails_02() {
 #[test]
 // This scenario must fail:
 //     1. User Signed Request to Provider: create_sponsored_account_with_delegation
-//     2. User Request Direct to Chain: add_key_to_msa
+//     2. User Request Direct to Chain: add_public_key_to_msa
 //     3. User Wallet: delete_key_from_msa (using the original delegator key from Step 1)
 //     4. The Provider from Step 1 attempts to create a NEW MSA with the original delegator key from Step 1
 // Transaction 1-4 all executed before Step 1's payload expireBlock
@@ -259,7 +259,7 @@ fn replaying_create_sponsored_account_with_delegation_fails_03() {
 		let add_key_signature: MultiSignature = new_key_pair.sign(&encode_add_key_data).into();
 
 		// Step 2.
-		assert_ok!(Msa::add_key_to_msa(
+		assert_ok!(Msa::add_public_key_to_msa(
 			Origin::signed(delegator_key.into()),
 			delegator_key.into(),
 			add_key_signature_delegator.into(),
