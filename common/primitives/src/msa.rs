@@ -5,7 +5,10 @@ use frame_support::{
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::DispatchError;
+use sp_runtime::{
+	traits::{AtLeast32BitUnsigned, Zero},
+	DispatchError,
+};
 use sp_std::prelude::Vec;
 
 pub use crate::schema::SchemaId;
@@ -58,8 +61,26 @@ where
 	/// Block number the grant will be revoked.
 	pub revoked_at: BlockNumber,
 	/// Schemas that the provider is allowed to use for a delegated message.
-	pub schema_permissions:
-		BoundedBTreeMap<SchemaId, Option<BlockNumber>, MaxSchemaGrantsPerDelegation>,
+	pub schema_permissions: BoundedBTreeMap<SchemaId, BlockNumber, MaxSchemaGrantsPerDelegation>,
+}
+
+impl<
+		SchemaId: Ord + Default,
+		BlockNumber: Ord + Copy + Zero + AtLeast32BitUnsigned + Default,
+		MaxSchemaGrantsPerDelegation: Get<u32>,
+	> Default for Delegation<SchemaId, BlockNumber, MaxSchemaGrantsPerDelegation>
+{
+	/// Provides the default values for Delegation type.
+	fn default() -> Self {
+		Delegation {
+			revoked_at: BlockNumber::default(),
+			schema_permissions: BoundedBTreeMap::<
+				SchemaId,
+				BlockNumber,
+				MaxSchemaGrantsPerDelegation,
+			>::new(),
+		}
+	}
 }
 
 /// Provider is the recipient of a delegation.
