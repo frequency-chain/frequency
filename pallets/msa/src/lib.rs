@@ -650,6 +650,9 @@ pub mod pallet {
 		///
 		/// This does not currently remove any messages related to the MSA.
 		///
+		/// ### Arguments
+		/// - `origin` - The account that signs the transaction. Note: can be same as msa owner.
+		///
 		/// ### Events
 		/// - Deposits [`MsaRetired`](Event::MsaRetired) when MSA is retired
 		///
