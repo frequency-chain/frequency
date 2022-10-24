@@ -1,5 +1,6 @@
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
+	pallet_prelude::InvalidTransaction,
 	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 	BoundedBTreeMap,
 };
@@ -11,7 +12,7 @@ use crate::{
 	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, CurrentMsaIdentifierMaximum, DispatchResult, Error, Event,
-	PayloadSignatureRegistry, ProviderToRegistryEntry,
+	PayloadSignatureRegistry, ProviderToRegistryEntry, ValidityError,
 };
 
 use common_primitives::{
@@ -407,7 +408,6 @@ fn test_retire_msa_success() {
 		let provider_msa_id =
 			Msa::try_get_msa_from_account_id(&AccountId32::new(provider_account.0)).unwrap();
 
-		// Register provider
 		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
 		let (delegator_signature, add_provider_payload) =
@@ -437,16 +437,23 @@ fn test_retire_msa_success() {
 #[test]
 fn test_retire_msa_fails_if_registered_provider() {
 	new_test_ext().execute_with(|| {
+		// Create an account
+		let (test_account_key_pair, _) = sr25519::Pair::generate();
+		let test_account = AccountId32::new(test_account_key_pair.public().into());
+		let origin = Origin::signed(test_account.clone());
+
 		// Add an account to the MSA
-		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(2, &test_account, EMPTY_FUNCTION));
 
 		// Register provider
-		assert_ok!(Msa::create_provider(test_origin_signed(1), Vec::from("Foo")));
+		assert_ok!(Msa::create_provider(origin, Vec::from("Foo")));
 
 		// Retire MSA
 		assert_noop!(
-			Msa::retire_msa(test_origin_signed(1)),
-			Error::<Test>::RegisteredProviderCannotBeRetired
+			CheckFreeExtrinsicUse::<Test>::ensure_msa_can_retire(&test_account),
+			InvalidTransaction::Custom(
+				ValidityError::InvalidRegisteredProviderCannotBeRetired as u8
+			)
 		);
 	})
 }
@@ -454,13 +461,23 @@ fn test_retire_msa_fails_if_registered_provider() {
 #[test]
 fn test_retire_msa_fails_if_more_than_one_account_exists() {
 	new_test_ext().execute_with(|| {
-		// Add an account to the MSA
-		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
-		// Add an account to the MSA
-		assert_ok!(Msa::add_key(2, &test_public(2), EMPTY_FUNCTION));
+		let msa_id = 2;
+		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
+		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
+
+		// Create accounts
+		let test_account_1 = AccountId32::new(test_account_1_key_pair.public().into());
+		let test_account_2 = AccountId32::new(test_account_2_key_pair.public().into());
+
+		// Add two accounts to the MSA
+		assert_ok!(Msa::add_key(msa_id, &test_account_1, EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(msa_id, &test_account_2, EMPTY_FUNCTION));
 
 		// Retire the MSA
-		assert_noop!(Msa::retire_msa(test_origin_signed(1)), Error::<Test>::MoreThanOneKeyExists);
+		assert_noop!(
+			CheckFreeExtrinsicUse::<Test>::ensure_msa_can_retire(&test_account_1),
+			InvalidTransaction::Custom(ValidityError::InvalidMoreThanOneKeyExists as u8)
+		);
 	})
 }
 
