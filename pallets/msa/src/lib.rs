@@ -89,6 +89,9 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod replay_tests;
+
 pub mod weights;
 
 pub use weights::*;
@@ -1091,7 +1094,7 @@ impl<T: Config> Pallet<T> {
 
 		// If we did not cross a bucket boundary block, stop
 		if prior_bucket_num == current_bucket_num {
-			return T::WeightInfo::on_initialize(0 as u32)
+			return Weight::zero()
 		}
 		// Clear the previous bucket block set
 		let multi_removal_result = <PayloadSignatureRegistry<T>>::clear_prefix(
