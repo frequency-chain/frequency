@@ -1,11 +1,15 @@
 //! Types for the MSA Pallet
 #![cfg_attr(not(feature = "std"), no_std)]
+
 use super::*;
 use codec::{Decode, Encode};
+use sp_runtime::traits::AtLeast32BitUnsigned;
 
 use core::fmt::Debug;
 
-pub use common_primitives::msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider};
+pub use common_primitives::msa::{
+	Delegation, Delegator, KeyInfoResponse, MessageSourceId, Provider,
+};
 use common_primitives::{node::BlockNumber, schema::SchemaId};
 
 use scale_info::TypeInfo;
@@ -49,5 +53,66 @@ impl AddProvider {
 		};
 
 		Self { authorized_msa_id, schema_ids, expiration }
+	}
+}
+
+/// Some docs
+pub trait SchemaPermission<T: Config> {
+	/// Some doc
+	fn try_insert_schema(&mut self, schema_id: SchemaId) -> Result<(), DispatchError>;
+
+	/// Some docs
+	fn try_insert_schemas(&mut self, schema_ids: Vec<SchemaId>) -> Result<(), DispatchError> {
+		for schema_id in schema_ids.into_iter() {
+			self.try_insert_schema(schema_id)?;
+		}
+
+		Ok(())
+	}
+
+	/// Some docs
+	fn try_get_mut_schemas(
+		&mut self,
+		schema_ids: Vec<SchemaId>,
+		block_number: T::BlockNumber,
+	) -> Result<(), DispatchError> {
+		for schema_id in schema_ids.into_iter() {
+			self.try_get_mut_schema(schema_id, block_number)?;
+		}
+		Ok(())
+	}
+
+	/// Some doc
+	fn try_get_mut_schema(
+		&mut self,
+		schema_id: SchemaId,
+		block_number: T::BlockNumber,
+	) -> Result<(), DispatchError>;
+}
+
+impl<T: Config> SchemaPermission<T>
+	for Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>
+{
+	/// Some doc
+	fn try_insert_schema(&mut self, schema_id: SchemaId) -> Result<(), DispatchError> {
+		self.schema_permissions
+			.try_insert(schema_id, Default::default())
+			.map_err(|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegation)?;
+		Ok(())
+	}
+
+	fn try_get_mut_schema(
+		&mut self,
+		schema_id: SchemaId,
+		block_number: T::BlockNumber,
+	) -> Result<(), DispatchError> {
+		let schema = self
+			.schema_permissions
+			.get_mut(&schema_id)
+			.ok_or(Error::<T>::SchemaNotGranted)?;
+
+		*schema = block_number;
+
+		Ok(())
 	}
 }
