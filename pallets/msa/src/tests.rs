@@ -2348,9 +2348,6 @@ fn grant_schema_permissions_success() {
 			schema_ids,
 		));
 
-		System::assert_last_event(
-			Event::SchemaPermissionGranted { provider, delegator, schema_ids: vec![2].into() }
-				.into(),
-		);
+		System::assert_last_event(Event::DelegationUpdated { provider, delegator }.into());
 	});
 }

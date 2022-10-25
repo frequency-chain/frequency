@@ -273,10 +273,8 @@ pub mod pallet {
 			/// The MSA id for the Event
 			msa_id: MessageSourceId,
 		},
-		/// The Schema permissions granted.
-		SchemaPermissionGranted {
-			/// Schema Ids granted
-			schema_ids: Vec<SchemaId>,
+		/// A an update to the delegation occured (ex. schema permissions where updated).
+		DelegationUpdated {
 			/// The Provider MSA Id
 			provider: Provider,
 			/// The Delegator MSA Id
@@ -678,10 +676,9 @@ pub mod pallet {
 				schema_ids.clone(),
 			)?;
 
-			Self::deposit_event(Event::SchemaPermissionGranted {
+			Self::deposit_event(Event::DelegationUpdated {
 				provider: provider_msa_id,
 				delegator: delegator_msa_id,
-				schema_ids,
 			});
 
 			Ok(())
