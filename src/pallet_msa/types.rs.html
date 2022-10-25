@@ -49,8 +49,6 @@
 <span id="49">49</span>
 <span id="50">50</span>
 <span id="51">51</span>
-<span id="52">52</span>
-<span id="53">53</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Types for the MSA Pallet
 </span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="kw">use super</span>::<span class="kw-2">*</span>;
@@ -66,14 +64,12 @@
 <span class="doccomment">/// Dispatch Empty
 </span><span class="kw">pub const </span>EMPTY_FUNCTION: <span class="kw">fn</span>(MessageSourceId) -&gt; DispatchResult = |<span class="kw">_</span>| <span class="prelude-val">Ok</span>(());
 
-<span class="doccomment">/// A type definition for the payload of adding an MSA key - `pallet_msa::add_key_to_msa`
+<span class="doccomment">/// A type definition for the payload of adding an MSA key - `pallet_msa::add_public_key_to_msa`
 </span><span class="attribute">#[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>AddKeyData {
 	<span class="doccomment">/// Message Source Account identifier
 	</span><span class="kw">pub </span>msa_id: MessageSourceId,
-	<span class="doccomment">/// A cryptographic nonce.
-	</span><span class="kw">pub </span>nonce: u32,
-	<span class="doccomment">/// The block number at which the signed proof for add_key_to_msa expires.
+	<span class="doccomment">/// The block number at which the signed proof for add_public_key_to_msa expires.
 	</span><span class="kw">pub </span>expiration: BlockNumber,
 }
 
@@ -85,7 +81,7 @@
 	<span class="doccomment">/// Schemas for which publishing grants are authorized.
 	/// This is private intended for internal use only.
 	</span><span class="kw">pub </span>schema_ids: Vec&lt;SchemaId&gt;,
-	<span class="doccomment">/// The block number at which the proof for add_provider_to_msa expires.
+	<span class="doccomment">/// The block number at which the proof for grant_delegation expires.
 	</span><span class="kw">pub </span>expiration: BlockNumber,
 }
 

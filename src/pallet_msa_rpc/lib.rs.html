@@ -128,8 +128,8 @@
 		block_number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
 	) -&gt; RpcResult&lt;Vec&lt;(MessageSourceId, bool)&gt;&gt;;
 
-	<span class="attribute">#[method(name = <span class="string">&quot;msa_grantedSchemaIds&quot;</span>)]
-	</span><span class="kw">fn </span>get_granted_schemas(
+	<span class="attribute">#[method(name = <span class="string">&quot;msa_grantedSchemaIdsByMsaId&quot;</span>)]
+	</span><span class="kw">fn </span>get_granted_schemas_by_msa_id(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		delegator_msa_id: MessageSourceId,
 		provider_msa_id: MessageSourceId,
@@ -189,7 +189,7 @@
 			.collect())
 	}
 
-	<span class="kw">fn </span>get_granted_schemas(
+	<span class="kw">fn </span>get_granted_schemas_by_msa_id(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		delegator_msa_id: MessageSourceId,
 		provider_msa_id: MessageSourceId,
@@ -198,7 +198,7 @@
 		<span class="kw">let </span>at = BlockId::hash(<span class="self">self</span>.client.info().best_hash);
 		<span class="kw">let </span>delegator = Delegator(delegator_msa_id);
 		<span class="kw">let </span>provider = Provider(provider_msa_id);
-		<span class="kw">let </span>runtime_api_result = api.get_granted_schemas(<span class="kw-2">&amp;</span>at, delegator, provider);
+		<span class="kw">let </span>runtime_api_result = api.get_granted_schemas_by_msa_id(<span class="kw-2">&amp;</span>at, delegator, provider);
 		map_rpc_result(runtime_api_result)
 	}
 }

@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"pallet_msa":[["impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_msa/pallet/trait.Config.html\" title=\"trait pallet_msa::pallet::Config\">Config</a>&gt; ProviderLookup for <a class=\"struct\" href=\"pallet_msa/pallet/struct.Pallet.html\" title=\"struct pallet_msa::pallet::Pallet\">Pallet</a>&lt;T&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

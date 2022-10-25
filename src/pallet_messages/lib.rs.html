@@ -370,6 +370,15 @@
 <span id="370">370</span>
 <span id="371">371</span>
 <span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # Messages pallet
 //! A pallet for storing messages.
 //!
@@ -427,7 +436,10 @@
 <span class="kw">use </span>codec::Encode;
 <span class="kw">use </span>common_primitives::{
 	messages::<span class="kw-2">*</span>,
-	msa::{AccountProvider, Delegator, MessageSourceId, Provider},
+	msa::{
+		DelegationValidator, Delegator, MessageSourceId, MsaLookup, MsaValidator, Provider,
+		ProviderLookup, SchemaGrantValidator,
+	},
 	schema::<span class="kw-2">*</span>,
 };
 <span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
@@ -448,8 +460,14 @@
 		<span class="doccomment">/// Weight information for extrinsics in this pallet.
 		</span><span class="kw">type </span>WeightInfo: WeightInfo;
 
-		<span class="doccomment">/// A type that will supply account related information.
-		</span><span class="kw">type </span>AccountProvider: AccountProvider&lt;AccountId = <span class="self">Self</span>::AccountId&gt;;
+		<span class="doccomment">/// A type that will supply MSA related information
+		</span><span class="kw">type </span>MsaInfoProvider: MsaLookup + MsaValidator&lt;AccountId = <span class="self">Self</span>::AccountId&gt;;
+
+		<span class="doccomment">/// A type that will supply delegation related information
+		</span><span class="kw">type </span>DelegationInfoProvider: ProviderLookup + DelegationValidator;
+
+		<span class="doccomment">/// A type that will validate schema grants
+		</span><span class="kw">type </span>SchemaGrantValidator: SchemaGrantValidator;
 
 		<span class="doccomment">/// A type that will supply schema related information.
 		</span><span class="kw">type </span>SchemaProvider: SchemaProvider&lt;SchemaId&gt;;
@@ -609,7 +627,7 @@
 			<span class="comment">// On-chain messages either are sent from the user themselves, or on behalf of another MSA Id
 			</span><span class="kw">let </span>maybe_delegator = <span class="kw">match </span>on_behalf_of {
 				<span class="prelude-val">Some</span>(delegator) =&gt; {
-					T::AccountProvider::ensure_valid_schema_grant(
+					T::SchemaGrantValidator::ensure_valid_schema_grant(
 						Provider(provider_msa_id),
 						Delegator(delegator),
 						schema_id,
@@ -682,7 +700,7 @@
 	/// # Returns
 	/// * Result&lt;MessageSourceId, DispatchError&gt; - Returns an MSA Id for storing a message.
 	</span><span class="kw">pub fn </span>find_msa_id(key: <span class="kw-2">&amp;</span>T::AccountId) -&gt; <span class="prelude-ty">Result</span>&lt;MessageSourceId, DispatchError&gt; {
-		<span class="prelude-val">Ok</span>(T::AccountProvider::ensure_valid_msa_key(key)
+		<span class="prelude-val">Ok</span>(T::MsaInfoProvider::ensure_valid_msa_key(key)
 			.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InvalidMessageSourceAccount)<span class="question-mark">?</span>)
 	}
 

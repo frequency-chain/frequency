@@ -339,6 +339,31 @@
 <span id="339">339</span>
 <span id="340">340</span>
 <span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # Schemas Pallet
 //!
 //! The Schemas pallet provides functionality for handling schemas.
@@ -374,7 +399,7 @@
 //!
 //! ### Dispatchable Functions
 //!
-//! - `register_schema` - Registers a new schema after some initial validation.
+//! - `create_schema` - Registers a new schema after some initial validation.
 //! - `set_max_schema_model_bytes` - Sets the maximum schema model size (Bytes) by governance.
 //!
 //! The Schema pallet implements the following traits:
@@ -396,9 +421,13 @@
 
 </span><span class="kw">use </span>common_primitives::{
 	parquet::ParquetModel,
-	schema::{ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse},
+	schema::{
+		ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaValidator,
+	},
 };
 <span class="kw">use </span>frame_support::{dispatch::DispatchResult, ensure, traits::Get};
+<span class="kw">use </span>sp_std::vec::Vec;
+
 <span class="attribute">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
@@ -414,6 +443,7 @@
 <span class="kw">pub mod </span>weights;
 <span class="kw">pub use </span>types::<span class="kw-2">*</span>;
 <span class="kw">pub use </span>weights::<span class="kw-2">*</span>;
+
 <span class="kw">mod </span>serde;
 
 <span class="attribute">#[frame_support::pallet]
@@ -421,7 +451,6 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_support::pallet_prelude::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
-	<span class="kw">use </span>sp_std::vec::Vec;
 
 	<span class="attribute">#[pallet::config]
 	</span><span class="kw">pub trait </span>Config: frame_system::Config {
@@ -475,7 +504,7 @@
 		</span>DeserializationError,
 		<span class="doccomment">/// Error in Serialization
 		</span>SerializationError,
-		<span class="doccomment">/// SchemaCount was attempted to overflow max, means MaxSchemaRegistrations is too big
+		<span class="doccomment">/// CurrentSchemaIdentifierMaximum was attempted to overflow max, means MaxSchemaRegistrations is too big
 		</span>SchemaCountOverflow,
 	}
 
@@ -495,8 +524,9 @@
 	/// Useful for retrieving latest schema id
 	/// - Value: Last Schema Id
 	</span><span class="attribute">#[pallet::storage]
-	#[pallet::getter(<span class="kw">fn </span>schema_count)]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>SchemaCount&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, SchemaId, ValueQuery&gt;;
+	#[pallet::getter(<span class="kw">fn </span>get_current_schema_identifier_maximum)]
+	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>CurrentSchemaIdentifierMaximum&lt;T: Config&gt; =
+		StorageValue&lt;<span class="kw">_</span>, SchemaId, ValueQuery&gt;;
 
 	<span class="doccomment">/// Storage for message schema struct data
 	/// - Key: Schema Id
@@ -551,8 +581,8 @@
 		/// * [`Error::&lt;T&gt;::TooManySchemas`] - The maximum number of schemas has been met
 		/// * [`Error::&lt;T&gt;::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		///
-		</span><span class="attribute">#[pallet::weight(&lt; T <span class="kw">as </span>Config &gt;::WeightInfo::register_schema(model.len() <span class="kw">as </span>u32, <span class="number">1000</span>))]
-		</span><span class="kw">pub fn </span>register_schema(
+		</span><span class="attribute">#[pallet::weight(&lt; T <span class="kw">as </span>Config &gt;::WeightInfo::create_schema(model.len() <span class="kw">as </span>u32, <span class="number">1000</span>))]
+		</span><span class="kw">pub fn </span>create_schema(
 			origin: OriginFor&lt;T&gt;,
 			model: BoundedVec&lt;u8, T::SchemaModelMaxBytesBoundedVecLimit&gt;,
 			model_type: ModelType,
@@ -592,24 +622,22 @@
 	}
 
 	<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
+		<span class="doccomment">/// Set the schema count to something in particular.
+		</span><span class="attribute">#[cfg(any(feature = <span class="string">&quot;std&quot;</span>, feature = <span class="string">&quot;runtime-benchmarks&quot;</span>, test))]
+		</span><span class="kw">pub fn </span>set_schema_count(n: SchemaId) {
+			&lt;CurrentSchemaIdentifierMaximum&lt;T&gt;&gt;::set(n);
+		}
+
 		<span class="kw">fn </span>add_schema(
 			model: BoundedVec&lt;u8, T::SchemaModelMaxBytesBoundedVecLimit&gt;,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
 		) -&gt; <span class="prelude-ty">Result</span>&lt;SchemaId, DispatchError&gt; {
-			<span class="kw">let </span>cur_count = <span class="self">Self</span>::schema_count();
-			<span class="macro">ensure!</span>(cur_count &lt; T::MaxSchemaRegistrations::get(), Error::&lt;T&gt;::TooManySchemas);
-			<span class="kw">let </span>schema_id = cur_count.checked_add(<span class="number">1</span>).ok_or(Error::&lt;T&gt;::SchemaCountOverflow)<span class="question-mark">?</span>;
-
+			<span class="kw">let </span>schema_id = <span class="self">Self</span>::get_next_schema_id()<span class="question-mark">?</span>;
 			<span class="kw">let </span>schema = Schema { model_type, model, payload_location };
-			&lt;SchemaCount&lt;T&gt;&gt;::set(schema_id);
+			&lt;CurrentSchemaIdentifierMaximum&lt;T&gt;&gt;::set(schema_id);
 			&lt;Schemas&lt;T&gt;&gt;::insert(schema_id, schema);
 			<span class="prelude-val">Ok</span>(schema_id)
-		}
-
-		<span class="doccomment">/// Retrieve latest schema id via total count of schemas on chain
-		</span><span class="kw">pub fn </span>get_latest_schema_id() -&gt; <span class="prelude-ty">Option</span>&lt;SchemaId&gt; {
-			<span class="prelude-val">Some</span>(<span class="self">Self</span>::schema_count())
 		}
 
 		<span class="doccomment">/// Retrieve a schema by id
@@ -643,6 +671,27 @@
 			};
 			<span class="prelude-val">Ok</span>(())
 		}
+
+		<span class="doccomment">/// Get the next available schema id
+		</span><span class="kw">fn </span>get_next_schema_id() -&gt; <span class="prelude-ty">Result</span>&lt;SchemaId, DispatchError&gt; {
+			<span class="kw">let </span>next = <span class="self">Self</span>::get_current_schema_identifier_maximum()
+				.checked_add(<span class="number">1</span>)
+				.ok_or(Error::&lt;T&gt;::SchemaCountOverflow)<span class="question-mark">?</span>;
+
+			<span class="prelude-val">Ok</span>(next)
+		}
+	}
+}
+
+<span class="kw">impl</span>&lt;T: Config&gt; SchemaValidator&lt;SchemaId&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
+	<span class="kw">fn </span>are_all_schema_ids_valid(schema_ids: <span class="kw-2">&amp;</span>Vec&lt;SchemaId&gt;) -&gt; bool {
+		<span class="kw">let </span>latest_issue_schema_id = <span class="self">Self</span>::get_current_schema_identifier_maximum();
+		schema_ids.iter().all(|id| id &lt;= <span class="kw-2">&amp;</span>latest_issue_schema_id)
+	}
+
+	<span class="attribute">#[cfg(any(feature = <span class="string">&quot;std&quot;</span>, feature = <span class="string">&quot;runtime-benchmarks&quot;</span>, test))]
+	</span><span class="kw">fn </span>set_schema_count(n: SchemaId) {
+		<span class="self">Self</span>::set_schema_count(n);
 	}
 }
 
@@ -651,6 +700,7 @@
 	</span><span class="kw">fn </span>get_schema_by_id(schema_id: SchemaId) -&gt; <span class="prelude-ty">Option</span>&lt;SchemaResponse&gt; {
 		<span class="self">Self</span>::get_schema_by_id(schema_id)
 	}
+
 	<span class="doccomment">/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
 	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
 	/// that has dependencies on this one, we would need to define msa accounts on those pallets&#39;

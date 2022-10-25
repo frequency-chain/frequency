@@ -271,6 +271,10 @@
 <span id="271">271</span>
 <span id="272">272</span>
 <span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::prod_or_testnet_or_local_or_env;
 <span class="kw">use </span>common_primitives::{
 	node::{Balance, BlockNumber},
@@ -380,7 +384,7 @@
 <span class="comment">// -end- Frame System Pallet ---
 
 // --- MSA Pallet ---
-</span><span class="kw">pub type </span>MsaMaxKeys = ConstU8&lt;<span class="number">25</span>&gt;;
+</span><span class="kw">pub type </span>MsaMaxPublicKeysPerMsa = ConstU8&lt;<span class="number">25</span>&gt;;
 <span class="kw">pub type </span>MsaMaxProviderNameSize = ConstU32&lt;<span class="number">16</span>&gt;;
 <span class="comment">// -end- MSA Pallet ---
 
@@ -544,5 +548,9 @@
 	}
 }
 <span class="comment">// -end- Messages Pallet ---
-</span></code></pre></div>
+
+</span><span class="kw">pub type </span>MSAMortalityWindowSize = ConstU32&lt;<span class="number">100</span>&gt;;
+<span class="kw">pub type </span>MSAMaxSignaturesPerBucket = ConstU32&lt;<span class="number">50_000</span>&gt;;
+<span class="kw">pub type </span>MSANumberOfBuckets = ConstU32&lt;<span class="number">2</span>&gt;;
+</code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>

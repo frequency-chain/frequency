@@ -177,21 +177,49 @@
 <span id="177">177</span>
 <span id="178">178</span>
 <span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
 </pre><pre class="rust"><code><span class="kw">use </span>codec::{Decode, Encode, EncodeLike, Error, MaxEncodedLen};
-<span class="kw">use </span>frame_support::{dispatch::DispatchResult, traits::Get, BoundedVec};
+<span class="kw">use </span>frame_support::{
+	dispatch::DispatchResult, traits::Get, BoundedBTreeMap, BoundedVec, RuntimeDebug,
+};
 <span class="kw">use </span>scale_info::TypeInfo;
 <span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>sp_runtime::DispatchError;
 <span class="kw">use </span>sp_std::prelude::Vec;
 
-<span class="kw">pub use crate</span>::{ds::OrderedSetExt, schema::SchemaId};
-
-<span class="doccomment">/// The gap between the current block and a future expiring block allowed when validating signature proofs.
-/// 150 blocks at 6 seconds per block would equate to a 15 minute gap.
-</span><span class="kw">pub const </span>EXPIRATION_BLOCK_VALIDITY_GAP: u32 = <span class="number">150</span>;
+<span class="kw">pub use </span><span class="kw">crate</span>::schema::SchemaId;
 
 <span class="doccomment">/// Message Source Id or msaId is the unique identifier for Message Source Accounts
+/// Message Source Id or msaId is the unique identifier for Message Source Accounts
 </span><span class="kw">pub type </span>MessageSourceId = u64;
 
 <span class="doccomment">/// A Delegator is a role for an MSA to play.
@@ -229,16 +257,17 @@
 }
 
 <span class="doccomment">/// Struct for the information of the relationship between an MSA and a Provider
-</span><span class="attribute">#[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
-#[scale_info(skip_type_params(MaxSchemaGrants))]
-</span><span class="kw">pub struct </span>ProviderInfo&lt;BlockNumber, MaxSchemaGrants&gt;
+</span><span class="attribute">#[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, PartialEq, MaxEncodedLen, Eq)]
+#[scale_info(skip_type_params(MaxSchemaGrantsPerDelegation))]
+</span><span class="kw">pub struct </span>Delegation&lt;SchemaId, BlockNumber, MaxSchemaGrantsPerDelegation&gt;
 <span class="kw">where
-	</span>MaxSchemaGrants: Get&lt;u32&gt;,
+	</span>MaxSchemaGrantsPerDelegation: Get&lt;u32&gt;,
 {
 	<span class="doccomment">/// Block number the grant will be revoked.
-	</span><span class="kw">pub </span>expired: BlockNumber,
+	</span><span class="kw">pub </span>revoked_at: BlockNumber,
 	<span class="doccomment">/// Schemas that the provider is allowed to use for a delegated message.
-	</span><span class="kw">pub </span>schemas: OrderedSetExt&lt;SchemaId, MaxSchemaGrants&gt;,
+	</span><span class="kw">pub </span>schema_permissions:
+		BoundedBTreeMap&lt;SchemaId, <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;, MaxSchemaGrantsPerDelegation&gt;,
 }
 
 <span class="doccomment">/// Provider is the recipient of a delegation.
@@ -267,7 +296,7 @@
 /// name, but it will likely be expanded in the future
 </span><span class="attribute">#[derive(MaxEncodedLen, TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
 #[scale_info(skip_type_params(T))]
-</span><span class="kw">pub struct </span>ProviderMetadata&lt;T&gt;
+</span><span class="kw">pub struct </span>ProviderRegistryEntry&lt;T&gt;
 <span class="kw">where
 	</span>T: Get&lt;u32&gt;,
 {
@@ -287,14 +316,10 @@
 	</span>}
 }
 
-<span class="doccomment">/// This allows other pallets to resolve MSA information.
-</span><span class="kw">pub trait </span>AccountProvider {
-	<span class="doccomment">/// Type used to associate a key to an MSA.
+<span class="doccomment">/// A behavior that allows looking up an MSA id
+</span><span class="kw">pub trait </span>MsaLookup {
+	<span class="doccomment">/// The association between key and MSA
 	</span><span class="kw">type </span>AccountId;
-	<span class="doccomment">/// Type for block number.
-	</span><span class="kw">type </span>BlockNumber;
-	<span class="doccomment">/// Type for maximum number of schemas that can be granted to a provider.
-	</span><span class="kw">type </span>MaxSchemaGrants: Get&lt;u32&gt; + Clone + Eq;
 
 	<span class="doccomment">/// Gets the MSA Id associated with this `AccountId` if any
 	/// # Arguments
@@ -302,17 +327,13 @@
 	/// # Returns
 	/// * `Option&lt;MessageSourceId&gt;`
 	</span><span class="kw">fn </span>get_msa_id(key: <span class="kw-2">&amp;</span><span class="self">Self</span>::AccountId) -&gt; <span class="prelude-ty">Option</span>&lt;MessageSourceId&gt;;
+}
 
-	<span class="doccomment">/// Gets the relationship information for this delegator, provider pair
-	/// # Arguments
-	/// * `delegator` - The `MessageSourceId` that delegated to the provider
-	/// * `provider` - The `MessageSourceId` that has been delegated to
-	/// # Returns
-	/// * `Option&lt;ProviderInfo&lt;Self::BlockNumber&gt;&gt;`
-	</span><span class="kw">fn </span>get_provider_info_of(
-		delegator: Delegator,
-		provider: Provider,
-	) -&gt; <span class="prelude-ty">Option</span>&lt;ProviderInfo&lt;<span class="self">Self</span>::BlockNumber, <span class="self">Self</span>::MaxSchemaGrants&gt;&gt;;
+<span class="doccomment">/// A behavior that allows for validating an MSA
+</span><span class="kw">pub trait </span>MsaValidator {
+	<span class="doccomment">/// The association between key and MSA
+	</span><span class="kw">type </span>AccountId;
+
 	<span class="doccomment">/// Check that a key is associated to an MSA and returns key information.
 	/// Returns a `[DispatchError`] if there is no MSA associated with the key
 	/// # Arguments
@@ -320,6 +341,37 @@
 	/// # Returns
 	/// * `Result&lt;MessageSourceId, DispatchError&gt;`
 	</span><span class="kw">fn </span>ensure_valid_msa_key(key: <span class="kw-2">&amp;</span><span class="self">Self</span>::AccountId) -&gt; <span class="prelude-ty">Result</span>&lt;MessageSourceId, DispatchError&gt;;
+}
+
+<span class="doccomment">/// A behavior that allows for looking up delegator-provider relationships
+</span><span class="kw">pub trait </span>ProviderLookup {
+	<span class="doccomment">/// Type for block number.
+	</span><span class="kw">type </span>BlockNumber;
+	<span class="doccomment">/// Type for maximum number of schemas that can be granted to a provider.
+	</span><span class="kw">type </span>MaxSchemaGrantsPerDelegation: Get&lt;u32&gt; + Clone + Eq;
+	<span class="doccomment">/// Schema Id is the unique identifier for a Schema
+	</span><span class="kw">type </span>SchemaId;
+
+	<span class="doccomment">/// Gets the relationship information for this delegator, provider pair
+	/// # Arguments
+	/// * `delegator` - The `MessageSourceId` that delegated to the provider
+	/// * `provider` - The `MessageSourceId` that has been delegated to
+	/// # Returns
+	/// * `Option&lt;Delegation&lt;Self::BlockNumber&gt;&gt;`
+	</span><span class="kw">fn </span>get_delegation_of(
+		delegator: Delegator,
+		provider: Provider,
+	) -&gt; <span class="prelude-ty">Option</span>&lt;Delegation&lt;<span class="self">Self</span>::SchemaId, <span class="self">Self</span>::BlockNumber, <span class="self">Self</span>::MaxSchemaGrantsPerDelegation&gt;&gt;;
+}
+
+<span class="doccomment">/// A behavior that allows for validating a delegator-provider relationship
+</span><span class="kw">pub trait </span>DelegationValidator {
+	<span class="doccomment">/// Type for block number.
+	</span><span class="kw">type </span>BlockNumber;
+	<span class="doccomment">/// Type for maximum number of schemas that can be granted to a provider.
+	</span><span class="kw">type </span>MaxSchemaGrantsPerDelegation: Get&lt;u32&gt; + Clone + Eq;
+	<span class="doccomment">/// Schema Id is the unique identifier for a Schema
+	</span><span class="kw">type </span>SchemaId;
 
 	<span class="doccomment">/// Validates that the delegator and provider have a relationship at this point
 	/// # Arguments
@@ -331,8 +383,14 @@
 		provider: Provider,
 		delegator: Delegator,
 		block_number: <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::BlockNumber&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;ProviderInfo&lt;<span class="self">Self</span>::BlockNumber, <span class="self">Self</span>::MaxSchemaGrants&gt;, DispatchError&gt;;
+	) -&gt; <span class="prelude-ty">Result</span>&lt;
+		Delegation&lt;<span class="self">Self</span>::SchemaId, <span class="self">Self</span>::BlockNumber, <span class="self">Self</span>::MaxSchemaGrantsPerDelegation&gt;,
+		DispatchError,
+	&gt;;
+}
 
+<span class="doccomment">/// A behavior that allows for validating a schema grant
+</span><span class="kw">pub trait </span>SchemaGrantValidator {
 	<span class="doccomment">/// Validates if the provider is allowed to use the schema
 	/// # Arguments
 	/// * `provider` - The `MessageSourceId` that has been delegated to

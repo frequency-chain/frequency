@@ -69,6 +69,16 @@
 <span id="69">69</span>
 <span id="70">70</span>
 <span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
 </pre><pre class="rust"><code><span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span><span class="kw">crate</span>::utils;
 <span class="kw">use </span>codec::{Decode, Encode, MaxEncodedLen};
@@ -139,6 +149,16 @@
 	/// # Remarks
 	/// This function is used to resolve a Schema from a SchemaId.
 	</span><span class="kw">fn </span>get_schema_by_id(schema_id: SchemaId) -&gt; <span class="prelude-ty">Option</span>&lt;SchemaResponse&gt;;
+}
+
+<span class="doccomment">/// This allows other Pallets to check validity of schema ids.
+</span><span class="kw">pub trait </span>SchemaValidator&lt;SchemaId&gt; {
+	<span class="doccomment">/// Checks that a collection of SchemaIds are all valid
+	</span><span class="kw">fn </span>are_all_schema_ids_valid(schema_ids: <span class="kw-2">&amp;</span>Vec&lt;SchemaId&gt;) -&gt; bool;
+
+	<span class="doccomment">/// Set the schema counter for testing purposes.
+	</span><span class="attribute">#[cfg(any(feature = <span class="string">&quot;std&quot;</span>, feature = <span class="string">&quot;runtime-benchmarks&quot;</span>, test))]
+	</span><span class="kw">fn </span>set_schema_count(n: SchemaId);
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_primitives" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>

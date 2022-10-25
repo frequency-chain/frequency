@@ -972,6 +972,12 @@
 <span id="972">972</span>
 <span id="973">973</span>
 <span id="974">974</span>
+<span id="975">975</span>
+<span id="976">976</span>
+<span id="977">977</span>
+<span id="978">978</span>
+<span id="979">979</span>
+<span id="980">980</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attribute">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
@@ -1225,9 +1231,13 @@
 	<span class="kw">type </span>Event = Event;
 	<span class="kw">type </span>WeightInfo = pallet_msa::weights::SubstrateWeight&lt;Runtime&gt;;
 	<span class="kw">type </span>ConvertIntoAccountId32 = ConvertInto;
-	<span class="kw">type </span>MaxKeys = MsaMaxKeys;
-	<span class="kw">type </span>MaxSchemaGrants = MaxDataSize;
+	<span class="kw">type </span>MaxPublicKeysPerMsa = MsaMaxPublicKeysPerMsa;
+	<span class="kw">type </span>MaxSchemaGrantsPerDelegation = MaxDataSize;
 	<span class="kw">type </span>MaxProviderNameSize = MsaMaxProviderNameSize;
+	<span class="kw">type </span>SchemaValidator = Schemas;
+	<span class="kw">type </span>MortalityWindowSize = MSAMortalityWindowSize;
+	<span class="kw">type </span>MaxSignaturesPerBucket = MSAMaxSignaturesPerBucket;
+	<span class="kw">type </span>NumberOfBuckets = MSANumberOfBuckets;
 }
 
 <span class="kw">pub use </span>common_primitives::schema::SchemaId;
@@ -1605,7 +1615,9 @@
 <span class="kw">impl </span>pallet_messages::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>Event = Event;
 	<span class="kw">type </span>WeightInfo = pallet_messages::weights::SubstrateWeight&lt;Runtime&gt;;
-	<span class="kw">type </span>AccountProvider = Msa;
+	<span class="kw">type </span>MsaInfoProvider = Msa;
+	<span class="kw">type </span>DelegationInfoProvider = Msa;
+	<span class="kw">type </span>SchemaGrantValidator = Msa;
 	<span class="kw">type </span>SchemaProvider = Schemas;
 	<span class="kw">type </span>MaxMessagesPerBlock = MessagesMaxPerBlock;
 	<span class="kw">type </span>MaxMessagePayloadSizeBytes = MessagesMaxPayloadSizeBytes;
@@ -1837,8 +1849,8 @@
 			}
 		}
 
-		<span class="kw">fn </span>get_granted_schemas(delegator: Delegator, provider: Provider) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;SchemaId&gt;&gt;, DispatchError&gt; {
-			Msa::get_granted_schemas(delegator, provider)
+		<span class="kw">fn </span>get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;SchemaId&gt;&gt;, DispatchError&gt; {
+			Msa::get_granted_schemas_by_msa_id(delegator, provider)
 		}
 	}
 

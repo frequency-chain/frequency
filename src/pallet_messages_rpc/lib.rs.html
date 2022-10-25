@@ -151,8 +151,8 @@
 
 <span class="attribute">#[rpc(client, server)]
 </span><span class="kw">pub trait </span>MessagesApi&lt;BlockNumber&gt; {
-	<span class="attribute">#[method(name = <span class="string">&quot;messages_getBySchema&quot;</span>)]
-	</span><span class="kw">fn </span>get_messages_by_schema(
+	<span class="attribute">#[method(name = <span class="string">&quot;messages_getBySchemaId&quot;</span>)]
+	</span><span class="kw">fn </span>get_messages_by_schema_id(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest&lt;BlockNumber&gt;,
@@ -196,7 +196,7 @@
 	C::Api: MessagesRuntimeApi&lt;Block, BlockNumber&gt;,
 	BlockNumber: Codec + Copy + AtLeast32BitUnsigned,
 {
-	<span class="kw">fn </span>get_messages_by_schema(
+	<span class="kw">fn </span>get_messages_by_schema_id(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest&lt;BlockNumber&gt;,
