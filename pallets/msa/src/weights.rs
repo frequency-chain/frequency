@@ -72,9 +72,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa PublicKeyToMsaId (r:1 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	fn create(s: u32, ) -> Weight {
-		Weight::from_ref_time(51_298_000 as u64)
+		Weight::from_ref_time(51_085_000 as u64)
 			// Standard Error: 4_000
-			.saturating_add(Weight::from_ref_time(46_000 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_ref_time(44_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -86,16 +86,16 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	fn create_sponsored_account_with_delegation() -> Weight {
-		Weight::from_ref_time(99_354_000 as u64)
+		Weight::from_ref_time(99_926_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(8 as u64))
 			.saturating_add(T::DbWeight::get().writes(5 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	fn revoke_delegation_by_provider(s: u32, ) -> Weight {
-		Weight::from_ref_time(51_704_000 as u64)
+		Weight::from_ref_time(49_451_000 as u64)
 			// Standard Error: 3_000
-			.saturating_add(Weight::from_ref_time(69_000 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_ref_time(72_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -103,21 +103,21 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	fn add_public_key_to_msa() -> Weight {
-		Weight::from_ref_time(140_576_000 as u64)
+		Weight::from_ref_time(140_619_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	fn delete_msa_public_key() -> Weight {
-		Weight::from_ref_time(28_504_000 as u64)
+		Weight::from_ref_time(28_541_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	fn retire_msa() -> Weight {
-		Weight::from_ref_time(30_647_000 as u64)
+		Weight::from_ref_time(30_694_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -127,28 +127,28 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	fn grant_delegation() -> Weight {
-		Weight::from_ref_time(92_311_000 as u64)
+		Weight::from_ref_time(93_242_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(6 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	fn revoke_delegation_by_delegator() -> Weight {
-		Weight::from_ref_time(24_779_000 as u64)
+		Weight::from_ref_time(24_680_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:1)
 	fn create_provider() -> Weight {
-		Weight::from_ref_time(20_226_000 as u64)
+		Weight::from_ref_time(20_729_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	fn on_initialize(m: u32, ) -> Weight {
-		Weight::from_ref_time(10_503_000 as u64)
+		Weight::from_ref_time(10_472_000 as u64)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(1_000 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_ref_time(2_000 as u64).saturating_mul(m as u64))
 	}
 }
 
@@ -158,9 +158,9 @@ impl WeightInfo for () {
 	// Storage: Msa PublicKeyToMsaId (r:1 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	fn create(s: u32, ) -> Weight {
-		Weight::from_ref_time(51_298_000 as u64)
+		Weight::from_ref_time(51_085_000 as u64)
 			// Standard Error: 4_000
-			.saturating_add(Weight::from_ref_time(46_000 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_ref_time(44_000 as u64).saturating_mul(s as u64))
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
@@ -172,16 +172,16 @@ impl WeightInfo for () {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	fn create_sponsored_account_with_delegation() -> Weight {
-		Weight::from_ref_time(99_354_000 as u64)
+		Weight::from_ref_time(99_926_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(8 as u64))
 			.saturating_add(RocksDbWeight::get().writes(5 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	fn revoke_delegation_by_provider(s: u32, ) -> Weight {
-		Weight::from_ref_time(51_704_000 as u64)
+		Weight::from_ref_time(49_451_000 as u64)
 			// Standard Error: 3_000
-			.saturating_add(Weight::from_ref_time(69_000 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_ref_time(72_000 as u64).saturating_mul(s as u64))
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -189,21 +189,21 @@ impl WeightInfo for () {
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	fn add_public_key_to_msa() -> Weight {
-		Weight::from_ref_time(140_576_000 as u64)
+		Weight::from_ref_time(140_619_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	fn delete_msa_public_key() -> Weight {
-		Weight::from_ref_time(28_504_000 as u64)
+		Weight::from_ref_time(28_541_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	fn retire_msa() -> Weight {
-		Weight::from_ref_time(30_647_000 as u64)
+		Weight::from_ref_time(30_694_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
@@ -213,27 +213,27 @@ impl WeightInfo for () {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	fn grant_delegation() -> Weight {
-		Weight::from_ref_time(92_311_000 as u64)
+		Weight::from_ref_time(93_242_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(6 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	fn revoke_delegation_by_delegator() -> Weight {
-		Weight::from_ref_time(24_779_000 as u64)
+		Weight::from_ref_time(24_680_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:1)
 	fn create_provider() -> Weight {
-		Weight::from_ref_time(20_226_000 as u64)
+		Weight::from_ref_time(20_729_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	fn on_initialize(m: u32, ) -> Weight {
-		Weight::from_ref_time(10_503_000 as u64)
+		Weight::from_ref_time(10_472_000 as u64)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(1_000 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_ref_time(2_000 as u64).saturating_mul(m as u64))
 	}
 }
