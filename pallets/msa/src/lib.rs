@@ -342,6 +342,8 @@ pub mod pallet {
 		ProofNotYetValid,
 		/// Attempted to add a signature when the signature is already in the registry
 		SignatureAlreadySubmitted,
+		/// Exceeds or not granted
+		ExceedsMaxSchemaGrantsPerDelegationOrSchemaNotGranted,
 	}
 
 	#[pallet::hooks]
@@ -756,6 +758,39 @@ impl<T: Config> Pallet<T> {
 		CurrentMsaIdentifierMaximum::<T>::set(identifier);
 
 		Ok(())
+	}
+
+	/// Revokes schema permissions
+	pub fn revoke_schema_permissions_for(
+		delegator: Delegator,
+		provider: Provider,
+		schema_ids: Vec<SchemaId>,
+	) -> DispatchResult {
+		DelegatorAndProviderToDelegation::<T>::try_mutate(
+			delegator,
+			provider,
+			|maybe_info| -> DispatchResult {
+				let mut info = maybe_info.take().ok_or(Error::<T>::DelegationNotFound)?;
+
+				Self::ensure_all_schema_ids_are_valid(&schema_ids)?;
+
+				let mut schema_permissions = info.schema_permissions;
+
+				let current_block = frame_system::Pallet::<T>::block_number();
+
+				for id in schema_ids {
+					schema_permissions.try_insert(id, Some(current_block.clone())).map_err(
+						|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegationOrSchemaNotGranted,
+					)?;
+				}
+
+				info.schema_permissions = schema_permissions;
+
+				*maybe_info = Some(info);
+
+				Ok(())
+			},
+		)
 	}
 
 	/// Adds a list of schema permissions to an MSA.
