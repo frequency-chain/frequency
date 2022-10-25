@@ -670,7 +670,7 @@ pub mod pallet {
 			let provider_msa_id = Provider(provider);
 			let delegator_msa_id = Delegator(delegator_msa_id);
 
-			Self::create_schema_permissions_for(
+			Self::add_schema_permissions_for(
 				delegator_msa_id,
 				provider_msa_id,
 				schema_ids.clone(),
@@ -759,7 +759,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Adds a list of schema permissions to an MSA.
-	pub fn create_schema_permissions_for(
+	pub fn add_schema_permissions_for(
 		delegator: Delegator,
 		provider: Provider,
 		schema_ids: Vec<SchemaId>,

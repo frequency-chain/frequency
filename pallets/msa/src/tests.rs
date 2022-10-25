@@ -2184,7 +2184,7 @@ fn create_schema_permissions_errors() {
 		let delegator = Delegator(2);
 		let provider = Provider(1);
 		let schema_ids = vec![1, 2];
-		let result = Msa::create_schema_permissions_for(delegator, provider, schema_ids);
+		let result = Msa::add_schema_permissions_for(delegator, provider, schema_ids);
 
 		assert_noop!(result, Error::<Test>::DelegationNotFound);
 	});
@@ -2196,7 +2196,7 @@ fn create_schema_permissions_delegation_not_found_error() {
 		let delegator = Delegator(2);
 		let provider = Provider(1);
 		let schema_ids = vec![1, 2];
-		let result = Msa::create_schema_permissions_for(delegator, provider, schema_ids);
+		let result = Msa::add_schema_permissions_for(delegator, provider, schema_ids);
 
 		assert_noop!(result, Error::<Test>::DelegationNotFound);
 	});
@@ -2213,7 +2213,7 @@ fn create_schema_permissions_invalid_schema_id_error() {
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
 
 		let additional_grants = vec![2];
-		let result = Msa::create_schema_permissions_for(delegator, provider, additional_grants);
+		let result = Msa::add_schema_permissions_for(delegator, provider, additional_grants);
 
 		assert_noop!(result, Error::<Test>::InvalidSchemaId);
 	});
@@ -2231,7 +2231,7 @@ fn create_schema_permissions_exceeds_max_schema_grants_error() {
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
 
 		let additional_grants = vec![2, 3];
-		let result = Msa::create_schema_permissions_for(delegator, provider, additional_grants);
+		let result = Msa::add_schema_permissions_for(delegator, provider, additional_grants);
 
 		assert_noop!(result, Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation);
 	});
@@ -2261,7 +2261,7 @@ fn create_schema_permissions_success() {
 
 		// Add new schema ids
 		let additional_grants = vec![2];
-		let result = Msa::create_schema_permissions_for(delegator, provider, additional_grants);
+		let result = Msa::add_schema_permissions_for(delegator, provider, additional_grants);
 
 		assert_ok!(result);
 
