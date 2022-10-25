@@ -966,16 +966,13 @@ impl<T: Config> Pallet<T> {
 	pub fn initialize_schema_permissions(
 		schemas: Vec<SchemaId>,
 	) -> Result<
-		BoundedBTreeMap<SchemaId, Option<T::BlockNumber>, T::MaxSchemaGrantsPerDelegation>,
+		BoundedBTreeMap<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
 		DispatchError,
 	> {
 		Self::ensure_all_schema_ids_are_valid(&schemas)?;
 
-		let mut schema_permissions_map = BoundedBTreeMap::<
-			SchemaId,
-			Option<T::BlockNumber>,
-			T::MaxSchemaGrantsPerDelegation,
-		>::new();
+		let mut schema_permissions_map =
+			BoundedBTreeMap::<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>::new();
 
 		for schema_id in schemas.into_iter() {
 			schema_permissions_map
@@ -1338,7 +1335,7 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 			return Ok(Delegation {
 				schema_permissions: BoundedBTreeMap::<
 					SchemaId,
-					Option<T::BlockNumber>,
+					T::BlockNumber,
 					T::MaxSchemaGrantsPerDelegation,
 				>::default(),
 				revoked_at: Default::default(),
@@ -1347,7 +1344,7 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		Ok(Delegation {
 			schema_permissions: BoundedBTreeMap::<
 				SchemaId,
-				Option<T::BlockNumber>,
+				T::BlockNumber,
 				T::MaxSchemaGrantsPerDelegation,
 			>::default(),
 			revoked_at: Default::default(),

@@ -2137,11 +2137,11 @@ pub fn initialize_schema_permissions_success() {
 
 		let mut expected = BoundedBTreeMap::<
 			SchemaId,
-			Option<<Test as frame_system::Config>::BlockNumber>,
+			<Test as frame_system::Config>::BlockNumber,
 			<Test as Config>::MaxSchemaGrantsPerDelegation,
 		>::new();
 
-		expected.try_insert(1, None).expect("all good");
+		expected.try_insert(1, Default::default()).expect("all good");
 
 		assert_eq!(result.unwrap(), expected);
 	});
@@ -2251,11 +2251,11 @@ fn create_schema_permissions_success() {
 		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
 		let mut expected = BoundedBTreeMap::<
 			SchemaId,
-			Option<<Test as frame_system::Config>::BlockNumber>,
+			<Test as frame_system::Config>::BlockNumber,
 			<Test as Config>::MaxSchemaGrantsPerDelegation,
 		>::new();
 
-		expected.try_insert(1, None).expect("all good");
+		expected.try_insert(1, Default::default()).expect("all good");
 
 		assert_eq!(delegation_relationship.schema_permissions, expected);
 
@@ -2268,12 +2268,12 @@ fn create_schema_permissions_success() {
 		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
 		let mut expected = BoundedBTreeMap::<
 			SchemaId,
-			Option<<Test as frame_system::Config>::BlockNumber>,
+			<Test as frame_system::Config>::BlockNumber,
 			<Test as Config>::MaxSchemaGrantsPerDelegation,
 		>::new();
 
-		expected.try_insert(1, None).expect("all good");
-		expected.try_insert(2, None).expect("all good");
+		expected.try_insert(1, Default::default()).expect("all good");
+		expected.try_insert(2, Default::default()).expect("all good");
 
 		assert_eq!(delegation_relationship.schema_permissions, expected);
 	});

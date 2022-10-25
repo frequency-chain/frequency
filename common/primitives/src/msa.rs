@@ -58,8 +58,7 @@ where
 	/// Block number the grant will be revoked.
 	pub revoked_at: BlockNumber,
 	/// Schemas that the provider is allowed to use for a delegated message.
-	pub schema_permissions:
-		BoundedBTreeMap<SchemaId, Option<BlockNumber>, MaxSchemaGrantsPerDelegation>,
+	pub schema_permissions: BoundedBTreeMap<SchemaId, BlockNumber, MaxSchemaGrantsPerDelegation>,
 }
 
 /// Provider is the recipient of a delegation.
