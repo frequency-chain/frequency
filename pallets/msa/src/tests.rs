@@ -78,7 +78,7 @@ fn it_throws_error_when_key_verification_fails() {
 
 		let fake_account = key_pair_2.public();
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
@@ -111,7 +111,7 @@ fn it_throws_error_when_not_msa_owner() {
 		let new_account = key_pair_2.public();
 		let (_new_msa_id2, _) = Msa::create_account(new_account.into(), EMPTY_FUNCTION).unwrap();
 
-		let add_new_key_data = AddKeyData { nonce: 0, msa_id: new_msa_id, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
@@ -139,7 +139,7 @@ fn it_throws_error_when_for_duplicate_key() {
 
 		let (new_msa_id, _) = Msa::create_account(new_account.into(), EMPTY_FUNCTION).unwrap();
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
@@ -165,7 +165,7 @@ fn add_key_with_more_than_allowed_should_panic() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let account = key_pair.public();
 		let (new_msa_id, _) = Msa::create_account(account.into(), EMPTY_FUNCTION).unwrap();
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		for _ in 1..<Test as Config>::MaxPublicKeysPerMsa::get() {
@@ -215,7 +215,7 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 
 		let new_key = key_pair_2.public();
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 		let signature_owner: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
 		let signature_new_key: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
@@ -257,7 +257,7 @@ fn add_key_with_expired_proof_fails() {
 
 		// The current block is 1, therefore setting the proof expiration to 1 shoud cause
 		// the extrinsic to fail because the proof has expired.
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 1 };
+		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 1 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		System::set_block_number(2);
@@ -294,7 +294,7 @@ fn add_key_with_proof_too_far_into_future_fails() {
 		// The current block is 1, therefore setting the proof expiration to  + 1
 		// should cause the extrinsic to fail because the proof is only valid for
 		// more blocks.
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 202 };
+		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 202 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
@@ -384,7 +384,7 @@ fn test_retire_msa_success() {
 		let new_account2 = key_pair2.public();
 		let (msa_id2, _) = Msa::create_account(new_account2.into(), EMPTY_FUNCTION).unwrap();
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: msa_id2, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: msa_id2, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 		let signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
 		assert_noop!(
@@ -1494,7 +1494,7 @@ fn double_add_key_two_msa_fails() {
 		let (msa_id1, _) = Msa::create_account(new_account1.into(), EMPTY_FUNCTION).unwrap();
 		let (_msa_id2, _) = Msa::create_account(new_account2.into(), EMPTY_FUNCTION).unwrap();
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: msa_id1, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: msa_id1, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 		let signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
 		assert_noop!(
@@ -1524,7 +1524,7 @@ fn add_removed_key_to_msa_pass() {
 
 		assert_ok!(Msa::delete_key_for_msa(msa_id1, &new_account1.into()));
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: msa_id2, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: msa_id2, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 		let signature_owner: MultiSignature = key_pair2.sign(&encode_data_new_key_data).into();
 		let signature_new_key: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
@@ -2101,8 +2101,7 @@ pub fn add_msa_key_replay_fails() {
 		let nonce = 1u32;
 		for tc in test_cases {
 			System::set_block_number(tc.current);
-			let add_new_key_data =
-				AddKeyData { nonce, msa_id: new_msa_id, expiration: tc.mortality };
+			let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: tc.mortality };
 			let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 			let (new_key_pair, _) = sr25519::Pair::generate();
 			let new_delegator_account = new_key_pair.public();
