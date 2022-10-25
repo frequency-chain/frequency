@@ -20,3 +20,4 @@ ignore:
   - "runtime"  # ignore folders and all its contents
   - "**/weights.rs" # Ignore weights
   - "**/benchmarking.rs" # Ignore benchmarking
+  - "**/*tests.rs" # Ignore test files for coverage
