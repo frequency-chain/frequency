@@ -169,7 +169,7 @@ benchmarks! {
 	on_initialize {
 		// we should not need to max out storage for this benchmark, see:
 		// https://substrate.stackexchange.com/a/4430/2060
-		let m in 1 .. 5_000;
+		let m in 1 .. 3_000;
 		for j in 0 .. m {
 			let mortality = 49;
 			register_signature::<T>(mortality as u32);
