@@ -18,23 +18,28 @@ function run_benchmark() {
   --extrinsic "*" \
   --chain="frequency" \
   --execution wasm \
+  --heap-pages=4096 \
   --wasm-execution compiled \
-  --steps 20 \
-  --repeat 10 \
-  --output=$2 \
-  --template=$3
+  --steps=$2 \
+  --repeat=$3 \
+  --output=$4 \
+  --template=$5
 }
 
 cargo build --profile production --features runtime-benchmarks --features all-frequency-features --workspace || exit_err
 
 for external_pallet in "${EXTERNAL_PALLETS[@]}"; do
   output=${PROJECT}/runtime/common/src/weights/${external_pallet}.rs
+  steps=50
+  repeat=20
   template=${PROJECT}/.maintain/runtime-weight-template.hbs
-  run_benchmark ${external_pallet} ${output} ${template} || exit_err
+  run_benchmark ${external_pallet} ${steps} ${repeat} ${output} ${template} || exit_err
 done
 
 for pallet_name in "${CUSTOM_PALLETS[@]}"; do
-  output=${PROJECT}/pallets/${pallet_name}/src/weights.rs
+  steps=20
+  repeat=10
   template=${PROJECT}/.maintain/frame-weight-template.hbs
-  run_benchmark pallet_${pallet_name} ${output} ${template} || exit_err
+  output=${PROJECT}/pallets/${pallet_name}/src/weights.rs
+  run_benchmark pallet_${pallet_name} ${steps} ${repeat} ${output} ${template} || exit_err
 done
