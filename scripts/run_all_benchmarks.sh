@@ -6,6 +6,7 @@ PROJECT=${1:-$THIS_DIR/..}
 RUNTIME=$PROJECT/target/production/frequency
 BENCHMARK="$RUNTIME benchmark pallet "
 EXTERNAL_PALLETS=(orml_vesting pallet_scheduler pallet_democracy pallet_treasury pallet_preimage pallet_utility)
+CUSTOM_PALLETS=(messages msa schemas)
 
 function exit_err() { echo "❌ 💔" ; exit 1; }
 
@@ -14,15 +15,15 @@ function run_benchmark() {
   echo " "
   $BENCHMARK \
   --pallet $1 \
-  --extrinsic "$2" \
+  --extrinsic "*" \
   --chain="frequency" \
   --execution wasm \
   --heap-pages=4096 \
   --wasm-execution compiled \
-  --steps=$3 \
-  --repeat=$4 \
-  --output=$5 \
-  --template=$6
+  --steps=$2 \
+  --repeat=$3 \
+  --output=$4 \
+  --template=$5
 }
 
 cargo build --profile production --features runtime-benchmarks --features all-frequency-features --workspace || exit_err
@@ -32,13 +33,13 @@ for external_pallet in "${EXTERNAL_PALLETS[@]}"; do
   steps=50
   repeat=20
   template=${PROJECT}/.maintain/runtime-weight-template.hbs
-  run_benchmark pallet_${pallet_name} "*" ${steps} ${repeat} ${output} ${template} || exit_err
+  run_benchmark ${external_pallet} ${steps} ${repeat} ${output} ${template} || exit_err
 done
 
-for pallet_name in messages schemas msa; do
+for pallet_name in "${CUSTOM_PALLETS[@]}"; do
   steps=20
   repeat=10
   template=${PROJECT}/.maintain/frame-weight-template.hbs
   output=${PROJECT}/pallets/${pallet_name}/src/weights.rs
-  run_benchmark pallet_${pallet_name} "*" ${steps} ${repeat} ${output} ${template} || exit_err
+  run_benchmark pallet_${pallet_name} ${steps} ${repeat} ${output} ${template} || exit_err
 done
