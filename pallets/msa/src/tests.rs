@@ -989,7 +989,7 @@ pub fn revoke_delegation_by_delegatoris_successful() {
 		));
 
 		System::assert_last_event(
-			Event::DelegatorRevokedDelegation { delegator: 1.into(), provider: 2.into() }.into(),
+			Event::DelegationRevoked { delegator: 1.into(), provider: 2.into() }.into(),
 		);
 	});
 }
@@ -1218,8 +1218,7 @@ pub fn revoke_delegation_by_provider_happy_path() {
 
 		// 7. verify the event
 		System::assert_last_event(
-			Event::ProviderRevokedDelegation { provider: Provider(1), delegator: Delegator(2) }
-				.into(),
+			Event::DelegationRevoked { provider: Provider(1), delegator: Delegator(2) }.into(),
 		);
 	})
 }

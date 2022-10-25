@@ -255,14 +255,7 @@ pub mod pallet {
 			provider_msa_id: MessageSourceId,
 		},
 		/// The Delegator revoked its delegation to the Provider
-		DelegatorRevokedDelegation {
-			/// The Provider MSA Id
-			provider: Provider,
-			/// The Delegator MSA Id
-			delegator: Delegator,
-		},
-		/// The Provider revoked itself as delegate for the Delegator
-		ProviderRevokedDelegation {
+		DelegationRevoked {
 			/// The Provider MSA Id
 			provider: Provider,
 			/// The Delegator MSA Id
@@ -493,7 +486,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Delegator (Origin) MSA terminates a delegation relationship with the `Provider` MSA. Deposits event[`DelegatorRevokedDelegation`](Event::DelegatorRevokedDelegation).
+		/// Delegator (Origin) MSA terminates a delegation relationship with the `Provider` MSA. Deposits event[`DelegationRevoked`](Event::DelegationRevoked).
 		/// Returns `Ok(())` on success, otherwise returns an error.
 		///
 		/// ### Errors
@@ -514,7 +507,7 @@ pub mod pallet {
 
 			Self::revoke_provider(provider_msa_id, delegator_msa_id)?;
 
-			Self::deposit_event(Event::DelegatorRevokedDelegation {
+			Self::deposit_event(Event::DelegationRevoked {
 				delegator: delegator_msa_id,
 				provider: provider_msa_id,
 			});
@@ -613,7 +606,7 @@ pub mod pallet {
 		}
 
 		/// Provider MSA terminates Delegation with a Delegator MSA by expiring the Delegation at the current block.
-		/// Returns `Ok(())` on success, otherwise returns an error. Deposits events [`ProviderRevokedDelegation`](Event::ProviderRevokedDelegation).
+		/// Returns `Ok(())` on success, otherwise returns an error. Deposits events [`DelegationRevoked`](Event::DelegationRevoked).
 		///
 		/// ### Errors
 		///
@@ -636,7 +629,7 @@ pub mod pallet {
 
 			Self::revoke_provider(provider_msa_id, delegator_msa_id)?;
 
-			Self::deposit_event(Event::ProviderRevokedDelegation {
+			Self::deposit_event(Event::DelegationRevoked {
 				provider: provider_msa_id,
 				delegator: delegator_msa_id,
 			});
