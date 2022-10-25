@@ -37,7 +37,7 @@
 //!
 //! ### Dispatchable Functions
 //!
-//! - `add_key_to_msa` - Associates a key to an MSA ID in a signed payload.
+//! - `add_public_key_to_msa` - Associates a key to an MSA ID in a signed payload.
 //! - `grant_delegation` - Creates a delegation relationship between a `Provider` and MSA.
 //! - `create` - Creates an MSA for the `Origin`.
 //! - `create_sponsored_account_with_delegation` - `Origin` creates an account for a given `AccountId` and sets themselves as a `Provider`.
@@ -63,12 +63,14 @@
 use codec::{Decode, Encode};
 use common_primitives::{
 	msa::{
-		DelegationValidator, Delegator, MsaLookup, MsaValidator, OrderedSet, Provider,
-		ProviderInfo, ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
+		Delegation, DelegationValidator, Delegator, MsaLookup, MsaValidator, Provider,
+		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
 	},
 	schema::{SchemaId, SchemaValidator},
 };
-use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
+use frame_support::{
+	dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo, BoundedBTreeMap,
+};
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -86,6 +88,9 @@ mod benchmarking;
 mod mock;
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod replay_tests;
 
 pub mod weights;
 
@@ -148,24 +153,26 @@ pub mod pallet {
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
-	/// Storage type for MSA identifier
+	/// Storage type for the current MSA identifier maximum.
+	/// We need to track this value because the identifier maximum
+	/// is incremented each time a new identifier is created.
 	/// - Value: The current maximum MSA Id
 	#[pallet::storage]
-	#[pallet::getter(fn get_identifier)]
-	pub type MsaIdentifier<T> = StorageValue<_, MessageSourceId, ValueQuery>;
+	#[pallet::getter(fn get_current_msa_identifier_maximum)]
+	pub type CurrentMsaIdentifierMaximum<T> = StorageValue<_, MessageSourceId, ValueQuery>;
 
 	/// Storage type for mapping the relationship between a Delegator and its Provider.
 	/// - Keys: Delegator MSA, Provider MSA
-	/// - Value: [`ProviderInfo`](common_primitives::msa::ProviderInfo)
+	/// - Value: [`Delegation`](common_primitives::msa::Delegation)
 	#[pallet::storage]
-	#[pallet::getter(fn get_provider_info)]
-	pub type ProviderInfoOf<T: Config> = StorageDoubleMap<
+	#[pallet::getter(fn get_delegation)]
+	pub type DelegatorAndProviderToDelegation<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
 		Delegator,
 		Twox64Concat,
 		Provider,
-		ProviderInfo<T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
+		Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
 		OptionQuery,
 	>;
 
@@ -236,7 +243,7 @@ pub mod pallet {
 			key: T::AccountId,
 		},
 		/// A delegation relationship was added with the given provider and delegator
-		ProviderAdded {
+		DelegationGranted {
 			/// The Provider MSA Id
 			provider: Provider,
 			/// The Delegator MSA Id
@@ -248,14 +255,7 @@ pub mod pallet {
 			provider_msa_id: MessageSourceId,
 		},
 		/// The Delegator revoked its delegation to the Provider
-		DelegatorRevokedDelegation {
-			/// The Provider MSA Id
-			provider: Provider,
-			/// The Delegator MSA Id
-			delegator: Delegator,
-		},
-		/// The Provider revoked itself as delegate for the Delegator
-		ProviderRevokedDelegation {
+		DelegationRevoked {
 			/// The Provider MSA Id
 			provider: Provider,
 			/// The Delegator MSA Id
@@ -357,7 +357,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// `Origin` MSA creates an MSA on behalf of `delegator_key`, creates a Delegation with the `delegator_key`'s MSA as the Delegator and `origin` as `Provider`. Deposits events [`MsaCreated`](Event::MsaCreated) and [`ProviderAdded`](Event::ProviderAdded).
+		/// `Origin` MSA creates an MSA on behalf of `delegator_key`, creates a Delegation with the `delegator_key`'s MSA as the Delegator and `origin` as `Provider`. Deposits events [`MsaCreated`](Event::MsaCreated) and [`DelegationGranted`](Event::DelegationGranted).
 		/// Returns `Ok(())` on success, otherwise returns an error.
 		///
 		/// ## Errors
@@ -406,7 +406,7 @@ pub mod pallet {
 						key: delegator_key.clone(),
 					});
 
-					Self::deposit_event(Event::ProviderAdded {
+					Self::deposit_event(Event::DelegationGranted {
 						delegator: new_msa_id.into(),
 						provider: provider_msa_id.into(),
 					});
@@ -422,8 +422,8 @@ pub mod pallet {
 		/// ## Errors
 		/// - Returns
 		///   [`DuplicateProviderRegistryEntry`](Error::DuplicateProviderRegistryEntry) if there is already a ProviderRegistryEntry associated with the given MSA id.
-		#[pallet::weight(T::WeightInfo::register_provider())]
-		pub fn register_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
+		#[pallet::weight(T::WeightInfo::create_provider())]
+		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
 				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
@@ -446,7 +446,7 @@ pub mod pallet {
 
 		/// Creates a new Delegation for an existing MSA, with `origin` as the Provider and `delegator_key` is the delegator.
 		/// Since it is being sent on the Delegator's behalf, it requires the Delegator to authorize the new Delegation.
-		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`ProviderAdded`](Event::ProviderAdded).
+		/// Returns `Ok(())` on success, otherwise returns an error. Deposits event [`DelegationGranted`](Event::DelegationGranted).
 		///
 		/// ## Errors
 		/// - Returns [`AddProviderSignatureVerificationFailed`](Error::AddProviderSignatureVerificationFailed) if `origin`'s MSA ID does not equal `add_provider_payload.authorized_msa_id`.
@@ -481,12 +481,12 @@ pub mod pallet {
 
 			Self::add_provider(provider, delegator, add_provider_payload.schema_ids)?;
 
-			Self::deposit_event(Event::ProviderAdded { delegator, provider });
+			Self::deposit_event(Event::DelegationGranted { delegator, provider });
 
 			Ok(())
 		}
 
-		/// Delegator (Origin) MSA terminates a delegation relationship with the `Provider` MSA. Deposits event[`DelegatorRevokedDelegation`](Event::DelegatorRevokedDelegation).
+		/// Delegator (Origin) MSA terminates a delegation relationship with the `Provider` MSA. Deposits event[`DelegationRevoked`](Event::DelegationRevoked).
 		/// Returns `Ok(())` on success, otherwise returns an error.
 		///
 		/// ### Errors
@@ -507,7 +507,7 @@ pub mod pallet {
 
 			Self::revoke_provider(provider_msa_id, delegator_msa_id)?;
 
-			Self::deposit_event(Event::DelegatorRevokedDelegation {
+			Self::deposit_event(Event::DelegationRevoked {
 				delegator: delegator_msa_id,
 				provider: provider_msa_id,
 			});
@@ -522,9 +522,10 @@ pub mod pallet {
 		///
 		/// ### Arguments
 		/// - `origin` - The account that signs the transaction. Note: can be same as msa owner.
-		/// - `msa_owner_key` - The account that owns the MSA.
+		/// - `msa_owner_public_key` - The account that owns the MSA.
 		/// - `msa_owner_proof`: A signature of the MSA owner account, which must match the MSA in `add_key_payload`.
-		/// - `new_proof`: A signature of the new key account, should also sign `add_key_payload`.
+		/// - `new_public_key`: The new public key to add to the MSA.
+		/// - `new_key_owner_proof`: A signature of the new key account, should also sign `add_key_payload`.
 		/// ### Errors
 		///
 		/// - Returns [`AddKeySignatureVerificationFailed`](Error::AddKeySignatureVerificationFailed) if `key` is not a valid signer of the provided `add_key_payload`.
@@ -532,8 +533,8 @@ pub mod pallet {
 		/// - Returns ['NotMsaOwner'](Error::NotMsaOwner) if Origin's MSA is not the same as 'add_key_payload` MSA. Essentially you can only add a key to your own MSA.
 		/// - Returns ['ProofHasExpired'](Error::ProofHasExpired) if the current block is less than the `expired` bock number set in `AddKeyData`.
 		/// - Returns ['ProofNotYetValid'](Error::ProofNotYetValid) if the `expired` block number set in `AddKeyData` is greater than the current block number plus mortality_block_limit().
-		#[pallet::weight(T::WeightInfo::add_key_to_msa())]
-		pub fn add_key_to_msa(
+		#[pallet::weight(T::WeightInfo::add_public_key_to_msa())]
+		pub fn add_public_key_to_msa(
 			origin: OriginFor<T>,
 			msa_owner_public_key: T::AccountId,
 			msa_owner_proof: MultiSignature,
@@ -605,7 +606,7 @@ pub mod pallet {
 		}
 
 		/// Provider MSA terminates Delegation with a Delegator MSA by expiring the Delegation at the current block.
-		/// Returns `Ok(())` on success, otherwise returns an error. Deposits events [`ProviderRevokedDelegation`](Event::ProviderRevokedDelegation).
+		/// Returns `Ok(())` on success, otherwise returns an error. Deposits events [`DelegationRevoked`](Event::DelegationRevoked).
 		///
 		/// ### Errors
 		///
@@ -628,7 +629,7 @@ pub mod pallet {
 
 			Self::revoke_provider(provider_msa_id, delegator_msa_id)?;
 
-			Self::deposit_event(Event::ProviderRevokedDelegation {
+			Self::deposit_event(Event::DelegationRevoked {
 				provider: provider_msa_id,
 				delegator: delegator_msa_id,
 			});
@@ -638,33 +639,32 @@ pub mod pallet {
 
 		/// Retire a MSA
 		///
+		/// When a user wants to disassociate themselves from Frequency, they can retire their MSA for free provided that:
+		///  (1) They own the MSA
+		///  (2) There is only one account key
+		///  (3) The MSA is not a registered provider.
+		///
+		/// This does not currently remove any messages related to the MSA.
+		///
+		/// ### Arguments
+		/// - `origin` - The account that signs the transaction. Note: can be same as msa owner.
+		///
 		/// ### Events
 		/// - Deposits [`MsaRetired`](Event::MsaRetired) when MSA is retired
 		///
 		/// ### Errors
 		///
 		/// - Returns [`NoKeyExists`](Error::NoKeyExists) if `delegator` does not have an MSA key.
-		/// - Returns [`MoreThanOneKeyExists`](Error::MoreThanOneKeyExists) if the MSA has more than one account key.
-		/// - Returns [`RegisteredProviderCannotBeRetired`](Error::RegisteredProviderCannotBeRetired) if the MSA id is a registered provider
 
-		#[pallet::weight((T::WeightInfo::retire_msa(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((T::WeightInfo::retire_msa(), DispatchClass::Normal, Pays::No))]
 		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResult {
 			// Check and get the account id from the origin
 			let who = ensure_signed(origin)?;
 
-			// Get the MSA id of the origin
-			let msa_id = Self::get_owner_of(&who).ok_or(Error::<T>::NoKeyExists)?;
+			// Get the MSA id of the origin which can trigger NoKeyExists error
+			let msa_id = Self::try_get_msa_from_account_id(&who)?;
+
 			let delegator = Delegator(msa_id);
-
-			// Dispatches error "RegisteredProviderCannotBeRetired" if the MSA id is a registered provider
-			ensure!(
-				!Self::is_registered_provider(msa_id),
-				Error::<T>::RegisteredProviderCannotBeRetired,
-			);
-
-			// Dispatches error "MoreThanOneKeyExists" if the MSA has more than one account key.
-			let key_count = Self::get_public_key_count_by_msa_id(msa_id);
-			ensure!(key_count == 1, Error::<T>::MoreThanOneKeyExists);
 
 			// Remove delegator from all delegator<->provider delegations
 			Self::remove_delegator(delegator)?;
@@ -673,7 +673,6 @@ pub mod pallet {
 			Self::delete_key_for_msa(msa_id, &who)?;
 			Self::deposit_event(Event::PublicKeyDeleted { key: who });
 
-			// Deposit the "MsaRetired" event
 			Self::deposit_event(Event::MsaRetired { msa_id });
 			Ok(())
 		}
@@ -698,14 +697,16 @@ impl<T: Config> Pallet<T> {
 
 	/// Generate the next MSA Id
 	pub fn get_next_msa_id() -> Result<MessageSourceId, DispatchError> {
-		let next = Self::get_identifier().checked_add(1).ok_or(Error::<T>::MsaIdOverflow)?;
+		let next = Self::get_current_msa_identifier_maximum()
+			.checked_add(1)
+			.ok_or(Error::<T>::MsaIdOverflow)?;
 
 		Ok(next)
 	}
 
 	/// Set the current identifier in storage
 	pub fn set_msa_identifier(identifier: MessageSourceId) -> DispatchResult {
-		MsaIdentifier::<T>::set(identifier);
+		CurrentMsaIdentifierMaximum::<T>::set(identifier);
 
 		Ok(())
 	}
@@ -735,11 +736,13 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Check that schema ids are all valid
-	pub fn ensure_all_schema_ids_are_valid(
-		schema_ids: BoundedVec<SchemaId, T::MaxSchemaGrantsPerDelegation>,
-	) -> DispatchResult {
-		let are_schemas_valid =
-			T::SchemaValidator::are_all_schema_ids_valid(schema_ids.into_inner());
+	pub fn ensure_all_schema_ids_are_valid(schema_ids: &Vec<SchemaId>) -> DispatchResult {
+		ensure!(
+			schema_ids.len() <= T::MaxSchemaGrantsPerDelegation::get() as usize,
+			Error::<T>::ExceedsMaxSchemaGrantsPerDelegation
+		);
+
+		let are_schemas_valid = T::SchemaValidator::are_all_schema_ids_valid(schema_ids);
 
 		ensure!(are_schemas_valid, Error::<T>::InvalidSchemaId);
 
@@ -802,26 +805,45 @@ impl<T: Config> Pallet<T> {
 		delegator: Delegator,
 		schemas: Vec<SchemaId>,
 	) -> DispatchResult {
-		let granted_schemas: BoundedVec<SchemaId, T::MaxSchemaGrantsPerDelegation> = schemas
-			.try_into()
-			.map_err(|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegation)?;
+		let schema_permissions = Self::initialize_schema_permissions(schemas)?;
 
-		Self::ensure_all_schema_ids_are_valid(granted_schemas.clone())?;
+		DelegatorAndProviderToDelegation::<T>::try_mutate(
+			delegator,
+			provider,
+			|maybe_info| -> DispatchResult {
+				ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
+				let info = Delegation { revoked_at: Default::default(), schema_permissions };
+				*maybe_info = Some(info);
 
-		ProviderInfoOf::<T>::try_mutate(delegator, provider, |maybe_info| -> DispatchResult {
-			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
-			let info = ProviderInfo {
-				expired: Default::default(),
-				schemas: OrderedSet::<SchemaId, T::MaxSchemaGrantsPerDelegation>::from(
-					granted_schemas,
-				),
-			};
-			*maybe_info = Some(info);
-
-			Ok(())
-		})?;
+				Ok(())
+			},
+		)?;
 
 		Ok(())
+	}
+
+	/// Initializes the BoundedBTreeMap used to store schema permissions and validates schema ids.
+	pub fn initialize_schema_permissions(
+		schemas: Vec<SchemaId>,
+	) -> Result<
+		BoundedBTreeMap<SchemaId, Option<T::BlockNumber>, T::MaxSchemaGrantsPerDelegation>,
+		DispatchError,
+	> {
+		Self::ensure_all_schema_ids_are_valid(&schemas)?;
+
+		let mut schema_permissions_map = BoundedBTreeMap::<
+			SchemaId,
+			Option<T::BlockNumber>,
+			T::MaxSchemaGrantsPerDelegation,
+		>::new();
+
+		for schema_id in schemas.into_iter() {
+			schema_permissions_map
+				.try_insert(schema_id, Default::default())
+				.map_err(|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegation)?;
+		}
+
+		Ok(schema_permissions_map)
 	}
 
 	/// Check that the delegator has an active delegation to the provider
@@ -830,7 +852,7 @@ impl<T: Config> Pallet<T> {
 	/// * `delegate` - The delegator to check delegation from
 	/// * `block_number` - Optional: check delegation at specific block in past
 	/// # Returns
-	/// * [`ProviderInfo`]
+	/// * [`Delegation`]
 	/// # Errors
 	/// * [`Error::<T>::DelegationNotFound`] - If no delegation
 	/// * [`Error::<T>::DelegationExpired`] - If delegation revoked
@@ -838,9 +860,10 @@ impl<T: Config> Pallet<T> {
 		provider: Provider,
 		delegator: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError> {
-		let info = Self::get_provider_info_of(delegator, provider)
-			.ok_or(Error::<T>::DelegationNotFound)?;
+	) -> Result<Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError>
+	{
+		let info =
+			Self::get_delegation(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
 		let current_block = frame_system::Pallet::<T>::block_number();
 		let requested_block = match block_number {
 			Some(block_number) => {
@@ -849,10 +872,10 @@ impl<T: Config> Pallet<T> {
 			},
 			None => current_block,
 		};
-		if info.expired == T::BlockNumber::zero() {
+		if info.revoked_at == T::BlockNumber::zero() {
 			return Ok(info)
 		}
-		ensure!(info.expired >= requested_block, Error::<T>::DelegationExpired);
+		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationExpired);
 		Ok(info)
 	}
 
@@ -897,17 +920,20 @@ impl<T: Config> Pallet<T> {
 		provider_msa_id: Provider,
 		delegator_msa_id: Delegator,
 	) -> DispatchResult {
-		ProviderInfoOf::<T>::try_mutate_exists(
+		DelegatorAndProviderToDelegation::<T>::try_mutate_exists(
 			delegator_msa_id,
 			provider_msa_id,
 			|maybe_info| -> DispatchResult {
 				let mut info = maybe_info.take().ok_or(Error::<T>::DelegationNotFound)?;
 
-				ensure!(info.expired == T::BlockNumber::default(), Error::<T>::DelegationRevoked);
+				ensure!(
+					info.revoked_at == T::BlockNumber::default(),
+					Error::<T>::DelegationRevoked
+				);
 
 				let current_block = frame_system::Pallet::<T>::block_number();
 
-				info.expired = current_block;
+				info.revoked_at = current_block;
 
 				*maybe_info = Some(info);
 
@@ -920,7 +946,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Removes all delegations from the specified delegator MSA id to providers
 	pub fn remove_delegator(delegator: Delegator) -> DispatchResult {
-		_ = ProviderInfoOf::<T>::clear_prefix(delegator, u32::max_value(), None);
+		_ = DelegatorAndProviderToDelegation::<T>::clear_prefix(delegator, u32::max_value(), None);
 		Ok(())
 	}
 
@@ -984,7 +1010,10 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		let provider_info = Self::ensure_valid_delegation(provider, delegator, None)?;
 
-		ensure!(provider_info.schemas.0.contains(&schema_id), Error::<T>::SchemaNotGranted);
+		ensure!(
+			provider_info.schema_permissions.contains_key(&schema_id),
+			Error::<T>::SchemaNotGranted
+		);
 		Ok(())
 	}
 
@@ -1001,13 +1030,19 @@ impl<T: Config> Pallet<T> {
 		delegator: Delegator,
 		provider: Provider,
 	) -> Result<Option<Vec<SchemaId>>, DispatchError> {
-		let provider_info = Self::get_provider_info_of(delegator, provider)
-			.ok_or(Error::<T>::DelegationNotFound)?;
-		let schemas = provider_info.schemas.0;
-		if schemas.is_empty() {
+		let provider_info =
+			Self::get_delegation_of(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
+
+		let schema_permissions = provider_info.schema_permissions;
+		if schema_permissions.is_empty() {
 			return Err(Error::<T>::SchemaNotGranted.into())
 		}
-		Ok(Some(schemas.into_inner()))
+
+		let mut schema_list = Vec::new();
+		for (key, _) in schema_permissions {
+			schema_list.push(key);
+		}
+		Ok(Some(schema_list))
 	}
 
 	/// Adds a signature to the PayloadSignatureRegistry based on a virtual "bucket" grouping.
@@ -1050,7 +1085,7 @@ impl<T: Config> Pallet<T> {
 
 		// If we did not cross a bucket boundary block, stop
 		if prior_bucket_num == current_bucket_num {
-			return T::WeightInfo::on_initialize(0 as u32)
+			return Weight::zero()
 		}
 		// Clear the previous bucket block set
 		let multi_removal_result = <PayloadSignatureRegistry<T>>::clear_prefix(
@@ -1112,26 +1147,30 @@ impl<T: Config> MsaValidator for Pallet<T> {
 impl<T: Config> ProviderLookup for Pallet<T> {
 	type BlockNumber = T::BlockNumber;
 	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
+	type SchemaId = SchemaId;
 
-	fn get_provider_info_of(
+	fn get_delegation_of(
 		delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>> {
-		Self::get_provider_info(delegator, provider)
+	) -> Option<Delegation<SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>> {
+		Self::get_delegation(delegator, provider)
 	}
 }
 
 impl<T: Config> DelegationValidator for Pallet<T> {
 	type BlockNumber = T::BlockNumber;
 	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
+	type SchemaId = SchemaId;
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_delegation(
 		provider: Provider,
 		delegation: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>
-	{
+	) -> Result<
+		Delegation<SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
+		DispatchError,
+	> {
 		Self::ensure_valid_delegation(provider, delegation, block_number)
 	}
 
@@ -1147,16 +1186,32 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		provider: Provider,
 		delegation: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>
-	{
+	) -> Result<
+		Delegation<Self::SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
+		DispatchError,
+	> {
 		let validation_check = Self::ensure_valid_delegation(provider, delegation, block_number);
 		if validation_check.is_err() {
 			// If the delegation does not exist, we return a ok
 			// This is only used for benchmarks, so it is safe to return a dummy account
 			// in case the delegation does not exist
-			return Ok(ProviderInfo { schemas: OrderedSet::new(), expired: Default::default() })
+			return Ok(Delegation {
+				schema_permissions: BoundedBTreeMap::<
+					SchemaId,
+					Option<T::BlockNumber>,
+					T::MaxSchemaGrantsPerDelegation,
+				>::default(),
+				revoked_at: Default::default(),
+			})
 		}
-		Ok(ProviderInfo { schemas: OrderedSet::new(), expired: Default::default() })
+		Ok(Delegation {
+			schema_permissions: BoundedBTreeMap::<
+				SchemaId,
+				Option<T::BlockNumber>,
+				T::MaxSchemaGrantsPerDelegation,
+			>::default(),
+			revoked_at: Default::default(),
+		})
 	}
 }
 
@@ -1202,7 +1257,7 @@ impl<T: Config> SchemaGrantValidator for Pallet<T> {
 		delegator: Delegator,
 		_schema_id: SchemaId,
 	) -> DispatchResult {
-		let provider_info = Self::get_provider_info_of(delegator, provider);
+		let provider_info = Self::get_delegation_of(delegator, provider);
 		if provider_info.is_none() {
 			return Ok(())
 		}
@@ -1232,7 +1287,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 
 		Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id, None)
 			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidDelegation as u8))?;
-		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
+		ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}
 
 	/// validates that a key being revoked is both valid and owned by a valid MSA account
@@ -1246,14 +1301,42 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			.into();
 		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}
+
+	/// validates that a MSA being retired is valid
+	pub fn ensure_msa_can_retire(account_id: &T::AccountId) -> TransactionValidity {
+		const TAG_PREFIX: &str = "MSARetirement";
+		let msa_id = Pallet::<T>::ensure_valid_msa_key(account_id)
+			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
+			.into();
+
+		// Invalid transaction error "InvalidRegisteredProviderCannotBeRetired" if the MSA id is a registered provider
+		ensure!(
+			!Pallet::<T>::is_registered_provider(msa_id),
+			InvalidTransaction::Custom(
+				ValidityError::InvalidRegisteredProviderCannotBeRetired as u8
+			)
+		);
+
+		// Invalid transaction error "MoreThanOneKeyExists" if the MSA has more than one account key.
+		let key_count = Pallet::<T>::get_public_key_count_by_msa_id(msa_id);
+		ensure!(
+			key_count == 1,
+			InvalidTransaction::Custom(ValidityError::InvalidMoreThanOneKeyExists as u8)
+		);
+		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
+	}
 }
 
 /// Errors related to the validity of the CheckFreeExtrinsicUse signed extension.
-enum ValidityError {
+pub enum ValidityError {
 	/// Delegation to provider is not found or expired.
 	InvalidDelegation,
 	/// MSA key as been revoked.
 	InvalidMsaKey,
+	/// Cannot retire a registered provider MSA
+	InvalidRegisteredProviderCannotBeRetired,
+	/// More than one account key exists for the MSA during retire attempt
+	InvalidMoreThanOneKeyExists,
 }
 
 impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
@@ -1314,6 +1397,7 @@ where
 				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id),
 			Some(Call::delete_msa_public_key { key, .. }) =>
 				CheckFreeExtrinsicUse::<T>::validate_key_revocation(who, key),
+			Some(Call::retire_msa { .. }) => CheckFreeExtrinsicUse::<T>::ensure_msa_can_retire(who),
 			_ => return Ok(Default::default()),
 		}
 	}

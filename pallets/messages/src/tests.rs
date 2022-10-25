@@ -282,6 +282,23 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_return_offchain_payl
 }
 
 #[test]
+fn get_messages_by_schema_with_ipfs_payload_location_should_fail_bad_schema() {
+	new_test_ext().execute_with(|| {
+		let bad_message: Message<MaxSchemaGrantsPerDelegation> = Message {
+			payload: BoundedVec::try_from(
+				vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].to_vec(),
+			)
+			.unwrap(),
+			msa_id: Some(0),
+			provider_msa_id: 1,
+			index: 0,
+		};
+		let mapped_response = bad_message.map_to_response(0, PayloadLocation::IPFS);
+		assert_eq!(mapped_response.cid, Some(Vec::new()));
+	});
+}
+
+#[test]
 fn add_message_via_valid_delegate_should_pass() {
 	new_test_ext().execute_with(|| {
 		// arrange

@@ -97,7 +97,7 @@ benchmarks! {
 
 		let caller: T::AccountId = whitelisted_caller();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
-		assert_ok!(Msa::<T>::register_provider(RawOrigin::Signed(caller.clone()).into(),Vec::from("Foo")));
+		assert_ok!(Msa::<T>::create_provider(RawOrigin::Signed(caller.clone()).into(),Vec::from("Foo")));
 
 		let (payload, signature, key) = create_payload_and_signature::<T>();
 
@@ -116,8 +116,7 @@ benchmarks! {
 		}
 	}: _ (RawOrigin::Signed(provider), delegator_msa_id)
 
-	add_key_to_msa {
-
+	add_public_key_to_msa {
 		let (add_provider_payload, signature, key) = add_key_payload_and_signature::<T>();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(key.clone()).into()));
 		let (add_provider_payload, signature_new, key_new) = add_key_payload_and_signature::<T>();
@@ -129,7 +128,7 @@ benchmarks! {
 		let (add_provider_payload, signature, caller) = add_key_payload_and_signature::<T>();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
 		let (add_provider_payload, signature_new, key_new) = add_key_payload_and_signature::<T>();
-		assert_ok!(Msa::<T>::add_key_to_msa(RawOrigin::Signed(caller.clone()).into(), caller.clone(), signature, key_new.clone(), signature_new, add_provider_payload));
+		assert_ok!(Msa::<T>::add_public_key_to_msa(RawOrigin::Signed(caller.clone()).into(), caller.clone(), signature, key_new.clone(), signature_new, add_provider_payload));
 
 	}: _(RawOrigin::Signed(caller), key_new)
 
@@ -150,7 +149,7 @@ benchmarks! {
 		let (payload, signature, key) = create_payload_and_signature::<T>();
 
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
-		assert_ok!(Msa::<T>::register_provider(RawOrigin::Signed(caller.clone()).into(),Vec::from("Foo")));
+		assert_ok!(Msa::<T>::create_provider(RawOrigin::Signed(caller.clone()).into(),Vec::from("Foo")));
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(key.clone()).into()));
 
 	}: _ (RawOrigin::Signed(caller), key, signature, payload)
@@ -163,13 +162,14 @@ benchmarks! {
 
 	}: _ (RawOrigin::Signed(delegator), provider_msa_id)
 
-	register_provider {
-
+	create_provider {
 		let (provider, _provider_msa_id) = create_account_with_msa_id::<T>(1);
 	}: _ (RawOrigin::Signed(provider), Vec::from("Foo"))
 
 	on_initialize {
-		let m in 1 .. 50_000;
+		// we should not need to max out storage for this benchmark, see:
+		// https://substrate.stackexchange.com/a/4430/2060
+		let m in 1 .. 3_000;
 		for j in 0 .. m {
 			let mortality = 49;
 			register_signature::<T>(mortality as u32);

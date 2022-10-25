@@ -65,7 +65,7 @@ Creates a new MSA on behalf of a delegator and adds the origin held MSA as its p
       1. `MsaCreated`
           * `new_msa_id` - id of the newly created MSA
           * `key` - the `delegator_key`
-      2. `ProviderAdded`
+      2. `DelegationGranted`
           * `delegator` - id of the newly created MSA
           * `provider` - id of the MSA help by the provider
 
@@ -123,13 +123,13 @@ Throws an Error enum indicating if either provider or delegator does not exist.
 ### Storage
 * Delegations are stored as a Double-key map of Delegator MSA id --> Provider MSA id. The data stored contains the `Permission` for that relationship:
 ```rust
-pub(super) type ProviderInfoOf<T: Config> = StorageDoubleMap<
+pub(super) type DelegatorAndProviderToDelegation<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
 		Delegator,
 		Blake2_128Concat,
 		Provider,
-		ProviderInfo<T::BlockNumber>,
+		Delegation<T::BlockNumber>,
 		OptionQuery,
 	>;
 ```

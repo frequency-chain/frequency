@@ -1,8 +1,8 @@
 use crate as pallet_messages;
 use common_primitives::{
 	msa::{
-		DelegationValidator, Delegator, MessageSourceId, MsaLookup, MsaValidator, OrderedSet,
-		Provider, ProviderInfo, ProviderLookup, SchemaGrantValidator,
+		Delegation, DelegationValidator, Delegator, MessageSourceId, MsaLookup, MsaValidator,
+		Provider, ProviderLookup, SchemaGrantValidator,
 	},
 	schema::*,
 };
@@ -150,32 +150,36 @@ impl MsaValidator for MsaInfoHandler {
 impl ProviderLookup for DelegationInfoHandler {
 	type BlockNumber = u64;
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type SchemaId = SchemaId;
 
-	fn get_provider_info_of(
+	fn get_delegation_of(
 		_delegator: Delegator,
 		provider: Provider,
-	) -> Option<ProviderInfo<Self::BlockNumber, MaxSchemaGrantsPerDelegation>> {
+	) -> Option<Delegation<SchemaId, Self::BlockNumber, MaxSchemaGrantsPerDelegation>> {
 		if provider == Provider(2000) {
 			return None
 		};
-		Some(ProviderInfo { expired: 100, schemas: OrderedSet::new() })
+		Some(Delegation { revoked_at: 100, schema_permissions: Default::default() })
 	}
 }
 impl DelegationValidator for DelegationInfoHandler {
 	type BlockNumber = u64;
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type SchemaId = SchemaId;
 
 	fn ensure_valid_delegation(
 		provider: Provider,
 		_delegator: Delegator,
 		_block_number: Option<Self::BlockNumber>,
-	) -> Result<ProviderInfo<Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>, DispatchError>
-	{
+	) -> Result<
+		Delegation<SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
+		DispatchError,
+	> {
 		if provider == Provider(2000) {
 			return Err(DispatchError::Other("some delegation error"))
 		};
 
-		Ok(ProviderInfo { schemas: OrderedSet::new(), expired: Default::default() })
+		Ok(Delegation { schema_permissions: Default::default(), revoked_at: Default::default() })
 	}
 }
 impl SchemaGrantValidator for SchemaGrantValidationHandler {
@@ -184,7 +188,7 @@ impl SchemaGrantValidator for SchemaGrantValidationHandler {
 		delegator: Delegator,
 		_schema_id: SchemaId,
 	) -> DispatchResult {
-		match DelegationInfoHandler::get_provider_info_of(delegator, provider) {
+		match DelegationInfoHandler::get_delegation_of(delegator, provider) {
 			Some(_) => Ok(()),
 			None => Err(DispatchError::Other("no schema grant or delegation")),
 		}

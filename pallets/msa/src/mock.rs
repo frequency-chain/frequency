@@ -186,7 +186,7 @@ pub fn test_create_delegator_msa_with_provider() -> (u64, Public) {
 		create_and_sign_add_provider_payload(delegator_key_pair, provider_msa_id);
 
 	// Register provider
-	assert_ok!(Msa::register_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
+	assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
 	assert_ok!(Msa::grant_delegation(
 		Origin::signed(provider_account.into()),
@@ -196,6 +196,12 @@ pub fn test_create_delegator_msa_with_provider() -> (u64, Public) {
 	));
 
 	(provider_msa_id, delegator_account)
+}
+
+pub fn generate_test_signature() -> MultiSignature {
+	let (key_pair, _) = sr25519::Pair::generate();
+	let fake_data = H256::random();
+	key_pair.sign(fake_data.as_bytes()).into()
 }
 
 #[cfg(feature = "runtime-benchmarks")]
