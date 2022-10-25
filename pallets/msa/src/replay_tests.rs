@@ -35,7 +35,7 @@ pub fn user_adds_key_to_msa(
 	delegator_pair: sp_core::sr25519::Pair,
 	new_pair: sp_core::sr25519::Pair,
 ) {
-	let add_key_payload: AddKeyData = AddKeyData { msa_id: 2, nonce: 0, expiration: 109 };
+	let add_key_payload: AddKeyData = AddKeyData { msa_id: 2, expiration: 109 };
 	let encode_add_key_data = wrap_binary_data(add_key_payload.encode());
 	let add_key_signature_delegator = delegator_pair.sign(&encode_add_key_data);
 	let add_key_signature_new_key = new_pair.sign(&encode_add_key_data);
@@ -252,7 +252,7 @@ fn replaying_create_sponsored_account_with_delegation_fails_03() {
 		let (new_key_pair, _) = sr25519::Pair::generate();
 		let new_public_key = new_key_pair.public();
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: 2, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: 2, expiration: 10 };
 		let encode_add_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let add_key_signature_delegator = delegator_keypair.sign(&encode_add_key_data);

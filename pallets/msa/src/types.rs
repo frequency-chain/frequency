@@ -18,8 +18,6 @@ pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 pub struct AddKeyData {
 	/// Message Source Account identifier
 	pub msa_id: MessageSourceId,
-	/// A cryptographic nonce.
-	pub nonce: u32,
 	/// The block number at which the signed proof for add_public_key_to_msa expires.
 	pub expiration: BlockNumber,
 }
