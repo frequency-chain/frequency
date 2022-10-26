@@ -80,7 +80,7 @@ use sp_runtime::{
 
 use sp_core::crypto::AccountId32;
 pub mod types;
-pub use types::{AddKeyData, AddProvider};
+pub use types::{AddKeyData, AddProvider, SchemaPermission};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -340,8 +340,6 @@ pub mod pallet {
 		ProofNotYetValid,
 		/// Attempted to add a signature when the signature is already in the registry
 		SignatureAlreadySubmitted,
-		/// Exceeds or not granted
-		ExceedsMaxSchemaGrantsPerDelegationOrSchemaNotGranted,
 	}
 
 	#[pallet::hooks]
@@ -670,11 +668,7 @@ pub mod pallet {
 			let provider_msa_id = Provider(provider);
 			let delegator_msa_id = Delegator(delegator_msa_id);
 
-			Self::add_schema_permissions_for(
-				delegator_msa_id,
-				provider_msa_id,
-				schema_ids.clone(),
-			)?;
+			Self::add_schema_grants_for(delegator_msa_id, provider_msa_id, schema_ids)?;
 
 			Self::deposit_event(Event::DelegationUpdated {
 				provider: provider_msa_id,
@@ -757,68 +751,20 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Revokes schema permissions
-	pub fn revoke_schema_permissions_for(
-		delegator: Delegator,
-		provider: Provider,
-		schema_ids: Vec<SchemaId>,
-	) -> DispatchResult {
-		DelegatorAndProviderToDelegation::<T>::try_mutate(
-			delegator,
-			provider,
-			|maybe_info| -> DispatchResult {
-				let mut info = maybe_info.take().ok_or(Error::<T>::DelegationNotFound)?;
-
-				Self::ensure_all_schema_ids_are_valid(&schema_ids)?;
-
-				let mut schema_permissions = info.schema_permissions;
-
-				let current_block = frame_system::Pallet::<T>::block_number();
-
-				for id in schema_ids {
-					schema_permissions.try_insert(id, Some(current_block.clone())).map_err(
-						|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegationOrSchemaNotGranted,
-					)?;
-				}
-
-				info.schema_permissions = schema_permissions;
-
-				*maybe_info = Some(info);
-
-				Ok(())
-			},
-		)
-	}
-
 	/// Adds a list of schema permissions to an MSA.
-	pub fn add_schema_permissions_for(
+	pub fn add_schema_grants_for(
 		delegator: Delegator,
 		provider: Provider,
 		schema_ids: Vec<SchemaId>,
 	) -> DispatchResult {
-		DelegatorAndProviderToDelegation::<T>::try_mutate(
-			delegator,
-			provider,
-			|maybe_info| -> DispatchResult {
-				let mut info = maybe_info.take().ok_or(Error::<T>::DelegationNotFound)?;
+		Self::try_mutate_delegation(delegator, provider, |delegation, is_new_delegation| {
+			ensure!(!is_new_delegation, Error::<T>::DelegationNotFound);
+			Self::ensure_all_schema_ids_are_valid(&schema_ids)?;
 
-				Self::ensure_all_schema_ids_are_valid(&schema_ids)?;
+			SchemaPermission::<T>::try_insert_schemas(delegation, schema_ids)?;
 
-				let mut schema_permissions = info.schema_permissions;
-
-				for id in schema_ids {
-					schema_permissions
-						.try_insert(id, Default::default())
-						.map_err(|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegation)?;
-				}
-
-				info.schema_permissions = schema_permissions;
-
-				*maybe_info = Some(info);
-
-				Ok(())
-			},
-		)
+			Ok(())
+		})
 	}
 
 	/// Add a new key to the MSA
@@ -915,72 +861,60 @@ impl<T: Config> Pallet<T> {
 		delegator: Delegator,
 		schemas: Vec<SchemaId>,
 	) -> DispatchResult {
-		let schema_permissions = Self::initialize_schema_permissions(schemas)?;
+		Self::try_mutate_delegation(delegator, provider, |delegation, is_new_delegation| {
+			ensure!(is_new_delegation, Error::<T>::DuplicateProvider);
+			Self::ensure_all_schema_ids_are_valid(&schemas)?;
 
-		// Self::try_mutate_delegation_relationship(delegator, provider, |maybe_provider_info| {
-		// 	ensure!(maybe_provider_info.take() == None, Error::<T>::DuplicateProvider);
-		// 	let info = Delegation { revoked_at: Default::default(), schema_permissions };
-		// 	*maybe_provider_info = Some(info);
+			SchemaPermission::<T>::try_insert_schemas(delegation, schemas)?;
 
-		// 	Ok(())
-		// });
-		DelegatorAndProviderToDelegation::<T>::try_mutate(
-			delegator,
-			provider,
-			|maybe_info| -> DispatchResult {
-				ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
-				let info = Delegation { revoked_at: Default::default(), schema_permissions };
-				*maybe_info = Some(info);
+			Ok(())
+		})
+	}
 
-				Ok(())
-			},
-		)?;
+	/// Some Doc
+	pub fn revoke_schema_grants(
+		provider: Provider,
+		delegator: Delegator,
+		schema_ids: Vec<SchemaId>,
+	) -> DispatchResult {
+		Self::try_mutate_delegation(delegator, provider, |delegation, is_new_delegation| {
+			ensure!(!is_new_delegation, Error::<T>::DelegationNotFound);
+			Self::ensure_all_schema_ids_are_valid(&schema_ids)?;
 
-		Ok(())
+			let current_block = frame_system::Pallet::<T>::block_number();
+
+			for schema_id in schema_ids.into_iter() {
+				SchemaPermission::<T>::try_get_mut(delegation, schema_id, current_block)?;
+			}
+
+			Ok(())
+		})
 	}
 
 	/// Mutates the delegation relelationship storage
-	// pub fn try_mutate_delegation_relationship<R, E: From<DispatchError>>(
-	// 	delegator: Delegator,
-	// 	provider: Provider,
-	// 	f: impl FnOnce(&mut Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>),
-	// ) -> DispatchResult {
-	// 	DelegatorAndProviderToDelegation::<T>::try_mutate(
-	// 		delegator,
-	// 		provider,
-	// 		|maybe_info| -> DispatchResult {
-	// 			ensure!(maybe_info.take() == None, Error::<T>::DuplicateProvider);
-	// 			let info = Delegation { revoked_at: Default::default(), schema_permissions };
+	pub fn try_mutate_delegation<R, E: From<DispatchError>>(
+		delegator: Delegator,
+		provider: Provider,
+		f: impl FnOnce(
+			&mut Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
+			bool,
+		) -> Result<R, E>,
+	) -> Result<R, E> {
+		DelegatorAndProviderToDelegation::<T>::try_mutate_exists(
+			delegator,
+			provider,
+			|maybe_delegation_info| {
+				let is_new = maybe_delegation_info.is_none();
+				let mut delegation = maybe_delegation_info.take().unwrap_or_default();
 
-	// 			f(maybe_info);
-	// 			*maybe_info = f(maybe_info);
+				let result = f(&mut delegation, is_new).map(move |result| {
+					*maybe_delegation_info = Some(delegation);
+					result
+				});
 
-	// 			Ok(())
-	// 		},
-	// 	)?;
-
-	// 	Ok(())
-	// }
-
-	/// Initializes the BoundedBTreeMap used to store schema permissions and validates schema ids.
-	pub fn initialize_schema_permissions(
-		schemas: Vec<SchemaId>,
-	) -> Result<
-		BoundedBTreeMap<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
-		DispatchError,
-	> {
-		Self::ensure_all_schema_ids_are_valid(&schemas)?;
-
-		let mut schema_permissions_map =
-			BoundedBTreeMap::<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>::new();
-
-		for schema_id in schemas.into_iter() {
-			schema_permissions_map
-				.try_insert(schema_id, Default::default())
-				.map_err(|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegation)?;
-		}
-
-		Ok(schema_permissions_map)
+				result
+			},
+		)
 	}
 
 	/// Check that the delegator has an active delegation to the provider
