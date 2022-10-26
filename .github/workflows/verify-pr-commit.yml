@@ -211,14 +211,13 @@ jobs:
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
         with:
-          version: "0.20.1"
-          override: true
+          version: "0.22.0"
           # Tarpaulin Docs https://github.com/xd009642/tarpaulin
           # -e for exclude
           args: |
             -v --no-fail-fast --workspace
             -e frequency frequency-cli frequency-runtime frequency-rococo-runtime frequency-service
-            --exclude-files **/mock.rs **/weights.rs **/weights/*
+            --exclude-files **/mock.rs **/weights.rs **/weights/* **/benchmarking.rs
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
         with:
