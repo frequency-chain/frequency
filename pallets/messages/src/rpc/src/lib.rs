@@ -7,7 +7,7 @@ use jsonrpsee::{
 	core::{async_trait, error::Error as RpcError, RpcResult},
 	proc_macros::rpc,
 };
-use pallet_messages_runtime_api::MessagesApi as MessagesRuntimeApi;
+use pallet_messages_runtime_api::MessagesRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
