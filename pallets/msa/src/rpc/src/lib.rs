@@ -10,7 +10,7 @@ use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
 };
-use pallet_msa_runtime_api::MsaApi as MsaRuntimeApi;
+use pallet_msa_runtime_api::MsaRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};

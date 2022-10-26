@@ -49,7 +49,7 @@ where
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_messages_runtime_api::MessagesApi<Block, BlockNumber>,
 	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block>,
-	C::Api: pallet_msa_runtime_api::MsaApi<Block, AccountId>,
+	C::Api: pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
