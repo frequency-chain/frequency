@@ -58,8 +58,7 @@ pub fn fingerprint_raw_schema_list(
 	let schemas: (Vec<Schema>, Vec<Vec<u8>>) = raw_schema
 		.par_iter()
 		.map(|r| -> (Schema, Vec<u8>) {
-			let schema = fingerprint_raw_schema(r);
-			match schema {
+			match fingerprint_raw_schema(r) {
 				Ok(schema) => schema,
 				Err(_error) => (Schema::Null, r.to_string().as_bytes().to_vec()),
 			}
@@ -87,8 +86,8 @@ pub fn fingerprint_raw_schema_list(
 /// assert!(translated_schema.is_ok());
 /// ```
 pub fn translate_schema(serialized_schema: Vec<u8>) -> Result<Schema, AvroError> {
-	let schema_str = str::from_utf8(&serialized_schema);
-	match schema_str {
+	// let schema_str = str::from_utf8(&serialized_schema);
+	match str::from_utf8(&serialized_schema) {
 		Ok(schema_str) => {
 			let schema = Schema::parse_str(schema_str)?;
 			Ok(schema)
@@ -119,8 +118,7 @@ pub fn translate_schemas(serialized_schema: Vec<Vec<u8>>) -> Result<Vec<Schema>,
 	let schemas: Vec<Schema> = serialized_schema
 		.par_iter()
 		.map(|o| -> Schema {
-			let schema = translate_schema(o.to_vec());
-			match schema {
+			match translate_schema(o.to_vec()) {
 				Ok(schema) => schema,
 				Err(_error) => Schema::Null,
 			}
@@ -180,12 +178,17 @@ pub fn populate_schema_and_serialize(
 	records: &HashMap<String, SchemaValue>,
 ) -> Result<Vec<u8>, AvroError> {
 	let writer = get_schema_data_writer(schema);
-	let mut record_list = Record::new(writer.schema()).unwrap();
-	for (field_name, field_value) in records.iter() {
-		record_list.put(field_name, field_value.clone());
+	match Record::new(writer.schema()) {
+		None =>
+			Err(AvroError::InvalidSchema("Could not create record from this schema".to_string())),
+		Some(mut record_list) => {
+			for (field_name, field_value) in records.iter() {
+				record_list.put(field_name, field_value.clone());
+			}
+			let datum_res = to_avro_datum(schema, record_list)?;
+			Ok(datum_res)
+		},
 	}
-	let datum_res = to_avro_datum(schema, record_list)?;
-	Ok(datum_res)
 }
 
 /// Function to get serialized datum data for a given schema into hashmap.
@@ -258,14 +261,14 @@ pub fn get_schema_data_map<'a>(
 /// let schema_fingerprint = avro::fingerprint_raw_schema(raw_schema);
 /// assert!(schema_fingerprint.is_ok());
 pub fn validate_raw_avro_schema(json_schema: &Vec<u8>) -> Result<(), AvroError> {
-	let avro_schema_raw = String::from_utf8(json_schema.clone());
-	if avro_schema_raw.is_err() {
-		return Err(AvroError::InvalidSchema("Invalid schema".to_string()))
+	match String::from_utf8(json_schema.clone()) {
+		Err(_e) => Err(AvroError::InvalidSchema("Invalid schema".to_string())),
+		Ok(avro_schema) => {
+			let schema_fingerprint = fingerprint_raw_schema(&avro_schema);
+			if schema_fingerprint.is_err() {
+				return Err(AvroError::InvalidSchema("Invalid schema".to_string()))
+			}
+			Ok(())
+		},
 	}
-	let avro_schema = avro_schema_raw.unwrap();
-	let schema_fingerprint = fingerprint_raw_schema(&avro_schema);
-	if schema_fingerprint.is_err() {
-		return Err(AvroError::InvalidSchema("Invalid schema".to_string()))
-	}
-	Ok(())
 }
