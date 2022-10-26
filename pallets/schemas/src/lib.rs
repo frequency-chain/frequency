@@ -1,10 +1,12 @@
 //! # Schemas Pallet
-//!
 //! The Schemas pallet provides functionality for handling schemas.
 //!
-//! - [`Config`]
-//! - [`Call`]
-//! - [`Pallet`]
+//! - [Configuration: `Config`](Config)
+//! - [Extrenisics: `Call`](Call)
+//! - [Runtime API: `SchemasRuntimeApi`](../pallet_schemas_runtime_api/trait.SchemasRuntimeApi.html)
+//! - [Custom RPC API: `SchemasApiServer`](../pallet_schemas_rpc/trait.SchemasApiServer.html)
+//! - [Event Enum: `Event`](Event)
+//! - [Error Enum: `Error`](Error)
 //!
 //! ## Overview
 //!
@@ -22,23 +24,17 @@
 //! - Retrieving schemas by their id.
 //!
 //!
-//! ### Terminology
+//! ## Terminology
 //!
 //! - **Schema:** The structure that defines how a Message is stored and structured.
-//!
 //! - **Schema Model:** Serialization/Deserialization details of the schema
-//!
 //! - **Schema Model Type:** The type of the following Serialization/Deserialization. It can be
 //!   Avro, Parquet or ...
 //!
-//! ### Dispatchable Functions
+//! ## Implementations
 //!
-//! - `create_schema` - Registers a new schema after some initial validation.
-//! - `set_max_schema_model_bytes` - Sets the maximum schema model size (Bytes) by governance.
-//!
-//! The Schema pallet implements the following traits:
-//!
-//! - [`SchemaProvider`](common_primitives::schema::SchemaProvider<SchemaId>): Functions for accessing and validating Schemas.  This implementation is what is used in the runtime.
+//! - [`SchemaValidator`](../common_primitives/schema/trait.SchemaValidator.html): Functions for accessing and validating Schemas. This implementation is what is used in the runtime.
+//! - [`SchemaProvider`](../common_primitives/schema/trait.SchemaProvider.html): Allows another pallet to resolve schema information.
 //!
 //! ## Genesis config
 //!
