@@ -29,7 +29,7 @@ pub trait MessagesApi<BlockNumber> {
 	) -> RpcResult<BlockPaginationResponse<BlockNumber, MessageResponse<BlockNumber>>>;
 }
 
-/// The client handler for the API.
+/// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
 pub struct MessagesHandler<C, M> {
 	client: Arc<C>,
 	_marker: std::marker::PhantomData<M>,

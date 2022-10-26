@@ -34,7 +34,7 @@ pub trait MsaApi<BlockHash, AccountId> {
 	) -> RpcResult<Option<Vec<SchemaId>>>;
 }
 
-/// The client handler for the API.
+/// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
 pub struct MsaHandler<C, M> {
 	client: Arc<C>,
 	_marker: std::marker::PhantomData<M>,

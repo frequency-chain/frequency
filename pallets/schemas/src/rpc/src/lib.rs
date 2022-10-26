@@ -32,7 +32,7 @@ impl From<Error> for i32 {
 	}
 }
 
-/// Frequency Schema API
+/// Frequency Schema Custom RPC API
 #[rpc(client, server)]
 pub trait SchemasApi<BlockHash> {
 	/// retrieving schema by schema id
@@ -44,7 +44,7 @@ pub trait SchemasApi<BlockHash> {
 	fn check_schema_validity(&self, model: Vec<u8>, at: Option<BlockHash>) -> RpcResult<bool>;
 }
 
-/// The client handler for the API.
+/// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
 pub struct SchemasHandler<C, M> {
 	client: Arc<C>,
 	_marker: std::marker::PhantomData<M>,
