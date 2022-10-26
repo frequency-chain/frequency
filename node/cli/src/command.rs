@@ -90,14 +90,28 @@ macro_rules! with_runtime_or_err {
 }
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
-	Ok(match id {
-		#[cfg(feature = "frequency")]
-		"frequency" => Box::new(chain_spec::frequency::frequency()),
-		#[cfg(feature = "frequency-rococo-local")]
-		"frequency-local" | "dev" => Box::new(chain_spec::frequency_local::local_testnet_config()),
-		#[cfg(feature = "frequency-rococo-testnet")]
-		"frequency-rococo" | "rococo" | "testnet" =>
-			Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet()),
+	match id {
+		"frequency" => {
+			if cfg!(feature = "frequency") {
+				#[cfg(feature = "frequency")]
+				return Ok(Box::new(chain_spec::frequency::frequency()))
+			}
+			return Err("Frequency runtime is not available.".into())
+		},
+		"frequency-local" | "dev" => {
+			if cfg!(feature = "frequency-rococo-local") {
+				#[cfg(feature = "frequency-rococo-local")]
+				return Ok(Box::new(chain_spec::frequency_local::local_testnet_config()))
+			}
+			return Err("Frequency local runtime is not available.".into())
+		},
+		"frequency-rococo" | "rococo" | "testnet" => {
+			if cfg!(feature = "frequency-rococo-testnet") {
+				#[cfg(feature = "frequency-rococo-testnet")]
+				return Ok(Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet()))
+			}
+			return Err("Frequency rococo runtime is not available.".into())
+		},
 		path => {
 			if path.is_empty() {
 				if cfg!(feature = "frequency") {
@@ -133,21 +147,25 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			if ChainIdentity::Frequency == spec.identify() {
 				#[cfg(feature = "frequency")]
 				{
-					Box::new(chain_spec::frequency::ChainSpec::from_json_file(path_buf)?)
+					return Ok(Box::new(chain_spec::frequency::ChainSpec::from_json_file(path_buf)?))
 				}
 				#[cfg(not(feature = "frequency"))]
 				return Err("Frequency runtime is not available.".into())
 			} else if ChainIdentity::FrequencyRococo == spec.identify() {
 				#[cfg(feature = "frequency-rococo-testnet")]
 				{
-					Box::new(chain_spec::frequency_rococo::ChainSpec::from_json_file(path_buf)?)
+					return Ok(Box::new(chain_spec::frequency_rococo::ChainSpec::from_json_file(
+						path_buf,
+					)?))
 				}
 				#[cfg(not(feature = "frequency-rococo-testnet"))]
 				return Err("Frequency Rococo runtime is not available.".into())
 			} else if ChainIdentity::FrequencyLocal == spec.identify() {
 				#[cfg(feature = "frequency-rococo-local")]
 				{
-					Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(path_buf)?)
+					return Ok(Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(
+						path_buf,
+					)?))
 				}
 				#[cfg(not(feature = "frequency-rococo-local"))]
 				return Err("Frequency Local runtime is not available.".into())
@@ -155,7 +173,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				return Err("Unknown chain spec.".into())
 			}
 		},
-	})
+	}
 }
 
 fn chain_name() -> String {
