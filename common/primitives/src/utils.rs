@@ -178,4 +178,18 @@ mod tests {
 			result.unwrap().data
 		);
 	}
+
+	#[test]
+	fn as_string_errors_for_bad_utf8_vec() {
+		let test_data = TestAsString { data: vec![0xc3, 0x28] };
+		let result = serde_json::to_string(&test_data);
+		assert!(result.is_err());
+	}
+
+	#[test]
+	fn as_string_errors_for_bad_utf8_str() {
+		let result: Result<TestAsString, serde_json::Error> =
+			serde_json::from_str("{\"data\":\"\\xa0\\xa1\"}");
+		assert!(result.is_err());
+	}
 }
