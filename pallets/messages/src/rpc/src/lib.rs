@@ -1,3 +1,13 @@
+// Strong Documentation Lints
+#![deny(
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
+)]
+
+//! Custom APIs for [Messages](pallet-messages)
+
 use codec::Codec;
 #[cfg(feature = "std")]
 use common_helpers::rpc::*;
@@ -19,8 +29,10 @@ use std::sync::Arc;
 #[cfg(test)]
 mod tests;
 
+/// Frequency Messages Custom RPC API
 #[rpc(client, server)]
 pub trait MessagesApi<BlockNumber> {
+	/// Retrieve paginated messages by schema id
 	#[method(name = "messages_getBySchemaId")]
 	fn get_messages_by_schema_id(
 		&self,
@@ -42,6 +54,7 @@ impl<C, M> MessagesHandler<C, M> {
 	}
 }
 
+/// Errors that occur on the client RPC
 #[derive(Debug)]
 pub enum MessageRpcError {
 	/// Pagination request is bad

@@ -5,6 +5,7 @@
 In these files:
 - `src/lib.rs`
 - `src/runtime-api/src/lib.rs`
+- `src/rpc/src/lib.rs`
 
 Add these lines:
 

@@ -1,3 +1,13 @@
+// Strong Documentation Lints
+#![deny(
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
+)]
+
+//! Custom APIs for [MSA](pallet-msa)
+
 use codec::Codec;
 use common_helpers::rpc::*;
 use common_primitives::{
@@ -16,8 +26,12 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
+/// Frequency MSA Custom RPC API
 #[rpc(client, server)]
 pub trait MsaApi<BlockHash, AccountId> {
+	/// Check for a list of delegations
+	/// Given a single provider, test a list of potential delegators
+	/// At a given block number
 	#[method(name = "msa_checkDelegations")]
 	fn check_delegations(
 		&self,
@@ -26,6 +40,7 @@ pub trait MsaApi<BlockHash, AccountId> {
 		block_number: Option<BlockNumber>,
 	) -> RpcResult<Vec<(MessageSourceId, bool)>>;
 
+	/// Retrieve the list of currently granted schemas given a delegator and provider pair
 	#[method(name = "msa_grantedSchemaIdsByMsaId")]
 	fn get_granted_schemas_by_msa_id(
 		&self,
