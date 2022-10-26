@@ -2098,7 +2098,6 @@ pub fn add_msa_key_replay_fails() {
 		let (key_pair_provider, _) = sr25519::Pair::generate();
 		let account_provider = key_pair_provider.public();
 		let (new_msa_id, _) = Msa::create_account(account_provider.into(), EMPTY_FUNCTION).unwrap();
-		let nonce = 1u32;
 		for tc in test_cases {
 			System::set_block_number(tc.current);
 			let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: tc.mortality };
