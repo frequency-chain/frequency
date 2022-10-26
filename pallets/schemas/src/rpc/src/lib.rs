@@ -44,12 +44,14 @@ pub trait SchemasApi<BlockHash> {
 	fn check_schema_validity(&self, model: Vec<u8>, at: Option<BlockHash>) -> RpcResult<bool>;
 }
 
+/// The client handler for the API.
 pub struct SchemasHandler<C, M> {
 	client: Arc<C>,
 	_marker: std::marker::PhantomData<M>,
 }
 
 impl<C, M> SchemasHandler<C, M> {
+	/// Create new instance with the given reference to the client.
 	pub fn new(client: Arc<C>) -> Self {
 		Self { client, _marker: Default::default() }
 	}

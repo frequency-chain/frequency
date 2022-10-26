@@ -34,14 +34,14 @@ pub trait MsaApi<BlockHash, AccountId> {
 	) -> RpcResult<Option<Vec<SchemaId>>>;
 }
 
-/// A struct that implements the `MessagesApi`.
+/// The client handler for the API.
 pub struct MsaHandler<C, M> {
 	client: Arc<C>,
 	_marker: std::marker::PhantomData<M>,
 }
 
 impl<C, M> MsaHandler<C, M> {
-	/// Create new `MessagesApi` instance with the given reference to the client.
+	/// Create new instance with the given reference to the client.
 	pub fn new(client: Arc<C>) -> Self {
 		Self { client, _marker: Default::default() }
 	}

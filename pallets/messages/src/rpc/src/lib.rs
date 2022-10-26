@@ -29,14 +29,14 @@ pub trait MessagesApi<BlockNumber> {
 	) -> RpcResult<BlockPaginationResponse<BlockNumber, MessageResponse<BlockNumber>>>;
 }
 
-/// A struct that implements the `MessagesApi`.
+/// The client handler for the API.
 pub struct MessagesHandler<C, M> {
 	client: Arc<C>,
 	_marker: std::marker::PhantomData<M>,
 }
 
 impl<C, M> MessagesHandler<C, M> {
-	/// Create new `MessagesApi` instance with the given reference to the client.
+	/// Create new instance with the given reference to the client.
 	pub fn new(client: Arc<C>) -> Self {
 		Self { client, _marker: Default::default() }
 	}
