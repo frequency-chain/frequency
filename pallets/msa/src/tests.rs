@@ -2128,56 +2128,6 @@ pub fn add_msa_key_replay_fails() {
 	})
 }
 
-// #[test]
-// pub fn initialize_schema_permissions_success() {
-// 	new_test_ext().execute_with(|| {
-// 		set_schema_count::<Test>(3);
-// 		let schema_ids = vec![1];
-// 		let result = Msa::initialize_schema_permissions(schema_ids);
-
-// 		let mut expected = BoundedBTreeMap::<
-// 			SchemaId,
-// 			<Test as frame_system::Config>::BlockNumber,
-// 			<Test as Config>::MaxSchemaGrantsPerDelegation,
-// 		>::new();
-
-// 		expected.try_insert(1, Default::default()).expect("all good");
-
-// 		assert_eq!(result.unwrap(), expected);
-// 	});
-// }
-
-// #[test]
-// pub fn initialize_schema_permissions_error() {
-// 	new_test_ext().execute_with(|| {
-// 		let schema_ids = vec![1];
-// 		let result = Msa::initialize_schema_permissions(schema_ids);
-
-// 		assert_noop!(result, Error::<Test>::InvalidSchemaId);
-
-// 		set_schema_count::<Test>(3);
-
-// 		let schema_ids = vec![1, 2, 3];
-// 		let result = Msa::initialize_schema_permissions(schema_ids);
-
-// 		assert_noop!(result, Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation);
-// 	});
-// }
-
-// #[test]
-// fn try_mutate_delegation_relationship_success() {
-// 	new_test_ext().execute_with(|| {
-// 		let provider_msa_id = Provider(1);
-// 		let delegator_msa_id = Delegator(2);
-// 		let fn_callback = |delegation_info| -> DispatchResult { delegation_info };
-
-// 		Msa::try_mutate_delegation_relationship(delegator_msa_id, provider_msa_id, fn_callback);
-// 	});
-// }
-
-// Add test for ensuring that it does not error when
-// when trying to grant a schema to already granted.
-
 #[test]
 fn create_schema_permissions_errors() {
 	new_test_ext().execute_with(|| {
