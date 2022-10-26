@@ -6,7 +6,7 @@
 	missing_docs
 )]
 
-//! Custom APIs for [MSA](pallet-msa)
+//! Custom APIs for [MSA](../pallet_msa/index.html)
 
 use codec::Codec;
 use common_helpers::rpc::*;

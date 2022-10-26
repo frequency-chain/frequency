@@ -9,7 +9,7 @@
 	missing_docs
 )]
 
-//! Runtime API definition for [Messages](pallet-messages)
+//! Runtime API definition for [Messages](../pallet_messages/index.html)
 //!
 //! This api must be implemented by the node runtime.
 //! Runtime APIs Provide:
@@ -24,7 +24,7 @@ use frame_support::inherent::Vec;
 // runtime files (the `runtime` folder)
 sp_api::decl_runtime_apis! {
 
-	/// Runtime APIs for [Messages](pallet-messages)
+	/// Runtime APIs for [Messages](../pallet_messages/index.html)
 	pub trait MessagesRuntimeApi<BlockNumber> where
 		BlockNumber: Codec,
 	{

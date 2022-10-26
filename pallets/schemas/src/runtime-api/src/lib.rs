@@ -9,7 +9,7 @@
 	missing_docs
 )]
 
-//! Runtime API definition for [Schemas](pallet-schemas)
+//! Runtime API definition for [Schemas](../pallet_schemas/index.html)
 //!
 //! This api must be implemented by the node runtime.
 //! Runtime APIs Provide:
@@ -20,7 +20,7 @@ use common_primitives::schema::*;
 use frame_support::dispatch::DispatchError;
 
 sp_api::decl_runtime_apis! {
-	/// Runtime API definition for [Schemas](pallet-schemas)
+	/// Runtime API definition for [Schemas](../pallet_schemas/index.html)
 	pub trait SchemasRuntimeApi
 	{
 		/// Fetch the schema by id

@@ -6,7 +6,7 @@
 	missing_docs
 )]
 
-//! Custom APIs for [Messages](pallet-messages)
+//! Custom APIs for [Messages](../pallet_messages/index.html)
 
 use codec::Codec;
 #[cfg(feature = "std")]

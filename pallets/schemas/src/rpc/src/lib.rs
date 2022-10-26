@@ -6,7 +6,7 @@
 	missing_docs
 )]
 
-//! Custom APIs for [Schemas](pallet-schemas)
+//! Custom APIs for [Schemas](../pallet_schemas/index.html)
 
 use common_helpers::{avro, rpc::*};
 use common_primitives::schema::*;
