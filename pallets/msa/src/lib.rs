@@ -678,6 +678,35 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Revoke Schema Permissions
+		/// ### Events
+		///
+		///
+		/// ### Errors
+		///
+		/// - Returns []
+		#[pallet::weight(1_000)]
+		pub fn revoke_schema_permissions(
+			origin: OriginFor<T>,
+			provider: MessageSourceId,
+			schema_ids: Vec<SchemaId>,
+		) -> DispatchResult {
+			let delegator_key = ensure_signed(origin)?;
+			let delegator_msa_id = Self::ensure_valid_msa_key(&delegator_key)?;
+
+			let provider_msa_id = Provider(provider);
+			let delegator_msa_id = Delegator(delegator_msa_id);
+
+			Self::revoke_schema_grants_for(delegator_msa_id, provider_msa_id, schema_ids)?;
+
+			Self::deposit_event(Event::DelegationUpdated {
+				provider: provider_msa_id,
+				delegator: delegator_msa_id,
+			});
+
+			Ok(())
+		}
+
 		/// Retire a MSA
 		///
 		/// When a user wants to disassociate themselves from Frequency, they can retire their MSA for free provided that:
@@ -872,9 +901,9 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Some Doc
-	pub fn revoke_schema_grants(
-		provider: Provider,
+	pub fn revoke_schema_grants_for(
 		delegator: Delegator,
+		provider: Provider,
 		schema_ids: Vec<SchemaId>,
 	) -> DispatchResult {
 		Self::try_mutate_delegation(delegator, provider, |delegation, is_new_delegation| {
@@ -883,9 +912,7 @@ impl<T: Config> Pallet<T> {
 
 			let current_block = frame_system::Pallet::<T>::block_number();
 
-			for schema_id in schema_ids.into_iter() {
-				SchemaPermission::<T>::try_get_mut(delegation, schema_id, current_block)?;
-			}
+			SchemaPermission::<T>::try_get_mut_schemas(delegation, schema_ids, current_block)?;
 
 			Ok(())
 		})

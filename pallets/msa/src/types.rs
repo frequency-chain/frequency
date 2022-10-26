@@ -70,8 +70,20 @@ pub trait SchemaPermission<T: Config> {
 		Ok(())
 	}
 
+	/// Some docs
+	fn try_get_mut_schemas(
+		&mut self,
+		schema_ids: Vec<SchemaId>,
+		block_number: T::BlockNumber,
+	) -> Result<(), DispatchError> {
+		for schema_id in schema_ids.into_iter() {
+			self.try_get_mut_schema(schema_id, block_number)?;
+		}
+		Ok(())
+	}
+
 	/// Some doc
-	fn try_get_mut(
+	fn try_get_mut_schema(
 		&mut self,
 		schema_id: SchemaId,
 		block_number: T::BlockNumber,
@@ -89,7 +101,7 @@ impl<T: Config> SchemaPermission<T>
 		Ok(())
 	}
 
-	fn try_get_mut(
+	fn try_get_mut_schema(
 		&mut self,
 		schema_id: SchemaId,
 		block_number: T::BlockNumber,
