@@ -236,7 +236,10 @@ pub mod pallet {
 		/// Set a new value for the Schema maximum number of bytes.  Must be <= the limit of the
 		/// Schema BoundedVec used for registration.
 		#[pallet::weight(30_000)]
-		pub fn set_max_schema_model_bytes(origin: OriginFor<T>, max_size: u32) -> DispatchResult {
+		pub fn set_max_schema_model_bytes(
+			origin: OriginFor<T>,
+			#[pallet::compact] max_size: u32,
+		) -> DispatchResult {
 			ensure_root(origin)?;
 			ensure!(
 				max_size <= T::SchemaModelMaxBytesBoundedVecLimit::get(),
