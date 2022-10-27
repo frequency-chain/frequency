@@ -492,7 +492,7 @@ pub mod pallet {
 		#[pallet::weight((T::WeightInfo::revoke_delegation_by_delegator(), DispatchClass::Normal, Pays::No))]
 		pub fn revoke_delegation_by_delegator(
 			origin: OriginFor<T>,
-			provider_msa_id: MessageSourceId,
+			#[pallet::compact] provider_msa_id: MessageSourceId,
 		) -> DispatchResult {
 			let delegator_key = ensure_signed(origin)?;
 
@@ -611,7 +611,7 @@ pub mod pallet {
 		#[pallet::weight((T::WeightInfo::revoke_delegation_by_provider(20_000), DispatchClass::Normal, Pays::No))]
 		pub fn revoke_delegation_by_provider(
 			origin: OriginFor<T>,
-			delegator: MessageSourceId,
+			#[pallet::compact] delegator: MessageSourceId,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
