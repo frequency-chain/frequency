@@ -118,8 +118,6 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Schema is malformed
 		InvalidSchema,
-		/// The maximum number of schemas is stored in the database.
-		TooManySchemas,
 		/// The schema model exceeds the maximum length allowed
 		ExceedsMaxSchemaModelBytes,
 		/// The governance schema model max value provided is too large (greater than the BoundedVec size)
@@ -195,7 +193,7 @@ pub mod pallet {
 		/// Adds a given schema to storage. The schema in question must be of length
 		/// between the min and max model size allowed for schemas (see pallet
 		/// constants above). If the pallet's maximum schema limit has been
-		/// fulfilled by the time this extrinsic is called, a TooManySchemas error
+		/// fulfilled by the time this extrinsic is called, a SchemaCountOverflow error
 		/// will be thrown.
 		///
 		/// # Arguments
@@ -208,7 +206,6 @@ pub mod pallet {
 		/// # Errors
 		/// * [`Error::<T>::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
 		/// * [`Error::<T>::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
-		/// * [`Error::<T>::TooManySchemas`] - The maximum number of schemas has been met
 		/// * [`Error::<T>::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		///
 		#[pallet::weight(< T as Config >::WeightInfo::create_schema(model.len() as u32, 1000))]
