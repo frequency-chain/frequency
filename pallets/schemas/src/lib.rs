@@ -196,16 +196,10 @@ pub mod pallet {
 		/// fulfilled by the time this extrinsic is called, a SchemaCountOverflow error
 		/// will be thrown.
 		///
-		/// # Arguments
-		/// * `origin` - The originator of the transaction
-		/// * `model` - The new schema model data
-		/// * 'model_type' - The formatting type of the model data
-		/// # Returns
-		/// * `DispatchResult`
-		///
 		/// # Errors
 		/// * [`Error::<T>::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
 		/// * [`Error::<T>::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
+		/// * [`Error::<T>::InvalidSchema`] - Schema is malformed in some way
 		/// * [`Error::<T>::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		///
 		#[pallet::weight(< T as Config >::WeightInfo::create_schema(model.len() as u32, 1000))]
@@ -233,8 +227,15 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Set a new value for the Schema maximum number of bytes.  Must be <= the limit of the
-		/// Schema BoundedVec used for registration.
+		/// Root and Governance can set a new max value for Schema bytes.
+		/// Must be <= the limit of the Schema BoundedVec used for registration.
+		///
+		/// # Requires
+		/// * Root Origin
+		///
+		/// # Errors
+		/// * [`Error::<T>::ExceedsMaxSchemaModelBytes`] - Cannot set to above the hard coded maximum [`Config::SchemaModelMaxBytesBoundedVecLimit`]
+		///
 		#[pallet::weight(30_000)]
 		pub fn set_max_schema_model_bytes(
 			origin: OriginFor<T>,
@@ -258,6 +259,8 @@ pub mod pallet {
 			<CurrentSchemaIdentifierMaximum<T>>::set(n);
 		}
 
+		/// Build the [`Schema`] and insert it into storage
+		/// Updates the [`CurrentSchemaIdentifierMaximum`] storage
 		fn add_schema(
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
@@ -287,6 +290,11 @@ pub mod pallet {
 		}
 
 		/// Ensures that a given u8 Vector conforms to a recognized Parquet shape
+		///
+		/// # Errors
+		/// * [`Error::<T>::InvalidSchema`]
+		/// * [`Error::<T>::SchemaCountOverflow`]
+		///
 		pub fn ensure_valid_model(
 			model_type: &ModelType,
 			model: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
@@ -303,6 +311,10 @@ pub mod pallet {
 		}
 
 		/// Get the next available schema id
+		///
+		/// # Errors
+		/// * [`Error::<T>::SchemaCountOverflow`]
+		///
 		fn get_next_schema_id() -> Result<SchemaId, DispatchError> {
 			let next = Self::get_current_schema_identifier_maximum()
 				.checked_add(1)
