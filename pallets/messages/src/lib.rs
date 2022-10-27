@@ -2,7 +2,7 @@
 //! A pallet for storing messages.
 //!
 //! - [Configuration: `Config`](Config)
-//! - [Extrenisics: `Call`](Call)
+//! - [Extrinsics: `Call`](Call)
 //! - [Runtime API: `MessagesRuntimeApi`](../pallet_messages_runtime_api/trait.MessagesRuntimeApi.html)
 //! - [Custom RPC API: `MessagesApiServer`](../pallet_messages_rpc/trait.MessagesApiServer.html)
 //! - [Event Enum: `Event`](Event)
@@ -12,7 +12,7 @@
 //!
 //! Messages allow for discovery of new content matching a given Schema.
 //! Each message MUST have either a provider or a validated source and provider.
-//! Message is the metadata of the source, order, schema for a payload or refrerenced payload.
+//! Message is the metadata of the source, order, schema for a payload or referenced payload.
 //!
 //! The Messages Pallet provides functions for:
 //!

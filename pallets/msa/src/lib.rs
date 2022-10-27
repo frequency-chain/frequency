@@ -2,7 +2,7 @@
 //! The MSA pallet provides functionality for handling Message Source Accounts.
 //!
 //! - [Configuration: `Config`](Config)
-//! - [Extrenisics: `Call`](Call)
+//! - [Extrinsics: `Call`](Call)
 //! - [Runtime API: `MsaRuntimeApi`](../pallet_msa_runtime_api/trait.MsaRuntimeApi.html)
 //! - [Custom RPC API: `MsaApiServer`](../pallet_msa_rpc/trait.MsaApiServer.html)
 //! - [Event Enum: `Event`](Event)

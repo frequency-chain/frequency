@@ -7,7 +7,7 @@
 //! Super short description
 //!
 //! - [Configuration: `Config`](Config)
-//! - [Extrenisics: `Call`](Call)
+//! - [Extrinsics: `Call`](Call)
 //! - [Runtime API: `PALLETRuntimeApi`](../pallet_PALLET_runtime_api/trait.PALLETRuntimeApi.html)
 //! - [Custom RPC API: `PALLETApiServer`](../pallet_PALLET_rpc/trait.PALLETApiServer.html)
 //! - [Event Enum: `Event`](Event)

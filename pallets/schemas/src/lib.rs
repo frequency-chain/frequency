@@ -2,7 +2,7 @@
 //! The Schemas pallet provides functionality for handling schemas.
 //!
 //! - [Configuration: `Config`](Config)
-//! - [Extrenisics: `Call`](Call)
+//! - [Extrinsics: `Call`](Call)
 //! - [Runtime API: `SchemasRuntimeApi`](../pallet_schemas_runtime_api/trait.SchemasRuntimeApi.html)
 //! - [Custom RPC API: `SchemasApiServer`](../pallet_schemas_rpc/trait.SchemasApiServer.html)
 //! - [Event Enum: `Event`](Event)
