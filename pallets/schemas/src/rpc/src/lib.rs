@@ -1,3 +1,13 @@
+// Strong Documentation Lints
+#![deny(
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
+)]
+
+//! Custom APIs for [Schemas](../pallet_schemas/index.html)
+
 use common_helpers::{avro, rpc::*};
 use common_primitives::schema::*;
 use jsonrpsee::{
@@ -12,27 +22,27 @@ use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use sp_std::vec::Vec;
 use std::sync::Arc;
 
-/// Error type of this RPC api.
-pub enum Error {
+/// Errors that occur on the client RPC
+pub enum SchemaRpcError {
 	/// No schema was found for the given id.
 	SchemaNotFound,
 	/// Failed to fetch latest schema.
 	SchemaSearchError,
-	// Schema validation error.
+	/// Schema model did not validate
 	SchemaValidationError,
 }
 
-impl From<Error> for i32 {
-	fn from(e: Error) -> i32 {
+impl From<SchemaRpcError> for i32 {
+	fn from(e: SchemaRpcError) -> i32 {
 		match e {
-			Error::SchemaNotFound => 1,
-			Error::SchemaSearchError => 2,
-			Error::SchemaValidationError => 3,
+			SchemaRpcError::SchemaNotFound => 1,
+			SchemaRpcError::SchemaSearchError => 2,
+			SchemaRpcError::SchemaValidationError => 3,
 		}
 	}
 }
 
-/// Frequency Schema API
+/// Frequency Schema Custom RPC API
 #[rpc(client, server)]
 pub trait SchemasApi<BlockHash> {
 	/// retrieving schema by schema id
@@ -44,12 +54,14 @@ pub trait SchemasApi<BlockHash> {
 	fn check_schema_validity(&self, model: Vec<u8>, at: Option<BlockHash>) -> RpcResult<bool>;
 }
 
+/// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
 pub struct SchemasHandler<C, M> {
 	client: Arc<C>,
 	_marker: std::marker::PhantomData<M>,
 }
 
 impl<C, M> SchemasHandler<C, M> {
+	/// Create new instance with the given reference to the client.
 	pub fn new(client: Arc<C>) -> Self {
 		Self { client, _marker: Default::default() }
 	}
@@ -71,7 +83,7 @@ where
 		match validated_schema {
 			Ok(_) => Ok(true),
 			Err(e) => Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
-				Error::SchemaValidationError.into(),
+				SchemaRpcError::SchemaValidationError.into(),
 				"Unable to validate schema",
 				Some(format!("{:?}", e)),
 			)))),

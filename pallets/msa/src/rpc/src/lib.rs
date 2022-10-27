@@ -1,3 +1,13 @@
+// Strong Documentation Lints
+#![deny(
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
+)]
+
+//! Custom APIs for [MSA](../pallet_msa/index.html)
+
 use codec::Codec;
 use common_helpers::rpc::*;
 use common_primitives::{
@@ -16,8 +26,12 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
+/// Frequency MSA Custom RPC API
 #[rpc(client, server)]
 pub trait MsaApi<BlockHash, AccountId> {
+	/// Check for a list of delegations
+	/// Given a single provider, test a list of potential delegators
+	/// At a given block number
 	#[method(name = "msa_checkDelegations")]
 	fn check_delegations(
 		&self,
@@ -26,6 +40,7 @@ pub trait MsaApi<BlockHash, AccountId> {
 		block_number: Option<BlockNumber>,
 	) -> RpcResult<Vec<(MessageSourceId, bool)>>;
 
+	/// Retrieve the list of currently granted schemas given a delegator and provider pair
 	#[method(name = "msa_grantedSchemaIdsByMsaId")]
 	fn get_granted_schemas_by_msa_id(
 		&self,
@@ -34,14 +49,14 @@ pub trait MsaApi<BlockHash, AccountId> {
 	) -> RpcResult<Option<Vec<SchemaId>>>;
 }
 
-/// A struct that implements the `MessagesApi`.
+/// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
 pub struct MsaHandler<C, M> {
 	client: Arc<C>,
 	_marker: std::marker::PhantomData<M>,
 }
 
 impl<C, M> MsaHandler<C, M> {
-	/// Create new `MessagesApi` instance with the given reference to the client.
+	/// Create new instance with the given reference to the client.
 	pub fn new(client: Arc<C>) -> Self {
 		Self { client, _marker: Default::default() }
 	}

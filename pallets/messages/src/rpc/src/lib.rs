@@ -1,3 +1,13 @@
+// Strong Documentation Lints
+#![deny(
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
+)]
+
+//! Custom APIs for [Messages](../pallet_messages/index.html)
+
 use codec::Codec;
 #[cfg(feature = "std")]
 use common_helpers::rpc::*;
@@ -19,8 +29,10 @@ use std::sync::Arc;
 #[cfg(test)]
 mod tests;
 
+/// Frequency Messages Custom RPC API
 #[rpc(client, server)]
 pub trait MessagesApi<BlockNumber> {
+	/// Retrieve paginated messages by schema id
 	#[method(name = "messages_getBySchemaId")]
 	fn get_messages_by_schema_id(
 		&self,
@@ -29,19 +41,20 @@ pub trait MessagesApi<BlockNumber> {
 	) -> RpcResult<BlockPaginationResponse<BlockNumber, MessageResponse<BlockNumber>>>;
 }
 
-/// A struct that implements the `MessagesApi`.
+/// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
 pub struct MessagesHandler<C, M> {
 	client: Arc<C>,
 	_marker: std::marker::PhantomData<M>,
 }
 
 impl<C, M> MessagesHandler<C, M> {
-	/// Create new `MessagesApi` instance with the given reference to the client.
+	/// Create new instance with the given reference to the client.
 	pub fn new(client: Arc<C>) -> Self {
 		Self { client, _marker: Default::default() }
 	}
 }
 
+/// Errors that occur on the client RPC
 #[derive(Debug)]
 pub enum MessageRpcError {
 	/// Pagination request is bad
