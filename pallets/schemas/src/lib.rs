@@ -196,6 +196,9 @@ pub mod pallet {
 		/// fulfilled by the time this extrinsic is called, a SchemaCountOverflow error
 		/// will be thrown.
 		///
+		/// # Events
+		/// * [`SchemaRegistered`]
+		///
 		/// # Errors
 		/// * [`Error::<T>::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
 		/// * [`Error::<T>::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
@@ -232,6 +235,9 @@ pub mod pallet {
 		///
 		/// # Requires
 		/// * Root Origin
+		///
+		/// # Events
+		/// * [`SchemaMaxSizeChanged`]
 		///
 		/// # Errors
 		/// * [`Error::<T>::ExceedsMaxSchemaModelBytes`] - Cannot set to above the hard coded maximum [`Config::SchemaModelMaxBytesBoundedVecLimit`]
