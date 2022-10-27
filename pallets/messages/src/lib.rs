@@ -197,9 +197,9 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() as u32, 1_000))]
 		pub fn add_ipfs_message(
 			origin: OriginFor<T>,
-			schema_id: SchemaId,
+			#[pallet::compact] schema_id: SchemaId,
 			cid: Vec<u8>,
-			payload_length: u32,
+			#[pallet::compact] payload_length: u32,
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
 			let payload_tuple: OffchainPayloadType = (cid.clone(), payload_length);
@@ -233,7 +233,7 @@ pub mod pallet {
 		pub fn add_onchain_message(
 			origin: OriginFor<T>,
 			on_behalf_of: Option<MessageSourceId>,
-			schema_id: SchemaId,
+			#[pallet::compact] schema_id: SchemaId,
 			payload: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
