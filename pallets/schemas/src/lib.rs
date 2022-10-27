@@ -238,7 +238,7 @@ pub mod pallet {
 		#[pallet::weight(30_000)]
 		pub fn set_max_schema_model_bytes(
 			origin: OriginFor<T>,
-			#[pallet::compact] max_size: u32
+			#[pallet::compact] max_size: u32,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			ensure!(
