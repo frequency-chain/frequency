@@ -1,29 +1,36 @@
 //! # Messages pallet
 //! A pallet for storing messages.
 //!
-//! This pallet contains functionality for storing, retrieving and eventually removing messages for
-//! registered schemas on chain.
-//!
-//! - [`Config`]
-//! - [`Call`]
-//! - [`Pallet`]
+//! - [Configuration: `Config`](Config)
+//! - [Extrinsics: `Call`](Call)
+//! - [Runtime API: `MessagesRuntimeApi`](../pallet_messages_runtime_api/trait.MessagesRuntimeApi.html)
+//! - [Custom RPC API: `MessagesApiServer`](../pallet_messages_rpc/trait.MessagesApiServer.html)
+//! - [Event Enum: `Event`](Event)
+//! - [Error Enum: `Error`](Error)
 //!
 //! ## Overview
 //!
+//! Messages allow for discovery of new content matching a given Schema.
+//! Each message MUST have either a provider or a validated source and provider.
+//! Message is the metadata of the source, order, schema for a payload or referenced payload.
+//!
 //! The Messages Pallet provides functions for:
 //!
-//! - Adding a message for given schema.
-//! - Retrieving messages for a given schema.
+//! - Adding messages for a given schema.
+//! - Enabling retrieving messages for a given schema.
+//! - (FUTURE) Removing messages after expiration
 //!
-//! ### Terminology
+//! ## Terminology
 //!
-//! - **Message:** A message that matches a registered `Schema` (on-chain or off-chain).
-//! - **Payload:** The user data in a `Message` that matches a `Schema`.
+//! - **Message:** A message that matches a registered Schema (on-chain or off-chain).
+//! - **Payload:** The data in a `Message` that matches a `Schema`.
 //! - **MSA Id:** The 64 bit unsigned integer associated with an `Message Source Account`.
-//! - **MSA:** Message Source Account. A registered identifier with the MSA pallet.
-//! - **Schema:** A registered data structure and the settings around it.
+//! - **MSA:** Message Source Account. A registered identifier with the [MSA pallet](../pallet_msa/index.html).
+//! - **Schema:** A registered data structure and the settings around it. (See [Schemas pallet](../pallet_schemas/index.html))
 //! - **Schema Id:** A U16 bit identifier for a schema stored on-chain.
 //!
+//! ## Implementations
+//! - None
 //!
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]

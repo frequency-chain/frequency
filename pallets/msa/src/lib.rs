@@ -1,12 +1,20 @@
 //! # MSA Pallet
-//!
 //! The MSA pallet provides functionality for handling Message Source Accounts.
 //!
-//! - [`Config`]
-//! - [`Call`]
-//! - [`Pallet`]
+//! - [Configuration: `Config`](Config)
+//! - [Extrinsics: `Call`](Call)
+//! - [Runtime API: `MsaRuntimeApi`](../pallet_msa_runtime_api/trait.MsaRuntimeApi.html)
+//! - [Custom RPC API: `MsaApiServer`](../pallet_msa_rpc/trait.MsaApiServer.html)
+//! - [Event Enum: `Event`](Event)
+//! - [Error Enum: `Error`](Error)
 //!
 //! ## Overview
+//!
+//! The Message Source Account (MSA) is an account that can be sponsored such that public keys attached to the account
+//! to control the MSA are not required to hold any balance, while still being able to control revocation of any delegation or control.
+//!
+//! The MSA is represented by an Id and has one or more public keys attached to it for control.
+//! The same public key may only be attached to ONE MSA at any single point in time.
 //!
 //! The MSA pallet provides functions for:
 //!
@@ -14,36 +22,22 @@
 //! - Managing delegation relationships for MSAs.
 //! - Managing keys associated with MSA.
 //!
-//! ### Terminology
-//! * **MSA** - Message Source Account.  A Source or Provider Account for Frequency Messages. It may or may not have `Capacity` token.  It must have at least one `AccountId` (public key) associated with it.
-//! Created by generating a new MSA ID number and associating it with a Substrate `AccountID`.
+//! ## Terminology
+//! * **MSA:** Message Source Account. A Source or Provider Account for Frequency Messages. It may or may not have `Capacity`.  It must have at least one public key (`AccountId`) associated with it.
 //! An MSA is required for sending Capacity-based messages and for creating Delegations.
-//! * **MSA ID** - This is the ID number created for a new Message Source Account and associated with a Substrate `AccountId`.
-//! * **Delegator** - a Message Source Account that has provably delegated certain actions to a Provider, typically sending a `Message`
-//! * **Provider** - the actor that a Delegator has delegated specific actions to.
-//! * **Delegation** - A stored Delegator-Provider association between MSAs which permits the Provider to perform specific actions on the Delegator's behalf.
+//! * **MSA ID:** the ID number created for a new Message Source Account and associated with one or more Public Keys.
+//! * **MSA Public Key:** the keys that control the MSA, represented by Substrate `AccountId`.
+//! * **Delegator:** a Message Source Account that has provably delegated certain actions to a Provider, typically sending a `Message`
+//! * **Provider:** the actor that a Delegator has delegated specific actions to.
+//! * **Delegation:** A stored Delegator-Provider association between MSAs which permits the Provider to perform specific actions on the Delegator's behalf.
 //!
-//! ### Implementations
+//! ## Implementations
 //!
-//! The MSA pallet implements the following traits:
-//!
-//! - [`MsaLookup`](common_primitives::msa::MsaLookup): Functions for accessing MSAs.
-//! - [`MsaValidator`](common_primitives::msa::MsaValidator): Functions for validating MSAs.
-//! - [`ProviderLookup`](common_primitives::msa::ProviderLookup): Functions for accessing Provider info.
-//! - [`DelegationValidator`](common_primitives::msa::DelegationValidator): Functions for validating delegations.
-//! - [`SchemaGrantValidator`](common_primitives::msa::SchemaGrantValidator): Functions for validating schema grants.
-//!
-//! ## Interface
-//!
-//! ### Dispatchable Functions
-//!
-//! - `add_public_key_to_msa` - Associates a key to an MSA ID in a signed payload.
-//! - `grant_delegation` - Creates a delegation relationship between a `Provider` and MSA.
-//! - `create` - Creates an MSA for the `Origin`.
-//! - `create_sponsored_account_with_delegation` - `Origin` creates an account for a given `AccountId` and sets themselves as a `Provider`.
-//! - `revoke_delegation_by_provider` - `Provider` MSA terminates a Delegation with Delegator MSA by expiring it.
-//! - `revoke_delegation_by_delegator` - Delegator MSA terminates a Delegation with the `Provider` MSA by expiring it.
-//! - `delete_msa_public_key` - Removes the given key by from storage against respective MSA.
+//! - [`MsaLookup`](../common_primitives/msa/trait.MsaLookup.html): Functions for accessing MSAs.
+//! - [`MsaValidator`](../common_primitives/msa/trait.MsaValidator.html): Functions for validating MSAs.
+//! - [`ProviderLookup`](../common_primitives/msa/trait.ProviderLookup.html): Functions for accessing Provider info.
+//! - [`DelegationValidator`](../common_primitives/msa/trait.DelegationValidator.html): Functions for validating delegations.
+//! - [`SchemaGrantValidator`](../common_primitives/msa/trait.SchemaGrantValidator.html): Functions for validating schema grants.
 //!
 //! ### Assumptions
 //!
