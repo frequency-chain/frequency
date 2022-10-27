@@ -299,11 +299,13 @@ pub mod pallet {
 		/// Origin attempted to add a different delegate than what was in the payload
 		UnauthorizedProvider,
 		/// The operation was attempted with a revoked delegation
+		///
+		/// # Situations
+		/// * Had a prior delegation
+		/// * Has an active delegation, but the schema permission is revoked
 		DelegationRevoked,
 		/// The operation was attempted with an unknown delegation
 		DelegationNotFound,
-		/// The operation was attempted with an expired delegation
-		DelegationExpired,
 		/// The MSA id submitted for provider creation has already been associated with a provider
 		DuplicateProviderRegistryEntry,
 		/// The maximum length for a provider name has been exceeded
@@ -849,7 +851,7 @@ impl<T: Config> Pallet<T> {
 	/// * [`Delegation`]
 	/// # Errors
 	/// * [`Error::<T>::DelegationNotFound`] - If no delegation
-	/// * [`Error::<T>::DelegationExpired`] - If delegation revoked
+	/// * [`Error::<T>::DelegationRevoked`] - If delegation revoked
 	pub fn ensure_valid_delegation(
 		provider: Provider,
 		delegator: Delegator,
@@ -869,7 +871,7 @@ impl<T: Config> Pallet<T> {
 		if info.revoked_at == T::BlockNumber::zero() {
 			return Ok(info)
 		}
-		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationExpired);
+		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
 		Ok(info)
 	}
 

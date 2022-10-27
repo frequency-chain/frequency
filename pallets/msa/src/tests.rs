@@ -1319,7 +1319,7 @@ pub fn delegation_expired() {
 
 		assert_noop!(
 			Msa::ensure_valid_delegation(provider, delegator, None),
-			Error::<Test>::DelegationExpired
+			Error::<Test>::DelegationRevoked
 		);
 	})
 }
@@ -1864,7 +1864,7 @@ pub fn delegation_expired_long_back() {
 
 		assert_noop!(
 			Msa::ensure_valid_delegation(provider, delegator, Some(151)),
-			Error::<Test>::DelegationExpired
+			Error::<Test>::DelegationRevoked
 		);
 		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, Some(6)));
 		assert_noop!(
