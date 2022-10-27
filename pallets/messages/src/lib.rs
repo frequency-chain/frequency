@@ -187,6 +187,9 @@ pub mod pallet {
 		/// as well as a 32-bit payload length.
 		/// The actual payload will be on IPFS
 		///
+		/// # Events
+		/// * [`Event::MessagesStored`] - In the next block
+		///
 		/// # Errors
 		/// * [`Error::<T>::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large
 		/// * [`Error::<T>::InvalidSchemaId`] - Schema not found
@@ -221,7 +224,10 @@ pub mod pallet {
 
 			Ok(Some(T::WeightInfo::add_ipfs_message(cid.len() as u32, message.index as u32)).into())
 		}
-		/// Add an on-chain message for a given schema-id.
+		/// Add an on-chain message for a given schema id.
+		///
+		/// # Events
+		/// * [`Event::MessagesStored`] - In the next block
 		///
 		/// # Errors
 		/// * [`Error::<T>::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large
@@ -284,18 +290,12 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	/// Stores a message for a given schema-id.
-	/// # Arguments
-	/// * `provider_msa_id` - The MSA id of the provider that submitted the transaction.
-	/// * `message_source_id` - The
-	/// * `payload` - Serialized payload data for a given schema.
-	/// * `schema_id` - Registered schema id for current message.
-	/// # Returns
-	/// * Result<Message<T::MaxMessagePayloadSizeBytes> - Returns the message stored.
+	/// Stores a message for a given schema id.
 	///
 	/// # Errors
 	/// * [`Error::<T>::TooManyMessagesInBlock`]
 	/// * [`Error::<T>::TypeConversionOverflow`]
+	///
 	pub fn add_message(
 		provider_msa_id: MessageSourceId,
 		msa_id: Option<MessageSourceId>,
@@ -328,13 +328,9 @@ impl<T: Config> Pallet<T> {
 	/// Resolve an MSA from an account key(key)
 	/// An MSA Id associated with the account key is returned, if one exists.
 	///
-	/// # Arguments
-	/// * `key` - An MSA key for lookup.
-	/// # Returns
-	/// * Result<MessageSourceId, DispatchError> - Returns an MSA Id for storing a message.
-	///
 	/// # Errors
 	/// * [`Error::<T>::InvalidMessageSourceAccount`]
+	///
 	pub fn find_msa_id(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		Ok(T::MsaInfoProvider::ensure_valid_msa_key(key)
 			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?)
@@ -345,6 +341,7 @@ impl<T: Config> Pallet<T> {
 	/// Payload location is included to map to correct response (To avoid fetching the schema in this method)
 	///
 	/// Result is a vector of [`MessageResponse`].
+	///
 	pub fn get_messages_by_schema_and_block(
 		schema_id: SchemaId,
 		schema_payload_location: PayloadLocation,
@@ -363,6 +360,7 @@ impl<T: Config> Pallet<T> {
 	/// Called inside of `on_initialize`
 	///
 	/// Returns execution weights
+	///
 	fn move_messages_into_final_storage(block_number: T::BlockNumber) -> Weight {
 		let mut map = BTreeMap::new();
 		let block_messages = BlockMessages::<T>::get();
