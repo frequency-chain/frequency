@@ -243,7 +243,7 @@ pub mod pallet {
 			ensure_root(origin)?;
 			ensure!(
 				max_size <= T::SchemaModelMaxBytesBoundedVecLimit::get(),
-				Error::<T>::ExceedsGovernanceSchemaModelMaxValue
+				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 			GovernanceSchemaModelMaxBytes::<T>::set(max_size);
 			Self::deposit_event(Event::SchemaMaxSizeChanged(max_size));
