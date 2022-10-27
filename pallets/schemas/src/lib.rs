@@ -197,13 +197,13 @@ pub mod pallet {
 		/// will be thrown.
 		///
 		/// # Events
-		/// * [`SchemaRegistered`]
+		/// * [`Event::SchemaRegistered`]
 		///
 		/// # Errors
-		/// * [`Error::<T>::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
-		/// * [`Error::<T>::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
-		/// * [`Error::<T>::InvalidSchema`] - Schema is malformed in some way
-		/// * [`Error::<T>::SchemaCountOverflow`] - The schema count has exceeded its bounds
+		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
+		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
+		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
+		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		///
 		#[pallet::weight(< T as Config >::WeightInfo::create_schema(model.len() as u32, 1000))]
 		pub fn create_schema(
@@ -237,10 +237,10 @@ pub mod pallet {
 		/// * Root Origin
 		///
 		/// # Events
-		/// * [`SchemaMaxSizeChanged`]
+		/// * [`Event::SchemaMaxSizeChanged`]
 		///
 		/// # Errors
-		/// * [`Error::<T>::ExceedsMaxSchemaModelBytes`] - Cannot set to above the hard coded maximum [`Config::SchemaModelMaxBytesBoundedVecLimit`]
+		/// * [`Error::ExceedsMaxSchemaModelBytes`] - Cannot set to above the hard coded maximum [`Config::SchemaModelMaxBytesBoundedVecLimit`]
 		///
 		#[pallet::weight(30_000)]
 		pub fn set_max_schema_model_bytes(
@@ -298,8 +298,8 @@ pub mod pallet {
 		/// Ensures that a given u8 Vector conforms to a recognized Parquet shape
 		///
 		/// # Errors
-		/// * [`Error::<T>::InvalidSchema`]
-		/// * [`Error::<T>::SchemaCountOverflow`]
+		/// * [`Error::InvalidSchema`]
+		/// * [`Error::SchemaCountOverflow`]
 		///
 		pub fn ensure_valid_model(
 			model_type: &ModelType,
@@ -319,7 +319,7 @@ pub mod pallet {
 		/// Get the next available schema id
 		///
 		/// # Errors
-		/// * [`Error::<T>::SchemaCountOverflow`]
+		/// * [`Error::SchemaCountOverflow`]
 		///
 		fn get_next_schema_id() -> Result<SchemaId, DispatchError> {
 			let next = Self::get_current_schema_identifier_maximum()

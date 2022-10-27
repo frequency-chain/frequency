@@ -191,12 +191,12 @@ pub mod pallet {
 		/// * [`Event::MessagesStored`] - In the next block
 		///
 		/// # Errors
-		/// * [`Error::<T>::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large
-		/// * [`Error::<T>::InvalidSchemaId`] - Schema not found
-		/// * [`Error::<T>::InvalidPayloadLocation`] - The schema is not an IPFS payload location
-		/// * [`Error::<T>::InvalidMessageSourceAccount`] - Origin must be from an MSA
-		/// * [`Error::<T>::TooManyMessagesInBlock`] - Block is full of messages already
-		/// * [`Error::<T>::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
+		/// * [`Error::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large
+		/// * [`Error::InvalidSchemaId`] - Schema not found
+		/// * [`Error::InvalidPayloadLocation`] - The schema is not an IPFS payload location
+		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA
+		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
+		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
 		///
 		#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() as u32, 1_000))]
 		pub fn add_ipfs_message(
@@ -230,13 +230,13 @@ pub mod pallet {
 		/// * [`Event::MessagesStored`] - In the next block
 		///
 		/// # Errors
-		/// * [`Error::<T>::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large
-		/// * [`Error::<T>::InvalidSchemaId`] - Schema not found
-		/// * [`Error::<T>::InvalidPayloadLocation`] - The schema is not an IPFS payload location
-		/// * [`Error::<T>::InvalidMessageSourceAccount`] - Origin must be from an MSA
-		/// * [`Error::<T>::UnAuthorizedDelegate`] - Trying to add a message without a proper delegation between the origin and the on_behalf_of MSA
-		/// * [`Error::<T>::TooManyMessagesInBlock`] - Block is full of messages already
-		/// * [`Error::<T>::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
+		/// * [`Error::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large
+		/// * [`Error::InvalidSchemaId`] - Schema not found
+		/// * [`Error::InvalidPayloadLocation`] - The schema is not an IPFS payload location
+		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA
+		/// * [`Error::UnAuthorizedDelegate`] - Trying to add a message without a proper delegation between the origin and the on_behalf_of MSA
+		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
+		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
 		///
 		#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() as u32, 1_000))]
 		pub fn add_onchain_message(
@@ -293,8 +293,8 @@ impl<T: Config> Pallet<T> {
 	/// Stores a message for a given schema id.
 	///
 	/// # Errors
-	/// * [`Error::<T>::TooManyMessagesInBlock`]
-	/// * [`Error::<T>::TypeConversionOverflow`]
+	/// * [`Error::TooManyMessagesInBlock`]
+	/// * [`Error::TypeConversionOverflow`]
 	///
 	pub fn add_message(
 		provider_msa_id: MessageSourceId,
@@ -329,7 +329,7 @@ impl<T: Config> Pallet<T> {
 	/// An MSA Id associated with the account key is returned, if one exists.
 	///
 	/// # Errors
-	/// * [`Error::<T>::InvalidMessageSourceAccount`]
+	/// * [`Error::InvalidMessageSourceAccount`]
 	///
 	pub fn find_msa_id(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		Ok(T::MsaInfoProvider::ensure_valid_msa_key(key)
