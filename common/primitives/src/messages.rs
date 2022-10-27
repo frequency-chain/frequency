@@ -96,8 +96,6 @@ where
 	BlockNumber: AtLeast32BitUnsigned + Copy + One,
 {
 	/// Generates a new empty Pagination request
-	/// # Returns
-	/// * `BlockPaginationResponse<BlockNumber, T>`
 	pub const fn new() -> BlockPaginationResponse<BlockNumber, T> {
 		BlockPaginationResponse {
 			content: vec![],
