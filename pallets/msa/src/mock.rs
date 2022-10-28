@@ -73,7 +73,7 @@ parameter_types! {
 }
 
 parameter_types! {
-	pub const MaxSchemaGrantsPerDelegation: u32 = 2;
+	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
 }
 
 impl Clone for MaxSchemaGrantsPerDelegation {
