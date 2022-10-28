@@ -1086,7 +1086,7 @@ impl<T: Config> Pallet<T> {
 	///
 	/// # Errors
 	/// * [`Error::DelegationNotFound`]
-	/// * [`Error::DelegationExpired`]
+	/// * [`Error::DelegationRevoked`]
 	/// * [`Error::SchemaNotGranted`]
 	///
 	pub fn ensure_valid_schema_grant(
@@ -1311,7 +1311,7 @@ impl<T: Config> SchemaGrantValidator for Pallet<T> {
 	/// # Errors
 	/// * [`Error::DelegationNotFound`]
 	/// * [`Error::SchemaNotGranted`]
-	/// * [`Error::DelegationExpired`]
+	/// * [`Error::DelegationRevoked`]
 	///
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_schema_grant(
