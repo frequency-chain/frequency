@@ -195,6 +195,23 @@ benchmarks! {
 
 	}: _ (RawOrigin::Signed(delegator), provider_msa_id, schema_ids)
 
+	revoke_schema_permissions {
+		let s in 5 .. 1005;
+
+		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
+		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
+		add_delegation::<T>(Delegator(delegator_msa_id), Provider(provider_msa_id.clone()));
+
+		for j in 2 .. s {
+			let (other, other_msa_id) = create_account_with_msa_id::<T>(j);
+			add_delegation::<T>(Delegator(other_msa_id), Provider(provider_msa_id.clone()));
+		}
+
+		let schema_ids: Vec<SchemaId> = (1..31 as u16).collect::<Vec<_>>();
+		T::SchemaValidator::set_schema_count(schema_ids.len().try_into().unwrap());
+
+	}: _ (RawOrigin::Signed(delegator), provider_msa_id, schema_ids)
+
 	impl_benchmark_test_suite!(Msa,
 		crate::mock::new_test_ext_keystore(),
 		crate::mock::Test);

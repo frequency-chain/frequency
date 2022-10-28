@@ -66,6 +66,25 @@ pub trait PermittedDelegationSchemas<T: Config> {
 
 		Ok(())
 	}
+
+	/// Some docs
+	fn try_get_mut_schemas(
+		&mut self,
+		schema_ids: Vec<SchemaId>,
+		block_number: T::BlockNumber,
+	) -> Result<(), DispatchError> {
+		for schema_id in schema_ids.into_iter() {
+			self.try_get_mut_schema(schema_id, block_number)?;
+		}
+		Ok(())
+	}
+
+	/// Some doc
+	fn try_get_mut_schema(
+		&mut self,
+		schema_id: SchemaId,
+		block_number: T::BlockNumber,
+	) -> Result<(), DispatchError>;
 }
 
 /// Implementation of SchemaPermission trait on Delegation type.
@@ -77,6 +96,21 @@ impl<T: Config> PermittedDelegationSchemas<T>
 		self.schema_permissions
 			.try_insert(schema_id, Default::default())
 			.map_err(|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegation)?;
+		Ok(())
+	}
+
+	fn try_get_mut_schema(
+		&mut self,
+		schema_id: SchemaId,
+		block_number: T::BlockNumber,
+	) -> Result<(), DispatchError> {
+		let schema = self
+			.schema_permissions
+			.get_mut(&schema_id)
+			.ok_or(Error::<T>::SchemaNotGranted)?;
+
+		*schema = block_number;
+
 		Ok(())
 	}
 }
