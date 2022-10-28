@@ -359,6 +359,9 @@ impl<T: Config> Pallet<T> {
 	///
 	/// Called inside of `on_initialize`
 	///
+	/// # Events
+	/// * [`Event::MessagesStored`]
+	///
 	/// Returns execution weights
 	///
 	fn move_messages_into_final_storage(block_number: T::BlockNumber) -> Weight {

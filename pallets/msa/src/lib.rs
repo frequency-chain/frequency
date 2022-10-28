@@ -512,6 +512,9 @@ pub mod pallet {
 
 		/// Delegator (Origin) MSA terminates a delegation relationship with the `Provider` MSA. Deposits event[`DelegationRevoked`](Event::DelegationRevoked).
 		///
+		/// # Events
+		/// * [`Event::DelegationRevoked`]
+		///
 		/// # Errors
 		///
 		/// * [`Error::DelegationRevoked`] - the delegation has already been revoked.
