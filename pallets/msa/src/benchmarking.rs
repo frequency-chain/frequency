@@ -66,9 +66,9 @@ fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSource
 }
 
 fn add_delegation<T: Config>(delegator: Delegator, provider: Provider) {
-	let schemas: Vec<SchemaId> = vec![1, 2];
-	T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
-	assert_ok!(Msa::<T>::add_provider(provider, delegator, schemas));
+	let schema_ids: Vec<SchemaId> = (1..31 as u16).collect::<Vec<_>>();
+	T::SchemaValidator::set_schema_count(schema_ids.len().try_into().unwrap());
+	assert_ok!(Msa::<T>::add_provider(provider, delegator, schema_ids));
 }
 
 pub fn generate_test_signature() -> MultiSignature {

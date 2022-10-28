@@ -67,7 +67,7 @@ pub trait PermittedDelegationSchemas<T: Config> {
 		Ok(())
 	}
 
-	/// Some docs
+	/// Attempt get and mutate a collection of schemas. Dispatches error when a schema cannot be found.
 	fn try_get_mut_schemas(
 		&mut self,
 		schema_ids: Vec<SchemaId>,
@@ -79,7 +79,7 @@ pub trait PermittedDelegationSchemas<T: Config> {
 		Ok(())
 	}
 
-	/// Some doc
+	/// Attempt get and mutate a schema. Dispatches error when a schema cannot be found.
 	fn try_get_mut_schema(
 		&mut self,
 		schema_id: SchemaId,
@@ -99,6 +99,7 @@ impl<T: Config> PermittedDelegationSchemas<T>
 		Ok(())
 	}
 
+	/// Attempt get and mutate a schema. Dispatches error when a schema cannot be found.
 	fn try_get_mut_schema(
 		&mut self,
 		schema_id: SchemaId,

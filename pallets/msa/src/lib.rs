@@ -701,23 +701,24 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Revoke Schema Permissions
-		/// ### Events
-		///
+		/// Revokes a list of schema permissions to a provider. Attempting to revoke a Schemas that have already
+		/// been revoked are ignored.
 		///
 		/// ### Errors
+		/// - Returns [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
+		/// - Returns [`DelegationNotFound`](Error::DelegationNotFound) - If there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
+		/// - Returns [`SchemaNotGranted`](Error::SchemaNotGranted) - If attempting to revoke a schema that has not previously been granted.
 		///
-		/// - Returns []
-		#[pallet::weight(1_000)]
+		#[pallet::weight((1_000, DispatchClass::Normal, Pays::No))]
 		pub fn revoke_schema_permissions(
 			origin: OriginFor<T>,
-			provider: MessageSourceId,
+			provider_msa_id: MessageSourceId,
 			schema_ids: Vec<SchemaId>,
 		) -> DispatchResult {
 			let delegator_key = ensure_signed(origin)?;
 			let delegator_msa_id = Self::ensure_valid_msa_key(&delegator_key)?;
 
-			let provider_msa_id = Provider(provider);
+			let provider_msa_id = Provider(provider_msa_id);
 			let delegator_msa_id = Delegator(delegator_msa_id);
 
 			Self::revoke_permissions_for_schemas(delegator_msa_id, provider_msa_id, schema_ids)?;
@@ -827,7 +828,7 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	/// Some Doc
+	/// Revokes a list of schema permissions from a delegation relationship.
 	pub fn revoke_permissions_for_schemas(
 		delegator: Delegator,
 		provider: Provider,
@@ -1427,6 +1428,28 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 		ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}
 
+	/// Validates the delegation by making sure that the MSA ids used are valid
+	///
+	/// # Errors
+	/// * [`ValidityError::InvalidMsaKey`]
+	/// * [`ValidityError::InvalidDelegation`]
+	///
+	pub fn validate_can_revoke_schemas(
+		account_id: &T::AccountId,
+		provider_msa_id: &MessageSourceId,
+	) -> TransactionValidity {
+		const TAG_PREFIX: &str = "SchemaRevocation";
+		let delegator_msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(account_id)
+			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
+			.into();
+		let provider_msa_id = Provider(*provider_msa_id);
+
+		Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id, None)
+			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidDelegation as u8))?;
+
+		ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
+	}
+
 	/// validates that a key being revoked is both valid and owned by a valid MSA account
 	///
 	/// # Errors
@@ -1540,6 +1563,8 @@ where
 		_len: usize,
 	) -> TransactionValidity {
 		match call.is_sub_type() {
+			Some(Call::revoke_schema_permissions { provider_msa_id, .. }) =>
+				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id),
 			Some(Call::revoke_delegation_by_delegator { provider_msa_id, .. }) =>
 				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id),
 			Some(Call::delete_msa_public_key { key, .. }) =>

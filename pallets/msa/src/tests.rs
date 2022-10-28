@@ -2365,3 +2365,175 @@ fn try_mutate_delegation_success() {
 		assert!(Msa::get_delegation(delegator, provider).is_some());
 	});
 }
+
+#[test]
+fn revoke_permissions_for_schema_success() {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(3);
+
+		let delegator = Delegator(2);
+		let provider = Provider(1);
+		let schema_grants = vec![1];
+
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
+		let mut expected = BoundedBTreeMap::<
+			SchemaId,
+			<Test as frame_system::Config>::BlockNumber,
+			<Test as Config>::MaxSchemaGrantsPerDelegation,
+		>::new();
+
+		expected.try_insert(1, Default::default()).expect("testing expected");
+
+		assert_eq!(delegation_relationship.schema_permissions, expected);
+
+		// Add revoke schema ids
+		let schemas_to_be_revoked = vec![1];
+		let result =
+			Msa::revoke_permissions_for_schemas(delegator, provider, schemas_to_be_revoked);
+
+		assert_ok!(result);
+
+		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
+		let mut expected = BoundedBTreeMap::<
+			SchemaId,
+			<Test as frame_system::Config>::BlockNumber,
+			<Test as Config>::MaxSchemaGrantsPerDelegation,
+		>::new();
+
+		expected.try_insert(1, 1u32.into()).expect("testing expected");
+
+		assert_eq!(delegation_relationship.schema_permissions, expected);
+	});
+}
+
+#[test]
+fn revoke_permissions_for_schemas_errors_when_no_delegation() {
+	new_test_ext().execute_with(|| {
+		let delegator = Delegator(2);
+		let provider = Provider(1);
+		let schema_ids = vec![1, 2];
+		let result = Msa::revoke_permissions_for_schemas(delegator, provider, schema_ids);
+
+		assert_noop!(result, Error::<Test>::DelegationNotFound);
+	});
+}
+
+#[test]
+fn revoke_permissions_for_schemas_errors_when_schema_does_not_exist_in_list_of_schema_grants() {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(31);
+
+		let delegator = Delegator(2);
+		let provider = Provider(1);
+		let schema_grants = vec![1];
+
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		let additional_grants = (2..32 as u16).collect::<Vec<_>>();
+		let result = Msa::revoke_permissions_for_schemas(delegator, provider, additional_grants);
+
+		assert_noop!(result, Error::<Test>::SchemaNotGranted);
+
+		let result = Msa::get_delegation(delegator, provider);
+
+		let mut expected = Delegation {
+			revoked_at: 0u32.into(),
+			schema_permissions: BoundedBTreeMap::<
+				SchemaId,
+				<Test as frame_system::Config>::BlockNumber,
+				<Test as Config>::MaxSchemaGrantsPerDelegation,
+			>::new(),
+		};
+
+		expected
+			.schema_permissions
+			.try_insert(1, 0u32.into())
+			.expect("testing expected");
+
+		assert_eq!(result.unwrap(), expected);
+	});
+}
+
+#[test]
+fn revoke_schema_permissions_success() {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(3);
+
+		let (key_pair, _) = sr25519::Pair::generate();
+		let provider_account = key_pair.public();
+
+		let (delegator_pair, _) = sr25519::Pair::generate();
+		let delegator_account = delegator_pair.public();
+
+		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+
+		let delegator = Delegator(1);
+		let provider = Provider(2);
+
+		assert_ok!(Msa::add_provider(provider, delegator, vec![1, 2]));
+
+		let schema_ids_to_revoke: Vec<SchemaId> = vec![2];
+
+		assert_ok!(Msa::revoke_schema_permissions(
+			Origin::signed(delegator_account.into()),
+			provider.into(),
+			schema_ids_to_revoke,
+		));
+
+		System::assert_last_event(Event::DelegationUpdated { provider, delegator }.into());
+	});
+}
+
+#[test]
+fn revoke_schema_permissions_errors_when_no_key_exists() {
+	new_test_ext().execute_with(|| {
+		let (delegator_pair, _) = sr25519::Pair::generate();
+		let delegator_account = delegator_pair.public();
+
+		let provider = Provider(2);
+		let schema_ids: Vec<SchemaId> = vec![1];
+
+		assert_noop!(
+			Msa::revoke_schema_permissions(
+				Origin::signed(delegator_account.into()),
+				provider.into(),
+				schema_ids,
+			),
+			Error::<Test>::NoKeyExists
+		);
+	});
+}
+
+#[test]
+fn schema_permissions_trait_impl_try_get_mut_schema_success() {
+	new_test_ext().execute_with(|| {
+		let mut delegation: Delegation<
+			SchemaId,
+			<Test as frame_system::Config>::BlockNumber,
+			<Test as Config>::MaxSchemaGrantsPerDelegation,
+		> = Default::default();
+
+		let schema_id = 1;
+		assert_ok!(PermittedDelegationSchemas::<Test>::try_insert_schema(
+			&mut delegation,
+			schema_id
+		));
+		let default_block_number = 0u64;
+
+		assert_eq!(delegation.schema_permissions.len(), 1);
+		assert_eq!(delegation.schema_permissions.get(&schema_id).unwrap(), &default_block_number);
+
+		let revoked_block_number = 2u64;
+
+		assert_ok!(PermittedDelegationSchemas::<Test>::try_get_mut_schema(
+			&mut delegation,
+			schema_id,
+			revoked_block_number.clone()
+		));
+
+		assert_eq!(delegation.schema_permissions.get(&schema_id).unwrap(), &revoked_block_number);
+	});
+}
