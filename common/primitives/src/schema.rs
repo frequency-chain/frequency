@@ -61,12 +61,6 @@ pub struct SchemaResponse {
 /// This allows other pallets to resolve Schema information. With generic SchemaId
 pub trait SchemaProvider<SchemaId> {
 	/// Gets the Schema details associated with this `SchemaId` if any
-	/// # Arguments
-	/// * `schema_id` - The `SchemaId` to lookup
-	/// # Returns
-	/// * `Option<SchemaResponse>`
-	/// # Remarks
-	/// This function is used to resolve a Schema from a SchemaId.
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse>;
 }
 

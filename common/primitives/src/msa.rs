@@ -5,17 +5,20 @@ use frame_support::{
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::DispatchError;
+use sp_runtime::{
+	traits::{AtLeast32BitUnsigned, Zero},
+	DispatchError,
+};
 use sp_std::prelude::Vec;
 
 pub use crate::schema::SchemaId;
 
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
-/// Message Source Id or msaId is the unique identifier for Message Source Accounts
 pub type MessageSourceId = u64;
 
 /// A Delegator is a role for an MSA to play.
 /// Delegators delegate to Providers.
+/// Encodes and Decodes as just a `u64`
 #[derive(TypeInfo, Debug, Clone, Copy, PartialEq, MaxEncodedLen, Eq)]
 pub struct Delegator(pub MessageSourceId);
 
@@ -58,12 +61,31 @@ where
 	/// Block number the grant will be revoked.
 	pub revoked_at: BlockNumber,
 	/// Schemas that the provider is allowed to use for a delegated message.
-	pub schema_permissions:
-		BoundedBTreeMap<SchemaId, Option<BlockNumber>, MaxSchemaGrantsPerDelegation>,
+	pub schema_permissions: BoundedBTreeMap<SchemaId, BlockNumber, MaxSchemaGrantsPerDelegation>,
+}
+
+impl<
+		SchemaId: Ord + Default,
+		BlockNumber: Ord + Copy + Zero + AtLeast32BitUnsigned + Default,
+		MaxSchemaGrantsPerDelegation: Get<u32>,
+	> Default for Delegation<SchemaId, BlockNumber, MaxSchemaGrantsPerDelegation>
+{
+	/// Provides the default values for Delegation type.
+	fn default() -> Self {
+		Delegation {
+			revoked_at: BlockNumber::default(),
+			schema_permissions: BoundedBTreeMap::<
+				SchemaId,
+				BlockNumber,
+				MaxSchemaGrantsPerDelegation,
+			>::new(),
+		}
+	}
 }
 
 /// Provider is the recipient of a delegation.
 /// It is a subset of an MSA
+/// Encodes and Decodes as just a `u64`
 #[derive(TypeInfo, Debug, Clone, Copy, PartialEq, MaxEncodedLen, Eq)]
 pub struct Provider(pub MessageSourceId);
 
@@ -84,18 +106,6 @@ impl Decode for Provider {
 	}
 }
 
-/// This is the metadata associated with a provider. As of now it is just a
-/// name, but it will likely be expanded in the future
-#[derive(MaxEncodedLen, TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
-#[scale_info(skip_type_params(T))]
-pub struct ProviderRegistryEntry<T>
-where
-	T: Get<u32>,
-{
-	/// The provider's name
-	pub provider_name: BoundedVec<u8, T>,
-}
-
 impl From<MessageSourceId> for Provider {
 	fn from(t: MessageSourceId) -> Self {
 		Provider(t)
@@ -108,16 +118,24 @@ impl From<Provider> for MessageSourceId {
 	}
 }
 
+/// This is the metadata associated with a provider. As of now it is just a
+/// name, but it will likely be expanded in the future
+#[derive(MaxEncodedLen, TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
+#[scale_info(skip_type_params(T))]
+pub struct ProviderRegistryEntry<T>
+where
+	T: Get<u32>,
+{
+	/// The provider's name
+	pub provider_name: BoundedVec<u8, T>,
+}
+
 /// A behavior that allows looking up an MSA id
 pub trait MsaLookup {
 	/// The association between key and MSA
 	type AccountId;
 
 	/// Gets the MSA Id associated with this `AccountId` if any
-	/// # Arguments
-	/// * `key` - The `AccountId` to lookup
-	/// # Returns
-	/// * `Option<MessageSourceId>`
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId>;
 }
 
@@ -127,11 +145,7 @@ pub trait MsaValidator {
 	type AccountId;
 
 	/// Check that a key is associated to an MSA and returns key information.
-	/// Returns a `[DispatchError`] if there is no MSA associated with the key
-	/// # Arguments
-	/// * `key` - The `AccountId` to lookup
-	/// # Returns
-	/// * `Result<MessageSourceId, DispatchError>`
+	/// Returns a [`DispatchError`] if there is no MSA associated with the key
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError>;
 }
 
@@ -145,11 +159,6 @@ pub trait ProviderLookup {
 	type SchemaId;
 
 	/// Gets the relationship information for this delegator, provider pair
-	/// # Arguments
-	/// * `delegator` - The `MessageSourceId` that delegated to the provider
-	/// * `provider` - The `MessageSourceId` that has been delegated to
-	/// # Returns
-	/// * `Option<Delegation<Self::BlockNumber>>`
 	fn get_delegation_of(
 		delegator: Delegator,
 		provider: Provider,
@@ -166,11 +175,6 @@ pub trait DelegationValidator {
 	type SchemaId;
 
 	/// Validates that the delegator and provider have a relationship at this point
-	/// # Arguments
-	/// * `provider` - The `MessageSourceId` that has been delegated to
-	/// * `delegator` - The `MessageSourceId` that delegated to the provider
-	/// # Returns
-	/// * [DispatchResult](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResult.html) The return type of a Dispatchable in frame.
 	fn ensure_valid_delegation(
 		provider: Provider,
 		delegator: Delegator,
@@ -183,13 +187,7 @@ pub trait DelegationValidator {
 
 /// A behavior that allows for validating a schema grant
 pub trait SchemaGrantValidator {
-	/// Validates if the provider is allowed to use the schema
-	/// # Arguments
-	/// * `provider` - The `MessageSourceId` that has been delegated to
-	/// * `delegator` - The `MessageSourceId` that delegated to the provider
-	/// * `schema_id` - The `SchemaId` that the provider is trying to use
-	/// # Returns
-	/// * [DispatchResult](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResult.html) The return type of a Dispatchable in frame.
+	/// Validates if the provider is allowed to use the particular schema id currently
 	fn ensure_valid_schema_grant(
 		provider: Provider,
 		delegator: Delegator,
