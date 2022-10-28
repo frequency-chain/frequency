@@ -95,8 +95,10 @@ where
 			.iter() // TODO: Change back to par_iter() which has borrow panic
 			.map(|&id| {
 				let delegator = Delegator(id);
+				// api.has_delegation returns  Result<bool, ApiError>), so _or(false) should not happen,
+				// but just in case, protect against panic
 				let has_delegation =
-					api.has_delegation(&at, delegator, provider, block_number).unwrap();
+					api.has_delegation(&at, delegator, provider, block_number).unwrap_or(false);
 				(id, has_delegation)
 			})
 			.collect())
