@@ -86,7 +86,6 @@ pub fn fingerprint_raw_schema_list(
 /// assert!(translated_schema.is_ok());
 /// ```
 pub fn translate_schema(serialized_schema: Vec<u8>) -> Result<Schema, AvroError> {
-	// let schema_str = str::from_utf8(&serialized_schema);
 	match str::from_utf8(&serialized_schema) {
 		Ok(schema_str) => {
 			let schema = Schema::parse_str(schema_str)?;
