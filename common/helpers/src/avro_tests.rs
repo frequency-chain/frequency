@@ -87,18 +87,6 @@ fn test_fingerprint_invalid() {
 	}
 }
 
-// const VALID_EXAMPLES: &[(&str, bool)] = &[
-// 	(r#"{"type": "fixed", "name": "Test", "size": 1}"#, true),
-// 	(
-// 		r#"{
-//                 "type": "fixed",
-//                 "name": "MyFixed",
-//                 "namespace": "org.apache.hadoop.avro",
-//                 "size": 1
-//             }"#,
-// 		true,
-// 	),
-// ];
 #[test]
 /// Test schema round trip: raw Avro schema -> serialized Avro -> raw Avro Schema.
 fn test_fingerprint_raw_schema_has_valid_cast_to_string_after_parse() {
