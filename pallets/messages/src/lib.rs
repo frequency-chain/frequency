@@ -383,7 +383,11 @@ impl<T: Config> Pallet<T> {
 		// insert into storage and create events
 		for (schema_id, messages) in map {
 			let count = messages.len() as u16;
-			let bounded_vec: BoundedVec<_, _> = messages.try_into().unwrap();
+			let bounded_vec: BoundedVec<_, _> = messages.try_into().unwrap_or_default();
+
+			if bounded_vec.is_empty() {
+				return T::DbWeight::get().reads(1)
+			}
 			Messages::<T>::insert(&block_number, schema_id, &bounded_vec);
 			Self::deposit_event(Event::MessagesStored { schema_id, block_number, count });
 			schema_count += 1;

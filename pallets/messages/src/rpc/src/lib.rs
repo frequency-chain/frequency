@@ -117,7 +117,7 @@ where
 					schema.payload_location,
 					block_number,
 				)
-				.unwrap();
+				.unwrap_or_default();
 
 			let list_size: u32 =
 				list.len().try_into().map_err(|_| MessageRpcError::TypeConversionOverflow)?;

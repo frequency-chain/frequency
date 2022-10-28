@@ -119,7 +119,7 @@ fn add_message_with_too_large_message_should_panic() {
 }
 
 #[test]
-fn add_message_with_invalid_msa_account_should_panic() {
+fn add_message_with_invalid_msa_account_errors() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let caller_1 = 1000;
@@ -143,7 +143,7 @@ fn add_message_with_invalid_msa_account_should_panic() {
 }
 
 #[test]
-fn add_message_with_maxed_out_storage_should_panic() {
+fn add_message_with_maxed_out_storage_errors() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let caller_1 = 5;

@@ -19,6 +19,7 @@ use common_primitives::{
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
+	tracing::warn,
 };
 use pallet_msa_runtime_api::MsaRuntimeApi;
 use sp_api::ProvideRuntimeApi;
@@ -95,8 +96,16 @@ where
 			.iter() // TODO: Change back to par_iter() which has borrow panic
 			.map(|&id| {
 				let delegator = Delegator(id);
-				let has_delegation =
-					api.has_delegation(&at, delegator, provider, block_number).unwrap();
+				// api.has_delegation returns  Result<bool, ApiError>), so _or(false) should not happen,
+				// but just in case, protect against panic
+				let has_delegation: bool =
+					match api.has_delegation(&at, delegator, provider, block_number) {
+						Ok(result) => result,
+						Err(e) => {
+							warn!("ApiError from has_delegation! {:?}", e);
+							false
+						},
+					};
 				(id, has_delegation)
 			})
 			.collect())
