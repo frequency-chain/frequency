@@ -18,10 +18,7 @@ pub enum AvroError {
 
 /// Function to convert a raw schema into serialized Avro schema.
 /// If schema is malformed or invalid, returns an error.
-/// # Arguments
-/// * `raw_schema` - raw schema to be converted
-/// # Returns
-/// * `Result<(Schema, Vec<u8>), AvroError>` - structured and serialized Avro schema
+///
 /// # Examples
 /// ```
 /// use common_helpers::avro;
@@ -30,6 +27,7 @@ pub enum AvroError {
 /// let schema_result = avro::fingerprint_raw_schema(raw_schema);
 /// assert!(schema_result.is_ok());
 /// let serialized_schema = schema_result.unwrap().1;
+/// ```
 pub fn fingerprint_raw_schema(raw_schema: &str) -> Result<(Schema, Vec<u8>), AvroError> {
 	let schema_result = Schema::parse_str(raw_schema)?;
 	let schema_canonical_form = schema_result.canonical_form();
@@ -38,10 +36,7 @@ pub fn fingerprint_raw_schema(raw_schema: &str) -> Result<(Schema, Vec<u8>), Avr
 
 /// Function to convert a list of raw schema into serialized Avro schema.
 /// If schema is malformed or invalid, it is set to Null.
-/// # Arguments
-/// * `raw_schema` - raw schema list to be converted
-/// # Returns
-/// * `Result<(Vec<Schema>, Vec<Vec<u8>>), AvroError>` - structured and serialized Avro schemas
+///
 /// # Examples
 /// ```
 /// use common_helpers::avro;
@@ -71,10 +66,7 @@ pub fn fingerprint_raw_schema_list(
 
 ///Function to convert a serialized Avro schema into Avro Schema type.
 /// If schema is malformed or invalid, returns an error.
-/// # Arguments
-/// * `serialized_schema` - serialized Avro schema to be converted
-/// # Returns
-/// * `Result<Schema, AvroError>` - structured Avro schema
+///
 /// # Examples
 /// ```
 /// use common_helpers::avro;
@@ -99,10 +91,7 @@ pub fn translate_schema(serialized_schema: Vec<u8>) -> Result<Schema, AvroError>
 
 ///Function to convert a list of serialized Avro schema into Avro Schema type.
 /// If schema is malformed or invalid, it is set to Null.
-/// # Arguments
-/// * `serialized_schema` - list of serialized Avro schema to be converted
-/// # Returns
-/// * `Result<Vec<Schema>, AvroError>` - structured Avro schema
+///
 /// # Examples
 /// ```
 /// use common_helpers::avro;
@@ -131,6 +120,7 @@ pub fn translate_schemas(serialized_schema: Vec<Vec<u8>>) -> Result<Vec<Schema>,
 }
 
 /// Function to get the schema writer with default container as Vec<u8>
+///
 /// # Examples
 /// ```
 /// use common_helpers::avro;
@@ -146,9 +136,10 @@ pub fn get_schema_data_writer(schema: &Schema) -> Writer<Vec<u8>> {
 }
 
 /// Function to populate a given schema with data and return serialized record.
-/// # Arguments
-/// * `schema` - Avro schema
-/// * `record` - record to be written as HashMap<String, SchemaValue> where SchemaValue is common types
+///
+/// # Remarks
+/// * `record` is the record to be written as HashMap<String, SchemaValue> where SchemaValue is common types
+///
 /// # Examples
 /// ```
 /// use common_helpers::avro;
@@ -189,9 +180,7 @@ pub fn populate_schema_and_serialize(
 }
 
 /// Function to get serialized datum data for a given schema into hashmap.
-/// # Arguments
-/// *serialized_data* - serialized data to be converted into hashmap
-/// * `schema` - Avro schema
+///
 /// # Examples
 /// ```
 /// use common_helpers::avro;
@@ -220,6 +209,7 @@ pub fn populate_schema_and_serialize(
 /// let serialized_data = serialized_record.unwrap();
 /// let deserialized_data = avro::get_schema_data_map(&serialized_data, &data_schema);
 /// assert!(deserialized_data.is_ok());
+/// ```
 pub fn get_schema_data_map<'a>(
 	serialized_data: &'a Vec<u8>,
 	schema: &'a Schema,
@@ -239,8 +229,7 @@ pub fn get_schema_data_map<'a>(
 }
 
 /// Function to validate incoming json serialized schema against avro schema.
-/// # Arguments
-/// * `json_schema` - json serialized schema
+///
 /// # Examples
 /// ```
 /// use common_helpers::avro;
@@ -257,6 +246,7 @@ pub fn get_schema_data_map<'a>(
 /// "#;
 /// let schema_fingerprint = avro::fingerprint_raw_schema(raw_schema);
 /// assert!(schema_fingerprint.is_ok());
+/// ```
 pub fn validate_raw_avro_schema(json_schema: &Vec<u8>) -> Result<(), AvroError> {
 	let avro_schema_raw = String::from_utf8(json_schema.clone());
 	if avro_schema_raw.is_err() {
