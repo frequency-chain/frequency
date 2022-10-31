@@ -60,7 +60,7 @@ fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSource
 
 	assert_ok!(Msa::<T>::create(RawOrigin::Signed(provider.clone()).into()));
 
-	let msa_id = Msa::<T>::try_get_msa_from_account_id(&provider).unwrap();
+	let msa_id = Msa::<T>::try_get_msa_from_public_key(&provider).unwrap();
 
 	(provider.clone(), msa_id)
 }
@@ -138,7 +138,7 @@ benchmarks! {
 
 		// Create a MSA account
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
-		let msa_id = Msa::<T>::try_get_msa_from_account_id(&caller).unwrap();
+		let msa_id = Msa::<T>::try_get_msa_from_public_key(&caller).unwrap();
 
 		assert_eq!(Msa::<T>::is_registered_provider(msa_id),false);
 
