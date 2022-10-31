@@ -85,7 +85,29 @@
 <span id="85">85</span>
 <span id="86">86</span>
 <span id="87">87</span>
-</pre><pre class="rust"><code><span class="kw">use </span>common_helpers::{avro, rpc::<span class="kw-2">*</span>};
+<span id="88">88</span>
+<span id="89">89</span>
+<span id="90">90</span>
+<span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
+</pre><pre class="rust"><code><span class="comment">// Strong Documentation Lints
+</span><span class="attribute">#![deny(
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
+)]
+
+</span><span class="doccomment">//! Custom APIs for [Schemas](../pallet_schemas/index.html)
+
+</span><span class="kw">use </span>common_helpers::{avro, rpc::<span class="kw-2">*</span>};
 <span class="kw">use </span>common_primitives::schema::<span class="kw-2">*</span>;
 <span class="kw">use </span>jsonrpsee::{
 	core::{async_trait, Error <span class="kw">as </span>RpcError, RpcResult},
@@ -99,27 +121,27 @@
 <span class="kw">use </span>sp_std::vec::Vec;
 <span class="kw">use </span>std::sync::Arc;
 
-<span class="doccomment">/// Error type of this RPC api.
-</span><span class="kw">pub enum </span>Error {
+<span class="doccomment">/// Errors that occur on the client RPC
+</span><span class="kw">pub enum </span>SchemaRpcError {
 	<span class="doccomment">/// No schema was found for the given id.
 	</span>SchemaNotFound,
 	<span class="doccomment">/// Failed to fetch latest schema.
 	</span>SchemaSearchError,
-	<span class="comment">// Schema validation error.
+	<span class="doccomment">/// Schema model did not validate
 	</span>SchemaValidationError,
 }
 
-<span class="kw">impl </span>From&lt;Error&gt; <span class="kw">for </span>i32 {
-	<span class="kw">fn </span>from(e: Error) -&gt; i32 {
+<span class="kw">impl </span>From&lt;SchemaRpcError&gt; <span class="kw">for </span>i32 {
+	<span class="kw">fn </span>from(e: SchemaRpcError) -&gt; i32 {
 		<span class="kw">match </span>e {
-			Error::SchemaNotFound =&gt; <span class="number">1</span>,
-			Error::SchemaSearchError =&gt; <span class="number">2</span>,
-			Error::SchemaValidationError =&gt; <span class="number">3</span>,
+			SchemaRpcError::SchemaNotFound =&gt; <span class="number">1</span>,
+			SchemaRpcError::SchemaSearchError =&gt; <span class="number">2</span>,
+			SchemaRpcError::SchemaValidationError =&gt; <span class="number">3</span>,
 		}
 	}
 }
 
-<span class="doccomment">/// Frequency Schema API
+<span class="doccomment">/// Frequency Schema Custom RPC API
 </span><span class="attribute">#[rpc(client, server)]
 </span><span class="kw">pub trait </span>SchemasApi&lt;BlockHash&gt; {
 	<span class="doccomment">/// retrieving schema by schema id
@@ -131,13 +153,15 @@
 	</span><span class="kw">fn </span>check_schema_validity(<span class="kw-2">&amp;</span><span class="self">self</span>, model: Vec&lt;u8&gt;, at: <span class="prelude-ty">Option</span>&lt;BlockHash&gt;) -&gt; RpcResult&lt;bool&gt;;
 }
 
-<span class="kw">pub struct </span>SchemasHandler&lt;C, M&gt; {
+<span class="doccomment">/// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
+</span><span class="kw">pub struct </span>SchemasHandler&lt;C, M&gt; {
 	client: Arc&lt;C&gt;,
 	_marker: std::marker::PhantomData&lt;M&gt;,
 }
 
 <span class="kw">impl</span>&lt;C, M&gt; SchemasHandler&lt;C, M&gt; {
-	<span class="kw">pub fn </span>new(client: Arc&lt;C&gt;) -&gt; <span class="self">Self </span>{
+	<span class="doccomment">/// Create new instance with the given reference to the client.
+	</span><span class="kw">pub fn </span>new(client: Arc&lt;C&gt;) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{ client, _marker: Default::default() }
 	}
 }
@@ -158,7 +182,7 @@
 		<span class="kw">match </span>validated_schema {
 			<span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>),
 			<span class="prelude-val">Err</span>(e) =&gt; <span class="prelude-val">Err</span>(RpcError::Call(CallError::Custom(ErrorObject::owned(
-				Error::SchemaValidationError.into(),
+				SchemaRpcError::SchemaValidationError.into(),
 				<span class="string">&quot;Unable to validate schema&quot;</span>,
 				<span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e)),
 			)))),

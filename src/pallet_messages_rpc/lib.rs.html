@@ -128,7 +128,30 @@
 <span id="128">128</span>
 <span id="129">129</span>
 <span id="130">130</span>
-</pre><pre class="rust"><code><span class="kw">use </span>codec::Codec;
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+</pre><pre class="rust"><code><span class="comment">// Strong Documentation Lints
+</span><span class="attribute">#![deny(
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
+)]
+
+</span><span class="doccomment">//! Custom APIs for [Messages](../pallet_messages/index.html)
+
+</span><span class="kw">use </span>codec::Codec;
 <span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span>common_helpers::rpc::<span class="kw-2">*</span>;
 <span class="kw">use </span>common_primitives::{messages::<span class="kw-2">*</span>, schema::<span class="kw-2">*</span>};
@@ -137,7 +160,7 @@
 	core::{async_trait, error::Error <span class="kw">as </span>RpcError, RpcResult},
 	proc_macros::rpc,
 };
-<span class="kw">use </span>pallet_messages_runtime_api::MessagesApi <span class="kw">as </span>MessagesRuntimeApi;
+<span class="kw">use </span>pallet_messages_runtime_api::MessagesRuntimeApi;
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_runtime::{
@@ -149,9 +172,11 @@
 <span class="attribute">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
-<span class="attribute">#[rpc(client, server)]
+<span class="doccomment">/// Frequency Messages Custom RPC API
+</span><span class="attribute">#[rpc(client, server)]
 </span><span class="kw">pub trait </span>MessagesApi&lt;BlockNumber&gt; {
-	<span class="attribute">#[method(name = <span class="string">&quot;messages_getBySchemaId&quot;</span>)]
+	<span class="doccomment">/// Retrieve paginated messages by schema id
+	</span><span class="attribute">#[method(name = <span class="string">&quot;messages_getBySchemaId&quot;</span>)]
 	</span><span class="kw">fn </span>get_messages_by_schema_id(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		schema_id: SchemaId,
@@ -159,20 +184,21 @@
 	) -&gt; RpcResult&lt;BlockPaginationResponse&lt;BlockNumber, MessageResponse&lt;BlockNumber&gt;&gt;&gt;;
 }
 
-<span class="doccomment">/// A struct that implements the `MessagesApi`.
+<span class="doccomment">/// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
 </span><span class="kw">pub struct </span>MessagesHandler&lt;C, M&gt; {
 	client: Arc&lt;C&gt;,
 	_marker: std::marker::PhantomData&lt;M&gt;,
 }
 
 <span class="kw">impl</span>&lt;C, M&gt; MessagesHandler&lt;C, M&gt; {
-	<span class="doccomment">/// Create new `MessagesApi` instance with the given reference to the client.
+	<span class="doccomment">/// Create new instance with the given reference to the client.
 	</span><span class="kw">pub fn </span>new(client: Arc&lt;C&gt;) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{ client, _marker: Default::default() }
 	}
 }
 
-<span class="attribute">#[derive(Debug)]
+<span class="doccomment">/// Errors that occur on the client RPC
+</span><span class="attribute">#[derive(Debug)]
 </span><span class="kw">pub enum </span>MessageRpcError {
 	<span class="doccomment">/// Pagination request is bad
 	</span>InvalidPaginationRequest,
@@ -234,7 +260,7 @@
 					schema.payload_location,
 					block_number,
 				)
-				.unwrap();
+				.unwrap_or_default();
 
 			<span class="kw">let </span>list_size: u32 =
 				list.len().try_into().map_err(|<span class="kw">_</span>| MessageRpcError::TypeConversionOverflow)<span class="question-mark">?</span>;

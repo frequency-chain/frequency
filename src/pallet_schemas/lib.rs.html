@@ -364,13 +364,29 @@
 <span id="364">364</span>
 <span id="365">365</span>
 <span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # Schemas Pallet
-//!
 //! The Schemas pallet provides functionality for handling schemas.
 //!
-//! - [`Config`]
-//! - [`Call`]
-//! - [`Pallet`]
+//! - [Configuration: `Config`](Config)
+//! - [Extrinsics: `Call`](Call)
+//! - [Runtime API: `SchemasRuntimeApi`](../pallet_schemas_runtime_api/trait.SchemasRuntimeApi.html)
+//! - [Custom RPC API: `SchemasApiServer`](../pallet_schemas_rpc/trait.SchemasApiServer.html)
+//! - [Event Enum: `Event`](Event)
+//! - [Error Enum: `Error`](Error)
 //!
 //! ## Overview
 //!
@@ -388,23 +404,17 @@
 //! - Retrieving schemas by their id.
 //!
 //!
-//! ### Terminology
+//! ## Terminology
 //!
 //! - **Schema:** The structure that defines how a Message is stored and structured.
-//!
 //! - **Schema Model:** Serialization/Deserialization details of the schema
-//!
 //! - **Schema Model Type:** The type of the following Serialization/Deserialization. It can be
 //!   Avro, Parquet or ...
 //!
-//! ### Dispatchable Functions
+//! ## Implementations
 //!
-//! - `create_schema` - Registers a new schema after some initial validation.
-//! - `set_max_schema_model_bytes` - Sets the maximum schema model size (Bytes) by governance.
-//!
-//! The Schema pallet implements the following traits:
-//!
-//! - [`SchemaProvider`](common_primitives::schema::SchemaProvider&lt;SchemaId&gt;): Functions for accessing and validating Schemas.  This implementation is what is used in the runtime.
+//! - [`SchemaValidator`](../common_primitives/schema/trait.SchemaValidator.html): Functions for accessing and validating Schemas. This implementation is what is used in the runtime.
+//! - [`SchemaProvider`](../common_primitives/schema/trait.SchemaProvider.html): Allows another pallet to resolve schema information.
 //!
 //! ## Genesis config
 //!
@@ -488,8 +498,6 @@
 	</span><span class="kw">pub enum </span>Error&lt;T&gt; {
 		<span class="doccomment">/// Schema is malformed
 		</span>InvalidSchema,
-		<span class="doccomment">/// The maximum number of schemas is stored in the database.
-		</span>TooManySchemas,
 		<span class="doccomment">/// The schema model exceeds the maximum length allowed
 		</span>ExceedsMaxSchemaModelBytes,
 		<span class="doccomment">/// The governance schema model max value provided is too large (greater than the BoundedVec size)
@@ -565,21 +573,17 @@
 		<span class="doccomment">/// Adds a given schema to storage. The schema in question must be of length
 		/// between the min and max model size allowed for schemas (see pallet
 		/// constants above). If the pallet&#39;s maximum schema limit has been
-		/// fulfilled by the time this extrinsic is called, a TooManySchemas error
+		/// fulfilled by the time this extrinsic is called, a SchemaCountOverflow error
 		/// will be thrown.
 		///
-		/// # Arguments
-		/// * `origin` - The originator of the transaction
-		/// * `model` - The new schema model data
-		/// * &#39;model_type&#39; - The formatting type of the model data
-		/// # Returns
-		/// * `DispatchResult`
+		/// # Events
+		/// * [`Event::SchemaRegistered`]
 		///
 		/// # Errors
-		/// * [`Error::&lt;T&gt;::LessThanMinSchemaModelBytes`] - The schema&#39;s length is less than the minimum schema length
-		/// * [`Error::&lt;T&gt;::ExceedsMaxSchemaModelBytes`] - The schema&#39;s length is greater than the maximum schema length
-		/// * [`Error::&lt;T&gt;::TooManySchemas`] - The maximum number of schemas has been met
-		/// * [`Error::&lt;T&gt;::SchemaCountOverflow`] - The schema count has exceeded its bounds
+		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema&#39;s length is less than the minimum schema length
+		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema&#39;s length is greater than the maximum schema length
+		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
+		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		///
 		</span><span class="attribute">#[pallet::weight(&lt; T <span class="kw">as </span>Config &gt;::WeightInfo::create_schema(model.len() <span class="kw">as </span>u32, <span class="number">1000</span>))]
 		</span><span class="kw">pub fn </span>create_schema(
@@ -606,14 +610,27 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Set a new value for the Schema maximum number of bytes.  Must be &lt;= the limit of the
-		/// Schema BoundedVec used for registration.
+		<span class="doccomment">/// Root and Governance can set a new max value for Schema bytes.
+		/// Must be &lt;= the limit of the Schema BoundedVec used for registration.
+		///
+		/// # Requires
+		/// * Root Origin
+		///
+		/// # Events
+		/// * [`Event::SchemaMaxSizeChanged`]
+		///
+		/// # Errors
+		/// * [`Error::ExceedsMaxSchemaModelBytes`] - Cannot set to above the hard coded maximum [`Config::SchemaModelMaxBytesBoundedVecLimit`]
+		///
 		</span><span class="attribute">#[pallet::weight(<span class="number">30_000</span>)]
-		</span><span class="kw">pub fn </span>set_max_schema_model_bytes(origin: OriginFor&lt;T&gt;, max_size: u32) -&gt; DispatchResult {
+		</span><span class="kw">pub fn </span>set_max_schema_model_bytes(
+			origin: OriginFor&lt;T&gt;,
+			<span class="attribute">#[pallet::compact] </span>max_size: u32,
+		) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 			<span class="macro">ensure!</span>(
 				max_size &lt;= T::SchemaModelMaxBytesBoundedVecLimit::get(),
-				Error::&lt;T&gt;::ExceedsGovernanceSchemaModelMaxValue
+				Error::&lt;T&gt;::ExceedsMaxSchemaModelBytes
 			);
 			GovernanceSchemaModelMaxBytes::&lt;T&gt;::set(max_size);
 			<span class="self">Self</span>::deposit_event(Event::SchemaMaxSizeChanged(max_size));
@@ -628,7 +645,9 @@
 			&lt;CurrentSchemaIdentifierMaximum&lt;T&gt;&gt;::set(n);
 		}
 
-		<span class="kw">fn </span>add_schema(
+		<span class="doccomment">/// Build the [`Schema`] and insert it into storage
+		/// Updates the [`CurrentSchemaIdentifierMaximum`] storage
+		</span><span class="kw">fn </span>add_schema(
 			model: BoundedVec&lt;u8, T::SchemaModelMaxBytesBoundedVecLimit&gt;,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
@@ -657,6 +676,11 @@
 		</span>}
 
 		<span class="doccomment">/// Ensures that a given u8 Vector conforms to a recognized Parquet shape
+		///
+		/// # Errors
+		/// * [`Error::InvalidSchema`]
+		/// * [`Error::SchemaCountOverflow`]
+		///
 		</span><span class="kw">pub fn </span>ensure_valid_model(
 			model_type: <span class="kw-2">&amp;</span>ModelType,
 			model: <span class="kw-2">&amp;</span>BoundedVec&lt;u8, T::SchemaModelMaxBytesBoundedVecLimit&gt;,
@@ -673,6 +697,10 @@
 		}
 
 		<span class="doccomment">/// Get the next available schema id
+		///
+		/// # Errors
+		/// * [`Error::SchemaCountOverflow`]
+		///
 		</span><span class="kw">fn </span>get_next_schema_id() -&gt; <span class="prelude-ty">Result</span>&lt;SchemaId, DispatchError&gt; {
 			<span class="kw">let </span>next = <span class="self">Self</span>::get_current_schema_identifier_maximum()
 				.checked_add(<span class="number">1</span>)

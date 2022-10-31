@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["MsaHandler","A struct that implements the `MessagesApi`."]],"trait":[["MsaApiClient","Client implementation for the `MsaApi` RPC API."],["MsaApiServer","Server trait implementation for the `MsaApi` RPC API."]]};
+window.SIDEBAR_ITEMS = {"struct":[["MsaHandler","The client handler for the API used by Frequency Service RPC with `jsonrpsee`"]],"trait":[["MsaApiClient","Client implementation for the `MsaApi` RPC API."],["MsaApiServer","Server trait implementation for the `MsaApi` RPC API."]]};

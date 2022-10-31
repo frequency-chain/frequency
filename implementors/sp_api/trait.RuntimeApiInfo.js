@@ -1,5 +1,5 @@
 (function() {var implementors = {
-"pallet_messages_runtime_api":[["impl&lt;Block:&nbsp;BlockT, BlockNumber&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"pallet_messages_runtime_api/trait.MessagesApi.html\" title=\"trait pallet_messages_runtime_api::MessagesApi\">MessagesApi</a>&lt;Block, BlockNumber&gt;"]],
-"pallet_msa_runtime_api":[["impl&lt;Block:&nbsp;BlockT, AccountId&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"pallet_msa_runtime_api/trait.MsaApi.html\" title=\"trait pallet_msa_runtime_api::MsaApi\">MsaApi</a>&lt;Block, AccountId&gt;"]],
+"pallet_messages_runtime_api":[["impl&lt;Block:&nbsp;BlockT, BlockNumber&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"pallet_messages_runtime_api/trait.MessagesRuntimeApi.html\" title=\"trait pallet_messages_runtime_api::MessagesRuntimeApi\">MessagesRuntimeApi</a>&lt;Block, BlockNumber&gt;"]],
+"pallet_msa_runtime_api":[["impl&lt;Block:&nbsp;BlockT, AccountId&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"pallet_msa_runtime_api/trait.MsaRuntimeApi.html\" title=\"trait pallet_msa_runtime_api::MsaRuntimeApi\">MsaRuntimeApi</a>&lt;Block, AccountId&gt;"]],
 "pallet_schemas_runtime_api":[["impl&lt;Block:&nbsp;BlockT&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"pallet_schemas_runtime_api/trait.SchemasRuntimeApi.html\" title=\"trait pallet_schemas_runtime_api::SchemasRuntimeApi\">SchemasRuntimeApi</a>&lt;Block&gt;"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

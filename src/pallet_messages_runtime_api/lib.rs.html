@@ -18,24 +18,60 @@
 <span id="18">18</span>
 <span id="19">19</span>
 <span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::unnecessary_mut_passed)]
+</span><span class="comment">// Strong Documentation Lints
+</span><span class="attribute">#![deny(
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
+)]
+
+</span><span class="doccomment">//! Runtime API definition for [Messages](../pallet_messages/index.html)
+//!
+//! This api must be implemented by the node runtime.
+//! Runtime APIs Provide:
+//! - An interface between the runtime and Custom RPCs.
+//! - Runtime interfaces for end users beyond just State Queries
 
 </span><span class="kw">use </span>codec::Codec;
 <span class="kw">use </span>common_primitives::{messages::<span class="kw-2">*</span>, schema::<span class="kw-2">*</span>};
 <span class="kw">use </span>frame_support::inherent::Vec;
 
 <span class="comment">// Here we declare the runtime API. It is implemented it the `impl` block in
-// runtime file (the `runtime/src/lib.rs`)
+// runtime files (the `runtime` folder)
 </span><span class="macro">sp_api::decl_runtime_apis! </span>{
-	<span class="kw">pub trait </span>MessagesApi&lt;BlockNumber&gt; <span class="kw">where
+
+	<span class="doccomment">/// Runtime APIs for [Messages](../pallet_messages/index.html)
+	</span><span class="kw">pub trait </span>MessagesRuntimeApi&lt;BlockNumber&gt; <span class="kw">where
 		</span>BlockNumber: Codec,
 	{
-		<span class="kw">fn </span>get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber) -&gt;
+		<span class="doccomment">/// Retrieve the messages for a particular schema and block number
+		</span><span class="kw">fn </span>get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber) -&gt;
 			Vec&lt;MessageResponse&lt;BlockNumber&gt;&gt;;
 
-		<span class="kw">fn </span>get_schema_by_id(schema_id: SchemaId) -&gt; <span class="prelude-ty">Option</span>&lt;SchemaResponse&gt;;
+		<span class="doccomment">/// Retrieve a schema by id
+		</span><span class="kw">fn </span>get_schema_by_id(schema_id: SchemaId) -&gt; <span class="prelude-ty">Option</span>&lt;SchemaResponse&gt;;
 	}
 }
 </code></pre></div>

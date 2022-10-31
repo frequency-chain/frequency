@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":[["MessagesApi",""]]};
+window.SIDEBAR_ITEMS = {"trait":[["MessagesRuntimeApi","Runtime APIs for Messages"]]};

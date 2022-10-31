@@ -11,17 +11,49 @@
 <span id="11">11</span>
 <span id="12">12</span>
 <span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::unnecessary_mut_passed)]
+</span><span class="comment">// Strong Documentation Lints
+</span><span class="attribute">#![deny(
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
+)]
+
+</span><span class="doccomment">//! Runtime API definition for [Schemas](../pallet_schemas/index.html)
+//!
+//! This api must be implemented by the node runtime.
+//! Runtime APIs Provide:
+//! - An interface between the runtime and Custom RPCs.
+//! - Runtime interfaces for end users beyond just State Queries
 
 </span><span class="kw">use </span>common_primitives::schema::<span class="kw-2">*</span>;
 <span class="kw">use </span>frame_support::dispatch::DispatchError;
 
 <span class="macro">sp_api::decl_runtime_apis! </span>{
-	<span class="kw">pub trait </span>SchemasRuntimeApi
+	<span class="doccomment">/// Runtime API definition for [Schemas](../pallet_schemas/index.html)
+	</span><span class="kw">pub trait </span>SchemasRuntimeApi
 	{
-		<span class="kw">fn </span>get_by_schema_id(schema_id: SchemaId) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;SchemaResponse&gt;, DispatchError&gt;;
+		<span class="doccomment">/// Fetch the schema by id
+		</span><span class="kw">fn </span>get_by_schema_id(schema_id: SchemaId) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;SchemaResponse&gt;, DispatchError&gt;;
 	}
 }
 </code></pre></div>

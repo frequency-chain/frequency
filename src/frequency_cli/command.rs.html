@@ -669,6 +669,11 @@
 <span id="669">669</span>
 <span id="670">670</span>
 <span id="671">671</span>
+<span id="672">672</span>
+<span id="673">673</span>
+<span id="674">674</span>
+<span id="675">675</span>
+<span id="676">676</span>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cli::{Cli, RelayChainCli, Subcommand};
 <span class="kw">use </span>frequency_service::chain_spec;
 
@@ -761,14 +766,15 @@
 }
 
 <span class="kw">fn </span>load_spec(id: <span class="kw-2">&amp;</span>str) -&gt; std::result::Result&lt;Box&lt;<span class="kw">dyn </span>ChainSpec&gt;, String&gt; {
-	<span class="prelude-val">Ok</span>(<span class="kw">match </span>id {
+	<span class="kw">match </span>id {
 		<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency&quot;</span>)]
-		</span><span class="string">&quot;frequency&quot; </span>=&gt; Box::new(chain_spec::frequency::frequency()),
+		</span><span class="string">&quot;frequency&quot; </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(Box::new(chain_spec::frequency::frequency())),
 		<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
-		</span><span class="string">&quot;frequency-local&quot; </span>| <span class="string">&quot;dev&quot; </span>=&gt; Box::new(chain_spec::frequency_local::local_testnet_config()),
+		</span><span class="string">&quot;frequency-local&quot; </span>| <span class="string">&quot;dev&quot; </span>=&gt;
+			<span class="kw">return </span><span class="prelude-val">Ok</span>(Box::new(chain_spec::frequency_local::local_testnet_config())),
 		<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>)]
 		</span><span class="string">&quot;frequency-rococo&quot; </span>| <span class="string">&quot;rococo&quot; </span>| <span class="string">&quot;testnet&quot; </span>=&gt;
-			Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet()),
+			<span class="kw">return </span><span class="prelude-val">Ok</span>(Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet())),
 		path =&gt; {
 			<span class="kw">if </span>path.is_empty() {
 				<span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;frequency&quot;</span>) {
@@ -804,21 +810,25 @@
 			<span class="kw">if </span>ChainIdentity::Frequency == spec.identify() {
 				<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency&quot;</span>)]
 				</span>{
-					Box::new(chain_spec::frequency::ChainSpec::from_json_file(path_buf)<span class="question-mark">?</span>)
+					<span class="kw">return </span><span class="prelude-val">Ok</span>(Box::new(chain_spec::frequency::ChainSpec::from_json_file(path_buf)<span class="question-mark">?</span>))
 				}
 				<span class="attribute">#[cfg(not(feature = <span class="string">&quot;frequency&quot;</span>))]
 				</span><span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Frequency runtime is not available.&quot;</span>.into())
 			} <span class="kw">else if </span>ChainIdentity::FrequencyRococo == spec.identify() {
 				<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>)]
 				</span>{
-					Box::new(chain_spec::frequency_rococo::ChainSpec::from_json_file(path_buf)<span class="question-mark">?</span>)
+					<span class="kw">return </span><span class="prelude-val">Ok</span>(Box::new(chain_spec::frequency_rococo::ChainSpec::from_json_file(
+						path_buf,
+					)<span class="question-mark">?</span>))
 				}
 				<span class="attribute">#[cfg(not(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>))]
 				</span><span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Frequency Rococo runtime is not available.&quot;</span>.into())
 			} <span class="kw">else if </span>ChainIdentity::FrequencyLocal == spec.identify() {
 				<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
 				</span>{
-					Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(path_buf)<span class="question-mark">?</span>)
+					<span class="kw">return </span><span class="prelude-val">Ok</span>(Box::new(chain_spec::frequency_local::ChainSpec::from_json_file(
+						path_buf,
+					)<span class="question-mark">?</span>))
 				}
 				<span class="attribute">#[cfg(not(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>))]
 				</span><span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Frequency Local runtime is not available.&quot;</span>.into())
@@ -826,7 +836,7 @@
 				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Unknown chain spec.&quot;</span>.into())
 			}
 		},
-	})
+	}
 }
 
 <span class="kw">fn </span>chain_name() -&gt; String {

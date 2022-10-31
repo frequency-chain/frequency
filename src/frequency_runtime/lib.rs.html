@@ -1819,7 +1819,7 @@
 	}
 
 	<span class="comment">// Unfinished runtime APIs
-	</span><span class="kw">impl </span>pallet_messages_runtime_api::MessagesApi&lt;Block, BlockNumber&gt; <span class="kw">for </span>Runtime {
+	</span><span class="kw">impl </span>pallet_messages_runtime_api::MessagesRuntimeApi&lt;Block, BlockNumber&gt; <span class="kw">for </span>Runtime {
 		<span class="kw">fn </span>get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber,) -&gt;
 			Vec&lt;MessageResponse&lt;BlockNumber&gt;&gt; {
 			Messages::get_messages_by_schema_and_block(schema_id, schema_payload_location, block_number)
@@ -1836,7 +1836,7 @@
 		}
 	}
 
-	<span class="kw">impl </span>pallet_msa_runtime_api::MsaApi&lt;Block, AccountId&gt; <span class="kw">for </span>Runtime {
+	<span class="kw">impl </span>pallet_msa_runtime_api::MsaRuntimeApi&lt;Block, AccountId&gt; <span class="kw">for </span>Runtime {
 		<span class="comment">// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
 		// fn get_msa_keys(msa_id: MessageSourceId) -&gt; Result&lt;Vec&lt;KeyInfoResponse&lt;AccountId&gt;&gt;, DispatchError&gt; {
 		// 	Ok(Msa::fetch_msa_keys(msa_id))

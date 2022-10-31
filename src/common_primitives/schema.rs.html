@@ -73,12 +73,6 @@
 <span id="73">73</span>
 <span id="74">74</span>
 <span id="75">75</span>
-<span id="76">76</span>
-<span id="77">77</span>
-<span id="78">78</span>
-<span id="79">79</span>
-<span id="80">80</span>
-<span id="81">81</span>
 </pre><pre class="rust"><code><span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span><span class="kw">crate</span>::utils;
 <span class="kw">use </span>codec::{Decode, Encode, MaxEncodedLen};
@@ -142,12 +136,6 @@
 <span class="doccomment">/// This allows other pallets to resolve Schema information. With generic SchemaId
 </span><span class="kw">pub trait </span>SchemaProvider&lt;SchemaId&gt; {
 	<span class="doccomment">/// Gets the Schema details associated with this `SchemaId` if any
-	/// # Arguments
-	/// * `schema_id` - The `SchemaId` to lookup
-	/// # Returns
-	/// * `Option&lt;SchemaResponse&gt;`
-	/// # Remarks
-	/// This function is used to resolve a Schema from a SchemaId.
 	</span><span class="kw">fn </span>get_schema_by_id(schema_id: SchemaId) -&gt; <span class="prelude-ty">Option</span>&lt;SchemaResponse&gt;;
 }
 

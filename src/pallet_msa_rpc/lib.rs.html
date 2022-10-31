@@ -100,7 +100,41 @@
 <span id="100">100</span>
 <span id="101">101</span>
 <span id="102">102</span>
-</pre><pre class="rust"><code><span class="kw">use </span>codec::Codec;
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+</pre><pre class="rust"><code><span class="comment">// Strong Documentation Lints
+</span><span class="attribute">#![deny(
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
+)]
+
+</span><span class="doccomment">//! Custom APIs for [MSA](../pallet_msa/index.html)
+
+</span><span class="kw">use </span>codec::Codec;
 <span class="kw">use </span>common_helpers::rpc::<span class="kw-2">*</span>;
 <span class="kw">use </span>common_primitives::{
 	msa::{Delegator, MessageSourceId, Provider},
@@ -111,16 +145,21 @@
 <span class="kw">use </span>jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
+	tracing::warn,
 };
-<span class="kw">use </span>pallet_msa_runtime_api::MsaApi <span class="kw">as </span>MsaRuntimeApi;
+<span class="kw">use </span>pallet_msa_runtime_api::MsaRuntimeApi;
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_runtime::{generic::BlockId, traits::Block <span class="kw">as </span>BlockT};
 <span class="kw">use </span>std::sync::Arc;
 
-<span class="attribute">#[rpc(client, server)]
+<span class="doccomment">/// Frequency MSA Custom RPC API
+</span><span class="attribute">#[rpc(client, server)]
 </span><span class="kw">pub trait </span>MsaApi&lt;BlockHash, AccountId&gt; {
-	<span class="attribute">#[method(name = <span class="string">&quot;msa_checkDelegations&quot;</span>)]
+	<span class="doccomment">/// Check for a list of delegations
+	/// Given a single provider, test a list of potential delegators
+	/// At a given block number
+	</span><span class="attribute">#[method(name = <span class="string">&quot;msa_checkDelegations&quot;</span>)]
 	</span><span class="kw">fn </span>check_delegations(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		delegator_msa_ids: Vec&lt;MessageSourceId&gt;,
@@ -128,7 +167,8 @@
 		block_number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
 	) -&gt; RpcResult&lt;Vec&lt;(MessageSourceId, bool)&gt;&gt;;
 
-	<span class="attribute">#[method(name = <span class="string">&quot;msa_grantedSchemaIdsByMsaId&quot;</span>)]
+	<span class="doccomment">/// Retrieve the list of currently granted schemas given a delegator and provider pair
+	</span><span class="attribute">#[method(name = <span class="string">&quot;msa_grantedSchemaIdsByMsaId&quot;</span>)]
 	</span><span class="kw">fn </span>get_granted_schemas_by_msa_id(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		delegator_msa_id: MessageSourceId,
@@ -136,14 +176,14 @@
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;SchemaId&gt;&gt;&gt;;
 }
 
-<span class="doccomment">/// A struct that implements the `MessagesApi`.
+<span class="doccomment">/// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
 </span><span class="kw">pub struct </span>MsaHandler&lt;C, M&gt; {
 	client: Arc&lt;C&gt;,
 	_marker: std::marker::PhantomData&lt;M&gt;,
 }
 
 <span class="kw">impl</span>&lt;C, M&gt; MsaHandler&lt;C, M&gt; {
-	<span class="doccomment">/// Create new `MessagesApi` instance with the given reference to the client.
+	<span class="doccomment">/// Create new instance with the given reference to the client.
 	</span><span class="kw">pub fn </span>new(client: Arc&lt;C&gt;) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{ client, _marker: Default::default() }
 	}
@@ -182,8 +222,16 @@
 			.iter() <span class="comment">// TODO: Change back to par_iter() which has borrow panic
 			</span>.map(|<span class="kw-2">&amp;</span>id| {
 				<span class="kw">let </span>delegator = Delegator(id);
-				<span class="kw">let </span>has_delegation =
-					api.has_delegation(<span class="kw-2">&amp;</span>at, delegator, provider, block_number).unwrap();
+				<span class="comment">// api.has_delegation returns  Result&lt;bool, ApiError&gt;), so _or(false) should not happen,
+				// but just in case, protect against panic
+				</span><span class="kw">let </span>has_delegation: bool =
+					<span class="kw">match </span>api.has_delegation(<span class="kw-2">&amp;</span>at, delegator, provider, block_number) {
+						<span class="prelude-val">Ok</span>(result) =&gt; result,
+						<span class="prelude-val">Err</span>(e) =&gt; {
+							<span class="macro">warn!</span>(<span class="string">&quot;ApiError from has_delegation! {:?}&quot;</span>, e);
+							<span class="bool-val">false
+						</span>},
+					};
 				(id, has_delegation)
 			})
 			.collect())
