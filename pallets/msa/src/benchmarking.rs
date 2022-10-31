@@ -66,9 +66,9 @@ fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSource
 }
 
 fn add_delegation<T: Config>(delegator: Delegator, provider: Provider) {
-	let schemas: Vec<SchemaId> = vec![1, 2];
-	T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
-	assert_ok!(Msa::<T>::add_provider(provider, delegator, schemas));
+	let schema_ids: Vec<SchemaId> = (1..31 as u16).collect::<Vec<_>>();
+	T::SchemaValidator::set_schema_count(schema_ids.len().try_into().unwrap());
+	assert_ok!(Msa::<T>::add_provider(provider, delegator, schema_ids));
 }
 
 pub fn generate_test_signature() -> MultiSignature {
@@ -179,6 +179,23 @@ benchmarks! {
 	}
 
 	grant_schema_permissions {
+		let s in 5 .. 1005;
+
+		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
+		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
+		add_delegation::<T>(Delegator(delegator_msa_id), Provider(provider_msa_id.clone()));
+
+		for j in 2 .. s {
+			let (other, other_msa_id) = create_account_with_msa_id::<T>(j);
+			add_delegation::<T>(Delegator(other_msa_id), Provider(provider_msa_id.clone()));
+		}
+
+		let schema_ids: Vec<SchemaId> = (1..31 as u16).collect::<Vec<_>>();
+		T::SchemaValidator::set_schema_count(schema_ids.len().try_into().unwrap());
+
+	}: _ (RawOrigin::Signed(delegator), provider_msa_id, schema_ids)
+
+	revoke_schema_permissions {
 		let s in 5 .. 1005;
 
 		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
