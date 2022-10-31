@@ -80,6 +80,7 @@ impl Contains<Call> for BaseCallFilter {
 			Call::TechnicalCommittee(..) => true,
 			Call::Council(..) => true,
 			Call::Democracy(..) => true,
+			Call::Session(..) => true,
 			_ => false,
 		};
 		core_calls
