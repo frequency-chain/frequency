@@ -157,7 +157,9 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 			)
 		},
 		// Bootnodes
-		Vec::new(),
+		vec![
+			"/dns/0.boot.rococo.frequency.xyz/tcp/30333/p2p/5CkhzgoWc21tKSYATXhba2Rj1Nhu6subu8FEfbxPk9GFjGqd".parse().unwrap(),
+		],
 		// Telemetry
 		TelemetryEndpoints::new(vec![("wss://telemetry.frequency.xyz/submit/".into(), 0)]).ok(),
 		// Protocol ID
