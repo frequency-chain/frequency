@@ -651,24 +651,18 @@ pub mod pallet {
 		/// * [`Error::NoKeyExists`] - `origin` or `key` are not associated with `origin`'s MSA ID.
 		///
 		#[pallet::weight((T::WeightInfo::delete_msa_public_key(), DispatchClass::Normal, Pays::No))]
-		pub fn delete_msa_public_key(origin: OriginFor<T>, key: T::AccountId) -> DispatchResult {
-			let who = ensure_signed(origin)?;
+		pub fn delete_msa_public_key(
+			origin: OriginFor<T>,
+			public_key_to_delete: T::AccountId,
+		) -> DispatchResult {
+			let signing_key = ensure_signed(origin)?;
 
-			// The calling account can't remove itself
-			ensure!(who != key, Error::<T>::InvalidSelfRemoval);
+			let who_msa_id = Self::try_get_msa_from_public_key(&signing_key)?;
 
-			// Get the MSA id for the calling account
-			let who_msa_id = Self::ensure_valid_msa_key(&who)?;
-			// Get the MSA id for the account to be removed
-			let account_to_remove_msa_id = Self::ensure_valid_msa_key(&key)?;
-			// The calling account doesn't own the account that is to be removed
-			ensure!(who_msa_id == account_to_remove_msa_id, Error::<T>::NotKeyOwner);
-
-			// Remove the account for the calling MSA id
-			Self::delete_key_for_msa(who_msa_id, &key)?;
+			Self::delete_key_for_msa(who_msa_id, &public_key_to_delete)?;
 
 			// Deposit the event
-			Self::deposit_event(Event::PublicKeyDeleted { key });
+			Self::deposit_event(Event::PublicKeyDeleted { key: public_key_to_delete });
 
 			Ok(())
 		}
@@ -1460,15 +1454,35 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// 	owns the msa also associated with `key`
 	/// * `key`: the account id to revoke as an access key for account_id's msa
 	///
-	pub fn validate_key_revocation(
-		account_id: &T::AccountId,
-		key: &T::AccountId,
+	pub fn validate_key_delete(
+		signing_public_key: &T::AccountId,
+		public_key_to_delete: &T::AccountId,
 	) -> TransactionValidity {
 		const TAG_PREFIX: &str = "KeyRevocation";
-		let _msa_id: DelegatorId = Pallet::<T>::ensure_valid_msa_key(key)
-			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
-			.into();
-		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
+
+		ensure!(
+			signing_public_key != public_key_to_delete,
+			InvalidTransaction::Custom(ValidityError::InvalidSelfRemoval as u8)
+		);
+
+		let delegator_msa_id: Delegator =
+			Pallet::<T>::try_get_msa_from_public_key(&signing_public_key)
+				.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
+				.into();
+
+		let public_key_delete_msa_id: Delegator =
+			Pallet::<T>::try_get_msa_from_public_key(&public_key_to_delete)
+				.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
+				.into();
+
+		ensure!(
+			delegator_msa_id == public_key_delete_msa_id,
+			InvalidTransaction::Custom(ValidityError::NotKeyOwner as u8)
+		);
+
+		return ValidTransaction::with_tag_prefix(TAG_PREFIX)
+			.and_provides(signing_public_key)
+			.build()
 	}
 
 	/// Validates that a MSA being retired exists, does not belong to a registered provider, and
@@ -1514,6 +1528,10 @@ pub enum ValidityError {
 	InvalidRegisteredProviderCannotBeRetired,
 	/// More than one account key exists for the MSA during retire attempt
 	InvalidMoreThanOneKeyExists,
+	/// A transaction's Origin (AccountId) may not remove itself
+	InvalidSelfRemoval,
+	/// NotKeyOwner
+	NotKeyOwner,
 }
 
 impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
@@ -1584,7 +1602,7 @@ where
 			Some(Call::revoke_delegation_by_delegator { provider_msa_id, .. }) =>
 				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id),
 			Some(Call::delete_msa_public_key { key, .. }) =>
-				CheckFreeExtrinsicUse::<T>::validate_key_revocation(who, key),
+				CheckFreeExtrinsicUse::<T>::validate_key_delete(who, key),
 			Some(Call::retire_msa { .. }) => CheckFreeExtrinsicUse::<T>::ensure_msa_can_retire(who),
 			_ => return Ok(Default::default()),
 		}
