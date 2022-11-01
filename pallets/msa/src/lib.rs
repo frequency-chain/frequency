@@ -619,9 +619,9 @@ pub mod pallet {
 			ensure!(who != key, Error::<T>::InvalidSelfRemoval);
 
 			// Get the MSA id for the calling account
-			let who_msa_id = Self::try_get_msa_from_account_id(&who)?;
+			let who_msa_id = Self::try_get_msa_from_public_key(&who)?;
 			// Get the MSA id for the account to be removed
-			let account_to_remove_msa_id = Self::try_get_msa_from_account_id(&key)?;
+			let account_to_remove_msa_id = Self::try_get_msa_from_public_key(&key)?;
 			// The calling account doesn't own the account that is to be removed
 			ensure!(who_msa_id == account_to_remove_msa_id, Error::<T>::NotKeyOwner);
 
@@ -753,12 +753,12 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			// Get the MSA id of the origin which can trigger NoKeyExists error
-			let msa_id = Self::try_get_msa_from_account_id(&who)?;
+			let msa_id = Self::try_get_msa_from_public_key(&who)?;
 
 			let delegator = Delegator(msa_id);
 
 			// Remove delegator from all delegator<->provider delegations
-			Self::remove_delegator(delegator)?;
+			Self::delete_delegation_relationship(delegator);
 
 			// Delete the last and only account key and deposit the "PublicKeyDeleted" event
 			Self::delete_key_for_msa(msa_id, &who)?;
@@ -1097,9 +1097,8 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Removes all delegations from the specified delegator MSA id to providers
-	pub fn remove_delegator(delegator: Delegator) -> DispatchResult {
+	pub fn delete_delegation_relationship(delegator: Delegator) {
 		_ = DelegatorAndProviderToDelegation::<T>::clear_prefix(delegator, u32::max_value(), None);
-		Ok(())
 	}
 
 	/// Attempts to retrieve the MSA id for an account
@@ -1107,7 +1106,7 @@ impl<T: Config> Pallet<T> {
 	/// # Errors
 	/// * [`Error::NoKeyExists`]
 	///
-	pub fn try_get_msa_from_account_id(
+	pub fn try_get_msa_from_public_key(
 		key: &T::AccountId,
 	) -> Result<MessageSourceId, DispatchError> {
 		let info = Self::get_msa_by_public_key(key).ok_or(Error::<T>::NoKeyExists)?;
@@ -1126,7 +1125,7 @@ impl<T: Config> Pallet<T> {
 	// pub fn fetch_msa_keys(msa_id: MessageSourceId) -> Vec<KeyInfoResponse<T::AccountId>> {
 	// 	let mut response = Vec::new();
 	// 	for key in Self::get_msa_keys(msa_id) {
-	// 		if let Ok(_info) = Self::try_get_msa_from_account_id(&key) {
+	// 		if let Ok(_info) = Self::try_get_msa_from_public_key(&key) {
 	// 			response.push(KeyInfoResponse { key, msa_id });
 	// 		}
 	// 	}
@@ -1136,7 +1135,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Checks that a key is associated to an MSA and has not been revoked.
 	pub fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
-		let msa_id = Self::try_get_msa_from_account_id(key)?;
+		let msa_id = Self::try_get_msa_from_public_key(key)?;
 
 		Ok(msa_id)
 	}
