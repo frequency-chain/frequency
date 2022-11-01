@@ -97,6 +97,7 @@ use sp_std::prelude::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use frame_support::log::warn;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -752,18 +753,23 @@ pub mod pallet {
 			// Check and get the account id from the origin
 			let who = ensure_signed(origin)?;
 
-			let msa_id = Self::ensure_valid_msa_key(&who)?;
-
-			let delegator = Delegator(msa_id);
-
-			// Remove delegator from all delegator<->provider delegations
-			Self::delete_delegation_relationship(delegator);
-
 			// Delete the last and only account key and deposit the "PublicKeyDeleted" event
-			Self::delete_key_for_msa(msa_id, &who)?;
-			Self::deposit_event(Event::PublicKeyDeleted { key: who });
-
-			Self::deposit_event(Event::MsaRetired { msa_id });
+			// check for valid MSA is in SignedExtension.
+			match Self::get_msa_by_public_key(&who) {
+				Some(msa_id) => {
+					let delegator = Delegator(msa_id);
+					Self::delete_delegation_relationship(delegator);
+					Self::delete_key_for_msa(msa_id, &who)?;
+					Self::deposit_event(Event::PublicKeyDeleted { key: who });
+					Self::deposit_event(Event::MsaRetired { msa_id });
+				},
+				None => {
+					warn!(
+						"Did not find MSA for account {:?}, SignedExtension did not catch.",
+						who
+					);
+				},
+			}
 			Ok(())
 		}
 	}
@@ -938,8 +944,7 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::NoKeyExists`]
 	///
 	pub fn ensure_msa_owner(who: &T::AccountId, msa_id: MessageSourceId) -> DispatchResult {
-		let provider_msa_id = Self::get_owner_of(who).ok_or(Error::<T>::NoKeyExists)?;
-
+		let provider_msa_id = Self::ensure_valid_msa_key(who)?;
 		ensure!(provider_msa_id == msa_id, Error::<T>::NotMsaOwner);
 
 		Ok(())
@@ -1442,10 +1447,13 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	///
 	pub fn ensure_msa_can_retire(account_id: &T::AccountId) -> TransactionValidity {
 		const TAG_PREFIX: &str = "MSARetirement";
+
+		// Verify the msa to be retired exists
 		let msa_id = Pallet::<T>::ensure_valid_msa_key(account_id)
 			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
 			.into();
 
+		// Verify the MSA is not a registered provider
 		// Invalid transaction error "InvalidRegisteredProviderCannotBeRetired" if the MSA id is a registered provider
 		ensure!(
 			!Pallet::<T>::is_registered_provider(msa_id),
@@ -1454,6 +1462,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			)
 		);
 
+		// Verify this is the last access key associated with the MSA
 		// Invalid transaction error "MoreThanOneKeyExists" if the MSA has more than one account key.
 		let key_count = Pallet::<T>::get_public_key_count_by_msa_id(msa_id);
 		ensure!(
