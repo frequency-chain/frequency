@@ -1,0 +1,18 @@
+{
+    "name": "frequency-integration-tests",
+    "version": "1.0.0",
+    "description": "Integration tests for the Frequency project",
+    "scripts": {
+        "test": "mocha **/*.test.js --exit"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "Apache-2.0",
+    "dependencies": {
+        "@frequency-chain/api-augment": "v0.0.0-6ddff6",
+        "@polkadot/api": "9.6.2"
+    },
+    "devDependencies": {
+        "mocha": "^10.1.0"
+    }
+}
