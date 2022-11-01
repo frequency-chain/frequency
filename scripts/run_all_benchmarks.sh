@@ -5,7 +5,9 @@ THIS_DIR=$( dirname -- "$0"; )
 PROJECT=${1:-$THIS_DIR/..}
 RUNTIME=$PROJECT/target/production/frequency
 BENCHMARK="$RUNTIME benchmark pallet "
-EXTERNAL_PALLETS=(orml_vesting pallet_scheduler pallet_democracy pallet_treasury pallet_preimage pallet_utility)
+# TODO: pallet_collator_selection and pallet_collective benchmarks fail due to errors in the
+#  actual benchmark code. See Issue #608
+EXTERNAL_PALLETS=(orml_vesting pallet_balances pallet_timestamp pallet_session pallet_scheduler pallet_democracy pallet_treasury pallet_preimage pallet_utility)
 CUSTOM_PALLETS=(messages msa schemas)
 
 function exit_err() { echo "❌ 💔" ; exit 1; }
@@ -26,7 +28,7 @@ function run_benchmark() {
   --template=$5
 }
 
-cargo build --profile production --features runtime-benchmarks --features all-frequency-features --workspace || exit_err
+#cargo build --profile production --features runtime-benchmarks --features all-frequency-features --workspace || exit_err
 
 for external_pallet in "${EXTERNAL_PALLETS[@]}"; do
   output=${PROJECT}/runtime/common/src/weights/${external_pallet}.rs
