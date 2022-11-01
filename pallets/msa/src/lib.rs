@@ -55,6 +55,19 @@
 )]
 
 use codec::{Decode, Encode};
+use frame_support::{
+	dispatch::DispatchResult, ensure, pallet_prelude::*, traits::IsSubType, weights::DispatchInfo,
+};
+use frame_system::pallet_prelude::*;
+use scale_info::TypeInfo;
+use sp_core::crypto::AccountId32;
+use sp_runtime::{
+	traits::{Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify, Zero},
+	DispatchError, MultiSignature,
+};
+use sp_std::prelude::*;
+
+pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, Delegator, MsaLookup, MsaValidator, Provider,
@@ -62,17 +75,9 @@ use common_primitives::{
 	},
 	schema::{SchemaId, SchemaValidator},
 };
-use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 pub use pallet::*;
-use scale_info::TypeInfo;
-use sp_runtime::{
-	traits::{Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify, Zero},
-	DispatchError, MultiSignature,
-};
-
-use sp_core::crypto::AccountId32;
-pub mod types;
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas};
+pub use weights::*;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -80,24 +85,18 @@ mod benchmarking;
 mod mock;
 #[cfg(test)]
 mod tests;
+pub mod types;
 
 #[cfg(test)]
 mod replay_tests;
 
 pub mod weights;
 
-pub use weights::*;
-
-pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
-
-use frame_support::pallet_prelude::*;
-use frame_system::pallet_prelude::*;
-use sp_std::prelude::*;
-
 #[frame_support::pallet]
 pub mod pallet {
-	use super::*;
 	use frame_support::log::warn;
+
+	use super::*;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -143,7 +142,7 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	/// Storage type for the current MSA identifier maximum.
@@ -214,7 +213,7 @@ pub mod pallet {
 	>;
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A new Message Service Account was created with a new MessageSourceId
 		MsaCreated {
@@ -764,10 +763,7 @@ pub mod pallet {
 					Self::deposit_event(Event::MsaRetired { msa_id });
 				},
 				None => {
-					warn!(
-						"Did not find MSA for account {:?}, SignedExtension did not catch.",
-						who
-					);
+					warn!("Did not find MSA for account {:?}, SignedExtension did not catch.", who);
 				},
 			}
 			Ok(())
@@ -1215,7 +1211,7 @@ impl<T: Config> Pallet<T> {
 	/// Check if enough blocks have passed to reset bucket mortality storage.
 	/// If so:
 	///     1. delete all the stored bucket/signature values with key1 = bucket num
-	///	   2. add the WeightInfo proportional to the storage read/writes to the block weight
+	///       2. add the WeightInfo proportional to the storage read/writes to the block weight
 	/// If not, don't do anything.
 	///
 	fn reset_virtual_bucket_if_needed(current_block: T::BlockNumber) -> Weight {
