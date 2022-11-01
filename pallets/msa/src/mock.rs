@@ -179,8 +179,7 @@ pub fn test_create_delegator_msa_with_provider() -> (u64, Public) {
 	assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 	assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
 
-	let provider_msa_id =
-		Msa::try_get_msa_from_public_key(&AccountId32::new(provider_account.0)).unwrap();
+	let provider_msa_id = Msa::ensure_valid_msa_key(&AccountId32::new(provider_account.0)).unwrap();
 
 	let (delegator_signature, add_provider_payload) =
 		create_and_sign_add_provider_payload(delegator_key_pair, provider_msa_id);

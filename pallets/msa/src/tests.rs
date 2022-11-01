@@ -406,7 +406,7 @@ fn test_retire_msa_success() {
 		// Create provider account and get its MSA ID (u64)
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 		let provider_msa_id =
-			Msa::try_get_msa_from_public_key(&AccountId32::new(provider_account.0)).unwrap();
+			Msa::ensure_valid_msa_key(&AccountId32::new(provider_account.0)).unwrap();
 
 		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
@@ -537,12 +537,12 @@ pub fn add_provider_to_msa_is_success() {
 		// Create provider account and get its MSA ID (u64)
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 		let provider_msa =
-			Msa::try_get_msa_from_public_key(&AccountId32::new(provider_account.0)).unwrap();
+			Msa::ensure_valid_msa_key(&AccountId32::new(provider_account.0)).unwrap();
 
 		// Create delegator account and get its MSA ID (u64)
 		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
 		let delegator_msa =
-			Msa::try_get_msa_from_public_key(&AccountId32::new(delegator_account.0)).unwrap();
+			Msa::ensure_valid_msa_key(&AccountId32::new(delegator_account.0)).unwrap();
 
 		// Register provider
 		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
@@ -689,7 +689,7 @@ pub fn grant_delegation_throws_unauthorized_delegator_error() {
 		let delegator_account = delegator_key_pair.public();
 		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
 		let delegator_msa_id =
-			Msa::try_get_msa_from_public_key(&AccountId32::new(delegator_account.0)).unwrap();
+			Msa::ensure_valid_msa_key(&AccountId32::new(delegator_account.0)).unwrap();
 
 		let expiration: BlockNumber = 10;
 		let add_provider_payload = AddProvider::new(delegator_msa_id, None, expiration);
@@ -971,7 +971,7 @@ pub fn revoke_delegation_by_delegatoris_successful() {
 		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
 		let provider_msa =
-			Msa::try_get_msa_from_public_key(&AccountId32::new(provider_account.0)).unwrap();
+			Msa::ensure_valid_msa_key(&AccountId32::new(provider_account.0)).unwrap();
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
@@ -1007,7 +1007,7 @@ pub fn revoke_provider_is_successful() {
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		let provider_msa =
-			Msa::try_get_msa_from_public_key(&AccountId32::new(provider_account.0)).unwrap();
+			Msa::ensure_valid_msa_key(&AccountId32::new(provider_account.0)).unwrap();
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
@@ -1023,7 +1023,7 @@ pub fn revoke_provider_is_successful() {
 		));
 
 		let delegator_msa =
-			Msa::try_get_msa_from_public_key(&AccountId32::new(delegator_account.0)).unwrap();
+			Msa::ensure_valid_msa_key(&AccountId32::new(delegator_account.0)).unwrap();
 
 		let provider = Provider(provider_msa);
 		let delegator = Delegator(delegator_msa);
@@ -1084,7 +1084,7 @@ fn revoke_provider_throws_error_when_delegation_already_revoked() {
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		let provider_msa =
-			Msa::try_get_msa_from_public_key(&AccountId32::new(provider_account.0)).unwrap();
+			Msa::ensure_valid_msa_key(&AccountId32::new(provider_account.0)).unwrap();
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
