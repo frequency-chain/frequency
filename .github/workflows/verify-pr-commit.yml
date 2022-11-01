@@ -14,7 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       rust: ${{steps.filter.outputs.rust}}
-      js: ${{steps.filter.outputs.rust}}
+      build-binary: ${{steps.filter.outputs.build-binary}}
+      cargo-lock: ${{steps.filter.outputs.cargo-lock}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -30,20 +31,20 @@ jobs:
               - '.rustfmt.toml'
               - '**/Cargo.toml'
               - '**/Cargo.lock'
-              - '.github/workflows/*'
-            js:
-              - "js/api-augment/**"
+            build-binary:
               - '**/*.rs'
+              - '**/*.hbs'
+              - '.rustfmt.toml'
               - '**/Cargo.toml'
               - '**/Cargo.lock'
-              - '.github/workflows/*'
+              - 'js/api-augment/**'
             cargo-lock:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
 
   build-binary:
     needs: changes
-    if: ${{needs.changes.outputs.rust == 'true'}}
+    if: needs.changes.outputs.build-binary == 'true'
     name: Compile Frequency Project
     runs-on: ubuntu-latest
     steps:
@@ -82,7 +83,7 @@ jobs:
 
   check-for-vulnerable-crates:
     needs: changes
-    if: ${{needs.changes.outputs.cargo-lock == 'true'}}
+    if: needs.changes.outputs.cargo-lock == 'true'
     name: Check for Vulnerable Crates
     runs-on: ubuntu-latest
     steps:
@@ -97,7 +98,7 @@ jobs:
 
   check-rust-code-format:
     needs: changes
-    if: ${{needs.changes.outputs.rust == 'true'}}
+    if: needs.changes.outputs.rust == 'true'
     name: Check Rust Code Format
     runs-on: ubuntu-latest
     steps:
@@ -115,7 +116,7 @@ jobs:
 
   lint-rust-code:
     needs: changes
-    if: ${{needs.changes.outputs.rust == 'true'}}
+    if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
     runs-on: ubuntu-latest
     steps:
@@ -137,7 +138,7 @@ jobs:
 
   check-rust-docs:
     needs: changes
-    if: ${{needs.changes.outputs.rust == 'true'}}
+    if: needs.changes.outputs.rust == 'true'
     name: Check Rust Docs
     runs-on: ubuntu-latest
     steps:
@@ -156,7 +157,7 @@ jobs:
 
   check-rust-packages-and-deps:
     needs: changes
-    if: ${{needs.changes.outputs.rust == 'true'}}
+    if: needs.changes.outputs.rust == 'true'
     name: Check Rust Packages and Dependencies
     runs-on: ubuntu-latest
     steps:
@@ -173,7 +174,7 @@ jobs:
 
   run-rust-tests:
     needs: changes
-    if: ${{needs.changes.outputs.rust == 'true'}}
+    if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
     runs-on: ubuntu-latest
     steps:
@@ -195,7 +196,7 @@ jobs:
 
   calc-code-coverage:
     needs: changes
-    if: ${{needs.changes.outputs.rust == 'true'}}
+    if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
     runs-on: ubuntu-latest
     steps:
@@ -211,14 +212,13 @@ jobs:
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
         with:
-          version: "0.20.1"
-          override: true
+          version: "0.22.0"
           # Tarpaulin Docs https://github.com/xd009642/tarpaulin
           # -e for exclude
           args: |
             -v --no-fail-fast --workspace
             -e frequency frequency-cli frequency-runtime frequency-rococo-runtime frequency-service
-            --exclude-files **/mock.rs **/weights.rs **/weights/*
+            --exclude-files **/mock.rs **/weights.rs **/weights/* **/benchmarking.rs
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
         with:
@@ -227,9 +227,7 @@ jobs:
 
   verify-js-api-augment:
     needs:
-      - changes
       - build-binary
-    if: ${{needs.changes.outputs.js == 'true'}}
     name: Verify JS API Augment
     runs-on: ubuntu-latest
     steps:

@@ -1,10 +1,12 @@
 //! # Schemas Pallet
-//!
 //! The Schemas pallet provides functionality for handling schemas.
 //!
-//! - [`Config`]
-//! - [`Call`]
-//! - [`Pallet`]
+//! - [Configuration: `Config`](Config)
+//! - [Extrinsics: `Call`](Call)
+//! - [Runtime API: `SchemasRuntimeApi`](../pallet_schemas_runtime_api/trait.SchemasRuntimeApi.html)
+//! - [Custom RPC API: `SchemasApiServer`](../pallet_schemas_rpc/trait.SchemasApiServer.html)
+//! - [Event Enum: `Event`](Event)
+//! - [Error Enum: `Error`](Error)
 //!
 //! ## Overview
 //!
@@ -22,23 +24,17 @@
 //! - Retrieving schemas by their id.
 //!
 //!
-//! ### Terminology
+//! ## Terminology
 //!
 //! - **Schema:** The structure that defines how a Message is stored and structured.
-//!
 //! - **Schema Model:** Serialization/Deserialization details of the schema
-//!
 //! - **Schema Model Type:** The type of the following Serialization/Deserialization. It can be
 //!   Avro, Parquet or ...
 //!
-//! ### Dispatchable Functions
+//! ## Implementations
 //!
-//! - `create_schema` - Registers a new schema after some initial validation.
-//! - `set_max_schema_model_bytes` - Sets the maximum schema model size (Bytes) by governance.
-//!
-//! The Schema pallet implements the following traits:
-//!
-//! - [`SchemaProvider`](common_primitives::schema::SchemaProvider<SchemaId>): Functions for accessing and validating Schemas.  This implementation is what is used in the runtime.
+//! - [`SchemaValidator`](../common_primitives/schema/trait.SchemaValidator.html): Functions for accessing and validating Schemas. This implementation is what is used in the runtime.
+//! - [`SchemaProvider`](../common_primitives/schema/trait.SchemaProvider.html): Allows another pallet to resolve schema information.
 //!
 //! ## Genesis config
 //!
@@ -122,8 +118,6 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Schema is malformed
 		InvalidSchema,
-		/// The maximum number of schemas is stored in the database.
-		TooManySchemas,
 		/// The schema model exceeds the maximum length allowed
 		ExceedsMaxSchemaModelBytes,
 		/// The governance schema model max value provided is too large (greater than the BoundedVec size)
@@ -199,21 +193,17 @@ pub mod pallet {
 		/// Adds a given schema to storage. The schema in question must be of length
 		/// between the min and max model size allowed for schemas (see pallet
 		/// constants above). If the pallet's maximum schema limit has been
-		/// fulfilled by the time this extrinsic is called, a TooManySchemas error
+		/// fulfilled by the time this extrinsic is called, a SchemaCountOverflow error
 		/// will be thrown.
 		///
-		/// # Arguments
-		/// * `origin` - The originator of the transaction
-		/// * `model` - The new schema model data
-		/// * 'model_type' - The formatting type of the model data
-		/// # Returns
-		/// * `DispatchResult`
+		/// # Events
+		/// * [`Event::SchemaRegistered`]
 		///
 		/// # Errors
-		/// * [`Error::<T>::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
-		/// * [`Error::<T>::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
-		/// * [`Error::<T>::TooManySchemas`] - The maximum number of schemas has been met
-		/// * [`Error::<T>::SchemaCountOverflow`] - The schema count has exceeded its bounds
+		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
+		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
+		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
+		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		///
 		#[pallet::weight(< T as Config >::WeightInfo::create_schema(model.len() as u32, 1000))]
 		pub fn create_schema(
@@ -240,14 +230,27 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Set a new value for the Schema maximum number of bytes.  Must be <= the limit of the
-		/// Schema BoundedVec used for registration.
+		/// Root and Governance can set a new max value for Schema bytes.
+		/// Must be <= the limit of the Schema BoundedVec used for registration.
+		///
+		/// # Requires
+		/// * Root Origin
+		///
+		/// # Events
+		/// * [`Event::SchemaMaxSizeChanged`]
+		///
+		/// # Errors
+		/// * [`Error::ExceedsMaxSchemaModelBytes`] - Cannot set to above the hard coded maximum [`Config::SchemaModelMaxBytesBoundedVecLimit`]
+		///
 		#[pallet::weight(30_000)]
-		pub fn set_max_schema_model_bytes(origin: OriginFor<T>, max_size: u32) -> DispatchResult {
+		pub fn set_max_schema_model_bytes(
+			origin: OriginFor<T>,
+			#[pallet::compact] max_size: u32,
+		) -> DispatchResult {
 			ensure_root(origin)?;
 			ensure!(
 				max_size <= T::SchemaModelMaxBytesBoundedVecLimit::get(),
-				Error::<T>::ExceedsGovernanceSchemaModelMaxValue
+				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 			GovernanceSchemaModelMaxBytes::<T>::set(max_size);
 			Self::deposit_event(Event::SchemaMaxSizeChanged(max_size));
@@ -262,6 +265,8 @@ pub mod pallet {
 			<CurrentSchemaIdentifierMaximum<T>>::set(n);
 		}
 
+		/// Build the [`Schema`] and insert it into storage
+		/// Updates the [`CurrentSchemaIdentifierMaximum`] storage
 		fn add_schema(
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
@@ -291,6 +296,11 @@ pub mod pallet {
 		}
 
 		/// Ensures that a given u8 Vector conforms to a recognized Parquet shape
+		///
+		/// # Errors
+		/// * [`Error::InvalidSchema`]
+		/// * [`Error::SchemaCountOverflow`]
+		///
 		pub fn ensure_valid_model(
 			model_type: &ModelType,
 			model: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
@@ -307,6 +317,10 @@ pub mod pallet {
 		}
 
 		/// Get the next available schema id
+		///
+		/// # Errors
+		/// * [`Error::SchemaCountOverflow`]
+		///
 		fn get_next_schema_id() -> Result<SchemaId, DispatchError> {
 			let next = Self::get_current_schema_identifier_maximum()
 				.checked_add(1)

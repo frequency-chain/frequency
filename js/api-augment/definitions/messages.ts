@@ -1,6 +1,6 @@
 export default {
   rpc: {
-    getBySchema: {
+    getBySchemaId: {
       description: "Get messages by schemaId paginated",
       params: [
         {

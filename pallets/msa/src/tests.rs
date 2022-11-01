@@ -10,7 +10,7 @@ use sp_runtime::{traits::SignedExtension, MultiSignature};
 use crate::{
 	ensure,
 	mock::*,
-	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
+	types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, CurrentMsaIdentifierMaximum, DispatchResult, Error, Event,
 	PayloadSignatureRegistry, ProviderToRegistryEntry, ValidityError,
 };
@@ -75,7 +75,7 @@ fn it_throws_error_when_key_verification_fails() {
 
 		let fake_account = key_pair_2.public();
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
@@ -103,7 +103,7 @@ fn it_throws_error_when_not_msa_owner() {
 
 		let new_account = key_pair_2.public();
 
-		let add_new_key_data = AddKeyData { nonce: 0, msa_id: new_msa_id, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
@@ -126,7 +126,7 @@ fn it_throws_error_when_not_msa_owner() {
 fn it_throws_error_when_for_duplicate_key() {
 	new_test_ext().execute_with(|| {
 		let (new_msa_id, _) = create_account();
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
@@ -148,7 +148,7 @@ fn add_key_with_more_than_allowed_should_panic() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let (new_msa_id, _) = create_account();
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		for _ in 1..<Test as Config>::MaxKeys::get() {
@@ -197,7 +197,7 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 
 		let new_key = key_pair_2.public();
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
@@ -236,7 +236,7 @@ fn add_key_with_expired_proof_fails() {
 
 		// The current block is 1, therefore setting the proof expiration to 1 shoud cause
 		// the extrinsic to fail because the proof has expired.
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 1 };
+		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 1 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
@@ -268,7 +268,7 @@ fn add_key_with_proof_too_far_into_future_fails() {
 		// The current block is 1, therefore setting the proof expiration to EXPIRATION_BLOCK_VALIDITY_GAP + 1
 		// shoud cause the extrinsic to fail because the proof is only valid for EXPIRATION_BLOCK_VALIDITY_GAP
 		// more blocks.
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: new_msa_id, expiration: 202 };
+		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 202 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let signature: MultiSignature = key_pair_2.sign(&encode_data_new_key_data).into();
@@ -356,7 +356,7 @@ fn test_retire_msa_success() {
 		let new_account1 = key_pair1.public();
 		let (msa_id2, _) = create_account();
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: msa_id2, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: msa_id2, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 		let signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
 		assert_noop!(
@@ -378,7 +378,7 @@ fn test_retire_msa_success() {
 		// Create provider account and get its MSA ID (u64)
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 		let provider_msa_id =
-			Msa::try_get_msa_from_account_id(&AccountId32::new(provider_account.0)).unwrap();
+			Msa::try_get_msa_from_public_key(&AccountId32::new(provider_account.0)).unwrap();
 
 		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
@@ -509,12 +509,12 @@ pub fn add_provider_to_msa_is_success() {
 		// Create provider account and get its MSA ID (u64)
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 		let provider_msa =
-			Msa::try_get_msa_from_account_id(&AccountId32::new(provider_account.0)).unwrap();
+			Msa::try_get_msa_from_public_key(&AccountId32::new(provider_account.0)).unwrap();
 
 		// Create delegator account and get its MSA ID (u64)
 		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
 		let delegator_msa =
-			Msa::try_get_msa_from_account_id(&AccountId32::new(delegator_account.0)).unwrap();
+			Msa::try_get_msa_from_public_key(&AccountId32::new(delegator_account.0)).unwrap();
 
 		// Register provider
 		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
@@ -661,7 +661,7 @@ pub fn grant_delegation_throws_unauthorized_delegator_error() {
 		let delegator_account = delegator_key_pair.public();
 		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
 		let delegator_msa_id =
-			Msa::try_get_msa_from_account_id(&AccountId32::new(delegator_account.0)).unwrap();
+			Msa::try_get_msa_from_public_key(&AccountId32::new(delegator_account.0)).unwrap();
 
 		let expiration: BlockNumber = 10;
 		let add_provider_payload = AddProvider::new(delegator_msa_id, None, expiration);
@@ -943,7 +943,7 @@ pub fn revoke_delegation_by_delegatoris_successful() {
 		assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
 
 		let provider_msa =
-			Msa::try_get_msa_from_account_id(&AccountId32::new(provider_account.0)).unwrap();
+			Msa::try_get_msa_from_public_key(&AccountId32::new(provider_account.0)).unwrap();
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
@@ -979,7 +979,7 @@ pub fn revoke_provider_is_successful() {
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		let provider_msa =
-			Msa::try_get_msa_from_account_id(&AccountId32::new(provider_account.0)).unwrap();
+			Msa::try_get_msa_from_public_key(&AccountId32::new(provider_account.0)).unwrap();
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
@@ -995,7 +995,7 @@ pub fn revoke_provider_is_successful() {
 		));
 
 		let delegator_msa =
-			Msa::try_get_msa_from_account_id(&AccountId32::new(delegator_account.0)).unwrap();
+			Msa::try_get_msa_from_public_key(&AccountId32::new(delegator_account.0)).unwrap();
 
 		let provider = Provider(provider_msa);
 		let delegator = Delegator(delegator_msa);
@@ -1056,7 +1056,7 @@ fn revoke_provider_throws_error_when_delegation_already_revoked() {
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
 		let provider_msa =
-			Msa::try_get_msa_from_account_id(&AccountId32::new(provider_account.0)).unwrap();
+			Msa::try_get_msa_from_public_key(&AccountId32::new(provider_account.0)).unwrap();
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
@@ -1291,7 +1291,7 @@ pub fn delegation_expired() {
 
 		assert_noop!(
 			Msa::ensure_valid_delegation(provider, delegator, None),
-			Error::<Test>::DelegationExpired
+			Error::<Test>::DelegationRevoked
 		);
 	})
 }
@@ -1458,12 +1458,12 @@ fn signed_extension_validation_failure_on_msa_key_deleted() {
 /// Expected error: KeyAlreadyRegistered
 #[test]
 fn double_add_key_two_msa_fails() {
-	new_test_ext().execute_with(|| {		
+	new_test_ext().execute_with(|| {
 		let (msa_id1, _) = create_account();
 		let (_msa_id2, _) = create_account();
 
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: msa_id1, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: msa_id1, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 		let signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
 		assert_noop!(
@@ -1483,14 +1483,14 @@ fn double_add_key_two_msa_fails() {
 /// Assert that when a key has been deleted from one MSA, that it may be added to a different MSA.
 #[test]
 fn add_removed_key_to_msa_pass() {
-	new_test_ext().execute_with(|| {		
+	new_test_ext().execute_with(|| {
 		let (msa_id1, _) = create_account();
 		let (msa_id2, _) = create_account();
 
 
 		assert_ok!(Msa::delete_key_for_msa(msa_id1, &new_account1.into()));
 
-		let add_new_key_data = AddKeyData { nonce: 1, msa_id: msa_id2, expiration: 10 };
+		let add_new_key_data = AddKeyData { msa_id: msa_id2, expiration: 10 };
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 		let signature_owner: MultiSignature = key_pair2.sign(&encode_data_new_key_data).into();
 		let signature_new_key: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
@@ -1844,7 +1844,7 @@ pub fn delegation_expired_long_back() {
 
 		assert_noop!(
 			Msa::ensure_valid_delegation(provider, delegator, Some(151)),
-			Error::<Test>::DelegationExpired
+			Error::<Test>::DelegationRevoked
 		);
 		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, Some(6)));
 		assert_noop!(
@@ -1863,7 +1863,7 @@ pub fn ensure_all_schema_ids_are_valid_errors() {
 			Error::<Test>::InvalidSchemaId
 		);
 
-		let schema_ids = vec![1, 2, 3];
+		let schema_ids = (1..32).collect::<Vec<_>>();
 		assert_noop!(
 			Msa::ensure_all_schema_ids_are_valid(&schema_ids),
 			Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation
@@ -2077,11 +2077,9 @@ pub fn add_msa_key_replay_fails() {
 		];
 
 		let (msa_id, _) = create_account();
-		let nonce = 1u32;
 		for tc in test_cases {
 			System::set_block_number(tc.current);
-			let add_new_key_data =
-				AddKeyData { nonce, msa_id: new_msa_id, expiration: tc.mortality };
+			let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: tc.mortality };
 			let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 			let (new_key_pair, _) = sr25519::Pair::generate();
 			let new_delegator_account = new_key_pair.public();
@@ -2107,37 +2105,419 @@ pub fn add_msa_key_replay_fails() {
 }
 
 #[test]
-pub fn initialize_schema_permissions_success() {
+fn grant_permissions_for_schemas_errors_when_no_delegation() {
+	new_test_ext().execute_with(|| {
+		let delegator = Delegator(2);
+		let provider = Provider(1);
+		let schema_ids = vec![1, 2];
+		let result = Msa::grant_permissions_for_schemas(delegator, provider, schema_ids);
+
+		assert_noop!(result, Error::<Test>::DelegationNotFound);
+	});
+}
+
+#[test]
+fn grant_permissions_for_schemas_errors_when_invalid_schema_id() {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(1);
+		let delegator = Delegator(2);
+		let provider = Provider(1);
+		let schema_grants = vec![1];
+
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		let additional_grants = vec![2];
+		let result = Msa::grant_permissions_for_schemas(delegator, provider, additional_grants);
+
+		assert_noop!(result, Error::<Test>::InvalidSchemaId);
+	});
+}
+
+#[test]
+fn grant_permissions_for_schemas_errors_when_exceeds_max_schema_grants() {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(31);
+
+		let delegator = Delegator(2);
+		let provider = Provider(1);
+		let schema_grants = vec![1];
+
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		let additional_grants = (2..32 as u16).collect::<Vec<_>>();
+		let result = Msa::grant_permissions_for_schemas(delegator, provider, additional_grants);
+
+		assert_noop!(result, Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation);
+	});
+}
+
+#[test]
+fn grant_permissions_for_schema_success() {
 	new_test_ext().execute_with(|| {
 		set_schema_count::<Test>(3);
-		let schema_ids = vec![1];
-		let result = Msa::initialize_schema_permissions(schema_ids);
 
+		let delegator = Delegator(2);
+		let provider = Provider(1);
+		let schema_grants = vec![1];
+
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
 		let mut expected = BoundedBTreeMap::<
 			SchemaId,
-			Option<<Test as frame_system::Config>::BlockNumber>,
+			<Test as frame_system::Config>::BlockNumber,
 			<Test as Config>::MaxSchemaGrantsPerDelegation,
 		>::new();
 
-		expected.try_insert(1, None).expect("all good");
+		expected.try_insert(1, Default::default()).expect("testing expected");
+
+		assert_eq!(delegation_relationship.schema_permissions, expected);
+
+		// Add new schema ids
+		let additional_grants = vec![2];
+		let result = Msa::grant_permissions_for_schemas(delegator, provider, additional_grants);
+
+		assert_ok!(result);
+
+		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
+		let mut expected = BoundedBTreeMap::<
+			SchemaId,
+			<Test as frame_system::Config>::BlockNumber,
+			<Test as Config>::MaxSchemaGrantsPerDelegation,
+		>::new();
+
+		expected.try_insert(1, Default::default()).expect("testing expected");
+		expected.try_insert(2, Default::default()).expect("testing expected");
+
+		assert_eq!(delegation_relationship.schema_permissions, expected);
+	});
+}
+
+#[test]
+fn grant_schema_permissions_errors_when_no_key_exists() {
+	new_test_ext().execute_with(|| {
+		let (delegator_pair, _) = sr25519::Pair::generate();
+		let delegator_account = delegator_pair.public();
+
+		let provider = Provider(2);
+		let schema_ids: Vec<SchemaId> = vec![1];
+
+		assert_noop!(
+			Msa::grant_schema_permissions(
+				Origin::signed(delegator_account.into()),
+				provider.into(),
+				schema_ids,
+			),
+			Error::<Test>::NoKeyExists
+		);
+	});
+}
+
+#[test]
+fn grant_schema_permissions_errors_when_delegation_not_found_error() {
+	new_test_ext().execute_with(|| {
+		let (delegator_pair, _) = sr25519::Pair::generate();
+		let delegator_account = delegator_pair.public();
+
+		let provider = Provider(2);
+		let schema_ids: Vec<SchemaId> = vec![1];
+
+		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
+
+		assert_noop!(
+			Msa::grant_schema_permissions(
+				Origin::signed(delegator_account.into()),
+				provider.into(),
+				schema_ids,
+			),
+			Error::<Test>::DelegationNotFound
+		);
+	});
+}
+
+#[test]
+fn grant_schema_permissions_success() {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(3);
+
+		let (key_pair, _) = sr25519::Pair::generate();
+		let provider_account = key_pair.public();
+
+		let (delegator_pair, _) = sr25519::Pair::generate();
+		let delegator_account = delegator_pair.public();
+
+		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+
+		let delegator = Delegator(1);
+		let provider = Provider(2);
+
+		assert_ok!(Msa::add_provider(provider, delegator, Default::default()));
+
+		let schema_ids: Vec<SchemaId> = vec![2];
+
+		assert_ok!(Msa::grant_schema_permissions(
+			Origin::signed(delegator_account.into()),
+			provider.into(),
+			schema_ids,
+		));
+
+		System::assert_last_event(Event::DelegationUpdated { provider, delegator }.into());
+	});
+}
+
+#[test]
+fn delegation_default_trait_impl() {
+	new_test_ext().execute_with(|| {
+		let delegation: Delegation<
+			SchemaId,
+			<Test as frame_system::Config>::BlockNumber,
+			<Test as Config>::MaxSchemaGrantsPerDelegation,
+		> = Default::default();
+
+		let expected = Delegation {
+			schema_permissions: BoundedBTreeMap::<
+				SchemaId,
+				<Test as frame_system::Config>::BlockNumber,
+				<Test as Config>::MaxSchemaGrantsPerDelegation,
+			>::default(),
+			revoked_at: Default::default(),
+		};
+
+		assert_eq!(delegation, expected);
+	});
+}
+
+#[test]
+fn schema_permissions_trait_impl_try_insert_schema_success() {
+	new_test_ext().execute_with(|| {
+		let mut delegation: Delegation<
+			SchemaId,
+			<Test as frame_system::Config>::BlockNumber,
+			<Test as Config>::MaxSchemaGrantsPerDelegation,
+		> = Default::default();
+
+		let schema_id = 1;
+		assert_ok!(PermittedDelegationSchemas::<Test>::try_insert_schema(
+			&mut delegation,
+			schema_id
+		));
+		assert_eq!(delegation.schema_permissions.len(), 1);
+	});
+}
+
+#[test]
+fn schema_permissions_trait_impl_try_insert_schemas_errors_when_exceeds_max_schema_grants() {
+	new_test_ext().execute_with(|| {
+		let mut delegation: Delegation<
+			SchemaId,
+			<Test as frame_system::Config>::BlockNumber,
+			<Test as Config>::MaxSchemaGrantsPerDelegation,
+		> = Default::default();
+
+		let schema_ids = (1..32).collect::<Vec<_>>();
+		assert_noop!(
+			PermittedDelegationSchemas::<Test>::try_insert_schemas(&mut delegation, schema_ids),
+			Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation
+		);
+	});
+}
+
+#[test]
+fn try_mutate_delegation_success() {
+	new_test_ext().execute_with(|| {
+		let delegator = Delegator(1);
+		let provider = Provider(2);
+
+		assert_ok!(Msa::try_mutate_delegation(
+			delegator,
+			provider,
+			|delegation, _is_new_provider| -> Result<(), &'static str> {
+				let schema_id = 1;
+				let _a =
+					PermittedDelegationSchemas::<Test>::try_insert_schema(delegation, schema_id);
+
+				Ok(())
+			},
+		));
+
+		assert!(Msa::get_delegation(delegator, provider).is_some());
+	});
+}
+
+#[test]
+fn revoke_permissions_for_schema_success() {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(3);
+
+		let delegator = Delegator(2);
+		let provider = Provider(1);
+		let schema_grants = vec![1];
+
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
+		let mut expected = BoundedBTreeMap::<
+			SchemaId,
+			<Test as frame_system::Config>::BlockNumber,
+			<Test as Config>::MaxSchemaGrantsPerDelegation,
+		>::new();
+
+		expected.try_insert(1, Default::default()).expect("testing expected");
+
+		assert_eq!(delegation_relationship.schema_permissions, expected);
+
+		// Revoke schema ids
+		let schemas_to_be_revoked = vec![1];
+		let result =
+			Msa::revoke_permissions_for_schemas(delegator, provider, schemas_to_be_revoked);
+
+		assert_ok!(result);
+
+		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
+		let mut expected = BoundedBTreeMap::<
+			SchemaId,
+			<Test as frame_system::Config>::BlockNumber,
+			<Test as Config>::MaxSchemaGrantsPerDelegation,
+		>::new();
+
+		expected.try_insert(1, 1u32.into()).expect("testing expected");
+
+		assert_eq!(delegation_relationship.schema_permissions, expected);
+	});
+}
+
+#[test]
+fn revoke_permissions_for_schemas_errors_when_no_delegation() {
+	new_test_ext().execute_with(|| {
+		let delegator = Delegator(2);
+		let provider = Provider(1);
+		let schema_ids = vec![1, 2];
+		let result = Msa::revoke_permissions_for_schemas(delegator, provider, schema_ids);
+
+		assert_noop!(result, Error::<Test>::DelegationNotFound);
+	});
+}
+
+#[test]
+fn revoke_permissions_for_schemas_errors_when_schema_does_not_exist_in_list_of_schema_grants() {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(31);
+
+		let delegator = Delegator(2);
+		let provider = Provider(1);
+		let schema_grants = vec![1, 2];
+
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		let additional_grants = (3..32 as u16).collect::<Vec<_>>();
+		let result = Msa::revoke_permissions_for_schemas(delegator, provider, additional_grants);
+
+		assert_noop!(result, Error::<Test>::SchemaNotGranted);
+
+		let result = Msa::get_delegation(delegator, provider);
+
+		let mut expected = Delegation {
+			revoked_at: 0u32.into(),
+			schema_permissions: BoundedBTreeMap::<
+				SchemaId,
+				<Test as frame_system::Config>::BlockNumber,
+				<Test as Config>::MaxSchemaGrantsPerDelegation,
+			>::new(),
+		};
+
+		expected
+			.schema_permissions
+			.try_insert(1, 0u32.into())
+			.expect("testing expected");
+
+		expected
+			.schema_permissions
+			.try_insert(2, 0u32.into())
+			.expect("testing expected");
 
 		assert_eq!(result.unwrap(), expected);
 	});
 }
 
 #[test]
-pub fn initialize_schema_permissions_error() {
+fn revoke_schema_permissions_success() {
 	new_test_ext().execute_with(|| {
-		let schema_ids = vec![1];
-		let result = Msa::initialize_schema_permissions(schema_ids);
-
-		assert_noop!(result, Error::<Test>::InvalidSchemaId);
-
 		set_schema_count::<Test>(3);
 
-		let schema_ids = vec![1, 2, 3];
-		let result = Msa::initialize_schema_permissions(schema_ids);
+		let (key_pair, _) = sr25519::Pair::generate();
+		let provider_account = key_pair.public();
 
-		assert_noop!(result, Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation);
+		let (delegator_pair, _) = sr25519::Pair::generate();
+		let delegator_account = delegator_pair.public();
+
+		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
+		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
+
+		let delegator = Delegator(1);
+		let provider = Provider(2);
+
+		assert_ok!(Msa::add_provider(provider, delegator, vec![1, 2]));
+
+		let schema_ids_to_revoke: Vec<SchemaId> = vec![2];
+
+		assert_ok!(Msa::revoke_schema_permissions(
+			Origin::signed(delegator_account.into()),
+			provider.into(),
+			schema_ids_to_revoke,
+		));
+
+		System::assert_last_event(Event::DelegationUpdated { provider, delegator }.into());
+	});
+}
+
+#[test]
+fn revoke_schema_permissions_errors_when_no_key_exists() {
+	new_test_ext().execute_with(|| {
+		let (delegator_pair, _) = sr25519::Pair::generate();
+		let delegator_account = delegator_pair.public();
+
+		let provider = Provider(2);
+		let schema_ids: Vec<SchemaId> = vec![1];
+
+		assert_noop!(
+			Msa::revoke_schema_permissions(
+				Origin::signed(delegator_account.into()),
+				provider.into(),
+				schema_ids,
+			),
+			Error::<Test>::NoKeyExists
+		);
+	});
+}
+
+#[test]
+fn schema_permissions_trait_impl_try_get_mut_schema_success() {
+	new_test_ext().execute_with(|| {
+		let mut delegation: Delegation<
+			SchemaId,
+			<Test as frame_system::Config>::BlockNumber,
+			<Test as Config>::MaxSchemaGrantsPerDelegation,
+		> = Default::default();
+
+		let schema_id = 1;
+		assert_ok!(PermittedDelegationSchemas::<Test>::try_insert_schema(
+			&mut delegation,
+			schema_id
+		));
+		let default_block_number = 0u64;
+
+		assert_eq!(delegation.schema_permissions.len(), 1);
+		assert_eq!(delegation.schema_permissions.get(&schema_id).unwrap(), &default_block_number);
+
+		let revoked_block_number = 2u64;
+
+		assert_ok!(PermittedDelegationSchemas::<Test>::try_get_mut_schema(
+			&mut delegation,
+			schema_id,
+			revoked_block_number.clone()
+		));
+
+		assert_eq!(delegation.schema_permissions.get(&schema_id).unwrap(), &revoked_block_number);
 	});
 }

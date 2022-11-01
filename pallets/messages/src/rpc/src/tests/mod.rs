@@ -4,7 +4,7 @@ use super::*;
 use rpc_mock::*;
 
 use common_primitives::node::BlockNumber;
-use pallet_messages_runtime_api::MessagesApi as MessagesRuntimeApi;
+use pallet_messages_runtime_api::MessagesRuntimeApi;
 use std::sync::Arc;
 use substrate_test_runtime_client::runtime::Block;
 

@@ -1,11 +1,14 @@
 //! Types for the MSA Pallet
 #![cfg_attr(not(feature = "std"), no_std)]
+
 use super::*;
 use codec::{Decode, Encode};
 
 use core::fmt::Debug;
 
-pub use common_primitives::msa::{Delegator, KeyInfoResponse, MessageSourceId, Provider};
+pub use common_primitives::msa::{
+	Delegation, Delegator, KeyInfoResponse, MessageSourceId, Provider,
+};
 use common_primitives::{node::BlockNumber, schema::SchemaId};
 
 use scale_info::TypeInfo;
@@ -18,8 +21,6 @@ pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 pub struct AddKeyData {
 	/// Message Source Account identifier
 	pub msa_id: MessageSourceId,
-	/// A cryptographic nonce.
-	pub nonce: u32,
 	/// The block number at which the signed proof for add_public_key_to_msa expires.
 	pub expiration: BlockNumber,
 }
@@ -49,5 +50,68 @@ impl AddProvider {
 		};
 
 		Self { authorized_msa_id, schema_ids, expiration }
+	}
+}
+
+/// The interface for mutating schemas permissions in a delegation relationship.
+pub trait PermittedDelegationSchemas<T: Config> {
+	/// Attempt to insert a new schema. Dispatches error when the max allowed schemas are exceeded.
+	fn try_insert_schema(&mut self, schema_id: SchemaId) -> Result<(), DispatchError>;
+
+	/// Attempt to insert a collection of schemas. Dispatches error when the max allowed schemas are exceeded.
+	fn try_insert_schemas(&mut self, schema_ids: Vec<SchemaId>) -> Result<(), DispatchError> {
+		for schema_id in schema_ids.into_iter() {
+			self.try_insert_schema(schema_id)?;
+		}
+
+		Ok(())
+	}
+
+	/// Attempt get and mutate a collection of schemas. Dispatches error when a schema cannot be found.
+	fn try_get_mut_schemas(
+		&mut self,
+		schema_ids: Vec<SchemaId>,
+		block_number: T::BlockNumber,
+	) -> Result<(), DispatchError> {
+		for schema_id in schema_ids.into_iter() {
+			self.try_get_mut_schema(schema_id, block_number)?;
+		}
+		Ok(())
+	}
+
+	/// Attempt get and mutate a schema. Dispatches error when a schema cannot be found.
+	fn try_get_mut_schema(
+		&mut self,
+		schema_id: SchemaId,
+		block_number: T::BlockNumber,
+	) -> Result<(), DispatchError>;
+}
+
+/// Implementation of SchemaPermission trait on Delegation type.
+impl<T: Config> PermittedDelegationSchemas<T>
+	for Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>
+{
+	/// Attempt to insert a new schema. Dispatches error when the max allowed schemas are exceeded.
+	fn try_insert_schema(&mut self, schema_id: SchemaId) -> Result<(), DispatchError> {
+		self.schema_permissions
+			.try_insert(schema_id, Default::default())
+			.map_err(|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegation)?;
+		Ok(())
+	}
+
+	/// Attempt get and mutate a schema. Dispatches error when a schema cannot be found.
+	fn try_get_mut_schema(
+		&mut self,
+		schema_id: SchemaId,
+		block_number: T::BlockNumber,
+	) -> Result<(), DispatchError> {
+		let schema = self
+			.schema_permissions
+			.get_mut(&schema_id)
+			.ok_or(Error::<T>::SchemaNotGranted)?;
+
+		*schema = block_number;
+
+		Ok(())
 	}
 }

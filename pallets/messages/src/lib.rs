@@ -1,29 +1,36 @@
 //! # Messages pallet
 //! A pallet for storing messages.
 //!
-//! This pallet contains functionality for storing, retrieving and eventually removing messages for
-//! registered schemas on chain.
-//!
-//! - [`Config`]
-//! - [`Call`]
-//! - [`Pallet`]
+//! - [Configuration: `Config`](Config)
+//! - [Extrinsics: `Call`](Call)
+//! - [Runtime API: `MessagesRuntimeApi`](../pallet_messages_runtime_api/trait.MessagesRuntimeApi.html)
+//! - [Custom RPC API: `MessagesApiServer`](../pallet_messages_rpc/trait.MessagesApiServer.html)
+//! - [Event Enum: `Event`](Event)
+//! - [Error Enum: `Error`](Error)
 //!
 //! ## Overview
 //!
+//! Messages allow for discovery of new content matching a given Schema.
+//! Each message MUST have either a provider or a validated source and provider.
+//! Message is the metadata of the source, order, schema for a payload or referenced payload.
+//!
 //! The Messages Pallet provides functions for:
 //!
-//! - Adding a message for given schema.
-//! - Retrieving messages for a given schema.
+//! - Adding messages for a given schema.
+//! - Enabling retrieving messages for a given schema.
+//! - (FUTURE) Removing messages after expiration
 //!
-//! ### Terminology
+//! ## Terminology
 //!
-//! - **Message:** A message that matches a registered `Schema` (on-chain or off-chain).
-//! - **Payload:** The user data in a `Message` that matches a `Schema`.
+//! - **Message:** A message that matches a registered Schema (on-chain or off-chain).
+//! - **Payload:** The data in a `Message` that matches a `Schema`.
 //! - **MSA Id:** The 64 bit unsigned integer associated with an `Message Source Account`.
-//! - **MSA:** Message Source Account. A registered identifier with the MSA pallet.
-//! - **Schema:** A registered data structure and the settings around it.
+//! - **MSA:** Message Source Account. A registered identifier with the [MSA pallet](../pallet_msa/index.html).
+//! - **Schema:** A registered data structure and the settings around it. (See [Schemas pallet](../pallet_schemas/index.html))
 //! - **Schema Id:** A U16 bit identifier for a schema stored on-chain.
 //!
+//! ## Implementations
+//! - None
 //!
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -174,25 +181,29 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Adds a message for a resource hosted on IPFS. The IPFS payload should
+		/// Adds a message for a resource hosted on IPFS. The payload storage will
 		/// contain both a
 		/// [CID](https://docs.ipfs.io/concepts/content-addressing/#identifier-formats)
 		/// as well as a 32-bit payload length.
-
-		/// # Arguments
-		/// * `origin` - A signed transaction origin from the provider
-		/// * `on_behalf_of` - Optional. The msa id of delegate.
-		/// * `schema_id` - Registered schema id for current message.
-		/// * `cid` - The content address for an IPFS payload
-		/// * `payload_length` - The size of the payload
-		/// * Returns
-		/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html)
+		/// The actual payload will be on IPFS
+		///
+		/// # Events
+		/// * [`Event::MessagesStored`] - In the next block
+		///
+		/// # Errors
+		/// * [`Error::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large
+		/// * [`Error::InvalidSchemaId`] - Schema not found
+		/// * [`Error::InvalidPayloadLocation`] - The schema is not an IPFS payload location
+		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA
+		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
+		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
+		///
 		#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() as u32, 1_000))]
 		pub fn add_ipfs_message(
 			origin: OriginFor<T>,
-			schema_id: SchemaId,
+			#[pallet::compact] schema_id: SchemaId,
 			cid: Vec<u8>,
-			payload_length: u32,
+			#[pallet::compact] payload_length: u32,
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
 			let payload_tuple: OffchainPayloadType = (cid.clone(), payload_length);
@@ -213,20 +224,25 @@ pub mod pallet {
 
 			Ok(Some(T::WeightInfo::add_ipfs_message(cid.len() as u32, message.index as u32)).into())
 		}
-		/// Add an on-chain message for a given schema-id.
-		/// # Arguments
-		/// * `origin` - A signed transaction origin from the provider
-		/// * `on_behalf_of` - Optional. The msa id of delegate.
-		/// * `schema_id` - Registered schema id for current message.
-		/// * `payload` - Serialized payload data for a given schema.
-		/// # Returns
-		/// * [DispatchResultWithPostInfo](https://paritytech.github.io/substrate/master/frame_support/dispatch/type.DispatchResultWithPostInfo.html) The return type of a Dispatchable in frame.
-		/// When returned explicitly from a dispatchable function it allows overriding the default PostDispatchInfo returned from a dispatch.
+		/// Add an on-chain message for a given schema id.
+		///
+		/// # Events
+		/// * [`Event::MessagesStored`] - In the next block
+		///
+		/// # Errors
+		/// * [`Error::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large
+		/// * [`Error::InvalidSchemaId`] - Schema not found
+		/// * [`Error::InvalidPayloadLocation`] - The schema is not an IPFS payload location
+		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA
+		/// * [`Error::UnAuthorizedDelegate`] - Trying to add a message without a proper delegation between the origin and the on_behalf_of MSA
+		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
+		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
+		///
 		#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() as u32, 1_000))]
 		pub fn add_onchain_message(
 			origin: OriginFor<T>,
 			on_behalf_of: Option<MessageSourceId>,
-			schema_id: SchemaId,
+			#[pallet::compact] schema_id: SchemaId,
 			payload: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let provider_key = ensure_signed(origin)?;
@@ -274,14 +290,12 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	/// Stores a message for a given schema-id.
-	/// # Arguments
-	/// * `provider_msa_id` - The MSA id of the provider that submitted the transaction.
-	/// * `message_source_id` - The
-	/// * `payload` - Serialized payload data for a given schema.
-	/// * `schema_id` - Registered schema id for current message.
-	/// # Returns
-	/// * Result<Message<T::MaxMessagePayloadSizeBytes> - Returns the message stored.
+	/// Stores a message for a given schema id.
+	///
+	/// # Errors
+	/// * [`Error::TooManyMessagesInBlock`]
+	/// * [`Error::TypeConversionOverflow`]
+	///
 	pub fn add_message(
 		provider_msa_id: MessageSourceId,
 		msa_id: Option<MessageSourceId>,
@@ -314,24 +328,20 @@ impl<T: Config> Pallet<T> {
 	/// Resolve an MSA from an account key(key)
 	/// An MSA Id associated with the account key is returned, if one exists.
 	///
-	/// # Arguments
-	/// * `key` - An MSA key for lookup.
-	/// # Returns
-	/// * Result<MessageSourceId, DispatchError> - Returns an MSA Id for storing a message.
+	/// # Errors
+	/// * [`Error::InvalidMessageSourceAccount`]
+	///
 	pub fn find_msa_id(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		Ok(T::MsaInfoProvider::ensure_valid_msa_key(key)
 			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?)
 	}
 
 	/// Gets a messages for a given schema-id and block-number.
-	/// # Arguments
-	/// * `schema_id` - Registered schema id for current message.
-	/// * `schema_payload_location` - Payload location to map to correct response (To avoid fetching the schema in this method)
-	/// * `block_number` - Block number to fetch messages from.
-	/// # Returns
-	/// * `Vec<MessageResponse<T::BlockNumber>>`
 	///
-	/// Result is a vector response of type [`MessageResponse`].
+	/// Payload location is included to map to correct response (To avoid fetching the schema in this method)
+	///
+	/// Result is a vector of [`MessageResponse`].
+	///
 	pub fn get_messages_by_schema_and_block(
 		schema_id: SchemaId,
 		schema_payload_location: PayloadLocation,
@@ -347,9 +357,13 @@ impl<T: Config> Pallet<T> {
 	/// Moves messages from temporary storage `BlockMessages` into final storage `Messages`
 	/// and calculates execution weight
 	///
-	/// * `block_number`: Target Block Number
+	/// Called inside of `on_initialize`
+	///
+	/// # Events
+	/// * [`Event::MessagesStored`]
 	///
 	/// Returns execution weights
+	///
 	fn move_messages_into_final_storage(block_number: T::BlockNumber) -> Weight {
 		let mut map = BTreeMap::new();
 		let block_messages = BlockMessages::<T>::get();
@@ -369,7 +383,11 @@ impl<T: Config> Pallet<T> {
 		// insert into storage and create events
 		for (schema_id, messages) in map {
 			let count = messages.len() as u16;
-			let bounded_vec: BoundedVec<_, _> = messages.try_into().unwrap();
+			let bounded_vec: BoundedVec<_, _> = messages.try_into().unwrap_or_default();
+
+			if bounded_vec.is_empty() {
+				return T::DbWeight::get().reads(1)
+			}
 			Messages::<T>::insert(&block_number, schema_id, &bounded_vec);
 			Self::deposit_event(Event::MessagesStored { schema_id, block_number, count });
 			schema_count += 1;

@@ -115,7 +115,7 @@ fn set_max_schema_size_fails_if_not_root() {
 fn set_max_schema_size_fails_if_larger_than_bound() {
 	new_test_ext().execute_with(|| {
 		let new_size: u32 = 68_000;
-		let expected_err = Error::<Test>::ExceedsGovernanceSchemaModelMaxValue;
+		let expected_err = Error::<Test>::ExceedsMaxSchemaModelBytes;
 		assert_noop!(
 			SchemasPallet::set_max_schema_model_bytes(RawOrigin::Root.into(), new_size),
 			expected_err
