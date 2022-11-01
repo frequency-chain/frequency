@@ -1494,7 +1494,9 @@ pub fn delete_msa_public_key_call_has_correct_costs() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let new_key = key_pair.public();
 
-		let call = MsaCall::<Test>::delete_msa_public_key { key: AccountId32::from(new_key) };
+		let call = MsaCall::<Test>::delete_msa_public_key {
+			public_key_to_delete: AccountId32::from(new_key),
+		};
 		let dispatch_info = call.get_dispatch_info();
 		assert_eq!(dispatch_info.pays_fee, Pays::No);
 	})
@@ -1511,7 +1513,11 @@ fn signed_extension_validation_delete_msa_public_key_success() {
 		assert_ok!(Msa::add_key(owner_msa_id, &user_account_id, EMPTY_FUNCTION));
 
 		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
+<<<<<<< HEAD
 			&Call::Msa(MsaCall::delete_msa_public_key { key: owner_key_pair.public().into() });
+=======
+			&Call::Msa(MsaCall::delete_msa_public_key { public_key_to_delete: owner_key.clone() });
+>>>>>>> 8b26ea69 (fix test compile errors)
 
 		let info = DispatchInfo::default();
 		let len = 0_usize;
@@ -1559,7 +1565,9 @@ fn signed_extension_validation_failure_when_delete_msa_public_key_called_twice()
 		));
 
 		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_public_key { key: user_account_id.clone() });
+			&Call::Msa(MsaCall::delete_msa_public_key {
+				public_key_to_delete: user_account_id.clone(),
+			});
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result_deleted = CheckFreeExtrinsicUse::<Test>::new().validate(
@@ -1837,7 +1845,9 @@ fn signed_ext_check_nonce_delete_msa_public_key() {
 
 		// Test the delete_msa_public_key() call
 		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_public_key { key: AccountId32::from(msa_new_key) });
+			&Call::Msa(MsaCall::delete_msa_public_key {
+				public_key_to_delete: AccountId32::from(msa_new_key),
+			});
 		let info = call_delete_msa_public_key.get_dispatch_info();
 
 		// Call delete_msa_public_key() using the Alice account

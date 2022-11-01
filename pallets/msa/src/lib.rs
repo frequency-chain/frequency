@@ -1601,8 +1601,8 @@ where
 				CheckFreeExtrinsicUse::<T>::validate_delegation_by_provider(who, delegator),
 			Some(Call::revoke_delegation_by_delegator { provider_msa_id, .. }) =>
 				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id),
-			Some(Call::delete_msa_public_key { key, .. }) =>
-				CheckFreeExtrinsicUse::<T>::validate_key_delete(who, key),
+			Some(Call::delete_msa_public_key { public_key_to_delete, .. }) =>
+				CheckFreeExtrinsicUse::<T>::validate_key_delete(who, public_key_to_delete),
 			Some(Call::retire_msa { .. }) => CheckFreeExtrinsicUse::<T>::ensure_msa_can_retire(who),
 			_ => return Ok(Default::default()),
 		}
