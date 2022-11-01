@@ -175,7 +175,7 @@ pub mod pallet {
 		fn on_initialize(current: T::BlockNumber) -> Weight {
 			let prev_block = current - T::BlockNumber::one();
 			Self::move_messages_into_final_storage(prev_block)
-			// TODO: add retention policy execution
+			// TODO: add retention policy execution GitHub Issue: #126 and #25
 		}
 	}
 
