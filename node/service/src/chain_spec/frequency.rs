@@ -44,8 +44,7 @@ pub mod frequency_mainnet_keys {
 pub fn frequency() -> ChainSpec {
 	let properties =
 		get_properties(FREQUENCY_TOKEN, TOKEN_DECIMALS as u32, SS58Prefix::get().into());
-	// TODO need a paraid here for the frequency chain
-	let para_id: ParaId = 999.into();
+	let para_id: ParaId = 2091.into();
 	ChainSpec::from_genesis(
 		// Name
 		"Frequency",
@@ -164,7 +163,7 @@ pub fn frequency() -> ChainSpec {
 			"/dns/1.boot.frequency.xyz/tcp/30333/p2p/12D3KooWCW8d7Yz2d3Jcb49rWcNppRNEs1K2NZitCpPtrHSQb6dw".parse().unwrap(),
 		],
 		// Telemetry
-		TelemetryEndpoints::new(vec![("wss://telemetry.polkadot.io/submit/".into(), 0)]).ok(),
+		TelemetryEndpoints::new(vec![("wss://telemetry.polkadot.io/submit/".into(), 0), ("wss://telemetry.frequency.xyz/submit/".into(), 0)]).ok(),
 		// Protocol ID
 		Some("frequency"),
 		// Fork ID

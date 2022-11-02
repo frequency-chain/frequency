@@ -24,7 +24,7 @@ pub mod public_testnet_keys {
 	pub const COLLATOR_2_SR25519: &str =
 		"0x58025fbd92bcc65fc2e054b623d10a8558662ae545a9718e26815024a2433545";
 	pub const ROCOCO_FRQ_SUDO: &str =
-		"0xa4c16e3ce8b11a0e43102bc4a718e9f031df2d0f61b1b03031b2f45ed664f853";
+		"0xccca4a5b784105460c5466cbb8d11b34f29ffcf6c725d07b65940e697763763c";
 	pub const TECH_COUNCIL1: &str =
 		"0x847c1ac02474b90cf1e9d8e722318b75fd56d370e6f35e9c983fe671e788d23a";
 	pub const TECH_COUNCIL2: &str =
@@ -157,7 +157,9 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 			)
 		},
 		// Bootnodes
-		Vec::new(),
+		vec![
+			"/dns/0.boot.rococo.frequency.xyz/tcp/30333/p2p/5CkhzgoWc21tKSYATXhba2Rj1Nhu6subu8FEfbxPk9GFjGqd".parse().unwrap(),
+		],
 		// Telemetry
 		TelemetryEndpoints::new(vec![("wss://telemetry.frequency.xyz/submit/".into(), 0)]).ok(),
 		// Protocol ID
