@@ -93,7 +93,7 @@ where
 		let provider = Provider(provider_msa_id);
 
 		Ok(delegator_msa_ids
-			.iter() // TODO: Change back to par_iter() which has borrow panic
+			.iter() // TODO: Change back to par_iter() which has borrow panic GitHub Issue: #519
 			.map(|&id| {
 				let delegator = Delegator(id);
 				// api.has_delegation returns  Result<bool, ApiError>), so _or(false) should not happen,
