@@ -142,12 +142,13 @@ pub fn test_origin_signed(n: u8) -> Origin {
 
 /// Create a new keypair and an MSA associated with its public key.
 /// # Returns
-/// (MessageSourceId, AccountId32) - a tuple wiht the MSA and the new Account public key.
-pub fn create_account() -> (MessageSourceId, AccountId32) {
+/// (MessageSourceId, Pair) - a tuple with the MSA and the new Account key pair
+pub fn create_account() -> (MessageSourceId, sr25519::Pair) {
 	let (key_pair, _) = sr25519::Pair::generate();
 	let result_key = Msa::create_account(AccountId32::from(key_pair.public()), EMPTY_FUNCTION);
 	assert_ok!(&result_key);
-	result_key.unwrap()
+	let (msa_id, _) = result_key.unwrap();
+	(msa_id, key_pair)
 }
 
 /// Creates and signs an `AddProvider` struct using the provided delegator keypair and provider MSA
