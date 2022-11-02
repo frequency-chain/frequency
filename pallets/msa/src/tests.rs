@@ -10,6 +10,7 @@ use sp_runtime::{traits::SignedExtension, MultiSignature};
 use crate::{
 	ensure,
 	mock::*,
+	replay_tests::*,
 	types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, CurrentMsaIdentifierMaximum, DispatchResult, Error, Event,
 	PayloadSignatureRegistry, ProviderToRegistryEntry, ValidityError,
@@ -1137,22 +1138,23 @@ pub fn revoke_provider_call_has_no_cost() {
 pub fn revoke_provider_throws_delegation_not_found_error() {
 	new_test_ext().execute_with(|| {
 		// 1. create two key pairs
-		let (provider_pair, _) = sr25519::Pair::generate();
-		let (user_pair, _) = sr25519::Pair::generate();
-		let provider_key = provider_pair.public();
-		let delegator_key = user_pair.public();
+		let (delegator_key, provider_key) = create_user_and_provider();
 
 		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
+
+		let retrieved_delegator = Msa::get_owner_of(delegator_key.into());
+		assert_eq!(retrieved_delegator, None);
+
 		// 1. error when delegator msa_id not found
 		assert_noop!(
-			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64),
+			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), retrieved_delegator),
 			Error::<Test>::DelegationNotFound
 		);
 
 		assert_ok!(Msa::create(Origin::signed(delegator_key.into())));
 		// 2. error when no delegation relationship
 		assert_noop!(
-			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64),
+			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), retrieved_delegator),
 			Error::<Test>::DelegationNotFound
 		);
 
@@ -1188,12 +1190,13 @@ pub fn revoke_delegation_by_provider_happy_path() {
 			signature,
 			add_provider_payload
 		));
+		let retrieved_delegator = Msa::get_owner_of(delegator_key.into());
 
 		//  4. set some block number to ensure it's not a default value
 		System::set_block_number(System::block_number() + 25);
 
 		// 5. assert_ok! fn as 2 to remove provider 1
-		assert_ok!(Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64));
+		assert_ok!(Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), retrieved_delegator));
 
 		// 6. verify that the provider is revoked
 		let provider_info = Msa::get_delegation(Delegator(2), Provider(1));
@@ -1222,15 +1225,13 @@ pub fn remove_msa_delegation_call_has_correct_costs() {
 #[test]
 pub fn revoke_delegation_by_provider_errors_when_no_delegator_msa_id() {
 	new_test_ext().execute_with(|| {
-		let (provider_pair, _) = sr25519::Pair::generate();
-		let (user_pair, _) = sr25519::Pair::generate();
-
-		let provider_key = provider_pair.public();
-		let delegator_key = user_pair.public();
+		let (delegator_key, provider_key) = create_user_and_provider();
+		let none_retrieved_delegator = Msa::get_owner_of(delegator_key.into());
+		assert_eq!(retrieved_delegator, None);
 
 		// 0. when provider msa_id not found
 		assert_noop!(
-			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64),
+			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), none_retrieved_delegator),
 			Error::<Test>::NoKeyExists
 		);
 
@@ -1240,22 +1241,26 @@ pub fn revoke_delegation_by_provider_errors_when_no_delegator_msa_id() {
 
 		// 1. when delegator msa_id not found
 		assert_noop!(
-			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64),
+			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), none_retrieved_delegator),
 			Error::<Test>::DelegationNotFound
 		);
 
 		assert_ok!(Msa::create(Origin::signed(delegator_key.into())));
+		let retrieved_delegator = Msa::get_owner_of(delegator_key.into());
 		// 2. when no delegation relationship
 		assert_noop!(
-			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64),
+			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), retrieved_delegator),
 			Error::<Test>::DelegationNotFound
 		);
 
 		assert_ok!(Msa::add_provider(Provider(1), Delegator(2), Vec::default()));
 		assert_ok!(Msa::revoke_provider(Provider(1), Delegator(2)));
+		let second_none_retrieved_delegator = Msa::get_owner_of(delegator_key.into());
+		assert_eq!(retrieved_delegator, None);
+
 		// 3. when_delegation_expired
 		assert_noop!(
-			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64),
+			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), second_none_retrieved_delegator),
 			Error::<Test>::DelegationRevoked
 		);
 	})
@@ -1588,7 +1593,7 @@ pub fn valid_schema_grant() {
 }
 
 #[test]
-pub fn error_invalid_schema_id_table() {
+pub fn error_invalid_schema_id() {
 	struct TestCase<T> {
 		schema: Vec<u16>,
 		expected: T,
@@ -1808,6 +1813,7 @@ pub fn add_provider_expired() {
 
 		let provider_key = provider_pair.public();
 		let delegator_key = user_pair.public();
+
 
 		// 2. create provider MSA
 		assert_ok!(Msa::create(Origin::signed(provider_key.into()))); // MSA = 1
