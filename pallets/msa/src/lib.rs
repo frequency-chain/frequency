@@ -55,6 +55,19 @@
 )]
 
 use codec::{Decode, Encode};
+use frame_support::{
+	dispatch::DispatchResult, ensure, pallet_prelude::*, traits::IsSubType, weights::DispatchInfo,
+};
+use frame_system::pallet_prelude::*;
+use scale_info::TypeInfo;
+use sp_core::crypto::AccountId32;
+use sp_runtime::{
+	traits::{Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify, Zero},
+	DispatchError, MultiSignature,
+};
+use sp_std::prelude::*;
+
+pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, Delegator, MsaLookup, MsaValidator, Provider,
@@ -62,17 +75,9 @@ use common_primitives::{
 	},
 	schema::{SchemaId, SchemaValidator},
 };
-use frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 pub use pallet::*;
-use scale_info::TypeInfo;
-use sp_runtime::{
-	traits::{Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify, Zero},
-	DispatchError, MultiSignature,
-};
-
-use sp_core::crypto::AccountId32;
-pub mod types;
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas};
+pub use weights::*;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -80,22 +85,17 @@ mod benchmarking;
 mod mock;
 #[cfg(test)]
 mod tests;
+pub mod types;
 
 #[cfg(test)]
 mod replay_tests;
 
 pub mod weights;
 
-pub use weights::*;
-
-pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
-
-use frame_support::pallet_prelude::*;
-use frame_system::pallet_prelude::*;
-use sp_std::prelude::*;
-
 #[frame_support::pallet]
 pub mod pallet {
+	use frame_support::log::warn;
+
 	use super::*;
 
 	#[pallet::config]
@@ -142,7 +142,7 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	/// Storage type for the current MSA identifier maximum.
@@ -213,7 +213,7 @@ pub mod pallet {
 	>;
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A new Message Service Account was created with a new MessageSourceId
 		MsaCreated {
@@ -619,9 +619,9 @@ pub mod pallet {
 			ensure!(who != key, Error::<T>::InvalidSelfRemoval);
 
 			// Get the MSA id for the calling account
-			let who_msa_id = Self::try_get_msa_from_public_key(&who)?;
+			let who_msa_id = Self::ensure_valid_msa_key(&who)?;
 			// Get the MSA id for the account to be removed
-			let account_to_remove_msa_id = Self::try_get_msa_from_public_key(&key)?;
+			let account_to_remove_msa_id = Self::ensure_valid_msa_key(&key)?;
 			// The calling account doesn't own the account that is to be removed
 			ensure!(who_msa_id == account_to_remove_msa_id, Error::<T>::NotKeyOwner);
 
@@ -752,19 +752,20 @@ pub mod pallet {
 			// Check and get the account id from the origin
 			let who = ensure_signed(origin)?;
 
-			// Get the MSA id of the origin which can trigger NoKeyExists error
-			let msa_id = Self::try_get_msa_from_public_key(&who)?;
-
-			let delegator = Delegator(msa_id);
-
-			// Remove delegator from all delegator<->provider delegations
-			Self::delete_delegation_relationship(delegator);
-
 			// Delete the last and only account key and deposit the "PublicKeyDeleted" event
-			Self::delete_key_for_msa(msa_id, &who)?;
-			Self::deposit_event(Event::PublicKeyDeleted { key: who });
-
-			Self::deposit_event(Event::MsaRetired { msa_id });
+			// check for valid MSA is in SignedExtension.
+			match Self::get_msa_by_public_key(&who) {
+				Some(msa_id) => {
+					let delegator = Delegator(msa_id);
+					Self::delete_delegation_relationship(delegator);
+					Self::delete_key_for_msa(msa_id, &who)?;
+					Self::deposit_event(Event::PublicKeyDeleted { key: who });
+					Self::deposit_event(Event::MsaRetired { msa_id });
+				},
+				None => {
+					warn!("Did not find MSA for account {:?}, SignedExtension did not catch.", who);
+				},
+			}
 			Ok(())
 		}
 	}
@@ -939,8 +940,7 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::NoKeyExists`]
 	///
 	pub fn ensure_msa_owner(who: &T::AccountId, msa_id: MessageSourceId) -> DispatchResult {
-		let provider_msa_id = Self::get_owner_of(who).ok_or(Error::<T>::NoKeyExists)?;
-
+		let provider_msa_id = Self::ensure_valid_msa_key(who)?;
 		ensure!(provider_msa_id == msa_id, Error::<T>::NotMsaOwner);
 
 		Ok(())
@@ -1101,18 +1101,6 @@ impl<T: Config> Pallet<T> {
 		_ = DelegatorAndProviderToDelegation::<T>::clear_prefix(delegator, u32::max_value(), None);
 	}
 
-	/// Attempts to retrieve the MSA id for an account
-	///
-	/// # Errors
-	/// * [`Error::NoKeyExists`]
-	///
-	pub fn try_get_msa_from_public_key(
-		key: &T::AccountId,
-	) -> Result<MessageSourceId, DispatchError> {
-		let info = Self::get_msa_by_public_key(key).ok_or(Error::<T>::NoKeyExists)?;
-		Ok(info)
-	}
-
 	/// Retrieves the MSA Id for a given `AccountId`
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
 		Self::get_msa_by_public_key(&key)
@@ -1125,7 +1113,7 @@ impl<T: Config> Pallet<T> {
 	// pub fn fetch_msa_keys(msa_id: MessageSourceId) -> Vec<KeyInfoResponse<T::AccountId>> {
 	// 	let mut response = Vec::new();
 	// 	for key in Self::get_msa_keys(msa_id) {
-	// 		if let Ok(_info) = Self::try_get_msa_from_public_key(&key) {
+	// 		if let Ok(_info) = Self::ensure_valid_msa_key(&key) {
 	// 			response.push(KeyInfoResponse { key, msa_id });
 	// 		}
 	// 	}
@@ -1133,10 +1121,9 @@ impl<T: Config> Pallet<T> {
 	// 	response
 	// }
 
-	/// Checks that a key is associated to an MSA and has not been revoked.
+	/// Retrieve MSA Id associated with `key` or return `NoKeyExists`
 	pub fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
-		let msa_id = Self::try_get_msa_from_public_key(key)?;
-
+		let msa_id = Self::get_msa_by_public_key(key).ok_or(Error::<T>::NoKeyExists)?;
 		Ok(msa_id)
 	}
 
@@ -1224,7 +1211,7 @@ impl<T: Config> Pallet<T> {
 	/// Check if enough blocks have passed to reset bucket mortality storage.
 	/// If so:
 	///     1. delete all the stored bucket/signature values with key1 = bucket num
-	///	   2. add the WeightInfo proportional to the storage read/writes to the block weight
+	///       2. add the WeightInfo proportional to the storage read/writes to the block weight
 	/// If not, don't do anything.
 	///
 	fn reset_virtual_bucket_if_needed(current_block: T::BlockNumber) -> Weight {
@@ -1456,10 +1443,13 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	///
 	pub fn ensure_msa_can_retire(account_id: &T::AccountId) -> TransactionValidity {
 		const TAG_PREFIX: &str = "MSARetirement";
+
+		// Verify the msa to be retired exists
 		let msa_id = Pallet::<T>::ensure_valid_msa_key(account_id)
 			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
 			.into();
 
+		// Verify the MSA is not a registered provider
 		// Invalid transaction error "InvalidRegisteredProviderCannotBeRetired" if the MSA id is a registered provider
 		ensure!(
 			!Pallet::<T>::is_registered_provider(msa_id),
@@ -1468,6 +1458,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			)
 		);
 
+		// Verify this is the last access key associated with the MSA
 		// Invalid transaction error "MoreThanOneKeyExists" if the MSA has more than one account key.
 		let key_count = Pallet::<T>::get_public_key_count_by_msa_id(msa_id);
 		ensure!(
