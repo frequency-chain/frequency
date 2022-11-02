@@ -1,0 +1,9 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "lib": ["ES2020", "DOM"],
+        "module": "CommonJS",
+        "target": "es2022",
+        "outDir": "dist/cjs"
+    },
+}
