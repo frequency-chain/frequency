@@ -68,28 +68,65 @@ fn it_create_has_weight() {
 }
 
 #[test]
-fn it_throws_error_when_key_verification_fails() {
+fn it_throws_error_when_new_key_verification_fails() {
 	new_test_ext().execute_with(|| {
 		let (new_msa_id, owner_key_pair) = create_account();
 		let (new_key_pair, _) = sr25519::Pair::generate();
 		let (fake_key_pair, _) = sr25519::Pair::generate();
 
-		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
+		let add_new_key_data = AddKeyData {
+			msa_id: new_msa_id,
+			expiration: 10,
+			new_public_key: new_key_pair.public().into(),
+		};
+
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let owner_signature: MultiSignature = owner_key_pair.sign(&encode_data_new_key_data).into();
-		let fake_signature: MultiSignature = fake_key_pair.sign(&encode_data_new_key_data).into();
+		let fake_new_key_signature: MultiSignature =
+			fake_key_pair.sign(&encode_data_new_key_data).into();
 
 		assert_noop!(
 			Msa::add_public_key_to_msa(
 				test_origin_signed(1),
 				owner_key_pair.public().into(),
 				owner_signature,
-				new_key_pair.public().into(), // This is different from the signature signer below
-				fake_signature,
+				fake_new_key_signature,
 				add_new_key_data
 			),
-			Error::<Test>::AddKeySignatureVerificationFailed
+			Error::<Test>::NewKeyOwnershipInvalidSignature
+		);
+	});
+}
+
+#[test]
+fn it_throws_error_when_msa_ownership_verification_fails() {
+	new_test_ext().execute_with(|| {
+		let (new_msa_id, owner_key_pair) = create_account();
+		let (new_key_pair, _) = sr25519::Pair::generate();
+		let (fake_owner_pair, _) = sr25519::Pair::generate();
+
+		let add_new_key_data = AddKeyData {
+			msa_id: new_msa_id,
+			expiration: 10,
+			new_public_key: new_key_pair.public().into(),
+		};
+
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
+		let fake_owner_signature: MultiSignature =
+			fake_owner_pair.sign(&encode_data_new_key_data).into();
+		let new_key_signature: MultiSignature = new_key_pair.sign(&encode_data_new_key_data).into();
+
+		assert_noop!(
+			Msa::add_public_key_to_msa(
+				test_origin_signed(1),
+				owner_key_pair.public().into(),
+				fake_owner_signature,
+				new_key_signature,
+				add_new_key_data
+			),
+			Error::<Test>::MsaOwnershipInvalidSignature
 		);
 	});
 }
@@ -103,7 +140,12 @@ fn it_throws_error_when_not_msa_owner() {
 
 		assert_ok!(Msa::create_account(test_public(1), EMPTY_FUNCTION));
 
-		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
+		let add_new_key_data = AddKeyData {
+			msa_id: new_msa_id,
+			expiration: 10,
+			new_public_key: new_key_pair.public().into(),
+		};
+
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let fake_owner_signature: MultiSignature =
@@ -115,7 +157,6 @@ fn it_throws_error_when_not_msa_owner() {
 				test_origin_signed(1),
 				fake_key_pair.public().into(),
 				fake_owner_signature,
-				new_key_pair.public().into(),
 				new_key_signature,
 				add_new_key_data
 			),
@@ -132,7 +173,12 @@ fn it_throws_error_when_for_duplicate_key() {
 
 		let _ = Msa::add_key(new_msa_id, &new_key_pair.public().into(), EMPTY_FUNCTION);
 
-		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
+		let add_new_key_data = AddKeyData {
+			msa_id: new_msa_id,
+			expiration: 10,
+			new_public_key: new_key_pair.public().into(),
+		};
+
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let owner_signature: MultiSignature = owner_key_pair.sign(&encode_data_new_key_data).into();
@@ -143,7 +189,6 @@ fn it_throws_error_when_for_duplicate_key() {
 				test_origin_signed(1),
 				owner_key_pair.public().into(),
 				owner_signature,
-				new_key_pair.public().into(),
 				new_key_signature,
 				add_new_key_data
 			),
@@ -161,39 +206,48 @@ fn add_key_with_more_than_allowed_should_panic() {
 		for _ in 1..<Test as Config>::MaxPublicKeysPerMsa::get() {
 			let (new_key_pair, _) = sr25519::Pair::generate();
 
-			let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
+			let add_new_key_data = AddKeyData {
+				msa_id: new_msa_id,
+				expiration: 10,
+				new_public_key: new_key_pair.public().into(),
+			};
 			let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 			let owner_signature: MultiSignature =
 				owner_key_pair.sign(&encode_data_new_key_data).into();
-			let new_key_signature: MultiSignature =
+
+			let public_key_ownership_signature =
 				new_key_pair.sign(&encode_data_new_key_data).into();
 
 			assert_ok!(Msa::add_public_key_to_msa(
 				test_origin_signed(1),
 				owner_key_pair.public().into(),
 				owner_signature,
-				new_key_pair.public().into(),
-				new_key_signature,
+				public_key_ownership_signature,
 				add_new_key_data
 			));
 		}
 
 		// act
 		let (final_key_pair, _) = sr25519::Pair::generate();
-		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
+
+		let add_new_key_data = AddKeyData {
+			msa_id: new_msa_id,
+			expiration: 10,
+			new_public_key: final_key_pair.public().into(),
+		};
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let owner_signature: MultiSignature = owner_key_pair.sign(&encode_data_new_key_data).into();
-		let final_key_signature: MultiSignature =
+		let new_key_signature: MultiSignature =
 			final_key_pair.sign(&encode_data_new_key_data).into();
+
 		assert_noop!(
 			Msa::add_public_key_to_msa(
 				test_origin_signed(1),
 				owner_key_pair.public().into(),
 				owner_signature,
-				final_key_pair.public().into(),
-				final_key_signature,
+				new_key_signature,
 				add_new_key_data
 			),
 			Error::<Test>::KeyLimitExceeded
@@ -208,7 +262,11 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 		let (new_msa_id, owner_key_pair) = create_account();
 		let (new_key_pair, _) = sr25519::Pair::generate();
 
-		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 10 };
+		let add_new_key_data = AddKeyData {
+			msa_id: new_msa_id,
+			expiration: 10,
+			new_public_key: new_key_pair.public().into(),
+		};
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let owner_signature: MultiSignature = owner_key_pair.sign(&encode_data_new_key_data).into();
@@ -219,7 +277,6 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 			test_origin_signed(1),
 			owner_key_pair.public().into(),
 			owner_signature,
-			new_key_pair.public().into(),
 			new_key_signature,
 			add_new_key_data
 		));
@@ -249,7 +306,12 @@ fn add_key_with_expired_proof_fails() {
 
 		// The current block is 1, therefore setting the proof expiration to 1 should cause
 		// the extrinsic to fail because the proof has expired.
-		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 1 };
+		let add_new_key_data = AddKeyData {
+			msa_id: new_msa_id,
+			expiration: 1,
+			new_public_key: new_key_pair.public().into(),
+		};
+
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let owner_signature: MultiSignature = owner_key_pair.sign(&encode_data_new_key_data).into();
@@ -260,7 +322,6 @@ fn add_key_with_expired_proof_fails() {
 				test_origin_signed(1),
 				owner_key_pair.public().into(),
 				owner_signature,
-				new_key_pair.public().into(),
 				new_key_signature,
 				add_new_key_data
 			),
@@ -281,7 +342,12 @@ fn add_key_with_proof_too_far_into_future_fails() {
 		// The current block is 1, therefore setting the proof expiration to EXPIRATION_BLOCK_VALIDITY_GAP + 1
 		// should cause the extrinsic to fail because the proof is only valid for EXPIRATION_BLOCK_VALIDITY_GAP
 		// more blocks.
-		let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: 202 };
+		let add_new_key_data = AddKeyData {
+			msa_id: new_msa_id,
+			expiration: 202,
+			new_public_key: new_key_pair.public().into(),
+		};
+
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let owner_signature: MultiSignature = owner_key_pair.sign(&encode_data_new_key_data).into();
@@ -292,7 +358,6 @@ fn add_key_with_proof_too_far_into_future_fails() {
 				test_origin_signed(1),
 				owner_key_pair.public().into(),
 				owner_signature,
-				new_key_pair.public().into(),
 				new_key_signature,
 				add_new_key_data
 			),
@@ -370,16 +435,19 @@ fn test_retire_msa_success() {
 		let new_account1 = key_pair1.public();
 		let (msa_id2, _) = create_account();
 
-		let add_new_key_data = AddKeyData { msa_id: msa_id2, expiration: 10 };
+		let add_new_key_data =
+			AddKeyData { msa_id: msa_id2, expiration: 10, new_public_key: new_account1.into() };
+
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
-		let signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
+		let old_msa_owner_signature: MultiSignature =
+			test_account_key_pair.sign(&encode_data_new_key_data).into();
+		let new_key_signature: MultiSignature = key_pair1.sign(&encode_data_new_key_data).into();
 		assert_noop!(
 			Msa::add_public_key_to_msa(
 				Origin::signed(test_account.clone()),
-				new_account1.into(),
-				signature.clone(),
-				new_account1.into(),
-				signature,
+				test_account_key_pair.public().into(),
+				old_msa_owner_signature.clone(),
+				new_key_signature,
 				add_new_key_data
 			),
 			Error::<Test>::NoKeyExists
@@ -1512,7 +1580,11 @@ fn double_add_key_two_msa_fails() {
 		let (msa_id1, owner_key_pair) = create_account();
 		let (_msa_id2, msa_2_owner_key_pair) = create_account();
 
-		let add_new_key_data = AddKeyData { msa_id: msa_id1, expiration: 10 };
+		let add_new_key_data = AddKeyData {
+			msa_id: msa_id1,
+			expiration: 10,
+			new_public_key: msa_2_owner_key_pair.public().into(),
+		};
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 
 		let owner_signature: MultiSignature = owner_key_pair.sign(&encode_data_new_key_data).into();
@@ -1524,13 +1596,43 @@ fn double_add_key_two_msa_fails() {
 				test_origin_signed(1),
 				owner_key_pair.public().into(),
 				owner_signature,
-				msa_2_owner_key_pair.public().into(),
 				new_key_signature,
 				add_new_key_data
 			),
 			Error::<Test>::KeyAlreadyRegistered
 		);
 	})
+}
+
+#[test]
+fn add_public_key_to_msa_registers_two_signatures() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(1);
+		let (msa_id1, owner_key_pair) = create_account();
+		let (_msa_id2, _msa_2_owner_key_pair) = create_account();
+		let (new_key_pair, _) = sr25519::Pair::generate();
+
+		let add_new_key_data = AddKeyData {
+			msa_id: msa_id1,
+			expiration: 10,
+			new_public_key: new_key_pair.public().into(),
+		};
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
+		let owner_signature: MultiSignature = owner_key_pair.sign(&encode_data_new_key_data).into();
+		let new_key_signature: MultiSignature = new_key_pair.sign(&encode_data_new_key_data).into();
+
+		assert_ok!(Msa::add_public_key_to_msa(
+			test_origin_signed(1),
+			owner_key_pair.public().into(),
+			owner_signature.clone(),
+			new_key_signature.clone(),
+			add_new_key_data
+		));
+
+		assert_eq!(Msa::get_payload_signature_registry(0, owner_signature).unwrap(), 10);
+		assert_eq!(Msa::get_payload_signature_registry(0, new_key_signature).unwrap(), 10);
+	});
 }
 
 /// Assert that when a key has been deleted from one MSA, that it may be added to a different MSA.
@@ -1542,16 +1644,20 @@ fn add_removed_key_to_msa_pass() {
 
 		assert_ok!(Msa::delete_key_for_msa(msa_used_to_have_a_key, &prior_msa_key.public().into()));
 
-		let add_new_key_data = AddKeyData { msa_id: msa_getting_a_second_key, expiration: 10 };
+		let add_new_key_data = AddKeyData {
+			msa_id: msa_getting_a_second_key,
+			expiration: 10,
+			new_public_key: prior_msa_key.public().into(),
+		};
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
 		let owner_signature: MultiSignature = owner_key_pair.sign(&encode_data_new_key_data).into();
 		let new_key_signature: MultiSignature =
 			prior_msa_key.sign(&encode_data_new_key_data).into();
+
 		assert_ok!(Msa::add_public_key_to_msa(
 			test_origin_signed(1),
 			owner_key_pair.public().into(),
 			owner_signature,
-			prior_msa_key.public().into(),
 			new_key_signature,
 			add_new_key_data
 		));
@@ -2083,7 +2189,7 @@ pub fn cannot_register_signature_with_mortality_out_of_bounds() {
 pub fn add_msa_key_replay_fails() {
 	struct TestCase {
 		current: u64,
-		mortality: u32,
+		mortality: u64,
 		run_to: u64,
 		expected_ok: bool,
 	}
@@ -2092,28 +2198,28 @@ pub fn add_msa_key_replay_fails() {
 		let test_cases: Vec<TestCase> = vec![
 			TestCase {
 				current: 10_849u64,
-				mortality: 11_001u32,
+				mortality: 11_001u64,
 				run_to: 10_848u64,
 				expected_ok: true,
 			},
-			TestCase { current: 1u64, mortality: 3u32, run_to: 5u64, expected_ok: false },
-			TestCase { current: 99u64, mortality: 101u32, run_to: 100u64, expected_ok: true },
+			TestCase { current: 1u64, mortality: 3u64, run_to: 5u64, expected_ok: false },
+			TestCase { current: 99u64, mortality: 101u64, run_to: 100u64, expected_ok: true },
 			TestCase {
 				current: 1_000u64,
-				mortality: 1_199u32,
+				mortality: 1_199u64,
 				run_to: 1_198u64,
 				expected_ok: true,
 			},
 			TestCase {
 				current: 1_002u64,
-				mortality: 1_201u32,
+				mortality: 1_201u64,
 				run_to: 1_200u64,
 				expected_ok: true,
 			},
-			TestCase { current: 999u64, mortality: 1_148u32, run_to: 1_101u64, expected_ok: true },
+			TestCase { current: 999u64, mortality: 1_148u64, run_to: 1_101u64, expected_ok: true },
 			TestCase {
 				current: 1_000_000u64,
-				mortality: 1_000_000u32,
+				mortality: 1_000_000u64,
 				run_to: 1_000_000u64,
 				expected_ok: false,
 			},
@@ -2123,21 +2229,29 @@ pub fn add_msa_key_replay_fails() {
 		let account_provider = key_pair_provider.public();
 		for tc in test_cases {
 			System::set_block_number(tc.current);
-			let add_new_key_data = AddKeyData { msa_id: new_msa_id, expiration: tc.mortality };
-			let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
 			let (new_key_pair, _) = sr25519::Pair::generate();
-			let new_delegator_account = new_key_pair.public();
+
+			let add_new_key_data = AddKeyData {
+				msa_id: new_msa_id,
+				expiration: tc.mortality,
+				new_public_key: new_key_pair.public().into(),
+			};
+
+			let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
 			let signature_owner: MultiSignature =
 				key_pair_provider.sign(&encode_data_new_key_data).into();
+
 			let signature_new_key: MultiSignature =
 				new_key_pair.sign(&encode_data_new_key_data).into();
+
 			run_to_block(tc.run_to);
 
 			let add_key_response: bool = Msa::add_public_key_to_msa(
 				Origin::signed(account_provider.into()),
 				account_provider.into(),
 				signature_owner.clone(),
-				new_delegator_account.into(),
 				signature_new_key,
 				add_new_key_data.clone(),
 			)

@@ -2,6 +2,7 @@
 
 use super::*;
 
+use crate::types::EMPTY_FUNCTION;
 #[allow(unused)]
 use crate::Pallet as Msa;
 use frame_benchmarking::{account, benchmarks, whitelisted_caller};
@@ -45,13 +46,21 @@ fn create_payload_and_signature<T: Config>() -> (AddProvider, MultiSignature, T:
 	(add_provider_payload, MultiSignature::Sr25519(signature.into()), acc.into())
 }
 
-fn add_key_payload_and_signature<T: Config>() -> (AddKeyData, MultiSignature, T::AccountId) {
-	let account = SignerId::generate_pair(None);
-	let add_key_payload = AddKeyData { msa_id: 1u64.into(), expiration: 10 };
-	let encode_add_provider_data = wrap_binary_data(add_key_payload.encode());
+fn add_key_payload_and_signature<T: Config>(
+	msa_id: u64,
+) -> (AddKeyData<T>, MultiSignature, T::AccountId) {
+	let new_keys = SignerId::generate_pair(None);
+	let public_key = T::AccountId::decode(&mut &new_keys.encode()[..]).unwrap();
+	let add_key_payload = AddKeyData::<T> {
+		msa_id: msa_id.into(),
+		expiration: 10u32.into(),
+		new_public_key: public_key.into(),
+	};
 
-	let signature = account.sign(&encode_add_provider_data).unwrap();
-	let acc = T::AccountId::decode(&mut &account.encode()[..]).unwrap();
+	let encoded_add_key_payload = wrap_binary_data(add_key_payload.encode());
+
+	let signature = new_keys.sign(&encoded_add_key_payload).unwrap();
+	let acc = T::AccountId::decode(&mut &new_keys.encode()[..]).unwrap();
 	(add_key_payload, MultiSignature::Sr25519(signature.into()), acc.into())
 }
 
@@ -63,6 +72,15 @@ fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSource
 	let msa_id = Msa::<T>::ensure_valid_msa_key(&provider).unwrap();
 
 	(provider.clone(), msa_id)
+}
+
+fn create_msa_account_and_keys<T: Config>() -> (T::AccountId, SignerId, MessageSourceId) {
+	let key_pair = SignerId::generate_pair(None);
+	let account_id = T::AccountId::decode(&mut &key_pair.encode()[..]).unwrap();
+
+	let (msa_id, _) = Msa::<T>::create_account(account_id.clone(), EMPTY_FUNCTION).unwrap();
+
+	(account_id, key_pair, msa_id)
 }
 
 fn add_delegation<T: Config>(delegator: Delegator, provider: Provider) {
@@ -117,20 +135,28 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(provider), delegator_msa_id)
 
 	add_public_key_to_msa {
-		let (add_provider_payload, signature, key) = add_key_payload_and_signature::<T>();
-		assert_ok!(Msa::<T>::create(RawOrigin::Signed(key.clone()).into()));
-		let (add_provider_payload, signature_new, key_new) = add_key_payload_and_signature::<T>();
+		let (provider_public_key, provider_key_pair, _) = create_msa_account_and_keys::<T>();
+		let (delegator_public_key, delegator_key_pair, delegator_msa_id) = create_msa_account_and_keys::<T>();
 
-	}: _ (RawOrigin::Signed(key.clone()), key.clone(), signature, key_new, signature_new, add_provider_payload)
+		let (add_key_payload, new_public_key_signature, _) = add_key_payload_and_signature::<T>(delegator_msa_id);
+
+		let encoded_add_key_payload = wrap_binary_data(add_key_payload.encode());
+		let owner_signature = MultiSignature::Sr25519(delegator_key_pair.sign(&encoded_add_key_payload).unwrap().into());
+
+	}: _ (RawOrigin::Signed(provider_public_key.clone()), delegator_public_key.clone(), owner_signature, new_public_key_signature, add_key_payload)
 
 	delete_msa_public_key {
+		let (provider_public_key, provider_key_pair, _) = create_msa_account_and_keys::<T>();
+		let (caller_and_delegator_public_key, delegator_key_pair, delegator_msa_id) = create_msa_account_and_keys::<T>();
 
-		let (add_provider_payload, signature, caller) = add_key_payload_and_signature::<T>();
-		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
-		let (add_provider_payload, signature_new, key_new) = add_key_payload_and_signature::<T>();
-		assert_ok!(Msa::<T>::add_public_key_to_msa(RawOrigin::Signed(caller.clone()).into(), caller.clone(), signature, key_new.clone(), signature_new, add_provider_payload));
+		let (add_key_payload, new_public_key_signature, new_public_key) = add_key_payload_and_signature::<T>(delegator_msa_id);
 
-	}: _(RawOrigin::Signed(caller), key_new)
+		let encoded_add_key_payload = wrap_binary_data(add_key_payload.encode());
+		let owner_signature = MultiSignature::Sr25519(delegator_key_pair.sign(&encoded_add_key_payload).unwrap().into());
+
+		assert_ok!(Msa::<T>::add_public_key_to_msa(RawOrigin::Signed(provider_public_key).into(), caller_and_delegator_public_key.clone(), owner_signature,  new_public_key_signature, add_key_payload));
+
+	}: _(RawOrigin::Signed(caller_and_delegator_public_key), new_public_key)
 
 	retire_msa {
 
