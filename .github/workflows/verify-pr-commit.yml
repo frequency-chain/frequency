@@ -91,10 +91,10 @@ jobs:
         uses: actions/checkout@v3
       - name: Set Up Cargo Audit
         run: |
-          cargo install --force cargo-audit
+          cargo install --force cargo-deny
           cargo generate-lockfile
-      - name: Run Cargo Audit
-        run: cargo audit
+      - name: Run Cargo Deny
+        run: cargo deny check --hide-inclusion-graph -c ./ci/deny.toml
 
   check-rust-code-format:
     needs: changes
