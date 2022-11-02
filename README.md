@@ -261,7 +261,7 @@ genesis state and WASM:
 -   Format code with `make format` according to style guidelines and configurations in `rustfmt.toml`.
 -   Lint code with with `make lint` to catch common mistakes and improve your [Rust](https://github.com/rust-lang/rust) code.
 -   Alternatively, run `make format-lint` to run both at the same time.
--   Run `cargo-audit` to audit Cargo.lock files for crates with security vulnerabilities reported to the RustSec Advisory Database. [See cargo-audit installation instructions](https://github.com/RustSec/rustsec/tree/main/cargo-audit)
+-   Run `cargo-deny` to audit Cargo.lock files for crates with security vulnerabilities reported to the RustSec Advisory Database. [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
 
 # Verify Runtime
 
