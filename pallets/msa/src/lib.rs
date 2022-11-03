@@ -1143,12 +1143,24 @@ impl<T: Config> Pallet<T> {
 		delegator: Delegator,
 		schema_id: SchemaId,
 	) -> DispatchResult {
-		let provider_info = Self::ensure_valid_delegation(provider, delegator, None)?;
+		let current_block = frame_system::Pallet::<T>::block_number();
+		let provider_info =
+			Self::ensure_valid_delegation(provider, delegator, Some(current_block))?;
+
+		let schema_permission_revoked_at_block_number = provider_info
+			.schema_permissions
+			.get(&schema_id)
+			.ok_or(Error::<T>::SchemaNotGranted)?;
+
+		if *schema_permission_revoked_at_block_number == T::BlockNumber::zero() {
+			return Ok(())
+		}
 
 		ensure!(
-			provider_info.schema_permissions.contains_key(&schema_id),
+			current_block <= *schema_permission_revoked_at_block_number,
 			Error::<T>::SchemaNotGranted
 		);
+
 		Ok(())
 	}
 
