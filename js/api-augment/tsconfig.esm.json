@@ -5,7 +5,6 @@
         "module": "ES2022",
         "target": "es2022",
         "outDir": "dist/esm",
-        "emitDeclarationOnly": false,
         "declaration": false
     },
 }

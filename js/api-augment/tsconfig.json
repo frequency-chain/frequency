@@ -3,8 +3,6 @@
     "display": "Base",
     "compilerOptions": {
         "allowSyntheticDefaultImports": true,
-        "declaration": true,
-        "emitDeclarationOnly": true,
         "esModuleInterop": true,
         "moduleResolution": "node",
         "noImplicitAny": true,
