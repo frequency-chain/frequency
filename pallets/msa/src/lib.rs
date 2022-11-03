@@ -1409,7 +1409,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// * [`ValidityError::InvalidDelegation`]
 	///
 	pub fn validate_delegation_by_delegator(
-		account_id: &T::AccountId,
+		account_id: &T::AccountId, // presumptive delegator
 		provider_msa_id: &MessageSourceId,
 	) -> TransactionValidity {
 		const TAG_PREFIX: &str = "DelegatorDelegationRevocation";
@@ -1431,7 +1431,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// * [`ValidityError::InvalidDelegation`]
 	///
 	pub fn validate_delegation_by_provider(
-		account_id: &T::AccountId, // presumptive
+		account_id: &T::AccountId, // presumptive provider
 		delegator_msa_id: &MessageSourceId,
 	) -> TransactionValidity {
 		const TAG_PREFIX: &str = "ProviderDelegationRevocation";

@@ -428,7 +428,7 @@ fn test_retire_msa_does_nothing_when_no_msa() {
 		let origin = Origin::signed(first_account_key.into());
 
 		// 1. when there's no MSA at all
-		let mut event_count = System::event_count();
+		let event_count = System::event_count();
 		assert_ok!(Msa::retire_msa(origin.clone()));
 		assert_eq!(event_count, System::event_count());
 	});
@@ -956,7 +956,7 @@ pub fn create_account_with_panic_in_on_success_should_revert_everything() {
 }
 
 #[test]
-pub fn revoke_delegation_by_delegatoris_successful() {
+pub fn revoke_delegation_by_delegator_is_successful() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
@@ -1210,10 +1210,8 @@ pub fn revoke_delegation_by_provider_has_correct_costs() {
 pub fn revoke_delegation_by_provider_does_nothing_when_no_msa() {
 	new_test_ext().execute_with(|| {
 		let (provider_pair, _) = sr25519::Pair::generate();
-		let (user_pair, _) = sr25519::Pair::generate();
 
 		let provider_key = provider_pair.public();
-		let delegator_key = user_pair.public();
 		let delegator_msa = 2u64;
 
 		let current_event_count = System::event_count();
@@ -1278,9 +1276,9 @@ pub fn delegation_expired() {
 /// Assert that revoking an MSA delegation passes the signed extension CheckFreeExtrinsicUse
 /// validation when a valid delegation exists.
 #[test]
-fn signed_extension_revoke_delegation_by_delegator() {
+fn signed_extension_revoke_delegation_by_delegator_success() {
 	new_test_ext().execute_with(|| {
-		let (provider_msa_id, delegator_account) = test_create_delegator_msa_with_provider();
+		let (provider_msa_id, delegator_account) = create_provider_msa_and_delegator();
 		let call_revoke_delegation: &<Test as frame_system::Config>::Call =
 			&Call::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
@@ -1298,9 +1296,9 @@ fn signed_extension_revoke_delegation_by_delegator() {
 /// Assert that revoking an MSA delegation fails the signed extension CheckFreeExtrinsicUse
 /// validation when no valid delegation exists.
 #[test]
-fn signed_extension_validation_failure_on_revoked() {
+fn signed_extension_fails_when_revoke_delegation_by_delegator_called_twice() {
 	new_test_ext().execute_with(|| {
-		let (provider_msa_id, delegator_account) = test_create_delegator_msa_with_provider();
+		let (provider_msa_id, delegator_account) = create_provider_msa_and_delegator();
 		let call_revoke_delegation: &<Test as frame_system::Config>::Call =
 			&Call::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
@@ -1332,10 +1330,84 @@ fn signed_extension_validation_failure_on_revoked() {
 	});
 }
 
-/// Assert that a call that is not revoke_delegation_by_delegator passes the signed extension
-/// CheckFreeExtrinsicUse validaton.
 #[test]
-fn signed_extension_validation_valid_for_others() {
+fn signed_extension_revoke_delegation_by_provider_success() {
+	new_test_ext().execute_with(|| {
+		let (delegator_msa_id, provider_account) = create_delegator_msa_and_provider();
+		let call_revoke_delegation: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::revoke_delegation_by_provider { delegator: delegator_msa_id });
+		let info = DispatchInfo::default();
+		let len = 0_usize;
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
+			&provider_account.into(),
+			call_revoke_delegation,
+			&info,
+			len,
+		);
+		assert_ok!(result);
+	})
+}
+
+fn assert_revoke_delegation_by_provider_err(
+	expected_err: InvalidTransaction,
+	provider_account: Public,
+	delegator_msa_id: u64,
+) {
+	let call_revoke_delegation: &<Test as frame_system::Config>::Call =
+		&Call::Msa(MsaCall::revoke_delegation_by_provider { delegator: delegator_msa_id });
+	let info = DispatchInfo::default();
+	let len = 0_usize;
+	let result = CheckFreeExtrinsicUse::<Test>::new().validate(
+		&provider_account.into(),
+		call_revoke_delegation,
+		&info,
+		len,
+	);
+	assert_err!(result, expected_err);
+}
+
+#[test]
+fn signed_extension_revoke_delegation_by_provider_fails_when_no_delegator_msa() {
+	new_test_ext().execute_with(|| {
+		let (_, provider_pair) = create_account();
+		let provider_account = provider_pair.public();
+
+		let delegator_msa_id = 33u64;
+		let expected_err = InvalidTransaction::Custom(ValidityError::InvalidDelegation as u8);
+		assert_revoke_delegation_by_provider_err(expected_err, provider_account, delegator_msa_id);
+	})
+}
+
+#[test]
+fn signed_extension_revoke_delegation_by_provider_fails_when_no_provider_msa() {
+	new_test_ext().execute_with(|| {
+		let (provider_pair, _) = sr25519::Pair::generate();
+		let provider_account = provider_pair.public();
+
+		let (delegator_msa, delegator_pair) = create_account();
+
+		let expected_err = InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8);
+		assert_revoke_delegation_by_provider_err(expected_err, provider_account, delegator_msa);
+	});
+}
+
+#[test]
+fn signed_extension_revoke_delegation_by_provider_fails_when_no_delegation() {
+	new_test_ext().execute_with(|| {
+		let (_, provider_pair) = create_account();
+		let provider_account = provider_pair.public();
+		let (delegator_msa, delegator_pair) = create_account();
+		let delegator_account = delegator_pair.public();
+
+		let expected_err = InvalidTransaction::Custom(ValidityError::InvalidDelegation as u8);
+		assert_revoke_delegation_by_provider_err(expected_err, provider_account, delegator_msa);
+	})
+}
+
+/// Assert that a call that is not revoke_delegation_by_delegator passes the signed extension
+/// CheckFreeExtrinsicUse validation.
+#[test]
+fn signed_extension_validation_valid_for_other_extrinsics() {
 	let random_call_should_pass: &<Test as frame_system::Config>::Call =
 		&Call::Msa(MsaCall::create {});
 	let info = DispatchInfo::default();
@@ -1362,7 +1434,7 @@ pub fn delete_msa_public_key_call_has_correct_costs() {
 }
 
 #[test]
-fn signed_extension_validation_on_msa_key_deleted() {
+fn signed_extension_validation_delete_msa_public_key_success() {
 	new_test_ext().execute_with(|| {
 		let (owner_msa_id, owner_key_pair) = create_account();
 
@@ -1391,7 +1463,7 @@ fn signed_extension_validation_on_msa_key_deleted() {
 }
 
 #[test]
-fn signed_extension_validation_failure_on_msa_key_deleted() {
+fn signed_extension_validation_failure_when_delete_msa_public_key_called_twice() {
 	new_test_ext().execute_with(|| {
 		let (owner_msa_id, owner_key_pair) = create_account();
 
@@ -1692,7 +1764,7 @@ fn signed_ext_check_nonce_delete_msa_public_key() {
 #[test]
 fn signed_ext_check_nonce_revoke_delegation_by_delegator() {
 	new_test_ext().execute_with(|| {
-		let (provider_msa_id, _) = test_create_delegator_msa_with_provider();
+		let (provider_msa_id, _) = create_provider_msa_and_delegator();
 
 		// We are testing the revoke_delegation_by_delegator() call.
 		let call_revoke_delegation_by_delegator: &<Test as frame_system::Config>::Call =
