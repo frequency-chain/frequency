@@ -1544,16 +1544,6 @@
 <span id="1544">1544</span>
 <span id="1545">1545</span>
 <span id="1546">1546</span>
-<span id="1547">1547</span>
-<span id="1548">1548</span>
-<span id="1549">1549</span>
-<span id="1550">1550</span>
-<span id="1551">1551</span>
-<span id="1552">1552</span>
-<span id="1553">1553</span>
-<span id="1554">1554</span>
-<span id="1555">1555</span>
-<span id="1556">1556</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet
 //! The MSA pallet provides functionality for handling Message Source Accounts.
 //!
@@ -1611,6 +1601,19 @@
 )]
 
 </span><span class="kw">use </span>codec::{Decode, Encode};
+<span class="kw">use </span>frame_support::{
+	dispatch::DispatchResult, ensure, pallet_prelude::<span class="kw-2">*</span>, traits::IsSubType, weights::DispatchInfo,
+};
+<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>scale_info::TypeInfo;
+<span class="kw">use </span>sp_core::crypto::AccountId32;
+<span class="kw">use </span>sp_runtime::{
+	traits::{Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify, Zero},
+	DispatchError, MultiSignature,
+};
+<span class="kw">use </span>sp_std::prelude::<span class="kw-2">*</span>;
+
+<span class="kw">pub use </span>common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 <span class="kw">use </span>common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, Delegator, MsaLookup, MsaValidator, Provider,
@@ -1618,17 +1621,9 @@
 	},
 	schema::{SchemaId, SchemaValidator},
 };
-<span class="kw">use </span>frame_support::{dispatch::DispatchResult, ensure, traits::IsSubType, weights::DispatchInfo};
 <span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
-<span class="kw">use </span>scale_info::TypeInfo;
-<span class="kw">use </span>sp_runtime::{
-	traits::{Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify, Zero},
-	DispatchError, MultiSignature,
-};
-
-<span class="kw">use </span>sp_core::crypto::AccountId32;
-<span class="kw">pub mod </span>types;
 <span class="kw">pub use </span>types::{AddKeyData, AddProvider, PermittedDelegationSchemas};
+<span class="kw">pub use </span>weights::<span class="kw-2">*</span>;
 
 <span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">mod </span>benchmarking;
@@ -1636,22 +1631,17 @@
 </span><span class="kw">mod </span>mock;
 <span class="attribute">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
+<span class="kw">pub mod </span>types;
 
 <span class="attribute">#[cfg(test)]
 </span><span class="kw">mod </span>replay_tests;
 
 <span class="kw">pub mod </span>weights;
 
-<span class="kw">pub use </span>weights::<span class="kw-2">*</span>;
-
-<span class="kw">pub use </span>common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
-
-<span class="kw">use </span>frame_support::pallet_prelude::<span class="kw-2">*</span>;
-<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
-<span class="kw">use </span>sp_std::prelude::<span class="kw-2">*</span>;
-
 <span class="attribute">#[frame_support::pallet]
 </span><span class="kw">pub mod </span>pallet {
+	<span class="kw">use </span>frame_support::log::warn;
+
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
 	<span class="attribute">#[pallet::config]
@@ -1698,7 +1688,7 @@
 	}
 
 	<span class="attribute">#[pallet::pallet]
-	#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]
+	#[pallet::generate_store(<span class="kw">pub </span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]
 	</span><span class="kw">pub struct </span>Pallet&lt;T&gt;(<span class="kw">_</span>);
 
 	<span class="doccomment">/// Storage type for the current MSA identifier maximum.
@@ -1769,7 +1759,7 @@
 	&gt;;
 
 	<span class="attribute">#[pallet::event]
-	#[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]
+	#[pallet::generate_deposit(<span class="kw">pub </span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]
 	</span><span class="kw">pub enum </span>Event&lt;T: Config&gt; {
 		<span class="doccomment">/// A new Message Service Account was created with a new MessageSourceId
 		</span>MsaCreated {
@@ -2175,9 +2165,9 @@
 			</span><span class="macro">ensure!</span>(who != key, Error::&lt;T&gt;::InvalidSelfRemoval);
 
 			<span class="comment">// Get the MSA id for the calling account
-			</span><span class="kw">let </span>who_msa_id = <span class="self">Self</span>::try_get_msa_from_account_id(<span class="kw-2">&amp;</span>who)<span class="question-mark">?</span>;
+			</span><span class="kw">let </span>who_msa_id = <span class="self">Self</span>::ensure_valid_msa_key(<span class="kw-2">&amp;</span>who)<span class="question-mark">?</span>;
 			<span class="comment">// Get the MSA id for the account to be removed
-			</span><span class="kw">let </span>account_to_remove_msa_id = <span class="self">Self</span>::try_get_msa_from_account_id(<span class="kw-2">&amp;</span>key)<span class="question-mark">?</span>;
+			</span><span class="kw">let </span>account_to_remove_msa_id = <span class="self">Self</span>::ensure_valid_msa_key(<span class="kw-2">&amp;</span>key)<span class="question-mark">?</span>;
 			<span class="comment">// The calling account doesn&#39;t own the account that is to be removed
 			</span><span class="macro">ensure!</span>(who_msa_id == account_to_remove_msa_id, Error::&lt;T&gt;::NotKeyOwner);
 
@@ -2308,19 +2298,20 @@
 			<span class="comment">// Check and get the account id from the origin
 			</span><span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
-			<span class="comment">// Get the MSA id of the origin which can trigger NoKeyExists error
-			</span><span class="kw">let </span>msa_id = <span class="self">Self</span>::try_get_msa_from_account_id(<span class="kw-2">&amp;</span>who)<span class="question-mark">?</span>;
-
-			<span class="kw">let </span>delegator = Delegator(msa_id);
-
-			<span class="comment">// Remove delegator from all delegator&lt;-&gt;provider delegations
-			</span><span class="self">Self</span>::remove_delegator(delegator)<span class="question-mark">?</span>;
-
 			<span class="comment">// Delete the last and only account key and deposit the &quot;PublicKeyDeleted&quot; event
-			</span><span class="self">Self</span>::delete_key_for_msa(msa_id, <span class="kw-2">&amp;</span>who)<span class="question-mark">?</span>;
-			<span class="self">Self</span>::deposit_event(Event::PublicKeyDeleted { key: who });
-
-			<span class="self">Self</span>::deposit_event(Event::MsaRetired { msa_id });
+			// check for valid MSA is in SignedExtension.
+			</span><span class="kw">match </span><span class="self">Self</span>::get_msa_by_public_key(<span class="kw-2">&amp;</span>who) {
+				<span class="prelude-val">Some</span>(msa_id) =&gt; {
+					<span class="kw">let </span>delegator = Delegator(msa_id);
+					<span class="self">Self</span>::delete_delegation_relationship(delegator);
+					<span class="self">Self</span>::delete_key_for_msa(msa_id, <span class="kw-2">&amp;</span>who)<span class="question-mark">?</span>;
+					<span class="self">Self</span>::deposit_event(Event::PublicKeyDeleted { key: who });
+					<span class="self">Self</span>::deposit_event(Event::MsaRetired { msa_id });
+				},
+				<span class="prelude-val">None </span>=&gt; {
+					<span class="macro">warn!</span>(<span class="string">&quot;Did not find MSA for account {:?}, SignedExtension did not catch.&quot;</span>, who);
+				},
+			}
 			<span class="prelude-val">Ok</span>(())
 		}
 	}
@@ -2495,8 +2486,7 @@
 	/// * [`Error::NoKeyExists`]
 	///
 	</span><span class="kw">pub fn </span>ensure_msa_owner(who: <span class="kw-2">&amp;</span>T::AccountId, msa_id: MessageSourceId) -&gt; DispatchResult {
-		<span class="kw">let </span>provider_msa_id = <span class="self">Self</span>::get_owner_of(who).ok_or(Error::&lt;T&gt;::NoKeyExists)<span class="question-mark">?</span>;
-
+		<span class="kw">let </span>provider_msa_id = <span class="self">Self</span>::ensure_valid_msa_key(who)<span class="question-mark">?</span>;
 		<span class="macro">ensure!</span>(provider_msa_id == msa_id, Error::&lt;T&gt;::NotMsaOwner);
 
 		<span class="prelude-val">Ok</span>(())
@@ -2653,21 +2643,8 @@
 	}
 
 	<span class="doccomment">/// Removes all delegations from the specified delegator MSA id to providers
-	</span><span class="kw">pub fn </span>remove_delegator(delegator: Delegator) -&gt; DispatchResult {
+	</span><span class="kw">pub fn </span>delete_delegation_relationship(delegator: Delegator) {
 		<span class="kw">_ </span>= DelegatorAndProviderToDelegation::&lt;T&gt;::clear_prefix(delegator, u32::max_value(), <span class="prelude-val">None</span>);
-		<span class="prelude-val">Ok</span>(())
-	}
-
-	<span class="doccomment">/// Attempts to retrieve the MSA id for an account
-	///
-	/// # Errors
-	/// * [`Error::NoKeyExists`]
-	///
-	</span><span class="kw">pub fn </span>try_get_msa_from_account_id(
-		key: <span class="kw-2">&amp;</span>T::AccountId,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;MessageSourceId, DispatchError&gt; {
-		<span class="kw">let </span>info = <span class="self">Self</span>::get_msa_by_public_key(key).ok_or(Error::&lt;T&gt;::NoKeyExists)<span class="question-mark">?</span>;
-		<span class="prelude-val">Ok</span>(info)
 	}
 
 	<span class="doccomment">/// Retrieves the MSA Id for a given `AccountId`
@@ -2682,7 +2659,7 @@
 	// pub fn fetch_msa_keys(msa_id: MessageSourceId) -&gt; Vec&lt;KeyInfoResponse&lt;T::AccountId&gt;&gt; {
 	// 	let mut response = Vec::new();
 	// 	for key in Self::get_msa_keys(msa_id) {
-	// 		if let Ok(_info) = Self::try_get_msa_from_account_id(&amp;key) {
+	// 		if let Ok(_info) = Self::ensure_valid_msa_key(&amp;key) {
 	// 			response.push(KeyInfoResponse { key, msa_id });
 	// 		}
 	// 	}
@@ -2690,10 +2667,9 @@
 	// 	response
 	// }
 
-	</span><span class="doccomment">/// Checks that a key is associated to an MSA and has not been revoked.
+	</span><span class="doccomment">/// Retrieve MSA Id associated with `key` or return `NoKeyExists`
 	</span><span class="kw">pub fn </span>ensure_valid_msa_key(key: <span class="kw-2">&amp;</span>T::AccountId) -&gt; <span class="prelude-ty">Result</span>&lt;MessageSourceId, DispatchError&gt; {
-		<span class="kw">let </span>msa_id = <span class="self">Self</span>::try_get_msa_from_account_id(key)<span class="question-mark">?</span>;
-
+		<span class="kw">let </span>msa_id = <span class="self">Self</span>::get_msa_by_public_key(key).ok_or(Error::&lt;T&gt;::NoKeyExists)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(msa_id)
 	}
 
@@ -2781,7 +2757,7 @@
 	<span class="doccomment">/// Check if enough blocks have passed to reset bucket mortality storage.
 	/// If so:
 	///     1. delete all the stored bucket/signature values with key1 = bucket num
-	///	   2. add the WeightInfo proportional to the storage read/writes to the block weight
+	///       2. add the WeightInfo proportional to the storage read/writes to the block weight
 	/// If not, don&#39;t do anything.
 	///
 	</span><span class="kw">fn </span>reset_virtual_bucket_if_needed(current_block: T::BlockNumber) -&gt; Weight {
@@ -3013,11 +2989,14 @@
 	///
 	</span><span class="kw">pub fn </span>ensure_msa_can_retire(account_id: <span class="kw-2">&amp;</span>T::AccountId) -&gt; TransactionValidity {
 		<span class="kw">const </span>TAG_PREFIX: <span class="kw-2">&amp;</span>str = <span class="string">&quot;MSARetirement&quot;</span>;
-		<span class="kw">let </span>msa_id = Pallet::&lt;T&gt;::ensure_valid_msa_key(account_id)
+
+		<span class="comment">// Verify the msa to be retired exists
+		</span><span class="kw">let </span>msa_id = Pallet::&lt;T&gt;::ensure_valid_msa_key(account_id)
 			.map_err(|<span class="kw">_</span>| InvalidTransaction::Custom(ValidityError::InvalidMsaKey <span class="kw">as </span>u8))<span class="question-mark">?
 			</span>.into();
 
-		<span class="comment">// Invalid transaction error &quot;InvalidRegisteredProviderCannotBeRetired&quot; if the MSA id is a registered provider
+		<span class="comment">// Verify the MSA is not a registered provider
+		// Invalid transaction error &quot;InvalidRegisteredProviderCannotBeRetired&quot; if the MSA id is a registered provider
 		</span><span class="macro">ensure!</span>(
 			!Pallet::&lt;T&gt;::is_registered_provider(msa_id),
 			InvalidTransaction::Custom(
@@ -3025,7 +3004,8 @@
 			)
 		);
 
-		<span class="comment">// Invalid transaction error &quot;MoreThanOneKeyExists&quot; if the MSA has more than one account key.
+		<span class="comment">// Verify this is the last access key associated with the MSA
+		// Invalid transaction error &quot;MoreThanOneKeyExists&quot; if the MSA has more than one account key.
 		</span><span class="kw">let </span>key_count = Pallet::&lt;T&gt;::get_public_key_count_by_msa_id(msa_id);
 		<span class="macro">ensure!</span>(
 			key_count == <span class="number">1</span>,

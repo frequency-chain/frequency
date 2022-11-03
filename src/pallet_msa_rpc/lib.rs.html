@@ -219,7 +219,7 @@
 		<span class="kw">let </span>provider = Provider(provider_msa_id);
 
 		<span class="prelude-val">Ok</span>(delegator_msa_ids
-			.iter() <span class="comment">// TODO: Change back to par_iter() which has borrow panic
+			.iter() <span class="comment">// TODO: Change back to par_iter() which has borrow panic GitHub Issue: #519
 			</span>.map(|<span class="kw-2">&amp;</span>id| {
 				<span class="kw">let </span>delegator = Delegator(id);
 				<span class="comment">// api.has_delegation returns  Result&lt;bool, ApiError&gt;), so _or(false) should not happen,

@@ -574,7 +574,7 @@
 		<span class="kw">fn </span>on_initialize(current: T::BlockNumber) -&gt; Weight {
 			<span class="kw">let </span>prev_block = current - T::BlockNumber::one();
 			<span class="self">Self</span>::move_messages_into_final_storage(prev_block)
-			<span class="comment">// TODO: add retention policy execution
+			<span class="comment">// TODO: add retention policy execution GitHub Issue: #126 and #25
 		</span>}
 	}
 

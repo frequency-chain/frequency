@@ -929,6 +929,8 @@
 <span id="929">929</span>
 <span id="930">930</span>
 <span id="931">931</span>
+<span id="932">932</span>
+<span id="933">933</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attribute">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
@@ -1012,13 +1014,20 @@
 	pallet_msa::CheckFreeExtrinsicUse&lt;Runtime&gt;,
 );
 
-<span class="doccomment">/// Extrinsic type that has already been checked.
-</span><span class="kw">pub type </span>CheckedExtrinsic = generic::CheckedExtrinsic&lt;AccountId, Call, SignedExtra&gt;;
 <span class="doccomment">/// A Block signed with a Justification
 </span><span class="kw">pub type </span>SignedBlock = generic::SignedBlock&lt;Block&gt;;
 
 <span class="doccomment">/// BlockId type as expected by this runtime.
 </span><span class="kw">pub type </span>BlockId = generic::BlockId&lt;Block&gt;;
+
+<span class="doccomment">/// Block type as expected by this runtime.
+</span><span class="kw">pub type </span>Block = generic::Block&lt;Header, UncheckedExtrinsic&gt;;
+
+<span class="doccomment">/// Unchecked extrinsic type as expected by this runtime.
+</span><span class="kw">pub type </span>UncheckedExtrinsic = generic::UncheckedExtrinsic&lt;Address, Call, Signature, SignedExtra&gt;;
+
+<span class="doccomment">/// Extrinsic type that has already been checked.
+</span><span class="kw">pub type </span>CheckedExtrinsic = generic::CheckedExtrinsic&lt;AccountId, Call, SignedExtra&gt;;
 
 <span class="doccomment">/// Executive: handles dispatch to the various modules.
 </span><span class="kw">pub type </span>Executive = frame_executive::Executive&lt;
@@ -1028,11 +1037,6 @@
 	Runtime,
 	AllPalletsWithSystem,
 &gt;;
-
-<span class="doccomment">/// Block type as expected by this runtime.
-</span><span class="kw">pub type </span>Block = generic::Block&lt;Header, UncheckedExtrinsic&gt;;
-
-<span class="kw">pub type </span>UncheckedExtrinsic = generic::UncheckedExtrinsic&lt;Address, Call, Signature, SignedExtra&gt;;
 
 <span class="doccomment">/// Opaque types. These are used by the CLI to instantiate machinery that don&#39;t need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -1218,7 +1222,7 @@
 	</span><span class="kw">type </span>Moment = u64;
 	<span class="kw">type </span>OnTimestampSet = ();
 	<span class="kw">type </span>MinimumPeriod = MinimumPeriod;
-	<span class="kw">type </span>WeightInfo = ();
+	<span class="kw">type </span>WeightInfo = weights::pallet_timestamp::SubstrateWeight&lt;Runtime&gt;;
 }
 
 <span class="kw">impl </span>pallet_authorship::Config <span class="kw">for </span>Runtime {
@@ -1237,7 +1241,7 @@
 	<span class="kw">type </span>DustRemoval = ();
 	<span class="kw">type </span>ExistentialDeposit = ConstU128&lt;EXISTENTIAL_DEPOSIT&gt;;
 	<span class="kw">type </span>AccountStore = System;
-	<span class="kw">type </span>WeightInfo = pallet_balances::weights::SubstrateWeight&lt;Runtime&gt;;
+	<span class="kw">type </span>WeightInfo = weights::pallet_balances::SubstrateWeight&lt;Runtime&gt;;
 	<span class="kw">type </span>MaxReserves = BalancesMaxReserves;
 	<span class="kw">type </span>ReserveIdentifier = [u8; <span class="number">8</span>];
 }
@@ -1275,7 +1279,7 @@
 	<span class="kw">type </span>WeightInfo = weights::pallet_preimage::SubstrateWeight&lt;Runtime&gt;;
 	<span class="kw">type </span>Event = Event;
 	<span class="kw">type </span>Currency = Balances;
-	<span class="doccomment">/// Allow the Technical council to request preimages without deposit or fees
+	<span class="comment">// Allow the Technical council to request preimages without deposit or fees
 	</span><span class="kw">type </span>ManagerOrigin = EitherOfDiverse&lt;
 		EnsureRoot&lt;AccountId&gt;,
 		pallet_collective::EnsureMember&lt;AccountId, TechnicalCommitteeInstance&gt;,
@@ -1489,7 +1493,7 @@
 	<span class="comment">// Essentially just Aura, but lets be pedantic.
 	</span><span class="kw">type </span>SessionHandler = &lt;SessionKeys <span class="kw">as </span>sp_runtime::traits::OpaqueKeys&gt;::KeyTypeIdProviders;
 	<span class="kw">type </span>Keys = SessionKeys;
-	<span class="kw">type </span>WeightInfo = ();
+	<span class="kw">type </span>WeightInfo = weights::pallet_session::SubstrateWeight&lt;Runtime&gt;;
 }
 
 <span class="kw">impl </span>pallet_aura::Config <span class="kw">for </span>Runtime {

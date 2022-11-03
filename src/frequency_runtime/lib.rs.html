@@ -978,6 +978,7 @@
 <span id="978">978</span>
 <span id="979">979</span>
 <span id="980">980</span>
+<span id="981">981</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attribute">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
@@ -1060,6 +1061,7 @@
 			Call::TechnicalCommittee(..) =&gt; <span class="bool-val">true</span>,
 			Call::Council(..) =&gt; <span class="bool-val">true</span>,
 			Call::Democracy(..) =&gt; <span class="bool-val">true</span>,
+			Call::Session(..) =&gt; <span class="bool-val">true</span>,
 			<span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
 		};
 		core_calls
@@ -1172,7 +1174,7 @@
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
 
-	<span class="kw">pub const </span>SS58Prefix: u16 = <span class="number">42</span>;
+	<span class="kw">pub const </span>SS58Prefix: u16 = <span class="number">90</span>;
 }
 
 <span class="comment">// Configure FRAME pallets to include in runtime.
@@ -1280,7 +1282,7 @@
 	<span class="kw">type </span>Currency = Balances;
 	<span class="kw">type </span>MinVestedTransfer = MinVestedTransfer;
 	<span class="kw">type </span>VestedTransferOrigin = RootAsVestingPallet;
-	<span class="kw">type </span>WeightInfo = ();
+	<span class="kw">type </span>WeightInfo = weights::orml_vesting::SubstrateWeight&lt;Runtime&gt;;
 	<span class="kw">type </span>MaxVestingSchedules = MaxVestingSchedules;
 	<span class="kw">type </span>BlockNumberProvider = RelaychainBlockNumberProvider&lt;Runtime&gt;;
 }
@@ -1290,7 +1292,7 @@
 	</span><span class="kw">type </span>Moment = u64;
 	<span class="kw">type </span>OnTimestampSet = ();
 	<span class="kw">type </span>MinimumPeriod = MinimumPeriod;
-	<span class="kw">type </span>WeightInfo = ();
+	<span class="kw">type </span>WeightInfo = weights::pallet_timestamp::SubstrateWeight&lt;Runtime&gt;;
 }
 
 <span class="kw">impl </span>pallet_authorship::Config <span class="kw">for </span>Runtime {
@@ -1309,7 +1311,7 @@
 	<span class="kw">type </span>DustRemoval = ();
 	<span class="kw">type </span>ExistentialDeposit = ConstU128&lt;EXISTENTIAL_DEPOSIT&gt;;
 	<span class="kw">type </span>AccountStore = System;
-	<span class="kw">type </span>WeightInfo = pallet_balances::weights::SubstrateWeight&lt;Runtime&gt;;
+	<span class="kw">type </span>WeightInfo = weights::pallet_balances::SubstrateWeight&lt;Runtime&gt;;
 	<span class="kw">type </span>MaxReserves = BalancesMaxReserves;
 	<span class="kw">type </span>ReserveIdentifier = [u8; <span class="number">8</span>];
 }
@@ -1336,7 +1338,7 @@
 		pallet_collective::EnsureProportionAtLeast&lt;AccountId, CouncilCollective, <span class="number">1</span>, <span class="number">2</span>&gt;,
 	&gt;;
 	<span class="kw">type </span>MaxScheduledPerBlock = SchedulerMaxScheduledPerBlock;
-	<span class="kw">type </span>WeightInfo = pallet_scheduler::weights::SubstrateWeight&lt;Runtime&gt;;
+	<span class="kw">type </span>WeightInfo = weights::pallet_scheduler::SubstrateWeight&lt;Runtime&gt;;
 	<span class="kw">type </span>OriginPrivilegeCmp = EqualPrivilegeOnly;
 	<span class="kw">type </span>PreimageProvider = Preimage;
 	<span class="comment">// Will be removed in v0.9.30
@@ -1344,7 +1346,7 @@
 }
 
 <span class="kw">impl </span>pallet_preimage::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>WeightInfo = pallet_preimage::weights::SubstrateWeight&lt;Runtime&gt;;
+	<span class="kw">type </span>WeightInfo = weights::pallet_preimage::SubstrateWeight&lt;Runtime&gt;;
 	<span class="kw">type </span>Event = Event;
 	<span class="kw">type </span>Currency = Balances;
 	<span class="comment">// Allow the Technical council to request preimages without deposit or fees
@@ -1557,7 +1559,7 @@
 	<span class="comment">// Essentially just Aura, but lets be pedantic.
 	</span><span class="kw">type </span>SessionHandler = &lt;SessionKeys <span class="kw">as </span>sp_runtime::traits::OpaqueKeys&gt;::KeyTypeIdProviders;
 	<span class="kw">type </span>Keys = SessionKeys;
-	<span class="kw">type </span>WeightInfo = ();
+	<span class="kw">type </span>WeightInfo = weights::pallet_session::SubstrateWeight&lt;Runtime&gt;;
 }
 
 <span class="kw">impl </span>pallet_aura::Config <span class="kw">for </span>Runtime {
