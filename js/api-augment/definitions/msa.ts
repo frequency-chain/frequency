@@ -25,7 +25,7 @@ export default {
         {
           name: "block_number",
           type: "Option<BlockNumber>",
-        }
+        },
       ],
       type: "Vec<(MessageSourceId, bool)>",
     },
