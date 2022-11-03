@@ -18,13 +18,13 @@ delete rootPackage["scripts"];
 
 // Setup the main and types correctly
 rootPackage["main"] = "./cjs/index.js";
-rootPackage["module"] = "index.js";
+rootPackage["module"] = "./esm/index.js";
 rootPackage["types"] = "index.d.ts";
 rootPackage["exports"] = {
   ".": {
     "types": "./index.d.ts",
     "require": "./cjs/index.js",
-    "default": "./index.js"
+    "default": "./esm/index.js"
   },
 },
 

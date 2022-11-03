@@ -4,8 +4,8 @@
     "compilerOptions": {
         "allowSyntheticDefaultImports": true,
         "declaration": true,
+        "emitDeclarationOnly": true,
         "esModuleInterop": true,
-        "module": "es2022",
         "moduleResolution": "node",
         "noEmit": false,
         "noImplicitAny": true,
