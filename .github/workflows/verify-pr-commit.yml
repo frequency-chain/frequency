@@ -255,7 +255,7 @@ jobs:
         run: |
           tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
       - name: Output Metadata
-        run: target/${{env.BUILD_PROFILE}}/frequency export-metadata > ./js/api-augment/metadata.json
+        run: target/${{env.BUILD_PROFILE}}/frequency export-metadata ./js/api-augment/metadata.json
       - name: Build
         run: npm run build
         working-directory: js/api-augment
