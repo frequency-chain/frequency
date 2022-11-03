@@ -27,6 +27,13 @@ An easy way to get all the custom rpc and types config to be able to easily use 
 - `npm install @frequency-chain/api-augment` (API Augmentation Library)
 - `npm install @polkadot/api` (Polkadot API Library)
 
+## Upgrades and Matching Versions
+
+Assuming you are using no deprecated methods, any release version should work against a release version of `@frequency-chain/api-augment`.
+If you are working against a development version it is suggested that you match against the commit hash using `v0.0.0-[First 6 of the commit hash]`.
+
+Changelog is maintained in the [releases for Frequency](https://github.com/LibertyDSNP/frequency/releases).
+
 ### Usage
 
 For details on use, see the [Polkadot API library documentation](https://polkadot.js.org/docs/api).

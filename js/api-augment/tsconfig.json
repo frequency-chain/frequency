@@ -1,21 +1,20 @@
 {
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "display": "Base",
     "compilerOptions": {
         "allowSyntheticDefaultImports": true,
-        "declaration": true,
         "esModuleInterop": true,
-        "module": "esnext",
         "moduleResolution": "node",
-        "noEmit": false,
         "noImplicitAny": true,
         "outDir": "dist",
         "resolveJsonModule": true,
         "sourceMap": false,
         "strict": true,
         "skipLibCheck": true,
-        "target": "esnext",
+        "target": "es2022",
         "watch": false,
         "typeRoots": [
-            "node_modules/@types",
+            "node_modules/@types"
         ],
         "paths": {
             "@frequency-chain/api-augment/*": [
