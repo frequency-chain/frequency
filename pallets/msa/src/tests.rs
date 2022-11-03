@@ -4,7 +4,7 @@ use frame_support::{
 	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 	BoundedBTreeMap,
 };
-use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
+use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Encode, Pair};
 use sp_runtime::{traits::SignedExtension, MultiSignature};
 
 use crate::{
@@ -341,14 +341,14 @@ fn it_deletes_msa_last_key_self_removal() {
 fn test_retire_msa_success() {
 	new_test_ext().execute_with(|| {
 		let (test_account_key_pair, _) = sr25519::Pair::generate();
-		let msa_id = 2;
 
 		// Create an account
 		let test_account = AccountId32::new(test_account_key_pair.public().into());
 		let origin = Origin::signed(test_account.clone());
 
-		// Add an account to the MSA so it has exactly one account
-		assert_ok!(Msa::add_key(msa_id, &test_account, EMPTY_FUNCTION));
+		// Create an MSA so this account has one key associated with it
+		assert_ok!(Msa::create(origin.clone()));
+		let msa_id = Msa::get_owner_of(&test_account).unwrap();
 
 		// Retire the MSA
 		assert_ok!(Msa::retire_msa(origin));
@@ -421,7 +421,21 @@ fn test_retire_msa_success() {
 }
 
 #[test]
-fn test_retire_msa_fails_if_registered_provider() {
+fn test_retire_msa_does_nothing_when_no_msa() {
+	new_test_ext().execute_with(|| {
+		let (test_pair, _) = sr25519::Pair::generate();
+		let first_account_key = test_pair.public();
+		let origin = Origin::signed(first_account_key.into());
+
+		// 1. when there's no MSA at all
+		let mut event_count = System::event_count();
+		assert_ok!(Msa::retire_msa(origin.clone()));
+		assert_eq!(event_count, System::event_count());
+	});
+}
+
+#[test]
+fn test_ensure_msa_can_retire_fails_if_registered_provider() {
 	new_test_ext().execute_with(|| {
 		// Create an account
 		let (test_account_key_pair, _) = sr25519::Pair::generate();
@@ -445,7 +459,7 @@ fn test_retire_msa_fails_if_registered_provider() {
 }
 
 #[test]
-fn test_retire_msa_fails_if_more_than_one_account_exists() {
+fn test_ensure_msa_can_retire_fails_if_more_than_one_account_exists() {
 	new_test_ext().execute_with(|| {
 		let msa_id = 2;
 		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
@@ -1058,7 +1072,7 @@ pub fn revoke_delegation_by_delegator_fails_if_has_msa_but_no_delegation() {
 }
 
 #[test]
-fn revoke_provider_throws_error_when_delegation_already_revoked() {
+fn revoke_delegation_by_delegator_throws_error_when_delegation_already_revoked() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
@@ -1134,33 +1148,6 @@ pub fn revoke_provider_call_has_no_cost() {
 }
 
 #[test]
-pub fn revoke_provider_throws_delegation_not_found_error() {
-	new_test_ext().execute_with(|| {
-		// 1. create two key pairs
-		let (provider_pair, _) = sr25519::Pair::generate();
-		let (user_pair, _) = sr25519::Pair::generate();
-		let provider_key = provider_pair.public();
-		let delegator_key = user_pair.public();
-
-		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
-		// 1. error when delegator msa_id not found
-		assert_noop!(
-			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64),
-			Error::<Test>::DelegationNotFound
-		);
-
-		assert_ok!(Msa::create(Origin::signed(delegator_key.into())));
-		// 2. error when no delegation relationship
-		assert_noop!(
-			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64),
-			Error::<Test>::DelegationNotFound
-		);
-
-		Error::<Test>::DelegationNotFound
-	});
-}
-
-#[test]
 pub fn revoke_delegation_by_provider_happy_path() {
 	new_test_ext().execute_with(|| {
 		// 1. create two key pairs
@@ -1210,7 +1197,7 @@ pub fn revoke_delegation_by_provider_happy_path() {
 }
 
 #[test]
-pub fn remove_msa_delegation_call_has_correct_costs() {
+pub fn revoke_delegation_by_provider_has_correct_costs() {
 	new_test_ext().execute_with(|| {
 		let call = MsaCall::<Test>::revoke_delegation_by_provider { delegator: 2 };
 		let dispatch_info = call.get_dispatch_info();
@@ -1220,45 +1207,23 @@ pub fn remove_msa_delegation_call_has_correct_costs() {
 }
 
 #[test]
-pub fn revoke_delegation_by_provider_errors_when_no_delegator_msa_id() {
+pub fn revoke_delegation_by_provider_does_nothing_when_no_msa() {
 	new_test_ext().execute_with(|| {
 		let (provider_pair, _) = sr25519::Pair::generate();
 		let (user_pair, _) = sr25519::Pair::generate();
 
 		let provider_key = provider_pair.public();
 		let delegator_key = user_pair.public();
+		let delegator_msa = 2u64;
 
-		// 0. when provider msa_id not found
-		assert_noop!(
-			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64),
-			Error::<Test>::NoKeyExists
-		);
-
-		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
-
-		System::set_block_number(System::block_number() + 19);
-
-		// 1. when delegator msa_id not found
-		assert_noop!(
-			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64),
-			Error::<Test>::DelegationNotFound
-		);
-
-		assert_ok!(Msa::create(Origin::signed(delegator_key.into())));
-		// 2. when no delegation relationship
-		assert_noop!(
-			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64),
-			Error::<Test>::DelegationNotFound
-		);
-
-		assert_ok!(Msa::add_provider(Provider(1), Delegator(2), Vec::default()));
-		assert_ok!(Msa::revoke_provider(Provider(1), Delegator(2)));
-		// 3. when_delegation_expired
-		assert_noop!(
-			Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64),
-			Error::<Test>::DelegationRevoked
-		);
-	})
+		let current_event_count = System::event_count();
+		assert_ok!(Msa::revoke_delegation_by_provider(
+			Origin::signed(provider_key.into()),
+			delegator_msa
+		));
+		// no events should have been deposited.
+		assert_eq!(current_event_count, System::event_count());
+	});
 }
 
 #[test]
