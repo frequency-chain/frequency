@@ -348,6 +348,28 @@ pub fn run() -> Result<()> {
 				}
 			})
 		},
+		Some(Subcommand::ExportOpenApiCmd(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			let chain_spec = &runner.config().chain_spec;
+			with_runtime_or_err!(chain_spec, {
+				{
+					runner.async_run(|config| {
+						// grab the task manager.
+						let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+						let task_manager =
+							sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
+								.map_err(|e| format!("Error: {:?}", e))?;
+						let partials =
+							frequency_service::service::new_partial::<RuntimeApi, Executor, _>(
+								&config,
+								frequency_service::service::parachain_build_import_queue,
+								false,
+							)?;
+						Ok((cmd.run(partials.client), task_manager))
+					})
+				}
+			})
+		},
 		Some(Subcommand::PurgeChain(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 
