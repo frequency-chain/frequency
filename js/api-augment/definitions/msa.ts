@@ -25,11 +25,11 @@ export default {
         {
           name: "block_number",
           type: "Option<BlockNumber>",
-        }
+        },
       ],
       type: "Vec<(MessageSourceId, bool)>",
     },
-    grantedSchemaIds: {
+    grantedSchemaIdsByMsaId: {
       description: "Fetch the list of schema ids that a delegator has granted to provider",
       params: [
         {
@@ -41,7 +41,7 @@ export default {
           type: "MessageSourceId",
         },
       ],
-      type: "Vec<SchemaId>",
+      type: "Option<Vec<SchemaId>>",
     },
   },
   types: {
