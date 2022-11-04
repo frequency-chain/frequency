@@ -1609,22 +1609,6 @@ fn set_schema_count<T: Config>(n: u16) {
 }
 
 #[test]
-pub fn valid_schema_grant() {
-	new_test_ext().execute_with(|| {
-		set_schema_count::<Test>(2);
-
-		let provider = Provider(1);
-		let delegator = Delegator(2);
-		let schema_grants = vec![1, 2];
-		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
-
-		System::set_block_number(System::block_number() + 1);
-
-		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 1_u16));
-	})
-}
-
-#[test]
 pub fn error_invalid_schema_id_table() {
 	struct TestCase<T> {
 		schema: Vec<u16>,
@@ -1656,25 +1640,6 @@ pub fn error_exceeding_max_schema_under_minimum_schema_grants() {
 		assert_noop!(
 			Msa::add_provider(provider, delegator, (1..32 as u16).collect::<Vec<_>>()),
 			Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation
-		);
-	})
-}
-
-#[test]
-pub fn error_schema_not_granted() {
-	new_test_ext().execute_with(|| {
-		set_schema_count::<Test>(2);
-
-		let provider = Provider(1);
-		let delegator = Delegator(2);
-		let schema_grants = vec![1, 2];
-		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
-
-		System::set_block_number(System::block_number() + 1);
-
-		assert_err!(
-			Msa::ensure_valid_schema_grant(provider, delegator, 3_u16),
-			Error::<Test>::SchemaNotGranted
 		);
 	})
 }
@@ -1893,7 +1858,7 @@ pub fn delegation_expired_long_back() {
 		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, Some(6)));
 		assert_noop!(
 			Msa::ensure_valid_delegation(provider, delegator, Some(1000)),
-			Error::<Test>::DelegationNotFound
+			Error::<Test>::CannotPredictValidityPastCurrentBlock
 		);
 	})
 }
@@ -2564,5 +2529,125 @@ fn schema_permissions_trait_impl_try_get_mut_schema_success() {
 		));
 
 		assert_eq!(delegation.schema_permissions.get(&schema_id).unwrap(), &revoked_block_number);
+	});
+}
+
+#[test]
+pub fn ensure_valid_schema_grant_success() {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(2);
+
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		let schema_grants = vec![1, 2];
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		System::set_block_number(System::block_number() + 1);
+
+		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 1_u16, 1u64));
+	})
+}
+
+#[test]
+pub fn ensure_valid_schema_grant_errors_when_delegation_relationship_is_valid_and_grant_does_not_exist(
+) {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(2);
+
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		let schema_grants = vec![1, 2];
+
+		// Add delegation relationship with schema grants
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		System::set_block_number(System::block_number() + 1);
+		assert_eq!(System::block_number(), 2);
+
+		assert_err!(
+			Msa::ensure_valid_schema_grant(provider, delegator, 3_u16, 1u64),
+			Error::<Test>::SchemaNotGranted
+		);
+	})
+}
+
+#[test]
+pub fn ensure_valid_schema_grant_errors_when_delegation_relationship_is_valid_and_schema_grant_is_revoked(
+) {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(2);
+
+		// create delegation relationship
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		let schema_grants = vec![1, 2];
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		// create delegation relationship
+		System::set_block_number(System::block_number() + 5);
+		assert_eq!(System::block_number(), 6);
+
+		// revoke schema permission at block 6
+		assert_ok!(Msa::revoke_permissions_for_schemas(delegator, provider, vec![1]));
+
+		// Schemas is valid for the current block that is revoked 6
+		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 1, 6));
+
+		// Checking that asking for validity past the current block, 6, errors
+		assert_noop!(
+			Msa::ensure_valid_schema_grant(provider, delegator, 1, 7),
+			Error::<Test>::CannotPredictValidityPastCurrentBlock
+		);
+
+		System::set_block_number(System::block_number() + 5);
+		assert_eq!(System::block_number(), 11);
+
+		assert_noop!(
+			Msa::ensure_valid_schema_grant(provider, delegator, 1, 7),
+			Error::<Test>::SchemaNotGranted
+		);
+	});
+}
+
+#[test]
+pub fn ensure_valid_schema_grant_errors_delegation_revoked_when_delegation_relationship_has_been_revoked(
+) {
+	new_test_ext().execute_with(|| {
+		// Set the schemas counts so that it passes validation
+		set_schema_count::<Test>(2);
+
+		// create delegation relationship
+		let provider = Provider(1);
+		let delegator = Delegator(2);
+		let schema_grants = vec![1, 2];
+
+		// create delegation relationship
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		// move forward to block 6
+		System::set_block_number(System::block_number() + 5);
+		assert_eq!(System::block_number(), 6);
+
+		// revoke delegation relationship at block 6
+		assert_ok!(Msa::revoke_provider(provider, delegator));
+
+		// Schemas is valid for the current block that is revoked 6
+		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 1, 6));
+		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 1, 5));
+
+		// Checking that asking for validity past the current block, 6, errors
+		assert_noop!(
+			Msa::ensure_valid_schema_grant(provider, delegator, 1, 7),
+			Error::<Test>::CannotPredictValidityPastCurrentBlock
+		);
+
+		System::set_block_number(System::block_number() + 5);
+		assert_eq!(System::block_number(), 11);
+
+		// Check that schema is not valid after delegation revocation
+		assert_noop!(
+			Msa::ensure_valid_schema_grant(provider, delegator, 1, 7),
+			Error::<Test>::DelegationRevoked
+		);
 	});
 }

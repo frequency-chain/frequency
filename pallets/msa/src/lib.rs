@@ -327,6 +327,8 @@ pub mod pallet {
 		ProofNotYetValid,
 		/// Attempted to add a signature when the signature is already in the registry
 		SignatureAlreadySubmitted,
+		/// Attempted to request validity of schema permission or delegation in the future.
+		CannotPredictValidityPastCurrentBlock,
 	}
 
 	#[pallet::hooks]
@@ -1014,6 +1016,11 @@ impl<T: Config> Pallet<T> {
 		)
 	}
 
+	// |-----|-----|------|------|------|-
+	//  0     1     2      3      4      5
+	//              R
+	// Status
+	//  +     +     +      x      x
 	/// Check that the delegator has an active delegation to the provider.
 	/// `block_number`: Provide `None` to know if the delegation is active at the current block.
 	///                 Provide Some(N) to know if the delegation was or will be active at block N.
@@ -1033,7 +1040,10 @@ impl<T: Config> Pallet<T> {
 		let current_block = frame_system::Pallet::<T>::block_number();
 		let requested_block = match block_number {
 			Some(block_number) => {
-				ensure!(current_block >= block_number, Error::<T>::DelegationNotFound);
+				ensure!(
+					current_block >= block_number,
+					Error::<T>::CannotPredictValidityPastCurrentBlock
+				);
 				block_number
 			},
 			None => current_block,
@@ -1142,10 +1152,9 @@ impl<T: Config> Pallet<T> {
 		provider: Provider,
 		delegator: Delegator,
 		schema_id: SchemaId,
+		block_number: T::BlockNumber,
 	) -> DispatchResult {
-		let current_block = frame_system::Pallet::<T>::block_number();
-		let provider_info =
-			Self::ensure_valid_delegation(provider, delegator, Some(current_block))?;
+		let provider_info = Self::ensure_valid_delegation(provider, delegator, Some(block_number))?;
 
 		let schema_permission_revoked_at_block_number = provider_info
 			.schema_permissions
@@ -1157,7 +1166,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		ensure!(
-			current_block <= *schema_permission_revoked_at_block_number,
+			block_number <= *schema_permission_revoked_at_block_number,
 			Error::<T>::SchemaNotGranted
 		);
 
@@ -1366,7 +1375,7 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 	}
 }
 
-impl<T: Config> SchemaGrantValidator for Pallet<T> {
+impl<T: Config> SchemaGrantValidator<T::BlockNumber> for Pallet<T> {
 	/// Check if provider is allowed to publish for a given schema_id for a given delegator
 	///
 	/// # Errors
@@ -1379,8 +1388,9 @@ impl<T: Config> SchemaGrantValidator for Pallet<T> {
 		provider: Provider,
 		delegator: Delegator,
 		schema_id: SchemaId,
+		block_number: T::BlockNumber,
 	) -> DispatchResult {
-		Self::ensure_valid_schema_grant(provider, delegator, schema_id)
+		Self::ensure_valid_schema_grant(provider, delegator, schema_id, block_number)
 	}
 
 	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
@@ -1395,6 +1405,7 @@ impl<T: Config> SchemaGrantValidator for Pallet<T> {
 		provider: Provider,
 		delegator: Delegator,
 		_schema_id: SchemaId,
+		block_number: T::BlockNumber,
 	) -> DispatchResult {
 		let provider_info = Self::get_delegation_of(delegator, provider);
 		if provider_info.is_none() {

@@ -93,7 +93,7 @@ pub mod pallet {
 		type DelegationInfoProvider: ProviderLookup + DelegationValidator;
 
 		/// A type that will validate schema grants
-		type SchemaGrantValidator: SchemaGrantValidator;
+		type SchemaGrantValidator: SchemaGrantValidator<Self::BlockNumber>;
 
 		/// A type that will supply schema related information.
 		type SchemaProvider: SchemaProvider<SchemaId>;
@@ -259,6 +259,7 @@ pub mod pallet {
 
 			let provider_msa_id = Self::find_msa_id(&provider_key)?;
 
+			let current_block = frame_system::Pallet::<T>::block_number();
 			// On-chain messages either are sent from the user themselves, or on behalf of another MSA Id
 			let maybe_delegator = match on_behalf_of {
 				Some(delegator) => {
@@ -266,6 +267,7 @@ pub mod pallet {
 						Provider(provider_msa_id),
 						Delegator(delegator),
 						schema_id,
+						current_block,
 					)
 					.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
 					Delegator(delegator)
