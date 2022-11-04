@@ -1,14 +1,8 @@
 use clap::Parser;
 use polkadot_cli::ProvideRuntimeApi;
 use sc_cli::{CliConfiguration, Error, GenericNumber, SharedParams};
-use serde_json::{json, to_writer};
-use sp_api::Metadata;
-use sp_core::Bytes;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{Block as BlockT, Header as HeaderT},
-};
-use std::{fmt::Debug, fs, io, path::PathBuf, str::FromStr, sync::Arc};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
+use std::{fmt::Debug, path::PathBuf, str::FromStr, sync::Arc};
 
 /// The `export-metadata` command used to export chain metadata.
 #[derive(Debug, Clone, Parser)]
@@ -30,7 +24,7 @@ pub struct ExportOpenApiCmd {
 
 impl ExportOpenApiCmd {
 	/// Run the export-metadata command
-	pub async fn run<B, C>(&self, client: Arc<C>) -> Result<(), Error>
+	pub async fn run<B, C>(&self, _client: Arc<C>) -> Result<(), Error>
 	where
 		B: BlockT,
 		C: ProvideRuntimeApi<B>,
