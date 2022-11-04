@@ -409,15 +409,21 @@ fn test_retire_msa_success() {
 			Error::<Test>::NoKeyExists
 		);
 
-		// [TEST] Revoking a provider (modifying permissions) should fail
-		assert_noop!(
-			Msa::revoke_delegation_by_delegator(
-				Origin::signed(test_account.clone()),
-				provider_msa_id
-			),
-			Error::<Test>::NoKeyExists
-		);
+		// [TEST] Revoking a delegation (modifying permissions) should not do anything
+		assert_revoke_delegation_by_delegator_no_effect(test_account, provider_msa_id)
 	})
+}
+
+fn assert_revoke_delegation_by_delegator_no_effect(
+	test_account: AccountId32,
+	provider_msa_id: u64,
+) {
+	let event_count = System::event_count();
+	assert_ok!(Msa::revoke_delegation_by_delegator(
+		Origin::signed(test_account.clone()),
+		provider_msa_id
+	));
+	assert_eq!(event_count, System::event_count())
 }
 
 #[test]
@@ -1038,24 +1044,17 @@ pub fn revoke_provider_is_successful() {
 }
 
 #[test]
-fn revoke_delegation_by_delegator_fails_when_no_msa() {
-	new_test_ext().execute_with(|| {
-		assert_noop!(
-			Msa::revoke_delegation_by_delegator(test_origin_signed(1), 1),
-			Error::<Test>::NoKeyExists
-		);
-	});
+fn revoke_delegation_by_delegator_does_nothing_when_no_msa() {
+	new_test_ext()
+		.execute_with(|| assert_revoke_delegation_by_delegator_no_effect(test_public(3), 333u64));
 }
 
 #[test]
-pub fn revoke_delegation_fails_if_only_key_is_revoked() {
+pub fn revoke_delegation_by_delegator_does_nothing_if_only_key_is_revoked() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Msa::create(test_origin_signed(2)));
+		assert_ok!(Msa::create(Origin::signed(test_public(2))));
 		assert_ok!(Msa::delete_key_for_msa(1, &test_public(2)));
-		assert_noop!(
-			Msa::revoke_delegation_by_delegator(test_origin_signed(2), 1),
-			Error::<Test>::NoKeyExists
-		);
+		assert_revoke_delegation_by_delegator_no_effect(test_public(2), 1u64)
 	})
 }
 
@@ -1404,7 +1403,7 @@ fn signed_extension_revoke_delegation_by_provider_fails_when_no_delegation() {
 	})
 }
 
-/// Assert that a call that is not revoke_delegation_by_delegator passes the signed extension
+/// Assert that a call that is not one of the matches passes the signed extension
 /// CheckFreeExtrinsicUse validation.
 #[test]
 fn signed_extension_validation_valid_for_other_extrinsics() {
