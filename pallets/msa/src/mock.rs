@@ -166,24 +166,33 @@ pub fn create_and_sign_add_provider_payload(
 }
 
 /// Creates a provider and delegator MSA and sets the delegation relationship.
+// create and set up delegations for a delegator and provider, but for convenience only
 /// # Returns
 /// * (u8, Public) - Returns a provider_msa_id and a delegator account.
-pub fn test_create_delegator_msa_with_provider() -> (u64, Public) {
-	let (key_pair, _) = sr25519::Pair::generate();
+pub fn create_provider_msa_and_delegator() -> (u64, Public) {
+	let (provider_msa_id, _, _, delegator_account) = create_provider_delegator_msas();
+	(provider_msa_id, delegator_account)
+}
 
-	let provider_account = key_pair.public();
+// create and set up delegations for a delegator and provider, but for convenience only
+// return delegator msa and provider account for testing delegator-submitted extrinsics
+/// # Returns
+/// * (u8, Public) - Returns a delegator_msa_id and a provider_account.
+pub fn create_delegator_msa_and_provider() -> (u64, Public) {
+	let (_, provider_account, delegator_msa_id, _) = create_provider_delegator_msas();
+	(delegator_msa_id, provider_account)
+}
 
-	let (delegator_key_pair, _) = sr25519::Pair::generate();
+// create and set up delegations for a delegator and provider and return it all
+pub fn create_provider_delegator_msas() -> (u64, Public, u64, Public) {
+	let (provider_msa_id, provider_pair) = create_account();
+	let provider_account = provider_pair.public();
 
-	let delegator_account = delegator_key_pair.public();
-
-	assert_ok!(Msa::create(Origin::signed(provider_account.into())));
-	assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
-
-	let provider_msa_id = Msa::ensure_valid_msa_key(&AccountId32::new(provider_account.0)).unwrap();
+	let (delegator_msa_id, delegator_pair) = create_account();
+	let delegator_account = delegator_pair.public();
 
 	let (delegator_signature, add_provider_payload) =
-		create_and_sign_add_provider_payload(delegator_key_pair, provider_msa_id);
+		create_and_sign_add_provider_payload(delegator_pair, provider_msa_id);
 
 	// Register provider
 	assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
@@ -194,8 +203,7 @@ pub fn test_create_delegator_msa_with_provider() -> (u64, Public) {
 		delegator_signature,
 		add_provider_payload
 	));
-
-	(provider_msa_id, delegator_account)
+	(provider_msa_id, provider_account, delegator_msa_id, delegator_account)
 }
 
 pub fn generate_test_signature() -> MultiSignature {
