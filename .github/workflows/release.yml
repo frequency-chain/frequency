@@ -84,13 +84,29 @@ jobs:
         run: |
           cd ${{env.BIN_DIR}}
           sha256sum ${{env.RELEASE_BIN_FILENAME}} > ${{env.RELEASE_BIN_FILENAME}}.sha256
-      - name: Upload Artifact
+      - name: Import GPG key
+        id: import-gpg
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{secrets.FREQUENCY_PGP_SECRET_SUBKEYS}}
+          passphrase: ${{secrets.FREQUENCY_PGP_MASTER_KEY_PASSWORD}}
+          fingerprint: B6327D1474C6392032870E8EFA4FD1E73A0FE707
+      - name: Sign Binary
+        run: |
+          cd ${{env.BIN_DIR}}
+          gpg --detach-sign --armor ${{env.RELEASE_BIN_FILENAME}}
+      - name: Verify Binary
+        run: |
+          cd ${{env.BIN_DIR}}
+          gpg --verify ${{env.RELEASE_BIN_FILENAME}}.asc
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
           path: |
             ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
             ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.sha256
+            ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.asc
           if-no-files-found: error
 
   build-runtimes:
@@ -263,8 +279,7 @@ jobs:
       - name: Upload Binary Artifact to Release Page
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            frequency-*.*
+          files: frequency-*.*
 
   release-node-images:
     needs: wait-for-all-builds
