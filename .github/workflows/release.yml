@@ -18,7 +18,7 @@ jobs:
     name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        # os: [[self-hosted, Linux, X64], macos-latest]
         network: [local, rococo, mainnet]
         include:
           - network: local
@@ -30,11 +30,11 @@ jobs:
           - network: mainnet
             spec: frequency
             build-profile: production
-          - os: ubuntu-latest
+          - os: [self-hosted, Linux, X64]
             arch: amd64
-          - os: macos-latest
-            arch: arm64
-    runs-on: ${{matrix.os}}
+          # - os: macos-latest
+          #   arch: arm64
+    runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Set Env Vars
         run: |
@@ -50,11 +50,6 @@ jobs:
       #   with:
       #     path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
       #     key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.RELEASE_VERSION}}
-      - name: Cache Dependencies
-        if: steps.cache-binary.outputs.cache-hit != 'true'
-        uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: actions-rs/toolchain@v1
@@ -63,6 +58,11 @@ jobs:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
+      - name: Cache Dependencies
+        if: steps.cache-binary.outputs.cache-hit != 'true'
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Compile for ${{matrix.network}}
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
