@@ -16,7 +16,6 @@ use jsonrpsee::{
 	types::error::{CallError, ErrorObject},
 };
 use pallet_schemas_runtime_api::SchemasRuntimeApi;
-use poem_openapi::{param::Query, payload::PlainText, OpenApi, OpenApiService};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
