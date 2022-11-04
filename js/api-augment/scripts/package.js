@@ -16,6 +16,9 @@ delete rootPackage["jest"];
 // Don't keep scripts
 delete rootPackage["scripts"];
 
+// Don't keep dev dependencies
+delete rootPackage["devDependencies"];
+
 // Setup the main and types correctly
 rootPackage["main"] = "./cjs/index.js";
 rootPackage["module"] = "./esm/index.js";

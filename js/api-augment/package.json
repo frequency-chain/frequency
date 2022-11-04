@@ -29,11 +29,13 @@
   },
   "author": "LibertyDSNP",
   "license": "Apache-2.0",
-  "devDependencies": {
+  "dependencies": {
     "@polkadot/api": "^9.6.2",
     "@polkadot/rpc-provider": "^9.6.2",
+    "@polkadot/types": "^9.6.2"
+  },
+  "devDependencies": {
     "@polkadot/typegen": "^9.6.2",
-    "@polkadot/types": "^9.6.2",
     "@types/mocha": "^9.1.1",
     "@typescript-eslint/eslint-plugin": "^5.42.0",
     "@typescript-eslint/parser": "^5.42.0",
