@@ -23,6 +23,7 @@ COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificat
 # For local testing only
 # COPY --chown=frequency target/release/frequency.amd64 ./frequency/frequency
 COPY --chown=frequency target/release/frequency ./frequency/
+RUN chmod +x ./frequency/frequency
 
 # 9933 P2P port
 # 9944 for RPC call
