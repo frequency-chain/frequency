@@ -17,7 +17,7 @@ jobs:
     name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
     strategy:
       matrix:
-        os: [ubuntu-20.04, macOS-latest]
+        os: [[self-hosted, Linux, X64], [self-hosted, Linux, ARM64]]
         network: [local, rococo, mainnet]
         include:
           - network: local
@@ -29,17 +29,20 @@ jobs:
           - network: mainnet
             spec: frequency
             build-profile: production
-          - os: ubuntu-20.04
+          - os: [self-hosted, Linux, X64]
             arch: amd64
-          - os: macOS-latest
+          - os: [self-hosted, Linux, ARM64]
             arch: arm64
     runs-on: ${{matrix.os}}
     steps:
-      - name: Set Env Vars
+      - name: Set Global Env Vars
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=frequency-${{matrix.network}}.${{matrix.arch}}" >> $GITHUB_ENV
+      - name: Set Ubuntu Env Vars
+        run: |
+          echo "HOME=/home/ubuntu" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
@@ -49,11 +52,6 @@ jobs:
       #   with:
       #     path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
       #     key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.NEW_RELEASE_VERSION}}
-      - name: Cache Dependencies
-        if: steps.cache-binary.outputs.cache-hit != 'true'
-        uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: actions-rs/toolchain@v1
@@ -62,6 +60,11 @@ jobs:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
+      - name: Cache Rust Dependencies
+        if: steps.cache-binary.outputs.cache-hit != 'true'
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Compile for ${{matrix.network}}
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
@@ -77,9 +80,6 @@ jobs:
         run: |
           cp -p ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} \
             ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
-      - name: Install coreutils for macOS
-        if: matrix.os == 'macOS-latest'
-        run: brew install coreutils
       - name: Generate Binary Hash
         working-directory: ${{env.BIN_DIR}}
         run: sha256sum ${{env.RELEASE_BIN_FILENAME}} > ${{env.RELEASE_BIN_FILENAME}}.sha256
@@ -118,28 +118,36 @@ jobs:
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
-            release-wasm-file-name-prefix: frequency-rococo_runtime
             features: frequency-rococo-testnet
           - network: mainnet
             build-profile: production
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
-            release-wasm-file-name-prefix: frequency-mainnet_runtime
             features: frequency
-    env:
-      SRT_TOOL_VERSION: "1.62.0"
-    runs-on: ubuntu-20.04
+    runs-on: [self-hosted, Linux, X64]
     steps:
+      - name: Set Ubuntu Env Vars
+        run: |
+          echo "HOME=/home/ubuntu" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          default: true
+          profile: minimal
+          toolchain: stable
+      - name: Install Docker
+        run: |
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sudo sh get-docker.sh
       - name: Extract Runtime Spec Version
         run: |
           echo "RUNTIME_SPEC_VERSION=$(sed -nr 's/spec_version:\s*([0-9]+),/\1/p' \
             ${{matrix.runtime-dir}}/src/lib.rs | tr -d '[:space:]')" >> $GITHUB_ENV
       - name: Validate Extracted Version
         run: |
-          set -ex
           echo "Runtime Spec Version:|${{env.RUNTIME_SPEC_VERSION}}|"
           echo "Runtime Spec Version:||$RUNTIME_SPEC_VERSION||"
           [[ $RUNTIME_SPEC_VERSION == ?(-)+([0-9]) ]] || \
@@ -156,15 +164,18 @@ jobs:
       #   with:
       #     path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
       #     key: ${{runner.os}}-${{matrix.network}}-${{env.NEW_RELEASE_VERSION}}
-      - name: Build Deterministic WASM with srtool
-        if: steps.cache-wasm.outputs.cache-hit != 'true'
+      - name: Install srtool-cli
         run: |
-          docker run --rm -e PACKAGE=${{matrix.package}} \
-            -e RUNTIME_DIR=${{matrix.runtime-dir}} \
-            -e PROFILE=${{matrix.build-profile}} \
-            -e BUILD_OPTS="--features on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
-            -v $PWD:/build \
-            -v /tmp/cargo:/cargo-home paritytech/srtool:$SRT_TOOL_VERSION build
+          cargo install --git https://github.com/chevdor/srtool-cli
+          srtool --version
+      - name: Build Deterministic WASM
+        run: |
+          set -ex
+          srtool build \
+            --default-features="on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
+            --profile=${{matrix.build-profile}} \
+            --package=${{matrix.package}} \
+            --root
       - name: Rename WASM file
         run: |
           cp -p ./${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} \
@@ -178,14 +189,12 @@ jobs:
 
   build-rust-developer-docs:
     name: Build Rust Developer Docs
-    runs-on: ubuntu-20.04
+    runs-on: [self-hosted, Linux, X64]
     steps:
+      - name: Set Ubuntu Env Vars
+        run: echo "HOME=/home/ubuntu" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
-      - name: Cache Dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -193,6 +202,10 @@ jobs:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
+      - name: Cache Rust Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Build Docs
         run: |
           RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps

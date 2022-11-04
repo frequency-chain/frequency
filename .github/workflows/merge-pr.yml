@@ -39,8 +39,11 @@ jobs:
 
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
-    runs-on: ubuntu-20.04
+    runs-on: [self-hosted, Linux, X64]
     steps:
+      - name: Set Env Vars
+        run: |
+          echo "HOME=/home/ubuntu" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
@@ -116,7 +119,7 @@ jobs:
 
   save-encoded-metadata:
     name: Save Encoded Metadata
-    runs-on: ubuntu-20.04
+    runs-on: [self-hosted, Linux, X64]
     env:
       NETWORK: mainnet
     steps:
@@ -124,6 +127,7 @@ jobs:
         run: |
           echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
           echo "METADATA_FILENAME=encoded-metadata-${{env.NETWORK}}-${{github.ref_name}}.amd64.json" >> $GITHUB_ENV
+          echo "HOME=/home/ubuntu" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
