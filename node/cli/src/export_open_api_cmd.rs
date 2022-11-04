@@ -37,9 +37,6 @@ impl ExportOpenApiCmd {
 		C::Api: sp_api::Metadata<B> + 'static,
 		<<B::Header as HeaderT>::Number as FromStr>::Err: Debug,
 	{
-		let from = self.from.as_ref().and_then(|f| f.parse().ok()).unwrap_or(0u32);
-		let metadata: RuntimeMetadataPrefixed =
-			client.runtime_api().metadata(&BlockId::number(from.into())).unwrap().into();
 		Ok(())
 	}
 }
