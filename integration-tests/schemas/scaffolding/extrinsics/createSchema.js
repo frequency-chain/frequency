@@ -42,8 +42,8 @@ const createSchema = async (payload, modelType, payloadLocation) => {
 
     return new Promise((resolve, reject) => {
         tx.signAndSend(signerAccountKeys, { nonce: nonce++ }, ({status, events}) => {
+            console.log("Extrinsic call status:", status.type);
             if (status.isFinalized) {
-                console.log(events.forEach(({event}) => console.log(event.method)));
                 const schemaRegisteredEvent = events.find(({ event }) => event.section === "schemas" && event.method === "SchemaRegistered");
                 const successEvent = events.find(({ event }) => event.section === "system" && event.method === "ExtrinsicSuccess");
     

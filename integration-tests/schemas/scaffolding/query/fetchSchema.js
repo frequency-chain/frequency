@@ -25,7 +25,6 @@ const fetchSchema = async (schemaId) => {
     let schemaResult = schema.unwrap();
     const jsonSchema = Buffer.from(schemaResult.model).toString("utf8");
     const modelParsed = JSON.parse(jsonSchema);
-    console.log("Schema Result", schemaResult);
     const { schema_id, model_type, payload_location } = schemaResult;
     return {
       key: schema_id.toString(),
