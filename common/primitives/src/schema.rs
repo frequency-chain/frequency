@@ -23,7 +23,7 @@ pub enum ModelType {
 
 impl Default for ModelType {
 	fn default() -> Self {
-		Self::Parquet
+		Self::AvroBinary
 	}
 }
 

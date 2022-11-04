@@ -229,6 +229,10 @@ cargo test --features runtime-benchmarks, std
 cargo test --all-features --workspace --release
 ```
 
+### Integration Tests
+
+To run the integration tests, run `npm test` from the `./integration-tests/` directory.
+
 ## Run Benchmarks
 
 ```sh
