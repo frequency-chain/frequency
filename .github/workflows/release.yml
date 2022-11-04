@@ -77,15 +77,24 @@ jobs:
       - name: Rename Binary
         run: |
           cp -p ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
+      - name: Install coreutils for macOS
+        if: matrix.os == 'macOS-latest'
+        run: brew install coreutils
+      - name: Create Binary Hash
+        run: |
+          cd ${{env.BIN_DIR}}
+          sha256sum ${{env.RELEASE_BIN_FILENAME}} > ${{env.RELEASE_BIN_FILENAME}}.sha256
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
-          path: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
+          path: |
+            ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
+            ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.sha256
           if-no-files-found: error
 
-  build-wasms:
-    name: Build Deterministic WASM for ${{matrix.network}}
+  build-runtimes:
+    name: Build Runtime for ${{matrix.network}}
     strategy:
       matrix:
         network: [rococo, mainnet]
@@ -233,7 +242,7 @@ jobs:
           if-no-files-found: error
 
   wait-for-all-builds:
-    needs: [build-binaries, build-wasms, build-rust-developer-docs, build-js-api-augment]
+    needs: [build-binaries, build-runtimes, build-rust-developer-docs, build-js-api-augment]
     name: Wait for All Builds to Finish
     runs-on: ubuntu-latest
     steps:
