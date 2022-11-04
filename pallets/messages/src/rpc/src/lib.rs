@@ -31,9 +31,11 @@ mod tests;
 
 /// Frequency Messages Custom RPC API
 #[rpc(client, server)]
+#[OpenApi]
 pub trait MessagesApi<BlockNumber> {
 	/// Retrieve paginated messages by schema id
 	#[method(name = "messages_getBySchemaId")]
+	#[oai(path = "/messages_getBySchemaId", method = "get")]
 	fn get_messages_by_schema_id(
 		&self,
 		schema_id: SchemaId,

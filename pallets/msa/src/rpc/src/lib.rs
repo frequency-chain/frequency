@@ -29,11 +29,13 @@ use std::sync::Arc;
 
 /// Frequency MSA Custom RPC API
 #[rpc(client, server)]
+#[OpenApi]
 pub trait MsaApi<BlockHash, AccountId> {
 	/// Check for a list of delegations
 	/// Given a single provider, test a list of potential delegators
 	/// At a given block number
 	#[method(name = "msa_checkDelegations")]
+	#[oai(path = "/msa_checkDelegations", method = "get")]
 	fn check_delegations(
 		&self,
 		delegator_msa_ids: Vec<MessageSourceId>,
@@ -43,6 +45,7 @@ pub trait MsaApi<BlockHash, AccountId> {
 
 	/// Retrieve the list of currently granted schemas given a delegator and provider pair
 	#[method(name = "msa_grantedSchemaIdsByMsaId")]
+	#[oai(path = "/msa_grantedSchemaIdsByMsaId", method = "get")]
 	fn get_granted_schemas_by_msa_id(
 		&self,
 		delegator_msa_id: MessageSourceId,
