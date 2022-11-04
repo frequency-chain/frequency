@@ -527,8 +527,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			let res = Self::get_msa_by_public_key(&who);
-			match res {
+			match Self::get_msa_by_public_key(&who) {
 				Some(delegator_msa) => {
 					let delegator_msa_id: Delegator = delegator_msa.into();
 					let provider_msa_id = Provider(provider_msa_id);
