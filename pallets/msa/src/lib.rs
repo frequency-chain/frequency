@@ -525,17 +525,22 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			#[pallet::compact] provider_msa_id: MessageSourceId,
 		) -> DispatchResult {
-			let delegator_key = ensure_signed(origin)?;
+			let who = ensure_signed(origin)?;
 
-			let delegator_msa_id: Delegator = Self::ensure_valid_msa_key(&delegator_key)?.into();
-			let provider_msa_id = Provider(provider_msa_id);
-
-			Self::revoke_provider(provider_msa_id, delegator_msa_id)?;
-
-			Self::deposit_event(Event::DelegationRevoked {
-				delegator: delegator_msa_id,
-				provider: provider_msa_id,
-			});
+			match Self::get_msa_by_public_key(&who) {
+				Some(delegator_msa) => {
+					let delegator_msa_id: Delegator = delegator_msa.into();
+					let provider_msa_id = Provider(provider_msa_id);
+					Self::revoke_provider(provider_msa_id, delegator_msa_id)?;
+					Self::deposit_event(Event::DelegationRevoked {
+						delegator: delegator_msa_id,
+						provider: provider_msa_id,
+					});
+				},
+				None => {
+					error!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
+				},
+			}
 
 			Ok(())
 		}
@@ -1402,14 +1407,17 @@ pub struct CheckFreeExtrinsicUse<T: Config + Send + Sync>(PhantomData<T>);
 
 impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// Validates the delegation by making sure that the MSA ids used are valid and the delegation is
-	/// still active
+	/// is still active. Returns a `ValidTransaction` or wrapped [`ValidityError`]
+	/// # Arguments:
+	/// * `account_id`: the account id of the delegator that is revoking the delegation relationship
+	/// *  `provider_msa_id` the MSA ID of the provider (the "other end" of the delegation).
 	///
 	/// # Errors
-	/// * [`ValidityError::InvalidMsaKey`]
-	/// * [`ValidityError::InvalidDelegation`]
+	/// * [`ValidityError::InvalidMsaKey`] - if  `account_id` does not have an MSA
+	/// * [`ValidityError::InvalidDelegation`] - if the delegation with `delegator_msa_id` is invalid
 	///
 	pub fn validate_delegation_by_delegator(
-		account_id: &T::AccountId, // presumptive delegator
+		account_id: &T::AccountId,
 		provider_msa_id: &MessageSourceId,
 	) -> TransactionValidity {
 		const TAG_PREFIX: &str = "DelegatorDelegationRevocation";
@@ -1424,31 +1432,38 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	}
 
 	/// Validates the delegation by making sure that the MSA ids used are valid and that the delegation
-	/// is still active.
+	/// is still active. Returns a `ValidTransaction` or wrapped [`ValidityError`]
+	/// # Arguments:
+	/// * `account_id`: the account id of the provider that is revoking the delegation relationship
+	/// *  `delegator_msa_id` the MSA ID of the delegator (the "other end" of the delegation).
 	///
 	/// # Errors
-	/// * [`ValidityError::InvalidMsaKey`]
-	/// * [`ValidityError::InvalidDelegation`]
+	/// * [`ValidityError::InvalidMsaKey`] - if  `account_id` does not have an MSA
+	/// * [`ValidityError::InvalidDelegation`] - if the delegation with `delegator_msa_id` is invalid
 	///
 	pub fn validate_delegation_by_provider(
-		account_id: &T::AccountId, // presumptive provider
+		account_id: &T::AccountId,
 		delegator_msa_id: &MessageSourceId,
 	) -> TransactionValidity {
 		const TAG_PREFIX: &str = "ProviderDelegationRevocation";
+
 		let provider_msa_id: Provider = Pallet::<T>::ensure_valid_msa_key(account_id)
 			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
 			.into();
 		let delegator_msa_id = Delegator(*delegator_msa_id);
 
+		// Verify the delegation exists and is active
 		Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id, None)
 			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidDelegation as u8))?;
 		ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}
 
-	/// validates that a key being revoked is both valid and owned by a valid MSA account
-	///
-	/// # Errors
-	/// * [`ValidityError::InvalidMsaKey`]
+	/// Validates that a key being revoked is both valid and owned by a valid MSA account.
+	/// Returns a `ValidTransaction` or wrapped [`ValidityError::InvalidMsaKey`]
+	/// Arguments:
+	/// * `account_id`: the account id calling for revoking the key, and which
+	/// 	owns the msa also associated with `key`
+	/// * `key`: the account id to revoke as an access key for account_id's msa
 	///
 	pub fn validate_key_revocation(
 		account_id: &T::AccountId,
@@ -1461,7 +1476,11 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}
 
-	/// validates that a MSA being retired is valid
+	/// Validates that a MSA being retired exists, does not belong to a registered provider, and
+	/// that `account_id` is the only access key associated with the MSA.
+	/// Returns a `ValidTransaction` or wrapped [`ValidityError]
+	/// # Arguments:
+	/// * account_id: the account id associated with the MSA to retire
 	///
 	/// # Errors
 	/// * [`ValidityError::InvalidMsaKey`]
@@ -1470,14 +1489,10 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	///
 	pub fn ensure_msa_can_retire(account_id: &T::AccountId) -> TransactionValidity {
 		const TAG_PREFIX: &str = "MSARetirement";
-
-		// Verify the msa to be retired exists
 		let msa_id = Pallet::<T>::ensure_valid_msa_key(account_id)
 			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
 			.into();
 
-		// Verify the MSA is not a registered provider
-		// Invalid transaction error "InvalidRegisteredProviderCannotBeRetired" if the MSA id is a registered provider
 		ensure!(
 			!Pallet::<T>::is_registered_provider(msa_id),
 			InvalidTransaction::Custom(
@@ -1485,8 +1500,6 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			)
 		);
 
-		// Verify this is the last access key associated with the MSA
-		// Invalid transaction error "MoreThanOneKeyExists" if the MSA has more than one account key.
 		let key_count = Pallet::<T>::get_public_key_count_by_msa_id(msa_id);
 		ensure!(
 			key_count == 1,
@@ -1550,10 +1563,19 @@ where
 		self.validate(who, call, info, len).map(|_| ())
 	}
 
-	/// Frequently called by the transaction queue to ensure that the transaction is valid such that:
-	/// * The calling extrinsic is 'revoke_delegation_by_delegator'.
-	/// * The sender key is associated to an MSA and not revoked.
-	/// * The provider MSA is a valid provider to the delegator MSA.
+	/// Frequently called by the transaction queue to validate all free MSA extrinsics:
+	/// Returns a `ValidTransaction` or wrapped [`ValidityError`]
+	/// * revoke_delegation_by_provider
+	/// * revoke_delegation_by_delegator
+	/// * delete_msa_public_key
+	/// * retire_msa
+	/// Validate functions for the above MUST prevent errors in the extrinsic logic to prevent spam.
+	///
+	/// Arguments:
+	/// who: AccountId calling the extrinsic
+	/// call: The pallet extrinsic being called
+	/// unused: _info, _len
+	///
 	fn validate(
 		&self,
 		who: &Self::AccountId,
