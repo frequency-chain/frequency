@@ -28,7 +28,7 @@ use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
 /// Frequency MSA Custom RPC API
-#[rpc(client, server)]
+#[rpc(server)]
 pub trait MsaApi<BlockHash, AccountId> {
 	/// Check for a list of delegations
 	/// Given a single provider, test a list of potential delegators

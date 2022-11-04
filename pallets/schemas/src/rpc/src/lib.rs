@@ -43,7 +43,7 @@ impl From<SchemaRpcError> for i32 {
 }
 
 /// Frequency Schema Custom RPC API
-#[rpc(client, server)]
+#[rpc(server)]
 pub trait SchemasApi<BlockHash> {
 	/// retrieving schema by schema id
 	#[method(name = "schemas_getBySchemaId")]

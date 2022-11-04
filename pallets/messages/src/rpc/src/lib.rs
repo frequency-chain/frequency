@@ -30,7 +30,7 @@ use std::sync::Arc;
 mod tests;
 
 /// Frequency Messages Custom RPC API
-#[rpc(client, server)]
+#[rpc(server)]
 pub trait MessagesApi<BlockNumber> {
 	/// Retrieve paginated messages by schema id
 	#[method(name = "messages_getBySchemaId")]
