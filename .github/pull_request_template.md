@@ -8,7 +8,7 @@ Closes <!-- issue # -->
 
 # Checklist
 - [ ] Chain spec updated
-- [ ] Updated the js/api-augment code if a custom RPC added/changed
+- [ ] Custom RPC OR Runtime API added/changed? Updated js/api-augment.
 - [ ] Design doc(s) updated
 - [ ] Tests added
 - [ ] Benchmarks added
