@@ -9,7 +9,7 @@
 //! Custom APIs for [MSA](../pallet_msa/index.html)
 
 use codec::Codec;
-use common_helpers::rpc::*;
+use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
 	msa::{Delegator, MessageSourceId, Provider},
 	node::BlockNumber,

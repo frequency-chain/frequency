@@ -4,26 +4,11 @@ use jsonrpsee::{
 	types::error::{CallError, ErrorCode, ErrorObject},
 };
 use sp_api::ApiError;
-use sp_runtime::DispatchError;
 
 /// Converts CoreResult to Result for RPC calls
-pub fn map_rpc_result<T>(
-	response: CoreResult<CoreResult<T, DispatchError>, ApiError>,
-) -> RpcResult<T> {
+pub fn map_rpc_result<T>(response: CoreResult<T, ApiError>) -> RpcResult<T> {
 	match response {
-		Ok(Ok(res)) => Ok(res),
-		Ok(Err(DispatchError::Module(e))) => {
-			Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
-				ErrorCode::ServerError(100).code(), // No real reason for this value
-				"Dispatch Module Error",
-				Some(format!("{:?}", e)),
-			))))
-		},
-		Ok(Err(e)) => Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
-			ErrorCode::ServerError(200).code(), // No real reason for this value
-			"Dispatch Error",
-			Some(format!("{:?}", e)),
-		)))),
+		Ok(res) => Ok(res),
 		Err(e) => Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
 			ErrorCode::ServerError(300).code(), // No real reason for this value
 			"Api Error",
@@ -39,27 +24,10 @@ mod tests {
 	// It is enough to test that we are getting into the correct match statement.
 
 	#[test]
-	fn maps_ok_ok_to_ok() {
-		let result = map_rpc_result(Ok(Ok(0)));
+	fn maps_ok_to_ok() {
+		let result = map_rpc_result(Ok(0));
 		assert!(result.is_ok());
 		assert_eq!(0, result.unwrap());
-	}
-
-	#[test]
-	fn maps_ok_dispatch_err() {
-		let dispach_err = sp_runtime::ModuleError { index: 0, error: [0, 0, 0, 0], message: None };
-		let result = map_rpc_result::<u64>(Ok(Err(sp_runtime::DispatchError::Module(dispach_err))));
-		assert!(result.is_err());
-		let str = format!("{:?}", result.err().unwrap());
-		assert!(str.contains("Dispatch Module Error"), "Did not find in: {:?}", str);
-	}
-
-	#[test]
-	fn maps_ok_dispatch_err_to_call_err() {
-		let result = map_rpc_result::<u64>(Ok(Err(sp_runtime::DispatchError::Other("test"))));
-		assert!(result.is_err());
-		let str = format!("{:?}", result.err().unwrap());
-		assert!(str.contains("Dispatch Error"), "Did not find in: {:?}", str);
 	}
 
 	#[test]
