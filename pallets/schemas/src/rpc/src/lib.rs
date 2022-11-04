@@ -16,6 +16,7 @@ use jsonrpsee::{
 	types::error::{CallError, ErrorObject},
 };
 use pallet_schemas_runtime_api::SchemasRuntimeApi;
+use poem_openapi::{param::Query, payload::PlainText, OpenApi, OpenApiService};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
@@ -44,13 +45,16 @@ impl From<SchemaRpcError> for i32 {
 
 /// Frequency Schema Custom RPC API
 #[rpc(client, server)]
+#[OpenApi]
 pub trait SchemasApi<BlockHash> {
 	/// retrieving schema by schema id
 	#[method(name = "schemas_getBySchemaId")]
+	#[oai(path = "/schemas_getBySchemaId", method = "get")]
 	fn get_by_schema_id(&self, schema_id: SchemaId) -> RpcResult<Option<SchemaResponse>>;
 
 	/// validates a schema model and returns `true` if the model is correct.
 	#[method(name = "schemas_checkSchemaValidity")]
+	#[oai(path = "/schemas_checkSchemaValidity", method = "get")]
 	fn check_schema_validity(&self, model: Vec<u8>, at: Option<BlockHash>) -> RpcResult<bool>;
 }
 
