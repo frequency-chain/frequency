@@ -1,7 +1,7 @@
 //! Frequency CLI library.
 use std::path::PathBuf;
 
-use crate::ExportMetadataCmd;
+use crate::{ExportMetadataCmd, ExportOpenApiCmd};
 
 /// Sub-commands supported by the collator.
 #[derive(Debug, clap::Subcommand)]
@@ -23,6 +23,9 @@ pub enum Subcommand {
 
 	/// Export metadata.
 	ExportMetadata(ExportMetadataCmd),
+
+	/// Export openapi spec.
+	ExportOpenApiCmd(ExportOpenApiCmd),
 
 	/// Revert the chain to a previous state.
 	Revert(sc_cli::RevertCmd),
