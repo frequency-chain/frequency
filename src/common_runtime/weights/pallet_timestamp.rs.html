@@ -80,12 +80,12 @@
 <span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_timestamp::WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
 	<span class="comment">// Storage: Timestamp Now (r:1 w:1)
 	</span><span class="kw">fn </span>set() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">8_922_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">8_693_000 </span><span class="kw">as </span>u64)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="kw">fn </span>on_finalize() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">5_142_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">5_214_000 </span><span class="kw">as </span>u64)
 	}
 }
 </code></pre></div>

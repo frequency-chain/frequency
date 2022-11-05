@@ -115,6 +115,9 @@
 <span id="115">115</span>
 <span id="116">116</span>
 <span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Types for the MSA Pallet
 </span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
@@ -134,12 +137,15 @@
 </span><span class="kw">pub const </span>EMPTY_FUNCTION: <span class="kw">fn</span>(MessageSourceId) -&gt; DispatchResult = |<span class="kw">_</span>| <span class="prelude-val">Ok</span>(());
 
 <span class="doccomment">/// A type definition for the payload of adding an MSA key - `pallet_msa::add_public_key_to_msa`
-</span><span class="attribute">#[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>AddKeyData {
+</span><span class="attribute">#[derive(TypeInfo, RuntimeDebugNoBound, Clone, Decode, Encode, PartialEq, Eq)]
+#[scale_info(skip_type_params(T))]
+</span><span class="kw">pub struct </span>AddKeyData&lt;T: Config&gt; {
 	<span class="doccomment">/// Message Source Account identifier
 	</span><span class="kw">pub </span>msa_id: MessageSourceId,
 	<span class="doccomment">/// The block number at which the signed proof for add_public_key_to_msa expires.
-	</span><span class="kw">pub </span>expiration: BlockNumber,
+	</span><span class="kw">pub </span>expiration: T::BlockNumber,
+	<span class="doccomment">/// The public key to be added.
+	</span><span class="kw">pub </span>new_public_key: T::AccountId,
 }
 
 <span class="doccomment">/// Structure that is signed for granting permissions to a Provider

@@ -206,11 +206,11 @@
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	</span><span class="kw">fn </span>add_onchain_message(n: u32, m: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">3_054_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">2_775_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 0
 			</span>.saturating_add(Weight::from_ref_time(<span class="number">1_000 </span><span class="kw">as </span>u64).saturating_mul(n <span class="kw">as </span>u64))
 			<span class="comment">// Standard Error: 2_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">227_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">222_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
@@ -218,11 +218,11 @@
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	</span><span class="kw">fn </span>add_ipfs_message(n: u32, m: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">3_403_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">4_153_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 0
 			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_000 </span><span class="kw">as </span>u64).saturating_mul(n <span class="kw">as </span>u64))
 			<span class="comment">// Standard Error: 2_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">196_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">190_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
@@ -230,10 +230,10 @@
 	// Storage: Messages Messages (r:0 w:1)
 	</span><span class="kw">fn </span>on_initialize(m: u32, s: u32, ) -&gt; Weight {
 		Weight::from_ref_time(<span class="number">0 </span><span class="kw">as </span>u64)
-			<span class="comment">// Standard Error: 17_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">369_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
-			<span class="comment">// Standard Error: 178_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">5_036_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			<span class="comment">// Standard Error: 15_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">384_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
+			<span class="comment">// Standard Error: 155_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">5_167_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
 	}
@@ -246,11 +246,11 @@
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	</span><span class="kw">fn </span>add_onchain_message(n: u32, m: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">3_054_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">2_775_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 0
 			</span>.saturating_add(Weight::from_ref_time(<span class="number">1_000 </span><span class="kw">as </span>u64).saturating_mul(n <span class="kw">as </span>u64))
 			<span class="comment">// Standard Error: 2_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">227_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">222_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
@@ -258,11 +258,11 @@
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	</span><span class="kw">fn </span>add_ipfs_message(n: u32, m: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">3_403_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">4_153_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 0
 			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_000 </span><span class="kw">as </span>u64).saturating_mul(n <span class="kw">as </span>u64))
 			<span class="comment">// Standard Error: 2_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">196_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">190_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
@@ -270,10 +270,10 @@
 	// Storage: Messages Messages (r:0 w:1)
 	</span><span class="kw">fn </span>on_initialize(m: u32, s: u32, ) -&gt; Weight {
 		Weight::from_ref_time(<span class="number">0 </span><span class="kw">as </span>u64)
-			<span class="comment">// Standard Error: 17_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">369_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
-			<span class="comment">// Standard Error: 178_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">5_036_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			<span class="comment">// Standard Error: 15_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">384_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
+			<span class="comment">// Standard Error: 155_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">5_167_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().writes((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64)))
 	}

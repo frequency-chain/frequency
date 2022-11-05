@@ -1573,6 +1573,40 @@
 <span id="1573">1573</span>
 <span id="1574">1574</span>
 <span id="1575">1575</span>
+<span id="1576">1576</span>
+<span id="1577">1577</span>
+<span id="1578">1578</span>
+<span id="1579">1579</span>
+<span id="1580">1580</span>
+<span id="1581">1581</span>
+<span id="1582">1582</span>
+<span id="1583">1583</span>
+<span id="1584">1584</span>
+<span id="1585">1585</span>
+<span id="1586">1586</span>
+<span id="1587">1587</span>
+<span id="1588">1588</span>
+<span id="1589">1589</span>
+<span id="1590">1590</span>
+<span id="1591">1591</span>
+<span id="1592">1592</span>
+<span id="1593">1593</span>
+<span id="1594">1594</span>
+<span id="1595">1595</span>
+<span id="1596">1596</span>
+<span id="1597">1597</span>
+<span id="1598">1598</span>
+<span id="1599">1599</span>
+<span id="1600">1600</span>
+<span id="1601">1601</span>
+<span id="1602">1602</span>
+<span id="1603">1603</span>
+<span id="1604">1604</span>
+<span id="1605">1605</span>
+<span id="1606">1606</span>
+<span id="1607">1607</span>
+<span id="1608">1608</span>
+<span id="1609">1609</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet
 //! The MSA pallet provides functionality for handling Message Source Accounts.
 //!
@@ -1777,6 +1811,7 @@
 	/// For this to work, the payload must include a mortality block number, which
 	/// is used in lieu of a monotonically increasing nonce.
 	</span><span class="attribute">#[pallet::storage]
+	#[pallet::getter(<span class="kw">fn </span>get_payload_signature_registry)]
 	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>PayloadSignatureRegistry&lt;T: Config&gt; = StorageDoubleMap&lt;
 		<span class="kw">_</span>,
 		Twox64Concat,
@@ -1849,7 +1884,7 @@
 		<span class="doccomment">/// MsaId values have reached the maximum
 		</span>MsaIdOverflow,
 		<span class="doccomment">/// Cryptographic signature verification failed for adding a key to MSA
-		</span>AddKeySignatureVerificationFailed,
+		</span>MsaOwnershipInvalidSignature,
 		<span class="doccomment">/// Ony the MSA Owner may perform the operation
 		</span>NotMsaOwner,
 		<span class="doccomment">/// Cryptographic signature failed verification
@@ -1902,6 +1937,8 @@
 		</span>ProofNotYetValid,
 		<span class="doccomment">/// Attempted to add a signature when the signature is already in the registry
 		</span>SignatureAlreadySubmitted,
+		<span class="doccomment">/// Cryptographic signature verification failed for proving ownership of new public-key.
+		</span>NewKeyOwnershipInvalidSignature,
 	}
 
 	<span class="attribute">#[pallet::hooks]
@@ -2100,17 +2137,22 @@
 			origin: OriginFor&lt;T&gt;,
 			<span class="attribute">#[pallet::compact] </span>provider_msa_id: MessageSourceId,
 		) -&gt; DispatchResult {
-			<span class="kw">let </span>delegator_key = ensure_signed(origin)<span class="question-mark">?</span>;
+			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
-			<span class="kw">let </span>delegator_msa_id: Delegator = <span class="self">Self</span>::ensure_valid_msa_key(<span class="kw-2">&amp;</span>delegator_key)<span class="question-mark">?</span>.into();
-			<span class="kw">let </span>provider_msa_id = Provider(provider_msa_id);
-
-			<span class="self">Self</span>::revoke_provider(provider_msa_id, delegator_msa_id)<span class="question-mark">?</span>;
-
-			<span class="self">Self</span>::deposit_event(Event::DelegationRevoked {
-				delegator: delegator_msa_id,
-				provider: provider_msa_id,
-			});
+			<span class="kw">match </span><span class="self">Self</span>::get_msa_by_public_key(<span class="kw-2">&amp;</span>who) {
+				<span class="prelude-val">Some</span>(delegator_msa) =&gt; {
+					<span class="kw">let </span>delegator_msa_id: Delegator = delegator_msa.into();
+					<span class="kw">let </span>provider_msa_id = Provider(provider_msa_id);
+					<span class="self">Self</span>::revoke_provider(provider_msa_id, delegator_msa_id)<span class="question-mark">?</span>;
+					<span class="self">Self</span>::deposit_event(Event::DelegationRevoked {
+						delegator: delegator_msa_id,
+						provider: provider_msa_id,
+					});
+				},
+				<span class="prelude-val">None </span>=&gt; {
+					<span class="macro">error!</span>(<span class="string">&quot;SignedExtension did not catch invalid MSA for account {:?}, &quot;</span>, who);
+				},
+			}
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -2127,7 +2169,8 @@
 		///
 		/// # Errors
 		///
-		/// * [`Error::AddKeySignatureVerificationFailed`] - `key` is not a valid signer of the provided `add_key_payload`.
+		/// * [`Error::MsaOwnershipInvalidSignature`] - `key` is not a valid signer of the provided `add_key_payload`.
+		/// * [`Error::NewKeyOwnershipInvalidSignature`] - `key` is not a valid signer of the provided `add_key_payload`.
 		/// * [`Error::NoKeyExists`] - the MSA id for the account in `add_key_payload` does not exist.
 		/// * [`Error::NotMsaOwner`] - Origin&#39;s MSA is not the same as &#39;add_key_payload` MSA. Essentially you can only add a key to your own MSA.
 		/// * [`Error::ProofHasExpired`] - the current block is less than the `expired` bock number set in `AddKeyData`.
@@ -2139,9 +2182,8 @@
 			origin: OriginFor&lt;T&gt;,
 			msa_owner_public_key: T::AccountId,
 			msa_owner_proof: MultiSignature,
-			new_public_key: T::AccountId,
 			new_key_owner_proof: MultiSignature,
-			add_key_payload: AddKeyData,
+			add_key_payload: AddKeyData&lt;T&gt;,
 		) -&gt; DispatchResult {
 			<span class="kw">let _ </span>= ensure_signed(origin)<span class="question-mark">?</span>;
 
@@ -2150,24 +2192,33 @@
 				<span class="kw-2">&amp;</span>msa_owner_public_key,
 				add_key_payload.encode(),
 			)
-			.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::AddKeySignatureVerificationFailed)<span class="question-mark">?</span>;
+			.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::MsaOwnershipInvalidSignature)<span class="question-mark">?</span>;
 
-			<span class="self">Self</span>::verify_signature(<span class="kw-2">&amp;</span>new_key_owner_proof, <span class="kw-2">&amp;</span>new_public_key, add_key_payload.encode())
-				.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::AddKeySignatureVerificationFailed)<span class="question-mark">?</span>;
+			<span class="self">Self</span>::verify_signature(
+				<span class="kw-2">&amp;</span>new_key_owner_proof,
+				<span class="kw-2">&amp;</span>add_key_payload.new_public_key.clone(),
+				add_key_payload.encode(),
+			)
+			.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::NewKeyOwnershipInvalidSignature)<span class="question-mark">?</span>;
 
+			<span class="self">Self</span>::register_signature(<span class="kw-2">&amp;</span>msa_owner_proof, add_key_payload.expiration.into())<span class="question-mark">?</span>;
 			<span class="self">Self</span>::register_signature(<span class="kw-2">&amp;</span>new_key_owner_proof, add_key_payload.expiration.into())<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>msa_id = add_key_payload.msa_id;
 
 			<span class="self">Self</span>::ensure_msa_owner(<span class="kw-2">&amp;</span>msa_owner_public_key, msa_id)<span class="question-mark">?</span>;
 
-			<span class="self">Self</span>::add_key(msa_id, <span class="kw-2">&amp;</span>new_public_key.clone(), |new_msa_id| -&gt; DispatchResult {
-				<span class="self">Self</span>::deposit_event(Event::PublicKeyAdded {
-					msa_id: new_msa_id,
-					key: new_public_key.clone(),
-				});
-				<span class="prelude-val">Ok</span>(())
-			})<span class="question-mark">?</span>;
+			<span class="self">Self</span>::add_key(
+				msa_id,
+				<span class="kw-2">&amp;</span>add_key_payload.new_public_key.clone(),
+				|msa_id| -&gt; DispatchResult {
+					<span class="self">Self</span>::deposit_event(Event::PublicKeyAdded {
+						msa_id,
+						key: add_key_payload.new_public_key.clone(),
+					});
+					<span class="prelude-val">Ok</span>(())
+				},
+			)<span class="question-mark">?</span>;
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -2977,15 +3028,18 @@
 
 <span class="kw">impl</span>&lt;T: Config + Send + Sync&gt; CheckFreeExtrinsicUse&lt;T&gt; {
 	<span class="doccomment">/// Validates the delegation by making sure that the MSA ids used are valid and the delegation is
-	/// still active
+	/// is still active. Returns a `ValidTransaction` or wrapped [`ValidityError`]
+	/// # Arguments:
+	/// * `account_id`: the account id of the delegator that is revoking the delegation relationship
+	/// *  `provider_msa_id` the MSA ID of the provider (the &quot;other end&quot; of the delegation).
 	///
 	/// # Errors
-	/// * [`ValidityError::InvalidMsaKey`]
-	/// * [`ValidityError::InvalidDelegation`]
+	/// * [`ValidityError::InvalidMsaKey`] - if  `account_id` does not have an MSA
+	/// * [`ValidityError::InvalidDelegation`] - if the delegation with `delegator_msa_id` is invalid
 	///
 	</span><span class="kw">pub fn </span>validate_delegation_by_delegator(
-		account_id: <span class="kw-2">&amp;</span>T::AccountId, <span class="comment">// presumptive delegator
-		</span>provider_msa_id: <span class="kw-2">&amp;</span>MessageSourceId,
+		account_id: <span class="kw-2">&amp;</span>T::AccountId,
+		provider_msa_id: <span class="kw-2">&amp;</span>MessageSourceId,
 	) -&gt; TransactionValidity {
 		<span class="kw">const </span>TAG_PREFIX: <span class="kw-2">&amp;</span>str = <span class="string">&quot;DelegatorDelegationRevocation&quot;</span>;
 		<span class="kw">let </span>delegator_msa_id: Delegator = Pallet::&lt;T&gt;::ensure_valid_msa_key(account_id)
@@ -2999,31 +3053,38 @@
 	}
 
 	<span class="doccomment">/// Validates the delegation by making sure that the MSA ids used are valid and that the delegation
-	/// is still active.
+	/// is still active. Returns a `ValidTransaction` or wrapped [`ValidityError`]
+	/// # Arguments:
+	/// * `account_id`: the account id of the provider that is revoking the delegation relationship
+	/// *  `delegator_msa_id` the MSA ID of the delegator (the &quot;other end&quot; of the delegation).
 	///
 	/// # Errors
-	/// * [`ValidityError::InvalidMsaKey`]
-	/// * [`ValidityError::InvalidDelegation`]
+	/// * [`ValidityError::InvalidMsaKey`] - if  `account_id` does not have an MSA
+	/// * [`ValidityError::InvalidDelegation`] - if the delegation with `delegator_msa_id` is invalid
 	///
 	</span><span class="kw">pub fn </span>validate_delegation_by_provider(
-		account_id: <span class="kw-2">&amp;</span>T::AccountId, <span class="comment">// presumptive provider
-		</span>delegator_msa_id: <span class="kw-2">&amp;</span>MessageSourceId,
+		account_id: <span class="kw-2">&amp;</span>T::AccountId,
+		delegator_msa_id: <span class="kw-2">&amp;</span>MessageSourceId,
 	) -&gt; TransactionValidity {
 		<span class="kw">const </span>TAG_PREFIX: <span class="kw-2">&amp;</span>str = <span class="string">&quot;ProviderDelegationRevocation&quot;</span>;
+
 		<span class="kw">let </span>provider_msa_id: Provider = Pallet::&lt;T&gt;::ensure_valid_msa_key(account_id)
 			.map_err(|<span class="kw">_</span>| InvalidTransaction::Custom(ValidityError::InvalidMsaKey <span class="kw">as </span>u8))<span class="question-mark">?
 			</span>.into();
 		<span class="kw">let </span>delegator_msa_id = Delegator(<span class="kw-2">*</span>delegator_msa_id);
 
-		Pallet::&lt;T&gt;::ensure_valid_delegation(provider_msa_id, delegator_msa_id, <span class="prelude-val">None</span>)
+		<span class="comment">// Verify the delegation exists and is active
+		</span>Pallet::&lt;T&gt;::ensure_valid_delegation(provider_msa_id, delegator_msa_id, <span class="prelude-val">None</span>)
 			.map_err(|<span class="kw">_</span>| InvalidTransaction::Custom(ValidityError::InvalidDelegation <span class="kw">as </span>u8))<span class="question-mark">?</span>;
 		ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}
 
-	<span class="doccomment">/// validates that a key being revoked is both valid and owned by a valid MSA account
-	///
-	/// # Errors
-	/// * [`ValidityError::InvalidMsaKey`]
+	<span class="doccomment">/// Validates that a key being revoked is both valid and owned by a valid MSA account.
+	/// Returns a `ValidTransaction` or wrapped [`ValidityError::InvalidMsaKey`]
+	/// Arguments:
+	/// * `account_id`: the account id calling for revoking the key, and which
+	/// 	owns the msa also associated with `key`
+	/// * `key`: the account id to revoke as an access key for account_id&#39;s msa
 	///
 	</span><span class="kw">pub fn </span>validate_key_revocation(
 		account_id: <span class="kw-2">&amp;</span>T::AccountId,
@@ -3036,7 +3097,11 @@
 		<span class="kw">return </span>ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}
 
-	<span class="doccomment">/// validates that a MSA being retired is valid
+	<span class="doccomment">/// Validates that a MSA being retired exists, does not belong to a registered provider, and
+	/// that `account_id` is the only access key associated with the MSA.
+	/// Returns a `ValidTransaction` or wrapped [`ValidityError]
+	/// # Arguments:
+	/// * account_id: the account id associated with the MSA to retire
 	///
 	/// # Errors
 	/// * [`ValidityError::InvalidMsaKey`]
@@ -3045,24 +3110,18 @@
 	///
 	</span><span class="kw">pub fn </span>ensure_msa_can_retire(account_id: <span class="kw-2">&amp;</span>T::AccountId) -&gt; TransactionValidity {
 		<span class="kw">const </span>TAG_PREFIX: <span class="kw-2">&amp;</span>str = <span class="string">&quot;MSARetirement&quot;</span>;
-
-		<span class="comment">// Verify the msa to be retired exists
-		</span><span class="kw">let </span>msa_id = Pallet::&lt;T&gt;::ensure_valid_msa_key(account_id)
+		<span class="kw">let </span>msa_id = Pallet::&lt;T&gt;::ensure_valid_msa_key(account_id)
 			.map_err(|<span class="kw">_</span>| InvalidTransaction::Custom(ValidityError::InvalidMsaKey <span class="kw">as </span>u8))<span class="question-mark">?
 			</span>.into();
 
-		<span class="comment">// Verify the MSA is not a registered provider
-		// Invalid transaction error &quot;InvalidRegisteredProviderCannotBeRetired&quot; if the MSA id is a registered provider
-		</span><span class="macro">ensure!</span>(
+		<span class="macro">ensure!</span>(
 			!Pallet::&lt;T&gt;::is_registered_provider(msa_id),
 			InvalidTransaction::Custom(
 				ValidityError::InvalidRegisteredProviderCannotBeRetired <span class="kw">as </span>u8
 			)
 		);
 
-		<span class="comment">// Verify this is the last access key associated with the MSA
-		// Invalid transaction error &quot;MoreThanOneKeyExists&quot; if the MSA has more than one account key.
-		</span><span class="kw">let </span>key_count = Pallet::&lt;T&gt;::get_public_key_count_by_msa_id(msa_id);
+		<span class="kw">let </span>key_count = Pallet::&lt;T&gt;::get_public_key_count_by_msa_id(msa_id);
 		<span class="macro">ensure!</span>(
 			key_count == <span class="number">1</span>,
 			InvalidTransaction::Custom(ValidityError::InvalidMoreThanOneKeyExists <span class="kw">as </span>u8)
@@ -3125,10 +3184,19 @@
 		<span class="self">self</span>.validate(who, call, info, len).map(|<span class="kw">_</span>| ())
 	}
 
-	<span class="doccomment">/// Frequently called by the transaction queue to ensure that the transaction is valid such that:
-	/// * The calling extrinsic is &#39;revoke_delegation_by_delegator&#39;.
-	/// * The sender key is associated to an MSA and not revoked.
-	/// * The provider MSA is a valid provider to the delegator MSA.
+	<span class="doccomment">/// Frequently called by the transaction queue to validate all free MSA extrinsics:
+	/// Returns a `ValidTransaction` or wrapped [`ValidityError`]
+	/// * revoke_delegation_by_provider
+	/// * revoke_delegation_by_delegator
+	/// * delete_msa_public_key
+	/// * retire_msa
+	/// Validate functions for the above MUST prevent errors in the extrinsic logic to prevent spam.
+	///
+	/// Arguments:
+	/// who: AccountId calling the extrinsic
+	/// call: The pallet extrinsic being called
+	/// unused: _info, _len
+	///
 	</span><span class="kw">fn </span>validate(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		who: <span class="kw-2">&amp;</span><span class="self">Self</span>::AccountId,

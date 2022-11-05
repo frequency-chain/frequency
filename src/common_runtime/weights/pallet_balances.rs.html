@@ -113,43 +113,43 @@
 <span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_balances::WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
 	<span class="comment">// Storage: System Account (r:1 w:1)
 	</span><span class="kw">fn </span>transfer() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">46_648_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">46_139_000 </span><span class="kw">as </span>u64)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: System Account (r:1 w:1)
 	</span><span class="kw">fn </span>transfer_keep_alive() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">34_575_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">34_141_000 </span><span class="kw">as </span>u64)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: System Account (r:1 w:1)
 	</span><span class="kw">fn </span>set_balance_creating() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">25_185_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">25_211_000 </span><span class="kw">as </span>u64)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: System Account (r:1 w:1)
 	</span><span class="kw">fn </span>set_balance_killing() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">28_624_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">27_912_000 </span><span class="kw">as </span>u64)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: System Account (r:2 w:2)
 	</span><span class="kw">fn </span>force_transfer() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">46_133_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">45_142_000 </span><span class="kw">as </span>u64)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: System Account (r:1 w:1)
 	</span><span class="kw">fn </span>transfer_all() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">40_367_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">39_651_000 </span><span class="kw">as </span>u64)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: System Account (r:1 w:1)
 	</span><span class="kw">fn </span>force_unreserve() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">21_547_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">21_227_000 </span><span class="kw">as </span>u64)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}

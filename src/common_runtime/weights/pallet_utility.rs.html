@@ -95,27 +95,27 @@
 <span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_utility::WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
 	<span class="doccomment">/// The range of component `c` is `[0, 1000]`.
 	</span><span class="kw">fn </span>batch(c: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">16_189_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">18_106_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 1_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">4_029_000 </span><span class="kw">as </span>u64).saturating_mul(c <span class="kw">as </span>u64))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">4_089_000 </span><span class="kw">as </span>u64).saturating_mul(c <span class="kw">as </span>u64))
 	}
 	<span class="kw">fn </span>as_derivative() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">6_394_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">6_634_000 </span><span class="kw">as </span>u64)
 	}
 	<span class="doccomment">/// The range of component `c` is `[0, 1000]`.
 	</span><span class="kw">fn </span>batch_all(c: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">15_836_000 </span><span class="kw">as </span>u64)
-			<span class="comment">// Standard Error: 1_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">4_152_000 </span><span class="kw">as </span>u64).saturating_mul(c <span class="kw">as </span>u64))
+		Weight::from_ref_time(<span class="number">13_392_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 3_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">4_180_000 </span><span class="kw">as </span>u64).saturating_mul(c <span class="kw">as </span>u64))
 	}
 	<span class="kw">fn </span>dispatch_as() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">14_507_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">14_489_000 </span><span class="kw">as </span>u64)
 	}
 	<span class="doccomment">/// The range of component `c` is `[0, 1000]`.
 	</span><span class="kw">fn </span>force_batch(c: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">16_469_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">17_245_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 1_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">4_060_000 </span><span class="kw">as </span>u64).saturating_mul(c <span class="kw">as </span>u64))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">4_071_000 </span><span class="kw">as </span>u64).saturating_mul(c <span class="kw">as </span>u64))
 	}
 }
 </code></pre></div>

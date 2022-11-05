@@ -355,9 +355,9 @@
 	// Storage: Msa PublicKeyToMsaId (r:1 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	</span><span class="kw">fn </span>create(s: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">51_558_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">51_661_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 4_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">45_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">47_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>u64))
 	}
@@ -369,38 +369,38 @@
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	</span><span class="kw">fn </span>create_sponsored_account_with_delegation() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">101_295_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">101_654_000 </span><span class="kw">as </span>u64)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">8 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">5 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	</span><span class="kw">fn </span>revoke_delegation_by_provider(s: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">49_008_000 </span><span class="kw">as </span>u64)
-			<span class="comment">// Standard Error: 3_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">81_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+		Weight::from_ref_time(<span class="number">47_478_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 2_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">83_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
-	<span class="comment">// Storage: Msa PayloadSignatureRegistry (r:1 w:1)
+	<span class="comment">// Storage: Msa PayloadSignatureRegistry (r:2 w:2)
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	</span><span class="kw">fn </span>add_public_key_to_msa() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">139_833_000 </span><span class="kw">as </span>u64)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>u64))
+		Weight::from_ref_time(<span class="number">145_828_000 </span><span class="kw">as </span>u64)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	</span><span class="kw">fn </span>delete_msa_public_key() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">29_267_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">30_633_000 </span><span class="kw">as </span>u64)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Msa PublicKeyToMsaId (r:1 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	</span><span class="kw">fn </span>retire_msa() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">30_084_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">29_830_000 </span><span class="kw">as </span>u64)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
 	}
@@ -410,26 +410,26 @@
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	</span><span class="kw">fn </span>grant_delegation() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">92_979_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">94_608_000 </span><span class="kw">as </span>u64)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">6 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	</span><span class="kw">fn </span>revoke_delegation_by_delegator() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">27_154_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">26_842_000 </span><span class="kw">as </span>u64)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:1)
 	</span><span class="kw">fn </span>create_provider() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">21_009_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">21_431_000 </span><span class="kw">as </span>u64)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="kw">fn </span>on_initialize(m: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">10_913_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">10_587_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 0
 			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
 	}
@@ -437,9 +437,9 @@
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	</span><span class="kw">fn </span>grant_schema_permissions(s: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">60_177_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">61_082_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 3_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">80_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">75_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
@@ -447,9 +447,9 @@
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	</span><span class="kw">fn </span>revoke_schema_permissions(s: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">60_165_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">61_425_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 3_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">84_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">80_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
@@ -461,9 +461,9 @@
 	// Storage: Msa PublicKeyToMsaId (r:1 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	</span><span class="kw">fn </span>create(s: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">51_558_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">51_661_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 4_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">45_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">47_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>u64))
 	}
@@ -475,38 +475,38 @@
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	</span><span class="kw">fn </span>create_sponsored_account_with_delegation() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">101_295_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">101_654_000 </span><span class="kw">as </span>u64)
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">8 </span><span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">5 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	</span><span class="kw">fn </span>revoke_delegation_by_provider(s: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">49_008_000 </span><span class="kw">as </span>u64)
-			<span class="comment">// Standard Error: 3_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">81_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+		Weight::from_ref_time(<span class="number">47_478_000 </span><span class="kw">as </span>u64)
+			<span class="comment">// Standard Error: 2_000
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">83_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
-	<span class="comment">// Storage: Msa PayloadSignatureRegistry (r:1 w:1)
+	<span class="comment">// Storage: Msa PayloadSignatureRegistry (r:2 w:2)
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	</span><span class="kw">fn </span>add_public_key_to_msa() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">139_833_000 </span><span class="kw">as </span>u64)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>u64))
+		Weight::from_ref_time(<span class="number">145_828_000 </span><span class="kw">as </span>u64)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	</span><span class="kw">fn </span>delete_msa_public_key() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">29_267_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">30_633_000 </span><span class="kw">as </span>u64)
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Msa PublicKeyToMsaId (r:1 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	</span><span class="kw">fn </span>retire_msa() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">30_084_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">29_830_000 </span><span class="kw">as </span>u64)
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
 	}
@@ -516,26 +516,26 @@
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	</span><span class="kw">fn </span>grant_delegation() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">92_979_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">94_608_000 </span><span class="kw">as </span>u64)
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">6 </span><span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	</span><span class="kw">fn </span>revoke_delegation_by_delegator() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">27_154_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">26_842_000 </span><span class="kw">as </span>u64)
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:1)
 	</span><span class="kw">fn </span>create_provider() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">21_009_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">21_431_000 </span><span class="kw">as </span>u64)
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="kw">fn </span>on_initialize(m: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">10_913_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">10_587_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 0
 			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
 	}
@@ -543,9 +543,9 @@
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	</span><span class="kw">fn </span>grant_schema_permissions(s: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">60_177_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">61_082_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 3_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">80_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">75_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
@@ -553,9 +553,9 @@
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	</span><span class="kw">fn </span>revoke_schema_permissions(s: u32, ) -&gt; Weight {
-		Weight::from_ref_time(<span class="number">60_165_000 </span><span class="kw">as </span>u64)
+		Weight::from_ref_time(<span class="number">61_425_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 3_000
-			</span>.saturating_add(Weight::from_ref_time(<span class="number">84_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">80_000 </span><span class="kw">as </span>u64).saturating_mul(s <span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
