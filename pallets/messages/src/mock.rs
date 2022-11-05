@@ -7,17 +7,18 @@ use common_primitives::{
 	schema::*,
 };
 
+use common_primitives::node::AccountId;
 use frame_support::{
 	dispatch::DispatchResult,
 	parameter_types,
-	traits::{ConstU16, ConstU64, OnFinalize, OnInitialize},
+	traits::{ConstU16, ConstU32, ConstU64, OnFinalize, OnInitialize},
 };
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
-	DispatchError,
+	traits::{BlakeTwo256, Convert, ConvertInto, IdentityLookup},
+	AccountId32, DispatchError,
 };
 use std::fmt::Formatter;
 
@@ -38,6 +39,8 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		MessagesPallet: pallet_messages::{Pallet, Call, Storage, Event<T>},
+		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
+		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -71,23 +74,6 @@ impl system::Config for Test {
 parameter_types! {
 	pub const MaxMessagesPerBlock: u32 = 500;
 	pub const MaxMessagePayloadSizeBytes: u32 = 100;
-	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
-}
-
-impl Clone for MaxSchemaGrantsPerDelegation {
-	fn clone(&self) -> Self {
-		MaxSchemaGrantsPerDelegation {}
-	}
-}
-
-impl Eq for MaxSchemaGrantsPerDelegation {
-	fn assert_receiver_is_total_eq(&self) -> () {}
-}
-
-impl PartialEq for MaxSchemaGrantsPerDelegation {
-	fn eq(&self, _other: &Self) -> bool {
-		true
-	}
 }
 
 impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
@@ -222,13 +208,67 @@ impl SchemaProvider<u16> for SchemaHandler {
 
 impl pallet_messages::Config for Test {
 	type Event = Event;
-	type MsaInfoProvider = MsaInfoHandler;
+	type MsaInfoProvider = Msa;
 	type DelegationInfoProvider = DelegationInfoHandler;
-	type SchemaGrantValidator = SchemaGrantValidationHandler;
+	type SchemaGrantValidator = Msa;
 	type SchemaProvider = SchemaHandler;
 	type WeightInfo = ();
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type MaxMessagePayloadSizeBytes = MaxMessagePayloadSizeBytes;
+}
+
+parameter_types! {
+	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
+	pub const MaxPublicKeysPerMsa: u8 = 10;
+	pub const MaxProviderNameSize: u32 = 16;
+}
+
+impl Clone for MaxSchemaGrantsPerDelegation {
+	fn clone(&self) -> Self {
+		MaxSchemaGrantsPerDelegation {}
+	}
+}
+
+impl Eq for MaxSchemaGrantsPerDelegation {
+	fn assert_receiver_is_total_eq(&self) -> () {}
+}
+
+impl PartialEq for MaxSchemaGrantsPerDelegation {
+	fn eq(&self, _other: &Self) -> bool {
+		true
+	}
+}
+
+parameter_types! {
+	pub const MockAccount: u32 = 30;
+}
+pub struct TestAccountId;
+
+impl Convert<u64, AccountId> for TestAccountId {
+	fn convert(x: u64) -> AccountId32 {
+		AccountId32::new([1u8; 32])
+	}
+}
+
+impl pallet_msa::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type ConvertIntoAccountId32 = TestAccountId;
+	type MaxPublicKeysPerMsa = MaxPublicKeysPerMsa;
+	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type MaxProviderNameSize = MaxProviderNameSize;
+	type SchemaValidator = Schemas;
+	type MortalityWindowSize = ConstU32<200>;
+	type MaxSignaturesPerBucket = ConstU32<10>;
+	type NumberOfBuckets = ConstU32<2>;
+}
+
+impl pallet_schemas::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type MinSchemaModelSizeBytes = ConstU32<10>;
+	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<10>;
+	type MaxSchemaRegistrations = ConstU16<10>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
