@@ -1544,6 +1544,35 @@
 <span id="1544">1544</span>
 <span id="1545">1545</span>
 <span id="1546">1546</span>
+<span id="1547">1547</span>
+<span id="1548">1548</span>
+<span id="1549">1549</span>
+<span id="1550">1550</span>
+<span id="1551">1551</span>
+<span id="1552">1552</span>
+<span id="1553">1553</span>
+<span id="1554">1554</span>
+<span id="1555">1555</span>
+<span id="1556">1556</span>
+<span id="1557">1557</span>
+<span id="1558">1558</span>
+<span id="1559">1559</span>
+<span id="1560">1560</span>
+<span id="1561">1561</span>
+<span id="1562">1562</span>
+<span id="1563">1563</span>
+<span id="1564">1564</span>
+<span id="1565">1565</span>
+<span id="1566">1566</span>
+<span id="1567">1567</span>
+<span id="1568">1568</span>
+<span id="1569">1569</span>
+<span id="1570">1570</span>
+<span id="1571">1571</span>
+<span id="1572">1572</span>
+<span id="1573">1573</span>
+<span id="1574">1574</span>
+<span id="1575">1575</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet
 //! The MSA pallet provides functionality for handling Message Source Accounts.
 //!
@@ -1640,7 +1669,7 @@
 
 <span class="attribute">#[frame_support::pallet]
 </span><span class="kw">pub mod </span>pallet {
-	<span class="kw">use </span>frame_support::log::warn;
+	<span class="kw">use </span>frame_support::log::error;
 
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
@@ -2196,20 +2225,25 @@
 			origin: OriginFor&lt;T&gt;,
 			<span class="attribute">#[pallet::compact] </span>delegator: MessageSourceId,
 		) -&gt; DispatchResult {
-			<span class="kw">let </span>provider_key = ensure_signed(origin)<span class="question-mark">?</span>;
+			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
-			<span class="comment">// Remover should have valid keys (non expired and exists)
-			</span><span class="kw">let </span>key_info = <span class="self">Self</span>::ensure_valid_msa_key(<span class="kw-2">&amp;</span>provider_key)<span class="question-mark">?</span>;
-
-			<span class="kw">let </span>provider_msa_id = Provider(key_info);
-			<span class="kw">let </span>delegator_msa_id = Delegator(delegator);
-
-			<span class="self">Self</span>::revoke_provider(provider_msa_id, delegator_msa_id)<span class="question-mark">?</span>;
-
-			<span class="self">Self</span>::deposit_event(Event::DelegationRevoked {
-				provider: provider_msa_id,
-				delegator: delegator_msa_id,
-			});
+			<span class="comment">// Revoke delegation relationship entry in the delegation registry by expiring it
+			// at the current block
+			// validity checks are in SignedExtension so in theory this should never error.
+			</span><span class="kw">match </span><span class="self">Self</span>::get_msa_by_public_key(<span class="kw-2">&amp;</span>who) {
+				<span class="prelude-val">Some</span>(msa_id) =&gt; {
+					<span class="kw">let </span>provider_msa_id = Provider(msa_id);
+					<span class="kw">let </span>delegator_msa_id = Delegator(delegator);
+					<span class="self">Self</span>::revoke_provider(provider_msa_id, delegator_msa_id)<span class="question-mark">?</span>;
+					<span class="self">Self</span>::deposit_event(Event::DelegationRevoked {
+						provider: provider_msa_id,
+						delegator: delegator_msa_id,
+					})
+				},
+				<span class="prelude-val">None </span>=&gt; {
+					<span class="macro">error!</span>(<span class="string">&quot;SignedExtension did not catch invalid MSA for account {:?}, &quot;</span>, who);
+				},
+			}
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -2309,7 +2343,7 @@
 					<span class="self">Self</span>::deposit_event(Event::MsaRetired { msa_id });
 				},
 				<span class="prelude-val">None </span>=&gt; {
-					<span class="macro">warn!</span>(<span class="string">&quot;Did not find MSA for account {:?}, SignedExtension did not catch.&quot;</span>, who);
+					<span class="macro">error!</span>(<span class="string">&quot;SignedExtension did not catch invalid MSA for account {:?}, &quot;</span>, who);
 				},
 			}
 			<span class="prelude-val">Ok</span>(())
@@ -2555,7 +2589,9 @@
 		)
 	}
 
-	<span class="doccomment">/// Check that the delegator has an active delegation to the provider
+	<span class="doccomment">/// Check that the delegator has an active delegation to the provider.
+	/// `block_number`: Provide `None` to know if the delegation is active at the current block.
+	///                 Provide Some(N) to know if the delegation was or will be active at block N.
 	///
 	/// # Errors
 	/// * [`Error::DelegationNotFound`]
@@ -2630,11 +2666,8 @@
 				);
 
 				<span class="kw">let </span>current_block = frame_system::Pallet::&lt;T&gt;::block_number();
-
 				info.revoked_at = current_block;
-
 				<span class="kw-2">*</span>maybe_info = <span class="prelude-val">Some</span>(info);
-
 				<span class="prelude-val">Ok</span>(())
 			},
 		)<span class="question-mark">?</span>;
@@ -2943,21 +2976,44 @@
 </span><span class="kw">pub struct </span>CheckFreeExtrinsicUse&lt;T: Config + Send + Sync&gt;(PhantomData&lt;T&gt;);
 
 <span class="kw">impl</span>&lt;T: Config + Send + Sync&gt; CheckFreeExtrinsicUse&lt;T&gt; {
-	<span class="doccomment">/// Validates the delegation by making sure that the MSA ids used are valid
+	<span class="doccomment">/// Validates the delegation by making sure that the MSA ids used are valid and the delegation is
+	/// still active
 	///
 	/// # Errors
 	/// * [`ValidityError::InvalidMsaKey`]
 	/// * [`ValidityError::InvalidDelegation`]
 	///
 	</span><span class="kw">pub fn </span>validate_delegation_by_delegator(
-		account_id: <span class="kw-2">&amp;</span>T::AccountId,
-		provider_msa_id: <span class="kw-2">&amp;</span>MessageSourceId,
+		account_id: <span class="kw-2">&amp;</span>T::AccountId, <span class="comment">// presumptive delegator
+		</span>provider_msa_id: <span class="kw-2">&amp;</span>MessageSourceId,
 	) -&gt; TransactionValidity {
-		<span class="kw">const </span>TAG_PREFIX: <span class="kw-2">&amp;</span>str = <span class="string">&quot;DelegationRevocation&quot;</span>;
+		<span class="kw">const </span>TAG_PREFIX: <span class="kw-2">&amp;</span>str = <span class="string">&quot;DelegatorDelegationRevocation&quot;</span>;
 		<span class="kw">let </span>delegator_msa_id: Delegator = Pallet::&lt;T&gt;::ensure_valid_msa_key(account_id)
 			.map_err(|<span class="kw">_</span>| InvalidTransaction::Custom(ValidityError::InvalidMsaKey <span class="kw">as </span>u8))<span class="question-mark">?
 			</span>.into();
 		<span class="kw">let </span>provider_msa_id = Provider(<span class="kw-2">*</span>provider_msa_id);
+
+		Pallet::&lt;T&gt;::ensure_valid_delegation(provider_msa_id, delegator_msa_id, <span class="prelude-val">None</span>)
+			.map_err(|<span class="kw">_</span>| InvalidTransaction::Custom(ValidityError::InvalidDelegation <span class="kw">as </span>u8))<span class="question-mark">?</span>;
+		ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
+	}
+
+	<span class="doccomment">/// Validates the delegation by making sure that the MSA ids used are valid and that the delegation
+	/// is still active.
+	///
+	/// # Errors
+	/// * [`ValidityError::InvalidMsaKey`]
+	/// * [`ValidityError::InvalidDelegation`]
+	///
+	</span><span class="kw">pub fn </span>validate_delegation_by_provider(
+		account_id: <span class="kw-2">&amp;</span>T::AccountId, <span class="comment">// presumptive provider
+		</span>delegator_msa_id: <span class="kw-2">&amp;</span>MessageSourceId,
+	) -&gt; TransactionValidity {
+		<span class="kw">const </span>TAG_PREFIX: <span class="kw-2">&amp;</span>str = <span class="string">&quot;ProviderDelegationRevocation&quot;</span>;
+		<span class="kw">let </span>provider_msa_id: Provider = Pallet::&lt;T&gt;::ensure_valid_msa_key(account_id)
+			.map_err(|<span class="kw">_</span>| InvalidTransaction::Custom(ValidityError::InvalidMsaKey <span class="kw">as </span>u8))<span class="question-mark">?
+			</span>.into();
+		<span class="kw">let </span>delegator_msa_id = Delegator(<span class="kw-2">*</span>delegator_msa_id);
 
 		Pallet::&lt;T&gt;::ensure_valid_delegation(provider_msa_id, delegator_msa_id, <span class="prelude-val">None</span>)
 			.map_err(|<span class="kw">_</span>| InvalidTransaction::Custom(ValidityError::InvalidDelegation <span class="kw">as </span>u8))<span class="question-mark">?</span>;
@@ -3081,6 +3137,8 @@
 		_len: usize,
 	) -&gt; TransactionValidity {
 		<span class="kw">match </span>call.is_sub_type() {
+			<span class="prelude-val">Some</span>(Call::revoke_delegation_by_provider { delegator, .. }) =&gt;
+				CheckFreeExtrinsicUse::&lt;T&gt;::validate_delegation_by_provider(who, delegator),
 			<span class="prelude-val">Some</span>(Call::revoke_delegation_by_delegator { provider_msa_id, .. }) =&gt;
 				CheckFreeExtrinsicUse::&lt;T&gt;::validate_delegation_by_delegator(who, provider_msa_id),
 			<span class="prelude-val">Some</span>(Call::delete_msa_public_key { key, .. }) =&gt;
