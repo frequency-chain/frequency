@@ -3,7 +3,6 @@
 # the binary in the build folder.
 # This is the build stage for Polkadot. Here we create the binary in a temporary image.
 FROM --platform=linux/amd64 ubuntu:focal AS base
-
 LABEL maintainer="Frequency Team"
 LABEL description="Frequency parachain node for Rococo testnet and Mainnet"
 
@@ -24,7 +23,6 @@ COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificat
 # For local testing only
 # COPY --chown=frequency target/production/frequency.amd64 ./frequency/frequency
 COPY --chown=frequency target/production/frequency ./frequency/
-RUN chmod +x ./frequency/frequency
 
 # 9933 for RPC call
 # 9944 for Websocket
