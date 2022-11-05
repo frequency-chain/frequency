@@ -17,12 +17,15 @@ use scale_info::TypeInfo;
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 
 /// A type definition for the payload of adding an MSA key - `pallet_msa::add_public_key_to_msa`
-#[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
-pub struct AddKeyData {
+#[derive(TypeInfo, RuntimeDebugNoBound, Clone, Decode, Encode, PartialEq, Eq)]
+#[scale_info(skip_type_params(T))]
+pub struct AddKeyData<T: Config> {
 	/// Message Source Account identifier
 	pub msa_id: MessageSourceId,
 	/// The block number at which the signed proof for add_public_key_to_msa expires.
-	pub expiration: BlockNumber,
+	pub expiration: T::BlockNumber,
+	/// The public key to be added.
+	pub new_public_key: T::AccountId,
 }
 
 /// Structure that is signed for granting permissions to a Provider

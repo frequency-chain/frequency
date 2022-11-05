@@ -35,17 +35,17 @@ pub fn user_adds_key_to_msa(
 	delegator_pair: sp_core::sr25519::Pair,
 	new_pair: sp_core::sr25519::Pair,
 ) {
-	let add_key_payload: AddKeyData = AddKeyData { msa_id: 2, expiration: 109 };
+	let add_key_payload =
+		AddKeyData { msa_id: 2, expiration: 109, new_public_key: new_pair.public().into() };
 	let encode_add_key_data = wrap_binary_data(add_key_payload.encode());
-	let add_key_signature_delegator = delegator_pair.sign(&encode_add_key_data);
-	let add_key_signature_new_key = new_pair.sign(&encode_add_key_data);
+	let msa_owner_signature = delegator_pair.sign(&encode_add_key_data);
+	let signature_new_key: MultiSignature = new_pair.sign(&encode_add_key_data).into();
 
 	assert_ok!(Msa::add_public_key_to_msa(
 		Origin::signed(delegator_pair.public().into()),
 		delegator_pair.public().into(),
-		add_key_signature_delegator.into(),
-		new_pair.public().into(),
-		add_key_signature_new_key.into(),
+		msa_owner_signature.into(),
+		signature_new_key,
 		add_key_payload
 	));
 }
@@ -252,19 +252,20 @@ fn replaying_create_sponsored_account_with_delegation_fails_03() {
 		let (new_key_pair, _) = sr25519::Pair::generate();
 		let new_public_key = new_key_pair.public();
 
-		let add_new_key_data = AddKeyData { msa_id: 2, expiration: 10 };
+		let add_new_key_data =
+			AddKeyData { msa_id: 2, expiration: 10, new_public_key: new_key_pair.public().into() };
+
 		let encode_add_key_data = wrap_binary_data(add_new_key_data.encode());
 
-		let add_key_signature_delegator = delegator_keypair.sign(&encode_add_key_data);
-		let add_key_signature: MultiSignature = new_key_pair.sign(&encode_add_key_data).into();
+		let msa_owner_signature = delegator_keypair.sign(&encode_add_key_data);
+		let new_key_owner_signature = new_key_pair.sign(&encode_add_key_data);
 
 		// Step 2.
 		assert_ok!(Msa::add_public_key_to_msa(
 			Origin::signed(delegator_key.into()),
 			delegator_key.into(),
-			add_key_signature_delegator.into(),
-			new_public_key.into(),
-			add_key_signature,
+			msa_owner_signature.into(),
+			new_key_owner_signature.into(),
 			add_new_key_data.clone()
 		));
 		run_to_block(75);

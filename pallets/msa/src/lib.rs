@@ -202,6 +202,7 @@ pub mod pallet {
 	/// For this to work, the payload must include a mortality block number, which
 	/// is used in lieu of a monotonically increasing nonce.
 	#[pallet::storage]
+	#[pallet::getter(fn get_payload_signature_registry)]
 	pub(super) type PayloadSignatureRegistry<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
@@ -274,7 +275,7 @@ pub mod pallet {
 		/// MsaId values have reached the maximum
 		MsaIdOverflow,
 		/// Cryptographic signature verification failed for adding a key to MSA
-		AddKeySignatureVerificationFailed,
+		MsaOwnershipInvalidSignature,
 		/// Ony the MSA Owner may perform the operation
 		NotMsaOwner,
 		/// Cryptographic signature failed verification
@@ -327,6 +328,8 @@ pub mod pallet {
 		ProofNotYetValid,
 		/// Attempted to add a signature when the signature is already in the registry
 		SignatureAlreadySubmitted,
+		/// Cryptographic signature verification failed for proving ownership of new public-key.
+		NewKeyOwnershipInvalidSignature,
 	}
 
 	#[pallet::hooks]
@@ -557,7 +560,8 @@ pub mod pallet {
 		///
 		/// # Errors
 		///
-		/// * [`Error::AddKeySignatureVerificationFailed`] - `key` is not a valid signer of the provided `add_key_payload`.
+		/// * [`Error::MsaOwnershipInvalidSignature`] - `key` is not a valid signer of the provided `add_key_payload`.
+		/// * [`Error::NewKeyOwnershipInvalidSignature`] - `key` is not a valid signer of the provided `add_key_payload`.
 		/// * [`Error::NoKeyExists`] - the MSA id for the account in `add_key_payload` does not exist.
 		/// * [`Error::NotMsaOwner`] - Origin's MSA is not the same as 'add_key_payload` MSA. Essentially you can only add a key to your own MSA.
 		/// * [`Error::ProofHasExpired`] - the current block is less than the `expired` bock number set in `AddKeyData`.
@@ -569,9 +573,8 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			msa_owner_public_key: T::AccountId,
 			msa_owner_proof: MultiSignature,
-			new_public_key: T::AccountId,
 			new_key_owner_proof: MultiSignature,
-			add_key_payload: AddKeyData,
+			add_key_payload: AddKeyData<T>,
 		) -> DispatchResult {
 			let _ = ensure_signed(origin)?;
 
@@ -580,24 +583,33 @@ pub mod pallet {
 				&msa_owner_public_key,
 				add_key_payload.encode(),
 			)
-			.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
+			.map_err(|_| Error::<T>::MsaOwnershipInvalidSignature)?;
 
-			Self::verify_signature(&new_key_owner_proof, &new_public_key, add_key_payload.encode())
-				.map_err(|_| Error::<T>::AddKeySignatureVerificationFailed)?;
+			Self::verify_signature(
+				&new_key_owner_proof,
+				&add_key_payload.new_public_key.clone(),
+				add_key_payload.encode(),
+			)
+			.map_err(|_| Error::<T>::NewKeyOwnershipInvalidSignature)?;
 
+			Self::register_signature(&msa_owner_proof, add_key_payload.expiration.into())?;
 			Self::register_signature(&new_key_owner_proof, add_key_payload.expiration.into())?;
 
 			let msa_id = add_key_payload.msa_id;
 
 			Self::ensure_msa_owner(&msa_owner_public_key, msa_id)?;
 
-			Self::add_key(msa_id, &new_public_key.clone(), |new_msa_id| -> DispatchResult {
-				Self::deposit_event(Event::PublicKeyAdded {
-					msa_id: new_msa_id,
-					key: new_public_key.clone(),
-				});
-				Ok(())
-			})?;
+			Self::add_key(
+				msa_id,
+				&add_key_payload.new_public_key.clone(),
+				|msa_id| -> DispatchResult {
+					Self::deposit_event(Event::PublicKeyAdded {
+						msa_id,
+						key: add_key_payload.new_public_key.clone(),
+					});
+					Ok(())
+				},
+			)?;
 
 			Ok(())
 		}
