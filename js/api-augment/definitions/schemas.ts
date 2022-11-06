@@ -47,18 +47,18 @@ export default {
       {
         methods: {
           get_schema_by_id: {
-            description: 'Fetch the schema by id',
+            description: "Fetch the schema by id",
             params: [
               {
-                name: 'schema_id',
-                type: 'SchemaId'
-              }
+                name: "schema_id",
+                type: "SchemaId",
+              },
             ],
-            type: 'Option<SchemaResponse>'
-          }
+            type: "Option<SchemaResponse>",
+          },
         },
-        version: 1
-      }
-    ]
-  }
+        version: 1,
+      },
+    ],
+  },
 };

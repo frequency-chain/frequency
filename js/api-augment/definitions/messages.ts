@@ -43,36 +43,36 @@ export default {
       {
         methods: {
           get_messages_by_schema_and_block: {
-            description: 'Retrieve the messages for a particular schema and block number',
+            description: "Retrieve the messages for a particular schema and block number",
             params: [
               {
-                name: 'schema_id',
-                type: 'SchemaId'
+                name: "schema_id",
+                type: "SchemaId",
               },
               {
-                name: 'schema_payload_location',
-                type: 'PayloadLocation'
+                name: "schema_payload_location",
+                type: "PayloadLocation",
               },
               {
-                name: 'block_number',
-                type: 'BlockNumber'
-              }
+                name: "block_number",
+                type: "BlockNumber",
+              },
             ],
-            type: 'Vec<MessageResponse<BlockNumber>>'
+            type: "Vec<MessageResponse<BlockNumber>>",
           },
           get_schema_by_id: {
-            description: 'Retrieve a schema by id',
+            description: "Retrieve a schema by id",
             params: [
               {
-                name: 'schema_id',
-                type: 'SchemaId'
-              }
+                name: "schema_id",
+                type: "SchemaId",
+              },
             ],
-            type: 'Option<SchemaResponse>'
-          }
+            type: "Option<SchemaResponse>",
+          },
         },
-        version: 1
-      }
-    ]
-  }
+        version: 1,
+      },
+    ],
+  },
 };
