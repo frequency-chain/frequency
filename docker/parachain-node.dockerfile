@@ -14,8 +14,8 @@ FROM --platform=linux/amd64 ubuntu:focal
 RUN useradd -m -u 1000 -U -s /bin/sh -d /frequency frequency && \
 	mkdir -p /chain-data /frequency/.local/share && \
 	chown -R frequency:frequency /chain-data && \
-	ln -s /chain-data /frequency/.local/share/frequency && \
-	rm -rf /usr/bin /usr/sbin
+	ln -s /chain-data /frequency/.local/share/frequency
+	# rm -rf /usr/bin /usr/sbin
 
 USER frequency
 
