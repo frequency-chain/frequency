@@ -89,9 +89,6 @@ pub mod pallet {
 		/// A type that will supply MSA related information
 		type MsaInfoProvider: MsaLookup + MsaValidator<AccountId = Self::AccountId>;
 
-		/// A type that will supply delegation related information
-		type DelegationInfoProvider: ProviderLookup + DelegationValidator;
-
 		/// A type that will validate schema grants
 		type SchemaGrantValidator: SchemaGrantValidator<Self::BlockNumber>;
 

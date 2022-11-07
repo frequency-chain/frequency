@@ -1124,39 +1124,6 @@ impl<T: Config> Pallet<T> {
 		Ok(msa_id)
 	}
 
-	/// Check if provider is allowed to publish for a given schema_id for a given delegator
-	///
-	/// # Errors
-	/// * [`Error::DelegationNotFound`]
-	/// * [`Error::DelegationRevoked`]
-	/// * [`Error::SchemaNotGranted`]
-	/// * [`Error::CannotPredictValidityPastCurrentBlock`]
-	///
-	pub fn ensure_valid_schema_grant(
-		provider: Provider,
-		delegator: Delegator,
-		schema_id: SchemaId,
-		block_number: T::BlockNumber,
-	) -> DispatchResult {
-		let provider_info = Self::ensure_valid_delegation(provider, delegator, Some(block_number))?;
-
-		let schema_permission_revoked_at_block_number = provider_info
-			.schema_permissions
-			.get(&schema_id)
-			.ok_or(Error::<T>::SchemaNotGranted)?;
-
-		if *schema_permission_revoked_at_block_number == T::BlockNumber::zero() {
-			return Ok(())
-		}
-
-		ensure!(
-			block_number <= *schema_permission_revoked_at_block_number,
-			Error::<T>::SchemaNotGranted
-		);
-
-		Ok(())
-	}
-
 	/// Get a list of Schema Ids that a provider has been granted access to
 	///
 	/// # Errors
@@ -1315,7 +1282,6 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 	/// * [`Error::DelegationRevoked`]
 	/// * [`Error::CannotPredictValidityPastCurrentBlock`]
 	///
-	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_delegation(
 		provider: Provider,
 		delegator: Delegator,
@@ -1341,46 +1307,6 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
 		Ok(info)
 	}
-
-	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
-	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
-	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
-	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
-	/// would like to avoid.
-	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
-	/// this method to return a dummy account in case it does not exist
-	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_valid_delegation(
-		provider: Provider,
-		delegation: Delegator,
-		block_number: Option<T::BlockNumber>,
-	) -> Result<
-		Delegation<Self::SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
-		DispatchError,
-	> {
-		let validation_check = Self::ensure_valid_delegation(provider, delegation, block_number);
-		if validation_check.is_err() {
-			// If the delegation does not exist, we return a ok
-			// This is only used for benchmarks, so it is safe to return a dummy account
-			// in case the delegation does not exist
-			return Ok(Delegation {
-				schema_permissions: frame_support::BoundedBTreeMap::<
-					SchemaId,
-					T::BlockNumber,
-					T::MaxSchemaGrantsPerDelegation,
-				>::default(),
-				revoked_at: Default::default(),
-			})
-		}
-		Ok(Delegation {
-			schema_permissions: frame_support::BoundedBTreeMap::<
-				SchemaId,
-				T::BlockNumber,
-				T::MaxSchemaGrantsPerDelegation,
-			>::default(),
-			revoked_at: Default::default(),
-		})
-	}
 }
 
 impl<T: Config> SchemaGrantValidator<T::BlockNumber> for Pallet<T> {
@@ -1399,7 +1325,22 @@ impl<T: Config> SchemaGrantValidator<T::BlockNumber> for Pallet<T> {
 		schema_id: SchemaId,
 		block_number: T::BlockNumber,
 	) -> DispatchResult {
-		Self::ensure_valid_schema_grant(provider, delegator, schema_id, block_number)?;
+		let provider_info = Self::ensure_valid_delegation(provider, delegator, Some(block_number))?;
+
+		let schema_permission_revoked_at_block_number = provider_info
+			.schema_permissions
+			.get(&schema_id)
+			.ok_or(Error::<T>::SchemaNotGranted)?;
+
+		if *schema_permission_revoked_at_block_number == T::BlockNumber::zero() {
+			return Ok(())
+		}
+
+		ensure!(
+			block_number <= *schema_permission_revoked_at_block_number,
+			Error::<T>::SchemaNotGranted
+		);
+
 		Ok(())
 	}
 

@@ -18,7 +18,7 @@ use crate::{
 use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, Delegator, MessageSourceId, Provider,
-		ProviderRegistryEntry,
+		ProviderRegistryEntry, SchemaGrantValidator,
 	},
 	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
