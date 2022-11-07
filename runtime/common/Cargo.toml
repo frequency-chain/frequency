@@ -30,9 +30,12 @@ frame-system = {git = "https://github.com/paritytech/substrate", default-feature
 sp-core = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
 sp-std = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
 # Substrate pallets
+pallet-balances = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
 pallet-democracy = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
 pallet-preimage = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
 pallet-scheduler = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
+pallet-session = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
+pallet-timestamp = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
 pallet-treasury = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
 pallet-utility = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
 # ORML

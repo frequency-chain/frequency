@@ -42,4 +42,23 @@ export default {
       _enum: ["OnChain", "IPFS"],
     },
   },
+  runtime: {
+    SchemasRuntimeApi: [
+      {
+        methods: {
+          get_schema_by_id: {
+            description: "Fetch the schema by id",
+            params: [
+              {
+                name: "schema_id",
+                type: "SchemaId",
+              },
+            ],
+            type: "Option<SchemaResponse>",
+          },
+        },
+        version: 1,
+      },
+    ],
+  },
 };

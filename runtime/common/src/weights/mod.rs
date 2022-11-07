@@ -20,9 +20,12 @@
 pub mod block_weights;
 pub mod extrinsic_weights;
 pub mod orml_vesting;
+pub mod pallet_balances;
 pub mod pallet_democracy;
 pub mod pallet_preimage;
 pub mod pallet_scheduler;
+pub mod pallet_session;
+pub mod pallet_timestamp;
 pub mod pallet_treasury;
 pub mod pallet_utility;
 

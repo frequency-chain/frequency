@@ -16,15 +16,18 @@ delete rootPackage["jest"];
 // Don't keep scripts
 delete rootPackage["scripts"];
 
+// Don't keep dev dependencies
+delete rootPackage["devDependencies"];
+
 // Setup the main and types correctly
-rootPackage["main"] = "index.cjs";
-rootPackage["module"] = "index.js";
+rootPackage["main"] = "./cjs/index.js";
+rootPackage["module"] = "./esm/index.js";
 rootPackage["types"] = "index.d.ts";
 rootPackage["exports"] = {
   ".": {
     "types": "./index.d.ts",
-    "require": "./index.cjs",
-    "default": "./index.js"
+    "require": "./cjs/index.js",
+    "default": "./esm/index.js"
   },
 },
 

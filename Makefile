@@ -62,6 +62,9 @@ lint:
 	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features all-frequency-features -- -D warnings
 	RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps
 
+lint-audit:
+	cargo deny -c .cargo-deny.toml
+
 .PHONY: format-lint
 format-lint: format lint
 

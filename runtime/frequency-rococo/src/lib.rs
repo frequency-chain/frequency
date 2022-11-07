@@ -41,9 +41,7 @@ pub use common_runtime::{
 };
 
 use frame_support::{
-	construct_runtime,
-	dispatch::DispatchError,
-	parameter_types,
+	construct_runtime, parameter_types,
 	traits::{ConstU128, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly, Everything},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, DispatchClass, Weight},
 };
@@ -81,13 +79,20 @@ pub type SignedExtra = (
 	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
 );
 
-/// Extrinsic type that has already been checked.
-pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
 /// A Block signed with a Justification
 pub type SignedBlock = generic::SignedBlock<Block>;
 
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
+
+/// Block type as expected by this runtime.
+pub type Block = generic::Block<Header, UncheckedExtrinsic>;
+
+/// Unchecked extrinsic type as expected by this runtime.
+pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+
+/// Extrinsic type that has already been checked.
+pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -97,11 +102,6 @@ pub type Executive = frame_executive::Executive<
 	Runtime,
 	AllPalletsWithSystem,
 >;
-
-/// Block type as expected by this runtime.
-pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -287,7 +287,7 @@ impl pallet_timestamp::Config for Runtime {
 	type Moment = u64;
 	type OnTimestampSet = ();
 	type MinimumPeriod = MinimumPeriod;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
 }
 
 impl pallet_authorship::Config for Runtime {
@@ -306,7 +306,7 @@ impl pallet_balances::Config for Runtime {
 	type DustRemoval = ();
 	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
 	type AccountStore = System;
-	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
 	type MaxReserves = BalancesMaxReserves;
 	type ReserveIdentifier = [u8; 8];
 }
@@ -344,7 +344,7 @@ impl pallet_preimage::Config for Runtime {
 	type WeightInfo = weights::pallet_preimage::SubstrateWeight<Runtime>;
 	type Event = Event;
 	type Currency = Balances;
-	/// Allow the Technical council to request preimages without deposit or fees
+	// Allow the Technical council to request preimages without deposit or fees
 	type ManagerOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMember<AccountId, TechnicalCommitteeInstance>,
@@ -558,7 +558,7 @@ impl pallet_session::Config for Runtime {
 	// Essentially just Aura, but lets be pedantic.
 	type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = SessionKeys;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_session::SubstrateWeight<Runtime>;
 }
 
 impl pallet_aura::Config for Runtime {
@@ -802,14 +802,14 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
-		fn get_by_schema_id(schema_id: SchemaId) -> Result<Option<SchemaResponse>, DispatchError> {
-			Ok(Schemas::get_schema_by_id(schema_id))
+		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+			Schemas::get_schema_by_id(schema_id)
 		}
 	}
 
 	impl pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId> for Runtime {
 		// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
-		// fn get_msa_keys(msa_id: MessageSourceId) -> Result<Vec<KeyInfoResponse<AccountId>>, DispatchError> {
+		// fn get_msa_keys(msa_id: MessageSourceId) -> Vec<KeyInfoResponse<AccountId>> {
 		// 	Ok(Msa::fetch_msa_keys(msa_id))
 		// }
 
@@ -820,8 +820,11 @@ impl_runtime_apis! {
 			}
 		}
 
-		fn get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -> Result<Option<Vec<SchemaId>>, DispatchError> {
-			Msa::get_granted_schemas_by_msa_id(delegator, provider)
+		fn get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -> Option<Vec<SchemaId>> {
+			match Msa::get_granted_schemas_by_msa_id(delegator, provider) {
+				Ok(x) => x,
+				Err(_) => None,
+			}
 		}
 	}
 

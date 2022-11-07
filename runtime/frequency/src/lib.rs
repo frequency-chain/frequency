@@ -41,9 +41,7 @@ pub use common_runtime::{
 };
 
 use frame_support::{
-	construct_runtime,
-	dispatch::DispatchError,
-	parameter_types,
+	construct_runtime, parameter_types,
 	traits::{ConstU128, ConstU32, Contains, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, DispatchClass, Weight},
 };
@@ -301,7 +299,7 @@ impl orml_vesting::Config for Runtime {
 	type Currency = Balances;
 	type MinVestedTransfer = MinVestedTransfer;
 	type VestedTransferOrigin = RootAsVestingPallet;
-	type WeightInfo = ();
+	type WeightInfo = weights::orml_vesting::SubstrateWeight<Runtime>;
 	type MaxVestingSchedules = MaxVestingSchedules;
 	type BlockNumberProvider = RelaychainBlockNumberProvider<Runtime>;
 }
@@ -311,7 +309,7 @@ impl pallet_timestamp::Config for Runtime {
 	type Moment = u64;
 	type OnTimestampSet = ();
 	type MinimumPeriod = MinimumPeriod;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
 }
 
 impl pallet_authorship::Config for Runtime {
@@ -330,7 +328,7 @@ impl pallet_balances::Config for Runtime {
 	type DustRemoval = ();
 	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
 	type AccountStore = System;
-	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
 	type MaxReserves = BalancesMaxReserves;
 	type ReserveIdentifier = [u8; 8];
 }
@@ -357,7 +355,7 @@ impl pallet_scheduler::Config for Runtime {
 		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>,
 	>;
 	type MaxScheduledPerBlock = SchedulerMaxScheduledPerBlock;
-	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
 	type OriginPrivilegeCmp = EqualPrivilegeOnly;
 	type PreimageProvider = Preimage;
 	// Will be removed in v0.9.30
@@ -365,7 +363,7 @@ impl pallet_scheduler::Config for Runtime {
 }
 
 impl pallet_preimage::Config for Runtime {
-	type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_preimage::SubstrateWeight<Runtime>;
 	type Event = Event;
 	type Currency = Balances;
 	// Allow the Technical council to request preimages without deposit or fees
@@ -578,7 +576,7 @@ impl pallet_session::Config for Runtime {
 	// Essentially just Aura, but lets be pedantic.
 	type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = SessionKeys;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_session::SubstrateWeight<Runtime>;
 }
 
 impl pallet_aura::Config for Runtime {
@@ -852,14 +850,14 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
-		fn get_by_schema_id(schema_id: SchemaId) -> Result<Option<SchemaResponse>, DispatchError> {
-			Ok(Schemas::get_schema_by_id(schema_id))
+		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+			Schemas::get_schema_by_id(schema_id)
 		}
 	}
 
 	impl pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId> for Runtime {
 		// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
-		// fn get_msa_keys(msa_id: MessageSourceId) -> Result<Vec<KeyInfoResponse<AccountId>>, DispatchError> {
+		// fn get_msa_keys(msa_id: MessageSourceId) -> Vec<KeyInfoResponse<AccountId>> {
 		// 	Ok(Msa::fetch_msa_keys(msa_id))
 		// }
 
@@ -870,8 +868,11 @@ impl_runtime_apis! {
 			}
 		}
 
-		fn get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -> Result<Option<Vec<SchemaId>>, DispatchError> {
-			Msa::get_granted_schemas_by_msa_id(delegator, provider)
+		fn get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -> Option<Vec<SchemaId>> {
+			match Msa::get_granted_schemas_by_msa_id(delegator, provider) {
+				Ok(x) => x,
+				Err(_) => None,
+			}
 		}
 	}
 

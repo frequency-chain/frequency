@@ -24,6 +24,7 @@ then
     cargo run --features frequency export-metadata > ./js/api-augment/metadata.json
     # cd into js dir
     cd "js/api-augment"
+    npm install # in case things have changed
     npm run build
 else
     echo -e "${SUCCESS}"
@@ -37,6 +38,7 @@ else
 
     # cd into js dir
     cd "js/api-augment"
+    npm install # in case things have changed
     npm run fetch:local
     npm run build
 fi
