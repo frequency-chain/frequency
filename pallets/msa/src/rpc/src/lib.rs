@@ -22,6 +22,7 @@ use jsonrpsee::{
 	tracing::warn,
 };
 use pallet_msa_runtime_api::MsaRuntimeApi;
+use poem_openapi::OpenApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
@@ -35,7 +36,6 @@ pub trait MsaApi<BlockHash, AccountId> {
 	/// Given a single provider, test a list of potential delegators
 	/// At a given block number
 	#[method(name = "msa_checkDelegations")]
-	#[oai(path = "/msa_checkDelegations", method = "get")]
 	fn check_delegations(
 		&self,
 		delegator_msa_ids: Vec<MessageSourceId>,
@@ -45,7 +45,6 @@ pub trait MsaApi<BlockHash, AccountId> {
 
 	/// Retrieve the list of currently granted schemas given a delegator and provider pair
 	#[method(name = "msa_grantedSchemaIdsByMsaId")]
-	#[oai(path = "/msa_grantedSchemaIdsByMsaId", method = "get")]
 	fn get_granted_schemas_by_msa_id(
 		&self,
 		delegator_msa_id: MessageSourceId,
@@ -59,6 +58,7 @@ pub struct MsaHandler<C, M> {
 	_marker: std::marker::PhantomData<M>,
 }
 
+#[OpenApi]
 impl<C, M> MsaHandler<C, M> {
 	/// Create new instance with the given reference to the client.
 	pub fn new(client: Arc<C>) -> Self {

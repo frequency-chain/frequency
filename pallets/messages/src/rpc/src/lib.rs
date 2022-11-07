@@ -18,6 +18,7 @@ use jsonrpsee::{
 	proc_macros::rpc,
 };
 use pallet_messages_runtime_api::MessagesRuntimeApi;
+use poem_openapi::OpenApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
@@ -25,17 +26,14 @@ use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, Block as BlockT},
 };
 use std::sync::Arc;
-
 #[cfg(test)]
 mod tests;
 
 /// Frequency Messages Custom RPC API
 #[rpc(client, server)]
-#[OpenApi]
 pub trait MessagesApi<BlockNumber> {
 	/// Retrieve paginated messages by schema id
 	#[method(name = "messages_getBySchemaId")]
-	#[oai(path = "/messages_getBySchemaId", method = "get")]
 	fn get_messages_by_schema_id(
 		&self,
 		schema_id: SchemaId,
@@ -49,6 +47,7 @@ pub struct MessagesHandler<C, M> {
 	_marker: std::marker::PhantomData<M>,
 }
 
+#[OpenApi]
 impl<C, M> MessagesHandler<C, M> {
 	/// Create new instance with the given reference to the client.
 	pub fn new(client: Arc<C>) -> Self {
