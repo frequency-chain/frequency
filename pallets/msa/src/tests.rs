@@ -10,7 +10,6 @@ use sp_runtime::{traits::SignedExtension, MultiSignature};
 use crate::{
 	ensure,
 	mock::*,
-	replay_tests::*,
 	types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, CurrentMsaIdentifierMaximum, DispatchResult, Error, Event,
 	PayloadSignatureRegistry, ProviderToRegistryEntry, ValidityError,
