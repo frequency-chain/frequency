@@ -42,20 +42,33 @@ jobs:
           GITHUB_CONTEXT: ${{toJson(github)}}
         run: |
           echo "$GITHUB_CONTEXT"
+      # - name: Install Dependencies
+      #   run: |
+      #     sudo apt update
+      #     sudo apt install -y build-essential cmake clang
       - name: Set Env Vars
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=frequency-${{matrix.network}}.${{matrix.arch}}" >> $GITHUB_ENV
+          echo "PATH: $PATH"
+          echo "HOME BEFORE: $HOME"
+          env
+
+          ls -la /home
+          ls -la /home/ubuntu
+          ls -la /usr/bin
+          echo "---------------"
+          echo "HOME=/home/ubuntu" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
-      # # XXX Keep this step as it lets us skip full binary builds during development/testing
-      # - name: Cache Binary for Testing
-      #   id: cache-binary
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-      #     key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.RELEASE_VERSION}}
+      # XXX Keep this step as it lets us skip full binary builds during development/testing
+      - name: Cache Binary for Testing
+        id: cache-binary
+        uses: actions/cache@v3
+        with:
+          path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+          key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.RELEASE_VERSION}}
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: actions-rs/toolchain@v1
@@ -156,13 +169,13 @@ jobs:
           echo "WASM_DIR=${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}" >> $GITHUB_ENV
           echo "BUILT_WASM_FILENAME=${{matrix.built-wasm-file-name-prefix}}.compact.compressed.wasm" >> $GITHUB_ENV
           echo "RELEASE_WASM_FILENAME=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.RELEASE_VERSION}}.compact.compressed.wasm" >> $GITHUB_ENV
-      # # XXX Keep this step as it lets us skip WASM builds during development/testing
-      # - name: Cache WASM for Testing
-      #   id: cache-wasm
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
-      #     key: ${{runner.os}}-${{matrix.network}}-${{env.RELEASE_VERSION}}
+      # XXX Keep this step as it lets us skip WASM builds during development/testing
+      - name: Cache WASM for Testing
+        id: cache-wasm
+        uses: actions/cache@v3
+        with:
+          path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
+          key: ${{runner.os}}-${{matrix.network}}-${{env.RELEASE_VERSION}}
       - name: Build Deterministic WASM with srtool
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
@@ -437,31 +450,31 @@ jobs:
           branch: gh-pages
           folder: ./target/doc
 
-  release-js-api-augment:
-    needs: wait-for-all-builds
-    name: Release JS API Augment
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-      - name: Set up NodeJs
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: "npm"
-          registry-url: "https://registry.npmjs.org"
-          cache-dependency-path: js/api-augment/package-lock.json
-      - name: Download Dist Dir
-        id: download
-        uses: actions/download-artifact@v3
-        with:
-          name: js-api-augment-${{github.run_id}}
-          path: js/api-augment/dist
-      - name: Version Package
-        run: npm version --new-version "${{env.RELEASE_VERSION}}" --no-git-tag-version
-        working-directory: js/api-augment/dist
-      - name: Release on NPM @latest
-        run: npm publish --tag latest --access public
-        working-directory: ./js/api-augment/dist
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+  # release-js-api-augment:
+  #   needs: wait-for-all-builds
+  #   name: Release JS API Augment
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Check Out Repo
+  #       uses: actions/checkout@v3
+  #     - name: Set up NodeJs
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 16
+  #         cache: "npm"
+  #         registry-url: "https://registry.npmjs.org"
+  #         cache-dependency-path: js/api-augment/package-lock.json
+  #     - name: Download Dist Dir
+  #       id: download
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: js-api-augment-${{github.run_id}}
+  #         path: js/api-augment/dist
+  #     - name: Version Package
+  #       run: npm version --new-version "${{env.RELEASE_VERSION}}" --no-git-tag-version
+  #       working-directory: js/api-augment/dist
+  #     - name: Release on NPM @latest
+  #       run: npm publish --tag latest --access public
+  #       working-directory: ./js/api-augment/dist
+  #       env:
+  #         NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
