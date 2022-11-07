@@ -62,7 +62,7 @@ use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 use codec::Encode;
 use common_primitives::{
 	messages::*,
-	msa::{Delegator, MessageSourceId, MsaLookup, MsaValidator, Provider, SchemaGrantValidator},
+	msa::{ DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator },
 	schema::*,
 };
 pub use pallet::*;
@@ -136,16 +136,22 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Too many messages are added to existing block
 		TooManyMessagesInBlock,
+
 		/// Message payload size is too large
 		ExceedsMaxMessagePayloadSizeBytes,
+
 		/// Type Conversion Overflow
 		TypeConversionOverflow,
+
 		/// Invalid Message Source Account
 		InvalidMessageSourceAccount,
+
 		/// Invalid SchemaId or Schema not found
 		InvalidSchemaId,
+
 		/// UnAuthorizedDelegate
 		UnAuthorizedDelegate,
+
 		/// Invalid payload location
 		InvalidPayloadLocation,
 	}
@@ -252,19 +258,21 @@ pub mod pallet {
 			);
 
 			let provider_msa_id = Self::find_msa_id(&provider_key)?;
+			let provider_id = ProviderId(provider_msa_id);
 
 			// On-chain messages either are sent from the user themselves, or on behalf of another MSA Id
 			let maybe_delegator = match on_behalf_of {
-				Some(delegator) => {
+				Some(delegator_msa_id) => {
+					let delegator_id = DelegatorId(delegator_msa_id);
 					T::SchemaGrantValidator::ensure_valid_schema_grant(
-						Provider(provider_msa_id),
-						Delegator(delegator),
+						provider_id,
+						delegator_id,
 						schema_id,
 					)
 					.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
-					Delegator(delegator)
+					delegator_id
 				},
-				None => Delegator(provider_msa_id), // Delegate is also the Provider
+				None => DelegatorId(provider_msa_id), // Delegate is also the Provider
 			};
 
 			let message = Self::add_message(
