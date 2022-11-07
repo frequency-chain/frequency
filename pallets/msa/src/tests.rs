@@ -9,6 +9,7 @@ use sp_runtime::{traits::SignedExtension, MultiSignature};
 
 use crate::{
 	ensure,
+	replay_tests::*,
 	mock::*,
 	types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, CurrentMsaIdentifierMaximum, DispatchResult, Error, Event,
@@ -1139,8 +1140,6 @@ pub fn revoke_provider_throws_delegation_not_found_error() {
 		// 1. create two key pairs
 		let (delegator_key, provider_key) = create_user_and_provider();
 
-		assert_ok!(Msa::create(Origin::signed(provider_key.into())));
-
 		let retrieved_delegator = Msa::get_owner_of(delegator_key.into());
 		assert_eq!(retrieved_delegator, None);
 
@@ -1165,17 +1164,7 @@ pub fn revoke_provider_throws_delegation_not_found_error() {
 pub fn revoke_delegation_by_provider_happy_path() {
 	new_test_ext().execute_with(|| {
 		// 1. create two key pairs
-		let (provider_pair, _) = sr25519::Pair::generate();
-		let (user_pair, _) = sr25519::Pair::generate();
-
-		let provider_key = provider_pair.public();
-		let delegator_key = user_pair.public();
-
-		// 2. create provider MSA
-		assert_ok!(Msa::create(Origin::signed(provider_key.into()))); // MSA = 1
-
-		// Register provider
-		assert_ok!(Msa::create_provider(Origin::signed(provider_key.into()), Vec::from("Foo")));
+		let (delegator_key, provider_key) = create_user_and_provider();
 
 		// 3. create delegator MSA and provider to provider
 		let expiration: BlockNumber = 10;
