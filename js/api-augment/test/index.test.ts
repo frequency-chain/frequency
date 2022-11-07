@@ -1,8 +1,8 @@
 import assert from "assert";
-import { options, rpc } from "../index";
+import { options } from "../index";
 import { ApiPromise } from "@polkadot/api";
 import { MockProvider } from "@polkadot/rpc-provider/mock";
-import { Metadata, TypeRegistry } from "@polkadot/types";
+import { TypeRegistry } from "@polkadot/types";
 import metadataRaw from "../metadata.json";
 
 describe("index", function () {
@@ -10,9 +10,7 @@ describe("index", function () {
   let api: ApiPromise;
 
   beforeEach(async function () {
-    const registry = new TypeRegistry();
-    registry.register(options.types);
-    mock = new MockProvider(registry);
+    mock = new MockProvider(new TypeRegistry());
 
     api = await ApiPromise.create({
       ...options,
@@ -24,6 +22,11 @@ describe("index", function () {
   afterEach(async function () {
     await api.disconnect();
     await mock.disconnect();
+  });
+
+  it("should know about runtime apis", function () {
+    const topLevelRuntimeApis = Object.keys((api.registry.knownTypes as any).runtime || {});
+    assert.deepEqual(topLevelRuntimeApis, ["MsaRuntimeApi", "MessagesRuntimeApi", "SchemasRuntimeApi"]);
   });
 
   it("should have rpc calls", async function () {
