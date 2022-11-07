@@ -1,4 +1,7 @@
-use crate::{Config, Error, Event as AnnouncementEvent};
+use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin, BoundedVec};
+use serial_test::serial;
+use sp_runtime::DispatchError::BadOrigin;
+
 use common_primitives::{
 	parquet::{
 		column::ParquetColumn,
@@ -9,9 +12,8 @@ use common_primitives::{
 	},
 	schema::{ModelType, PayloadLocation, SchemaId},
 };
-use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin, BoundedVec};
-use serial_test::serial;
-use sp_runtime::DispatchError::BadOrigin;
+
+use crate::{Config, Error, Event as AnnouncementEvent};
 
 use super::mock::*;
 
@@ -41,7 +43,7 @@ fn require_valid_schema_size_errors() {
 		let test_cases: [TestCase<(Error<Test>, u8)>; 2] = [
 			TestCase {
 				schema: r#"{"a":1}"#,
-				expected: (Error::<Test>::LessThanMinSchemaModelBytes,3),
+				expected: (Error::<Test>::LessThanMinSchemaModelBytes, 3),
 			},
 			TestCase {
 				schema: r#"{"id": "long", "title": "I am a very very very long schema", "properties": "just way too long to live a long life", "description": "Just a never ending stream of bytes that goes on for a minute too long"}"#,
@@ -143,7 +145,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 				PayloadLocation::OnChain
 			));
 			System::assert_last_event(
-                AnnouncementEvent::SchemaCreated(sender, expected_schema_id).into(),
+				AnnouncementEvent::SchemaCreated(sender, expected_schema_id).into(),
 			);
 			last_schema_id = expected_schema_id;
 		}
@@ -279,7 +281,7 @@ fn serialize_parquet_model_integer() {
 			ParquetType::NumericType(ParquetNumericType::Integer(
 				ParquetInteger {
 					bit_width: 32,
-					sign: false
+					sign: false,
 				}
 			)),
 			ColumnCompressionCodec::default(),
