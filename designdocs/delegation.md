@@ -123,15 +123,15 @@ Throws an Error enum indicating if either provider or delegator does not exist.
 ### Storage
 * Delegations are stored as a Double-key map of Delegator MSA id --> Provider MSA id. The data stored contains the `Permission` for that relationship:
 ```rust
-pub(super) type DelegatorAndProviderToDelegation<T: Config> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		Delegator,
-		Blake2_128Concat,
-		Provider,
-		Delegation<T::BlockNumber>,
-		OptionQuery,
-	>;
+    pub(super) type DelegatorAndProviderToDelegation<T: Config> = StorageDoubleMap<
+        _,
+        Twox64Concat,
+        Delegator,
+        Twox64Concat,
+        Provider,
+        Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
+        OptionQuery,
+    >;
 ```
 
 ## Benefits and Risks
