@@ -62,10 +62,7 @@ use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 use codec::Encode;
 use common_primitives::{
 	messages::*,
-	msa::{
-		DelegationValidator, Delegator, MessageSourceId, MsaLookup, MsaValidator, Provider,
-		ProviderLookup, SchemaGrantValidator,
-	},
+	msa::{Delegator, MessageSourceId, MsaLookup, MsaValidator, Provider, SchemaGrantValidator},
 	schema::*,
 };
 pub use pallet::*;
@@ -88,9 +85,6 @@ pub mod pallet {
 
 		/// A type that will supply MSA related information
 		type MsaInfoProvider: MsaLookup + MsaValidator<AccountId = Self::AccountId>;
-
-		/// A type that will supply delegation related information
-		type DelegationInfoProvider: ProviderLookup + DelegationValidator;
 
 		/// A type that will validate schema grants
 		type SchemaGrantValidator: SchemaGrantValidator;
