@@ -2,33 +2,36 @@ import assert from "assert";
 import { options } from "../index";
 import { ApiPromise } from "@polkadot/api";
 import { MockProvider } from "@polkadot/rpc-provider/mock";
-import { Metadata, TypeRegistry } from "@polkadot/types";
-import { result as rpcMetadata } from "../metadata.json";
+import { TypeRegistry } from "@polkadot/types";
+import metadataRaw from "../metadata.json";
 
 describe("index", function () {
-  const registry = new TypeRegistry();
-  registry.register(options.types);
-  const metadata = new Metadata(registry, rpcMetadata as "0x{string}");
-  registry.setMetadata(metadata);
-
   let mock: MockProvider;
+  let api: ApiPromise;
 
-  beforeEach(function (): void {
+  beforeEach(async function () {
     mock = new MockProvider(new TypeRegistry());
+
+    api = await ApiPromise.create({
+      ...options,
+      provider: mock,
+      metadata: metadataRaw as any,
+    });
   });
 
   afterEach(async function () {
+    await api.disconnect();
     await mock.disconnect();
   });
 
+  it("should know about runtime apis", function () {
+    const topLevelRuntimeApis = Object.keys((api.registry.knownTypes as any).runtime || {});
+    assert.deepEqual(topLevelRuntimeApis, ["MsaRuntimeApi", "MessagesRuntimeApi", "SchemasRuntimeApi"]);
+  });
+
   it("should have rpc calls", async function () {
-    const api = await ApiPromise.create({
-      ...options,
-      provider: mock,
-    });
     assert.notEqual(api.rpc.messages, undefined);
     assert.notEqual(api.rpc.msa, undefined);
     assert.notEqual(api.rpc.schemas, undefined);
-    await api.disconnect();
   });
 });

@@ -41,9 +41,7 @@ pub use common_runtime::{
 };
 
 use frame_support::{
-	construct_runtime,
-	dispatch::DispatchError,
-	parameter_types,
+	construct_runtime, parameter_types,
 	traits::{ConstU128, ConstU32, Contains, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, DispatchClass, Weight},
 };
@@ -852,14 +850,14 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
-		fn get_by_schema_id(schema_id: SchemaId) -> Result<Option<SchemaResponse>, DispatchError> {
-			Ok(Schemas::get_schema_by_id(schema_id))
+		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+			Schemas::get_schema_by_id(schema_id)
 		}
 	}
 
 	impl pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId> for Runtime {
 		// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
-		// fn get_msa_keys(msa_id: MessageSourceId) -> Result<Vec<KeyInfoResponse<AccountId>>, DispatchError> {
+		// fn get_msa_keys(msa_id: MessageSourceId) -> Vec<KeyInfoResponse<AccountId>> {
 		// 	Ok(Msa::fetch_msa_keys(msa_id))
 		// }
 
@@ -870,8 +868,11 @@ impl_runtime_apis! {
 			}
 		}
 
-		fn get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -> Result<Option<Vec<SchemaId>>, DispatchError> {
-			Msa::get_granted_schemas_by_msa_id(delegator, provider)
+		fn get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -> Option<Vec<SchemaId>> {
+			match Msa::get_granted_schemas_by_msa_id(delegator, provider) {
+				Ok(x) => x,
+				Err(_) => None,
+			}
 		}
 	}
 

@@ -37,6 +37,16 @@ export const signedExtensions: ExtDef = {
 };
 
 /**
+ * Build up all the Runtime Api Calls
+ */
+export const runtime = Object.entries(definitions).reduce((acc, [key, value]) => {
+  return {
+    ...acc,
+    ...value.runtime,
+  };
+}, {});
+
+/**
  * Export for easy use with Polkadot API's ApiPromise
  *
  * ```javascript
@@ -50,4 +60,5 @@ export const options = {
   rpc,
   types,
   signedExtensions,
+  runtime,
 };
