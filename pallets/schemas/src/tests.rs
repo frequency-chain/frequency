@@ -143,7 +143,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 				PayloadLocation::OnChain
 			));
 			System::assert_last_event(
-				AnnouncementEvent::SchemaRegistered(sender, expected_schema_id).into(),
+                AnnouncementEvent::SchemaCreated(sender, expected_schema_id).into(),
 			);
 			last_schema_id = expected_schema_id;
 		}
