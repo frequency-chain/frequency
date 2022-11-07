@@ -80,20 +80,20 @@ Using schema registry, message producers no longer need to include full schema w
 - **SchemaPolicy** : Defines a contract that encapsulate ```retention``` which is of type ```BlockCount``` and ```starting_block``` which of type ```BlockNumber```. A typical generic structure for schema policy is defined as follows[*](#disclaimer):
 
   ```rust
-  
+
   pub  struct SchemaPolicy {
     pub retention: BlockCount,
     pub starting_block: BlockNumber,
     pub validity: SchemaValidity
   }
-  
+
   ```
 
 ### Schema Storage
 
 - **Type definition**: ```StorageMap<_, Twox64Concat, SchemaId, BoundedVec<Schema,T::MaxSchemaSize>>```
 - **Description**: Schemas are stored as key-value pair of SchemaId vs Serialized schema payload allowed to a maximum size.
-- **Implementation**: Frequency will expose a substrate extrinsic ``` create_schema ``` to allow participants store a schema on chain. On successful registration raise ```SchemaRegistered``` event with ```schema_id``` and schema payload. Schema registration should also initialize default ```SchemaPolicy``` upon successful schema registration.
+- **Implementation**: Frequency will expose a substrate extrinsic ``` create_schema ``` to allow participants store a schema on chain. On successful registration raise ```SchemaCreated``` event with ```schema_id``` and schema payload. Schema registration should also initialize default ```SchemaPolicy``` upon successful schema registration.
 
 ### Schema Validation
 
