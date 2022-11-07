@@ -10,7 +10,7 @@
 
 use codec::Codec;
 #[cfg(feature = "std")]
-use common_helpers::rpc::*;
+use common_helpers::rpc::map_rpc_result;
 use common_primitives::{messages::*, schema::*};
 use frame_support::{ensure, fail};
 use jsonrpsee::{
@@ -139,6 +139,6 @@ where
 			from_index = 0;
 		}
 
-		map_rpc_result(Ok(Ok(response)))
+		map_rpc_result(Ok(response))
 	}
 }

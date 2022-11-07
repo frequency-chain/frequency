@@ -17,13 +17,12 @@
 //! - Runtime interfaces for end users beyond just State Queries
 
 use common_primitives::schema::*;
-use frame_support::dispatch::DispatchError;
 
 sp_api::decl_runtime_apis! {
 	/// Runtime API definition for [Schemas](../pallet_schemas/index.html)
 	pub trait SchemasRuntimeApi
 	{
 		/// Fetch the schema by id
-		fn get_by_schema_id(schema_id: SchemaId) -> Result<Option<SchemaResponse>, DispatchError>;
+		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse>;
 	}
 }

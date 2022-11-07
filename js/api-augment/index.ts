@@ -1,3 +1,4 @@
+import { ExtDef } from "@polkadot/types/extrinsic/signedExtensions/types";
 import "./interfaces/types-lookup";
 import "./interfaces/augment-api";
 import "./interfaces/augment-types";
@@ -25,6 +26,27 @@ export const rpc = Object.entries(definitions).reduce((acc, [key, value]) => {
 }, {});
 
 /**
+ * Frequency Specific Signed Extensions
+ */
+export const signedExtensions: ExtDef = {
+  // `CheckFreeExtrinsicUse` has no payload or extrinsic requirements
+  CheckFreeExtrinsicUse: {
+    extrinsic: {},
+    payload: {},
+  },
+};
+
+/**
+ * Build up all the Runtime Api Calls
+ */
+export const runtime = Object.entries(definitions).reduce((acc, [key, value]) => {
+  return {
+    ...acc,
+    ...value.runtime,
+  };
+}, {});
+
+/**
  * Export for easy use with Polkadot API's ApiPromise
  *
  * ```javascript
@@ -37,4 +59,6 @@ export const rpc = Object.entries(definitions).reduce((acc, [key, value]) => {
 export const options = {
   rpc,
   types,
+  signedExtensions,
+  runtime,
 };

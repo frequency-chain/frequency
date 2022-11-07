@@ -18,7 +18,6 @@
 
 use codec::Codec;
 use common_primitives::{msa::*, node::BlockNumber};
-use frame_support::dispatch::DispatchError;
 use sp_std::vec::Vec;
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
@@ -29,12 +28,12 @@ sp_api::decl_runtime_apis! {
 		AccountId: Codec,
 	{
 		// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
-		// fn get_msa_keys(msa_id: MessageSourceId) ->	Result<Vec<KeyInfoResponse<AccountId>>, DispatchError>;
+		// fn get_msa_keys(msa_id: MessageSourceId) ->	Vec<KeyInfoResponse<AccountId>>;
 
 		/// Check to see if a delegation existed between the given delegator and provider at a given block
 		fn has_delegation(delegator: Delegator, provider: Provider, block_number: Option<BlockNumber>) -> bool;
 
 		/// Get the list of schema ids (if any) that exist in any delegation between the delegator and provider
-		fn get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -> Result<Option<Vec<SchemaId>>, DispatchError>;
+		fn get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -> Option<Vec<SchemaId>>;
 	}
 }

@@ -8,7 +8,7 @@
 
 //! Custom APIs for [Schemas](../pallet_schemas/index.html)
 
-use common_helpers::{avro, rpc::*};
+use common_helpers::{avro, rpc::map_rpc_result};
 use common_primitives::schema::*;
 use jsonrpsee::{
 	core::{async_trait, Error as RpcError, RpcResult},

@@ -302,6 +302,7 @@ jobs:
         run: |
           mkdir -p ${{env.BIN_DIR}}
           mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+          chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
         with:
@@ -365,6 +366,7 @@ jobs:
         run: |
           mkdir -p ${{env.BIN_DIR}}
           mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+          chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
         with:
