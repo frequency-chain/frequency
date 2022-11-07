@@ -438,6 +438,7 @@ pub mod pallet {
 		/// * [`Event::ProviderCreated`]
 		///
 		/// # Errors
+		/// * [`Error::NoKeyExists`] - origin does not have an MSA
 		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		///
@@ -520,6 +521,7 @@ pub mod pallet {
 		///
 		/// # Errors
 		///
+		/// * [`Error::NoKeyExists`] - origin does not have an MSA
 		/// * [`Error::DelegationRevoked`] - the delegation has already been revoked.
 		/// * [`Error::DelegationNotFound`] - there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
 		///
@@ -726,10 +728,13 @@ pub mod pallet {
 		/// Revokes a list of schema permissions to a provider. Attempting to revoke a Schemas that have already
 		/// been revoked are ignored.
 		///
-		/// ### Errors
-		/// - Returns [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
-		/// - Returns [`DelegationNotFound`](Error::DelegationNotFound) - If there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
-		/// - Returns [`SchemaNotGranted`](Error::SchemaNotGranted) - If attempting to revoke a schema that has not previously been granted.
+		/// # Events
+		/// - [DelegationUpdated](Event::DelegationUpdated)
+		///
+		/// # Errors
+		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
+		/// - [`DelegationNotFound`](Error::DelegationNotFound) - If there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
+		/// - [`SchemaNotGranted`](Error::SchemaNotGranted) - If attempting to revoke a schema that has not previously been granted.
 		///
 		#[pallet::weight(T::WeightInfo::revoke_schema_permissions(20_000))]
 		pub fn revoke_schema_permissions(
@@ -753,7 +758,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Retire a MSA
+		/// Retires an MSA
 		///
 		/// When a user wants to disassociate themselves from Frequency, they can retire their MSA for free provided that:
 		///  (1) They own the MSA
