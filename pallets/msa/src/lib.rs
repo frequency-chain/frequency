@@ -1038,41 +1038,6 @@ impl<T: Config> Pallet<T> {
 		)
 	}
 
-	/// Check that the delegator has an active delegation to the provider.
-	/// `block_number`: Provide `None` to know if the delegation is active at the current block.
-	///                 Provide Some(N) to know if the delegation was or will be active at block N.
-	///
-	/// # Errors
-	/// * [`Error::DelegationNotFound`]
-	/// * [`Error::DelegationRevoked`]
-	/// * [`Error::CannotPredictValidityPastCurrentBlock`]
-	///
-	pub fn ensure_valid_delegation(
-		provider: Provider,
-		delegator: Delegator,
-		block_number: Option<T::BlockNumber>,
-	) -> Result<Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError>
-	{
-		let info =
-			Self::get_delegation(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
-		let current_block = frame_system::Pallet::<T>::block_number();
-		let requested_block = match block_number {
-			Some(block_number) => {
-				ensure!(
-					current_block >= block_number,
-					Error::<T>::CannotPredictValidityPastCurrentBlock
-				);
-				block_number
-			},
-			None => current_block,
-		};
-		if info.revoked_at == T::BlockNumber::zero() {
-			return Ok(info)
-		}
-		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
-		Ok(info)
-	}
-
 	/// Deletes a key associated with a given MSA
 	///
 	/// # Errors
@@ -1341,16 +1306,40 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
 	type SchemaId = SchemaId;
 
+	/// Check that the delegator has an active delegation to the provider.
+	/// `block_number`: Provide `None` to know if the delegation is active at the current block.
+	///                 Provide Some(N) to know if the delegation was or will be active at block N.
+	///
+	/// # Errors
+	/// * [`Error::DelegationNotFound`]
+	/// * [`Error::DelegationRevoked`]
+	/// * [`Error::CannotPredictValidityPastCurrentBlock`]
+	///
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_delegation(
 		provider: Provider,
-		delegation: Delegator,
+		delegator: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<
-		Delegation<SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
-		DispatchError,
-	> {
-		Self::ensure_valid_delegation(provider, delegation, block_number)
+	) -> Result<Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError>
+	{
+		let info =
+			Self::get_delegation(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
+		let current_block = frame_system::Pallet::<T>::block_number();
+		let requested_block = match block_number {
+			Some(block_number) => {
+				ensure!(
+					current_block >= block_number,
+					Error::<T>::CannotPredictValidityPastCurrentBlock
+				);
+				block_number
+			},
+			None => current_block,
+		};
+		if info.revoked_at == T::BlockNumber::zero() {
+			return Ok(info)
+		}
+		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
+		Ok(info)
 	}
 
 	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
