@@ -36,6 +36,12 @@ jobs:
           #   arch: arm64
     runs-on: [self-hosted, Linux, X64]
     steps:
+      # https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#contexts
+      - name: "[DEBUG ONLY!!!] Dumping contexts"
+        env:
+          GITHUB_CONTEXT: ${{toJson(github)}}
+        run: |
+          echo "$GITHUB_CONTEXT"
       - name: Set Env Vars
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
