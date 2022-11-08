@@ -136,4 +136,4 @@ build-mainnet-release:
 
 PHONY: test
 test:
-	cargo test --all --locked --features all-frequency-features
+	cargo test --workspace --locked --features all-frequency-features
