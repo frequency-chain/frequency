@@ -36,11 +36,19 @@ jobs:
             arch: arm64
     runs-on: ${{matrix.os}}
     steps:
+      # https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#contexts
+      - name: "[DEBUG ONLY!!!] Dumping contexts"
+        env:
+          GITHUB_CONTEXT: ${{toJson(github)}}
+        run: |
+          echo "$GITHUB_CONTEXT"
       - name: Set Env Vars
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=frequency-${{matrix.network}}.${{matrix.arch}}" >> $GITHUB_ENV
+          echo "PATH: $PATH"
+          echo "HOME: $HOME"
       - name: Check Out Repo
         uses: actions/checkout@v3
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
