@@ -6,5 +6,5 @@ to `{{ env.REF2 | replace(from="refs/tags/", to="") }}`. #}
 This release was built and tested against the following versions of `rustc`.
 Other versions may work.
 
-- Rust Stable: `{{ RUSTC_STABLE }}`
-- Rust Nightly: `{{ RUSTC_NIGHTLY }}`
+- Rust Stable: `{{ RUSTC_STABLE_VERSION }}`
+- Rust Nightly: `{{ RUSTC_NIGHTLY_VERSION }}`
