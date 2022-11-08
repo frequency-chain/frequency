@@ -11,7 +11,7 @@ use substrate_test_runtime_client::runtime::Block;
 const SCHEMA_ID_EMPTY: u16 = 1;
 const SCHEMA_ID_HAS_MESSAGES: u16 = 2;
 
-fn test_messages() -> Vec<MessageResponse<BlockNumber>> {
+fn test_messages() -> Vec<MessageResponse> {
 	vec![
 		MessageResponse {
 			payload: None,
@@ -49,7 +49,7 @@ sp_api::mock_impl_runtime_apis! {
 		}
 
 		fn get_messages_by_schema_and_block(schema_id: SchemaId, _schema_payload_location: PayloadLocation, _block_number: BlockNumber) ->
-			Vec<MessageResponse<BlockNumber>> {
+			Vec<MessageResponse> {
 				match schema_id {
 					SCHEMA_ID_HAS_MESSAGES => test_messages(),
 					_ => vec![]

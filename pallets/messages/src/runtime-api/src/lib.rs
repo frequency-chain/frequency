@@ -30,7 +30,7 @@ sp_api::decl_runtime_apis! {
 	{
 		/// Retrieve the messages for a particular schema and block number
 		fn get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber) ->
-			Vec<MessageResponse<BlockNumber>>;
+			Vec<MessageResponse>;
 
 		/// Retrieve a schema by id
 		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse>;

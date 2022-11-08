@@ -37,8 +37,8 @@ pub trait MessagesApi<BlockNumber> {
 	fn get_messages_by_schema_id(
 		&self,
 		schema_id: SchemaId,
-		pagination: BlockPaginationRequest<BlockNumber>,
-	) -> RpcResult<BlockPaginationResponse<BlockNumber, MessageResponse<BlockNumber>>>;
+		pagination: BlockPaginationRequest,
+	) -> RpcResult<BlockPaginationResponse<MessageResponse>>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -82,8 +82,8 @@ where
 	fn get_messages_by_schema_id(
 		&self,
 		schema_id: SchemaId,
-		pagination: BlockPaginationRequest<BlockNumber>,
-	) -> RpcResult<BlockPaginationResponse<BlockNumber, MessageResponse<BlockNumber>>> {
+		pagination: BlockPaginationRequest,
+	) -> RpcResult<BlockPaginationResponse<MessageResponse>> {
 		// Request Validation
 		ensure!(pagination.validate(), MessageRpcError::InvalidPaginationRequest);
 
@@ -110,7 +110,7 @@ where
 
 		'loops: for bid in from..to {
 			let block_number: BlockNumber = bid.into();
-			let list: Vec<MessageResponse<BlockNumber>> = api
+			let list: Vec<MessageResponse> = api
 				.get_messages_by_schema_and_block(
 					&at,
 					schema.schema_id,
@@ -125,7 +125,7 @@ where
 				response.content.push(list[i as usize].clone());
 
 				if response.check_end_condition_and_set_next_pagination(
-					block_number,
+					block_number.try_into().unwrap_or_default(),
 					i,
 					list_size,
 					&pagination,
