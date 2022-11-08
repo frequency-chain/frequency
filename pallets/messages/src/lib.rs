@@ -351,11 +351,15 @@ impl<T: Config> Pallet<T> {
 		schema_payload_location: PayloadLocation,
 		block_number: T::BlockNumber,
 	) -> Vec<MessageResponse> {
-		let block_number_value: u32 = block_number.try_into().unwrap_or_default();
 		<Messages<T>>::get(block_number, schema_id)
 			.into_inner()
 			.iter()
-			.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
+			.map(|msg| {
+				msg.map_to_response(
+					block_number.try_into().unwrap_or_default(),
+					schema_payload_location,
+				)
+			})
 			.collect()
 	}
 
