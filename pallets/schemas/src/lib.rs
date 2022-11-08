@@ -352,11 +352,6 @@ impl<T: Config> SchemaValidator<SchemaId> for Pallet<T> {
 }
 
 impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
-	#[cfg(not(feature = "runtime-benchmarks"))]
-	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-		Self::get_schema_by_id(schema_id)
-	}
-
 	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
 	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
 	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
@@ -364,25 +359,27 @@ impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
 	/// would like to avoid.
 	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
 	/// this method to return schema checks requested by the benchmark to also be some.
-	#[cfg(feature = "runtime-benchmarks")]
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-		// To account for db read
-		Self::get_schema_by_id(schema_id);
+		let result = Self::get_schema_by_id(schema_id);
 
-		// This method allows the benchmarks to cover both payload location types
-		// used by the messages pallets. Maybe one day we can replace this with a
-		// common "benchmarking" crate.
-		const IPFS_SCHEMA_ID: u16 = 65535;
-		let location: PayloadLocation = if schema_id == IPFS_SCHEMA_ID {
-			PayloadLocation::IPFS
-		} else {
-			PayloadLocation::OnChain
-		};
-		Some(SchemaResponse {
-			schema_id,
-			model: "{}".as_bytes().to_vec(),
-			model_type: ModelType::default(),
-			payload_location: location,
-		})
+		if cfg!(feature = "runtime-benchmarks") {
+			// This method allows the benchmarks to cover both payload location types
+			// used by the messages pallets. Maybe one day we can replace this with a
+			// common "benchmarking" crate.
+			const IPFS_SCHEMA_ID: u16 = 65535;
+			let location: PayloadLocation = if schema_id == IPFS_SCHEMA_ID {
+				PayloadLocation::IPFS
+			} else {
+				PayloadLocation::OnChain
+			};
+			return Some(SchemaResponse {
+				schema_id,
+				model: "{}".as_bytes().to_vec(),
+				model_type: ModelType::default(),
+				payload_location: location,
+			})
+		}
+
+		result
 	}
 }

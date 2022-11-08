@@ -1282,11 +1282,6 @@ impl<T: Config> MsaLookup for Pallet<T> {
 impl<T: Config> MsaValidator for Pallet<T> {
 	type AccountId = T::AccountId;
 
-	#[cfg(not(feature = "runtime-benchmarks"))]
-	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
-		Self::ensure_valid_msa_key(key)
-	}
-
 	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
 	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
 	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
@@ -1294,13 +1289,12 @@ impl<T: Config> MsaValidator for Pallet<T> {
 	/// would like to avoid.
 	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
 	/// this method to return a dummy account in case it does not exist
-	#[cfg(feature = "runtime-benchmarks")]
 	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		let result = Self::ensure_valid_msa_key(key);
-		if result.is_err() {
+		if cfg!(feature = "runtime-benchmarks") && result.is_err() {
 			return Ok(1 as MessageSourceId)
 		}
-		Ok(result.unwrap())
+		result
 	}
 }
 
@@ -1355,22 +1349,6 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 }
 
 impl<T: Config> SchemaGrantValidator for Pallet<T> {
-	/// Check if provider is allowed to publish for a given schema_id for a given delegator
-	///
-	/// # Errors
-	/// * [`Error::DelegationNotFound`]
-	/// * [`Error::SchemaNotGranted`]
-	/// * [`Error::DelegationRevoked`]
-	///
-	#[cfg(not(feature = "runtime-benchmarks"))]
-	fn ensure_valid_schema_grant(
-		provider: ProviderId,
-		delegator: DelegatorId,
-		schema_id: SchemaId,
-	) -> DispatchResult {
-		Self::ensure_valid_schema_grant(provider, delegator, schema_id)
-	}
-
 	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
 	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
 	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
@@ -1378,17 +1356,25 @@ impl<T: Config> SchemaGrantValidator for Pallet<T> {
 	/// would like to avoid.
 	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
 	/// this method to return a dummy account in case it does not exist
-	#[cfg(feature = "runtime-benchmarks")]
+	/// # Arguments
+	/// * `provider` - The provider account
+	/// * `delegator` - The delegator account
+	/// * `schema_id` - The schema id
+	/// # Returns
+	/// * [`DispatchResult`]
+	/// # Errors
+	/// * [`Error::DelegationNotFound`]
+	/// * [`Error::SchemaNotGranted`]
 	fn ensure_valid_schema_grant(
 		provider: ProviderId,
 		delegator: DelegatorId,
-		_schema_id: SchemaId,
+		schema_id: SchemaId,
 	) -> DispatchResult {
-		let provider_info = Self::get_delegation_of(delegator, provider);
-		if provider_info.is_none() {
+		let result = Self::ensure_valid_schema_grant(provider, delegator, schema_id);
+		if cfg!(feature = "runtime-benchmarks") && result.is_err() {
 			return Ok(())
 		}
-		Ok(())
+		result
 	}
 }
 
