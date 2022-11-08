@@ -36,10 +36,11 @@ pub trait MsaApi<BlockHash, AccountId> {
 	#[method(name = "msa_checkDelegations")]
 	fn check_delegations(
 		&self,
-		delegator_msa_ids: Vec<DelegatorId>,
-		provider_msa_id: ProviderId,
-		block_number: Option<BlockNumber>,
-	) -> RpcResult<Vec<(DelegatorId, bool)>>;
+		delegator_msa_ids: Vec<MessageSourceId>,
+		provider_msa_id: MessageSourceId,
+		block_number: BlockNumber,
+		schema_id: Option<SchemaId>,
+	) -> RpcResult<Vec<(MessageSourceId, bool)>>;
 
 	/// Retrieve the list of currently granted schemas given a delegator and provider pair
 	#[method(name = "msa_grantedSchemaIdsByMsaId")]
@@ -83,27 +84,29 @@ where
 
 	fn check_delegations(
 		&self,
-		delegator_msa_ids: Vec<DelegatorId>,
-		provider_msa_id: ProviderId,
-		block_number: Option<BlockNumber>,
-	) -> RpcResult<Vec<(DelegatorId, bool)>> {
+		delegator_msa_ids: Vec<MessageSourceId>,
+		provider_msa_id: MessageSourceId,
+		block_number: BlockNumber,
+		schema_id: Option<SchemaId>,
+	) -> RpcResult<Vec<(MessageSourceId, bool)>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 
 		Ok(delegator_msa_ids
 			.iter() // TODO: Change back to par_iter() which has borrow panic GitHub Issue: #519
-			.map(|&delegator_id| {
+			.map(|&delegator_msa_id| {
+				let delegator = Delegator(delegator_msa_id);
 				// api.has_delegation returns  Result<bool, ApiError>), so _or(false) should not happen,
 				// but just in case, protect against panic
 				let has_delegation: bool =
-					match api.has_delegation(&at, delegator_id, provider_msa_id, block_number) {
+					match api.has_delegation(&at, delegator, provider, block_number, schema_id) {
 						Ok(result) => result,
 						Err(e) => {
 							warn!("ApiError from has_delegation! {:?}", e);
 							false
 						},
 					};
-				(delegator_id, has_delegation)
+				(delegator_msa_id, has_delegation)
 			})
 			.collect())
 	}
