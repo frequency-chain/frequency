@@ -1331,13 +1331,13 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 	/// * [`Error::DelegationRevoked`]
 	///
 	fn ensure_valid_delegation(
-		provider: ProviderId,
-		delegation: DelegatorId,
+		provider_id: ProviderId,
+		delegator_id: DelegatorId,
 		block_number: Option<T::BlockNumber>,
 	) -> Result<Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError>
 	{
-		let info =
-			Self::get_delegation(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
+		let info = Self::get_delegation(delegator_id, provider_id)
+			.ok_or(Error::<T>::DelegationNotFound)?;
 		let current_block = frame_system::Pallet::<T>::block_number();
 		let requested_block = match block_number {
 			Some(block_number) => {

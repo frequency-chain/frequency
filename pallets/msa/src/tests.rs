@@ -16,10 +16,7 @@ use crate::{
 };
 
 use common_primitives::{
-	msa::{
-		Delegation, DelegationValidator, DelegatorId, MessageSourceId, ProviderId,
-		ProviderRegistryEntry,
-	},
+	msa::{Delegation, DelegatorId, MessageSourceId, ProviderId, ProviderRegistryEntry},
 	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
 	utils::wrap_binary_data,
