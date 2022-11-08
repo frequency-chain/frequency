@@ -646,8 +646,8 @@ pub fn add_provider_to_msa_is_success() {
 
 		System::assert_last_event(
 			Event::DelegationGranted {
-				delegator: delegator_msa.into(),
-				provider: provider_msa.into(),
+				delegator_id: delegator_msa.into(),
+				provider_id: provider_msa.into(),
 			}
 			.into(),
 		);
@@ -845,8 +845,8 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		assert_eq!(
 			provider_event.event,
 			Event::DelegationGranted {
-				provider: provider_msa.into(),
-				delegator: delegator_msa.into()
+				provider_id: provider_msa.into(),
+				delegator_id: delegator_msa.into()
 			}
 			.into()
 		);
@@ -1066,7 +1066,7 @@ pub fn revoke_delegation_by_delegator_is_successful() {
 		));
 
 		System::assert_last_event(
-			Event::DelegationRevoked { delegator: 1.into(), provider: 2.into() }.into(),
+			Event::DelegationRevoked { delegator_id: 1.into(), provider_id: 2.into() }.into(),
 		);
 	});
 }
@@ -2410,20 +2410,20 @@ fn grant_schema_permissions_success() {
 		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
-		let delegator = DelegatorId(1);
-		let provider = ProviderId(2);
+		let delegator_id = DelegatorId(1);
+		let provider_id = ProviderId(2);
 
-		assert_ok!(Msa::add_provider(provider, delegator, Default::default()));
+		assert_ok!(Msa::add_provider(provider_id, delegator_id, Default::default()));
 
 		let schema_ids: Vec<SchemaId> = vec![2];
 
 		assert_ok!(Msa::grant_schema_permissions(
 			Origin::signed(delegator_account.into()),
-			provider.into(),
+			provider_id.into(),
 			schema_ids,
 		));
 
-		System::assert_last_event(Event::DelegationUpdated { provider, delegator }.into());
+		System::assert_last_event(Event::DelegationUpdated { provider_id, delegator_id }.into());
 	});
 }
 
@@ -2615,20 +2615,20 @@ fn revoke_schema_permissions_success() {
 		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
-		let delegator = DelegatorId(1);
-		let provider = ProviderId(2);
+		let delegator_id = DelegatorId(1);
+		let provider_id = ProviderId(2);
 
-		assert_ok!(Msa::add_provider(provider, delegator, vec![1, 2]));
+		assert_ok!(Msa::add_provider(provider_id, delegator_id, vec![1, 2]));
 
 		let schema_ids_to_revoke: Vec<SchemaId> = vec![2];
 
 		assert_ok!(Msa::revoke_schema_permissions(
 			Origin::signed(delegator_account.into()),
-			provider.into(),
+			provider_id.into(),
 			schema_ids_to_revoke,
 		));
 
-		System::assert_last_event(Event::DelegationUpdated { provider, delegator }.into());
+		System::assert_last_event(Event::DelegationUpdated { provider_id, delegator_id }.into());
 	});
 }
 
