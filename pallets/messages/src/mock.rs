@@ -182,11 +182,12 @@ impl DelegationValidator for DelegationInfoHandler {
 		Ok(Delegation { schema_permissions: Default::default(), revoked_at: Default::default() })
 	}
 }
-impl SchemaGrantValidator for SchemaGrantValidationHandler {
+impl<BlockNumber> SchemaGrantValidator<BlockNumber> for SchemaGrantValidationHandler {
 	fn ensure_valid_schema_grant(
 		provider: ProviderId,
 		delegator: DelegatorId,
 		_schema_id: SchemaId,
+		_block_number: BlockNumber,
 	) -> DispatchResult {
 		match DelegationInfoHandler::get_delegation_of(delegator, provider) {
 			Some(_) => Ok(()),

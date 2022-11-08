@@ -359,6 +359,8 @@ pub mod pallet {
 
 		/// Cryptographic signature verification failed for proving ownership of new public-key.
 		NewKeyOwnershipInvalidSignature,
+		/// Attempted to request validity of schema permission or delegation in the future.
+		CannotPredictValidityPastCurrentBlock,
 	}
 
 	#[pallet::hooks]
@@ -1152,27 +1154,6 @@ impl<T: Config> Pallet<T> {
 		Ok(msa_id)
 	}
 
-	/// Check if provider is allowed to publish for a given schema_id for a given delegator
-	///
-	/// # Errors
-	/// * [`Error::DelegationNotFound`]
-	/// * [`Error::DelegationRevoked`]
-	/// * [`Error::SchemaNotGranted`]
-	///
-	pub fn ensure_valid_schema_grant(
-		provider: ProviderId,
-		delegator: DelegatorId,
-		schema_id: SchemaId,
-	) -> DispatchResult {
-		let provider_info = Self::ensure_valid_delegation(provider, delegator, None)?;
-
-		ensure!(
-			provider_info.schema_permissions.contains_key(&schema_id),
-			Error::<T>::SchemaNotGranted
-		);
-		Ok(())
-	}
-
 	/// Get a list of Schema Ids that a provider has been granted access to
 	///
 	/// # Errors
@@ -1329,6 +1310,7 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 	/// # Errors
 	/// * [`Error::DelegationNotFound`]
 	/// * [`Error::DelegationRevoked`]
+	/// * [`Error::CannotPredictValidityPastCurrentBlock`]
 	///
 	fn ensure_valid_delegation(
 		provider_id: ProviderId,
@@ -1341,7 +1323,10 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		let current_block = frame_system::Pallet::<T>::block_number();
 		let requested_block = match block_number {
 			Some(block_number) => {
-				ensure!(current_block >= block_number, Error::<T>::DelegationNotFound);
+				ensure!(
+					current_block >= block_number,
+					Error::<T>::CannotPredictValidityPastCurrentBlock
+				);
 				block_number
 			},
 			None => current_block,
@@ -1354,40 +1339,37 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 	}
 }
 
-impl<T: Config> SchemaGrantValidator for Pallet<T> {
+impl<T: Config> SchemaGrantValidator<T::BlockNumber> for Pallet<T> {
 	/// Check if provider is allowed to publish for a given schema_id for a given delegator
 	///
 	/// # Errors
 	/// * [`Error::DelegationNotFound`]
-	/// * [`Error::SchemaNotGranted`]
 	/// * [`Error::DelegationRevoked`]
+	/// * [`Error::SchemaNotGranted`]
+	/// * [`Error::CannotPredictValidityPastCurrentBlock`]
 	///
-	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_schema_grant(
 		provider: ProviderId,
 		delegator: DelegatorId,
 		schema_id: SchemaId,
+		block_number: T::BlockNumber,
 	) -> DispatchResult {
-		Self::ensure_valid_schema_grant(provider, delegator, schema_id)
-	}
+		let provider_info = Self::ensure_valid_delegation(provider, delegator, Some(block_number))?;
 
-	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
-	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
-	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
-	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
-	/// would like to avoid.
-	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
-	/// this method to return a dummy account in case it does not exist
-	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_valid_schema_grant(
-		provider: ProviderId,
-		delegator: DelegatorId,
-		_schema_id: SchemaId,
-	) -> DispatchResult {
-		let provider_info = Self::get_delegation_of(delegator, provider);
-		if provider_info.is_none() {
+		let schema_permission_revoked_at_block_number = provider_info
+			.schema_permissions
+			.get(&schema_id)
+			.ok_or(Error::<T>::SchemaNotGranted)?;
+
+		if *schema_permission_revoked_at_block_number == T::BlockNumber::zero() {
 			return Ok(())
 		}
+
+		ensure!(
+			block_number <= *schema_permission_revoked_at_block_number,
+			Error::<T>::SchemaNotGranted
+		);
+
 		Ok(())
 	}
 }
