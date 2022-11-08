@@ -1410,7 +1410,7 @@ impl<T: Config> SchemaGrantValidator<T::BlockNumber> for Pallet<T> {
 		schema_id: SchemaId,
 		block_number: T::BlockNumber,
 	) -> DispatchResult {
-		Ok(Self::ensure_valid_schema_grant(provider, delegator, schema_id, block_number)?)
+		Self::ensure_valid_schema_grant(provider, delegator, schema_id, block_number)
 	}
 
 	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded

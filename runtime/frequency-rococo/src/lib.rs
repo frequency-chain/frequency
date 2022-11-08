@@ -813,10 +813,20 @@ impl_runtime_apis! {
 		// 	Ok(Msa::fetch_msa_keys(msa_id))
 		// }
 
-		fn has_delegation(delegator: Delegator, provider: Provider, block_number: Option<BlockNumber>) -> bool {
-			match Msa::ensure_valid_delegation(provider, delegator, block_number) {
-				Ok(_) => true,
-				Err(_) => false,
+		fn has_delegation(delegator: Delegator, provider: Provider, block_number: BlockNumber, schema_id: Option<SchemaId>) -> bool {
+			match schema_id {
+				Some(sid) => {
+					match Msa::ensure_valid_schema_grant(provider, delegator, sid, block_number) {
+						Ok(_) => true,
+						Err(_) => false,
+					}
+				},
+				None => {
+					match Msa::ensure_valid_delegation(provider, delegator, Some(block_number)) {
+						Ok(_) => true,
+						Err(_) => false,
+					}
+				},
 			}
 		}
 
