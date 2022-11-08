@@ -107,7 +107,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Emitted when a schema is registered. [who, schemas id]
-		SchemaRegistered(T::AccountId, SchemaId),
+		SchemaCreated(T::AccountId, SchemaId),
 
 		/// Emitted when maximum size for schema model is changed.
 		SchemaMaxSizeChanged(u32),
@@ -118,20 +118,28 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Schema is malformed
 		InvalidSchema,
+
 		/// The schema model exceeds the maximum length allowed
 		ExceedsMaxSchemaModelBytes,
+
 		/// The governance schema model max value provided is too large (greater than the BoundedVec size)
 		ExceedsGovernanceSchemaModelMaxValue,
+
 		/// The schema is less than the minimum length allowed
 		LessThanMinSchemaModelBytes,
+
 		/// Schema does not exist
 		NoSuchSchema,
-		/// Error is converting to string
+
+		/// String failed to convert
 		StringConversionError,
-		/// Error in Deserialization
+
+		/// Deserialization failed
 		DeserializationError,
-		/// Error in Serialization
+
+		/// Serialization failed
 		SerializationError,
+
 		/// CurrentSchemaIdentifierMaximum was attempted to overflow max, means MaxSchemaRegistrations is too big
 		SchemaCountOverflow,
 	}
@@ -197,7 +205,7 @@ pub mod pallet {
 		/// will be thrown.
 		///
 		/// # Events
-		/// * [`Event::SchemaRegistered`]
+		/// * [`Event::SchemaCreated`]
 		///
 		/// # Errors
 		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
@@ -226,7 +234,7 @@ pub mod pallet {
 			Self::ensure_valid_model(&model_type, &model)?;
 			let schema_id = Self::add_schema(model, model_type, payload_location)?;
 
-			Self::deposit_event(Event::SchemaRegistered(sender, schema_id));
+			Self::deposit_event(Event::SchemaCreated(sender, schema_id));
 			Ok(())
 		}
 
