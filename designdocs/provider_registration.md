@@ -54,8 +54,7 @@ Please note:
   * `name`: `Vec<u8>`
 
 #### Events
-* `ProviderRegistrationEvent<T: Config>`, the resource that exists on-chain
-  * `block_number`: `BlockNumber`
+* `ProviderCreated<T: Config>`, the resource that exists on-chain
   * `provider_id`: `ProviderId`
 
 #### Storage
@@ -66,7 +65,7 @@ Please note:
 
 ### Extrinsics
 #### create_provider(origin, provider_name)
-Creates and posts a `ProviderRegistrationEvent`. The `MsaId`
+Creates and posts a `ProviderCreated`. The `MsaId`
 included in the registration must already exist.
 
 This extrinsic is responsible for storing the registered provider in the
@@ -75,7 +74,7 @@ This extrinsic is responsible for storing the registered provider in the
 * **Parameters**
   * `origin`: `Origin`  required for all extrinsics, the caller/sender.
   * `provider_name`: the name used for the provider.
-* **Event**:  `Event::<T>::ProviderRegistrationEvent(provider_id)`
+* **Event**:  `Event::<T>::ProviderCreated(provider_id)`
 * **Restrictions**:
   * `origin`'s `msa_id` must have capacity to post the transaction (including fee) during the current epoch.
 

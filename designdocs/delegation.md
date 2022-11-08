@@ -92,7 +92,7 @@ This is a signed call directly from the delegator's MSA.
 This call incurs no fees.
 
   * Parameters:
-      1. `provider_id` - id of the MSA held by the provider
+      1. `provider_msa_id` - id of the MSA held by the provider
 
   * Restrictions:  **Owner only**.
 
@@ -112,13 +112,13 @@ Validate that a provider can delegate for a list of MSA ids.
 This call is intended for validating messages in a batch, so this function would be an all-or-nothing check.
 If the permission stored for a given MSA id exceeds the parameter, the check for that MSA id passes.
 For example, if a provider has *all* permissions set, then querying for a subset of permissions will pass.
-Verify that the provided provider `provider_id` is a provider of the delegator, and has the given permission value.
+Verify that the provided provider `provider_msa_id` is a provider of the delegator, and has the given permission value.
 Returns `Ok(true)` if provider is valid, `Ok(false)` if not.
 Throws an Error enum indicating if either provider or delegator does not exist.
 
 * Parameters:
-    1. `delegator_msa_ids`: a list of MSA ids possible delegators
-    2. `provider_id`: the MSA id of the provider to verify
+    1. `delegator_msa_ids`: a list of Delegator ids possible delegators
+    2. `provider_msa_id`: the ProviderId to verify
 
 ### Storage
 * Delegations are stored as a Double-key map of Delegator MSA id --> Provider MSA id. The data stored contains the `Permission` for that relationship:
