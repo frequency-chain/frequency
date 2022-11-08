@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "description": "Integration tests for the Frequency project",
     "scripts": {
-        "test": "mocha **/*.test.js --exit"
+        "test": "mocha './{,!(node_modules)/**}/*.test.js' --exit"
     },
     "keywords": [],
     "author": "",
@@ -13,6 +13,7 @@
         "@polkadot/api": "9.6.2"
     },
     "devDependencies": {
-        "mocha": "^10.1.0"
+        "mocha": "^10.1.0",
+        "sinon": "^14.0.2"
     }
 }

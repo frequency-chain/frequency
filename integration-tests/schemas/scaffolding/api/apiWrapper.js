@@ -44,13 +44,20 @@ module.exports = function ApiWrapper(polkadotApi, signerAccountKeys) {
         this._clearEventData();
 
         let nonce = (await this._api.rpc.system.accountNextIndex(keys.address)).toNumber();
-        return new Promise((resolve, reject) => {
-            tx.signAndSend(keys, { nonce: nonce++ }, ({status, events}) => {
-                if (status.isInBlock || status.isFinalized) {
-                    events.forEach(({ event }) => this._storeEvent(event));
-                    resolve();
-                }
+        return new Promise((resolve, _reject) => {
+            tx.signAndSend(keys, { nonce: nonce++ }, async ({status, events}) => {
+                await this._handleTxResponse(status, events);
+                resolve();
             })
+        })
+    }
+
+    this._handleTxResponse = async (status, events) => {
+        return new Promise((resolve, _reject) => {
+            if (status.isInBlock || status.isFinalized) {
+                events.forEach(({ event }) => this._storeEvent(event));
+                resolve();
+            }
         })
     }
 

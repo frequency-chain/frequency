@@ -17,7 +17,7 @@ describe("#createSchema", () => {
 
     it("should successfully create an Avro GraphChange schema", async () => {
         await api.createSchema(AVRO_GRAPH_CHANGE, AVRO, ON_CHAIN);
-        
+
         const schemaRegisteredEvent = api.getEvent("schemas.SchemaRegistered");
         const successEvent = api.getEvent("system.ExtrinsicSuccess");
         const failureEvent = api.getEvent("system.ExtrinsicFailed");
