@@ -15,9 +15,8 @@ module.exports = function ApiWrapper(polkadotApi, signerAccountKeys) {
         return new Promise((resolve, reject) => {
             tx.signAndSend(signerAccountKeys, { nonce: nonce++ }, ({status, events}) => {
                 console.log("Extrinsic call status:", status.type);
-                if (status.isInBlock) {
-                    events.forEach(({ event }) => this._checkSubscriptions(event));
-                    this._clearSubscriptions();
+                if (status.isInBlock || status.isFinalized) {
+                    events.forEach(({ event }) => this._storeEvent(event));
                     resolve();
                 }
             })
@@ -49,41 +48,21 @@ module.exports = function ApiWrapper(polkadotApi, signerAccountKeys) {
         return new Promise((resolve, reject) => {
             tx.signAndSend(signerAccountKeys, { nonce: nonce++ }, ({status, events}) => {
                 console.log("Extrinsic call status:", status.type);
-                if (status.isInBlock) {
-                    events.forEach(({ event }) => this._checkSubscriptions(event));
-                    this._clearSubscriptions();
+                if (status.isInBlock || status.isFinalized) {
+                    events.forEach(({ event }) => this._storeEvent(event));
                     resolve();
                 }
             })
         })
     }
 
-    this.subscribeToEvent = (...eventNames) => {
-        eventNames.forEach((eventName) => { this._eventSubscriptions.push(this._splitEventName(eventName)) })
-        return this;
+    this.getEvent = (eventKey) => {
+        return this._eventData[eventKey];
     }
 
-    this._splitEventName = (eventName) => {
-        [section, method] = eventName.split('.');
-        if (method == undefined) { 
-            method = section;
-            section = this._DEFAULT_SECTION;
-         }
-
-         return [section, method];
-    }
-
-    this._checkSubscriptions = (polkaDotEvent) => {
-        this._eventSubscriptions.forEach(([section, method]) => {
-            if (polkaDotEvent.section === section && polkaDotEvent.method === method) {
-                let key = `${section}.${method}`
-                this._eventData[key] = polkaDotEvent;
-            }
-        })
-    }
-
-    this._clearSubscriptions = () => {
-        this._eventSubscriptions = [];
+    this._storeEvent = (polkaDotEvent) => {
+        let key = `${polkaDotEvent.section}.${polkaDotEvent.method}`;
+        this._eventData[key] = polkaDotEvent;
     }
 
     this._clearEventData = () => {

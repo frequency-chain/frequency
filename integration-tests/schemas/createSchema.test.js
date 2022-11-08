@@ -16,14 +16,14 @@ describe("#createSchema", () => {
     });
 
     it("should successfully create an Avro GraphChange schema", async () => {
-        await api.subscribeToEvent("schemas.SchemaRegistered")
-            .subscribeToEvent("system.ExtrinsicSuccess")
-            .createSchema(AVRO_GRAPH_CHANGE, AVRO, ON_CHAIN);
+        await api.createSchema(AVRO_GRAPH_CHANGE, AVRO, ON_CHAIN);
         
-        const schemaRegisteredEvent = api._eventData["schemas.SchemaRegistered"];
-        const successEvent = api._eventData["system.ExtrinsicSuccess"];
+        const schemaRegisteredEvent = api.getEvent("schemas.SchemaRegistered");
+        const successEvent = api.getEvent("system.ExtrinsicSuccess");
+        const failureEvent = api.getEvent("system.ExtrinsicFailed");
 
         assert.equal(true, typeof(schemaRegisteredEvent) !== "undefined" && typeof(successEvent) !== "undefined")
+        assert.equal(true, typeof(failureEvent) == "undefined");
 
         const schemaId = schemaRegisteredEvent.data[1];
         assert.notEqual(undefined, schemaId);
