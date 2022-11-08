@@ -1607,6 +1607,11 @@
 <span id="1607">1607</span>
 <span id="1608">1608</span>
 <span id="1609">1609</span>
+<span id="1610">1610</span>
+<span id="1611">1611</span>
+<span id="1612">1612</span>
+<span id="1613">1613</span>
+<span id="1614">1614</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet
 //! The MSA pallet provides functionality for handling Message Source Accounts.
 //!
@@ -2047,6 +2052,7 @@
 		/// * [`Event::ProviderCreated`]
 		///
 		/// # Errors
+		/// * [`Error::NoKeyExists`] - origin does not have an MSA
 		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		///
@@ -2129,6 +2135,7 @@
 		///
 		/// # Errors
 		///
+		/// * [`Error::NoKeyExists`] - origin does not have an MSA
 		/// * [`Error::DelegationRevoked`] - the delegation has already been revoked.
 		/// * [`Error::DelegationNotFound`] - there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
 		///
@@ -2335,10 +2342,13 @@
 		<span class="doccomment">/// Revokes a list of schema permissions to a provider. Attempting to revoke a Schemas that have already
 		/// been revoked are ignored.
 		///
-		/// ### Errors
-		/// - Returns [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
-		/// - Returns [`DelegationNotFound`](Error::DelegationNotFound) - If there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
-		/// - Returns [`SchemaNotGranted`](Error::SchemaNotGranted) - If attempting to revoke a schema that has not previously been granted.
+		/// # Events
+		/// - [DelegationUpdated](Event::DelegationUpdated)
+		///
+		/// # Errors
+		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
+		/// - [`DelegationNotFound`](Error::DelegationNotFound) - If there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
+		/// - [`SchemaNotGranted`](Error::SchemaNotGranted) - If attempting to revoke a schema that has not previously been granted.
 		///
 		</span><span class="attribute">#[pallet::weight(T::WeightInfo::revoke_schema_permissions(<span class="number">20_000</span>))]
 		</span><span class="kw">pub fn </span>revoke_schema_permissions(
@@ -2362,7 +2372,7 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Retire a MSA
+		<span class="doccomment">/// Retires an MSA
 		///
 		/// When a user wants to disassociate themselves from Frequency, they can retire their MSA for free provided that:
 		///  (1) They own the MSA

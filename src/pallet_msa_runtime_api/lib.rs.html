@@ -37,7 +37,6 @@
 <span id="37">37</span>
 <span id="38">38</span>
 <span id="39">39</span>
-<span id="40">40</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::unnecessary_mut_passed)]
@@ -58,7 +57,6 @@
 
 </span><span class="kw">use </span>codec::Codec;
 <span class="kw">use </span>common_primitives::{msa::<span class="kw-2">*</span>, node::BlockNumber};
-<span class="kw">use </span>frame_support::dispatch::DispatchError;
 <span class="kw">use </span>sp_std::vec::Vec;
 
 <span class="comment">// Here we declare the runtime API. It is implemented it the `impl` block in
@@ -69,13 +67,13 @@
 		</span>AccountId: Codec,
 	{
 		<span class="comment">// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
-		// fn get_msa_keys(msa_id: MessageSourceId) -&gt;	Result&lt;Vec&lt;KeyInfoResponse&lt;AccountId&gt;&gt;, DispatchError&gt;;
+		// fn get_msa_keys(msa_id: MessageSourceId) -&gt;	Vec&lt;KeyInfoResponse&lt;AccountId&gt;&gt;;
 
 		</span><span class="doccomment">/// Check to see if a delegation existed between the given delegator and provider at a given block
 		</span><span class="kw">fn </span>has_delegation(delegator: Delegator, provider: Provider, block_number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; bool;
 
 		<span class="doccomment">/// Get the list of schema ids (if any) that exist in any delegation between the delegator and provider
-		</span><span class="kw">fn </span>get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;SchemaId&gt;&gt;, DispatchError&gt;;
+		</span><span class="kw">fn </span>get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;SchemaId&gt;&gt;;
 	}
 }
 </code></pre></div>

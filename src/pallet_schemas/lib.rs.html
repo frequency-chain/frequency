@@ -378,6 +378,14 @@
 <span id="378">378</span>
 <span id="379">379</span>
 <span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # Schemas Pallet
 //! The Schemas pallet provides functionality for handling schemas.
 //!
@@ -487,7 +495,7 @@
 	#[pallet::generate_deposit(<span class="kw">pub </span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]
 	</span><span class="kw">pub enum </span>Event&lt;T: Config&gt; {
 		<span class="doccomment">/// Emitted when a schema is registered. [who, schemas id]
-		</span>SchemaRegistered(T::AccountId, SchemaId),
+		</span>SchemaCreated(T::AccountId, SchemaId),
 
 		<span class="doccomment">/// Emitted when maximum size for schema model is changed.
 		</span>SchemaMaxSizeChanged(u32),
@@ -498,20 +506,28 @@
 	</span><span class="kw">pub enum </span>Error&lt;T&gt; {
 		<span class="doccomment">/// Schema is malformed
 		</span>InvalidSchema,
+
 		<span class="doccomment">/// The schema model exceeds the maximum length allowed
 		</span>ExceedsMaxSchemaModelBytes,
+
 		<span class="doccomment">/// The governance schema model max value provided is too large (greater than the BoundedVec size)
 		</span>ExceedsGovernanceSchemaModelMaxValue,
+
 		<span class="doccomment">/// The schema is less than the minimum length allowed
 		</span>LessThanMinSchemaModelBytes,
+
 		<span class="doccomment">/// Schema does not exist
 		</span>NoSuchSchema,
-		<span class="doccomment">/// Error is converting to string
+
+		<span class="doccomment">/// String failed to convert
 		</span>StringConversionError,
-		<span class="doccomment">/// Error in Deserialization
+
+		<span class="doccomment">/// Deserialization failed
 		</span>DeserializationError,
-		<span class="doccomment">/// Error in Serialization
+
+		<span class="doccomment">/// Serialization failed
 		</span>SerializationError,
+
 		<span class="doccomment">/// CurrentSchemaIdentifierMaximum was attempted to overflow max, means MaxSchemaRegistrations is too big
 		</span>SchemaCountOverflow,
 	}
@@ -577,7 +593,7 @@
 		/// will be thrown.
 		///
 		/// # Events
-		/// * [`Event::SchemaRegistered`]
+		/// * [`Event::SchemaCreated`]
 		///
 		/// # Errors
 		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema&#39;s length is less than the minimum schema length
@@ -606,7 +622,7 @@
 			<span class="self">Self</span>::ensure_valid_model(<span class="kw-2">&amp;</span>model_type, <span class="kw-2">&amp;</span>model)<span class="question-mark">?</span>;
 			<span class="kw">let </span>schema_id = <span class="self">Self</span>::add_schema(model, model_type, payload_location)<span class="question-mark">?</span>;
 
-			<span class="self">Self</span>::deposit_event(Event::SchemaRegistered(sender, schema_id));
+			<span class="self">Self</span>::deposit_event(Event::SchemaCreated(sender, schema_id));
 			<span class="prelude-val">Ok</span>(())
 		}
 

@@ -78,6 +78,7 @@ only piece of metadata we are recording is provider name.</p>
 </ul>
 <h4 id="errors-2"><a href="#errors-2">Errors</a></h4>
 <ul>
+<li><a href="enum.Error.html#variant.NoKeyExists" title="Error::NoKeyExists"><code>Error::NoKeyExists</code></a> - origin does not have an MSA</li>
 <li><a href="enum.Error.html#variant.ExceedsMaxProviderNameSize" title="Error::ExceedsMaxProviderNameSize"><code>Error::ExceedsMaxProviderNameSize</code></a> - Too long of a provider name</li>
 <li><a href="enum.Error.html#variant.DuplicateProviderRegistryEntry" title="Error::DuplicateProviderRegistryEntry"><code>Error::DuplicateProviderRegistryEntry</code></a> - a ProviderRegistryEntry associated with the given MSA id already exists.</li>
 </ul>
@@ -110,6 +111,7 @@ Since it is being sent on the Delegator’s behalf, it requires the Delegator to
 </ul>
 <h4 id="errors-4"><a href="#errors-4">Errors</a></h4>
 <ul>
+<li><a href="enum.Error.html#variant.NoKeyExists" title="Error::NoKeyExists"><code>Error::NoKeyExists</code></a> - origin does not have an MSA</li>
 <li><a href="enum.Error.html#variant.DelegationRevoked" title="Error::DelegationRevoked"><code>Error::DelegationRevoked</code></a> - the delegation has already been revoked.</li>
 <li><a href="enum.Error.html#variant.DelegationNotFound" title="Error::DelegationNotFound"><code>Error::DelegationNotFound</code></a> - there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.</li>
 </ul>
@@ -175,19 +177,23 @@ been granted are ignored. Schemas that are revoked are re-granted.</p>
 </ul>
 </div><h3 id="variant.revoke_schema_permissions" class="variant small-section-header"><a href="#variant.revoke_schema_permissions" class="anchor field"></a><code>revoke_schema_permissions</code></h3><div class="sub-variant" id="variant.revoke_schema_permissions.fields"><h4>Fields</h4><div class="sub-variant-field"><span id="variant.revoke_schema_permissions.field.provider_msa_id" class="variant small-section-header"><a href="#variant.revoke_schema_permissions.field.provider_msa_id" class="anchor field"></a><code>provider_msa_id:&nbsp;<a class="type" href="../type.MessageSourceId.html" title="type pallet_msa::MessageSourceId">MessageSourceId</a></code></span></div><div class="sub-variant-field"><span id="variant.revoke_schema_permissions.field.schema_ids" class="variant small-section-header"><a href="#variant.revoke_schema_permissions.field.schema_ids" class="anchor field"></a><code>schema_ids:&nbsp;<a class="struct" href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;SchemaId&gt;</code></span></div></div><div class="docblock"><p>Revokes a list of schema permissions to a provider. Attempting to revoke a Schemas that have already
 been revoked are ignored.</p>
-<h6 id="errors-9"><a href="#errors-9">Errors</a></h6>
+<h4 id="events-9"><a href="#events-9">Events</a></h4>
 <ul>
-<li>Returns <a href="enum.Error.html#variant.NoKeyExists"><code>NoKeyExists</code></a> - If there is not MSA for <code>origin</code>.</li>
-<li>Returns <a href="enum.Error.html#variant.DelegationNotFound"><code>DelegationNotFound</code></a> - If there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.</li>
-<li>Returns <a href="enum.Error.html#variant.SchemaNotGranted"><code>SchemaNotGranted</code></a> - If attempting to revoke a schema that has not previously been granted.</li>
+<li><a href="enum.Event.html#variant.DelegationUpdated">DelegationUpdated</a></li>
 </ul>
-</div><h3 id="variant.retire_msa" class="variant small-section-header"><a href="#variant.retire_msa" class="anchor field"></a><code>retire_msa</code></h3><div class="sub-variant" id="variant.retire_msa.fields"><h4>Fields</h4></div><div class="docblock"><p>Retire a MSA</p>
+<h4 id="errors-9"><a href="#errors-9">Errors</a></h4>
+<ul>
+<li><a href="enum.Error.html#variant.NoKeyExists"><code>NoKeyExists</code></a> - If there is not MSA for <code>origin</code>.</li>
+<li><a href="enum.Error.html#variant.DelegationNotFound"><code>DelegationNotFound</code></a> - If there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.</li>
+<li><a href="enum.Error.html#variant.SchemaNotGranted"><code>SchemaNotGranted</code></a> - If attempting to revoke a schema that has not previously been granted.</li>
+</ul>
+</div><h3 id="variant.retire_msa" class="variant small-section-header"><a href="#variant.retire_msa" class="anchor field"></a><code>retire_msa</code></h3><div class="sub-variant" id="variant.retire_msa.fields"><h4>Fields</h4></div><div class="docblock"><p>Retires an MSA</p>
 <p>When a user wants to disassociate themselves from Frequency, they can retire their MSA for free provided that:
 (1) They own the MSA
 (2) There is only one account key
 (3) The MSA is not a registered provider.</p>
 <p>This does not currently remove any messages related to the MSA.</p>
-<h4 id="events-9"><a href="#events-9">Events</a></h4>
+<h4 id="events-10"><a href="#events-10">Events</a></h4>
 <ul>
 <li><a href="enum.Event.html#variant.PublicKeyDeleted" title="Event::PublicKeyDeleted"><code>Event::PublicKeyDeleted</code></a></li>
 <li><a href="enum.Event.html#variant.MsaRetired" title="Event::MsaRetired"><code>Event::MsaRetired</code></a></li>

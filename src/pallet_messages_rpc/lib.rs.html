@@ -153,7 +153,7 @@
 
 </span><span class="kw">use </span>codec::Codec;
 <span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
-</span><span class="kw">use </span>common_helpers::rpc::<span class="kw-2">*</span>;
+</span><span class="kw">use </span>common_helpers::rpc::map_rpc_result;
 <span class="kw">use </span>common_primitives::{messages::<span class="kw-2">*</span>, schema::<span class="kw-2">*</span>};
 <span class="kw">use </span>frame_support::{ensure, fail};
 <span class="kw">use </span>jsonrpsee::{
@@ -281,7 +281,7 @@
 			</span>from_index = <span class="number">0</span>;
 		}
 
-		map_rpc_result(<span class="prelude-val">Ok</span>(<span class="prelude-val">Ok</span>(response)))
+		map_rpc_result(<span class="prelude-val">Ok</span>(response))
 	}
 }
 </code></pre></div>

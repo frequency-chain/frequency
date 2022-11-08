@@ -397,6 +397,7 @@
 <span id="397">397</span>
 <span id="398">398</span>
 <span id="399">399</span>
+<span id="400">400</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # Messages pallet
 //! A pallet for storing messages.
 //!
@@ -785,8 +786,9 @@
 			<span class="kw">let </span>bounded_vec: BoundedVec&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt; = messages.try_into().unwrap_or_default();
 
 			<span class="kw">if </span>bounded_vec.is_empty() {
-				<span class="kw">return </span>T::DbWeight::get().reads(<span class="number">1</span>)
-			}
+				<span class="macro">log::warn!</span>(<span class="string">&quot;empty bounded_vec for schema id {}&quot;</span>, schema_id);
+				<span class="kw">continue
+			</span>}
 			Messages::&lt;T&gt;::insert(<span class="kw-2">&amp;</span>block_number, schema_id, <span class="kw-2">&amp;</span>bounded_vec);
 			<span class="self">Self</span>::deposit_event(Event::MessagesStored { schema_id, block_number, count });
 			schema_count += <span class="number">1</span>;

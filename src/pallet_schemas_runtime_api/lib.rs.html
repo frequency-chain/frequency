@@ -26,7 +26,6 @@
 <span id="26">26</span>
 <span id="27">27</span>
 <span id="28">28</span>
-<span id="29">29</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::unnecessary_mut_passed)]
@@ -46,14 +45,13 @@
 //! - Runtime interfaces for end users beyond just State Queries
 
 </span><span class="kw">use </span>common_primitives::schema::<span class="kw-2">*</span>;
-<span class="kw">use </span>frame_support::dispatch::DispatchError;
 
 <span class="macro">sp_api::decl_runtime_apis! </span>{
 	<span class="doccomment">/// Runtime API definition for [Schemas](../pallet_schemas/index.html)
 	</span><span class="kw">pub trait </span>SchemasRuntimeApi
 	{
 		<span class="doccomment">/// Fetch the schema by id
-		</span><span class="kw">fn </span>get_by_schema_id(schema_id: SchemaId) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;SchemaResponse&gt;, DispatchError&gt;;
+		</span><span class="kw">fn </span>get_by_schema_id(schema_id: SchemaId) -&gt; <span class="prelude-ty">Option</span>&lt;SchemaResponse&gt;;
 	}
 }
 </code></pre></div>

@@ -38,64 +38,17 @@
 <span id="38">38</span>
 <span id="39">39</span>
 <span id="40">40</span>
-<span id="41">41</span>
-<span id="42">42</span>
-<span id="43">43</span>
-<span id="44">44</span>
-<span id="45">45</span>
-<span id="46">46</span>
-<span id="47">47</span>
-<span id="48">48</span>
-<span id="49">49</span>
-<span id="50">50</span>
-<span id="51">51</span>
-<span id="52">52</span>
-<span id="53">53</span>
-<span id="54">54</span>
-<span id="55">55</span>
-<span id="56">56</span>
-<span id="57">57</span>
-<span id="58">58</span>
-<span id="59">59</span>
-<span id="60">60</span>
-<span id="61">61</span>
-<span id="62">62</span>
-<span id="63">63</span>
-<span id="64">64</span>
-<span id="65">65</span>
-<span id="66">66</span>
-<span id="67">67</span>
-<span id="68">68</span>
-<span id="69">69</span>
-<span id="70">70</span>
-<span id="71">71</span>
-<span id="72">72</span>
 </pre><pre class="rust"><code><span class="kw">use </span>core::result::Result <span class="kw">as </span>CoreResult;
 <span class="kw">use </span>jsonrpsee::{
 	core::{Error <span class="kw">as </span>RpcError, RpcResult},
 	types::error::{CallError, ErrorCode, ErrorObject},
 };
 <span class="kw">use </span>sp_api::ApiError;
-<span class="kw">use </span>sp_runtime::DispatchError;
 
 <span class="doccomment">/// Converts CoreResult to Result for RPC calls
-</span><span class="kw">pub fn </span>map_rpc_result&lt;T&gt;(
-	response: CoreResult&lt;CoreResult&lt;T, DispatchError&gt;, ApiError&gt;,
-) -&gt; RpcResult&lt;T&gt; {
+</span><span class="kw">pub fn </span>map_rpc_result&lt;T&gt;(response: CoreResult&lt;T, ApiError&gt;) -&gt; RpcResult&lt;T&gt; {
 	<span class="kw">match </span>response {
-		<span class="prelude-val">Ok</span>(<span class="prelude-val">Ok</span>(res)) =&gt; <span class="prelude-val">Ok</span>(res),
-		<span class="prelude-val">Ok</span>(<span class="prelude-val">Err</span>(DispatchError::Module(e))) =&gt; {
-			<span class="prelude-val">Err</span>(RpcError::Call(CallError::Custom(ErrorObject::owned(
-				ErrorCode::ServerError(<span class="number">100</span>).code(), <span class="comment">// No real reason for this value
-				</span><span class="string">&quot;Dispatch Module Error&quot;</span>,
-				<span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e)),
-			))))
-		},
-		<span class="prelude-val">Ok</span>(<span class="prelude-val">Err</span>(e)) =&gt; <span class="prelude-val">Err</span>(RpcError::Call(CallError::Custom(ErrorObject::owned(
-			ErrorCode::ServerError(<span class="number">200</span>).code(), <span class="comment">// No real reason for this value
-			</span><span class="string">&quot;Dispatch Error&quot;</span>,
-			<span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e)),
-		)))),
+		<span class="prelude-val">Ok</span>(res) =&gt; <span class="prelude-val">Ok</span>(res),
 		<span class="prelude-val">Err</span>(e) =&gt; <span class="prelude-val">Err</span>(RpcError::Call(CallError::Custom(ErrorObject::owned(
 			ErrorCode::ServerError(<span class="number">300</span>).code(), <span class="comment">// No real reason for this value
 			</span><span class="string">&quot;Api Error&quot;</span>,
@@ -111,27 +64,10 @@
 	<span class="comment">// It is enough to test that we are getting into the correct match statement.
 
 	</span><span class="attribute">#[test]
-	</span><span class="kw">fn </span>maps_ok_ok_to_ok() {
-		<span class="kw">let </span>result = map_rpc_result(<span class="prelude-val">Ok</span>(<span class="prelude-val">Ok</span>(<span class="number">0</span>)));
+	</span><span class="kw">fn </span>maps_ok_to_ok() {
+		<span class="kw">let </span>result = map_rpc_result(<span class="prelude-val">Ok</span>(<span class="number">0</span>));
 		<span class="macro">assert!</span>(result.is_ok());
 		<span class="macro">assert_eq!</span>(<span class="number">0</span>, result.unwrap());
-	}
-
-	<span class="attribute">#[test]
-	</span><span class="kw">fn </span>maps_ok_dispatch_err() {
-		<span class="kw">let </span>dispach_err = sp_runtime::ModuleError { index: <span class="number">0</span>, error: [<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>], message: <span class="prelude-val">None </span>};
-		<span class="kw">let </span>result = map_rpc_result::&lt;u64&gt;(<span class="prelude-val">Ok</span>(<span class="prelude-val">Err</span>(sp_runtime::DispatchError::Module(dispach_err))));
-		<span class="macro">assert!</span>(result.is_err());
-		<span class="kw">let </span>str = <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, result.err().unwrap());
-		<span class="macro">assert!</span>(str.contains(<span class="string">&quot;Dispatch Module Error&quot;</span>), <span class="string">&quot;Did not find in: {:?}&quot;</span>, str);
-	}
-
-	<span class="attribute">#[test]
-	</span><span class="kw">fn </span>maps_ok_dispatch_err_to_call_err() {
-		<span class="kw">let </span>result = map_rpc_result::&lt;u64&gt;(<span class="prelude-val">Ok</span>(<span class="prelude-val">Err</span>(sp_runtime::DispatchError::Other(<span class="string">&quot;test&quot;</span>))));
-		<span class="macro">assert!</span>(result.is_err());
-		<span class="kw">let </span>str = <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, result.err().unwrap());
-		<span class="macro">assert!</span>(str.contains(<span class="string">&quot;Dispatch Error&quot;</span>), <span class="string">&quot;Did not find in: {:?}&quot;</span>, str);
 	}
 
 	<span class="attribute">#[test]
