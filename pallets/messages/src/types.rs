@@ -1,5 +1,7 @@
 use codec::{Decode, Encode};
-use common_primitives::{messages::MessageResponse, msa::MessageSourceId, schema::PayloadLocation};
+use common_primitives::{
+	messages::MessageResponse, msa::MessageSourceId, node::BlockNumber, schema::PayloadLocation,
+};
 use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 use sp_std::prelude::*;
@@ -32,11 +34,11 @@ where
 	MaxDataSize: Get<u32> + Clone,
 {
 	/// Helper function to handle response type [`MessageResponse`] depending on the Payload Location (on chain or IPFS)
-	pub fn map_to_response<BlockNumber>(
+	pub fn map_to_response(
 		&self,
 		block_number: BlockNumber,
 		payload_location: PayloadLocation,
-	) -> MessageResponse<BlockNumber> {
+	) -> MessageResponse {
 		match payload_location {
 			PayloadLocation::OnChain => MessageResponse {
 				provider_msa_id: self.provider_msa_id,

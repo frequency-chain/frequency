@@ -7,15 +7,27 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::traits::{AtLeast32BitUnsigned, One};
 use sp_std::{prelude::*, vec};
+use std::ops::Sub;
 #[cfg(feature = "std")]
 use utils::*;
+
+use poem::{
+	http::{HeaderValue, StatusCode},
+	Body, FromRequest, Request, RequestBody,
+};
+
+use poem_openapi::{
+	payload::{Json, Payload, Response},
+	registry::{MetaSchema, MetaSchemaRef},
+	ApiResponse, Object,
+};
 
 /// A type for responding with an single Message in an RPC-call dependent on schema model
 /// IPFS, Parquet: { index, block_number, provider_msa_id, cid, payload_length }
 /// Avro, OnChain: { index, block_number, provider_msa_id, msa_id, payload }
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct MessageResponse<BlockNumber> {
+#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, Object)]
+pub struct MessageResponse {
 	/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
 	/// indicating that the original source MSA is acting as its own provider. An id differing from that
 	/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
@@ -24,7 +36,7 @@ pub struct MessageResponse<BlockNumber> {
 	/// Index in block to get total order.
 	pub index: u16,
 	/// Block-number for which the message was stored.
-	pub block_number: BlockNumber,
+	pub block_number: u32,
 	///  Message source account id (the original source).
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
 	pub msa_id: Option<MessageSourceId>,
@@ -43,22 +55,19 @@ pub struct MessageResponse<BlockNumber> {
 }
 /// A type for requesting paginated messages.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct BlockPaginationRequest<BlockNumber> {
+#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, Object)]
+pub struct BlockPaginationRequest {
 	/// Starting block-number (inclusive).
-	pub from_block: BlockNumber,
+	pub from_block: u32,
 	/// Current page index starting from 0.
 	pub from_index: u32,
 	/// Ending block-number (exclusive).
-	pub to_block: BlockNumber,
+	pub to_block: u32,
 	/// The number of messages in a single page.
 	pub page_size: u32,
 }
 
-impl<BlockNumber> BlockPaginationRequest<BlockNumber>
-where
-	BlockNumber: Copy + AtLeast32BitUnsigned,
-{
+impl BlockPaginationRequest {
 	/// Hard limit on the number of items per page that can be returned
 	pub const MAX_PAGE_SIZE: u32 = 10000;
 	/// Hard limit on the block range for a request (~7 days at 12 sec per block)
@@ -71,32 +80,29 @@ where
 		self.page_size > 0 &&
 			self.page_size <= Self::MAX_PAGE_SIZE &&
 			self.from_block < self.to_block &&
-			self.to_block.sub(self.from_block) <= BlockNumber::from(Self::MAX_BLOCK_RANGE)
+			self.to_block.sub(self.from_block) <= Self::MAX_BLOCK_RANGE
 	}
 }
 
 /// A type for responding with a collection of paginated messages.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct BlockPaginationResponse<BlockNumber, T> {
+pub struct BlockPaginationResponse<T> {
 	/// Collection of messages for a given [`BlockPaginationRequest`].
 	pub content: Vec<T>,
 	/// Flag to indicate the end of paginated messages.
 	pub has_next: bool,
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
 	/// Flag to indicate the starting block number for the next page.
-	pub next_block: Option<BlockNumber>,
+	pub next_block: Option<u32>,
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
 	/// Flag to indicate the next index for the following request.
 	pub next_index: Option<u32>,
 }
 
-impl<BlockNumber, T> BlockPaginationResponse<BlockNumber, T>
-where
-	BlockNumber: AtLeast32BitUnsigned + Copy + One,
-{
+impl<T> BlockPaginationResponse<T> {
 	/// Generates a new empty Pagination request
-	pub const fn new() -> BlockPaginationResponse<BlockNumber, T> {
+	pub const fn new() -> BlockPaginationResponse<T> {
 		BlockPaginationResponse {
 			content: vec![],
 			has_next: false,
@@ -109,10 +115,10 @@ where
 	/// if we are, update the response with the correct next information
 	pub fn check_end_condition_and_set_next_pagination(
 		&mut self,
-		block_number: BlockNumber,
+		block_number: u32,
 		current_index: u32,
 		list_size: u32,
-		request: &BlockPaginationRequest<BlockNumber>,
+		request: &BlockPaginationRequest,
 	) -> bool {
 		if self.content.len() as u32 == request.page_size {
 			let mut next_block = block_number;
@@ -120,7 +126,7 @@ where
 
 			// checking if it's end of current list
 			if next_index == list_size {
-				next_block = block_number + BlockNumber::one();
+				next_block = block_number + 1u32;
 				next_index = 0;
 			}
 

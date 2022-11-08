@@ -1072,6 +1072,8 @@ dependencies = [
  "frame-support",
  "impl-serde 0.4.0",
  "parity-scale-codec",
+ "poem",
+ "poem-openapi",
  "scale-info",
  "serde",
  "serde_json",

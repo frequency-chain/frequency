@@ -34,24 +34,26 @@ mod tests;
 pub trait MessagesApi<BlockNumber> {
 	/// Retrieve paginated messages by schema id
 	#[method(name = "messages_getBySchemaId")]
-	fn get_messages_by_schema_id(
+	async fn get_messages_by_schema_id(
 		&self,
 		schema_id: SchemaId,
-		pagination: BlockPaginationRequest<BlockNumber>,
-	) -> RpcResult<BlockPaginationResponse<BlockNumber, MessageResponse<BlockNumber>>>;
+		pagination: BlockPaginationRequest,
+	) -> RpcResult<BlockPaginationResponse<MessageResponse>>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
-pub struct MessagesHandler<C, M> {
+pub struct MessagesHandler<C, M, B> {
 	client: Arc<C>,
 	_marker: std::marker::PhantomData<M>,
+	block_number: std::marker::PhantomData<B>,
 }
 
-#[OpenApi]
-impl<C, M> MessagesHandler<C, M> {
+impl<C, M, B> MessagesHandler<C, M, B> {
 	/// Create new instance with the given reference to the client.
 	pub fn new(client: Arc<C>) -> Self {
-		Self { client, _marker: Default::default() }
+		// get current block_number
+
+		Self { client, _marker: Default::default(), block_number: Default::default() }
 	}
 }
 
@@ -72,19 +74,23 @@ impl From<MessageRpcError> for RpcError {
 	}
 }
 
+#[OpenApi]
 #[async_trait]
-impl<C, Block, BlockNumber> MessagesApiServer<BlockNumber> for MessagesHandler<C, Block>
+impl<C, Block, BlockNumber> MessagesApiServer<BlockNumber>
+	for MessagesHandler<C, Block, BlockNumber>
 where
 	Block: BlockT,
 	C: ProvideRuntimeApi<Block> + HeaderBackend<Block> + 'static,
 	C::Api: MessagesRuntimeApi<Block, BlockNumber>,
-	BlockNumber: Codec + Copy + AtLeast32BitUnsigned,
+	BlockNumber:
+		Codec + Copy + AtLeast32BitUnsigned + std::marker::Send + std::marker::Sync + 'static,
 {
-	fn get_messages_by_schema_id(
+	#[oai(path = "/messages/getBySchemaId", method = "get")]
+	async fn get_messages_by_schema_id(
 		&self,
 		schema_id: SchemaId,
-		pagination: BlockPaginationRequest<BlockNumber>,
-	) -> RpcResult<BlockPaginationResponse<BlockNumber, MessageResponse<BlockNumber>>> {
+		pagination: BlockPaginationRequest,
+	) -> RpcResult<BlockPaginationResponse<MessageResponse>> {
 		// Request Validation
 		ensure!(pagination.validate(), MessageRpcError::InvalidPaginationRequest);
 
@@ -111,7 +117,7 @@ where
 
 		'loops: for bid in from..to {
 			let block_number: BlockNumber = bid.into();
-			let list: Vec<MessageResponse<BlockNumber>> = api
+			let list: Vec<MessageResponse> = api
 				.get_messages_by_schema_and_block(
 					&at,
 					schema.schema_id,
@@ -124,9 +130,10 @@ where
 				list.len().try_into().map_err(|_| MessageRpcError::TypeConversionOverflow)?;
 			for i in from_index..list_size {
 				response.content.push(list[i as usize].clone());
-
+				let given_block: u32 =
+					block_number.try_into().map_err(|_| MessageRpcError::TypeConversionOverflow)?;
 				if response.check_end_condition_and_set_next_pagination(
-					block_number,
+					given_block,
 					i,
 					list_size,
 					&pagination,

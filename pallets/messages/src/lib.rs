@@ -346,11 +346,12 @@ impl<T: Config> Pallet<T> {
 		schema_id: SchemaId,
 		schema_payload_location: PayloadLocation,
 		block_number: T::BlockNumber,
-	) -> Vec<MessageResponse<T::BlockNumber>> {
+	) -> Vec<MessageResponse> {
+		let given_block = block_number.saturated_into::<u32>();
 		<Messages<T>>::get(block_number, schema_id)
 			.into_inner()
 			.iter()
-			.map(|msg| msg.map_to_response(block_number, schema_payload_location))
+			.map(|msg| msg.map_to_response(given_block, schema_payload_location))
 			.collect()
 	}
 
