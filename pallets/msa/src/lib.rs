@@ -1036,37 +1036,6 @@ impl<T: Config> Pallet<T> {
 		)
 	}
 
-	/// Check that the delegator has an active delegation to the provider.
-	/// `block_number`: Provide `None` to know if the delegation is active at the current block.
-	///                 Provide Some(N) to know if the delegation was or will be active at block N.
-	///
-	/// # Errors
-	/// * [`Error::DelegationNotFound`]
-	/// * [`Error::DelegationRevoked`]
-	///
-	pub fn ensure_valid_delegation(
-		provider: Provider,
-		delegator: Delegator,
-		block_number: Option<T::BlockNumber>,
-	) -> Result<Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError>
-	{
-		let info =
-			Self::get_delegation(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
-		let current_block = frame_system::Pallet::<T>::block_number();
-		let requested_block = match block_number {
-			Some(block_number) => {
-				ensure!(current_block >= block_number, Error::<T>::DelegationNotFound);
-				block_number
-			},
-			None => current_block,
-		};
-		if info.revoked_at == T::BlockNumber::zero() {
-			return Ok(info)
-		}
-		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
-		Ok(info)
-	}
-
 	/// Deletes a key associated with a given MSA
 	///
 	/// # Errors
@@ -1323,56 +1292,35 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
 	type SchemaId = SchemaId;
 
-	#[cfg(not(feature = "runtime-benchmarks"))]
+	/// Check that the delegator has an active delegation to the provider.
+	/// `block_number`: Provide `None` to know if the delegation is active at the current block.
+	///                 Provide Some(N) to know if the delegation was or will be active at block N.
+	///
+	/// # Errors
+	/// * [`Error::DelegationNotFound`]
+	/// * [`Error::DelegationRevoked`]
+	///
 	fn ensure_valid_delegation(
 		provider: Provider,
-		delegation: Delegator,
+		delegator: Delegator,
 		block_number: Option<T::BlockNumber>,
-	) -> Result<
-		Delegation<SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
-		DispatchError,
-	> {
-		Self::ensure_valid_delegation(provider, delegation, block_number)
-	}
-
-	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
-	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
-	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
-	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
-	/// would like to avoid.
-	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
-	/// this method to return a dummy account in case it does not exist
-	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_valid_delegation(
-		provider: Provider,
-		delegation: Delegator,
-		block_number: Option<T::BlockNumber>,
-	) -> Result<
-		Delegation<Self::SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
-		DispatchError,
-	> {
-		let validation_check = Self::ensure_valid_delegation(provider, delegation, block_number);
-		if validation_check.is_err() {
-			// If the delegation does not exist, we return a ok
-			// This is only used for benchmarks, so it is safe to return a dummy account
-			// in case the delegation does not exist
-			return Ok(Delegation {
-				schema_permissions: frame_support::BoundedBTreeMap::<
-					SchemaId,
-					T::BlockNumber,
-					T::MaxSchemaGrantsPerDelegation,
-				>::default(),
-				revoked_at: Default::default(),
-			})
+	) -> Result<Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError>
+	{
+		let info =
+			Self::get_delegation(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
+		let current_block = frame_system::Pallet::<T>::block_number();
+		let requested_block = match block_number {
+			Some(block_number) => {
+				ensure!(current_block >= block_number, Error::<T>::DelegationNotFound);
+				block_number
+			},
+			None => current_block,
+		};
+		if info.revoked_at == T::BlockNumber::zero() {
+			return Ok(info)
 		}
-		Ok(Delegation {
-			schema_permissions: frame_support::BoundedBTreeMap::<
-				SchemaId,
-				T::BlockNumber,
-				T::MaxSchemaGrantsPerDelegation,
-			>::default(),
-			revoked_at: Default::default(),
-		})
+		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
+		Ok(info)
 	}
 }
 

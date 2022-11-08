@@ -222,7 +222,6 @@ impl SchemaProvider<u16> for SchemaHandler {
 impl pallet_messages::Config for Test {
 	type Event = Event;
 	type MsaInfoProvider = MsaInfoHandler;
-	type DelegationInfoProvider = DelegationInfoHandler;
 	type SchemaGrantValidator = SchemaGrantValidationHandler;
 	type SchemaProvider = SchemaHandler;
 	type WeightInfo = ();

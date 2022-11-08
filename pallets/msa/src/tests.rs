@@ -16,7 +16,10 @@ use crate::{
 };
 
 use common_primitives::{
-	msa::{Delegation, Delegator, MessageSourceId, Provider, ProviderRegistryEntry},
+	msa::{
+		Delegation, DelegationValidator, Delegator, MessageSourceId, Provider,
+		ProviderRegistryEntry,
+	},
 	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
 	utils::wrap_binary_data,
@@ -1451,7 +1454,7 @@ fn signed_extension_revoke_delegation_by_provider_fails_when_no_provider_msa() {
 		let (provider_pair, _) = sr25519::Pair::generate();
 		let provider_account = provider_pair.public();
 
-		let (delegator_msa, delegator_pair) = create_account();
+		let (delegator_msa, _) = create_account();
 
 		let expected_err = InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8);
 		assert_revoke_delegation_by_provider_err(expected_err, provider_account, delegator_msa);
@@ -1463,8 +1466,7 @@ fn signed_extension_revoke_delegation_by_provider_fails_when_no_delegation() {
 	new_test_ext().execute_with(|| {
 		let (_, provider_pair) = create_account();
 		let provider_account = provider_pair.public();
-		let (delegator_msa, delegator_pair) = create_account();
-		let delegator_account = delegator_pair.public();
+		let (delegator_msa, _) = create_account();
 
 		let expected_err = InvalidTransaction::Custom(ValidityError::InvalidDelegation as u8);
 		assert_revoke_delegation_by_provider_err(expected_err, provider_account, delegator_msa);
