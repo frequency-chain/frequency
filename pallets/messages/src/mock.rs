@@ -1,8 +1,8 @@
 use crate as pallet_messages;
 use common_primitives::{
 	msa::{
-		Delegation, DelegationValidator, Delegator, MessageSourceId, MsaLookup, MsaValidator,
-		Provider, ProviderLookup, SchemaGrantValidator,
+		Delegation, DelegationValidator, DelegatorId, MessageSourceId, MsaLookup, MsaValidator,
+		ProviderId, ProviderLookup, SchemaGrantValidator,
 	},
 	schema::*,
 };
@@ -153,10 +153,10 @@ impl ProviderLookup for DelegationInfoHandler {
 	type SchemaId = SchemaId;
 
 	fn get_delegation_of(
-		_delegator: Delegator,
-		provider: Provider,
+		_delegator: DelegatorId,
+		provider: ProviderId,
 	) -> Option<Delegation<SchemaId, Self::BlockNumber, MaxSchemaGrantsPerDelegation>> {
-		if provider == Provider(2000) {
+		if provider == ProviderId(2000) {
 			return None
 		};
 		Some(Delegation { revoked_at: 100, schema_permissions: Default::default() })
@@ -168,14 +168,14 @@ impl DelegationValidator for DelegationInfoHandler {
 	type SchemaId = SchemaId;
 
 	fn ensure_valid_delegation(
-		provider: Provider,
-		_delegator: Delegator,
+		provider: ProviderId,
+		_delegator: DelegatorId,
 		_block_number: Option<Self::BlockNumber>,
 	) -> Result<
 		Delegation<SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
 		DispatchError,
 	> {
-		if provider == Provider(2000) {
+		if provider == ProviderId(2000) {
 			return Err(DispatchError::Other("some delegation error"))
 		};
 
@@ -184,8 +184,8 @@ impl DelegationValidator for DelegationInfoHandler {
 }
 impl SchemaGrantValidator for SchemaGrantValidationHandler {
 	fn ensure_valid_schema_grant(
-		provider: Provider,
-		delegator: Delegator,
+		provider: ProviderId,
+		delegator: DelegatorId,
 		_schema_id: SchemaId,
 	) -> DispatchResult {
 		match DelegationInfoHandler::get_delegation_of(delegator, provider) {

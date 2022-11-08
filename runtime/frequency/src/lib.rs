@@ -860,14 +860,14 @@ impl_runtime_apis! {
 		// 	Ok(Msa::fetch_msa_keys(msa_id))
 		// }
 
-		fn has_delegation(delegator: Delegator, provider: Provider, block_number: Option<BlockNumber>) -> bool {
+		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: Option<BlockNumber>) -> bool {
 			match Msa::ensure_valid_delegation(provider, delegator, block_number) {
 				Ok(_) => true,
 				Err(_) => false,
 			}
 		}
 
-		fn get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -> Option<Vec<SchemaId>> {
+		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaId>> {
 			match Msa::get_granted_schemas_by_msa_id(delegator, provider) {
 				Ok(x) => x,
 				Err(_) => None,

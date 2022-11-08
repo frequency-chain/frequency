@@ -54,9 +54,8 @@ Please note:
   * `name`: `Vec<u8>`
 
 #### Events
-* `ProviderRegistrationEvent<T: Config>`, the resource that exists on-chain
-  * `block_number`: `BlockNumber`
-  * `provider_msa_id`: `MsaId`
+* `ProviderCreated<T: Config>`, the resource that exists on-chain
+  * `provider_id`: `ProviderId`
 
 #### Storage
 * `ProviderToRegistryEntry<T: Config>`: `StorageMap<MsaId, ProviderRegistryEntry>`
@@ -66,7 +65,7 @@ Please note:
 
 ### Extrinsics
 #### create_provider(origin, provider_name)
-Creates and posts a `ProviderRegistrationEvent`. The `MsaId`
+Creates and posts a `ProviderCreated`. The `MsaId`
 included in the registration must already exist.
 
 This extrinsic is responsible for storing the registered provider in the
@@ -75,18 +74,18 @@ This extrinsic is responsible for storing the registered provider in the
 * **Parameters**
   * `origin`: `Origin`  required for all extrinsics, the caller/sender.
   * `provider_name`: the name used for the provider.
-* **Event**:  `Event::<T>::ProviderRegistrationEvent(provider_msa_id)`
+* **Event**:  `Event::<T>::ProviderCreated(provider_id)`
 * **Restrictions**:
   * `origin`'s `msa_id` must have capacity to post the transaction (including fee) during the current epoch.
 
 
 ### Custom RPCs
-#### get_provider(provider_msa_id)
-Retrieves a single provider. The `provider_msa_id` should belong to a registered
+#### get_provider(provider_id)
+Retrieves a single provider. The `provider_id` should belong to a registered
 provider.
 
 * **Parameters**
-  * `provider_msa_id`: `MsaId` the `MsaId` of the provider in question.
+  * `provider_id`: `ProviderId` the `MsaId` of the provider in question.
 
 * **Returns**
   * `None()` if no messages meet the criteria.

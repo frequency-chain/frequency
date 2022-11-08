@@ -11,7 +11,7 @@
 use codec::Codec;
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
-	msa::{Delegator, MessageSourceId, Provider},
+	msa::{DelegatorId, ProviderId},
 	node::BlockNumber,
 	schema::SchemaId,
 };
@@ -36,17 +36,17 @@ pub trait MsaApi<BlockHash, AccountId> {
 	#[method(name = "msa_checkDelegations")]
 	fn check_delegations(
 		&self,
-		delegator_msa_ids: Vec<MessageSourceId>,
-		provider_msa_id: MessageSourceId,
+		delegator_msa_ids: Vec<DelegatorId>,
+		provider_msa_id: ProviderId,
 		block_number: Option<BlockNumber>,
-	) -> RpcResult<Vec<(MessageSourceId, bool)>>;
+	) -> RpcResult<Vec<(DelegatorId, bool)>>;
 
 	/// Retrieve the list of currently granted schemas given a delegator and provider pair
 	#[method(name = "msa_grantedSchemaIdsByMsaId")]
 	fn get_granted_schemas_by_msa_id(
 		&self,
-		delegator_msa_id: MessageSourceId,
-		provider_msa_id: MessageSourceId,
+		delegator_msa_id: DelegatorId,
+		provider_msa_id: ProviderId,
 	) -> RpcResult<Option<Vec<SchemaId>>>;
 }
 
@@ -83,44 +83,40 @@ where
 
 	fn check_delegations(
 		&self,
-		delegator_msa_ids: Vec<MessageSourceId>,
-		provider_msa_id: MessageSourceId,
+		delegator_msa_ids: Vec<DelegatorId>,
+		provider_msa_id: ProviderId,
 		block_number: Option<BlockNumber>,
-	) -> RpcResult<Vec<(MessageSourceId, bool)>> {
+	) -> RpcResult<Vec<(DelegatorId, bool)>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 
-		let provider = Provider(provider_msa_id);
-
 		Ok(delegator_msa_ids
 			.iter() // TODO: Change back to par_iter() which has borrow panic GitHub Issue: #519
-			.map(|&id| {
-				let delegator = Delegator(id);
+			.map(|&delegator_id| {
 				// api.has_delegation returns  Result<bool, ApiError>), so _or(false) should not happen,
 				// but just in case, protect against panic
 				let has_delegation: bool =
-					match api.has_delegation(&at, delegator, provider, block_number) {
+					match api.has_delegation(&at, delegator_id, provider_msa_id, block_number) {
 						Ok(result) => result,
 						Err(e) => {
 							warn!("ApiError from has_delegation! {:?}", e);
 							false
 						},
 					};
-				(id, has_delegation)
+				(delegator_id, has_delegation)
 			})
 			.collect())
 	}
 
 	fn get_granted_schemas_by_msa_id(
 		&self,
-		delegator_msa_id: MessageSourceId,
-		provider_msa_id: MessageSourceId,
+		delegator_msa_id: DelegatorId,
+		provider_msa_id: ProviderId,
 	) -> RpcResult<Option<Vec<SchemaId>>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		let delegator = Delegator(delegator_msa_id);
-		let provider = Provider(provider_msa_id);
-		let runtime_api_result = api.get_granted_schemas_by_msa_id(&at, delegator, provider);
+		let runtime_api_result =
+			api.get_granted_schemas_by_msa_id(&at, delegator_msa_id, provider_msa_id);
 		map_rpc_result(runtime_api_result)
 	}
 }
