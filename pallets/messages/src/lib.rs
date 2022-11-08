@@ -55,10 +55,6 @@ pub mod weights;
 
 mod types;
 
-use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
-use sp_runtime::{traits::One, DispatchError};
-use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
-
 use codec::Encode;
 use common_primitives::{
 	messages::*,
@@ -68,7 +64,10 @@ use common_primitives::{
 	},
 	schema::*,
 };
+use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
 pub use pallet::*;
+use sp_runtime::{traits::One, DispatchError, SaturatedConversion};
+use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 pub use types::*;
 pub use weights::*;
 
