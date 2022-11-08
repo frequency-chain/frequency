@@ -1546,8 +1546,8 @@ fn signed_extension_validate_fails_when_delete_msa_public_key_called_twice() {
 
 		// new key deletes the old key
 		assert_ok!(Msa::delete_msa_public_key(
-			Origin::signed(AccountId32::from(owner_key_pair.public())),
-			new_key.clone()
+			Origin::signed(new_key.clone()),
+			owner_key_pair.public().into()
 		));
 
 		assert_validate_key_delete_fails(
