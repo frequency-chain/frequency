@@ -18,7 +18,7 @@ jobs:
     name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
     strategy:
       matrix:
-        # os: [[self-hosted, Linux, X64], macos-latest]
+        os: [[self-hosted, Linux, X64], macos-latest]
         network: [local, rococo, mainnet]
         include:
           - network: local
@@ -31,10 +31,11 @@ jobs:
             spec: frequency
             build-profile: production
           - os: [self-hosted, Linux, X64]
+            os-short-name: ubuntu
             arch: amd64
-          # - os: macos-latest
-          #   arch: arm64
-    runs-on: [self-hosted, Linux, X64]
+          - os: macos-latest
+            arch: arm64
+    runs-on: ${{matrix.os}}
     steps:
       # https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#contexts
       - name: "[DEBUG ONLY!!!] Dumping contexts"
@@ -54,21 +55,22 @@ jobs:
           echo "PATH: $PATH"
           echo "HOME BEFORE: $HOME"
           env
-
-          ls -la /home
-          ls -la /home/ubuntu
-          ls -la /usr/bin
           echo "---------------"
+          echo "OS: ${{matrix.os}}"
+          echo "OS Short Name: ${{matrix.os-short-name}}"
+      - name: Set Env Vars
+        if: matrix.os-short-name == 'ubuntu'
+        run: |
           echo "HOME=/home/ubuntu" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
-      # XXX Keep this step as it lets us skip full binary builds during development/testing
-      - name: Cache Binary for Testing
-        id: cache-binary
-        uses: actions/cache@v3
-        with:
-          path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-          key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.RELEASE_VERSION}}
+      # # XXX Keep this step as it lets us skip full binary builds during development/testing
+      # - name: Cache Binary for Testing
+      #   id: cache-binary
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+      #     key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.RELEASE_VERSION}}
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: actions-rs/toolchain@v1
@@ -97,7 +99,7 @@ jobs:
         run: |
           cp -p ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
       - name: Install coreutils for macOS
-        if: matrix.os == 'macOS-latest'
+        if: matrix.os == 'macos-latest'
         run: brew install coreutils
       - name: Create Binary Hash
         run: |
