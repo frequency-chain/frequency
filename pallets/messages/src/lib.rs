@@ -62,7 +62,9 @@ use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 use codec::Encode;
 use common_primitives::{
 	messages::*,
-	msa::{ DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator },
+	msa::{
+		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
+	},
 	schema::*,
 };
 pub use pallet::*;
