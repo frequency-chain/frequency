@@ -15,7 +15,7 @@ module.exports = function ApiWrapper(polkadotApi, signerAccountKeys) {
         return new Promise((resolve, reject) => {
             tx.signAndSend(signerAccountKeys, { nonce: nonce++ }, ({status, events}) => {
                 console.log("Extrinsic call status:", status.type);
-                if (status.isFinalized) {
+                if (status.isInBlock) {
                     events.forEach(({ event }) => this._checkSubscriptions(event));
                     this._clearSubscriptions();
                     resolve();
@@ -24,7 +24,7 @@ module.exports = function ApiWrapper(polkadotApi, signerAccountKeys) {
         })
     }
 
-    this.fetchSchema = async function(schemaId) {
+    this.fetchSchema = async (schemaId) => {
         const schema = await this._api.rpc.schemas.getBySchemaId(schemaId);
         let schemaResult = schema.unwrap();
         const jsonSchema = Buffer.from(schemaResult.model).toString("utf8");
@@ -38,6 +38,24 @@ module.exports = function ApiWrapper(polkadotApi, signerAccountKeys) {
             payload_location: payload_location.toString(),
             model_structure: modelParsed,
         };
+    }
+
+    // This will not work until we provision a root account
+    this.setMaxSchemaSize = async (rootKeys, size) => {
+        this._clearEventData();
+
+        let nonce = (await this._api.rpc.system.accountNextIndex(rootKeys.address)).toNumber();
+        const tx = await this._api.tx.schemas.setMaxSchemaModelBytes(size);
+        return new Promise((resolve, reject) => {
+            tx.signAndSend(signerAccountKeys, { nonce: nonce++ }, ({status, events}) => {
+                console.log("Extrinsic call status:", status.type);
+                if (status.isInBlock) {
+                    events.forEach(({ event }) => this._checkSubscriptions(event));
+                    this._clearSubscriptions();
+                    resolve();
+                }
+            })
+        })
     }
 
     this.subscribeToEvent = (...eventNames) => {
@@ -58,7 +76,8 @@ module.exports = function ApiWrapper(polkadotApi, signerAccountKeys) {
     this._checkSubscriptions = (polkaDotEvent) => {
         this._eventSubscriptions.forEach(([section, method]) => {
             if (polkaDotEvent.section === section && polkaDotEvent.method === method) {
-                this._eventData[method] = polkaDotEvent;
+                let key = `${section}.${method}`
+                this._eventData[key] = polkaDotEvent;
             }
         })
     }
