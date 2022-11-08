@@ -1512,12 +1512,10 @@ fn signed_extension_validation_delete_msa_public_key_success() {
 		let user_account_id = AccountId32::from(user_public_key);
 		assert_ok!(Msa::add_key(owner_msa_id, &user_account_id, EMPTY_FUNCTION));
 
+		let owner_key: AccountId32 = owner_key_pair.public().into();
+
 		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
-<<<<<<< HEAD
-			&Call::Msa(MsaCall::delete_msa_public_key { key: owner_key_pair.public().into() });
-=======
-			&Call::Msa(MsaCall::delete_msa_public_key { public_key_to_delete: owner_key.clone() });
->>>>>>> 8b26ea69 (fix test compile errors)
+			&Call::Msa(MsaCall::delete_msa_public_key { public_key_to_delete: owner_key });
 
 		let info = DispatchInfo::default();
 		let len = 0_usize;
@@ -1545,8 +1543,9 @@ fn signed_extension_validation_failure_when_delete_msa_public_key_called_twice()
 		let user_account_id = AccountId32::from(user_public_key);
 		assert_ok!(Msa::add_key(owner_msa_id, &user_account_id, EMPTY_FUNCTION));
 
+		let public_key_to_delete: AccountId32 = owner_key_pair.public().into();
 		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_public_key { key: owner_key_pair.public().into() });
+			&Call::Msa(MsaCall::delete_msa_public_key { public_key_to_delete });
 
 		let info = DispatchInfo::default();
 		let len = 0_usize;

@@ -655,15 +655,19 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			public_key_to_delete: T::AccountId,
 		) -> DispatchResult {
-			let signing_key = ensure_signed(origin)?;
+			let who = ensure_signed(origin)?;
 
-			let who_msa_id = Self::try_get_msa_from_public_key(&signing_key)?;
+			match Self::get_msa_by_public_key(&who) {
+				Some(who_msa_id) => {
+					Self::delete_key_for_msa(who_msa_id, &public_key_to_delete)?;
 
-			Self::delete_key_for_msa(who_msa_id, &public_key_to_delete)?;
-
-			// Deposit the event
-			Self::deposit_event(Event::PublicKeyDeleted { key: public_key_to_delete });
-
+					// Deposit the event
+					Self::deposit_event(Event::PublicKeyDeleted { key: public_key_to_delete });
+				},
+				None => {
+					error!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
+				},
+			}
 			Ok(())
 		}
 
@@ -1450,10 +1454,15 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// Validates that a key being revoked is both valid and owned by a valid MSA account.
 	/// Returns a `ValidTransaction` or wrapped [`ValidityError::InvalidMsaKey`]
 	/// Arguments:
-	/// * `account_id`: the account id calling for revoking the key, and which
+	/// * `signing_public_key`: the account id calling for revoking the key, and which
 	/// 	owns the msa also associated with `key`
-	/// * `key`: the account id to revoke as an access key for account_id's msa
+	/// * `public_key_to_delete`: the account id to revoke as an access key for account_id's msa
 	///
+	/// # Errors
+	/// * [`ValidityError::InvalidMsaKey`] - if  `account_id` does not have an MSA or if
+	/// 'public_key_to_delete' does not have an MSA.
+	/// * [`ValidityError::NotKeyOwner`] - if the `signing_public_key` and `public_key_to_delete` do not
+	/// belong to the same MSA ID.
 	pub fn validate_key_delete(
 		signing_public_key: &T::AccountId,
 		public_key_to_delete: &T::AccountId,
@@ -1465,18 +1474,16 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			InvalidTransaction::Custom(ValidityError::InvalidSelfRemoval as u8)
 		);
 
-		let delegator_msa_id: Delegator =
-			Pallet::<T>::try_get_msa_from_public_key(&signing_public_key)
-				.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
-				.into();
+		let maybe_owner_msa_id: MessageSourceId =
+			Pallet::<T>::ensure_valid_msa_key(&signing_public_key)
+				.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?;
 
-		let public_key_delete_msa_id: Delegator =
-			Pallet::<T>::try_get_msa_from_public_key(&public_key_to_delete)
-				.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
-				.into();
+		let msa_id_for_key_to_delete: MessageSourceId =
+			Pallet::<T>::ensure_valid_msa_key(&public_key_to_delete)
+				.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?;
 
 		ensure!(
-			delegator_msa_id == public_key_delete_msa_id,
+			maybe_owner_msa_id == msa_id_for_key_to_delete,
 			InvalidTransaction::Custom(ValidityError::NotKeyOwner as u8)
 		);
 
