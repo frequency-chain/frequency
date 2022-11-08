@@ -20,14 +20,14 @@ describe("#createSchema", () => {
             .subscribeToEvent("system.ExtrinsicSuccess")
             .createSchema(AVRO_GRAPH_CHANGE, AVRO, ON_CHAIN);
         
-        const schemaRegisteredEvent = api._eventData["SchemaRegistered"];
-        const successEvent = api._eventData["ExtrinsicSuccess"];
+        const schemaRegisteredEvent = api._eventData["schemas.SchemaRegistered"];
+        const successEvent = api._eventData["system.ExtrinsicSuccess"];
 
         assert.equal(true, typeof(schemaRegisteredEvent) !== "undefined" && typeof(successEvent) !== "undefined")
 
         const schemaId = schemaRegisteredEvent.data[1];
         assert.notEqual(undefined, schemaId);
-        
+
         // To test Parquet types, we will need to patch the api-augment lib to contain Parquet types
         const {key, model_type, payload_location} = await api.fetchSchema(schemaId);
 
