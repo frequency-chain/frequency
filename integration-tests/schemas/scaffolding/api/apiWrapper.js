@@ -8,19 +8,8 @@ module.exports = function ApiWrapper(polkadotApi, signerAccountKeys) {
     this._DEFAULT_SECTION = "schemas";
 
     this.createSchema = async (payload, modelType, payloadLocation) => {
-        this._clearEventData();
-
-        let nonce = (await this._api.rpc.system.accountNextIndex(this._keys.address)).toNumber();
         const tx = await this._api.tx.schemas.createSchema(JSON.stringify(payload), modelType, payloadLocation);
-        return new Promise((resolve, reject) => {
-            tx.signAndSend(signerAccountKeys, { nonce: nonce++ }, ({status, events}) => {
-                console.log("Extrinsic call status:", status.type);
-                if (status.isInBlock || status.isFinalized) {
-                    events.forEach(({ event }) => this._storeEvent(event));
-                    resolve();
-                }
-            })
-        })
+        return this._sendTx(tx, this._keys);
     }
 
     this.fetchSchema = async (schemaId) => {
@@ -39,25 +28,30 @@ module.exports = function ApiWrapper(polkadotApi, signerAccountKeys) {
         };
     }
 
-    // This will not work until we provision a root account
+    // NOTE:
+    // The setMaxSchemaSize extrinsic checks for root privileges,
+    // so this will not work until we provision a root account
     this.setMaxSchemaSize = async (rootKeys, size) => {
+        const tx = await this._api.tx.schemas.setMaxSchemaModelBytes(size);
+        return this._sendTx(tx, rootKeys);
+    }
+
+    this.getEvent = (eventKey) => {
+        return this._eventData[eventKey];
+    }
+
+    this._sendTx = async (tx, keys) => {
         this._clearEventData();
 
-        let nonce = (await this._api.rpc.system.accountNextIndex(rootKeys.address)).toNumber();
-        const tx = await this._api.tx.schemas.setMaxSchemaModelBytes(size);
+        let nonce = (await this._api.rpc.system.accountNextIndex(keys.address)).toNumber();
         return new Promise((resolve, reject) => {
-            tx.signAndSend(signerAccountKeys, { nonce: nonce++ }, ({status, events}) => {
-                console.log("Extrinsic call status:", status.type);
+            tx.signAndSend(keys, { nonce: nonce++ }, ({status, events}) => {
                 if (status.isInBlock || status.isFinalized) {
                     events.forEach(({ event }) => this._storeEvent(event));
                     resolve();
                 }
             })
         })
-    }
-
-    this.getEvent = (eventKey) => {
-        return this._eventData[eventKey];
     }
 
     this._storeEvent = (polkaDotEvent) => {
