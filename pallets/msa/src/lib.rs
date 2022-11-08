@@ -1459,10 +1459,10 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// * `public_key_to_delete`: the account id to revoke as an access key for account_id's msa
 	///
 	/// # Errors
+	/// * [`ValidityError::InvalidSelfRemoval`] - if `signing_public_key` and `public_key_to_delete` are the same.
 	/// * [`ValidityError::InvalidMsaKey`] - if  `account_id` does not have an MSA or if
 	/// 'public_key_to_delete' does not have an MSA.
-	/// * [`ValidityError::NotKeyOwner`] - if the `signing_public_key` and `public_key_to_delete` do not
-	/// belong to the same MSA ID.
+	/// * [`ValidityError::NotKeyOwner`] - if the `signing_public_key` and `public_key_to_delete` do not belong to the same MSA ID.
 	pub fn validate_key_delete(
 		signing_public_key: &T::AccountId,
 		public_key_to_delete: &T::AccountId,
