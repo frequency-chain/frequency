@@ -386,7 +386,8 @@ impl<T: Config> Pallet<T> {
 			let bounded_vec: BoundedVec<_, _> = messages.try_into().unwrap_or_default();
 
 			if bounded_vec.is_empty() {
-				return T::DbWeight::get().reads(1)
+				log::warn!("empty bounded_vec for schema id {}", schema_id);
+				continue
 			}
 			Messages::<T>::insert(&block_number, schema_id, &bounded_vec);
 			Self::deposit_event(Event::MessagesStored { schema_id, block_number, count });
