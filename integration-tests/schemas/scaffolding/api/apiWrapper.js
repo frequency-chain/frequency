@@ -43,9 +43,8 @@ module.exports = function ApiWrapper(polkadotApi, signerAccountKeys) {
     this._sendTx = async (tx, keys) => {
         this._clearEventData();
 
-        let nonce = (await this._api.rpc.system.accountNextIndex(keys.address)).toNumber();
         return new Promise((resolve, _reject) => {
-            tx.signAndSend(keys, { nonce: nonce++ }, async ({status, events}) => {
+            tx.signAndSend(keys, { nonce: -1 }, async ({status, events}) => {
                 await this._handleTxResponse(status, events);
                 resolve();
             })
