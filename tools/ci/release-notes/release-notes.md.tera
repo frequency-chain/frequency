@@ -1,10 +1,13 @@
-{# This release contains the changes from `{{ env.REF1 | replace(from="refs/tags/", to="") }}`
-to `{{ env.REF2 | replace(from="refs/tags/", to="") }}`. #}
+This release contains the changes from `{{env.PREVIOUS_RELEASE_TAG}}` to `{{env.NEW_RELEASE_TAG}}`.
 
-## Rust compiler versions
+Full changelog: https://github.com/LibertyDSNP/frequency/compare/{{env.PREVIOUS_RELEASE_TAG}}...{{env.NEW_RELEASE_TAG}}
 
-This release was built and tested against the following versions of `rustc`.
-Other versions may work.
+## Versions
+- Rust Toolchain: `{{env.RUST_TOOLCHAIN}}`
 
-- Rust Stable: `{{ RUSTC_STABLE_VERSION }}`
-- Rust Nightly: `{{ RUSTC_NIGHTLY_VERSION }}`
+## PRs
+
+<ul>
+{# {{env.CHANGELOG | replace(from="\n", to="") | safe}} #}
+{{env.CHANGELOG | safe}}
+</ul>

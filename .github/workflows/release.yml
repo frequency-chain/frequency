@@ -8,19 +8,49 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+" # ex. v0.29.9
       - "v[0-9]+.[0-9]+.[0-9]+-[0-9]+" # ex. v0.29.9-1
       - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-1-rc1
-    branches:
-      - 282-create-release-notes
+    # branches:
+    #   - 282-create-release-notes
 env:
   RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
-  RELEASE_VERSION: ${{github.ref_name}}
-
+  NEW_RELEASE_VERSION: ${{github.ref_name}}
+  # PREVIOUS_RELEASE_TAG: latest
+  PREVIOUS_RELEASE_TAG: v0.9.29-rc1
+  NEW_RELEASE_TAG: ${{github.ref_name}}
 jobs:
+  # get-toolchain-versions:
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     rustc-stable: ${{ steps.get-rust-stable-version.outputs.stable }}
+  #     rustc-nightly: ${{ steps.get-rust-nightly-version.outputs.nightly }}
+  #   steps:
+  #     - name: Check Out Repo
+  #       uses: actions/checkout@v3
+  #     - name: Install from Toolchain File
+  #       run: rustup show # triggers install
+  #     # - name: Get Rust Nightly Version
+  #     #   id: get-rust-nightly-version
+  #     #   run: |
+  #     #     echo "nightly=$RUST_TOOLCHAIN" >> $GITHUB_OUTPUT
+  #     - name: Install Rust Toolchain
+  #       if: steps.cache-binary.outputs.cache-hit != 'true'
+  #       uses: actions-rs/toolchain@v1
+  #       with:
+  #         toolchain: stable
+  #         default: true
+  #         profile: minimal
+  #         target: wasm32-unknown-unknown
+  #     - name: Get Toolchain Versions
+  #       id: get-rust-stable-version
+  #       run: |
+  #         echo "nightly=$RUST_TOOLCHAIN" >> $GITHUB_OUTPUT
+  #         echo "stable=$(rustc +stable --version)" >> $GITHUB_OUTPUT
+
   build-binaries:
     name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
     strategy:
       matrix:
-        # os: [ubuntu-latest, macOS-latest]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macOS-latest]
+        # os: [ubuntu-latest]
         network: [local, rococo, mainnet]
         include:
           - network: local
@@ -34,8 +64,8 @@ jobs:
             build-profile: production
           - os: ubuntu-latest
             arch: amd64
-          # - os: macOS-latest
-          #   arch: arm64
+          - os: macOS-latest
+            arch: arm64
     runs-on: ${{matrix.os}}
     steps:
       - name: Set Env Vars
@@ -51,7 +81,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-          key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.RELEASE_VERSION}}
+          key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.NEW_RELEASE_VERSION}}
       - name: Cache Dependencies
         if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: Swatinem/rust-cache@v2
@@ -65,11 +95,6 @@ jobs:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
-      - name: Get Rust Versions
-        id: get-rust-versions
-        run: |
-          echo "RUSTC_STABLE_VERSION=$(rustc +stable --version)" >> $GITHUB_OUTPUT
-          echo "RUSTC_NIGHTLY_VERSION=$(rustc +nightly --version)" >> $GITHUB_OUTPUT
       - name: Compile for ${{matrix.network}}
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
@@ -99,6 +124,8 @@ jobs:
           gpg_private_key: ${{secrets.FREQUENCY_PGP_SECRET_SUBKEYS}}
           passphrase: ${{secrets.FREQUENCY_PGP_MASTER_KEY_PASSWORD}}
           fingerprint: B6327D1474C6392032870E8EFA4FD1E73A0FE707
+      - name: XXX Debug Print PGP keys
+        run: gpg -K --with-subkey-fingerprints
       - name: Sign Binary
         run: |
           cd ${{env.BIN_DIR}}
@@ -107,15 +134,15 @@ jobs:
         run: |
           cd ${{env.BIN_DIR}}
           gpg --verify ${{env.RELEASE_BIN_FILENAME}}.asc
-      # - name: Upload Artifacts
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: artifacts-${{github.run_id}}
-      #     path: |
-      #       ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
-      #       ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.sha256
-      #       ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.asc
-      #     if-no-files-found: error
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts-${{github.run_id}}
+          path: |
+            ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
+            ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.sha256
+            ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.asc
+          if-no-files-found: error
       - name: XXX Debug
         run: |
           ls -la target
@@ -160,14 +187,14 @@ jobs:
   #       run: |
   #         echo "WASM_DIR=${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}" >> $GITHUB_ENV
   #         echo "BUILT_WASM_FILENAME=${{matrix.built-wasm-file-name-prefix}}.compact.compressed.wasm" >> $GITHUB_ENV
-  #         echo "RELEASE_WASM_FILENAME=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.RELEASE_VERSION}}.compact.compressed.wasm" >> $GITHUB_ENV
+  #         echo "RELEASE_WASM_FILENAME=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.NEW_RELEASE_VERSION}}.compact.compressed.wasm" >> $GITHUB_ENV
   #     # # XXX Keep this step as it lets us skip WASM builds during development/testing
   #     # - name: Cache WASM for Testing
   #     #   id: cache-wasm
   #     #   uses: actions/cache@v3
   #     #   with:
   #     #     path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
-  #     #     key: ${{runner.os}}-${{matrix.network}}-${{env.RELEASE_VERSION}}
+  #     #     key: ${{runner.os}}-${{matrix.network}}-${{env.NEW_RELEASE_VERSION}}
   #     - name: Build Deterministic WASM with srtool
   #       if: steps.cache-wasm.outputs.cache-hit != 'true'
   #       run: |
@@ -277,26 +304,28 @@ jobs:
     steps:
       - name: Proceed Forward
         run: |
-          echo "RUSTC_STABLE_VERSION: ${{needs.build-binaries.get-rust-versions.outputs.RUSTC_STABLE_VERSION}}"
-          echo "RUSTC_NIGHTLY_VERSION: ${{needs.build-binaries.get-rust-versions.outputs.RUSTC_NIGHTLY_VERSION}}"
           echo "All build jobs have finished, proceeding with the release"
 
   release-artifacts:
-    needs: wait-for-all-builds
+    needs: [wait-for-all-builds]
     name: Release Built Artifacts
     runs-on: ubuntu-latest
     steps:
-      - name: "XXX [DEBUG ONLY!!!] Dumping contexts"
-        env:
-          GITHUB_CONTEXT: ${{toJson(github)}}
+      # - name: "XXX [DEBUG ONLY!!!] Dumping contexts"
+      #   env:
+      #     GITHUB_CONTEXT: ${{toJson(github)}}
+      #   run: |
+      #     echo "$GITHUB_CONTEXT"
+      - name: Download Binary Artifacts
+        id: download
+        uses: actions/download-artifact@v3
+        with:
+          name: artifacts-${{github.run_id}}
+          path: .
+      - name: XXX Check Rust versions
         run: |
-          echo "$GITHUB_CONTEXT"
-      # - name: Download Binary Artifacts
-      #   id: download
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     name: artifacts-${{github.run_id}}
-      #     path: .
+          echo "RUSTC_STABLE_VERSION: ${{needs.get-toolchain-versions.outputs.rustc-stable}}"
+          echo "RUSTC_NIGHTLY_VERSION: ${{needs.get-toolchain-versions.outputs.rustc-nightly}}"
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Cache Tooling
@@ -311,46 +340,88 @@ jobs:
           pwd
           ls -la
           ls -la /home/runner/.cargo/bin
-          echo "Checking if Tera is installed"
-          tera --version
           echo "Installing Tera..."
           cargo install --git https://github.com/chevdor/tera-cli || exit 0
           tera --version
           which tera
-      # - name: Build Changelog
-      #   id: build-changelog
-      #   uses: mikepenz/release-changelog-builder-action@v3
-      #   env:
-      #     GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-      #   with:
-      #     fromTag: "v0.9.29-rc1"
-      #     toTag: "v0.9.29-rc2"
-      # - name: XXX Debug Output
-      #   run: |
-      #     echo "Changelog: ${{steps.build-changelog.outputs.changelog}}"
-      - name: Update CHANGELOG
-        uses: stefanzweifel/changelog-updater-action@v1
-        with:
-          latest-version: "v0.9.29-rc2"
-          release-notes: "Test release notes"
-      - name: Commit updated CHANGELOG
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          branch: ${{ github.ref }}
-          commit_message: Update CHANGELOG
-          file_pattern: CHANGELOG.md
-      - name: Generate release notes
+      - name: Build Changelog
+        id: build-changelog
+        uses: mikepenz/release-changelog-builder-action@v3
         env:
-          RUSTC_STABLE_VERSION: ${{ needs.get-rust-versions.outputs.rustc-stable }}
-          RUSTC_NIGHTLY_VERSION: ${{ needs.get-rust-versions.outputs.rustc-nightly }}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          fromTag: ${{env.PREVIOUS_RELEASE_TAG}}
+          toTag: ${{env.NEW_RELEASE_TAG}}
+          configurationJson: |
+            {
+              "template": "#{{UNCATEGORIZED}}",
+              "pr_template": "- #{{TITLE}} ##{{NUMBER}}",
+              "empty_template": "- No changes",
+              "transformers": [
+                {
+                  "pattern": "- (.*)",
+                  "target": "<li>$1</li>"
+                }
+              ]
+            }
+      # ${change_log//[^a-zA-Z0-9$'\n']/}"
+      # clean="${clean//$'\n'/\\n}"
+      - name: Sanitize Changelog
+        id: sanitize-changelog
+        run: |
+          echo "original: ${{steps.build-changelog.outputs.changelog}}"
+          changelog='${{steps.build-changelog.outputs.changelog}}'
+          clean="${changelog//\`[\[\]]/}"
+          clean="${clean//$'\n'/}"
+          echo "clean: $clean"
+          echo "1---------------------"
+          echo "sanitized=$clean" >> $GITHUB_OUTPUT
+          echo "2---------------------"
+      # - name: Sanitize Changelog
+      #   uses: actions/github-script@v6
+      #   id: sanitize-changelog
+      #   with:
+      #     result-encoding: string
+      #     script: |
+      #       echo "1------------------------"
+      #       changelog='${{steps.build-changelog.outputs.changelog}}'
+      #       echo "changelog: $changelog"
+      #       echo "2------------------------"
+      #       clean="${changelog//\`/}"
+      #       echo "3------------------------"
+      #       return clean
+      # - name: XXX Print Generated Changelog
+      #   run: |
+      #     change_log=${{steps.build-changelog.outputs.changelog}}
+      #     echo "Changelog: ${change_log//[^a-zA-Z0-9]/}"
+      # - name: Update CHANGELOG.md
+      #   uses: stefanzweifel/changelog-updater-action@v1
+      #   with:
+      #     latest-version: ${{env.NEW_RELEASE_TAG}}
+      #     release-notes: ${{steps.build-changelog.outputs.changelog}}
+      # - name: XXX Print Changelog File
+      #   run: |
+      #     echo "--> Changelog File: --------------------"
+      #     cat CHANGELOG.md
+      # - name: Commit updated CHANGELOG
+      #   uses: stefanzweifel/git-auto-commit-action@v4
+      #   with:
+      #     branch: ${{ github.ref }}
+      #     commit_message: Update CHANGELOG
+      #     file_pattern: CHANGELOG.md
+      - name: Generate release notes
         run: |
           cd tools/ci/release-notes
-          ./build-release-notes.sh ${{github.ref}} > release-notes.md
-          cat release-notes.md
-      # - name: Create Release
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     files: frequency-*.*
+          ./build-release-notes.sh '${{steps.sanitize-changelog.outputs.sanitized}}' > release-notes.md
+      - name: XXX Print Release Notes File
+        run: |
+          echo "--> Release Notes File: --------------------"
+          cat tools/ci/release-notes/release-notes.md
+      - name: Publish Release on GitHub
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: tools/ci/release-notes/release-notes.md
+          files: frequency-*.*
       - name: Create latest tag
         uses: rickstaa/action-create-tag@v1
         with:
@@ -414,7 +485,7 @@ jobs:
   #         push: true
   #         file: ./docker/${{env.IMAGE_NAME}}.dockerfile
   #         tags: |
-  #           ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.RELEASE_VERSION}}
+  #           ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.NEW_RELEASE_VERSION}}
   #           ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:latest
   #     - name: Update DockerHub Description
   #       uses: peter-evans/dockerhub-description@v3
@@ -478,7 +549,7 @@ jobs:
   #         push: true
   #         file: ./docker/${{matrix.node}}.dockerfile
   #         tags: |
-  #           ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.RELEASE_VERSION}}
+  #           ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.NEW_RELEASE_VERSION}}
   #           ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:latest
   #     - name: Update DockerHub Description
   #       uses: peter-evans/dockerhub-description@v3
@@ -528,7 +599,7 @@ jobs:
   #         name: js-api-augment-${{github.run_id}}
   #         path: js/api-augment/dist
   #     - name: Version Package
-  #       run: npm version --new-version "${{env.RELEASE_VERSION}}" --no-git-tag-version
+  #       run: npm version --new-version "${{env.NEW_RELEASE_VERSION}}" --no-git-tag-version
   #       working-directory: js/api-augment/dist
   #     - name: Release on NPM @latest
   #       run: npm publish --tag latest --access public
