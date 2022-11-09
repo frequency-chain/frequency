@@ -1,11 +1,11 @@
-use crate::msa::MessageSourceId;
 #[cfg(feature = "std")]
 use crate::utils;
+use crate::{msa::MessageSourceId, node::BlockNumber};
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::traits::{AtLeast32BitUnsigned, One};
+use sp_runtime::traits::One;
 use sp_std::{prelude::*, vec};
 #[cfg(feature = "std")]
 use utils::*;
@@ -15,7 +15,7 @@ use utils::*;
 /// Avro, OnChain: { index, block_number, provider_msa_id, msa_id, payload }
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct MessageResponse<BlockNumber> {
+pub struct MessageResponse {
 	/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
 	/// indicating that the original source MSA is acting as its own provider. An id differing from that
 	/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
@@ -44,7 +44,7 @@ pub struct MessageResponse<BlockNumber> {
 /// A type for requesting paginated messages.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct BlockPaginationRequest<BlockNumber> {
+pub struct BlockPaginationRequest {
 	/// Starting block-number (inclusive).
 	pub from_block: BlockNumber,
 	/// Current page index starting from 0.
@@ -55,10 +55,7 @@ pub struct BlockPaginationRequest<BlockNumber> {
 	pub page_size: u32,
 }
 
-impl<BlockNumber> BlockPaginationRequest<BlockNumber>
-where
-	BlockNumber: Copy + AtLeast32BitUnsigned,
-{
+impl BlockPaginationRequest {
 	/// Hard limit on the number of items per page that can be returned
 	pub const MAX_PAGE_SIZE: u32 = 10000;
 	/// Hard limit on the block range for a request (~7 days at 12 sec per block)
@@ -71,14 +68,14 @@ where
 		self.page_size > 0 &&
 			self.page_size <= Self::MAX_PAGE_SIZE &&
 			self.from_block < self.to_block &&
-			self.to_block.sub(self.from_block) <= BlockNumber::from(Self::MAX_BLOCK_RANGE)
+			self.to_block - self.from_block <= Self::MAX_BLOCK_RANGE
 	}
 }
 
 /// A type for responding with a collection of paginated messages.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct BlockPaginationResponse<BlockNumber, T> {
+pub struct BlockPaginationResponse<T> {
 	/// Collection of messages for a given [`BlockPaginationRequest`].
 	pub content: Vec<T>,
 	/// Flag to indicate the end of paginated messages.
@@ -91,12 +88,9 @@ pub struct BlockPaginationResponse<BlockNumber, T> {
 	pub next_index: Option<u32>,
 }
 
-impl<BlockNumber, T> BlockPaginationResponse<BlockNumber, T>
-where
-	BlockNumber: AtLeast32BitUnsigned + Copy + One,
-{
+impl<T> BlockPaginationResponse<T> {
 	/// Generates a new empty Pagination request
-	pub const fn new() -> BlockPaginationResponse<BlockNumber, T> {
+	pub const fn new() -> BlockPaginationResponse<T> {
 		BlockPaginationResponse {
 			content: vec![],
 			has_next: false,
@@ -112,7 +106,7 @@ where
 		block_number: BlockNumber,
 		current_index: u32,
 		list_size: u32,
-		request: &BlockPaginationRequest<BlockNumber>,
+		request: &BlockPaginationRequest,
 	) -> bool {
 		if self.content.len() as u32 == request.page_size {
 			let mut next_block = block_number;
@@ -144,7 +138,7 @@ mod tests {
 	};
 
 	struct TestCase<T> {
-		input: BlockPaginationRequest<u32>,
+		input: BlockPaginationRequest,
 		expected: T,
 		message: String,
 	}
@@ -164,7 +158,7 @@ mod tests {
 		let serialized = serde_json::to_string(&msg).unwrap();
 		assert_eq!(serialized, "{\"provider_msa_id\":1,\"index\":1,\"block_number\":1,\"cid\":[0,1,2,3],\"payload_length\":42}");
 
-		let deserialized: MessageResponse<BlockNumber> = serde_json::from_str(&serialized).unwrap();
+		let deserialized: MessageResponse = serde_json::from_str(&serialized).unwrap();
 		assert_eq!(deserialized, msg);
 	}
 
@@ -184,7 +178,7 @@ mod tests {
 		let serialized_msg_without_payload =
 			"{\"provider_msa_id\":1,\"index\":1,\"block_number\":1,\"msa_id\":1}";
 
-		let deserialized_result: MessageResponse<BlockNumber> =
+		let deserialized_result: MessageResponse =
 			serde_json::from_str(&serialized_msg_without_payload).unwrap();
 		assert_eq!(deserialized_result, expected_msg);
 	}
@@ -226,7 +220,7 @@ mod tests {
 
 	#[test]
 	fn check_end_condition_does_not_mutate_when_at_the_end() {
-		let mut resp = BlockPaginationResponse::<BlockNumber, u32> {
+		let mut resp = BlockPaginationResponse::<u32> {
 			content: vec![1, 2, 3],
 			has_next: false,
 			next_block: None,
@@ -235,7 +229,7 @@ mod tests {
 
 		let total_data_length: u32 = resp.content.len() as u32;
 
-		let request = BlockPaginationRequest::<BlockNumber> {
+		let request = BlockPaginationRequest {
 			from_block: 1 as BlockNumber,
 			from_index: 0,
 			to_block: 5,
@@ -265,7 +259,7 @@ mod tests {
 
 	#[test]
 	fn check_end_condition_mutates_when_more_in_list_than_page() {
-		let mut resp = BlockPaginationResponse::<BlockNumber, u32> {
+		let mut resp = BlockPaginationResponse::<u32> {
 			content: vec![1, 2, 3],
 			has_next: false,
 			next_block: None,
@@ -274,7 +268,7 @@ mod tests {
 
 		let total_data_length: u32 = resp.content.len() as u32;
 
-		let request = BlockPaginationRequest::<BlockNumber> {
+		let request = BlockPaginationRequest {
 			from_block: 1 as BlockNumber,
 			from_index: 0,
 			to_block: 5,
@@ -302,7 +296,7 @@ mod tests {
 
 	#[test]
 	fn check_end_condition_mutates_when_more_than_page_but_none_left_in_block() {
-		let mut resp = BlockPaginationResponse::<BlockNumber, u32> {
+		let mut resp = BlockPaginationResponse::<u32> {
 			content: vec![1, 2, 3],
 			has_next: false,
 			next_block: None,
@@ -311,7 +305,7 @@ mod tests {
 
 		let total_data_length: u32 = resp.content.len() as u32;
 
-		let request = BlockPaginationRequest::<BlockNumber> {
+		let request = BlockPaginationRequest {
 			from_block: 1 as BlockNumber,
 			from_index: 0,
 			to_block: 5,

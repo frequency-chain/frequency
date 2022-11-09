@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use common_primitives::node::{AccountId, Balance, Block, BlockNumber, Hash, Index as Nonce};
+use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
 
 use sc_client_api::AuxStore;
 use sc_consensus_manual_seal::rpc::{EngineCommand, ManualSeal, ManualSealApiServer};
@@ -47,7 +47,7 @@ where
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	C::Api: BlockBuilder<Block>,
-	C::Api: pallet_messages_runtime_api::MessagesRuntimeApi<Block, BlockNumber>,
+	C::Api: pallet_messages_runtime_api::MessagesRuntimeApi<Block>,
 	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block>,
 	C::Api: pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId>,
 	P: TransactionPool + Sync + Send + 'static,

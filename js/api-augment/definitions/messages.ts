@@ -58,7 +58,7 @@ export default {
                 type: "BlockNumber",
               },
             ],
-            type: "Vec<MessageResponse<BlockNumber>>",
+            type: "Vec<MessageResponse>",
           },
           get_schema_by_id: {
             description: "Retrieve a schema by id",

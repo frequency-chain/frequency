@@ -789,9 +789,9 @@ impl_runtime_apis! {
 	}
 
 	// Unfinished runtime APIs
-	impl pallet_messages_runtime_api::MessagesRuntimeApi<Block, BlockNumber> for Runtime {
+	impl pallet_messages_runtime_api::MessagesRuntimeApi<Block> for Runtime {
 		fn get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber) ->
-			Vec<MessageResponse<BlockNumber>> {
+			Vec<MessageResponse> {
 			Messages::get_messages_by_schema_and_block(schema_id, schema_payload_location, block_number)
 		}
 
