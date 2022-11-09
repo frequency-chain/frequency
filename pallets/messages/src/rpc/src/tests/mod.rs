@@ -60,8 +60,7 @@ sp_api::mock_impl_runtime_apis! {
 
 type GetMessagesBySchemaResult = Result<
 	common_primitives::messages::BlockPaginationResponse<
-		u32,
-		common_primitives::messages::MessageResponse<u32>,
+		common_primitives::messages::MessageResponse,
 	>,
 	jsonrpsee::core::Error,
 >;

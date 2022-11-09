@@ -138,7 +138,7 @@ mod tests {
 	};
 
 	struct TestCase<T> {
-		input: BlockPaginationRequest<u32>,
+		input: BlockPaginationRequest,
 		expected: T,
 		message: String,
 	}
@@ -220,7 +220,7 @@ mod tests {
 
 	#[test]
 	fn check_end_condition_does_not_mutate_when_at_the_end() {
-		let mut resp = BlockPaginationResponse::<BlockNumber, u32> {
+		let mut resp = BlockPaginationResponse::<u32> {
 			content: vec![1, 2, 3],
 			has_next: false,
 			next_block: None,
@@ -229,7 +229,7 @@ mod tests {
 
 		let total_data_length: u32 = resp.content.len() as u32;
 
-		let request = BlockPaginationRequest::<BlockNumber> {
+		let request = BlockPaginationRequest {
 			from_block: 1 as BlockNumber,
 			from_index: 0,
 			to_block: 5,
@@ -259,7 +259,7 @@ mod tests {
 
 	#[test]
 	fn check_end_condition_mutates_when_more_in_list_than_page() {
-		let mut resp = BlockPaginationResponse::<BlockNumber, u32> {
+		let mut resp = BlockPaginationResponse::<u32> {
 			content: vec![1, 2, 3],
 			has_next: false,
 			next_block: None,
@@ -268,7 +268,7 @@ mod tests {
 
 		let total_data_length: u32 = resp.content.len() as u32;
 
-		let request = BlockPaginationRequest::<BlockNumber> {
+		let request = BlockPaginationRequest {
 			from_block: 1 as BlockNumber,
 			from_index: 0,
 			to_block: 5,
@@ -296,7 +296,7 @@ mod tests {
 
 	#[test]
 	fn check_end_condition_mutates_when_more_than_page_but_none_left_in_block() {
-		let mut resp = BlockPaginationResponse::<BlockNumber, u32> {
+		let mut resp = BlockPaginationResponse::<u32> {
 			content: vec![1, 2, 3],
 			has_next: false,
 			next_block: None,
@@ -305,7 +305,7 @@ mod tests {
 
 		let total_data_length: u32 = resp.content.len() as u32;
 
-		let request = BlockPaginationRequest::<BlockNumber> {
+		let request = BlockPaginationRequest {
 			from_block: 1 as BlockNumber,
 			from_index: 0,
 			to_block: 5,
