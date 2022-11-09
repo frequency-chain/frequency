@@ -639,6 +639,10 @@ impl pallet_messages::Config for Runtime {
 	type SchemaProvider = Schemas;
 	type MaxMessagesPerBlock = MessagesMaxPerBlock;
 	type MaxMessagePayloadSizeBytes = MessagesMaxPayloadSizeBytes;
+
+	/// A set of helper functions for benchmarking.
+	#[cfg(feature = "runtime-benchmarks")]
+	type Helper = Msa;
 }
 
 impl pallet_sudo::Config for Runtime {
