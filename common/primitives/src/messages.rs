@@ -8,8 +8,6 @@ use serde::{Deserialize, Serialize};
 use sp_runtime::traits::One;
 use sp_std::{prelude::*, vec};
 #[cfg(feature = "std")]
-use std::ops::Sub;
-#[cfg(feature = "std")]
 use utils::*;
 
 /// A type for responding with an single Message in an RPC-call dependent on schema model
@@ -70,7 +68,7 @@ impl BlockPaginationRequest {
 		self.page_size > 0 &&
 			self.page_size <= Self::MAX_PAGE_SIZE &&
 			self.from_block < self.to_block &&
-			self.to_block.sub(self.from_block) <= BlockNumber::from(Self::MAX_BLOCK_RANGE)
+			self.to_block - self.from_block <= Self::MAX_BLOCK_RANGE
 	}
 }
 
