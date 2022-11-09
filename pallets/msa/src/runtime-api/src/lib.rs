@@ -31,7 +31,7 @@ sp_api::decl_runtime_apis! {
 		// fn get_msa_keys(msa_id: MessageSourceId) ->	Vec<KeyInfoResponse<AccountId>>;
 
 		/// Check to see if a delegation existed between the given delegator and provider at a given block
-		fn has_delegation(delegator: Delegator, provider: Provider, block_number: BlockNumber, schema_id: Option<SchemaId>) -> bool;
+		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<SchemaId>) -> bool;
 
 		/// Get the list of schema ids (if any) that exist in any delegation between the delegator and provider
 		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaId>>;
