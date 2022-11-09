@@ -35,7 +35,7 @@ fn test_messages() -> Vec<MessageResponse> {
 }
 
 sp_api::mock_impl_runtime_apis! {
-	impl MessagesRuntimeApi<Block, BlockNumber> for TestRuntimeApi {
+	impl MessagesRuntimeApi<Block> for TestRuntimeApi {
 		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			match schema_id {
 				SCHEMA_ID_EMPTY | SCHEMA_ID_HAS_MESSAGES => Some(SchemaResponse {
