@@ -83,7 +83,7 @@ fn create_msa_account_and_keys<T: Config>() -> (T::AccountId, SignerId, MessageS
 	(account_id, key_pair, msa_id)
 }
 
-fn add_delegation<T: Config>(delegator: Delegator, provider: Provider) {
+fn add_delegation<T: Config>(delegator: DelegatorId, provider: ProviderId) {
 	let schema_ids: Vec<SchemaId> = (1..31 as u16).collect::<Vec<_>>();
 	T::SchemaValidator::set_schema_count(schema_ids.len().try_into().unwrap());
 	assert_ok!(Msa::<T>::add_provider(provider, delegator, schema_ids));
@@ -126,11 +126,11 @@ benchmarks! {
 
 		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
 		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
-		add_delegation::<T>(Delegator(delegator_msa_id), Provider(provider_msa_id.clone()));
+		add_delegation::<T>(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id.clone()));
 
 		for j in 2 .. s {
 			let (other, other_msa_id) = create_account_with_msa_id::<T>(j);
-			add_delegation::<T>(Delegator(other_msa_id), Provider(provider_msa_id.clone()));
+			add_delegation::<T>(DelegatorId(other_msa_id), ProviderId(provider_msa_id.clone()));
 		}
 	}: _ (RawOrigin::Signed(provider), delegator_msa_id)
 
@@ -183,7 +183,7 @@ benchmarks! {
 	revoke_delegation_by_delegator {
 		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
 		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
-		add_delegation::<T>(Delegator(delegator_msa_id), Provider(provider_msa_id.clone()));
+		add_delegation::<T>(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id.clone()));
 
 
 	}: _ (RawOrigin::Signed(delegator), provider_msa_id)
@@ -209,11 +209,11 @@ benchmarks! {
 
 		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
 		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
-		add_delegation::<T>(Delegator(delegator_msa_id), Provider(provider_msa_id.clone()));
+		add_delegation::<T>(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id.clone()));
 
 		for j in 2 .. s {
 			let (other, other_msa_id) = create_account_with_msa_id::<T>(j);
-			add_delegation::<T>(Delegator(other_msa_id), Provider(provider_msa_id.clone()));
+			add_delegation::<T>(DelegatorId(other_msa_id), ProviderId(provider_msa_id.clone()));
 		}
 
 		let schema_ids: Vec<SchemaId> = (1..31 as u16).collect::<Vec<_>>();
@@ -226,11 +226,11 @@ benchmarks! {
 
 		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
 		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
-		add_delegation::<T>(Delegator(delegator_msa_id), Provider(provider_msa_id.clone()));
+		add_delegation::<T>(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id.clone()));
 
 		for j in 2 .. s {
 			let (other, other_msa_id) = create_account_with_msa_id::<T>(j);
-			add_delegation::<T>(Delegator(other_msa_id), Provider(provider_msa_id.clone()));
+			add_delegation::<T>(DelegatorId(other_msa_id), ProviderId(provider_msa_id.clone()));
 		}
 
 		let schema_ids: Vec<SchemaId> = (1..31 as u16).collect::<Vec<_>>();

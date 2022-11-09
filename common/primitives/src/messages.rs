@@ -1,10 +1,11 @@
-use crate::msa::MessageSourceId;
 #[cfg(feature = "std")]
 use crate::utils;
+use crate::{msa::MessageSourceId, node::BlockNumber};
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_runtime::traits::One;
 use sp_std::{prelude::*, vec};
 use std::ops::Sub;
 #[cfg(feature = "std")]
@@ -75,7 +76,7 @@ impl BlockPaginationRequest {
 		self.page_size > 0 &&
 			self.page_size <= Self::MAX_PAGE_SIZE &&
 			self.from_block < self.to_block &&
-			self.to_block.sub(self.from_block) <= Self::MAX_BLOCK_RANGE
+			self.to_block - self.from_block <= Self::MAX_BLOCK_RANGE
 	}
 }
 
@@ -219,7 +220,7 @@ mod tests {
 	};
 
 	struct TestCase<T> {
-		input: BlockPaginationRequest<u32>,
+		input: BlockPaginationRequest,
 		expected: T,
 		message: String,
 	}
@@ -239,7 +240,7 @@ mod tests {
 		let serialized = serde_json::to_string(&msg).unwrap();
 		assert_eq!(serialized, "{\"provider_msa_id\":1,\"index\":1,\"block_number\":1,\"cid\":[0,1,2,3],\"payload_length\":42}");
 
-		let deserialized: MessageResponse<BlockNumber> = serde_json::from_str(&serialized).unwrap();
+		let deserialized: MessageResponse = serde_json::from_str(&serialized).unwrap();
 		assert_eq!(deserialized, msg);
 	}
 
@@ -259,7 +260,7 @@ mod tests {
 		let serialized_msg_without_payload =
 			"{\"provider_msa_id\":1,\"index\":1,\"block_number\":1,\"msa_id\":1}";
 
-		let deserialized_result: MessageResponse<BlockNumber> =
+		let deserialized_result: MessageResponse =
 			serde_json::from_str(&serialized_msg_without_payload).unwrap();
 		assert_eq!(deserialized_result, expected_msg);
 	}
@@ -301,7 +302,7 @@ mod tests {
 
 	#[test]
 	fn check_end_condition_does_not_mutate_when_at_the_end() {
-		let mut resp = BlockPaginationResponse::<BlockNumber, u32> {
+		let mut resp = BlockPaginationResponse::<u32> {
 			content: vec![1, 2, 3],
 			has_next: false,
 			next_block: None,
@@ -310,7 +311,7 @@ mod tests {
 
 		let total_data_length: u32 = resp.content.len() as u32;
 
-		let request = BlockPaginationRequest::<BlockNumber> {
+		let request = BlockPaginationRequest {
 			from_block: 1 as BlockNumber,
 			from_index: 0,
 			to_block: 5,
@@ -340,7 +341,7 @@ mod tests {
 
 	#[test]
 	fn check_end_condition_mutates_when_more_in_list_than_page() {
-		let mut resp = BlockPaginationResponse::<BlockNumber, u32> {
+		let mut resp = BlockPaginationResponse::<u32> {
 			content: vec![1, 2, 3],
 			has_next: false,
 			next_block: None,
@@ -349,7 +350,7 @@ mod tests {
 
 		let total_data_length: u32 = resp.content.len() as u32;
 
-		let request = BlockPaginationRequest::<BlockNumber> {
+		let request = BlockPaginationRequest {
 			from_block: 1 as BlockNumber,
 			from_index: 0,
 			to_block: 5,
@@ -377,7 +378,7 @@ mod tests {
 
 	#[test]
 	fn check_end_condition_mutates_when_more_than_page_but_none_left_in_block() {
-		let mut resp = BlockPaginationResponse::<BlockNumber, u32> {
+		let mut resp = BlockPaginationResponse::<u32> {
 			content: vec![1, 2, 3],
 			has_next: false,
 			next_block: None,
@@ -386,7 +387,7 @@ mod tests {
 
 		let total_data_length: u32 = resp.content.len() as u32;
 
-		let request = BlockPaginationRequest::<BlockNumber> {
+		let request = BlockPaginationRequest {
 			from_block: 1 as BlockNumber,
 			from_index: 0,
 			to_block: 5,

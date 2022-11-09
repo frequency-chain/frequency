@@ -7,7 +7,7 @@ use codec::{Decode, Encode};
 use core::fmt::Debug;
 
 pub use common_primitives::msa::{
-	Delegation, Delegator, KeyInfoResponse, MessageSourceId, Provider,
+	Delegation, DelegatorId, KeyInfoResponse, MessageSourceId, ProviderId,
 };
 use common_primitives::{node::BlockNumber, schema::SchemaId};
 

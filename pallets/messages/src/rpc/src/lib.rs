@@ -8,7 +8,6 @@
 
 //! Custom APIs for [Messages](../pallet_messages/index.html)
 
-use codec::Codec;
 #[cfg(feature = "std")]
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{messages::*, schema::*};
@@ -21,17 +20,14 @@ use pallet_messages_runtime_api::MessagesRuntimeApi;
 use poem_openapi::OpenApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{AtLeast32BitUnsigned, Block as BlockT},
-};
+use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 #[cfg(test)]
 mod tests;
 
 /// Frequency Messages Custom RPC API
 #[rpc(client, server)]
-pub trait MessagesApi<BlockNumber> {
+pub trait MessagesApi {
 	/// Retrieve paginated messages by schema id
 	#[method(name = "messages_getBySchemaId")]
 	async fn get_messages_by_schema_id(
@@ -76,14 +72,11 @@ impl From<MessageRpcError> for RpcError {
 
 #[OpenApi]
 #[async_trait]
-impl<C, Block, BlockNumber> MessagesApiServer<BlockNumber>
-	for MessagesHandler<C, Block, BlockNumber>
+impl<C, Block> MessagesApiServer for MessagesHandler<C, Block>
 where
 	Block: BlockT,
 	C: ProvideRuntimeApi<Block> + HeaderBackend<Block> + 'static,
-	C::Api: MessagesRuntimeApi<Block, BlockNumber>,
-	BlockNumber:
-		Codec + Copy + AtLeast32BitUnsigned + std::marker::Send + std::marker::Sync + 'static,
+	C::Api: MessagesRuntimeApi<Block>,
 {
 	#[oai(path = "/messages/getBySchemaId", method = "get")]
 	async fn get_messages_by_schema_id(
@@ -105,18 +98,11 @@ where
 		};
 
 		let mut response = BlockPaginationResponse::new();
-		let from: u32 = pagination
-			.from_block
-			.try_into()
-			.map_err(|_| MessageRpcError::TypeConversionOverflow)?;
-		let to: u32 = pagination
-			.to_block
-			.try_into()
-			.map_err(|_| MessageRpcError::TypeConversionOverflow)?;
+		let from: u32 = pagination.from_block;
+		let to: u32 = pagination.to_block;
 		let mut from_index = pagination.from_index;
 
-		'loops: for bid in from..to {
-			let block_number: BlockNumber = bid.into();
+		'loops: for block_number in from..to {
 			let list: Vec<MessageResponse> = api
 				.get_messages_by_schema_and_block(
 					&at,

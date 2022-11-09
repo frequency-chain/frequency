@@ -117,21 +117,21 @@ Returns `Ok(true)` if provider is valid, `Ok(false)` if not.
 Throws an Error enum indicating if either provider or delegator does not exist.
 
 * Parameters:
-    1. `delegator_msa_ids`: a list of MSA ids possible delegators
-    2. `provider_msa_id`: the MSA id of the provider to verify
+    1. `delegator_msa_ids`: a list of Delegator ids possible delegators
+    2. `provider_msa_id`: the ProviderId to verify
 
 ### Storage
 * Delegations are stored as a Double-key map of Delegator MSA id --> Provider MSA id. The data stored contains the `Permission` for that relationship:
 ```rust
-pub(super) type DelegatorAndProviderToDelegation<T: Config> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		Delegator,
-		Blake2_128Concat,
-		Provider,
-		Delegation<T::BlockNumber>,
-		OptionQuery,
-	>;
+    pub(super) type DelegatorAndProviderToDelegation<T: Config> = StorageDoubleMap<
+        _,
+        Twox64Concat,
+        Delegator,
+        Twox64Concat,
+        Provider,
+        Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
+        OptionQuery,
+    >;
 ```
 
 ## Benefits and Risks
@@ -173,8 +173,8 @@ Including an effective block range in the provider storage data would allow prov
 Directly adding a provider, with or without a provider's permission, is not to be implemented at this time. The original use case was for a potential wallet app to support browsing and adding providers. Adding/replacing a provider for an existing account with an MSA id could still be done using the delegated methods, `add_self_as_delegate` or `replace_delegate_with_self`.  A direct add brought up concerns about potential risks of adding a provider without the provider's knowledge. For example, if the provider has removed the delegator for legitimate reasons, such as if the End User violated the provider's Terms of Service, then the provider ought to be able to prevent them from adding the provider again just by paying for it.
 
 ## Glossary
-* **Provider**: An MSA id that has been granted specific permissions by its Delegator. A company or individual operating an on-chain Provider MSA in order to post Frequency transactions on behalf of other MSAs.
-* **Delegator**: An MSA id that has granted specific permissions to a Provider.
+* **Provider**: An MSA that has been granted specific permissions by its Delegator. A company or individual operating an on-chain Provider MSA in order to post Frequency transactions on behalf of other MSAs.
+* **Delegator**: An MSA that has granted specific permissions to a Provider.
 * **MSA**: Message Source Account. A collection of key pairs which can have a specific token balance.
 * **Public Key**: A 32-byte (u256) number that is used to refer to an on-chain MSA and verify signatures. It is one of the keys of an MSA key pair
 * **MsaId**: An 8-byte (u64) number used as a lookup and storage key for delegations, among other things

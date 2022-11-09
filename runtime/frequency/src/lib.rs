@@ -635,7 +635,6 @@ impl pallet_messages::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_messages::weights::SubstrateWeight<Runtime>;
 	type MsaInfoProvider = Msa;
-	type DelegationInfoProvider = Msa;
 	type SchemaGrantValidator = Msa;
 	type SchemaProvider = Schemas;
 	type MaxMessagesPerBlock = MessagesMaxPerBlock;
@@ -838,9 +837,9 @@ impl_runtime_apis! {
 	}
 
 	// Unfinished runtime APIs
-	impl pallet_messages_runtime_api::MessagesRuntimeApi<Block, BlockNumber> for Runtime {
+	impl pallet_messages_runtime_api::MessagesRuntimeApi<Block> for Runtime {
 		fn get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber,) ->
-			Vec<MessageResponse<BlockNumber>> {
+			Vec<MessageResponse> {
 			Messages::get_messages_by_schema_and_block(schema_id, schema_payload_location, block_number)
 		}
 
@@ -861,14 +860,14 @@ impl_runtime_apis! {
 		// 	Ok(Msa::fetch_msa_keys(msa_id))
 		// }
 
-		fn has_delegation(delegator: Delegator, provider: Provider, block_number: Option<BlockNumber>) -> bool {
+		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: Option<BlockNumber>) -> bool {
 			match Msa::ensure_valid_delegation(provider, delegator, block_number) {
 				Ok(_) => true,
 				Err(_) => false,
 			}
 		}
 
-		fn get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -> Option<Vec<SchemaId>> {
+		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaId>> {
 			match Msa::get_granted_schemas_by_msa_id(delegator, provider) {
 				Ok(x) => x,
 				Err(_) => None,

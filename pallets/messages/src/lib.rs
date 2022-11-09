@@ -59,8 +59,7 @@ use codec::Encode;
 use common_primitives::{
 	messages::*,
 	msa::{
-		DelegationValidator, Delegator, MessageSourceId, MsaLookup, MsaValidator, Provider,
-		ProviderLookup, SchemaGrantValidator,
+		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
 	},
 	schema::*,
 };
@@ -87,9 +86,6 @@ pub mod pallet {
 
 		/// A type that will supply MSA related information
 		type MsaInfoProvider: MsaLookup + MsaValidator<AccountId = Self::AccountId>;
-
-		/// A type that will supply delegation related information
-		type DelegationInfoProvider: ProviderLookup + DelegationValidator;
 
 		/// A type that will validate schema grants
 		type SchemaGrantValidator: SchemaGrantValidator;
@@ -141,16 +137,22 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Too many messages are added to existing block
 		TooManyMessagesInBlock,
+
 		/// Message payload size is too large
 		ExceedsMaxMessagePayloadSizeBytes,
+
 		/// Type Conversion Overflow
 		TypeConversionOverflow,
+
 		/// Invalid Message Source Account
 		InvalidMessageSourceAccount,
+
 		/// Invalid SchemaId or Schema not found
 		InvalidSchemaId,
+
 		/// UnAuthorizedDelegate
 		UnAuthorizedDelegate,
+
 		/// Invalid payload location
 		InvalidPayloadLocation,
 	}
@@ -257,19 +259,21 @@ pub mod pallet {
 			);
 
 			let provider_msa_id = Self::find_msa_id(&provider_key)?;
+			let provider_id = ProviderId(provider_msa_id);
 
 			// On-chain messages either are sent from the user themselves, or on behalf of another MSA Id
 			let maybe_delegator = match on_behalf_of {
-				Some(delegator) => {
+				Some(delegator_msa_id) => {
+					let delegator_id = DelegatorId(delegator_msa_id);
 					T::SchemaGrantValidator::ensure_valid_schema_grant(
-						Provider(provider_msa_id),
-						Delegator(delegator),
+						provider_id,
+						delegator_id,
 						schema_id,
 					)
 					.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
-					Delegator(delegator)
+					delegator_id
 				},
-				None => Delegator(provider_msa_id), // Delegate is also the Provider
+				None => DelegatorId(provider_msa_id), // Delegate is also the Provider
 			};
 
 			let message = Self::add_message(
@@ -346,11 +350,12 @@ impl<T: Config> Pallet<T> {
 		schema_payload_location: PayloadLocation,
 		block_number: T::BlockNumber,
 	) -> Vec<MessageResponse> {
-		let given_block = block_number.saturated_into::<u32>();
+		let block_number_value: u32 = block_number.try_into().unwrap_or_default();
+
 		<Messages<T>>::get(block_number, schema_id)
 			.into_inner()
 			.iter()
-			.map(|msg| msg.map_to_response(given_block, schema_payload_location))
+			.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
 			.collect()
 	}
 
@@ -386,7 +391,8 @@ impl<T: Config> Pallet<T> {
 			let bounded_vec: BoundedVec<_, _> = messages.try_into().unwrap_or_default();
 
 			if bounded_vec.is_empty() {
-				return T::DbWeight::get().reads(1)
+				log::warn!("empty bounded_vec for schema id {}", schema_id);
+				continue
 			}
 			Messages::<T>::insert(&block_number, schema_id, &bounded_vec);
 			Self::deposit_event(Event::MessagesStored { schema_id, block_number, count });

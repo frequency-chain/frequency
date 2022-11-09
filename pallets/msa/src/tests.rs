@@ -16,7 +16,7 @@ use crate::{
 };
 
 use common_primitives::{
-	msa::{Delegation, Delegator, MessageSourceId, Provider, ProviderRegistryEntry},
+	msa::{Delegation, DelegatorId, MessageSourceId, ProviderId, ProviderRegistryEntry},
 	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
 	utils::wrap_binary_data,
@@ -633,8 +633,8 @@ pub fn add_provider_to_msa_is_success() {
 			add_provider_payload
 		));
 
-		let provider = Provider(provider_msa);
-		let delegator = Delegator(delegator_msa);
+		let provider = ProviderId(provider_msa);
+		let delegator = DelegatorId(delegator_msa);
 
 		assert_eq!(
 			Msa::get_delegation(delegator, provider),
@@ -643,8 +643,8 @@ pub fn add_provider_to_msa_is_success() {
 
 		System::assert_last_event(
 			Event::DelegationGranted {
-				delegator: delegator_msa.into(),
-				provider: provider_msa.into(),
+				delegator_id: delegator_msa.into(),
+				provider_id: provider_msa.into(),
 			}
 			.into(),
 		);
@@ -829,7 +829,7 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		let delegator_msa =
 			Msa::get_msa_by_public_key(&AccountId32::new(delegator_account.0)).unwrap();
 
-		let provider_info = Msa::get_delegation(Delegator(2), Provider(1));
+		let provider_info = Msa::get_delegation(DelegatorId(2), ProviderId(1));
 		assert_eq!(provider_info.is_some(), true);
 
 		let events_occured = System::events();
@@ -842,8 +842,8 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		assert_eq!(
 			provider_event.event,
 			Event::DelegationGranted {
-				provider: provider_msa.into(),
-				delegator: delegator_msa.into()
+				provider_id: provider_msa.into(),
+				delegator_id: delegator_msa.into()
 			}
 			.into()
 		);
@@ -1063,7 +1063,7 @@ pub fn revoke_delegation_by_delegator_is_successful() {
 		));
 
 		System::assert_last_event(
-			Event::DelegationRevoked { delegator: 1.into(), provider: 2.into() }.into(),
+			Event::DelegationRevoked { delegator_id: 1.into(), provider_id: 2.into() }.into(),
 		);
 	});
 }
@@ -1099,8 +1099,8 @@ pub fn revoke_provider_is_successful() {
 		let delegator_msa =
 			Msa::ensure_valid_msa_key(&AccountId32::new(delegator_account.0)).unwrap();
 
-		let provider = Provider(provider_msa);
-		let delegator = Delegator(delegator_msa);
+		let provider = ProviderId(provider_msa);
+		let delegator = DelegatorId(delegator_msa);
 
 		assert_ok!(Msa::revoke_provider(provider, delegator));
 
@@ -1250,7 +1250,7 @@ pub fn revoke_delegation_by_provider_happy_path() {
 		assert_ok!(Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2u64));
 
 		// 6. verify that the provider is revoked
-		let provider_info = Msa::get_delegation(Delegator(2), Provider(1));
+		let provider_info = Msa::get_delegation(DelegatorId(2), ProviderId(1));
 		assert_eq!(
 			provider_info,
 			Some(Delegation { revoked_at: 26, schema_permissions: Default::default() })
@@ -1258,7 +1258,8 @@ pub fn revoke_delegation_by_provider_happy_path() {
 
 		// 7. verify the event
 		System::assert_last_event(
-			Event::DelegationRevoked { provider: Provider(1), delegator: Delegator(2) }.into(),
+			Event::DelegationRevoked { provider_id: ProviderId(1), delegator_id: DelegatorId(2) }
+				.into(),
 		);
 	})
 }
@@ -1294,8 +1295,8 @@ pub fn revoke_delegation_by_provider_does_nothing_when_no_msa() {
 #[test]
 pub fn valid_delegation() {
 	new_test_ext().execute_with(|| {
-		let provider = Provider(1);
-		let delegator = Delegator(2);
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
 
 		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
 
@@ -1308,8 +1309,8 @@ pub fn valid_delegation() {
 #[test]
 pub fn delegation_not_found() {
 	new_test_ext().execute_with(|| {
-		let provider = Provider(1);
-		let delegator = Delegator(2);
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
 
 		assert_noop!(
 			Msa::ensure_valid_delegation(provider, delegator, None),
@@ -1321,8 +1322,8 @@ pub fn delegation_not_found() {
 #[test]
 pub fn delegation_expired() {
 	new_test_ext().execute_with(|| {
-		let provider = Provider(1);
-		let delegator = Delegator(2);
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
 
 		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
 
@@ -1451,7 +1452,7 @@ fn signed_extension_revoke_delegation_by_provider_fails_when_no_provider_msa() {
 		let (provider_pair, _) = sr25519::Pair::generate();
 		let provider_account = provider_pair.public();
 
-		let (delegator_msa, delegator_pair) = create_account();
+		let (delegator_msa, _) = create_account();
 
 		let expected_err = InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8);
 		assert_revoke_delegation_by_provider_err(expected_err, provider_account, delegator_msa);
@@ -1463,8 +1464,7 @@ fn signed_extension_revoke_delegation_by_provider_fails_when_no_delegation() {
 	new_test_ext().execute_with(|| {
 		let (_, provider_pair) = create_account();
 		let provider_account = provider_pair.public();
-		let (delegator_msa, delegator_pair) = create_account();
-		let delegator_account = delegator_pair.public();
+		let (delegator_msa, _) = create_account();
 
 		let expected_err = InvalidTransaction::Custom(ValidityError::InvalidDelegation as u8);
 		assert_revoke_delegation_by_provider_err(expected_err, provider_account, delegator_msa);
@@ -1718,8 +1718,8 @@ pub fn valid_schema_grant() {
 	new_test_ext().execute_with(|| {
 		set_schema_count::<Test>(2);
 
-		let provider = Provider(1);
-		let delegator = Delegator(2);
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
 		let schema_grants = vec![1, 2];
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
 
@@ -1738,8 +1738,8 @@ pub fn error_invalid_schema_id_table() {
 	new_test_ext().execute_with(|| {
 		set_schema_count::<Test>(12);
 
-		let provider = Provider(1);
-		let delegator = Delegator(2);
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
 		let test_cases: [TestCase<Error<Test>>; 3] = [
 			TestCase { schema: vec![15, 16], expected: Error::<Test>::InvalidSchemaId },
 			TestCase { schema: vec![16, 17], expected: Error::<Test>::InvalidSchemaId },
@@ -1756,8 +1756,8 @@ pub fn error_exceeding_max_schema_under_minimum_schema_grants() {
 	new_test_ext().execute_with(|| {
 		set_schema_count::<Test>(16);
 
-		let provider = Provider(1);
-		let delegator = Delegator(2);
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
 		assert_noop!(
 			Msa::add_provider(provider, delegator, (1..32 as u16).collect::<Vec<_>>()),
 			Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation
@@ -1770,8 +1770,8 @@ pub fn error_schema_not_granted() {
 	new_test_ext().execute_with(|| {
 		set_schema_count::<Test>(2);
 
-		let provider = Provider(1);
-		let delegator = Delegator(2);
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
 		let schema_grants = vec![1, 2];
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
 
@@ -1787,8 +1787,8 @@ pub fn error_schema_not_granted() {
 #[test]
 pub fn error_not_delegated_rpc() {
 	new_test_ext().execute_with(|| {
-		let provider = Provider(1);
-		let delegator = Delegator(2);
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
 		assert_err!(
 			Msa::get_granted_schemas_by_msa_id(delegator, provider),
 			Error::<Test>::DelegationNotFound
@@ -1799,8 +1799,8 @@ pub fn error_not_delegated_rpc() {
 #[test]
 pub fn error_schema_not_granted_rpc() {
 	new_test_ext().execute_with(|| {
-		let provider = Provider(1);
-		let delegator = Delegator(2);
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
 		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
 		assert_err!(
 			Msa::get_granted_schemas_by_msa_id(delegator, provider),
@@ -1814,8 +1814,8 @@ pub fn schema_granted_success_rpc() {
 	new_test_ext().execute_with(|| {
 		set_schema_count::<Test>(2);
 
-		let provider = Provider(1);
-		let delegator = Delegator(2);
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
 		let schema_grants = vec![1, 2];
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
 		let schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, provider);
@@ -1979,8 +1979,8 @@ pub fn add_provider_expired() {
 #[test]
 pub fn delegation_expired_long_back() {
 	new_test_ext().execute_with(|| {
-		let provider = Provider(1);
-		let delegator = Delegator(2);
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
 
 		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
 
@@ -2032,7 +2032,7 @@ pub fn ensure_all_schema_ids_are_valid_success() {
 #[test]
 pub fn is_registered_provider_is_true() {
 	new_test_ext().execute_with(|| {
-		let provider = Provider(1);
+		let provider = ProviderId(1);
 		let provider_name = Vec::from("frequency".as_bytes()).try_into().unwrap();
 
 		let provider_meta = ProviderRegistryEntry { provider_name };
@@ -2265,8 +2265,8 @@ pub fn add_msa_key_replay_fails() {
 #[test]
 fn grant_permissions_for_schemas_errors_when_no_delegation() {
 	new_test_ext().execute_with(|| {
-		let delegator = Delegator(2);
-		let provider = Provider(1);
+		let delegator = DelegatorId(2);
+		let provider = ProviderId(1);
 		let schema_ids = vec![1, 2];
 		let result = Msa::grant_permissions_for_schemas(delegator, provider, schema_ids);
 
@@ -2278,8 +2278,8 @@ fn grant_permissions_for_schemas_errors_when_no_delegation() {
 fn grant_permissions_for_schemas_errors_when_invalid_schema_id() {
 	new_test_ext().execute_with(|| {
 		set_schema_count::<Test>(1);
-		let delegator = Delegator(2);
-		let provider = Provider(1);
+		let delegator = DelegatorId(2);
+		let provider = ProviderId(1);
 		let schema_grants = vec![1];
 
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
@@ -2296,8 +2296,8 @@ fn grant_permissions_for_schemas_errors_when_exceeds_max_schema_grants() {
 	new_test_ext().execute_with(|| {
 		set_schema_count::<Test>(31);
 
-		let delegator = Delegator(2);
-		let provider = Provider(1);
+		let delegator = DelegatorId(2);
+		let provider = ProviderId(1);
 		let schema_grants = vec![1];
 
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
@@ -2314,8 +2314,8 @@ fn grant_permissions_for_schema_success() {
 	new_test_ext().execute_with(|| {
 		set_schema_count::<Test>(3);
 
-		let delegator = Delegator(2);
-		let provider = Provider(1);
+		let delegator = DelegatorId(2);
+		let provider = ProviderId(1);
 		let schema_grants = vec![1];
 
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
@@ -2357,7 +2357,7 @@ fn grant_schema_permissions_errors_when_no_key_exists() {
 		let (delegator_pair, _) = sr25519::Pair::generate();
 		let delegator_account = delegator_pair.public();
 
-		let provider = Provider(2);
+		let provider = ProviderId(2);
 		let schema_ids: Vec<SchemaId> = vec![1];
 
 		assert_noop!(
@@ -2377,7 +2377,7 @@ fn grant_schema_permissions_errors_when_delegation_not_found_error() {
 		let (delegator_pair, _) = sr25519::Pair::generate();
 		let delegator_account = delegator_pair.public();
 
-		let provider = Provider(2);
+		let provider = ProviderId(2);
 		let schema_ids: Vec<SchemaId> = vec![1];
 
 		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
@@ -2407,20 +2407,20 @@ fn grant_schema_permissions_success() {
 		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
-		let delegator = Delegator(1);
-		let provider = Provider(2);
+		let delegator_id = DelegatorId(1);
+		let provider_id = ProviderId(2);
 
-		assert_ok!(Msa::add_provider(provider, delegator, Default::default()));
+		assert_ok!(Msa::add_provider(provider_id, delegator_id, Default::default()));
 
 		let schema_ids: Vec<SchemaId> = vec![2];
 
 		assert_ok!(Msa::grant_schema_permissions(
 			Origin::signed(delegator_account.into()),
-			provider.into(),
+			provider_id.into(),
 			schema_ids,
 		));
 
-		System::assert_last_event(Event::DelegationUpdated { provider, delegator }.into());
+		System::assert_last_event(Event::DelegationUpdated { provider_id, delegator_id }.into());
 	});
 }
 
@@ -2484,8 +2484,8 @@ fn schema_permissions_trait_impl_try_insert_schemas_errors_when_exceeds_max_sche
 #[test]
 fn try_mutate_delegation_success() {
 	new_test_ext().execute_with(|| {
-		let delegator = Delegator(1);
-		let provider = Provider(2);
+		let delegator = DelegatorId(1);
+		let provider = ProviderId(2);
 
 		assert_ok!(Msa::try_mutate_delegation(
 			delegator,
@@ -2508,8 +2508,8 @@ fn revoke_permissions_for_schema_success() {
 	new_test_ext().execute_with(|| {
 		set_schema_count::<Test>(3);
 
-		let delegator = Delegator(2);
-		let provider = Provider(1);
+		let delegator = DelegatorId(2);
+		let provider = ProviderId(1);
 		let schema_grants = vec![1];
 
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
@@ -2548,8 +2548,8 @@ fn revoke_permissions_for_schema_success() {
 #[test]
 fn revoke_permissions_for_schemas_errors_when_no_delegation() {
 	new_test_ext().execute_with(|| {
-		let delegator = Delegator(2);
-		let provider = Provider(1);
+		let delegator = DelegatorId(2);
+		let provider = ProviderId(1);
 		let schema_ids = vec![1, 2];
 		let result = Msa::revoke_permissions_for_schemas(delegator, provider, schema_ids);
 
@@ -2562,8 +2562,8 @@ fn revoke_permissions_for_schemas_errors_when_schema_does_not_exist_in_list_of_s
 	new_test_ext().execute_with(|| {
 		set_schema_count::<Test>(31);
 
-		let delegator = Delegator(2);
-		let provider = Provider(1);
+		let delegator = DelegatorId(2);
+		let provider = ProviderId(1);
 		let schema_grants = vec![1, 2];
 
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
@@ -2612,20 +2612,20 @@ fn revoke_schema_permissions_success() {
 		assert_ok!(Msa::create(Origin::signed(delegator_account.into())));
 		assert_ok!(Msa::create(Origin::signed(provider_account.into())));
 
-		let delegator = Delegator(1);
-		let provider = Provider(2);
+		let delegator_id = DelegatorId(1);
+		let provider_id = ProviderId(2);
 
-		assert_ok!(Msa::add_provider(provider, delegator, vec![1, 2]));
+		assert_ok!(Msa::add_provider(provider_id, delegator_id, vec![1, 2]));
 
 		let schema_ids_to_revoke: Vec<SchemaId> = vec![2];
 
 		assert_ok!(Msa::revoke_schema_permissions(
 			Origin::signed(delegator_account.into()),
-			provider.into(),
+			provider_id.into(),
 			schema_ids_to_revoke,
 		));
 
-		System::assert_last_event(Event::DelegationUpdated { provider, delegator }.into());
+		System::assert_last_event(Event::DelegationUpdated { provider_id, delegator_id }.into());
 	});
 }
 
@@ -2635,7 +2635,7 @@ fn revoke_schema_permissions_errors_when_no_key_exists() {
 		let (delegator_pair, _) = sr25519::Pair::generate();
 		let delegator_account = delegator_pair.public();
 
-		let provider = Provider(2);
+		let provider = ProviderId(2);
 		let schema_ids: Vec<SchemaId> = vec![1];
 
 		assert_noop!(
