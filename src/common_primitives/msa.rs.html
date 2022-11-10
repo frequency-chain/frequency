@@ -204,6 +204,9 @@
 <span id="204">204</span>
 <span id="205">205</span>
 <span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
 </pre><pre class="rust"><code><span class="kw">use </span>codec::{Decode, Encode, EncodeLike, Error, MaxEncodedLen};
 <span class="kw">use </span>frame_support::{
 	dispatch::DispatchResult, traits::Get, BoundedBTreeMap, BoundedVec, RuntimeDebug,
@@ -222,37 +225,38 @@
 <span class="doccomment">/// Message Source Id or msaId is the unique identifier for Message Source Accounts
 </span><span class="kw">pub type </span>MessageSourceId = u64;
 
-<span class="doccomment">/// A Delegator is a role for an MSA to play.
+<span class="doccomment">/// A DelegatorId an MSA Id serving the role of a Delegator.
 /// Delegators delegate to Providers.
 /// Encodes and Decodes as just a `u64`
-</span><span class="attribute">#[derive(TypeInfo, Debug, Clone, Copy, PartialEq, MaxEncodedLen, Eq)]
-</span><span class="kw">pub struct </span>Delegator(<span class="kw">pub </span>MessageSourceId);
+</span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
+#[derive(TypeInfo, Default, Debug, Clone, Copy, PartialEq, MaxEncodedLen, Eq)]
+</span><span class="kw">pub struct </span>DelegatorId(<span class="kw">pub </span>MessageSourceId);
 
-<span class="kw">impl </span>EncodeLike <span class="kw">for </span>Delegator {}
+<span class="kw">impl </span>EncodeLike <span class="kw">for </span>DelegatorId {}
 
-<span class="kw">impl </span>Encode <span class="kw">for </span>Delegator {
+<span class="kw">impl </span>Encode <span class="kw">for </span>DelegatorId {
 	<span class="kw">fn </span>encode(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;u8&gt; {
 		<span class="self">self</span>.<span class="number">0</span>.encode()
 	}
 }
 
-<span class="kw">impl </span>Decode <span class="kw">for </span>Delegator {
+<span class="kw">impl </span>Decode <span class="kw">for </span>DelegatorId {
 	<span class="kw">fn </span>decode&lt;I: codec::Input&gt;(input: <span class="kw-2">&amp;mut </span>I) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, codec::Error&gt; {
 		<span class="kw">match </span>&lt;u64&gt;::decode(input) {
-			<span class="prelude-val">Ok</span>(x) =&gt; <span class="prelude-val">Ok</span>(Delegator(x)),
-			<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(Error::from(<span class="string">&quot;Could not decode Delegator&quot;</span>)),
+			<span class="prelude-val">Ok</span>(x) =&gt; <span class="prelude-val">Ok</span>(DelegatorId(x)),
+			<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(Error::from(<span class="string">&quot;Could not decode DelegatorId&quot;</span>)),
 		}
 	}
 }
 
-<span class="kw">impl </span>From&lt;MessageSourceId&gt; <span class="kw">for </span>Delegator {
+<span class="kw">impl </span>From&lt;MessageSourceId&gt; <span class="kw">for </span>DelegatorId {
 	<span class="kw">fn </span>from(t: MessageSourceId) -&gt; <span class="self">Self </span>{
-		Delegator(t)
+		DelegatorId(t)
 	}
 }
 
-<span class="kw">impl </span>From&lt;Delegator&gt; <span class="kw">for </span>MessageSourceId {
-	<span class="kw">fn </span>from(t: Delegator) -&gt; MessageSourceId {
+<span class="kw">impl </span>From&lt;DelegatorId&gt; <span class="kw">for </span>MessageSourceId {
+	<span class="kw">fn </span>from(t: DelegatorId) -&gt; MessageSourceId {
 		t.<span class="number">0
 	</span>}
 }
@@ -292,34 +296,35 @@
 <span class="doccomment">/// Provider is the recipient of a delegation.
 /// It is a subset of an MSA
 /// Encodes and Decodes as just a `u64`
-</span><span class="attribute">#[derive(TypeInfo, Debug, Clone, Copy, PartialEq, MaxEncodedLen, Eq)]
-</span><span class="kw">pub struct </span>Provider(<span class="kw">pub </span>MessageSourceId);
+</span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
+#[derive(TypeInfo, Default, Debug, Clone, Copy, PartialEq, MaxEncodedLen, Eq)]
+</span><span class="kw">pub struct </span>ProviderId(<span class="kw">pub </span>MessageSourceId);
 
-<span class="kw">impl </span>EncodeLike <span class="kw">for </span>Provider {}
+<span class="kw">impl </span>EncodeLike <span class="kw">for </span>ProviderId {}
 
-<span class="kw">impl </span>Encode <span class="kw">for </span>Provider {
+<span class="kw">impl </span>Encode <span class="kw">for </span>ProviderId {
 	<span class="kw">fn </span>encode(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;u8&gt; {
 		<span class="self">self</span>.<span class="number">0</span>.encode()
 	}
 }
 
-<span class="kw">impl </span>Decode <span class="kw">for </span>Provider {
+<span class="kw">impl </span>Decode <span class="kw">for </span>ProviderId {
 	<span class="kw">fn </span>decode&lt;I: codec::Input&gt;(input: <span class="kw-2">&amp;mut </span>I) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, codec::Error&gt; {
 		<span class="kw">match </span>&lt;u64&gt;::decode(input) {
-			<span class="prelude-val">Ok</span>(x) =&gt; <span class="prelude-val">Ok</span>(Provider(x)),
-			<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(Error::from(<span class="string">&quot;Could not decode Provider&quot;</span>)),
+			<span class="prelude-val">Ok</span>(x) =&gt; <span class="prelude-val">Ok</span>(ProviderId(x)),
+			<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(Error::from(<span class="string">&quot;Could not decode ProviderId&quot;</span>)),
 		}
 	}
 }
 
-<span class="kw">impl </span>From&lt;MessageSourceId&gt; <span class="kw">for </span>Provider {
+<span class="kw">impl </span>From&lt;MessageSourceId&gt; <span class="kw">for </span>ProviderId {
 	<span class="kw">fn </span>from(t: MessageSourceId) -&gt; <span class="self">Self </span>{
-		Provider(t)
+		ProviderId(t)
 	}
 }
 
-<span class="kw">impl </span>From&lt;Provider&gt; <span class="kw">for </span>MessageSourceId {
-	<span class="kw">fn </span>from(t: Provider) -&gt; MessageSourceId {
+<span class="kw">impl </span>From&lt;ProviderId&gt; <span class="kw">for </span>MessageSourceId {
+	<span class="kw">fn </span>from(t: ProviderId) -&gt; MessageSourceId {
 		t.<span class="number">0
 	</span>}
 }
@@ -366,8 +371,8 @@
 
 	<span class="doccomment">/// Gets the relationship information for this delegator, provider pair
 	</span><span class="kw">fn </span>get_delegation_of(
-		delegator: Delegator,
-		provider: Provider,
+		delegator: DelegatorId,
+		provider: ProviderId,
 	) -&gt; <span class="prelude-ty">Option</span>&lt;Delegation&lt;<span class="self">Self</span>::SchemaId, <span class="self">Self</span>::BlockNumber, <span class="self">Self</span>::MaxSchemaGrantsPerDelegation&gt;&gt;;
 }
 
@@ -382,8 +387,8 @@
 
 	<span class="doccomment">/// Validates that the delegator and provider have a relationship at this point
 	</span><span class="kw">fn </span>ensure_valid_delegation(
-		provider: Provider,
-		delegator: Delegator,
+		provider: ProviderId,
+		delegator: DelegatorId,
 		block_number: <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::BlockNumber&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;
 		Delegation&lt;<span class="self">Self</span>::SchemaId, <span class="self">Self</span>::BlockNumber, <span class="self">Self</span>::MaxSchemaGrantsPerDelegation&gt;,
@@ -392,12 +397,13 @@
 }
 
 <span class="doccomment">/// A behavior that allows for validating a schema grant
-</span><span class="kw">pub trait </span>SchemaGrantValidator {
+</span><span class="kw">pub trait </span>SchemaGrantValidator&lt;BlockNumber&gt; {
 	<span class="doccomment">/// Validates if the provider is allowed to use the particular schema id currently
 	</span><span class="kw">fn </span>ensure_valid_schema_grant(
-		provider: Provider,
-		delegator: Delegator,
+		provider_id: ProviderId,
+		delegator_id: DelegatorId,
 		schema_id: SchemaId,
+		block_number: BlockNumber,
 	) -&gt; DispatchResult;
 }
 

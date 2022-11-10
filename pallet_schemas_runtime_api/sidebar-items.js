@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":[["SchemasRuntimeApi","Runtime API definition for Schemas"]]};
+window.SIDEBAR_ITEMS = {"trait":[["SchemasRuntimeApi","Runtime Version for Schemas"]]};

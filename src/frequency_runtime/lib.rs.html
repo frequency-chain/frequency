@@ -980,6 +980,9 @@
 <span id="980">980</span>
 <span id="981">981</span>
 <span id="982">982</span>
+<span id="983">983</span>
+<span id="984">984</span>
+<span id="985">985</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attribute">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
@@ -1617,11 +1620,14 @@
 	<span class="kw">type </span>Event = Event;
 	<span class="kw">type </span>WeightInfo = pallet_messages::weights::SubstrateWeight&lt;Runtime&gt;;
 	<span class="kw">type </span>MsaInfoProvider = Msa;
-	<span class="kw">type </span>DelegationInfoProvider = Msa;
 	<span class="kw">type </span>SchemaGrantValidator = Msa;
 	<span class="kw">type </span>SchemaProvider = Schemas;
 	<span class="kw">type </span>MaxMessagesPerBlock = MessagesMaxPerBlock;
 	<span class="kw">type </span>MaxMessagePayloadSizeBytes = MessagesMaxPayloadSizeBytes;
+
+	<span class="doccomment">/// A set of helper functions for benchmarking.
+	</span><span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+	</span><span class="kw">type </span>Helper = Msa;
 }
 
 <span class="kw">impl </span>pallet_sudo::Config <span class="kw">for </span>Runtime {
@@ -1820,9 +1826,9 @@
 	}
 
 	<span class="comment">// Unfinished runtime APIs
-	</span><span class="kw">impl </span>pallet_messages_runtime_api::MessagesRuntimeApi&lt;Block, BlockNumber&gt; <span class="kw">for </span>Runtime {
+	</span><span class="kw">impl </span>pallet_messages_runtime_api::MessagesRuntimeApi&lt;Block&gt; <span class="kw">for </span>Runtime {
 		<span class="kw">fn </span>get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber,) -&gt;
-			Vec&lt;MessageResponse&lt;BlockNumber&gt;&gt; {
+			Vec&lt;MessageResponse&gt; {
 			Messages::get_messages_by_schema_and_block(schema_id, schema_payload_location, block_number)
 		}
 
@@ -1843,14 +1849,14 @@
 		// 	Ok(Msa::fetch_msa_keys(msa_id))
 		// }
 
-		</span><span class="kw">fn </span>has_delegation(delegator: Delegator, provider: Provider, block_number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; bool {
-			<span class="kw">match </span>Msa::ensure_valid_delegation(provider, delegator, block_number) {
-				<span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="bool-val">true</span>,
-				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="bool-val">false</span>,
+		</span><span class="kw">fn </span>has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: <span class="prelude-ty">Option</span>&lt;SchemaId&gt;) -&gt; bool {
+			<span class="kw">match </span>schema_id {
+				<span class="prelude-val">Some</span>(sid) =&gt; Msa::ensure_valid_schema_grant(provider, delegator, sid, block_number).is_ok(),
+				<span class="prelude-val">None </span>=&gt; Msa::ensure_valid_delegation(provider, delegator, <span class="prelude-val">Some</span>(block_number)).is_ok(),
 			}
 		}
 
-		<span class="kw">fn </span>get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;SchemaId&gt;&gt; {
+		<span class="kw">fn </span>get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;SchemaId&gt;&gt; {
 			<span class="kw">match </span>Msa::get_granted_schemas_by_msa_id(delegator, provider) {
 				<span class="prelude-val">Ok</span>(x) =&gt; x,
 				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">None</span>,

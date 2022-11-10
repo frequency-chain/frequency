@@ -815,7 +815,7 @@
 
 <span class="kw">use </span>cumulus_client_cli::CollatorOptions;
 
-<span class="kw">use </span>common_primitives::node::{AccountId, Balance, Block, BlockNumber, Hash, Index <span class="kw">as </span>Nonce};
+<span class="kw">use </span>common_primitives::node::{AccountId, Balance, Block, Hash, Index <span class="kw">as </span>Nonce};
 <span class="comment">// Cumulus Imports
 </span><span class="kw">use </span>cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 <span class="kw">use </span>cumulus_client_consensus_common::ParachainConsensus;
@@ -1092,7 +1092,7 @@
 		+ cumulus_primitives_core::CollectCollationInfo&lt;Block&gt;
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi&lt;Block, Balance&gt;
 		+ substrate_frame_rpc_system::AccountNonceApi&lt;Block, AccountId, Nonce&gt;
-		+ pallet_messages_runtime_api::MessagesRuntimeApi&lt;Block, BlockNumber&gt;
+		+ pallet_messages_runtime_api::MessagesRuntimeApi&lt;Block&gt;
 		+ pallet_schemas_runtime_api::SchemasRuntimeApi&lt;Block&gt;
 		+ pallet_msa_runtime_api::MsaRuntimeApi&lt;Block, AccountId&gt;,
 	sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;: sp_api::StateBackend&lt;BlakeTwo256&gt;,
@@ -1366,7 +1366,7 @@
 		+ cumulus_primitives_core::CollectCollationInfo&lt;Block&gt;
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi&lt;Block, Balance&gt;
 		+ substrate_frame_rpc_system::AccountNonceApi&lt;Block, AccountId, Nonce&gt;
-		+ pallet_messages_runtime_api::MessagesRuntimeApi&lt;Block, BlockNumber&gt;
+		+ pallet_messages_runtime_api::MessagesRuntimeApi&lt;Block&gt;
 		+ pallet_schemas_runtime_api::SchemasRuntimeApi&lt;Block&gt;
 		+ pallet_msa_runtime_api::MsaRuntimeApi&lt;Block, AccountId&gt;,
 	Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,

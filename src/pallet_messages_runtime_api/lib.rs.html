@@ -36,6 +36,10 @@
 <span id="36">36</span>
 <span id="37">37</span>
 <span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::unnecessary_mut_passed)]
@@ -54,21 +58,25 @@
 //! - An interface between the runtime and Custom RPCs.
 //! - Runtime interfaces for end users beyond just State Queries
 
-</span><span class="kw">use </span>codec::Codec;
-<span class="kw">use </span>common_primitives::{messages::<span class="kw-2">*</span>, schema::<span class="kw-2">*</span>};
+</span><span class="kw">use </span>common_primitives::{messages::<span class="kw-2">*</span>, node::BlockNumber, schema::<span class="kw-2">*</span>};
 <span class="kw">use </span>frame_support::inherent::Vec;
 
 <span class="comment">// Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime files (the `runtime` folder)
 </span><span class="macro">sp_api::decl_runtime_apis! </span>{
 
-	<span class="doccomment">/// Runtime APIs for [Messages](../pallet_messages/index.html)
-	</span><span class="kw">pub trait </span>MessagesRuntimeApi&lt;BlockNumber&gt; <span class="kw">where
-		</span>BlockNumber: Codec,
+	<span class="doccomment">/// Runtime Version for Messages
+	/// - MUST be incremented if anything changes
+	/// - Also update in js/api-augment
+	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
+	</span><span class="attribute">#[api_version(<span class="number">1</span>)]
+
+	</span><span class="doccomment">/// Runtime APIs for [Messages](../pallet_messages/index.html)
+	</span><span class="kw">pub trait </span>MessagesRuntimeApi
 	{
 		<span class="doccomment">/// Retrieve the messages for a particular schema and block number
 		</span><span class="kw">fn </span>get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber) -&gt;
-			Vec&lt;MessageResponse&lt;BlockNumber&gt;&gt;;
+			Vec&lt;MessageResponse&gt;;
 
 		<span class="doccomment">/// Retrieve a schema by id
 		</span><span class="kw">fn </span>get_schema_by_id(schema_id: SchemaId) -&gt; <span class="prelude-ty">Option</span>&lt;SchemaResponse&gt;;

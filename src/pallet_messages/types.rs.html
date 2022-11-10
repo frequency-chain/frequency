@@ -63,8 +63,12 @@
 <span id="63">63</span>
 <span id="64">64</span>
 <span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
 </pre><pre class="rust"><code><span class="kw">use </span>codec::{Decode, Encode};
-<span class="kw">use </span>common_primitives::{messages::MessageResponse, msa::MessageSourceId, schema::PayloadLocation};
+<span class="kw">use </span>common_primitives::{
+	messages::MessageResponse, msa::MessageSourceId, node::BlockNumber, schema::PayloadLocation,
+};
 <span class="kw">use </span>frame_support::{traits::Get, BoundedVec};
 <span class="kw">use </span>scale_info::TypeInfo;
 <span class="kw">use </span>sp_std::prelude::<span class="kw-2">*</span>;
@@ -97,11 +101,11 @@
 	</span>MaxDataSize: Get&lt;u32&gt; + Clone,
 {
 	<span class="doccomment">/// Helper function to handle response type [`MessageResponse`] depending on the Payload Location (on chain or IPFS)
-	</span><span class="kw">pub fn </span>map_to_response&lt;BlockNumber&gt;(
+	</span><span class="kw">pub fn </span>map_to_response(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		block_number: BlockNumber,
 		payload_location: PayloadLocation,
-	) -&gt; MessageResponse&lt;BlockNumber&gt; {
+	) -&gt; MessageResponse {
 		<span class="kw">match </span>payload_location {
 			PayloadLocation::OnChain =&gt; MessageResponse {
 				provider_msa_id: <span class="self">self</span>.provider_msa_id,

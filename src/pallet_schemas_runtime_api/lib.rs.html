@@ -26,6 +26,13 @@
 <span id="26">26</span>
 <span id="27">27</span>
 <span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::unnecessary_mut_passed)]
@@ -47,7 +54,14 @@
 </span><span class="kw">use </span>common_primitives::schema::<span class="kw-2">*</span>;
 
 <span class="macro">sp_api::decl_runtime_apis! </span>{
-	<span class="doccomment">/// Runtime API definition for [Schemas](../pallet_schemas/index.html)
+
+	<span class="doccomment">/// Runtime Version for Schemas
+	/// - MUST be incremented if anything changes
+	/// - Also update in js/api-augment
+	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
+	</span><span class="attribute">#[api_version(<span class="number">1</span>)]
+
+	</span><span class="doccomment">/// Runtime API definition for [Schemas](../pallet_schemas/index.html)
 	</span><span class="kw">pub trait </span>SchemasRuntimeApi
 	{
 		<span class="doccomment">/// Fetch the schema by id

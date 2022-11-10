@@ -129,18 +129,6 @@
 <span id="129">129</span>
 <span id="130">130</span>
 <span id="131">131</span>
-<span id="132">132</span>
-<span id="133">133</span>
-<span id="134">134</span>
-<span id="135">135</span>
-<span id="136">136</span>
-<span id="137">137</span>
-<span id="138">138</span>
-<span id="139">139</span>
-<span id="140">140</span>
-<span id="141">141</span>
-<span id="142">142</span>
-<span id="143">143</span>
 </pre><pre class="rust"><code><span class="comment">// Strong Documentation Lints
 </span><span class="attribute">#![deny(
 	rustdoc::broken_intra_doc_links,
@@ -151,8 +139,7 @@
 
 </span><span class="doccomment">//! Custom APIs for [Messages](../pallet_messages/index.html)
 
-</span><span class="kw">use </span>codec::Codec;
-<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span>common_helpers::rpc::map_rpc_result;
 <span class="kw">use </span>common_primitives::{messages::<span class="kw-2">*</span>, schema::<span class="kw-2">*</span>};
 <span class="kw">use </span>frame_support::{ensure, fail};
@@ -163,10 +150,7 @@
 <span class="kw">use </span>pallet_messages_runtime_api::MessagesRuntimeApi;
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
-<span class="kw">use </span>sp_runtime::{
-	generic::BlockId,
-	traits::{AtLeast32BitUnsigned, Block <span class="kw">as </span>BlockT},
-};
+<span class="kw">use </span>sp_runtime::{generic::BlockId, traits::Block <span class="kw">as </span>BlockT};
 <span class="kw">use </span>std::sync::Arc;
 
 <span class="attribute">#[cfg(test)]
@@ -174,14 +158,14 @@
 
 <span class="doccomment">/// Frequency Messages Custom RPC API
 </span><span class="attribute">#[rpc(client, server)]
-</span><span class="kw">pub trait </span>MessagesApi&lt;BlockNumber&gt; {
+</span><span class="kw">pub trait </span>MessagesApi {
 	<span class="doccomment">/// Retrieve paginated messages by schema id
 	</span><span class="attribute">#[method(name = <span class="string">&quot;messages_getBySchemaId&quot;</span>)]
 	</span><span class="kw">fn </span>get_messages_by_schema_id(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		schema_id: SchemaId,
-		pagination: BlockPaginationRequest&lt;BlockNumber&gt;,
-	) -&gt; RpcResult&lt;BlockPaginationResponse&lt;BlockNumber, MessageResponse&lt;BlockNumber&gt;&gt;&gt;;
+		pagination: BlockPaginationRequest,
+	) -&gt; RpcResult&lt;BlockPaginationResponse&lt;MessageResponse&gt;&gt;;
 }
 
 <span class="doccomment">/// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -215,18 +199,17 @@
 }
 
 <span class="attribute">#[async_trait]
-</span><span class="kw">impl</span>&lt;C, Block, BlockNumber&gt; MessagesApiServer&lt;BlockNumber&gt; <span class="kw">for </span>MessagesHandler&lt;C, Block&gt;
+</span><span class="kw">impl</span>&lt;C, Block&gt; MessagesApiServer <span class="kw">for </span>MessagesHandler&lt;C, Block&gt;
 <span class="kw">where
 	</span>Block: BlockT,
 	C: ProvideRuntimeApi&lt;Block&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
-	C::Api: MessagesRuntimeApi&lt;Block, BlockNumber&gt;,
-	BlockNumber: Codec + Copy + AtLeast32BitUnsigned,
+	C::Api: MessagesRuntimeApi&lt;Block&gt;,
 {
 	<span class="kw">fn </span>get_messages_by_schema_id(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		schema_id: SchemaId,
-		pagination: BlockPaginationRequest&lt;BlockNumber&gt;,
-	) -&gt; RpcResult&lt;BlockPaginationResponse&lt;BlockNumber, MessageResponse&lt;BlockNumber&gt;&gt;&gt; {
+		pagination: BlockPaginationRequest,
+	) -&gt; RpcResult&lt;BlockPaginationResponse&lt;MessageResponse&gt;&gt; {
 		<span class="comment">// Request Validation
 		</span><span class="macro">ensure!</span>(pagination.validate(), MessageRpcError::InvalidPaginationRequest);
 
@@ -241,19 +224,12 @@
 		};
 
 		<span class="kw">let </span><span class="kw-2">mut </span>response = BlockPaginationResponse::new();
-		<span class="kw">let </span>from: u32 = pagination
-			.from_block
-			.try_into()
-			.map_err(|<span class="kw">_</span>| MessageRpcError::TypeConversionOverflow)<span class="question-mark">?</span>;
-		<span class="kw">let </span>to: u32 = pagination
-			.to_block
-			.try_into()
-			.map_err(|<span class="kw">_</span>| MessageRpcError::TypeConversionOverflow)<span class="question-mark">?</span>;
+		<span class="kw">let </span>from: u32 = pagination.from_block;
+		<span class="kw">let </span>to: u32 = pagination.to_block;
 		<span class="kw">let </span><span class="kw-2">mut </span>from_index = pagination.from_index;
 
-		<span class="lifetime">&#39;loops</span>: <span class="kw">for </span>bid <span class="kw">in </span>from..to {
-			<span class="kw">let </span>block_number: BlockNumber = bid.into();
-			<span class="kw">let </span>list: Vec&lt;MessageResponse&lt;BlockNumber&gt;&gt; = api
+		<span class="lifetime">&#39;loops</span>: <span class="kw">for </span>block_number <span class="kw">in </span>from..to {
+			<span class="kw">let </span>list: Vec&lt;MessageResponse&gt; = api
 				.get_messages_by_schema_and_block(
 					<span class="kw-2">&amp;</span>at,
 					schema.schema_id,

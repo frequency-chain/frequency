@@ -337,28 +337,77 @@
 <span id="337">337</span>
 <span id="338">338</span>
 <span id="339">339</span>
-</pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::msa::MessageSourceId;
-<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+</pre><pre class="rust"><code><span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span><span class="kw">crate</span>::utils;
+<span class="kw">use crate</span>::{msa::MessageSourceId, node::BlockNumber};
 <span class="kw">use </span>codec::{Decode, Encode};
 <span class="kw">use </span>scale_info::TypeInfo;
 <span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span>serde::{Deserialize, Serialize};
-<span class="kw">use </span>sp_runtime::traits::{AtLeast32BitUnsigned, One};
+<span class="kw">use </span>sp_runtime::traits::One;
 <span class="kw">use </span>sp_std::{prelude::<span class="kw-2">*</span>, vec};
 <span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span>utils::<span class="kw-2">*</span>;
+
+<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+</span><span class="kw">use </span>frame_support::dispatch::DispatchResult;
+
+<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+</span><span class="kw">use crate</span>::{
+	msa::{DelegatorId, ProviderId},
+	schema::SchemaId,
+};
 
 <span class="doccomment">/// A type for responding with an single Message in an RPC-call dependent on schema model
 /// IPFS, Parquet: { index, block_number, provider_msa_id, cid, payload_length }
 /// Avro, OnChain: { index, block_number, provider_msa_id, msa_id, payload }
 </span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-</span><span class="kw">pub struct </span>MessageResponse&lt;BlockNumber&gt; {
+</span><span class="kw">pub struct </span>MessageResponse {
 	<span class="doccomment">/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
 	/// indicating that the original source MSA is acting as its own provider. An id differing from that
 	/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
-	/// its behalf.
+	/// its behalf .
 	</span><span class="kw">pub </span>provider_msa_id: MessageSourceId,
 	<span class="doccomment">/// Index in block to get total order.
 	</span><span class="kw">pub </span>index: u16,
@@ -383,7 +432,7 @@
 <span class="doccomment">/// A type for requesting paginated messages.
 </span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-</span><span class="kw">pub struct </span>BlockPaginationRequest&lt;BlockNumber&gt; {
+</span><span class="kw">pub struct </span>BlockPaginationRequest {
 	<span class="doccomment">/// Starting block-number (inclusive).
 	</span><span class="kw">pub </span>from_block: BlockNumber,
 	<span class="doccomment">/// Current page index starting from 0.
@@ -394,10 +443,7 @@
 	</span><span class="kw">pub </span>page_size: u32,
 }
 
-<span class="kw">impl</span>&lt;BlockNumber&gt; BlockPaginationRequest&lt;BlockNumber&gt;
-<span class="kw">where
-	</span>BlockNumber: Copy + AtLeast32BitUnsigned,
-{
+<span class="kw">impl </span>BlockPaginationRequest {
 	<span class="doccomment">/// Hard limit on the number of items per page that can be returned
 	</span><span class="kw">pub const </span>MAX_PAGE_SIZE: u32 = <span class="number">10000</span>;
 	<span class="doccomment">/// Hard limit on the block range for a request (~7 days at 12 sec per block)
@@ -410,14 +456,14 @@
 		<span class="self">self</span>.page_size &gt; <span class="number">0 </span>&amp;&amp;
 			<span class="self">self</span>.page_size &lt;= <span class="self">Self</span>::MAX_PAGE_SIZE &amp;&amp;
 			<span class="self">self</span>.from_block &lt; <span class="self">self</span>.to_block &amp;&amp;
-			<span class="self">self</span>.to_block.sub(<span class="self">self</span>.from_block) &lt;= BlockNumber::from(<span class="self">Self</span>::MAX_BLOCK_RANGE)
+			<span class="self">self</span>.to_block - <span class="self">self</span>.from_block &lt;= <span class="self">Self</span>::MAX_BLOCK_RANGE
 	}
 }
 
 <span class="doccomment">/// A type for responding with a collection of paginated messages.
 </span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-</span><span class="kw">pub struct </span>BlockPaginationResponse&lt;BlockNumber, T&gt; {
+</span><span class="kw">pub struct </span>BlockPaginationResponse&lt;T&gt; {
 	<span class="doccomment">/// Collection of messages for a given [`BlockPaginationRequest`].
 	</span><span class="kw">pub </span>content: Vec&lt;T&gt;,
 	<span class="doccomment">/// Flag to indicate the end of paginated messages.
@@ -430,12 +476,9 @@
 	</span><span class="kw">pub </span>next_index: <span class="prelude-ty">Option</span>&lt;u32&gt;,
 }
 
-<span class="kw">impl</span>&lt;BlockNumber, T&gt; BlockPaginationResponse&lt;BlockNumber, T&gt;
-<span class="kw">where
-	</span>BlockNumber: AtLeast32BitUnsigned + Copy + One,
-{
+<span class="kw">impl</span>&lt;T&gt; BlockPaginationResponse&lt;T&gt; {
 	<span class="doccomment">/// Generates a new empty Pagination request
-	</span><span class="kw">pub const fn </span>new() -&gt; BlockPaginationResponse&lt;BlockNumber, T&gt; {
+	</span><span class="kw">pub const fn </span>new() -&gt; BlockPaginationResponse&lt;T&gt; {
 		BlockPaginationResponse {
 			content: <span class="macro">vec!</span>[],
 			has_next: <span class="bool-val">false</span>,
@@ -451,7 +494,7 @@
 		block_number: BlockNumber,
 		current_index: u32,
 		list_size: u32,
-		request: <span class="kw-2">&amp;</span>BlockPaginationRequest&lt;BlockNumber&gt;,
+		request: <span class="kw-2">&amp;</span>BlockPaginationRequest,
 	) -&gt; bool {
 		<span class="kw">if </span><span class="self">self</span>.content.len() <span class="kw">as </span>u32 == request.page_size {
 			<span class="kw">let </span><span class="kw-2">mut </span>next_block = block_number;
@@ -475,6 +518,43 @@
 	</span>}
 }
 
+<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+</span><span class="doccomment">/// A trait for helping setup state for running benchmarks.
+</span><span class="kw">pub trait </span>BenchmarkHelper&lt;AccountId&gt; {
+	<span class="doccomment">/// Sets the delegation relationship of between Provider and Delegator.
+	</span><span class="kw">fn </span>set_delegation_relationship(
+		provider: ProviderId,
+		delegator: DelegatorId,
+		schemas: Vec&lt;SchemaId&gt;,
+	) -&gt; DispatchResult;
+
+	<span class="doccomment">/// Sets a publickey to an MSA.
+	</span><span class="kw">fn </span>add_key(msa_id: MessageSourceId, key: AccountId) -&gt; DispatchResult;
+
+	<span class="doccomment">/// Sets the schema count.
+	</span><span class="kw">fn </span>set_schema_count(schema_id: SchemaId);
+}
+
+<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+</span><span class="kw">impl</span>&lt;AccountId&gt; BenchmarkHelper&lt;AccountId&gt; <span class="kw">for </span>() {
+	<span class="doccomment">/// Sets the delegation relationship of between Provider and Delegator.
+	</span><span class="kw">fn </span>set_delegation_relationship(
+		_provider: ProviderId,
+		_delegator: DelegatorId,
+		_schemas: Vec&lt;SchemaId&gt;,
+	) -&gt; DispatchResult {
+		<span class="prelude-val">Ok</span>(())
+	}
+
+	<span class="doccomment">/// Sets a publickey to an MSA.
+	</span><span class="kw">fn </span>add_key(_msa_id: MessageSourceId, _key: AccountId) -&gt; DispatchResult {
+		<span class="prelude-val">Ok</span>(())
+	}
+
+	<span class="doccomment">/// Sets the schema count.
+	</span><span class="kw">fn </span>set_schema_count(_schema_id: SchemaId) {}
+}
+
 <span class="attribute">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use crate</span>::{
@@ -483,7 +563,7 @@
 	};
 
 	<span class="kw">struct </span>TestCase&lt;T&gt; {
-		input: BlockPaginationRequest&lt;u32&gt;,
+		input: BlockPaginationRequest,
 		expected: T,
 		message: String,
 	}
@@ -503,7 +583,7 @@
 		<span class="kw">let </span>serialized = serde_json::to_string(<span class="kw-2">&amp;</span>msg).unwrap();
 		<span class="macro">assert_eq!</span>(serialized, <span class="string">&quot;{\&quot;provider_msa_id\&quot;:1,\&quot;index\&quot;:1,\&quot;block_number\&quot;:1,\&quot;cid\&quot;:[0,1,2,3],\&quot;payload_length\&quot;:42}&quot;</span>);
 
-		<span class="kw">let </span>deserialized: MessageResponse&lt;BlockNumber&gt; = serde_json::from_str(<span class="kw-2">&amp;</span>serialized).unwrap();
+		<span class="kw">let </span>deserialized: MessageResponse = serde_json::from_str(<span class="kw-2">&amp;</span>serialized).unwrap();
 		<span class="macro">assert_eq!</span>(deserialized, msg);
 	}
 
@@ -523,7 +603,7 @@
 		</span><span class="kw">let </span>serialized_msg_without_payload =
 			<span class="string">&quot;{\&quot;provider_msa_id\&quot;:1,\&quot;index\&quot;:1,\&quot;block_number\&quot;:1,\&quot;msa_id\&quot;:1}&quot;</span>;
 
-		<span class="kw">let </span>deserialized_result: MessageResponse&lt;BlockNumber&gt; =
+		<span class="kw">let </span>deserialized_result: MessageResponse =
 			serde_json::from_str(<span class="kw-2">&amp;</span>serialized_msg_without_payload).unwrap();
 		<span class="macro">assert_eq!</span>(deserialized_result, expected_msg);
 	}
@@ -565,7 +645,7 @@
 
 	<span class="attribute">#[test]
 	</span><span class="kw">fn </span>check_end_condition_does_not_mutate_when_at_the_end() {
-		<span class="kw">let </span><span class="kw-2">mut </span>resp = BlockPaginationResponse::&lt;BlockNumber, u32&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>resp = BlockPaginationResponse::&lt;u32&gt; {
 			content: <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>],
 			has_next: <span class="bool-val">false</span>,
 			next_block: <span class="prelude-val">None</span>,
@@ -574,7 +654,7 @@
 
 		<span class="kw">let </span>total_data_length: u32 = resp.content.len() <span class="kw">as </span>u32;
 
-		<span class="kw">let </span>request = BlockPaginationRequest::&lt;BlockNumber&gt; {
+		<span class="kw">let </span>request = BlockPaginationRequest {
 			from_block: <span class="number">1 </span><span class="kw">as </span>BlockNumber,
 			from_index: <span class="number">0</span>,
 			to_block: <span class="number">5</span>,
@@ -604,7 +684,7 @@
 
 	<span class="attribute">#[test]
 	</span><span class="kw">fn </span>check_end_condition_mutates_when_more_in_list_than_page() {
-		<span class="kw">let </span><span class="kw-2">mut </span>resp = BlockPaginationResponse::&lt;BlockNumber, u32&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>resp = BlockPaginationResponse::&lt;u32&gt; {
 			content: <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>],
 			has_next: <span class="bool-val">false</span>,
 			next_block: <span class="prelude-val">None</span>,
@@ -613,7 +693,7 @@
 
 		<span class="kw">let </span>total_data_length: u32 = resp.content.len() <span class="kw">as </span>u32;
 
-		<span class="kw">let </span>request = BlockPaginationRequest::&lt;BlockNumber&gt; {
+		<span class="kw">let </span>request = BlockPaginationRequest {
 			from_block: <span class="number">1 </span><span class="kw">as </span>BlockNumber,
 			from_index: <span class="number">0</span>,
 			to_block: <span class="number">5</span>,
@@ -641,7 +721,7 @@
 
 	<span class="attribute">#[test]
 	</span><span class="kw">fn </span>check_end_condition_mutates_when_more_than_page_but_none_left_in_block() {
-		<span class="kw">let </span><span class="kw-2">mut </span>resp = BlockPaginationResponse::&lt;BlockNumber, u32&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>resp = BlockPaginationResponse::&lt;u32&gt; {
 			content: <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>],
 			has_next: <span class="bool-val">false</span>,
 			next_block: <span class="prelude-val">None</span>,
@@ -650,7 +730,7 @@
 
 		<span class="kw">let </span>total_data_length: u32 = resp.content.len() <span class="kw">as </span>u32;
 
-		<span class="kw">let </span>request = BlockPaginationRequest::&lt;BlockNumber&gt; {
+		<span class="kw">let </span>request = BlockPaginationRequest {
 			from_block: <span class="number">1 </span><span class="kw">as </span>BlockNumber,
 			from_index: <span class="number">0</span>,
 			to_block: <span class="number">5</span>,

@@ -774,7 +774,7 @@
 			<span class="kw">return </span><span class="prelude-val">Ok</span>(Box::new(chain_spec::frequency_local::local_testnet_config())),
 		<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>)]
 		</span><span class="string">&quot;frequency-rococo&quot; </span>| <span class="string">&quot;rococo&quot; </span>| <span class="string">&quot;testnet&quot; </span>=&gt;
-			<span class="kw">return </span><span class="prelude-val">Ok</span>(Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet())),
+			<span class="kw">return </span><span class="prelude-val">Ok</span>(Box::new(chain_spec::frequency_rococo::load_frequency_rococo_spec())),
 		path =&gt; {
 			<span class="kw">if </span>path.is_empty() {
 				<span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;frequency&quot;</span>) {
@@ -794,9 +794,9 @@
 				} <span class="kw">else if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>) {
 					<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>)]
 					</span>{
-						<span class="kw">return </span><span class="prelude-val">Ok</span>(
-							Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet()),
-						)
+						<span class="kw">return </span><span class="prelude-val">Ok</span>(Box::new(
+							chain_spec::frequency_rococo::load_frequency_rococo_spec(),
+						))
 					}
 					<span class="attribute">#[cfg(not(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>))]
 					</span><span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Frequency Rococo runtime is not available.&quot;</span>.into())

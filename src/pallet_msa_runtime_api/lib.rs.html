@@ -37,6 +37,13 @@
 <span id="37">37</span>
 <span id="38">38</span>
 <span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::unnecessary_mut_passed)]
@@ -62,7 +69,14 @@
 <span class="comment">// Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime files (the `runtime` folder)
 </span><span class="macro">sp_api::decl_runtime_apis! </span>{
-	<span class="doccomment">/// Runtime API definition for [MSA](../pallet_msa/index.html)
+
+	<span class="doccomment">/// Runtime Version for MSAs
+	/// - MUST be incremented if anything changes
+	/// - Also update in js/api-augment
+	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
+	</span><span class="attribute">#[api_version(<span class="number">1</span>)]
+
+	</span><span class="doccomment">/// Runtime API definition for [MSA](../pallet_msa/index.html)
 	</span><span class="kw">pub trait </span>MsaRuntimeApi&lt;AccountId&gt; <span class="kw">where
 		</span>AccountId: Codec,
 	{
@@ -70,10 +84,10 @@
 		// fn get_msa_keys(msa_id: MessageSourceId) -&gt;	Vec&lt;KeyInfoResponse&lt;AccountId&gt;&gt;;
 
 		</span><span class="doccomment">/// Check to see if a delegation existed between the given delegator and provider at a given block
-		</span><span class="kw">fn </span>has_delegation(delegator: Delegator, provider: Provider, block_number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; bool;
+		</span><span class="kw">fn </span>has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: <span class="prelude-ty">Option</span>&lt;SchemaId&gt;) -&gt; bool;
 
 		<span class="doccomment">/// Get the list of schema ids (if any) that exist in any delegation between the delegator and provider
-		</span><span class="kw">fn </span>get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;SchemaId&gt;&gt;;
+		</span><span class="kw">fn </span>get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;SchemaId&gt;&gt;;
 	}
 }
 </code></pre></div>

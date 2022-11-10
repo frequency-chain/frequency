@@ -124,6 +124,9 @@
 <span id="124">124</span>
 <span id="125">125</span>
 <span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
 </pre><pre class="rust"><code><span class="comment">// Strong Documentation Lints
 </span><span class="attribute">#![deny(
 	rustdoc::broken_intra_doc_links,
@@ -137,7 +140,7 @@
 </span><span class="kw">use </span>codec::Codec;
 <span class="kw">use </span>common_helpers::rpc::map_rpc_result;
 <span class="kw">use </span>common_primitives::{
-	msa::{Delegator, MessageSourceId, Provider},
+	msa::{DelegatorId, ProviderId},
 	node::BlockNumber,
 	schema::SchemaId,
 };
@@ -162,17 +165,18 @@
 	</span><span class="attribute">#[method(name = <span class="string">&quot;msa_checkDelegations&quot;</span>)]
 	</span><span class="kw">fn </span>check_delegations(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		delegator_msa_ids: Vec&lt;MessageSourceId&gt;,
-		provider_msa_id: MessageSourceId,
-		block_number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
-	) -&gt; RpcResult&lt;Vec&lt;(MessageSourceId, bool)&gt;&gt;;
+		delegator_msa_ids: Vec&lt;DelegatorId&gt;,
+		provider_msa_id: ProviderId,
+		block_number: BlockNumber,
+		schema_id: <span class="prelude-ty">Option</span>&lt;SchemaId&gt;,
+	) -&gt; RpcResult&lt;Vec&lt;(DelegatorId, bool)&gt;&gt;;
 
 	<span class="doccomment">/// Retrieve the list of currently granted schemas given a delegator and provider pair
 	</span><span class="attribute">#[method(name = <span class="string">&quot;msa_grantedSchemaIdsByMsaId&quot;</span>)]
 	</span><span class="kw">fn </span>get_granted_schemas_by_msa_id(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		delegator_msa_id: MessageSourceId,
-		provider_msa_id: MessageSourceId,
+		delegator_msa_id: DelegatorId,
+		provider_msa_id: ProviderId,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;SchemaId&gt;&gt;&gt;;
 }
 
@@ -209,44 +213,46 @@
 
 	</span><span class="kw">fn </span>check_delegations(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		delegator_msa_ids: Vec&lt;MessageSourceId&gt;,
-		provider_msa_id: MessageSourceId,
-		block_number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
-	) -&gt; RpcResult&lt;Vec&lt;(MessageSourceId, bool)&gt;&gt; {
+		delegator_msa_ids: Vec&lt;DelegatorId&gt;,
+		provider_msa_id: ProviderId,
+		block_number: BlockNumber,
+		schema_id: <span class="prelude-ty">Option</span>&lt;SchemaId&gt;,
+	) -&gt; RpcResult&lt;Vec&lt;(DelegatorId, bool)&gt;&gt; {
 		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
 		<span class="kw">let </span>at = BlockId::hash(<span class="self">self</span>.client.info().best_hash);
 
-		<span class="kw">let </span>provider = Provider(provider_msa_id);
-
 		<span class="prelude-val">Ok</span>(delegator_msa_ids
 			.iter() <span class="comment">// TODO: Change back to par_iter() which has borrow panic GitHub Issue: #519
-			</span>.map(|<span class="kw-2">&amp;</span>id| {
-				<span class="kw">let </span>delegator = Delegator(id);
+			</span>.map(|<span class="kw-2">&amp;</span>delegator_msa_id| {
 				<span class="comment">// api.has_delegation returns  Result&lt;bool, ApiError&gt;), so _or(false) should not happen,
 				// but just in case, protect against panic
-				</span><span class="kw">let </span>has_delegation: bool =
-					<span class="kw">match </span>api.has_delegation(<span class="kw-2">&amp;</span>at, delegator, provider, block_number) {
-						<span class="prelude-val">Ok</span>(result) =&gt; result,
-						<span class="prelude-val">Err</span>(e) =&gt; {
-							<span class="macro">warn!</span>(<span class="string">&quot;ApiError from has_delegation! {:?}&quot;</span>, e);
-							<span class="bool-val">false
-						</span>},
-					};
-				(id, has_delegation)
+				</span><span class="kw">let </span>has_delegation: bool = <span class="kw">match </span>api.has_delegation(
+					<span class="kw-2">&amp;</span>at,
+					delegator_msa_id,
+					provider_msa_id,
+					block_number,
+					schema_id,
+				) {
+					<span class="prelude-val">Ok</span>(result) =&gt; result,
+					<span class="prelude-val">Err</span>(e) =&gt; {
+						<span class="macro">warn!</span>(<span class="string">&quot;ApiError from has_delegation! {:?}&quot;</span>, e);
+						<span class="bool-val">false
+					</span>},
+				};
+				(delegator_msa_id, has_delegation)
 			})
 			.collect())
 	}
 
 	<span class="kw">fn </span>get_granted_schemas_by_msa_id(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		delegator_msa_id: MessageSourceId,
-		provider_msa_id: MessageSourceId,
+		delegator_msa_id: DelegatorId,
+		provider_msa_id: ProviderId,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;SchemaId&gt;&gt;&gt; {
 		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
 		<span class="kw">let </span>at = BlockId::hash(<span class="self">self</span>.client.info().best_hash);
-		<span class="kw">let </span>delegator = Delegator(delegator_msa_id);
-		<span class="kw">let </span>provider = Provider(provider_msa_id);
-		<span class="kw">let </span>runtime_api_result = api.get_granted_schemas_by_msa_id(<span class="kw-2">&amp;</span>at, delegator, provider);
+		<span class="kw">let </span>runtime_api_result =
+			api.get_granted_schemas_by_msa_id(<span class="kw-2">&amp;</span>at, delegator_msa_id, provider_msa_id);
 		map_rpc_result(runtime_api_result)
 	}
 }

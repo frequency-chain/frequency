@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":[["MsaRuntimeApi","Runtime API definition for MSA"]]};
+window.SIDEBAR_ITEMS = {"trait":[["MsaRuntimeApi","Runtime Version for MSAs"]]};
