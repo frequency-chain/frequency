@@ -10,6 +10,15 @@ use sp_std::{prelude::*, vec};
 #[cfg(feature = "std")]
 use utils::*;
 
+#[cfg(feature = "runtime-benchmarks")]
+use frame_support::dispatch::DispatchResult;
+
+#[cfg(feature = "runtime-benchmarks")]
+use crate::{
+	msa::{DelegatorId, ProviderId},
+	schema::SchemaId,
+};
+
 /// A type for responding with an single Message in an RPC-call dependent on schema model
 /// IPFS, Parquet: { index, block_number, provider_msa_id, cid, payload_length }
 /// Avro, OnChain: { index, block_number, provider_msa_id, msa_id, payload }
@@ -19,7 +28,7 @@ pub struct MessageResponse {
 	/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
 	/// indicating that the original source MSA is acting as its own provider. An id differing from that
 	/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
-	/// its behalf.
+	/// its behalf .
 	pub provider_msa_id: MessageSourceId,
 	/// Index in block to get total order.
 	pub index: u16,
@@ -128,6 +137,43 @@ impl<T> BlockPaginationResponse<T> {
 
 		false
 	}
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+/// A trait for helping setup state for running benchmarks.
+pub trait BenchmarkHelper<AccountId> {
+	/// Sets the delegation relationship of between Provider and Delegator.
+	fn set_delegation_relationship(
+		provider: ProviderId,
+		delegator: DelegatorId,
+		schemas: Vec<SchemaId>,
+	) -> DispatchResult;
+
+	/// Sets a publickey to an MSA.
+	fn add_key(msa_id: MessageSourceId, key: AccountId) -> DispatchResult;
+
+	/// Sets the schema count.
+	fn set_schema_count(schema_id: SchemaId);
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl<AccountId> BenchmarkHelper<AccountId> for () {
+	/// Sets the delegation relationship of between Provider and Delegator.
+	fn set_delegation_relationship(
+		_provider: ProviderId,
+		_delegator: DelegatorId,
+		_schemas: Vec<SchemaId>,
+	) -> DispatchResult {
+		Ok(())
+	}
+
+	/// Sets a publickey to an MSA.
+	fn add_key(_msa_id: MessageSourceId, _key: AccountId) -> DispatchResult {
+		Ok(())
+	}
+
+	/// Sets the schema count.
+	fn set_schema_count(_schema_id: SchemaId) {}
 }
 
 #[cfg(test)]

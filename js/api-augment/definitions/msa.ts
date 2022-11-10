@@ -24,7 +24,11 @@ export default {
         },
         {
           name: "block_number",
-          type: "Option<BlockNumber>",
+          type: "BlockNumber",
+        },
+        {
+          name: "schema_id",
+          type: "Option<SchemaId>",
         },
       ],
       type: "Vec<(DelegatorId, bool)>",
@@ -71,7 +75,11 @@ export default {
               },
               {
                 name: "block_number",
-                type: "Option<BlockNumber>",
+                type: "BlockNumber",
+              },
+              {
+                name: "schema_id",
+                type: "Option<SchemaId>",
               },
             ],
             type: "bool",

@@ -58,6 +58,10 @@ use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::DispatchResult, ensure, pallet_prelude::*, traits::IsSubType, weights::DispatchInfo,
 };
+
+#[cfg(feature = "runtime-benchmarks")]
+use common_primitives::messages::BenchmarkHelper;
+
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
@@ -67,7 +71,6 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
@@ -75,8 +78,10 @@ use common_primitives::{
 	},
 	schema::{SchemaId, SchemaValidator},
 };
+
+pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 pub use pallet::*;
-pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas};
+pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
 pub use weights::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -353,6 +358,8 @@ pub mod pallet {
 
 		/// Cryptographic signature verification failed for proving ownership of new public-key.
 		NewKeyOwnershipInvalidSignature,
+		/// Attempted to request validity of schema permission or delegation in the future.
+		CannotPredictValidityPastCurrentBlock,
 	}
 
 	#[pallet::hooks]
@@ -1030,37 +1037,6 @@ impl<T: Config> Pallet<T> {
 		)
 	}
 
-	/// Check that the delegator has an active delegation to the provider.
-	/// `block_number`: Provide `None` to know if the delegation is active at the current block.
-	///                 Provide Some(N) to know if the delegation was or will be active at block N.
-	///
-	/// # Errors
-	/// * [`Error::DelegationNotFound`]
-	/// * [`Error::DelegationRevoked`]
-	///
-	pub fn ensure_valid_delegation(
-		provider: ProviderId,
-		delegator: DelegatorId,
-		block_number: Option<T::BlockNumber>,
-	) -> Result<Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError>
-	{
-		let info =
-			Self::get_delegation(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
-		let current_block = frame_system::Pallet::<T>::block_number();
-		let requested_block = match block_number {
-			Some(block_number) => {
-				ensure!(current_block >= block_number, Error::<T>::DelegationNotFound);
-				block_number
-			},
-			None => current_block,
-		};
-		if info.revoked_at == T::BlockNumber::zero() {
-			return Ok(info)
-		}
-		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
-		Ok(info)
-	}
-
 	/// Deletes a key associated with a given MSA
 	///
 	/// # Errors
@@ -1142,27 +1118,6 @@ impl<T: Config> Pallet<T> {
 	pub fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		let msa_id = Self::get_msa_by_public_key(key).ok_or(Error::<T>::NoKeyExists)?;
 		Ok(msa_id)
-	}
-
-	/// Check if provider is allowed to publish for a given schema_id for a given delegator
-	///
-	/// # Errors
-	/// * [`Error::DelegationNotFound`]
-	/// * [`Error::DelegationRevoked`]
-	/// * [`Error::SchemaNotGranted`]
-	///
-	pub fn ensure_valid_schema_grant(
-		provider: ProviderId,
-		delegator: DelegatorId,
-		schema_id: SchemaId,
-	) -> DispatchResult {
-		let provider_info = Self::ensure_valid_delegation(provider, delegator, None)?;
-
-		ensure!(
-			provider_info.schema_permissions.contains_key(&schema_id),
-			Error::<T>::SchemaNotGranted
-		);
-		Ok(())
 	}
 
 	/// Get a list of Schema Ids that a provider has been granted access to
@@ -1263,6 +1218,29 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+impl<T: Config> BenchmarkHelper<T::AccountId> for Pallet<T> {
+	/// Some docs
+	fn set_delegation_relationship(
+		provider: ProviderId,
+		delegator: DelegatorId,
+		schemas: Vec<SchemaId>,
+	) -> DispatchResult {
+		Self::add_provider(provider, delegator, schemas)?;
+		Ok(())
+	}
+
+	/// Some docs
+	fn add_key(msa_id: MessageSourceId, key: T::AccountId) -> DispatchResult {
+		Self::add_key(msa_id, &key, EMPTY_FUNCTION)?;
+		Ok(())
+	}
+
+	fn set_schema_count(schema_id: SchemaId) {
+		T::SchemaValidator::set_schema_count(schema_id)
+	}
+}
+
 impl<T: Config> MsaLookup for Pallet<T> {
 	type AccountId = T::AccountId;
 
@@ -1274,25 +1252,8 @@ impl<T: Config> MsaLookup for Pallet<T> {
 impl<T: Config> MsaValidator for Pallet<T> {
 	type AccountId = T::AccountId;
 
-	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		Self::ensure_valid_msa_key(key)
-	}
-
-	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
-	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
-	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
-	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
-	/// would like to avoid.
-	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
-	/// this method to return a dummy account in case it does not exist
-	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
-		let result = Self::ensure_valid_msa_key(key);
-		if result.is_err() {
-			return Ok(1 as MessageSourceId)
-		}
-		Ok(result.unwrap())
 	}
 }
 
@@ -1321,6 +1282,7 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 	/// # Errors
 	/// * [`Error::DelegationNotFound`]
 	/// * [`Error::DelegationRevoked`]
+	/// * [`Error::CannotPredictValidityPastCurrentBlock`]
 	///
 	fn ensure_valid_delegation(
 		provider_id: ProviderId,
@@ -1333,53 +1295,55 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		let current_block = frame_system::Pallet::<T>::block_number();
 		let requested_block = match block_number {
 			Some(block_number) => {
-				ensure!(current_block >= block_number, Error::<T>::DelegationNotFound);
+				ensure!(
+					current_block >= block_number,
+					Error::<T>::CannotPredictValidityPastCurrentBlock
+				);
 				block_number
 			},
 			None => current_block,
 		};
+
 		if info.revoked_at == T::BlockNumber::zero() {
 			return Ok(info)
 		}
 		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
+
 		Ok(info)
 	}
 }
 
-impl<T: Config> SchemaGrantValidator for Pallet<T> {
+impl<T: Config> SchemaGrantValidator<T::BlockNumber> for Pallet<T> {
 	/// Check if provider is allowed to publish for a given schema_id for a given delegator
 	///
 	/// # Errors
 	/// * [`Error::DelegationNotFound`]
-	/// * [`Error::SchemaNotGranted`]
 	/// * [`Error::DelegationRevoked`]
+	/// * [`Error::SchemaNotGranted`]
+	/// * [`Error::CannotPredictValidityPastCurrentBlock`]
 	///
-	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_schema_grant(
 		provider: ProviderId,
 		delegator: DelegatorId,
 		schema_id: SchemaId,
+		block_number: T::BlockNumber,
 	) -> DispatchResult {
-		Self::ensure_valid_schema_grant(provider, delegator, schema_id)
-	}
+		let provider_info = Self::ensure_valid_delegation(provider, delegator, Some(block_number))?;
 
-	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
-	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
-	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
-	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
-	/// would like to avoid.
-	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
-	/// this method to return a dummy account in case it does not exist
-	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_valid_schema_grant(
-		provider: ProviderId,
-		delegator: DelegatorId,
-		_schema_id: SchemaId,
-	) -> DispatchResult {
-		let provider_info = Self::get_delegation_of(delegator, provider);
-		if provider_info.is_none() {
+		let schema_permission_revoked_at_block_number = provider_info
+			.schema_permissions
+			.get(&schema_id)
+			.ok_or(Error::<T>::SchemaNotGranted)?;
+
+		if *schema_permission_revoked_at_block_number == T::BlockNumber::zero() {
 			return Ok(())
 		}
+
+		ensure!(
+			block_number <= *schema_permission_revoked_at_block_number,
+			Error::<T>::SchemaNotGranted
+		);
+
 		Ok(())
 	}
 }

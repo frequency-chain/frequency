@@ -188,12 +188,13 @@ pub trait DelegationValidator {
 }
 
 /// A behavior that allows for validating a schema grant
-pub trait SchemaGrantValidator {
+pub trait SchemaGrantValidator<BlockNumber> {
 	/// Validates if the provider is allowed to use the particular schema id currently
 	fn ensure_valid_schema_grant(
 		provider_id: ProviderId,
 		delegator_id: DelegatorId,
 		schema_id: SchemaId,
+		block_number: BlockNumber,
 	) -> DispatchResult;
 }
 
