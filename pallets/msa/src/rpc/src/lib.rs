@@ -97,14 +97,19 @@ where
 			.map(|&delegator_msa_id| {
 				// api.has_delegation returns  Result<bool, ApiError>), so _or(false) should not happen,
 				// but just in case, protect against panic
-				let has_delegation: bool =
-					match api.has_delegation(&at, delegator_msa_id, provider_msa_id, block_number, schema_id) {
-						Ok(result) => result,
-						Err(e) => {
-							warn!("ApiError from has_delegation! {:?}", e);
-							false
-						},
-					};
+				let has_delegation: bool = match api.has_delegation(
+					&at,
+					delegator_msa_id,
+					provider_msa_id,
+					block_number,
+					schema_id,
+				) {
+					Ok(result) => result,
+					Err(e) => {
+						warn!("ApiError from has_delegation! {:?}", e);
+						false
+					},
+				};
 				(delegator_msa_id, has_delegation)
 			})
 			.collect())
