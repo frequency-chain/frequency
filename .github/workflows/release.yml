@@ -18,7 +18,7 @@ jobs:
     name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
     strategy:
       matrix:
-        os: [[self-hosted, Linux, X64], macos-latest]
+        os: [[self-hosted, Linux, X64], [self-hosted, Linux, ARM64]]
         network: [local, rococo, mainnet]
         include:
           - network: local
@@ -33,7 +33,8 @@ jobs:
           - os: [self-hosted, Linux, X64]
             os-short-name: ubuntu
             arch: amd64
-          - os: macos-latest
+          - os: [self-hosted, Linux, ARM64]
+            os-short-name: ubuntu
             arch: arm64
     runs-on: ${{matrix.os}}
     steps:
@@ -98,9 +99,9 @@ jobs:
       - name: Rename Binary
         run: |
           cp -p ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
-      - name: Install coreutils for macOS
-        if: matrix.os == 'macos-latest'
-        run: brew install coreutils
+      # - name: Install coreutils for macOS
+      #   if: matrix.os == 'macos-latest'
+      #   run: brew install coreutils
       - name: Create Binary Hash
         run: |
           cd ${{env.BIN_DIR}}
