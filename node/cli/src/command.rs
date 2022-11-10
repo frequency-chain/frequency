@@ -98,7 +98,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			return Ok(Box::new(chain_spec::frequency_local::local_testnet_config())),
 		#[cfg(feature = "frequency-rococo-testnet")]
 		"frequency-rococo" | "rococo" | "testnet" =>
-			return Ok(Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet())),
+			return Ok(Box::new(chain_spec::frequency_rococo::load_frequency_rococo_spec())),
 		path => {
 			if path.is_empty() {
 				if cfg!(feature = "frequency") {
@@ -118,9 +118,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				} else if cfg!(feature = "frequency-rococo-testnet") {
 					#[cfg(feature = "frequency-rococo-testnet")]
 					{
-						return Ok(
-							Box::new(chain_spec::frequency_rococo::frequency_rococo_testnet()),
-						)
+						return Ok(Box::new(
+							chain_spec::frequency_rococo::load_frequency_rococo_spec(),
+						))
 					}
 					#[cfg(not(feature = "frequency-rococo-testnet"))]
 					return Err("Frequency Rococo runtime is not available.".into())
