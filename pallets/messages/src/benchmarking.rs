@@ -8,11 +8,7 @@ use common_primitives::{
 	schema::*,
 };
 use frame_benchmarking::{benchmarks, whitelisted_caller};
-use frame_support::{
-	assert_ok,
-	pallet_prelude::{DispatchResult, DispatchResultWithPostInfo},
-	traits::OnInitialize,
-};
+use frame_support::{assert_ok, pallet_prelude::DispatchResult, traits::OnInitialize};
 use frame_system::RawOrigin;
 
 const MESSAGES: u32 = 499;
@@ -34,7 +30,7 @@ fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 		Some(message_source_id.into()),
 		bounded_payload,
 		schema_id,
-	);
+	)?;
 	Ok(())
 }
 
