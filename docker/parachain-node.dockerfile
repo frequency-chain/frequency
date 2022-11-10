@@ -3,7 +3,7 @@
 # the binary in the build folder.
 # This is the build stage for Polkadot. Here we create the binary in a temporary image.
 FROM --platform=linux/amd64 ubuntu:focal AS base
-LABEL maintainer="Frequency Team"
+LABEL maintainer="Frequency"
 LABEL description="Frequency parachain node for Rococo testnet and Mainnet"
 
 RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates
