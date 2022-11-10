@@ -122,23 +122,8 @@ pub mod pallet {
 		/// The schema model exceeds the maximum length allowed
 		ExceedsMaxSchemaModelBytes,
 
-		/// The governance schema model max value provided is too large (greater than the BoundedVec size)
-		ExceedsGovernanceSchemaModelMaxValue,
-
 		/// The schema is less than the minimum length allowed
 		LessThanMinSchemaModelBytes,
-
-		/// Schema does not exist
-		NoSuchSchema,
-
-		/// String failed to convert
-		StringConversionError,
-
-		/// Deserialization failed
-		DeserializationError,
-
-		/// Serialization failed
-		SerializationError,
 
 		/// CurrentSchemaIdentifierMaximum was attempted to overflow max, means MaxSchemaRegistrations is too big
 		SchemaCountOverflow,

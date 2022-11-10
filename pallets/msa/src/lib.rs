@@ -305,12 +305,6 @@ pub mod pallet {
 		/// The number of key values has reached its maximum
 		KeyLimitExceeded,
 
-		/// More than one account key exists for the MSA during retire attempt
-		MoreThanOneKeyExists,
-
-		/// Can't retire a registered provider MSA
-		RegisteredProviderCannotBeRetired,
-
 		/// A transaction's Origin (AccountId) may not remove itself
 		InvalidSelfRemoval,
 
