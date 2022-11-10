@@ -8,7 +8,7 @@ use jsonrpsee::RpcModule;
 
 use cumulus_client_cli::CollatorOptions;
 
-use common_primitives::node::{AccountId, Balance, Block, BlockNumber, Hash, Index as Nonce};
+use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
 // Cumulus Imports
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::ParachainConsensus;
@@ -285,7 +285,7 @@ where
 		+ cumulus_primitives_core::CollectCollationInfo<Block>
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
 		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
-		+ pallet_messages_runtime_api::MessagesRuntimeApi<Block, BlockNumber>
+		+ pallet_messages_runtime_api::MessagesRuntimeApi<Block>
 		+ pallet_schemas_runtime_api::SchemasRuntimeApi<Block>
 		+ pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
@@ -559,7 +559,7 @@ where
 		+ cumulus_primitives_core::CollectCollationInfo<Block>
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
 		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
-		+ pallet_messages_runtime_api::MessagesRuntimeApi<Block, BlockNumber>
+		+ pallet_messages_runtime_api::MessagesRuntimeApi<Block>
 		+ pallet_schemas_runtime_api::SchemasRuntimeApi<Block>
 		+ pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,

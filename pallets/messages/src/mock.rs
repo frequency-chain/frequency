@@ -228,6 +228,10 @@ impl pallet_messages::Config for Test {
 	type WeightInfo = ();
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type MaxMessagePayloadSizeBytes = MaxMessagePayloadSizeBytes;
+
+	#[cfg(feature = "runtime-benchmarks")]
+	/// A set of helper functions for benchmarking.
+	type Helper = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
