@@ -1,28 +1,25 @@
+use crate::msa::MessageSourceId;
 #[cfg(feature = "std")]
 use crate::utils;
-use crate::{msa::MessageSourceId, node::BlockNumber};
 use codec::{Decode, Encode};
-use scale_info::TypeInfo;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-use sp_runtime::traits::One;
-use sp_std::{prelude::*, vec};
-use std::ops::Sub;
-#[cfg(feature = "std")]
-use utils::*;
-
 use poem::{http::StatusCode, FromRequest, IntoResponse, Request, RequestBody};
 use poem_openapi::{
+	payload::Json,
 	types::{ParseFromJSON, ToJSON, Type},
 	ApiResponse, Object,
 };
+use scale_info::TypeInfo;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+use sp_std::{prelude::*, vec};
+#[cfg(feature = "std")]
+use utils::*;
 
 /// A type for responding with an single Message in an RPC-call dependent on schema model
 /// IPFS, Parquet: { index, block_number, provider_msa_id, cid, payload_length }
 /// Avro, OnChain: { index, block_number, provider_msa_id, msa_id, payload }
-#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, Object)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Object)]
 pub struct MessageResponse {
 	/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
 	/// indicating that the original source MSA is acting as its own provider. An id differing from that
@@ -126,12 +123,13 @@ impl<'a> FromRequest<'a> for BlockPaginationRequest {
 		Ok(BlockPaginationRequest { from_block, from_index, to_block, page_size })
 	}
 }
+
 /// A type for responding with a collection of paginated messages.
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, Object)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct BlockPaginationResponse<T>
 where
-	T: Sized + Serialize + std::marker::Sync + std::marker::Send + Type,
+	T: Sized + Serialize + std::marker::Sync + std::marker::Send + Type + ParseFromJSON + ToJSON,
 {
 	/// Collection of messages for a given [`BlockPaginationRequest`].
 	pub content: Vec<T>,
@@ -150,7 +148,7 @@ where
 pub enum BlockPaginationApiResponse {
 	/// Success response
 	#[oai(status = 200)]
-	Ok(BlockPaginationResponse<MessageResponse>),
+	Ok(Json<BlockPaginationResponse<MessageResponse>>),
 	/// Error response
 	#[oai(status = 400)]
 	BadRequest,
@@ -158,7 +156,7 @@ pub enum BlockPaginationApiResponse {
 
 impl<T> BlockPaginationResponse<T>
 where
-	T: Sized + Serialize + std::marker::Sync + std::marker::Send + Type,
+	T: Sized + Serialize + std::marker::Sync + std::marker::Send + Type + ParseFromJSON + ToJSON,
 {
 	/// Generates a new empty Pagination request
 	pub const fn new() -> BlockPaginationResponse<T> {
@@ -202,7 +200,16 @@ where
 }
 
 #[poem::async_trait]
-impl<MessageResponse> IntoResponse for BlockPaginationResponse<MessageResponse> {
+impl<'a> FromRequest<'a> for BlockPaginationResponse<MessageResponse> {
+	async fn from_request(req: &'a Request, _body: &mut RequestBody) -> Result<Self, poem::Error> {
+		let self_value =
+			Self { content: vec![], has_next: false, next_block: None, next_index: None };
+		Ok(self_value)
+	}
+}
+
+#[poem::async_trait]
+impl IntoResponse for BlockPaginationResponse<MessageResponse> {
 	fn into_response(self) -> poem::Response {
 		let self_json = serde_json::to_string(&self).unwrap();
 		poem::Response::builder()

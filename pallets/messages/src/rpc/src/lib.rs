@@ -38,18 +38,15 @@ pub trait MessagesApi {
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
-pub struct MessagesHandler<C, M, B> {
+pub struct MessagesHandler<C, M> {
 	client: Arc<C>,
 	_marker: std::marker::PhantomData<M>,
-	block_number: std::marker::PhantomData<B>,
 }
 
-impl<C, M, B> MessagesHandler<C, M, B> {
+impl<C, M> MessagesHandler<C, M> {
 	/// Create new instance with the given reference to the client.
 	pub fn new(client: Arc<C>) -> Self {
-		// get current block_number
-
-		Self { client, _marker: Default::default(), block_number: Default::default() }
+		Self { client, _marker: Default::default() }
 	}
 }
 
