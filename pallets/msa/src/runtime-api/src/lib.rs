@@ -23,6 +23,13 @@ use sp_std::vec::Vec;
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime files (the `runtime` folder)
 sp_api::decl_runtime_apis! {
+
+	/// Runtime Version for MSAs
+	/// - MUST be incremented if anything changes
+	/// - Also update in js/api-augment
+	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
+	#[api_version(1)]
+
 	/// Runtime API definition for [MSA](../pallet_msa/index.html)
 	pub trait MsaRuntimeApi<AccountId> where
 		AccountId: Codec,

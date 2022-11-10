@@ -1,13 +1,13 @@
 [package]
-authors = ["Frequency Team"]
+authors = ["Frequency"]
 description = "A package that defines common helper modules used in Frequency"
 edition = "2021"
 homepage = "https://frequency.xyz"
 license = "Apache-2.0"
-name = 'common-helpers'
+name = "common-helpers"
 publish = false
 repository = "https://github.com/LibertyDSNP/frequency/"
-version = "0.1.0"
+version = "0.9.29-rc3"
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
