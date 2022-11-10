@@ -1,11 +1,11 @@
-const assert = require("assert");
-const sinon = require("sinon");
+import assert from "assert";
+import sinon from "sinon";
 
-const { AVRO_GRAPH_CHANGE } = require("../fixtures/schemaTypes");
-const { AVRO, PARQUET } = require("../fixtures/modelTypes");
-const { ON_CHAIN, IPFS } = require("../fixtures/payloadLocation");
+import { AVRO_GRAPH_CHANGE } from "../fixtures/schemaTypes";
+import { AVRO, PARQUET } from "../fixtures/modelTypes";
+import { ON_CHAIN, IPFS } from "../fixtures/payloadLocation";
 
-const ApiWrapper = require("./apiWrapper");
+import ApiWrapper from "./apiWrapper";
 
 describe("#ApiWrapper", () => {
     let mockPolkadot;

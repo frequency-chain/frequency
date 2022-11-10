@@ -1,8 +1,7 @@
-const { ApiPromise, WsProvider } = require("@polkadot/api");
-const { options } = require("@frequency-chain/api-augment");
-const { Keyring } = require("@polkadot/api");
+import { ApiPromise, ApiRx, Keyring, WsProvider } from "@polkadot/api";
+import { options } from "@frequency-chain/api-augment";
 
-exports.getFrequencyAPI = async () => {
+export const getFrequencyAPI = async (): Promise<ApiPromise> => {
     let DEPLOY_SCHEMA_ENDPOINT_URL = process.env.DEPLOY_SCHEMA_ENDPOINT_URL;
     if (DEPLOY_SCHEMA_ENDPOINT_URL === undefined) {
       // One would think that localhost would also work here but it doesn't consistently.
@@ -19,8 +18,8 @@ exports.getFrequencyAPI = async () => {
     return api;
 }
 
-exports.getSignerAccountKeys = () => {
-    const keyring = new Keyring();
+export const getSignerAccountKeys = () => {
+    const keyring: Keyring = new Keyring();
 
     let DEPLOY_SCHEMA_ACCOUNT_URI = process.env.DEPLOY_SCHEMA_ACCOUNT_URI;
     if (DEPLOY_SCHEMA_ACCOUNT_URI === undefined) {

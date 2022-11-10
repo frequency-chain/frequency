@@ -1,10 +1,10 @@
-const assert = require("assert");
+import assert from "assert";
 
-const ApiWrapper = require("./scaffolding/api/apiWrapper");
-const { getFrequencyAPI, getSignerAccountKeys} = require("./scaffolding/api/apiConnection");
+import ApiWrapper from "./scaffolding/api/apiWrapper";
+import { getFrequencyAPI, getSignerAccountKeys} from "./scaffolding/api/apiConnection";
 
 describe("#setMaxSchemaModelBytes", () => {
-    let api;
+    let api: ApiWrapper;
 
     beforeEach(async () => {
         api = new ApiWrapper(await getFrequencyAPI(), getSignerAccountKeys());

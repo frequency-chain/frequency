@@ -1,15 +1,15 @@
-const assert = require("assert");
+import ApiWrapper from "./scaffolding/api/apiWrapper";
 
-const ApiWrapper = require("./scaffolding/api/apiWrapper");
-const { getFrequencyAPI, getSignerAccountKeys} = require("./scaffolding/api/apiConnection");
+import assert from "assert";
 
-const { AVRO_GRAPH_CHANGE } = require("./scaffolding/fixtures/schemaTypes");
-const { AVRO, PARQUET } = require("./scaffolding/fixtures/modelTypes");
-const { ON_CHAIN, IPFS } = require("./scaffolding/fixtures/payloadLocation");
+import { getFrequencyAPI, getSignerAccountKeys} from "./scaffolding/api/apiConnection";
 
+import { AVRO_GRAPH_CHANGE } from "./scaffolding/fixtures/schemaTypes";
+import { AVRO, PARQUET } from "./scaffolding/fixtures/modelTypes";
+import { ON_CHAIN, IPFS } from "./scaffolding/fixtures/payloadLocation";
 
 describe("#createSchema", () => {
-    let api;
+    let api: ApiWrapper;
 
     beforeEach(async () => {
         api = new ApiWrapper(await getFrequencyAPI(), getSignerAccountKeys());

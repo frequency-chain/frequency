@@ -1,4 +1,4 @@
-exports.PARQUET_BROADCAST = [
+export const PARQUET_BROADCAST = [
     {
         name: "announcementType",
         column_type: {
@@ -35,7 +35,7 @@ exports.PARQUET_BROADCAST = [
     },
 ];
 
-exports.AVRO_GRAPH_CHANGE = {
+export const AVRO_GRAPH_CHANGE = {
     type: "record",
     name: "GraphChange",
     fields: [
