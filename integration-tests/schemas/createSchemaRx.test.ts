@@ -3,12 +3,11 @@ import { Keyring } from "@polkadot/api";
 
 import assert from "assert";
 
-import { AVRO_GRAPH_CHANGE } from "./scaffolding/fixtures/schemaTypes";
-import { AVRO } from "./scaffolding/fixtures/modelTypes";
-import { ON_CHAIN } from "./scaffolding/fixtures/payloadLocation";
-import { filter, firstValueFrom, map, mergeMap, Observable, pipe } from "rxjs";
-import { Event } from "@polkadot/types/interfaces";
-import { ISubmittableResult } from "@polkadot/types/types";
+import { AVRO_GRAPH_CHANGE } from "./scaffolding/schemaTypes";
+import { AVRO } from "./scaffolding/modelTypes";
+import { ON_CHAIN } from "./scaffolding/payloadLocation";
+import { filter, firstValueFrom, mergeMap, Observable } from "rxjs";
+import { groupEventsByKey } from "./scaffolding/helpers";
 
 describe("#createSchema", () => {
     let apiObservable: Observable<ApiRx>;
@@ -21,7 +20,7 @@ describe("#createSchema", () => {
         keys = keyring.addFromUri("//Alice");
     })
 
-    it.only("should successfully create an Avro GraphChange schema", async () => {
+    it("should successfully create an Avro GraphChange schema", async () => {
         const chainEvents = await firstValueFrom(
             apiObservable.pipe(
                 mergeMap((api) => api.tx.schemas.createSchema(JSON.stringify(AVRO_GRAPH_CHANGE), AVRO, ON_CHAIN).signAndSend(keys).pipe(
@@ -33,15 +32,3 @@ describe("#createSchema", () => {
         assert.notEqual(chainEvents["schemas.SchemaCreated"], undefined);
     }).timeout(10000);
 })
-
-
-/************* Private Helper Functions *************/
-function groupEventsByKey() {
-    return pipe(
-        map((result: ISubmittableResult) => result.events.reduce((acc, {event}) => { acc[eventKey(event)] = event.data; return acc}, {})),
-    )
-}
-
-function eventKey(event:Event) {
-    return `${event.section}.${event.method}`;
-}
