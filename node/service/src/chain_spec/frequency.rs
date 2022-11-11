@@ -68,7 +68,6 @@ pub fn frequency() -> ChainSpec {
 		ChainType::Live,
 		move || {
 			frequency_genesis(
-				// TODO: initial collators.
 				vec![
 					(
 						frequency_mainnet_keys::UNFINISHED_COLLATOR_1_SR25519
