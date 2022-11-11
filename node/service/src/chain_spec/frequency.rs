@@ -40,28 +40,28 @@ pub mod frequency_mainnet_keys {
 
 	// Unfinished Collator 3 public key (sr25519) and session key
 	pub const UNFINISHED_COLLATOR_3_SR25519: &str =
-		"0x7eb4de08f44e6077ed072e2fc357aac007150e3b73373434c47ec56323b52a75"; // Unfinished Labs Collator 3
+		"0x7eb4de08f44e6077ed072e2fc357aac007150e3b73373434c47ec56323b52a75";
 
 	pub const UNFINISHED_COLLATOR_3_SESSION_KEY: &str =
-		"0x8062ffd04e84549b541668e4974f37f79f490ea846321e8a613c3406fceff565"; // Unfinished Labs Collator 3
+		"0x8062ffd04e84549b541668e4974f37f79f490ea846321e8a613c3406fceff565";
 
 	// OnFinality Collator public key (sr25519) and session key
 	pub const ON_FINALITY_COLLATOR_1_SR25519: &str =
-		"0x3c9ea854901c1b36bd203400c90c31a69367316f7deaeeb14037f2be44bcb118"; // OnFinality Collator 1
+		"0x3c9ea854901c1b36bd203400c90c31a69367316f7deaeeb14037f2be44bcb118";
 	pub const ON_FINALITY_COLLATOR_1_SESSION_KEY: &str =
-		"0xb615416b0c34c5f3d1451a5d44390325832154ea20196b152ea5fa49346f5a30"; // OnFinality Collator 1
+		"0xb615416b0c34c5f3d1451a5d44390325832154ea20196b152ea5fa49346f5a30";
 
 	// External Collator 1  public key (sr25519) and session key
 	pub const EXTERNAL_COLLATOR_1_SR25519: &str =
-		"0x3c33f8c4c1155958d60d4d52a5181677da96052493d876b747272311b52cfe61"; // External Collator 1
+		"0x3c33f8c4c1155958d60d4d52a5181677da96052493d876b747272311b52cfe61";
 	pub const EXTERNAL_COLLATOR_1_SESSION_KEY: &str =
-		"0xbe16ebba3525a83e5f5e49cea331d5bc15c723d1dff7319b42837524b40c5970"; // External Collator 1
+		"0xbe16ebba3525a83e5f5e49cea331d5bc15c723d1dff7319b42837524b40c5970";
 
 	// External Collator 2 public key (sr25519) and session key
 	pub const EXTERNAL_COLLATOR_2_SR25519: &str =
-		"0x36523fba06e0f31f35dd904386a0ebe25d505ef09af4d39041afa1d994a23f5d"; // External Collator 2
+		"0x36523fba06e0f31f35dd904386a0ebe25d505ef09af4d39041afa1d994a23f5d";
 	pub const EXTERNAL_COLLATOR_2_SESSION_KEY: &str =
-		"0x8415832dcab4bcc60023222bbef2e222082ba69d53c9a870129e1c858a9ff87a"; // External Collator 2
+		"0x8415832dcab4bcc60023222bbef2e222082ba69d53c9a870129e1c858a9ff87a";
 }
 
 // pub fn load_frequency_spec() -> Result<ChainSpec, String> {
