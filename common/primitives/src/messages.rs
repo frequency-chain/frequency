@@ -200,11 +200,14 @@ where
 }
 
 #[poem::async_trait]
-impl<'a> FromRequest<'a> for BlockPaginationResponse<MessageResponse> {
+impl<'a> FromRequest<'a> for BlockPaginationApiResponse {
 	async fn from_request(req: &'a Request, _body: &mut RequestBody) -> Result<Self, poem::Error> {
-		let self_value =
-			Self { content: vec![], has_next: false, next_block: None, next_index: None };
-		Ok(self_value)
+		let self_value = req
+			.data::<BlockPaginationResponse<MessageResponse>>()
+			.expect("Request data should be set by the handler.")
+			.clone();
+
+		Ok(BlockPaginationApiResponse::Ok(Json(self_value)))
 	}
 }
 
