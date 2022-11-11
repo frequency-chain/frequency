@@ -1,2 +1,2 @@
-export const ON_CHAIN: string = "OnChain";
-export const IPFS: string = "IPFS";
+export const ON_CHAIN: 'OnChain' | 'IPFS' = 'OnChain';
+export const IPFS: 'OnChain' | 'IPFS' = 'IPFS';

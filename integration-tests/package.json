@@ -13,11 +13,10 @@
     "dependencies": {
         "@frequency-chain/api-augment": "v0.0.0-6ddff6",
         "@polkadot/api": "9.6.2",
-        "@polkadot/types": "^9.6.2"
+        "@polkadot/types": "^9.6.2",
+        "rxjs": "^7.5.7"
     },
     "devDependencies": {
-        "mocha": "^10.1.0",
-        "sinon": "^14.0.2",
         "@polkadot/typegen": "^9.6.2",
         "@types/mocha": "^10.0.0",
         "@typescript-eslint/eslint-plugin": "^5.42.0",
@@ -27,7 +26,9 @@
         "eslint-plugin-import": "^2.26.0",
         "eslint-plugin-mocha": "^10.1.0",
         "eslint-plugin-prettier": "^4.2.1",
+        "mocha": "^10.1.0",
         "prettier": "2.7.1",
+        "sinon": "^14.0.2",
         "ts-node": "^10.9.1",
         "typescript": "^4.8.4"
     }
