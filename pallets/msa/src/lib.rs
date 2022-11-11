@@ -75,6 +75,7 @@ use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
 		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
+		MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR,
 	},
 	schema::{SchemaId, SchemaValidator},
 };
@@ -1090,8 +1091,13 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Removes all delegations from the specified delegator MSA id to providers
-	pub fn delete_delegation_relationship(delegator: DelegatorId) {
-		_ = DelegatorAndProviderToDelegation::<T>::clear_prefix(delegator, u32::max_value(), None);
+	pub fn delete_delegation_relationship(delegator: DelegatorId) -> u32 {
+		let result = DelegatorAndProviderToDelegation::<T>::clear_prefix(
+			delegator,
+			MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR,
+			None,
+		);
+		result.backend
 	}
 
 	/// Retrieves the MSA Id for a given `AccountId`

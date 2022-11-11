@@ -157,14 +157,15 @@ benchmarks! {
 	}: _(RawOrigin::Signed(caller_and_delegator_public_key), new_public_key)
 
 	retire_msa {
-
 		let caller: T::AccountId = whitelisted_caller();
 
-		// Create a MSA account
-		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
-		let msa_id = Msa::<T>::ensure_valid_msa_key(&caller).unwrap();
+		let s in 1 .. MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR;
+		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(0);
 
-		assert_eq!(Msa::<T>::is_registered_provider(msa_id),false);
+		for j in 2 .. s {
+			let (provider, provider_msa_id) = create_account_with_msa_id::<T>(j);
+			add_delegation::<T>(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id.clone()));
+		}
 
 	}: _(RawOrigin::Signed(caller))
 
