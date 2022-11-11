@@ -28,15 +28,15 @@ pub mod frequency_mainnet_keys {
 
 	// Unfinished Collator 1 public key (sr25519) and session key
 	pub const UNFINISHED_COLLATOR_1_SR25519: &str =
-		"0x40c0cf083ba1d081fce7c1f38f5344a4eba4ee5c13e1dddcb9cc6acf74559710"; // Unfinished Labs Collator 1
+		"0x40c0cf083ba1d081fce7c1f38f5344a4eba4ee5c13e1dddcb9cc6acf74559710";
 	pub const UNFINISHED_COLLATOR_1_SESSION_KEY: &str =
-		"0x7c63b545dc15066a4867f5d127b554d2bad49eab73303f550e99ea11d9ab123c"; // Unfinished Labs Collator 1
+		"0x7c63b545dc15066a4867f5d127b554d2bad49eab73303f550e99ea11d9ab123c";
 
 	// Unfinished Collator 2 public key (sr25519) and session key
 	pub const UNFINISHED_COLLATOR_2_SR25519: &str =
-		"0x1e5dc06d8418a0dd695bf3a23ecdc219103a149a863c1977396bf0697a474015"; // Unfinished Labs Collator 2
+		"0x1e5dc06d8418a0dd695bf3a23ecdc219103a149a863c1977396bf0697a474015";
 	pub const UNFINISHED_COLLATOR_2_SESSION_KEY: &str =
-		"0xa0e9a263e02d8b504808a67abbab811cb14fb376c0f79f5b7d6f7c2e7dcb585d"; // Unfinished Labs Collator 2
+		"0xa0e9a263e02d8b504808a67abbab811cb14fb376c0f79f5b7d6f7c2e7dcb585d";
 
 	// Unfinished Collator 3 public key (sr25519) and session key
 	pub const UNFINISHED_COLLATOR_3_SR25519: &str =
