@@ -60,7 +60,7 @@ use frame_support::{
 };
 
 #[cfg(feature = "runtime-benchmarks")]
-use common_primitives::messages::BenchmarkHelper;
+use common_primitives::benchmarks::BenchmarkHelper;
 
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;

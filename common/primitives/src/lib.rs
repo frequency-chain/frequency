@@ -23,3 +23,7 @@ pub mod parquet;
 pub mod schema;
 /// Structs and traits for the utility package.
 pub mod utils;
+
+#[cfg(feature = "runtime-benchmarks")]
+/// Benchmarking helper trait
+pub mod benchmarks;

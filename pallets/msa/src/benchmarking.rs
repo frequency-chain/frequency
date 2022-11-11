@@ -1,5 +1,3 @@
-#![cfg(feature = "runtime-benchmarks")]
-
 use super::*;
 
 use crate::types::EMPTY_FUNCTION;

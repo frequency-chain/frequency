@@ -67,6 +67,10 @@ use common_primitives::{
 	},
 	schema::*,
 };
+
+#[cfg(feature = "runtime-benchmarks")]
+use common_primitives::benchmarks::BenchmarkHelper;
+
 pub use pallet::*;
 pub use types::*;
 pub use weights::*;
