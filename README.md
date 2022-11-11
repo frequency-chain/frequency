@@ -231,7 +231,7 @@ cargo test --all-features --workspace --release
 
 ### Integration Tests
 
-To run the integration tests, run `npm test` from the `./integration-tests/` directory.
+To run the integration tests, run `make integration-test`.
 
 ## Run Benchmarks
 
