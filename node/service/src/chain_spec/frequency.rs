@@ -25,29 +25,41 @@ pub mod frequency_mainnet_keys {
 		"0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"; // Alice
 
 	//TODO: update collator key naming convention
+
+	// Unfinished Collator 1 public key (sr25519) and session key
 	pub const UNFINISHED_COLLATOR_1_SR25519: &str =
 		"0x40c0cf083ba1d081fce7c1f38f5344a4eba4ee5c13e1dddcb9cc6acf74559710"; // Unfinished Labs Collator 1
-	pub const UNFINISHED_COLLATOR_2_SR25519: &str =
-		"0x1e5dc06d8418a0dd695bf3a23ecdc219103a149a863c1977396bf0697a474015"; // Unfinished Labs Collator 2
-	pub const UNFINISHED_COLLATOR_3_SR25519: &str =
-		"0x7eb4de08f44e6077ed072e2fc357aac007150e3b73373434c47ec56323b52a75"; // Unfinished Labs Collator 3
-	pub const ON_FINALITY_COLLATOR_1_SR25519: &str =
-		"0x3c9ea854901c1b36bd203400c90c31a69367316f7deaeeb14037f2be44bcb118"; // OnFinality Collator 1
-	pub const EXTERNAL_COLLATOR_1_SR25519: &str =
-		"0x3c33f8c4c1155958d60d4d52a5181677da96052493d876b747272311b52cfe61"; // External Collator 1
-	pub const EXTERNAL_COLLATOR_2_SR25519: &str =
-		"0x36523fba06e0f31f35dd904386a0ebe25d505ef09af4d39041afa1d994a23f5d"; // External Collator 2
-
 	pub const UNFINISHED_COLLATOR_1_SESSION_KEY: &str =
 		"0x7c63b545dc15066a4867f5d127b554d2bad49eab73303f550e99ea11d9ab123c"; // Unfinished Labs Collator 1
+
+	// Unfinished Collator 2 public key (sr25519) and session key
+	pub const UNFINISHED_COLLATOR_2_SR25519: &str =
+		"0x1e5dc06d8418a0dd695bf3a23ecdc219103a149a863c1977396bf0697a474015"; // Unfinished Labs Collator 2
 	pub const UNFINISHED_COLLATOR_2_SESSION_KEY: &str =
 		"0xa0e9a263e02d8b504808a67abbab811cb14fb376c0f79f5b7d6f7c2e7dcb585d"; // Unfinished Labs Collator 2
+
+	// Unfinished Collator 3 public key (sr25519) and session key
+	pub const UNFINISHED_COLLATOR_3_SR25519: &str =
+		"0x7eb4de08f44e6077ed072e2fc357aac007150e3b73373434c47ec56323b52a75"; // Unfinished Labs Collator 3
+
 	pub const UNFINISHED_COLLATOR_3_SESSION_KEY: &str =
 		"0x8062ffd04e84549b541668e4974f37f79f490ea846321e8a613c3406fceff565"; // Unfinished Labs Collator 3
+
+	// OnFinality Collator public key (sr25519) and session key
+	pub const ON_FINALITY_COLLATOR_1_SR25519: &str =
+		"0x3c9ea854901c1b36bd203400c90c31a69367316f7deaeeb14037f2be44bcb118"; // OnFinality Collator 1
 	pub const ON_FINALITY_COLLATOR_1_SESSION_KEY: &str =
 		"0xb615416b0c34c5f3d1451a5d44390325832154ea20196b152ea5fa49346f5a30"; // OnFinality Collator 1
+
+	// External Collator 1  public key (sr25519) and session key
+	pub const EXTERNAL_COLLATOR_1_SR25519: &str =
+		"0x3c33f8c4c1155958d60d4d52a5181677da96052493d876b747272311b52cfe61"; // External Collator 1
 	pub const EXTERNAL_COLLATOR_1_SESSION_KEY: &str =
 		"0xbe16ebba3525a83e5f5e49cea331d5bc15c723d1dff7319b42837524b40c5970"; // External Collator 1
+
+	// External Collator 2 public key (sr25519) and session key
+	pub const EXTERNAL_COLLATOR_2_SR25519: &str =
+		"0x36523fba06e0f31f35dd904386a0ebe25d505ef09af4d39041afa1d994a23f5d"; // External Collator 2
 	pub const EXTERNAL_COLLATOR_2_SESSION_KEY: &str =
 		"0x8415832dcab4bcc60023222bbef2e222082ba69d53c9a870129e1c858a9ff87a"; // External Collator 2
 }
