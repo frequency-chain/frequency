@@ -18,11 +18,9 @@ pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConf
 
 use super::{get_properties, Extensions};
 
-//TODO: Define FINAL keys for frequency mainnet
 pub mod frequency_mainnet_keys {
-	//TODO: final sudo key(s) for mainnet
 	pub const MAINNET_FRQ_SUDO: &str =
-		"0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"; // Alice
+		"0xd64279ee49fc11521ab7272190f8c11fdff7ab554d5490254f292613b36dab30";
 
 	//TODO: update collator key naming convention
 
