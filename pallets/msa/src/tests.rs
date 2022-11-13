@@ -5,7 +5,9 @@ use frame_support::{
 	BoundedBTreeMap,
 };
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Encode, Pair};
-use sp_runtime::{traits::SignedExtension, MultiSignature};
+use sp_runtime::{
+	traits::SignedExtension, transaction_validity::TransactionValidity, MultiSignature,
+};
 
 use crate::{
 	ensure,
@@ -16,7 +18,10 @@ use crate::{
 };
 
 use common_primitives::{
-	msa::{Delegation, DelegatorId, MessageSourceId, ProviderId, ProviderRegistryEntry},
+	msa::{
+		Delegation, DelegationValidator, DelegatorId, MessageSourceId, ProviderId,
+		ProviderRegistryEntry, SchemaGrantValidator,
+	},
 	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
 	utils::wrap_binary_data,
@@ -379,26 +384,6 @@ fn it_deletes_msa_key_successfully() {
 		assert_eq!(info, None);
 
 		System::assert_last_event(Event::PublicKeyDeleted { key: test_public(2) }.into());
-	})
-}
-
-#[test]
-fn it_deletes_msa_last_key_self_removal() {
-	new_test_ext().execute_with(|| {
-		let msa_id = 2;
-
-		// Create an account
-		let test_account = test_public(4);
-		let origin = Origin::signed(test_account.clone());
-
-		// Add an account to the MSA so it has exactly one account
-		assert_ok!(Msa::add_key(msa_id, &test_account, EMPTY_FUNCTION));
-
-		// Attempt to delete/remove the account from the MSA
-		assert_noop!(
-			Msa::delete_msa_public_key(origin, test_account),
-			Error::<Test>::InvalidSelfRemoval
-		);
 	})
 }
 
@@ -1494,7 +1479,9 @@ pub fn delete_msa_public_key_call_has_correct_costs() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let new_key = key_pair.public();
 
-		let call = MsaCall::<Test>::delete_msa_public_key { key: AccountId32::from(new_key) };
+		let call = MsaCall::<Test>::delete_msa_public_key {
+			public_key_to_delete: AccountId32::from(new_key),
+		};
 		let dispatch_info = call.get_dispatch_info();
 		assert_eq!(dispatch_info.pays_fee, Pays::No);
 	})
@@ -1503,73 +1490,130 @@ pub fn delete_msa_public_key_call_has_correct_costs() {
 #[test]
 fn signed_extension_validation_delete_msa_public_key_success() {
 	new_test_ext().execute_with(|| {
-		let (owner_msa_id, owner_key_pair) = create_account();
+		let (msa_id, original_key_pair) = create_account();
 
-		let (user_key_pair, _) = sr25519::Pair::generate();
-		let user_public_key = user_key_pair.public();
-		let user_account_id = AccountId32::from(user_public_key);
-		assert_ok!(Msa::add_key(owner_msa_id, &user_account_id, EMPTY_FUNCTION));
+		let (new_key_pair, _) = sr25519::Pair::generate();
+		let new_key: AccountId32 = new_key_pair.public().into();
+		assert_ok!(Msa::add_key(msa_id, &new_key, EMPTY_FUNCTION));
 
+		let original_key: AccountId32 = original_key_pair.public().into();
+
+		// set up call for new key to delete original key
 		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_public_key { key: owner_key_pair.public().into() });
+			&Call::Msa(MsaCall::delete_msa_public_key {
+				public_key_to_delete: original_key.clone(),
+			});
 
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
-			&owner_key_pair.public().into(),
+		assert_ok!(CheckFreeExtrinsicUse::<Test>::new().validate(
+			&new_key,
 			call_delete_msa_public_key,
 			&info,
 			len,
-		);
-		assert_ok!(result);
-		assert_ok!(Msa::delete_msa_public_key(
-			Origin::signed(AccountId32::from(owner_key_pair.public())),
-			user_account_id
+		));
+
+		// validate other direction
+		let call_delete_msa_public_key2: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::delete_msa_public_key { public_key_to_delete: new_key });
+		assert_ok!(CheckFreeExtrinsicUse::<Test>::new().validate(
+			&original_key,
+			call_delete_msa_public_key2,
+			&info,
+			len,
 		));
 	});
 }
 
 #[test]
-fn signed_extension_validation_failure_when_delete_msa_public_key_called_twice() {
+fn signed_extension_validate_fails_when_delete_msa_public_key_called_twice() {
 	new_test_ext().execute_with(|| {
 		let (owner_msa_id, owner_key_pair) = create_account();
 
-		let (user_key_pair, _) = sr25519::Pair::generate();
-		let user_public_key = user_key_pair.public();
-		let user_account_id = AccountId32::from(user_public_key);
-		assert_ok!(Msa::add_key(owner_msa_id, &user_account_id, EMPTY_FUNCTION));
+		let (new_key_pair, _) = sr25519::Pair::generate();
+		let new_key: AccountId32 = new_key_pair.public().into();
+		assert_ok!(Msa::add_key(owner_msa_id, &new_key, EMPTY_FUNCTION));
 
 		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_public_key { key: owner_key_pair.public().into() });
+			&Call::Msa(MsaCall::delete_msa_public_key {
+				public_key_to_delete: owner_key_pair.public().into(),
+			});
 
-		let info = DispatchInfo::default();
-		let len = 0_usize;
-		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
-			&owner_key_pair.public().into(),
+		// check that it's okay to delete the original key
+		assert_ok!(CheckFreeExtrinsicUse::<Test>::new().validate(
+			&new_key,
 			call_delete_msa_public_key,
-			&info,
-			len,
-		);
-
-		System::set_block_number(2);
-		assert_ok!(result);
-		assert_ok!(Msa::delete_msa_public_key(
-			Origin::signed(AccountId32::from(owner_key_pair.public())),
-			user_account_id.clone()
+			&DispatchInfo::default(),
+			0_usize,
 		));
 
-		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_public_key { key: user_account_id.clone() });
-		let info = DispatchInfo::default();
-		let len = 0_usize;
-		let result_deleted = CheckFreeExtrinsicUse::<Test>::new().validate(
-			&user_account_id.clone(),
-			call_delete_msa_public_key,
-			&info,
-			len,
+		// new key deletes the old key
+		assert_ok!(Msa::delete_msa_public_key(
+			Origin::signed(new_key.clone()),
+			owner_key_pair.public().into()
+		));
+
+		assert_validate_key_delete_fails(
+			&new_key,
+			owner_key_pair.public().into(),
+			ValidityError::InvalidMsaKey,
 		);
-		assert!(result_deleted.is_err());
 	});
+}
+
+#[test]
+fn signed_extension_validate_fails_when_delete_msa_public_key_called_on_only_key() {
+	new_test_ext().execute_with(|| {
+		let (_, original_pair) = create_account();
+		let original_key: AccountId32 = original_pair.public().into();
+
+		assert_validate_key_delete_fails(
+			&original_key,
+			original_key.clone(),
+			ValidityError::InvalidSelfRemoval,
+		)
+	})
+}
+
+#[test]
+fn signed_extension_validate_fails_when_delete_msa_public_key_called_by_non_owner() {
+	new_test_ext().execute_with(|| {
+		let (_, original_pair) = create_account();
+		let original_key: AccountId32 = original_pair.public().into();
+
+		let (_, non_owner_pair) = create_account();
+		let non_owner_key: AccountId32 = non_owner_pair.public().into();
+		assert_validate_key_delete_fails(
+			&non_owner_key,
+			original_key.clone(),
+			ValidityError::NotKeyOwner,
+		)
+	})
+}
+
+// Assert that CheckFreeExtrinsicUse::validate fails with `expected_err_enum`,
+// for the "delete_msa_public_key" call, given extrinsic caller = caller_key,
+// when attempting to delete `public_key_to_delete`
+fn assert_validate_key_delete_fails(
+	caller_key: &AccountId32,
+	public_key_to_delete: AccountId32,
+	expected_err_enum: ValidityError,
+) {
+	let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
+		&Call::Msa(MsaCall::delete_msa_public_key { public_key_to_delete });
+
+	let expected_err: TransactionValidity =
+		InvalidTransaction::Custom(expected_err_enum as u8).into();
+
+	assert_eq!(
+		CheckFreeExtrinsicUse::<Test>::new().validate(
+			&caller_key,
+			call_delete_msa_public_key,
+			&DispatchInfo::default(),
+			0_usize,
+		),
+		expected_err
+	);
 }
 
 /// Assert that when a key has been added to an MSA, that it my NOT be added to any other MSA.
@@ -1714,22 +1758,6 @@ fn set_schema_count<T: Config>(n: u16) {
 }
 
 #[test]
-pub fn valid_schema_grant() {
-	new_test_ext().execute_with(|| {
-		set_schema_count::<Test>(2);
-
-		let provider = ProviderId(1);
-		let delegator = DelegatorId(2);
-		let schema_grants = vec![1, 2];
-		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
-
-		System::set_block_number(System::block_number() + 1);
-
-		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 1_u16));
-	})
-}
-
-#[test]
 pub fn error_invalid_schema_id_table() {
 	struct TestCase<T> {
 		schema: Vec<u16>,
@@ -1761,25 +1789,6 @@ pub fn error_exceeding_max_schema_under_minimum_schema_grants() {
 		assert_noop!(
 			Msa::add_provider(provider, delegator, (1..32 as u16).collect::<Vec<_>>()),
 			Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation
-		);
-	})
-}
-
-#[test]
-pub fn error_schema_not_granted() {
-	new_test_ext().execute_with(|| {
-		set_schema_count::<Test>(2);
-
-		let provider = ProviderId(1);
-		let delegator = DelegatorId(2);
-		let schema_grants = vec![1, 2];
-		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
-
-		System::set_block_number(System::block_number() + 1);
-
-		assert_err!(
-			Msa::ensure_valid_schema_grant(provider, delegator, 3_u16),
-			Error::<Test>::SchemaNotGranted
 		);
 	})
 }
@@ -1837,7 +1846,9 @@ fn signed_ext_check_nonce_delete_msa_public_key() {
 
 		// Test the delete_msa_public_key() call
 		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_public_key { key: AccountId32::from(msa_new_key) });
+			&Call::Msa(MsaCall::delete_msa_public_key {
+				public_key_to_delete: AccountId32::from(msa_new_key),
+			});
 		let info = call_delete_msa_public_key.get_dispatch_info();
 
 		// Call delete_msa_public_key() using the Alice account
@@ -1998,7 +2009,7 @@ pub fn delegation_expired_long_back() {
 		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, Some(6)));
 		assert_noop!(
 			Msa::ensure_valid_delegation(provider, delegator, Some(1000)),
-			Error::<Test>::DelegationNotFound
+			Error::<Test>::CannotPredictValidityPastCurrentBlock
 		);
 	})
 }
@@ -2677,5 +2688,124 @@ fn schema_permissions_trait_impl_try_get_mut_schema_success() {
 		));
 
 		assert_eq!(delegation.schema_permissions.get(&schema_id).unwrap(), &revoked_block_number);
+	});
+}
+
+#[test]
+pub fn ensure_valid_schema_grant_success() {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(2);
+
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
+		let schema_grants = vec![1, 2];
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		System::set_block_number(System::block_number() + 1);
+
+		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 1_u16, 1u64));
+	})
+}
+
+#[test]
+pub fn ensure_valid_schema_grant_errors_when_delegation_relationship_is_valid_and_grant_does_not_exist(
+) {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(2);
+
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
+		let schema_grants = vec![1, 2];
+
+		// Add delegation relationship with schema grants.
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		// Set block number to 2.
+		System::set_block_number(System::block_number() + 1);
+
+		assert_err!(
+			Msa::ensure_valid_schema_grant(provider, delegator, 3_u16, 1u64),
+			Error::<Test>::SchemaNotGranted
+		);
+	})
+}
+
+#[test]
+pub fn ensure_valid_schema_grant_errors_when_delegation_relationship_is_valid_and_schema_grant_is_revoked(
+) {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(2);
+
+		// Create delegation relationship.
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
+		let schema_grants = vec![1, 2];
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		// Set block number to 6.
+		System::set_block_number(System::block_number() + 5);
+
+		// revoke schema permission at block 6.
+		assert_ok!(Msa::revoke_permissions_for_schemas(delegator, provider, vec![1]));
+
+		// Schemas is valid for the current block that is revoked 6
+		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 1, 6));
+
+		// Checking that asking for validity past the current block, 6, errors.
+		assert_noop!(
+			Msa::ensure_valid_schema_grant(provider, delegator, 1, 7),
+			Error::<Test>::CannotPredictValidityPastCurrentBlock
+		);
+
+		// Set block number to 6.
+		System::set_block_number(System::block_number() + 5);
+		assert_eq!(System::block_number(), 11);
+
+		assert_noop!(
+			Msa::ensure_valid_schema_grant(provider, delegator, 1, 7),
+			Error::<Test>::SchemaNotGranted
+		);
+	});
+}
+
+#[test]
+pub fn ensure_valid_schema_grant_errors_delegation_revoked_when_delegation_relationship_has_been_revoked(
+) {
+	new_test_ext().execute_with(|| {
+		// Set the schemas counts so that it passes validation.
+		set_schema_count::<Test>(2);
+
+		// Create delegation relationship.
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
+		let schema_grants = vec![1, 2];
+
+		// Create delegation relationship.
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		// Move forward to block 6.
+		System::set_block_number(System::block_number() + 5);
+
+		// Revoke delegation relationship at block 6.
+		assert_ok!(Msa::revoke_provider(provider, delegator));
+
+		// Schemas is valid for the current block that is revoked 6.
+		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 1, 6));
+		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 1, 5));
+
+		// Checking that asking for validity past the current block, 6, errors.
+		assert_noop!(
+			Msa::ensure_valid_schema_grant(provider, delegator, 1, 8),
+			Error::<Test>::CannotPredictValidityPastCurrentBlock
+		);
+
+		// Move forward to block 11.
+		System::set_block_number(System::block_number() + 5);
+
+		// Check that schema is not valid after delegation revocation
+		assert_noop!(
+			Msa::ensure_valid_schema_grant(provider, delegator, 1, 7),
+			Error::<Test>::DelegationRevoked
+		);
 	});
 }

@@ -1,13 +1,13 @@
 [package]
-authors = ['Frequency Team']
-description = 'FRAME Message Storage Pallet'
+authors = ["Frequency"]
+description = "Message Storage Pallet"
 edition = "2021"
 homepage = "https://frequency.xyz"
 license = "Apache-2.0"
-name = 'pallet-messages'
+name = "pallet-messages"
 publish = false
 repository = "https://github.com/LibertyDSNP/frequency/"
-version = '0.1.0'
+version = "0.9.29-rc3"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -30,8 +30,6 @@ sp-runtime = {git = "https://github.com/paritytech/substrate", default-features 
 sp-std = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
 # Frequency related dependencies
 common-primitives = {default-features = false, path = "../../common/primitives"}
-#ORML
-orml-utilities = {git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.29"}
 
 [features]
 default = ['std']
@@ -39,6 +37,7 @@ runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",
   "frame-support/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
+  "common-primitives/runtime-benchmarks",
 ]
 std = [
   'codec/std',

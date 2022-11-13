@@ -40,7 +40,8 @@ pub trait MsaApi<BlockHash, AccountId> {
 		&self,
 		delegator_msa_ids: Vec<DelegatorId>,
 		provider_msa_id: ProviderId,
-		block_number: Option<BlockNumber>,
+		block_number: BlockNumber,
+		schema_id: Option<SchemaId>,
 	) -> RpcResult<Vec<(DelegatorId, bool)>>;
 
 	/// Retrieve the list of currently granted schemas given a delegator and provider pair
@@ -88,25 +89,31 @@ where
 		&self,
 		delegator_msa_ids: Vec<DelegatorId>,
 		provider_msa_id: ProviderId,
-		block_number: Option<BlockNumber>,
+		block_number: BlockNumber,
+		schema_id: Option<SchemaId>,
 	) -> RpcResult<Vec<(DelegatorId, bool)>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 
 		Ok(delegator_msa_ids
 			.iter() // TODO: Change back to par_iter() which has borrow panic GitHub Issue: #519
-			.map(|&delegator_id| {
+			.map(|&delegator_msa_id| {
 				// api.has_delegation returns  Result<bool, ApiError>), so _or(false) should not happen,
 				// but just in case, protect against panic
-				let has_delegation: bool =
-					match api.has_delegation(&at, delegator_id, provider_msa_id, block_number) {
-						Ok(result) => result,
-						Err(e) => {
-							warn!("ApiError from has_delegation! {:?}", e);
-							false
-						},
-					};
-				(delegator_id, has_delegation)
+				let has_delegation: bool = match api.has_delegation(
+					&at,
+					delegator_msa_id,
+					provider_msa_id,
+					block_number,
+					schema_id,
+				) {
+					Ok(result) => result,
+					Err(e) => {
+						warn!("ApiError from has_delegation! {:?}", e);
+						false
+					},
+				};
+				(delegator_msa_id, has_delegation)
 			})
 			.collect())
 	}

@@ -20,21 +20,47 @@ use super::{get_properties, Extensions};
 
 //TODO: Define FINAL keys for frequency mainnet
 pub mod frequency_mainnet_keys {
-	//TODO: final sudo key(s) for mainnet
 	pub const MAINNET_FRQ_SUDO: &str =
-		"0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"; // Alice
+		"0xd64279ee49fc11521ab7272190f8c11fdff7ab554d5490254f292613b36dab30";
 
-	//TODO: final collator key(s) for mainnet
-	pub const COLLATOR_1_SR25519: &str =
-		"0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"; // Alice
-	pub const COLLATOR_2_SR25519: &str =
-		"0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"; // Bob
-	pub const COLLATOR_3_SR25519: &str =
-		"0x90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22"; // Charlie
-	pub const COLLATOR_4_SR25519: &str =
-		"0x306721211d5404bd9da88e0204360a1a9ab8b87c66c1bc2fcdd37f3c2222cc20"; // Dave
-	pub const COLLATOR_5_SR25519: &str =
-		"0xe659a7a1628cdd93febc04a4e0646ea20e9f5f0ce097d9a05290d4a9e054df4e"; // Eve
+	//TODO: update collator key naming convention
+
+	// Unfinished Collator 1 public key (sr25519) and session key
+	pub const UNFINISHED_COLLATOR_1_SR25519: &str =
+		"0x40c0cf083ba1d081fce7c1f38f5344a4eba4ee5c13e1dddcb9cc6acf74559710";
+	pub const UNFINISHED_COLLATOR_1_SESSION_KEY: &str =
+		"0x7c63b545dc15066a4867f5d127b554d2bad49eab73303f550e99ea11d9ab123c";
+
+	// Unfinished Collator 2 public key (sr25519) and session key
+	pub const UNFINISHED_COLLATOR_2_SR25519: &str =
+		"0x1e5dc06d8418a0dd695bf3a23ecdc219103a149a863c1977396bf0697a474015";
+	pub const UNFINISHED_COLLATOR_2_SESSION_KEY: &str =
+		"0xa0e9a263e02d8b504808a67abbab811cb14fb376c0f79f5b7d6f7c2e7dcb585d";
+
+	// Unfinished Collator 3 public key (sr25519) and session key
+	pub const UNFINISHED_COLLATOR_3_SR25519: &str =
+		"0x7eb4de08f44e6077ed072e2fc357aac007150e3b73373434c47ec56323b52a75";
+
+	pub const UNFINISHED_COLLATOR_3_SESSION_KEY: &str =
+		"0x8062ffd04e84549b541668e4974f37f79f490ea846321e8a613c3406fceff565";
+
+	// OnFinality Collator public key (sr25519) and session key
+	pub const ON_FINALITY_COLLATOR_1_SR25519: &str =
+		"0x3c9ea854901c1b36bd203400c90c31a69367316f7deaeeb14037f2be44bcb118";
+	pub const ON_FINALITY_COLLATOR_1_SESSION_KEY: &str =
+		"0xb615416b0c34c5f3d1451a5d44390325832154ea20196b152ea5fa49346f5a30";
+
+	// External Collator 1  public key (sr25519) and session key
+	pub const EXTERNAL_COLLATOR_1_SR25519: &str =
+		"0x3c33f8c4c1155958d60d4d52a5181677da96052493d876b747272311b52cfe61";
+	pub const EXTERNAL_COLLATOR_1_SESSION_KEY: &str =
+		"0xbe16ebba3525a83e5f5e49cea331d5bc15c723d1dff7319b42837524b40c5970";
+
+	// External Collator 2 public key (sr25519) and session key
+	pub const EXTERNAL_COLLATOR_2_SR25519: &str =
+		"0x36523fba06e0f31f35dd904386a0ebe25d505ef09af4d39041afa1d994a23f5d";
+	pub const EXTERNAL_COLLATOR_2_SESSION_KEY: &str =
+		"0x8415832dcab4bcc60023222bbef2e222082ba69d53c9a870129e1c858a9ff87a";
 }
 
 // pub fn load_frequency_spec() -> Result<ChainSpec, String> {
@@ -53,16 +79,15 @@ pub fn frequency() -> ChainSpec {
 		ChainType::Live,
 		move || {
 			frequency_genesis(
-				// TODO: initial collators.
 				vec![
 					(
-						frequency_mainnet_keys::COLLATOR_1_SR25519
+						frequency_mainnet_keys::UNFINISHED_COLLATOR_1_SR25519
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
 						AuraId::from_slice(
 							&<[u8; 32]>::from_hex(
-								frequency_mainnet_keys::COLLATOR_1_SR25519
+								frequency_mainnet_keys::UNFINISHED_COLLATOR_1_SESSION_KEY
 									.strip_prefix("0x")
 									.unwrap(),
 							)
@@ -71,13 +96,13 @@ pub fn frequency() -> ChainSpec {
 						.unwrap(),
 					),
 					(
-						frequency_mainnet_keys::COLLATOR_2_SR25519
+						frequency_mainnet_keys::UNFINISHED_COLLATOR_2_SR25519
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
 						AuraId::from_slice(
 							&<[u8; 32]>::from_hex(
-								frequency_mainnet_keys::COLLATOR_2_SR25519
+								frequency_mainnet_keys::UNFINISHED_COLLATOR_2_SESSION_KEY
 									.strip_prefix("0x")
 									.unwrap(),
 							)
@@ -86,13 +111,13 @@ pub fn frequency() -> ChainSpec {
 						.unwrap(),
 					),
 					(
-						frequency_mainnet_keys::COLLATOR_3_SR25519
+						frequency_mainnet_keys::UNFINISHED_COLLATOR_3_SR25519
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
 						AuraId::from_slice(
 							&<[u8; 32]>::from_hex(
-								frequency_mainnet_keys::COLLATOR_3_SR25519
+								frequency_mainnet_keys::UNFINISHED_COLLATOR_3_SESSION_KEY
 									.strip_prefix("0x")
 									.unwrap(),
 							)
@@ -101,13 +126,13 @@ pub fn frequency() -> ChainSpec {
 						.unwrap(),
 					),
 					(
-						frequency_mainnet_keys::COLLATOR_4_SR25519
+						frequency_mainnet_keys::ON_FINALITY_COLLATOR_1_SR25519
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
 						AuraId::from_slice(
 							&<[u8; 32]>::from_hex(
-								frequency_mainnet_keys::COLLATOR_4_SR25519
+								frequency_mainnet_keys::ON_FINALITY_COLLATOR_1_SESSION_KEY
 									.strip_prefix("0x")
 									.unwrap(),
 							)
@@ -116,13 +141,28 @@ pub fn frequency() -> ChainSpec {
 						.unwrap(),
 					),
 					(
-						frequency_mainnet_keys::COLLATOR_5_SR25519
+						frequency_mainnet_keys::EXTERNAL_COLLATOR_1_SR25519
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
 						AuraId::from_slice(
 							&<[u8; 32]>::from_hex(
-								frequency_mainnet_keys::COLLATOR_5_SR25519
+								frequency_mainnet_keys::EXTERNAL_COLLATOR_1_SESSION_KEY
+									.strip_prefix("0x")
+									.unwrap(),
+							)
+							.unwrap(),
+						)
+						.unwrap(),
+					),
+					(
+						frequency_mainnet_keys::EXTERNAL_COLLATOR_2_SR25519
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						AuraId::from_slice(
+							&<[u8; 32]>::from_hex(
+								frequency_mainnet_keys::EXTERNAL_COLLATOR_2_SESSION_KEY
 									.strip_prefix("0x")
 									.unwrap(),
 							)

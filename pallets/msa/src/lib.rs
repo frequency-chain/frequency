@@ -58,6 +58,10 @@ use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::DispatchResult, ensure, pallet_prelude::*, traits::IsSubType, weights::DispatchInfo,
 };
+
+#[cfg(feature = "runtime-benchmarks")]
+use common_primitives::benchmarks::BenchmarkHelper;
+
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
@@ -67,7 +71,6 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
@@ -75,8 +78,10 @@ use common_primitives::{
 	},
 	schema::{SchemaId, SchemaValidator},
 };
+
+pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 pub use pallet::*;
-pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas};
+pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
 pub use weights::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -300,12 +305,6 @@ pub mod pallet {
 		/// The number of key values has reached its maximum
 		KeyLimitExceeded,
 
-		/// More than one account key exists for the MSA during retire attempt
-		MoreThanOneKeyExists,
-
-		/// Can't retire a registered provider MSA
-		RegisteredProviderCannotBeRetired,
-
 		/// A transaction's Origin (AccountId) may not remove itself
 		InvalidSelfRemoval,
 
@@ -359,6 +358,8 @@ pub mod pallet {
 
 		/// Cryptographic signature verification failed for proving ownership of new public-key.
 		NewKeyOwnershipInvalidSignature,
+		/// Attempted to request validity of schema permission or delegation in the future.
+		CannotPredictValidityPastCurrentBlock,
 	}
 
 	#[pallet::hooks]
@@ -651,25 +652,23 @@ pub mod pallet {
 		/// * [`Error::NoKeyExists`] - `origin` or `key` are not associated with `origin`'s MSA ID.
 		///
 		#[pallet::weight((T::WeightInfo::delete_msa_public_key(), DispatchClass::Normal, Pays::No))]
-		pub fn delete_msa_public_key(origin: OriginFor<T>, key: T::AccountId) -> DispatchResult {
+		pub fn delete_msa_public_key(
+			origin: OriginFor<T>,
+			public_key_to_delete: T::AccountId,
+		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			// The calling account can't remove itself
-			ensure!(who != key, Error::<T>::InvalidSelfRemoval);
+			match Self::get_msa_by_public_key(&who) {
+				Some(who_msa_id) => {
+					Self::delete_key_for_msa(who_msa_id, &public_key_to_delete)?;
 
-			// Get the MSA id for the calling account
-			let who_msa_id = Self::ensure_valid_msa_key(&who)?;
-			// Get the MSA id for the account to be removed
-			let account_to_remove_msa_id = Self::ensure_valid_msa_key(&key)?;
-			// The calling account doesn't own the account that is to be removed
-			ensure!(who_msa_id == account_to_remove_msa_id, Error::<T>::NotKeyOwner);
-
-			// Remove the account for the calling MSA id
-			Self::delete_key_for_msa(who_msa_id, &key)?;
-
-			// Deposit the event
-			Self::deposit_event(Event::PublicKeyDeleted { key });
-
+					// Deposit the event
+					Self::deposit_event(Event::PublicKeyDeleted { key: public_key_to_delete });
+				},
+				None => {
+					error!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
+				},
+			}
 			Ok(())
 		}
 
@@ -1038,37 +1037,6 @@ impl<T: Config> Pallet<T> {
 		)
 	}
 
-	/// Check that the delegator has an active delegation to the provider.
-	/// `block_number`: Provide `None` to know if the delegation is active at the current block.
-	///                 Provide Some(N) to know if the delegation was or will be active at block N.
-	///
-	/// # Errors
-	/// * [`Error::DelegationNotFound`]
-	/// * [`Error::DelegationRevoked`]
-	///
-	pub fn ensure_valid_delegation(
-		provider: ProviderId,
-		delegator: DelegatorId,
-		block_number: Option<T::BlockNumber>,
-	) -> Result<Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError>
-	{
-		let info =
-			Self::get_delegation(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
-		let current_block = frame_system::Pallet::<T>::block_number();
-		let requested_block = match block_number {
-			Some(block_number) => {
-				ensure!(current_block >= block_number, Error::<T>::DelegationNotFound);
-				block_number
-			},
-			None => current_block,
-		};
-		if info.revoked_at == T::BlockNumber::zero() {
-			return Ok(info)
-		}
-		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
-		Ok(info)
-	}
-
 	/// Deletes a key associated with a given MSA
 	///
 	/// # Errors
@@ -1150,27 +1118,6 @@ impl<T: Config> Pallet<T> {
 	pub fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		let msa_id = Self::get_msa_by_public_key(key).ok_or(Error::<T>::NoKeyExists)?;
 		Ok(msa_id)
-	}
-
-	/// Check if provider is allowed to publish for a given schema_id for a given delegator
-	///
-	/// # Errors
-	/// * [`Error::DelegationNotFound`]
-	/// * [`Error::DelegationRevoked`]
-	/// * [`Error::SchemaNotGranted`]
-	///
-	pub fn ensure_valid_schema_grant(
-		provider: ProviderId,
-		delegator: DelegatorId,
-		schema_id: SchemaId,
-	) -> DispatchResult {
-		let provider_info = Self::ensure_valid_delegation(provider, delegator, None)?;
-
-		ensure!(
-			provider_info.schema_permissions.contains_key(&schema_id),
-			Error::<T>::SchemaNotGranted
-		);
-		Ok(())
 	}
 
 	/// Get a list of Schema Ids that a provider has been granted access to
@@ -1271,6 +1218,29 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+impl<T: Config> BenchmarkHelper<T::AccountId> for Pallet<T> {
+	/// Some docs
+	fn set_delegation_relationship(
+		provider: ProviderId,
+		delegator: DelegatorId,
+		schemas: Vec<SchemaId>,
+	) -> DispatchResult {
+		Self::add_provider(provider, delegator, schemas)?;
+		Ok(())
+	}
+
+	/// Some docs
+	fn add_key(msa_id: MessageSourceId, key: T::AccountId) -> DispatchResult {
+		Self::add_key(msa_id, &key, EMPTY_FUNCTION)?;
+		Ok(())
+	}
+
+	fn set_schema_count(schema_id: SchemaId) {
+		T::SchemaValidator::set_schema_count(schema_id)
+	}
+}
+
 impl<T: Config> MsaLookup for Pallet<T> {
 	type AccountId = T::AccountId;
 
@@ -1282,25 +1252,8 @@ impl<T: Config> MsaLookup for Pallet<T> {
 impl<T: Config> MsaValidator for Pallet<T> {
 	type AccountId = T::AccountId;
 
-	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		Self::ensure_valid_msa_key(key)
-	}
-
-	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
-	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
-	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
-	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
-	/// would like to avoid.
-	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
-	/// this method to return a dummy account in case it does not exist
-	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
-		let result = Self::ensure_valid_msa_key(key);
-		if result.is_err() {
-			return Ok(1 as MessageSourceId)
-		}
-		Ok(result.unwrap())
 	}
 }
 
@@ -1329,6 +1282,7 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 	/// # Errors
 	/// * [`Error::DelegationNotFound`]
 	/// * [`Error::DelegationRevoked`]
+	/// * [`Error::CannotPredictValidityPastCurrentBlock`]
 	///
 	fn ensure_valid_delegation(
 		provider_id: ProviderId,
@@ -1341,53 +1295,55 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		let current_block = frame_system::Pallet::<T>::block_number();
 		let requested_block = match block_number {
 			Some(block_number) => {
-				ensure!(current_block >= block_number, Error::<T>::DelegationNotFound);
+				ensure!(
+					current_block >= block_number,
+					Error::<T>::CannotPredictValidityPastCurrentBlock
+				);
 				block_number
 			},
 			None => current_block,
 		};
+
 		if info.revoked_at == T::BlockNumber::zero() {
 			return Ok(info)
 		}
 		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
+
 		Ok(info)
 	}
 }
 
-impl<T: Config> SchemaGrantValidator for Pallet<T> {
+impl<T: Config> SchemaGrantValidator<T::BlockNumber> for Pallet<T> {
 	/// Check if provider is allowed to publish for a given schema_id for a given delegator
 	///
 	/// # Errors
 	/// * [`Error::DelegationNotFound`]
-	/// * [`Error::SchemaNotGranted`]
 	/// * [`Error::DelegationRevoked`]
+	/// * [`Error::SchemaNotGranted`]
+	/// * [`Error::CannotPredictValidityPastCurrentBlock`]
 	///
-	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn ensure_valid_schema_grant(
 		provider: ProviderId,
 		delegator: DelegatorId,
 		schema_id: SchemaId,
+		block_number: T::BlockNumber,
 	) -> DispatchResult {
-		Self::ensure_valid_schema_grant(provider, delegator, schema_id)
-	}
+		let provider_info = Self::ensure_valid_delegation(provider, delegator, Some(block_number))?;
 
-	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
-	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
-	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
-	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
-	/// would like to avoid.
-	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
-	/// this method to return a dummy account in case it does not exist
-	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_valid_schema_grant(
-		provider: ProviderId,
-		delegator: DelegatorId,
-		_schema_id: SchemaId,
-	) -> DispatchResult {
-		let provider_info = Self::get_delegation_of(delegator, provider);
-		if provider_info.is_none() {
+		let schema_permission_revoked_at_block_number = provider_info
+			.schema_permissions
+			.get(&schema_id)
+			.ok_or(Error::<T>::SchemaNotGranted)?;
+
+		if *schema_permission_revoked_at_block_number == T::BlockNumber::zero() {
 			return Ok(())
 		}
+
+		ensure!(
+			block_number <= *schema_permission_revoked_at_block_number,
+			Error::<T>::SchemaNotGranted
+		);
+
 		Ok(())
 	}
 }
@@ -1456,19 +1412,42 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// Validates that a key being revoked is both valid and owned by a valid MSA account.
 	/// Returns a `ValidTransaction` or wrapped [`ValidityError::InvalidMsaKey`]
 	/// Arguments:
-	/// * `account_id`: the account id calling for revoking the key, and which
+	/// * `signing_public_key`: the account id calling for revoking the key, and which
 	/// 	owns the msa also associated with `key`
-	/// * `key`: the account id to revoke as an access key for account_id's msa
+	/// * `public_key_to_delete`: the account id to revoke as an access key for account_id's msa
 	///
-	pub fn validate_key_revocation(
-		account_id: &T::AccountId,
-		key: &T::AccountId,
+	/// # Errors
+	/// * [`ValidityError::InvalidSelfRemoval`] - if `signing_public_key` and `public_key_to_delete` are the same.
+	/// * [`ValidityError::InvalidMsaKey`] - if  `account_id` does not have an MSA or if
+	/// 'public_key_to_delete' does not have an MSA.
+	/// * [`ValidityError::NotKeyOwner`] - if the `signing_public_key` and `public_key_to_delete` do not belong to the same MSA ID.
+	pub fn validate_key_delete(
+		signing_public_key: &T::AccountId,
+		public_key_to_delete: &T::AccountId,
 	) -> TransactionValidity {
 		const TAG_PREFIX: &str = "KeyRevocation";
-		let _msa_id: DelegatorId = Pallet::<T>::ensure_valid_msa_key(key)
-			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
-			.into();
-		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
+
+		ensure!(
+			signing_public_key != public_key_to_delete,
+			InvalidTransaction::Custom(ValidityError::InvalidSelfRemoval as u8)
+		);
+
+		let maybe_owner_msa_id: MessageSourceId =
+			Pallet::<T>::ensure_valid_msa_key(&signing_public_key)
+				.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?;
+
+		let msa_id_for_key_to_delete: MessageSourceId =
+			Pallet::<T>::ensure_valid_msa_key(&public_key_to_delete)
+				.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?;
+
+		ensure!(
+			maybe_owner_msa_id == msa_id_for_key_to_delete,
+			InvalidTransaction::Custom(ValidityError::NotKeyOwner as u8)
+		);
+
+		return ValidTransaction::with_tag_prefix(TAG_PREFIX)
+			.and_provides(signing_public_key)
+			.build()
 	}
 
 	/// Validates that a MSA being retired exists, does not belong to a registered provider, and
@@ -1514,6 +1493,10 @@ pub enum ValidityError {
 	InvalidRegisteredProviderCannotBeRetired,
 	/// More than one account key exists for the MSA during retire attempt
 	InvalidMoreThanOneKeyExists,
+	/// A transaction's Origin (AccountId) may not remove itself
+	InvalidSelfRemoval,
+	/// NotKeyOwner
+	NotKeyOwner,
 }
 
 impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
@@ -1583,8 +1566,8 @@ where
 				CheckFreeExtrinsicUse::<T>::validate_delegation_by_provider(who, delegator),
 			Some(Call::revoke_delegation_by_delegator { provider_msa_id, .. }) =>
 				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id),
-			Some(Call::delete_msa_public_key { key, .. }) =>
-				CheckFreeExtrinsicUse::<T>::validate_key_revocation(who, key),
+			Some(Call::delete_msa_public_key { public_key_to_delete, .. }) =>
+				CheckFreeExtrinsicUse::<T>::validate_key_delete(who, public_key_to_delete),
 			Some(Call::retire_msa { .. }) => CheckFreeExtrinsicUse::<T>::ensure_msa_can_retire(who),
 			_ => return Ok(Default::default()),
 		}

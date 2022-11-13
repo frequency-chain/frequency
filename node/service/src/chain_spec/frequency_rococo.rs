@@ -18,11 +18,16 @@ pub type ChainSpec =
 
 use super::{get_properties, Extensions};
 
+pub fn load_frequency_rococo_spec() -> ChainSpec {
+	ChainSpec::from_json_bytes(&include_bytes!("../../../../resources/frequency-rococo.json")[..])
+		.unwrap()
+}
+
 pub mod public_testnet_keys {
 	pub const COLLATOR_1_SR25519: &str =
-		"0x42ec8b3541d5647e46711e8f109ed51838cdde115a0a7e56622c033d7e04a678";
+		"0x5c0f55ba602f76d69b5cc075d81f6d27db9157c90dc4be492f4edbe7d7c96d18";
 	pub const COLLATOR_2_SR25519: &str =
-		"0x58025fbd92bcc65fc2e054b623d10a8558662ae545a9718e26815024a2433545";
+		"0x202be6542ed50679271280b8c37140681bbd5acfd0e508668297029f871b9f0c";
 	pub const ROCOCO_FRQ_SUDO: &str =
 		"0xccca4a5b784105460c5466cbb8d11b34f29ffcf6c725d07b65940e697763763c";
 	pub const TECH_COUNCIL1: &str =
@@ -53,10 +58,6 @@ pub mod public_testnet_keys {
 		"0x1caccabbe8095a35292782cffc29145030264f9706753923a5c237e8f5aceb1a";
 }
 
-// pub fn load_frequency_rococo_spec() -> Result<ChainSpec, String> {
-// 	ChainSpec::from_json_bytes(&include_bytes!("../../specs/frequency_rococo.json")[..])
-// }
-
 pub fn frequency_rococo_testnet() -> ChainSpec {
 	let properties =
 		get_properties(FREQUENCY_ROCOCO_TOKEN, TOKEN_DECIMALS as u32, SS58Prefix::get().into());
@@ -72,7 +73,7 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 				// initial collators.
 				vec![
 					(
-						// 5DaTHXTHUckbmLK2mUABQDrbwYKEaCLjKpTRB4VHYEbvF9fp
+						// 5FLZcmvR22FvM2u4GDbeSAQ8uJpePuaEQccquD89UcVBwEgB
 						public_testnet_keys::COLLATOR_1_SR25519
 							.parse::<AccountId>()
 							.unwrap()
@@ -86,7 +87,7 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 						.unwrap(),
 					),
 					(
-						// 5E46myWYmywo8cF9Wk77NZM7TqLqVG7uMYjGuyyfrve9waa9
+						// 5CkeZ1PLWpdS4aSYKBLxVwzZGfvGa2SitSKhX72KT1KAih4Z
 						public_testnet_keys::COLLATOR_2_SR25519
 							.parse::<AccountId>()
 							.unwrap()
@@ -103,7 +104,7 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 				Some(public_testnet_keys::ROCOCO_FRQ_SUDO.parse::<AccountId>().unwrap().into()),
 				// endowed accounts.
 				vec![
-					// 5FnjAszaYTVfEFDooTN37DCBinQyw4dvsZDr7PbYovmAhEqn
+					// 5GhDid9V5rpReBSAK6sSEmCzeiUXTgAmAoMJQUuK5gFzPXoq
 					public_testnet_keys::ROCOCO_FRQ_SUDO.parse::<AccountId>().unwrap().into(),
 					// 5E46myWYmywo8cF9Wk77NZM7TqLqVG7uMYjGuyyfrve9waa9
 					public_testnet_keys::TECH_COUNCIL1.parse::<AccountId>().unwrap().into(),
@@ -158,7 +159,7 @@ pub fn frequency_rococo_testnet() -> ChainSpec {
 		},
 		// Bootnodes
 		vec![
-			"/dns/0.boot.rococo.frequency.xyz/tcp/30333/p2p/5CkhzgoWc21tKSYATXhba2Rj1Nhu6subu8FEfbxPk9GFjGqd".parse().unwrap(),
+			"/dns4/0.boot.rococo.frequency.xyz/tcp/30333/ws/p2p/12D3KooWArmKDbY8Y6XXHGodosWAjRWWxSw5YxWEjSZTBNjJXVSC".parse().unwrap(),
 		],
 		// Telemetry
 		TelemetryEndpoints::new(vec![("wss://telemetry.frequency.xyz/submit/".into(), 0)]).ok(),

@@ -24,7 +24,7 @@ pub struct MessageResponse {
 	/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
 	/// indicating that the original source MSA is acting as its own provider. An id differing from that
 	/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
-	/// its behalf.
+	/// its behalf .
 	pub provider_msa_id: MessageSourceId,
 	/// Index in block to get total order.
 	pub index: u16,
