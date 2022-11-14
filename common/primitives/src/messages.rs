@@ -4,7 +4,7 @@ use crate::utils;
 use codec::{Decode, Encode};
 use poem::{http::StatusCode, FromRequest, IntoResponse, Request, RequestBody};
 use poem_openapi::{
-	payload::Json,
+	payload::{Json, Payload},
 	types::{ParseFromJSON, ToJSON, Type},
 	ApiResponse, Object,
 };
@@ -145,10 +145,11 @@ where
 
 /// A type for requesting paginated messages.
 #[derive(ApiResponse)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum BlockPaginationApiResponse {
 	/// Success response
 	#[oai(status = 200)]
-	Ok(Json<BlockPaginationResponse<MessageResponse>>),
+	Ok(BlockPaginationResponse<MessageResponse>),
 	/// Error response
 	#[oai(status = 400)]
 	BadRequest,
@@ -200,15 +201,8 @@ where
 }
 
 #[poem::async_trait]
-impl<'a> FromRequest<'a> for BlockPaginationApiResponse {
-	async fn from_request(req: &'a Request, _body: &mut RequestBody) -> Result<Self, poem::Error> {
-		let self_value = req
-			.data::<BlockPaginationResponse<MessageResponse>>()
-			.expect("Request data should be set by the handler.")
-			.clone();
-
-		Ok(BlockPaginationApiResponse::Ok(Json(self_value)))
-	}
+impl Payload for BlockPaginationResponse<MessageResponse> {
+	const CONTENT_TYPE: &'static str = "application/json; charset=utf-8";
 }
 
 #[poem::async_trait]

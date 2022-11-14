@@ -35,6 +35,13 @@ pub trait MessagesApi {
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest,
 	) -> RpcResult<BlockPaginationResponse<MessageResponse>>;
+
+	#[method(name = "messages_getBySchemaId2")]
+	async fn get_messages_by_schema_id_openapi(
+		&self,
+		schema_id: SchemaId,
+		pagination: BlockPaginationRequest,
+	) -> RpcResult<BlockPaginationApiResponse>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -75,7 +82,6 @@ where
 	C: ProvideRuntimeApi<Block> + HeaderBackend<Block> + 'static,
 	C::Api: MessagesRuntimeApi<Block>,
 {
-	#[oai(path = "/messages/getBySchemaId", method = "get")]
 	async fn get_messages_by_schema_id(
 		&self,
 		schema_id: SchemaId,
@@ -131,4 +137,12 @@ where
 
 		map_rpc_result(Ok(response))
 	}
+	// #[oai(path = "/messages/getBySchemaId", method = "get")]
+	// async fn get_messages_by_schema_id_openapi(
+	// 	&self,
+	// 	schema_id: SchemaId,
+	// 	pagination: BlockPaginationRequest,
+	// ) -> RpcResult<ApiResponseSuccess<BlockPaginationApiResponse>, ApiResponseError> {
+	// 	Ok(BlockPaginationApiResponse::Ok(BlockPaginationResponse::new()))
+	// }
 }
