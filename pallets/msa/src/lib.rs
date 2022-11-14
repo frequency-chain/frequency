@@ -75,6 +75,7 @@ use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
 		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
+		MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR,
 	},
 	schema::{SchemaId, SchemaValidator},
 };
@@ -780,16 +781,17 @@ pub mod pallet {
 		/// # Errors
 		/// * [`Error::NoKeyExists`] - `delegator` does not have an MSA key.
 		///
-		#[pallet::weight((T::WeightInfo::retire_msa(), DispatchClass::Normal, Pays::No))]
-		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResult {
+		#[pallet::weight((T::WeightInfo::retire_msa(MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR), DispatchClass::Normal, Pays::No))]
+		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			// Check and get the account id from the origin
 			let who = ensure_signed(origin)?;
 
 			// Delete the last and only account key and deposit the "PublicKeyDeleted" event
 			// check for valid MSA is in SignedExtension.
+			let mut num_deletations: u32 = 0_u32;
 			match Self::get_msa_by_public_key(&who) {
 				Some(msa_id) => {
-					Self::delete_delegation_relationship(DelegatorId(msa_id));
+					num_deletations = Self::delete_delegation_relationship(DelegatorId(msa_id));
 					Self::delete_key_for_msa(msa_id, &who)?;
 					Self::deposit_event(Event::PublicKeyDeleted { key: who });
 					Self::deposit_event(Event::MsaRetired { msa_id });
@@ -798,7 +800,7 @@ pub mod pallet {
 					error!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
 				},
 			}
-			Ok(())
+			Ok(Some(T::WeightInfo::retire_msa(num_deletations)).into())
 		}
 	}
 }
@@ -1090,8 +1092,13 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Removes all delegations from the specified delegator MSA id to providers
-	pub fn delete_delegation_relationship(delegator: DelegatorId) {
-		_ = DelegatorAndProviderToDelegation::<T>::clear_prefix(delegator, u32::max_value(), None);
+	pub fn delete_delegation_relationship(delegator: DelegatorId) -> u32 {
+		let result = DelegatorAndProviderToDelegation::<T>::clear_prefix(
+			delegator,
+			MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR,
+			None,
+		);
+		result.unique
 	}
 
 	/// Retrieves the MSA Id for a given `AccountId`
