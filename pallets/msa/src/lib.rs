@@ -781,7 +781,7 @@ pub mod pallet {
 		/// # Errors
 		/// * [`Error::NoKeyExists`] - `delegator` does not have an MSA key.
 		///
-		#[pallet::weight((T::WeightInfo::retire_msa(10_000), DispatchClass::Normal, Pays::No))]
+		#[pallet::weight((T::WeightInfo::retire_msa(128), DispatchClass::Normal, Pays::No))]
 		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			// Check and get the account id from the origin
 			let who = ensure_signed(origin)?;
