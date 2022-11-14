@@ -8,17 +8,16 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+" # ex. v0.29.9
       - "v[0-9]+.[0-9]+.[0-9]+-[0-9]+" # ex. v0.29.9-1
       - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-1-rc1
-
 env:
   RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
-  RELEASE_VERSION: ${{github.ref_name}}
-
+  NEW_RELEASE_VERSION: ${{github.ref_name}}
+  NEW_RELEASE_TAG: ${{github.ref_name}}
 jobs:
   build-binaries:
     name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macOS-latest]
         network: [local, rococo, mainnet]
         include:
           - network: local
@@ -32,7 +31,7 @@ jobs:
             build-profile: production
           - os: ubuntu-latest
             arch: amd64
-          - os: macos-latest
+          - os: macOS-latest
             arch: arm64
     runs-on: ${{matrix.os}}
     steps:
@@ -49,7 +48,7 @@ jobs:
       #   uses: actions/cache@v3
       #   with:
       #     path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-      #     key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.RELEASE_VERSION}}
+      #     key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.NEW_RELEASE_VERSION}}
       - name: Cache Dependencies
         if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: Swatinem/rust-cache@v2
@@ -76,14 +75,14 @@ jobs:
             ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version
       - name: Rename Binary
         run: |
-          cp -p ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
+          cp -p ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} \
+            ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
       - name: Install coreutils for macOS
         if: matrix.os == 'macOS-latest'
         run: brew install coreutils
-      - name: Create Binary Hash
-        run: |
-          cd ${{env.BIN_DIR}}
-          sha256sum ${{env.RELEASE_BIN_FILENAME}} > ${{env.RELEASE_BIN_FILENAME}}.sha256
+      - name: Generate Binary Hash
+        working-directory: ${{env.BIN_DIR}}
+        run: sha256sum ${{env.RELEASE_BIN_FILENAME}} > ${{env.RELEASE_BIN_FILENAME}}.sha256
       - name: Import GPG key
         id: import-gpg
         # Pinning it to the exact version since this touches our private key
@@ -91,15 +90,13 @@ jobs:
         with:
           gpg_private_key: ${{secrets.FREQUENCY_PGP_SECRET_SUBKEYS}}
           passphrase: ${{secrets.FREQUENCY_PGP_MASTER_KEY_PASSWORD}}
-          fingerprint: B6327D1474C6392032870E8EFA4FD1E73A0FE707
-      - name: Sign Binary
-        run: |
-          cd ${{env.BIN_DIR}}
-          gpg --detach-sign --armor ${{env.RELEASE_BIN_FILENAME}}
+          fingerprint: B6327D1474C6392032870E8EFA4FD1E73A0FE707 # signing subkey
+      - name: Generate Binary Signature
+        working-directory: ${{env.BIN_DIR}}
+        run: gpg --detach-sign --armor ${{env.RELEASE_BIN_FILENAME}}
       - name: Verify Binary
-        run: |
-          cd ${{env.BIN_DIR}}
-          gpg --verify ${{env.RELEASE_BIN_FILENAME}}.asc
+        working-directory: ${{env.BIN_DIR}}
+        run: gpg --verify ${{env.RELEASE_BIN_FILENAME}}.asc
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -149,14 +146,14 @@ jobs:
         run: |
           echo "WASM_DIR=${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}" >> $GITHUB_ENV
           echo "BUILT_WASM_FILENAME=${{matrix.built-wasm-file-name-prefix}}.compact.compressed.wasm" >> $GITHUB_ENV
-          echo "RELEASE_WASM_FILENAME=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.RELEASE_VERSION}}.compact.compressed.wasm" >> $GITHUB_ENV
+          echo "RELEASE_WASM_FILENAME=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.NEW_RELEASE_VERSION}}.compact.compressed.wasm" >> $GITHUB_ENV
       # # XXX Keep this step as it lets us skip WASM builds during development/testing
       # - name: Cache WASM for Testing
       #   id: cache-wasm
       #   uses: actions/cache@v3
       #   with:
       #     path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
-      #     key: ${{runner.os}}-${{matrix.network}}-${{env.RELEASE_VERSION}}
+      #     key: ${{runner.os}}-${{matrix.network}}-${{env.NEW_RELEASE_VERSION}}
       - name: Build Deterministic WASM with srtool
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
@@ -271,16 +268,82 @@ jobs:
     name: Release Built Artifacts
     runs-on: ubuntu-latest
     steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Full Release?
+        run: |
+          is_full_release=$([[ "$NEW_RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] && \
+            echo 'true' || echo 'false')
+          echo "is_full_release: $is_full_release"
+          echo "IS_FULL_RELEASE=$is_full_release" >> $GITHUB_ENV
+      - name: Get Latest Release Tag
+        run: |
+          git show-ref --tags -d
+          latest_tag_commit=$(git show-ref --tags -d | grep latest^{} | cut -d' ' -f1)
+          latest_release_tag=$(git show-ref --tags -d | grep "^$latest_tag_commit" | \
+            grep refs/tags/v | sed -e 's,.* refs/tags/,,' -e 's/\^{}//')
+          echo "latest_release_tag: $latest_release_tag"
+          echo "PREVIOUS_RELEASE_TAG=$latest_release_tag" >> $GITHUB_ENV
+      - name: Install Tera CLI
+        if: steps.cache-tera.outputs.cache-hit != 'true'
+        run: |
+          cargo install --git https://github.com/chevdor/tera-cli
+          tera --version
+      - name: Build Changelog
+        id: build-changelog
+        uses: mikepenz/release-changelog-builder-action@v3
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          fromTag: ${{env.PREVIOUS_RELEASE_TAG}}
+          toTag: ${{env.NEW_RELEASE_TAG}}
+          configurationJson: |
+            {
+              "template": "#{{UNCATEGORIZED}}",
+              "pr_template": "- #{{TITLE}} ##{{NUMBER}}",
+              "empty_template": "- No changes",
+              "transformers": [
+                {
+                  "pattern": "- (.*)",
+                  "target": "<li>$1</li>"
+                }
+              ]
+            }
+      - name: Sanitize Changelog
+        id: sanitize-changelog
+        run: |
+          echo "original: ${{steps.build-changelog.outputs.changelog}}"
+          echo "1---------------------"
+          changelog='${{steps.build-changelog.outputs.changelog}}'
+          clean="${changelog//[\`\[\]$'\n']/}"
+          echo "sanitized: $clean"
+          echo "2---------------------"
+          echo "sanitized=$clean" >> $GITHUB_OUTPUT
+      - name: Generate Release Notes
+        working-directory: tools/ci/release-notes
+        run: |
+          ./build-release-notes.sh '${{steps.sanitize-changelog.outputs.sanitized}}' > \
+          release-notes.md
       - name: Download Binary Artifacts
         id: download
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
-          path: .
-      - name: Upload Binary Artifact to Release Page
+          path: /tmp
+      - name: Publish Release on GitHub
         uses: softprops/action-gh-release@v1
         with:
-          files: frequency-*.*
+          body_path: tools/ci/release-notes/release-notes.md
+          files: /tmp/frequency-*.*
+      - name: Update latest tag
+        if: env.IS_FULL_RELEASE == 'true'
+        uses: rickstaa/action-create-tag@v1
+        with:
+          tag: "latest"
+          force_push_tag: true
+          message: "Latest full release"
 
   release-node-images:
     needs: wait-for-all-builds
@@ -338,7 +401,7 @@ jobs:
           push: true
           file: ./docker/${{env.IMAGE_NAME}}.dockerfile
           tags: |
-            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.RELEASE_VERSION}}
+            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.NEW_RELEASE_VERSION}}
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:latest
       - name: Update DockerHub Description
         uses: peter-evans/dockerhub-description@v3
@@ -402,7 +465,7 @@ jobs:
           push: true
           file: ./docker/${{matrix.node}}.dockerfile
           tags: |
-            ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.RELEASE_VERSION}}
+            ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.NEW_RELEASE_VERSION}}
             ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:latest
       - name: Update DockerHub Description
         uses: peter-evans/dockerhub-description@v3
@@ -452,7 +515,7 @@ jobs:
           name: js-api-augment-${{github.run_id}}
           path: js/api-augment/dist
       - name: Version Package
-        run: npm version --new-version "${{env.RELEASE_VERSION}}" --no-git-tag-version
+        run: npm version --new-version "${{env.NEW_RELEASE_VERSION}}" --no-git-tag-version
         working-directory: js/api-augment/dist
       - name: Release on NPM @latest
         run: npm publish --tag latest --access public

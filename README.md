@@ -2,31 +2,31 @@ Frequency is a Polkadot parachain designed to run Decentralized Social Network P
 
 # Table of Contents
 
-- [Table of Contents](#table-of-contents)
-- [Prerequisites](#prerequisites)
-  - [Hardware](#hardware)
-- [Build](#build)
-  - [Local Desktop](#local-desktop)
-    - [asdf Support](#asdf-support)
-  - [Remote Instance such as AWS EC2](#remote-instance-such-as-aws-ec2)
-    - [Ubuntu](#ubuntu)
-- [Run](#run)
-  - [1. Collator Node in Instant Sealing Mode](#1-collator-node-in-instant-sealing-mode)
-    - [In Terminal](#in-terminal)
-    - [In Docker Container](#in-docker-container)
-  - [2. Collator Node with Local Relay Chain](#2-collator-node-with-local-relay-chain)
-    - [Mixed Terminal/Docker](#mixed-terminaldocker)
-      - [Stop and Clean Environment](#stop-and-clean-environment)
-    - [All in Docker Container](#all-in-docker-container)
-  - [Run Tests](#run-tests)
-  - [Run Benchmarks](#run-benchmarks)
-  - [Generate Specs](#generate-specs)
-- [Format, Lint and Audit Source Code](#format-lint-and-audit-source-code)
-- [Verify Runtime](#verify-runtime)
-- [Local Runtime Upgrade](#local-runtime-upgrade)
-- [Contributing](#contributing)
-- [Additional Resources](#additional-resources)
-- [Miscellaneous](#miscellaneous)
+-   [Table of Contents](#table-of-contents)
+-   [Prerequisites](#prerequisites)
+    -   [Hardware](#hardware)
+-   [Build](#build)
+    -   [Local Desktop](#local-desktop)
+        -   [asdf Support](#asdf-support)
+    -   [Remote Instance such as AWS EC2](#remote-instance-such-as-aws-ec2)
+        -   [Ubuntu](#ubuntu)
+-   [Run](#run)
+    -   [1. Collator Node in Instant Sealing Mode](#1-collator-node-in-instant-sealing-mode)
+        -   [In Terminal](#in-terminal)
+        -   [In Docker Container](#in-docker-container)
+    -   [2. Collator Node with Local Relay Chain](#2-collator-node-with-local-relay-chain)
+        -   [Mixed Terminal/Docker](#mixed-terminaldocker)
+            -   [Stop and Clean Environment](#stop-and-clean-environment)
+        -   [All in Docker Container](#all-in-docker-container)
+    -   [Run Tests](#run-tests)
+    -   [Run Benchmarks](#run-benchmarks)
+    -   [Generate Specs](#generate-specs)
+-   [Format, Lint and Audit Source Code](#format-lint-and-audit-source-code)
+-   [Verify Runtime](#verify-runtime)
+-   [Local Runtime Upgrade](#local-runtime-upgrade)
+-   [Contributing](#contributing)
+-   [Additional Resources](#additional-resources)
+-   [Miscellaneous](#miscellaneous)
 
 # Prerequisites
 
@@ -47,7 +47,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
 
 1. Install Rust using the [official instructions](https://www.rust-lang.org/tools/install).
 2. Check out this repository
-3. ```rust-toolchain.toml``` specifies the standard toolchain to use. If you have ```rustup``` installed, it will automatically install the correct toolchain when you run any cargo command.
+3. `rust-toolchain.toml` specifies the standard toolchain to use. If you have `rustup` installed, it will automatically install the correct toolchain when you run any cargo command.
 4. Running `make check` will run cargo checks for all frequency features. This is the recommended way to check your code before committing. Alternatively, you can run following for specific features:
 
     ```sh
@@ -268,7 +268,7 @@ genesis state and WASM:
 1. Check out the commit at which the runtime was built.
 2. Use srtool to verify the runtime:
     ```sh
-    TARGET=build-runtime RUST_TOOLCHAIN=nightly ./ci/build.sh
+    TARGET=build-runtime RUST_TOOLCHAIN=nightly ./tools/scripts/build.sh
     ```
 
 # Local Runtime Upgrade
