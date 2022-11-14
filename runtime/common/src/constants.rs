@@ -7,7 +7,7 @@ use common_primitives::{
 use frame_support::{
 	parameter_types,
 	sp_runtime::{Perbill, Permill},
-	traits::{ConstU32, ConstU8},
+	traits::{ConstU16, ConstU32, ConstU8},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 	PalletId,
 };
@@ -275,3 +275,4 @@ impl Clone for MessagesMaxPayloadSizeBytes {
 pub type MSAMortalityWindowSize = ConstU32<100>;
 pub type MSAMaxSignaturesPerBucket = ConstU32<50_000>;
 pub type MSANumberOfBuckets = ConstU32<2>;
+pub type MSAMaxNumberOfProvidersPerDelegator = ConstU16<128>;

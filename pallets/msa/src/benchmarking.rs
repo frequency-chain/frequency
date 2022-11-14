@@ -157,7 +157,7 @@ benchmarks! {
 	}: _(RawOrigin::Signed(caller_and_delegator_public_key), new_public_key)
 
 	retire_msa {
-		let s in 5 .. MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR;
+		let s in 5 .. T::MaxNumberOfProvidersPerDelegator::get() as u32;
 		let caller: T::AccountId = whitelisted_caller();
 		assert_ok!(Msa::<T>::add_key(ProviderId(1).into(), &caller.clone(), EMPTY_FUNCTION));
 		T::SchemaValidator::set_schema_count(2);

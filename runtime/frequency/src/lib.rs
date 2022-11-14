@@ -257,6 +257,7 @@ impl pallet_msa::Config for Runtime {
 	type MortalityWindowSize = MSAMortalityWindowSize;
 	type MaxSignaturesPerBucket = MSAMaxSignaturesPerBucket;
 	type NumberOfBuckets = MSANumberOfBuckets;
+	type MaxNumberOfProvidersPerDelegator = MSAMaxNumberOfProvidersPerDelegator;
 }
 
 pub use common_primitives::schema::SchemaId;
