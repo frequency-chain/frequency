@@ -61,6 +61,24 @@ pub mod frequency_mainnet_keys {
 		"0x36523fba06e0f31f35dd904386a0ebe25d505ef09af4d39041afa1d994a23f5d";
 	pub const EXTERNAL_COLLATOR_2_SESSION_KEY: &str =
 		"0x8415832dcab4bcc60023222bbef2e222082ba69d53c9a870129e1c858a9ff87a";
+
+	pub const TECHNICAL_COUNCIL_1: &str =
+		"0x92e8dba6b1cbd25e32a786a128406a24ec3e7f8c0c17c65e7d146f14f0fd3e69";
+	pub const TECHNICAL_COUNCIL_2: &str =
+		"0xfcac9ce9c9807732f092a84efde7cfbf77b4c3abedffadfb12cc63c6f6836605";
+	pub const TECHNICAL_COUNCIL_3: &str =
+		"0xcee0137a698a9a616193c80550185ea91387f16208544a8b47d477703b055b4b";
+
+	pub const FREQUENCY_COUNCIL_1: &str =
+		"0x9286ca034a2523b7a53c30e433bc148aa43a4eccbceffe2569df30c915bf666f";
+	pub const FREQUENCY_COUNCIL_2: &str =
+		"0x3692687b80fcc7293aeae47847e234d9744a81963881d262d044d0dc7080f059";
+	pub const FREQUENCY_COUNCIL_3: &str =
+		"0x96a666eb5d96e39f555094e37f32885f6c8fad30e17bee5fddb138843285c237";
+	pub const FREQUENCY_COUNCIL_4: &str =
+		"0xaab55f57a977dfed1fc64e88c242c9a6c7f02abe2b581fc58f2bbfc0bdaad224";
+	pub const FREQUENCY_COUNCIL_5: &str =
+		"0xfcac9ce9c9807732f092a84efde7cfbf77b4c3abedffadfb12cc63c6f6836605";
 }
 
 // pub fn load_frequency_spec() -> Result<ChainSpec, String> {
@@ -187,10 +205,18 @@ pub fn frequency() -> ChainSpec {
 						EXISTENTIAL_DEPOSIT,
 					),
 				],
-				// TODO: initial council members
-				Default::default(),
-				// TODO: initial technical committee members
-				Default::default(),
+				vec!(
+					frequency_mainnet_keys::FREQUENCY_COUNCIL_1.parse::<AccountId>().unwrap().into(),
+					frequency_mainnet_keys::FREQUENCY_COUNCIL_2.parse::<AccountId>().unwrap().into(),
+					frequency_mainnet_keys::FREQUENCY_COUNCIL_3.parse::<AccountId>().unwrap().into(),
+					frequency_mainnet_keys::FREQUENCY_COUNCIL_4.parse::<AccountId>().unwrap().into(),
+					frequency_mainnet_keys::FREQUENCY_COUNCIL_5.parse::<AccountId>().unwrap().into(),
+				),
+				vec!(
+					frequency_mainnet_keys::TECHNICAL_COUNCIL_1.parse::<AccountId>().unwrap().into(),
+					frequency_mainnet_keys::TECHNICAL_COUNCIL_2.parse::<AccountId>().unwrap().into(),
+					frequency_mainnet_keys::TECHNICAL_COUNCIL_3.parse::<AccountId>().unwrap().into(),
+				),
 				//candidacy bond
 				100_000 * UNITS,
 				// TODO: include council/democracy/staking related inputs
