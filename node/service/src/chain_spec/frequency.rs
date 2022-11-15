@@ -23,8 +23,6 @@ pub mod frequency_mainnet_keys {
 	pub const MAINNET_FRQ_SUDO: &str =
 		"0xd64279ee49fc11521ab7272190f8c11fdff7ab554d5490254f292613b36dab30";
 
-	//TODO: update collator key naming convention
-
 	// Unfinished Collator 1 public key (sr25519) and session key
 	pub const UNFINISHED_COLLATOR_1_SR25519: &str =
 		"0x40c0cf083ba1d081fce7c1f38f5344a4eba4ee5c13e1dddcb9cc6acf74559710";
