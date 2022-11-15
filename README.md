@@ -1,3 +1,16 @@
+<!-- PROJECT SHIELDS -->
+<!--
+*** I'm using markdown "reference style" links for readability.
+*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
+*** See the bottom of this document for the declaration of the reference variables
+*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
+*** https://www.markdownguide.org/basic-syntax/#reference-style-links
+-->
+[![Release][release-shield]][release-url]
+[![Docker][docker-shield]][docker-url]
+[![Issues][issues-shield]][issues-url]
+[![Codecov][codecov-shield]][codecov-url]
+
 Frequency is a Polkadot parachain designed to run Decentralized Social Network Protocol (DSNP), but it could run other things.
 
 # Table of Contents
@@ -289,3 +302,15 @@ lsof -i -P | grep -i "listen"
 # View ports Frequency node is listening on
 lsof -i -P | grep -i "listen" | grep frequency
 ```
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[issues-shield]: https://img.shields.io/github/issues/LibertyDSNP/frequency.svg?style=for-the-badge
+[issues-url]: https://github.com/LibertyDSNP/frequency/issues
+[codecov-shield]: https://img.shields.io/codecov/c/github/LibertyDSNP/frequency?style=for-the-badge
+[codecov-url]: https://app.codecov.io/gh/LibertyDSNP/frequency
+[release-shield]: https://img.shields.io/github/v/release/LibertyDSNP/frequency?style=for-the-badge
+[release-url]: https://github.com/LibertyDSNP/frequency/releases
+[docker-shield]: https://img.shields.io/docker/v/frequencychain/parachain-node-mainnet/latest?color=1c90ed&label=Docker&style=for-the-badge
+[docker-url]: https://hub.docker.com/u/frequencychain
+
