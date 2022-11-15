@@ -78,6 +78,39 @@ pub mod frequency_mainnet_keys {
 		"0xfcac9ce9c9807732f092a84efde7cfbf77b4c3abedffadfb12cc63c6f6836605";
 }
 
+pub mod project_liberty_keys {
+	pub const PROJECT_LIBERTY_MULTISIG_1: &str =
+		"0xcd0760f6b5ebbcf0181368f7d7258e7e1f3154c43df4a1112b6d7e366937ca42";
+	pub const PROJECT_LIBERTY_MULTISIG_2: &str =
+		"0xb6fdaa1aea71c2cabf6fed4c2943d6fcd7c7a594e0bc36c8293220a1971dbc74";
+	pub const PROJECT_LIBERTY_MULTISIG_3: &str =
+		"0x8e49e6382a3e6fa0e0cecefca2af3c7f9d3eebde95bd9e75893ed179d03cf61c";
+	pub const PROJECT_LIBERTY_MULTISIG_4: &str =
+		"0x5854d238bff3f7a924eadcb1efa6fb2cce5dbdd340afdbdaaa4586567083883d";
+}
+
+pub mod unfinished_labs_keys {
+	pub const UNFINISHED_LABS_MULTISIG_1: &str =
+		"0x3c9ea854901c1b36bd203400c90c31a69367316f7deaeeb14037f2be44bcb118";
+	pub const UNFINISHED_LABS_MULTISIG_2: &str =
+		"0x46ebddef8cd9bb167dc30878d7113b7e168e6f0646beffd77d69d39bad76b47a";
+	pub const UNFINISHED_LABS_MULTISIG_3: &str =
+		"0xb26873df000ddae71bbc035cd907b1d23b06e662d7db11cd5802f845fbae547e";
+	pub const UNFINISHED_LABS_MULTISIG_4: &str =
+		"0x2041926697db16c0a27bd1bfe2883b69cd12186f89bc44c2e1cdd2eb69508268";
+}
+
+pub mod foundation_keys {
+	pub const FOUNDATION_MULTISIG_1: &str =
+		"0xb2bacd25b122a125e0196107e0a13e0505d17399e46b93f339fae9387d9921cf";
+	pub const FOUNDATION_MULTISIG_2: &str =
+		"0x6a793e27cb1bafc5c241872cafc75e08333b6b95765bf868e47056909cbc5b07";
+	pub const FOUNDATION_MULTISIG_3: &str =
+		"0x202f792d3edc84813c8e89b6a2cbc6dff7d077522f0b8be78e4b0877f2c0b70a";
+	pub const FOUNDATION_MULTISIG_4: &str =
+		"0xf811cbc8611b38f68f4e486284e71eb45523fc5cf685c070bc76331d595cf81c";
+}
+
 // pub fn load_frequency_spec() -> Result<ChainSpec, String> {
 // 	ChainSpec::from_json_bytes(&include_bytes!("../../specs/frequency.json")[..])
 // }
@@ -192,32 +225,28 @@ pub fn frequency() -> ChainSpec {
 				vec![
 					// Project Liberty (1% Total)
 					(
-						// Multisig (2/3)
-						"0xcd0760f6b5ebbcf0181368f7d7258e7e1f3154c43df4a1112b6d7e366937ca42"
+						project_liberty_keys::PROJECT_LIBERTY_MULTISIG_1
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
 						9_999_700,
 					),
 					(
-						// Multisig 1 of 3
-						"0xb6fdaa1aea71c2cabf6fed4c2943d6fcd7c7a594e0bc36c8293220a1971dbc74"
+						project_liberty_keys::PROJECT_LIBERTY_MULTISIG_2
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
 						100,
 					),
 					(
-						// Multisig 2 of 3
-						"0x8e49e6382a3e6fa0e0cecefca2af3c7f9d3eebde95bd9e75893ed179d03cf61c"
+						project_liberty_keys::PROJECT_LIBERTY_MULTISIG_3
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
 						100,
 					),
 					(
-						// Multisig 3 of 3
-						"0x5854d238bff3f7a924eadcb1efa6fb2cce5dbdd340afdbdaaa4586567083883d"
+						project_liberty_keys::PROJECT_LIBERTY_MULTISIG_4
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
@@ -225,32 +254,28 @@ pub fn frequency() -> ChainSpec {
 					),
 					// Unfinished Labs (40% Total)
 					(
-						// Multisig (2/3)
-						"0xf06e128a8f9b813d07c1212475183c174de545f1705bf9b1ae8ce468a7f0ec0c"
+						unfinished_labs_keys::UNFINISHED_LABS_MULTISIG_1
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
 						399_999_700,
 					),
 					(
-						// Multisig 1 of 3
-						"0x46ebddef8cd9bb167dc30878d7113b7e168e6f0646beffd77d69d39bad76b47a"
+						unfinished_labs_keys::UNFINISHED_LABS_MULTISIG_2
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
 						100,
 					),
 					(
-						// Multisig 2 of 3
-						"0xb26873df000ddae71bbc035cd907b1d23b06e662d7db11cd5802f845fbae547e"
+						unfinished_labs_keys::UNFINISHED_LABS_MULTISIG_3
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
 						100,
 					),
 					(
-						// Multisig 3 of 3
-						"0x2041926697db16c0a27bd1bfe2883b69cd12186f89bc44c2e1cdd2eb69508268"
+						unfinished_labs_keys::UNFINISHED_LABS_MULTISIG_4
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
@@ -258,32 +283,28 @@ pub fn frequency() -> ChainSpec {
 					),
 					// Foundation Operational (2% Total)
 					(
-						// Multisig (2/3)
-						"0xb2bacd25b122a125e0196107e0a13e0505d17399e46b93f339fae9387d9921cf"
+						foundation_keys::FOUNDATION_MULTISIG_1
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
 						19_999_700,
 					),
 					(
-						// Multisig 1 of 3
-						"0x6a793e27cb1bafc5c241872cafc75e08333b6b95765bf868e47056909cbc5b07"
+						foundation_keys::FOUNDATION_MULTISIG_2
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
 						100,
 					),
 					(
-						// Multisig 2 of 3
-						"0x202f792d3edc84813c8e89b6a2cbc6dff7d077522f0b8be78e4b0877f2c0b70a"
+						foundation_keys::FOUNDATION_MULTISIG_3
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
 						100,
 					),
 					(
-						// Multisig 3 of 3
-						"0xf811cbc8611b38f68f4e486284e71eb45523fc5cf685c070bc76331d595cf81c"
+						foundation_keys::FOUNDATION_MULTISIG_4
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
