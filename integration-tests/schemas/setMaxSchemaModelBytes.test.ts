@@ -8,10 +8,14 @@ describe("#setMaxSchemaModelBytes", () => {
     let api: ApiRx;
     let keys: any;
 
-    beforeEach(async () => {
-        let { api, keys } = await connect();
+    before(async () => {
+        let { api, keys } = await connect(process.env.WS_PROVIDER_URL);
         api = api;
         keys = keys
+    })
+
+    after(() => {
+        api.disconnect()
     })
 
     it("should fail to set the schema size because of lack of root authority", async () => {

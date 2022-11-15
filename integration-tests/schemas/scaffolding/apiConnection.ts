@@ -3,7 +3,7 @@ import { ApiRx, WsProvider, Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { firstValueFrom } from "rxjs";
 
-export async function connect(providerUrl): Promise<{api: ApiRx, keys: KeyringPair}> {
+export async function connect(providerUrl?): Promise<{api: ApiRx, keys: KeyringPair}> {
     let url = providerUrl;
     if (!providerUrl) {
         url = "ws://127.0.0.1:9944"

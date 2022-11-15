@@ -12,10 +12,14 @@ describe("#createSchema", () => {
     let api: ApiRx;
     let keys: KeyringPair;
 
-    beforeEach(async () => {
-        let {api, keys} = await connect();
+    before(async () => {
+        let {api, keys} = await connect(process.env.WS_PROVIDER_URL);
         api = api
         keys = keys
+    })
+
+    after(() => {
+        api.disconnect()
     })
 
     it("should successfully create an Avro GraphChange schema", async () => {
