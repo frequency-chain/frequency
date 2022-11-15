@@ -1,4 +1,4 @@
-import "@frequency-chain/api-augment";
+import { options } from "@frequency-chain/api-augment";
 import { ApiRx, WsProvider, Keyring } from "@polkadot/api";
 import assert from "assert";
 import { filter, firstValueFrom, mergeMap, Observable } from "rxjs";
@@ -10,7 +10,7 @@ describe("#setMaxSchemaModelBytes", () => {
 
     beforeEach(() => {
         const provider = new WsProvider("ws://127.0.0.1:9944");
-        apiObservable = ApiRx.create({ provider });
+        apiObservable = ApiRx.create({ provider, ...options });
         const keyring = new Keyring({ type: "sr25519" });
         keys = keyring.addFromUri("//Alice");
     })

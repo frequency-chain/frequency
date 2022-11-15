@@ -1,4 +1,4 @@
-import "@frequency-chain/api-augment";
+import { options } from "@frequency-chain/api-augment";
 import { ApiRx, WsProvider } from "@polkadot/api";
 import { Keyring } from "@polkadot/api";
 
@@ -16,7 +16,7 @@ describe("#createSchema", () => {
 
     beforeEach(() => {
         const provider = new WsProvider("ws://127.0.0.1:9944");
-        apiObservable = ApiRx.create({ provider });
+        apiObservable = ApiRx.create({ provider, ...options });
         const keyring = new Keyring({ type: "sr25519" });
         keys = keyring.addFromUri("//Alice");
     })
