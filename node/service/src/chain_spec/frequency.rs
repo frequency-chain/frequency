@@ -1,7 +1,7 @@
 #![allow(missing_docs)]
 use common_primitives::node::{AccountId, Balance};
 use common_runtime::constants::{
-	currency::{EXISTENTIAL_DEPOSIT, UNITS},
+	currency::{DOLLARS, UNITS},
 	FREQUENCY_TOKEN, TOKEN_DECIMALS,
 };
 use cumulus_primitives_core::ParaId;
@@ -229,28 +229,28 @@ pub fn frequency() -> ChainSpec {
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						9_999_700,
+						9_999_700 * DOLLARS,
 					),
 					(
 						project_liberty_keys::PROJECT_LIBERTY_MULTISIG_2
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						100,
+						100 * DOLLARS,
 					),
 					(
 						project_liberty_keys::PROJECT_LIBERTY_MULTISIG_3
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						100,
+						100 * DOLLARS,
 					),
 					(
 						project_liberty_keys::PROJECT_LIBERTY_MULTISIG_4
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						100,
+						100 * DOLLARS,
 					),
 					// Unfinished Labs (40% Total)
 					(
@@ -258,28 +258,28 @@ pub fn frequency() -> ChainSpec {
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						399_999_700,
+						399_999_700 * DOLLARS,
 					),
 					(
 						unfinished_labs_keys::UNFINISHED_LABS_MULTISIG_2
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						100,
+						100 * DOLLARS,
 					),
 					(
 						unfinished_labs_keys::UNFINISHED_LABS_MULTISIG_3
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						100,
+						100 * DOLLARS,
 					),
 					(
 						unfinished_labs_keys::UNFINISHED_LABS_MULTISIG_4
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						100,
+						100 * DOLLARS,
 					),
 					// Foundation Operational (2% Total)
 					(
@@ -287,34 +287,34 @@ pub fn frequency() -> ChainSpec {
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						19_999_700,
+						19_999_700 * DOLLARS,
 					),
 					(
 						foundation_keys::FOUNDATION_MULTISIG_2
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						100,
+						100 * DOLLARS,
 					),
 					(
 						foundation_keys::FOUNDATION_MULTISIG_3
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						100,
+						100 * DOLLARS,
 					),
 					(
 						foundation_keys::FOUNDATION_MULTISIG_4
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						100,
+						100 * DOLLARS,
 					),
 					// Frequency (57% Total)
 					(
 						// Treasury Pallet
 						common_runtime::constants::TREASURY_PALLET_ID.into_account_truncating(),
-						569_988_600,
+						569_988_600 * DOLLARS,
 					),
 					(
 						// Sudo, remainder returned to Treasury before sudo removed
@@ -322,7 +322,7 @@ pub fn frequency() -> ChainSpec {
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						10_000,
+						10_000 * DOLLARS,
 					),
 					(
 						// Council Member
@@ -330,7 +330,7 @@ pub fn frequency() -> ChainSpec {
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						200,
+						200 * DOLLARS,
 					),
 					(
 						// Council Member
@@ -338,7 +338,7 @@ pub fn frequency() -> ChainSpec {
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						200,
+						200 * DOLLARS,
 					),
 					(
 						// Council Member
@@ -346,7 +346,7 @@ pub fn frequency() -> ChainSpec {
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						200,
+						200 * DOLLARS,
 					),
 					(
 						// Council Member
@@ -354,7 +354,7 @@ pub fn frequency() -> ChainSpec {
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						200,
+						200 * DOLLARS,
 					),
 					(
 						// Council Member and TECHNICAL_COUNCIL_2
@@ -362,7 +362,7 @@ pub fn frequency() -> ChainSpec {
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						200,
+						200 * DOLLARS,
 					),
 					(
 						// Council Member
@@ -370,7 +370,7 @@ pub fn frequency() -> ChainSpec {
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						200,
+						200 * DOLLARS,
 					),
 					(
 						// Council Member
@@ -378,7 +378,7 @@ pub fn frequency() -> ChainSpec {
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						200,
+						200 * DOLLARS,
 					),
 				],
 				vec!(
