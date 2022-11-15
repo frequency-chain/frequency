@@ -5,8 +5,6 @@ import { Keyring } from "@polkadot/api";
 import assert from "assert";
 
 import { AVRO_GRAPH_CHANGE } from "./scaffolding/schemaTypes";
-import { AVRO } from "./scaffolding/modelTypes";
-import { ON_CHAIN } from "./scaffolding/payloadLocation";
 import { filter, firstValueFrom, mergeMap, Observable } from "rxjs";
 import { groupEventsByKey } from "./scaffolding/helpers";
 
@@ -24,7 +22,7 @@ describe("#createSchema", () => {
     it("should successfully create an Avro GraphChange schema", async () => {
         const chainEvents = await firstValueFrom(
             apiObservable.pipe(
-                mergeMap((api) => api.tx.schemas.createSchema(JSON.stringify(AVRO_GRAPH_CHANGE), AVRO, ON_CHAIN).signAndSend(keys).pipe(
+                mergeMap((api) => api.tx.schemas.createSchema(JSON.stringify(AVRO_GRAPH_CHANGE), "AvroBinary", "OnChain").signAndSend(keys).pipe(
                 filter(({status}) => status.isInBlock),
                 groupEventsByKey()
             ))))
