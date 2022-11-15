@@ -29,5 +29,5 @@ describe("#setMaxSchemaModelBytes", () => {
 
     }).timeout(15000);
 
-    // NOTE: We need a root account to test the positive case
+    // NOTE: We need a governance account or a sudo call to test the positive case
 });
