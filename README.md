@@ -235,27 +235,6 @@ cargo test --all-features --workspace --release
 make benchmarks
 ```
 
-## Generate Specs
-
-To build spec against specific chain config specify chain name in the command above.
-
-1. Update `node/**/chain_spec.rs` with required spec config, defaults to `para_id:2000`
-   and relay chain to be `rococo_local.json` with `protocol_id:frequency-local`
-1. Export the chain spec
-    ```sh
-    cargo run --release build-spec --disable-default-bootnode > ./res/genesis/local/frequency-spec-rococo.json
-    ```
-1. Export the raw chain spec
-    ```sh
-    cargo run --release build-spec --raw --disable-default-bootnode --chain ./res/genesis/local/frequency-spec-rococo.json > ./res/genesis/local/rococo-local-frequency-2000-raw.json
-    ```
-
-Alternatively, run the following to generate plain and raw frequency spec along with
-genesis state and WASM:
-
--   `make specs-rococo-2000` for Rococo local testnet
--   `make specs-rococo-4044` for Rococo public testnet
-
 # Format, Lint and Audit Source Code
 
 -   Format code with `make format` according to style guidelines and configurations in `rustfmt.toml`.
@@ -281,7 +260,7 @@ make upgrade-local
 
 The current scripts follow this process for upgrading locally:
 
-1. Build new runtime and generate the compressed wasm
+1. Build new runtime and generate the compressed wasm: `make specs-rococo-2000`
 2. Call `authorizeUpgrade` extrinsic from parachain system to initiate the upgrade.
 3. Call `enactAuthorizedUpgrade` extrinsic from parachain system to enact the upgrade.
 4. For testnet and mainnet, the upgrade is done slightly differently using `scheduler` and enactment is scheduled for a specific block number in the future.
