@@ -23,6 +23,7 @@ echo "PID: ${PID}"
 echo "---------------------------------------------"
 
 cd integration-tests
+npm i
 WS_PROVIDER="ws://127.0.0.1:9944" npm test
 
 kill -9 $PID > /dev/null
