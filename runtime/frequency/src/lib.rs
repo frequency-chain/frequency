@@ -79,6 +79,8 @@ impl Contains<Call> for BaseCallFilter {
 			Call::Council(..) => true,
 			Call::Democracy(..) => true,
 			Call::Session(..) => true,
+			Call::Preimage(..) => true,
+			Call::Scheduler(..) => true,
 			_ => false,
 		};
 		core_calls
