@@ -4,7 +4,7 @@ import { Keyring } from "@polkadot/api";
 
 import assert from "assert";
 
-import { AVRO_GRAPH_CHANGE } from "./scaffolding/schemaTypes";
+import { AVRO_GRAPH_CHANGE } from "./fixtures/avroGraphChangeSchemaType";
 import { filter, firstValueFrom, mergeMap, Observable } from "rxjs";
 import { groupEventsByKey } from "./scaffolding/helpers";
 
