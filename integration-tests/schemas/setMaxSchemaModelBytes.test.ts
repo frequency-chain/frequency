@@ -27,7 +27,7 @@ describe("#setMaxSchemaModelBytes", () => {
         assert.notEqual(chainEvents["system.ExtrinsicFailed"], undefined);
         assert.equal(chainEvents["system.ExtrinsicSuccess"], undefined);
 
-    }).timeout(1000000);
+    }).timeout(15000);
 
     // NOTE: We need a root account to test the positive case
 });

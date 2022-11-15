@@ -30,5 +30,5 @@ describe("#createSchema", () => {
         assert.equal(chainEvents["system.ExtrinsicFailed"], undefined);
         assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined);
         assert.notEqual(chainEvents["schemas.SchemaCreated"], undefined);
-    }).timeout(10000);
+    }).timeout(15000);
 })
