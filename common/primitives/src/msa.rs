@@ -17,7 +17,7 @@ pub use crate::schema::SchemaId;
 pub type MessageSourceId = u64;
 
 /// Maximum # of providers per delegator for deletion/benchmarking use
-pub const MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR: u32 = 128;
+pub const EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR: u32 = 128;
 
 /// A DelegatorId an MSA Id serving the role of a Delegator.
 /// Delegators delegate to Providers.
