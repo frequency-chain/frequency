@@ -69,7 +69,7 @@ use common_primitives::{
 };
 
 #[cfg(feature = "runtime-benchmarks")]
-use common_primitives::benchmarks::BenchmarkHelper;
+use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
 
 pub use pallet::*;
 pub use types::*;
@@ -108,7 +108,11 @@ pub mod pallet {
 
 		#[cfg(feature = "runtime-benchmarks")]
 		/// A set of helper functions for benchmarking.
-		type Helper: BenchmarkHelper<Self::AccountId>;
+		type MsaBenchmarkHelper: MsaBenchmarkHelper<Self::AccountId>;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		/// A set of helper functions for benchmarking.
+		type SchemaBenchmarkHelper: SchemaBenchmarkHelper;
 	}
 
 	#[pallet::pallet]

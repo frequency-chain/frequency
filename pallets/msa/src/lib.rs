@@ -60,7 +60,7 @@ use frame_support::{
 };
 
 #[cfg(feature = "runtime-benchmarks")]
-use common_primitives::benchmarks::BenchmarkHelper;
+use common_primitives::benchmarks::MsaBenchmarkHelper;
 
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
@@ -1228,7 +1228,7 @@ impl<T: Config> Pallet<T> {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-impl<T: Config> BenchmarkHelper<T::AccountId> for Pallet<T> {
+impl<T: Config> MsaBenchmarkHelper<T::AccountId> for Pallet<T> {
 	/// Some docs
 	fn set_delegation_relationship(
 		provider: ProviderId,
@@ -1243,10 +1243,6 @@ impl<T: Config> BenchmarkHelper<T::AccountId> for Pallet<T> {
 	fn add_key(msa_id: MessageSourceId, key: T::AccountId) -> DispatchResult {
 		Self::add_key(msa_id, &key, EMPTY_FUNCTION)?;
 		Ok(())
-	}
-
-	fn set_schema_count(schema_id: SchemaId) {
-		T::SchemaValidator::set_schema_count(schema_id)
 	}
 }
 
