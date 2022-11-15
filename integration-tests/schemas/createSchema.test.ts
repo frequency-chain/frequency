@@ -1,3 +1,4 @@
+import "@frequency-chain/api-augment";
 import { ApiRx, WsProvider } from "@polkadot/api";
 import { Keyring } from "@polkadot/api";
 
