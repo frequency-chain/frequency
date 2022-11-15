@@ -176,6 +176,27 @@ parameter_types! {
 
 // Configure FRAME pallets to include in runtime.
 
+/// Basefilter to only allow specified transactions call to be executed
+pub struct BaseCallFilter;
+impl frame_support::traits::Contains<Call> for BaseCallFilter {
+	fn contains(call: &Call) -> bool {
+		let core_calls = match call {
+			Call::System(..) => true,
+			Call::Timestamp(..) => true,
+			Call::ParachainSystem(..) => true,
+			Call::Sudo(..) => true,
+			Call::TechnicalCommittee(..) => true,
+			Call::Council(..) => true,
+			Call::Democracy(..) => true,
+			Call::Session(..) => true,
+			Call::Preimage(..) => true,
+			Call::Scheduler(..) => true,
+			_ => false,
+		};
+		core_calls
+	}
+}
+
 impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
@@ -212,7 +233,7 @@ impl frame_system::Config for Runtime {
 	/// The weight of database operations that the runtime can invoke.
 	type DbWeight = RocksDbWeight;
 	/// The basic call filter to use in dispatchable.
-	type BaseCallFilter = Everything;
+	type BaseCallFilter = BaseCallFilter;
 	/// Weight information for the extrinsics of this pallet.
 	type SystemWeightInfo = ();
 	/// Block & extrinsics weights: base values and limits.
