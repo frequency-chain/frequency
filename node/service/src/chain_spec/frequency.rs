@@ -91,7 +91,7 @@ pub mod project_liberty_keys {
 
 pub mod unfinished_labs_keys {
 	pub const MULTISIG_THRESHOLD_2: &str =
-		"0x3c9ea854901c1b36bd203400c90c31a69367316f7deaeeb14037f2be44bcb118";
+		"0xf06e128a8f9b813d07c1212475183c174de545f1705bf9b1ae8ce468a7f0ec0c";
 	pub const SIGNATORY_1_OF_3: &str =
 		"0x46ebddef8cd9bb167dc30878d7113b7e168e6f0646beffd77d69d39bad76b47a";
 	pub const SIGNATORY_2_OF_3: &str =
