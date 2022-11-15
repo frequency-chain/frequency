@@ -1,27 +1,24 @@
-import { options } from "@frequency-chain/api-augment";
-import { ApiRx, WsProvider, Keyring } from "@polkadot/api";
+import { ApiRx } from "@polkadot/api";
 import assert from "assert";
-import { filter, firstValueFrom, mergeMap, Observable } from "rxjs";
+import { filter } from "rxjs";
+import { connect } from "./scaffolding/apiConnection";
 import { groupEventsByKey } from "./scaffolding/helpers";
 
 describe("#setMaxSchemaModelBytes", () => {
-    let apiObservable: Observable<ApiRx>;
+    let api: ApiRx;
     let keys: any;
 
-    beforeEach(() => {
-        const provider = new WsProvider("ws://127.0.0.1:9944");
-        apiObservable = ApiRx.create({ provider, ...options });
-        const keyring = new Keyring({ type: "sr25519" });
-        keys = keyring.addFromUri("//Alice");
+    beforeEach(async () => {
+        let { api, keys } = await connect();
+        api = api;
+        keys = keys
     })
 
     it("should fail to set the schema size because of lack of root authority", async () => {
-        const chainEvents = await firstValueFrom(
-            apiObservable.pipe(
-                mergeMap((api) => api.tx.schemas.setMaxSchemaModelBytes(1000000).signAndSend(keys).pipe(
+        const chainEvents = api.tx.schemas.setMaxSchemaModelBytes(1000000).signAndSend(keys).pipe(
                 filter(({status}) => status.isInBlock),
                 groupEventsByKey()
-            ))))
+            )
 
         assert.notEqual(chainEvents["system.ExtrinsicFailed"], undefined);
         assert.equal(chainEvents["system.ExtrinsicSuccess"], undefined);
