@@ -5,7 +5,7 @@
     "scripts": {
         "clean": "rm -Rf dist",
         "build": "tsc -p ./tsconfig.json",
-        "test": "npm run clean && npm run build && mocha --require ts-node/register  './{,!(node_modules)/**}/*.test.js' --exit"
+        "test": "mocha --require ts-node/register  './{,!(node_modules)/**}/*.test.js' --exit"
     },
     "keywords": [],
     "author": "",
