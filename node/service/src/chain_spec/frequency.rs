@@ -18,12 +18,9 @@ pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConf
 
 use super::{get_properties, Extensions};
 
-//TODO: Define FINAL keys for frequency mainnet
 pub mod frequency_mainnet_keys {
 	pub const MAINNET_FRQ_SUDO: &str =
 		"0xd64279ee49fc11521ab7272190f8c11fdff7ab554d5490254f292613b36dab30";
-
-	//TODO: update collator key naming convention
 
 	// Unfinished Collator 1 public key (sr25519) and session key
 	pub const UNFINISHED_COLLATOR_1_SR25519: &str =
@@ -191,18 +188,176 @@ pub fn frequency() -> ChainSpec {
 				],
 				// Sudo Account
 				Some(frequency_mainnet_keys::MAINNET_FRQ_SUDO.parse::<AccountId>().unwrap().into()),
-				// TODO:: endowed accounts with initial balance.
+				// Total initial tokens: 1_000_000_000 FRQCY
 				vec![
+					// Project Liberty (1% Total)
 					(
+						// Multisig (2/3)
+						"0xcd0760f6b5ebbcf0181368f7d7258e7e1f3154c43df4a1112b6d7e366937ca42"
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						9_999_700,
+					),
+					(
+						// Multisig 1 of 3
+						"0xb6fdaa1aea71c2cabf6fed4c2943d6fcd7c7a594e0bc36c8293220a1971dbc74"
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						100,
+					),
+					(
+						// Multisig 2 of 3
+						"0x8e49e6382a3e6fa0e0cecefca2af3c7f9d3eebde95bd9e75893ed179d03cf61c"
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						100,
+					),
+					(
+						// Multisig 3 of 3
+						"0x5854d238bff3f7a924eadcb1efa6fb2cce5dbdd340afdbdaaa4586567083883d"
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						100,
+					),
+					// Unfinished Labs (40% Total)
+					(
+						// Multisig (2/3)
+						"0xf06e128a8f9b813d07c1212475183c174de545f1705bf9b1ae8ce468a7f0ec0c"
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						399_999_700,
+					),
+					(
+						// Multisig 1 of 3
+						"0x46ebddef8cd9bb167dc30878d7113b7e168e6f0646beffd77d69d39bad76b47a"
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						100,
+					),
+					(
+						// Multisig 2 of 3
+						"0xb26873df000ddae71bbc035cd907b1d23b06e662d7db11cd5802f845fbae547e"
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						100,
+					),
+					(
+						// Multisig 3 of 3
+						"0x2041926697db16c0a27bd1bfe2883b69cd12186f89bc44c2e1cdd2eb69508268"
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						100,
+					),
+					// Foundation Operational (2% Total)
+					(
+						// Multisig (2/3)
+						"0xb2bacd25b122a125e0196107e0a13e0505d17399e46b93f339fae9387d9921cf"
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						19_999_700,
+					),
+					(
+						// Multisig 1 of 3
+						"0x6a793e27cb1bafc5c241872cafc75e08333b6b95765bf868e47056909cbc5b07"
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						100,
+					),
+					(
+						// Multisig 2 of 3
+						"0x202f792d3edc84813c8e89b6a2cbc6dff7d077522f0b8be78e4b0877f2c0b70a"
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						100,
+					),
+					(
+						// Multisig 3 of 3
+						"0xf811cbc8611b38f68f4e486284e71eb45523fc5cf685c070bc76331d595cf81c"
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						100,
+					),
+					// Frequency (57% Total)
+					(
+						// Treasury Pallet
+						common_runtime::constants::TREASURY_PALLET_ID.into_account_truncating(),
+						569_988_600,
+					),
+					(
+						// Sudo, remainder returned to Treasury before sudo removed
 						frequency_mainnet_keys::MAINNET_FRQ_SUDO
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						1 << 60,
+						10_000,
 					),
 					(
-						common_runtime::constants::TREASURY_PALLET_ID.into_account_truncating(),
-						EXISTENTIAL_DEPOSIT,
+						// Council Member
+						frequency_mainnet_keys::FREQUENCY_COUNCIL_1
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						200,
+					),
+					(
+						// Council Member
+						frequency_mainnet_keys::FREQUENCY_COUNCIL_2
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						200,
+					),
+					(
+						// Council Member
+						frequency_mainnet_keys::FREQUENCY_COUNCIL_3
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						200,
+					),
+					(
+						// Council Member
+						frequency_mainnet_keys::FREQUENCY_COUNCIL_4
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						200,
+					),
+					(
+						// Council Member and TECHNICAL_COUNCIL_2
+						frequency_mainnet_keys::FREQUENCY_COUNCIL_5
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						200,
+					),
+					(
+						// Council Member
+						frequency_mainnet_keys::TECHNICAL_COUNCIL_1
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						200,
+					),
+					(
+						// Council Member
+						frequency_mainnet_keys::TECHNICAL_COUNCIL_3
+							.parse::<AccountId>()
+							.unwrap()
+							.into(),
+						200,
 					),
 				],
 				vec!(
