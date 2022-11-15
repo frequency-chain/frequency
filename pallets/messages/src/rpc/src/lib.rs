@@ -36,12 +36,11 @@ pub trait MessagesApi {
 		pagination: BlockPaginationRequest,
 	) -> RpcResult<BlockPaginationResponse<MessageResponse>>;
 
-	#[method(name = "messages_getBySchemaId2")]
 	async fn get_messages_by_schema_id_openapi(
 		&self,
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest,
-	) -> RpcResult<BlockPaginationApiResponse>;
+	) -> payload::Json<BlockPaginationApiResponse>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -137,12 +136,13 @@ where
 
 		map_rpc_result(Ok(response))
 	}
-	// #[oai(path = "/messages/getBySchemaId", method = "get")]
-	// async fn get_messages_by_schema_id_openapi(
-	// 	&self,
-	// 	schema_id: SchemaId,
-	// 	pagination: BlockPaginationRequest,
-	// ) -> RpcResult<ApiResponseSuccess<BlockPaginationApiResponse>, ApiResponseError> {
-	// 	Ok(BlockPaginationApiResponse::Ok(BlockPaginationResponse::new()))
-	// }
+	#[oai(path = "/messages/getBySchemaId", method = "get")]
+	async fn get_messages_by_schema_id_openapi(
+		&self,
+		schema_id: SchemaId,
+		pagination: BlockPaginationRequest,
+	) -> payload::Json<BlockPaginationApiResponse> {
+		let response = self.get_messages_by_schema_id(schema_id, pagination).await?;
+		payload::Json(BlockPaginationApiResponse::from(response))
+	}
 }
