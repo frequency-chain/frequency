@@ -223,13 +223,13 @@ pub fn frequency() -> ChainSpec {
 				Some(frequency_mainnet_keys::MAINNET_FRQ_SUDO.parse::<AccountId>().unwrap().into()),
 				// Total initial tokens: 1_000_000_000 FRQCY
 				vec![
-					// Project Liberty (1% Total)
+					// Project Liberty (5% Total)
 					(
 						project_liberty_keys::MULTISIG_THRESHOLD_2
 							.parse::<AccountId>()
 							.unwrap()
 							.into(),
-						9_999_700 * DOLLARS,
+						49_999_700 * DOLLARS,
 					),
 					(
 						project_liberty_keys::SIGNATORY_1_OF_3
@@ -310,11 +310,11 @@ pub fn frequency() -> ChainSpec {
 							.into(),
 						100 * DOLLARS,
 					),
-					// Frequency (57% Total)
+					// Frequency (53% Total)
 					(
 						// Treasury Pallet
 						common_runtime::constants::TREASURY_PALLET_ID.into_account_truncating(),
-						569_988_600 * DOLLARS,
+						529_988_600 * DOLLARS,
 					),
 					(
 						// Sudo, remainder returned to Treasury before sudo removed
