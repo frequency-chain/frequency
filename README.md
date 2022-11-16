@@ -242,6 +242,10 @@ cargo test --features runtime-benchmarks, std
 cargo test --all-features --workspace --release
 ```
 
+### Integration Tests
+
+To run the integration tests, run `make integration-test`.
+
 ## Run Benchmarks
 
 ```sh

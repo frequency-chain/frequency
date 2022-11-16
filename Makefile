@@ -131,3 +131,6 @@ build-mainnet-release:
 PHONY: test
 test:
 	cargo test --workspace --locked --features all-frequency-features
+
+integration-test:
+	./scripts/run_integration_tests.sh
