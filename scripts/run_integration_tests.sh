@@ -24,7 +24,7 @@ echo "---------------------------------------------"
 
 cd integration-tests
 npm i
-WS_PROVIDER="ws://127.0.0.1:9944" npm test
+WS_PROVIDER_URL="ws://127.0.0.1:9944" npm test
 
 kill -9 $PID > /dev/null
 echo "Frequency node has been stopped"

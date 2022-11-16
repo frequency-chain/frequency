@@ -1,6 +1,6 @@
 import { ApiRx } from "@polkadot/api";
 import assert from "assert";
-import { filter } from "rxjs";
+import { filter, firstValueFrom } from "rxjs";
 import { connect } from "./scaffolding/apiConnection";
 import { groupEventsByKey } from "./scaffolding/helpers";
 
@@ -9,9 +9,9 @@ describe("#setMaxSchemaModelBytes", () => {
     let keys: any;
 
     before(async () => {
-        let { api, keys } = await connect(process.env.WS_PROVIDER_URL);
-        api = api;
-        keys = keys
+        let {api: connectApi, keys: connectKeys} = await connect(process.env.WS_PROVIDER_URL);
+        api = connectApi
+        keys = connectKeys
     })
 
     after(() => {
@@ -19,9 +19,9 @@ describe("#setMaxSchemaModelBytes", () => {
     })
 
     it("should fail to set the schema size because of lack of root authority", async () => {
-        const chainEvents = api.tx.schemas.setMaxSchemaModelBytes(1000000).signAndSend(keys).pipe(
+        const chainEvents = await firstValueFrom(api.tx.schemas.setMaxSchemaModelBytes(1000000).signAndSend(keys).pipe(
                 filter(({status}) => status.isInBlock),
-                groupEventsByKey())
+                groupEventsByKey()))
 
         assert.notEqual(chainEvents["system.ExtrinsicFailed"], undefined);
         assert.equal(chainEvents["system.ExtrinsicSuccess"], undefined);
