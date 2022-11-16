@@ -1,12 +1,12 @@
 import "@frequency-chain/api-augment";
 import { ApiRx } from "@polkadot/api";
-import { connect } from "./scaffolding/apiConnection"
+import { connect } from "../scaffolding/apiConnection"
 
 import assert from "assert";
 
 import { AVRO_GRAPH_CHANGE } from "./fixtures/avroGraphChangeSchemaType";
 import { filter, firstValueFrom } from "rxjs";
-import { groupEventsByKey } from "./scaffolding/helpers";
+import { groupEventsByKey } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 
 describe("#createSchema", () => {

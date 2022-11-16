@@ -2,8 +2,8 @@ import "@frequency-chain/api-augment";
 import { ApiRx } from "@polkadot/api";
 import assert from "assert";
 import { filter, firstValueFrom } from "rxjs";
-import { connect } from "./scaffolding/apiConnection";
-import { groupEventsByKey } from "./scaffolding/helpers";
+import { connect } from "../scaffolding/apiConnection";
+import { groupEventsByKey } from "../scaffolding/helpers";
 
 describe("#setMaxSchemaModelBytes", () => {
     let api: ApiRx;
