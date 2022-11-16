@@ -369,16 +369,24 @@ jobs:
     env:
       # The release tag to obtain reference binary to test against
       REF_TAG: latest
-      BIN_DIR: target/$BUILD_PROFILE
     strategy:
       fail-fast: false
       matrix:
-        chain: [rococo, mainnet]
+        network: [rococo, mainnet]
+        include:
+          - network: rococo
+            build-profile: release
+          - network: mainnet
+            build-profile: release
     steps:
+      - name: Set Env Vars
+        run: |
+          echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      # XXX Do we need this step if I already have bins?
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -403,8 +411,9 @@ jobs:
         run: |
           tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
       - name: XXX Debug
+        working-directory: ${{env.BIN_DIR}}
         run: |
-          ls -la ${{env.BIN_DIR}}
+          ls -la .
       - name: Output Binary Version
         run: |
           file ${{env.BIN_DIR}}/frequency && \
@@ -415,9 +424,58 @@ jobs:
           cd ${{env.BIN_DIR}}
           ref_url=https://github.com/LibertyDSNP/frequency/releases/download/${{env.LATEST_RELEASE_TAG}}/frequency-mainnet.amd64
           echo Fetching $ref_url
-          wget $ref_url -O frequency-ref
+          wget -q $ref_url -O frequency-ref
           chmod a+x frequency-ref
           ./frequency-ref --version
       - name: XXX Debug
+        working-directory: ${{env.BIN_DIR}}
         run: |
-          ls -la ${{env.BIN_DIR}}
+          ls -la .
+      - name: Start local reference node
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          echo Running reference on ${{ matrix.network }}-local
+          ./frequency-ref --rpc-port=9934 --ws-port=9945 --base-path=frequency-ref-base/ &
+      - name: Start local test node
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          echo Running test on ${{ matrix.network }}-local
+          ./frequency &
+      - name: Prepare output
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          REF_VERSION=$(./frequency-ref --version)
+          BIN_VERSION=$(./frequency --version)
+          echo "Metadata comparison:" >> output.txt
+          echo "Date: $(date)" >> output.txt
+          echo "Ref. binary: $REF_URL" >> output.txt
+          echo "Test binary: $BIN_URL" >> output.txt
+          echo "Ref. version: $REF_VERSION" >> output.txt
+          echo "Test version: $BIN_VERSION" >> output.txt
+          echo "Chain: ${{ matrix.frequency }}-local" >> output.txt
+          echo "----------------------------------------------------------------------" >> output.txt
+      - name: Pull polkadot-js-tools image
+        run: docker pull jacogr/polkadot-js-tools
+      - name: Compare the metadata
+        run: |
+          CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata ws://localhost:9945 ws://localhost:9944"
+          echo -e "Running:\n$CMD"
+          $CMD >> output.txt
+          sed -z -i 's/\n\n/\n/g' output.txt
+          cat output.txt | egrep -n -i ''
+          SUMMARY=$(./tools/ci/scripts/extrinsic-ordering-filter.sh output.txt)
+          echo -e $SUMMARY
+          echo -e $SUMMARY >> output.txt
+      - name: Show result
+        run: |
+          cat output.txt
+      - name: Save output as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: extrinsic-order-check-${{ matrix.network }}
+          path: |
+            output.txt
+      - name: Stop our local nodes
+        run: |
+          pkill frequency-ref
+          pkill frequency
