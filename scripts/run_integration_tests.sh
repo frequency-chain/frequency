@@ -6,10 +6,13 @@ echo -e "Checking to see if Frequency is running..."
 
 PID=$(lsof -i tcp:9933 | grep frequency | grep -v grep | xargs | awk '{print $2}')
 
+SHOULD_KILL=false
+
 if [ -z "$PID" ]
 then
     echo -e "Starting a Frequency Node..."
     make start &
+    SHOULD_KILL=true
 fi
 
 while [ -z "$PID" ]
@@ -26,5 +29,8 @@ cd integration-tests
 npm i
 WS_PROVIDER_URL="ws://127.0.0.1:9944" npm test
 
-kill -9 $PID > /dev/null
-echo "Frequency node has been stopped"
+if $SHOULD_KILL
+then
+    kill -9 $PID > /dev/null
+    echo "Frequency node has been stopped"
+fi
