@@ -25,7 +25,7 @@ describe("#createSchema", () => {
 
     it("should successfully create an Avro GraphChange schema", async () => {
         const chainEvents = await firstValueFrom(api.tx.schemas.createSchema(JSON.stringify(AVRO_GRAPH_CHANGE), "AvroBinary", "OnChain").signAndSend(keys).pipe(
-                filter(({status}) => status.isInBlock),
+                filter(({status}) => status.isInBlock || status.isFinalized),
                 groupEventsByKey()))
 
         assert.equal(chainEvents["system.ExtrinsicFailed"], undefined);

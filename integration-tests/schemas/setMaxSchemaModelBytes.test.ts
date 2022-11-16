@@ -21,7 +21,7 @@ describe("#setMaxSchemaModelBytes", () => {
 
     it("should fail to set the schema size because of lack of root authority", async () => {
         const chainEvents = await firstValueFrom(api.tx.schemas.setMaxSchemaModelBytes(1000000).signAndSend(keys).pipe(
-                filter(({status}) => status.isInBlock),
+                filter(({status}) => status.isInBlock || status.isFinalized),
                 groupEventsByKey()))
 
         assert.notEqual(chainEvents["system.ExtrinsicFailed"], undefined);
