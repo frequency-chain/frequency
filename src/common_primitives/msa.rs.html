@@ -207,6 +207,9 @@
 <span id="207">207</span>
 <span id="208">208</span>
 <span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
 </pre><pre class="rust"><code><span class="kw">use </span>codec::{Decode, Encode, EncodeLike, Error, MaxEncodedLen};
 <span class="kw">use </span>frame_support::{
 	dispatch::DispatchResult, traits::Get, BoundedBTreeMap, BoundedVec, RuntimeDebug,
@@ -224,6 +227,9 @@
 
 <span class="doccomment">/// Message Source Id or msaId is the unique identifier for Message Source Accounts
 </span><span class="kw">pub type </span>MessageSourceId = u64;
+
+<span class="doccomment">/// Maximum # of providers per delegator for deletion/benchmarking use
+</span><span class="kw">pub const </span>EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR: u32 = <span class="number">128</span>;
 
 <span class="doccomment">/// A DelegatorId an MSA Id serving the role of a Delegator.
 /// Delegators delegate to Providers.

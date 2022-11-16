@@ -1068,7 +1068,7 @@
 	spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;frequency-rococo&quot;</span>),
 	impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;frequency-rococo&quot;</span>),
 	authoring_version: <span class="number">1</span>,
-	spec_version: <span class="number">1</span>,
+	spec_version: <span class="number">2</span>,
 	impl_version: <span class="number">0</span>,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: <span class="number">1</span>,
@@ -1281,7 +1281,7 @@
 	<span class="kw">type </span>WeightInfo = weights::pallet_preimage::SubstrateWeight&lt;Runtime&gt;;
 	<span class="kw">type </span>Event = Event;
 	<span class="kw">type </span>Currency = Balances;
-	<span class="comment">// Allow the Technical council to request preimages without deposit or fees
+	<span class="comment">// Allow a Member of the Technical council to request preimages without deposit or fees
 	</span><span class="kw">type </span>ManagerOrigin = EitherOfDiverse&lt;
 		EnsureRoot&lt;AccountId&gt;,
 		pallet_collective::EnsureMember&lt;AccountId, TechnicalCommitteeInstance&gt;,
@@ -1301,7 +1301,7 @@
 	<span class="kw">type </span>MaxProposals = CouncilMaxProposals;
 	<span class="kw">type </span>MaxMembers = ConstU32&lt;<span class="number">5</span>&gt;;
 	<span class="kw">type </span>DefaultVote = pallet_collective::PrimeDefaultVote;
-	<span class="comment">// TODO: this uses default but we don&#39;t have weights yet
+	<span class="comment">// TODO: this uses default but we don&#39;t have weights yet. Issue: #608
 	</span><span class="kw">type </span>WeightInfo = pallet_collective::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
@@ -1314,7 +1314,7 @@
 	<span class="kw">type </span>MaxProposals = TCMaxProposals;
 	<span class="kw">type </span>MaxMembers = TCMaxMembers;
 	<span class="kw">type </span>DefaultVote = pallet_collective::PrimeDefaultVote;
-	<span class="comment">// TODO: this uses default but we don&#39;t have weights yet
+	<span class="comment">// TODO: this uses default but we don&#39;t have weights yet. Issue: #608
 	</span><span class="kw">type </span>WeightInfo = pallet_collective::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 

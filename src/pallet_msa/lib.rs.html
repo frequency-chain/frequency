@@ -1573,6 +1573,15 @@
 <span id="1573">1573</span>
 <span id="1574">1574</span>
 <span id="1575">1575</span>
+<span id="1576">1576</span>
+<span id="1577">1577</span>
+<span id="1578">1578</span>
+<span id="1579">1579</span>
+<span id="1580">1580</span>
+<span id="1581">1581</span>
+<span id="1582">1582</span>
+<span id="1583">1583</span>
+<span id="1584">1584</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet
 //! The MSA pallet provides functionality for handling Message Source Accounts.
 //!
@@ -1650,6 +1659,7 @@
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
 		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
+		EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR,
 	},
 	schema::{SchemaId, SchemaValidator},
 };
@@ -2355,16 +2365,17 @@
 		/// # Errors
 		/// * [`Error::NoKeyExists`] - `delegator` does not have an MSA key.
 		///
-		</span><span class="attribute">#[pallet::weight((T::WeightInfo::retire_msa(), DispatchClass::Normal, Pays::No))]
-		</span><span class="kw">pub fn </span>retire_msa(origin: OriginFor&lt;T&gt;) -&gt; DispatchResult {
+		</span><span class="attribute">#[pallet::weight((T::WeightInfo::retire_msa(EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR), DispatchClass::Normal, Pays::No))]
+		</span><span class="kw">pub fn </span>retire_msa(origin: OriginFor&lt;T&gt;) -&gt; DispatchResultWithPostInfo {
 			<span class="comment">// Check and get the account id from the origin
 			</span><span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
 			<span class="comment">// Delete the last and only account key and deposit the &quot;PublicKeyDeleted&quot; event
 			// check for valid MSA is in SignedExtension.
-			</span><span class="kw">match </span><span class="self">Self</span>::get_msa_by_public_key(<span class="kw-2">&amp;</span>who) {
+			</span><span class="kw">let </span><span class="kw-2">mut </span>num_deletions: u32 = <span class="number">0_u32</span>;
+			<span class="kw">match </span><span class="self">Self</span>::get_msa_by_public_key(<span class="kw-2">&amp;</span>who) {
 				<span class="prelude-val">Some</span>(msa_id) =&gt; {
-					<span class="self">Self</span>::delete_delegation_relationship(DelegatorId(msa_id));
+					num_deletions = <span class="self">Self</span>::delete_delegation_relationship(DelegatorId(msa_id));
 					<span class="self">Self</span>::delete_key_for_msa(msa_id, <span class="kw-2">&amp;</span>who)<span class="question-mark">?</span>;
 					<span class="self">Self</span>::deposit_event(Event::PublicKeyDeleted { key: who });
 					<span class="self">Self</span>::deposit_event(Event::MsaRetired { msa_id });
@@ -2373,7 +2384,7 @@
 					<span class="macro">error!</span>(<span class="string">&quot;SignedExtension did not catch invalid MSA for account {:?}, &quot;</span>, who);
 				},
 			}
-			<span class="prelude-val">Ok</span>(())
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(T::WeightInfo::retire_msa(num_deletions)).into())
 		}
 	}
 }
@@ -2664,9 +2675,16 @@
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="doccomment">/// Removes all delegations from the specified delegator MSA id to providers
-	</span><span class="kw">pub fn </span>delete_delegation_relationship(delegator: DelegatorId) {
-		<span class="kw">_ </span>= DelegatorAndProviderToDelegation::&lt;T&gt;::clear_prefix(delegator, u32::max_value(), <span class="prelude-val">None</span>);
+	<span class="doccomment">/// Removes delegations from the specified delegator MSA id to providers
+	/// up to the expected number of providers.
+	</span><span class="kw">pub fn </span>delete_delegation_relationship(delegator: DelegatorId) -&gt; u32 {
+		<span class="comment">// TODO: Handle case when the number of providers exceeds the expected number.  Issue #678
+		</span><span class="kw">let </span>result = DelegatorAndProviderToDelegation::&lt;T&gt;::clear_prefix(
+			delegator,
+			EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR,
+			<span class="prelude-val">None</span>,
+		);
+		result.unique
 	}
 
 	<span class="doccomment">/// Retrieves the MSA Id for a given `AccountId`
