@@ -381,14 +381,13 @@ pub mod pallet {
 		///
 		/// * [`Error::KeyAlreadyRegistered`] - MSA is already registered to the Origin.
 		///
-		#[pallet::weight(T::WeightInfo::create(10_000))]
+		#[pallet::weight(T::WeightInfo::create(1_000))]
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
-			let who = ensure_signed(origin)?;
+			let public_key = ensure_signed(origin)?;
 
-			let (_, _) = Self::create_account(who.clone(), |new_msa_id| -> DispatchResult {
-				Self::deposit_event(Event::MsaCreated { msa_id: new_msa_id, key: who });
-				Ok(())
-			})?;
+			let (new_msa_id, new_public_key) =
+				Self::create_account(public_key.clone(), |_| -> DispatchResult { Ok(()) })?;
+			Self::deposit_event(Event::MsaCreated { msa_id: new_msa_id, key: new_public_key});
 
 			Ok(())
 		}

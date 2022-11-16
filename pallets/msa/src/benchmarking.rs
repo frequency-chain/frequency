@@ -105,12 +105,12 @@ benchmarks! {
 		let caller: T::AccountId = whitelisted_caller();
 
 		for j in 0 .. s {
-			assert_ok!(create_msa::<T>(j));
+			let acc = create_account::<T>("account", n);
+			assert_ok!(Msa::<T>::create_account(acc.clone().into(), EMPTY_FUNCTION));
 		}
 	}: _ (RawOrigin::Signed(caller))
 
 	create_sponsored_account_with_delegation {
-
 		let caller: T::AccountId = whitelisted_caller();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
 		assert_ok!(Msa::<T>::create_provider(RawOrigin::Signed(caller.clone()).into(),Vec::from("Foo")));
