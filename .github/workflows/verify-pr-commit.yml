@@ -59,20 +59,23 @@ jobs:
         uses: actions/checkout@v3
       # XXX Keep this step as it lets us skip full binary builds during development/testing
       - name: Cache Binary for Testing
+        id: cache-binary
         uses: actions/cache@v3
         with:
           path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
           key: ${{runner.os}}-${{matrix.network}}-${{github.ref_name}}
       - name: Save/Restore Dependencies from Cache
+        if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: ${{env.RUST_TOOLCHAIN}}
-      - name: Cache Frequency Binary
-        uses: actions/cache@v3
-        with:
-          path: target/${{env.BUILD_PROFILE}}/${{env.BUILT_BIN_FILENAME}}
-          key: ${{runner.os}}-${{env.RUST_TOOLCHAIN}}-${{github.sha}}
+      # - name: Cache Frequency Binary
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: target/${{env.BUILD_PROFILE}}/${{env.BUILT_BIN_FILENAME}}
+      #     key: ${{runner.os}}-${{env.RUST_TOOLCHAIN}}-${{github.sha}}
       - name: Install Rust Toolchain
+        if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: actions-rs/toolchain@v1
         with:
           default: true
@@ -80,6 +83,7 @@ jobs:
           target: wasm32-unknown-unknown
           toolchain: stable
       - name: Compile for ${{matrix.network}}
+        if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
           CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release \
             --features frequency
@@ -365,6 +369,7 @@ jobs:
     env:
       # The release tag to obtain reference binary to test against
       REF_TAG: latest
+      BIN_DIR: target/$BUILD_PROFILE
     strategy:
       fail-fast: false
       matrix:
@@ -372,22 +377,47 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
           default: true
           profile: minimal
           toolchain: stable
-      - name: Download Binary Artifacts
+      - name: Get Latest Release Tag
+        run: |
+          git show-ref --tags -d
+          latest_tag_commit=$(git show-ref --tags -d | grep latest^{} | cut -d' ' -f1)
+          latest_release_tag=$(git show-ref --tags -d | grep "^$latest_tag_commit" | \
+            grep refs/tags/v | sed -e 's,.* refs/tags/,,' -e 's/\^{}//')
+          echo "latest_release_tag: $latest_release_tag"
+          echo "LATEST_RELEASE_TAG=$latest_release_tag" >> $GITHUB_ENV
+      - name: Download Test Binary
         id: download
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
           path: .
-      - name: Extract Binary
+      - name: Extract Test Binary
         run: |
           tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
+      - name: XXX Debug
+        run: |
+          ls -la ${{env.BIN_DIR}}
       - name: Output Binary Version
         run: |
-          file ./target/${{env.BUILD_PROFILE}}/frequency && \
-            ./target/${{env.BUILD_PROFILE}}/frequency --version
+          file ${{env.BIN_DIR}}/frequency && \
+            ${{env.BIN_DIR}}/frequency --version
+      - name: Fetch Reference Binary
+        # working-directory: ${{env.BIN_DIR}}
+        run: |
+          cd ${{env.BIN_DIR}}
+          ref_url=https://github.com/LibertyDSNP/frequency/releases/download/${{env.LATEST_RELEASE_TAG}}/frequency-mainnet.amd64
+          echo Fetching $ref_url
+          wget $ref_url -O frequency-ref
+          chmod a+x frequency-ref
+          ./frequency-ref --version
+      - name: XXX Debug
+        run: |
+          ls -la ${{env.BIN_DIR}}
