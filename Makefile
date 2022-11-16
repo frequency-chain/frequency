@@ -43,12 +43,6 @@ offboard:
 specs-rococo-2000:
 	./scripts/generate_specs.sh 2000 rococo-2000 release
 
-specs-rococo-4044:
-	./scripts/generate_specs.sh 4044 rococo-4044 release
-
-specs-mainnet:
-	./scripts/generate_specs.sh 999 mainnet release
-
 specs-rococo-local:
 	./scripts/generate_relay_specs.sh
 

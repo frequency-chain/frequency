@@ -16,6 +16,9 @@ pub use crate::schema::SchemaId;
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
 pub type MessageSourceId = u64;
 
+/// Maximum # of providers per delegator for deletion/benchmarking use
+pub const EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR: u32 = 128;
+
 /// A DelegatorId an MSA Id serving the role of a Delegator.
 /// Delegators delegate to Providers.
 /// Encodes and Decodes as just a `u64`
