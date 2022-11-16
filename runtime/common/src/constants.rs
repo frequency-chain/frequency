@@ -182,11 +182,11 @@ parameter_types! {
 // Config from
 // https://github.com/paritytech/substrate/blob/367dab0d4bd7fd7b6c222dd15c753169c057dd42/bin/node/runtime/src/lib.rs#L880
 parameter_types! {
-	pub LaunchPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 28 * DAYS, 28 * DAYS, "FRQCY_LAUNCH_PERIOD");
-	pub VotingPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 28 * DAYS, 28 * DAYS, "FRQCY_VOTING_PERIOD");
-	pub FastTrackVotingPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(3 * HOURS, 3 * HOURS, 3 * HOURS, "FRQCY_FAST_TRACK_VOTING_PERIOD");
-	pub EnactmentPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(8 * DAYS, 28 * DAYS, 28 * DAYS, "FRQCY_ENACTMENT_PERIOD");
-	pub CooloffPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 7 * DAYS, 7 * DAYS, "FRQCY_COOLOFF_PERIOD");
+	pub LaunchPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 1 * DAYS, 5 * MINUTES, "FRQCY_LAUNCH_PERIOD");
+	pub VotingPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 1 * DAYS, 5 * MINUTES, "FRQCY_VOTING_PERIOD");
+	pub FastTrackVotingPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(3 * HOURS, 30 * MINUTES, 5 * MINUTES, "FRQCY_FAST_TRACK_VOTING_PERIOD");
+	pub EnactmentPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(8 * DAYS, 30 * HOURS, 10 * MINUTES, "FRQCY_ENACTMENT_PERIOD");
+	pub CooloffPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 1 * DAYS, 5 * MINUTES, "FRQCY_COOLOFF_PERIOD");
 	pub MinimumDeposit: Balance = prod_or_testnet_or_local_or_env!(currency::deposit(5, 0), 100 * currency::deposit(5, 0), 100 * currency::deposit(5, 0), "FRQCY_MINIMUM_DEPOSIT");
 	pub SpendPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 10 * MINUTES, 10 * MINUTES, "FRQCY_SPEND_PERIOD");
 }

@@ -36,7 +36,7 @@ export default {
       payload_location: "PayloadLocation",
     },
     ModelType: {
-      _enum: ["AvroBinary"],
+      _enum: ["AvroBinary", "Parquet"],
     },
     PayloadLocation: {
       _enum: ["OnChain", "IPFS"],

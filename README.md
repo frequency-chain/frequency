@@ -1,32 +1,45 @@
+<!-- PROJECT SHIELDS -->
+<!--
+*** I'm using markdown "reference style" links for readability.
+*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
+*** See the bottom of this document for the declaration of the reference variables
+*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
+*** https://www.markdownguide.org/basic-syntax/#reference-style-links
+-->
+[![Release][release-shield]][release-url]
+[![Docker][docker-shield]][docker-url]
+[![Issues][issues-shield]][issues-url]
+[![Codecov][codecov-shield]][codecov-url]
+
 Frequency is a Polkadot parachain designed to run Decentralized Social Network Protocol (DSNP), but it could run other things.
 
 # Table of Contents
 
-- [Table of Contents](#table-of-contents)
-- [Prerequisites](#prerequisites)
-  - [Hardware](#hardware)
-- [Build](#build)
-  - [Local Desktop](#local-desktop)
-    - [asdf Support](#asdf-support)
-  - [Remote Instance such as AWS EC2](#remote-instance-such-as-aws-ec2)
-    - [Ubuntu](#ubuntu)
-- [Run](#run)
-  - [1. Collator Node in Instant Sealing Mode](#1-collator-node-in-instant-sealing-mode)
-    - [In Terminal](#in-terminal)
-    - [In Docker Container](#in-docker-container)
-  - [2. Collator Node with Local Relay Chain](#2-collator-node-with-local-relay-chain)
-    - [Mixed Terminal/Docker](#mixed-terminaldocker)
-      - [Stop and Clean Environment](#stop-and-clean-environment)
-    - [All in Docker Container](#all-in-docker-container)
-  - [Run Tests](#run-tests)
-  - [Run Benchmarks](#run-benchmarks)
-  - [Generate Specs](#generate-specs)
-- [Format, Lint and Audit Source Code](#format-lint-and-audit-source-code)
-- [Verify Runtime](#verify-runtime)
-- [Local Runtime Upgrade](#local-runtime-upgrade)
-- [Contributing](#contributing)
-- [Additional Resources](#additional-resources)
-- [Miscellaneous](#miscellaneous)
+-   [Table of Contents](#table-of-contents)
+-   [Prerequisites](#prerequisites)
+    -   [Hardware](#hardware)
+-   [Build](#build)
+    -   [Local Desktop](#local-desktop)
+        -   [asdf Support](#asdf-support)
+    -   [Remote Instance such as AWS EC2](#remote-instance-such-as-aws-ec2)
+        -   [Ubuntu](#ubuntu)
+-   [Run](#run)
+    -   [1. Collator Node in Instant Sealing Mode](#1-collator-node-in-instant-sealing-mode)
+        -   [In Terminal](#in-terminal)
+        -   [In Docker Container](#in-docker-container)
+    -   [2. Collator Node with Local Relay Chain](#2-collator-node-with-local-relay-chain)
+        -   [Mixed Terminal/Docker](#mixed-terminaldocker)
+            -   [Stop and Clean Environment](#stop-and-clean-environment)
+        -   [All in Docker Container](#all-in-docker-container)
+    -   [Run Tests](#run-tests)
+    -   [Run Benchmarks](#run-benchmarks)
+    -   [Generate Specs](#generate-specs)
+-   [Format, Lint and Audit Source Code](#format-lint-and-audit-source-code)
+-   [Verify Runtime](#verify-runtime)
+-   [Local Runtime Upgrade](#local-runtime-upgrade)
+-   [Contributing](#contributing)
+-   [Additional Resources](#additional-resources)
+-   [Miscellaneous](#miscellaneous)
 
 # Prerequisites
 
@@ -47,7 +60,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
 
 1. Install Rust using the [official instructions](https://www.rust-lang.org/tools/install).
 2. Check out this repository
-3. ```rust-toolchain.toml``` specifies the standard toolchain to use. If you have ```rustup``` installed, it will automatically install the correct toolchain when you run any cargo command.
+3. `rust-toolchain.toml` specifies the standard toolchain to use. If you have `rustup` installed, it will automatically install the correct toolchain when you run any cargo command.
 4. Running `make check` will run cargo checks for all frequency features. This is the recommended way to check your code before committing. Alternatively, you can run following for specific features:
 
     ```sh
@@ -235,27 +248,6 @@ cargo test --all-features --workspace --release
 make benchmarks
 ```
 
-## Generate Specs
-
-To build spec against specific chain config specify chain name in the command above.
-
-1. Update `node/**/chain_spec.rs` with required spec config, defaults to `para_id:2000`
-   and relay chain to be `rococo_local.json` with `protocol_id:frequency-local`
-1. Export the chain spec
-    ```sh
-    cargo run --release build-spec --disable-default-bootnode > ./res/genesis/local/frequency-spec-rococo.json
-    ```
-1. Export the raw chain spec
-    ```sh
-    cargo run --release build-spec --raw --disable-default-bootnode --chain ./res/genesis/local/frequency-spec-rococo.json > ./res/genesis/local/rococo-local-frequency-2000-raw.json
-    ```
-
-Alternatively, run the following to generate plain and raw frequency spec along with
-genesis state and WASM:
-
--   `make specs-rococo-2000` for Rococo local testnet
--   `make specs-rococo-4044` for Rococo public testnet
-
 # Format, Lint and Audit Source Code
 
 -   Format code with `make format` according to style guidelines and configurations in `rustfmt.toml`.
@@ -268,7 +260,7 @@ genesis state and WASM:
 1. Check out the commit at which the runtime was built.
 2. Use srtool to verify the runtime:
     ```sh
-    TARGET=build-runtime RUST_TOOLCHAIN=nightly ./ci/build.sh
+    TARGET=build-runtime RUST_TOOLCHAIN=nightly ./tools/scripts/build.sh
     ```
 
 # Local Runtime Upgrade
@@ -281,7 +273,7 @@ make upgrade-local
 
 The current scripts follow this process for upgrading locally:
 
-1. Build new runtime and generate the compressed wasm
+1. Build new runtime and generate the compressed wasm: `make specs-rococo-2000`
 2. Call `authorizeUpgrade` extrinsic from parachain system to initiate the upgrade.
 3. Call `enactAuthorizedUpgrade` extrinsic from parachain system to enact the upgrade.
 4. For testnet and mainnet, the upgrade is done slightly differently using `scheduler` and enactment is scheduled for a specific block number in the future.
@@ -310,3 +302,15 @@ lsof -i -P | grep -i "listen"
 # View ports Frequency node is listening on
 lsof -i -P | grep -i "listen" | grep frequency
 ```
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[issues-shield]: https://img.shields.io/github/issues/LibertyDSNP/frequency.svg?style=for-the-badge
+[issues-url]: https://github.com/LibertyDSNP/frequency/issues
+[codecov-shield]: https://img.shields.io/codecov/c/github/LibertyDSNP/frequency?style=for-the-badge
+[codecov-url]: https://app.codecov.io/gh/LibertyDSNP/frequency
+[release-shield]: https://img.shields.io/github/v/release/LibertyDSNP/frequency?style=for-the-badge
+[release-url]: https://github.com/LibertyDSNP/frequency/releases
+[docker-shield]: https://img.shields.io/docker/v/frequencychain/parachain-node-mainnet/latest?color=1c90ed&label=Docker&style=for-the-badge
+[docker-url]: https://hub.docker.com/u/frequencychain
+
