@@ -1,3 +1,4 @@
+import "@frequency-chain/api-augment";
 import { ApiRx } from "@polkadot/api";
 import assert from "assert";
 import { filter, firstValueFrom } from "rxjs";
