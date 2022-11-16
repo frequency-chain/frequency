@@ -92,7 +92,7 @@ macro_rules! with_runtime_or_err {
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	match id {
 		#[cfg(feature = "frequency")]
-		"frequency" => return Ok(Box::new(chain_spec::frequency::frequency())),
+		"frequency" => return Ok(Box::new(chain_spec::frequency::load_frequency_spec())),
 		#[cfg(feature = "frequency-rococo-local")]
 		"frequency-local" | "dev" =>
 			return Ok(Box::new(chain_spec::frequency_local::local_testnet_config())),
@@ -104,7 +104,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				if cfg!(feature = "frequency") {
 					#[cfg(feature = "frequency")]
 					{
-						return Ok(Box::new(chain_spec::frequency::frequency()))
+						return Ok(Box::new(chain_spec::frequency::load_frequency_spec()))
 					}
 					#[cfg(not(feature = "frequency"))]
 					return Err("Frequency runtime is not available.".into())

@@ -111,9 +111,9 @@ pub mod foundation_keys {
 		"0xf811cbc8611b38f68f4e486284e71eb45523fc5cf685c070bc76331d595cf81c";
 }
 
-// pub fn load_frequency_spec() -> Result<ChainSpec, String> {
-// 	ChainSpec::from_json_bytes(&include_bytes!("../../specs/frequency.json")[..])
-// }
+pub fn load_frequency_spec() -> ChainSpec {
+	ChainSpec::from_json_bytes(&include_bytes!("../../../../resources/frequency.json")[..]).unwrap()
+}
 
 pub fn frequency() -> ChainSpec {
 	let properties =
