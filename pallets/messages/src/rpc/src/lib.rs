@@ -1,3 +1,7 @@
+//! # Message API Interface
+//!
+//! - [`MessageApi`]: Message API trait.
+//! - [`MessagesOAIHandler`]: OpenAPI handler for the Message API.
 // Strong Documentation Lints
 #![deny(
 	rustdoc::broken_intra_doc_links,
@@ -5,9 +9,9 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
-// OpenAPI for messages pallet
+/// OpenAPI for messages pallet
 pub mod open_api;
-// RPC for messages pallet
+/// RPC for messages pallet
 pub mod rpc;
 #[cfg(test)]
 mod tests;
