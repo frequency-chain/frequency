@@ -92,6 +92,8 @@ macro_rules! with_runtime_or_err {
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	match id {
 		#[cfg(feature = "frequency")]
+		"frequency-bench" => return Ok(Box::new(chain_spec::frequency::frequency())),
+		#[cfg(feature = "frequency")]
 		"frequency" => return Ok(Box::new(chain_spec::frequency::load_frequency_spec())),
 		#[cfg(feature = "frequency-rococo-local")]
 		"frequency-local" | "dev" =>

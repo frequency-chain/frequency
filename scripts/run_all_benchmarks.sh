@@ -18,7 +18,7 @@ function run_benchmark() {
   $BENCHMARK \
   --pallet $1 \
   --extrinsic "*" \
-  --chain="frequency" \
+  --chain="frequency-bench" \
   --execution wasm \
   --heap-pages=4096 \
   --wasm-execution compiled \
