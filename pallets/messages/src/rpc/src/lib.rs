@@ -21,6 +21,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
+mod open_api;
 #[cfg(test)]
 mod tests;
 

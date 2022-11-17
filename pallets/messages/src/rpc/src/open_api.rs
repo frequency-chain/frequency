@@ -9,38 +9,43 @@
 //! Custom APIs for [Messages](../pallet_messages/index.html)
 
 #[cfg(feature = "std")]
-use common_helpers::rpc::map_rpc_result;
 use common_primitives::{messages::*, schema::*};
-use frame_support::{ensure, fail};
-use jsonrpsee::{
-	core::{async_trait, error::Error as RpcError, RpcResult},
-	proc_macros::rpc,
+use poem_openapi::{
+	param::Query,
+	payload::Json,
+	types::{ParseFromJSON, ToJSON, Type},
+	ApiRequest, ApiResponse, OpenApi,
 };
-use pallet_messages_runtime_api::MessagesRuntimeApi;
-use sp_api::ProvideRuntimeApi;
-use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
-use std::sync::Arc;
-
-#[cfg(test)]
-mod tests;
-
+use serde::{Deserialize, Serialize};
 
 #[derive(ApiRequest)]
 enum MessagesApiRequest<T: ParseFromJSON + Send + Sync + Type + ToJSON + for<'b> Deserialize<'b>> {
-    Json(Json<T>),
-    Bcs(Bcs<T>),
-}
-
-impl<T: ParseFromJSON + Send + Sync + Type + ToJSON + for<'b> Deserialize<'b>> MyRequest<T> {
-    fn unpack(self) -> T {
-        let Self::Json(json) = self;
-        json.0
-    }
+	Json(Json<T>),
 }
 
 #[derive(ApiResponse)]
 enum MessageApiResponse<T: ToJSON + Send + Sync + Serialize> {
-    #[oai(status = 200, content_type = "application/json")]
-    Json(Json<T>),
+	#[oai(status = 200, content_type = "application/json")]
+	Json(Json<T>),
+}
+
+/// Frequency Messages OpenAPI Handler
+struct MessagesOAIHandler;
+
+#[OpenApi]
+impl MessagesOAIHandler {
+	/// Retrieve paginated messages by schema id
+	#[oai(path = "/messages/getBySchemaId", method = "get")]
+	async fn get_messages_by_schema_id(
+		&self,
+		_schema_id: Query<SchemaId>,
+		_pagination: BlockPaginationRequest,
+	) -> MessageApiResponse<BlockPaginationResponse<MessageResponse>> {
+		MessageApiResponse::Json(Json(BlockPaginationResponse {
+			content: vec![],
+			has_next: false,
+			next_block: Some(0),
+			next_index: Some(0),
+		}))
+	}
 }
