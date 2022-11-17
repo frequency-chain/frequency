@@ -60,7 +60,7 @@ use frame_support::{
 };
 
 #[cfg(feature = "runtime-benchmarks")]
-use common_primitives::benchmarks::BenchmarkHelper;
+use common_primitives::benchmarks::MsaBenchmarkHelper;
 
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
@@ -1228,8 +1228,8 @@ impl<T: Config> Pallet<T> {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-impl<T: Config> BenchmarkHelper<T::AccountId> for Pallet<T> {
-	/// Some docs
+impl<T: Config> MsaBenchmarkHelper<T::AccountId> for Pallet<T> {
+	/// adds delegation relationship with permitted schema ids
 	fn set_delegation_relationship(
 		provider: ProviderId,
 		delegator: DelegatorId,
@@ -1239,14 +1239,10 @@ impl<T: Config> BenchmarkHelper<T::AccountId> for Pallet<T> {
 		Ok(())
 	}
 
-	/// Some docs
+	/// adds a new key to specified msa
 	fn add_key(msa_id: MessageSourceId, key: T::AccountId) -> DispatchResult {
 		Self::add_key(msa_id, &key, EMPTY_FUNCTION)?;
 		Ok(())
-	}
-
-	fn set_schema_count(schema_id: SchemaId) {
-		T::SchemaValidator::set_schema_count(schema_id)
 	}
 }
 

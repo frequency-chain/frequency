@@ -594,7 +594,9 @@ impl pallet_messages::Config for Runtime {
 
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
-	type Helper = Msa;
+	type MsaBenchmarkHelper = Msa;
+	#[cfg(feature = "runtime-benchmarks")]
+	type SchemaBenchmarkHelper = Schemas;
 }
 
 impl pallet_sudo::Config for Runtime {

@@ -13,7 +13,7 @@ use frame_system::RawOrigin;
 
 const MESSAGES: u32 = 499;
 const SCHEMAS: u32 = 50;
-const IPFS_SCHEMA_ID: u16 = 65535;
+const IPFS_SCHEMA_ID: u16 = 50;
 const IPFS_PAYLOAD_LENGTH: u32 = 10;
 
 fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
@@ -47,24 +47,35 @@ fn ipfs_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 	Ok(())
 }
 
+fn create_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
+	T::SchemaBenchmarkHelper::create_schema(
+		Vec::from(r#"{"Name": "Bond", "Code": "007"}"#.as_bytes()),
+		ModelType::AvroBinary,
+		location,
+	)
+}
+
 benchmarks! {
 	add_onchain_message {
 		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - 1;
 		let m in 1 .. MESSAGES;
 		let message_source_id = DelegatorId(2);
 		let caller: T::AccountId = whitelisted_caller();
+		let schema_id = 1;
 
-		T::Helper::set_schema_count(51);
-		assert_ok!(T::Helper::add_key(ProviderId(1).into(), caller.clone()));
-		assert_ok!(T::Helper::set_delegation_relationship(ProviderId(1), message_source_id.into(), [1].to_vec()));
+		// schema ids start from 1, and we need to add that many to make sure our desired id exists
+		for j in 0 ..=schema_id {
+			assert_ok!(create_schema::<T>(PayloadLocation::OnChain));
+		}
+		assert_ok!(T::MsaBenchmarkHelper::add_key(ProviderId(1).into(), caller.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(ProviderId(1), message_source_id.into(), [schema_id].to_vec()));
 
 		let payload = vec![1; n as usize];
 
-		for j in 0 .. m {
-			let schema_id = j % SCHEMAS;
-			assert_ok!(onchain_message::<T>(schema_id.try_into().unwrap()));
+		for j in 1 .. m {
+			assert_ok!(onchain_message::<T>(schema_id));
 		}
-	}: _ (RawOrigin::Signed(caller), Some(message_source_id.into()), 1, payload)
+	}: _ (RawOrigin::Signed(caller), Some(message_source_id.into()), schema_id, payload)
 
 	add_ipfs_message {
 		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - IPFS_PAYLOAD_LENGTH;
@@ -72,11 +83,14 @@ benchmarks! {
 		let caller: T::AccountId = whitelisted_caller();
 		let cid = vec![1; n as usize];
 
-		assert_ok!(T::Helper::add_key(ProviderId(1).into(), caller.clone()));
+		// schema ids start from 1, and we need to add that many to make sure our desired id exists
+		for j in 0 ..=IPFS_SCHEMA_ID {
+			assert_ok!(create_schema::<T>(PayloadLocation::IPFS));
+		}
+		assert_ok!(T::MsaBenchmarkHelper::add_key(ProviderId(1).into(), caller.clone()));
 
-		for j in 0 .. m {
-			let schema_id = IPFS_SCHEMA_ID;
-			assert_ok!(ipfs_message::<T>(schema_id.try_into().unwrap()));
+		for j in 1 .. m {
+			assert_ok!(ipfs_message::<T>(IPFS_SCHEMA_ID));
 		}
 	}: _ (RawOrigin::Signed(caller),IPFS_SCHEMA_ID, cid, IPFS_PAYLOAD_LENGTH)
 
