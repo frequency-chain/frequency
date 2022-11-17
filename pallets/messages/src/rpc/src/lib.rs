@@ -17,7 +17,6 @@ use jsonrpsee::{
 	proc_macros::rpc,
 };
 use pallet_messages_runtime_api::MessagesRuntimeApi;
-use poem_openapi::OpenApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
@@ -35,12 +34,6 @@ pub trait MessagesApi {
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest,
 	) -> RpcResult<BlockPaginationResponse<MessageResponse>>;
-
-	async fn get_messages_by_schema_id_openapi(
-		&self,
-		schema_id: SchemaId,
-		pagination: BlockPaginationRequest,
-	) -> payload::Json<BlockPaginationApiResponse>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -73,7 +66,6 @@ impl From<MessageRpcError> for RpcError {
 	}
 }
 
-#[OpenApi]
 #[async_trait]
 impl<C, Block> MessagesApiServer for MessagesHandler<C, Block>
 where
@@ -135,14 +127,5 @@ where
 		}
 
 		map_rpc_result(Ok(response))
-	}
-	#[oai(path = "/messages/getBySchemaId", method = "get")]
-	async fn get_messages_by_schema_id_openapi(
-		&self,
-		schema_id: SchemaId,
-		pagination: BlockPaginationRequest,
-	) -> payload::Json<BlockPaginationApiResponse> {
-		let response = self.get_messages_by_schema_id(schema_id, pagination).await?;
-		payload::Json(BlockPaginationApiResponse::from(response))
 	}
 }

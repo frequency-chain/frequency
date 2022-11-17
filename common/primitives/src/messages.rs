@@ -4,7 +4,8 @@ use crate::utils;
 use codec::{Decode, Encode};
 use poem::{http::StatusCode, FromRequest, IntoResponse, Request, RequestBody};
 use poem_openapi::{
-	payload::{Json, Payload},
+	payload::Payload,
+	registry::MetaSchemaRef,
 	types::{ParseFromJSON, ToJSON, Type},
 	ApiResponse, Object,
 };
@@ -203,6 +204,9 @@ where
 #[poem::async_trait]
 impl Payload for BlockPaginationResponse<MessageResponse> {
 	const CONTENT_TYPE: &'static str = "application/json; charset=utf-8";
+	fn schema_ref() -> MetaSchemaRef {
+		todo!()
+	}
 }
 
 #[poem::async_trait]
