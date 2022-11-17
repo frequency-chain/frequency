@@ -1,6 +1,6 @@
 mod rpc_mock;
 
-use super::*;
+use super::rpc::*;
 use rpc_mock::*;
 
 use common_primitives::node::BlockNumber;
