@@ -22,7 +22,6 @@ use jsonrpsee::{
 	tracing::warn,
 };
 use pallet_msa_runtime_api::MsaRuntimeApi;
-use poem_openapi::OpenApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
@@ -30,7 +29,6 @@ use std::sync::Arc;
 
 /// Frequency MSA Custom RPC API
 #[rpc(client, server)]
-#[OpenApi]
 pub trait MsaApi<BlockHash, AccountId> {
 	/// Check for a list of delegations
 	/// Given a single provider, test a list of potential delegators
@@ -59,7 +57,6 @@ pub struct MsaHandler<C, M> {
 	_marker: std::marker::PhantomData<M>,
 }
 
-#[OpenApi]
 impl<C, M> MsaHandler<C, M> {
 	/// Create new instance with the given reference to the client.
 	pub fn new(client: Arc<C>) -> Self {
