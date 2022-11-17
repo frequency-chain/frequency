@@ -359,13 +359,7 @@ pub fn run() -> Result<()> {
 						let task_manager =
 							sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
 								.map_err(|e| format!("Error: {:?}", e))?;
-						let partials =
-							frequency_service::service::new_partial::<RuntimeApi, Executor, _>(
-								&config,
-								frequency_service::service::parachain_build_import_queue,
-								false,
-							)?;
-						Ok((cmd.run(partials.client), task_manager))
+						Ok((cmd.run(), task_manager))
 					})
 				}
 			})

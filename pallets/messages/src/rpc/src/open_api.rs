@@ -14,7 +14,7 @@ use poem_openapi::{
 	param::Query,
 	payload::Json,
 	types::{ParseFromJSON, ToJSON, Type},
-	ApiRequest, ApiResponse, OpenApi,
+	ApiRequest, ApiResponse, OpenApi, OpenApiService,
 };
 use serde::{Deserialize, Serialize};
 
@@ -30,7 +30,17 @@ enum MessageApiResponse<T: ToJSON + Send + Sync + Serialize> {
 }
 
 /// Frequency Messages OpenAPI Handler
-struct MessagesOAIHandler;
+pub struct MessagesOAIHandler;
+
+/// An implementation of MessagesOAIHandler to extract the OpenAPI spec
+impl MessagesOAIHandler {
+	/// Get the OpenAPI spec for the Messages API
+	pub async fn get_open_api() -> Result<String, poem::Error> {
+		let api_service = OpenApiService::new(MessagesOAIHandler, "Messages API", "1.0")
+			.server("http://localhost:3000");
+		Ok(api_service.spec())
+	}
+}
 
 #[OpenApi]
 impl MessagesOAIHandler {
