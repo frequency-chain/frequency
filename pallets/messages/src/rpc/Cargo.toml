@@ -10,7 +10,6 @@ repository = "https://github.com/LibertyDSNP/frequency/"
 edition = "2021"
 
 [dependencies]
-poem-openapi = "2.0.19"
 codec = { package = "parity-scale-codec", version = "3.1.5" }
 jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 
