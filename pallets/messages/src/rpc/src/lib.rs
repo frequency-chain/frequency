@@ -129,3 +129,5 @@ where
 		map_rpc_result(Ok(response))
 	}
 }
+
+// OpenAPi

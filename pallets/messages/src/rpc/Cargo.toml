@@ -10,13 +10,14 @@ repository = "https://github.com/LibertyDSNP/frequency/"
 edition = "2021"
 
 [dependencies]
+poem = "1.3.48"
+poem-openapi = "2.0.19"
 codec = { package = "parity-scale-codec", version = "3.1.5" }
-jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
-
+jsonrpsee = { version = "0.16.0", features = ["server", "macros"] }
 # unfinished
-pallet-messages-runtime-api = {default-features = false, path = "../runtime-api" }
-common-primitives = {default-features = false, path = "../../../../common/primitives" }
-common-helpers = {default-features = false, path = "../../../../common/helpers" }
+pallet-messages-runtime-api = { default-features = false, path = "../runtime-api" }
+common-primitives = { default-features = false, path = "../../../../common/primitives" }
+common-helpers = { default-features = false, path = "../../../../common/helpers" }
 # Substrate packages
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
