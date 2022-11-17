@@ -30,7 +30,7 @@ mod tests;
 pub trait MessagesApi {
 	/// Retrieve paginated messages by schema id
 	#[method(name = "messages_getBySchemaId")]
-	async fn get_messages_by_schema_id(
+	fn get_messages_by_schema_id(
 		&self,
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest,
@@ -74,7 +74,7 @@ where
 	C: ProvideRuntimeApi<Block> + HeaderBackend<Block> + 'static,
 	C::Api: MessagesRuntimeApi<Block>,
 {
-	async fn get_messages_by_schema_id(
+	fn get_messages_by_schema_id(
 		&self,
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest,
