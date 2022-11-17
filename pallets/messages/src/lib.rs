@@ -66,7 +66,7 @@ use common_primitives::{
 use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
 
 #[cfg(feature = "runtime-benchmarks")]
-use common_primitives::benchmarks::BenchmarkHelper;
+use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
 
 pub use pallet::*;
 use sp_runtime::{traits::One, DispatchError};
@@ -107,7 +107,11 @@ pub mod pallet {
 
 		#[cfg(feature = "runtime-benchmarks")]
 		/// A set of helper functions for benchmarking.
-		type Helper: BenchmarkHelper<Self::AccountId>;
+		type MsaBenchmarkHelper: MsaBenchmarkHelper<Self::AccountId>;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		/// A set of helper functions for benchmarking.
+		type SchemaBenchmarkHelper: SchemaBenchmarkHelper;
 	}
 
 	#[pallet::pallet]

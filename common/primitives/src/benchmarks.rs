@@ -3,7 +3,7 @@ use sp_std::vec::Vec;
 
 use crate::{
 	msa::{DelegatorId, MessageSourceId, ProviderId},
-	schema::SchemaId,
+	schema::{ModelType, PayloadLocation, SchemaId},
 };
 
 /// A trait for helping setup state for running benchmarks.
@@ -13,7 +13,7 @@ use crate::{
 /// Implementing this trait and adding the runtime-benchmarks feature flag
 /// makes it possible for the messages pallet to access functions that allow
 /// one to set up the necessary state for running benchmarks for messages.
-pub trait BenchmarkHelper<AccountId> {
+pub trait MsaBenchmarkHelper<AccountId> {
 	/// Sets the delegation relationship of between Provider and Delegator.
 	fn set_delegation_relationship(
 		provider: ProviderId,
@@ -21,14 +21,11 @@ pub trait BenchmarkHelper<AccountId> {
 		schemas: Vec<SchemaId>,
 	) -> DispatchResult;
 
-	/// Sets a publickey to an MSA.
+	/// Sets a public key to an MSA.
 	fn add_key(msa_id: MessageSourceId, key: AccountId) -> DispatchResult;
-
-	/// Sets the schema count.
-	fn set_schema_count(schema_id: SchemaId);
 }
 
-impl<AccountId> BenchmarkHelper<AccountId> for () {
+impl<AccountId> MsaBenchmarkHelper<AccountId> for () {
 	/// Sets the delegation relationship of between Provider and Delegator.
 	fn set_delegation_relationship(
 		_provider: ProviderId,
@@ -42,7 +39,31 @@ impl<AccountId> BenchmarkHelper<AccountId> for () {
 	fn add_key(_msa_id: MessageSourceId, _key: AccountId) -> DispatchResult {
 		Ok(())
 	}
+}
 
+/// A trait for Schema pallet helping setup state for running benchmarks.
+pub trait SchemaBenchmarkHelper {
+	/// Sets the schema count.
+	fn set_schema_count(schema_id: SchemaId);
+
+	/// Creates a new schema.
+	fn create_schema(
+		model: Vec<u8>,
+		model_type: ModelType,
+		payload_location: PayloadLocation,
+	) -> DispatchResult;
+}
+
+impl SchemaBenchmarkHelper for () {
 	/// Sets the schema count.
 	fn set_schema_count(_schema_id: SchemaId) {}
+
+	/// Adds a new schema.
+	fn create_schema(
+		_model: Vec<u8>,
+		_model_type: ModelType,
+		_payload_location: PayloadLocation,
+	) -> DispatchResult {
+		Ok(())
+	}
 }
