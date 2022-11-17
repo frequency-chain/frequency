@@ -6,8 +6,7 @@ Full changelog: https://github.com/LibertyDSNP/frequency/compare/{{env.PREVIOUS_
 - Rust Toolchain: `{{env.RUST_TOOLCHAIN}}`
 
 ## What's Changed
-
-<ul>
-{# {{env.CHANGELOG | replace(from="\n", to="") | safe}} #}
-{{env.CHANGELOG | safe}}
-</ul>
+{% set changelog = env.CHANGELOG | split(pat='|n|') | safe %}
+{% for line in changelog -%}
+	{{ line }}
+{% endfor %}

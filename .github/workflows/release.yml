@@ -307,7 +307,7 @@ jobs:
               "transformers": [
                 {
                   "pattern": "- (.*)",
-                  "target": "<li>$1</li>"
+                  "target": "- $1|n|"
                 }
               ]
             }
