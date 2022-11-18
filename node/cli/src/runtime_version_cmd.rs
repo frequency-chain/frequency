@@ -16,7 +16,7 @@ pub struct GetRuntimeVersionCmd {
 }
 
 impl GetRuntimeVersionCmd {
-	/// Run the export-metadata command
+	/// Run the get-runtime-version command.
 	pub async fn run(&self) -> Result<(), Error> {
 		let runtime_version: RuntimeVersion = self.read_runtime_version().unwrap();
 		let result = json!(runtime_version);
@@ -35,7 +35,7 @@ impl GetRuntimeVersionCmd {
 		{
 			frequency_service::service::frequency_rococo_runtime::VERSION
 		} else {
-			panic!("No runtime version found");
+			return Err(Error::from("No runtime version found"))
 		};
 		Ok(version)
 	}
