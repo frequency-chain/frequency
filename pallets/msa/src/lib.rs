@@ -588,7 +588,7 @@ pub mod pallet {
 		/// * [`Error::NewKeyOwnershipInvalidSignature`] - `key` is not a valid signer of the provided `add_key_payload`.
 		/// * [`Error::NoKeyExists`] - the MSA id for the account in `add_key_payload` does not exist.
 		/// * [`Error::NotMsaOwner`] - Origin's MSA is not the same as 'add_key_payload` MSA. Essentially you can only add a key to your own MSA.
-		/// * [`Error::ProofHasExpired`] - the current block is less than the `expired` bock number set in `AddKeyData`.
+		/// * [`Error::ProofHasExpired`] - the current block is less than the `expired` block number set in `AddKeyData`.
 		/// * [`Error::ProofNotYetValid`] - the `expired` block number set in `AddKeyData` is greater than the current block number plus mortality_block_limit().
 		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used.
 		///
