@@ -1068,7 +1068,6 @@ dependencies = [
  "smallvec",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.29)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.29)",
- "sp-version",
  "substrate-wasm-builder",
 ]
 
