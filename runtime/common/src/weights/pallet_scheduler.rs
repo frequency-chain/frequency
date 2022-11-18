@@ -39,9 +39,9 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Scheduler Lookup (r:0 w:1)
 	/// The range of component `s` is `[1, 50]`.
 	fn on_initialize_periodic_named_resolved(s: u32, ) -> Weight {
-		Weight::from_ref_time(16_328_000 as u64)
-			// Standard Error: 15_000
-			.saturating_add(Weight::from_ref_time(20_401_000 as u64).saturating_mul(s as u64))
+		Weight::from_ref_time(15_866_000 as u64)
+			// Standard Error: 13_000
+			.saturating_add(Weight::from_ref_time(20_831_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().reads((3 as u64).saturating_mul(s as u64)))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
@@ -53,9 +53,9 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Scheduler Lookup (r:0 w:1)
 	/// The range of component `s` is `[1, 50]`.
 	fn on_initialize_named_resolved(s: u32, ) -> Weight {
-		Weight::from_ref_time(15_129_000 as u64)
-			// Standard Error: 13_000
-			.saturating_add(Weight::from_ref_time(16_289_000 as u64).saturating_mul(s as u64))
+		Weight::from_ref_time(15_442_000 as u64)
+			// Standard Error: 14_000
+			.saturating_add(Weight::from_ref_time(16_482_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().reads((2 as u64).saturating_mul(s as u64)))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
@@ -66,9 +66,9 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Preimage StatusFor (r:1 w:1)
 	/// The range of component `s` is `[1, 50]`.
 	fn on_initialize_periodic_resolved(s: u32, ) -> Weight {
-		Weight::from_ref_time(15_036_000 as u64)
-			// Standard Error: 17_000
-			.saturating_add(Weight::from_ref_time(17_224_000 as u64).saturating_mul(s as u64))
+		Weight::from_ref_time(15_043_000 as u64)
+			// Standard Error: 15_000
+			.saturating_add(Weight::from_ref_time(17_537_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().reads((3 as u64).saturating_mul(s as u64)))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
@@ -79,9 +79,9 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Preimage StatusFor (r:1 w:1)
 	/// The range of component `s` is `[1, 50]`.
 	fn on_initialize_resolved(s: u32, ) -> Weight {
-		Weight::from_ref_time(15_368_000 as u64)
-			// Standard Error: 11_000
-			.saturating_add(Weight::from_ref_time(14_870_000 as u64).saturating_mul(s as u64))
+		Weight::from_ref_time(15_847_000 as u64)
+			// Standard Error: 13_000
+			.saturating_add(Weight::from_ref_time(15_045_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().reads((2 as u64).saturating_mul(s as u64)))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
@@ -92,9 +92,9 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Scheduler Lookup (r:0 w:1)
 	/// The range of component `s` is `[1, 50]`.
 	fn on_initialize_named_aborted(s: u32, ) -> Weight {
-		Weight::from_ref_time(7_789_000 as u64)
-			// Standard Error: 5_000
-			.saturating_add(Weight::from_ref_time(5_523_000 as u64).saturating_mul(s as u64))
+		Weight::from_ref_time(7_225_000 as u64)
+			// Standard Error: 6_000
+			.saturating_add(Weight::from_ref_time(5_575_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(s as u64)))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
@@ -104,9 +104,9 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Preimage PreimageFor (r:1 w:0)
 	/// The range of component `s` is `[1, 50]`.
 	fn on_initialize_aborted(s: u32, ) -> Weight {
-		Weight::from_ref_time(10_201_000 as u64)
-			// Standard Error: 2_000
-			.saturating_add(Weight::from_ref_time(2_588_000 as u64).saturating_mul(s as u64))
+		Weight::from_ref_time(10_380_000 as u64)
+			// Standard Error: 5_000
+			.saturating_add(Weight::from_ref_time(2_687_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(s as u64)))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
@@ -115,9 +115,9 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Scheduler Lookup (r:0 w:1)
 	/// The range of component `s` is `[1, 50]`.
 	fn on_initialize_periodic_named(s: u32, ) -> Weight {
-		Weight::from_ref_time(17_020_000 as u64)
-			// Standard Error: 7_000
-			.saturating_add(Weight::from_ref_time(9_757_000 as u64).saturating_mul(s as u64))
+		Weight::from_ref_time(16_968_000 as u64)
+			// Standard Error: 8_000
+			.saturating_add(Weight::from_ref_time(9_959_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(s as u64)))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
@@ -126,9 +126,9 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Scheduler Agenda (r:2 w:2)
 	/// The range of component `s` is `[1, 50]`.
 	fn on_initialize_periodic(s: u32, ) -> Weight {
-		Weight::from_ref_time(15_164_000 as u64)
-			// Standard Error: 4_000
-			.saturating_add(Weight::from_ref_time(6_867_000 as u64).saturating_mul(s as u64))
+		Weight::from_ref_time(14_792_000 as u64)
+			// Standard Error: 7_000
+			.saturating_add(Weight::from_ref_time(6_980_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(s as u64)))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
@@ -138,9 +138,9 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Scheduler Lookup (r:0 w:1)
 	/// The range of component `s` is `[1, 50]`.
 	fn on_initialize_named(s: u32, ) -> Weight {
-		Weight::from_ref_time(16_040_000 as u64)
-			// Standard Error: 4_000
-			.saturating_add(Weight::from_ref_time(6_031_000 as u64).saturating_mul(s as u64))
+		Weight::from_ref_time(17_052_000 as u64)
+			// Standard Error: 5_000
+			.saturating_add(Weight::from_ref_time(6_099_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 			.saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(s as u64)))
@@ -148,18 +148,18 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Scheduler Agenda (r:1 w:1)
 	/// The range of component `s` is `[1, 50]`.
 	fn on_initialize(s: u32, ) -> Weight {
-		Weight::from_ref_time(15_919_000 as u64)
-			// Standard Error: 3_000
-			.saturating_add(Weight::from_ref_time(4_772_000 as u64).saturating_mul(s as u64))
+		Weight::from_ref_time(16_189_000 as u64)
+			// Standard Error: 4_000
+			.saturating_add(Weight::from_ref_time(4_847_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Scheduler Agenda (r:1 w:1)
 	/// The range of component `s` is `[0, 50]`.
 	fn schedule(s: u32, ) -> Weight {
-		Weight::from_ref_time(19_821_000 as u64)
+		Weight::from_ref_time(19_915_000 as u64)
 			// Standard Error: 1_000
-			.saturating_add(Weight::from_ref_time(110_000 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_ref_time(126_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -167,9 +167,9 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Scheduler Lookup (r:0 w:1)
 	/// The range of component `s` is `[1, 50]`.
 	fn cancel(s: u32, ) -> Weight {
-		Weight::from_ref_time(20_415_000 as u64)
+		Weight::from_ref_time(20_430_000 as u64)
 			// Standard Error: 1_000
-			.saturating_add(Weight::from_ref_time(545_000 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_ref_time(556_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -177,9 +177,9 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Scheduler Agenda (r:1 w:1)
 	/// The range of component `s` is `[0, 50]`.
 	fn schedule_named(s: u32, ) -> Weight {
-		Weight::from_ref_time(24_466_000 as u64)
+		Weight::from_ref_time(24_587_000 as u64)
 			// Standard Error: 3_000
-			.saturating_add(Weight::from_ref_time(174_000 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_ref_time(178_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -187,9 +187,9 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Scheduler Agenda (r:1 w:1)
 	/// The range of component `s` is `[1, 50]`.
 	fn cancel_named(s: u32, ) -> Weight {
-		Weight::from_ref_time(24_028_000 as u64)
+		Weight::from_ref_time(24_256_000 as u64)
 			// Standard Error: 3_000
-			.saturating_add(Weight::from_ref_time(599_000 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_ref_time(612_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
