@@ -28,16 +28,28 @@ impl GetRuntimeVersionCmd {
 	}
 
 	pub fn read_runtime_version(&self) -> Result<RuntimeVersion, Error> {
-		let version: RuntimeVersion = if cfg!(feature = "frequency") {
-			frequency_service::service::frequency_runtime::VERSION
+		if cfg!(feature = "frequency") {
+			#[cfg(feature = "frequency")]
+			{
+				return Ok(frequency_service::service::frequency_runtime::VERSION)
+			}
+			#[cfg(not(feature = "frequency"))]
+			panic!("Frequency feature is not enabled");
 		} else if cfg!(feature = "frequency-rococo-testnet") ||
 			cfg!(feature = "frequency-rococo-local")
 		{
-			frequency_service::service::frequency_rococo_runtime::VERSION
+			#[cfg(any(feature = "frequency-rococo-testnet", feature = "frequency-rococo-local"))]
+			{
+				return Ok(frequency_service::service::frequency_rococo_runtime::VERSION)
+			}
+			#[cfg(not(any(
+				feature = "frequency-rococo-testnet",
+				feature = "frequency-rococo-local"
+			)))]
+			panic!("Frequency rococo feature is not enabled")
 		} else {
-			return Err(Error::from("No runtime version found"))
-		};
-		Ok(version)
+			panic!("Frequency feature is not enabled")
+		}
 	}
 }
 
