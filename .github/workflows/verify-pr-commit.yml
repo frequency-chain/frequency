@@ -42,438 +42,302 @@ jobs:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
 
-  build-binaries:
+  build-binary:
     needs: changes
     if: needs.changes.outputs.build-binary == 'true'
     name: Compile Frequency Project
-    strategy:
-      matrix:
-        network: [rococo, mainnet]
     runs-on: ubuntu-latest
     steps:
-      - name: Set Env Vars
-        run: |
-          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
-          echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
-      # XXX Keep this step as it lets us skip full binary builds during development/testing
-      - name: Cache Binary for Testing
-        id: cache-binary
-        uses: actions/cache@v3
-        with:
-          path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-          key: ${{runner.os}}-${{matrix.network}}-${{github.ref_name}}
       - name: Save/Restore Dependencies from Cache
-        if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: ${{env.RUST_TOOLCHAIN}}
-      # - name: Cache Frequency Binary
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: target/${{env.BUILD_PROFILE}}/${{env.BUILT_BIN_FILENAME}}
-      #     key: ${{runner.os}}-${{env.RUST_TOOLCHAIN}}-${{github.sha}}
+      - name: Cache Frequency Binary
+        uses: actions/cache@v3
+        with:
+          path: target/${{env.BUILD_PROFILE}}/frequency
+          key: ${{runner.os}}-${{env.RUST_TOOLCHAIN}}-${{github.sha}}
       - name: Install Rust Toolchain
-        if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: actions-rs/toolchain@v1
         with:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
           toolchain: stable
-      - name: Compile for ${{matrix.network}}
-        if: steps.cache-binary.outputs.cache-hit != 'true'
+      - name: Compile for Mainnet
         run: |
           CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release \
-            --features frequency
-      - name: Run Sanity Checks
-        run: |
-          file ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} && \
-            ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version
+            --features  frequency
       - name: Archive Artifact
         run: |
-          tar -cvf frequency-binary-${{matrix.network}}-${{github.sha}}.amd64.tar \
-            ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+          tar -cvf frequency-binary-mainnet-${{github.sha}}.amd64.tar \
+            ./target/${{env.BUILD_PROFILE}}/frequency
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
-          path: frequency-binary-${{matrix.network}}-${{github.sha}}.amd64.tar
+          path: frequency-binary-mainnet-${{github.sha}}.amd64.tar
           if-no-files-found: error
 
-  # check-for-vulnerable-crates:
-  #   needs: changes
-  #   if: needs.changes.outputs.cargo-lock == 'true'
-  #   name: Check for Vulnerable Crates
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check Out Repo
-  #       uses: actions/checkout@v3
-  #     - name: Set Up Cargo Deny
-  #       run: |
-  #         cargo install --force cargo-deny
-  #         cargo generate-lockfile
-  #     - name: Run Cargo Deny
-  #       run: cargo deny check --hide-inclusion-graph -c .cargo-deny.toml
-
-  # check-rust-code-format:
-  #   needs: changes
-  #   if: needs.changes.outputs.rust == 'true'
-  #   name: Check Rust Code Format
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check Out Repo
-  #       uses: actions/checkout@v3
-  #     - name: Install Rust Toolchain
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         default: true
-  #         profile: minimal
-  #         components: rustfmt
-  #         toolchain: stable
-  #     - name: Check
-  #       run: cargo fmt --check
-
-  # lint-rust-code:
-  #   needs: changes
-  #   if: needs.changes.outputs.rust == 'true'
-  #   name: Lint Rust Code
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check Out Repo
-  #       uses: actions/checkout@v3
-  #     - name: Install Rust Toolchain
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         default: true
-  #         profile: minimal
-  #         components: clippy
-  #         toolchain: stable
-  #     - name: Lint
-  #       run: |
-  #         SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy \
-  #           --features all-frequency-features \
-  #           -- \
-  #           -D warnings
-
-  # check-rust-docs:
-  #   needs: changes
-  #   if: needs.changes.outputs.rust == 'true'
-  #   name: Check Rust Docs
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check Out Repo
-  #       uses: actions/checkout@v3
-  #     - name: Install Rust Toolchain
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         default: true
-  #         profile: minimal
-  #         target: wasm32-unknown-unknown
-  #         components: rust-docs
-  #         toolchain: stable
-  #     - name: Build Rust Docs
-  #       run: RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps
-
-  # check-rust-packages-and-deps:
-  #   needs: changes
-  #   if: needs.changes.outputs.rust == 'true'
-  #   name: Check Rust Packages and Dependencies
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check Out Repo
-  #       uses: actions/checkout@v3
-  #     - name: Install Rust Toolchain
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         default: true
-  #         profile: minimal
-  #         toolchain: stable
-  #     - name: Check
-  #       run: SKIP_WASM_BUILD= cargo check --all-features
-
-  # run-rust-tests:
-  #   needs: changes
-  #   if: needs.changes.outputs.rust == 'true'
-  #   name: Run Rust Tests
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check Out Repo
-  #       uses: actions/checkout@v3
-  #     - name: Install Rust Toolchain
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         default: true
-  #         profile: minimal
-  #         target: wasm32-unknown-unknown
-  #         toolchain: stable
-  #     - name: Restore Dependencies from Cache
-  #       uses: Swatinem/rust-cache@v2
-  #       with:
-  #         shared-key: ${{env.RUST_TOOLCHAIN}}
-  #     - name: Run Tests
-  #       run: cargo test --all-features --workspace --release
-
-  # calc-code-coverage:
-  #   needs: changes
-  #   if: needs.changes.outputs.rust == 'true'
-  #   name: Calculate Code Coverage
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check Out Repo
-  #       uses: actions/checkout@v3
-  #     - name: Install Rust Toolchain
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         default: true
-  #         profile: minimal
-  #         target: wasm32-unknown-unknown
-  #         toolchain: stable
-  #     - name: Run cargo-tarpaulin
-  #       uses: actions-rs/tarpaulin@v0.1
-  #       with:
-  #         version: "0.22.0"
-  #         # Tarpaulin Docs https://github.com/xd009642/tarpaulin
-  #         # -e for exclude
-  #         args: |
-  #           -v --no-fail-fast --workspace
-  #           -e frequency frequency-cli frequency-runtime frequency-rococo-runtime frequency-service
-  #           --exclude-files **/mock.rs **/weights.rs **/weights/* **/benchmarking.rs
-  #     - name: Upload to codecov.io
-  #       uses: codecov/codecov-action@v3
-  #       with:
-  #         fail_ci_if_error: false # optional (default = false)
-  #         verbose: true # optional (default = false)
-
-  # verify-js-api-augment:
-  #   needs: build-binaries
-  #   name: Verify JS API Augment
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check Out Repo
-  #       uses: actions/checkout@v3
-  #     - name: Set up NodeJs
-  #       uses: actions/setup-node@v3
-  #       with:
-  #         node-version: 16
-  #         cache: "npm"
-  #         cache-dependency-path: js/api-augment/package-lock.json
-  #     - name: Install Latest Versions
-  #       run: npm install # DO NOT use `npm ci` as we want the latest polkadot/api possible
-  #       working-directory: js/api-augment
-  #     - name: Lint
-  #       run: npm run lint
-  #       working-directory: js/api-augment
-  #     - name: Download Binary Artifacts
-  #       id: download
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: artifacts-${{github.run_id}}
-  #         path: .
-  #     - name: Extract Binary
-  #       run: |
-  #         tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
-  #     - name: Output Metadata
-  #       run: target/${{env.BUILD_PROFILE}}/frequency export-metadata ./js/api-augment/metadata.json
-  #     - name: Build
-  #       run: npm run build
-  #       working-directory: js/api-augment
-  #     - name: Test
-  #       run: npm test
-  #       working-directory: js/api-augment
-  #     - name: Build & Publish Dry Run
-  #       run: npm publish --dry-run
-  #       working-directory: js/api-augment/dist
-
-  # verify-docker-images:
-  #   needs: build-binaries
-  #   name: Verify Docker Images
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check Out Repo
-  #       uses: actions/checkout@v3
-  #     - name: Install Rust Toolchain
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         default: true
-  #         profile: minimal
-  #         toolchain: stable
-  #     - name: Restore Dependencies from Cache
-  #       uses: Swatinem/rust-cache@v2
-  #       with:
-  #         shared-key: ${{env.RUST_TOOLCHAIN}}
-  #     - name: Download Binary Artifacts
-  #       id: download
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: artifacts-${{github.run_id}}
-  #         path: .
-  #     - name: Extract Binary
-  #       run: |
-  #         tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
-  #     - name: Set up QEMU
-  #       uses: docker/setup-qemu-action@v2
-  #       with:
-  #         platforms: "amd64"
-  #     - name: Set up Docker Buildx
-  #       uses: docker/setup-buildx-action@v2
-  #     - name: Build collator image in instant seal mode
-  #       env:
-  #         IMAGE_NAME: instant-seal-node
-  #       uses: docker/build-push-action@v3
-  #       with:
-  #         context: .
-  #         push: false
-  #         file: ./docker/${{env.IMAGE_NAME}}.dockerfile
-  #     - name: Build collator image for local relay chain
-  #       env:
-  #         IMAGE_NAME: collator-node-local
-  #       uses: docker/build-push-action@v3
-  #       with:
-  #         context: .
-  #         push: false
-  #         file: docker/${{env.IMAGE_NAME}}.dockerfile
-
-  # execute-binary-checks:
-  #   needs: build-binaries
-  #   name: Execute Binary Checks
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check Out Repo
-  #       uses: actions/checkout@v3
-  #     - name: Install Rust Toolchain
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         default: true
-  #         profile: minimal
-  #         toolchain: stable
-  #     - name: Download Binary Artifacts
-  #       id: download
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: artifacts-${{github.run_id}}
-  #         path: .
-  #     - name: Extract Binary
-  #       run: |
-  #         tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
-  #     - name: Output Binary Version
-  #       run: |
-  #         file ./target/${{env.BUILD_PROFILE}}/frequency && \
-  #           ./target/${{env.BUILD_PROFILE}}/frequency --version
-
-  check-extrinsics-ordering:
-    needs: build-binaries
-    name: Check Extrinsics Order
+  check-for-vulnerable-crates:
+    needs: changes
+    if: needs.changes.outputs.cargo-lock == 'true'
+    name: Check for Vulnerable Crates
     runs-on: ubuntu-latest
-    env:
-      # The release tag to obtain reference binary to test against
-      REF_TAG: latest
-      NETWORK: mainnet
     steps:
-      - name: Set Env Vars
-        run: |
-          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Set Up Cargo Deny
+        run: |
+          cargo install --force cargo-deny
+          cargo generate-lockfile
+      - name: Run Cargo Deny
+        run: cargo deny check --hide-inclusion-graph -c .cargo-deny.toml
+
+  check-rust-code-format:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    name: Check Rust Code Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
         with:
-          fetch-depth: 0
-      # XXX Do we need this step if I already have bins?
+          default: true
+          profile: minimal
+          components: rustfmt
+          toolchain: stable
+      - name: Check
+        run: cargo fmt --check
+
+  lint-rust-code:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    name: Lint Rust Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          default: true
+          profile: minimal
+          components: clippy
+          toolchain: stable
+      - name: Lint
+        run: |
+          SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy \
+            --features all-frequency-features \
+            -- \
+            -D warnings
+
+  check-rust-docs:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    name: Check Rust Docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          default: true
+          profile: minimal
+          target: wasm32-unknown-unknown
+          components: rust-docs
+          toolchain: stable
+      - name: Build Rust Docs
+        run: RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps
+
+  check-rust-packages-and-deps:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    name: Check Rust Packages and Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
           default: true
           profile: minimal
           toolchain: stable
-      - name: Get Latest Release Tag
-        run: |
-          git show-ref --tags -d
-          latest_tag_commit=$(git show-ref --tags -d | grep latest^{} | cut -d' ' -f1)
-          latest_release_tag=$(git show-ref --tags -d | grep "^$latest_tag_commit" | \
-            grep refs/tags/v | sed -e 's,.* refs/tags/,,' -e 's/\^{}//')
-          echo "latest_release_tag: $latest_release_tag"
-          echo "LATEST_RELEASE_TAG=$latest_release_tag" >> $GITHUB_ENV
-      - name: Download Test Binary
+      - name: Check
+        run: SKIP_WASM_BUILD= cargo check --all-features
+
+  run-rust-tests:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    name: Run Rust Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          default: true
+          profile: minimal
+          target: wasm32-unknown-unknown
+          toolchain: stable
+      - name: Restore Dependencies from Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{env.RUST_TOOLCHAIN}}
+      - name: Run Tests
+        run: cargo test --all-features --workspace --release
+
+  calc-code-coverage:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    name: Calculate Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          default: true
+          profile: minimal
+          target: wasm32-unknown-unknown
+          toolchain: stable
+      - name: Run cargo-tarpaulin
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          version: "0.22.0"
+          # Tarpaulin Docs https://github.com/xd009642/tarpaulin
+          # -e for exclude
+          args: |
+            -v --no-fail-fast --workspace
+            -e frequency frequency-cli frequency-runtime frequency-rococo-runtime frequency-service
+            --exclude-files **/mock.rs **/weights.rs **/weights/* **/benchmarking.rs
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: false # optional (default = false)
+          verbose: true # optional (default = false)
+
+  verify-js-api-augment:
+    needs:
+      - build-binary
+    name: Verify JS API Augment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Set up NodeJs
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: "npm"
+          cache-dependency-path: js/api-augment/package-lock.json
+      - name: Install Latest Versions
+        run: npm install # DO NOT use `npm ci` as we want the latest polkadot/api possible
+        working-directory: js/api-augment
+      - name: Lint
+        run: npm run lint
+        working-directory: js/api-augment
+      - name: Download Binary Artifacts
         id: download
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
           path: .
-      - name: Extract Test Binary
+      - name: Extract Binary
         run: |
           tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
-      - name: XXX Debug
-        working-directory: ${{env.BIN_DIR}}
+      - name: Output Metadata
+        run: target/${{env.BUILD_PROFILE}}/frequency export-metadata ./js/api-augment/metadata.json
+      - name: Build
+        run: npm run build
+        working-directory: js/api-augment
+      - name: Test
+        run: npm test
+        working-directory: js/api-augment
+      - name: Build & Publish Dry Run
+        run: npm publish --dry-run
+        working-directory: js/api-augment/dist
+
+  verify-docker-images:
+    needs: build-binary
+    name: Verify Docker Images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          default: true
+          profile: minimal
+          toolchain: stable
+      - name: Restore Dependencies from Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{env.RUST_TOOLCHAIN}}
+      - name: Download Binary Artifacts
+        id: download
+        uses: actions/download-artifact@v3
+        with:
+          name: artifacts-${{github.run_id}}
+          path: .
+      - name: Extract Binary
         run: |
-          ls -la .
+          tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: "amd64"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build collator image in instant seal mode
+        env:
+          IMAGE_NAME: instant-seal-node
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: false
+          file: ./docker/${{env.IMAGE_NAME}}.dockerfile
+      - name: Build collator image for local relay chain
+        env:
+          IMAGE_NAME: collator-node-local
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: false
+          file: docker/${{env.IMAGE_NAME}}.dockerfile
+
+  execute-binary-checks:
+    needs: build-binary
+    name: Execute Binary Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          default: true
+          profile: minimal
+          toolchain: stable
+      - name: Download Binary Artifacts
+        id: download
+        uses: actions/download-artifact@v3
+        with:
+          name: artifacts-${{github.run_id}}
+          path: .
+      - name: Extract Binary
+        run: |
+          tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
       - name: Output Binary Version
         run: |
-          file ${{env.BIN_DIR}}/frequency && \
-            ${{env.BIN_DIR}}/frequency --version
-      - name: Fetch Reference Binary
-        # working-directory: ${{env.BIN_DIR}}
-        run: |
-          cd ${{env.BIN_DIR}}
-          ref_url=https://github.com/LibertyDSNP/frequency/releases/download/${{env.LATEST_RELEASE_TAG}}/frequency-mainnet.amd64
-          echo Fetching $ref_url
-          wget -q $ref_url -O frequency-ref
-          chmod a+x frequency-ref
-          ./frequency-ref --version
-      - name: XXX Debug
-        working-directory: ${{env.BIN_DIR}}
-        run: |
-          ls -la .
-      # - name: Start local reference node
-      #   working-directory: ${{env.BIN_DIR}}
-      #   run: |
-      #     echo Running reference on $NETWORK-local
-      #     ./frequency-ref --rpc-port=9934 --ws-port=9945 --base-path=frequency-ref-base/ &
-      # - name: Start local test node
-      #   working-directory: ${{env.BIN_DIR}}
-      #   run: |
-      #     echo Running test on $NETWORK-local
-      #     ./frequency &
-      - name: Extract Metadata
-        working-directory: ${{env.BIN_DIR}}
-        run: |
-          ./frequency-ref export-metadata metadata-ref.json
-          ./frequency export-metadata metadata.json
-      # - name: Prepare output
-      #   working-directory: ${{env.BIN_DIR}}
-      #   run: |
-      #     REF_VERSION=$(./frequency-ref --version)
-      #     BIN_VERSION=$(./frequency --version)
-      #     echo "Metadata comparison:" >> output.txt
-      #     echo "Date: $(date)" >> output.txt
-      #     echo "Ref. binary: $REF_URL" >> output.txt
-      #     echo "Test binary: $BIN_URL" >> output.txt
-      #     echo "Ref. version: $REF_VERSION" >> output.txt
-      #     echo "Test version: $BIN_VERSION" >> output.txt
-      #     echo "Chain: $NETWORK-local" >> output.txt
-      #     echo "----------------------------------------------------------------------" >> output.txt
-      # - name: Pull polkadot-js-tools image
-      #   run: docker pull jacogr/polkadot-js-tools
-      # - name: Compare the metadata
-      #   run: |
-      #     CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata ws://localhost:9945 ws://localhost:9944"
-      #     echo -e "Running:\n$CMD"
-      #     $CMD >> output.txt
-      #     sed -z -i 's/\n\n/\n/g' output.txt
-      #     cat output.txt | egrep -n -i ''
-      #     SUMMARY=$(./tools/ci/scripts/extrinsic-ordering-filter.sh output.txt)
-      #     echo -e $SUMMARY
-      #     echo -e $SUMMARY >> output.txt
-      # - name: Show result
-      #   run: |
-      #     cat output.txt
-      - name: Save output as artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: extrinsic-order-check-${{env.NETWORK}}
-          path: |
-            ${{env.BIN_DIR}}/metadata-ref.json
-            ${{env.BIN_DIR}}/metadata.json
-      # - name: Stop our local nodes
-      #   run: |
-      #     pkill frequency-ref
-      #     pkill frequency
+          file ./target/${{env.BUILD_PROFILE}}/frequency && \
+            ./target/${{env.BUILD_PROFILE}}/frequency --version
