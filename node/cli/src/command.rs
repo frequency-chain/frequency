@@ -470,7 +470,7 @@ pub fn run() -> Result<()> {
 				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
 			}
 		},
-		Some(Subcommand::GetRuntimeVersion(cmd)) => {
+		Some(Subcommand::ExportRuntimeVersion(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			let chain_spec = &runner.config().chain_spec;
 			with_runtime_or_err!(chain_spec, {
