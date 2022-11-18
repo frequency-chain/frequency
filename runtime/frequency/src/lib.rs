@@ -935,6 +935,11 @@ impl_runtime_apis! {
 				Err(_) => None,
 			}
 		}
+
+		fn get_public_key_count_by_msa_id(msa_id: MessageSourceId) -> u8 {
+			Msa::get_public_key_count_by_msa_id(msa_id)
+		}
+
 	}
 
 	#[cfg(feature = "try-runtime")]

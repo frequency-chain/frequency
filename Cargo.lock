@@ -821,7 +821,7 @@ version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6fac387a98bb7c37292057cffc56d62ecb629900026402633ae9160df93a8766"
 dependencies = [
- "nom",
+ "nom 7.1.1",
 ]
 
 [[package]]
@@ -1950,6 +1950,14 @@ dependencies = [
  "quote",
  "rustc_version",
  "syn",
+]
+
+[[package]]
+name = "did-parser"
+version = "0.1.0"
+source = "git+https://github.com/davebryson/did-parser#0774161e399d96c38100b8bfbbb26b110a36bbaf"
+dependencies = [
+ "nom 5.1.2",
 ]
 
 [[package]]
@@ -3926,6 +3934,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
+name = "lexical-core"
+version = "0.7.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6607c62aa161d23d17a9072cc5da0be67cdfc89d3afb1e8d9c842bebc2525ffe"
+dependencies = [
+ "arrayvec 0.5.2",
+ "bitflags",
+ "cfg-if 1.0.0",
+ "ryu",
+ "static_assertions",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.138"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5066,6 +5087,17 @@ checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 
 [[package]]
 name = "nom"
+version = "5.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffb4262d26ed83a1c0a33a38fe2bb15797329c85770da05e6b828ddb782627af"
+dependencies = [
+ "lexical-core",
+ "memchr",
+ "version_check",
+]
+
+[[package]]
+name = "nom"
 version = "7.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8903e5a29a317527874d0402f867152a3d21c908bb0b933e416c65e301d4c36"
@@ -5803,6 +5835,7 @@ version = "0.9.30"
 dependencies = [
  "common-primitives",
  "common-runtime",
+ "did-parser",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5822,7 +5855,9 @@ version = "0.9.30"
 dependencies = [
  "common-helpers",
  "common-primitives",
+ "did-parser",
  "jsonrpsee",
+ "nom 7.1.1",
  "pallet-msa-runtime-api",
  "parity-scale-codec",
  "rayon",

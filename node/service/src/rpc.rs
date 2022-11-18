@@ -49,7 +49,9 @@ where
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_messages_runtime_api::MessagesRuntimeApi<Block>,
 	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block>,
+
 	C::Api: pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId>,
+
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
@@ -57,7 +59,9 @@ where
 
 	// Unfinished RPCs
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
+
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
+
 	use pallet_schemas_rpc::{SchemasApiServer, SchemasHandler};
 
 	let mut module = RpcExtension::new(());

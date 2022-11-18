@@ -16,6 +16,8 @@ use common_primitives::{
 	schema::SchemaId,
 };
 
+use common_primitives::msa::MessageSourceId;
+use did_parser::Did;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
@@ -26,6 +28,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
+use String;
 
 /// Frequency MSA Custom RPC API
 #[rpc(client, server)]
@@ -49,6 +52,14 @@ pub trait MsaApi<BlockHash, AccountId> {
 		delegator_msa_id: DelegatorId,
 		provider_msa_id: ProviderId,
 	) -> RpcResult<Option<Vec<SchemaId>>>;
+
+	/// Given a DID, retrieve the MSA Id, if it is registered and active.
+	#[method(name = "msa_didToMsaId")]
+	fn did_to_msa_id(&self, did: Vec<u8>) -> RpcResult<Option<MessageSourceId>>;
+
+	// convert a given MSA Id to a DID document
+	// #[method(name"msa_idToDidDocument")]
+	// fn msa_id_to_did_document(&self, msa_id: MessageSourceId) -> RpcResult<Option<String>>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -126,4 +137,37 @@ where
 			api.get_granted_schemas_by_msa_id(&at, delegator_msa_id, provider_msa_id);
 		map_rpc_result(runtime_api_result)
 	}
+
+	// This returns some stuff
+	fn did_to_msa_id(&self, did: Vec<u8>) -> RpcResult<Option<MessageSourceId>> {
+		warn!("I AM IN msa/src/rpc/src/lib.rs");
+		let result = String::from_utf8(did);
+		match result {
+			Err(_) => Ok(None),
+			Ok(did_string) => {
+				let res = Did::parse(&did_string);
+				if res.is_err() {
+					return Ok(None)
+				}
+				let (_, did) = res.unwrap();
+				let api = self.client.runtime_api();
+				let at = BlockId::hash(self.client.info().best_hash);
+
+				// TODO: remove unwraps & handle errors
+				let msa_id: MessageSourceId = did.id.clone().parse().unwrap();
+				let key_count = api.get_public_key_count_by_msa_id(&at, msa_id).unwrap();
+				match key_count {
+					0 => Ok(None),
+					_ => Ok(Some(msa_id)),
+				}
+			},
+		}
+	}
+
+	// fn msa_id_to_did_document(
+	// 	&self,
+	// 	msa_id: MessageSourceId,
+	// ) -> RpcResult<Option<String>> {
+	// 	Ok(Some(String::from(&"did:dsnp:")))
+	// }
 }
