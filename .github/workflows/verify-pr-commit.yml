@@ -423,51 +423,61 @@ jobs:
         working-directory: ${{env.BIN_DIR}}
         run: |
           ls -la .
-      - name: Start local reference node
+      # - name: Start local reference node
+      #   working-directory: ${{env.BIN_DIR}}
+      #   run: |
+      #     echo Running reference on $NETWORK-local
+      #     ./frequency-ref --rpc-port=9934 --ws-port=9945 --base-path=frequency-ref-base/ &
+      # - name: Start local test node
+      #   working-directory: ${{env.BIN_DIR}}
+      #   run: |
+      #     echo Running test on $NETWORK-local
+      #     ./frequency &
+      - name: Output Metadata
         working-directory: ${{env.BIN_DIR}}
         run: |
-          echo Running reference on $NETWORK-local
-          ./frequency-ref --rpc-port=9934 --ws-port=9945 --base-path=frequency-ref-base/ &
-      - name: Start local test node
-        working-directory: ${{env.BIN_DIR}}
-        run: |
-          echo Running test on $NETWORK-local
-          ./frequency &
-      - name: Prepare output
-        working-directory: ${{env.BIN_DIR}}
-        run: |
-          REF_VERSION=$(./frequency-ref --version)
-          BIN_VERSION=$(./frequency --version)
-          echo "Metadata comparison:" >> output.txt
-          echo "Date: $(date)" >> output.txt
-          echo "Ref. binary: $REF_URL" >> output.txt
-          echo "Test binary: $BIN_URL" >> output.txt
-          echo "Ref. version: $REF_VERSION" >> output.txt
-          echo "Test version: $BIN_VERSION" >> output.txt
-          echo "Chain: $NETWORK-local" >> output.txt
-          echo "----------------------------------------------------------------------" >> output.txt
-      - name: Pull polkadot-js-tools image
-        run: docker pull jacogr/polkadot-js-tools
-      - name: Compare the metadata
-        run: |
-          CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata ws://localhost:9945 ws://localhost:9944"
-          echo -e "Running:\n$CMD"
-          $CMD >> output.txt
-          sed -z -i 's/\n\n/\n/g' output.txt
-          cat output.txt | egrep -n -i ''
-          SUMMARY=$(./tools/ci/scripts/extrinsic-ordering-filter.sh output.txt)
-          echo -e $SUMMARY
-          echo -e $SUMMARY >> output.txt
-      - name: Show result
-        run: |
-          cat output.txt
-      - name: Save output as artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: extrinsic-order-check-$NETWORK
-          path: |
-            output.txt
-      - name: Stop our local nodes
-        run: |
-          pkill frequency-ref
-          pkill frequency
+          ./frequency-ref export-metadata metadata-ref.json
+          echo "Reference Binary:"
+          cat metadata-ref.json
+          echo "-----------------------------------------------"
+          ./frequency export-metadata metadata.json
+          echo "Test Binary:"
+          cat metadata.json
+      # - name: Prepare output
+      #   working-directory: ${{env.BIN_DIR}}
+      #   run: |
+      #     REF_VERSION=$(./frequency-ref --version)
+      #     BIN_VERSION=$(./frequency --version)
+      #     echo "Metadata comparison:" >> output.txt
+      #     echo "Date: $(date)" >> output.txt
+      #     echo "Ref. binary: $REF_URL" >> output.txt
+      #     echo "Test binary: $BIN_URL" >> output.txt
+      #     echo "Ref. version: $REF_VERSION" >> output.txt
+      #     echo "Test version: $BIN_VERSION" >> output.txt
+      #     echo "Chain: $NETWORK-local" >> output.txt
+      #     echo "----------------------------------------------------------------------" >> output.txt
+      # - name: Pull polkadot-js-tools image
+      #   run: docker pull jacogr/polkadot-js-tools
+      # - name: Compare the metadata
+      #   run: |
+      #     CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata ws://localhost:9945 ws://localhost:9944"
+      #     echo -e "Running:\n$CMD"
+      #     $CMD >> output.txt
+      #     sed -z -i 's/\n\n/\n/g' output.txt
+      #     cat output.txt | egrep -n -i ''
+      #     SUMMARY=$(./tools/ci/scripts/extrinsic-ordering-filter.sh output.txt)
+      #     echo -e $SUMMARY
+      #     echo -e $SUMMARY >> output.txt
+      # - name: Show result
+      #   run: |
+      #     cat output.txt
+      # - name: Save output as artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: extrinsic-order-check-$NETWORK
+      #     path: |
+      #       output.txt
+      # - name: Stop our local nodes
+      #   run: |
+      #     pkill frequency-ref
+      #     pkill frequency
