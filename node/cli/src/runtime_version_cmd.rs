@@ -5,7 +5,7 @@ use std::{fmt::Debug, fs, io, path::PathBuf};
 
 /// The `export-metadata` command used to export chain metadata.
 #[derive(Debug, Clone, Parser)]
-pub struct GetRuntimeVersionCmd {
+pub struct ExportRuntimeVersionCmd {
 	/// Output file name or stdout if unspecified.
 	#[clap(value_parser)]
 	pub output: Option<PathBuf>,
@@ -15,7 +15,7 @@ pub struct GetRuntimeVersionCmd {
 	pub shared_params: SharedParams,
 }
 
-impl GetRuntimeVersionCmd {
+impl ExportRuntimeVersionCmd {
 	/// Run the get-runtime-version command.
 	pub async fn run(&self) -> Result<(), Error> {
 		let runtime_version: RuntimeVersion = self.read_runtime_version().unwrap();
@@ -53,7 +53,7 @@ impl GetRuntimeVersionCmd {
 	}
 }
 
-impl CliConfiguration for GetRuntimeVersionCmd {
+impl CliConfiguration for ExportRuntimeVersionCmd {
 	fn shared_params(&self) -> &SharedParams {
 		&self.shared_params
 	}

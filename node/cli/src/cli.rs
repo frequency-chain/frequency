@@ -1,7 +1,7 @@
 //! Frequency CLI library.
 use std::path::PathBuf;
 
-use crate::{ExportMetadataCmd, GetRuntimeVersionCmd};
+use crate::{ExportMetadataCmd, ExportRuntimeVersionCmd};
 
 /// Sub-commands supported by the collator.
 #[derive(Debug, clap::Subcommand)]
@@ -45,7 +45,7 @@ pub enum Subcommand {
 	TryRuntime(try_runtime_cli::TryRuntimeCmd),
 
 	/// Get current runtime spec version.
-	GetRuntimeVersion(GetRuntimeVersionCmd),
+	ExportRuntimeVersion(ExportRuntimeVersionCmd),
 }
 
 #[derive(Debug, clap::Parser)]
