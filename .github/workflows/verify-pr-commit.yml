@@ -369,19 +369,11 @@ jobs:
     env:
       # The release tag to obtain reference binary to test against
       REF_TAG: latest
-    strategy:
-      fail-fast: false
-      matrix:
-        network: [rococo, mainnet]
-        include:
-          - network: rococo
-            build-profile: release
-          - network: mainnet
-            build-profile: release
+      NETWORK: mainnet
     steps:
       - name: Set Env Vars
         run: |
-          echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
+          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
@@ -434,12 +426,12 @@ jobs:
       - name: Start local reference node
         working-directory: ${{env.BIN_DIR}}
         run: |
-          echo Running reference on ${{ matrix.network }}-local
+          echo Running reference on $NETWORK-local
           ./frequency-ref --rpc-port=9934 --ws-port=9945 --base-path=frequency-ref-base/ &
       - name: Start local test node
         working-directory: ${{env.BIN_DIR}}
         run: |
-          echo Running test on ${{ matrix.network }}-local
+          echo Running test on $NETWORK-local
           ./frequency &
       - name: Prepare output
         working-directory: ${{env.BIN_DIR}}
@@ -452,7 +444,7 @@ jobs:
           echo "Test binary: $BIN_URL" >> output.txt
           echo "Ref. version: $REF_VERSION" >> output.txt
           echo "Test version: $BIN_VERSION" >> output.txt
-          echo "Chain: ${{ matrix.frequency }}-local" >> output.txt
+          echo "Chain: $NETWORK-local" >> output.txt
           echo "----------------------------------------------------------------------" >> output.txt
       - name: Pull polkadot-js-tools image
         run: docker pull jacogr/polkadot-js-tools
@@ -472,7 +464,7 @@ jobs:
       - name: Save output as artifact
         uses: actions/upload-artifact@v3
         with:
-          name: extrinsic-order-check-${{ matrix.network }}
+          name: extrinsic-order-check-$NETWORK
           path: |
             output.txt
       - name: Stop our local nodes
