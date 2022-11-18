@@ -27,29 +27,17 @@ impl ExportRuntimeVersionCmd {
 		to_writer(file, &result).map_err(|_| Error::from("Failed Encoding"))
 	}
 
+	#[allow(unreachable_code)]
 	pub fn read_runtime_version(&self) -> Result<RuntimeVersion, Error> {
-		if cfg!(feature = "frequency") {
-			#[cfg(feature = "frequency")]
-			{
-				return Ok(frequency_service::service::frequency_runtime::VERSION)
-			}
-			#[cfg(not(feature = "frequency"))]
-			panic!("Frequency feature is not enabled");
-		} else if cfg!(feature = "frequency-rococo-testnet") ||
-			cfg!(feature = "frequency-rococo-local")
+		#[cfg(feature = "frequency")]
 		{
-			#[cfg(any(feature = "frequency-rococo-testnet", feature = "frequency-rococo-local"))]
-			{
-				return Ok(frequency_service::service::frequency_rococo_runtime::VERSION)
-			}
-			#[cfg(not(any(
-				feature = "frequency-rococo-testnet",
-				feature = "frequency-rococo-local"
-			)))]
-			panic!("Frequency rococo feature is not enabled")
-		} else {
-			panic!("Frequency feature is not enabled")
+			return Ok(frequency_service::service::frequency_runtime::VERSION)
 		}
+		#[cfg(any(feature = "frequency-rococo-testnet", feature = "frequency-rococo-local"))]
+		{
+			return Ok(frequency_service::service::frequency_rococo_runtime::VERSION)
+		}
+		return Err(Error::from("No runtime version available"))
 	}
 }
 
