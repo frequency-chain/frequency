@@ -433,16 +433,11 @@ jobs:
       #   run: |
       #     echo Running test on $NETWORK-local
       #     ./frequency &
-      - name: Output Metadata
+      - name: Extract Metadata
         working-directory: ${{env.BIN_DIR}}
         run: |
           ./frequency-ref export-metadata metadata-ref.json
-          echo "Reference Binary:"
-          cat metadata-ref.json
-          echo "-----------------------------------------------"
           ./frequency export-metadata metadata.json
-          echo "Test Binary:"
-          cat metadata.json
       # - name: Prepare output
       #   working-directory: ${{env.BIN_DIR}}
       #   run: |
@@ -471,12 +466,13 @@ jobs:
       # - name: Show result
       #   run: |
       #     cat output.txt
-      # - name: Save output as artifact
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: extrinsic-order-check-$NETWORK
-      #     path: |
-      #       output.txt
+      - name: Save output as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: extrinsic-order-check-${{env.NETWORK}}
+          path: |
+            ${{env.BIN_DIR}}/metadata-ref.json
+            ${{env.BIN_DIR}}/metadata.json
       # - name: Stop our local nodes
       #   run: |
       #     pkill frequency-ref
