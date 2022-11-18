@@ -11,19 +11,13 @@ pub struct ExportOpenApiCmd {
 	#[clap(value_parser)]
 	pub output: Option<PathBuf>,
 
-	/// Specify starting block number.
-	///
-	/// Default is 0.
-	#[clap(long, value_name = "BLOCK")]
-	pub from: Option<GenericNumber>,
-
 	#[allow(missing_docs)]
 	#[clap(flatten)]
 	pub shared_params: SharedParams,
 }
 
 impl ExportOpenApiCmd {
-	/// Run the export-metadata command
+	/// Run the export-open-api command
 	pub async fn run(&self) -> Result<(), Error> {
 		let messages_spec = MessagesOAIHandler::get_open_api().await.unwrap_or_default();
 		let file: Box<dyn io::Write> = match &self.output {

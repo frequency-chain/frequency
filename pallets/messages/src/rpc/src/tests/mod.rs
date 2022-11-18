@@ -3,7 +3,7 @@ mod rpc_mock;
 use super::rpc::*;
 use rpc_mock::*;
 
-use common_primitives::node::BlockNumber;
+use common_primitives::{messages::*, node::BlockNumber, schema::*};
 use pallet_messages_runtime_api::MessagesRuntimeApi;
 use std::sync::Arc;
 use substrate_test_runtime_client::runtime::Block;
