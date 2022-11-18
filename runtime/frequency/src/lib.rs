@@ -38,6 +38,7 @@ use common_primitives::{
 pub use common_runtime::{
 	constants::{currency::EXISTENTIAL_DEPOSIT, *},
 	fee::WeightToFee,
+	runtime_api::*,
 };
 
 use frame_support::{
@@ -845,6 +846,10 @@ impl_runtime_apis! {
 	}
 
 	// Unfinished runtime APIs
+	impl FrequencyRuntimeApi for Runtime {
+
+	}
+
 	impl pallet_messages_runtime_api::MessagesRuntimeApi<Block> for Runtime {
 		fn get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber,) ->
 			Vec<MessageResponse> {
