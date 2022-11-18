@@ -1,42 +1,47 @@
 use clap::Parser;
-use polkadot_cli::ProvideRuntimeApi;
-use sc_cli::{CliConfiguration, Error, GenericNumber, SharedParams};
+use sc_cli::{CliConfiguration, Error, RuntimeVersion, SharedParams};
 use serde_json::{json, to_writer};
-use sp_api::Metadata;
-use sp_core::Bytes;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{Block as BlockT, Header as HeaderT},
-};
-use std::{fmt::Debug, fs, io, path::PathBuf, str::FromStr, sync::Arc};
+use std::{fmt::Debug, fs, io, path::PathBuf};
 
 /// The `export-metadata` command used to export chain metadata.
 #[derive(Debug, Clone, Parser)]
-pub struct RuntimeVersionCmd {}
+pub struct GetRuntimeVersionCmd {
+	/// Output file name or stdout if unspecified.
+	#[clap(value_parser)]
+	pub output: Option<PathBuf>,
 
-impl RuntimeVersionCmd {
+	#[allow(missing_docs)]
+	#[clap(flatten)]
+	pub shared_params: SharedParams,
+}
+
+impl GetRuntimeVersionCmd {
 	/// Run the export-metadata command
-	pub async fn run<B, C>(&self, client: Arc<C>) -> Result<(), Error>
-	where
-		B: BlockT,
-		C: ProvideRuntimeApi<B>,
-		C::Api: sp_api::Metadata<B> + 'static,
-		<<B::Header as HeaderT>::Number as FromStr>::Err: Debug,
-	{
-		let from = self.from.as_ref().and_then(|f| f.parse().ok()).unwrap_or(0u32);
-		let metadata: Bytes =
-			client.runtime_api().get_runtime_version(&BlockId::number(from.into())).unwrap().into();
-		let version = json!({ "result": version });
-
+	pub async fn run(&self) -> Result<(), Error> {
+		let runtime_version: RuntimeVersion = self.read_runtime_version().unwrap();
+		let result = json!(runtime_version);
 		let file: Box<dyn io::Write> = match &self.output {
 			Some(filename) => Box::new(fs::File::create(filename)?),
 			None => Box::new(io::stdout()),
 		};
 		to_writer(file, &result).map_err(|_| Error::from("Failed Encoding"))
 	}
+
+	pub fn read_runtime_version(&self) -> Result<RuntimeVersion, Error> {
+		let version: RuntimeVersion = if cfg!(feature = "frequency") {
+			frequency_service::service::frequency_runtime::VERSION
+		} else if cfg!(feature = "frequency-rococo-testnet") ||
+			cfg!(feature = "frequency-rococo-local")
+		{
+			frequency_service::service::frequency_rococo_runtime::VERSION
+		} else {
+			panic!("No runtime version found");
+		};
+		Ok(version)
+	}
 }
 
-impl CliConfiguration for ExportMetadataCmd {
+impl CliConfiguration for GetRuntimeVersionCmd {
 	fn shared_params(&self) -> &SharedParams {
 		&self.shared_params
 	}
