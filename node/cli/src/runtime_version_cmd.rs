@@ -23,7 +23,8 @@ impl ExportRuntimeVersionCmd {
 			Some(filename) => Box::new(fs::File::create(filename)?),
 			None => Box::new(io::stdout()),
 		};
-		to_writer(file, &result).map_err(|_| Error::from("Failed Encoding"))
+		to_writer(file, &result)
+			.map_err(|_| Error::from("export-runtime-version: failed encoding"))?;
 	}
 }
 
