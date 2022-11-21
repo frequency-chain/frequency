@@ -8,8 +8,9 @@
 
 //! Custom APIs for [Messages](../pallet_messages/index.html)
 
+use crate::messages_oai::*;
 #[cfg(feature = "std")]
-use common_primitives::{messages::*, schema::*};
+use common_primitives::schema::*;
 use poem_openapi::{
 	param::Query,
 	payload::Json,

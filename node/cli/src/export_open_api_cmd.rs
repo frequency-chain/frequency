@@ -1,6 +1,6 @@
 use clap::Parser;
 use pallet_messages_rpc::open_api::MessagesOAIHandler;
-use sc_cli::{CliConfiguration, Error, GenericNumber, SharedParams};
+use sc_cli::{CliConfiguration, Error, SharedParams};
 use serde_json::to_writer;
 use std::{fmt::Debug, fs, io, path::PathBuf};
 

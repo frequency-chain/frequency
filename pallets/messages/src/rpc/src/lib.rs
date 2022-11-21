@@ -9,6 +9,8 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
+/// Structs and traits for Messages OpenAPI.
+pub mod messages_oai;
 /// OpenAPI for messages pallet
 pub mod open_api;
 /// RPC for messages pallet
