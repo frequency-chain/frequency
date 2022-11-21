@@ -470,6 +470,23 @@ pub fn run() -> Result<()> {
 				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
 			}
 		},
+		Some(Subcommand::ExportRuntimeVersion(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			let chain_spec = &runner.config().chain_spec;
+			with_runtime_or_err!(chain_spec, {
+				{
+					runner.async_run(|config| {
+						let version = Cli::native_runtime_version(&config.chain_spec);
+						// grab the task manager.
+						let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+						let task_manager =
+							sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
+								.map_err(|e| format!("Error: {:?}", e))?;
+						Ok((cmd.run(version), task_manager))
+					})
+				}
+			})
+		},
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 
