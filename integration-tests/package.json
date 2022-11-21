@@ -16,6 +16,7 @@
         "@frequency-chain/api-augment": "v0.9.29",
         "@polkadot/api": "9.6.2",
         "@polkadot/types": "^9.6.2",
+        "@polkadot/util": "^8.7.1",
         "rxjs": "^7.5.7"
     },
     "devDependencies": {

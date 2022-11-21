@@ -1,6 +1,6 @@
 import "@frequency-chain/api-augment";
 import { ApiRx } from "@polkadot/api";
-import { connect } from "../scaffolding/apiConnection"
+import { connect, createKeys } from "../scaffolding/apiConnection"
 
 import assert from "assert";
 
@@ -14,9 +14,12 @@ describe("#createSchema", () => {
     let keys: KeyringPair;
 
     before(async () => {
-        let {api: connectApi, keys: connectKeys} = await connect(process.env.WS_PROVIDER_URL);
+        let connectApi = await connect(process.env.WS_PROVIDER_URL);
         api = connectApi
-        keys = connectKeys
+    })
+
+    beforeEach(() => {
+        keys = createKeys("//Alice")
     })
 
     after(() => {
