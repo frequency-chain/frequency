@@ -5,11 +5,15 @@
 mod cli;
 #[cfg(feature = "cli")]
 mod command;
+
 #[cfg(feature = "cli")]
 mod export_metadata_cmd;
 
 #[cfg(feature = "cli")]
 mod export_open_api_cmd;
+
+#[cfg(feature = "cli")]
+mod runtime_version_cmd;
 
 #[cfg(feature = "cli")]
 pub use cli::*;
@@ -22,6 +26,9 @@ pub use export_metadata_cmd::*;
 
 #[cfg(feature = "cli")]
 pub use export_open_api_cmd::*;
+
+#[cfg(feature = "cli")]
+pub use runtime_version_cmd::*;
 
 #[cfg(feature = "cli")]
 pub use sc_cli::{Error, Result};
