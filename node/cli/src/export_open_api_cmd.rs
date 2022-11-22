@@ -1,7 +1,7 @@
 use clap::Parser;
 use pallet_messages_rpc::open_api::MessagesOAIHandler;
 use sc_cli::{CliConfiguration, Error, SharedParams};
-use serde_json::to_writer;
+use serde_json::{json, to_writer};
 use std::{fmt::Debug, fs, io, path::PathBuf};
 
 /// The `export-metadata` command used to export chain metadata.
@@ -24,7 +24,8 @@ impl ExportOpenApiCmd {
 			Some(filename) => Box::new(fs::File::create(filename)?),
 			None => Box::new(io::stdout()),
 		};
-		to_writer(file, &messages_spec).map_err(|_| Error::from("Failed Encoding"))
+		let json_spec = json!(messages_spec);
+		to_writer(file, &json_spec).map_err(|_| Error::from("Failed Encoding"))
 	}
 }
 

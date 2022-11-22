@@ -350,7 +350,7 @@ pub fn run() -> Result<()> {
 				}
 			})
 		},
-		Some(Subcommand::ExportOpenApiCmd(cmd)) => {
+		Some(Subcommand::ExportOpenApi(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			let chain_spec = &runner.config().chain_spec;
 			with_runtime_or_err!(chain_spec, {

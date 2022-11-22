@@ -6,6 +6,9 @@
 	missing_docs
 )]
 
+//! # Message API Interface
+//!
+//! - [`MessagesOAIHandler`]: OpenAPI handler for the Message API.
 //! Custom APIs for [Messages](../pallet_messages/index.html)
 
 use crate::messages_oai::*;

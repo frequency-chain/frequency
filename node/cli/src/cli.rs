@@ -25,7 +25,7 @@ pub enum Subcommand {
 	ExportMetadata(ExportMetadataCmd),
 
 	/// Export openapi spec.
-	ExportOpenApiCmd(ExportOpenApiCmd),
+	ExportOpenApi(ExportOpenApiCmd),
 
 	/// Revert the chain to a previous state.
 	Revert(sc_cli::RevertCmd),

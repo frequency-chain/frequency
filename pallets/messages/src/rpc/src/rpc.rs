@@ -5,7 +5,9 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
-
+//! # Message API Interface
+//!
+//! - [`MessageApi`]: Message API trait for rpc.
 //! Custom APIs for [Messages](../pallet_messages/index.html)
 
 #[cfg(feature = "std")]
