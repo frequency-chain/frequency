@@ -1,9 +1,8 @@
 # Frequency Parachain Node for Rococo Testnet
 
 Frequency parachain node which connects to the public Rococo testnet network.
-Has no collating abilities.
 
-## Run
+## Run Full Node
 
 Start full chain node that connects to Rococo Testnet network:
 

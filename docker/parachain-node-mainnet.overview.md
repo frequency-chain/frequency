@@ -1,9 +1,8 @@
 # Frequency Parachain Node for Mainnet
 
 Frequency parachain node which connects to the Mainnet network.
-Has no collating abilities.
 
-## Run
+## Run Full Node
 
 Start full chain node that connects to Mainnet network:
 
