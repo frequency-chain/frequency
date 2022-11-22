@@ -8,7 +8,7 @@ Has no collating abilities.
 Start full chain node that connects to Rococo Testnet network:
 
 ```sh
-docker run --rm -p 9944:9944 -p 9933:9944 -p 30333:30333 frequencychain/parachain-node-rococo \
+docker run -p 9944:9944 -p 9933:9933 -p 30333:30333 frequencychain/parachain-node-rococo \
     --base-path=/chain-data \
     --rpc-external \
     --rpc-cors=all \
