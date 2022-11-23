@@ -131,7 +131,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency-rococo"),
 	authoring_version: 1,
-	spec_version: 1,
+	spec_version: 2,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -344,7 +344,7 @@ impl pallet_preimage::Config for Runtime {
 	type WeightInfo = weights::pallet_preimage::SubstrateWeight<Runtime>;
 	type Event = Event;
 	type Currency = Balances;
-	// Allow the Technical council to request preimages without deposit or fees
+	// Allow a Member of the Technical council to request preimages without deposit or fees
 	type ManagerOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMember<AccountId, TechnicalCommitteeInstance>,
@@ -364,7 +364,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MaxProposals = CouncilMaxProposals;
 	type MaxMembers = ConstU32<5>;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
-	// TODO: this uses default but we don't have weights yet
+	// TODO: this uses default but we don't have weights yet. Issue: #608
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
@@ -377,7 +377,7 @@ impl pallet_collective::Config<TechnicalCommitteeInstance> for Runtime {
 	type MaxProposals = TCMaxProposals;
 	type MaxMembers = TCMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
-	// TODO: this uses default but we don't have weights yet
+	// TODO: this uses default but we don't have weights yet. Issue: #608
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
@@ -594,7 +594,9 @@ impl pallet_messages::Config for Runtime {
 
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
-	type Helper = Msa;
+	type MsaBenchmarkHelper = Msa;
+	#[cfg(feature = "runtime-benchmarks")]
+	type SchemaBenchmarkHelper = Schemas;
 }
 
 impl pallet_sudo::Config for Runtime {

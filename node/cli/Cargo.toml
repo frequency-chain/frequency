@@ -6,7 +6,7 @@ homepage = "https://unfinishedlabs.io/"
 license = "Apache-2.0"
 name = "frequency-cli"
 repository = "https://github.com/LibertyDSNP/frequency/"
-version = "0.9.29-rc3"
+version = "0.9.29"
 
 [dependencies]
 clap = { version = "3.2.20", features = ["derive"] }

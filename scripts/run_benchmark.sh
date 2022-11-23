@@ -32,7 +32,7 @@ echo "Creating benchmarks for $pallet"
 $BENCHMARK \
   --pallet pallet_$pallet \
   --extrinsic "*" \
-  --chain="frequency" \
+  --chain="frequency-bench" \
   --execution wasm \
   --wasm-execution compiled \
   --steps 50 \

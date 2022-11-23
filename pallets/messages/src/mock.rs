@@ -25,7 +25,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 pub const INVALID_SCHEMA_ID: SchemaId = 65534;
-pub const IPFS_SCHEMA_ID: SchemaId = 65535;
+pub const IPFS_SCHEMA_ID: SchemaId = 50;
 
 pub const IPFS_PAYLOAD_LENGTH: u32 = 1200;
 
@@ -229,9 +229,11 @@ impl pallet_messages::Config for Test {
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type MaxMessagePayloadSizeBytes = MaxMessagePayloadSizeBytes;
 
-	#[cfg(feature = "runtime-benchmarks")]
 	/// A set of helper functions for benchmarking.
-	type Helper = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type MsaBenchmarkHelper = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type SchemaBenchmarkHelper = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

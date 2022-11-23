@@ -12,9 +12,6 @@ describe("#setMaxSchemaModelBytes", () => {
     before(async () => {
         let connectApi = await connect(process.env.WS_PROVIDER_URL);
         api = connectApi
-    })
-
-    beforeEach(() => {
         keys = createKeys("//Alice")
     })
 

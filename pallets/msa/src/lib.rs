@@ -60,7 +60,7 @@ use frame_support::{
 };
 
 #[cfg(feature = "runtime-benchmarks")]
-use common_primitives::benchmarks::BenchmarkHelper;
+use common_primitives::benchmarks::MsaBenchmarkHelper;
 
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
@@ -75,6 +75,7 @@ use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
 		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
+		EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR,
 	},
 	schema::{SchemaId, SchemaValidator},
 };
@@ -380,14 +381,14 @@ pub mod pallet {
 		///
 		/// * [`Error::KeyAlreadyRegistered`] - MSA is already registered to the Origin.
 		///
-		#[pallet::weight(T::WeightInfo::create(10_000))]
+		#[pallet::weight(T::WeightInfo::create())]
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
-			let who = ensure_signed(origin)?;
+			let public_key = ensure_signed(origin)?;
 
-			let (_, _) = Self::create_account(who.clone(), |new_msa_id| -> DispatchResult {
-				Self::deposit_event(Event::MsaCreated { msa_id: new_msa_id, key: who });
-				Ok(())
-			})?;
+			let (new_msa_id, new_public_key) =
+				Self::create_account(public_key, |_| -> DispatchResult { Ok(()) })?;
+
+			Self::deposit_event(Event::MsaCreated { msa_id: new_msa_id, key: new_public_key });
 
 			Ok(())
 		}
@@ -413,7 +414,9 @@ pub mod pallet {
 		/// * [`Error::ProofHasExpired`] - `add_provider_payload` expiration is in the past
 		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used
 		///
-		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation())]
+		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation(
+			T::MaxSchemaGrantsPerDelegation::get()
+		))]
 		pub fn create_sponsored_account_with_delegation(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
@@ -438,20 +441,25 @@ pub mod pallet {
 				Error::<T>::ProviderNotRegistered
 			);
 
-			let (_, _) =
-				Self::create_account(delegator_key.clone(), |new_msa_id| -> DispatchResult {
-					let provider_id = ProviderId(provider_msa_id);
-					let delegator_id = DelegatorId(new_msa_id);
-					Self::add_provider(provider_id, delegator_id, add_provider_payload.schema_ids)?;
-
-					Self::deposit_event(Event::MsaCreated {
-						msa_id: new_msa_id,
-						key: delegator_key.clone(),
-					});
-
-					Self::deposit_event(Event::DelegationGranted { delegator_id, provider_id });
+			let (new_delegator_msa_id, new_delegator_public_key) =
+				Self::create_account(delegator_key, |new_msa_id| -> DispatchResult {
+					Self::add_provider(
+						ProviderId(provider_msa_id),
+						DelegatorId(new_msa_id),
+						add_provider_payload.schema_ids,
+					)?;
 					Ok(())
 				})?;
+
+			Self::deposit_event(Event::MsaCreated {
+				msa_id: new_delegator_msa_id,
+				key: new_delegator_public_key,
+			});
+
+			Self::deposit_event(Event::DelegationGranted {
+				delegator_id: DelegatorId(new_delegator_msa_id),
+				provider_id: ProviderId(provider_msa_id),
+			});
 
 			Ok(())
 		}
@@ -683,7 +691,7 @@ pub mod pallet {
 		/// * [`Error::DelegationRevoked`] - delegation is already revoked
 		/// * [`Error::DelegationNotFound`] - no Delegation found between origin MSA and delegator MSA.
 		///
-		#[pallet::weight((T::WeightInfo::revoke_delegation_by_provider(20_000), DispatchClass::Normal, Pays::No))]
+		#[pallet::weight((T::WeightInfo::revoke_delegation_by_provider(), DispatchClass::Normal, Pays::No))]
 		pub fn revoke_delegation_by_provider(
 			origin: OriginFor<T>,
 			#[pallet::compact] delegator: MessageSourceId,
@@ -780,16 +788,17 @@ pub mod pallet {
 		/// # Errors
 		/// * [`Error::NoKeyExists`] - `delegator` does not have an MSA key.
 		///
-		#[pallet::weight((T::WeightInfo::retire_msa(), DispatchClass::Normal, Pays::No))]
-		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResult {
+		#[pallet::weight((T::WeightInfo::retire_msa(EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR), DispatchClass::Normal, Pays::No))]
+		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			// Check and get the account id from the origin
 			let who = ensure_signed(origin)?;
 
 			// Delete the last and only account key and deposit the "PublicKeyDeleted" event
 			// check for valid MSA is in SignedExtension.
+			let mut num_deletions: u32 = 0_u32;
 			match Self::get_msa_by_public_key(&who) {
 				Some(msa_id) => {
-					Self::delete_delegation_relationship(DelegatorId(msa_id));
+					num_deletions = Self::delete_delegation_relationship(DelegatorId(msa_id));
 					Self::delete_key_for_msa(msa_id, &who)?;
 					Self::deposit_event(Event::PublicKeyDeleted { key: who });
 					Self::deposit_event(Event::MsaRetired { msa_id });
@@ -798,7 +807,7 @@ pub mod pallet {
 					error!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
 				},
 			}
-			Ok(())
+			Ok(Some(T::WeightInfo::retire_msa(num_deletions)).into())
 		}
 	}
 }
@@ -1089,9 +1098,16 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Removes all delegations from the specified delegator MSA id to providers
-	pub fn delete_delegation_relationship(delegator: DelegatorId) {
-		_ = DelegatorAndProviderToDelegation::<T>::clear_prefix(delegator, u32::max_value(), None);
+	/// Removes delegations from the specified delegator MSA id to providers
+	/// up to the expected number of providers.
+	pub fn delete_delegation_relationship(delegator: DelegatorId) -> u32 {
+		// TODO: Handle case when the number of providers exceeds the expected number.  Issue #678
+		let result = DelegatorAndProviderToDelegation::<T>::clear_prefix(
+			delegator,
+			EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR,
+			None,
+		);
+		result.unique
 	}
 
 	/// Retrieves the MSA Id for a given `AccountId`
@@ -1219,8 +1235,8 @@ impl<T: Config> Pallet<T> {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-impl<T: Config> BenchmarkHelper<T::AccountId> for Pallet<T> {
-	/// Some docs
+impl<T: Config> MsaBenchmarkHelper<T::AccountId> for Pallet<T> {
+	/// adds delegation relationship with permitted schema ids
 	fn set_delegation_relationship(
 		provider: ProviderId,
 		delegator: DelegatorId,
@@ -1230,14 +1246,10 @@ impl<T: Config> BenchmarkHelper<T::AccountId> for Pallet<T> {
 		Ok(())
 	}
 
-	/// Some docs
+	/// adds a new key to specified msa
 	fn add_key(msa_id: MessageSourceId, key: T::AccountId) -> DispatchResult {
 		Self::add_key(msa_id, &key, EMPTY_FUNCTION)?;
 		Ok(())
-	}
-
-	fn set_schema_count(schema_id: SchemaId) {
-		T::SchemaValidator::set_schema_count(schema_id)
 	}
 }
 

@@ -79,6 +79,8 @@ impl Contains<Call> for BaseCallFilter {
 			Call::Council(..) => true,
 			Call::Democracy(..) => true,
 			Call::Session(..) => true,
+			Call::Preimage(..) => true,
+			Call::Scheduler(..) => true,
 			_ => false,
 		};
 		core_calls
@@ -398,7 +400,7 @@ impl pallet_collective::Config<TechnicalCommitteeInstance> for Runtime {
 	type MaxProposals = TCMaxProposals;
 	type MaxMembers = TCMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
-	// TODO: this uses default but we don't have weights yet
+	// TODO: this uses default but we don't have weights yet. Issue: #608
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
@@ -642,7 +644,9 @@ impl pallet_messages::Config for Runtime {
 
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
-	type Helper = Msa;
+	type MsaBenchmarkHelper = Msa;
+	#[cfg(feature = "runtime-benchmarks")]
+	type SchemaBenchmarkHelper = Schemas;
 }
 
 impl pallet_sudo::Config for Runtime {
