@@ -414,7 +414,9 @@ pub mod pallet {
 		/// * [`Error::ProofHasExpired`] - `add_provider_payload` expiration is in the past
 		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used
 		///
-		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation())]
+		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation(
+			T::MaxSchemaGrantsPerDelegation::get()
+		))]
 		pub fn create_sponsored_account_with_delegation(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
@@ -439,20 +441,25 @@ pub mod pallet {
 				Error::<T>::ProviderNotRegistered
 			);
 
-			let (_, _) =
-				Self::create_account(delegator_key.clone(), |new_msa_id| -> DispatchResult {
-					let provider_id = ProviderId(provider_msa_id);
-					let delegator_id = DelegatorId(new_msa_id);
-					Self::add_provider(provider_id, delegator_id, add_provider_payload.schema_ids)?;
-
-					Self::deposit_event(Event::MsaCreated {
-						msa_id: new_msa_id,
-						key: delegator_key.clone(),
-					});
-
-					Self::deposit_event(Event::DelegationGranted { delegator_id, provider_id });
+			let (new_delegator_msa_id, new_delegator_public_key) =
+				Self::create_account(delegator_key, |new_msa_id| -> DispatchResult {
+					Self::add_provider(
+						ProviderId(provider_msa_id),
+						DelegatorId(new_msa_id),
+						add_provider_payload.schema_ids,
+					)?;
 					Ok(())
 				})?;
+
+			Self::deposit_event(Event::MsaCreated {
+				msa_id: new_delegator_msa_id,
+				key: new_delegator_public_key,
+			});
+
+			Self::deposit_event(Event::DelegationGranted {
+				delegator_id: DelegatorId(new_delegator_msa_id),
+				provider_id: ProviderId(provider_msa_id),
+			});
 
 			Ok(())
 		}
@@ -684,7 +691,7 @@ pub mod pallet {
 		/// * [`Error::DelegationRevoked`] - delegation is already revoked
 		/// * [`Error::DelegationNotFound`] - no Delegation found between origin MSA and delegator MSA.
 		///
-		#[pallet::weight((T::WeightInfo::revoke_delegation_by_provider(20_000), DispatchClass::Normal, Pays::No))]
+		#[pallet::weight((T::WeightInfo::revoke_delegation_by_provider(), DispatchClass::Normal, Pays::No))]
 		pub fn revoke_delegation_by_provider(
 			origin: OriginFor<T>,
 			#[pallet::compact] delegator: MessageSourceId,
