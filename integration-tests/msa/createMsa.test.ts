@@ -2,10 +2,10 @@ import "@frequency-chain/api-augment";
 import assert from "assert";
 import { ApiRx } from "@polkadot/api";
 import { connect, createKeys } from "../scaffolding/apiConnection"
-import { filter, firstValueFrom } from "rxjs";
-import { groupEventsByKey, signPayloadSr25519 } from "../scaffolding/helpers";
+import { signPayloadSr25519 } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { addPublicKeyToMsa, createMsa } from "../scaffolding/extrinsicHelpers";
+import { addPublicKeyToMsa, createMsa, createSchema, deletePublicKey } from "../scaffolding/extrinsicHelpers";
+import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 
 describe("Create Accounts", () => {
     let api: ApiRx;
@@ -32,10 +32,7 @@ describe("Create Accounts", () => {
 
     it("should successfully mimic a user's path using tokens", async () => {
         keys = createKeys("//Alice")
-        const createMsaEvents = await createMsa(api, keys)
-
-        assert.equal(createMsaEvents["system.ExtrinsicFailed"], undefined);
-        assert.notEqual(createMsaEvents["system.ExtrinsicSuccess"], undefined);
+        const createMsaEvents = await createMsa(api, keys);
         assert.notEqual(createMsaEvents["msa.MsaCreated"], undefined);
 
         const msaId = createMsaEvents["msa.MsaCreated"][0]
@@ -44,13 +41,18 @@ describe("Create Accounts", () => {
 
         const addKeyData = api.registry.createType("PalletMsaAddKeyData", payload); 
 
-        const ownerSig = signPayloadSr25519(keys, addKeyData)
-        const newSig = signPayloadSr25519(newKeys, addKeyData)
+        const ownerSig = signPayloadSr25519(keys, addKeyData);
+        const newSig = signPayloadSr25519(newKeys, addKeyData);
 
-        const events = await addPublicKeyToMsa(api, keys, ownerSig, newSig, payload)
-        
-        assert.equal(events["system.ExtrinsicFailed"], undefined);
-        assert.notEqual(events["system.ExtrinsicSuccess"], undefined);
-        assert.notEqual(events["msa.PublicKeyAdded"], undefined);
-    })
+        const publicKeyEvents = await addPublicKeyToMsa(api, keys, ownerSig, newSig, payload);
+
+        assert.notEqual(publicKeyEvents["msa.PublicKeyAdded"], undefined);
+
+        const deleteEvents = await deletePublicKey(api, keys, newKeys.publicKey);
+
+        assert.notEqual(deleteEvents["msa.PublicKeyDeleted"], undefined);
+
+        const createSchemaEvents = await createSchema(api, keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain");
+        assert.notEqual(createSchemaEvents["schemas.SchemaCreated"], undefined);
+    }).timeout(15000)
 })
