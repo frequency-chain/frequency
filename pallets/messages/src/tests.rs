@@ -3,7 +3,7 @@ use crate::{BlockMessages, Config, Error, Message, Messages};
 use codec::Encode;
 use common_primitives::{messages::MessageResponse, schema::*};
 use frame_support::{
-	assert_err, assert_noop, assert_ok,
+	assert_err, assert_err_ignore_postinfo, assert_noop, assert_ok,
 	weights::{Pays, PostDispatchInfo},
 	BoundedVec,
 };
@@ -114,7 +114,7 @@ fn add_message_with_too_large_message_should_panic() {
 		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}".as_bytes());
 
 		// act
-		assert_noop!(MessagesPallet::add_onchain_message(Origin::signed(caller_1), None, schema_id_1, message_payload_1), Error::<Test>::ExceedsMaxMessagePayloadSizeBytes);
+		assert_err_ignore_postinfo!(MessagesPallet::add_onchain_message(Origin::signed(caller_1), None, schema_id_1, message_payload_1), Error::<Test>::ExceedsMaxMessagePayloadSizeBytes);
 	});
 }
 
@@ -130,7 +130,7 @@ fn add_message_with_invalid_msa_account_errors() {
 		);
 
 		// act
-		assert_noop!(
+		assert_err_ignore_postinfo!(
 			MessagesPallet::add_onchain_message(
 				Origin::signed(caller_1),
 				None,
@@ -393,7 +393,7 @@ fn add_message_with_invalid_schema_id_should_error() {
 		);
 
 		// act
-		assert_err!(
+		assert_err_ignore_postinfo!(
 			MessagesPallet::add_onchain_message(
 				Origin::signed(caller_1),
 				None,
@@ -449,7 +449,7 @@ fn invalid_payload_location_onchain() {
 		let caller_1 = 5;
 		let payload: Vec<u8> = Vec::from("foo");
 
-		assert_noop!(
+		assert_err_ignore_postinfo!(
 			MessagesPallet::add_onchain_message(
 				Origin::signed(caller_1),
 				None,

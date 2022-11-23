@@ -7,6 +7,8 @@ use common_primitives::{
 	schema::*,
 };
 
+#[cfg(feature = "runtime-benchmarks")]
+use crate::benchmarking::SCHEMAS;
 use frame_support::{
 	dispatch::DispatchResult,
 	parameter_types,
@@ -26,7 +28,8 @@ type Block = frame_system::mocking::MockBlock<Test>;
 
 pub const INVALID_SCHEMA_ID: SchemaId = 65534;
 pub const IPFS_SCHEMA_ID: SchemaId = 50;
-
+// following number is not random it is the account_id of INVALID_CALLER_NAME in benchmarking.rs
+pub const INVALID_CALLER_ACCOUNT: u64 = 15032055221142339925;
 pub const IPFS_PAYLOAD_LENGTH: u32 = 1200;
 
 // Configure a mock runtime to test the pallet.
@@ -137,7 +140,7 @@ impl MsaValidator for MsaInfoHandler {
 	type AccountId = u64;
 
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError> {
-		if *key == 1000 {
+		if *key == 1000 || *key == INVALID_CALLER_ACCOUNT {
 			return Err(DispatchError::Other("some error"))
 		}
 		if *key == 2000 {
@@ -199,6 +202,10 @@ impl<BlockNumber> SchemaGrantValidator<BlockNumber> for SchemaGrantValidationHan
 pub struct SchemaHandler;
 impl SchemaProvider<u16> for SchemaHandler {
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+		#[cfg(feature = "runtime-benchmarks")]
+		if schema_id > SCHEMAS as u16 {
+			return None
+		}
 		if schema_id == INVALID_SCHEMA_ID {
 			return None
 		}

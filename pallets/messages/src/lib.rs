@@ -56,7 +56,7 @@ pub mod weights;
 mod types;
 
 use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
-use sp_runtime::{traits::One, DispatchError};
+use sp_runtime::{traits::One, DispatchError, ModuleError};
 use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 
 use codec::Encode;
@@ -66,6 +66,9 @@ use common_primitives::{
 		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
 	},
 	schema::*,
+};
+use frame_support::dispatch::{
+	DispatchErrorWithPostInfo, DispatchResultWithPostInfo, PostDispatchInfo,
 };
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -212,7 +215,7 @@ pub mod pallet {
 		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
 		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
 		///
-		#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() as u32, 1_000))]
+		#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() as u32, T::MaxMessagesPerBlock::get()))]
 		pub fn add_ipfs_message(
 			origin: OriginFor<T>,
 			#[pallet::compact] schema_id: SchemaId,
@@ -252,57 +255,61 @@ pub mod pallet {
 		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
 		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
 		///
-		#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() as u32, 1_000))]
+		#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() as u32, T::MaxMessagesPerBlock::get()))]
 		pub fn add_onchain_message(
 			origin: OriginFor<T>,
 			on_behalf_of: Option<MessageSourceId>,
 			#[pallet::compact] schema_id: SchemaId,
 			payload: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
-			let provider_key = ensure_signed(origin)?;
+			let result = || -> DispatchResultWithPostInfo {
+				let provider_key = ensure_signed(origin)?;
 
-			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> =
-				payload.try_into().map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
+				let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = payload
+					.try_into()
+					.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
-			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
-			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
-			ensure!(
-				schema.unwrap().payload_location == PayloadLocation::OnChain,
-				Error::<T>::InvalidPayloadLocation
-			);
+				let schema = T::SchemaProvider::get_schema_by_id(schema_id);
+				ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
+				ensure!(
+					schema.unwrap().payload_location == PayloadLocation::OnChain,
+					Error::<T>::InvalidPayloadLocation
+				);
 
-			let provider_msa_id = Self::find_msa_id(&provider_key)?;
-			let provider_id = ProviderId(provider_msa_id);
+				let provider_msa_id = Self::find_msa_id(&provider_key)?;
+				let provider_id = ProviderId(provider_msa_id);
 
-			let current_block = frame_system::Pallet::<T>::block_number();
-			// On-chain messages either are sent from the user themselves, or on behalf of another MSA Id
-			let maybe_delegator = match on_behalf_of {
-				Some(delegator_msa_id) => {
-					let delegator_id = DelegatorId(delegator_msa_id);
-					T::SchemaGrantValidator::ensure_valid_schema_grant(
-						provider_id,
-						delegator_id,
-						schema_id,
-						current_block,
-					)
-					.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
-					delegator_id
-				},
-				None => DelegatorId(provider_msa_id), // Delegate is also the Provider
+				let current_block = frame_system::Pallet::<T>::block_number();
+				// On-chain messages either are sent from the user themselves, or on behalf of another MSA Id
+				let maybe_delegator = match on_behalf_of {
+					Some(delegator_msa_id) => {
+						let delegator_id = DelegatorId(delegator_msa_id);
+						T::SchemaGrantValidator::ensure_valid_schema_grant(
+							provider_id,
+							delegator_id,
+							schema_id,
+							current_block,
+						)
+						.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
+						delegator_id
+					},
+					None => DelegatorId(provider_msa_id), // Delegate is also the Provider
+				};
+
+				let message = Self::add_message(
+					provider_msa_id,
+					Some(maybe_delegator.into()),
+					bounded_payload,
+					schema_id,
+				)?;
+
+				Ok(Some(T::WeightInfo::add_onchain_message(
+					message.payload.len() as u32,
+					message.index as u32,
+				))
+				.into())
 			};
-
-			let message = Self::add_message(
-				provider_msa_id,
-				Some(maybe_delegator.into()),
-				bounded_payload,
-				schema_id,
-			)?;
-
-			Ok(Some(T::WeightInfo::add_onchain_message(
-				message.payload.len() as u32,
-				message.index as u32,
-			))
-			.into())
+			Self::map_on_chain_errors(result())
 		}
 	}
 }
@@ -416,5 +423,44 @@ impl<T: Config> Pallet<T> {
 
 		BlockMessages::<T>::set(BoundedVec::default());
 		T::WeightInfo::on_initialize(message_count, schema_count)
+	}
+
+	fn map_error_and_weight(error: DispatchError, weight: Weight) -> DispatchErrorWithPostInfo {
+		DispatchErrorWithPostInfo {
+			post_info: PostDispatchInfo {
+				actual_weight: Some(weight),
+				pays_fee: Default::default(),
+			},
+			error,
+		}
+	}
+
+	fn map_on_chain_errors(result: DispatchResultWithPostInfo) -> DispatchResultWithPostInfo {
+		match result {
+			Ok(p) => Ok(p),
+			Err(e) => {
+				if let DispatchError::Module(ModuleError { message: Some(err_msg), .. }) = e.error {
+					if err_msg == Error::<T>::ExceedsMaxMessagePayloadSizeBytes.as_str() {
+						return Err(Self::map_error_and_weight(
+							e.error,
+							T::WeightInfo::add_onchain_message_too_large_payload(),
+						))
+					} else if err_msg == Error::<T>::InvalidSchemaId.as_str() ||
+						err_msg == Error::<T>::InvalidPayloadLocation.as_str()
+					{
+						return Err(Self::map_error_and_weight(
+							e.error,
+							T::WeightInfo::add_onchain_message_invalid_schema(0, 0),
+						))
+					} else if err_msg == Error::<T>::InvalidMessageSourceAccount.as_str() {
+						return Err(Self::map_error_and_weight(
+							e.error,
+							T::WeightInfo::add_onchain_message_invalid_account(),
+						))
+					}
+				}
+				Err(e)
+			},
+		}
 	}
 }
