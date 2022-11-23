@@ -59,13 +59,10 @@ fn add_key_payload_and_signature<T: Config>(
 }
 
 fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSourceId) {
-	let provider = create_account::<T>("account", n);
+	let account = create_account::<T>("account", n);
 
-	assert_ok!(Msa::<T>::create(RawOrigin::Signed(provider.clone()).into()));
-
-	let msa_id = Msa::<T>::ensure_valid_msa_key(&provider).unwrap();
-
-	(provider.clone(), msa_id)
+	let (msa_id, public_key) = Msa::<T>::create_account(account.into(), EMPTY_FUNCTION).unwrap();
+	(public_key, msa_id)
 }
 
 fn create_msa_account_and_keys<T: Config>() -> (T::AccountId, SignerId, MessageSourceId) {
@@ -121,13 +118,14 @@ benchmarks! {
 	}
 
 	revoke_delegation_by_provider {
-		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
-		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
-		add_delegation::<T>(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id.clone()));
+		let (provider_public_key, provider_msa_id) = create_account_with_msa_id::<T>(0);
+		let (_, delegator_msa_id) = create_account_with_msa_id::<T>(1);
 
-	}: _ (RawOrigin::Signed(provider), delegator_msa_id)
+		assert_ok!(Msa::<T>::add_provider(ProviderId(provider_msa_id.clone()), DelegatorId(delegator_msa_id.clone()), vec![]));
+	}: _ (RawOrigin::Signed(provider_public_key), delegator_msa_id.clone())
 	verify {
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+		assert_eq!(Msa::<T>::get_delegation(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).unwrap().revoked_at, T::BlockNumber::from(1u32));
 	}
 
 	add_public_key_to_msa {
@@ -138,7 +136,6 @@ benchmarks! {
 
 		let encoded_add_key_payload = wrap_binary_data(add_key_payload.encode());
 		let owner_signature = MultiSignature::Sr25519(delegator_key_pair.sign(&encoded_add_key_payload).unwrap().into());
-
 	}: _ (RawOrigin::Signed(provider_public_key.clone()), delegator_public_key.clone(), owner_signature, new_public_key_signature, add_key_payload)
 	verify {
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
@@ -203,6 +200,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(delegator), provider_msa_id)
 	verify {
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+		// assert!(Msa::<T>::get_delegation(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).is_none());
 	}
 
 	create_provider {
