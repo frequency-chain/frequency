@@ -2,10 +2,11 @@ import "@frequency-chain/api-augment";
 import assert from "assert";
 import { ApiRx } from "@polkadot/api";
 import { connect, createKeys } from "../scaffolding/apiConnection"
-import { signPayloadSr25519 } from "../scaffolding/helpers";
+import { groupEventsByKey, signPayloadSr25519 } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { addPublicKeyToMsa, createMsa, createSchema, deletePublicKey } from "../scaffolding/extrinsicHelpers";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
+import { filter, firstValueFrom } from "rxjs";
 
 describe("Create Accounts", () => {
     let api: ApiRx;
@@ -20,8 +21,10 @@ describe("Create Accounts", () => {
         api.disconnect()
     })
 
+    // NOTE: We will need a sustainable way to create new keys for every test,
+    // since there is only one node instance per test suite.
     it("should successfully create an MSA account", async () => {
-        keys = createKeys("//Charlie")
+        keys = createKeys("//Alice")
         const chainEvents = await createMsa(api, keys)
 
         assert.equal(chainEvents["system.ExtrinsicFailed"], undefined);
@@ -31,7 +34,7 @@ describe("Create Accounts", () => {
     }).timeout(15000)
 
     it("should successfully mimic a user's path using tokens", async () => {
-        keys = createKeys("//Alice")
+        keys = createKeys("//Charlie")
         const createMsaEvents = await createMsa(api, keys);
         assert.notEqual(createMsaEvents["msa.MsaCreated"], undefined);
 
@@ -54,5 +57,13 @@ describe("Create Accounts", () => {
 
         const createSchemaEvents = await createSchema(api, keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain");
         assert.notEqual(createSchemaEvents["schemas.SchemaCreated"], undefined);
+        
+        const retireMsaEvents = await firstValueFrom(
+            api.tx.msa.retireMsa().signAndSend(keys).pipe(
+                filter(({status}) => status.isInBlock || status.isFinalized),
+                groupEventsByKey()))
+        
+        assert.notEqual(retireMsaEvents["msa.PublicKeyDeleted"], undefined);
+        assert.notEqual(retireMsaEvents["msa.MsaRetired"], undefined);
     }).timeout(15000)
 })
