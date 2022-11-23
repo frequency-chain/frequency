@@ -5,6 +5,7 @@ import { connect, createKeys } from "../scaffolding/apiConnection"
 import { filter, firstValueFrom } from "rxjs";
 import { groupEventsByKey, signPayloadSr25519 } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
+import { addPublicKeyToMsa, createMsa } from "../scaffolding/extrinsicHelpers";
 
 describe("Create Accounts", () => {
     let api: ApiRx;
@@ -21,9 +22,7 @@ describe("Create Accounts", () => {
 
     it("should successfully create an MSA account", async () => {
         keys = createKeys("//Charlie")
-        const chainEvents = await firstValueFrom(api.tx.msa.create().signAndSend(keys).pipe(
-                filter(({status}) => status.isInBlock || status.isFinalized),
-                groupEventsByKey()))
+        const chainEvents = await createMsa(api, keys)
 
         assert.equal(chainEvents["system.ExtrinsicFailed"], undefined);
         assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined);
@@ -33,9 +32,7 @@ describe("Create Accounts", () => {
 
     it("should successfully mimic a user's path using tokens", async () => {
         keys = createKeys("//Alice")
-        const createMsaEvents = await firstValueFrom(api.tx.msa.create().signAndSend(keys).pipe(
-            filter(({status}) => status.isInBlock || status.isFinalized),
-            groupEventsByKey()))
+        const createMsaEvents = await createMsa(api, keys)
 
         assert.equal(createMsaEvents["system.ExtrinsicFailed"], undefined);
         assert.notEqual(createMsaEvents["system.ExtrinsicSuccess"], undefined);
@@ -50,13 +47,7 @@ describe("Create Accounts", () => {
         const ownerSig = signPayloadSr25519(keys, addKeyData)
         const newSig = signPayloadSr25519(newKeys, addKeyData)
 
-        const events = await firstValueFrom(
-            api.tx.msa.addPublicKeyToMsa(keys.publicKey, ownerSig, newSig, payload)
-            .signAndSend(keys)
-            .pipe(
-                filter(({status}) => status.isInBlock || status.isFinalized),
-                groupEventsByKey()
-            ))
+        const events = await addPublicKeyToMsa(api, keys, ownerSig, newSig, payload)
         
         assert.equal(events["system.ExtrinsicFailed"], undefined);
         assert.notEqual(events["system.ExtrinsicSuccess"], undefined);
