@@ -755,7 +755,9 @@ pub mod pallet {
 		/// - [`DelegationNotFound`](Error::DelegationNotFound) - If there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
 		/// - [`SchemaNotGranted`](Error::SchemaNotGranted) - If attempting to revoke a schema that has not previously been granted.
 		///
-		#[pallet::weight(T::WeightInfo::revoke_schema_permissions(20_000))]
+		#[pallet::weight(T::WeightInfo::revoke_schema_permissions(
+			T::MaxSchemaGrantsPerDelegation::get()
+		))]
 		pub fn revoke_schema_permissions(
 			origin: OriginFor<T>,
 			provider_msa_id: MessageSourceId,
