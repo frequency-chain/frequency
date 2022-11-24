@@ -13,7 +13,7 @@ edition = "2021"
 codec = { package = "parity-scale-codec", version = "3.1.5" }
 jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 rayon = "1.5.3"
-did-parser = { git = "https://github.com/davebryson/did-parser", default-features = false, commit = "0774161e399d96c38100b8bfbbb26b110a36bbaf" }
+did_doc = { git = "https://github.com/dhuseby/did", default-features = false, version = "0.3.1"}
 nom = "7.1.1"
 
 # unfinished

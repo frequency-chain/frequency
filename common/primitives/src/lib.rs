@@ -11,6 +11,8 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
+/// Decentralized Identifiers stuff
+pub mod did;
 /// Structs and traits for the Messages pallet.
 pub mod messages;
 /// Structs and traits for the MSA pallet.
