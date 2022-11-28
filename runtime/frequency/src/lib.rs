@@ -14,7 +14,7 @@ use cumulus_pallet_parachain_system::{
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
+	generic, impl_opaque_keys,
 	traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
@@ -37,6 +37,7 @@ use common_primitives::{
 
 pub use common_runtime::{
 	constants::{currency::EXISTENTIAL_DEPOSIT, *},
+	create_runtime_version_for_network,
 	fee::WeightToFee,
 };
 
@@ -145,6 +146,8 @@ impl_opaque_keys! {
 		pub aura: Aura,
 	}
 }
+
+pub const VERSION: RuntimeVersion = create_runtime_version_for_network!(RUNTIME_API_VERSIONS);
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
