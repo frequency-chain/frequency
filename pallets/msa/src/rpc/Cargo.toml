@@ -13,7 +13,7 @@ edition = "2021"
 codec = { package = "parity-scale-codec", version = "3.1.5" }
 jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 rayon = "1.5.3"
-did_doc = { git = "https://github.com/dhuseby/did", default-features = false, version = "0.3.1"}
+did-parser = { git = "https://github.com/davebryson/did-parser", default-features = false, version = "0.1.0"}
 nom = "7.1.1"
 
 # unfinished
@@ -25,6 +25,7 @@ sp-api = { git = "https://github.com/paritytech/substrate", default-features = f
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
+serde_json = {version = "1.0.86", default-features = false, features = ["alloc"]}
 
 [features]
 default = ["std"]
@@ -34,4 +35,5 @@ std = [
 	"sp-runtime/std",
 	"pallet-msa-runtime-api/std",
 	'common-primitives/std',
+	"serde_json/std",
 ]

@@ -1,9 +1,9 @@
 // Strong Documentation Lints
 #![deny(
-rustdoc::broken_intra_doc_links,
-rustdoc::missing_crate_level_docs,
-rustdoc::invalid_codeblock_attributes,
-missing_docs
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
 )]
 
 //! Custom APIs for [MSA](../pallet_msa/index.html)
@@ -12,7 +12,7 @@ use std::sync::Arc;
 use String;
 
 use codec::Codec;
-use did_doc::{Document as DidDocument, Uri as DidUri};
+use did_parser::Did as DidParser;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
@@ -24,11 +24,14 @@ use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
-	msa::{DelegatorId, ProviderId},
+	did::DidDocument,
+	msa::{DelegatorId, MessageSourceId, ProviderId},
 	node::BlockNumber,
 	schema::SchemaId,
 };
-use common_primitives::msa::MessageSourceId;
+
+use common_primitives::did::Did;
+
 use pallet_msa_runtime_api::MsaRuntimeApi;
 
 /// Frequency MSA Custom RPC API
@@ -78,13 +81,13 @@ impl<C, M> MsaHandler<C, M> {
 
 #[async_trait]
 impl<C, Block, AccountId> MsaApiServer<<Block as BlockT>::Hash, AccountId> for MsaHandler<C, Block>
-	where
-		Block: BlockT,
-		C: Send + Sync + 'static,
-		C: ProvideRuntimeApi<Block>,
-		C: HeaderBackend<Block>,
-		C::Api: MsaRuntimeApi<Block, AccountId>,
-		AccountId: Codec,
+where
+	Block: BlockT,
+	C: Send + Sync + 'static,
+	C: ProvideRuntimeApi<Block>,
+	C: HeaderBackend<Block>,
+	C::Api: MsaRuntimeApi<Block, AccountId>,
+	AccountId: Codec,
 {
 	// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
 	// fn get_msa_keys(&self, msa_id: MessageSourceId) -> RpcResult<Vec<KeyInfoResponse<AccountId>>> {
@@ -120,7 +123,7 @@ impl<C, Block, AccountId> MsaApiServer<<Block as BlockT>::Hash, AccountId> for M
 					Err(e) => {
 						warn!("ApiError from has_delegation! {:?}", e);
 						false
-					}
+					},
 				};
 				(delegator_msa_id, has_delegation)
 			})
@@ -145,9 +148,9 @@ impl<C, Block, AccountId> MsaApiServer<<Block as BlockT>::Hash, AccountId> for M
 		match result {
 			Err(_) => Ok(None),
 			Ok(did_string) => {
-				let res = DidUri::from_str(&did_string);
+				let res = DidParser::parse(&did_string);
 				if res.is_err() {
-					return Ok(None);
+					return Ok(None)
 				}
 				let (_, did) = res.unwrap();
 				let api = self.client.runtime_api();
@@ -160,27 +163,22 @@ impl<C, Block, AccountId> MsaApiServer<<Block as BlockT>::Hash, AccountId> for M
 					0 => Ok(None),
 					_ => Ok(Some(msa_id)),
 				}
-			}
+			},
 		}
 	}
 
-	fn msa_id_to_did_document(
-		&self,
-		msa_id: MessageSourceId,
-	) -> RpcResult<Option<String>> {
+	fn msa_id_to_did_document(&self, msa_id: MessageSourceId) -> RpcResult<Option<String>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 		let key_count = api.get_public_key_count_by_msa_id(&at, msa_id).unwrap();
 		match key_count {
 			0 => Ok(None),
 			_ => {
-				let id = String::from("did:dsnp:") + &msa_id.to_string();
-				let context = "https://www.w3.org/ns/did/v1,https://spec.dsnp.org/DSNP/Overview.html,https://w3id.org/security/v2,https://github.com/w3f/schnorrkel";
-
-				let doc: DidDocument = DidDocument::new(context, id.as_str());
-				doc.
+				let doc: DidDocument =
+					DidDocument::new(Did::new(msa_id.into()), Did::new(msa_id.into()));
+				let result = serde_json::to_string(&doc).unwrap();
 				Ok(Some(result))
-			}
+			},
 		}
 	}
 }

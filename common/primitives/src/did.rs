@@ -1,16 +1,8 @@
-#[cfg(feature = "std")]
-use std::{
-	default::Default,
-	string::{String, ToString},
-};
+use scale_info::prelude::string::String;
+use sp_std::{prelude::*, vec::Vec};
 
 #[cfg(feature = "std")]
-use serde::{
-	Deserialize,
-	ser::{Serializer, SerializeStruct},
-	Serialize,
-};
-use serde_json::{self, Value};
+use serde::{ser::Serializer, Serialize};
 
 const DIDPREFIX: &str = "did:dsnp:";
 
@@ -21,10 +13,14 @@ const CONTEXT: [&str; 4] = [
 	"https://github.com/w3f/schnorrkel",
 ];
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
+/// The type of cryptographic key being used
+#[cfg_attr(feature = "std", derive(Serialize))]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum KeyType {
+	/// Schnorkel version of a key using the curve25519 cryptographic key algorithm
 	Sr25519,
-	Edd25519,
+	/// cryptographic key using the curve25519 algorithm
+	Ed25519,
 }
 
 impl Default for KeyType {
@@ -33,21 +29,24 @@ impl Default for KeyType {
 	}
 }
 
-#[cfg(feature = "std")]
+/// A Frequency and DSNP-specific Decentralized Identifier
 #[derive(Copy, Clone, Debug, Default)]
 pub struct Did {
-	id: u32,
+	/// the numeric id for this Did. Corresponds to MSA Id.
+	pub id: u64,
 	// query: Option<HashMap<String, String>>
 	// path: Vec<String>,
 	// fragment: Option<String>,
 }
 
 impl Did {
-	pub fn new(msa_id: u32) -> Self {
+	/// Creates a new Did with id = msa_id
+	pub fn new(msa_id: u64) -> Self {
 		Self { id: msa_id }
 	}
 }
 
+#[cfg(feature = "std")]
 impl ToString for Did {
 	fn to_string(&self) -> String {
 		DIDPREFIX.to_string() + &self.id.to_string()
@@ -55,46 +54,82 @@ impl ToString for Did {
 }
 
 #[cfg(feature = "std")]
-#[derive(Copy, Clone, Serialize, Debug, Default)]
+fn string_serialize<S>(x: &Did, s: S) -> Result<S::Ok, S::Error>
+where
+	S: Serializer,
+{
+	s.serialize_str(&x.to_string())
+}
+
+/// A Frequency and DSNP-specific DID Verification Method
+#[cfg_attr(feature = "std", derive(Serialize))]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct VerificationMethod {
-	#[serde(serialize_with = "Did::to_string")]
+	/// The DID representing the subject of this Verification Method
+	#[cfg_attr(feature = "std", serde(serialize_with = "string_serialize"))]
 	pub id: Did,
-	#[serde(serialize_with = "Did::to_string")]
+
+	/// The DID representing the controller of this Verification Method
+	#[cfg_attr(feature = "std", serde(serialize_with = "string_serialize"))]
 	pub controller: Did,
-	#[serde(rename = "type")]
+
+	/// The type of cryptographic key for this verification method.
+	/// only SR25519 and ED25519 are supported.
+	#[cfg_attr(feature = "std", serde(rename = "type"))]
 	pub key_type: KeyType,
-	#[serde(rename = "blockchainAccountId")]
+
+	/// The blockchainAccountId for this Verification method.
+	/// Corresponds to the account keys (AccountIds) associated with an MSA Id
+	#[cfg_attr(feature = "std", serde(rename = "blockchainAccountId"))]
 	pub blockchain_account_id: u32,
-	// pub blockchain_account_id_index: u32,
+	// pub blockchain_account_id_index:u64,
 }
 
 impl VerificationMethod {
+	/// creates a new VerificationMethod with the provided id and controller Dids.
 	pub fn new(id: Did, controller: Did, blockchain_account_id: u32) -> Self {
 		let key_type = KeyType::default();
 		VerificationMethod { id, controller, key_type, blockchain_account_id }
 	}
 }
 
-#[cfg(feature = "std")]
-#[derive(Clone, Serialize, Debug, Default)]
+/// A Frequency and DSNP-specific DID Document
+#[cfg_attr(feature = "std", derive(Serialize))]
+#[derive(Clone, Debug)]
 pub struct DidDocument {
-	#[serde(rename = "@context")]
+	/// the DID context for this DidDocument
+	#[cfg_attr(feature = "std", serde(rename = "@context"))]
 	pub context: Vec<String>,
-	#[serde(serialize_with = "Did::to_string")]
+
+	/// The DID representing the subject of this Verification Method
+	#[cfg_attr(feature = "std", serde(serialize_with = "string_serialize"))]
 	pub id: Did,
-	#[serde(serialize_with = "Did::to_string")]
+
+	/// The DID representing the controller of this Verification Method
+	#[cfg_attr(feature = "std", serde(serialize_with = "string_serialize"))]
 	pub controller: Did,
-	#[serde(rename = "verificationMethod", skip_serializing_if = "Vec::is_empty", default)]
+
+	/// The verification methods available for this DID
+	#[cfg_attr(
+		feature = "std",
+		serde(rename = "verificationMethod", skip_serializing_if = "Vec::is_empty", default)
+	)]
 	pub verification_method: Vec<VerificationMethod>,
-	#[serde(rename = "capabilityDelegation", skip_serializing_if = "Vec::is_empty", default)]
+
+	/// The capability delegations for this DID
+	#[cfg_attr(
+		feature = "std",
+		serde(rename = "capabilityDelegation", skip_serializing_if = "Vec::is_empty", default)
+	)]
 	pub capability_delegation: Vec<VerificationMethod>,
 }
 
 impl DidDocument {
+	/// Creates a new DidDocument with the provided id and controller DIDs.
 	pub fn new(id: Did, controller: Did) -> Self {
 		let mut context = Vec::new();
 		for c in CONTEXT {
-			context.push(c.to_string());
+			context.push(String::from(c));
 		}
 		DidDocument {
 			context,
@@ -131,11 +166,8 @@ mod tests {
 
 	#[test]
 	fn can_construct_verification_method() {
-		let new_verification_method = VerificationMethod::new(
-			Did::new(3838),
-			Did::new(3838),
-			999999,
-		);
+		let new_verification_method =
+			VerificationMethod::new(Did::new(3838), Did::new(3838), 999999);
 		assert_eq!(KeyType::Sr25519, new_verification_method.key_type);
 		assert_eq!("did:dsnp:3838", new_verification_method.id.to_string().as_str());
 		assert_eq!("did:dsnp:3838", new_verification_method.controller.to_string().as_str());
@@ -146,27 +178,25 @@ mod tests {
 	fn did_document_serializes_correctly() {
 		let mut new_did_doc: DidDocument = DidDocument::new(Did::new(1234), Did::new(1234));
 		let account_keys: [u32; 1] = [31];
-		let msa_id: u32 = 3343;
+		let msa_id: u64 = 3343;
 		for key in account_keys {
 			new_did_doc.verification_method.push(VerificationMethod::new(
 				Did::new(msa_id.clone()),
 				Did::new(msa_id.clone()),
-				key.clone())
-			);
+				key.clone(),
+			));
 		}
 
-		let providers: [(u32, u32); 2] = [(1, 32), (2, 42)];
+		let providers: [(u64, u32); 2] = [(1, 32), (2, 42)];
 		for (provider_msa_id, provider_key) in providers {
-			new_did_doc.capability_delegation.push(
-				VerificationMethod::new(
-					Did::new(provider_msa_id.clone()),
-					Did::new(provider_msa_id.clone()),
-					provider_key.clone()
-				)
-			);
+			new_did_doc.capability_delegation.push(VerificationMethod::new(
+				Did::new(provider_msa_id.clone()),
+				Did::new(provider_msa_id.clone()),
+				provider_key.clone(),
+			));
 		}
 
-		let expected_json_str = r#"{"@context":["https://www.w3.org/ns/did/v1","https://spec.dsnp.org/DSNP/Overview.html","https://w3id.org/security/v2","https://github.com/w3f/schnorrkel"],"id":"did:dsnp:1234","controller":"did:dsnp:1234","verificationMethod":[{"id":"did:dsnp:3343","controller":"did:dsnp:3343","type":"sr25519","blockchainAccountId":"1"},],"capabilityDelegation":[{"id": "did:dsnp:1","controller":"did:dsnp:1","type":"sr25519","blockchainAccountId":"32"},{"id":"did:dsnp:1","controller": "did:dsnp:1","type":"sr25519","blockchainAccountId":"32"}]}"#;
+		let expected_json_str = r#"{"@context":["https://www.w3.org/ns/did/v1","https://spec.dsnp.org/DSNP/Overview.html","https://w3id.org/security/v2","https://github.com/w3f/schnorrkel"],"id":"did:dsnp:1234","controller":"did:dsnp:1234","verificationMethod":[{"id":"did:dsnp:3343","controller":"did:dsnp:3343","type":"Sr25519","blockchainAccountId":31}],"capabilityDelegation":[{"id":"did:dsnp:1","controller":"did:dsnp:1","type":"Sr25519","blockchainAccountId":32},{"id":"did:dsnp:2","controller":"did:dsnp:2","type":"Sr25519","blockchainAccountId":42}]}"#;
 		let serialized = serde_json::to_string(&new_did_doc).unwrap();
 		assert_eq!(expected_json_str, serialized);
 	}

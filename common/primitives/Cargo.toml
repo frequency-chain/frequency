@@ -41,4 +41,6 @@ std = [
   'sp-std/std',
   'sp-runtime/std',
   'sp-api/std',
+  'serde/std',
+  'serde_json/std',
 ]
