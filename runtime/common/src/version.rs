@@ -14,7 +14,7 @@ macro_rules! create_runtime_str_for_network {
 
 #[macro_export]
 macro_rules! create_runtime_version_for_network {
-	($runtime_apis:expr) => {
+	($runtime_apis:tt) => {
 		use sp_version::RuntimeVersion;
 		#[sp_version::runtime_version]
 		const VERSION: RuntimeVersion = RuntimeVersion {
@@ -25,7 +25,7 @@ macro_rules! create_runtime_version_for_network {
 			impl_version: 1,
 			transaction_version: 1,
 			state_version: 1,
-			apis: runtime_apis,
+			apis: $runtime_apis,
 		};
 		VERSION
 	};
