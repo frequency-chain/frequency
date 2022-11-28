@@ -10,6 +10,8 @@ type AddKeyData = {
     newPublicKey?: any;
 }
 
+type AddProviderPayload = { authorizedMsaId?: any; schemaIds?: any; expiration?: any; }
+
 /** Schema Extrinsics */
 export async function createSchema(api: ApiRx, keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS"): Promise<EventMap> {
     return firstValueFrom(api.tx.schemas.createSchema(JSON.stringify(model), modelType, payloadLocation).signAndSend(keys).pipe(
@@ -42,4 +44,30 @@ export function deletePublicKey(api: ApiRx, keys: KeyringPair, publicKey: Uint8A
             filter(({status}) => status.isInBlock || status.isFinalized),
             groupEventsByKey()
         ))
+}
+
+export function createProvider(api: ApiRx, keys: KeyringPair, providerName: string): Promise<EventMap> {
+    return firstValueFrom(api.tx.msa.createProvider(providerName).signAndSend(keys)
+    .pipe(
+        filter(({status}) => status.isInBlock || status.isFinalized),
+        groupEventsByKey()
+    ))
+}
+
+export function grantDelegation(api: ApiRx, userKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: AddProviderPayload): Promise<EventMap> {
+    return firstValueFrom(api.tx.msa.grantDelegation(userKeys.publicKey, signature, payload).signAndSend(providerKeys)
+        .pipe(
+            filter(({status}) => status.isInBlock || status.isFinalized),
+            groupEventsByKey()
+        )
+    )
+}
+
+export function revokeDelegationByDelegator(api: ApiRx, keys: KeyringPair, providerMsaId: any): Promise<EventMap> {
+    return firstValueFrom(api.tx.msa.revokeDelegationByDelegator(providerMsaId).signAndSend(keys)
+        .pipe(
+            filter(({status}) => status.isInBlock || status.isFinalized),
+            groupEventsByKey()
+        )
+    )
 }
