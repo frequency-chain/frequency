@@ -126,18 +126,6 @@ impl_opaque_keys! {
 	}
 }
 
-#[sp_version::runtime_version]
-pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("frequency-rococo"),
-	impl_name: create_runtime_str!("frequency-rococo"),
-	authoring_version: 1,
-	spec_version: 2,
-	impl_version: 0,
-	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 1,
-	state_version: 1,
-};
-
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
