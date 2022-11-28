@@ -4,14 +4,15 @@ concurrency:
   cancel-in-progress: true
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - main
 env:
   BUILD_PROFILE: release
   RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
 jobs:
   changes:
     name: Determine Changed Files
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       rust: ${{steps.filter.outputs.rust}}
       build-binary: ${{steps.filter.outputs.build-binary}}
@@ -46,46 +47,63 @@ jobs:
     needs: changes
     if: needs.changes.outputs.build-binary == 'true'
     name: Compile Frequency Project
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+    env:
+      NETWORK: mainnet
     steps:
+      - name: Set Env Vars
+        run: |
+          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
+          echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+      # # XXX Keep this step as it lets us skip full binary builds during development/testing
+      # - name: Cache Binary for Testing
+      #   id: cache-binary
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+      #     key: ${{runner.os}}-${{env.NETWORK}}-${{github.ref_name}}
       - name: Save/Restore Dependencies from Cache
+        if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: ${{env.RUST_TOOLCHAIN}}
-      - name: Cache Frequency Binary
-        uses: actions/cache@v3
-        with:
-          path: target/${{env.BUILD_PROFILE}}/frequency
-          key: ${{runner.os}}-${{env.RUST_TOOLCHAIN}}-${{github.sha}}
       - name: Install Rust Toolchain
+        if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: actions-rs/toolchain@v1
         with:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
           toolchain: stable
-      - name: Compile for Mainnet
+      - name: Compile Binary
+        if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
           CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release \
             --features  frequency
+      - name: Run Sanity Checks
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          ls -la
+          file ${{env.BUILT_BIN_FILENAME}} && \
+            ./${{env.BUILT_BIN_FILENAME}} --version
       - name: Archive Artifact
         run: |
-          tar -cvf frequency-binary-mainnet-${{github.sha}}.amd64.tar \
-            ./target/${{env.BUILD_PROFILE}}/frequency
+          tar -cvf frequency-binary-${{env.NETWORK}}-${{github.sha}}.amd64.tar \
+            ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
-          path: frequency-binary-mainnet-${{github.sha}}.amd64.tar
+          path: frequency-binary-${{env.NETWORK}}-${{github.sha}}.amd64.tar
           if-no-files-found: error
 
   check-for-vulnerable-crates:
     needs: changes
     if: needs.changes.outputs.cargo-lock == 'true'
     name: Check for Vulnerable Crates
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -100,7 +118,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Check Rust Code Format
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -118,7 +136,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -140,7 +158,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Check Rust Docs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -159,7 +177,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Check Rust Packages and Dependencies
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -176,7 +194,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -198,7 +216,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -229,7 +247,7 @@ jobs:
     needs:
       - build-binary
     name: Verify JS API Augment
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -269,7 +287,7 @@ jobs:
   verify-docker-images:
     needs: build-binary
     name: Verify Docker Images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -291,6 +309,7 @@ jobs:
           path: .
       - name: Extract Binary
         run: |
+          ls -la
           tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -318,7 +337,7 @@ jobs:
   execute-binary-checks:
     needs: build-binary
     name: Execute Binary Checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
