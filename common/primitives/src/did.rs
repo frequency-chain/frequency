@@ -19,7 +19,7 @@ const CONTEXT: [&str; 4] = [
 pub enum KeyType {
 	/// Schnorkel version of a key using the curve25519 cryptographic key algorithm
 	Sr25519,
-	/// cryptographic key using the curve25519 algorithm
+	/// A cryptographic key using the curve25519 algorithm
 	Ed25519,
 }
 
@@ -54,11 +54,22 @@ impl ToString for Did {
 }
 
 #[cfg(feature = "std")]
-fn string_serialize<S>(x: &Did, s: S) -> Result<S::Ok, S::Error>
+fn serialize_did<S>(x: &Did, s: S) -> Result<S::Ok, S::Error>
 where
 	S: Serializer,
 {
 	s.serialize_str(&x.to_string())
+}
+
+#[cfg(feature = "std")]
+fn key_type_serialize<S>(x: &KeyType, s: S) -> Result<S::Ok, S::Error>
+where
+	S: Serializer,
+{
+	match x {
+		KeyType::Sr25519 => s.serialize_str(&String::from("sr25519")),
+		KeyType::Ed25519 => s.serialize_str(&String::from("ed25519")),
+	}
 }
 
 /// A Frequency and DSNP-specific DID Verification Method
@@ -66,16 +77,16 @@ where
 #[derive(Copy, Clone, Debug, Default)]
 pub struct VerificationMethod {
 	/// The DID representing the subject of this Verification Method
-	#[cfg_attr(feature = "std", serde(serialize_with = "string_serialize"))]
+	#[cfg_attr(feature = "std", serde(serialize_with = "serialize_did"))]
 	pub id: Did,
 
 	/// The DID representing the controller of this Verification Method
-	#[cfg_attr(feature = "std", serde(serialize_with = "string_serialize"))]
+	#[cfg_attr(feature = "std", serde(serialize_with = "serialize_did"))]
 	pub controller: Did,
 
 	/// The type of cryptographic key for this verification method.
 	/// only SR25519 and ED25519 are supported.
-	#[cfg_attr(feature = "std", serde(rename = "type"))]
+	#[cfg_attr(feature = "std", serde(rename = "type", serialize_with = "key_type_serialize"))]
 	pub key_type: KeyType,
 
 	/// The blockchainAccountId for this Verification method.
@@ -102,11 +113,11 @@ pub struct DidDocument {
 	pub context: Vec<String>,
 
 	/// The DID representing the subject of this Verification Method
-	#[cfg_attr(feature = "std", serde(serialize_with = "string_serialize"))]
+	#[cfg_attr(feature = "std", serde(serialize_with = "serialize_did"))]
 	pub id: Did,
 
 	/// The DID representing the controller of this Verification Method
-	#[cfg_attr(feature = "std", serde(serialize_with = "string_serialize"))]
+	#[cfg_attr(feature = "std", serde(serialize_with = "serialize_did"))]
 	pub controller: Did,
 
 	/// The verification methods available for this DID
@@ -140,6 +151,10 @@ impl DidDocument {
 		}
 	}
 }
+
+// -------------------------------------- //
+// ---------------  TESTS --------------- //
+// -------------------------------------- //
 
 #[cfg(test)]
 mod tests {
@@ -196,7 +211,7 @@ mod tests {
 			));
 		}
 
-		let expected_json_str = r#"{"@context":["https://www.w3.org/ns/did/v1","https://spec.dsnp.org/DSNP/Overview.html","https://w3id.org/security/v2","https://github.com/w3f/schnorrkel"],"id":"did:dsnp:1234","controller":"did:dsnp:1234","verificationMethod":[{"id":"did:dsnp:3343","controller":"did:dsnp:3343","type":"Sr25519","blockchainAccountId":31}],"capabilityDelegation":[{"id":"did:dsnp:1","controller":"did:dsnp:1","type":"Sr25519","blockchainAccountId":32},{"id":"did:dsnp:2","controller":"did:dsnp:2","type":"Sr25519","blockchainAccountId":42}]}"#;
+		let expected_json_str = r#"{"@context":["https://www.w3.org/ns/did/v1","https://spec.dsnp.org/DSNP/Overview.html","https://w3id.org/security/v2","https://github.com/w3f/schnorrkel"],"id":"did:dsnp:1234","controller":"did:dsnp:1234","verificationMethod":[{"id":"did:dsnp:3343","controller":"did:dsnp:3343","type":"sr25519","blockchainAccountId":31}],"capabilityDelegation":[{"id":"did:dsnp:1","controller":"did:dsnp:1","type":"sr25519","blockchainAccountId":32},{"id":"did:dsnp:2","controller":"did:dsnp:2","type":"sr25519","blockchainAccountId":42}]}"#;
 		let serialized = serde_json::to_string(&new_did_doc).unwrap();
 		assert_eq!(expected_json_str, serialized);
 	}

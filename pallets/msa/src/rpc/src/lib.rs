@@ -8,6 +8,9 @@
 
 //! Custom APIs for [MSA](../pallet_msa/index.html)
 
+#[cfg(test)]
+mod tests;
+
 use std::sync::Arc;
 use String;
 
@@ -22,6 +25,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
+#[cfg(feature = "std")]
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
 	did::DidDocument,
@@ -157,7 +161,7 @@ where
 				let at = BlockId::hash(self.client.info().best_hash);
 
 				// TODO: remove unwraps & handle errors
-				let msa_id: MessageSourceId = did.id.clone().parse().unwrap();
+				let msa_id: MessageSourceId = did.id.parse().unwrap();
 				let key_count = api.get_public_key_count_by_msa_id(&at, msa_id).unwrap();
 				match key_count {
 					0 => Ok(None),
@@ -176,6 +180,7 @@ where
 			_ => {
 				let doc: DidDocument =
 					DidDocument::new(Did::new(msa_id.into()), Did::new(msa_id.into()));
+				// TODO: remove unwraps & handle errors
 				let result = serde_json::to_string(&doc).unwrap();
 				Ok(Some(result))
 			},

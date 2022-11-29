@@ -27,6 +27,11 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", default-featu
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
 serde_json = {version = "1.0.86", default-features = false, features = ["alloc"]}
 
+[dev-dependencies]
+tokio = { version = "1.21.2", features = ["macros", "time", "parking_lot"] }
+substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.29" }
+
 [features]
 default = ["std"]
 std = [
@@ -36,4 +41,5 @@ std = [
 	"pallet-msa-runtime-api/std",
 	'common-primitives/std',
 	"serde_json/std",
+	"common-helpers/std"
 ]

@@ -3,7 +3,10 @@ mod rpc_mock;
 use super::*;
 use rpc_mock::*;
 
-use common_primitives::node::BlockNumber;
+use common_primitives::{
+	messages::{BlockPaginationRequest, BlockPaginationResponse, MessageResponse},
+	node::BlockNumber,
+};
 use pallet_messages_runtime_api::MessagesRuntimeApi;
 use std::sync::Arc;
 use substrate_test_runtime_client::runtime::Block;
@@ -58,12 +61,8 @@ sp_api::mock_impl_runtime_apis! {
 	}
 }
 
-type GetMessagesBySchemaResult = Result<
-	common_primitives::messages::BlockPaginationResponse<
-		common_primitives::messages::MessageResponse,
-	>,
-	jsonrpsee::core::Error,
->;
+type GetMessagesBySchemaResult =
+	Result<BlockPaginationResponse<MessageResponse>, jsonrpsee::core::Error>;
 
 #[tokio::test]
 async fn get_messages_by_schema_with_invalid_request_should_panic() {
