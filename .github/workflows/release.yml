@@ -115,16 +115,18 @@ jobs:
         include:
           - network: rococo
             build-profile: production
-            package: frequency-rococo-runtime
-            runtime-dir: runtime/frequency-rococo
+            package: frequency-runtime
+            runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_rococo_runtime
             release-wasm-file-name-prefix: frequency-rococo_runtime
+            features: frequency-rococo-testnet
           - network: mainnet
             build-profile: production
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency-mainnet_runtime
+            features: frequency
     env:
       SRT_TOOL_VERSION: "1.62.0"
     runs-on: ubuntu-latest
@@ -160,7 +162,7 @@ jobs:
           docker run --rm -e PACKAGE=${{matrix.package}} \
             -e RUNTIME_DIR=${{matrix.runtime-dir}} \
             -e PROFILE=${{matrix.build-profile}} \
-            -e BUILD_OPTS="--features on-chain-release-build,no-metadata-docs" \
+            -e BUILD_OPTS="--features on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
             -v $PWD:/build \
             -v /tmp/cargo:/cargo-home paritytech/srtool:$SRT_TOOL_VERSION build
       - name: Rename WASM file
