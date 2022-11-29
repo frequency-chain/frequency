@@ -1,3 +1,4 @@
+import "@frequency-chain/api-augment";
 import { ApiRx } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import assert from "assert";

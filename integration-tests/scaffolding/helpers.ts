@@ -1,4 +1,3 @@
-import { keys } from "@polkadot/api-derive/staking";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { Event } from "@polkadot/types/interfaces";
 import { Codec, ISubmittableResult } from "@polkadot/types/types";
