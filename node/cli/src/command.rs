@@ -1,12 +1,17 @@
 use crate::cli::{Cli, RelayChainCli, Subcommand};
-use frequency_service::chain_spec;
-
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::info;
 
 use common_primitives::node::Block;
+use frequency_service::{
+	chain_spec,
+	service::{
+		frequency_runtime::{RuntimeApi, VERSION},
+		FrequencyRuntimeExecutor as Executor,
+	},
+};
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -58,34 +63,9 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 }
 
 macro_rules! with_runtime_or_err {
-	($chain_spec:expr, { $( $code:tt )* }) => {
-		if ChainIdentity::Frequency == $chain_spec.identify() {
-			#[cfg(feature = "frequency")]
-			#[allow(unused_imports)]
-			use frequency_service::service::{frequency_runtime::{RuntimeApi, VERSION }, FrequencyRuntimeExecutor as Executor};
-			#[cfg(feature = "frequency")]
-			$( $code )*
-			#[cfg(not(feature = "frequency"))]
-			return Err("Frequency runtime is not available.".into());
-		} else if ChainIdentity::FrequencyRococo == $chain_spec.identify() {
-			#[cfg(feature = "frequency-rococo-testnet")]
-			#[allow(unused_imports)]
-			use frequency_service::service::{frequency_rococo_runtime::{ RuntimeApi, VERSION }, FrequencyRococoRuntimeExecutor as Executor};
-			#[cfg(feature = "frequency-rococo-testnet")]
-			$( $code )*
-			#[cfg(not(feature = "frequency-rococo-testnet"))]
-			return Err("Frequency Rococo runtime is not available.".into());
-		} else if ChainIdentity::FrequencyLocal == $chain_spec.identify() {
-			#[cfg(feature = "frequency-rococo-local")]
-			#[allow(unused_imports)]
-			use frequency_service::service::{frequency_rococo_runtime::{ RuntimeApi, VERSION }, FrequencyLocalRuntimeExecutor as Executor};
-			#[cfg(feature = "frequency-rococo-local")]
-			$( $code )*
-			#[cfg(not(feature = "frequency-rococo-local"))]
-			return Err("Frequency Local runtime is not available.".into());
-		} else {
-			panic!("Unknown chain spec.");
-		}
+	({ $( $code:tt )* }) => {
+		#[allow(unused_braces)]
+		$( $code )*
 	}
 }
 
@@ -202,42 +182,8 @@ impl SubstrateCli for Cli {
 		load_spec(id)
 	}
 
-	fn native_runtime_version(spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		if spec.id() == "frequency" {
-			if cfg!(feature = "frequency") {
-				#[cfg(feature = "frequency")]
-				{
-					return &frequency_service::service::frequency_runtime::VERSION
-				}
-				#[cfg(not(feature = "frequency"))]
-				panic!("Frequency runtime is not compiled!");
-			} else {
-				panic!("Frequency runtime is not compiled!");
-			}
-		} else if spec.id() == "frequency-rococo" {
-			if cfg!(feature = "frequency-rococo-testnet") {
-				#[cfg(feature = "frequency-rococo-testnet")]
-				{
-					return &frequency_service::service::frequency_rococo_runtime::VERSION
-				}
-				#[cfg(not(feature = "frequency-rococo-testnet"))]
-				panic!("Frequency Rococo runtime is not compiled!");
-			} else {
-				panic!("Frequency Rococo runtime is not compiled!");
-			}
-		} else if spec.id() == "frequency-local" {
-			if cfg!(feature = "frequency-rococo-local") {
-				#[cfg(feature = "frequency-rococo-local")]
-				{
-					return &frequency_service::service::frequency_rococo_runtime::VERSION
-				}
-				#[cfg(not(feature = "frequency-rococo-local"))]
-				panic!("Frequency Local runtime is not compiled!");
-			} else {
-				panic!("Frequency Local runtime is not compiled!");
-			}
-		}
-		panic!("Unknown spec id: {}", spec.id());
+	fn native_runtime_version(_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+		&VERSION
 	}
 }
 
@@ -282,8 +228,7 @@ impl SubstrateCli for RelayChainCli {
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
-		let chain_spec = &runner.config().chain_spec;
-		with_runtime_or_err!(chain_spec, {
+		with_runtime_or_err!({
 			{
 				runner.async_run(|$config| {
 					let $components = frequency_service::service::new_partial::<RuntimeApi, Executor, _>(
@@ -330,8 +275,7 @@ pub fn run() -> Result<()> {
 		},
 		Some(Subcommand::ExportMetadata(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			let chain_spec = &runner.config().chain_spec;
-			with_runtime_or_err!(chain_spec, {
+			with_runtime_or_err!({
 				{
 					runner.async_run(|config| {
 						// grab the task manager.
@@ -391,8 +335,7 @@ pub fn run() -> Result<()> {
 		},
 		Some(Subcommand::Benchmark(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			let chain_spec = &runner.config().chain_spec;
-			with_runtime_or_err!(chain_spec, {
+			with_runtime_or_err!({
 				{
 					match cmd {
 						frame_benchmarking_cli::BenchmarkCmd::Pallet(cmd) =>
@@ -450,8 +393,7 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::TryRuntime(cmd)) => {
 			if cfg!(feature = "try-runtime") {
 				let runner = cli.create_runner(cmd)?;
-				let chain_spec = &runner.config().chain_spec;
-				with_runtime_or_err!(chain_spec, {
+				with_runtime_or_err!({
 					{
 						// grab the task manager.
 						let registry =
@@ -472,8 +414,7 @@ pub fn run() -> Result<()> {
 		},
 		Some(Subcommand::ExportRuntimeVersion(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			let chain_spec = &runner.config().chain_spec;
-			with_runtime_or_err!(chain_spec, {
+			with_runtime_or_err!({
 				{
 					runner.async_run(|config| {
 						let version = Cli::native_runtime_version(&config.chain_spec);
@@ -515,7 +456,7 @@ pub fn run() -> Result<()> {
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
-				with_runtime_or_err!(config.chain_spec, {
+				with_runtime_or_err!({
 					{
 						let tokio_handle = config.tokio_handle.clone();
 						let polkadot_cli = RelayChainCli::new(
