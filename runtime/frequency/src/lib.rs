@@ -42,12 +42,10 @@ pub use common_runtime::{
 
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{
-		ConstU128, ConstU32, Contains, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly,
-		Everything,
-	},
+	traits::{ConstU128, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly, Everything},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, DispatchClass, Weight},
 };
+
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot, RawOrigin,
@@ -68,9 +66,14 @@ pub use common_runtime::{
 	weights,
 	weights::{BlockExecutionWeight, ExtrinsicBaseWeight},
 };
+#[cfg(feature = "frequency")]
+use frame_support::traits::Contains;
 
 /// Basefilter to only allow specified transactions call to be executed
+#[cfg(feature = "frequency")]
 pub struct BaseCallFilter;
+
+#[cfg(feature = "frequency")]
 impl Contains<Call> for BaseCallFilter {
 	fn contains(call: &Call) -> bool {
 		let core_calls = match call {
