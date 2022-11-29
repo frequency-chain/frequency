@@ -171,7 +171,7 @@ jobs:
           components: rust-docs
           toolchain: stable
       - name: Build Rust Docs
-        run: RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps
+        run: RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --all-features
 
   check-rust-packages-and-deps:
     needs: changes
