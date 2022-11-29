@@ -1,16 +1,28 @@
 import { ApiRx } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { Event } from "@polkadot/types/interfaces";
 import { firstValueFrom, filter } from "rxjs";
 import { EventMap, groupEventsByKey, Sr25519Signature } from "./helpers";
 
-type AddKeyData = {
-    msaId?: any;
-    expiration?: any;
-    newPublicKey?: any;
-}
-
+type AddKeyData = { msaId?: any; expiration?: any; newPublicKey?: any;}
 type AddProviderPayload = { authorizedMsaId?: any; schemaIds?: any; expiration?: any; }
+
+/**
+ * These helpers return a map of events, some of which contain useful data, some of which don't.
+ * Extrinsics that "create" records typically contain an ID of the entity they created, and this
+ * would be a useful value to return. However, this data seems to be nested inside an array of arrays.
+ * 
+ * Ex: schemaId = events["schemas.SchemaCreated"][<arbitrary_index>]
+ * 
+ * To get the value associated with an event key, we would need to query inside that nested array with
+ * a set of arbitrary indices. Should an object at any level of that querying be undefined, the helper 
+ * will throw an unchecked exception.
+ * 
+ * Normally, I'd say the best experience is for the helper to return both the ID of the created entity
+ * along with a map of emitted events. But in this case, returning that value will increase the complexity
+ * of each helper, since each would have to check for undefined values at every lookup. So, this may be
+ * a rare case when it is best to simply return the map of emitted events and trust the user to look them
+ * up in the test.
+ */
 
 /** Schema Extrinsics */
 export async function createSchema(api: ApiRx, keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS"): Promise<EventMap> {

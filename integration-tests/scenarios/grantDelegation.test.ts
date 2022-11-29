@@ -68,7 +68,7 @@ describe("Delegation Scenario Tests", () => {
         const payload = {
             authorizedMsaId: providerId,
             schemaIds: [schemaId],
-            // If we ever have tests that exceed Block 1200, this test will start failing
+            // If we ever have tests that exceed Block 24, this test will start failing
             expiration: 24
         }
         const addProviderData = api.registry.createType("PalletMsaAddProvider", payload); 
