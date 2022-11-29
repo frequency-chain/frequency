@@ -12,9 +12,31 @@ on:
       - "**/Cargo.toml"
       - "**/Cargo.lock"
 env:
+  BUILD_PROFILE: release
   RUST_TOOLCHAIN: nightly-2022-09-22
 
 jobs:
+  changes:
+    name: Determine Changed Files
+    runs-on: ubuntu-latest
+    outputs:
+      js-api-augment: ${{steps.filter.outputs.js-api-augment}}
+      rust: ${{steps.filter.outputs.rust}}
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Check for Changed Files
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            js-api-augment:
+              - "js/api-augment/**"
+            rust:
+              - "**/*.rs"
+              - "**/Cargo.toml"
+              - "**/Cargo.lock"
+
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
     runs-on: ubuntu-latest
@@ -91,3 +113,53 @@ jobs:
         with:
           fail_ci_if_error: false # optional (default = false)
           verbose: true # optional (default = false)
+
+  save-encoded-metadata:
+    name: Save Encoded Metadata
+    runs-on: ubuntu-latest
+    env:
+      NETWORK: mainnet
+    steps:
+      - name: Set Env Vars
+        run: |
+          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
+          echo "METADATA_FILENAME=encoded-metadata-${{env.NETWORK}}-${{github.ref_name}}.amd64.json" >> $GITHUB_ENV
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      # # XXX Keep this step as it lets us skip full binary builds during development/testing
+      # - name: Cache Binary for Testing
+      #   id: cache-binary
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+      #     key: ${{runner.os}}-${{env.NETWORK}}-${{github.ref_name}}
+      - name: Save/Restore Dependencies from Cache
+        if: steps.cache-binary.outputs.cache-hit != 'true'
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{env.RUST_TOOLCHAIN}}
+      - name: Install Rust Toolchain
+        if: steps.cache-binary.outputs.cache-hit != 'true'
+        uses: actions-rs/toolchain@v1
+        with:
+          default: true
+          profile: minimal
+          target: wasm32-unknown-unknown
+          toolchain: stable
+      - name: Compile Mainnet Binary
+        if: steps.cache-binary.outputs.cache-hit != 'true'
+        run: |
+          CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release \
+            --features  frequency
+      - name: Extract Encoded Metadata
+        id: extract-metadata
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          ./frequency export-metadata metadata.json
+          cat metadata.json | jq -r .result > $METADATA_FILENAME
+      - name: Upload Metadata
+        uses: actions/upload-artifact@v3
+        with:
+          name: encoded-metadata-latest-main
+          path: ${{env.BIN_DIR}}/${{env.METADATA_FILENAME}}
+          if-no-files-found: error
