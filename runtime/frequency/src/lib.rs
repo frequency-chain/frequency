@@ -195,8 +195,8 @@ parameter_types! {
 		})
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
-
-	pub const SS58Prefix: u16 = 90;
+	pub const SS58Prefix42: u16 = 42;
+	pub const SS58Prefix90: u16 = 90;
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -249,7 +249,10 @@ impl frame_system::Config for Runtime {
 	/// The maximum length of a block (in bytes).
 	type BlockLength = RuntimeBlockLength;
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
-	type SS58Prefix = SS58Prefix;
+	#[cfg(not(feature = "frequency"))]
+	type SS58Prefix = SS58Prefix42;
+	#[cfg(feature = "frequency")]
+	type SS58Prefix = SS58Prefix90;
 	/// The action to take on a Runtime Upgrade
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 	type MaxConsumers = FrameSystemMaxConsumers;
