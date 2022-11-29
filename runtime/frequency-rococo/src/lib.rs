@@ -131,7 +131,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency-rococo"),
 	authoring_version: 1,
-	spec_version: 1,
+	spec_version: 2,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -344,7 +344,7 @@ impl pallet_preimage::Config for Runtime {
 	type WeightInfo = weights::pallet_preimage::SubstrateWeight<Runtime>;
 	type Event = Event;
 	type Currency = Balances;
-	// Allow the Technical council to request preimages without deposit or fees
+	// Allow a Member of the Technical council to request preimages without deposit or fees
 	type ManagerOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMember<AccountId, TechnicalCommitteeInstance>,
@@ -364,7 +364,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MaxProposals = CouncilMaxProposals;
 	type MaxMembers = ConstU32<5>;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
-	// TODO: this uses default but we don't have weights yet
+	// TODO: this uses default but we don't have weights yet. Issue: #608
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
@@ -377,7 +377,7 @@ impl pallet_collective::Config<TechnicalCommitteeInstance> for Runtime {
 	type MaxProposals = TCMaxProposals;
 	type MaxMembers = TCMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
-	// TODO: this uses default but we don't have weights yet
+	// TODO: this uses default but we don't have weights yet. Issue: #608
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
@@ -587,11 +587,16 @@ impl pallet_messages::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = pallet_messages::weights::SubstrateWeight<Runtime>;
 	type MsaInfoProvider = Msa;
-	type DelegationInfoProvider = Msa;
 	type SchemaGrantValidator = Msa;
 	type SchemaProvider = Schemas;
 	type MaxMessagesPerBlock = MessagesMaxPerBlock;
 	type MaxMessagePayloadSizeBytes = MessagesMaxPayloadSizeBytes;
+
+	/// A set of helper functions for benchmarking.
+	#[cfg(feature = "runtime-benchmarks")]
+	type MsaBenchmarkHelper = Msa;
+	#[cfg(feature = "runtime-benchmarks")]
+	type SchemaBenchmarkHelper = Schemas;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -790,9 +795,9 @@ impl_runtime_apis! {
 	}
 
 	// Unfinished runtime APIs
-	impl pallet_messages_runtime_api::MessagesRuntimeApi<Block, BlockNumber> for Runtime {
+	impl pallet_messages_runtime_api::MessagesRuntimeApi<Block> for Runtime {
 		fn get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber) ->
-			Vec<MessageResponse<BlockNumber>> {
+			Vec<MessageResponse> {
 			Messages::get_messages_by_schema_and_block(schema_id, schema_payload_location, block_number)
 		}
 
@@ -813,14 +818,14 @@ impl_runtime_apis! {
 		// 	Ok(Msa::fetch_msa_keys(msa_id))
 		// }
 
-		fn has_delegation(delegator: Delegator, provider: Provider, block_number: Option<BlockNumber>) -> bool {
-			match Msa::ensure_valid_delegation(provider, delegator, block_number) {
-				Ok(_) => true,
-				Err(_) => false,
+		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<SchemaId>) -> bool {
+			match schema_id {
+				Some(sid) => Msa::ensure_valid_schema_grant(provider, delegator, sid, block_number).is_ok(),
+				None => Msa::ensure_valid_delegation(provider, delegator, Some(block_number)).is_ok(),
 			}
 		}
 
-		fn get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -> Option<Vec<SchemaId>> {
+		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaId>> {
 			match Msa::get_granted_schemas_by_msa_id(delegator, provider) {
 				Ok(x) => x,
 				Err(_) => None,

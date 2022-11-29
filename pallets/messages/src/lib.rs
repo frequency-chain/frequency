@@ -63,11 +63,14 @@ use codec::Encode;
 use common_primitives::{
 	messages::*,
 	msa::{
-		DelegationValidator, Delegator, MessageSourceId, MsaLookup, MsaValidator, Provider,
-		ProviderLookup, SchemaGrantValidator,
+		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
 	},
 	schema::*,
 };
+
+#[cfg(feature = "runtime-benchmarks")]
+use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
+
 pub use pallet::*;
 pub use types::*;
 pub use weights::*;
@@ -89,11 +92,8 @@ pub mod pallet {
 		/// A type that will supply MSA related information
 		type MsaInfoProvider: MsaLookup + MsaValidator<AccountId = Self::AccountId>;
 
-		/// A type that will supply delegation related information
-		type DelegationInfoProvider: ProviderLookup + DelegationValidator;
-
 		/// A type that will validate schema grants
-		type SchemaGrantValidator: SchemaGrantValidator;
+		type SchemaGrantValidator: SchemaGrantValidator<Self::BlockNumber>;
 
 		/// A type that will supply schema related information.
 		type SchemaProvider: SchemaProvider<SchemaId>;
@@ -105,6 +105,14 @@ pub mod pallet {
 		/// The maximum size of a message payload bytes.
 		#[pallet::constant]
 		type MaxMessagePayloadSizeBytes: Get<u32> + Clone;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		/// A set of helper functions for benchmarking.
+		type MsaBenchmarkHelper: MsaBenchmarkHelper<Self::AccountId>;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		/// A set of helper functions for benchmarking.
+		type SchemaBenchmarkHelper: SchemaBenchmarkHelper;
 	}
 
 	#[pallet::pallet]
@@ -142,16 +150,22 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Too many messages are added to existing block
 		TooManyMessagesInBlock,
+
 		/// Message payload size is too large
 		ExceedsMaxMessagePayloadSizeBytes,
+
 		/// Type Conversion Overflow
 		TypeConversionOverflow,
+
 		/// Invalid Message Source Account
 		InvalidMessageSourceAccount,
+
 		/// Invalid SchemaId or Schema not found
 		InvalidSchemaId,
+
 		/// UnAuthorizedDelegate
 		UnAuthorizedDelegate,
+
 		/// Invalid payload location
 		InvalidPayloadLocation,
 	}
@@ -258,19 +272,23 @@ pub mod pallet {
 			);
 
 			let provider_msa_id = Self::find_msa_id(&provider_key)?;
+			let provider_id = ProviderId(provider_msa_id);
 
+			let current_block = frame_system::Pallet::<T>::block_number();
 			// On-chain messages either are sent from the user themselves, or on behalf of another MSA Id
 			let maybe_delegator = match on_behalf_of {
-				Some(delegator) => {
+				Some(delegator_msa_id) => {
+					let delegator_id = DelegatorId(delegator_msa_id);
 					T::SchemaGrantValidator::ensure_valid_schema_grant(
-						Provider(provider_msa_id),
-						Delegator(delegator),
+						provider_id,
+						delegator_id,
 						schema_id,
+						current_block,
 					)
 					.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
-					Delegator(delegator)
+					delegator_id
 				},
-				None => Delegator(provider_msa_id), // Delegate is also the Provider
+				None => DelegatorId(provider_msa_id), // Delegate is also the Provider
 			};
 
 			let message = Self::add_message(
@@ -346,11 +364,13 @@ impl<T: Config> Pallet<T> {
 		schema_id: SchemaId,
 		schema_payload_location: PayloadLocation,
 		block_number: T::BlockNumber,
-	) -> Vec<MessageResponse<T::BlockNumber>> {
+	) -> Vec<MessageResponse> {
+		let block_number_value: u32 = block_number.try_into().unwrap_or_default();
+
 		<Messages<T>>::get(block_number, schema_id)
 			.into_inner()
 			.iter()
-			.map(|msg| msg.map_to_response(block_number, schema_payload_location))
+			.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
 			.collect()
 	}
 

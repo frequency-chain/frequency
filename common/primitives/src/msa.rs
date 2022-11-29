@@ -16,37 +16,41 @@ pub use crate::schema::SchemaId;
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
 pub type MessageSourceId = u64;
 
-/// A Delegator is a role for an MSA to play.
+/// Maximum # of providers per delegator for deletion/benchmarking use
+pub const EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR: u32 = 128;
+
+/// A DelegatorId an MSA Id serving the role of a Delegator.
 /// Delegators delegate to Providers.
 /// Encodes and Decodes as just a `u64`
-#[derive(TypeInfo, Debug, Clone, Copy, PartialEq, MaxEncodedLen, Eq)]
-pub struct Delegator(pub MessageSourceId);
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(TypeInfo, Default, Debug, Clone, Copy, PartialEq, MaxEncodedLen, Eq)]
+pub struct DelegatorId(pub MessageSourceId);
 
-impl EncodeLike for Delegator {}
+impl EncodeLike for DelegatorId {}
 
-impl Encode for Delegator {
+impl Encode for DelegatorId {
 	fn encode(&self) -> Vec<u8> {
 		self.0.encode()
 	}
 }
 
-impl Decode for Delegator {
+impl Decode for DelegatorId {
 	fn decode<I: codec::Input>(input: &mut I) -> Result<Self, codec::Error> {
 		match <u64>::decode(input) {
-			Ok(x) => Ok(Delegator(x)),
-			_ => Err(Error::from("Could not decode Delegator")),
+			Ok(x) => Ok(DelegatorId(x)),
+			_ => Err(Error::from("Could not decode DelegatorId")),
 		}
 	}
 }
 
-impl From<MessageSourceId> for Delegator {
+impl From<MessageSourceId> for DelegatorId {
 	fn from(t: MessageSourceId) -> Self {
-		Delegator(t)
+		DelegatorId(t)
 	}
 }
 
-impl From<Delegator> for MessageSourceId {
-	fn from(t: Delegator) -> MessageSourceId {
+impl From<DelegatorId> for MessageSourceId {
+	fn from(t: DelegatorId) -> MessageSourceId {
 		t.0
 	}
 }
@@ -86,34 +90,35 @@ impl<
 /// Provider is the recipient of a delegation.
 /// It is a subset of an MSA
 /// Encodes and Decodes as just a `u64`
-#[derive(TypeInfo, Debug, Clone, Copy, PartialEq, MaxEncodedLen, Eq)]
-pub struct Provider(pub MessageSourceId);
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(TypeInfo, Default, Debug, Clone, Copy, PartialEq, MaxEncodedLen, Eq)]
+pub struct ProviderId(pub MessageSourceId);
 
-impl EncodeLike for Provider {}
+impl EncodeLike for ProviderId {}
 
-impl Encode for Provider {
+impl Encode for ProviderId {
 	fn encode(&self) -> Vec<u8> {
 		self.0.encode()
 	}
 }
 
-impl Decode for Provider {
+impl Decode for ProviderId {
 	fn decode<I: codec::Input>(input: &mut I) -> Result<Self, codec::Error> {
 		match <u64>::decode(input) {
-			Ok(x) => Ok(Provider(x)),
-			_ => Err(Error::from("Could not decode Provider")),
+			Ok(x) => Ok(ProviderId(x)),
+			_ => Err(Error::from("Could not decode ProviderId")),
 		}
 	}
 }
 
-impl From<MessageSourceId> for Provider {
+impl From<MessageSourceId> for ProviderId {
 	fn from(t: MessageSourceId) -> Self {
-		Provider(t)
+		ProviderId(t)
 	}
 }
 
-impl From<Provider> for MessageSourceId {
-	fn from(t: Provider) -> MessageSourceId {
+impl From<ProviderId> for MessageSourceId {
+	fn from(t: ProviderId) -> MessageSourceId {
 		t.0
 	}
 }
@@ -160,8 +165,8 @@ pub trait ProviderLookup {
 
 	/// Gets the relationship information for this delegator, provider pair
 	fn get_delegation_of(
-		delegator: Delegator,
-		provider: Provider,
+		delegator: DelegatorId,
+		provider: ProviderId,
 	) -> Option<Delegation<Self::SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>>;
 }
 
@@ -176,8 +181,8 @@ pub trait DelegationValidator {
 
 	/// Validates that the delegator and provider have a relationship at this point
 	fn ensure_valid_delegation(
-		provider: Provider,
-		delegator: Delegator,
+		provider: ProviderId,
+		delegator: DelegatorId,
 		block_number: Option<Self::BlockNumber>,
 	) -> Result<
 		Delegation<Self::SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
@@ -186,12 +191,13 @@ pub trait DelegationValidator {
 }
 
 /// A behavior that allows for validating a schema grant
-pub trait SchemaGrantValidator {
+pub trait SchemaGrantValidator<BlockNumber> {
 	/// Validates if the provider is allowed to use the particular schema id currently
 	fn ensure_valid_schema_grant(
-		provider: Provider,
-		delegator: Delegator,
+		provider_id: ProviderId,
+		delegator_id: DelegatorId,
 		schema_id: SchemaId,
+		block_number: BlockNumber,
 	) -> DispatchResult;
 }
 

@@ -1,8 +1,8 @@
 [package]
 name = "pallet-schemas-runtime-api"
-version = "0.1.0"
+version = "0.9.29"
 description = "RPC runtime package for schemas"
-authors = ["Frequency Team"]
+authors = ["Frequency"]
 license = "Apache-2.0"
 publish = false
 homepage = "https://frequency.xyz"

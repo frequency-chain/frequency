@@ -16,29 +16,33 @@ export default {
       params: [
         {
           name: "delegator_msa_ids",
-          type: "Vec<MessageSourceId>",
+          type: "Vec<DelegatorId>",
         },
         {
           name: "provider_msa_id",
-          type: "MessageSourceId",
+          type: "ProviderId",
         },
         {
           name: "block_number",
-          type: "Option<BlockNumber>",
+          type: "BlockNumber",
+        },
+        {
+          name: "schema_id",
+          type: "Option<SchemaId>",
         },
       ],
-      type: "Vec<(MessageSourceId, bool)>",
+      type: "Vec<(DelegatorId, bool)>",
     },
     grantedSchemaIdsByMsaId: {
       description: "Fetch the list of schema ids that a delegator has granted to provider",
       params: [
         {
           name: "delegator_msa_id",
-          type: "MessageSourceId",
+          type: "DelegatorId",
         },
         {
           name: "provider_msa_id",
-          type: "MessageSourceId",
+          type: "ProviderId",
         },
       ],
       type: "Option<Vec<SchemaId>>",
@@ -46,8 +50,8 @@ export default {
   },
   types: {
     MessageSourceId: "u64",
-    Delegator: "MessageSourceId",
-    Provider: "MessageSourceId",
+    DelegatorId: "MessageSourceId",
+    ProviderId: "MessageSourceId",
     KeyInfoResponse: {
       key: "AccountId",
       msaId: "MessageSourceId",
@@ -62,16 +66,20 @@ export default {
               "Check to see if a delegation existed between the given delegator and provider at a given block",
             params: [
               {
-                name: "delegator",
-                type: "Delegator",
+                name: "delegator_id",
+                type: "DelegatorId",
               },
               {
-                name: "provider",
-                type: "Provider",
+                name: "provider_id",
+                type: "ProviderId",
               },
               {
                 name: "block_number",
-                type: "Option<BlockNumber>",
+                type: "BlockNumber",
+              },
+              {
+                name: "schema_id",
+                type: "Option<SchemaId>",
               },
             ],
             type: "bool",
@@ -81,12 +89,12 @@ export default {
               "Get the list of schema ids (if any) that exist in any delegation between the delegator and provider",
             params: [
               {
-                name: "delegator",
-                type: "Delegator",
+                name: "delegator_id",
+                type: "DelegatorId",
               },
               {
-                name: "provider",
-                type: "Provider",
+                name: "provider_id",
+                type: "ProviderId",
               },
             ],
             type: "Option<Vec<SchemaId>>",

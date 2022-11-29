@@ -1,0 +1,12 @@
+This release contains the changes from `{{env.PREVIOUS_RELEASE_TAG}}` to `{{env.NEW_RELEASE_TAG}}`.
+
+Full changelog: https://github.com/LibertyDSNP/frequency/compare/{{env.PREVIOUS_RELEASE_TAG}}...{{env.NEW_RELEASE_TAG}}
+
+## Versions
+- Rust Toolchain: `{{env.RUST_TOOLCHAIN}}`
+
+## What's Changed
+{% set changelog = env.CHANGELOG | split(pat='|n|') | safe %}
+{% for line in changelog -%}
+	{{ line }}
+{% endfor %}

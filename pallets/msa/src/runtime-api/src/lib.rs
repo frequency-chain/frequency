@@ -23,6 +23,13 @@ use sp_std::vec::Vec;
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime files (the `runtime` folder)
 sp_api::decl_runtime_apis! {
+
+	/// Runtime Version for MSAs
+	/// - MUST be incremented if anything changes
+	/// - Also update in js/api-augment
+	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
+	#[api_version(1)]
+
 	/// Runtime API definition for [MSA](../pallet_msa/index.html)
 	pub trait MsaRuntimeApi<AccountId> where
 		AccountId: Codec,
@@ -31,9 +38,9 @@ sp_api::decl_runtime_apis! {
 		// fn get_msa_keys(msa_id: MessageSourceId) ->	Vec<KeyInfoResponse<AccountId>>;
 
 		/// Check to see if a delegation existed between the given delegator and provider at a given block
-		fn has_delegation(delegator: Delegator, provider: Provider, block_number: Option<BlockNumber>) -> bool;
+		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<SchemaId>) -> bool;
 
 		/// Get the list of schema ids (if any) that exist in any delegation between the delegator and provider
-		fn get_granted_schemas_by_msa_id(delegator: Delegator, provider: Provider) -> Option<Vec<SchemaId>>;
+		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaId>>;
 	}
 }

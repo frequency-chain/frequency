@@ -1,0 +1,30 @@
+{
+    "name": "frequency-integration-tests",
+    "version": "1.0.0",
+    "description": "Integration tests for the Frequency project",
+    "scripts": {
+        "clean": "rm -Rf dist",
+        "build": "tsc -p ./tsconfig.json",
+        "test": "mocha --require ts-node/register  './{,!(node_modules)/**}/*.test.ts' --exit",
+        "format": "tsc --noEmit --pretty",
+        "lint": "tsc --noEmit --pretty"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "Apache-2.0",
+    "dependencies": {
+        "@frequency-chain/api-augment": "v0.9.29",
+        "@polkadot/api": "9.6.2",
+        "@polkadot/types": "^9.6.2",
+        "rxjs": "^7.5.7"
+    },
+    "devDependencies": {
+        "@polkadot/typegen": "^9.6.2",
+        "@types/mocha": "^10.0.0",
+        "mocha": "^10.1.0",
+        "prettier": "2.7.1",
+        "sinon": "^14.0.2",
+        "ts-node": "^10.9.1",
+        "typescript": "^4.8.4"
+    }
+}

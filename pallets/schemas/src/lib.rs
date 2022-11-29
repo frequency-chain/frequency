@@ -56,6 +56,7 @@ use common_primitives::{
 	},
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
+use sp_runtime::BoundedVec;
 use sp_std::vec::Vec;
 
 #[cfg(test)]
@@ -66,6 +67,8 @@ mod mock;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+#[cfg(feature = "runtime-benchmarks")]
+use common_primitives::benchmarks::SchemaBenchmarkHelper;
 
 mod types;
 
@@ -122,23 +125,8 @@ pub mod pallet {
 		/// The schema model exceeds the maximum length allowed
 		ExceedsMaxSchemaModelBytes,
 
-		/// The governance schema model max value provided is too large (greater than the BoundedVec size)
-		ExceedsGovernanceSchemaModelMaxValue,
-
 		/// The schema is less than the minimum length allowed
 		LessThanMinSchemaModelBytes,
-
-		/// Schema does not exist
-		NoSuchSchema,
-
-		/// String failed to convert
-		StringConversionError,
-
-		/// Deserialization failed
-		DeserializationError,
-
-		/// Serialization failed
-		SerializationError,
 
 		/// CurrentSchemaIdentifierMaximum was attempted to overflow max, means MaxSchemaRegistrations is too big
 		SchemaCountOverflow,
@@ -275,7 +263,7 @@ pub mod pallet {
 
 		/// Build the [`Schema`] and insert it into storage
 		/// Updates the [`CurrentSchemaIdentifierMaximum`] storage
-		fn add_schema(
+		pub fn add_schema(
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
@@ -339,6 +327,27 @@ pub mod pallet {
 	}
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+impl<T: Config> SchemaBenchmarkHelper for Pallet<T> {
+	/// Sets schema count.
+	fn set_schema_count(schema_id: SchemaId) {
+		Self::set_schema_count(schema_id);
+	}
+
+	/// Creates a schema.
+	fn create_schema(
+		model: Vec<u8>,
+		model_type: ModelType,
+		payload_location: PayloadLocation,
+	) -> DispatchResult {
+		let model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> =
+			model.try_into().unwrap();
+		Self::ensure_valid_model(&model_type, &model)?;
+		Self::add_schema(model, model_type, payload_location)?;
+		Ok(())
+	}
+}
+
 impl<T: Config> SchemaValidator<SchemaId> for Pallet<T> {
 	fn are_all_schema_ids_valid(schema_ids: &Vec<SchemaId>) -> bool {
 		let latest_issue_schema_id = Self::get_current_schema_identifier_maximum();
@@ -352,37 +361,7 @@ impl<T: Config> SchemaValidator<SchemaId> for Pallet<T> {
 }
 
 impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
-	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 		Self::get_schema_by_id(schema_id)
-	}
-
-	/// Since benchmarks are using regular runtime, we can not use mocking for this loosely bounded
-	/// pallet trait implementation. To be able to run benchmarks successfully for any other pallet
-	/// that has dependencies on this one, we would need to define msa accounts on those pallets'
-	/// benchmarks, but this will introduce direct dependencies between these pallets, which we
-	/// would like to avoid.
-	/// To successfully run benchmarks without adding dependencies between pallets we re-defined
-	/// this method to return schema checks requested by the benchmark to also be some.
-	#[cfg(feature = "runtime-benchmarks")]
-	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-		// To account for db read
-		Self::get_schema_by_id(schema_id);
-
-		// This method allows the benchmarks to cover both payload location types
-		// used by the messages pallets. Maybe one day we can replace this with a
-		// common "benchmarking" crate.
-		const IPFS_SCHEMA_ID: u16 = 65535;
-		let location: PayloadLocation = if schema_id == IPFS_SCHEMA_ID {
-			PayloadLocation::IPFS
-		} else {
-			PayloadLocation::OnChain
-		};
-		Some(SchemaResponse {
-			schema_id,
-			model: "{}".as_bytes().to_vec(),
-			model_type: ModelType::default(),
-			payload_location: location,
-		})
 	}
 }

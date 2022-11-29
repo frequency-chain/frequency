@@ -1,13 +1,15 @@
 # Docker image for running collator node node locally against the local relay chain.
 # Requires to run from repository root and to copy the binary in the build folder.
-FROM --platform=linux/amd64 ubuntu:focal
-LABEL maintainer="Frequency Team"
+FROM --platform=linux/amd64 ubuntu:20.04
+LABEL maintainer="Frequency"
 LABEL description="Frequency collator node for local relay chain"
 
 WORKDIR /frequency
 
 RUN apt-get update && \
-	apt-get install -y jq apt-utils apt-transport-https software-properties-common readline-common curl vim wget gnupg gnupg2 gnupg-agent ca-certificates tini && \
+	apt-get install -y jq apt-utils apt-transport-https \
+		software-properties-common readline-common curl vim wget gnupg gnupg2 \
+		gnupg-agent ca-certificates tini && \
 	rm -rf /var/lib/apt/lists/*
 
 # For local testing only

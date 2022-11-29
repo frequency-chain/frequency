@@ -1,8 +1,8 @@
 use crate as pallet_messages;
 use common_primitives::{
 	msa::{
-		Delegation, DelegationValidator, Delegator, MessageSourceId, MsaLookup, MsaValidator,
-		Provider, ProviderLookup, SchemaGrantValidator,
+		Delegation, DelegationValidator, DelegatorId, MessageSourceId, MsaLookup, MsaValidator,
+		ProviderId, ProviderLookup, SchemaGrantValidator,
 	},
 	schema::*,
 };
@@ -25,7 +25,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 pub const INVALID_SCHEMA_ID: SchemaId = 65534;
-pub const IPFS_SCHEMA_ID: SchemaId = 65535;
+pub const IPFS_SCHEMA_ID: SchemaId = 50;
 
 pub const IPFS_PAYLOAD_LENGTH: u32 = 1200;
 
@@ -153,10 +153,10 @@ impl ProviderLookup for DelegationInfoHandler {
 	type SchemaId = SchemaId;
 
 	fn get_delegation_of(
-		_delegator: Delegator,
-		provider: Provider,
+		_delegator: DelegatorId,
+		provider: ProviderId,
 	) -> Option<Delegation<SchemaId, Self::BlockNumber, MaxSchemaGrantsPerDelegation>> {
-		if provider == Provider(2000) {
+		if provider == ProviderId(2000) {
 			return None
 		};
 		Some(Delegation { revoked_at: 100, schema_permissions: Default::default() })
@@ -168,25 +168,26 @@ impl DelegationValidator for DelegationInfoHandler {
 	type SchemaId = SchemaId;
 
 	fn ensure_valid_delegation(
-		provider: Provider,
-		_delegator: Delegator,
+		provider: ProviderId,
+		_delegator: DelegatorId,
 		_block_number: Option<Self::BlockNumber>,
 	) -> Result<
 		Delegation<SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
 		DispatchError,
 	> {
-		if provider == Provider(2000) {
+		if provider == ProviderId(2000) {
 			return Err(DispatchError::Other("some delegation error"))
 		};
 
 		Ok(Delegation { schema_permissions: Default::default(), revoked_at: Default::default() })
 	}
 }
-impl SchemaGrantValidator for SchemaGrantValidationHandler {
+impl<BlockNumber> SchemaGrantValidator<BlockNumber> for SchemaGrantValidationHandler {
 	fn ensure_valid_schema_grant(
-		provider: Provider,
-		delegator: Delegator,
+		provider: ProviderId,
+		delegator: DelegatorId,
 		_schema_id: SchemaId,
+		_block_number: BlockNumber,
 	) -> DispatchResult {
 		match DelegationInfoHandler::get_delegation_of(delegator, provider) {
 			Some(_) => Ok(()),
@@ -222,12 +223,17 @@ impl SchemaProvider<u16> for SchemaHandler {
 impl pallet_messages::Config for Test {
 	type Event = Event;
 	type MsaInfoProvider = MsaInfoHandler;
-	type DelegationInfoProvider = DelegationInfoHandler;
 	type SchemaGrantValidator = SchemaGrantValidationHandler;
 	type SchemaProvider = SchemaHandler;
 	type WeightInfo = ();
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type MaxMessagePayloadSizeBytes = MaxMessagePayloadSizeBytes;
+
+	/// A set of helper functions for benchmarking.
+	#[cfg(feature = "runtime-benchmarks")]
+	type MsaBenchmarkHelper = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type SchemaBenchmarkHelper = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
