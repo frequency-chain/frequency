@@ -42,7 +42,10 @@ pub use common_runtime::{
 
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU128, ConstU32, Contains, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
+	traits::{
+		ConstU128, ConstU32, Contains, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly,
+		Everything,
+	},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, DispatchClass, Weight},
 };
 use frame_system::{
@@ -202,6 +205,10 @@ impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// Base call filter to use in dispatchable.
+	// enable for cfg feature "frequency" only
+	#[cfg(not(feature = "frequency"))]
+	type BaseCallFilter = Everything;
+	#[cfg(feature = "frequency")]
 	type BaseCallFilter = BaseCallFilter;
 	/// The aggregated dispatch type that is available for extrinsics.
 	type Call = Call;
