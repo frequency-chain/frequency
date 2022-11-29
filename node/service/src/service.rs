@@ -41,8 +41,7 @@ type FullBackend = TFullBackend<Block>;
 
 type MaybeFullSelectChain = Option<LongestChain<FullBackend, Block>>;
 
-/// Native executor instance for frequency mainnet.
-#[cfg(feature = "frequency")]
+/// Native executor instance for frequency.
 pub mod frequency_executor {
 	pub use frequency_runtime;
 
@@ -62,7 +61,6 @@ pub mod frequency_executor {
 	}
 }
 
-#[cfg(feature = "frequency")]
 pub use frequency_executor::*;
 
 /// Starts a `ServiceBuilder` for a full service.
