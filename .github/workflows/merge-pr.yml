@@ -18,7 +18,7 @@ env:
 jobs:
   changes:
     name: Determine Changed Files
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       js-api-augment: ${{steps.filter.outputs.js-api-augment}}
       rust: ${{steps.filter.outputs.rust}}
@@ -39,7 +39,7 @@ jobs:
 
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -87,7 +87,7 @@ jobs:
 
   calc-code-coverage-main:
     name: Merge - Calculate Code Coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -116,7 +116,7 @@ jobs:
 
   save-encoded-metadata:
     name: Save Encoded Metadata
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       NETWORK: mainnet
     steps:
