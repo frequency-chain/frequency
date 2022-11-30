@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"frequency_cli":[["impl Parser for <a class=\"struct\" href=\"frequency_cli/struct.Cli.html\" title=\"struct frequency_cli::Cli\">Cli</a>"],["impl Parser for <a class=\"struct\" href=\"frequency_cli/struct.ExportMetadataCmd.html\" title=\"struct frequency_cli::ExportMetadataCmd\">ExportMetadataCmd</a>"]]
+"frequency_cli":[["impl Parser for <a class=\"struct\" href=\"frequency_cli/struct.Cli.html\" title=\"struct frequency_cli::Cli\">Cli</a>"],["impl Parser for <a class=\"struct\" href=\"frequency_cli/struct.ExportMetadataCmd.html\" title=\"struct frequency_cli::ExportMetadataCmd\">ExportMetadataCmd</a>"],["impl Parser for <a class=\"struct\" href=\"frequency_cli/struct.ExportRuntimeVersionCmd.html\" title=\"struct frequency_cli::ExportRuntimeVersionCmd\">ExportRuntimeVersionCmd</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -674,6 +674,25 @@
 <span id="674">674</span>
 <span id="675">675</span>
 <span id="676">676</span>
+<span id="677">677</span>
+<span id="678">678</span>
+<span id="679">679</span>
+<span id="680">680</span>
+<span id="681">681</span>
+<span id="682">682</span>
+<span id="683">683</span>
+<span id="684">684</span>
+<span id="685">685</span>
+<span id="686">686</span>
+<span id="687">687</span>
+<span id="688">688</span>
+<span id="689">689</span>
+<span id="690">690</span>
+<span id="691">691</span>
+<span id="692">692</span>
+<span id="693">693</span>
+<span id="694">694</span>
+<span id="695">695</span>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cli::{Cli, RelayChainCli, Subcommand};
 <span class="kw">use </span>frequency_service::chain_spec;
 
@@ -767,6 +786,8 @@
 
 <span class="kw">fn </span>load_spec(id: <span class="kw-2">&amp;</span>str) -&gt; std::result::Result&lt;Box&lt;<span class="kw">dyn </span>ChainSpec&gt;, String&gt; {
 	<span class="kw">match </span>id {
+		<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency&quot;</span>)]
+		</span><span class="string">&quot;frequency-bench&quot; </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(Box::new(chain_spec::frequency::frequency())),
 		<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency&quot;</span>)]
 		</span><span class="string">&quot;frequency&quot; </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(Box::new(chain_spec::frequency::load_frequency_spec())),
 		<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
@@ -1143,6 +1164,23 @@
 			} <span class="kw">else </span>{
 				<span class="prelude-val">Err</span>(<span class="string">&quot;Try-runtime must be enabled by `--features try-runtime`.&quot;</span>.into())
 			}
+		},
+		<span class="prelude-val">Some</span>(Subcommand::ExportRuntimeVersion(cmd)) =&gt; {
+			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+			<span class="kw">let </span>chain_spec = <span class="kw-2">&amp;</span>runner.config().chain_spec;
+			<span class="macro">with_runtime_or_err!</span>(chain_spec, {
+				{
+					runner.async_run(|config| {
+						<span class="kw">let </span>version = Cli::native_runtime_version(<span class="kw-2">&amp;</span>config.chain_spec);
+						<span class="comment">// grab the task manager.
+						</span><span class="kw">let </span>registry = config.prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry);
+						<span class="kw">let </span>task_manager =
+							sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
+								.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;Error: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
+						<span class="prelude-val">Ok</span>((cmd.run(version), task_manager))
+					})
+				}
+			})
 		},
 		<span class="prelude-val">None </span>=&gt; {
 			<span class="kw">let </span>runner = cli.create_runner(<span class="kw-2">&amp;</span>cli.run.normalize())<span class="question-mark">?</span>;

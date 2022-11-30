@@ -132,7 +132,7 @@ The <code>new_key</code> must sign the <code>add_key_payload</code> to authorize
 <li><a href="enum.Error.html#variant.NewKeyOwnershipInvalidSignature" title="Error::NewKeyOwnershipInvalidSignature"><code>Error::NewKeyOwnershipInvalidSignature</code></a> - <code>key</code> is not a valid signer of the provided <code>add_key_payload</code>.</li>
 <li><a href="enum.Error.html#variant.NoKeyExists" title="Error::NoKeyExists"><code>Error::NoKeyExists</code></a> - the MSA id for the account in <code>add_key_payload</code> does not exist.</li>
 <li><a href="enum.Error.html#variant.NotMsaOwner" title="Error::NotMsaOwner"><code>Error::NotMsaOwner</code></a> - Origin’s MSA is not the same as ’add_key_payload` MSA. Essentially you can only add a key to your own MSA.</li>
-<li><a href="enum.Error.html#variant.ProofHasExpired" title="Error::ProofHasExpired"><code>Error::ProofHasExpired</code></a> - the current block is less than the <code>expired</code> bock number set in <code>AddKeyData</code>.</li>
+<li><a href="enum.Error.html#variant.ProofHasExpired" title="Error::ProofHasExpired"><code>Error::ProofHasExpired</code></a> - the current block is less than the <code>expired</code> block number set in <code>AddKeyData</code>.</li>
 <li><a href="enum.Error.html#variant.ProofNotYetValid" title="Error::ProofNotYetValid"><code>Error::ProofNotYetValid</code></a> - the <code>expired</code> block number set in <code>AddKeyData</code> is greater than the current block number plus mortality_block_limit().</li>
 <li><a href="enum.Error.html#variant.SignatureAlreadySubmitted" title="Error::SignatureAlreadySubmitted"><code>Error::SignatureAlreadySubmitted</code></a> - signature has already been used.</li>
 </ul>

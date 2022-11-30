@@ -105,10 +105,13 @@
 <span id="105">105</span>
 <span id="106">106</span>
 <span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Frequency CLI library.
 </span><span class="kw">use </span>std::path::PathBuf;
 
-<span class="kw">use </span><span class="kw">crate</span>::ExportMetadataCmd;
+<span class="kw">use crate</span>::{ExportMetadataCmd, ExportRuntimeVersionCmd};
 
 <span class="doccomment">/// Sub-commands supported by the collator.
 </span><span class="attribute">#[derive(Debug, clap::Subcommand)]
@@ -150,6 +153,9 @@
 
 	<span class="doccomment">/// Try some testing command against a specified runtime state.
 	</span>TryRuntime(try_runtime_cli::TryRuntimeCmd),
+
+	<span class="doccomment">/// Get current runtime spec version.
+	</span>ExportRuntimeVersion(ExportRuntimeVersionCmd),
 }
 
 <span class="attribute">#[derive(Debug, clap::Parser)]
