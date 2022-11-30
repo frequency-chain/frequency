@@ -6,9 +6,7 @@ use common_runtime::constants::{
 };
 
 use cumulus_primitives_core::ParaId;
-use frequency_runtime::{
-	AuraId, CouncilConfig, Ss58Prefix42, SudoConfig, TechnicalCommitteeConfig,
-};
+use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig};
 use sc_service::ChainType;
 use sp_core::sr25519;
 use sp_runtime::traits::AccountIdConversion;
@@ -27,7 +25,7 @@ pub fn template_session_keys(keys: AuraId) -> frequency_runtime::SessionKeys {
 pub fn local_testnet_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let properties =
-		get_properties(FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix42::get().into());
+		get_properties(FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
 
 	ChainSpec::from_genesis(
 		// Name

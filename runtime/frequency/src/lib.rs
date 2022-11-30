@@ -250,10 +250,7 @@ impl frame_system::Config for Runtime {
 	/// The maximum length of a block (in bytes).
 	type BlockLength = RuntimeBlockLength;
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
-	#[cfg(not(feature = "frequency"))]
-	type SS58Prefix = Ss58Prefix42;
-	#[cfg(feature = "frequency")]
-	type SS58Prefix = Ss58Prefix90;
+	type SS58Prefix = Ss58Prefix;
 	/// The action to take on a Runtime Upgrade
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 	type MaxConsumers = FrameSystemMaxConsumers;

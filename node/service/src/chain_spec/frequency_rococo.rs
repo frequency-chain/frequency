@@ -4,9 +4,7 @@ use common_runtime::constants::{
 	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_ROCOCO_TOKEN, TOKEN_DECIMALS,
 };
 use cumulus_primitives_core::ParaId;
-use frequency_runtime::{
-	AuraId, CouncilConfig, Ss58Prefix42, SudoConfig, TechnicalCommitteeConfig,
-};
+use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig};
 use hex::FromHex;
 use sc_service::ChainType;
 use sc_telemetry::TelemetryEndpoints;
@@ -59,7 +57,7 @@ pub mod public_testnet_keys {
 
 pub fn frequency_rococo_testnet() -> ChainSpec {
 	let properties =
-		get_properties(FREQUENCY_ROCOCO_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix42::get().into());
+		get_properties(FREQUENCY_ROCOCO_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
 	let para_id: ParaId = 4044.into();
 	ChainSpec::from_genesis(
 		// Name

@@ -278,6 +278,5 @@ pub type MSANumberOfBuckets = ConstU32<2>;
 
 parameter_types! {
 	/// SS58 Prefix for the for Frequency Network
-	pub const Ss58Prefix42: u16 = 42;
-	pub const Ss58Prefix90: u16 = 90;
+	pub const Ss58Prefix: u16 = prod_or_testnet_or_local_or_env!(90, 42, 42);
 }
