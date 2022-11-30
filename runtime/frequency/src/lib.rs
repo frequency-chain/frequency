@@ -85,8 +85,7 @@ impl Contains<Call> for BaseCallFilter {
 				_call,
 				Call::System(..) |
 					Call::Timestamp(..) | Call::ParachainSystem(..) |
-					Call::Sudo(..) | Call::Balances(..) |
-					Call::TechnicalCommittee(..) |
+					Call::Sudo(..) | Call::TechnicalCommittee(..) |
 					Call::Council(..) | Call::Democracy(..) |
 					Call::Session(..) | Call::Preimage(..) |
 					Call::Scheduler(..)
