@@ -72,30 +72,26 @@ use frame_support::traits::Contains;
 /// Basefilter to only allow specified transactions call to be executed
 /// For non mainnet [--features frequency] all transactions are allowed
 pub struct BaseCallFilter;
-#[cfg(not(feature = "frequency"))]
+
 impl Contains<Call> for BaseCallFilter {
 	fn contains(_call: &Call) -> bool {
-		true
-	}
-}
-
-#[cfg(feature = "frequency")]
-impl Contains<Call> for BaseCallFilter {
-	fn contains(call: &Call) -> bool {
-		let core_calls = match call {
-			Call::System(..) => true,
-			Call::Timestamp(..) => true,
-			Call::ParachainSystem(..) => true,
-			Call::Sudo(..) => true,
-			Call::TechnicalCommittee(..) => true,
-			Call::Council(..) => true,
-			Call::Democracy(..) => true,
-			Call::Session(..) => true,
-			Call::Preimage(..) => true,
-			Call::Scheduler(..) => true,
-			_ => false,
-		};
-		core_calls
+		#[cfg(not(feature = "frequency"))]
+		{
+			true
+		}
+		#[cfg(feature = "frequency")]
+		{
+			matches!(
+				_call,
+				Call::System(..) |
+					Call::Timestamp(..) | Call::ParachainSystem(..) |
+					Call::Sudo(..) | Call::Balances(..) |
+					Call::TechnicalCommittee(..) |
+					Call::Council(..) | Call::Democracy(..) |
+					Call::Session(..) | Call::Preimage(..) |
+					Call::Scheduler(..)
+			)
+		}
 	}
 }
 
