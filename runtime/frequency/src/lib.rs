@@ -38,11 +38,12 @@ use common_primitives::{
 pub use common_runtime::{
 	constants::{currency::EXISTENTIAL_DEPOSIT, *},
 	fee::WeightToFee,
+	prod_or_testnet_or_local_or_env,
 };
 
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU128, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly, Everything},
+	traits::{ConstU128, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, DispatchClass, Weight},
 };
 
@@ -66,12 +67,17 @@ pub use common_runtime::{
 	weights,
 	weights::{BlockExecutionWeight, ExtrinsicBaseWeight},
 };
-#[cfg(feature = "frequency")]
 use frame_support::traits::Contains;
 
 /// Basefilter to only allow specified transactions call to be executed
-#[cfg(feature = "frequency")]
+/// For non mainnet [--features frequency] all transactions are allowed
 pub struct BaseCallFilter;
+#[cfg(not(feature = "frequency"))]
+impl Contains<Call> for BaseCallFilter {
+	fn contains(_call: &Call) -> bool {
+		true
+	}
+}
 
 #[cfg(feature = "frequency")]
 impl Contains<Call> for BaseCallFilter {
@@ -207,9 +213,6 @@ impl frame_system::Config for Runtime {
 	type AccountId = AccountId;
 	/// Base call filter to use in dispatchable.
 	// enable for cfg feature "frequency" only
-	#[cfg(not(feature = "frequency"))]
-	type BaseCallFilter = Everything;
-	#[cfg(feature = "frequency")]
 	type BaseCallFilter = BaseCallFilter;
 	/// The aggregated dispatch type that is available for extrinsics.
 	type Call = Call;
