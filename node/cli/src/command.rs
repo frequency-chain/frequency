@@ -62,13 +62,6 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 	}
 }
 
-macro_rules! with_runtime_or_err {
-	({ $( $code:tt )* }) => {
-		#[allow(unused_braces)]
-		$( $code )*
-	}
-}
-
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	match id {
 		#[cfg(feature = "frequency")]
@@ -228,8 +221,7 @@ impl SubstrateCli for RelayChainCli {
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
-		with_runtime_or_err!({
-			{
+
 				runner.async_run(|$config| {
 					let $components = frequency_service::service::new_partial::<RuntimeApi, Executor, _>(
 						&$config,
@@ -239,8 +231,7 @@ macro_rules! construct_async_run {
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
-			}
-		})
+
 	}}
 }
 
@@ -275,23 +266,19 @@ pub fn run() -> Result<()> {
 		},
 		Some(Subcommand::ExportMetadata(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			with_runtime_or_err!({
-				{
-					runner.async_run(|config| {
-						// grab the task manager.
-						let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
-						let task_manager =
-							sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-								.map_err(|e| format!("Error: {:?}", e))?;
-						let partials =
-							frequency_service::service::new_partial::<RuntimeApi, Executor, _>(
-								&config,
-								frequency_service::service::parachain_build_import_queue,
-								false,
-							)?;
-						Ok((cmd.run(partials.client), task_manager))
-					})
-				}
+
+			runner.async_run(|config| {
+				// grab the task manager.
+				let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+				let task_manager =
+					sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
+						.map_err(|e| format!("Error: {:?}", e))?;
+				let partials = frequency_service::service::new_partial::<RuntimeApi, Executor, _>(
+					&config,
+					frequency_service::service::parachain_build_import_queue,
+					false,
+				)?;
+				Ok((cmd.run(partials.client), task_manager))
 			})
 		},
 		Some(Subcommand::PurgeChain(cmd)) => {
@@ -335,97 +322,71 @@ pub fn run() -> Result<()> {
 		},
 		Some(Subcommand::Benchmark(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			with_runtime_or_err!({
-				{
-					match cmd {
-						frame_benchmarking_cli::BenchmarkCmd::Pallet(cmd) =>
-							if cfg!(feature = "runtime-benchmarks") {
-								runner.sync_run(|config| cmd.run::<Block, Executor>(config))
-							} else {
-								return Err("Benchmarking wasn't enabled when building the node. \
-									You can enable it with `--features runtime-benchmarks`."
-									.into())
-							},
-						frame_benchmarking_cli::BenchmarkCmd::Block(cmd) =>
-							runner.sync_run(|config| {
-								let partials = frequency_service::service::new_partial::<
-									RuntimeApi,
-									Executor,
-									_,
-								>(
-									&config,
-									frequency_service::service::parachain_build_import_queue,
-									false,
-								)?;
-								cmd.run(partials.client)
-							}),
-						frame_benchmarking_cli::BenchmarkCmd::Storage(cmd) =>
-							runner.sync_run(|config| {
-								let partials = frequency_service::service::new_partial::<
-									RuntimeApi,
-									Executor,
-									_,
-								>(
-									&config,
-									frequency_service::service::parachain_build_import_queue,
-									false,
-								)?;
-								let db = partials.backend.expose_db();
-								let storage = partials.backend.expose_storage();
 
-								cmd.run(config, partials.client.clone(), db, storage)
-							}),
-						frame_benchmarking_cli::BenchmarkCmd::Overhead(_) =>
-							Err("Unsupported benchmarking command".into()),
-						frame_benchmarking_cli::BenchmarkCmd::Machine(cmd) =>
-							runner.sync_run(|config| {
-								cmd.run(
-									&config,
-									frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE.clone(),
-								)
-							}),
-						frame_benchmarking_cli::BenchmarkCmd::Extrinsic(_cmd) =>
-							Err("Benchmarking command not implemented.".into()),
-					}
-				}
-			})
+			match cmd {
+				frame_benchmarking_cli::BenchmarkCmd::Pallet(cmd) =>
+					if cfg!(feature = "runtime-benchmarks") {
+						runner.sync_run(|config| cmd.run::<Block, Executor>(config))
+					} else {
+						return Err("Benchmarking wasn't enabled when building the node. \
+									You can enable it with `--features runtime-benchmarks`."
+							.into())
+					},
+				frame_benchmarking_cli::BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
+					let partials =
+						frequency_service::service::new_partial::<RuntimeApi, Executor, _>(
+							&config,
+							frequency_service::service::parachain_build_import_queue,
+							false,
+						)?;
+					cmd.run(partials.client)
+				}),
+				frame_benchmarking_cli::BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
+					let partials =
+						frequency_service::service::new_partial::<RuntimeApi, Executor, _>(
+							&config,
+							frequency_service::service::parachain_build_import_queue,
+							false,
+						)?;
+					let db = partials.backend.expose_db();
+					let storage = partials.backend.expose_storage();
+
+					cmd.run(config, partials.client.clone(), db, storage)
+				}),
+				frame_benchmarking_cli::BenchmarkCmd::Overhead(_) =>
+					Err("Unsupported benchmarking command".into()),
+				frame_benchmarking_cli::BenchmarkCmd::Machine(cmd) => runner.sync_run(|config| {
+					cmd.run(&config, frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE.clone())
+				}),
+				frame_benchmarking_cli::BenchmarkCmd::Extrinsic(_cmd) =>
+					Err("Benchmarking command not implemented.".into()),
+			}
 		},
 		Some(Subcommand::TryRuntime(cmd)) => {
 			if cfg!(feature = "try-runtime") {
 				let runner = cli.create_runner(cmd)?;
-				with_runtime_or_err!({
-					{
-						// grab the task manager.
-						let registry =
-							&runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
-						let task_manager = sc_service::TaskManager::new(
-							runner.config().tokio_handle.clone(),
-							*registry,
-						)
+
+				// grab the task manager.
+				let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
+				let task_manager =
+					sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
 						.map_err(|e| format!("Error: {:?}", e))?;
-						runner.async_run(|config| {
-							Ok((cmd.run::<Block, Executor>(config), task_manager))
-						})
-					}
-				})
+				runner.async_run(|config| Ok((cmd.run::<Block, Executor>(config), task_manager)))
 			} else {
 				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
 			}
 		},
 		Some(Subcommand::ExportRuntimeVersion(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			with_runtime_or_err!({
-				{
-					runner.async_run(|config| {
-						let version = Cli::native_runtime_version(&config.chain_spec);
-						// grab the task manager.
-						let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
-						let task_manager =
-							sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-								.map_err(|e| format!("Error: {:?}", e))?;
-						Ok((cmd.run(version), task_manager))
-					})
-				}
+
+			runner.async_run(|config| {
+				let version = Cli::native_runtime_version(&config.chain_spec);
+				// grab the task manager.
+				let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+				let task_manager =
+					sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
+						.map_err(|e| format!("Error: {:?}", e))?;
+				Ok((cmd.run(version), task_manager))
 			})
 		},
 		None => {
@@ -456,43 +417,35 @@ pub fn run() -> Result<()> {
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
-				with_runtime_or_err!({
-					{
-						let tokio_handle = config.tokio_handle.clone();
-						let polkadot_cli = RelayChainCli::new(
-							&config,
-							[RelayChainCli::executable_name()]
-								.iter()
-								.chain(cli.relay_chain_args.iter()),
-						);
-						let polkadot_config = SubstrateCli::create_configuration(
-							&polkadot_cli,
-							&polkadot_cli,
-							tokio_handle,
-						)
+
+				let tokio_handle = config.tokio_handle.clone();
+				let polkadot_cli = RelayChainCli::new(
+					&config,
+					[RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
+				);
+				let polkadot_config =
+					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
 						.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
-						let collator_options = cli.run.collator_options();
-						let hwbench = if !cli.no_hardware_benchmarks {
-							config.database.path().map(|database_path| {
-								let _ = std::fs::create_dir_all(&database_path);
-								sc_sysinfo::gather_hwbench(Some(database_path))
-							})
-						} else {
-							None
-						};
-						frequency_service::service::start_parachain_node::<RuntimeApi, Executor>(
-							config,
-							polkadot_config,
-							collator_options,
-							id,
-							hwbench,
-						)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
-					}
-				})
+				let collator_options = cli.run.collator_options();
+				let hwbench = if !cli.no_hardware_benchmarks {
+					config.database.path().map(|database_path| {
+						let _ = std::fs::create_dir_all(&database_path);
+						sc_sysinfo::gather_hwbench(Some(database_path))
+					})
+				} else {
+					None
+				};
+				frequency_service::service::start_parachain_node::<RuntimeApi, Executor>(
+					config,
+					polkadot_config,
+					collator_options,
+					id,
+					hwbench,
+				)
+				.await
+				.map(|r| r.0)
+				.map_err(Into::into)
 			})
 		},
 	}
