@@ -275,3 +275,9 @@ impl Clone for MessagesMaxPayloadSizeBytes {
 pub type MSAMortalityWindowSize = ConstU32<100>;
 pub type MSAMaxSignaturesPerBucket = ConstU32<50_000>;
 pub type MSANumberOfBuckets = ConstU32<2>;
+
+parameter_types! {
+	/// SS58 Prefix for the for Frequency Network
+	pub const Ss58Prefix42: u16 = 42;
+	pub const Ss58Prefix90: u16 = 90;
+}

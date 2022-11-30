@@ -6,7 +6,7 @@ use common_runtime::constants::{
 };
 use cumulus_primitives_core::ParaId;
 use frequency_runtime::{
-	AuraId, CouncilConfig, SS58Prefix90, SudoConfig, TechnicalCommitteeConfig,
+	AuraId, CouncilConfig, Ss58Prefix90, SudoConfig, TechnicalCommitteeConfig,
 };
 
 use hex::FromHex;
@@ -119,7 +119,7 @@ pub fn load_frequency_spec() -> ChainSpec {
 
 pub fn frequency() -> ChainSpec {
 	let properties =
-		get_properties(FREQUENCY_TOKEN, TOKEN_DECIMALS as u32, SS58Prefix90::get().into());
+		get_properties(FREQUENCY_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix90::get().into());
 	let para_id: ParaId = 2091.into();
 	ChainSpec::from_genesis(
 		// Name

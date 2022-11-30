@@ -5,7 +5,7 @@ use common_runtime::constants::{
 };
 use cumulus_primitives_core::ParaId;
 use frequency_runtime::{
-	AuraId, CouncilConfig, SS58Prefix42, SudoConfig, TechnicalCommitteeConfig,
+	AuraId, CouncilConfig, Ss58Prefix42, SudoConfig, TechnicalCommitteeConfig,
 };
 use hex::FromHex;
 use sc_service::ChainType;
@@ -59,7 +59,7 @@ pub mod public_testnet_keys {
 
 pub fn frequency_rococo_testnet() -> ChainSpec {
 	let properties =
-		get_properties(FREQUENCY_ROCOCO_TOKEN, TOKEN_DECIMALS as u32, SS58Prefix42::get().into());
+		get_properties(FREQUENCY_ROCOCO_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix42::get().into());
 	let para_id: ParaId = 4044.into();
 	ChainSpec::from_genesis(
 		// Name
