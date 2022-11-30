@@ -38,7 +38,6 @@ use common_primitives::{
 pub use common_runtime::{
 	constants::{currency::EXISTENTIAL_DEPOSIT, *},
 	fee::WeightToFee,
-	prod_or_testnet_or_local_or_env,
 };
 
 use frame_support::{

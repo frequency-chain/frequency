@@ -278,5 +278,7 @@ pub type MSANumberOfBuckets = ConstU32<2>;
 
 parameter_types! {
 	/// SS58 Prefix for the for Frequency Network
+	/// 90 is the prefix for the Frequency Network on Polkadot
+	/// 42 is the prefix for the Frequency Network on Rococo
 	pub const Ss58Prefix: u16 = prod_or_testnet_or_local_or_env!(90, 42, 42);
 }
