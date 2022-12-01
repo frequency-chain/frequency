@@ -41,8 +41,7 @@ type FullBackend = TFullBackend<Block>;
 
 type MaybeFullSelectChain = Option<LongestChain<FullBackend, Block>>;
 
-/// Native executor instance for frequency mainnet.
-#[cfg(feature = "frequency")]
+/// Native executor instance for frequency.
 pub mod frequency_executor {
 	pub use frequency_runtime;
 
@@ -61,54 +60,8 @@ pub mod frequency_executor {
 		}
 	}
 }
-/// Native executor instance for frequency local.
-#[cfg(feature = "frequency-rococo-local")]
-pub mod frequency_local_executor {
-	pub use frequency_rococo_runtime;
 
-	/// Native executor instance for frequency local.
-	pub struct FrequencyLocalRuntimeExecutor;
-
-	impl sc_executor::NativeExecutionDispatch for FrequencyLocalRuntimeExecutor {
-		type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-		fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-			frequency_rococo_runtime::api::dispatch(method, data)
-		}
-
-		fn native_version() -> sc_executor::NativeVersion {
-			frequency_rococo_runtime::native_version()
-		}
-	}
-}
-/// Native executor instance for frequency rococo testnet
-#[cfg(feature = "frequency-rococo-testnet")]
-pub mod frequency_rococo_executor {
-	pub use frequency_rococo_runtime;
-
-	/// Native executor instance for frequency rococo testnet
-	pub struct FrequencyRococoRuntimeExecutor;
-
-	impl sc_executor::NativeExecutionDispatch for FrequencyRococoRuntimeExecutor {
-		type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-		fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-			frequency_rococo_runtime::api::dispatch(method, data)
-		}
-
-		fn native_version() -> sc_executor::NativeVersion {
-			frequency_rococo_runtime::native_version()
-		}
-	}
-}
-#[cfg(feature = "frequency")]
 pub use frequency_executor::*;
-
-#[cfg(feature = "frequency-rococo-local")]
-pub use frequency_local_executor::*;
-
-#[cfg(feature = "frequency-rococo-testnet")]
-pub use frequency_rococo_executor::*;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -653,7 +606,7 @@ fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_servic
 		select_chain: maybe_select_chain,
 		transaction_pool,
 		other: (mut telemetry, _),
-	} = new_partial::<frequency_rococo_runtime::RuntimeApi, FrequencyLocalRuntimeExecutor, _>(
+	} = new_partial::<frequency_runtime::RuntimeApi, FrequencyRuntimeExecutor, _>(
 		&parachain_config,
 		parachain_build_import_queue,
 		true,

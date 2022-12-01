@@ -171,7 +171,7 @@ jobs:
           components: rust-docs
           toolchain: stable
       - name: Build Rust Docs
-        run: RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps
+        run: RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --all-features
 
   check-rust-packages-and-deps:
     needs: changes
@@ -235,7 +235,7 @@ jobs:
           # -e for exclude
           args: |
             -v --no-fail-fast --workspace
-            -e frequency frequency-cli frequency-runtime frequency-rococo-runtime frequency-service
+            -e frequency frequency-cli frequency-runtime frequency-service
             --exclude-files **/mock.rs **/weights.rs **/weights/* **/benchmarking.rs
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
