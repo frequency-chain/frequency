@@ -2106,7 +2106,7 @@
 		/// * [`Error::ProviderNotRegistered`] - the a non-provider MSA is used as the provider
 		/// * [`Error::UnauthorizedDelegator`] - Origin attempted to add a delegate for someone else&#39;s MSA
 		///
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::grant_delegation())]
+		</span><span class="attribute">#[pallet::weight(T::WeightInfo::grant_delegation(add_provider_payload.schema_ids.len() <span class="kw">as </span>u32))]
 		</span><span class="kw">pub fn </span>grant_delegation(
 			origin: OriginFor&lt;T&gt;,
 			delegator_key: T::AccountId,
