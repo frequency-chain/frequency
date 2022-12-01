@@ -459,7 +459,7 @@ impl pallet_democracy::Config for Runtime {
 	/// vote immediately and asynchronously in a similar manner to the emergency origin.
 	/// Requires TechnicalCommittee to be unanimous.
 	type InstantOrigin = EitherOfDiverse<
-		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 1, 1>,
 		frame_system::EnsureRoot<AccountId>,
 	>;
 	/// Overarching type of all pallets origins
@@ -474,7 +474,7 @@ impl pallet_democracy::Config for Runtime {
 	/// Root must agree.
 	type CancelProposalOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
-		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 1, 1>,
 	>;
 
 	/// This origin can blacklist proposals.
