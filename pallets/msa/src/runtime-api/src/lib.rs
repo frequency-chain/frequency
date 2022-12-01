@@ -20,6 +20,7 @@ use codec::Codec;
 use common_primitives::{msa::*, node::BlockNumber};
 use sp_std::vec::Vec;
 use MessageSourceId;
+use ProviderId;
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime files (the `runtime` folder)
@@ -32,9 +33,7 @@ sp_api::decl_runtime_apis! {
 	#[api_version(1)]
 
 	/// Runtime API definition for [MSA](../pallet_msa/index.html)
-	pub trait MsaRuntimeApi<AccountId> where
-		AccountId: Codec,
-	{
+	pub trait MsaRuntimeApi<AccountId> where AccountId: Codec {
 		// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
 		// fn get_msa_keys(msa_id: MessageSourceId) ->	Vec<KeyInfoResponse<AccountId>>;
 
@@ -46,5 +45,8 @@ sp_api::decl_runtime_apis! {
 
 		/// Transform a DID to  MSA Id.
 		fn get_public_key_count_by_msa_id(msa_id: MessageSourceId) -> u8;
+
+		/// Get a list of provider MSA Ids for a given MSA Id
+		fn get_providers_for_msa_id(msa_id: MessageSourceId) -> Vec<ProviderId>;
 	}
 }

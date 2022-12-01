@@ -1245,6 +1245,18 @@ impl<T: Config> Pallet<T> {
 		block_number / (T::BlockNumber::from(T::MortalityWindowSize::get())) %
 			T::BlockNumber::from(T::NumberOfBuckets::get())
 	}
+
+	/// get a list of provider_ids that a delegator has delegated to
+	pub fn get_providers_for_delegator(delegator: DelegatorId) -> Vec<ProviderId> {
+		let mut iter = DelegatorAndProviderToDelegation::<T>::iter_key_prefix(delegator);
+		let mut providers: Vec<ProviderId> = vec![];
+		let mut current: Option<ProviderId> = iter.next();
+		while current.is_some() {
+			providers.push(current.unwrap());
+			current = iter.next();
+		}
+		providers
+	}
 }
 
 #[cfg(feature = "runtime-benchmarks")]

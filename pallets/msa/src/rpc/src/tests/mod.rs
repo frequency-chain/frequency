@@ -8,20 +8,34 @@ use pallet_msa_runtime_api::MsaRuntimeApi;
 use serde_json::json;
 use std::sync::Arc;
 use substrate_test_runtime_client::runtime::{AccountId, Block};
+use DelegatorId;
+use ProviderId;
+use SchemaId;
+
+// a hacky way to change up the results of the api calls
+const NOBODY: MessageSourceId = 99;
 
 sp_api::mock_impl_runtime_apis! {
 	impl MsaRuntimeApi<Block, AccountId> for TestRuntimeApi {
-		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<SchemaId>) -> bool {
-			false
+		fn has_delegation(delegator: DelegatorId, _provider: ProviderId, _block_number: BlockNumber, _schema_id: Option<SchemaId>) -> bool {
+			if (delegator == DelegatorId(NOBODY)) { return false; }
+			true
 		}
 
-
-		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaId>> {
-			Some(vec![])
+		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, _provider: ProviderId) -> Option<Vec<SchemaId>> {
+			if (delegator == DelegatorId(NOBODY)) { return None; }
+			let result: Vec<SchemaId> = vec![1,2];
+			Some(result)
 		}
 
 		fn get_public_key_count_by_msa_id(msa_id: MessageSourceId) -> u8 {
+			if msa_id == NOBODY { return 0; }
 			1
+		}
+
+		fn get_providers_for_msa_id(msa_id: MessageSourceId) -> Vec<ProviderId> {
+			if msa_id == NOBODY { return vec![]; }
+			vec![ProviderId(2),ProviderId(3),ProviderId(4)]
 		}
 	}
 }
@@ -51,4 +65,15 @@ async fn msa_id_to_did_document_works() {
 	let json: serde_json::Value = serde_json::from_str(&unwrapped.as_str()).unwrap();
 	assert_eq!("did:dsnp:1", json["id"]);
 	assert_eq!("did:dsnp:1", json["controller"]);
+
+	let actual_delegations = json["capabilityDelegation"].as_array().unwrap();
+	assert_eq!(3, actual_delegations.len());
+
+	let expected = json!({
+		"blockchainAccountId": 0,
+		"controller": "did:dsnp:4",
+		"id": "did:dsnp:4",
+		"type": "sr25519"
+	});
+	assert_eq!(expected, actual_delegations[2]);
 }

@@ -27,7 +27,6 @@ use common_primitives::{
 	utils::wrap_binary_data,
 };
 use common_runtime::extensions::check_nonce::CheckNonce;
-use did_parser::Did;
 
 #[test]
 fn it_creates_an_msa_account() {
@@ -2873,4 +2872,19 @@ pub fn ensure_valid_schema_grant_errors_delegation_revoked_when_delegation_relat
 			Error::<Test>::DelegationRevoked
 		);
 	});
+}
+
+#[test]
+pub fn test_prefix_key_iter_on_storage_double_map() {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(2);
+		let delegator = DelegatorId(1);
+		for i in 2u64..5u64 {
+			let provider = ProviderId(i);
+			let schema_grants = vec![1, 2];
+			assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+		}
+		let providers = Msa::get_providers_for_delegator(delegator);
+		assert_eq!(3, providers.len());
+	})
 }

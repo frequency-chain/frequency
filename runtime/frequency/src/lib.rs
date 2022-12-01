@@ -940,6 +940,9 @@ impl_runtime_apis! {
 			Msa::get_public_key_count_by_msa_id(msa_id)
 		}
 
+		fn get_providers_for_msa_id(msa_id: MessageSourceId) -> Vec<ProviderId> {
+			Msa::get_providers_for_delegator(DelegatorId(msa_id))
+		}
 	}
 
 	#[cfg(feature = "try-runtime")]

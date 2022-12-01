@@ -28,13 +28,13 @@ use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 #[cfg(feature = "std")]
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
-	did::DidDocument,
+	did::{DidDocument, VerificationMethod},
 	msa::{DelegatorId, MessageSourceId, ProviderId},
 	node::BlockNumber,
 	schema::SchemaId,
 };
 
-use common_primitives::did::Did;
+use common_primitives::did::{Did, KeyType};
 
 use pallet_msa_runtime_api::MsaRuntimeApi;
 
@@ -178,8 +178,22 @@ where
 		match key_count {
 			0 => Ok(None),
 			_ => {
-				let doc: DidDocument =
+				let mut doc: DidDocument =
 					DidDocument::new(Did::new(msa_id.into()), Did::new(msa_id.into()));
+				// get providers for msa
+				let mut capability_delegations: Vec<VerificationMethod> = vec![];
+				let provider_ids = api.get_providers_for_msa_id(&at, msa_id).unwrap();
+				for provider in provider_ids {
+					capability_delegations.push(VerificationMethod {
+						id: Did::new(u64::from(provider)),
+						controller: Did::new(u64::from(provider)),
+						key_type: KeyType::Sr25519,
+						blockchain_account_id: 0, // TODO: blocked by Issue #418
+					})
+				}
+				doc.capability_delegation = capability_delegations;
+				// get the key that was used to sign the delegation???? or just any key, or all keys?
+				// because we don't necessarily know what key the provider will use to sign batch message announcements.
 				// TODO: remove unwraps & handle errors
 				let result = serde_json::to_string(&doc).unwrap();
 				Ok(Some(result))
