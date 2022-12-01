@@ -221,17 +221,15 @@ impl SubstrateCli for RelayChainCli {
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
-
-				runner.async_run(|$config| {
-					let $components = frequency_service::service::new_partial::<RuntimeApi, Executor, _>(
-						&$config,
-						frequency_service::service::parachain_build_import_queue,
-						false,
-					)?;
-					let task_manager = $components.task_manager;
-					{ $( $code )* }.map(|v| (v, task_manager))
-				})
-
+		runner.async_run(|$config| {
+				let $components = frequency_service::service::new_partial::<RuntimeApi, Executor, _>(
+					&$config,
+					frequency_service::service::parachain_build_import_queue,
+					false,
+				)?;
+				let task_manager = $components.task_manager;
+				{ $( $code )* }.map(|v| (v, task_manager))
+			})
 	}}
 }
 
