@@ -519,7 +519,7 @@ pub mod pallet {
 		/// * [`Error::ProviderNotRegistered`] - the a non-provider MSA is used as the provider
 		/// * [`Error::UnauthorizedDelegator`] - Origin attempted to add a delegate for someone else's MSA
 		///
-		#[pallet::weight(T::WeightInfo::grant_delegation())]
+		#[pallet::weight(T::WeightInfo::grant_delegation(add_provider_payload.schema_ids.len() as u32))]
 		pub fn grant_delegation(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
