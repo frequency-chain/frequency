@@ -19,7 +19,6 @@ jsonrpsee = { version = "0.15.1", features = ["server"] }
 log = "0.4.17"
 serde = { version = "1.0.144", features = ["derive"] }
 # Frequency Runtime
-frequency-rococo-runtime = { path = "../../runtime/frequency-rococo", optional = true }
 frequency-runtime = { path = "../../runtime/frequency", optional = true }
 common-runtime = { path = "../../runtime/common" }
 # Substrate
@@ -96,16 +95,15 @@ pallet-schemas-runtime-api = { path = "../../pallets/schemas/src/runtime-api" }
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.29" }
 
 [features]
-default = ["std"]
+default = ["std", "frequency"]
 std = []
 runtime-benchmarks = [
   "frequency-runtime/runtime-benchmarks",
-  "frequency-rococo-runtime/runtime-benchmarks",
   "polkadot-service/runtime-benchmarks",
 ]
 frequency = ["frequency-runtime"]
-frequency-rococo-local = ["frequency-rococo-runtime"]
-frequency-rococo-testnet = ["frequency-rococo-runtime"]
+frequency-rococo-local = ["frequency-runtime"]
+frequency-rococo-testnet = ["frequency-runtime"]
 all-frequency-features = [
   "frequency",
   "frequency-rococo-local",
@@ -113,6 +111,5 @@ all-frequency-features = [
 ]
 try-runtime = [
   "frequency-runtime/try-runtime",
-  "frequency-rococo-runtime/try-runtime",
   "polkadot-service/try-runtime"
 ]

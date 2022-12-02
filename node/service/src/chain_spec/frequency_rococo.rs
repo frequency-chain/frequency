@@ -4,17 +4,14 @@ use common_runtime::constants::{
 	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_ROCOCO_TOKEN, TOKEN_DECIMALS,
 };
 use cumulus_primitives_core::ParaId;
-use frequency_rococo_runtime::{
-	AuraId, CouncilConfig, SS58Prefix, SudoConfig, TechnicalCommitteeConfig,
-};
+use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig};
 use hex::FromHex;
 use sc_service::ChainType;
 use sc_telemetry::TelemetryEndpoints;
 use sp_core::ByteArray;
 use sp_runtime::traits::AccountIdConversion;
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec =
-	sc_service::GenericChainSpec<frequency_rococo_runtime::GenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConfig, Extensions>;
 
 use super::{get_properties, Extensions};
 
@@ -60,7 +57,7 @@ pub mod public_testnet_keys {
 
 pub fn frequency_rococo_testnet() -> ChainSpec {
 	let properties =
-		get_properties(FREQUENCY_ROCOCO_TOKEN, TOKEN_DECIMALS as u32, SS58Prefix::get().into());
+		get_properties(FREQUENCY_ROCOCO_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
 	let para_id: ParaId = 4044.into();
 	ChainSpec::from_genesis(
 		// Name
@@ -184,30 +181,30 @@ fn frequency_rococo_genesis(
 	council_members: Vec<AccountId>,
 	technical_committee_members: Vec<AccountId>,
 	id: ParaId,
-) -> frequency_rococo_runtime::GenesisConfig {
-	frequency_rococo_runtime::GenesisConfig {
-		system: frequency_rococo_runtime::SystemConfig {
-			code: frequency_rococo_runtime::WASM_BINARY
+) -> frequency_runtime::GenesisConfig {
+	frequency_runtime::GenesisConfig {
+		system: frequency_runtime::SystemConfig {
+			code: frequency_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 		},
-		balances: frequency_rococo_runtime::BalancesConfig {
+		balances: frequency_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
-		parachain_info: frequency_rococo_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: frequency_rococo_runtime::CollatorSelectionConfig {
+		parachain_info: frequency_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: frequency_runtime::CollatorSelectionConfig {
 			invulnerables: initial_authorities.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
 			..Default::default()
 		},
-		session: frequency_rococo_runtime::SessionConfig {
+		session: frequency_runtime::SessionConfig {
 			keys: initial_authorities
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                                    // account id
-						acc,                                            // validator id
-						frequency_rococo_runtime::SessionKeys { aura }, // session keys
+						acc.clone(),                             // account id
+						acc,                                     // validator id
+						frequency_runtime::SessionKeys { aura }, // session keys
 					)
 				})
 				.collect(),

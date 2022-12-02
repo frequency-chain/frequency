@@ -6,29 +6,26 @@ use common_runtime::constants::{
 };
 
 use cumulus_primitives_core::ParaId;
-use frequency_rococo_runtime::{
-	AuraId, CouncilConfig, SS58Prefix, SudoConfig, TechnicalCommitteeConfig,
-};
+use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig};
 use sc_service::ChainType;
 use sp_core::sr25519;
 use sp_runtime::traits::AccountIdConversion;
 
 use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_properties, Extensions};
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec =
-	sc_service::GenericChainSpec<frequency_rococo_runtime::GenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConfig, Extensions>;
 
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn template_session_keys(keys: AuraId) -> frequency_rococo_runtime::SessionKeys {
-	frequency_rococo_runtime::SessionKeys { aura: keys }
+pub fn template_session_keys(keys: AuraId) -> frequency_runtime::SessionKeys {
+	frequency_runtime::SessionKeys { aura: keys }
 }
 
 pub fn local_testnet_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let properties =
-		get_properties(FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS as u32, SS58Prefix::get().into());
+		get_properties(FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
 
 	ChainSpec::from_genesis(
 		// Name
@@ -107,23 +104,23 @@ fn testnet_genesis(
 	council_members: Vec<AccountId>,
 	technical_committee_members: Vec<AccountId>,
 	id: ParaId,
-) -> frequency_rococo_runtime::GenesisConfig {
-	frequency_rococo_runtime::GenesisConfig {
-		system: frequency_rococo_runtime::SystemConfig {
-			code: frequency_rococo_runtime::WASM_BINARY
+) -> frequency_runtime::GenesisConfig {
+	frequency_runtime::GenesisConfig {
+		system: frequency_runtime::SystemConfig {
+			code: frequency_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 		},
-		balances: frequency_rococo_runtime::BalancesConfig {
+		balances: frequency_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
-		parachain_info: frequency_rococo_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: frequency_rococo_runtime::CollatorSelectionConfig {
+		parachain_info: frequency_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: frequency_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
 			..Default::default()
 		},
-		session: frequency_rococo_runtime::SessionConfig {
+		session: frequency_runtime::SessionConfig {
 			keys: invulnerables
 				.into_iter()
 				.map(|(acc, aura)| {

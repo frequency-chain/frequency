@@ -42,9 +42,10 @@ pub use common_runtime::{
 
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU128, ConstU32, Contains, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
+	traits::{ConstU128, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, DispatchClass, Weight},
 };
+
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot, RawOrigin,
@@ -65,25 +66,30 @@ pub use common_runtime::{
 	weights,
 	weights::{BlockExecutionWeight, ExtrinsicBaseWeight},
 };
+use frame_support::traits::Contains;
 
 /// Basefilter to only allow specified transactions call to be executed
+/// For non mainnet [--features frequency] all transactions are allowed
 pub struct BaseCallFilter;
+
 impl Contains<Call> for BaseCallFilter {
-	fn contains(call: &Call) -> bool {
-		let core_calls = match call {
-			Call::System(..) => true,
-			Call::Timestamp(..) => true,
-			Call::ParachainSystem(..) => true,
-			Call::Sudo(..) => true,
-			Call::TechnicalCommittee(..) => true,
-			Call::Council(..) => true,
-			Call::Democracy(..) => true,
-			Call::Session(..) => true,
-			Call::Preimage(..) => true,
-			Call::Scheduler(..) => true,
-			_ => false,
-		};
-		core_calls
+	fn contains(_call: &Call) -> bool {
+		#[cfg(not(feature = "frequency"))]
+		{
+			true
+		}
+		#[cfg(feature = "frequency")]
+		{
+			matches!(
+				_call,
+				Call::System(..) |
+					Call::Timestamp(..) | Call::ParachainSystem(..) |
+					Call::Sudo(..) | Call::TechnicalCommittee(..) |
+					Call::Council(..) | Call::Democracy(..) |
+					Call::Session(..) | Call::Preimage(..) |
+					Call::Scheduler(..)
+			)
+		}
 	}
 }
 
@@ -151,7 +157,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 1,
+	spec_version: 3,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -192,8 +198,6 @@ parameter_types! {
 		})
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
-
-	pub const SS58Prefix: u16 = 90;
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -202,6 +206,7 @@ impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// Base call filter to use in dispatchable.
+	// enable for cfg feature "frequency" only
 	type BaseCallFilter = BaseCallFilter;
 	/// The aggregated dispatch type that is available for extrinsics.
 	type Call = Call;
@@ -242,7 +247,7 @@ impl frame_system::Config for Runtime {
 	/// The maximum length of a block (in bytes).
 	type BlockLength = RuntimeBlockLength;
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
-	type SS58Prefix = SS58Prefix;
+	type SS58Prefix = Ss58Prefix;
 	/// The action to take on a Runtime Upgrade
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 	type MaxConsumers = FrameSystemMaxConsumers;

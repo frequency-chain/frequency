@@ -2,17 +2,17 @@ import "@frequency-chain/api-augment";
 import { ApiRx } from "@polkadot/api";
 import assert from "assert";
 import { filter, firstValueFrom } from "rxjs";
-import { connect } from "./scaffolding/apiConnection";
-import { groupEventsByKey } from "./scaffolding/helpers";
+import { connect, createKeys } from "../scaffolding/apiConnection";
+import { groupEventsByKey } from "../scaffolding/helpers";
 
 describe("#setMaxSchemaModelBytes", () => {
     let api: ApiRx;
     let keys: any;
 
     before(async () => {
-        let {api: connectApi, keys: connectKeys} = await connect(process.env.WS_PROVIDER_URL);
+        let connectApi = await connect(process.env.WS_PROVIDER_URL);
         api = connectApi
-        keys = connectKeys
+        keys = createKeys("//Alice")
     })
 
     after(() => {

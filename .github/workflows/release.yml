@@ -17,7 +17,7 @@ jobs:
     name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest]
+        os: [ubuntu-20.04, macOS-latest]
         network: [local, rococo, mainnet]
         include:
           - network: local
@@ -29,7 +29,7 @@ jobs:
           - network: mainnet
             spec: frequency
             build-profile: production
-          - os: ubuntu-latest
+          - os: ubuntu-20.04
             arch: amd64
           - os: macOS-latest
             arch: arm64
@@ -115,19 +115,21 @@ jobs:
         include:
           - network: rococo
             build-profile: production
-            package: frequency-rococo-runtime
-            runtime-dir: runtime/frequency-rococo
-            built-wasm-file-name-prefix: frequency_rococo_runtime
+            package: frequency-runtime
+            runtime-dir: runtime/frequency
+            built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency-rococo_runtime
+            features: frequency-rococo-testnet
           - network: mainnet
             build-profile: production
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency-mainnet_runtime
+            features: frequency
     env:
       SRT_TOOL_VERSION: "1.62.0"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -160,7 +162,7 @@ jobs:
           docker run --rm -e PACKAGE=${{matrix.package}} \
             -e RUNTIME_DIR=${{matrix.runtime-dir}} \
             -e PROFILE=${{matrix.build-profile}} \
-            -e BUILD_OPTS="--features on-chain-release-build,no-metadata-docs" \
+            -e BUILD_OPTS="--features on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
             -v $PWD:/build \
             -v /tmp/cargo:/cargo-home paritytech/srtool:$SRT_TOOL_VERSION build
       - name: Rename WASM file
@@ -176,7 +178,7 @@ jobs:
 
   build-rust-developer-docs:
     name: Build Rust Developer Docs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -206,13 +208,13 @@ jobs:
     name: Build JS API Augment
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-20.04]
         network: [mainnet]
         include:
           - network: mainnet
             spec: frequency
             build-profile: production
-          - os: ubuntu-latest
+          - os: ubuntu-20.04
             arch: amd64
     runs-on: ${{matrix.os}}
     steps:
@@ -258,7 +260,7 @@ jobs:
   wait-for-all-builds:
     needs: [build-binaries, build-runtimes, build-rust-developer-docs, build-js-api-augment]
     name: Wait for All Builds to Finish
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Proceed Forward
         run: echo "All build jobs have finished, proceeding with the release"
@@ -266,7 +268,7 @@ jobs:
   release-artifacts:
     needs: wait-for-all-builds
     name: Release Built Artifacts
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -362,7 +364,7 @@ jobs:
     env:
       DOCKER_HUB_PROFILE: frequencychain
       IMAGE_NAME: parachain-node
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Set Env Vars
         run: |
@@ -426,7 +428,7 @@ jobs:
             docker-platform: linux/amd64
     env:
       DOCKER_HUB_PROFILE: frequencychain
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Set Env Vars
         run: |
@@ -478,7 +480,7 @@ jobs:
   release-rust-developer-docs:
     needs: wait-for-all-builds
     name: Release Rust Developer Docs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -497,7 +499,7 @@ jobs:
   release-js-api-augment:
     needs: wait-for-all-builds
     name: Release JS API Augment
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3

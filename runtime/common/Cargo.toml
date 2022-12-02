@@ -43,6 +43,8 @@ orml-vesting = {git = "https://github.com/open-web3-stack/open-runtime-module-li
 
 [features]
 default = ["std"]
+frequency = []
+frequency-rococo-testnet = []
 frequency-rococo-local = []
 std = ["frame-support/std"]
 try-runtime = [

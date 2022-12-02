@@ -1,4 +1,4 @@
-use crate::prod_or_testnet_or_local_or_env;
+use crate::prod_or_testnet_or_local;
 use common_primitives::{
 	node::{Balance, BlockNumber},
 	schema::SchemaId,
@@ -182,13 +182,13 @@ parameter_types! {
 // Config from
 // https://github.com/paritytech/substrate/blob/367dab0d4bd7fd7b6c222dd15c753169c057dd42/bin/node/runtime/src/lib.rs#L880
 parameter_types! {
-	pub LaunchPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 1 * DAYS, 5 * MINUTES, "FRQCY_LAUNCH_PERIOD");
-	pub VotingPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 1 * DAYS, 5 * MINUTES, "FRQCY_VOTING_PERIOD");
-	pub FastTrackVotingPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(3 * HOURS, 30 * MINUTES, 5 * MINUTES, "FRQCY_FAST_TRACK_VOTING_PERIOD");
-	pub EnactmentPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(8 * DAYS, 30 * HOURS, 10 * MINUTES, "FRQCY_ENACTMENT_PERIOD");
-	pub CooloffPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 1 * DAYS, 5 * MINUTES, "FRQCY_COOLOFF_PERIOD");
-	pub MinimumDeposit: Balance = prod_or_testnet_or_local_or_env!(currency::deposit(5, 0), 100 * currency::deposit(5, 0), 100 * currency::deposit(5, 0), "FRQCY_MINIMUM_DEPOSIT");
-	pub SpendPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 10 * MINUTES, 10 * MINUTES, "FRQCY_SPEND_PERIOD");
+	pub LaunchPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 1 * DAYS, 5 * MINUTES);
+	pub VotingPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 1 * DAYS, 5 * MINUTES);
+	pub FastTrackVotingPeriod: BlockNumber = prod_or_testnet_or_local!(3 * HOURS, 30 * MINUTES, 5 * MINUTES);
+	pub EnactmentPeriod: BlockNumber = prod_or_testnet_or_local!(8 * DAYS, 30 * HOURS, 10 * MINUTES);
+	pub CooloffPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 1 * DAYS, 5 * MINUTES);
+	pub MinimumDeposit: Balance = prod_or_testnet_or_local!(currency::deposit(5, 0), 100 * currency::deposit(5, 0), 100 * currency::deposit(5, 0));
+	pub SpendPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 10 * MINUTES, 10 * MINUTES);
 }
 pub type DemocracyMaxVotes = ConstU32<100>;
 pub type DemocracyMaxProposals = HUNDRED;
@@ -249,10 +249,10 @@ pub type AuraMaxAuthorities = ConstU32<100_000>;
 // Example CollatorMaxInvulnerables are 16 in production(mainnet),
 // 5 in rococo testnet and 5 in rococo local
 parameter_types! {
-	pub CollatorMaxCandidates: u32 = prod_or_testnet_or_local_or_env!(0, 0, 0);
-	pub CollatorMinCandidates: u32 = prod_or_testnet_or_local_or_env!(0, 0, 0);
-	pub CollatorMaxInvulnerables: u32 = prod_or_testnet_or_local_or_env!(16, 5, 5);
-	pub CollatorKickThreshold: BlockNumber = prod_or_testnet_or_local_or_env!(
+	pub CollatorMaxCandidates: u32 = prod_or_testnet_or_local!(0, 0, 0);
+	pub CollatorMinCandidates: u32 = prod_or_testnet_or_local!(0, 0, 0);
+	pub CollatorMaxInvulnerables: u32 = prod_or_testnet_or_local!(16, 5, 5);
+	pub CollatorKickThreshold: BlockNumber = prod_or_testnet_or_local!(
 		6 * HOURS,
 		6 * HOURS,
 		6 * HOURS
@@ -275,3 +275,10 @@ impl Clone for MessagesMaxPayloadSizeBytes {
 pub type MSAMortalityWindowSize = ConstU32<100>;
 pub type MSAMaxSignaturesPerBucket = ConstU32<50_000>;
 pub type MSANumberOfBuckets = ConstU32<2>;
+
+parameter_types! {
+	/// SS58 Prefix for the for Frequency Network
+	/// 90 is the prefix for the Frequency Network on Polkadot
+	/// 42 is the prefix for the Frequency Network on Rococo
+	pub const Ss58Prefix: u16 = prod_or_testnet_or_local!(90, 42, 42);
+}
