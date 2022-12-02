@@ -1200,7 +1200,7 @@ pub fn revoke_provider_call_has_no_cost() {
 }
 
 fn create_two_keypairs() -> (sr25519::Pair, sr25519::Pair) {
-// fn create_two_keypairs() -> (Public, Public) {
+	// fn create_two_keypairs() -> (Public, Public) {
 	let (pair1, _) = sr25519::Pair::generate();
 	let (pair2, _) = sr25519::Pair::generate();
 	(pair1, pair2)
@@ -1216,18 +1216,14 @@ pub fn revoke_delegation_by_provider_happy_path() {
 		let (provider_msa_id, provider_pair) = create_account();
 		let provider_account = provider_pair.public();
 
-		assert_ok!(
-			Msa::create_provider(
-				Origin::signed(provider_account.into()),
-				Vec::from("provider")
-			)
-		);
+		assert_ok!(Msa::create_provider(
+			Origin::signed(provider_account.into()),
+			Vec::from("provider")
+		));
 
 		// 3. create delegator MSA and provider to provider
-		let (signature, add_provider_payload) = create_and_sign_add_provider_payload(
-			delegator_pair,
-			provider_msa_id,
-		);
+		let (signature, add_provider_payload) =
+			create_and_sign_add_provider_payload(delegator_pair, provider_msa_id);
 
 		// 3.5 create the user's MSA + add provider as provider
 		assert_ok!(Msa::create_sponsored_account_with_delegation(
@@ -1242,7 +1238,10 @@ pub fn revoke_delegation_by_provider_happy_path() {
 		System::set_block_number(System::block_number() + 25);
 
 		// 5. assert_ok! fn as 2 to remove provider 1
-		assert_ok!(Msa::revoke_delegation_by_provider(Origin::signed(AccountId32::from(provider_account)), retrieved_delegator));
+		assert_ok!(Msa::revoke_delegation_by_provider(
+			Origin::signed(AccountId32::from(provider_account)),
+			retrieved_delegator
+		));
 
 		// 6. verify that the provider is revoked
 		let provider_info = Msa::get_delegation(DelegatorId(2), ProviderId(1));
@@ -1287,7 +1286,10 @@ pub fn revoke_delegation_by_provider_does_nothing_when_no_msa() {
 
 		// 1. when delegator msa_id not found
 		assert_noop!(
-			Msa::revoke_delegation_by_provider(Origin::signed(AccountId32::from(provider_account)), not_an_msa_id),
+			Msa::revoke_delegation_by_provider(
+				Origin::signed(AccountId32::from(provider_account)),
+				not_an_msa_id
+			),
 			Error::<Test>::DelegationNotFound
 		);
 
@@ -1295,7 +1297,10 @@ pub fn revoke_delegation_by_provider_does_nothing_when_no_msa() {
 		let delegator_msa_id = Msa::get_owner_of(&AccountId32::from(delegator_account)).unwrap();
 		// 2. when no delegation relationship
 		assert_noop!(
-			Msa::revoke_delegation_by_provider(Origin::signed(AccountId32::from(provider_account)), delegator_msa_id),
+			Msa::revoke_delegation_by_provider(
+				Origin::signed(AccountId32::from(provider_account)),
+				delegator_msa_id
+			),
 			Error::<Test>::DelegationNotFound
 		);
 
@@ -1304,7 +1309,10 @@ pub fn revoke_delegation_by_provider_does_nothing_when_no_msa() {
 
 		// 3. when_delegation_expired
 		assert_noop!(
-			Msa::revoke_delegation_by_provider(Origin::signed(AccountId32::from(provider_account)), delegator_msa_id),
+			Msa::revoke_delegation_by_provider(
+				Origin::signed(AccountId32::from(provider_account)),
+				delegator_msa_id
+			),
 			Error::<Test>::DelegationRevoked
 		);
 	})
@@ -2010,7 +2018,6 @@ pub fn add_provider_expired() {
 
 		let provider_key = provider_pair.public();
 		let delegator_key = user_pair.public();
-
 
 		// 2. create provider MSA
 		assert_ok!(Msa::create(Origin::signed(provider_key.into()))); // MSA = 1
