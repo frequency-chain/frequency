@@ -3,11 +3,11 @@ concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 on:
-  push:
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+" # ex. v0.29.9
-      - "v[0-9]+.[0-9]+.[0-9]+-[0-9]+" # ex. v0.29.9-1
-      - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-1-rc1
+  pull_request:
+    # tags:
+    #   - "v[0-9]+.[0-9]+.[0-9]+" # ex. v0.29.9
+    #   - "v[0-9]+.[0-9]+.[0-9]+-[0-9]+" # ex. v0.29.9-1
+    #   - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-1-rc1
 env:
   RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
   NEW_RELEASE_VERSION: ${{github.ref_name}}
