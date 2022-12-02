@@ -117,7 +117,7 @@ jobs:
             build-profile: production
             package: frequency-runtime
             runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_rococo_runtime
+            built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency-rococo_runtime
             features: frequency-rococo-testnet
           - network: mainnet

@@ -13,24 +13,15 @@ pub mod weights;
 /// ```Rust
 /// parameter_types! {
 /// 	// Note that the env variable version parameter cannot be const.
-/// 	pub LaunchPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 28 * DAYS, 1 * MINUTES, "FRQCY_LAUNCH_PERIOD");
-/// 	pub const VotingPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 28 * DAYS, 1 * MINUTES);
+/// 	pub LaunchPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 28 * DAYS, 1 * MINUTES);
+/// 	pub const VotingPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 28 * DAYS, 1 * MINUTES);
 /// }
 /// ```
 #[macro_export]
-macro_rules! prod_or_testnet_or_local_or_env {
+macro_rules! prod_or_testnet_or_local {
 	($prod:expr, $test:expr, $local:expr) => {
 		if cfg!(feature = "frequency-rococo-local") {
 			$local
-		} else if cfg!(feature = "frequency-rococo-testnet") {
-			$test
-		} else {
-			$prod
-		}
-	};
-	($prod:expr, $test:expr, $local:expr, $env:expr) => {
-		if cfg!(feature = "frequency-rococo-local") {
-			core::option_env!($env).map(|s| s.parse().ok()).flatten().unwrap_or($local)
 		} else if cfg!(feature = "frequency-rococo-testnet") {
 			$test
 		} else {
