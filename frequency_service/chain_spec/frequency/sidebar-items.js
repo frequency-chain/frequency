@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["frequency",""],["load_frequency_spec",""]],"mod":[["foundation_keys",""],["frequency_mainnet_keys",""],["project_liberty_keys",""],["unfinished_labs_keys",""]],"type":[["ChainSpec","Specialized `ChainSpec` for the normal parachain runtime."]]};

@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"frequency_service":[["impl NativeExecutionDispatch for <a class=\"struct\" href=\"frequency_service/service/frequency_executor/struct.FrequencyRuntimeExecutor.html\" title=\"struct frequency_service::service::frequency_executor::FrequencyRuntimeExecutor\">FrequencyRuntimeExecutor</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

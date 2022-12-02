@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["SubstrateWeight","Weights for pallet_preimage using the Substrate node and recommended hardware."]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["MULTISIG_THRESHOLD_2",""],["SIGNATORY_1_OF_3",""],["SIGNATORY_2_OF_3",""],["SIGNATORY_3_OF_3",""]]};

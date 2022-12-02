@@ -29,15 +29,6 @@
 <span id="29">29</span>
 <span id="30">30</span>
 <span id="31">31</span>
-<span id="32">32</span>
-<span id="33">33</span>
-<span id="34">34</span>
-<span id="35">35</span>
-<span id="36">36</span>
-<span id="37">37</span>
-<span id="38">38</span>
-<span id="39">39</span>
-<span id="40">40</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
 </span><span class="kw">pub mod </span>constants;
@@ -53,25 +44,16 @@
 /// ```Rust
 /// parameter_types! {
 /// 	// Note that the env variable version parameter cannot be const.
-/// 	pub LaunchPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 28 * DAYS, 1 * MINUTES, &quot;FRQCY_LAUNCH_PERIOD&quot;);
-/// 	pub const VotingPeriod: BlockNumber = prod_or_testnet_or_local_or_env!(7 * DAYS, 28 * DAYS, 1 * MINUTES);
+/// 	pub LaunchPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 28 * DAYS, 1 * MINUTES);
+/// 	pub const VotingPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 28 * DAYS, 1 * MINUTES);
 /// }
 /// ```
 </span><span class="attribute">#[macro_export]
-</span><span class="macro">macro_rules! </span>prod_or_testnet_or_local_or_env {
+</span><span class="macro">macro_rules! </span>prod_or_testnet_or_local {
 	(<span class="macro-nonterminal">$prod</span>:expr, <span class="macro-nonterminal">$test</span>:expr, <span class="macro-nonterminal">$local</span>:expr) =&gt; {
 		<span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>) {
 			<span class="macro-nonterminal">$local
 		</span>} <span class="kw">else if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>) {
-			<span class="macro-nonterminal">$test
-		</span>} <span class="kw">else </span>{
-			<span class="macro-nonterminal">$prod
-		</span>}
-	};
-	(<span class="macro-nonterminal">$prod</span>:expr, <span class="macro-nonterminal">$test</span>:expr, <span class="macro-nonterminal">$local</span>:expr, <span class="macro-nonterminal">$env</span>:expr) =&gt; {
-		<span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>) {
-			<span class="macro">core::option_env!</span>(<span class="macro-nonterminal">$env</span>).map(|s| s.parse().ok()).flatten().unwrap_or(<span class="macro-nonterminal">$local</span>)
-		} <span class="kw">else if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>) {
 			<span class="macro-nonterminal">$test
 		</span>} <span class="kw">else </span>{
 			<span class="macro-nonterminal">$prod

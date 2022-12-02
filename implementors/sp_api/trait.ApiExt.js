@@ -1,4 +1,3 @@
 (function() {var implementors = {
-"frequency_rococo_runtime":[["impl&lt;Block:&nbsp;BlockT, C:&nbsp;CallApiAt&lt;Block&gt;&gt; ApiExt&lt;Block&gt; for <a class=\"struct\" href=\"frequency_rococo_runtime/struct.RuntimeApiImpl.html\" title=\"struct frequency_rococo_runtime::RuntimeApiImpl\">RuntimeApiImpl</a>&lt;Block, C&gt;"]],
 "frequency_runtime":[["impl&lt;Block:&nbsp;BlockT, C:&nbsp;CallApiAt&lt;Block&gt;&gt; ApiExt&lt;Block&gt; for <a class=\"struct\" href=\"frequency_runtime/struct.RuntimeApiImpl.html\" title=\"struct frequency_runtime::RuntimeApiImpl\">RuntimeApiImpl</a>&lt;Block, C&gt;"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

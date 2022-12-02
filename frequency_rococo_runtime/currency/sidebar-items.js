@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":[["CENTS",""],["DOLLARS",""],["EXISTENTIAL_DEPOSIT","The existential deposit. Set to be 1/100th of a token."],["MILLICENTS",""],["UNITS",""]],"fn":[["deposit","Generates an balance based on amount of items and bytes Items are each worth 20 Dollars Bytes each cost 1/1_000 of a Dollar"]]};

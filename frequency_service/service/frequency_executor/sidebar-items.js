@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["FrequencyRuntimeExecutor","Native executor instance for frequency mainnet."]]};

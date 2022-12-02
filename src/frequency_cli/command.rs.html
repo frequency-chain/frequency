@@ -585,123 +585,20 @@
 <span id="585">585</span>
 <span id="586">586</span>
 <span id="587">587</span>
-<span id="588">588</span>
-<span id="589">589</span>
-<span id="590">590</span>
-<span id="591">591</span>
-<span id="592">592</span>
-<span id="593">593</span>
-<span id="594">594</span>
-<span id="595">595</span>
-<span id="596">596</span>
-<span id="597">597</span>
-<span id="598">598</span>
-<span id="599">599</span>
-<span id="600">600</span>
-<span id="601">601</span>
-<span id="602">602</span>
-<span id="603">603</span>
-<span id="604">604</span>
-<span id="605">605</span>
-<span id="606">606</span>
-<span id="607">607</span>
-<span id="608">608</span>
-<span id="609">609</span>
-<span id="610">610</span>
-<span id="611">611</span>
-<span id="612">612</span>
-<span id="613">613</span>
-<span id="614">614</span>
-<span id="615">615</span>
-<span id="616">616</span>
-<span id="617">617</span>
-<span id="618">618</span>
-<span id="619">619</span>
-<span id="620">620</span>
-<span id="621">621</span>
-<span id="622">622</span>
-<span id="623">623</span>
-<span id="624">624</span>
-<span id="625">625</span>
-<span id="626">626</span>
-<span id="627">627</span>
-<span id="628">628</span>
-<span id="629">629</span>
-<span id="630">630</span>
-<span id="631">631</span>
-<span id="632">632</span>
-<span id="633">633</span>
-<span id="634">634</span>
-<span id="635">635</span>
-<span id="636">636</span>
-<span id="637">637</span>
-<span id="638">638</span>
-<span id="639">639</span>
-<span id="640">640</span>
-<span id="641">641</span>
-<span id="642">642</span>
-<span id="643">643</span>
-<span id="644">644</span>
-<span id="645">645</span>
-<span id="646">646</span>
-<span id="647">647</span>
-<span id="648">648</span>
-<span id="649">649</span>
-<span id="650">650</span>
-<span id="651">651</span>
-<span id="652">652</span>
-<span id="653">653</span>
-<span id="654">654</span>
-<span id="655">655</span>
-<span id="656">656</span>
-<span id="657">657</span>
-<span id="658">658</span>
-<span id="659">659</span>
-<span id="660">660</span>
-<span id="661">661</span>
-<span id="662">662</span>
-<span id="663">663</span>
-<span id="664">664</span>
-<span id="665">665</span>
-<span id="666">666</span>
-<span id="667">667</span>
-<span id="668">668</span>
-<span id="669">669</span>
-<span id="670">670</span>
-<span id="671">671</span>
-<span id="672">672</span>
-<span id="673">673</span>
-<span id="674">674</span>
-<span id="675">675</span>
-<span id="676">676</span>
-<span id="677">677</span>
-<span id="678">678</span>
-<span id="679">679</span>
-<span id="680">680</span>
-<span id="681">681</span>
-<span id="682">682</span>
-<span id="683">683</span>
-<span id="684">684</span>
-<span id="685">685</span>
-<span id="686">686</span>
-<span id="687">687</span>
-<span id="688">688</span>
-<span id="689">689</span>
-<span id="690">690</span>
-<span id="691">691</span>
-<span id="692">692</span>
-<span id="693">693</span>
-<span id="694">694</span>
-<span id="695">695</span>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cli::{Cli, RelayChainCli, Subcommand};
-<span class="kw">use </span>frequency_service::chain_spec;
-
 <span class="kw">use </span>codec::Encode;
 <span class="kw">use </span>cumulus_client_cli::generate_genesis_block;
 <span class="kw">use </span>cumulus_primitives_core::ParaId;
 <span class="kw">use </span>log::info;
 
 <span class="kw">use </span>common_primitives::node::Block;
+<span class="kw">use </span>frequency_service::{
+	chain_spec,
+	service::{
+		frequency_runtime::{RuntimeApi, VERSION},
+		FrequencyRuntimeExecutor <span class="kw">as </span>Executor,
+	},
+};
 <span class="kw">use </span>sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, <span class="prelude-ty">Result</span>, RuntimeVersion, SharedParams, SubstrateCli,
@@ -749,38 +646,6 @@
 <span class="kw">impl</span>&lt;T: sc_service::ChainSpec + <span class="lifetime">&#39;static</span>&gt; IdentifyChain <span class="kw">for </span>T {
 	<span class="kw">fn </span>identify(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ChainIdentity {
 		&lt;<span class="kw">dyn </span>sc_service::ChainSpec&gt;::identify(<span class="self">self</span>)
-	}
-}
-
-<span class="macro">macro_rules! </span>with_runtime_or_err {
-	(<span class="macro-nonterminal">$chain_spec</span>:expr, { $( <span class="macro-nonterminal">$code</span>:tt )* }) =&gt; {
-		<span class="kw">if </span>ChainIdentity::Frequency == <span class="macro-nonterminal">$chain_spec</span>.identify() {
-			<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency&quot;</span>)]
-			#[allow(unused_imports)]
-			</span><span class="kw">use </span>frequency_service::service::{frequency_runtime::{RuntimeApi, VERSION }, FrequencyRuntimeExecutor <span class="kw">as </span>Executor};
-			<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency&quot;</span>)]
-			</span>$( <span class="macro-nonterminal">$code </span>)*
-			<span class="attribute">#[cfg(not(feature = <span class="string">&quot;frequency&quot;</span>))]
-			</span><span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Frequency runtime is not available.&quot;</span>.into());
-		} <span class="kw">else if </span>ChainIdentity::FrequencyRococo == <span class="macro-nonterminal">$chain_spec</span>.identify() {
-			<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>)]
-			#[allow(unused_imports)]
-			</span><span class="kw">use </span>frequency_service::service::{frequency_rococo_runtime::{ RuntimeApi, VERSION }, FrequencyRococoRuntimeExecutor <span class="kw">as </span>Executor};
-			<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>)]
-			</span>$( <span class="macro-nonterminal">$code </span>)*
-			<span class="attribute">#[cfg(not(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>))]
-			</span><span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Frequency Rococo runtime is not available.&quot;</span>.into());
-		} <span class="kw">else if </span>ChainIdentity::FrequencyLocal == <span class="macro-nonterminal">$chain_spec</span>.identify() {
-			<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
-			#[allow(unused_imports)]
-			</span><span class="kw">use </span>frequency_service::service::{frequency_rococo_runtime::{ RuntimeApi, VERSION }, FrequencyLocalRuntimeExecutor <span class="kw">as </span>Executor};
-			<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
-			</span>$( <span class="macro-nonterminal">$code </span>)*
-			<span class="attribute">#[cfg(not(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>))]
-			</span><span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Frequency Local runtime is not available.&quot;</span>.into());
-		} <span class="kw">else </span>{
-			<span class="macro">panic!</span>(<span class="string">&quot;Unknown chain spec.&quot;</span>);
-		}
 	}
 }
 
@@ -897,42 +762,8 @@
 		load_spec(id)
 	}
 
-	<span class="kw">fn </span>native_runtime_version(spec: <span class="kw-2">&amp;</span>Box&lt;<span class="kw">dyn </span>ChainSpec&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>RuntimeVersion {
-		<span class="kw">if </span>spec.id() == <span class="string">&quot;frequency&quot; </span>{
-			<span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;frequency&quot;</span>) {
-				<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency&quot;</span>)]
-				</span>{
-					<span class="kw">return </span><span class="kw-2">&amp;</span>frequency_service::service::frequency_runtime::VERSION
-				}
-				<span class="attribute">#[cfg(not(feature = <span class="string">&quot;frequency&quot;</span>))]
-				</span><span class="macro">panic!</span>(<span class="string">&quot;Frequency runtime is not compiled!&quot;</span>);
-			} <span class="kw">else </span>{
-				<span class="macro">panic!</span>(<span class="string">&quot;Frequency runtime is not compiled!&quot;</span>);
-			}
-		} <span class="kw">else if </span>spec.id() == <span class="string">&quot;frequency-rococo&quot; </span>{
-			<span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>) {
-				<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>)]
-				</span>{
-					<span class="kw">return </span><span class="kw-2">&amp;</span>frequency_service::service::frequency_rococo_runtime::VERSION
-				}
-				<span class="attribute">#[cfg(not(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>))]
-				</span><span class="macro">panic!</span>(<span class="string">&quot;Frequency Rococo runtime is not compiled!&quot;</span>);
-			} <span class="kw">else </span>{
-				<span class="macro">panic!</span>(<span class="string">&quot;Frequency Rococo runtime is not compiled!&quot;</span>);
-			}
-		} <span class="kw">else if </span>spec.id() == <span class="string">&quot;frequency-local&quot; </span>{
-			<span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>) {
-				<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
-				</span>{
-					<span class="kw">return </span><span class="kw-2">&amp;</span>frequency_service::service::frequency_rococo_runtime::VERSION
-				}
-				<span class="attribute">#[cfg(not(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>))]
-				</span><span class="macro">panic!</span>(<span class="string">&quot;Frequency Local runtime is not compiled!&quot;</span>);
-			} <span class="kw">else </span>{
-				<span class="macro">panic!</span>(<span class="string">&quot;Frequency Local runtime is not compiled!&quot;</span>);
-			}
-		}
-		<span class="macro">panic!</span>(<span class="string">&quot;Unknown spec id: {}&quot;</span>, spec.id());
+	<span class="kw">fn </span>native_runtime_version(_spec: <span class="kw-2">&amp;</span>Box&lt;<span class="kw">dyn </span>ChainSpec&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>RuntimeVersion {
+		<span class="kw-2">&amp;</span>VERSION
 	}
 }
 
@@ -977,20 +808,15 @@
 <span class="macro">macro_rules! </span>construct_async_run {
 	(|<span class="macro-nonterminal">$components</span>:ident, <span class="macro-nonterminal">$cli</span>:ident, <span class="macro-nonterminal">$cmd</span>:ident, <span class="macro-nonterminal">$config</span>:ident| $( <span class="macro-nonterminal">$code</span>:tt )* ) =&gt; {{
 		<span class="kw">let </span>runner = <span class="macro-nonterminal">$cli</span>.create_runner(<span class="macro-nonterminal">$cmd</span>)<span class="question-mark">?</span>;
-		<span class="kw">let </span>chain_spec = <span class="kw-2">&amp;</span>runner.config().chain_spec;
-		<span class="macro">with_runtime_or_err!</span>(chain_spec, {
-			{
-				runner.async_run(|<span class="macro-nonterminal">$config</span>| {
-					<span class="kw">let </span><span class="macro-nonterminal">$components </span>= frequency_service::service::new_partial::&lt;RuntimeApi, Executor, <span class="kw">_</span>&gt;(
-						<span class="kw-2">&amp;</span><span class="macro-nonterminal">$config</span>,
-						frequency_service::service::parachain_build_import_queue,
-						<span class="bool-val">false</span>,
-					)<span class="question-mark">?</span>;
-					<span class="kw">let </span>task_manager = <span class="macro-nonterminal">$components</span>.task_manager;
-					{ $( <span class="macro-nonterminal">$code </span>)* }.map(|v| (v, task_manager))
-				})
-			}
-		})
+		runner.async_run(|<span class="macro-nonterminal">$config</span>| {
+				<span class="kw">let </span><span class="macro-nonterminal">$components </span>= frequency_service::service::new_partial::&lt;RuntimeApi, Executor, <span class="kw">_</span>&gt;(
+					<span class="kw-2">&amp;</span><span class="macro-nonterminal">$config</span>,
+					frequency_service::service::parachain_build_import_queue,
+					<span class="bool-val">false</span>,
+				)<span class="question-mark">?</span>;
+				<span class="kw">let </span>task_manager = <span class="macro-nonterminal">$components</span>.task_manager;
+				{ $( <span class="macro-nonterminal">$code </span>)* }.map(|v| (v, task_manager))
+			})
 	}}
 }
 
@@ -1025,24 +851,19 @@
 		},
 		<span class="prelude-val">Some</span>(Subcommand::ExportMetadata(cmd)) =&gt; {
 			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
-			<span class="kw">let </span>chain_spec = <span class="kw-2">&amp;</span>runner.config().chain_spec;
-			<span class="macro">with_runtime_or_err!</span>(chain_spec, {
-				{
-					runner.async_run(|config| {
-						<span class="comment">// grab the task manager.
-						</span><span class="kw">let </span>registry = config.prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry);
-						<span class="kw">let </span>task_manager =
-							sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-								.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;Error: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
-						<span class="kw">let </span>partials =
-							frequency_service::service::new_partial::&lt;RuntimeApi, Executor, <span class="kw">_</span>&gt;(
-								<span class="kw-2">&amp;</span>config,
-								frequency_service::service::parachain_build_import_queue,
-								<span class="bool-val">false</span>,
-							)<span class="question-mark">?</span>;
-						<span class="prelude-val">Ok</span>((cmd.run(partials.client), task_manager))
-					})
-				}
+
+			runner.async_run(|config| {
+				<span class="comment">// grab the task manager.
+				</span><span class="kw">let </span>registry = config.prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry);
+				<span class="kw">let </span>task_manager =
+					sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
+						.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;Error: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
+				<span class="kw">let </span>partials = frequency_service::service::new_partial::&lt;RuntimeApi, Executor, <span class="kw">_</span>&gt;(
+					<span class="kw-2">&amp;</span>config,
+					frequency_service::service::parachain_build_import_queue,
+					<span class="bool-val">false</span>,
+				)<span class="question-mark">?</span>;
+				<span class="prelude-val">Ok</span>((cmd.run(partials.client), task_manager))
 			})
 		},
 		<span class="prelude-val">Some</span>(Subcommand::PurgeChain(cmd)) =&gt; {
@@ -1086,100 +907,71 @@
 		},
 		<span class="prelude-val">Some</span>(Subcommand::Benchmark(cmd)) =&gt; {
 			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
-			<span class="kw">let </span>chain_spec = <span class="kw-2">&amp;</span>runner.config().chain_spec;
-			<span class="macro">with_runtime_or_err!</span>(chain_spec, {
-				{
-					<span class="kw">match </span>cmd {
-						frame_benchmarking_cli::BenchmarkCmd::Pallet(cmd) =&gt;
-							<span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>) {
-								runner.sync_run(|config| cmd.run::&lt;Block, Executor&gt;(config))
-							} <span class="kw">else </span>{
-								<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Benchmarking wasn&#39;t enabled when building the node. \
-									You can enable it with `--features runtime-benchmarks`.&quot;
-									</span>.into())
-							},
-						frame_benchmarking_cli::BenchmarkCmd::Block(cmd) =&gt;
-							runner.sync_run(|config| {
-								<span class="kw">let </span>partials = frequency_service::service::new_partial::&lt;
-									RuntimeApi,
-									Executor,
-									<span class="kw">_</span>,
-								&gt;(
-									<span class="kw-2">&amp;</span>config,
-									frequency_service::service::parachain_build_import_queue,
-									<span class="bool-val">false</span>,
-								)<span class="question-mark">?</span>;
-								cmd.run(partials.client)
-							}),
-						frame_benchmarking_cli::BenchmarkCmd::Storage(cmd) =&gt;
-							runner.sync_run(|config| {
-								<span class="kw">let </span>partials = frequency_service::service::new_partial::&lt;
-									RuntimeApi,
-									Executor,
-									<span class="kw">_</span>,
-								&gt;(
-									<span class="kw-2">&amp;</span>config,
-									frequency_service::service::parachain_build_import_queue,
-									<span class="bool-val">false</span>,
-								)<span class="question-mark">?</span>;
-								<span class="kw">let </span>db = partials.backend.expose_db();
-								<span class="kw">let </span>storage = partials.backend.expose_storage();
 
-								cmd.run(config, partials.client.clone(), db, storage)
-							}),
-						frame_benchmarking_cli::BenchmarkCmd::Overhead(<span class="kw">_</span>) =&gt;
-							<span class="prelude-val">Err</span>(<span class="string">&quot;Unsupported benchmarking command&quot;</span>.into()),
-						frame_benchmarking_cli::BenchmarkCmd::Machine(cmd) =&gt;
-							runner.sync_run(|config| {
-								cmd.run(
-									<span class="kw-2">&amp;</span>config,
-									frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE.clone(),
-								)
-							}),
-						frame_benchmarking_cli::BenchmarkCmd::Extrinsic(_cmd) =&gt;
-							<span class="prelude-val">Err</span>(<span class="string">&quot;Benchmarking command not implemented.&quot;</span>.into()),
-					}
-				}
-			})
+			<span class="kw">match </span>cmd {
+				frame_benchmarking_cli::BenchmarkCmd::Pallet(cmd) =&gt;
+					<span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>) {
+						runner.sync_run(|config| cmd.run::&lt;Block, Executor&gt;(config))
+					} <span class="kw">else </span>{
+						<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Benchmarking wasn&#39;t enabled when building the node. \
+									You can enable it with `--features runtime-benchmarks`.&quot;
+							</span>.into())
+					},
+				frame_benchmarking_cli::BenchmarkCmd::Block(cmd) =&gt; runner.sync_run(|config| {
+					<span class="kw">let </span>partials =
+						frequency_service::service::new_partial::&lt;RuntimeApi, Executor, <span class="kw">_</span>&gt;(
+							<span class="kw-2">&amp;</span>config,
+							frequency_service::service::parachain_build_import_queue,
+							<span class="bool-val">false</span>,
+						)<span class="question-mark">?</span>;
+					cmd.run(partials.client)
+				}),
+				frame_benchmarking_cli::BenchmarkCmd::Storage(cmd) =&gt; runner.sync_run(|config| {
+					<span class="kw">let </span>partials =
+						frequency_service::service::new_partial::&lt;RuntimeApi, Executor, <span class="kw">_</span>&gt;(
+							<span class="kw-2">&amp;</span>config,
+							frequency_service::service::parachain_build_import_queue,
+							<span class="bool-val">false</span>,
+						)<span class="question-mark">?</span>;
+					<span class="kw">let </span>db = partials.backend.expose_db();
+					<span class="kw">let </span>storage = partials.backend.expose_storage();
+
+					cmd.run(config, partials.client.clone(), db, storage)
+				}),
+				frame_benchmarking_cli::BenchmarkCmd::Overhead(<span class="kw">_</span>) =&gt;
+					<span class="prelude-val">Err</span>(<span class="string">&quot;Unsupported benchmarking command&quot;</span>.into()),
+				frame_benchmarking_cli::BenchmarkCmd::Machine(cmd) =&gt; runner.sync_run(|config| {
+					cmd.run(<span class="kw-2">&amp;</span>config, frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE.clone())
+				}),
+				frame_benchmarking_cli::BenchmarkCmd::Extrinsic(_cmd) =&gt;
+					<span class="prelude-val">Err</span>(<span class="string">&quot;Benchmarking command not implemented.&quot;</span>.into()),
+			}
 		},
 		<span class="prelude-val">Some</span>(Subcommand::TryRuntime(cmd)) =&gt; {
 			<span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;try-runtime&quot;</span>) {
 				<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
-				<span class="kw">let </span>chain_spec = <span class="kw-2">&amp;</span>runner.config().chain_spec;
-				<span class="macro">with_runtime_or_err!</span>(chain_spec, {
-					{
-						<span class="comment">// grab the task manager.
-						</span><span class="kw">let </span>registry =
-							<span class="kw-2">&amp;</span>runner.config().prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry);
-						<span class="kw">let </span>task_manager = sc_service::TaskManager::new(
-							runner.config().tokio_handle.clone(),
-							<span class="kw-2">*</span>registry,
-						)
+
+				<span class="comment">// grab the task manager.
+				</span><span class="kw">let </span>registry = <span class="kw-2">&amp;</span>runner.config().prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry);
+				<span class="kw">let </span>task_manager =
+					sc_service::TaskManager::new(runner.config().tokio_handle.clone(), <span class="kw-2">*</span>registry)
 						.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;Error: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
-						runner.async_run(|config| {
-							<span class="prelude-val">Ok</span>((cmd.run::&lt;Block, Executor&gt;(config), task_manager))
-						})
-					}
-				})
+				runner.async_run(|config| <span class="prelude-val">Ok</span>((cmd.run::&lt;Block, Executor&gt;(config), task_manager)))
 			} <span class="kw">else </span>{
 				<span class="prelude-val">Err</span>(<span class="string">&quot;Try-runtime must be enabled by `--features try-runtime`.&quot;</span>.into())
 			}
 		},
 		<span class="prelude-val">Some</span>(Subcommand::ExportRuntimeVersion(cmd)) =&gt; {
 			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
-			<span class="kw">let </span>chain_spec = <span class="kw-2">&amp;</span>runner.config().chain_spec;
-			<span class="macro">with_runtime_or_err!</span>(chain_spec, {
-				{
-					runner.async_run(|config| {
-						<span class="kw">let </span>version = Cli::native_runtime_version(<span class="kw-2">&amp;</span>config.chain_spec);
-						<span class="comment">// grab the task manager.
-						</span><span class="kw">let </span>registry = config.prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry);
-						<span class="kw">let </span>task_manager =
-							sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-								.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;Error: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
-						<span class="prelude-val">Ok</span>((cmd.run(version), task_manager))
-					})
-				}
+
+			runner.async_run(|config| {
+				<span class="kw">let </span>version = Cli::native_runtime_version(<span class="kw-2">&amp;</span>config.chain_spec);
+				<span class="comment">// grab the task manager.
+				</span><span class="kw">let </span>registry = config.prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry);
+				<span class="kw">let </span>task_manager =
+					sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
+						.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;Error: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
+				<span class="prelude-val">Ok</span>((cmd.run(version), task_manager))
 			})
 		},
 		<span class="prelude-val">None </span>=&gt; {
@@ -1210,43 +1002,35 @@
 				<span class="macro">info!</span>(<span class="string">&quot;Parachain Account: {}&quot;</span>, parachain_account);
 				<span class="macro">info!</span>(<span class="string">&quot;Parachain genesis state: {}&quot;</span>, genesis_state);
 				<span class="macro">info!</span>(<span class="string">&quot;Is collating: {}&quot;</span>, <span class="kw">if </span>config.role.is_authority() { <span class="string">&quot;yes&quot; </span>} <span class="kw">else </span>{ <span class="string">&quot;no&quot; </span>});
-				<span class="macro">with_runtime_or_err!</span>(config.chain_spec, {
-					{
-						<span class="kw">let </span>tokio_handle = config.tokio_handle.clone();
-						<span class="kw">let </span>polkadot_cli = RelayChainCli::new(
-							<span class="kw-2">&amp;</span>config,
-							[RelayChainCli::executable_name()]
-								.iter()
-								.chain(cli.relay_chain_args.iter()),
-						);
-						<span class="kw">let </span>polkadot_config = SubstrateCli::create_configuration(
-							<span class="kw-2">&amp;</span>polkadot_cli,
-							<span class="kw-2">&amp;</span>polkadot_cli,
-							tokio_handle,
-						)
+
+				<span class="kw">let </span>tokio_handle = config.tokio_handle.clone();
+				<span class="kw">let </span>polkadot_cli = RelayChainCli::new(
+					<span class="kw-2">&amp;</span>config,
+					[RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
+				);
+				<span class="kw">let </span>polkadot_config =
+					SubstrateCli::create_configuration(<span class="kw-2">&amp;</span>polkadot_cli, <span class="kw-2">&amp;</span>polkadot_cli, tokio_handle)
 						.map_err(|err| <span class="macro">format!</span>(<span class="string">&quot;Relay chain argument error: {}&quot;</span>, err))<span class="question-mark">?</span>;
 
-						<span class="kw">let </span>collator_options = cli.run.collator_options();
-						<span class="kw">let </span>hwbench = <span class="kw">if </span>!cli.no_hardware_benchmarks {
-							config.database.path().map(|database_path| {
-								<span class="kw">let _ </span>= std::fs::create_dir_all(<span class="kw-2">&amp;</span>database_path);
-								sc_sysinfo::gather_hwbench(<span class="prelude-val">Some</span>(database_path))
-							})
-						} <span class="kw">else </span>{
-							<span class="prelude-val">None
-						</span>};
-						frequency_service::service::start_parachain_node::&lt;RuntimeApi, Executor&gt;(
-							config,
-							polkadot_config,
-							collator_options,
-							id,
-							hwbench,
-						)
-						.<span class="kw">await
-						</span>.map(|r| r.<span class="number">0</span>)
-						.map_err(Into::into)
-					}
-				})
+				<span class="kw">let </span>collator_options = cli.run.collator_options();
+				<span class="kw">let </span>hwbench = <span class="kw">if </span>!cli.no_hardware_benchmarks {
+					config.database.path().map(|database_path| {
+						<span class="kw">let _ </span>= std::fs::create_dir_all(<span class="kw-2">&amp;</span>database_path);
+						sc_sysinfo::gather_hwbench(<span class="prelude-val">Some</span>(database_path))
+					})
+				} <span class="kw">else </span>{
+					<span class="prelude-val">None
+				</span>};
+				frequency_service::service::start_parachain_node::&lt;RuntimeApi, Executor&gt;(
+					config,
+					polkadot_config,
+					collator_options,
+					id,
+					hwbench,
+				)
+				.<span class="kw">await
+				</span>.map(|r| r.<span class="number">0</span>)
+				.map_err(Into::into)
 			})
 		},
 	}

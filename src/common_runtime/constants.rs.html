@@ -275,7 +275,14 @@
 <span id="275">275</span>
 <span id="276">276</span>
 <span id="277">277</span>
-</pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::prod_or_testnet_or_local_or_env;
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+</pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::prod_or_testnet_or_local;
 <span class="kw">use </span>common_primitives::{
 	node::{Balance, BlockNumber},
 	schema::SchemaId,
@@ -459,13 +466,13 @@
 // Config from
 // https://github.com/paritytech/substrate/blob/367dab0d4bd7fd7b6c222dd15c753169c057dd42/bin/node/runtime/src/lib.rs#L880
 </span><span class="macro">parameter_types! </span>{
-	<span class="kw">pub </span>LaunchPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7 </span>* DAYS, <span class="number">1 </span>* DAYS, <span class="number">5 </span>* MINUTES, <span class="string">&quot;FRQCY_LAUNCH_PERIOD&quot;</span>);
-	<span class="kw">pub </span>VotingPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7 </span>* DAYS, <span class="number">1 </span>* DAYS, <span class="number">5 </span>* MINUTES, <span class="string">&quot;FRQCY_VOTING_PERIOD&quot;</span>);
-	<span class="kw">pub </span>FastTrackVotingPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">3 </span>* HOURS, <span class="number">30 </span>* MINUTES, <span class="number">5 </span>* MINUTES, <span class="string">&quot;FRQCY_FAST_TRACK_VOTING_PERIOD&quot;</span>);
-	<span class="kw">pub </span>EnactmentPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">8 </span>* DAYS, <span class="number">30 </span>* HOURS, <span class="number">10 </span>* MINUTES, <span class="string">&quot;FRQCY_ENACTMENT_PERIOD&quot;</span>);
-	<span class="kw">pub </span>CooloffPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7 </span>* DAYS, <span class="number">1 </span>* DAYS, <span class="number">5 </span>* MINUTES, <span class="string">&quot;FRQCY_COOLOFF_PERIOD&quot;</span>);
-	<span class="kw">pub </span>MinimumDeposit: Balance = <span class="macro">prod_or_testnet_or_local_or_env!</span>(currency::deposit(<span class="number">5</span>, <span class="number">0</span>), <span class="number">100 </span>* currency::deposit(<span class="number">5</span>, <span class="number">0</span>), <span class="number">100 </span>* currency::deposit(<span class="number">5</span>, <span class="number">0</span>), <span class="string">&quot;FRQCY_MINIMUM_DEPOSIT&quot;</span>);
-	<span class="kw">pub </span>SpendPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">7 </span>* DAYS, <span class="number">10 </span>* MINUTES, <span class="number">10 </span>* MINUTES, <span class="string">&quot;FRQCY_SPEND_PERIOD&quot;</span>);
+	<span class="kw">pub </span>LaunchPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local!</span>(<span class="number">7 </span>* DAYS, <span class="number">1 </span>* DAYS, <span class="number">5 </span>* MINUTES);
+	<span class="kw">pub </span>VotingPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local!</span>(<span class="number">7 </span>* DAYS, <span class="number">1 </span>* DAYS, <span class="number">5 </span>* MINUTES);
+	<span class="kw">pub </span>FastTrackVotingPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local!</span>(<span class="number">3 </span>* HOURS, <span class="number">30 </span>* MINUTES, <span class="number">5 </span>* MINUTES);
+	<span class="kw">pub </span>EnactmentPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local!</span>(<span class="number">8 </span>* DAYS, <span class="number">30 </span>* HOURS, <span class="number">10 </span>* MINUTES);
+	<span class="kw">pub </span>CooloffPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local!</span>(<span class="number">7 </span>* DAYS, <span class="number">1 </span>* DAYS, <span class="number">5 </span>* MINUTES);
+	<span class="kw">pub </span>MinimumDeposit: Balance = <span class="macro">prod_or_testnet_or_local!</span>(currency::deposit(<span class="number">5</span>, <span class="number">0</span>), <span class="number">100 </span>* currency::deposit(<span class="number">5</span>, <span class="number">0</span>), <span class="number">100 </span>* currency::deposit(<span class="number">5</span>, <span class="number">0</span>));
+	<span class="kw">pub </span>SpendPeriod: BlockNumber = <span class="macro">prod_or_testnet_or_local!</span>(<span class="number">7 </span>* DAYS, <span class="number">10 </span>* MINUTES, <span class="number">10 </span>* MINUTES);
 }
 <span class="kw">pub type </span>DemocracyMaxVotes = ConstU32&lt;<span class="number">100</span>&gt;;
 <span class="kw">pub type </span>DemocracyMaxProposals = HUNDRED;
@@ -526,10 +533,10 @@
 // Example CollatorMaxInvulnerables are 16 in production(mainnet),
 // 5 in rococo testnet and 5 in rococo local
 </span><span class="macro">parameter_types! </span>{
-	<span class="kw">pub </span>CollatorMaxCandidates: u32 = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);
-	<span class="kw">pub </span>CollatorMinCandidates: u32 = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);
-	<span class="kw">pub </span>CollatorMaxInvulnerables: u32 = <span class="macro">prod_or_testnet_or_local_or_env!</span>(<span class="number">16</span>, <span class="number">5</span>, <span class="number">5</span>);
-	<span class="kw">pub </span>CollatorKickThreshold: BlockNumber = <span class="macro">prod_or_testnet_or_local_or_env!</span>(
+	<span class="kw">pub </span>CollatorMaxCandidates: u32 = <span class="macro">prod_or_testnet_or_local!</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);
+	<span class="kw">pub </span>CollatorMinCandidates: u32 = <span class="macro">prod_or_testnet_or_local!</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);
+	<span class="kw">pub </span>CollatorMaxInvulnerables: u32 = <span class="macro">prod_or_testnet_or_local!</span>(<span class="number">16</span>, <span class="number">5</span>, <span class="number">5</span>);
+	<span class="kw">pub </span>CollatorKickThreshold: BlockNumber = <span class="macro">prod_or_testnet_or_local!</span>(
 		<span class="number">6 </span>* HOURS,
 		<span class="number">6 </span>* HOURS,
 		<span class="number">6 </span>* HOURS
@@ -552,5 +559,12 @@
 </span><span class="kw">pub type </span>MSAMortalityWindowSize = ConstU32&lt;<span class="number">100</span>&gt;;
 <span class="kw">pub type </span>MSAMaxSignaturesPerBucket = ConstU32&lt;<span class="number">50_000</span>&gt;;
 <span class="kw">pub type </span>MSANumberOfBuckets = ConstU32&lt;<span class="number">2</span>&gt;;
+
+<span class="macro">parameter_types! </span>{
+	<span class="doccomment">/// SS58 Prefix for the for Frequency Network
+	/// 90 is the prefix for the Frequency Network on Polkadot
+	/// 42 is the prefix for the Frequency Network on Rococo
+	</span><span class="kw">pub const </span>Ss58Prefix: u16 = <span class="macro">prod_or_testnet_or_local!</span>(<span class="number">90</span>, <span class="number">42</span>, <span class="number">42</span>);
+}
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>
