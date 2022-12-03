@@ -376,7 +376,7 @@ impl pallet_preimage::Config for Runtime {
 	// Allow the Technical council to request preimages without deposit or fees
 	type ManagerOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
-		pallet_collective::EnsureMember<AccountId, TechnicalCommitteeInstance>,
+		pallet_collective::EnsureMember<AccountId, TechnicalCommitteeCollective>,
 	>;
 	/// Expected to be removed in Polkadot v0.9.31
 	type MaxSize = PreimageMaxSize;
@@ -396,8 +396,8 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
-type TechnicalCommitteeInstance = pallet_collective::Instance2;
-impl pallet_collective::Config<TechnicalCommitteeInstance> for Runtime {
+type TechnicalCommitteeCollective = pallet_collective::Instance2;
+impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 	type Origin = Origin;
 	type Proposal = Call;
 	type Event = Event;
@@ -452,14 +452,14 @@ impl pallet_democracy::Config for Runtime {
 	/// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
 	/// be tabled immediately and with a shorter voting/enactment period.
 	type FastTrackOrigin = EitherOfDiverse<
-		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 2, 3>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 2, 3>,
 		frame_system::EnsureRoot<AccountId>,
 	>;
 	/// Origin from which the next majority-carries (or more permissive) referendum may be tabled to
 	/// vote immediately and asynchronously in a similar manner to the emergency origin.
 	/// Requires TechnicalCommittee to be unanimous.
 	type InstantOrigin = EitherOfDiverse<
-		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 1, 1>,
 		frame_system::EnsureRoot<AccountId>,
 	>;
 	/// Overarching type of all pallets origins
@@ -474,7 +474,7 @@ impl pallet_democracy::Config for Runtime {
 	/// Root must agree.
 	type CancelProposalOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
-		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 1, 1>,
 	>;
 
 	/// This origin can blacklist proposals.
@@ -482,7 +482,7 @@ impl pallet_democracy::Config for Runtime {
 
 	/// Any single technical committee member may veto a coming council proposal, however they can
 	/// only do it once and it lasts only for the cool-off period.
-	type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCommitteeInstance>;
+	type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCommitteeCollective>;
 
 	type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
 }
