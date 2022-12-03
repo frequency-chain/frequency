@@ -1370,7 +1370,7 @@
 	<span class="comment">// Allow the Technical council to request preimages without deposit or fees
 	</span><span class="kw">type </span>ManagerOrigin = EitherOfDiverse&lt;
 		EnsureRoot&lt;AccountId&gt;,
-		pallet_collective::EnsureMember&lt;AccountId, TechnicalCommitteeInstance&gt;,
+		pallet_collective::EnsureMember&lt;AccountId, TechnicalCommitteeCollective&gt;,
 	&gt;;
 	<span class="doccomment">/// Expected to be removed in Polkadot v0.9.31
 	</span><span class="kw">type </span>MaxSize = PreimageMaxSize;
@@ -1390,8 +1390,8 @@
 	<span class="kw">type </span>WeightInfo = pallet_collective::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
-<span class="kw">type </span>TechnicalCommitteeInstance = pallet_collective::Instance2;
-<span class="kw">impl </span>pallet_collective::Config&lt;TechnicalCommitteeInstance&gt; <span class="kw">for </span>Runtime {
+<span class="kw">type </span>TechnicalCommitteeCollective = pallet_collective::Instance2;
+<span class="kw">impl </span>pallet_collective::Config&lt;TechnicalCommitteeCollective&gt; <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>Origin = Origin;
 	<span class="kw">type </span>Proposal = Call;
 	<span class="kw">type </span>Event = Event;
@@ -1446,14 +1446,14 @@
 	<span class="doccomment">/// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
 	/// be tabled immediately and with a shorter voting/enactment period.
 	</span><span class="kw">type </span>FastTrackOrigin = EitherOfDiverse&lt;
-		pallet_collective::EnsureProportionAtLeast&lt;AccountId, TechnicalCommitteeInstance, <span class="number">2</span>, <span class="number">3</span>&gt;,
+		pallet_collective::EnsureProportionAtLeast&lt;AccountId, TechnicalCommitteeCollective, <span class="number">2</span>, <span class="number">3</span>&gt;,
 		frame_system::EnsureRoot&lt;AccountId&gt;,
 	&gt;;
 	<span class="doccomment">/// Origin from which the next majority-carries (or more permissive) referendum may be tabled to
 	/// vote immediately and asynchronously in a similar manner to the emergency origin.
 	/// Requires TechnicalCommittee to be unanimous.
 	</span><span class="kw">type </span>InstantOrigin = EitherOfDiverse&lt;
-		pallet_collective::EnsureProportionAtLeast&lt;AccountId, CouncilCollective, <span class="number">1</span>, <span class="number">1</span>&gt;,
+		pallet_collective::EnsureProportionAtLeast&lt;AccountId, TechnicalCommitteeCollective, <span class="number">1</span>, <span class="number">1</span>&gt;,
 		frame_system::EnsureRoot&lt;AccountId&gt;,
 	&gt;;
 	<span class="doccomment">/// Overarching type of all pallets origins
@@ -1468,7 +1468,7 @@
 	/// Root must agree.
 	</span><span class="kw">type </span>CancelProposalOrigin = EitherOfDiverse&lt;
 		EnsureRoot&lt;AccountId&gt;,
-		pallet_collective::EnsureProportionAtLeast&lt;AccountId, CouncilCollective, <span class="number">1</span>, <span class="number">1</span>&gt;,
+		pallet_collective::EnsureProportionAtLeast&lt;AccountId, TechnicalCommitteeCollective, <span class="number">1</span>, <span class="number">1</span>&gt;,
 	&gt;;
 
 	<span class="doccomment">/// This origin can blacklist proposals.
@@ -1476,7 +1476,7 @@
 
 	<span class="doccomment">/// Any single technical committee member may veto a coming council proposal, however they can
 	/// only do it once and it lasts only for the cool-off period.
-	</span><span class="kw">type </span>VetoOrigin = pallet_collective::EnsureMember&lt;AccountId, TechnicalCommitteeInstance&gt;;
+	</span><span class="kw">type </span>VetoOrigin = pallet_collective::EnsureMember&lt;AccountId, TechnicalCommitteeCollective&gt;;
 
 	<span class="kw">type </span>OperationalPreimageOrigin = pallet_collective::EnsureMember&lt;AccountId, CouncilCollective&gt;;
 }
