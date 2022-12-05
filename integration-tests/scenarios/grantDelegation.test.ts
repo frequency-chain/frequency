@@ -78,8 +78,8 @@ describe("Delegation Scenario Tests", () => {
         assert.notEqual(grantDelegationEvents["msa.DelegationGranted"], undefined);
     }).timeout(15000);
 
-    it.only("should grant permissions to a provider for a specific set of schemas", async () => {
-        const providerKeys = createKeys("//Charlie");
+    it("should grant permissions to a provider for a specific set of schemas", async () => {
+        const providerKeys = createKeys("//Dave");
         await createMsa(api, keys);
         await createMsa(api, providerKeys);
 
@@ -140,7 +140,7 @@ describe("Delegation Scenario Tests", () => {
     }).timeout(15000);
 
     it("should revoke a delegation by delegator", async () => {
-        const providerKeys = createKeys("//Dave");
+        const providerKeys = createKeys("//Bob");
         await createMsa(api, keys);
         await createMsa(api, providerKeys);
 
