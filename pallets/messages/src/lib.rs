@@ -212,13 +212,13 @@ pub mod pallet {
 		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
 		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
 		///
-		#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() as u32, 1_000))]
+		#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() as u32))]
 		pub fn add_ipfs_message(
 			origin: OriginFor<T>,
 			#[pallet::compact] schema_id: SchemaId,
 			cid: Vec<u8>,
 			#[pallet::compact] payload_length: u32,
-		) -> DispatchResultWithPostInfo {
+		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			let payload_tuple: OffchainPayloadType = (cid.clone(), payload_length);
 			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = payload_tuple
@@ -234,9 +234,9 @@ pub mod pallet {
 			);
 
 			let provider_msa_id = Self::find_msa_id(&provider_key)?;
-			let message = Self::add_message(provider_msa_id, None, bounded_payload, schema_id)?;
+			Self::add_message(provider_msa_id, None, bounded_payload, schema_id)?;
 
-			Ok(Some(T::WeightInfo::add_ipfs_message(cid.len() as u32, message.index as u32)).into())
+			Ok(())
 		}
 		/// Add an on-chain message for a given schema id.
 		///
@@ -252,13 +252,13 @@ pub mod pallet {
 		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
 		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
 		///
-		#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() as u32, 1_000))]
+		#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() as u32))]
 		pub fn add_onchain_message(
 			origin: OriginFor<T>,
 			on_behalf_of: Option<MessageSourceId>,
 			#[pallet::compact] schema_id: SchemaId,
 			payload: Vec<u8>,
-		) -> DispatchResultWithPostInfo {
+		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
 			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> =
@@ -291,18 +291,14 @@ pub mod pallet {
 				None => DelegatorId(provider_msa_id), // Delegate is also the Provider
 			};
 
-			let message = Self::add_message(
+			Self::add_message(
 				provider_msa_id,
 				Some(maybe_delegator.into()),
 				bounded_payload,
 				schema_id,
 			)?;
 
-			Ok(Some(T::WeightInfo::add_onchain_message(
-				message.payload.len() as u32,
-				message.index as u32,
-			))
-			.into())
+			Ok(())
 		}
 	}
 }

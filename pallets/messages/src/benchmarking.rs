@@ -11,7 +11,7 @@ use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{assert_ok, pallet_prelude::DispatchResult, traits::OnInitialize};
 use frame_system::RawOrigin;
 
-const MESSAGES: u32 = 499;
+const AVERAGE_NUMBER_OF_MESSAGES: u32 = 499;
 const SCHEMAS: u32 = 50;
 const IPFS_SCHEMA_ID: u16 = 50;
 const IPFS_PAYLOAD_LENGTH: u32 = 10;
@@ -58,7 +58,6 @@ fn create_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
 benchmarks! {
 	add_onchain_message {
 		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - 1;
-		let m in 1 .. MESSAGES;
 		let message_source_id = DelegatorId(2);
 		let caller: T::AccountId = whitelisted_caller();
 		let schema_id = 1;
@@ -72,14 +71,13 @@ benchmarks! {
 
 		let payload = vec![1; n as usize];
 
-		for j in 1 .. m {
+		for j in 1 .. AVERAGE_NUMBER_OF_MESSAGES {
 			assert_ok!(onchain_message::<T>(schema_id));
 		}
 	}: _ (RawOrigin::Signed(caller), Some(message_source_id.into()), schema_id, payload)
 
 	add_ipfs_message {
 		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - IPFS_PAYLOAD_LENGTH;
-		let m in 1 .. MESSAGES;
 		let caller: T::AccountId = whitelisted_caller();
 		let cid = vec![1; n as usize];
 
@@ -89,13 +87,13 @@ benchmarks! {
 		}
 		assert_ok!(T::MsaBenchmarkHelper::add_key(ProviderId(1).into(), caller.clone()));
 
-		for j in 1 .. m {
+		for j in 1 .. AVERAGE_NUMBER_OF_MESSAGES {
 			assert_ok!(ipfs_message::<T>(IPFS_SCHEMA_ID));
 		}
 	}: _ (RawOrigin::Signed(caller),IPFS_SCHEMA_ID, cid, IPFS_PAYLOAD_LENGTH)
 
 	on_initialize {
-		let m in 1 .. MESSAGES;
+		let m in 1 .. AVERAGE_NUMBER_OF_MESSAGES;
 		let s in 1 .. SCHEMAS;
 
 		for j in 0 .. m {
