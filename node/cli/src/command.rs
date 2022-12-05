@@ -339,6 +339,15 @@ pub fn run() -> Result<()> {
 						)?;
 					cmd.run(partials.client)
 				}),
+				#[cfg(not(feature = "runtime-benchmarks"))]
+				frame_benchmarking_cli::BenchmarkCmd::Storage(_) =>
+					return Err(sc_cli::Error::Input(
+						"Compile with --features=runtime-benchmarks \
+						to enable storage benchmarks."
+							.into(),
+					)
+					.into()),
+				#[cfg(feature = "runtime-benchmarks")]
 				frame_benchmarking_cli::BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
 					let partials =
 						frequency_service::service::new_partial::<RuntimeApi, Executor, _>(

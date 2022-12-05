@@ -74,8 +74,8 @@ use frame_support::traits::Contains;
 /// For non mainnet [--features frequency] all transactions are allowed
 pub struct BaseCallFilter;
 
-impl Contains<Call> for BaseCallFilter {
-	fn contains(_call: &Call) -> bool {
+impl Contains<RuntimeCall> for BaseCallFilter {
+	fn contains(_call: &RuntimeCall) -> bool {
 		#[cfg(not(feature = "frequency"))]
 		{
 			true
@@ -257,7 +257,7 @@ impl frame_system::Config for Runtime {
 }
 
 impl pallet_msa::Config for Runtime {
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxPublicKeysPerMsa = MsaMaxPublicKeysPerMsa;
@@ -272,7 +272,7 @@ impl pallet_msa::Config for Runtime {
 pub use common_primitives::schema::SchemaId;
 
 impl pallet_schemas::Config for Runtime {
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
 	type MinSchemaModelSizeBytes = SchemasMinModelSizeBytes;
 	type MaxSchemaRegistrations = SchemasMaxRegistrations;
@@ -280,22 +280,22 @@ impl pallet_schemas::Config for Runtime {
 }
 
 pub struct RootAsVestingPallet;
-impl EnsureOrigin<Origin> for RootAsVestingPallet {
+impl EnsureOrigin<RuntimeOrigin> for RootAsVestingPallet {
 	type Success = AccountId;
 
-	fn try_origin(o: Origin) -> Result<Self::Success, Origin> {
-		Into::<Result<RawOrigin<AccountId>, Origin>>::into(o).and_then(|o| match o {
+	fn try_origin(o: RuntimeOrigin) -> Result<Self::Success, RuntimeOrigin> {
+		Into::<Result<RawOrigin<AccountId>, RuntimeOrigin>>::into(o).and_then(|o| match o {
 			RawOrigin::Root => Ok(VestingPalletId::get().into_account_truncating()),
-			r => Err(Origin::from(r)),
+			r => Err(RuntimeOrigin::from(r)),
 		})
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
-	fn successful_origin() -> Origin {
+	fn successful_origin() -> RuntimeOrigin {
 		let zero_account_id =
 			AccountId::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes())
 				.expect("infinite length input; no invalid inputs for type; qed");
-		Origin::from(RawOrigin::Signed(zero_account_id))
+		RuntimeOrigin::from(RawOrigin::Signed(zero_account_id))
 	}
 }
 
@@ -305,7 +305,7 @@ parameter_types! {
 }
 
 impl orml_vesting::Config for Runtime {
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type MinVestedTransfer = MinVestedTransfer;
 	type VestedTransferOrigin = RootAsVestingPallet;
@@ -334,7 +334,7 @@ impl pallet_balances::Config for Runtime {
 	/// The type for recording an account's balance.
 	type Balance = Balance;
 	/// The ubiquitous event type.
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
 	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
 	type AccountStore = System;
@@ -353,7 +353,7 @@ parameter_types! {
 
 // See also https://docs.rs/pallet-scheduler/latest/pallet_scheduler/trait.Config.html
 impl pallet_scheduler::Config for Runtime {
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type PalletsOrigin = OriginCaller;
 	type RuntimeCall = RuntimeCall;
@@ -374,7 +374,7 @@ impl pallet_scheduler::Config for Runtime {
 
 impl pallet_preimage::Config for Runtime {
 	type WeightInfo = weights::pallet_preimage::SubstrateWeight<Runtime>;
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	// Allow the Technical council to request preimages without deposit or fees
 	type ManagerOrigin = EitherOfDiverse<
@@ -390,8 +390,8 @@ impl pallet_preimage::Config for Runtime {
 type CouncilCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
-	type Proposal = Call;
-	type RuntimeEvent = RuntimeEven;
+	type Proposal = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
 	type MotionDuration = CouncilMotionDuration;
 	type MaxProposals = CouncilMaxProposals;
 	type MaxMembers = ConstU32<1>;
@@ -402,8 +402,8 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 type TechnicalCommitteeCollective = pallet_collective::Instance2;
 impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
-	type Proposal = Call;
-	type RuntimeEvent = RuntimeEven;
+	type Proposal = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
 	type MotionDuration = TCMotionDuration;
 	type MaxProposals = TCMaxProposals;
 	type MaxMembers = TCMaxMembers;
@@ -418,7 +418,7 @@ impl pallet_democracy::Config for Runtime {
 	type CooloffPeriod = CooloffPeriod;
 	type Currency = Balances;
 	type EnactmentPeriod = EnactmentPeriod;
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type FastTrackVotingPeriod = FastTrackVotingPeriod;
 	type InstantAllowed = frame_support::traits::ConstBool<true>;
 	type LaunchPeriod = LaunchPeriod;
@@ -426,7 +426,7 @@ impl pallet_democracy::Config for Runtime {
 	type MaxVotes = DemocracyMaxVotes;
 	type MinimumDeposit = MinimumDeposit;
 	type PreimageByteDeposit = PreimageByteDeposit;
-	type Proposal = Call;
+	type Proposal = RuntimeCall;
 	type Scheduler = Scheduler;
 	type Slash = (); // Treasury;
 	type WeightInfo = weights::pallet_democracy::SubstrateWeight<Runtime>;
@@ -494,7 +494,7 @@ impl pallet_treasury::Config for Runtime {
 	/// Treasury Account: 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z
 	type PalletId = TreasuryPalletId;
 	type Currency = Balances;
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
 
 	/// Who approves treasury proposals?
@@ -551,7 +551,7 @@ impl pallet_treasury::Config for Runtime {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
 	type WeightToFee = WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
@@ -560,7 +560,7 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type DmpMessageHandler = ();
@@ -576,7 +576,7 @@ impl parachain_info::Config for Runtime {}
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 impl pallet_session::Config for Runtime {
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	// we don't have stash and controller, thus we don't need the convert as well.
 	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
@@ -596,7 +596,7 @@ impl pallet_aura::Config for Runtime {
 }
 
 impl pallet_collator_selection::Config for Runtime {
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 
 	// Origin that can dictate updating parameters of this pallet.
@@ -642,7 +642,7 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 impl pallet_messages::Config for Runtime {
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_messages::weights::SubstrateWeight<Runtime>;
 	type MsaInfoProvider = Msa;
 	type SchemaGrantValidator = Msa;
@@ -658,12 +658,12 @@ impl pallet_messages::Config for Runtime {
 }
 
 impl pallet_sudo::Config for Runtime {
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 }
 
 impl pallet_utility::Config for Runtime {
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type PalletsOrigin = OriginCaller;
 	type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;

@@ -45,7 +45,7 @@ impl frame_system::Config for Test {
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
@@ -59,7 +59,7 @@ impl frame_system::Config for Test {
 }
 
 impl pallet_schemas::Config for Test {
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type MinSchemaModelSizeBytes = ConstU32<10>;
 	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<10>;
@@ -99,7 +99,7 @@ impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
 }
 
 impl pallet_msa::Config for Test {
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxPublicKeysPerMsa = MaxPublicKeysPerMsa;

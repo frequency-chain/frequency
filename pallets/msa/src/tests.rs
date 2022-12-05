@@ -1374,7 +1374,7 @@ fn signed_extension_revoke_delegation_by_delegator_success() {
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, delegator_account) = create_provider_msa_and_delegator();
 		let call_revoke_delegation: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
+			&RuntimeCall::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
@@ -1394,7 +1394,7 @@ fn signed_extension_fails_when_revoke_delegation_by_delegator_called_twice() {
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, delegator_account) = create_provider_msa_and_delegator();
 		let call_revoke_delegation: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
+			&RuntimeCall::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
@@ -1411,7 +1411,7 @@ fn signed_extension_fails_when_revoke_delegation_by_delegator_called_twice() {
 
 		System::set_block_number(System::block_number() + 1);
 		let call_revoke_delegation: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
+			&RuntimeCall::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result_revoked = CheckFreeExtrinsicUse::<Test>::new().validate(
@@ -1429,7 +1429,9 @@ fn signed_extension_revoke_delegation_by_provider_success() {
 	new_test_ext().execute_with(|| {
 		let (delegator_msa_id, provider_account) = create_delegator_msa_and_provider();
 		let call_revoke_delegation: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::revoke_delegation_by_provider { delegator: delegator_msa_id });
+			&RuntimeCall::Msa(MsaCall::revoke_delegation_by_provider {
+				delegator: delegator_msa_id,
+			});
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
@@ -1448,7 +1450,7 @@ fn assert_revoke_delegation_by_provider_err(
 	delegator_msa_id: u64,
 ) {
 	let call_revoke_delegation: &<Test as frame_system::Config>::Call =
-		&Call::Msa(MsaCall::revoke_delegation_by_provider { delegator: delegator_msa_id });
+		&RuntimeCall::Msa(MsaCall::revoke_delegation_by_provider { delegator: delegator_msa_id });
 	let info = DispatchInfo::default();
 	let len = 0_usize;
 	let result = CheckFreeExtrinsicUse::<Test>::new().validate(
@@ -1502,7 +1504,7 @@ fn signed_extension_revoke_delegation_by_provider_fails_when_no_delegation() {
 #[test]
 fn signed_extension_validation_valid_for_other_extrinsics() {
 	let random_call_should_pass: &<Test as frame_system::Config>::Call =
-		&Call::Msa(MsaCall::create {});
+		&RuntimeCall::Msa(MsaCall::create {});
 	let info = DispatchInfo::default();
 	let len = 0_usize;
 	let result = CheckFreeExtrinsicUse::<Test>::new().validate(
@@ -1541,7 +1543,7 @@ fn signed_extension_validation_delete_msa_public_key_success() {
 
 		// set up call for new key to delete original key
 		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_public_key {
+			&RuntimeCall::Msa(MsaCall::delete_msa_public_key {
 				public_key_to_delete: original_key.clone(),
 			});
 
@@ -1556,7 +1558,7 @@ fn signed_extension_validation_delete_msa_public_key_success() {
 
 		// validate other direction
 		let call_delete_msa_public_key2: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_public_key { public_key_to_delete: new_key });
+			&RuntimeCall::Msa(MsaCall::delete_msa_public_key { public_key_to_delete: new_key });
 		assert_ok!(CheckFreeExtrinsicUse::<Test>::new().validate(
 			&original_key,
 			call_delete_msa_public_key2,
@@ -1576,7 +1578,7 @@ fn signed_extension_validate_fails_when_delete_msa_public_key_called_twice() {
 		assert_ok!(Msa::add_key(owner_msa_id, &new_key, EMPTY_FUNCTION));
 
 		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_public_key {
+			&RuntimeCall::Msa(MsaCall::delete_msa_public_key {
 				public_key_to_delete: owner_key_pair.public().into(),
 			});
 
@@ -1641,7 +1643,7 @@ fn assert_validate_key_delete_fails(
 	expected_err_enum: ValidityError,
 ) {
 	let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
-		&Call::Msa(MsaCall::delete_msa_public_key { public_key_to_delete });
+		&RuntimeCall::Msa(MsaCall::delete_msa_public_key { public_key_to_delete });
 
 	let expected_err: TransactionValidity =
 		InvalidTransaction::Custom(expected_err_enum as u8).into();
@@ -1903,7 +1905,7 @@ fn signed_ext_check_nonce_delete_msa_public_key() {
 
 		// Test the delete_msa_public_key() call
 		let call_delete_msa_public_key: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::delete_msa_public_key {
+			&RuntimeCall::Msa(MsaCall::delete_msa_public_key {
 				public_key_to_delete: AccountId32::from(msa_new_key),
 			});
 		let info = call_delete_msa_public_key.get_dispatch_info();
@@ -1941,7 +1943,7 @@ fn signed_ext_check_nonce_revoke_delegation_by_delegator() {
 
 		// We are testing the revoke_delegation_by_delegator() call.
 		let call_revoke_delegation_by_delegator: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
+			&RuntimeCall::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
 
 		let len = 0_usize;
 
@@ -1981,7 +1983,7 @@ fn signed_ext_check_nonce_creates_token_account_if_paying() {
 		let who = test_public(1);
 		let len = 0_usize;
 		let pays_call_should_pass: &<Test as frame_system::Config>::Call =
-			&Call::Msa(MsaCall::create {});
+			&RuntimeCall::Msa(MsaCall::create {});
 
 		// Get the dispatch info for the create() call.
 		let pays_call_should_pass_info = pays_call_should_pass.get_dispatch_info();

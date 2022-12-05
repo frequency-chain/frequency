@@ -55,7 +55,7 @@ impl system::Config for Test {
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
@@ -221,7 +221,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 }
 
 impl pallet_messages::Config for Test {
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type MsaInfoProvider = MsaInfoHandler;
 	type SchemaGrantValidator = SchemaGrantValidationHandler;
 	type SchemaProvider = SchemaHandler;

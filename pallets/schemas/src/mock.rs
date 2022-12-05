@@ -51,7 +51,7 @@ impl WeightToFeePolynomial for WeightToFee {
 }
 
 impl pallet_schemas::Config for Test {
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type MinSchemaModelSizeBytes = ConstU32<8>;
 	// a very high limit on incoming schema size, expected to be much higher than what
@@ -75,7 +75,7 @@ impl frame_system::Config for Test {
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<AccountId>;
 	type Header = Header;
-	type RuntimeEvent = RuntimeEven;
+	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
