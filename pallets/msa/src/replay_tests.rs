@@ -23,7 +23,7 @@ pub fn user_creates_and_delegates_to_provider(
 
 	let signature: MultiSignature = delegator_keypair.sign(&encode_add_provider_data).into();
 	assert_ok!(Msa::create_sponsored_account_with_delegation(
-		Origin::signed(provider_key.into()),
+		RuntimeOrigin::signed(provider_key.into()),
 		delegator_key.into(),
 		signature.clone(),
 		payload.clone()
@@ -42,7 +42,7 @@ pub fn user_adds_key_to_msa(
 	let signature_new_key: MultiSignature = new_pair.sign(&encode_add_key_data).into();
 
 	assert_ok!(Msa::add_public_key_to_msa(
-		Origin::signed(delegator_pair.public().into()),
+		RuntimeOrigin::signed(delegator_pair.public().into()),
 		delegator_pair.public().into(),
 		msa_owner_signature.into(),
 		signature_new_key,
@@ -56,9 +56,9 @@ fn create_user_and_provider() -> (sr25519::Pair, sr25519::Pair) {
 	let (delegator_keypair, _) = sr25519::Pair::generate();
 
 	// create MSA for provider and register them
-	assert_ok!(Msa::create(Origin::signed(provider_keypair.public().into())));
+	assert_ok!(Msa::create(RuntimeOrigin::signed(provider_keypair.public().into())));
 	assert_ok!(Msa::create_provider(
-		Origin::signed(provider_keypair.public().into()),
+		RuntimeOrigin::signed(provider_keypair.public().into()),
 		Vec::from("Foo")
 	));
 	(delegator_keypair, provider_keypair)
@@ -85,7 +85,10 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 		run_to_block(25);
 
 		// Step 2
-		assert_ok!(Msa::revoke_delegation_by_delegator(Origin::signed(delegator_key.into()), 1));
+		assert_ok!(Msa::revoke_delegation_by_delegator(
+			RuntimeOrigin::signed(delegator_key.into()),
+			1
+		));
 		run_to_block(40);
 
 		// Step 3
@@ -93,7 +96,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 		user_adds_key_to_msa(delegator_keypair, new_keypair.clone());
 
 		assert_ok!(Msa::delete_msa_public_key(
-			Origin::signed(new_keypair.public().into()),
+			RuntimeOrigin::signed(new_keypair.public().into()),
 			delegator_key.into(),
 		));
 		run_to_block(75);
@@ -101,7 +104,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 		// expect call create with same signature to fail
 		assert_err!(
 			Msa::create_sponsored_account_with_delegation(
-				Origin::signed(provider_key.into()),
+				RuntimeOrigin::signed(provider_key.into()),
 				delegator_key.into(),
 				signature.clone(),
 				add_provider_payload.clone(),
@@ -113,7 +116,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 		// expect this to fail for the same reason
 		assert_err!(
 			Msa::grant_delegation(
-				Origin::signed(provider_key.into()),
+				RuntimeOrigin::signed(provider_key.into()),
 				delegator_key.into(),
 				signature.clone(),
 				add_provider_payload.clone(),
@@ -141,23 +144,26 @@ fn replaying_grant_delegation_fails() {
 		let signature: MultiSignature = delegator_keypair.sign(&encode_add_provider_data).into();
 
 		// create MSA for delegator
-		assert_ok!(Msa::create(Origin::signed(delegator_key.into())));
+		assert_ok!(Msa::create(RuntimeOrigin::signed(delegator_key.into())));
 
 		assert_ok!(Msa::grant_delegation(
-			Origin::signed(provider_key.into()),
+			RuntimeOrigin::signed(provider_key.into()),
 			delegator_key.into(),
 			signature.clone(),
 			add_provider_payload.clone(),
 		));
 
 		// provider revokes the delegation.
-		assert_ok!(Msa::revoke_delegation_by_provider(Origin::signed(provider_key.into()), 2));
+		assert_ok!(Msa::revoke_delegation_by_provider(
+			RuntimeOrigin::signed(provider_key.into()),
+			2
+		));
 		System::set_block_number(System::block_number() + 1);
 
 		// Expected to fail because revoking the delegation just expires it at a given block number.
 		assert_err!(
 			Msa::grant_delegation(
-				Origin::signed(provider_key.into()),
+				RuntimeOrigin::signed(provider_key.into()),
 				delegator_key.into(),
 				signature.clone(),
 				add_provider_payload.clone(),
@@ -215,13 +221,13 @@ fn replaying_create_sponsored_account_with_delegation_fails_02() {
 		run_to_block(2);
 
 		// Step 2
-		assert_ok!(Msa::retire_msa(Origin::signed(delegator_key.into())));
+		assert_ok!(Msa::retire_msa(RuntimeOrigin::signed(delegator_key.into())));
 		run_to_block(3);
 
 		// Step 3
 		assert_noop!(
 			Msa::create_sponsored_account_with_delegation(
-				Origin::signed(provider_key.into()),
+				RuntimeOrigin::signed(provider_key.into()),
 				delegator_key.into(),
 				signature.clone(),
 				add_provider_payload.clone()
@@ -262,7 +268,7 @@ fn replaying_create_sponsored_account_with_delegation_fails_03() {
 
 		// Step 2.
 		assert_ok!(Msa::add_public_key_to_msa(
-			Origin::signed(delegator_key.into()),
+			RuntimeOrigin::signed(delegator_key.into()),
 			delegator_key.into(),
 			msa_owner_signature.into(),
 			new_key_owner_signature.into(),
@@ -272,7 +278,7 @@ fn replaying_create_sponsored_account_with_delegation_fails_03() {
 
 		// Step 3
 		assert_ok!(Msa::delete_msa_public_key(
-			Origin::signed(new_public_key.into()),
+			RuntimeOrigin::signed(new_public_key.into()),
 			delegator_key.into()
 		));
 		run_to_block(99);
@@ -280,7 +286,7 @@ fn replaying_create_sponsored_account_with_delegation_fails_03() {
 		// Step 4
 		assert_noop!(
 			Msa::create_sponsored_account_with_delegation(
-				Origin::signed(provider_key.into()),
+				RuntimeOrigin::signed(provider_key.into()),
 				delegator_key.into(),
 				original_msa_creation_signature.clone(),
 				add_provider_payload.clone()

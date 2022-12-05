@@ -136,8 +136,8 @@ pub fn test_public(n: u8) -> AccountId32 {
 
 /// Create and return a simple signed origin from a test_public constructed with the desired integer,
 /// for passing to an extrinsic call
-pub fn test_origin_signed(n: u8) -> Origin {
-	Origin::signed(test_public(n))
+pub fn test_origin_signed(n: u8) -> RuntimeOrigin {
+	RuntimeOrigin::signed(test_public(n))
 }
 
 /// Create a new keypair and an MSA associated with its public key.
@@ -195,10 +195,13 @@ pub fn create_provider_delegator_msas() -> (u64, Public, u64, Public) {
 		create_and_sign_add_provider_payload(delegator_pair, provider_msa_id);
 
 	// Register provider
-	assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
+	assert_ok!(Msa::create_provider(
+		RuntimeOrigin::signed(provider_account.into()),
+		Vec::from("Foo")
+	));
 
 	assert_ok!(Msa::grant_delegation(
-		Origin::signed(provider_account.into()),
+		RuntimeOrigin::signed(provider_account.into()),
 		delegator_account.into(),
 		delegator_signature,
 		add_provider_payload

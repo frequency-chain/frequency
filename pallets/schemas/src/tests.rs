@@ -52,7 +52,7 @@ fn require_valid_schema_size_errors() {
 		];
 		for tc in test_cases {
 			assert_noop!(
-				SchemasPallet::create_schema(Origin::signed(sender), create_bounded_schema_vec(tc.schema), ModelType::AvroBinary, PayloadLocation::OnChain),
+				SchemasPallet::create_schema(RuntimeOrigin::signed(sender), create_bounded_schema_vec(tc.schema), ModelType::AvroBinary, PayloadLocation::OnChain),
 				tc.expected.0);
 		}
 	})
@@ -64,7 +64,7 @@ fn register_schema_happy_path() {
 		sudo_set_max_schema_size();
 		let sender: AccountId = 1;
 		assert_ok!(SchemasPallet::create_schema(
-			Origin::signed(sender),
+			RuntimeOrigin::signed(sender),
 			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
 			ModelType::AvroBinary,
 			PayloadLocation::OnChain
@@ -79,7 +79,7 @@ fn register_schema_unhappy_path() {
 		let sender: AccountId = 1;
 		assert_noop!(
 			SchemasPallet::create_schema(
-				Origin::signed(sender),
+				RuntimeOrigin::signed(sender),
 				// name key does not have a colon
 				create_bounded_schema_vec(r#"{"name", 54, "type": "none"}"#),
 				ModelType::AvroBinary,
@@ -107,7 +107,7 @@ fn set_max_schema_size_fails_if_not_root() {
 		let sender: AccountId = 1;
 		let expected_err = BadOrigin;
 		assert_noop!(
-			SchemasPallet::set_max_schema_model_bytes(Origin::signed(sender), new_size),
+			SchemasPallet::set_max_schema_model_bytes(RuntimeOrigin::signed(sender), new_size),
 			expected_err
 		);
 	})
@@ -139,7 +139,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 		] {
 			let expected_schema_id = last_schema_id + 1;
 			assert_ok!(SchemasPallet::create_schema(
-				Origin::signed(sender),
+				RuntimeOrigin::signed(sender),
 				create_bounded_schema_vec(fields),
 				ModelType::AvroBinary,
 				PayloadLocation::OnChain
@@ -150,7 +150,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 			last_schema_id = expected_schema_id;
 		}
 		assert_ok!(SchemasPallet::create_schema(
-			Origin::signed(sender),
+			RuntimeOrigin::signed(sender),
 			create_bounded_schema_vec(r#"{"account":3050}"#),
 			ModelType::AvroBinary,
 			PayloadLocation::OnChain
@@ -167,7 +167,7 @@ fn get_existing_schema_by_id_should_return_schema() {
 		let test_str = r#"{"foo": "bar", "bar": "buzz"}"#;
 		let serialized_fields = Vec::from(test_str.as_bytes());
 		assert_ok!(SchemasPallet::create_schema(
-			Origin::signed(sender),
+			RuntimeOrigin::signed(sender),
 			create_bounded_schema_vec(test_str),
 			ModelType::AvroBinary,
 			PayloadLocation::OnChain
