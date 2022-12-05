@@ -4,7 +4,7 @@ use codec::Encode;
 use common_primitives::{messages::MessageResponse, schema::*};
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
-	weights::{Pays, PostDispatchInfo},
+	dispatch::{Pays, PostDispatchInfo},
 	BoundedVec,
 };
 use sp_std::vec::Vec;
@@ -225,7 +225,7 @@ fn on_initialize_should_add_messages_into_storage_and_clean_temp() {
 
 		assert_eq!(
 			events_occured[0].event,
-			Event::MessagesPallet(MessageEvent::MessagesStored {
+			RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
 				block_number: current_block,
 				schema_id: schema_id_1,
 				count: 2
@@ -234,7 +234,7 @@ fn on_initialize_should_add_messages_into_storage_and_clean_temp() {
 
 		assert_eq!(
 			events_occured[1].event,
-			Event::MessagesPallet(MessageEvent::MessagesStored {
+			RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
 				block_number: current_block,
 				schema_id: schema_id_2,
 				count: 1
