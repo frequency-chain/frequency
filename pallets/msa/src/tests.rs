@@ -1,7 +1,7 @@
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
+	dispatch::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 	pallet_prelude::InvalidTransaction,
-	weights::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 	BoundedBTreeMap,
 };
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Encode, Pair};
