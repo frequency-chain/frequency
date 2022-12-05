@@ -94,6 +94,10 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Install Required Packages
+        run: |
+          sudo apt-get update
+          sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -128,6 +132,10 @@ jobs:
           echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
           echo "METADATA_FILENAME=encoded-metadata-${{env.NETWORK}}-${{github.ref_name}}.amd64.json" >> $GITHUB_ENV
           echo "HOME=/home/ubuntu" >> $GITHUB_ENV
+      - name: Install Required Packages
+        run: |
+          sudo apt-get update
+          sudo apt install -y protobuf-compiler
       - name: Check Out Repo
         uses: actions/checkout@v3
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
