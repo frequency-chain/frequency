@@ -294,6 +294,14 @@ jobs:
         run: |
           curl -fsSL https://get.docker.com -o get-docker.sh
           sudo sh get-docker.sh
+      - name: Prune Docker Resources
+        run: |
+          set -ex
+          docker system prune -a --volumes -f
+          docker container prune -f
+          docker image prune -a -f
+          docker container ls
+          docker image ls
       - name: Extract Runtime Spec Version
         run: |
           echo "RUNTIME_SPEC_VERSION=$(sed -nr 's/spec_version:\s*([0-9]+),/\1/p' \

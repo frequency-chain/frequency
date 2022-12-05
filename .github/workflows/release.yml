@@ -8,6 +8,7 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+" # ex. v0.29.9
       - "v[0-9]+.[0-9]+.[0-9]+-[0-9]+" # ex. v0.29.9-1
       - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-1-rc1
+      - "vX.X.X" # used for testing only
 env:
   RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
   NEW_RELEASE_VERSION: ${{github.ref_name}}
@@ -23,12 +24,15 @@ jobs:
           - network: local
             spec: frequency-rococo-local
             build-profile: release
+            release-file-name-prefix: frequency-local
           - network: rococo
             spec: frequency-rococo-testnet
             build-profile: production
+            release-file-name-prefix: frequency-rococo
           - network: mainnet
             spec: frequency
             build-profile: production
+            release-file-name-prefix: frequency
           - os: [self-hosted, Linux, X64]
             arch: amd64
           - os: [self-hosted, Linux, ARM64]
@@ -39,7 +43,7 @@ jobs:
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
-          echo "RELEASE_BIN_FILENAME=frequency-${{matrix.network}}.${{matrix.arch}}" >> $GITHUB_ENV
+          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Set Ubuntu Env Vars
         run: |
           echo "HOME=/home/ubuntu" >> $GITHUB_ENV
@@ -118,12 +122,14 @@ jobs:
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
+            release-wasm-file-name-prefix: frequency-rococo_runtime
             features: frequency-rococo-testnet
           - network: mainnet
             build-profile: production
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
+            release-wasm-file-name-prefix: frequency_runtime
             features: frequency
     runs-on: [self-hosted, Linux, X64]
     steps:
@@ -142,6 +148,13 @@ jobs:
         run: |
           curl -fsSL https://get.docker.com -o get-docker.sh
           sudo sh get-docker.sh
+      - name: Prune Docker Resources
+        run: |
+          docker system prune -a --volumes -f
+          docker container prune -f
+          docker image prune -a -f
+          docker container ls
+          docker image ls
       - name: Extract Runtime Spec Version
         run: |
           echo "RUNTIME_SPEC_VERSION=$(sed -nr 's/spec_version:\s*([0-9]+),/\1/p' \
@@ -347,11 +360,14 @@ jobs:
         with:
           name: artifacts-${{github.run_id}}
           path: /tmp
+      - name: List Downloaded Artifacts
+        run: |
+          ls -la /tmp/frequency*.*
       - name: Publish Release on GitHub
         uses: softprops/action-gh-release@v1
         with:
           body_path: tools/ci/release-notes/release-notes.md
-          files: /tmp/frequency-*.*
+          files: /tmp/frequency*.*
       - name: Update latest tag
         if: env.IS_FULL_RELEASE == 'true'
         uses: rickstaa/action-create-tag@v1
