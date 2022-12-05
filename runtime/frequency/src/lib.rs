@@ -84,12 +84,16 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		{
 			matches!(
 				_call,
-				Call::System(..) |
-					Call::Timestamp(..) | Call::ParachainSystem(..) |
-					Call::Sudo(..) | Call::TechnicalCommittee(..) |
-					Call::Council(..) | Call::Democracy(..) |
-					Call::Session(..) | Call::Preimage(..) |
-					Call::Scheduler(..)
+				RuntimeCall::System(..) |
+					RuntimeCall::Timestamp(..) |
+					RuntimeCall::ParachainSystem(..) |
+					RuntimeCall::Sudo(..) |
+					RuntimeCall::TechnicalCommittee(..) |
+					RuntimeCall::Council(..) |
+					RuntimeCall::Democracy(..) |
+					RuntimeCall::Session(..) |
+					RuntimeCall::Preimage(..) |
+					RuntimeCall::Scheduler(..)
 			)
 		}
 	}
