@@ -2,7 +2,6 @@ mod rpc_mock;
 
 use super::*;
 use rpc_mock::*;
-
 use common_primitives::node::BlockNumber;
 use pallet_msa_runtime_api::MsaRuntimeApi;
 use serde_json::json;
@@ -18,12 +17,12 @@ const NOBODY: MessageSourceId = 99;
 sp_api::mock_impl_runtime_apis! {
 	impl MsaRuntimeApi<Block, AccountId> for TestRuntimeApi {
 		fn has_delegation(delegator: DelegatorId, _provider: ProviderId, _block_number: BlockNumber, _schema_id: Option<SchemaId>) -> bool {
-			if (delegator == DelegatorId(NOBODY)) { return false; }
+			if delegator == DelegatorId(NOBODY) { return false; }
 			true
 		}
 
 		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, _provider: ProviderId) -> Option<Vec<SchemaId>> {
-			if (delegator == DelegatorId(NOBODY)) { return None; }
+			if delegator == DelegatorId(NOBODY) { return None; }
 			let result: Vec<SchemaId> = vec![1,2];
 			Some(result)
 		}
@@ -53,13 +52,34 @@ async fn did_to_msa_id_works() {
 }
 
 #[tokio::test]
-async fn msa_id_to_did_document_works() {
+async fn did_to_msa_id_returns_none_when_not_found() {
+	let client = Arc::new(TestApi {});
+	let api = MsaHandler::new(client);
+	let did = Vec::from("did:dsnp:99");
+	let result = api.did_to_msa_id(did);
+	assert_eq!(true, result.is_ok());
+	assert_eq!(None, result.unwrap());
+}
+
+#[tokio::test]
+async fn did_to_msa_id_returns_err_when_bad_id() {
+	let client = Arc::new(TestApi {});
+	let api = MsaHandler::new(client);
+	let did = Vec::from("did:dsnp:foobie_bletch");
+
+	let error = api.did_to_msa_id(did).unwrap_err().to_string();
+	let expected_substr = "invalid digit found in string";
+	assert!(error.rfind(expected_substr).is_some())
+}
+
+#[tokio::test]
+async fn resolve_did_works() {
 	let client = Arc::new(TestApi {});
 	let api = MsaHandler::new(client);
 
-	let result = api.msa_id_to_did_document(1u64);
-	assert_eq!(true, result.is_ok());
+	let did = Vec::from("did:dsnp:99");
 
+	let result = api.resolve_did(did).ok();
 	let unwrapped: String = result.unwrap().unwrap();
 
 	let json: serde_json::Value = serde_json::from_str(&unwrapped.as_str()).unwrap();
@@ -77,3 +97,13 @@ async fn msa_id_to_did_document_works() {
 	});
 	assert_eq!(expected, actual_delegations[2]);
 }
+
+#[tokio::test]
+async fn resolve_did_returns_none_when_not_found() {
+	let client = Arc::new(TestApi {});
+	let api = MsaHandler::new(client);
+
+	let did = Vec::from("did:dsnp:99");
+	assert!(api.resolve_did(did).unwrap().is_none());
+}
+

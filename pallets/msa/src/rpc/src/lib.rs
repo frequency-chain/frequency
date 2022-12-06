@@ -1,16 +1,14 @@
 // Strong Documentation Lints
 #![deny(
-	rustdoc::broken_intra_doc_links,
-	rustdoc::missing_crate_level_docs,
-	rustdoc::invalid_codeblock_attributes,
-	missing_docs
+rustdoc::broken_intra_doc_links,
+rustdoc::missing_crate_level_docs,
+rustdoc::invalid_codeblock_attributes,
+missing_docs
 )]
 
 //! Custom APIs for [MSA](../pallet_msa/index.html)
 
-#[cfg(test)]
-mod tests;
-
+use std::num::ParseIntError;
 use std::sync::Arc;
 use String;
 
@@ -25,6 +23,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
+use common_helpers::rpc::map_other_error;
 #[cfg(feature = "std")]
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
@@ -33,10 +32,11 @@ use common_primitives::{
 	node::BlockNumber,
 	schema::SchemaId,
 };
-
 use common_primitives::did::{Did, KeyType};
-
 use pallet_msa_runtime_api::MsaRuntimeApi;
+
+#[cfg(test)]
+mod tests;
 
 /// Frequency MSA Custom RPC API
 #[rpc(client, server)]
@@ -66,8 +66,8 @@ pub trait MsaApi<BlockHash, AccountId> {
 	fn did_to_msa_id(&self, did: Vec<u8>) -> RpcResult<Option<MessageSourceId>>;
 
 	/// convert a given MSA Id to a DID document
-	#[method(name = "msa_idToDidDocument")]
-	fn msa_id_to_did_document(&self, msa_id: MessageSourceId) -> RpcResult<Option<String>>;
+	#[method(name = "msa_resolveDid")]
+	fn resolve_did(&self, did: Vec<u8>) -> RpcResult<Option<String>>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -81,17 +81,23 @@ impl<C, M> MsaHandler<C, M> {
 	pub fn new(client: Arc<C>) -> Self {
 		Self { client, _marker: Default::default() }
 	}
+
+	pub fn parse_msa_from_did_bytes(did_bytes: Vec<u8>) -> Result<MessageSourceId, String> {
+		let maybe_did_str = String::from_utf8(did_bytes).map_err(|e| e.to_string())?;
+		let (_, parsed_did) = DidParser::parse(maybe_did_str.as_str()).map_err(|e| e.to_string())?;
+		parsed_did.id.parse().map_err(|e: ParseIntError| e.to_string())
+	}
 }
 
 #[async_trait]
 impl<C, Block, AccountId> MsaApiServer<<Block as BlockT>::Hash, AccountId> for MsaHandler<C, Block>
-where
-	Block: BlockT,
-	C: Send + Sync + 'static,
-	C: ProvideRuntimeApi<Block>,
-	C: HeaderBackend<Block>,
-	C::Api: MsaRuntimeApi<Block, AccountId>,
-	AccountId: Codec,
+	where
+		Block: BlockT,
+		C: Send + Sync + 'static,
+		C: ProvideRuntimeApi<Block>,
+		C: HeaderBackend<Block>,
+		C::Api: MsaRuntimeApi<Block, AccountId>,
+		AccountId: Codec,
 {
 	// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
 	// fn get_msa_keys(&self, msa_id: MessageSourceId) -> RpcResult<Vec<KeyInfoResponse<AccountId>>> {
@@ -127,7 +133,7 @@ where
 					Err(e) => {
 						warn!("ApiError from has_delegation! {:?}", e);
 						false
-					},
+					}
 				};
 				(delegator_msa_id, has_delegation)
 			})
@@ -146,35 +152,36 @@ where
 		map_rpc_result(runtime_api_result)
 	}
 
-	// This returns some stuff
+	/// A simple way to find out if a DID resolves to an MSA ID and nothing else.
 	fn did_to_msa_id(&self, did: Vec<u8>) -> RpcResult<Option<MessageSourceId>> {
-		let result = String::from_utf8(did);
-		match result {
-			Err(_) => Ok(None),
-			Ok(did_string) => {
-				let res = DidParser::parse(&did_string);
-				if res.is_err() {
-					return Ok(None)
-				}
-				let (_, did) = res.unwrap();
+		match Self::parse_msa_from_did_bytes(did) {
+			Ok(msa_id) => {
 				let api = self.client.runtime_api();
 				let at = BlockId::hash(self.client.info().best_hash);
-
-				// TODO: remove unwraps & handle errors
-				let msa_id: MessageSourceId = did.id.parse().unwrap();
-				let key_count = api.get_public_key_count_by_msa_id(&at, msa_id).unwrap();
-				match key_count {
-					0 => Ok(None),
-					_ => Ok(Some(msa_id)),
+				match api.get_public_key_count_by_msa_id(&at, msa_id) {
+					Ok(key_count) => {
+						match key_count {
+							0 => Ok(None),
+							_ => Ok(Some(msa_id)),
+						}
+					}
+					Err(e) => map_rpc_result(Err(e))
 				}
-			},
+			}
+			Err(e) => map_other_error(e.to_string())
 		}
 	}
 
-	fn msa_id_to_did_document(&self, msa_id: MessageSourceId) -> RpcResult<Option<String>> {
+	/// Resolves an DID to a DID document.
+	fn resolve_did(&self, did: Vec<u8>) -> RpcResult<Option<String>> {
+		let msa_id = Self::parse_msa_from_did_bytes(did)
+			.or_else(|e| map_other_error(e))?;
+
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		let key_count = api.get_public_key_count_by_msa_id(&at, msa_id).unwrap();
+
+		let key_count = api.get_public_key_count_by_msa_id(&at, msa_id)
+			.or_else(|e| map_rpc_result(Err(e)))?;
 		match key_count {
 			0 => Ok(None),
 			_ => {
@@ -194,10 +201,11 @@ where
 				doc.capability_delegation = capability_delegations;
 				// get the key that was used to sign the delegation???? or just any key, or all keys?
 				// because we don't necessarily know what key the provider will use to sign batch message announcements.
-				// TODO: remove unwraps & handle errors
-				let result = serde_json::to_string(&doc).unwrap();
-				Ok(Some(result))
-			},
+				match serde_json::to_string(&doc) {
+					Ok(stringified) => Ok(Some(stringified)),
+					Err(e) => map_other_error(e.to_string()),
+				}
+			}
 		}
 	}
 }
