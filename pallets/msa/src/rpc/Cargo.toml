@@ -1,6 +1,6 @@
 [package]
 name = "pallet-msa-rpc"
-version = "0.9.30"
+version = "0.9.32"
 description = "A package that adds RPC to Msa pallet"
 authors = ["Frequency"]
 license = "Apache-2.0"
@@ -18,10 +18,10 @@ pallet-msa-runtime-api = { default-features = false, path = "../runtime-api" }
 common-primitives = { default-features = false, path = "../../../../common/primitives" }
 common-helpers = { default-features = false, path = "../../../../common/helpers" }
 # Substrate packages
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.32" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.32" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.32" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.32" }
 
 [features]
 default = ["std"]

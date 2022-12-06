@@ -351,7 +351,7 @@ parameter_types! {
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(10) * RuntimeBlockWeights::get().max_block;
 	// The maximum number of scheduled calls in the queue for a single block. Not strictly enforced, but used for weight estimation.
 	// Retry a scheduled item every 25 blocks (5 minute) until the preimage exists.
-	// Will be removed in v0.9.30
+	// Will be removed in v0.9.32
 	pub const NoPreimagePostponement: Option<u32> = Some(5 * MINUTES);
 }
 
@@ -372,7 +372,7 @@ impl pallet_scheduler::Config for Runtime {
 	type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
 	type OriginPrivilegeCmp = EqualPrivilegeOnly;
 	type PreimageProvider = Preimage;
-	// Will be removed in v0.9.30
+	// Will be removed in v0.9.32
 	type NoPreimagePostponement = NoPreimagePostponement;
 }
 
