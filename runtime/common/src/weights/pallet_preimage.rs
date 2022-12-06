@@ -33,91 +33,90 @@ use sp_std::marker::PhantomData;
 /// Weights for pallet_preimage using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_preimage::WeightInfo for SubstrateWeight<T> {
-	// Storage: Preimage PreimageFor (r:1 w:1)
 	// Storage: Preimage StatusFor (r:1 w:1)
+	// Storage: Preimage PreimageFor (r:0 w:1)
 	/// The range of component `s` is `[0, 4194304]`.
 	fn note_preimage(s: u32, ) -> Weight {
-		Weight::from_ref_time(110_530_000 as u64)
+		Weight::from_ref_time(318_151_881 as u64)
 			// Standard Error: 6
-			.saturating_add(Weight::from_ref_time(4_419 as u64).saturating_mul(s as u64))
-			.saturating_add(T::DbWeight::get().reads(2 as u64))
+			.saturating_add(Weight::from_ref_time(3_312 as u64).saturating_mul(s as u64))
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
-	// Storage: Preimage PreimageFor (r:1 w:1)
-	// Storage: Preimage StatusFor (r:1 w:0)
+	// Storage: Preimage StatusFor (r:1 w:1)
+	// Storage: Preimage PreimageFor (r:0 w:1)
 	/// The range of component `s` is `[0, 4194304]`.
 	fn note_requested_preimage(s: u32, ) -> Weight {
-		Weight::from_ref_time(51_820_000 as u64)
-			// Standard Error: 5
-			.saturating_add(Weight::from_ref_time(4_420 as u64).saturating_mul(s as u64))
-			.saturating_add(T::DbWeight::get().reads(2 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+		Weight::from_ref_time(41_571_000 as u64)
+			// Standard Error: 2
+			.saturating_add(Weight::from_ref_time(3_423 as u64).saturating_mul(s as u64))
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
-	// Storage: Preimage PreimageFor (r:1 w:1)
-	// Storage: Preimage StatusFor (r:1 w:0)
+	// Storage: Preimage StatusFor (r:1 w:1)
+	// Storage: Preimage PreimageFor (r:0 w:1)
 	/// The range of component `s` is `[0, 4194304]`.
 	fn note_no_deposit_preimage(s: u32, ) -> Weight {
-		Weight::from_ref_time(46_984_000 as u64)
-			// Standard Error: 5
-			.saturating_add(Weight::from_ref_time(4_394 as u64).saturating_mul(s as u64))
-			.saturating_add(T::DbWeight::get().reads(2 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+		Weight::from_ref_time(4_538_777 as u64)
+			// Standard Error: 4
+			.saturating_add(Weight::from_ref_time(3_419 as u64).saturating_mul(s as u64))
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: Preimage StatusFor (r:1 w:1)
 	// Storage: Preimage PreimageFor (r:0 w:1)
 	fn unnote_preimage() -> Weight {
-		Weight::from_ref_time(119_223_000 as u64)
+		Weight::from_ref_time(91_834_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: Preimage StatusFor (r:1 w:1)
 	// Storage: Preimage PreimageFor (r:0 w:1)
 	fn unnote_no_deposit_preimage() -> Weight {
-		Weight::from_ref_time(83_502_000 as u64)
+		Weight::from_ref_time(66_296_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: Preimage StatusFor (r:1 w:1)
 	fn request_preimage() -> Weight {
-		Weight::from_ref_time(121_663_000 as u64)
+		Weight::from_ref_time(63_724_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Preimage StatusFor (r:1 w:1)
 	fn request_no_deposit_preimage() -> Weight {
-		Weight::from_ref_time(82_421_000 as u64)
+		Weight::from_ref_time(36_681_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Preimage StatusFor (r:1 w:1)
 	fn request_unnoted_preimage() -> Weight {
-		Weight::from_ref_time(55_872_000 as u64)
+		Weight::from_ref_time(41_362_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Preimage StatusFor (r:1 w:1)
 	fn request_requested_preimage() -> Weight {
-		Weight::from_ref_time(25_760_000 as u64)
+		Weight::from_ref_time(18_888_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Preimage StatusFor (r:1 w:1)
 	// Storage: Preimage PreimageFor (r:0 w:1)
 	fn unrequest_preimage() -> Weight {
-		Weight::from_ref_time(86_227_000 as u64)
+		Weight::from_ref_time(60_660_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: Preimage StatusFor (r:1 w:1)
-	// Storage: Preimage PreimageFor (r:0 w:1)
 	fn unrequest_unnoted_preimage() -> Weight {
-		Weight::from_ref_time(65_497_000 as u64)
+		Weight::from_ref_time(19_451_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Preimage StatusFor (r:1 w:1)
 	fn unrequest_multi_referenced_preimage() -> Weight {
-		Weight::from_ref_time(27_696_000 as u64)
+		Weight::from_ref_time(18_964_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}

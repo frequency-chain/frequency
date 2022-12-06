@@ -34,35 +34,33 @@ use sp_std::marker::PhantomData;
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T> {
 	fn spend() -> Weight {
-		Weight::from_ref_time(611_000 as u64)
+		Weight::from_ref_time(709_000 as u64)
 	}
 	// Storage: Treasury ProposalCount (r:1 w:1)
 	// Storage: Treasury Proposals (r:0 w:1)
 	fn propose_spend() -> Weight {
-		Weight::from_ref_time(102_449_000 as u64)
+		Weight::from_ref_time(113_966_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: Treasury Proposals (r:1 w:1)
 	// Storage: System Account (r:1 w:1)
 	fn reject_proposal() -> Weight {
-		Weight::from_ref_time(110_469_000 as u64)
+		Weight::from_ref_time(137_906_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: Treasury Proposals (r:1 w:0)
 	// Storage: Treasury Approvals (r:1 w:1)
 	/// The range of component `p` is `[0, 63]`.
-	fn approve_proposal(p: u32, ) -> Weight {
-		Weight::from_ref_time(33_926_000 as u64)
-			// Standard Error: 5_066
-			.saturating_add(Weight::from_ref_time(514_339 as u64).saturating_mul(p as u64))
+	fn approve_proposal(_p: u32, ) -> Weight {
+		Weight::from_ref_time(46_126_781 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Treasury Approvals (r:1 w:1)
 	fn remove_approval() -> Weight {
-		Weight::from_ref_time(23_708_000 as u64)
+		Weight::from_ref_time(19_168_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -71,12 +69,12 @@ impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T>
 	// Storage: Treasury Proposals (r:1 w:1)
 	/// The range of component `p` is `[0, 64]`.
 	fn on_initialize_proposals(p: u32, ) -> Weight {
-		Weight::from_ref_time(68_439_000 as u64)
-			// Standard Error: 210_726
-			.saturating_add(Weight::from_ref_time(70_569_107 as u64).saturating_mul(p as u64))
+		Weight::from_ref_time(141_080_734 as u64)
+			// Standard Error: 213_202
+			.saturating_add(Weight::from_ref_time(53_092_909 as u64).saturating_mul(p as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().reads((3 as u64).saturating_mul(p as u64)))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(2 as u64))
 			.saturating_add(T::DbWeight::get().writes((3 as u64).saturating_mul(p as u64)))
 	}
 }
