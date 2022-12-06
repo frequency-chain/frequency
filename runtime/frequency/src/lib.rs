@@ -371,9 +371,7 @@ impl pallet_scheduler::Config for Runtime {
 	type MaxScheduledPerBlock = SchedulerMaxScheduledPerBlock;
 	type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
 	type OriginPrivilegeCmp = EqualPrivilegeOnly;
-	type PreimageProvider = Preimage;
-	// Will be removed in v0.9.32
-	type NoPreimagePostponement = NoPreimagePostponement;
+	type Preimages = Preimage;
 }
 
 impl pallet_preimage::Config for Runtime {
@@ -385,8 +383,6 @@ impl pallet_preimage::Config for Runtime {
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMember<AccountId, TechnicalCommitteeCollective>,
 	>;
-	/// Expected to be removed in Polkadot v0.9.31
-	type MaxSize = PreimageMaxSize;
 	type BaseDeposit = PreimageBaseDeposit;
 	type ByteDeposit = PreimageByteDeposit;
 }
@@ -429,13 +425,14 @@ impl pallet_democracy::Config for Runtime {
 	type MaxProposals = DemocracyMaxProposals;
 	type MaxVotes = DemocracyMaxVotes;
 	type MinimumDeposit = MinimumDeposit;
-	type PreimageByteDeposit = PreimageByteDeposit;
-	type Proposal = RuntimeCall;
 	type Scheduler = Scheduler;
 	type Slash = (); // Treasury;
 	type WeightInfo = weights::pallet_democracy::SubstrateWeight<Runtime>;
 	type VoteLockingPeriod = EnactmentPeriod; // Same as EnactmentPeriod
 	type VotingPeriod = VotingPeriod;
+	type Preimages = Preimage;
+	type MaxDeposits = ConstU32<100>;
+	type MaxBlacklisted = ConstU32<100>;
 
 	// See https://paritytech.github.io/substrate/master/pallet_democracy/index.html for
 	// the descriptions of these origins.
@@ -490,8 +487,6 @@ impl pallet_democracy::Config for Runtime {
 	/// Any single technical committee member may veto a coming council proposal, however they can
 	/// only do it once and it lasts only for the cool-off period.
 	type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCommitteeCollective>;
-
-	type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
 }
 
 impl pallet_treasury::Config for Runtime {
