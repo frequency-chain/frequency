@@ -48,7 +48,10 @@ default = ["std"]
 frequency = []
 frequency-rococo-testnet = []
 frequency-rococo-local = []
-std = ["frame-support/std"]
+std = [
+	"frame-support/std",
+	"cumulus-primitives-core/std",
+]
 try-runtime = [
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
