@@ -26,6 +26,8 @@ where
 	///  Message source account id (the original source).
 	pub msa_id: Option<MessageSourceId>,
 	///  Stores index of message in block to keep total order.
+	// Is this index really needed, messages don't end up ordered in the Messages strorage Item (form on_initialize)?
+	// Maybe necessary for reading purposes from the StorageDoubleMap I guess?
 	pub index: u16,
 }
 

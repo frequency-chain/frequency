@@ -381,7 +381,7 @@ pub mod pallet {
 		///
 		/// * [`Error::KeyAlreadyRegistered`] - MSA is already registered to the Origin.
 		///
-		#[pallet::weight(T::WeightInfo::create(10_000))]
+		#[pallet::weight(T::WeightInfo::create(10_000))] // Number of accounts is not part of the extrinsic complexity
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -427,7 +427,7 @@ pub mod pallet {
 
 			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 
-			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?; // Shouldn't it be the first thing to check?
 			ensure!(
 				add_provider_payload.authorized_msa_id == provider_msa_id,
 				Error::<T>::UnauthorizedProvider
@@ -474,7 +474,7 @@ pub mod pallet {
 			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
 				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
-			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?; // check first?
 			ProviderToRegistryEntry::<T>::try_mutate(
 				ProviderId(provider_msa_id),
 				|maybe_metadata| -> DispatchResult {
@@ -621,7 +621,7 @@ pub mod pallet {
 
 			let msa_id = add_key_payload.msa_id;
 
-			Self::ensure_msa_owner(&msa_owner_public_key, msa_id)?;
+			Self::ensure_msa_owner(&msa_owner_public_key, msa_id)?; // Shouldn't be the first thing to check?
 
 			Self::add_key(
 				msa_id,
@@ -684,7 +684,7 @@ pub mod pallet {
 		/// * [`Error::DelegationRevoked`] - delegation is already revoked
 		/// * [`Error::DelegationNotFound`] - no Delegation found between origin MSA and delegator MSA.
 		///
-		#[pallet::weight((T::WeightInfo::revoke_delegation_by_provider(20_000), DispatchClass::Normal, Pays::No))]
+		#[pallet::weight((T::WeightInfo::revoke_delegation_by_provider(20_000), DispatchClass::Normal, Pays::No))]  // Number of delegations is not part of the extrinsic complexity
 		pub fn revoke_delegation_by_provider(
 			origin: OriginFor<T>,
 			#[pallet::compact] delegator: MessageSourceId,
@@ -720,6 +720,8 @@ pub mod pallet {
 		/// * [`Error::DelegationNotFound`] no delegation relationship between Origin and Delegator or Origin and Delegator are the same.
 		/// * [`Error::ExceedsMaxSchemaGrantsPerDelegation`] the limit of maximum allowed grants per delegation relationship has been exceeded.
 		///
+		// Number of delegations is not part of the extrinsic complexity
+		// I could see a dependancy on the length of `schema_ids` as they should be checked as valid. However, considering its small number the difference can be neglected
 		#[pallet::weight(T::WeightInfo::grant_schema_permissions(20_000))]
 		pub fn grant_schema_permissions(
 			origin: OriginFor<T>,
@@ -748,7 +750,7 @@ pub mod pallet {
 		/// - [`DelegationNotFound`](Error::DelegationNotFound) - If there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
 		/// - [`SchemaNotGranted`](Error::SchemaNotGranted) - If attempting to revoke a schema that has not previously been granted.
 		///
-		#[pallet::weight(T::WeightInfo::revoke_schema_permissions(20_000))]
+		#[pallet::weight(T::WeightInfo::revoke_schema_permissions(20_000))] // Number of delegations is not part of the extrinsic complexity
 		pub fn revoke_schema_permissions(
 			origin: OriginFor<T>,
 			provider_msa_id: MessageSourceId,
@@ -902,7 +904,7 @@ impl<T: Config> Pallet<T> {
 			// Increment the key counter
 			<PublicKeyCountForMsaId<T>>::try_mutate(msa_id, |key_count| {
 				// key_count:u8 should default to 0 if it does not exist
-				let incremented_key_count: u8 = *key_count + 1;
+				let incremented_key_count: u8 = *key_count + 1; // Not checking overflow here?
 				ensure!(
 					incremented_key_count <= T::MaxPublicKeysPerMsa::get(),
 					Error::<T>::KeyLimitExceeded
@@ -1097,8 +1099,9 @@ impl<T: Config> Pallet<T> {
 		// TODO: Handle case when the number of providers exceeds the expected number.  Issue #678
 		let result = DelegatorAndProviderToDelegation::<T>::clear_prefix(
 			delegator,
-			EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR,
-			None,
+			EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR, // Consider moving this constant as a Configuration type to be set in the pallet impl
+			None, // Handle case when the number of providers exceeds the expected number. (already in TODO)
+			// Also make sure that for the MAX, the operation weight fits in a single block
 		);
 		result.unique
 	}
@@ -1206,8 +1209,8 @@ impl<T: Config> Pallet<T> {
 		// Clear the previous bucket block set
 		let multi_removal_result = <PayloadSignatureRegistry<T>>::clear_prefix(
 			prior_bucket_num,
-			T::MaxSignaturesPerBucket::get(),
-			None,
+			T::MaxSignaturesPerBucket::get(), // I couldn't find any limitation for the number of PayloadSignatures that can be registered
+			None, // If there are more than 'MaxSignaturesPerBucket' items, you should check 'multi_removal_result.maybe_cursor' and handle the situation.
 		);
 		T::WeightInfo::on_initialize(multi_removal_result.unique)
 	}
@@ -1216,13 +1219,13 @@ impl<T: Config> Pallet<T> {
 	/// to be for current_block
 	/// This is calculated to be past the risk of a replay attack
 	fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
-		let mortality_size = (T::NumberOfBuckets::get() - 1) * T::MortalityWindowSize::get();
-		current_block + T::BlockNumber::from(mortality_size)
+		let mortality_size = (T::NumberOfBuckets::get() - 1) * T::MortalityWindowSize::get(); // underflow/overflow check?
+		current_block + T::BlockNumber::from(mortality_size) // overflow check?
 	}
 
 	/// calculate the virtual bucket number for the provided block number
 	pub fn bucket_for(block_number: T::BlockNumber) -> T::BlockNumber {
-		block_number / (T::BlockNumber::from(T::MortalityWindowSize::get())) %
+		block_number / (T::BlockNumber::from(T::MortalityWindowSize::get())) % // checked operations?
 			T::BlockNumber::from(T::NumberOfBuckets::get())
 	}
 }

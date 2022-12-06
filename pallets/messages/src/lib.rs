@@ -208,10 +208,15 @@ pub mod pallet {
 		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
 		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
 		///
+		// Wondering how the total number of messages affects in this case to calculate the weight
+		// Also why 1_000 is used. Shouldn't be MaxMessagesPerBlock as worst case?
 		#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() as u32, 1_000))]
 		pub fn add_ipfs_message(
 			origin: OriginFor<T>,
 			#[pallet::compact] schema_id: SchemaId,
+			// CID format doesn't have a expected format with a fixed length?
+			// Consider creating a new type for it instead of a Vec<u8> of arbitrary length
+			// (Maybe not, apparently there are 2 different versions)
 			cid: Vec<u8>,
 			#[pallet::compact] payload_length: u32,
 		) -> DispatchResultWithPostInfo {
@@ -229,7 +234,7 @@ pub mod pallet {
 				Error::<T>::InvalidPayloadLocation
 			);
 
-			let provider_msa_id = Self::find_msa_id(&provider_key)?;
+			let provider_msa_id = Self::find_msa_id(&provider_key)?; // Probably check this first rigt after getting the provider_key ?
 			let message = Self::add_message(provider_msa_id, None, bounded_payload, schema_id)?;
 
 			Ok(Some(T::WeightInfo::add_ipfs_message(cid.len() as u32, message.index as u32)).into())
@@ -248,6 +253,8 @@ pub mod pallet {
 		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
 		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
 		///
+		// Wondering how the total number of messages affects in this case to calculate the weight
+		// Also why 1_000 is used. Shouldn't be MaxMessagesPerBlock as worst case?
 		#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() as u32, 1_000))]
 		pub fn add_onchain_message(
 			origin: OriginFor<T>,
@@ -267,7 +274,7 @@ pub mod pallet {
 				Error::<T>::InvalidPayloadLocation
 			);
 
-			let provider_msa_id = Self::find_msa_id(&provider_key)?;
+			let provider_msa_id = Self::find_msa_id(&provider_key)?; // Same, should it be the first thing to check?
 			let provider_id = ProviderId(provider_msa_id);
 
 			let current_block = frame_system::Pallet::<T>::block_number();

@@ -198,6 +198,8 @@ pub mod pallet {
 		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		///
+		// Wondering how the total number of Schemas affects in this case to calculate the weight
+		// Also why 1_000 is used. Shouldn't be MaxSchemaRegistrations as worst case?
 		#[pallet::weight(< T as Config >::WeightInfo::create_schema(model.len() as u32, 1000))]
 		pub fn create_schema(
 			origin: OriginFor<T>,
@@ -205,6 +207,9 @@ pub mod pallet {
 			model_type: ModelType,
 			payload_location: PayloadLocation,
 		) -> DispatchResult {
+			// Anyone with enough balance to pay fot the tx can create Schemas?
+			// Considering there is a fixed max number of those, might be a good idea limiting access to this method.
+			// You could for example lock/resrve some tokens (deposit for creating the Schame) or add a especial origin (Governance and Providers?)
 			let sender = ensure_signed(origin)?;
 
 			ensure!(
@@ -212,7 +217,7 @@ pub mod pallet {
 				Error::<T>::LessThanMinSchemaModelBytes
 			);
 			ensure!(
-				model.len() < Self::get_schema_model_max_bytes() as usize,
+				model.len() < Self::get_schema_model_max_bytes() as usize, // < or <= ?
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 
@@ -235,7 +240,7 @@ pub mod pallet {
 		/// # Errors
 		/// * [`Error::ExceedsMaxSchemaModelBytes`] - Cannot set to above the hard coded maximum [`Config::SchemaModelMaxBytesBoundedVecLimit`]
 		///
-		#[pallet::weight(30_000)]
+		#[pallet::weight(30_000)] // Set as DispatchClass::Operational
 		pub fn set_max_schema_model_bytes(
 			origin: OriginFor<T>,
 			#[pallet::compact] max_size: u32,

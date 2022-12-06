@@ -69,7 +69,7 @@ pub use common_runtime::{
 /// Basefilter to only allow specified transactions call to be executed
 pub struct BaseCallFilter;
 impl Contains<Call> for BaseCallFilter {
-	fn contains(call: &Call) -> bool {
+	fn contains(call: &Call) -> bool { // I see some missing pallets here, did you double check you have all you want?
 		let core_calls = match call {
 			Call::System(..) => true,
 			Call::Timestamp(..) => true,
@@ -386,6 +386,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type Event = Event;
 	type MotionDuration = CouncilMotionDuration;
 	type MaxProposals = CouncilMaxProposals;
+	 // Only one member? I guess it will be just sudo for now? To be consistent, probably move the value to constants.rs
 	type MaxMembers = ConstU32<1>;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
@@ -420,7 +421,7 @@ impl pallet_democracy::Config for Runtime {
 	type PreimageByteDeposit = PreimageByteDeposit;
 	type Proposal = Call;
 	type Scheduler = Scheduler;
-	type Slash = (); // Treasury;
+	type Slash = (); // Treasury; // Null for now?
 	type WeightInfo = weights::pallet_democracy::SubstrateWeight<Runtime>;
 	type VoteLockingPeriod = EnactmentPeriod; // Same as EnactmentPeriod
 	type VotingPeriod = VotingPeriod;
@@ -544,6 +545,8 @@ impl pallet_treasury::Config for Runtime {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type Event = Event;
+	// You are not handling the fees, you are just burning them (). Take a look at DealWithFees in Statemint
+	// to send the fees to the ToStakingPot to be eventually collected by the Block Authors
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
 	type WeightToFee = WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
@@ -600,7 +603,7 @@ impl pallet_collator_selection::Config for Runtime {
 
 	// Account Identifier from which the internal Pot is generated.
 	// Set to something that NEVER gets a balance i.e. No block rewards.
-	type PotId = NeverDepositIntoId;
+	type PotId = NeverDepositIntoId; // I see here that you do not want collators to collect fees
 
 	// Maximum number of candidates that we should have. This is enforced in code.
 	//
