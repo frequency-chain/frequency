@@ -1037,6 +1037,7 @@ name = "common-runtime"
 version = "0.9.32"
 dependencies = [
  "common-primitives",
+ "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "orml-vesting",
