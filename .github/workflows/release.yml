@@ -150,9 +150,14 @@ jobs:
           sudo sh get-docker.sh
       - name: Prune Docker Resources
         run: |
-          docker system prune -a --volumes -f
+          set -x
+          containers=$(docker ps -q)
+          if [ ! -z $containers ]; then
+            docker kill $containers;
+          fi
           docker container prune -f
           docker image prune -a -f
+          docker system prune -a --volumes -f
           docker container ls
           docker image ls
       - name: Extract Runtime Spec Version
