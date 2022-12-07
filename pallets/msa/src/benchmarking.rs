@@ -58,16 +58,6 @@ fn add_key_payload_and_signature<T: Config>(
 	(add_key_payload, MultiSignature::Sr25519(signature.into()), acc.into())
 }
 
-fn create_account_with_msa_id<T: Config>(n: u32) -> (T::AccountId, MessageSourceId) {
-	let provider = create_account::<T>("account", n);
-
-	assert_ok!(Msa::<T>::create(RawOrigin::Signed(provider.clone()).into()));
-
-	let msa_id = Msa::<T>::ensure_valid_msa_key(&provider).unwrap();
-
-	(provider.clone(), msa_id)
-}
-
 fn create_msa_account_and_keys<T: Config>() -> (T::AccountId, SignerId, MessageSourceId) {
 	let key_pair = SignerId::generate_pair(None);
 	let account_id = T::AccountId::decode(&mut &key_pair.encode()[..]).unwrap();
@@ -77,22 +67,11 @@ fn create_msa_account_and_keys<T: Config>() -> (T::AccountId, SignerId, MessageS
 	(account_id, key_pair, msa_id)
 }
 
-fn add_delegation<T: Config>(delegator: DelegatorId, provider: ProviderId) {
-	let schema_ids: Vec<SchemaId> = (1..31 as u16).collect::<Vec<_>>();
-	T::SchemaValidator::set_schema_count(schema_ids.len().try_into().unwrap());
-	assert_ok!(Msa::<T>::add_provider(provider, delegator, schema_ids));
-}
-
 pub fn generate_test_signature() -> MultiSignature {
 	let account = SignerId::generate_pair(None);
 	let fake_data = vec![4u8; 32];
 	let signature = account.sign(&fake_data).unwrap();
 	MultiSignature::Sr25519(signature.into())
-}
-
-fn register_signature<T: Config>(mortality_block: u32) {
-	let sig = generate_test_signature();
-	assert_ok!(Msa::<T>::register_signature(&sig, T::BlockNumber::from(mortality_block)));
 }
 
 benchmarks! {
@@ -121,13 +100,17 @@ benchmarks! {
 	}
 
 	revoke_delegation_by_provider {
-		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
-		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
-		add_delegation::<T>(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id.clone()));
+		let provider_account = create_account::<T>("account", 0);
+		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(provider_account.into(), EMPTY_FUNCTION).unwrap();
 
-	}: _ (RawOrigin::Signed(provider), delegator_msa_id)
+		let delegator_account = create_account::<T>("account", 1);
+		let (delegator_msa_id, _) = Msa::<T>::create_account(delegator_account.into(), EMPTY_FUNCTION).unwrap();
+
+		assert_ok!(Msa::<T>::add_provider(ProviderId(provider_msa_id.clone()), DelegatorId(delegator_msa_id.clone()), vec![]));
+	}: _ (RawOrigin::Signed(provider_public_key), delegator_msa_id.clone())
 	verify {
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+		assert_eq!(Msa::<T>::get_delegation(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).unwrap().revoked_at, T::BlockNumber::from(1u32));
 	}
 
 	add_public_key_to_msa {
@@ -138,7 +121,6 @@ benchmarks! {
 
 		let encoded_add_key_payload = wrap_binary_data(add_key_payload.encode());
 		let owner_signature = MultiSignature::Sr25519(delegator_key_pair.sign(&encoded_add_key_payload).unwrap().into());
-
 	}: _ (RawOrigin::Signed(provider_public_key.clone()), delegator_public_key.clone(), owner_signature, new_public_key_signature, add_key_payload)
 	verify {
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
@@ -196,64 +178,76 @@ benchmarks! {
 	}
 
 	revoke_delegation_by_delegator {
-		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
-		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
+		let provider_account = create_account::<T>("account", 0);
+		let (provider_msa_id, provider) = Msa::<T>::create_account(provider_account.into(), EMPTY_FUNCTION).unwrap();
+
+		let delegator_account = create_account::<T>("account", 1);
+		let (delegator_msa_id, delegator_public_key) = Msa::<T>::create_account(delegator_account.into(), EMPTY_FUNCTION).unwrap();
 
 		assert_ok!(Msa::<T>::add_provider(ProviderId(provider_msa_id), DelegatorId(delegator_msa_id), vec![]));
-	}: _ (RawOrigin::Signed(delegator), provider_msa_id)
+	}: _ (RawOrigin::Signed(delegator_public_key), provider_msa_id)
 	verify {
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+		assert_eq!(Msa::<T>::get_delegation(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).unwrap().revoked_at, T::BlockNumber::from(1u32));
 	}
 
 	create_provider {
-		let (provider, _provider_msa_id) = create_account_with_msa_id::<T>(1);
-	}: _ (RawOrigin::Signed(provider), Vec::from("Foo"))
+		let account = create_account::<T>("account", 0);
+		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account.into(), EMPTY_FUNCTION).unwrap();
+	}: _ (RawOrigin::Signed(provider_public_key), Vec::from("Foo"))
+	verify {
+		assert!(Msa::<T>::get_provider_registry_entry(ProviderId(provider_msa_id)).is_some());
+	}
 
 	on_initialize {
 		// we should not need to max out storage for this benchmark, see:
 		// https://substrate.stackexchange.com/a/4430/2060
 		let m in 1 .. 3_000;
 		for j in 0 .. m {
-			let mortality = 49;
-			register_signature::<T>(mortality as u32);
+			let mortality_block = 49 as u32;
+			let sig = generate_test_signature();
+			assert_ok!(Msa::<T>::register_signature(&sig, T::BlockNumber::from(mortality_block)));
 		}
 	}: {
 		Msa::<T>::on_initialize(200u32.into());
 	}
 
 	grant_schema_permissions {
-		let s in 5 .. 1005;
+		let s in 0 .. T::MaxSchemaGrantsPerDelegation::get();
 
-		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
-		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
-		add_delegation::<T>(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id.clone()));
+		let provider_account = create_account::<T>("account", 0);
+		let (provider_msa_id, provider) = Msa::<T>::create_account(provider_account.into(), EMPTY_FUNCTION).unwrap();
 
-		for j in 2 .. s {
-			let (other, other_msa_id) = create_account_with_msa_id::<T>(j);
-			add_delegation::<T>(DelegatorId(other_msa_id), ProviderId(provider_msa_id.clone()));
-		}
+		let delegator_account = create_account::<T>("account", 1);
+		let (delegator_msa_id, delegator_public_key) = Msa::<T>::create_account(delegator_account.into(), EMPTY_FUNCTION).unwrap();
 
-		let schema_ids: Vec<SchemaId> = (1..31 as u16).collect::<Vec<_>>();
+		let schema_ids: Vec<SchemaId> = (1..s as u16).collect::<Vec<_>>();
 		T::SchemaValidator::set_schema_count(schema_ids.len().try_into().unwrap());
 
-	}: _ (RawOrigin::Signed(delegator), provider_msa_id, schema_ids)
+		assert_ok!(Msa::<T>::add_provider(ProviderId(provider_msa_id), DelegatorId(delegator_msa_id), vec![]));
+	}: _ (RawOrigin::Signed(delegator_public_key), provider_msa_id, schema_ids.clone())
+	verify {
+		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+		assert_eq!(Msa::<T>::get_delegation(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).unwrap().schema_permissions.len(), schema_ids.len() as usize);
+	}
 
 	revoke_schema_permissions {
-		let s in 5 .. 1005;
+		let s in 0 .. T::MaxSchemaGrantsPerDelegation::get();
 
-		let (provider, provider_msa_id) = create_account_with_msa_id::<T>(0);
-		let (delegator, delegator_msa_id) = create_account_with_msa_id::<T>(1);
-		add_delegation::<T>(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id.clone()));
+		let provider_account = create_account::<T>("account", 0);
+		let (provider_msa_id, _) = Msa::<T>::create_account(provider_account.into(), EMPTY_FUNCTION).unwrap();
 
-		for j in 2 .. s {
-			let (other, other_msa_id) = create_account_with_msa_id::<T>(j);
-			add_delegation::<T>(DelegatorId(other_msa_id), ProviderId(provider_msa_id.clone()));
-		}
+		let delegator_account = create_account::<T>("account", 1);
+		let (delegator_msa_id, delegator_public_key) = Msa::<T>::create_account(delegator_account.into(), EMPTY_FUNCTION).unwrap();
 
-		let schema_ids: Vec<SchemaId> = (1..31 as u16).collect::<Vec<_>>();
+		let schema_ids: Vec<SchemaId> = (1..s as u16).collect::<Vec<_>>();
 		T::SchemaValidator::set_schema_count(schema_ids.len().try_into().unwrap());
 
-	}: _ (RawOrigin::Signed(delegator), provider_msa_id, schema_ids)
+		assert_ok!(Msa::<T>::add_provider(ProviderId(provider_msa_id), DelegatorId(delegator_msa_id), schema_ids.clone()));
+	}: _ (RawOrigin::Signed(delegator_public_key), provider_msa_id, schema_ids.clone())
+	verify {
+		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+	}
 
 	impl_benchmark_test_suite!(Msa,
 		crate::mock::new_test_ext_keystore(),

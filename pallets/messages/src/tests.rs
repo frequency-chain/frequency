@@ -2,11 +2,7 @@ use super::{mock::*, Event as MessageEvent};
 use crate::{BlockMessages, Config, Error, Message, Messages};
 use codec::Encode;
 use common_primitives::{messages::MessageResponse, schema::*};
-use frame_support::{
-	assert_err, assert_noop, assert_ok,
-	weights::{Pays, PostDispatchInfo},
-	BoundedVec,
-};
+use frame_support::{assert_err, assert_noop, assert_ok, BoundedVec};
 use sp_std::vec::Vec;
 
 /// Populate mocked Messages storage with message data.
@@ -418,10 +414,6 @@ fn valid_payload_location() {
 		);
 
 		assert_eq!(info_result.is_ok(), true);
-		let info: PostDispatchInfo = info_result.unwrap();
-
-		assert_eq!(info.actual_weight.is_some(), true);
-		assert_eq!(info.pays_fee, Pays::Yes);
 	});
 }
 
