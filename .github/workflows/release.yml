@@ -46,11 +46,7 @@ jobs:
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Set Ubuntu Env Vars
         run: |
-          echo "HOME=/home/ubuntu" >> $GITHUB_ENV
-      - name: Install Required Packages
-        run: |
-          sudo apt-get update
-          sudo apt install -y protobuf-compiler
+          echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
@@ -139,11 +135,7 @@ jobs:
     steps:
       - name: Set Ubuntu Env Vars
         run: |
-          echo "HOME=/home/ubuntu" >> $GITHUB_ENV
-      - name: Install Required Packages
-        run: |
-          sudo apt-get update
-          sudo apt install -y protobuf-compiler
+          echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
@@ -158,9 +150,14 @@ jobs:
           sudo sh get-docker.sh
       - name: Prune Docker Resources
         run: |
-          docker system prune -a --volumes -f
+          set -x
+          containers=$(docker ps -q)
+          if [ ! -z $containers ]; then
+            docker kill $containers;
+          fi
           docker container prune -f
           docker image prune -a -f
+          docker system prune -a --volumes -f
           docker container ls
           docker image ls
       - name: Extract Runtime Spec Version
@@ -213,11 +210,7 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Set Ubuntu Env Vars
-        run: echo "HOME=/home/ubuntu" >> $GITHUB_ENV
-      - name: Install Required Packages
-        run: |
-          sudo apt-get update
-          sudo apt install -y protobuf-compiler
+        run: echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
