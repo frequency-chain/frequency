@@ -65,6 +65,10 @@ jobs:
       #   with:
       #     path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
       #     key: ${{runner.os}}-${{env.NETWORK}}-${{github.ref_name}}
+      - name: Install Required Packages
+        run: |
+          sudo apt-get update
+          sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: actions-rs/toolchain@v1
@@ -217,6 +221,10 @@ jobs:
           echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Install Required Packages
+        run: |
+          sudo apt-get update
+          sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
