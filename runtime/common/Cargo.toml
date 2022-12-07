@@ -51,6 +51,7 @@ frequency-rococo-local = []
 std = [
 	"frame-support/std",
 	"cumulus-primitives-core/std",
+	"pallet-democracy/std",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
