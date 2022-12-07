@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -e
-
 echo -e "Checking to see if Frequency is running..."
 
 PID=$(lsof -i tcp:9933 | grep frequency | grep -v grep | xargs | awk '{print $2}')
