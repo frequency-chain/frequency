@@ -22,7 +22,6 @@ use jsonrpsee::{
 	tracing::warn,
 };
 use pallet_msa_runtime_api::MsaRuntimeApi;
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
@@ -92,9 +91,8 @@ where
 	) -> RpcResult<Vec<(DelegatorId, bool)>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-
 		Ok(delegator_msa_ids
-			.par_iter()
+			.iter() // TODO: Change back to par_iter() which has borrow panic GitHub Issue: #519
 			.map(|&delegator_msa_id| {
 				// api.has_delegation returns  Result<bool, ApiError>), so _or(false) should not happen,
 				// but just in case, protect against panic
