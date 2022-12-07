@@ -238,7 +238,7 @@ pub mod pallet {
 		/// # Errors
 		/// * [`Error::ExceedsMaxSchemaModelBytes`] - Cannot set to above the hard coded maximum [`Config::SchemaModelMaxBytesBoundedVecLimit`]
 		///
-		#[pallet::weight(30_000)]
+		#[pallet::weight((30_000, DispatchClass::Operational))]
 		pub fn set_max_schema_model_bytes(
 			origin: OriginFor<T>,
 			#[pallet::compact] max_size: u32,
