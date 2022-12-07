@@ -66,11 +66,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add_onchain_message(n: u32, m: u32, ) -> Weight {
-		Weight::from_ref_time(73_895_792 as u64)
-			// Standard Error: 82
-			.saturating_add(Weight::from_ref_time(1_529 as u64).saturating_mul(n as u64))
-			// Standard Error: 8_439
-			.saturating_add(Weight::from_ref_time(347_163 as u64).saturating_mul(m as u64))
+		Weight::from_ref_time(28_016_000 as u64)
+			// Standard Error: 0
+			.saturating_add(Weight::from_ref_time(1_000 as u64).saturating_mul(n as u64))
+			// Standard Error: 3_000
+			.saturating_add(Weight::from_ref_time(212_000 as u64).saturating_mul(m as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -78,22 +78,22 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add_ipfs_message(n: u32, m: u32, ) -> Weight {
-		Weight::from_ref_time(45_798_869 as u64)
-			// Standard Error: 48
-			.saturating_add(Weight::from_ref_time(2_488 as u64).saturating_mul(n as u64))
-			// Standard Error: 4_939
-			.saturating_add(Weight::from_ref_time(299_696 as u64).saturating_mul(m as u64))
+		Weight::from_ref_time(23_294_000 as u64)
+			// Standard Error: 0
+			.saturating_add(Weight::from_ref_time(2_000 as u64).saturating_mul(n as u64))
+			// Standard Error: 2_000
+			.saturating_add(Weight::from_ref_time(174_000 as u64).saturating_mul(m as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Messages BlockMessages (r:1 w:1)
 	// Storage: Messages Messages (r:0 w:1)
 	fn on_initialize(m: u32, s: u32, ) -> Weight {
-		Weight::from_ref_time(29_022_000 as u64)
-			// Standard Error: 15_171
-			.saturating_add(Weight::from_ref_time(488_687 as u64).saturating_mul(m as u64))
-			// Standard Error: 151_554
-			.saturating_add(Weight::from_ref_time(6_708_414 as u64).saturating_mul(s as u64))
+		Weight::from_ref_time(0 as u64)
+			// Standard Error: 14_000
+			.saturating_add(Weight::from_ref_time(404_000 as u64).saturating_mul(m as u64))
+			// Standard Error: 145_000
+			.saturating_add(Weight::from_ref_time(4_902_000 as u64).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 			.saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(s as u64)))
@@ -107,11 +107,11 @@ impl WeightInfo for () {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add_onchain_message(n: u32, m: u32, ) -> Weight {
-		Weight::from_ref_time(73_895_792 as u64)
-			// Standard Error: 82
-			.saturating_add(Weight::from_ref_time(1_529 as u64).saturating_mul(n as u64))
-			// Standard Error: 8_439
-			.saturating_add(Weight::from_ref_time(347_163 as u64).saturating_mul(m as u64))
+		Weight::from_ref_time(28_016_000 as u64)
+			// Standard Error: 0
+			.saturating_add(Weight::from_ref_time(1_000 as u64).saturating_mul(n as u64))
+			// Standard Error: 3_000
+			.saturating_add(Weight::from_ref_time(212_000 as u64).saturating_mul(m as u64))
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -119,22 +119,22 @@ impl WeightInfo for () {
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Messages BlockMessages (r:1 w:1)
 	fn add_ipfs_message(n: u32, m: u32, ) -> Weight {
-		Weight::from_ref_time(45_798_869 as u64)
-			// Standard Error: 48
-			.saturating_add(Weight::from_ref_time(2_488 as u64).saturating_mul(n as u64))
-			// Standard Error: 4_939
-			.saturating_add(Weight::from_ref_time(299_696 as u64).saturating_mul(m as u64))
+		Weight::from_ref_time(23_294_000 as u64)
+			// Standard Error: 0
+			.saturating_add(Weight::from_ref_time(2_000 as u64).saturating_mul(n as u64))
+			// Standard Error: 2_000
+			.saturating_add(Weight::from_ref_time(174_000 as u64).saturating_mul(m as u64))
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: Messages BlockMessages (r:1 w:1)
 	// Storage: Messages Messages (r:0 w:1)
 	fn on_initialize(m: u32, s: u32, ) -> Weight {
-		Weight::from_ref_time(29_022_000 as u64)
-			// Standard Error: 15_171
-			.saturating_add(Weight::from_ref_time(488_687 as u64).saturating_mul(m as u64))
-			// Standard Error: 151_554
-			.saturating_add(Weight::from_ref_time(6_708_414 as u64).saturating_mul(s as u64))
+		Weight::from_ref_time(0 as u64)
+			// Standard Error: 14_000
+			.saturating_add(Weight::from_ref_time(404_000 as u64).saturating_mul(m as u64))
+			// Standard Error: 145_000
+			.saturating_add(Weight::from_ref_time(4_902_000 as u64).saturating_mul(s as u64))
 			.saturating_add(RocksDbWeight::get().reads(1 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes((1 as u64).saturating_mul(s as u64)))
