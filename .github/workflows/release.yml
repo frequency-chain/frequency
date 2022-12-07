@@ -46,7 +46,7 @@ jobs:
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Set Ubuntu Env Vars
         run: |
-          echo "HOME=/home/ubuntu" >> $GITHUB_ENV
+          echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
@@ -135,7 +135,7 @@ jobs:
     steps:
       - name: Set Ubuntu Env Vars
         run: |
-          echo "HOME=/home/ubuntu" >> $GITHUB_ENV
+          echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
@@ -210,7 +210,7 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Set Ubuntu Env Vars
-        run: echo "HOME=/home/ubuntu" >> $GITHUB_ENV
+        run: echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
