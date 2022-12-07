@@ -168,6 +168,10 @@ jobs:
           echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Install Required Packages
+        run: |
+          sudo apt-get update
+          sudo apt install -y protobuf-compiler 
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
