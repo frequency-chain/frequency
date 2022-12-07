@@ -111,10 +111,13 @@ jobs:
           version: "0.22.0"
           # Tarpaulin Docs https://github.com/xd009642/tarpaulin
           # -e for exclude
+          # TODO ignoring pallet-democracy due to issues with tarpaulin
+          # TODO check with later releases of substrate if this is still an issue
           args: |
             -v --no-fail-fast --workspace
             -e frequency frequency-cli frequency-runtime frequency-service
             --exclude-files **/mock.rs **/weights.rs **/weights/* **/benchmarking.rs
+            --exclude pallet-democracy
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
         with:
