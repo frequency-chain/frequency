@@ -22,6 +22,7 @@ use jsonrpsee::{
 	tracing::warn,
 };
 use pallet_msa_runtime_api::MsaRuntimeApi;
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
