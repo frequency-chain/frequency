@@ -66,8 +66,18 @@ export function createProvider(api: ApiRx, keys: KeyringPair, providerName: stri
     ))
 }
 
-export function grantDelegation(api: ApiRx, userKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: AddProviderPayload): Promise<EventMap> {
-    return firstValueFrom(api.tx.msa.grantDelegation(userKeys.publicKey, signature, payload).signAndSend(providerKeys)
+export function grantDelegation(api: ApiRx, delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: AddProviderPayload): Promise<EventMap> {
+    return firstValueFrom(api.tx.msa.grantDelegation(delegatorKeys.publicKey, signature, payload).signAndSend(providerKeys)
+        .pipe(
+            filter(({status}) => status.isInBlock || status.isFinalized),
+            groupEventsByKey()
+        )
+    )
+}
+
+export function grantSchemaPermissions(api: ApiRx, delegatorKeys: KeyringPair, providerMsaId: any, schemaIds: any): Promise<EventMap> {
+    return firstValueFrom(
+        api.tx.msa.grantSchemaPermissions(providerMsaId, schemaIds).signAndSend(delegatorKeys)
         .pipe(
             filter(({status}) => status.isInBlock || status.isFinalized),
             groupEventsByKey()
