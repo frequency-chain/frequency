@@ -93,7 +93,7 @@ where
 		let at = BlockId::hash(self.client.info().best_hash);
 
 		Ok(delegator_msa_ids
-			.iter() // TODO: Change back to par_iter() which has borrow panic GitHub Issue: #519
+			.par_iter()
 			.map(|&delegator_msa_id| {
 				// api.has_delegation returns  Result<bool, ApiError>), so _or(false) should not happen,
 				// but just in case, protect against panic

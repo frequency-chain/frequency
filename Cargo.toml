@@ -4,8 +4,7 @@ members = [
   "node/cli",
   "node/service",
   "pallets/*",
-  "runtime/common",
-  "runtime/frequency",
+  "runtime/*",
   "common/helpers",
 ]
 
