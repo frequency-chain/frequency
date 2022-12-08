@@ -90,11 +90,11 @@ where
 		block_number: BlockNumber,
 		schema_id: Option<SchemaId>,
 	) -> RpcResult<Vec<(DelegatorId, bool)>> {
+		let at = BlockId::hash(self.client.info().best_hash);
 		let results = delegator_msa_ids
 			.par_iter()
 			.map(|delegator_msa_id| {
 				let api = self.client.runtime_api();
-				let at = BlockId::hash(self.client.info().best_hash);
 				// api.has_delegation returns  Result<bool, ApiError>), so _or(false) should not happen,
 				// but just in case, protect against panic
 				let has_delegation: bool = match api.has_delegation(
