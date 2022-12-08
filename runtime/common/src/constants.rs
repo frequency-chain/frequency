@@ -79,7 +79,7 @@ pub mod currency {
 	pub const CENTS: Balance = DOLLARS / 100; // 1_000_000
 	pub const MILLICENTS: Balance = CENTS / 1_000; // 1_000
 
-	/// Generates an balance based on amount of items and bytes
+	/// Generates a balance based on amount of items and bytes
 	/// Items are each worth 20 Dollars
 	/// Bytes each cost 1/1_000 of a Dollar
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
@@ -107,15 +107,20 @@ pub type FrameSystemMaxConsumers = ConstU32<16>;
 // -end- Frame System Pallet ---
 
 // --- MSA Pallet ---
+// The maximum number of public keys per MSA
 pub type MsaMaxPublicKeysPerMsa = ConstU8<25>;
+// The maximum size of the provider name (in bytes)
 pub type MsaMaxProviderNameSize = ConstU32<16>;
 // -end- MSA Pallet ---
 
 // --- Schemas Pallet ---
 parameter_types! {
+	// The maximum number of schema registrations
 	pub const SchemasMaxRegistrations: SchemaId = 65_000;
 }
+// The minimum schema model size (in bytes)
 pub type SchemasMinModelSizeBytes = ConstU32<8>;
+// The maximum length of a schema model (in bytes)
 pub type SchemasMaxBytesBoundedVecLimit = ConstU32<65_500>;
 // -end- Schemas Pallet ---
 
@@ -162,6 +167,7 @@ parameter_types! {
 // -end- Preimage Pallet ---
 
 // --- Council ---
+// The maximum number of council proposals
 pub type CouncilMaxProposals = ConstU32<25>;
 
 parameter_types! {
@@ -170,7 +176,9 @@ parameter_types! {
 // -end- Council ---
 
 // --- Technical Committee ---
+// The maximum number of technical committee proposals
 pub type TCMaxProposals = ConstU32<25>;
+// The maximum number of technical committee members
 pub type TCMaxMembers = ConstU32<3>;
 
 parameter_types! {
@@ -227,6 +235,7 @@ parameter_types! {
 // -end- Treasury Pallet ---
 
 // --- Transaction Payment Pallet ---
+// The fee multiplier
 pub type TransactionPaymentOperationalFeeMultiplier = ConstU8<5>;
 
 parameter_types! {
@@ -241,6 +250,7 @@ pub type SessionOffset = ZERO;
 // -end- Session Pallet ---
 
 // --- Aura Pallet ---
+// The maximum number of authorities
 pub type AuraMaxAuthorities = ConstU32<100_000>;
 // -end- Aura Pallet ---
 
@@ -263,6 +273,7 @@ parameter_types! {
 // -end- Collator Selection Pallet ---
 
 // --- Messages Pallet ---
+// The maximum number of messages per block
 pub type MessagesMaxPerBlock = ConstU32<7000>;
 
 impl Clone for MessagesMaxPayloadSizeBytes {
@@ -272,8 +283,11 @@ impl Clone for MessagesMaxPayloadSizeBytes {
 }
 // -end- Messages Pallet ---
 
+// The number of blocks per virtual bucket
 pub type MSAMortalityWindowSize = ConstU32<100>;
+// The maximum number of signatures per virtual bucket
 pub type MSAMaxSignaturesPerBucket = ConstU32<50_000>;
+// The total number of virtual buckets
 pub type MSANumberOfBuckets = ConstU32<2>;
 
 parameter_types! {
