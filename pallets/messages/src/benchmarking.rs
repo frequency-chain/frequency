@@ -8,11 +8,11 @@ use common_primitives::{
 	schema::*,
 };
 use frame_benchmarking::{benchmarks, whitelisted_caller};
-use frame_support::{assert_ok, pallet_prelude::DispatchResult, traits::OnInitialize};
+use frame_support::{assert_ok, pallet_prelude::DispatchResult};
 use frame_system::RawOrigin;
+use sp_runtime::traits::One;
 
 const AVERAGE_NUMBER_OF_MESSAGES: u32 = 499;
-const SCHEMAS: u32 = 50;
 const IPFS_SCHEMA_ID: u16 = 50;
 const IPFS_PAYLOAD_LENGTH: u32 = 10;
 
@@ -30,6 +30,7 @@ fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 		Some(message_source_id.into()),
 		bounded_payload,
 		schema_id,
+		<T as frame_system::Config>::BlockNumber::one(),
 	)?;
 	Ok(())
 }
@@ -42,7 +43,13 @@ fn ipfs_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 	let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> =
 		payload.try_into().expect("Invalid payload");
 
-	MessagesPallet::<T>::add_message(provider_id.into(), None, bounded_payload, schema_id)?;
+	MessagesPallet::<T>::add_message(
+		provider_id.into(),
+		None,
+		bounded_payload,
+		schema_id,
+		<T as frame_system::Config>::BlockNumber::one(),
+	)?;
 
 	Ok(())
 }
@@ -91,22 +98,6 @@ benchmarks! {
 			assert_ok!(ipfs_message::<T>(IPFS_SCHEMA_ID));
 		}
 	}: _ (RawOrigin::Signed(caller),IPFS_SCHEMA_ID, cid, IPFS_PAYLOAD_LENGTH)
-
-	on_initialize {
-		let m in 1 .. AVERAGE_NUMBER_OF_MESSAGES;
-		let s in 1 .. SCHEMAS;
-
-		for j in 0 .. m {
-			let schema_id = j % s;
-			assert_ok!(onchain_message::<T>(schema_id.try_into().unwrap()));
-		}
-
-	}: {
-		MessagesPallet::<T>::on_initialize(2u32.into());
-	}
-	verify {
-		assert_eq!(BlockMessages::<T>::get().len(), 0);
-	}
 
 	impl_benchmark_test_suite!(MessagesPallet, crate::mock::new_test_ext(), crate::mock::Test);
 }
