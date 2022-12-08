@@ -391,7 +391,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type Event = Event;
 	type MotionDuration = CouncilMotionDuration;
 	type MaxProposals = CouncilMaxProposals;
-	type MaxMembers = ConstU32<1>;
+	type MaxMembers = ConstU32<10>;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
