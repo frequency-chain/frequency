@@ -117,8 +117,8 @@ jobs:
           fail_ci_if_error: false # optional (default = false)
           verbose: true # optional (default = false)
 
-  save-encoded-binary-with-metadata:
-    name: Save Encoded Binary with Metadata
+  save-binary-and-encoded-metadata:
+    name: Save Binary and Encoded Metadata
     runs-on: [self-hosted, Linux, X64]
     env:
       NETWORK: mainnet
