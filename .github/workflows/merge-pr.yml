@@ -124,17 +124,19 @@ jobs:
           fail_ci_if_error: false # optional (default = false)
           verbose: true # optional (default = false)
 
-  save-encoded-metadata:
-    name: Save Encoded Metadata
+  save-binary-and-encoded-metadata:
+    name: Save Binary and Encoded Metadata
     runs-on: [self-hosted, Linux, X64]
     env:
       NETWORK: mainnet
     steps:
       - name: Set Env Vars
         run: |
-          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
-          echo "METADATA_FILENAME=encoded-metadata-${{env.NETWORK}}-${{github.ref_name}}.amd64.json" >> $GITHUB_ENV
           echo "HOME=/root" >> $GITHUB_ENV
+          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
+          echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
+          export SAVED_BIN_FILENAME=frequency-${{env.NETWORK}}-${{github.ref_name}}.amd64; echo "SAVED_BIN_FILENAME=$SAVED_BIN_FILENAME" >> $GITHUB_ENV
+          echo "SAVED_METADATA_FILENAME=$SAVED_BIN_FILENAME.encoded-metadata.txt" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
@@ -162,15 +164,21 @@ jobs:
         run: |
           CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release \
             --features  frequency
-      - name: Extract Encoded Metadata
-        id: extract-metadata
+      - name: Rename Binary
         working-directory: ${{env.BIN_DIR}}
         run: |
-          ./frequency export-metadata metadata.json
-          cat metadata.json | jq -r .result > $METADATA_FILENAME
-      - name: Upload Metadata
+          ls -la
+          cp -p ${{env.BUILT_BIN_FILENAME}} ${{env.SAVED_BIN_FILENAME}}
+      - name: Extract Encoded Metadata
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          ./${{env.BUILT_BIN_FILENAME}} export-metadata metadata.json
+          cat metadata.json | jq -r .result > ${{env.SAVED_METADATA_FILENAME}}
+      - name: Upload Binary with Metadata
         uses: actions/upload-artifact@v3
         with:
-          name: encoded-metadata-latest-main
-          path: ${{env.BIN_DIR}}/${{env.METADATA_FILENAME}}
           if-no-files-found: error
+          name: binary-with-encoded-metadata-latest-main
+          path: |
+            ${{env.BIN_DIR}}/${{env.SAVED_BIN_FILENAME}}
+            ${{env.BIN_DIR}}/${{env.SAVED_METADATA_FILENAME}}
