@@ -211,11 +211,11 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 
 			ensure!(
-				model.len() > T::MinSchemaModelSizeBytes::get() as usize,
+				model.len() >= T::MinSchemaModelSizeBytes::get() as usize,
 				Error::<T>::LessThanMinSchemaModelBytes
 			);
 			ensure!(
-				model.len() < Self::get_schema_model_max_bytes() as usize,
+				model.len() <= Self::get_schema_model_max_bytes() as usize,
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 
