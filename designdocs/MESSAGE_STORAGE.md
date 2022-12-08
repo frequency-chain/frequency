@@ -27,10 +27,6 @@ using [StorageDoubleMap](https://docs.substrate.io/rustdocs/latest/frame_support
 - **Messages**
     - _Type_: `DoubleStorageMap<BlockNumber, SchemaId, BoundedVec<Message>>`
     - _Purpose_: Main structure To store all messages for a certain block number and schema id
-- **BlockMessages**
-    - _Storage Type_: `StorageValue<BoundedVec<(Message, SchemaId)>>`
-    - _Purpose_: A temporary storage to put each messages with it's schemaId for current block to
-  increase write throughput
 - **RetentionPeriods**
     - _Type_: `StorageMap<SchemaId, BlockNumber>`
     - _Purpose_: To store the retention period for each SchemaId (allows future adjustments)
@@ -86,15 +82,9 @@ been used in other parts of the project like parquet batch files.
 #### Write
 1. Off-chain: Schema of the new message will be validated against the desired schema stored on chain.
 2. Off-chain: Message will be serialized using chosen serialization format mentioned above.
-3. Message will be added to **BlockMessages** as a pair of `(Message, SchemaId)`
-4. `on_finalize` group all Messages inside **BlockMessages** by their schemaId and add them to **Messages**
-using current block number as main key and filtered schemaIds.
-5. `on_finalize` set **BlockMessages** as an empty collections.
-6. `on_finalize` send an `Event` for each of pair of `(currentBlock, schemaId)`
+3. Message will be added to **Messages** using `current_block_number` and `schema_id`
+4. Send an `Event` for added message.
 
-###### Side note for implementers
-- Due to the limitations of `on_finalize` mentioned [here](https://docs.substrate.io/v3/runtime/benchmarking/#minimize-usage-of-on_finalize-and-transition-logic-to-on_initialize), it might be needed to do this work in the
-`on_initialized` of block **n+1** rather than the `on_finalize` of block **n**.
 #### Read
 1. An RPC will get all messages using following params
     - `StartingBlockNumber` (inclusive)
@@ -119,7 +109,6 @@ from `StartingBlockNumber` until is reaches one of values from `EndBlockNumber` 
 
 ## Benefits and Risks
 ### Benefits
-- Relatively high write throughput due to adding to the temporary storage called `BlockMessages`
 - High read throughput for any query involving a specific block number
 - Built in Support for a flexible time-based retention policy per schema
 ### Risks
