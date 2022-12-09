@@ -578,11 +578,11 @@
 			<span class="kw">let </span>sender = ensure_signed(origin)<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(
-				model.len() &gt; T::MinSchemaModelSizeBytes::get() <span class="kw">as </span>usize,
+				model.len() &gt;= T::MinSchemaModelSizeBytes::get() <span class="kw">as </span>usize,
 				Error::&lt;T&gt;::LessThanMinSchemaModelBytes
 			);
 			<span class="macro">ensure!</span>(
-				model.len() &lt; <span class="self">Self</span>::get_schema_model_max_bytes() <span class="kw">as </span>usize,
+				model.len() &lt;= <span class="self">Self</span>::get_schema_model_max_bytes() <span class="kw">as </span>usize,
 				Error::&lt;T&gt;::ExceedsMaxSchemaModelBytes
 			);
 
@@ -605,7 +605,7 @@
 		/// # Errors
 		/// * [`Error::ExceedsMaxSchemaModelBytes`] - Cannot set to above the hard coded maximum [`Config::SchemaModelMaxBytesBoundedVecLimit`]
 		///
-		</span><span class="attribute">#[pallet::weight(<span class="number">30_000</span>)]
+		</span><span class="attribute">#[pallet::weight((<span class="number">30_000</span>, DispatchClass::Operational))]
 		</span><span class="kw">pub fn </span>set_max_schema_model_bytes(
 			origin: OriginFor&lt;T&gt;,
 			<span class="attribute">#[pallet::compact] </span>max_size: u32,

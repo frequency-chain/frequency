@@ -414,10 +414,6 @@
 <span id="414">414</span>
 <span id="415">415</span>
 <span id="416">416</span>
-<span id="417">417</span>
-<span id="418">418</span>
-<span id="419">419</span>
-<span id="420">420</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # Messages pallet
 //! A pallet for storing messages.
 //!
@@ -632,13 +628,13 @@
 		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
 		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
 		///
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() <span class="kw">as </span>u32, <span class="number">1_000</span>))]
+		</span><span class="attribute">#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() <span class="kw">as </span>u32))]
 		</span><span class="kw">pub fn </span>add_ipfs_message(
 			origin: OriginFor&lt;T&gt;,
 			<span class="attribute">#[pallet::compact] </span>schema_id: SchemaId,
 			cid: Vec&lt;u8&gt;,
 			<span class="attribute">#[pallet::compact] </span>payload_length: u32,
-		) -&gt; DispatchResultWithPostInfo {
+		) -&gt; DispatchResult {
 			<span class="kw">let </span>provider_key = ensure_signed(origin)<span class="question-mark">?</span>;
 			<span class="kw">let </span>payload_tuple: OffchainPayloadType = (cid.clone(), payload_length);
 			<span class="kw">let </span>bounded_payload: BoundedVec&lt;u8, T::MaxMessagePayloadSizeBytes&gt; = payload_tuple
@@ -654,9 +650,9 @@
 			);
 
 			<span class="kw">let </span>provider_msa_id = <span class="self">Self</span>::find_msa_id(<span class="kw-2">&amp;</span>provider_key)<span class="question-mark">?</span>;
-			<span class="kw">let </span>message = <span class="self">Self</span>::add_message(provider_msa_id, <span class="prelude-val">None</span>, bounded_payload, schema_id)<span class="question-mark">?</span>;
+			<span class="self">Self</span>::add_message(provider_msa_id, <span class="prelude-val">None</span>, bounded_payload, schema_id)<span class="question-mark">?</span>;
 
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(T::WeightInfo::add_ipfs_message(cid.len() <span class="kw">as </span>u32, message.index <span class="kw">as </span>u32)).into())
+			<span class="prelude-val">Ok</span>(())
 		}
 		<span class="doccomment">/// Add an on-chain message for a given schema id.
 		///
@@ -672,13 +668,13 @@
 		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
 		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
 		///
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() <span class="kw">as </span>u32, <span class="number">1_000</span>))]
+		</span><span class="attribute">#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() <span class="kw">as </span>u32))]
 		</span><span class="kw">pub fn </span>add_onchain_message(
 			origin: OriginFor&lt;T&gt;,
 			on_behalf_of: <span class="prelude-ty">Option</span>&lt;MessageSourceId&gt;,
 			<span class="attribute">#[pallet::compact] </span>schema_id: SchemaId,
 			payload: Vec&lt;u8&gt;,
-		) -&gt; DispatchResultWithPostInfo {
+		) -&gt; DispatchResult {
 			<span class="kw">let </span>provider_key = ensure_signed(origin)<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>bounded_payload: BoundedVec&lt;u8, T::MaxMessagePayloadSizeBytes&gt; =
@@ -711,18 +707,14 @@
 				<span class="prelude-val">None </span>=&gt; DelegatorId(provider_msa_id), <span class="comment">// Delegate is also the Provider
 			</span>};
 
-			<span class="kw">let </span>message = <span class="self">Self</span>::add_message(
+			<span class="self">Self</span>::add_message(
 				provider_msa_id,
 				<span class="prelude-val">Some</span>(maybe_delegator.into()),
 				bounded_payload,
 				schema_id,
 			)<span class="question-mark">?</span>;
 
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(T::WeightInfo::add_onchain_message(
-				message.payload.len() <span class="kw">as </span>u32,
-				message.index <span class="kw">as </span>u32,
-			))
-			.into())
+			<span class="prelude-val">Ok</span>(())
 		}
 	}
 }
