@@ -475,7 +475,7 @@ pub mod pallet {
 		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		///
-		#[pallet::weight(T::WeightInfo::create_provider())]
+		#[pallet::weight(T::WeightInfo::create_provider(provider_name.len() as u32))]
 		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
