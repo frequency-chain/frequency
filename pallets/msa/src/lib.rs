@@ -1024,7 +1024,9 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	/// Mutates the delegation relationship storage item only if a value OK is returned.
+	/// Mutates the delegation relationship storage item only when the supplied function returns an 'Ok()' result.
+	/// The callback function 'f' takes the value (a delegation) and a reference to a boolean variable. This callback
+	/// sets the boolean variable to 'true' if the value is to be inserted and to 'false' if it is to be updated.
 	pub fn try_mutate_delegation<R, E: From<DispatchError>>(
 		delegator_id: DelegatorId,
 		provider_id: ProviderId,
