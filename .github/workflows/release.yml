@@ -245,6 +245,7 @@ jobs:
           - network: mainnet
             spec: frequency
             build-profile: production
+            release-file-name-prefix: frequency
           - os: ubuntu-20.04
             arch: amd64
     runs-on: ${{matrix.os}}
@@ -252,7 +253,7 @@ jobs:
       - name: Set Env Vars
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
-          echo "RELEASE_BIN_FILENAME=frequency-${{matrix.network}}.${{matrix.arch}}" >> $GITHUB_ENV
+          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Set up NodeJs
