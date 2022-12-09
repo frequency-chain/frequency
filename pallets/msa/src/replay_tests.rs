@@ -5,9 +5,8 @@ use frame_support::{assert_err, assert_noop, assert_ok};
 use sp_core::{sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
-fn create_add_provider_payload() -> (AddProvider, Vec<u8>) {
-	let expiration: BlockNumber = 108;
-	let add_provider_payload = AddProvider::new(1u64, None, expiration);
+fn create_add_provider_payload(signature_expiration: BlockNumber) -> (AddProvider, Vec<u8>) {
+	let add_provider_payload = AddProvider::new(1u64, None, signature_expiration);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 	(add_provider_payload, encode_add_provider_data)
 }
@@ -15,11 +14,12 @@ fn create_add_provider_payload() -> (AddProvider, Vec<u8>) {
 pub fn user_creates_and_delegates_to_provider(
 	delegator_keypair: sp_core::sr25519::Pair,
 	provider_keypair: sp_core::sr25519::Pair,
+	signature_expiration: BlockNumber,
 ) -> (MultiSignature, AddProvider) {
 	let delegator_key = delegator_keypair.public();
 	let provider_key = provider_keypair.public();
 
-	let (payload, encode_add_provider_data) = create_add_provider_payload();
+	let (payload, encode_add_provider_data) = create_add_provider_payload(signature_expiration);
 
 	let signature: MultiSignature = delegator_keypair.sign(&encode_add_provider_data).into();
 	assert_ok!(Msa::create_sponsored_account_with_delegation(
@@ -80,8 +80,11 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 		let delegator_key = delegator_keypair.public();
 
 		// Step 1
-		let (signature, add_provider_payload) =
-			user_creates_and_delegates_to_provider(delegator_keypair.clone(), provider_keypair);
+		let (signature, add_provider_payload) = user_creates_and_delegates_to_provider(
+			delegator_keypair.clone(),
+			provider_keypair,
+			99u32.into(),
+		);
 		run_to_block(25);
 
 		// Step 2
@@ -108,7 +111,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 			),
 			Error::<Test>::SignatureAlreadySubmitted
 		);
-		run_to_block(99);
+		run_to_block(98);
 
 		// expect this to fail for the same reason
 		assert_err!(
@@ -135,7 +138,8 @@ fn replaying_grant_delegation_fails() {
 		let delegator_key = delegator_keypair.public();
 
 		// add_provider_payload in this case has delegator's msa_id as authorized_msa_id
-		let (add_provider_payload, encode_add_provider_data) = create_add_provider_payload();
+		let (add_provider_payload, encode_add_provider_data) =
+			create_add_provider_payload(99u32.into());
 
 		// DELEGATOR signs to add the provider
 		let signature: MultiSignature = delegator_keypair.sign(&encode_add_provider_data).into();
@@ -177,12 +181,13 @@ pub fn add_signature_replay_fails() {
 	new_test_ext().execute_with(|| {
 		// these should all fail replay
 		let test_cases: Vec<TestCase> = vec![
-			TestCase { current: 10_849u64, mortality: 11_001u64, run_to: 11_000u64 }, // fails test
+			// fails because
+			TestCase { current: 10_949u64, mortality: 11_001u64, run_to: 11_000u64 }, // fails test
 			TestCase { current: 1u64, mortality: 3u64, run_to: 2u64 },
 			TestCase { current: 99u64, mortality: 101u64, run_to: 100u64 },
-			TestCase { current: 1_000u64, mortality: 1_199u64, run_to: 1_198u64 },
-			TestCase { current: 1_002u64, mortality: 1_201u64, run_to: 1_200u64 },
-			TestCase { current: 999u64, mortality: 1_148u64, run_to: 1_101u64 },
+			TestCase { current: 1_100u64, mortality: 1_199u64, run_to: 1_198u64 },
+			TestCase { current: 1_102u64, mortality: 1_201u64, run_to: 1_200u64 },
+			TestCase { current: 1_099u64, mortality: 1_148u64, run_to: 1_101u64 },
 		];
 		for tc in test_cases {
 			System::set_block_number(tc.current);
@@ -210,8 +215,11 @@ fn replaying_create_sponsored_account_with_delegation_fails_02() {
 		let delegator_key = delegator_keypair.public();
 
 		// Step 1
-		let (signature, add_provider_payload) =
-			user_creates_and_delegates_to_provider(delegator_keypair.clone(), provider_keypair);
+		let (signature, add_provider_payload) = user_creates_and_delegates_to_provider(
+			delegator_keypair.clone(),
+			provider_keypair,
+			99u32.into(),
+		);
 		run_to_block(2);
 
 		// Step 2
@@ -246,7 +254,12 @@ fn replaying_create_sponsored_account_with_delegation_fails_03() {
 
 		// Step 1
 		let (original_msa_creation_signature, add_provider_payload) =
-			user_creates_and_delegates_to_provider(delegator_keypair.clone(), provider_keypair);
+			user_creates_and_delegates_to_provider(
+				delegator_keypair.clone(),
+				provider_keypair,
+				99u32.into(),
+			);
+
 		run_to_block(5);
 
 		let (new_key_pair, _) = sr25519::Pair::generate();
@@ -275,7 +288,7 @@ fn replaying_create_sponsored_account_with_delegation_fails_03() {
 			Origin::signed(new_public_key.into()),
 			delegator_key.into()
 		));
-		run_to_block(99);
+		run_to_block(98);
 
 		// Step 4
 		assert_noop!(
