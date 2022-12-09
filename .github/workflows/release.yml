@@ -392,8 +392,10 @@ jobs:
         include:
           - network: rococo
             build-profile: production
+            release-file-name-prefix: frequency-rococo
           - network: mainnet
             build-profile: production
+            release-file-name-prefix: frequency
           - arch: amd64
             docker-platform: linux/amd64
     env:
@@ -405,7 +407,7 @@ jobs:
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
-          echo "RELEASE_BIN_FILENAME=frequency-${{matrix.network}}.${{matrix.arch}}" >> $GITHUB_ENV
+          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Download Binary Artifacts
