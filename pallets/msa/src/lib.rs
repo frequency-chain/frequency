@@ -911,13 +911,20 @@ impl<T: Config> Pallet<T> {
 			// Increment the key counter
 			<PublicKeyCountForMsaId<T>>::try_mutate(msa_id, |key_count| {
 				// key_count:u8 should default to 0 if it does not exist
-				let incremented_key_count: u8 = *key_count + 1;
-				ensure!(
-					incremented_key_count <= T::MaxPublicKeysPerMsa::get(),
-					Error::<T>::KeyLimitExceeded
-				);
+				let checked_key_count = key_count.checked_add(1);
 
-				*key_count = incremented_key_count;
+				match checked_key_count {
+					// A value of None indicates that key_count would have overflowed
+					None => return Err(Error::<T>::KeyLimitExceeded.into()),
+					Some(incremented_key_count) => {
+						ensure!(
+							incremented_key_count <= T::MaxPublicKeysPerMsa::get(),
+							Error::<T>::KeyLimitExceeded
+						);
+
+						*key_count = incremented_key_count;
+					},
+				}
 				on_success(msa_id)
 			})
 		})
