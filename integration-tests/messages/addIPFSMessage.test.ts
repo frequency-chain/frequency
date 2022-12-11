@@ -9,7 +9,7 @@ import { GenericEvent } from "@polkadot/types";
 import { EventMap } from "../scaffolding/helpers";
 import { Event } from "@polkadot/types/interfaces";
 
-describe("Add Messages", () => {
+describe("Add Offchain Message", () => {
     let api: ApiRx;
     let keys: KeyringPair;
 
