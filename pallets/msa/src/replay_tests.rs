@@ -178,22 +178,34 @@ fn replaying_grant_delegation_fails() {
 }
 
 #[test]
-pub fn add_signature_replay_fails() {
+pub fn add_signature_replay_boundary_checks() {
 	struct TestCase {
 		current: u64,
 		mortality: u64,
 		run_to: u64,
 	}
 	new_test_ext().execute_with(|| {
-		// these should all fail replay
+		// This tests signature replay attacks for mortality window size = 100 and 2 buckets,
+		// .by looking at different boundary cases.  It checks that they can't
+		// be resubmitted at the expiration block. We assume if they cannot be replayed at a
+		// boundary that they can't be replayed earlier than that boundary.
 		let test_cases: Vec<TestCase> = vec![
-			// fails because
-			TestCase { current: 10_949u64, mortality: 11_001u64, run_to: 11_000u64 }, // fails test
+			// 1-block expiration for bucket 0, mortality crosses no boundary
 			TestCase { current: 1u64, mortality: 3u64, run_to: 2u64 },
+			// expiration for bucket 1, mortality is fast, crosses a 100-block boundary, we check at the boundary.
+			// at block 100, on_initialize's bucket-clearing has happened by the time register_extrinsic is called,
+			// so this should make sure that the signature is still there and the wrong bucket was not cleared.
 			TestCase { current: 99u64, mortality: 101u64, run_to: 100u64 },
+			// This does the same as above, only it's a different bucket.
+			TestCase { current: 11_149u64, mortality: 11_201u64, run_to: 11_200u64 },
+			// This sets mortality at a boundary
+			TestCase { current: 11_149u64, mortality: 11_200u64, run_to: 11_199u64 },
+			// This does the same as above, but for a different bucket.
+			TestCase { current: 11_249u64, mortality: 11_300u64, run_to: 11_299u64 },
+			// This case sets current block at a boundary, and sets the mortality to the very last block before the boundary
 			TestCase { current: 1_100u64, mortality: 1_199u64, run_to: 1_198u64 },
-			TestCase { current: 1_102u64, mortality: 1_201u64, run_to: 1_200u64 },
-			TestCase { current: 1_099u64, mortality: 1_148u64, run_to: 1_101u64 },
+			// This case has current block right before a boundary, and sets expiration to the very last possible block
+			TestCase { current: 1_699u64, mortality: 1_798u64, run_to: 1_797u64 },
 		];
 		for tc in test_cases {
 			System::set_block_number(tc.current);
@@ -203,6 +215,11 @@ pub fn add_signature_replay_fails() {
 			assert_noop!(
 				Msa::register_signature(sig1, tc.mortality),
 				Error::<Test>::SignatureAlreadySubmitted,
+			);
+			run_to_block(tc.run_to + 1);
+			assert_noop!(
+				Msa::register_signature(sig1, tc.mortality),
+				Error::<Test>::ProofHasExpired,
 			);
 		}
 	});

@@ -94,10 +94,14 @@ mod benchmarking;
 mod mock;
 #[cfg(test)]
 mod tests;
+
 pub mod types;
 
 #[cfg(test)]
 mod replay_tests;
+
+#[cfg(test)]
+mod replay_tests_2;
 
 pub mod weights;
 
