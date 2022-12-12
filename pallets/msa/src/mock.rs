@@ -67,7 +67,7 @@ impl pallet_schemas::Config for Test {
 }
 
 parameter_types! {
-	pub const MaxPublicKeysPerMsa: u8 = 10;
+	pub const MaxPublicKeysPerMsa: u8 = 255;
 	pub const MaxProviderNameSize: u32 = 16;
 	pub const MaxSchemas: u32 = 5;
 }
