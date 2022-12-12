@@ -1587,6 +1587,10 @@
 <span id="1587">1587</span>
 <span id="1588">1588</span>
 <span id="1589">1589</span>
+<span id="1590">1590</span>
+<span id="1591">1591</span>
+<span id="1592">1592</span>
+<span id="1593">1593</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet
 //! The MSA pallet provides functionality for handling Message Source Accounts.
 //!
@@ -2500,7 +2504,9 @@
 			<span class="comment">// Increment the key counter
 			</span>&lt;PublicKeyCountForMsaId&lt;T&gt;&gt;::try_mutate(msa_id, |key_count| {
 				<span class="comment">// key_count:u8 should default to 0 if it does not exist
-				</span><span class="kw">let </span>incremented_key_count: u8 = <span class="kw-2">*</span>key_count + <span class="number">1</span>;
+				</span><span class="kw">let </span>incremented_key_count =
+					key_count.checked_add(<span class="number">1</span>).ok_or(Error::&lt;T&gt;::KeyLimitExceeded)<span class="question-mark">?</span>;
+
 				<span class="macro">ensure!</span>(
 					incremented_key_count &lt;= T::MaxPublicKeysPerMsa::get(),
 					Error::&lt;T&gt;::KeyLimitExceeded
@@ -2613,7 +2619,9 @@
 		})
 	}
 
-	<span class="doccomment">/// Mutates the delegation relationship storage item only if a value OK is returned.
+	<span class="doccomment">/// Mutates the delegation relationship storage item only when the supplied function returns an &#39;Ok()&#39; result.
+	/// The callback function &#39;f&#39; takes the value (a delegation) and a reference to a boolean variable. This callback
+	/// sets the boolean variable to &#39;true&#39; if the value is to be inserted and to &#39;false&#39; if it is to be updated.
 	</span><span class="kw">pub fn </span>try_mutate_delegation&lt;R, E: From&lt;DispatchError&gt;&gt;(
 		delegator_id: DelegatorId,
 		provider_id: ProviderId,

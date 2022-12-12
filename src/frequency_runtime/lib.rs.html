@@ -992,6 +992,51 @@
 <span id="992">992</span>
 <span id="993">993</span>
 <span id="994">994</span>
+<span id="995">995</span>
+<span id="996">996</span>
+<span id="997">997</span>
+<span id="998">998</span>
+<span id="999">999</span>
+<span id="1000">1000</span>
+<span id="1001">1001</span>
+<span id="1002">1002</span>
+<span id="1003">1003</span>
+<span id="1004">1004</span>
+<span id="1005">1005</span>
+<span id="1006">1006</span>
+<span id="1007">1007</span>
+<span id="1008">1008</span>
+<span id="1009">1009</span>
+<span id="1010">1010</span>
+<span id="1011">1011</span>
+<span id="1012">1012</span>
+<span id="1013">1013</span>
+<span id="1014">1014</span>
+<span id="1015">1015</span>
+<span id="1016">1016</span>
+<span id="1017">1017</span>
+<span id="1018">1018</span>
+<span id="1019">1019</span>
+<span id="1020">1020</span>
+<span id="1021">1021</span>
+<span id="1022">1022</span>
+<span id="1023">1023</span>
+<span id="1024">1024</span>
+<span id="1025">1025</span>
+<span id="1026">1026</span>
+<span id="1027">1027</span>
+<span id="1028">1028</span>
+<span id="1029">1029</span>
+<span id="1030">1030</span>
+<span id="1031">1031</span>
+<span id="1032">1032</span>
+<span id="1033">1033</span>
+<span id="1034">1034</span>
+<span id="1035">1035</span>
+<span id="1036">1036</span>
+<span id="1037">1037</span>
+<span id="1038">1038</span>
+<span id="1039">1039</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attribute">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
@@ -1249,25 +1294,38 @@
 
 <span class="kw">impl </span>pallet_msa::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>Event = Event;
-	<span class="kw">type </span>WeightInfo = pallet_msa::weights::SubstrateWeight&lt;Runtime&gt;;
-	<span class="kw">type </span>ConvertIntoAccountId32 = ConvertInto;
-	<span class="kw">type </span>MaxPublicKeysPerMsa = MsaMaxPublicKeysPerMsa;
-	<span class="kw">type </span>MaxSchemaGrantsPerDelegation = MaxDataSize;
-	<span class="kw">type </span>MaxProviderNameSize = MsaMaxProviderNameSize;
-	<span class="kw">type </span>SchemaValidator = Schemas;
-	<span class="kw">type </span>MortalityWindowSize = MSAMortalityWindowSize;
-	<span class="kw">type </span>MaxSignaturesPerBucket = MSAMaxSignaturesPerBucket;
-	<span class="kw">type </span>NumberOfBuckets = MSANumberOfBuckets;
+	<span class="comment">// The weights info
+	</span><span class="kw">type </span>WeightInfo = pallet_msa::weights::SubstrateWeight&lt;Runtime&gt;;
+	<span class="comment">// The conversion to a 32 byte AccountId
+	</span><span class="kw">type </span>ConvertIntoAccountId32 = ConvertInto;
+	<span class="comment">// The maximum number of public keys per MSA
+	</span><span class="kw">type </span>MaxPublicKeysPerMsa = MsaMaxPublicKeysPerMsa;
+	<span class="comment">// The maximum number of schema grants per delegation
+	</span><span class="kw">type </span>MaxSchemaGrantsPerDelegation = MaxDataSize;
+	<span class="comment">// The maximum provider name size (in bytes)
+	</span><span class="kw">type </span>MaxProviderNameSize = MsaMaxProviderNameSize;
+	<span class="comment">// The type that provides schema related info
+	</span><span class="kw">type </span>SchemaValidator = Schemas;
+	<span class="comment">// The number of blocks per virtual bucket
+	</span><span class="kw">type </span>MortalityWindowSize = MSAMortalityWindowSize;
+	<span class="comment">// The maximum number of signatures per virtual bucket
+	</span><span class="kw">type </span>MaxSignaturesPerBucket = MSAMaxSignaturesPerBucket;
+	<span class="comment">// The total number of virtual buckets
+	</span><span class="kw">type </span>NumberOfBuckets = MSANumberOfBuckets;
 }
 
 <span class="kw">pub use </span>common_primitives::schema::SchemaId;
 
 <span class="kw">impl </span>pallet_schemas::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>Event = Event;
-	<span class="kw">type </span>WeightInfo = pallet_schemas::weights::SubstrateWeight&lt;Runtime&gt;;
-	<span class="kw">type </span>MinSchemaModelSizeBytes = SchemasMinModelSizeBytes;
-	<span class="kw">type </span>MaxSchemaRegistrations = SchemasMaxRegistrations;
-	<span class="kw">type </span>SchemaModelMaxBytesBoundedVecLimit = SchemasMaxBytesBoundedVecLimit;
+	<span class="comment">// The weights info
+	</span><span class="kw">type </span>WeightInfo = pallet_schemas::weights::SubstrateWeight&lt;Runtime&gt;;
+	<span class="comment">// The mininum size (in bytes) for a schema model
+	</span><span class="kw">type </span>MinSchemaModelSizeBytes = SchemasMinModelSizeBytes;
+	<span class="comment">// The maximum number of schemas that can be registered
+	</span><span class="kw">type </span>MaxSchemaRegistrations = SchemasMaxRegistrations;
+	<span class="comment">// The maximum length of a schema model (in bytes)
+	</span><span class="kw">type </span>SchemaModelMaxBytesBoundedVecLimit = SchemasMaxBytesBoundedVecLimit;
 }
 
 <span class="kw">pub struct </span>RootAsVestingPallet;
@@ -1295,7 +1353,9 @@
 	</span><span class="kw">pub const </span>MaxVestingSchedules: u32 = ORML_MAX_VESTING_SCHEDULES;
 }
 
-<span class="kw">impl </span>orml_vesting::Config <span class="kw">for </span>Runtime {
+<span class="comment">// See https://paritytech.github.io/substrate/master/pallet_vesting/index.html for
+// the descriptions of these configs.
+</span><span class="kw">impl </span>orml_vesting::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>Event = Event;
 	<span class="kw">type </span>Currency = Balances;
 	<span class="kw">type </span>MinVestedTransfer = MinVestedTransfer;
@@ -1305,7 +1365,9 @@
 	<span class="kw">type </span>BlockNumberProvider = RelaychainBlockNumberProvider&lt;Runtime&gt;;
 }
 
-<span class="kw">impl </span>pallet_timestamp::Config <span class="kw">for </span>Runtime {
+<span class="comment">// See https://paritytech.github.io/substrate/master/pallet_timestamp/index.html for
+// the descriptions of these configs.
+</span><span class="kw">impl </span>pallet_timestamp::Config <span class="kw">for </span>Runtime {
 	<span class="doccomment">/// A timestamp: milliseconds since the unix epoch.
 	</span><span class="kw">type </span>Moment = u64;
 	<span class="kw">type </span>OnTimestampSet = ();
@@ -1313,7 +1375,9 @@
 	<span class="kw">type </span>WeightInfo = weights::pallet_timestamp::SubstrateWeight&lt;Runtime&gt;;
 }
 
-<span class="kw">impl </span>pallet_authorship::Config <span class="kw">for </span>Runtime {
+<span class="comment">// See https://paritytech.github.io/substrate/master/pallet_authorship/index.html for
+// the descriptions of these configs.
+</span><span class="kw">impl </span>pallet_authorship::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>FindAuthor = pallet_session::FindAccountFromAuthorIndex&lt;<span class="self">Self</span>, Aura&gt;;
 	<span class="kw">type </span>UncleGenerations = AuthorshipUncleGenerations;
 	<span class="kw">type </span>FilterUncle = ();
@@ -1363,7 +1427,9 @@
 	</span><span class="kw">type </span>NoPreimagePostponement = NoPreimagePostponement;
 }
 
-<span class="kw">impl </span>pallet_preimage::Config <span class="kw">for </span>Runtime {
+<span class="comment">// See https://paritytech.github.io/substrate/master/pallet_preimage/index.html for
+// the descriptions of these configs.
+</span><span class="kw">impl </span>pallet_preimage::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>WeightInfo = weights::pallet_preimage::SubstrateWeight&lt;Runtime&gt;;
 	<span class="kw">type </span>Event = Event;
 	<span class="kw">type </span>Currency = Balances;
@@ -1378,7 +1444,9 @@
 	<span class="kw">type </span>ByteDeposit = PreimageByteDeposit;
 }
 
-<span class="kw">type </span>CouncilCollective = pallet_collective::Instance1;
+<span class="comment">// See https://paritytech.github.io/substrate/master/pallet_collective/index.html for
+// the descriptions of these configs.
+</span><span class="kw">type </span>CouncilCollective = pallet_collective::Instance1;
 <span class="kw">impl </span>pallet_collective::Config&lt;CouncilCollective&gt; <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>Origin = Origin;
 	<span class="kw">type </span>Proposal = Call;
@@ -1481,7 +1549,9 @@
 	<span class="kw">type </span>OperationalPreimageOrigin = pallet_collective::EnsureMember&lt;AccountId, CouncilCollective&gt;;
 }
 
-<span class="kw">impl </span>pallet_treasury::Config <span class="kw">for </span>Runtime {
+<span class="comment">// See https://paritytech.github.io/substrate/master/pallet_treasury/index.html for
+// the descriptions of these configs.
+</span><span class="kw">impl </span>pallet_treasury::Config <span class="kw">for </span>Runtime {
 	<span class="doccomment">/// Treasury Account: 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z
 	</span><span class="kw">type </span>PalletId = TreasuryPalletId;
 	<span class="kw">type </span>Currency = Balances;
@@ -1541,7 +1611,9 @@
 	</span><span class="kw">type </span>MaxApprovals = MaxApprovals;
 }
 
-<span class="kw">impl </span>pallet_transaction_payment::Config <span class="kw">for </span>Runtime {
+<span class="comment">// See https://paritytech.github.io/substrate/master/pallet_transaction_payment/index.html for
+// the descriptions of these configs.
+</span><span class="kw">impl </span>pallet_transaction_payment::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>Event = Event;
 	<span class="kw">type </span>OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter&lt;Balances, ()&gt;;
 	<span class="kw">type </span>WeightToFee = WeightToFee;
@@ -1550,7 +1622,9 @@
 	<span class="kw">type </span>OperationalFeeMultiplier = TransactionPaymentOperationalFeeMultiplier;
 }
 
-<span class="kw">impl </span>cumulus_pallet_parachain_system::Config <span class="kw">for </span>Runtime {
+<span class="comment">// See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
+// the descriptions of these configs.
+</span><span class="kw">impl </span>cumulus_pallet_parachain_system::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>Event = Event;
 	<span class="kw">type </span>OnSystemEvent = ();
 	<span class="kw">type </span>SelfParaId = parachain_info::Pallet&lt;Runtime&gt;;
@@ -1566,7 +1640,9 @@
 
 <span class="kw">impl </span>cumulus_pallet_aura_ext::Config <span class="kw">for </span>Runtime {}
 
-<span class="kw">impl </span>pallet_session::Config <span class="kw">for </span>Runtime {
+<span class="comment">// See https://paritytech.github.io/substrate/master/pallet_session/index.html for
+// the descriptions of these configs.
+</span><span class="kw">impl </span>pallet_session::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>Event = Event;
 	<span class="kw">type </span>ValidatorId = &lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::AccountId;
 	<span class="comment">// we don&#39;t have stash and controller, thus we don&#39;t need the convert as well.
@@ -1580,13 +1656,17 @@
 	<span class="kw">type </span>WeightInfo = weights::pallet_session::SubstrateWeight&lt;Runtime&gt;;
 }
 
-<span class="kw">impl </span>pallet_aura::Config <span class="kw">for </span>Runtime {
+<span class="comment">// See https://paritytech.github.io/substrate/master/pallet_aura/index.html for
+// the descriptions of these configs.
+</span><span class="kw">impl </span>pallet_aura::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>AuthorityId = AuraId;
 	<span class="kw">type </span>DisabledValidators = ();
 	<span class="kw">type </span>MaxAuthorities = AuraMaxAuthorities;
 }
 
-<span class="kw">impl </span>pallet_collator_selection::Config <span class="kw">for </span>Runtime {
+<span class="comment">// See https://paritytech.github.io/substrate/master/pallet_collator_selection/index.html for
+// the descriptions of these configs.
+</span><span class="kw">impl </span>pallet_collator_selection::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>Event = Event;
 	<span class="kw">type </span>Currency = Balances;
 
@@ -1634,12 +1714,18 @@
 
 <span class="kw">impl </span>pallet_messages::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>Event = Event;
-	<span class="kw">type </span>WeightInfo = pallet_messages::weights::SubstrateWeight&lt;Runtime&gt;;
-	<span class="kw">type </span>MsaInfoProvider = Msa;
-	<span class="kw">type </span>SchemaGrantValidator = Msa;
-	<span class="kw">type </span>SchemaProvider = Schemas;
-	<span class="kw">type </span>MaxMessagesPerBlock = MessagesMaxPerBlock;
-	<span class="kw">type </span>MaxMessagePayloadSizeBytes = MessagesMaxPayloadSizeBytes;
+	<span class="comment">// The weights info
+	</span><span class="kw">type </span>WeightInfo = pallet_messages::weights::SubstrateWeight&lt;Runtime&gt;;
+	<span class="comment">// The type that supplies MSA info
+	</span><span class="kw">type </span>MsaInfoProvider = Msa;
+	<span class="comment">// The type that validates schema grants
+	</span><span class="kw">type </span>SchemaGrantValidator = Msa;
+	<span class="comment">// The type that provides schema info
+	</span><span class="kw">type </span>SchemaProvider = Schemas;
+	<span class="comment">// The maximum number of messages per block
+	</span><span class="kw">type </span>MaxMessagesPerBlock = MessagesMaxPerBlock;
+	<span class="comment">// The maximum message payload in bytes
+	</span><span class="kw">type </span>MaxMessagePayloadSizeBytes = MessagesMaxPayloadSizeBytes;
 
 	<span class="doccomment">/// A set of helper functions for benchmarking.
 	</span><span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
@@ -1648,12 +1734,16 @@
 	</span><span class="kw">type </span>SchemaBenchmarkHelper = Schemas;
 }
 
-<span class="kw">impl </span>pallet_sudo::Config <span class="kw">for </span>Runtime {
+<span class="comment">// See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for
+// the descriptions of these configs.
+</span><span class="kw">impl </span>pallet_sudo::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>Event = Event;
 	<span class="kw">type </span>Call = Call;
 }
 
-<span class="kw">impl </span>pallet_utility::Config <span class="kw">for </span>Runtime {
+<span class="comment">// See https://paritytech.github.io/substrate/master/pallet_utility/index.html for
+// the descriptions of these configs.
+</span><span class="kw">impl </span>pallet_utility::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>Event = Event;
 	<span class="kw">type </span>Call = Call;
 	<span class="kw">type </span>PalletsOrigin = OriginCaller;

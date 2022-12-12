@@ -282,6 +282,20 @@
 <span id="282">282</span>
 <span id="283">283</span>
 <span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::prod_or_testnet_or_local;
 <span class="kw">use </span>common_primitives::{
 	node::{Balance, BlockNumber},
@@ -363,7 +377,7 @@
 	</span><span class="kw">pub const </span>CENTS: Balance = DOLLARS / <span class="number">100</span>; <span class="comment">// 1_000_000
 	</span><span class="kw">pub const </span>MILLICENTS: Balance = CENTS / <span class="number">1_000</span>; <span class="comment">// 1_000
 
-	</span><span class="doccomment">/// Generates an balance based on amount of items and bytes
+	</span><span class="doccomment">/// Generates a balance based on amount of items and bytes
 	/// Items are each worth 20 Dollars
 	/// Bytes each cost 1/1_000 of a Dollar
 	</span><span class="kw">pub const fn </span>deposit(items: u32, bytes: u32) -&gt; Balance {
@@ -391,16 +405,21 @@
 <span class="comment">// -end- Frame System Pallet ---
 
 // --- MSA Pallet ---
+</span><span class="doccomment">/// The maximum number of public keys per MSA
 </span><span class="kw">pub type </span>MsaMaxPublicKeysPerMsa = ConstU8&lt;<span class="number">25</span>&gt;;
-<span class="kw">pub type </span>MsaMaxProviderNameSize = ConstU32&lt;<span class="number">16</span>&gt;;
+<span class="doccomment">/// The maximum size of the provider name (in bytes)
+</span><span class="kw">pub type </span>MsaMaxProviderNameSize = ConstU32&lt;<span class="number">16</span>&gt;;
 <span class="comment">// -end- MSA Pallet ---
 
 // --- Schemas Pallet ---
 </span><span class="macro">parameter_types! </span>{
-	<span class="kw">pub const </span>SchemasMaxRegistrations: SchemaId = <span class="number">65_000</span>;
+	<span class="doccomment">/// The maximum number of schema registrations
+	</span><span class="kw">pub const </span>SchemasMaxRegistrations: SchemaId = <span class="number">65_000</span>;
 }
-<span class="kw">pub type </span>SchemasMinModelSizeBytes = ConstU32&lt;<span class="number">8</span>&gt;;
-<span class="kw">pub type </span>SchemasMaxBytesBoundedVecLimit = ConstU32&lt;<span class="number">65_500</span>&gt;;
+<span class="doccomment">/// The minimum schema model size (in bytes)
+</span><span class="kw">pub type </span>SchemasMinModelSizeBytes = ConstU32&lt;<span class="number">8</span>&gt;;
+<span class="doccomment">/// The maximum length of a schema model (in bytes)
+</span><span class="kw">pub type </span>SchemasMaxBytesBoundedVecLimit = ConstU32&lt;<span class="number">65_500</span>&gt;;
 <span class="comment">// -end- Schemas Pallet ---
 
 // --- Orml Vesting Pallet ---
@@ -446,6 +465,7 @@
 <span class="comment">// -end- Preimage Pallet ---
 
 // --- Council ---
+// The maximum number of council proposals
 </span><span class="kw">pub type </span>CouncilMaxProposals = ConstU32&lt;<span class="number">25</span>&gt;;
 
 <span class="macro">parameter_types! </span>{
@@ -454,8 +474,10 @@
 <span class="comment">// -end- Council ---
 
 // --- Technical Committee ---
+// The maximum number of technical committee proposals
 </span><span class="kw">pub type </span>TCMaxProposals = ConstU32&lt;<span class="number">25</span>&gt;;
-<span class="kw">pub type </span>TCMaxMembers = ConstU32&lt;<span class="number">3</span>&gt;;
+<span class="comment">// The maximum number of technical committee members
+</span><span class="kw">pub type </span>TCMaxMembers = ConstU32&lt;<span class="number">3</span>&gt;;
 
 <span class="macro">parameter_types! </span>{
 	<span class="kw">pub const </span>TCMotionDuration: BlockNumber = <span class="number">5 </span>* DAYS;
@@ -511,6 +533,7 @@
 <span class="comment">// -end- Treasury Pallet ---
 
 // --- Transaction Payment Pallet ---
+// The fee multiplier
 </span><span class="kw">pub type </span>TransactionPaymentOperationalFeeMultiplier = ConstU8&lt;<span class="number">5</span>&gt;;
 
 <span class="macro">parameter_types! </span>{
@@ -525,6 +548,7 @@
 <span class="comment">// -end- Session Pallet ---
 
 // --- Aura Pallet ---
+</span><span class="doccomment">/// The maximum number of authorities
 </span><span class="kw">pub type </span>AuraMaxAuthorities = ConstU32&lt;<span class="number">100_000</span>&gt;;
 <span class="comment">// -end- Aura Pallet ---
 
@@ -547,6 +571,7 @@
 <span class="comment">// -end- Collator Selection Pallet ---
 
 // --- Messages Pallet ---
+</span><span class="doccomment">/// The maximum number of messages per block
 </span><span class="kw">pub type </span>MessagesMaxPerBlock = ConstU32&lt;<span class="number">7000</span>&gt;;
 
 <span class="kw">impl </span>Clone <span class="kw">for </span>MessagesMaxPayloadSizeBytes {
@@ -556,9 +581,12 @@
 }
 <span class="comment">// -end- Messages Pallet ---
 
+</span><span class="doccomment">/// The number of blocks per virtual bucket
 </span><span class="kw">pub type </span>MSAMortalityWindowSize = ConstU32&lt;<span class="number">100</span>&gt;;
-<span class="kw">pub type </span>MSAMaxSignaturesPerBucket = ConstU32&lt;<span class="number">50_000</span>&gt;;
-<span class="kw">pub type </span>MSANumberOfBuckets = ConstU32&lt;<span class="number">2</span>&gt;;
+<span class="doccomment">/// The maximum number of signatures per virtual bucket
+</span><span class="kw">pub type </span>MSAMaxSignaturesPerBucket = ConstU32&lt;<span class="number">50_000</span>&gt;;
+<span class="doccomment">/// The total number of virtual buckets
+</span><span class="kw">pub type </span>MSANumberOfBuckets = ConstU32&lt;<span class="number">2</span>&gt;;
 
 <span class="macro">parameter_types! </span>{
 	<span class="doccomment">/// SS58 Prefix for the for Frequency Network
