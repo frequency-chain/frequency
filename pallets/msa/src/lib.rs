@@ -911,7 +911,8 @@ impl<T: Config> Pallet<T> {
 			// Increment the key counter
 			<PublicKeyCountForMsaId<T>>::try_mutate(msa_id, |key_count| {
 				// key_count:u8 should default to 0 if it does not exist
-				let incremented_key_count = key_count.checked_add(1).ok_or(Error::<T>::KeyLimitExceeded)?;
+				let incremented_key_count =
+					key_count.checked_add(1).ok_or(Error::<T>::KeyLimitExceeded)?;
 
 				ensure!(
 					incremented_key_count <= T::MaxPublicKeysPerMsa::get(),
