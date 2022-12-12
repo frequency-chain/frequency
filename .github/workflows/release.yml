@@ -18,7 +18,8 @@ jobs:
     name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
     strategy:
       matrix:
-        os: [[self-hosted, Linux, X64], [self-hosted, Linux, ARM64]]
+        # os: [[self-hosted, Linux, X64], [self-hosted, Linux, ARM64]]
+        os: [[self-hosted, Linux, X64]]
         network: [local, rococo, mainnet]
         include:
           - network: local
@@ -35,8 +36,8 @@ jobs:
             release-file-name-prefix: frequency
           - os: [self-hosted, Linux, X64]
             arch: amd64
-          - os: [self-hosted, Linux, ARM64]
-            arch: arm64
+          # - os: [self-hosted, Linux, ARM64]
+          #   arch: arm64
     runs-on: ${{matrix.os}}
     steps:
       - name: Set Global Env Vars
