@@ -21,12 +21,6 @@ pub enum ModelType {
 	Parquet,
 }
 
-impl Default for ModelType {
-	fn default() -> Self {
-		Self::AvroBinary
-	}
-}
-
 /// Types of payload locations
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
@@ -37,15 +31,9 @@ pub enum PayloadLocation {
 	IPFS,
 }
 
-impl Default for PayloadLocation {
-	fn default() -> Self {
-		Self::OnChain
-	}
-}
-
 /// RPC Response form for a Schema
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct SchemaResponse {
 	/// The unique identifier for this Schema
 	pub schema_id: SchemaId,
