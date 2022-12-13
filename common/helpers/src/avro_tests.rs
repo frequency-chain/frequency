@@ -1,9 +1,9 @@
-use apache_avro::Schema::Null;
 use std::collections::HashMap;
 
+use crate::avro;
 use apache_avro::types::Record;
 
-use crate::{avro, avro::fingerprint_raw_schema_list, types::*};
+pub type SchemaValue = apache_avro::types::Value;
 
 const VALID_SCHEMAS: [&str; 19] = [
 	r#""null""#,
@@ -417,33 +417,4 @@ fn test_json_serialized_bad_avro_schema() {
 	let serialized_bytes = INVALID_SCHEMAS[6].as_bytes().to_vec();
 	let validation_res = avro::validate_raw_avro_schema(&serialized_bytes);
 	assert!(validation_res.is_err());
-}
-
-#[test]
-fn test_fingerprint_raw_schema_list_works() {
-	assert!(fingerprint_raw_schema_list(&VALID_SCHEMAS).is_ok());
-}
-
-#[test]
-fn test_fingerprint_raw_schema_list_skips_invalid_schema() {
-	let schema_list = [
-		VALID_SCHEMAS[2],
-		INVALID_SCHEMAS[0],
-		VALID_SCHEMAS[17],
-		VALID_SCHEMAS[10],
-		INVALID_SCHEMAS[1],
-	];
-	let schema_result = fingerprint_raw_schema_list(&schema_list);
-	assert!(
-		schema_result.is_ok(),
-		"schema list was not supposed to error, {:?}",
-		schema_result.err()
-	);
-
-	let (schemas, _serialized) = schema_result.unwrap();
-	assert_eq!(Null, schemas[1], "schemas: {:?}", schemas);
-	assert_eq!(Null, schemas[4], "schemas: {:?}", schemas);
-	assert_ne!(Null, schemas[0], "schemas: {:?}", schemas);
-	assert_ne!(Null, schemas[2], "schemas: {:?}", schemas);
-	assert_ne!(Null, schemas[3], "schemas: {:?}", schemas);
 }

@@ -1031,7 +1031,6 @@ dependencies = [
  "apache-avro",
  "common-primitives",
  "jsonrpsee",
- "rayon",
  "sp-api",
  "sp-io 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.30)",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.30)",
