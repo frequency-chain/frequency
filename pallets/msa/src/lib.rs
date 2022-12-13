@@ -154,7 +154,10 @@ pub mod pallet {
 		#[pallet::constant]
 		type NumberOfBuckets: Get<u32>;
 
-		/// The maximum number of signatures that can be stored in PayloadSignatureRegistry
+		/// The maximum number of signatures that can be stored in PayloadSignatureRegistry.
+		/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
+		/// It's separate because this config is provided to signature storage and cannot be a
+		/// calculated value.
 		#[pallet::constant]
 		type MaxSignaturesStored: Get<Option<u32>>;
 	}

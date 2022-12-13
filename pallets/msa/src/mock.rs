@@ -109,6 +109,7 @@ impl pallet_msa::Config for Test {
 	type MortalityWindowSize = ConstU32<100>;
 	type MaxSignaturesPerBucket = ConstU32<20>;
 	type NumberOfBuckets = ConstU32<2>;
+	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<40>;
 }
 
