@@ -2,8 +2,8 @@ use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	dispatch::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 	pallet_prelude::InvalidTransaction,
+	traits::Get,
 	BoundedBTreeMap,
-	traits::{Get},
 };
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Encode, Pair};
 use sp_runtime::{
@@ -242,7 +242,7 @@ fn add_key_with_more_than_allowed_should_panic() {
 
 		let add_new_key_data = AddKeyData {
 			msa_id: new_msa_id,
-			expiration: current_block + 50,
+			expiration: current_block + 51,
 			new_public_key: final_key_pair.public().into(),
 		};
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
@@ -251,6 +251,7 @@ fn add_key_with_more_than_allowed_should_panic() {
 		let new_key_signature: MultiSignature =
 			final_key_pair.sign(&encode_data_new_key_data).into();
 
+		// fails here?
 		assert_noop!(
 			Msa::add_public_key_to_msa(
 				test_origin_signed(1),
@@ -2259,6 +2260,13 @@ pub fn cannot_register_signature_with_mortality_out_of_bounds() {
 	})
 }
 
+struct TestCase {
+	current: u64,
+	mortality: u64,
+	run_to: u64,
+	expected_ok: bool,
+}
+
 #[test]
 pub fn add_msa_key_replay_fails() {
 	new_test_ext().execute_with(|| {
@@ -2303,11 +2311,7 @@ pub fn add_msa_key_replay_fails() {
 		for tc in test_cases {
 			System::set_block_number(tc.current);
 
-		let limit: u32 = <Test as Config>::MaxSignaturesPerBucket::get();
-		for _i in 0..limit {
-			let sig = &generate_test_signature();
-			assert_ok!(Msa::register_signature(sig, mortality_block.into()));
-		}
+			let (new_key_pair, _) = sr25519::Pair::generate();
 
 			let add_new_key_data = AddKeyData {
 				msa_id: new_msa_id,
@@ -2358,7 +2362,6 @@ pub fn cannot_register_too_many_signatures_in_one_bucket() {
 		);
 	})
 }
-
 
 #[test]
 fn grant_permissions_for_schemas_errors_when_no_delegation() {

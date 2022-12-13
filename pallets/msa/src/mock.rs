@@ -107,9 +107,9 @@ impl pallet_msa::Config for Test {
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
 	type MortalityWindowSize = ConstU32<100>;
-	type MaxSignaturesPerBucket = ConstU32<10>;
+	type MaxSignaturesPerBucket = ConstU32<20>;
 	type NumberOfBuckets = ConstU32<2>;
-	type MaxSignaturesStored = ConstU32<20>;
+	type MaxSignaturesStored = ConstU32<40>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

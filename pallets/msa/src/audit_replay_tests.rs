@@ -53,7 +53,7 @@ impl frame_system::Config for Test {
 	type SystemWeightInfo = ();
 	type SS58Prefix = ConstU16<42>;
 	type OnSetCode = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
+	type MaxConsumers = ConstU32<16>;
 }
 
 impl pallet_schemas::Config for Test {
@@ -105,8 +105,9 @@ impl pallet_msa::Config for Test {
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
 	type MortalityWindowSize = ConstU32<10>;
-	type MaxSignaturesPerBucket = ConstU32<10>;
+	type MaxSignaturesPerBucket = ConstU32<20>;
 	type NumberOfBuckets = ConstU32<10>;
+	type MaxSignaturesStored = ConstU32<200>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
