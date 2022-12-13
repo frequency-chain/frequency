@@ -36,8 +36,8 @@ impl frame_system::Config for Test {
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
-	type Origin = Origin;
-	type Call = Call;
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeCall = RuntimeCall;
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
@@ -45,7 +45,7 @@ impl frame_system::Config for Test {
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
@@ -59,7 +59,7 @@ impl frame_system::Config for Test {
 }
 
 impl pallet_schemas::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type MinSchemaModelSizeBytes = ConstU32<10>;
 	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<10>;
@@ -99,14 +99,14 @@ impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
 }
 
 impl pallet_msa::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxPublicKeysPerMsa = MaxPublicKeysPerMsa;
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
-	type MortalityWindowSize = ConstU32<200>;
+	type MortalityWindowSize = ConstU32<100>;
 	type MaxSignaturesPerBucket = ConstU32<10>;
 	type NumberOfBuckets = ConstU32<2>;
 }
@@ -136,8 +136,8 @@ pub fn test_public(n: u8) -> AccountId32 {
 
 /// Create and return a simple signed origin from a test_public constructed with the desired integer,
 /// for passing to an extrinsic call
-pub fn test_origin_signed(n: u8) -> Origin {
-	Origin::signed(test_public(n))
+pub fn test_origin_signed(n: u8) -> RuntimeOrigin {
+	RuntimeOrigin::signed(test_public(n))
 }
 
 /// Create a new keypair and an MSA associated with its public key.
@@ -195,10 +195,13 @@ pub fn create_provider_delegator_msas() -> (u64, Public, u64, Public) {
 		create_and_sign_add_provider_payload(delegator_pair, provider_msa_id);
 
 	// Register provider
-	assert_ok!(Msa::create_provider(Origin::signed(provider_account.into()), Vec::from("Foo")));
+	assert_ok!(Msa::create_provider(
+		RuntimeOrigin::signed(provider_account.into()),
+		Vec::from("Foo")
+	));
 
 	assert_ok!(Msa::grant_delegation(
-		Origin::signed(provider_account.into()),
+		RuntimeOrigin::signed(provider_account.into()),
 		delegator_account.into(),
 		delegator_signature,
 		add_provider_payload

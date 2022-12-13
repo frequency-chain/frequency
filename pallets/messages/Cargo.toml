@@ -7,29 +7,29 @@ license = "Apache-2.0"
 name = "pallet-messages"
 publish = false
 repository = "https://github.com/LibertyDSNP/frequency/"
-version = "0.9.29"
+version = "0.9.30"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = {package = "parity-scale-codec", version = "3.1.5", default-features = false, features = [
+codec = { package = "parity-scale-codec", version = "3.1.5", default-features = false, features = [
   "derive",
-]}
-log = {version = "0.4.17", default-features = false}
-scale-info = {version = "2.1.2", default-features = false, features = [
+] }
+log = { version = "0.4.17", default-features = false }
+scale-info = { version = "2.2.0", default-features = false, features = [
   "derive",
-]}
+] }
 # Substrate
-frame-benchmarking = {git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.29"}
-frame-support = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
-frame-system = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
-sp-core = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
-sp-io = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
-sp-runtime = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
-sp-std = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.30" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
 # Frequency related dependencies
-common-primitives = {default-features = false, path = "../../common/primitives"}
+common-primitives = { default-features = false, path = "../../common/primitives" }
 
 [features]
 default = ['std']
