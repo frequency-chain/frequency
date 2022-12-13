@@ -103,7 +103,7 @@ pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::log::error;
+	use frame_support::log::error as log_err;
 
 	use super::*;
 
@@ -575,7 +575,7 @@ pub mod pallet {
 					Self::deposit_event(Event::DelegationRevoked { delegator_id, provider_id });
 				},
 				None => {
-					error!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
+					log_err!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
 				},
 			}
 
@@ -677,7 +677,7 @@ pub mod pallet {
 					Self::deposit_event(Event::PublicKeyDeleted { key: public_key_to_delete });
 				},
 				None => {
-					error!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
+					log_err!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
 				},
 			}
 			Ok(())
@@ -712,7 +712,7 @@ pub mod pallet {
 					Self::deposit_event(Event::DelegationRevoked { provider_id, delegator_id })
 				},
 				None => {
-					error!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
+					log_err!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
 				},
 			}
 
@@ -809,7 +809,7 @@ pub mod pallet {
 					Self::deposit_event(Event::MsaRetired { msa_id });
 				},
 				None => {
-					error!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
+					log_err!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
 				},
 			}
 			Ok(Some(T::WeightInfo::retire_msa(num_deletions)).into())
