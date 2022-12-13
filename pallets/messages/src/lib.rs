@@ -148,6 +148,23 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
+	/// A temporary storage of unique schema ids and counts, for a duration of block period.
+	/// Main use for this storage is to propagate events
+	/// At the start of the next block this storage is cleared
+	/// - Value: Sorted List(Set) of SchemaIds and their counts
+	#[pallet::storage]
+	#[pallet::whitelist_storage]
+	#[pallet::getter(fn get_block_schemas)]
+	pub(super) type BlockSchemas<T: Config> =
+		StorageValue<_, BoundedVec<(SchemaId, u16), T::MaxMessagesPerBlock>, ValueQuery>;
+
+	/// A temporary storage for getting the index for messages
+	/// At the start of the next block this storage is set to 0
+	#[pallet::storage]
+	#[pallet::whitelist_storage]
+	#[pallet::getter(fn get_message_index)]
+	pub(super) type MessageIndex<T: Config> = StorageValue<_, u16, ValueQuery>;
+
 	#[pallet::error]
 	pub enum Error<T> {
 		/// Too many messages are added to existing block
@@ -184,14 +201,23 @@ pub mod pallet {
 			schema_id: SchemaId,
 			/// The block number for these messages
 			block_number: T::BlockNumber,
+			/// Number of messages in this block for this schema
+			count: u16,
 		},
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_current: T::BlockNumber) -> Weight {
-			Weight::zero()
+			T::WeightInfo::on_finalize()
 			// TODO: add retention policy execution GitHub Issue: #126 and #25
+		}
+
+		fn on_finalize(block_number: T::BlockNumber) {
+			<MessageIndex<T>>::set(0u16);
+			for (schema_id, count) in <BlockSchemas<T>>::take() {
+				Self::deposit_event(Event::MessagesStored { schema_id, block_number, count });
+			}
 		}
 	}
 
@@ -322,21 +348,20 @@ impl<T: Config> Pallet<T> {
 		current_block: T::BlockNumber,
 	) -> DispatchResult {
 		<Messages<T>>::try_mutate(current_block, schema_id, |existing_messages| -> DispatchResult {
-			let extrinsic_index =
-				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::BadContext)?;
+			let index = MessageIndex::<T>::get();
 			let msg = Message {
 				payload, // size is checked on top of extrinsic
 				provider_msa_id,
 				msa_id,
-				// converting u32 to u16 and defaulting to u16:MAX if overflowed
-				index: extrinsic_index.try_into().unwrap_or(u16::MAX),
+				index,
 			};
 
 			existing_messages
 				.try_push(msg)
 				.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
 
-			Self::deposit_event(Event::MessagesStored { schema_id, block_number: current_block });
+			Self::track_schema_id(schema_id)?;
+			MessageIndex::<T>::put(index.saturating_add(1));
 			Ok(())
 		})
 	}
@@ -370,5 +395,19 @@ impl<T: Config> Pallet<T> {
 			.iter()
 			.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
 			.collect()
+	}
+
+	/// stores schema_id in a temporary set to allow sending events in the end of block
+	fn track_schema_id(schema_id: SchemaId) -> DispatchResult {
+		<BlockSchemas<T>>::try_mutate(|set| -> DispatchResult {
+			match set.binary_search_by(|(existing_schema_id, _)| existing_schema_id.cmp(&schema_id))
+			{
+				Err(i) => set
+					.try_insert(i, (schema_id, 1))
+					.map_err(|_| Error::<T>::TooManyMessagesInBlock)?,
+				Ok(i) => set[i].1 += 1, // increase the counter
+			}
+			Ok(())
+		})
 	}
 }

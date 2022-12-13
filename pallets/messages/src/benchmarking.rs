@@ -8,11 +8,12 @@ use common_primitives::{
 	schema::*,
 };
 use frame_benchmarking::{benchmarks, whitelisted_caller};
-use frame_support::{assert_ok, pallet_prelude::DispatchResult};
+use frame_support::{assert_ok, pallet_prelude::DispatchResult, traits::Hooks};
 use frame_system::RawOrigin;
 use sp_runtime::traits::One;
 
 const AVERAGE_NUMBER_OF_MESSAGES: u32 = 499;
+const AVERAGE_NUMBER_OF_SCHEMAS: u32 = 25;
 const IPFS_SCHEMA_ID: u16 = 50;
 const IPFS_PAYLOAD_LENGTH: u32 = 10;
 
@@ -98,6 +99,19 @@ benchmarks! {
 			assert_ok!(ipfs_message::<T>(IPFS_SCHEMA_ID));
 		}
 	}: _ (RawOrigin::Signed(caller),IPFS_SCHEMA_ID, cid, IPFS_PAYLOAD_LENGTH)
+
+	on_finalize {
+		for j in 0 .. AVERAGE_NUMBER_OF_MESSAGES {
+			let schema_id = j % AVERAGE_NUMBER_OF_SCHEMAS;
+			assert_ok!(onchain_message::<T>(schema_id.try_into().unwrap()));
+		}
+
+	}: {
+		MessagesPallet::<T>::on_finalize(1u32.into());
+	}
+	verify {
+		assert_eq!(BlockSchemas::<T>::get().len(), 0);
+	}
 
 	impl_benchmark_test_suite!(MessagesPallet, crate::mock::new_test_ext(), crate::mock::Test);
 }

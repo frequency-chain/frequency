@@ -1,8 +1,9 @@
 use super::{mock::*, Event as MessageEvent};
-use crate::{BlockMessages, Config, Error, Message, Messages};
+use crate::{BlockSchemas, Config, Error, Message, MessageIndex, Messages};
 use codec::Encode;
 use common_primitives::{messages::MessageResponse, schema::*};
-use frame_support::{assert_err, assert_noop, assert_ok, BoundedVec};
+use frame_support::{assert_err, assert_noop, assert_ok, traits::OnFinalize, BoundedVec};
+use frame_system::{EventRecord, Phase};
 use sp_std::vec::Vec;
 
 /// Populate mocked Messages storage with message data.
@@ -45,7 +46,7 @@ fn populate_messages(
 }
 
 #[test]
-fn add_message_should_store_message_on_temp_storage() {
+fn add_message_should_store_message_in_storage() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let caller_1 = 5;
@@ -54,6 +55,7 @@ fn add_message_should_store_message_on_temp_storage() {
 		let schema_id_2: SchemaId = 2;
 		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
 		let message_payload_2 = Vec::from("{'fromId': 343, 'content': '34333'}".as_bytes());
+		let message_payload_3 = Vec::from("{'fromId': 422, 'content': '23222'}".as_bytes());
 
 		// act
 		assert_ok!(MessagesPallet::add_onchain_message(
@@ -62,6 +64,7 @@ fn add_message_should_store_message_on_temp_storage() {
 			schema_id_1,
 			message_payload_1.clone()
 		));
+
 		assert_ok!(MessagesPallet::add_onchain_message(
 			RuntimeOrigin::signed(caller_2),
 			None,
@@ -69,35 +72,55 @@ fn add_message_should_store_message_on_temp_storage() {
 			message_payload_2.clone()
 		));
 
-		// assert
-		let list = BlockMessages::<Test>::get().into_inner();
-		assert_eq!(list.len(), 2);
+		assert_ok!(MessagesPallet::add_onchain_message(
+			RuntimeOrigin::signed(caller_2),
+			None,
+			schema_id_2,
+			message_payload_3.clone()
+		));
+
+		// assert messages
+		let list1 = Messages::<Test>::get(1, schema_id_1).into_inner();
+		let list2 = Messages::<Test>::get(1, schema_id_2).into_inner();
+		assert_eq!(list1.len(), 1);
+		assert_eq!(list2.len(), 2);
 
 		assert_eq!(
-			list[0],
-			(
-				Message {
-					msa_id: Some(get_msa_from_account(caller_1)),
-					payload: message_payload_1.try_into().unwrap(),
-					index: 0,
-					provider_msa_id: get_msa_from_account(caller_1)
-				},
-				schema_id_1
-			)
+			list1[0],
+			Message {
+				msa_id: Some(get_msa_from_account(caller_1)),
+				payload: message_payload_1.try_into().unwrap(),
+				index: 0,
+				provider_msa_id: get_msa_from_account(caller_1)
+			}
 		);
 
 		assert_eq!(
-			list[1],
-			(
+			list2,
+			vec![
 				Message {
 					msa_id: Some(get_msa_from_account(caller_2)),
 					payload: message_payload_2.try_into().unwrap(),
 					index: 1,
 					provider_msa_id: get_msa_from_account(caller_2)
 				},
-				schema_id_2
-			)
+				Message {
+					msa_id: Some(get_msa_from_account(caller_2)),
+					payload: message_payload_3.try_into().unwrap(),
+					index: 2,
+					provider_msa_id: get_msa_from_account(caller_2)
+				},
+			]
 		);
+
+		assert_eq!(
+			BlockSchemas::<Test>::get().into_inner(),
+			vec![(schema_id_1, 1), (schema_id_2, 2)]
+		);
+
+		// assert events
+		let events_occured = System::events();
+		assert_eq!(events_occured.len(), 0);
 	});
 }
 
@@ -167,78 +190,6 @@ fn add_message_with_maxed_out_storage_errors() {
 	});
 }
 
-#[test]
-fn on_initialize_should_add_messages_into_storage_and_clean_temp() {
-	new_test_ext().execute_with(|| {
-		// arrange
-		let current_block = 1;
-		let caller_1 = 5;
-		let caller_2 = 2;
-		let schema_id_1: SchemaId = 1;
-		let schema_id_2: SchemaId = 2;
-		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
-		let message_payload_2 = Vec::from("{'fromId': 343, 'content': '34333'}".as_bytes());
-		assert_ok!(MessagesPallet::add_onchain_message(
-			RuntimeOrigin::signed(caller_1),
-			None,
-			schema_id_1,
-			message_payload_1.clone()
-		));
-		assert_ok!(MessagesPallet::add_onchain_message(
-			RuntimeOrigin::signed(caller_2),
-			None,
-			schema_id_1,
-			message_payload_1
-		));
-		assert_ok!(MessagesPallet::add_onchain_message(
-			RuntimeOrigin::signed(caller_2),
-			None,
-			schema_id_2,
-			message_payload_2
-		));
-
-		// act
-		run_to_block(current_block + 1);
-
-		// assert
-		assert_eq!(BlockMessages::<Test>::get().len(), 0);
-
-		let list_1 = MessagesPallet::get_messages_by_schema_and_block(
-			schema_id_1,
-			PayloadLocation::OnChain,
-			current_block,
-		);
-		assert_eq!(list_1.len(), 2);
-		let list_2 = MessagesPallet::get_messages_by_schema_and_block(
-			schema_id_2,
-			PayloadLocation::OnChain,
-			current_block,
-		);
-		assert_eq!(list_2.len(), 1);
-
-		let events_occured = System::events();
-		assert_eq!(events_occured.len(), 2);
-
-		assert_eq!(
-			events_occured[0].event,
-			RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
-				block_number: current_block,
-				schema_id: schema_id_1,
-				count: 2
-			}),
-		);
-
-		assert_eq!(
-			events_occured[1].event,
-			RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
-				block_number: current_block,
-				schema_id: schema_id_2,
-				count: 1
-			}),
-		);
-	});
-}
-
 /// Assert that MessageResponse for IPFS messages returns the payload_length of the offchain message.
 #[test]
 fn get_messages_by_schema_with_ipfs_payload_location_should_return_offchain_payload_length() {
@@ -295,64 +246,6 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_fail_bad_schema() {
 }
 
 #[test]
-fn add_message_via_valid_delegate_should_pass() {
-	new_test_ext().execute_with(|| {
-		// arrange
-		let message_producer = 1;
-		let caller_1 = 5;
-		let caller_2 = 2;
-		let schema_id_1: SchemaId = 1;
-		let schema_id_2: SchemaId = 2;
-		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
-		let message_payload_2 = Vec::from("{'fromId': 343, 'content': '34333'}".as_bytes());
-
-		// act
-		assert_ok!(MessagesPallet::add_onchain_message(
-			RuntimeOrigin::signed(caller_1),
-			Some(message_producer),
-			schema_id_1,
-			message_payload_1.clone()
-		));
-		assert_ok!(MessagesPallet::add_onchain_message(
-			RuntimeOrigin::signed(caller_2),
-			Some(message_producer),
-			schema_id_2,
-			message_payload_2.clone()
-		));
-
-		// assert
-		let list = BlockMessages::<Test>::get().into_inner();
-		assert_eq!(list.len(), 2);
-
-		assert_eq!(
-			list[0],
-			(
-				Message {
-					msa_id: Some(message_producer),
-					payload: message_payload_1.try_into().unwrap(),
-					index: 0,
-					provider_msa_id: get_msa_from_account(caller_1)
-				},
-				schema_id_1
-			)
-		);
-
-		assert_eq!(
-			list[1],
-			(
-				Message {
-					msa_id: Some(message_producer),
-					payload: message_payload_2.try_into().unwrap(),
-					index: 1,
-					provider_msa_id: get_msa_from_account(caller_2)
-				},
-				schema_id_2
-			)
-		);
-	});
-}
-
-#[test]
 fn add_message_via_non_delegate_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -372,7 +265,7 @@ fn add_message_via_non_delegate_should_fail() {
 		);
 
 		// assert
-		let list = BlockMessages::<Test>::get().into_inner();
+		let list = Messages::<Test>::get(1, schema_id_1).into_inner();
 		assert_eq!(list.len(), 0);
 	});
 }
@@ -449,6 +342,71 @@ fn invalid_payload_location_onchain() {
 				payload,
 			),
 			Error::<Test>::InvalidPayloadLocation
+		);
+	});
+}
+
+#[test]
+fn on_finalize_should_add_events_and_clean_up_temporary_storages() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let current_block = 1;
+		let caller_1 = 5;
+		let caller_2 = 2;
+		let schema_id_1: SchemaId = 1;
+		let schema_id_2: SchemaId = 2;
+		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
+		let message_payload_2 = Vec::from("{'fromId': 343, 'content': '34333'}".as_bytes());
+		assert_ok!(MessagesPallet::add_onchain_message(
+			RuntimeOrigin::signed(caller_1),
+			None,
+			schema_id_1,
+			message_payload_1.clone()
+		));
+		assert_ok!(MessagesPallet::add_onchain_message(
+			RuntimeOrigin::signed(caller_2),
+			None,
+			schema_id_2,
+			message_payload_2.clone()
+		));
+		assert_ok!(MessagesPallet::add_onchain_message(
+			RuntimeOrigin::signed(caller_2),
+			None,
+			schema_id_2,
+			message_payload_2
+		));
+
+		// act
+		System::note_finished_extrinsics();
+		MessagesPallet::on_finalize(System::block_number());
+
+		// assert
+		assert_eq!(BlockSchemas::<Test>::get().len(), 0);
+		assert_eq!(MessageIndex::<Test>::get(), 0);
+
+		let events_occured = System::events();
+		assert_eq!(
+			events_occured,
+			vec![
+				EventRecord {
+					phase: Phase::Finalization,
+					event: RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
+						block_number: current_block,
+						schema_id: schema_id_1,
+						count: 1
+					}),
+					topics: vec![]
+				},
+				EventRecord {
+					phase: Phase::Finalization,
+					event: RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
+						block_number: current_block,
+						schema_id: schema_id_2,
+						count: 2
+					}),
+					topics: vec![]
+				},
+			]
 		);
 	});
 }
