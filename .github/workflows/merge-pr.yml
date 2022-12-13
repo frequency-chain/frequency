@@ -117,7 +117,6 @@ jobs:
             -v --no-fail-fast --workspace
             -e frequency frequency-cli frequency-runtime frequency-service
             --exclude-files **/mock.rs **/weights.rs **/weights/* **/benchmarking.rs
-            --exclude pallet-democracy
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
         with:
