@@ -35,26 +35,26 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_utility::WeightInfo for SubstrateWeight<T> {
 	/// The range of component `c` is `[0, 1000]`.
 	fn batch(c: u32, ) -> Weight {
-		Weight::from_ref_time(22_076_000 as u64)
-			// Standard Error: 2_000
-			.saturating_add(Weight::from_ref_time(3_964_000 as u64).saturating_mul(c as u64))
+		Weight::from_ref_time(29_505_000 as u64)
+			// Standard Error: 4_000
+			.saturating_add(Weight::from_ref_time(3_969_000 as u64).saturating_mul(c as u64))
 	}
 	fn as_derivative() -> Weight {
-		Weight::from_ref_time(6_595_000 as u64)
+		Weight::from_ref_time(6_686_000 as u64)
 	}
 	/// The range of component `c` is `[0, 1000]`.
 	fn batch_all(c: u32, ) -> Weight {
-		Weight::from_ref_time(14_905_000 as u64)
-			// Standard Error: 1_000
-			.saturating_add(Weight::from_ref_time(4_083_000 as u64).saturating_mul(c as u64))
+		Weight::from_ref_time(27_414_000 as u64)
+			// Standard Error: 3_000
+			.saturating_add(Weight::from_ref_time(4_064_000 as u64).saturating_mul(c as u64))
 	}
 	fn dispatch_as() -> Weight {
-		Weight::from_ref_time(14_971_000 as u64)
+		Weight::from_ref_time(14_729_000 as u64)
 	}
 	/// The range of component `c` is `[0, 1000]`.
 	fn force_batch(c: u32, ) -> Weight {
-		Weight::from_ref_time(18_543_000 as u64)
-			// Standard Error: 1_000
-			.saturating_add(Weight::from_ref_time(3_966_000 as u64).saturating_mul(c as u64))
+		Weight::from_ref_time(33_401_000 as u64)
+			// Standard Error: 3_000
+			.saturating_add(Weight::from_ref_time(3_937_000 as u64).saturating_mul(c as u64))
 	}
 }

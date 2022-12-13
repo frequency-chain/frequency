@@ -34,19 +34,19 @@ use sp_std::marker::PhantomData;
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T> {
 	fn spend() -> Weight {
-		Weight::from_ref_time(134_000 as u64)
+		Weight::from_ref_time(234_000 as u64)
 	}
 	// Storage: Treasury ProposalCount (r:1 w:1)
 	// Storage: Treasury Proposals (r:0 w:1)
 	fn propose_spend() -> Weight {
-		Weight::from_ref_time(30_320_000 as u64)
+		Weight::from_ref_time(30_835_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: Treasury Proposals (r:1 w:1)
 	// Storage: System Account (r:1 w:1)
 	fn reject_proposal() -> Weight {
-		Weight::from_ref_time(36_998_000 as u64)
+		Weight::from_ref_time(37_071_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -54,15 +54,15 @@ impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T>
 	// Storage: Treasury Approvals (r:1 w:1)
 	/// The range of component `p` is `[0, 63]`.
 	fn approve_proposal(p: u32, ) -> Weight {
-		Weight::from_ref_time(13_112_000 as u64)
-			// Standard Error: 1_000
-			.saturating_add(Weight::from_ref_time(235_000 as u64).saturating_mul(p as u64))
+		Weight::from_ref_time(13_719_000 as u64)
+			// Standard Error: 2_000
+			.saturating_add(Weight::from_ref_time(214_000 as u64).saturating_mul(p as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Treasury Approvals (r:1 w:1)
 	fn remove_approval() -> Weight {
-		Weight::from_ref_time(9_730_000 as u64)
+		Weight::from_ref_time(9_535_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -71,9 +71,9 @@ impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T>
 	// Storage: Treasury Proposals (r:1 w:1)
 	/// The range of component `p` is `[0, 64]`.
 	fn on_initialize_proposals(p: u32, ) -> Weight {
-		Weight::from_ref_time(47_855_000 as u64)
-			// Standard Error: 25_000
-			.saturating_add(Weight::from_ref_time(29_847_000 as u64).saturating_mul(p as u64))
+		Weight::from_ref_time(46_583_000 as u64)
+			// Standard Error: 18_000
+			.saturating_add(Weight::from_ref_time(30_398_000 as u64).saturating_mul(p as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().reads((3 as u64).saturating_mul(p as u64)))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
