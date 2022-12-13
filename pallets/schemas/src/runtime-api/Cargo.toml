@@ -1,6 +1,6 @@
 [package]
 name = "pallet-schemas-runtime-api"
-version = "0.9.29-2"
+version = "0.9.30"
 description = "RPC runtime package for schemas"
 authors = ["Frequency"]
 license = "Apache-2.0"
@@ -10,14 +10,14 @@ repository = "https://github.com/libertyDSNP/frequency/"
 edition = "2021"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.1.5", default-features = false, features = ["derive"] }
-
+codec = { package = "parity-scale-codec", version = "3.1.5", default-features = false, features = [
+	"derive"
+] }
 # Substrate
-sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
-sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
-
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.30" }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../../../common/primitives" }
 

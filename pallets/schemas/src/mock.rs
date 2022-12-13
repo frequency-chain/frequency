@@ -51,7 +51,7 @@ impl WeightToFeePolynomial for WeightToFee {
 }
 
 impl pallet_schemas::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type MinSchemaModelSizeBytes = ConstU32<8>;
 	// a very high limit on incoming schema size, expected to be much higher than what
@@ -65,9 +65,9 @@ impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	type DbWeight = ();
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
@@ -75,7 +75,7 @@ impl frame_system::Config for Test {
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<AccountId>;
 	type Header = Header;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;

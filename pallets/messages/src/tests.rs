@@ -57,13 +57,13 @@ fn add_message_should_store_message_on_temp_storage() {
 
 		// act
 		assert_ok!(MessagesPallet::add_onchain_message(
-			Origin::signed(caller_1),
+			RuntimeOrigin::signed(caller_1),
 			None,
 			schema_id_1,
 			message_payload_1.clone()
 		));
 		assert_ok!(MessagesPallet::add_onchain_message(
-			Origin::signed(caller_2),
+			RuntimeOrigin::signed(caller_2),
 			None,
 			schema_id_2,
 			message_payload_2.clone()
@@ -110,7 +110,7 @@ fn add_message_with_too_large_message_should_panic() {
 		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}".as_bytes());
 
 		// act
-		assert_noop!(MessagesPallet::add_onchain_message(Origin::signed(caller_1), None, schema_id_1, message_payload_1), Error::<Test>::ExceedsMaxMessagePayloadSizeBytes);
+		assert_noop!(MessagesPallet::add_onchain_message(RuntimeOrigin::signed(caller_1), None, schema_id_1, message_payload_1), Error::<Test>::ExceedsMaxMessagePayloadSizeBytes);
 	});
 }
 
@@ -128,7 +128,7 @@ fn add_message_with_invalid_msa_account_errors() {
 		// act
 		assert_noop!(
 			MessagesPallet::add_onchain_message(
-				Origin::signed(caller_1),
+				RuntimeOrigin::signed(caller_1),
 				None,
 				schema_id_1,
 				message_payload_1
@@ -149,7 +149,7 @@ fn add_message_with_maxed_out_storage_errors() {
 		// act
 		for _ in 0..<Test as Config>::MaxMessagesPerBlock::get() {
 			assert_ok!(MessagesPallet::add_onchain_message(
-				Origin::signed(caller_1),
+				RuntimeOrigin::signed(caller_1),
 				None,
 				schema_id_1,
 				message_payload_1.clone()
@@ -157,7 +157,7 @@ fn add_message_with_maxed_out_storage_errors() {
 		}
 		assert_noop!(
 			MessagesPallet::add_onchain_message(
-				Origin::signed(caller_1),
+				RuntimeOrigin::signed(caller_1),
 				None,
 				schema_id_1,
 				message_payload_1
@@ -179,19 +179,19 @@ fn on_initialize_should_add_messages_into_storage_and_clean_temp() {
 		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
 		let message_payload_2 = Vec::from("{'fromId': 343, 'content': '34333'}".as_bytes());
 		assert_ok!(MessagesPallet::add_onchain_message(
-			Origin::signed(caller_1),
+			RuntimeOrigin::signed(caller_1),
 			None,
 			schema_id_1,
 			message_payload_1.clone()
 		));
 		assert_ok!(MessagesPallet::add_onchain_message(
-			Origin::signed(caller_2),
+			RuntimeOrigin::signed(caller_2),
 			None,
 			schema_id_1,
 			message_payload_1
 		));
 		assert_ok!(MessagesPallet::add_onchain_message(
-			Origin::signed(caller_2),
+			RuntimeOrigin::signed(caller_2),
 			None,
 			schema_id_2,
 			message_payload_2
@@ -221,7 +221,7 @@ fn on_initialize_should_add_messages_into_storage_and_clean_temp() {
 
 		assert_eq!(
 			events_occured[0].event,
-			Event::MessagesPallet(MessageEvent::MessagesStored {
+			RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
 				block_number: current_block,
 				schema_id: schema_id_1,
 				count: 2
@@ -230,7 +230,7 @@ fn on_initialize_should_add_messages_into_storage_and_clean_temp() {
 
 		assert_eq!(
 			events_occured[1].event,
-			Event::MessagesPallet(MessageEvent::MessagesStored {
+			RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
 				block_number: current_block,
 				schema_id: schema_id_2,
 				count: 1
@@ -308,13 +308,13 @@ fn add_message_via_valid_delegate_should_pass() {
 
 		// act
 		assert_ok!(MessagesPallet::add_onchain_message(
-			Origin::signed(caller_1),
+			RuntimeOrigin::signed(caller_1),
 			Some(message_producer),
 			schema_id_1,
 			message_payload_1.clone()
 		));
 		assert_ok!(MessagesPallet::add_onchain_message(
-			Origin::signed(caller_2),
+			RuntimeOrigin::signed(caller_2),
 			Some(message_producer),
 			schema_id_2,
 			message_payload_2.clone()
@@ -363,7 +363,7 @@ fn add_message_via_non_delegate_should_fail() {
 		// act
 		assert_err!(
 			MessagesPallet::add_onchain_message(
-				Origin::signed(message_provider),
+				RuntimeOrigin::signed(message_provider),
 				Some(message_producer),
 				schema_id_1,
 				message_payload_1
@@ -391,7 +391,7 @@ fn add_message_with_invalid_schema_id_should_error() {
 		// act
 		assert_err!(
 			MessagesPallet::add_onchain_message(
-				Origin::signed(caller_1),
+				RuntimeOrigin::signed(caller_1),
 				None,
 				schema_id_1,
 				message_payload_1
@@ -407,7 +407,7 @@ fn valid_payload_location() {
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = IPFS_SCHEMA_ID;
 		let info_result = MessagesPallet::add_ipfs_message(
-			Origin::signed(caller_1),
+			RuntimeOrigin::signed(caller_1),
 			schema_id_1,
 			Vec::from("foo"),
 			1,
@@ -425,7 +425,7 @@ fn invalid_payload_location_ipfs() {
 
 		assert_noop!(
 			MessagesPallet::add_ipfs_message(
-				Origin::signed(caller_1),
+				RuntimeOrigin::signed(caller_1),
 				schema_id_1,
 				Vec::from("foo"),
 				1
@@ -443,7 +443,7 @@ fn invalid_payload_location_onchain() {
 
 		assert_noop!(
 			MessagesPallet::add_onchain_message(
-				Origin::signed(caller_1),
+				RuntimeOrigin::signed(caller_1),
 				None,
 				IPFS_SCHEMA_ID,
 				payload,

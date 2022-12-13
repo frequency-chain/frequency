@@ -483,10 +483,10 @@ pub struct CheckCapacityWeight<T: Config + Send + Sync>(sp_std::market::PhantomD
 ```rust
 
 impl<T: Config + Send + Sync> SignedExtension for CheckCapacityWeight<T>
-  where T::Call: Dispachable<Info = DispatchInfo> + IsSubtype<Call<T>>,
+  where T::RuntimeCall: Dispachable<Info = DispatchInfo> + IsSubtype<Call<T>>,
 {
   type AccountId = T::AccountId;
-  type Call = T::Call;
+  type Call = T::RuntimeCall;
   type AdditionalSigned = ();
   type Pre = ();
 

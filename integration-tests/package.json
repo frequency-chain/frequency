@@ -13,7 +13,7 @@
     "author": "",
     "license": "Apache-2.0",
     "dependencies": {
-        "@frequency-chain/api-augment": "v0.9.29",
+        "@frequency-chain/api-augment": "^v0.9.29",
         "@polkadot/api": "9.10.2",
         "@polkadot/types": "9.10.2",
         "@polkadot/util": "10.2.1",

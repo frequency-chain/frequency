@@ -56,7 +56,10 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-	dispatch::DispatchResult, ensure, pallet_prelude::*, traits::IsSubType, weights::DispatchInfo,
+	dispatch::{DispatchInfo, DispatchResult},
+	ensure,
+	pallet_prelude::*,
+	traits::IsSubType,
 };
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -107,7 +110,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
@@ -1537,10 +1540,10 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckFreeExtrinsicUse<T> {
 
 impl<T: Config + Send + Sync> SignedExtension for CheckFreeExtrinsicUse<T>
 where
-	T::Call: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
+	T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
 {
 	type AccountId = T::AccountId;
-	type Call = T::Call;
+	type Call = T::RuntimeCall;
 	type AdditionalSigned = ();
 	type Pre = ();
 	const IDENTIFIER: &'static str = "CheckFreeExtrinsicUse";

@@ -41,9 +41,11 @@ pub use common_runtime::{
 };
 
 use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime,
+	dispatch::DispatchClass,
+	parameter_types,
 	traits::{ConstU128, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
-	weights::{constants::RocksDbWeight, ConstantMultiplier, DispatchClass, Weight},
+	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
 };
 
 use frame_system::{
@@ -72,8 +74,8 @@ use frame_support::traits::Contains;
 /// For non mainnet [--features frequency] all transactions are allowed
 pub struct BaseCallFilter;
 
-impl Contains<Call> for BaseCallFilter {
-	fn contains(_call: &Call) -> bool {
+impl Contains<RuntimeCall> for BaseCallFilter {
+	fn contains(_call: &RuntimeCall) -> bool {
 		#[cfg(not(feature = "frequency"))]
 		{
 			true
@@ -82,12 +84,16 @@ impl Contains<Call> for BaseCallFilter {
 		{
 			matches!(
 				_call,
-				Call::System(..) |
-					Call::Timestamp(..) | Call::ParachainSystem(..) |
-					Call::Sudo(..) | Call::TechnicalCommittee(..) |
-					Call::Council(..) | Call::Democracy(..) |
-					Call::Session(..) | Call::Preimage(..) |
-					Call::Scheduler(..)
+				RuntimeCall::System(..) |
+					RuntimeCall::Timestamp(..) |
+					RuntimeCall::ParachainSystem(..) |
+					RuntimeCall::Sudo(..) |
+					RuntimeCall::TechnicalCommittee(..) |
+					RuntimeCall::Council(..) |
+					RuntimeCall::Democracy(..) |
+					RuntimeCall::Session(..) |
+					RuntimeCall::Preimage(..) |
+					RuntimeCall::Scheduler(..)
 			)
 		}
 	}
@@ -115,10 +121,11 @@ pub type BlockId = generic::BlockId<Block>;
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+pub type UncheckedExtrinsic =
+	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 
 /// Extrinsic type that has already been checked.
-pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
+pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -157,7 +164,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 3,
+	spec_version: 4,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -209,7 +216,7 @@ impl frame_system::Config for Runtime {
 	// enable for cfg feature "frequency" only
 	type BaseCallFilter = BaseCallFilter;
 	/// The aggregated dispatch type that is available for extrinsics.
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
 	type Lookup = AccountIdLookup<AccountId, ()>;
 	/// The index type for storing how many extrinsics an account has signed.
@@ -223,9 +230,9 @@ impl frame_system::Config for Runtime {
 	/// The header type.
 	type Header = generic::Header<BlockNumber, BlakeTwo256>;
 	/// The ubiquitous event type.
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	/// The ubiquitous origin type.
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	type BlockHashCount = BlockHashCount;
 	/// Runtime version.
@@ -254,8 +261,7 @@ impl frame_system::Config for Runtime {
 }
 
 impl pallet_msa::Config for Runtime {
-	type Event = Event;
-	// The weights info
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 	// The conversion to a 32 byte AccountId
 	type ConvertIntoAccountId32 = ConvertInto;
@@ -278,8 +284,7 @@ impl pallet_msa::Config for Runtime {
 pub use common_primitives::schema::SchemaId;
 
 impl pallet_schemas::Config for Runtime {
-	type Event = Event;
-	// The weights info
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
 	// The mininum size (in bytes) for a schema model
 	type MinSchemaModelSizeBytes = SchemasMinModelSizeBytes;
@@ -290,22 +295,22 @@ impl pallet_schemas::Config for Runtime {
 }
 
 pub struct RootAsVestingPallet;
-impl EnsureOrigin<Origin> for RootAsVestingPallet {
+impl EnsureOrigin<RuntimeOrigin> for RootAsVestingPallet {
 	type Success = AccountId;
 
-	fn try_origin(o: Origin) -> Result<Self::Success, Origin> {
-		Into::<Result<RawOrigin<AccountId>, Origin>>::into(o).and_then(|o| match o {
+	fn try_origin(o: RuntimeOrigin) -> Result<Self::Success, RuntimeOrigin> {
+		Into::<Result<RawOrigin<AccountId>, RuntimeOrigin>>::into(o).and_then(|o| match o {
 			RawOrigin::Root => Ok(VestingPalletId::get().into_account_truncating()),
-			r => Err(Origin::from(r)),
+			r => Err(RuntimeOrigin::from(r)),
 		})
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
-	fn successful_origin() -> Origin {
+	fn successful_origin() -> RuntimeOrigin {
 		let zero_account_id =
 			AccountId::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes())
 				.expect("infinite length input; no invalid inputs for type; qed");
-		Origin::from(RawOrigin::Signed(zero_account_id))
+		RuntimeOrigin::from(RawOrigin::Signed(zero_account_id))
 	}
 }
 
@@ -317,7 +322,7 @@ parameter_types! {
 // See https://paritytech.github.io/substrate/master/pallet_vesting/index.html for
 // the descriptions of these configs.
 impl orml_vesting::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type MinVestedTransfer = MinVestedTransfer;
 	type VestedTransferOrigin = RootAsVestingPallet;
@@ -350,7 +355,7 @@ impl pallet_balances::Config for Runtime {
 	/// The type for recording an account's balance.
 	type Balance = Balance;
 	/// The ubiquitous event type.
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
 	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
 	type AccountStore = System;
@@ -369,10 +374,10 @@ parameter_types! {
 
 // See also https://docs.rs/pallet-scheduler/latest/pallet_scheduler/trait.Config.html
 impl pallet_scheduler::Config for Runtime {
-	type Event = Event;
-	type Origin = Origin;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeOrigin = RuntimeOrigin;
 	type PalletsOrigin = OriginCaller;
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	type MaximumWeight = MaximumSchedulerWeight;
 	/// Origin to schedule or cancel calls
 	/// Set to Root or a simple majority of the Frequency Council
@@ -392,7 +397,7 @@ impl pallet_scheduler::Config for Runtime {
 // the descriptions of these configs.
 impl pallet_preimage::Config for Runtime {
 	type WeightInfo = weights::pallet_preimage::SubstrateWeight<Runtime>;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	// Allow the Technical council to request preimages without deposit or fees
 	type ManagerOrigin = EitherOfDiverse<
@@ -409,9 +414,9 @@ impl pallet_preimage::Config for Runtime {
 // the descriptions of these configs.
 type CouncilCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<CouncilCollective> for Runtime {
-	type Origin = Origin;
-	type Proposal = Call;
-	type Event = Event;
+	type RuntimeOrigin = RuntimeOrigin;
+	type Proposal = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
 	type MotionDuration = CouncilMotionDuration;
 	type MaxProposals = CouncilMaxProposals;
 	type MaxMembers = ConstU32<10>;
@@ -421,9 +426,9 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 
 type TechnicalCommitteeCollective = pallet_collective::Instance2;
 impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
-	type Origin = Origin;
-	type Proposal = Call;
-	type Event = Event;
+	type RuntimeOrigin = RuntimeOrigin;
+	type Proposal = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
 	type MotionDuration = TCMotionDuration;
 	type MaxProposals = TCMaxProposals;
 	type MaxMembers = TCMaxMembers;
@@ -438,7 +443,7 @@ impl pallet_democracy::Config for Runtime {
 	type CooloffPeriod = CooloffPeriod;
 	type Currency = Balances;
 	type EnactmentPeriod = EnactmentPeriod;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type FastTrackVotingPeriod = FastTrackVotingPeriod;
 	type InstantAllowed = frame_support::traits::ConstBool<true>;
 	type LaunchPeriod = LaunchPeriod;
@@ -446,7 +451,7 @@ impl pallet_democracy::Config for Runtime {
 	type MaxVotes = DemocracyMaxVotes;
 	type MinimumDeposit = MinimumDeposit;
 	type PreimageByteDeposit = PreimageByteDeposit;
-	type Proposal = Call;
+	type Proposal = RuntimeCall;
 	type Scheduler = Scheduler;
 	type Slash = (); // Treasury;
 	type WeightInfo = weights::pallet_democracy::SubstrateWeight<Runtime>;
@@ -516,7 +521,7 @@ impl pallet_treasury::Config for Runtime {
 	/// Treasury Account: 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z
 	type PalletId = TreasuryPalletId;
 	type Currency = Balances;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
 
 	/// Who approves treasury proposals?
@@ -575,7 +580,7 @@ impl pallet_treasury::Config for Runtime {
 // See https://paritytech.github.io/substrate/master/pallet_transaction_payment/index.html for
 // the descriptions of these configs.
 impl pallet_transaction_payment::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
 	type WeightToFee = WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
@@ -586,7 +591,7 @@ impl pallet_transaction_payment::Config for Runtime {
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
 // the descriptions of these configs.
 impl cumulus_pallet_parachain_system::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type DmpMessageHandler = ();
@@ -604,7 +609,7 @@ impl cumulus_pallet_aura_ext::Config for Runtime {}
 // See https://paritytech.github.io/substrate/master/pallet_session/index.html for
 // the descriptions of these configs.
 impl pallet_session::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	// we don't have stash and controller, thus we don't need the convert as well.
 	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
@@ -628,7 +633,7 @@ impl pallet_aura::Config for Runtime {
 // See https://paritytech.github.io/substrate/master/pallet_collator_selection/index.html for
 // the descriptions of these configs.
 impl pallet_collator_selection::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 
 	// Origin that can dictate updating parameters of this pallet.
@@ -674,8 +679,7 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 impl pallet_messages::Config for Runtime {
-	type Event = Event;
-	// The weights info
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_messages::weights::SubstrateWeight<Runtime>;
 	// The type that supplies MSA info
 	type MsaInfoProvider = Msa;
@@ -698,15 +702,15 @@ impl pallet_messages::Config for Runtime {
 // See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for
 // the descriptions of these configs.
 impl pallet_sudo::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_utility/index.html for
 // the descriptions of these configs.
 impl pallet_utility::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 	type PalletsOrigin = OriginCaller;
 	type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
 }
