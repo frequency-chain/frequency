@@ -211,8 +211,14 @@ benchmarks! {
 			let sig = generate_test_signature();
 			assert_ok!(Msa::<T>::register_signature(&sig, T::BlockNumber::from(mortality_block)));
 		}
+
+		let bucket_zero_iter = PayloadSignatureRegistry::<T>::iter_prefix(T::BlockNumber::from(0u32));
+		assert_eq!(bucket_zero_iter.count(), m as usize);
 	}: {
-		Msa::<T>::on_initialize(200u32.into());
+		Msa::<T>::on_initialize(100u32.into());
+	} verify {
+		let bucket_zero_iter = PayloadSignatureRegistry::<T>::iter_prefix(T::BlockNumber::from(0u32));
+		assert_eq!(bucket_zero_iter.count(), 0 as usize);
 	}
 
 	grant_schema_permissions {

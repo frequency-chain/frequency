@@ -263,13 +263,21 @@ impl frame_system::Config for Runtime {
 impl pallet_msa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
+	// The conversion to a 32 byte AccountId
 	type ConvertIntoAccountId32 = ConvertInto;
+	// The maximum number of public keys per MSA
 	type MaxPublicKeysPerMsa = MsaMaxPublicKeysPerMsa;
+	// The maximum number of schema grants per delegation
 	type MaxSchemaGrantsPerDelegation = MaxDataSize;
+	// The maximum provider name size (in bytes)
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
+	// The type that provides schema related info
 	type SchemaValidator = Schemas;
+	// The number of blocks per virtual bucket
 	type MortalityWindowSize = MSAMortalityWindowSize;
+	// The maximum number of signatures per virtual bucket
 	type MaxSignaturesPerBucket = MSAMaxSignaturesPerBucket;
+	// The total number of virtual buckets
 	type NumberOfBuckets = MSANumberOfBuckets;
 }
 
@@ -278,8 +286,11 @@ pub use common_primitives::schema::SchemaId;
 impl pallet_schemas::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
+	// The mininum size (in bytes) for a schema model
 	type MinSchemaModelSizeBytes = SchemasMinModelSizeBytes;
+	// The maximum number of schemas that can be registered
 	type MaxSchemaRegistrations = SchemasMaxRegistrations;
+	// The maximum length of a schema model (in bytes)
 	type SchemaModelMaxBytesBoundedVecLimit = SchemasMaxBytesBoundedVecLimit;
 }
 
@@ -308,6 +319,8 @@ parameter_types! {
 	pub const MaxVestingSchedules: u32 = ORML_MAX_VESTING_SCHEDULES;
 }
 
+// See https://paritytech.github.io/substrate/master/pallet_vesting/index.html for
+// the descriptions of these configs.
 impl orml_vesting::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
@@ -318,6 +331,8 @@ impl orml_vesting::Config for Runtime {
 	type BlockNumberProvider = RelaychainBlockNumberProvider<Runtime>;
 }
 
+// See https://paritytech.github.io/substrate/master/pallet_timestamp/index.html for
+// the descriptions of these configs.
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
@@ -326,6 +341,8 @@ impl pallet_timestamp::Config for Runtime {
 	type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
 }
 
+// See https://paritytech.github.io/substrate/master/pallet_authorship/index.html for
+// the descriptions of these configs.
 impl pallet_authorship::Config for Runtime {
 	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
 	type UncleGenerations = AuthorshipUncleGenerations;
@@ -376,6 +393,8 @@ impl pallet_scheduler::Config for Runtime {
 	type NoPreimagePostponement = NoPreimagePostponement;
 }
 
+// See https://paritytech.github.io/substrate/master/pallet_preimage/index.html for
+// the descriptions of these configs.
 impl pallet_preimage::Config for Runtime {
 	type WeightInfo = weights::pallet_preimage::SubstrateWeight<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
@@ -391,6 +410,8 @@ impl pallet_preimage::Config for Runtime {
 	type ByteDeposit = PreimageByteDeposit;
 }
 
+// See https://paritytech.github.io/substrate/master/pallet_collective/index.html for
+// the descriptions of these configs.
 type CouncilCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
@@ -494,6 +515,8 @@ impl pallet_democracy::Config for Runtime {
 	type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
 }
 
+// See https://paritytech.github.io/substrate/master/pallet_treasury/index.html for
+// the descriptions of these configs.
 impl pallet_treasury::Config for Runtime {
 	/// Treasury Account: 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z
 	type PalletId = TreasuryPalletId;
@@ -554,6 +577,8 @@ impl pallet_treasury::Config for Runtime {
 	type MaxApprovals = MaxApprovals;
 }
 
+// See https://paritytech.github.io/substrate/master/pallet_transaction_payment/index.html for
+// the descriptions of these configs.
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
@@ -563,6 +588,8 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OperationalFeeMultiplier = TransactionPaymentOperationalFeeMultiplier;
 }
 
+// See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
+// the descriptions of these configs.
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
@@ -579,6 +606,8 @@ impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
+// See https://paritytech.github.io/substrate/master/pallet_session/index.html for
+// the descriptions of these configs.
 impl pallet_session::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
@@ -593,12 +622,16 @@ impl pallet_session::Config for Runtime {
 	type WeightInfo = weights::pallet_session::SubstrateWeight<Runtime>;
 }
 
+// See https://paritytech.github.io/substrate/master/pallet_aura/index.html for
+// the descriptions of these configs.
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
 	type MaxAuthorities = AuraMaxAuthorities;
 }
 
+// See https://paritytech.github.io/substrate/master/pallet_collator_selection/index.html for
+// the descriptions of these configs.
 impl pallet_collator_selection::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
@@ -648,10 +681,15 @@ impl pallet_collator_selection::Config for Runtime {
 impl pallet_messages::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_messages::weights::SubstrateWeight<Runtime>;
+	// The type that supplies MSA info
 	type MsaInfoProvider = Msa;
+	// The type that validates schema grants
 	type SchemaGrantValidator = Msa;
+	// The type that provides schema info
 	type SchemaProvider = Schemas;
+	// The maximum number of messages per block
 	type MaxMessagesPerBlock = MessagesMaxPerBlock;
+	// The maximum message payload in bytes
 	type MaxMessagePayloadSizeBytes = MessagesMaxPayloadSizeBytes;
 
 	/// A set of helper functions for benchmarking.
@@ -661,11 +699,15 @@ impl pallet_messages::Config for Runtime {
 	type SchemaBenchmarkHelper = Schemas;
 }
 
+// See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for
+// the descriptions of these configs.
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 }
 
+// See https://paritytech.github.io/substrate/master/pallet_utility/index.html for
+// the descriptions of these configs.
 impl pallet_utility::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;

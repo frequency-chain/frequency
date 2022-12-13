@@ -18,7 +18,8 @@ jobs:
     name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
     strategy:
       matrix:
-        os: [[self-hosted, Linux, X64], [self-hosted, Linux, ARM64]]
+        # os: [[self-hosted, Linux, X64], [self-hosted, Linux, ARM64]]
+        os: [[self-hosted, Linux, X64]]
         network: [local, rococo, mainnet]
         include:
           - network: local
@@ -35,8 +36,8 @@ jobs:
             release-file-name-prefix: frequency
           - os: [self-hosted, Linux, X64]
             arch: amd64
-          - os: [self-hosted, Linux, ARM64]
-            arch: arm64
+          # - os: [self-hosted, Linux, ARM64]
+          #   arch: arm64
     runs-on: ${{matrix.os}}
     steps:
       - name: Set Global Env Vars
@@ -249,6 +250,7 @@ jobs:
           - network: mainnet
             spec: frequency
             build-profile: production
+            release-file-name-prefix: frequency
           - os: ubuntu-20.04
             arch: amd64
     runs-on: ${{matrix.os}}
@@ -256,7 +258,7 @@ jobs:
       - name: Set Env Vars
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
-          echo "RELEASE_BIN_FILENAME=frequency-${{matrix.network}}.${{matrix.arch}}" >> $GITHUB_ENV
+          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Set up NodeJs
@@ -395,8 +397,10 @@ jobs:
         include:
           - network: rococo
             build-profile: production
+            release-file-name-prefix: frequency-rococo
           - network: mainnet
             build-profile: production
+            release-file-name-prefix: frequency
           - arch: amd64
             docker-platform: linux/amd64
     env:
@@ -408,7 +412,7 @@ jobs:
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
-          echo "RELEASE_BIN_FILENAME=frequency-${{matrix.network}}.${{matrix.arch}}" >> $GITHUB_ENV
+          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Download Binary Artifacts
