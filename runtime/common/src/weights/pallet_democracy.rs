@@ -164,7 +164,7 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 			.saturating_add(Weight::from_ref_time(6_851_548 as u64).saturating_mul(r as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(r as u64)))
-			.saturating_add(T::DbWeight::get().writes(4 as u64))
+			.saturating_add(T::DbWeight::get().writes(5 as u64))
 			.saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(r as u64)))
 	}
 	// Storage: Democracy VotingOf (r:2 w:2)
@@ -176,7 +176,7 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 			.saturating_add(Weight::from_ref_time(6_846_460 as u64).saturating_mul(r as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(r as u64)))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
+			.saturating_add(T::DbWeight::get().writes(3 as u64))
 			.saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(r as u64)))
 	}
 	// Storage: Democracy PublicProps (r:0 w:1)
