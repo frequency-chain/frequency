@@ -2164,11 +2164,8 @@ pub fn stores_signature_in_expected_bucket() {
 	new_test_ext().execute_with(|| {
 		let test_cases: Vec<TestCase> = vec![
 			TestCase { current_block: 999_899, expected_bucket_number: 1 }, // signature-expiration = 999_950
-			TestCase { current_block: 4_294_965_098, expected_bucket_number: 1 }, // signature-expiration = 4_294_965_149
-			TestCase { current_block: 0, expected_bucket_number: 0 },             // signature-expiration = 51
-			TestCase { current_block: 129, expected_bucket_number: 1 },           // signature-expiration = 180
-			TestCase { current_block: 640, expected_bucket_number: 0 },           // signature-expiration = 691
 			TestCase { current_block: 128_999_799, expected_bucket_number: 0 }, // signature-expiration = 128_999_850
+			TestCase { current_block: 4_294_965_098, expected_bucket_number: 1 }, // signature-expiration = 4_294_965_149
 		];
 		for tc in test_cases {
 			System::set_block_number(tc.current_block as u64);
@@ -2184,7 +2181,7 @@ pub fn stores_signature_in_expected_bucket() {
 }
 
 #[test]
-// for illustration purposes
+// for illustration purposes of what buckets + bucket size does
 pub fn bucket_for() {
 	struct TestCase {
 		block: u64,
@@ -2236,36 +2233,6 @@ pub fn clears_stale_signatures_after_mortality_limit() {
 		assert_eq!(false, <PayloadSignatureRegistry<Test>>::contains_key(1u64, sig1));
 		assert_eq!(false, <PayloadSignatureRegistry<Test>>::contains_key(1u64, sig2));
 	})
-}
-
-#[test]
-pub fn add_signature_replay_fails() {
-	struct TestCase {
-		current: u64,
-		mortality: u64,
-		run_to: u64,
-	}
-	new_test_ext().execute_with(|| {
-		// these should all fail replay
-		let test_cases: Vec<TestCase> = vec![
-			TestCase { current: 10_949u64, mortality: 11_001u64, run_to: 11_000u64 }, // fails test
-			TestCase { current: 1u64, mortality: 3u64, run_to: 2u64 },
-			TestCase { current: 99u64, mortality: 101u64, run_to: 100u64 },
-			TestCase { current: 1_100u64, mortality: 1_199u64, run_to: 1_198u64 },
-			TestCase { current: 1_102u64, mortality: 1_201u64, run_to: 1_200u64 },
-			TestCase { current: 1_099u64, mortality: 1_148u64, run_to: 1_101u64 },
-		];
-		for tc in test_cases {
-			System::set_block_number(tc.current);
-			let signature_new = &generate_test_signature();
-			assert_ok!(Msa::register_signature(signature_new, tc.mortality));
-			run_to_block(tc.run_to);
-			assert_noop!(
-				Msa::register_signature(signature_new, tc.mortality),
-				Error::<Test>::SignatureAlreadySubmitted,
-			);
-		}
-	});
 }
 
 #[test]
