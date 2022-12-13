@@ -415,7 +415,7 @@ pub mod pallet {
 		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used
 		///
 		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation(
-			T::MaxSchemaGrantsPerDelegation::get()
+			add_provider_payload.schema_ids.len() as u32
 		))]
 		pub fn create_sponsored_account_with_delegation(
 			origin: OriginFor<T>,
