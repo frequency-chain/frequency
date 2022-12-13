@@ -238,7 +238,6 @@ pub mod pallet {
 		BoundedVec<u32,
 		T::NumberOfBuckets>,
 		ValueQuery,
-
 	>;
 
 	#[pallet::event]
@@ -390,7 +389,7 @@ pub mod pallet {
 		SignatureRegistryLimitExceeded,
 
 		/// Failed overflow check when adding to a bucket
-		FailedBucketOverflowCheck
+		FailedBucketOverflowCheck,
 	}
 
 	#[pallet::hooks]
@@ -600,10 +599,10 @@ pub mod pallet {
 					let provider_id = ProviderId(provider_msa_id);
 					Self::revoke_provider(provider_id, delegator_id)?;
 					Self::deposit_event(Event::DelegationRevoked { delegator_id, provider_id });
-				}
+				},
 				None => {
 					error!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
-				}
+				},
 			}
 
 			Ok(())
@@ -644,14 +643,14 @@ pub mod pallet {
 				&msa_owner_public_key,
 				add_key_payload.encode(),
 			)
-				.map_err(|_| Error::<T>::MsaOwnershipInvalidSignature)?;
+			.map_err(|_| Error::<T>::MsaOwnershipInvalidSignature)?;
 
 			Self::verify_signature(
 				&new_key_owner_proof,
 				&add_key_payload.new_public_key.clone(),
 				add_key_payload.encode(),
 			)
-				.map_err(|_| Error::<T>::NewKeyOwnershipInvalidSignature)?;
+			.map_err(|_| Error::<T>::NewKeyOwnershipInvalidSignature)?;
 
 			Self::register_signature(&msa_owner_proof, add_key_payload.expiration.into())?;
 			Self::register_signature(&new_key_owner_proof, add_key_payload.expiration.into())?;
@@ -1221,20 +1220,27 @@ impl<T: Config> Pallet<T> {
 		} else {
 			let bucket_num = Self::bucket_for(signature_expires_at.into());
 
-			<PayloadSignatureBucketsSignatureCount<T>>::try_mutate(|bucket_signatures: &mut BoundedVec<u32, T::NumberOfBuckets>| -> DispatchResult {
-				if bucket_signatures.len() == 0 {
-					for _i in 0..T::NumberOfBuckets::get() {
-						bucket_signatures.force_push(0);
+			<PayloadSignatureBucketsSignatureCount<T>>::try_mutate(
+				|bucket_signatures: &mut BoundedVec<u32, T::NumberOfBuckets>| -> DispatchResult {
+					if bucket_signatures.len() == 0 {
+						for _i in 0..T::NumberOfBuckets::get() {
+							bucket_signatures.force_push(0);
+						}
 					}
-				}
 
-				let bucket_index = bucket_num.saturated_into::<u32>() as usize;
-				let bucket = bucket_signatures.get_mut(bucket_index).ok_or(Error::<T>::NoSuchBucket)?;
-				ensure!(*bucket < T::MaxSignaturesPerBucket::get(), Error::<T>::SignatureRegistryLimitExceeded);
-				let can_add = bucket.checked_add(1).ok_or(Error::<T>::FailedBucketOverflowCheck)?;
-				*bucket = can_add;
-				Ok(())
-			})?;
+					let bucket_index = bucket_num.saturated_into::<u32>() as usize;
+					let bucket =
+						bucket_signatures.get_mut(bucket_index).ok_or(Error::<T>::NoSuchBucket)?;
+					ensure!(
+						*bucket < T::MaxSignaturesPerBucket::get(),
+						Error::<T>::SignatureRegistryLimitExceeded
+					);
+					let can_add =
+						bucket.checked_add(1).ok_or(Error::<T>::FailedBucketOverflowCheck)?;
+					*bucket = can_add;
+					Ok(())
+				},
+			)?;
 			<PayloadSignatureRegistry<T>>::try_mutate(
 				bucket_num,
 				signature,
@@ -1242,7 +1248,8 @@ impl<T: Config> Pallet<T> {
 					ensure!(maybe_mortality_block.is_none(), Error::<T>::SignatureAlreadySubmitted);
 					*maybe_mortality_block = Some(signature_expires_at);
 					Ok(())
-				})
+				},
+			)
 		}
 	}
 

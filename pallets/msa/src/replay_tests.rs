@@ -327,7 +327,6 @@ fn replaying_create_sponsored_account_with_delegation_fails_03() {
 	});
 }
 
-
 #[test]
 pub fn add_msa_key_replay_checks() {
 	struct TestCase {
@@ -391,14 +390,17 @@ pub fn add_msa_key_replay_checks() {
 
 			run_to_block(tc.run_to);
 
-			assert_eq!(tc.expected_ok,
+			assert_eq!(
+				tc.expected_ok,
 				Msa::add_public_key_to_msa(
-				Origin::signed(account_provider.into()),
-				account_provider.into(),
-				signature_owner.clone(),
-				signature_new_key,
-				add_new_key_data.clone(),
-			).is_ok());
+					Origin::signed(account_provider.into()),
+					account_provider.into(),
+					signature_owner.clone(),
+					signature_new_key,
+					add_new_key_data.clone(),
+				)
+				.is_ok()
+			);
 		}
 	})
 }

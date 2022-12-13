@@ -6,7 +6,9 @@ use frame_support::{
 	traits::{Get},
 };
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Encode, Pair};
-use sp_runtime::{traits::SignedExtension, transaction_validity::TransactionValidity, MultiSignature };
+use sp_runtime::{
+	traits::SignedExtension, transaction_validity::TransactionValidity, MultiSignature,
+};
 
 use crate::{
 	ensure,
@@ -209,7 +211,7 @@ fn add_key_with_more_than_allowed_should_panic() {
 
 		let mut current_block = 0;
 		for i in 1..<Test as Config>::MaxPublicKeysPerMsa::get() {
-			current_block = (i*10) as u64;
+			current_block = (i * 10) as u64;
 			run_to_block(current_block);
 			let (new_key_pair, _) = sr25519::Pair::generate();
 
