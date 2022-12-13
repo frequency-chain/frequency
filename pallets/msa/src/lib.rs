@@ -66,7 +66,7 @@ use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
 use sp_runtime::{
 	DispatchError,
-	MultiSignature, traits::{Convert, Dispatchable, DispatchInfoOf, One, SignedExtension, Verify, Zero},
+	MultiSignature, traits::{Convert, Dispatchable, DispatchInfoOf, One, SignedExtension, SaturatedConversion, Verify, Zero},
 };
 use sp_std::prelude::*;
 
@@ -144,7 +144,7 @@ pub mod pallet {
 		/// The maximum number of signatures that can be assigned to a virtual bucket. In other
 		/// words, no more than this many signatures can be assigned a specific first-key value.
 		#[pallet::constant]
-		type MaxSignaturesPerBucket: Get<Option<u32>>;
+		type MaxSignaturesPerBucket: Get<u32>;
 
 		/// The total number of virtual buckets
 		/// There are exactly NumberOfBuckets first-key values in PayloadSignatureRegistry.
@@ -153,7 +153,7 @@ pub mod pallet {
 
 		/// The maximum number of signatures that can be stored in PayloadSignatureRegistry
 		#[pallet::constant]
-		type MaxSignaturesStored: Get<u32>;
+		type MaxSignaturesStored: Get<Option<u32>>;
 	}
 
 	#[pallet::pallet]
@@ -227,13 +227,19 @@ pub mod pallet {
 		T::BlockNumber, // An actual flipping block number.
 		OptionQuery,   // The type for the query
 		GetDefault,
-		T::MaxSignaturesPerBucket
+		T::MaxSignaturesStored
 	>;
 
 	/// This keeps track of how many signatures are currently stored in each virtual signature registration bucket
 	#[pallet::storage]
 	#[pallet::getter(fn get_bucket_signature_count)]
-	pub(super) type PayloadSignatureBucketsSignatureCount<T: Config> = StorageValue<_, Vec<u32>, ValueQuery>;
+	pub(super) type PayloadSignatureBucketsSignatureCount<T: Config> = StorageValue<
+		_,
+		BoundedVec<u32,
+		T::NumberOfBuckets>,
+		ValueQuery,
+
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -382,6 +388,9 @@ pub mod pallet {
 
 		/// Attempted to add a new signature to a full virtual signature registration bucket
 		SignatureRegistryLimitExceeded,
+
+		/// Failed overflow check when adding to a bucket
+		FailedBucketOverflowCheck
 	}
 
 	#[pallet::hooks]
@@ -1211,19 +1220,29 @@ impl<T: Config> Pallet<T> {
 			Err(Error::<T>::ProofHasExpired.into())
 		} else {
 			let bucket_num = Self::bucket_for(signature_expires_at.into());
-			ensure!(bucket_num < Config::<T>::NumberOfBuckets::get(), Error::<T>::NoSuchBucket);
-			<PayloadSignatureBucketsSignatureCount<T>>::try_mutate(|bucket_count| {
-				ensure!(bucket_count[bucket_num].checked_add(1).is_some());
-				<PayloadSignatureRegistry<T>>::try_mutate(
-					bucket_num,
-					signature,
-					|maybe_mortality_block| -> DispatchResult {
-						ensure!(maybe_mortality_block.is_none(), Error::<T>::SignatureAlreadySubmitted);
-						*maybe_mortality_block = Some(signature_expires_at);
-						Ok(())
-					});
+
+			<PayloadSignatureBucketsSignatureCount<T>>::try_mutate(|bucket_signatures: &mut BoundedVec<u32, T::NumberOfBuckets>| -> DispatchResult {
+				if bucket_signatures.len() == 0 {
+					for _i in 0..T::NumberOfBuckets::get() {
+						bucket_signatures.force_push(0);
+					}
+				}
+
+				let bucket_index = bucket_num.saturated_into::<u32>() as usize;
+				let bucket = bucket_signatures.get_mut(bucket_index).ok_or(Error::<T>::NoSuchBucket)?;
+				ensure!(*bucket < T::MaxSignaturesPerBucket::get(), Error::<T>::SignatureRegistryLimitExceeded);
+				let can_add = bucket.checked_add(1).ok_or(Error::<T>::FailedBucketOverflowCheck)?;
+				*bucket = can_add;
 				Ok(())
-			})
+			})?;
+			<PayloadSignatureRegistry<T>>::try_mutate(
+				bucket_num,
+				signature,
+				|maybe_mortality_block| -> DispatchResult {
+					ensure!(maybe_mortality_block.is_none(), Error::<T>::SignatureAlreadySubmitted);
+					*maybe_mortality_block = Some(signature_expires_at);
+					Ok(())
+				})
 		}
 	}
 

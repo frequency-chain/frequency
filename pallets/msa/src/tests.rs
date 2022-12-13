@@ -3,11 +3,10 @@ use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 	pallet_prelude::InvalidTransaction,
 	BoundedBTreeMap,
+	traits::{Get},
 };
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Encode, Pair};
-use sp_runtime::{
-	traits::SignedExtension, transaction_validity::TransactionValidity, MultiSignature,
-};
+use sp_runtime::{traits::SignedExtension, transaction_validity::TransactionValidity, MultiSignature };
 
 use crate::{
 	ensure,
@@ -208,12 +207,15 @@ fn add_key_with_more_than_allowed_should_panic() {
 		// arrange
 		let (new_msa_id, owner_key_pair) = create_account();
 
-		for _ in 1..<Test as Config>::MaxPublicKeysPerMsa::get() {
+		let mut current_block = 0;
+		for i in 1..<Test as Config>::MaxPublicKeysPerMsa::get() {
+			current_block = (i*10) as u64;
+			run_to_block(current_block);
 			let (new_key_pair, _) = sr25519::Pair::generate();
 
 			let add_new_key_data = AddKeyData {
 				msa_id: new_msa_id,
-				expiration: 10,
+				expiration: current_block + 50,
 				new_public_key: new_key_pair.public().into(),
 			};
 			let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
@@ -238,7 +240,7 @@ fn add_key_with_more_than_allowed_should_panic() {
 
 		let add_new_key_data = AddKeyData {
 			msa_id: new_msa_id,
-			expiration: 10,
+			expiration: current_block + 50,
 			new_public_key: final_key_pair.public().into(),
 		};
 		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
@@ -2257,12 +2259,6 @@ pub fn cannot_register_signature_with_mortality_out_of_bounds() {
 
 #[test]
 pub fn add_msa_key_replay_fails() {
-	struct TestCase {
-		current: u64,
-		mortality: u64,
-		run_to: u64,
-		expected_ok: bool,
-	}
 	new_test_ext().execute_with(|| {
 		// these should all fail replay
 		let test_cases: Vec<TestCase> = vec![
@@ -2305,7 +2301,11 @@ pub fn add_msa_key_replay_fails() {
 		for tc in test_cases {
 			System::set_block_number(tc.current);
 
-			let (new_key_pair, _) = sr25519::Pair::generate();
+		let limit: u32 = <Test as Config>::MaxSignaturesPerBucket::get();
+		for _i in 0..limit {
+			let sig = &generate_test_signature();
+			assert_ok!(Msa::register_signature(sig, mortality_block.into()));
+		}
 
 			let add_new_key_data = AddKeyData {
 				msa_id: new_msa_id,
@@ -2336,6 +2336,27 @@ pub fn add_msa_key_replay_fails() {
 		}
 	})
 }
+
+#[test]
+pub fn cannot_register_too_many_signatures_in_one_bucket() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(1);
+		let mortality_block: BlockNumber = 3;
+
+		let limit: u32 = <Test as Config>::MaxSignaturesPerBucket::get();
+		for _i in 0..limit {
+			let sig = &generate_test_signature();
+			assert_ok!(Msa::register_signature(sig, mortality_block.into()));
+		}
+
+		let sig1 = &generate_test_signature();
+		assert_noop!(
+			Msa::register_signature(sig1, mortality_block.into()),
+			Error::<Test>::SignatureRegistryLimitExceeded
+		);
+	})
+}
+
 
 #[test]
 fn grant_permissions_for_schemas_errors_when_no_delegation() {
