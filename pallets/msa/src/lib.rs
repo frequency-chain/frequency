@@ -101,7 +101,7 @@ pub mod types;
 mod replay_tests;
 
 #[cfg(test)]
-mod replay_tests_2;
+mod audit_replay_tests;
 
 pub mod weights;
 

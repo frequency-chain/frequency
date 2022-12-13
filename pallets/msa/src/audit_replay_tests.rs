@@ -1,18 +1,14 @@
-use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddKeyData, AddProvider, Config, Error};
-use common_primitives::{
-	msa::MessageSourceId,
-	node::{AccountId, BlockNumber},
-	utils::wrap_binary_data,
-};
+use crate::{self as pallet_msa, Error};
+use common_primitives::node::AccountId;
 use frame_support::{
-	assert_err, assert_noop, assert_ok, parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64, Get, OnFinalize, OnInitialize},
+	assert_noop, assert_ok, parameter_types,
+	traits::{ConstU16, ConstU32, ConstU64, Everything, OnFinalize, OnInitialize},
 };
-use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
+use sp_core::{sr25519, Pair, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
-	AccountId32, MultiSignature,
+	MultiSignature,
 };
 
 pub use pallet_msa::Call as MsaCall;
@@ -34,7 +30,7 @@ frame_support::construct_runtime!(
 );
 
 impl frame_system::Config for Test {
-	type BaseCallFilter = frame_support::traits::Everything;
+	type BaseCallFilter = Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
@@ -57,7 +53,7 @@ impl frame_system::Config for Test {
 	type SystemWeightInfo = ();
 	type SS58Prefix = ConstU16<42>;
 	type OnSetCode = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
+	type MaxConsumers = ConstU32<16>;
 }
 
 impl pallet_schemas::Config for Test {
@@ -131,14 +127,14 @@ pub fn run_to_block(n: u64) {
 	}
 }
 
-pub fn generate_test_signature() -> MultiSignature {
+fn generate_test_signature() -> MultiSignature {
 	let (key_pair, _) = sr25519::Pair::generate();
 	let fake_data = H256::random();
 	key_pair.sign(fake_data.as_bytes()).into()
 }
 
 #[test]
-fn replaying_audit_bug_fails() {
+fn audit_replay_scenario_fails() {
 	new_test_ext().execute_with(|| {
 		let current_block = 9;
 		System::set_block_number(current_block);
@@ -152,8 +148,7 @@ fn replaying_audit_bug_fails() {
 			Error::<Test>::SignatureAlreadySubmitted,
 		);
 
-		let mut run_to: u64 = 10;
-		run_to_block(run_to);
+		run_to_block(10);
 		assert_noop!(
 			Msa::register_signature(sig1, mortality),
 			Error::<Test>::SignatureAlreadySubmitted,

@@ -186,9 +186,10 @@ pub fn add_signature_replay_boundary_checks() {
 	}
 	new_test_ext().execute_with(|| {
 		// This tests signature replay attacks for mortality window size = 100 and 2 buckets,
-		// .by looking at different boundary cases.  It checks that they can't
+		// by looking at different boundary cases.  It checks that they can't
 		// be resubmitted at the expiration block. We assume if they cannot be replayed at a
-		// boundary that they can't be replayed earlier than that boundary.
+		// boundary that they can't be replayed earlier than that boundary, given that we are
+		// checking explicitly for the error `SignatureAlreadySubmitted`.
 		let test_cases: Vec<TestCase> = vec![
 			// 1-block expiration for bucket 0, mortality crosses no boundary
 			TestCase { current: 1u64, mortality: 3u64, run_to: 2u64 },
@@ -216,7 +217,7 @@ pub fn add_signature_replay_boundary_checks() {
 				Msa::register_signature(sig1, tc.mortality),
 				Error::<Test>::SignatureAlreadySubmitted,
 			);
-			run_to_block(tc.run_to + 1);
+			run_to_block(tc.mortality);
 			assert_noop!(
 				Msa::register_signature(sig1, tc.mortality),
 				Error::<Test>::ProofHasExpired,
