@@ -418,7 +418,7 @@ pub mod pallet {
 		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used
 		///
 		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation(
-			T::MaxSchemaGrantsPerDelegation::get()
+			add_provider_payload.schema_ids.len() as u32
 		))]
 		pub fn create_sponsored_account_with_delegation(
 			origin: OriginFor<T>,
@@ -914,7 +914,9 @@ impl<T: Config> Pallet<T> {
 			// Increment the key counter
 			<PublicKeyCountForMsaId<T>>::try_mutate(msa_id, |key_count| {
 				// key_count:u8 should default to 0 if it does not exist
-				let incremented_key_count: u8 = *key_count + 1;
+				let incremented_key_count =
+					key_count.checked_add(1).ok_or(Error::<T>::KeyLimitExceeded)?;
+
 				ensure!(
 					incremented_key_count <= T::MaxPublicKeysPerMsa::get(),
 					Error::<T>::KeyLimitExceeded
@@ -1027,7 +1029,9 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	/// Mutates the delegation relationship storage item only if a value OK is returned.
+	/// Mutates the delegation relationship storage item only when the supplied function returns an 'Ok()' result.
+	/// The callback function 'f' takes the value (a delegation) and a reference to a boolean variable. This callback
+	/// sets the boolean variable to 'true' if the value is to be inserted and to 'false' if it is to be updated.
 	pub fn try_mutate_delegation<R, E: From<DispatchError>>(
 		delegator_id: DelegatorId,
 		provider_id: ProviderId,

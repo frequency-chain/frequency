@@ -2147,12 +2147,11 @@ fn register_signature_and_validate(
 	expected_bucket: u64,
 	signature: &MultiSignature,
 ) {
-	System::set_block_number(current_block as u64);
-	let mortality_block = current_block + 111;
-	assert_ok!(Msa::register_signature(signature, mortality_block.into()));
+	let signature_expiration_block = current_block + 51;
+	assert_ok!(Msa::register_signature(signature, signature_expiration_block.into()));
 
 	let actual = <PayloadSignatureRegistry<Test>>::get(expected_bucket, signature);
-	assert_eq!(Some(mortality_block as u64), actual);
+	assert_eq!(Some(signature_expiration_block as u64), actual);
 }
 
 #[test]
@@ -2164,20 +2163,22 @@ pub fn stores_signature_in_expected_bucket() {
 
 	new_test_ext().execute_with(|| {
 		let test_cases: Vec<TestCase> = vec![
-			TestCase { current_block: 999_899, expected_bucket_number: 0 }, // mortality = 1_000_010
-			TestCase { current_block: 4_294_965_098, expected_bucket_number: 0 }, // mortality = 4_294_965_209
-			TestCase { current_block: 0, expected_bucket_number: 0 },       // mortality = 111
-			TestCase { current_block: 129, expected_bucket_number: 1 },     // mortality = 240
-			TestCase { current_block: 640, expected_bucket_number: 1 },     // mortality = 751
-			TestCase { current_block: 128_999_799, expected_bucket_number: 1 }, // mortality = 128_999_910
+			TestCase { current_block: 999_899, expected_bucket_number: 1 }, // signature-expiration = 999_950
+			TestCase { current_block: 4_294_965_098, expected_bucket_number: 1 }, // signature-expiration = 4_294_965_149
+			TestCase { current_block: 0, expected_bucket_number: 0 },             // signature-expiration = 51
+			TestCase { current_block: 129, expected_bucket_number: 1 },           // signature-expiration = 180
+			TestCase { current_block: 640, expected_bucket_number: 0 },           // signature-expiration = 691
+			TestCase { current_block: 128_999_799, expected_bucket_number: 0 }, // signature-expiration = 128_999_850
 		];
 		for tc in test_cases {
-			// mortality block is current_block + 111 in this function.
-			register_signature_and_validate(
-				tc.current_block,
-				tc.expected_bucket_number,
-				&generate_test_signature(),
-			);
+			System::set_block_number(tc.current_block as u64);
+			let signature_expiration_block = tc.current_block + 51;
+			let signature = generate_test_signature();
+			assert_ok!(Msa::register_signature(&signature, signature_expiration_block.into()));
+
+			let actual =
+				<PayloadSignatureRegistry<Test>>::get(tc.expected_bucket_number, &signature);
+			assert_eq!(Some(signature_expiration_block as u64), actual);
 		}
 	})
 }
@@ -2191,15 +2192,15 @@ pub fn bucket_for() {
 	}
 	new_test_ext().execute_with(|| {
 		let test_cases: Vec<TestCase> = vec![
-			TestCase { block: 1_010, expected_bucket: 1 },
+			TestCase { block: 1_010, expected_bucket: 0 },
 			TestCase { block: 1_110, expected_bucket: 1 },
 			TestCase { block: 1_201, expected_bucket: 0 },
-			TestCase { block: 1_301, expected_bucket: 0 },
-			TestCase { block: 1_401, expected_bucket: 1 },
+			TestCase { block: 1_301, expected_bucket: 1 },
+			TestCase { block: 1_401, expected_bucket: 0 },
 			TestCase { block: 1_501, expected_bucket: 1 },
 			TestCase { block: 1_601, expected_bucket: 0 },
-			TestCase { block: 1_701, expected_bucket: 0 },
-			TestCase { block: 1_801, expected_bucket: 1 },
+			TestCase { block: 1_701, expected_bucket: 1 },
+			TestCase { block: 1_801, expected_bucket: 0 },
 			TestCase { block: 1_901, expected_bucket: 1 },
 		];
 		for tc in test_cases {
@@ -2215,15 +2216,17 @@ pub fn clears_stale_signatures_after_mortality_limit() {
 		let sig2 = &generate_test_signature();
 
 		let mut current_block: BlockNumber = 667;
-		let mortality_block = (current_block + 111) as u64;
+		let signature_expiration_block = (current_block + 51) as u64;
+
+		System::set_block_number(current_block as u64);
 		register_signature_and_validate(current_block, 1u64, sig1);
 		register_signature_and_validate(current_block, 1u64, sig2);
 
-		current_block = 777;
+		current_block = 707;
 		run_to_block(current_block.into());
 		// the old signature should not be able to be registered
 		assert_noop!(
-			Msa::register_signature(sig1, mortality_block),
+			Msa::register_signature(sig1, signature_expiration_block),
 			Error::<Test>::SignatureAlreadySubmitted
 		);
 
@@ -2245,12 +2248,12 @@ pub fn add_signature_replay_fails() {
 	new_test_ext().execute_with(|| {
 		// these should all fail replay
 		let test_cases: Vec<TestCase> = vec![
-			TestCase { current: 10_849u64, mortality: 11_001u64, run_to: 11_000u64 }, // fails test
+			TestCase { current: 10_949u64, mortality: 11_001u64, run_to: 11_000u64 }, // fails test
 			TestCase { current: 1u64, mortality: 3u64, run_to: 2u64 },
 			TestCase { current: 99u64, mortality: 101u64, run_to: 100u64 },
-			TestCase { current: 1_000u64, mortality: 1_199u64, run_to: 1_198u64 },
-			TestCase { current: 1_002u64, mortality: 1_201u64, run_to: 1_200u64 },
-			TestCase { current: 999u64, mortality: 1_148u64, run_to: 1_101u64 },
+			TestCase { current: 1_100u64, mortality: 1_199u64, run_to: 1_198u64 },
+			TestCase { current: 1_102u64, mortality: 1_201u64, run_to: 1_200u64 },
+			TestCase { current: 1_099u64, mortality: 1_148u64, run_to: 1_101u64 },
 		];
 		for tc in test_cases {
 			System::set_block_number(tc.current);
@@ -2297,7 +2300,7 @@ pub fn add_msa_key_replay_fails() {
 		// these should all fail replay
 		let test_cases: Vec<TestCase> = vec![
 			TestCase {
-				current: 10_849u64,
+				current: 10_949u64,
 				mortality: 11_001u64,
 				run_to: 10_848u64,
 				expected_ok: true,
@@ -2305,18 +2308,23 @@ pub fn add_msa_key_replay_fails() {
 			TestCase { current: 1u64, mortality: 3u64, run_to: 5u64, expected_ok: false },
 			TestCase { current: 99u64, mortality: 101u64, run_to: 100u64, expected_ok: true },
 			TestCase {
-				current: 1_000u64,
+				current: 1_100u64,
 				mortality: 1_199u64,
 				run_to: 1_198u64,
 				expected_ok: true,
 			},
 			TestCase {
-				current: 1_002u64,
+				current: 1_102u64,
 				mortality: 1_201u64,
 				run_to: 1_200u64,
 				expected_ok: true,
 			},
-			TestCase { current: 999u64, mortality: 1_148u64, run_to: 1_101u64, expected_ok: true },
+			TestCase {
+				current: 1_099u64,
+				mortality: 1_148u64,
+				run_to: 1_101u64,
+				expected_ok: true,
+			},
 			TestCase {
 				current: 1_000_000u64,
 				mortality: 1_000_000u64,

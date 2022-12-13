@@ -9,7 +9,6 @@ on:
 env:
   BUILD_PROFILE: release
   RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
-
 jobs:
   changes:
     name: Determine Changed Files
@@ -43,10 +42,18 @@ jobs:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
 
-  build-binary:
+  build-binaries:
     needs: changes
     if: needs.changes.outputs.build-binary == 'true'
-    name: Compile Frequency Project
+    name: Build Binary on ${{matrix.branch_name}} Branch
+    strategy:
+      matrix:
+        git_branch: ["${{github.head_ref}}", main]
+        include:
+          - git_branch: ${{github.head_ref}}
+            branch_name: PR
+          - git_branch: main
+            branch_name: Main
     runs-on: [self-hosted, Linux, X64]
     env:
       NETWORK: mainnet
@@ -54,10 +61,13 @@ jobs:
       - name: Set Env Vars
         run: |
           echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
-          echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
+          export BUILT_BIN_FILENAME=frequency; echo "BUILT_BIN_FILENAME=$BUILT_BIN_FILENAME" >> $GITHUB_ENV
+          echo "REF_BIN_FILENAME=$BUILT_BIN_FILENAME-ref" >> $GITHUB_ENV
           echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+        with:
+          ref: ${{matrix.git_branch}}
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
       # - name: Cache Binary for Testing
       #   id: cache-binary
@@ -92,15 +102,15 @@ jobs:
         run: |
           file ${{env.BUILT_BIN_FILENAME}} && \
             ./${{env.BUILT_BIN_FILENAME}} --version
-      - name: Archive Artifact
-        run: |
-          tar -cvf frequency-binary-${{env.NETWORK}}-${{github.sha}}.amd64.tar \
-            ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+      - name: Rename Reference Binary
+        if: matrix.git_branch == 'main'
+        working-directory: ${{env.BIN_DIR}}
+        run: mv ${{env.BUILT_BIN_FILENAME}} ${{env.REF_BIN_FILENAME}}
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
-          path: frequency-binary-${{env.NETWORK}}-${{github.sha}}.amd64.tar
+          path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}*
           if-no-files-found: error
 
   check-for-vulnerable-crates:
@@ -359,11 +369,13 @@ jobs:
             --root
 
   verify-js-api-augment:
-    needs:
-      - build-binary
+    needs: build-binaries
     name: Verify JS API Augment
     runs-on: ubuntu-20.04
     steps:
+      - name: Set Env Vars
+        run: |
+          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Set up NodeJs
@@ -378,17 +390,18 @@ jobs:
       - name: Lint
         run: npm run lint
         working-directory: js/api-augment
-      - name: Download Binary Artifacts
-        id: download
+      - name: Download Binary
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
-          path: .
-      - name: Extract Binary
+          path: ${{env.BIN_DIR}}
+      - name: Set Binary Permissions
+        working-directory: ${{env.BIN_DIR}}
         run: |
-          tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
+          set -x
+          chmod 755 frequency
       - name: Output Metadata
-        run: target/${{env.BUILD_PROFILE}}/frequency export-metadata ./js/api-augment/metadata.json
+        run: ${{env.BIN_DIR}}/frequency export-metadata ./js/api-augment/metadata.json
       - name: Build
         run: npm run build
         working-directory: js/api-augment
@@ -400,10 +413,13 @@ jobs:
         working-directory: js/api-augment/dist
 
   verify-docker-images:
-    needs: build-binary
+    needs: build-binaries
     name: Verify Docker Images
     runs-on: ubuntu-20.04
     steps:
+      - name: Set Env Vars
+        run: |
+          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
@@ -416,16 +432,16 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: ${{env.RUST_TOOLCHAIN}}
-      - name: Download Binary Artifacts
-        id: download
+      - name: Download Binary
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
-          path: .
-      - name: Extract Binary
+          path: ${{env.BIN_DIR}}
+      - name: Set Binary Permissions
+        working-directory: ${{env.BIN_DIR}}
         run: |
-          ls -la
-          tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
+          set -x
+          chmod 755 frequency
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
         with:
@@ -450,10 +466,13 @@ jobs:
           file: docker/${{env.IMAGE_NAME}}.dockerfile
 
   execute-binary-checks:
-    needs: build-binary
+    needs: build-binaries
     name: Execute Binary Checks
     runs-on: ubuntu-20.04
     steps:
+      - name: Set Env Vars
+        run: |
+          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
@@ -462,16 +481,80 @@ jobs:
           default: true
           profile: minimal
           toolchain: stable
-      - name: Download Binary Artifacts
-        id: download
+      - name: Download Binary
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
-          path: .
-      - name: Extract Binary
+          path: ${{env.BIN_DIR}}
+      - name: Set Binary Permissions
+        working-directory: ${{env.BIN_DIR}}
         run: |
-          tar -xvf frequency-binary-mainnet-${{github.sha}}.amd64.tar
+          set -x
+          chmod 755 frequency
       - name: Output Binary Version
+        working-directory: ${{env.BIN_DIR}}
         run: |
-          file ./target/${{env.BUILD_PROFILE}}/frequency && \
-            ./target/${{env.BUILD_PROFILE}}/frequency --version
+          file ./frequency && ./frequency --version
+
+  check-metadata-and-spec-version:
+    needs: build-binaries
+    name: Check Metadata and Spec Version
+    runs-on: ubuntu-20.04
+    env:
+      REF_TAG: latest # tag to obtain reference binary to test against
+      NETWORK: mainnet
+      GITHUB_PR_LABEL: metadata-mismatch
+    steps:
+      - name: Set Env Vars
+        run: |
+          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
+          export TEST_BIN_FILENAME=frequency; echo "TEST_BIN_FILENAME=$TEST_BIN_FILENAME" >> $GITHUB_ENV
+          echo "REF_BIN_FILENAME=$TEST_BIN_FILENAME-ref" >> $GITHUB_ENV
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Download Test Binary
+        uses: actions/download-artifact@v3
+        with:
+          name: artifacts-${{github.run_id}}
+          path: ${{env.BIN_DIR}}
+      - name: Set Binary Permissions
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          set -x
+          chmod 755 $TEST_BIN_FILENAME
+          chmod 755 $REF_BIN_FILENAME
+      - name: Compare Metadata
+        id: compare-metadata
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          ./$REF_BIN_FILENAME export-metadata metadata-ref.json
+          metadata_ref=$(cat metadata-ref.json | jq -r .result)
+          ./$TEST_BIN_FILENAME export-metadata metadata.json
+          metadata=$(cat metadata.json | jq -r .result)
+          match=$([[ $metadata == $metadata_ref ]] && echo 'true' || echo 'false')
+          echo "Metadata matches?: $match"
+          echo "metadata_match=$match" >> $GITHUB_OUTPUT
+      - name: Assign Metadata Mismatch Label
+        if: steps.compare-metadata.outputs.metadata_match != 'true'
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: ${{env.GITHUB_PR_LABEL}}
+      - name: Check Spec Version
+        if: steps.compare-metadata.outputs.metadata_match != 'true'
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          set -x
+          spec_version_ref=$(./$REF_BIN_FILENAME export-runtime-version | jq -r .specVersion)
+          spec_version=$(./$TEST_BIN_FILENAME export-runtime-version | jq -r .specVersion)
+          [[ $spec_version -gt $spec_version_ref  ]] || \
+            (echo "ERROR: When metadata is updated, the new spec version \($spec_version\) \
+            must be greater than the latest version on main \($spec_version_ref\)" && exit 10)
+      - name: Remove Metadata Mismatch Label
+        if: |
+          (steps.compare-metadata.outputs.metadata_match == 'true') &&
+            contains(github.event.pull_request.labels.*.name, env.GITHUB_PR_LABEL)
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          labels: ${{env.GITHUB_PR_LABEL}}

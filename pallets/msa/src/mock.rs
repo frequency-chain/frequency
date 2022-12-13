@@ -67,7 +67,7 @@ impl pallet_schemas::Config for Test {
 }
 
 parameter_types! {
-	pub const MaxPublicKeysPerMsa: u8 = 10;
+	pub const MaxPublicKeysPerMsa: u8 = 255;
 	pub const MaxProviderNameSize: u32 = 16;
 	pub const MaxSchemas: u32 = 5;
 }
@@ -106,7 +106,7 @@ impl pallet_msa::Config for Test {
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
-	type MortalityWindowSize = ConstU32<200>;
+	type MortalityWindowSize = ConstU32<100>;
 	type MaxSignaturesPerBucket = ConstU32<10>;
 	type NumberOfBuckets = ConstU32<2>;
 }
