@@ -177,9 +177,6 @@ pub mod pallet {
 
 		/// Invalid payload location
 		InvalidPayloadLocation,
-
-		/// Attempted to call `store` outside of block execution.
-		BadContext,
 	}
 
 	#[pallet::event]
@@ -191,6 +188,9 @@ pub mod pallet {
 			schema_id: SchemaId,
 			/// The block number for these messages
 			block_number: T::BlockNumber,
+			/// `DEPRECATED` - Number of messages in this block for this schema
+			/// Value does not reflect the actual count and it will be removed in June 2023
+			count: u16,
 		},
 	}
 
@@ -348,6 +348,7 @@ impl<T: Config> Pallet<T> {
 				Self::deposit_event(Event::MessagesStored {
 					schema_id,
 					block_number: current_block,
+					count: 1, // hardcoded to 1 for backwards compatibility
 				});
 			}
 			MessageIndex::<T>::put(index.saturating_add(1));

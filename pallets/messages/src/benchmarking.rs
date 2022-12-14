@@ -82,6 +82,13 @@ benchmarks! {
 			assert_ok!(onchain_message::<T>(schema_id));
 		}
 	}: _ (RawOrigin::Signed(caller), Some(message_source_id.into()), schema_id, payload)
+	verify {
+		assert_eq!(
+			MessagesPallet::<T>::get_messages(
+				<T as frame_system::Config>::BlockNumber::one(), schema_id).len(),
+			AVERAGE_NUMBER_OF_MESSAGES as usize
+		);
+	}
 
 	add_ipfs_message {
 		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - IPFS_PAYLOAD_LENGTH;
@@ -98,6 +105,13 @@ benchmarks! {
 			assert_ok!(ipfs_message::<T>(IPFS_SCHEMA_ID));
 		}
 	}: _ (RawOrigin::Signed(caller),IPFS_SCHEMA_ID, cid, IPFS_PAYLOAD_LENGTH)
+	verify {
+		assert_eq!(
+			MessagesPallet::<T>::get_messages(
+				<T as frame_system::Config>::BlockNumber::one(), IPFS_SCHEMA_ID).len(),
+			AVERAGE_NUMBER_OF_MESSAGES as usize
+		);
+	}
 
 	impl_benchmark_test_suite!(MessagesPallet, crate::mock::new_test_ext(), crate::mock::Test);
 }
