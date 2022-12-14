@@ -1,14 +1,17 @@
-use crate::{self as pallet_msa, Error};
+use crate::{
+	self as pallet_msa,
+	mock::{generate_test_signature, new_test_ext, run_to_block},
+	Error,
+};
 use common_primitives::node::AccountId;
 use frame_support::{
 	assert_noop, assert_ok, parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64, Everything, OnFinalize, OnInitialize},
+	traits::{ConstU16, ConstU32, ConstU64, Everything},
 };
-use sp_core::{sr25519, Pair, H256};
+use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
-	MultiSignature,
 };
 
 pub use pallet_msa::Call as MsaCall;
@@ -109,30 +112,6 @@ impl pallet_msa::Config for Test {
 	type NumberOfBuckets = ConstU32<10>;
 	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<200>;
-}
-
-pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	let mut ext = sp_io::TestExternalities::new(t);
-	ext.execute_with(|| System::set_block_number(1));
-	ext
-}
-
-pub fn run_to_block(n: u64) {
-	while System::block_number() < n {
-		if System::block_number() > 1 {
-			System::on_finalize(System::block_number());
-		}
-		System::set_block_number(System::block_number() + 1);
-		System::on_initialize(System::block_number());
-		Msa::on_initialize(System::block_number());
-	}
-}
-
-fn generate_test_signature() -> MultiSignature {
-	let (key_pair, _) = sr25519::Pair::generate();
-	let fake_data = H256::random();
-	key_pair.sign(fake_data.as_bytes()).into()
 }
 
 #[test]

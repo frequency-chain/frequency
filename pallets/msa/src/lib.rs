@@ -103,6 +103,9 @@ mod replay_tests;
 #[cfg(test)]
 mod audit_replay_tests;
 
+#[cfg(test)]
+mod signature_registry_tests;
+
 pub mod weights;
 
 #[frame_support::pallet]
