@@ -23,3 +23,4 @@ ignore:
   - "**/benchmarks.rs" # Ignore benchmarking
   - "**/*tests.rs" # Ignore test files for coverage
   - "**/tests/*.rs" # Ignore test files for coverage
+  - "**/*mock.rs" # Ignore test mock files for coverage
