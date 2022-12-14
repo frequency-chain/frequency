@@ -290,7 +290,8 @@ pub type MSAMortalityWindowSize = ConstU32<100>;
 pub type MSAMaxSignaturesPerBucket = ConstU32<50_000>;
 /// The total number of virtual buckets
 pub type MSANumberOfBuckets = ConstU32<2>;
-/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
+/// The upper limit on total stored signatures.
+/// This MUST be MaxSignaturesPerBucket * NumberOfBuckets.
 pub type MSAMaxSignaturesStored = ConstU32<100_000>;
 // -end- MSA Pallet ---
 

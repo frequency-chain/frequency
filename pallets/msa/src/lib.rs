@@ -61,21 +61,22 @@ use frame_support::{
 	pallet_prelude::*,
 	traits::IsSubType,
 };
+
+#[cfg(feature = "runtime-benchmarks")]
+use common_primitives::benchmarks::MsaBenchmarkHelper;
+
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
 use sp_runtime::{
 	traits::{
-		Convert, DispatchInfoOf, Dispatchable, One, SaturatedConversion, SignedExtension, Verify,
+		Convert, Dispatchable, DispatchInfoOf, One, SaturatedConversion, SignedExtension, Verify,
 		Zero,
 	},
 	DispatchError, MultiSignature,
 };
 use sp_std::prelude::*;
 
-#[cfg(feature = "runtime-benchmarks")]
-use common_primitives::benchmarks::MsaBenchmarkHelper;
-pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
@@ -84,6 +85,8 @@ use common_primitives::{
 	},
 	schema::{SchemaId, SchemaValidator},
 };
+
+pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 pub use pallet::*;
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
 pub use weights::*;
@@ -99,10 +102,8 @@ pub mod types;
 
 #[cfg(test)]
 mod replay_tests;
-
 #[cfg(test)]
 mod audit_replay_tests;
-
 #[cfg(test)]
 mod signature_registry_tests;
 
@@ -211,7 +212,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_msa_by_public_key)]
 	pub type PublicKeyToMsaId<T: Config> =
-		StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
+	StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
 
 	/// Storage type for a reference counter of the number of keys associated to an MSA
 	/// - Key: MSA Id
@@ -219,7 +220,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_public_key_count_by_msa_id)]
 	pub(super) type PublicKeyCountForMsaId<T: Config> =
-		StorageMap<_, Twox64Concat, MessageSourceId, u8, ValueQuery>;
+	StorageMap<_, Twox64Concat, MessageSourceId, u8, ValueQuery>;
 
 	/// PayloadSignatureRegistry is used to prevent replay attacks for extrinsics
 	/// that take an externally-signed payload.
@@ -235,11 +236,11 @@ pub mod pallet {
 		MultiSignature, // An externally-created Signature for an external payload, provided by an extrinsic
 		T::BlockNumber, // An actual flipping block number.
 		OptionQuery,    // The type for the query
-		GetDefault,
-		T::MaxSignaturesStored,
+		GetDefault,		// OnEmpty return type, defaults to None
+		T::MaxSignaturesStored, // Maximum total signatures to store
 	>;
 
-	/// This keeps track of how many signatures are currently stored in each virtual signature registration bucket
+	/// Records how many signatures are currently stored in each virtual signature registration bucket
 	#[pallet::storage]
 	#[pallet::getter(fn get_bucket_signature_count)]
 	pub(super) type PayloadSignatureBucketsSignatureCount<T: Config> =
@@ -387,14 +388,14 @@ pub mod pallet {
 		/// Attempted to request validity of schema permission or delegation in the future.
 		CannotPredictValidityPastCurrentBlock,
 
-		/// Attempted to access a virtual signature registration  bucket that is out of bounds
+		/// Attempted to access a virtual signature registration bucket that is out of bounds
 		NoSuchBucket,
 
 		/// Attempted to add a new signature to a full virtual signature registration bucket
 		SignatureRegistryLimitExceeded,
 
-		/// Failed overflow check when adding to a bucket
-		FailedBucketOverflowCheck,
+		/// Failed overflow check when adding to a bucket signature count
+		FailedBucketSignatureCountOverflowCheck,
 
 		/// Failed overflow check when adding a new key
 		FailedKeyOverflowCheck,
@@ -452,7 +453,7 @@ pub mod pallet {
 		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used
 		///
 		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation(
-			add_provider_payload.schema_ids.len() as u32
+		add_provider_payload.schema_ids.len() as u32
 		))]
 		pub fn create_sponsored_account_with_delegation(
 			origin: OriginFor<T>,
@@ -607,10 +608,10 @@ pub mod pallet {
 					let provider_id = ProviderId(provider_msa_id);
 					Self::revoke_provider(provider_id, delegator_id)?;
 					Self::deposit_event(Event::DelegationRevoked { delegator_id, provider_id });
-				},
+				}
 				None => {
 					error!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
-				},
+				}
 			}
 
 			Ok(())
@@ -651,14 +652,14 @@ pub mod pallet {
 				&msa_owner_public_key,
 				add_key_payload.encode(),
 			)
-			.map_err(|_| Error::<T>::MsaOwnershipInvalidSignature)?;
+				.map_err(|_| Error::<T>::MsaOwnershipInvalidSignature)?;
 
 			Self::verify_signature(
 				&new_key_owner_proof,
 				&add_key_payload.new_public_key.clone(),
 				add_key_payload.encode(),
 			)
-			.map_err(|_| Error::<T>::NewKeyOwnershipInvalidSignature)?;
+				.map_err(|_| Error::<T>::NewKeyOwnershipInvalidSignature)?;
 
 			Self::register_signature(&msa_owner_proof, add_key_payload.expiration.into())?;
 			Self::register_signature(&new_key_owner_proof, add_key_payload.expiration.into())?;
@@ -709,10 +710,10 @@ pub mod pallet {
 
 					// Deposit the event
 					Self::deposit_event(Event::PublicKeyDeleted { key: public_key_to_delete });
-				},
+				}
 				None => {
 					error!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
-				},
+				}
 			}
 			Ok(())
 		}
@@ -744,10 +745,10 @@ pub mod pallet {
 					let delegator_id = DelegatorId(delegator);
 					Self::revoke_provider(provider_id, delegator_id)?;
 					Self::deposit_event(Event::DelegationRevoked { provider_id, delegator_id })
-				},
+				}
 				None => {
 					error!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
-				},
+				}
 			}
 
 			Ok(())
@@ -793,7 +794,7 @@ pub mod pallet {
 		/// - [`SchemaNotGranted`](Error::SchemaNotGranted) - If attempting to revoke a schema that has not previously been granted.
 		///
 		#[pallet::weight(T::WeightInfo::revoke_schema_permissions(
-			schema_ids.len() as u32
+		schema_ids.len() as u32
 		))]
 		pub fn revoke_schema_permissions(
 			origin: OriginFor<T>,
@@ -841,10 +842,10 @@ pub mod pallet {
 					Self::delete_key_for_msa(msa_id, &who)?;
 					Self::deposit_event(Event::PublicKeyDeleted { key: who });
 					Self::deposit_event(Event::MsaRetired { msa_id });
-				},
+				}
 				None => {
 					error!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
-				},
+				}
 			}
 			Ok(Some(T::WeightInfo::retire_msa(num_deletions)).into())
 		}
@@ -863,8 +864,8 @@ impl<T: Config> Pallet<T> {
 		key: T::AccountId,
 		on_success: F,
 	) -> Result<(MessageSourceId, T::AccountId), DispatchError>
-	where
-		F: FnOnce(MessageSourceId) -> DispatchResult,
+		where
+			F: FnOnce(MessageSourceId) -> DispatchResult,
 	{
 		let next_msa_id = Self::get_next_msa_id()?;
 		Self::add_key(next_msa_id, &key, on_success)?;
@@ -938,8 +939,8 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::KeyAlreadyRegistered`]
 	///
 	pub fn add_key<F>(msa_id: MessageSourceId, key: &T::AccountId, on_success: F) -> DispatchResult
-	where
-		F: FnOnce(MessageSourceId) -> DispatchResult,
+		where
+			F: FnOnce(MessageSourceId) -> DispatchResult,
 	{
 		PublicKeyToMsaId::<T>::try_mutate(key, |maybe_msa_id| {
 			ensure!(maybe_msa_id.is_none(), Error::<T>::KeyAlreadyRegistered);
@@ -1194,7 +1195,7 @@ impl<T: Config> Pallet<T> {
 
 		let schema_permissions = provider_info.schema_permissions;
 		if schema_permissions.is_empty() {
-			return Err(Error::<T>::SchemaNotGranted.into())
+			return Err(Error::<T>::SchemaNotGranted.into());
 		}
 
 		let mut schema_list = Vec::new();
@@ -1247,7 +1248,7 @@ impl<T: Config> Pallet<T> {
 					);
 					let new_count = bucket_signature_count
 						.checked_add(1)
-						.ok_or(Error::<T>::FailedBucketOverflowCheck)?;
+						.ok_or(Error::<T>::FailedBucketSignatureCountOverflowCheck)?;
 					*bucket_signature_count = new_count;
 
 					// Tests for noop fail with "storage has been mutated"
@@ -1282,7 +1283,7 @@ impl<T: Config> Pallet<T> {
 
 		// If we did not cross a bucket boundary block, stop
 		if prior_bucket_num == current_bucket_num {
-			return Weight::zero()
+			return Weight::zero();
 		}
 		// Clear the previous bucket block set
 		let multi_removal_result = <PayloadSignatureRegistry<T>>::clear_prefix(
@@ -1386,12 +1387,12 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 					Error::<T>::CannotPredictValidityPastCurrentBlock
 				);
 				block_number
-			},
+			}
 			None => current_block,
 		};
 
 		if info.revoked_at == T::BlockNumber::zero() {
-			return Ok(info)
+			return Ok(info);
 		}
 		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
 
@@ -1422,7 +1423,7 @@ impl<T: Config> SchemaGrantValidator<T::BlockNumber> for Pallet<T> {
 			.ok_or(Error::<T>::SchemaNotGranted)?;
 
 		if *schema_permission_revoked_at_block_number == T::BlockNumber::zero() {
-			return Ok(())
+			return Ok(());
 		}
 
 		ensure!(
@@ -1533,7 +1534,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 
 		return ValidTransaction::with_tag_prefix(TAG_PREFIX)
 			.and_provides(signing_public_key)
-			.build()
+			.build();
 	}
 
 	/// Validates that a MSA being retired exists, does not belong to a registered provider, and
@@ -1565,7 +1566,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			key_count == 1,
 			InvalidTransaction::Custom(ValidityError::InvalidMoreThanOneKeyExists as u8)
 		);
-		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
+		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build();
 	}
 }
 
@@ -1604,8 +1605,8 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckFreeExtrinsicUse<T> {
 }
 
 impl<T: Config + Send + Sync> SignedExtension for CheckFreeExtrinsicUse<T>
-where
-	T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
+	where
+		T::RuntimeCall: Dispatchable<Info=DispatchInfo> + IsSubType<Call<T>>,
 {
 	type AccountId = T::AccountId;
 	type Call = T::RuntimeCall;
