@@ -5,6 +5,8 @@ use sp_std::{prelude::*, vec::Vec};
 use serde::{ser::Serializer, Serialize};
 
 const DIDPREFIX: &str = "did:dsnp:";
+/// The DSNP DID method value
+pub const DIDMETHOD: &str = "dsnp";
 
 const CONTEXT: [&str; 4] = [
 	"https://www.w3.org/ns/did/v1",

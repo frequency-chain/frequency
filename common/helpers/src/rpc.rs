@@ -25,8 +25,6 @@ pub fn map_other_error<T>(error: String) -> RpcResult<T> {
 	))))
 }
 
-
-
 #[cfg(test)]
 mod tests {
 	use super::*;

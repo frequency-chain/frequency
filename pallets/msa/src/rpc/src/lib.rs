@@ -1,39 +1,36 @@
 // Strong Documentation Lints
 #![deny(
-rustdoc::broken_intra_doc_links,
-rustdoc::missing_crate_level_docs,
-rustdoc::invalid_codeblock_attributes,
-missing_docs
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
 )]
 
 //! Custom APIs for [MSA](../pallet_msa/index.html)
 
-use std::num::ParseIntError;
-use std::sync::Arc;
+use std::{num::ParseIntError, sync::Arc};
 use String;
 
 use codec::Codec;
+use common_helpers::rpc::map_other_error;
+#[cfg(feature = "std")]
+use common_helpers::rpc::map_rpc_result;
+use common_primitives::{
+	did::{Did, DidDocument, KeyType, VerificationMethod, DIDMETHOD},
+	msa::{DelegatorId, MessageSourceId, ProviderId},
+	node::BlockNumber,
+	schema::SchemaId,
+};
 use did_parser::Did as DidParser;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
 	tracing::warn,
 };
+use pallet_msa_runtime_api::MsaRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
-
-use common_helpers::rpc::map_other_error;
-#[cfg(feature = "std")]
-use common_helpers::rpc::map_rpc_result;
-use common_primitives::{
-	did::{DidDocument, VerificationMethod},
-	msa::{DelegatorId, MessageSourceId, ProviderId},
-	node::BlockNumber,
-	schema::SchemaId,
-};
-use common_primitives::did::{Did, KeyType};
-use pallet_msa_runtime_api::MsaRuntimeApi;
 
 #[cfg(test)]
 mod tests;
@@ -82,22 +79,27 @@ impl<C, M> MsaHandler<C, M> {
 		Self { client, _marker: Default::default() }
 	}
 
+	/// Returns a MessageSourceId parsed from a DID, returning Error if it is not parseable or it isn't ours
 	pub fn parse_msa_from_did_bytes(did_bytes: Vec<u8>) -> Result<MessageSourceId, String> {
 		let maybe_did_str = String::from_utf8(did_bytes).map_err(|e| e.to_string())?;
-		let (_, parsed_did) = DidParser::parse(maybe_did_str.as_str()).map_err(|e| e.to_string())?;
+		let (_, parsed_did) =
+			DidParser::parse(maybe_did_str.as_str()).map_err(|e| e.to_string())?;
+		if parsed_did.method != DIDMETHOD {
+			return Err("not ours".to_string())
+		}
 		parsed_did.id.parse().map_err(|e: ParseIntError| e.to_string())
 	}
 }
 
 #[async_trait]
 impl<C, Block, AccountId> MsaApiServer<<Block as BlockT>::Hash, AccountId> for MsaHandler<C, Block>
-	where
-		Block: BlockT,
-		C: Send + Sync + 'static,
-		C: ProvideRuntimeApi<Block>,
-		C: HeaderBackend<Block>,
-		C::Api: MsaRuntimeApi<Block, AccountId>,
-		AccountId: Codec,
+where
+	Block: BlockT,
+	C: Send + Sync + 'static,
+	C: ProvideRuntimeApi<Block>,
+	C: HeaderBackend<Block>,
+	C::Api: MsaRuntimeApi<Block, AccountId>,
+	AccountId: Codec,
 {
 	// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
 	// fn get_msa_keys(&self, msa_id: MessageSourceId) -> RpcResult<Vec<KeyInfoResponse<AccountId>>> {
@@ -133,7 +135,7 @@ impl<C, Block, AccountId> MsaApiServer<<Block as BlockT>::Hash, AccountId> for M
 					Err(e) => {
 						warn!("ApiError from has_delegation! {:?}", e);
 						false
-					}
+					},
 				};
 				(delegator_msa_id, has_delegation)
 			})
@@ -159,28 +161,26 @@ impl<C, Block, AccountId> MsaApiServer<<Block as BlockT>::Hash, AccountId> for M
 				let api = self.client.runtime_api();
 				let at = BlockId::hash(self.client.info().best_hash);
 				match api.get_public_key_count_by_msa_id(&at, msa_id) {
-					Ok(key_count) => {
-						match key_count {
-							0 => Ok(None),
-							_ => Ok(Some(msa_id)),
-						}
-					}
-					Err(e) => map_rpc_result(Err(e))
+					Ok(key_count) => match key_count {
+						0 => Ok(None),
+						_ => Ok(Some(msa_id)),
+					},
+					Err(e) => map_rpc_result(Err(e)),
 				}
-			}
-			Err(e) => map_other_error(e.to_string())
+			},
+			Err(e) => map_other_error(e.to_string()),
 		}
 	}
 
 	/// Resolves an DID to a DID document.
 	fn resolve_did(&self, did: Vec<u8>) -> RpcResult<Option<String>> {
-		let msa_id = Self::parse_msa_from_did_bytes(did)
-			.or_else(|e| map_other_error(e))?;
+		let msa_id = Self::parse_msa_from_did_bytes(did).or_else(|e| map_other_error(e))?;
 
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 
-		let key_count = api.get_public_key_count_by_msa_id(&at, msa_id)
+		let key_count = api
+			.get_public_key_count_by_msa_id(&at, msa_id)
 			.or_else(|e| map_rpc_result(Err(e)))?;
 		match key_count {
 			0 => Ok(None),
@@ -205,7 +205,7 @@ impl<C, Block, AccountId> MsaApiServer<<Block as BlockT>::Hash, AccountId> for M
 					Ok(stringified) => Ok(Some(stringified)),
 					Err(e) => map_other_error(e.to_string()),
 				}
-			}
+			},
 		}
 	}
 }

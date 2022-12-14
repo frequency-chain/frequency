@@ -43,7 +43,7 @@ sp_api::decl_runtime_apis! {
 		/// Get the list of schema ids (if any) that exist in any delegation between the delegator and provider
 		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaId>>;
 
-		/// Transform a DID to  MSA Id.
+		/// Get the number of keys associated with an MSA Id.
 		fn get_public_key_count_by_msa_id(msa_id: MessageSourceId) -> u8;
 
 		/// Get a list of provider MSA Ids for a given MSA Id

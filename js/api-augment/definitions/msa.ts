@@ -47,6 +47,20 @@ export default {
       ],
       type: "Option<Vec<SchemaId>>",
     },
+    didToMsaId: {
+      description: "Given a DID, retrieve the MSA Id, if it is registered and active.",
+      params: [
+        {name: "did", type: "Vec<u8>"},
+      ],
+      type: "Option<MessageSourceId>",
+    },
+    resolveDid: {
+      description: "Convert a given MSA Id to a DID document",
+      params: [
+        {name: "did", type: "Vec<u8>"},
+      ],
+      type: "Option<String>",
+    }
   },
   types: {
     MessageSourceId: "u64",
@@ -98,6 +112,26 @@ export default {
               },
             ],
             type: "Option<Vec<SchemaId>>",
+          },
+          get_public_key_count_by_msa_id: {
+            description: "Get the number of keys associated with an MSA Id",
+            params: [
+              {
+                name: "msa_id",
+                type: "MessageSourceId",
+              },
+            ],
+            type: "u8",
+          },
+          get_providers_for_msa_id: {
+            description: "Get a list of provider MSA Ids for a given MSA Id",
+            params: [
+              {
+                name: "msa_id",
+                type: "MessageSourceId",
+              },
+            ],
+            type: "Vec<ProviderId>",
           },
         },
         version: 1,

@@ -1,9 +1,9 @@
 mod rpc_mock;
 
 use super::*;
-use rpc_mock::*;
 use common_primitives::node::BlockNumber;
 use pallet_msa_runtime_api::MsaRuntimeApi;
+use rpc_mock::*;
 use serde_json::json;
 use std::sync::Arc;
 use substrate_test_runtime_client::runtime::{AccountId, Block};
@@ -106,4 +106,3 @@ async fn resolve_did_returns_none_when_not_found() {
 	let did = Vec::from("did:dsnp:99");
 	assert!(api.resolve_did(did).unwrap().is_none());
 }
-
