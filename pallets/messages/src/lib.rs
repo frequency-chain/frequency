@@ -148,16 +148,6 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
-	/// A temporary storage of unique schema ids and counts, for a duration of block period.
-	/// Main use for this storage is to propagate events
-	/// At the start of the next block this storage is cleared
-	/// - Value: Sorted List(Set) of SchemaIds and their counts
-	#[pallet::storage]
-	#[pallet::whitelist_storage]
-	#[pallet::getter(fn get_block_schemas)]
-	pub(super) type BlockSchemas<T: Config> =
-		StorageValue<_, BoundedVec<(SchemaId, u16), T::MaxMessagesPerBlock>, ValueQuery>;
-
 	/// A temporary storage for getting the index for messages
 	/// At the start of the next block this storage is set to 0
 	#[pallet::storage]
