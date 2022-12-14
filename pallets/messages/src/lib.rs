@@ -201,23 +201,16 @@ pub mod pallet {
 			schema_id: SchemaId,
 			/// The block number for these messages
 			block_number: T::BlockNumber,
-			/// Number of messages in this block for this schema
-			count: u16,
 		},
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_current: T::BlockNumber) -> Weight {
-			T::WeightInfo::on_finalize()
-			// TODO: add retention policy execution GitHub Issue: #126 and #25
-		}
-
-		fn on_finalize(block_number: T::BlockNumber) {
 			<MessageIndex<T>>::set(0u16);
-			for (schema_id, count) in <BlockSchemas<T>>::take() {
-				Self::deposit_event(Event::MessagesStored { schema_id, block_number, count });
-			}
+			// allocates 1 read and 1 write for any access of `MessageIndex` in every block
+			T::DbWeight::get().reads(1u64).saturating_add(T::DbWeight::get().writes(1u64))
+			// TODO: add retention policy execution GitHub Issue: #126 and #25
 		}
 	}
 
@@ -360,7 +353,13 @@ impl<T: Config> Pallet<T> {
 				.try_push(msg)
 				.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
 
-			Self::track_schema_id(schema_id)?;
+			if existing_messages.len() == 1 {
+				// first message for any schema_id is going to trigger an event
+				Self::deposit_event(Event::MessagesStored {
+					schema_id,
+					block_number: current_block,
+				});
+			}
 			MessageIndex::<T>::put(index.saturating_add(1));
 			Ok(())
 		})
@@ -395,19 +394,5 @@ impl<T: Config> Pallet<T> {
 			.iter()
 			.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
 			.collect()
-	}
-
-	/// stores schema_id in a temporary set to allow sending events in the end of block
-	fn track_schema_id(schema_id: SchemaId) -> DispatchResult {
-		<BlockSchemas<T>>::try_mutate(|set| -> DispatchResult {
-			match set.binary_search_by(|(existing_schema_id, _)| existing_schema_id.cmp(&schema_id))
-			{
-				Err(i) => set
-					.try_insert(i, (schema_id, 1))
-					.map_err(|_| Error::<T>::TooManyMessagesInBlock)?,
-				Ok(i) => set[i].1 += 1, // increase the counter
-			}
-			Ok(())
-		})
 	}
 }

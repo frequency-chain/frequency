@@ -1,8 +1,8 @@
 use super::{mock::*, Event as MessageEvent};
-use crate::{BlockSchemas, Config, Error, Message, MessageIndex, Messages};
+use crate::{Config, Error, Message, MessageIndex, Messages};
 use codec::Encode;
 use common_primitives::{messages::MessageResponse, schema::*};
-use frame_support::{assert_err, assert_noop, assert_ok, traits::OnFinalize, BoundedVec};
+use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize, BoundedVec};
 use frame_system::{EventRecord, Phase};
 use sp_std::vec::Vec;
 
@@ -113,14 +113,29 @@ fn add_message_should_store_message_in_storage() {
 			]
 		);
 
-		assert_eq!(
-			BlockSchemas::<Test>::get().into_inner(),
-			vec![(schema_id_1, 1), (schema_id_2, 2)]
-		);
-
 		// assert events
 		let events_occured = System::events();
-		assert_eq!(events_occured.len(), 0);
+		assert_eq!(
+			events_occured,
+			vec![
+				EventRecord {
+					phase: Phase::Initialization,
+					event: RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
+						block_number: 1,
+						schema_id: schema_id_1,
+					}),
+					topics: vec![]
+				},
+				EventRecord {
+					phase: Phase::Initialization,
+					event: RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
+						block_number: 1,
+						schema_id: schema_id_2,
+					}),
+					topics: vec![]
+				},
+			]
+		);
 	});
 }
 
@@ -347,10 +362,9 @@ fn invalid_payload_location_onchain() {
 }
 
 #[test]
-fn on_finalize_should_add_events_and_clean_up_temporary_storages() {
+fn on_initialize_should_clean_up_temporary_storages() {
 	new_test_ext().execute_with(|| {
 		// arrange
-		let current_block = 1;
 		let caller_1 = 5;
 		let caller_2 = 2;
 		let schema_id_1: SchemaId = 1;
@@ -369,44 +383,11 @@ fn on_finalize_should_add_events_and_clean_up_temporary_storages() {
 			schema_id_2,
 			message_payload_2.clone()
 		));
-		assert_ok!(MessagesPallet::add_onchain_message(
-			RuntimeOrigin::signed(caller_2),
-			None,
-			schema_id_2,
-			message_payload_2
-		));
 
 		// act
-		System::note_finished_extrinsics();
-		MessagesPallet::on_finalize(System::block_number());
+		MessagesPallet::on_initialize(System::block_number() + 1);
 
 		// assert
-		assert_eq!(BlockSchemas::<Test>::get().len(), 0);
 		assert_eq!(MessageIndex::<Test>::get(), 0);
-
-		let events_occured = System::events();
-		assert_eq!(
-			events_occured,
-			vec![
-				EventRecord {
-					phase: Phase::Finalization,
-					event: RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
-						block_number: current_block,
-						schema_id: schema_id_1,
-						count: 1
-					}),
-					topics: vec![]
-				},
-				EventRecord {
-					phase: Phase::Finalization,
-					event: RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
-						block_number: current_block,
-						schema_id: schema_id_2,
-						count: 2
-					}),
-					topics: vec![]
-				},
-			]
-		);
 	});
 }
