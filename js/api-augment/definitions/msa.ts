@@ -60,7 +60,7 @@ export default {
         {name: "did", type: "Vec<u8>"},
       ],
       type: "Option<String>",
-    }
+    },
   },
   types: {
     MessageSourceId: "u64",
