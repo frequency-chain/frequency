@@ -22,6 +22,9 @@ use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use sp_std::vec::Vec;
 use std::sync::Arc;
 
+#[cfg(test)]
+mod tests;
+
 /// Errors that occur on the client RPC
 pub enum SchemaRpcError {
 	/// No schema was found for the given id.

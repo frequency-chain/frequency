@@ -27,6 +27,9 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
+#[cfg(test)]
+mod tests;
+
 /// Frequency MSA Custom RPC API
 #[rpc(client, server)]
 pub trait MsaApi<BlockHash, AccountId> {

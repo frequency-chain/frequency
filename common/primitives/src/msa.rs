@@ -210,3 +210,36 @@ pub struct KeyInfoResponse<AccountId> {
 	/// The MSA associated with the `key`
 	pub msa_id: MessageSourceId,
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn decoding_provider_id_failure() {
+		let mut da: &[u8] = b"\xf6\xf5";
+		let decoded = DelegatorId::decode(&mut da);
+		assert!(decoded.is_err());
+	}
+
+	#[test]
+	fn decoding_provider_id_success() {
+		let val = 16777215_u64.encode();
+		let decoded = ProviderId::decode(&mut &val[..]);
+		assert_eq!(decoded, Ok(ProviderId(16777215)))
+	}
+
+	#[test]
+	fn decoding_delegate_id_failure() {
+		let mut da: &[u8] = b"\xf6\xf5";
+		let decoded = DelegatorId::decode(&mut da);
+		assert!(decoded.is_err());
+	}
+
+	#[test]
+	fn decoding_delegator_id_success() {
+		let val = 42_u64.encode();
+		let decoded = DelegatorId::decode(&mut &val[..]);
+		assert_eq!(decoded, Ok(DelegatorId(42)))
+	}
+}
