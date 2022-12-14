@@ -116,6 +116,13 @@ mod tests {
 		pub data: Option<Vec<u8>>,
 	}
 
+	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+	#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+	struct TestAsHexOptionNull {
+		#[cfg_attr(feature = "std", serde(with = "as_hex_option", default))]
+		pub data: Option<Vec<u8>>,
+	}
+
 	#[test]
 	fn as_hex_option_can_serialize() {
 		let test_data = TestAsHexOption { data: Some(vec![1, 2, 3, 4]) };
@@ -133,11 +140,19 @@ mod tests {
 	}
 
 	#[test]
-	fn as_hex_option_can_serialize_nothing() {
+	fn as_hex_option_can_serialize_nothing_with_skip() {
 		let test_data = TestAsHexOption { data: None };
 		let result = serde_json::to_string(&test_data);
 		assert!(result.is_ok());
 		assert_eq!("{}", result.unwrap());
+	}
+
+	#[test]
+	fn as_hex_option_can_serialize_nothing_as_null() {
+		let test_data = TestAsHexOptionNull { data: None };
+		let result = serde_json::to_string(&test_data);
+		assert!(result.is_ok());
+		assert_eq!("{\"data\":null}", result.unwrap());
 	}
 
 	#[test]

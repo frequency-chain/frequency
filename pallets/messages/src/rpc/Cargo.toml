@@ -36,4 +36,5 @@ std = [
 	'frame-support/std',
 	"pallet-messages-runtime-api/std",
 	'common-primitives/std',
+	"common-helpers/std",
 ]
