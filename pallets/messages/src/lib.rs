@@ -121,18 +121,6 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
-	/// A temporary storage of messages, given a schema id, for a duration of block period.
-	/// At the start of the next block this storage is cleared and moved into Messages storage.
-	/// - Value: List of Messages
-	/// Obsolete storage (will be removed in next storage migration)
-	#[pallet::storage]
-	#[pallet::getter(fn get_block_messages)]
-	pub(super) type BlockMessages<T: Config> = StorageValue<
-		_,
-		BoundedVec<(Message<T::MaxMessagePayloadSizeBytes>, SchemaId), T::MaxMessagesPerBlock>,
-		ValueQuery,
-	>;
-
 	/// A permanent storage for messages mapped by block number and schema id.
 	/// - Keys: BlockNumber, Schema Id
 	/// - Value: List of Messages
@@ -246,7 +234,14 @@ pub mod pallet {
 
 			let provider_msa_id = Self::find_msa_id(&provider_key)?;
 			let current_block = frame_system::Pallet::<T>::block_number();
-			Self::add_message(provider_msa_id, None, bounded_payload, schema_id, current_block)?;
+			if Self::add_message(provider_msa_id, None, bounded_payload, schema_id, current_block)?
+			{
+				Self::deposit_event(Event::MessagesStored {
+					schema_id,
+					block_number: current_block,
+					count: 1, // hardcoded to 1 for backwards compatibility
+				});
+			}
 
 			Ok(())
 		}
@@ -303,13 +298,19 @@ pub mod pallet {
 				None => DelegatorId(provider_msa_id), // Delegate is also the Provider
 			};
 
-			Self::add_message(
+			if Self::add_message(
 				provider_msa_id,
 				Some(maybe_delegator.into()),
 				bounded_payload,
 				schema_id,
 				current_block,
-			)?;
+			)? {
+				Self::deposit_event(Event::MessagesStored {
+					schema_id,
+					block_number: current_block,
+					count: 1, // hardcoded to 1 for backwards compatibility
+				});
+			}
 
 			Ok(())
 		}
@@ -318,7 +319,7 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	/// Stores a message for a given schema id.
-	///
+	/// returns true if it needs to emit an event
 	/// # Errors
 	/// * [`Error::TooManyMessagesInBlock`]
 	/// * [`Error::TypeConversionOverflow`]
@@ -329,31 +330,29 @@ impl<T: Config> Pallet<T> {
 		payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes>,
 		schema_id: SchemaId,
 		current_block: T::BlockNumber,
-	) -> DispatchResult {
-		<Messages<T>>::try_mutate(current_block, schema_id, |existing_messages| -> DispatchResult {
-			let index = MessageIndex::<T>::get();
-			let msg = Message {
-				payload, // size is checked on top of extrinsic
-				provider_msa_id,
-				msa_id,
-				index,
-			};
-
-			existing_messages
-				.try_push(msg)
-				.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
-
-			if existing_messages.len() == 1 {
+	) -> Result<bool, DispatchError> {
+		<Messages<T>>::try_mutate(
+			current_block,
+			schema_id,
+			|existing_messages| -> Result<bool, DispatchError> {
 				// first message for any schema_id is going to trigger an event
-				Self::deposit_event(Event::MessagesStored {
-					schema_id,
-					block_number: current_block,
-					count: 1, // hardcoded to 1 for backwards compatibility
-				});
-			}
-			MessageIndex::<T>::put(index.saturating_add(1));
-			Ok(())
-		})
+				let need_event = existing_messages.len() == 0;
+				let index = MessageIndex::<T>::get();
+				let msg = Message {
+					payload, // size is checked on top of extrinsic
+					provider_msa_id,
+					msa_id,
+					index,
+				};
+
+				existing_messages
+					.try_push(msg)
+					.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
+
+				MessageIndex::<T>::put(index.saturating_add(1));
+				Ok(need_event)
+			},
+		)
 	}
 
 	/// Resolve an MSA from an account key(key)
