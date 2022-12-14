@@ -51,8 +51,8 @@ benchmarks! {
 		let m in (T::MinSchemaModelSizeBytes::get() + 8) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
 		let n in 1 .. SCHEMAS;
 		let sender: T::AccountId = whitelisted_caller();
-		let model_type = ModelType::default();
-		let payload_location = PayloadLocation::default();
+		let model_type = ModelType::AvroBinary;
+		let payload_location = PayloadLocation::OnChain;
 		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
 		for j in 0..(n) {
 			assert_ok!(register_some_schema::<T>(sender.clone(), model_type, payload_location));

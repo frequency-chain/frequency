@@ -5,7 +5,7 @@ use scale_info::TypeInfo;
 
 use codec::{Decode, Encode, MaxEncodedLen};
 
-#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxModelSize))]
 /// A structure defining a Schema
 pub struct Schema<MaxModelSize>

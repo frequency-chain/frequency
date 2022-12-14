@@ -1,6 +1,5 @@
 use crate::types::*;
 use apache_avro::{from_avro_datum, schema::Schema, to_avro_datum, types::Record, Codec, Writer};
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::{collections::HashMap, io::Cursor, str};
 
 /// Represents error types returned by the `avro` module.
@@ -34,35 +33,6 @@ pub fn fingerprint_raw_schema(raw_schema: &str) -> Result<(Schema, Vec<u8>), Avr
 	Ok((schema_result, schema_canonical_form.as_bytes().to_vec()))
 }
 
-/// Function to convert a list of raw schema into serialized Avro schema.
-/// If schema is malformed or invalid, it is set to Null.
-///
-/// # Examples
-/// ```
-/// use common_helpers::avro;
-/// use common_helpers::types::*;
-/// let raw_schema = r#"{"type": "record", "name": "User", "fields": [{"name": "name", "type": "string"}, {"name": "favorite_number", "type": "int"}]}"#;
-/// let vec_raw_schema: [&str; 1] = [raw_schema];
-/// let schema_result = avro::fingerprint_raw_schema_list(&vec_raw_schema);
-/// assert!(schema_result.is_ok());
-/// let serialized_schemas = schema_result.unwrap().1;
-/// ```
-pub fn fingerprint_raw_schema_list(
-	raw_schema: &[&str],
-) -> Result<(Vec<Schema>, Vec<Vec<u8>>), AvroError> {
-	let schemas: (Vec<Schema>, Vec<Vec<u8>>) = raw_schema
-		.par_iter()
-		.map(|r| -> (Schema, Vec<u8>) {
-			match fingerprint_raw_schema(r) {
-				Ok(schema) => schema,
-				Err(_error) => (Schema::Null, r.to_string().as_bytes().to_vec()),
-			}
-		})
-		.collect();
-
-	Ok(schemas)
-}
-
 ///Function to convert a serialized Avro schema into Avro Schema type.
 /// If schema is malformed or invalid, returns an error.
 ///
@@ -85,35 +55,6 @@ pub fn translate_schema(serialized_schema: Vec<u8>) -> Result<Schema, AvroError>
 		},
 		Err(error) => Err(AvroError::InvalidSchema(error.to_string())),
 	}
-}
-
-///Function to convert a list of serialized Avro schema into Avro Schema type.
-/// If schema is malformed or invalid, it is set to Null.
-///
-/// # Examples
-/// ```
-/// use common_helpers::avro;
-/// use common_helpers::types::*;
-/// let raw_schema = r#"{"type": "record", "name": "User", "fields": [{"name": "name", "type": "string"}, {"name": "favorite_number", "type": "int"}]}"#;
-/// let serialized_schema = avro::fingerprint_raw_schema(raw_schema);
-/// assert!(serialized_schema.is_ok());
-/// let schema = serialized_schema.unwrap().1;
-/// let vec_schema = vec![schema];
-/// let translated_schema = avro::translate_schemas(vec_schema);
-/// assert!(translated_schema.is_ok());
-/// ```
-pub fn translate_schemas(serialized_schema: Vec<Vec<u8>>) -> Result<Vec<Schema>, AvroError> {
-	let schemas: Vec<Schema> = serialized_schema
-		.par_iter()
-		.map(|o| -> Schema {
-			match translate_schema(o.to_vec()) {
-				Ok(schema) => schema,
-				Err(_error) => Schema::Null,
-			}
-		})
-		.collect();
-
-	Ok(schemas)
 }
 
 /// Function to get the schema writer with default container as Vec<u8>

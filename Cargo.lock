@@ -1031,7 +1031,6 @@ dependencies = [
  "apache-avro",
  "common-primitives",
  "jsonrpsee",
- "rayon",
  "sp-api",
  "sp-io 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.30)",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.30)",
@@ -5826,10 +5825,13 @@ dependencies = [
  "pallet-msa-runtime-api",
  "parity-scale-codec",
  "rayon",
+ "sc-client-api",
  "sp-api",
  "sp-blockchain",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.30)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.30)",
+ "substrate-test-runtime-client",
+ "tokio",
 ]
 
 [[package]]
@@ -6038,12 +6040,15 @@ dependencies = [
  "jsonrpsee",
  "pallet-schemas-runtime-api",
  "parity-scale-codec",
+ "sc-client-api",
  "sp-api",
  "sp-blockchain",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.30)",
  "sp-rpc",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.30)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.30)",
+ "substrate-test-runtime-client",
+ "tokio",
 ]
 
 [[package]]
