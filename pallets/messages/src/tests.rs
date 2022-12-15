@@ -1,5 +1,5 @@
 use super::{mock::*, Event as MessageEvent};
-use crate::{Config, Error, Message, MessageIndex, Messages};
+use crate::{Config, Error, Message, BlockMessageIndex, Messages};
 use codec::Encode;
 use common_primitives::{messages::MessageResponse, schema::*};
 use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize, BoundedVec};
@@ -390,6 +390,6 @@ fn on_initialize_should_clean_up_temporary_storages() {
 		MessagesPallet::on_initialize(System::block_number() + 1);
 
 		// assert
-		assert_eq!(MessageIndex::<Test>::get(), 0);
+		assert_eq!(BlockMessageIndex::<Test>::get(), 0);
 	});
 }

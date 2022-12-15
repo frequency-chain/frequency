@@ -141,7 +141,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::whitelist_storage]
 	#[pallet::getter(fn get_message_index)]
-	pub(super) type MessageIndex<T: Config> = StorageValue<_, u16, ValueQuery>;
+	pub(super) type BlockMessageIndex<T: Config> = StorageValue<_, u16, ValueQuery>;
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -185,7 +185,7 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_current: T::BlockNumber) -> Weight {
-			<MessageIndex<T>>::set(0u16);
+			<BlockMessageIndex<T>>::set(0u16);
 			// allocates 1 read and 1 write for any access of `MessageIndex` in every block
 			T::DbWeight::get().reads(1u64).saturating_add(T::DbWeight::get().writes(1u64))
 			// TODO: add retention policy execution GitHub Issue: #126 and #25
@@ -337,7 +337,7 @@ impl<T: Config> Pallet<T> {
 			|existing_messages| -> Result<bool, DispatchError> {
 				// first message for any schema_id is going to trigger an event
 				let need_event = existing_messages.len() == 0;
-				let index = MessageIndex::<T>::get();
+				let index = BlockMessageIndex::<T>::get();
 				let msg = Message {
 					payload, // size is checked on top of extrinsic
 					provider_msa_id,
@@ -349,7 +349,7 @@ impl<T: Config> Pallet<T> {
 					.try_push(msg)
 					.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
 
-				MessageIndex::<T>::put(index.saturating_add(1));
+				BlockMessageIndex::<T>::put(index.saturating_add(1));
 				Ok(need_event)
 			},
 		)
