@@ -1,5 +1,3 @@
-// XXX Test only
-
 import "@frequency-chain/api-augment";
 import { ApiRx } from "@polkadot/api";
 import { connect, createKeys } from "../scaffolding/apiConnection"

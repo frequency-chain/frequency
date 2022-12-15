@@ -1,5 +1,3 @@
-// XXX Test only
-
 import { ApiRx } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { firstValueFrom, filter } from "rxjs";
