@@ -93,3 +93,12 @@ export function revokeDelegationByDelegator(api: ApiRx, keys: KeyringPair, provi
         )
     )
 }
+
+/** Messages Extrinsics */
+export async function addIPFSMessage(api: ApiRx, keys: KeyringPair, schemaId: any, cid: string, payload_length: number): Promise<EventMap> {
+    return firstValueFrom(api.tx.messages.addIpfsMessage(schemaId, cid, payload_length).signAndSend(keys)
+        .pipe(
+            filter(({status}) => status.isInBlock || status.isFinalized),
+            groupEventsByKey())
+        )
+}
