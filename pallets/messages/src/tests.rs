@@ -1,5 +1,5 @@
 use super::{mock::*, Event as MessageEvent};
-use crate::{Config, Error, Message, BlockMessageIndex, Messages};
+use crate::{BlockMessageIndex, Config, Error, Message, Messages};
 use codec::Encode;
 use common_primitives::{messages::MessageResponse, schema::*};
 use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize, BoundedVec};
