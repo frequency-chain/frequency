@@ -1,3 +1,5 @@
+// XXX Test only
+
 import "@frequency-chain/api-augment";
 import { ApiRx } from "@polkadot/api";
 import { connect, createKeys } from "../scaffolding/apiConnection"
@@ -36,11 +38,11 @@ describe("Add Offchain Message", () => {
         // This is how the IPFS data was created:
         //
         // echo "This is a test of Frequency." > frequency_test
-        // % ipfs add frequency_test 
+        // % ipfs add frequency_test
         // added QmYzm8KGxRHr7nGn5g5Z9Zv9r8nN5WNn7Ajya6x7RxmAB1 frequency_test
-        // % wc -c frequency_test 
+        // % wc -c frequency_test
         // 29 frequency_test
-  
+
         const payload = "This is a test of Frequency.";
         const chainEvents: EventMap = await addIPFSMessage(api, keys, schemaId, "QmYzm8KGxRHr7nGn5g5Z9Zv9r8nN5WNn7Ajya6x7RxmAB1", payload.length + 1);
 
