@@ -89,7 +89,7 @@ Stakes some amount of tokens to the network and generates Capacity.
 /// - Returns Error::AlreadyStakedBalance if staker tried to decrease stake amount.
 /// - Returns Error::InsufficientBalance if the sender does not have enough to cover the amount wanting to stake.
 /// - Returns Error::InvalidMsa if attempting to stake to a non-registered provider MSA account.
-pub fn stake(origin: OriginFor<T>, account: MessageSourceId, amount: BalanceOf<T>) -> DispatchResult {}
+pub fn stake(origin: OriginFor<T>, target: MessageSourceId, amount: BalanceOf<T>) -> DispatchResult {}
 
 ```
 
@@ -98,13 +98,12 @@ Acceptance Criteria are listed below but can evolve:
 1. Dispatched origin is Signed by Staker.
 2. A Target MSA account must be a Registered Provided.
 3. A token amount staked must not be greater than the free balance.
-4. A Staker can only target an MSA of a Registered Provider.
-5. A Staker can stake multiple times and target different providers.
-6. The token amount staked is to remain [locked](https://paritytech.github.io/substrate/master/frame_support/traits/trait.LockableCurrency.html) with reason [WithdrawReasons::all()](https://paritytech.github.io/substrate/master/frame_support/traits/tokens/struct.WithdrawReasons.html#method.all).
-7. Capacity is generated with a configurable capacity-generating function.
-8. Target Registered Provider is issued generated Capacity.
-9. Target Registered Provider issued Capacity becomes available at the start of the next Epoch Period.
-10. Stakers can increase their staking amount.
+4. A Staker can stake multiple times and target different providers.
+5. The token amount staked is to remain [locked](https://paritytech.github.io/substrate/master/frame_support/traits/trait.LockableCurrency.html) with reason [WithdrawReasons::all()](https://paritytech.github.io/substrate/master/frame_support/traits/tokens/struct.WithdrawReasons.html#method.all).
+6. Capacity is generated with a configurable capacity-generating function.
+7. Target Registered Provider is issued generated Capacity.
+8. Target Registered Provider issued Capacity becomes available at the start of the next Epoch Period.
+9. Stakers can increase their staking amount.
 
 Note that we are considering allowing locked tokens to be used to pay transaction fees.
 
@@ -119,7 +118,7 @@ Schedules an amount of the stake to be unlocked.
 ///
 /// - Returns Error::UnstakedAmountIsZero Unstaking amount should be greater than zero.
 /// - Returns Error::NoMoreChunks if attempting to unlock more than allowed config::MaxUnlockingChunks.
-pub fn unstake(origin: OriginFor<T>, account: MessageSourceId, amount: BalanceOf<T>) -> DispatchResult {}
+pub fn unstake(origin: OriginFor<T>, target: MessageSourceId, amount: BalanceOf<T>) -> DispatchResult {}
 
 ```
 
@@ -160,16 +159,16 @@ pub enum Error<T> {
   AlreadyStakedBalance,
   /// Staker has insufficient balance to cover the amount wanting to stake.
   InsufficientBalance,
-  /// Staker attempted to stake to an invalid MSA.
-  NotRegisteredMsa,
+  /// Staker attempted to stake to an invalid staking target.
+  NotRegisteredTarget,
   /// Staking amount is below the minimum amount required.
-  BelowMinStakingAmount,
+  StakedBelowMinimumAmount,
   /// Unstaking amount should be greater than zero.
   UnstakedAmountIsZero,
-  /// Account address is not staking
+  /// Attempting to unstake from a target that has not been staked to.
   NotStakingAccount,
-  /// Unstaking amount is greater than the total contributed.
-  AmountUnstakingExceedsBalance,
+  /// Amount to unstake is greater than the amount staked.
+  AmountToUnstakeExceedsAmountStaked,
   /// Staker reached the limit number for the allowed amount of unlocking chunks.
   MaxUnlockingChunks
 }
@@ -768,7 +767,7 @@ Upon finalizing each block, we get the total amount of Capacity used and update 
 
 ### **Storage**
 
-To facilitate keeping track of the amount of Capacity consumed during an Epoch Period. 
+To facilitate keeping track of the amount of Capacity consumed during an Epoch Period.
 
 ```rust
 
