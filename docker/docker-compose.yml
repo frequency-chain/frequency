@@ -30,6 +30,7 @@ services:
       --rpc-methods=Unsafe
       --alice
       --log="main"
+    restart: unless-stopped
 
   relay_bob:
     container_name: bob
@@ -59,6 +60,7 @@ services:
       --rpc-methods=Unsafe
       --bob
       --log="main,info"
+    restart: unless-stopped
 
   collator_frequency:
     container_name: frequency

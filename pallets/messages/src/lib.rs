@@ -56,8 +56,8 @@ pub mod weights;
 mod types;
 
 use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
-use sp_runtime::{traits::One, DispatchError};
-use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
+use sp_runtime::DispatchError;
+use sp_std::{convert::TryInto, prelude::*};
 
 use codec::Encode;
 use common_primitives::{
@@ -67,6 +67,7 @@ use common_primitives::{
 	},
 	schema::*,
 };
+use frame_support::dispatch::DispatchResult;
 
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
@@ -120,17 +121,6 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
-	/// A temporary storage of messages, given a schema id, for a duration of block period.
-	/// At the start of the next block this storage is cleared and moved into Messages storage.
-	/// - Value: List of Messages
-	#[pallet::storage]
-	#[pallet::getter(fn get_block_messages)]
-	pub(super) type BlockMessages<T: Config> = StorageValue<
-		_,
-		BoundedVec<(Message<T::MaxMessagePayloadSizeBytes>, SchemaId), T::MaxMessagesPerBlock>,
-		ValueQuery,
-	>;
-
 	/// A permanent storage for messages mapped by block number and schema id.
 	/// - Keys: BlockNumber, Schema Id
 	/// - Value: List of Messages
@@ -145,6 +135,13 @@ pub mod pallet {
 		BoundedVec<Message<T::MaxMessagePayloadSizeBytes>, T::MaxMessagesPerBlock>,
 		ValueQuery,
 	>;
+
+	/// A temporary storage for getting the index for messages
+	/// At the start of the next block this storage is set to 0
+	#[pallet::storage]
+	#[pallet::whitelist_storage]
+	#[pallet::getter(fn get_message_index)]
+	pub(super) type BlockMessageIndex<T: Config> = StorageValue<_, u16, ValueQuery>;
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -179,16 +176,18 @@ pub mod pallet {
 			schema_id: SchemaId,
 			/// The block number for these messages
 			block_number: T::BlockNumber,
-			/// Number of messages in this block for this schema
+			/// `DEPRECATED` - Number of messages in this block for this schema
+			/// Value does not reflect the actual count and it will be removed in June 2023
 			count: u16,
 		},
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_initialize(current: T::BlockNumber) -> Weight {
-			let prev_block = current - T::BlockNumber::one();
-			Self::move_messages_into_final_storage(prev_block)
+		fn on_initialize(_current: T::BlockNumber) -> Weight {
+			<BlockMessageIndex<T>>::set(0u16);
+			// allocates 1 read and 1 write for any access of `MessageIndex` in every block
+			T::DbWeight::get().reads(1u64).saturating_add(T::DbWeight::get().writes(1u64))
 			// TODO: add retention policy execution GitHub Issue: #126 and #25
 		}
 	}
@@ -234,7 +233,15 @@ pub mod pallet {
 			);
 
 			let provider_msa_id = Self::find_msa_id(&provider_key)?;
-			Self::add_message(provider_msa_id, None, bounded_payload, schema_id)?;
+			let current_block = frame_system::Pallet::<T>::block_number();
+			if Self::add_message(provider_msa_id, None, bounded_payload, schema_id, current_block)?
+			{
+				Self::deposit_event(Event::MessagesStored {
+					schema_id,
+					block_number: current_block,
+					count: 1, // hardcoded to 1 for backwards compatibility
+				});
+			}
 
 			Ok(())
 		}
@@ -291,12 +298,19 @@ pub mod pallet {
 				None => DelegatorId(provider_msa_id), // Delegate is also the Provider
 			};
 
-			Self::add_message(
+			if Self::add_message(
 				provider_msa_id,
 				Some(maybe_delegator.into()),
 				bounded_payload,
 				schema_id,
-			)?;
+				current_block,
+			)? {
+				Self::deposit_event(Event::MessagesStored {
+					schema_id,
+					block_number: current_block,
+					count: 1, // hardcoded to 1 for backwards compatibility
+				});
+			}
 
 			Ok(())
 		}
@@ -305,7 +319,7 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	/// Stores a message for a given schema id.
-	///
+	/// returns true if it needs to emit an event
 	/// # Errors
 	/// * [`Error::TooManyMessagesInBlock`]
 	/// * [`Error::TypeConversionOverflow`]
@@ -315,26 +329,28 @@ impl<T: Config> Pallet<T> {
 		msa_id: Option<MessageSourceId>,
 		payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes>,
 		schema_id: SchemaId,
-	) -> Result<Message<T::MaxMessagePayloadSizeBytes>, DispatchError> {
-		<BlockMessages<T>>::try_mutate(
-			|existing_messages| -> Result<Message<T::MaxMessagePayloadSizeBytes>, DispatchError> {
-				let current_size: u16 = existing_messages
-					.len()
-					.try_into()
-					.map_err(|_| Error::<T>::TypeConversionOverflow)?;
-
+		current_block: T::BlockNumber,
+	) -> Result<bool, DispatchError> {
+		<Messages<T>>::try_mutate(
+			current_block,
+			schema_id,
+			|existing_messages| -> Result<bool, DispatchError> {
+				// first message for any schema_id is going to trigger an event
+				let need_event = existing_messages.len() == 0;
+				let index = BlockMessageIndex::<T>::get();
 				let msg = Message {
 					payload, // size is checked on top of extrinsic
 					provider_msa_id,
 					msa_id,
-					index: current_size,
+					index,
 				};
 
 				existing_messages
-					.try_push((msg.clone(), schema_id))
+					.try_push(msg)
 					.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
 
-				Ok(msg)
+				BlockMessageIndex::<T>::put(index.saturating_add(1));
+				Ok(need_event)
 			},
 		)
 	}
@@ -368,49 +384,5 @@ impl<T: Config> Pallet<T> {
 			.iter()
 			.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
 			.collect()
-	}
-
-	/// Moves messages from temporary storage `BlockMessages` into final storage `Messages`
-	/// and calculates execution weight
-	///
-	/// Called inside of `on_initialize`
-	///
-	/// # Events
-	/// * [`Event::MessagesStored`]
-	///
-	/// Returns execution weights
-	///
-	fn move_messages_into_final_storage(block_number: T::BlockNumber) -> Weight {
-		let mut map = BTreeMap::new();
-		let block_messages = BlockMessages::<T>::get();
-		let message_count = block_messages.len() as u32;
-		let mut schema_count = 0u32;
-
-		if message_count == 0 {
-			return T::DbWeight::get().reads(1)
-		}
-
-		// grouping messages by schema_id
-		for (m, schema_id) in block_messages {
-			let list = map.entry(schema_id).or_insert(vec![]);
-			list.push(m);
-		}
-
-		// insert into storage and create events
-		for (schema_id, messages) in map {
-			let count = messages.len() as u16;
-			let bounded_vec: BoundedVec<_, _> = messages.try_into().unwrap_or_default();
-
-			if bounded_vec.is_empty() {
-				log::warn!("empty bounded_vec for schema id {}", schema_id);
-				continue
-			}
-			Messages::<T>::insert(&block_number, schema_id, &bounded_vec);
-			Self::deposit_event(Event::MessagesStored { schema_id, block_number, count });
-			schema_count += 1;
-		}
-
-		BlockMessages::<T>::set(BoundedVec::default());
-		T::WeightInfo::on_initialize(message_count, schema_count)
 	}
 }
