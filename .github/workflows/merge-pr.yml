@@ -34,10 +34,6 @@ jobs:
           target: wasm32-unknown-unknown
       - name: Check Out Repo
         uses: actions/checkout@v3
-      # - name: Save/Restore Dependencies from Cache
-      #   uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
-      #   with:
-      #     shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Output Metadata
         # Run the cargo command and ignore any extra lines outside of the json result
         run: CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo run --features frequency export-metadata ./js/api-augment/metadata.json
