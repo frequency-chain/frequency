@@ -5698,10 +5698,14 @@ dependencies = [
  "pallet-messages-runtime-api",
  "parity-scale-codec",
  "sc-client-api",
+ "sc-rpc-api",
+ "sc-transaction-pool-api",
  "sp-api",
  "sp-blockchain",
+ "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.29)",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.29)",
  "substrate-test-runtime-client",
+ "thiserror",
  "tokio",
 ]
 

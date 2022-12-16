@@ -904,6 +904,18 @@ impl_runtime_apis! {
 		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			Schemas::get_schema_by_id(schema_id)
 		}
+
+		fn validate_extrinsic(ext: Vec<u8>) -> bool {
+			use codec::Decode;
+			let ext: UncheckedExtrinsic = Decode::decode(&mut &ext[..]).unwrap();
+			log::info!("{:?}", ext);
+			match ext.function {
+				Call::Msa(pallet_msa::Call::create {}) => {
+					true
+				},
+				_ => false
+			}
+		}
 	}
 
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {

@@ -8,18 +8,24 @@
 
 //! Custom APIs for [Messages](../pallet_messages/index.html)
 
+use codec::Decode;
 #[cfg(feature = "std")]
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{messages::*, schema::*};
-use frame_support::{ensure, fail};
+use frame_support::{ensure, fail, log};
 use jsonrpsee::{
 	core::{async_trait, error::Error as RpcError, RpcResult},
 	proc_macros::rpc,
 };
 use pallet_messages_runtime_api::MessagesRuntimeApi;
+use sc_rpc_api::author::error::Error;
+use sc_transaction_pool_api::{
+	error::IntoPoolError, BlockHash, TransactionPool, TransactionSource, TxHash,
+};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_core::Bytes;
+use sp_runtime::{generic, traits::Block as BlockT};
 use std::sync::Arc;
 
 #[cfg(test)]
@@ -27,7 +33,7 @@ mod tests;
 
 /// Frequency Messages Custom RPC API
 #[rpc(client, server)]
-pub trait MessagesApi {
+pub trait MessagesApi<Hash, BlockHash> {
 	/// Retrieve paginated messages by schema id
 	#[method(name = "messages_getBySchemaId")]
 	fn get_messages_by_schema_id(
@@ -35,18 +41,23 @@ pub trait MessagesApi {
 		schema_id: SchemaId,
 		pagination: BlockPaginationRequest,
 	) -> RpcResult<BlockPaginationResponse<MessageResponse>>;
+
+	/// Submit hex-encoded extrinsic for inclusion in block.
+	#[method(name = "messages_submitExtrinsic")]
+	async fn submit_extrinsic(&self, extrinsic: Bytes) -> RpcResult<Hash>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
-pub struct MessagesHandler<C, M> {
-	client: Arc<C>,
-	_marker: std::marker::PhantomData<M>,
+pub struct MessagesHandler<P, Client> {
+	client: Arc<Client>,
+	/// Transactions pool
+	pool: Arc<P>,
 }
 
-impl<C, M> MessagesHandler<C, M> {
+impl<P, Client> MessagesHandler<P, Client> {
 	/// Create new instance with the given reference to the client.
-	pub fn new(client: Arc<C>) -> Self {
-		Self { client, _marker: Default::default() }
+	pub fn new(client: Arc<Client>, pool: Arc<P>) -> Self {
+		Self { client, pool }
 	}
 }
 
@@ -67,12 +78,16 @@ impl From<MessageRpcError> for RpcError {
 	}
 }
 
+const TX_SOURCE: TransactionSource = TransactionSource::External;
+
 #[async_trait]
-impl<C, Block> MessagesApiServer for MessagesHandler<C, Block>
+impl<P, Client> MessagesApiServer<TxHash<P>, BlockHash<P>> for MessagesHandler<P, Client>
 where
-	Block: BlockT,
-	C: ProvideRuntimeApi<Block> + HeaderBackend<Block> + 'static,
-	C::Api: MessagesRuntimeApi<Block>,
+	P: TransactionPool + Sync + Send + 'static,
+	Client: HeaderBackend<P::Block> + ProvideRuntimeApi<P::Block> + Send + Sync + 'static,
+	Client::Api: MessagesRuntimeApi<P::Block>,
+	P::Hash: Unpin,
+	<P::Block as BlockT>::Hash: Unpin,
 {
 	fn get_messages_by_schema_id(
 		&self,
@@ -84,7 +99,7 @@ where
 
 		// Connect to on-chain data
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(self.client.info().best_hash);
+		let at = sp_runtime::generic::BlockId::hash(self.client.info().best_hash);
 
 		// Schema Fetch and Check
 		let schema: SchemaResponse = match api.get_schema_by_id(&at, schema_id) {
@@ -127,5 +142,32 @@ where
 		}
 
 		map_rpc_result(Ok(response))
+	}
+
+	async fn submit_extrinsic(&self, ext: Bytes) -> RpcResult<TxHash<P>> {
+		let xt = match Decode::decode(&mut &ext[..]) {
+			Ok(xt) => xt,
+			Err(err) => return Err(Error::Client(Box::new(err)).into()),
+		};
+		log::info!("incoming extrinsic {:?}", xt);
+
+		let best_block_hash = self.client.info().best_hash;
+		let at = sp_runtime::generic::BlockId::hash(best_block_hash);
+		let api = self.client.runtime_api();
+		let valid = api.validate_extrinsic(&at, ext.0).unwrap_or_default();
+		log::info!("valid =  {:?}", valid);
+		if valid == false {
+			return Err(Error::BadFormat(codec::Error::from("Custom Error")).into())
+		}
+
+		self.pool
+			.submit_one(&generic::BlockId::hash(best_block_hash), TX_SOURCE, xt)
+			.await
+			.map_err(|e| {
+				e.into_pool_error()
+					.map(|e| Error::Pool(e))
+					.unwrap_or_else(|e| Error::Verification(Box::new(e)))
+					.into()
+			})
 	}
 }

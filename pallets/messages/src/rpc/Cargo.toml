@@ -12,6 +12,7 @@ edition = "2021"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.1.5" }
 jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
+thiserror = "1.0"
 
 # unfinished
 pallet-messages-runtime-api = {default-features = false, path = "../runtime-api" }
@@ -19,20 +20,23 @@ common-primitives = {default-features = false, path = "../../../../common/primit
 common-helpers = {default-features = false, path = "../../../../common/helpers" }
 # Substrate packages
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
+sc-rpc-api = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29"}
 
 [dev-dependencies]
 tokio = { version = "1.21.2", features = ["macros", "time", "parking_lot"] }
 substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.29" }
-
 [features]
 default = ["std"]
 std = [
 	'codec/std',
 	"sp-api/std",
+	"sp-core/std",
 	"sp-runtime/std",
 	'frame-support/std',
 	"pallet-messages-runtime-api/std",

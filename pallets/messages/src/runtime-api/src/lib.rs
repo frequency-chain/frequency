@@ -38,5 +38,8 @@ sp_api::decl_runtime_apis! {
 
 		/// Retrieve a schema by id
 		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse>;
+
+		/// verify extrinsic
+		fn validate_extrinsic(ext: Vec<u8>) -> bool;
 	}
 }
