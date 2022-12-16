@@ -131,9 +131,9 @@ Acceptance Criteria are listed below but can evolve:
 1. Dispatched origin is Signed by Staker.
 2. Schedules a portion of the stake to be unlocked and ready for transfer after the `confg::UnstakingThawPeriod` ends.
 3. The amount unstaked must be greater than 0.
-4. Issued Capacity to the target Registered Provider is reduced.
+4. Issued Capacity to the target is reduced by the same amount originally issued
 5. The amount unstaked cannot exceed the amount staked.
-6. Staking accounts whose balance goes below `config::MinimumStakingAmount` will be unstake the entire balance to avoid leaving dust.
+6. If the result of the unstaking would be to leave a balance below `config::MinimumStakingAmount`, the entire amount will be unstaked to avoid leaving dust.
 
 **withdraw_unstaked**
 
@@ -242,11 +242,11 @@ The type used for storing information about the targeted MSA that received Capac
 
 ```rust
 /// Details about the total token amount targeted to an MSA.
-/// The amount of Capacity that the target will receive.
+/// The Capacity that the target will receive.
 pub struct StakingTargetDetails<Balance> {
   /// The total amount of tokens that have been targeted to the MSA.
   pub amount: Balance,
-  /// The total amount of Capacity that an MSA received.
+  /// The total Capacity that an MSA received.
   pub capacity: Balance,
 }
 
@@ -257,11 +257,11 @@ The type used for storing information about staking details.
 ```rust
 
 pub struct StakingAccountDetails<Balance, BlockNumber> {
-  /// The amount a Staker has stacked minus the sum of all tokens waiting to be unlocked.
+  /// The amount a Staker has staked, minus the sum of all tokens in `unlocking`.
   pub active: Balance
-  /// The total amount of tokens Staker has locked.
+  /// The total amount of tokens in `active` and `unlocking`
   pub total: Balance,
-  /// Unstaked balances that will be made available.
+  /// Unstaked balances that are thawing or awaiting withdrawal.
   pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>>, T::MaxUnlockingChunks>,
 }
 
@@ -325,7 +325,7 @@ The type for storing Registered Provider Capacity balance:
 ```rust
 
 pub struct CapacityDetails<Balance> {
-  /// The amount of Capacity remaining for the `last_replenished_epoch`.
+  /// The Capacity remaining for the `last_replenished_epoch`.
   pub remaining: Balance,
   /// The total Capacity issued to an MSA.
   pub total_available: Balance,
@@ -437,11 +437,11 @@ pub type EpochNumber<T> = StorageValue<_, u32, ValueQuery>;
 
 ```
 
-To facilitate keeping track of the amount of Capacity consumed in a block.
+To facilitate keeping track of the Capacity consumed in a block.
 
 ```rust
 
-/// Storage to keep track of the amount of Capacity consumed in a block.
+/// Storage to keep track of the Capacity consumed in a block.
 #[pallet::storage]
 pub type CurrentBlockUsedCapacity<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
@@ -763,13 +763,13 @@ This target would be configurable and can be called `config::epochTarget`. In ad
 
 The above illustrates two epochs where the second one contracts because network congestion has decreased. As a result of the epoch decreasing, Capacity is replenished faster.
 
-Upon finalizing each block, we get the total amount of Capacity used and update the total amount of weight for an Epoch.
+Upon finalizing each block, we get the total Capacity used and update the total weight for an Epoch.
 
 ![https://user-images.githubusercontent.com/3433442/189948747-03fbb85e-caff-4771-8d24-427406142c65.png](https://user-images.githubusercontent.com/3433442/189948747-03fbb85e-caff-4771-8d24-427406142c65.png)
 
 ### **Storage**
 
-To facilitate keeping track of the amount of Capacity consumed during an Epoch Period.
+To facilitate keeping track of the Capacity consumed during an Epoch Period.
 
 ```rust
 
