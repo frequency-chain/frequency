@@ -53,7 +53,7 @@ pub trait Config: frame_system::Config {
     /// The maximum number of `unlocking` chunks a `StakingAccountLedger` can have. It determines how many unique Epochs a Staker may be unstaked in.
     #[pallet::constant]
     type MaxUnlockingChunks: Get<u32>;
-    
+
     /// Validates that a target can be staked to.
     type TargetValidator: TargetValidator<MessageSourceId>;
 
@@ -99,14 +99,15 @@ pub fn stake(origin: OriginFor<T>, target: MessageSourceId, amount: BalanceOf<T>
 Acceptance Criteria are listed below but can evolve:
 
 1. Dispatched origin is Signed by Staker.
-2. A Target MSA account must be a Registered Provided.
+2. A Target MSA account must be a Registered Provider.
 3. A token amount staked must not be greater than the free balance.
 4. A Staker can stake multiple times and target different providers.
-5. The token amount staked is to remain [locked](https://paritytech.github.io/substrate/master/frame_support/traits/trait.LockableCurrency.html) with reason [WithdrawReasons::all()](https://paritytech.github.io/substrate/master/frame_support/traits/tokens/struct.WithdrawReasons.html#method.all).
-6. Capacity is generated with a configurable capacity-generating function.
-7. Target Registered Provider is issued generated Capacity.
-8. Target Registered Provider issued Capacity becomes available at the start of the next Epoch Period.
-9. Stakers can increase their staking amount.
+5. Additional staking increases total locked amount.
+6. The token amount staked is to remain [locked](https://paritytech.github.io/substrate/master/frame_support/traits/trait.LockableCurrency.html) with reason [WithdrawReasons::all()](https://paritytech.github.io/substrate/master/frame_support/traits/tokens/struct.WithdrawReasons.html#method.all).
+7. Capacity is generated with a configurable capacity-generating function.
+8. Target Registered Provider is issued generated Capacity.
+9. Target Registered Provider issued Capacity becomes available at the start of the next Epoch Period.
+10. Stakers can increase their staking amount.
 
 Note that we are considering allowing locked tokens to be used to pay transaction fees.
 
