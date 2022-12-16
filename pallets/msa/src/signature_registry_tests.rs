@@ -21,7 +21,7 @@ use common_primitives::{
 	utils::wrap_binary_data,
 };
 
-use crate::pallet::PayloadSignatureBucketStorageCount;
+use crate::pallet::PayloadSignatureBucketCount;
 pub use pallet_msa::Call as MsaCall;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -187,7 +187,7 @@ pub fn stores_signature_in_expected_bucket_and_increments_count() {
 			assert_eq!(Some(signature_expiration_block as u64), actual);
 			assert_eq!(
 				tc.expected_signatures,
-				<PayloadSignatureBucketStorageCount<Test>>::get(tc.expected_bucket_number)
+				<PayloadSignatureBucketCount<Test>>::get(tc.expected_bucket_number)
 			);
 		}
 	})
@@ -239,7 +239,7 @@ pub fn clears_stale_signatures_and_resets_signature_count_after_mortality_limit(
 			Msa::register_signature(sig1, signature_expiration_block),
 			Error::<Test>::SignatureAlreadySubmitted
 		);
-		assert_eq!(2, <PayloadSignatureBucketStorageCount<Test>>::get(1));
+		assert_eq!(2, <PayloadSignatureBucketCount<Test>>::get(1));
 
 		current_block = 876;
 		run_to_block(current_block.into());
@@ -248,7 +248,7 @@ pub fn clears_stale_signatures_and_resets_signature_count_after_mortality_limit(
 		assert_eq!(false, <PayloadSignatureRegistry<Test>>::contains_key(1u64, sig2));
 
 		// check that the bucket count has been cleared
-		assert_eq!(0, <PayloadSignatureBucketStorageCount<Test>>::get(1));
+		assert_eq!(0, <PayloadSignatureBucketCount<Test>>::get(1));
 	})
 }
 

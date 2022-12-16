@@ -239,7 +239,7 @@ pub mod pallet {
 
 	/// Records how many signatures are currently stored in each virtual signature registration bucket
 	#[pallet::storage]
-	pub(super) type PayloadSignatureBucketStorageCount<T: Config> = StorageMap<
+	pub(super) type PayloadSignatureBucketCount<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
 		T::BlockNumber, // bucket number
@@ -389,9 +389,6 @@ pub mod pallet {
 
 		/// Attempted to request validity of schema permission or delegation in the future.
 		CannotPredictValidityPastCurrentBlock,
-
-		/// Attempted to access a virtual signature registration bucket that is out of bounds
-		NoSuchBucket,
 
 		/// Attempted to add a new signature to a full virtual signature registration bucket
 		SignatureRegistryLimitExceeded,
@@ -1224,7 +1221,7 @@ impl<T: Config> Pallet<T> {
 			Err(Error::<T>::ProofHasExpired.into())
 		} else {
 			let bucket_num = Self::bucket_for(signature_expires_at.into());
-			<PayloadSignatureBucketStorageCount<T>>::try_mutate(
+			<PayloadSignatureBucketCount<T>>::try_mutate(
 				bucket_num,
 				|bucket_signature_count: &mut u32| -> DispatchResult {
 					let limit = T::MaxSignaturesPerBucket::get();
@@ -1276,12 +1273,9 @@ impl<T: Config> Pallet<T> {
 			T::MaxSignaturesPerBucket::get(),
 			None,
 		);
-		<PayloadSignatureBucketStorageCount<T>>::mutate(
-			prior_bucket_num,
-			|bucket_signature_count| {
-				*bucket_signature_count = 0;
-			},
-		);
+		<PayloadSignatureBucketCount<T>>::mutate(prior_bucket_num, |bucket_signature_count| {
+			*bucket_signature_count = 0;
+		});
 		T::WeightInfo::on_initialize(multi_removal_result.unique)
 	}
 
