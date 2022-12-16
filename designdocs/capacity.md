@@ -120,8 +120,11 @@ Schedules an amount of the stake to be unlocked.
 /// Schedules an amount of the stake to be unlocked.
 /// ### Errors
 ///
-/// - Returns Error::UnstakedAmountIsZero Unstaking amount should be greater than zero.
-/// - Returns Error::NoMoreChunks if attempting to unlock more than allowed config::MaxUnlockingChunks.
+/// - Returns `Error::UnstakedAmountIsZero` if `amount` is not greater than zero.
+/// - Returns `Error::MaxUnlockingChunksExceeded` if attempting to unlock more times than config::MaxUnlockingChunks.
+/// - Returns `Error::AmountToUnstakeExceedsAmountStaked` if `amount` exceeds the amount currently staked.
+/// - Returns `Error::InvalidTarget` if `target` is not a valid staking target
+/// - Returns `Error:: NotAStakingAccount` if `origin` has nothing staked
 pub fn unstake(origin: OriginFor<T>, target: MessageSourceId, amount: BalanceOf<T>) -> DispatchResult {}
 
 ```
