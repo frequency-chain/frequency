@@ -5,7 +5,10 @@ use frame_support::{
 	BoundedBTreeMap,
 };
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Encode, Pair};
-use sp_runtime::{traits::SignedExtension, transaction_validity::TransactionValidity, MultiSignature, ArithmeticError};
+use sp_runtime::{
+	traits::SignedExtension, transaction_validity::TransactionValidity, ArithmeticError,
+	MultiSignature,
+};
 
 use crate::{
 	ensure,

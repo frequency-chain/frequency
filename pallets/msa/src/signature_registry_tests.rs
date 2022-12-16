@@ -21,8 +21,8 @@ use common_primitives::{
 	utils::wrap_binary_data,
 };
 
-pub use pallet_msa::Call as MsaCall;
 use crate::pallet::PayloadSignatureBucketStorageCount;
+pub use pallet_msa::Call as MsaCall;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -164,9 +164,17 @@ pub fn stores_signature_in_expected_bucket_and_increments_count() {
 	new_test_ext().execute_with(|| {
 		let test_cases: Vec<TestCase> = vec![
 			TestCase { current_block: 999_899, expected_bucket_number: 1, expected_signatures: 1 }, // signature-expiration = 999_950
-			TestCase { current_block: 128_999_799, expected_bucket_number: 0, expected_signatures: 1 }, // signature-expiration = 128_999_850
+			TestCase {
+				current_block: 128_999_799,
+				expected_bucket_number: 0,
+				expected_signatures: 1,
+			}, // signature-expiration = 128_999_850
 			// signature-expiration = 4_294_965_149, expect 2 signatures because it's the second one in bucket 1 and we're not running on_initialize
-			TestCase { current_block: 4_294_965_098, expected_bucket_number: 1, expected_signatures: 2 },
+			TestCase {
+				current_block: 4_294_965_098,
+				expected_bucket_number: 1,
+				expected_signatures: 2,
+			},
 		];
 		for tc in test_cases {
 			System::set_block_number(tc.current_block as u64);
@@ -177,7 +185,10 @@ pub fn stores_signature_in_expected_bucket_and_increments_count() {
 			let actual =
 				<PayloadSignatureRegistry<Test>>::get(tc.expected_bucket_number, &signature);
 			assert_eq!(Some(signature_expiration_block as u64), actual);
-			assert_eq!(tc.expected_signatures, <PayloadSignatureBucketStorageCount<Test>>::get(tc.expected_bucket_number));
+			assert_eq!(
+				tc.expected_signatures,
+				<PayloadSignatureBucketStorageCount<Test>>::get(tc.expected_bucket_number)
+			);
 		}
 	})
 }

@@ -68,10 +68,10 @@ use common_primitives::benchmarks::MsaBenchmarkHelper;
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
-use sp_runtime::{traits::{
-	Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify,
-	Zero,
-}, DispatchError, MultiSignature, ArithmeticError};
+use sp_runtime::{
+	traits::{Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify, Zero},
+	ArithmeticError, DispatchError, MultiSignature,
+};
 use sp_std::prelude::*;
 
 use common_primitives::{
@@ -239,13 +239,13 @@ pub mod pallet {
 
 	/// Records how many signatures are currently stored in each virtual signature registration bucket
 	#[pallet::storage]
-	pub(super) type PayloadSignatureBucketStorageCount<T: Config> =
-		StorageMap<_,
-			Twox64Concat,
-			T::BlockNumber, // bucket number
-			u32, // number of signatures
-			ValueQuery
-		>;
+	pub(super) type PayloadSignatureBucketStorageCount<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		T::BlockNumber, // bucket number
+		u32,            // number of signatures
+		ValueQuery,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -1224,13 +1224,16 @@ impl<T: Config> Pallet<T> {
 			Err(Error::<T>::ProofHasExpired.into())
 		} else {
 			let bucket_num = Self::bucket_for(signature_expires_at.into());
-			<PayloadSignatureBucketStorageCount<T>>::try_mutate(bucket_num,
+			<PayloadSignatureBucketStorageCount<T>>::try_mutate(
+				bucket_num,
 				|bucket_signature_count: &mut u32| -> DispatchResult {
 					let limit = T::MaxSignaturesPerBucket::get();
-					ensure!(*bucket_signature_count < limit, Error::<T>::SignatureRegistryLimitExceeded);
-					let new_count = bucket_signature_count
-						.checked_add(1)
-						.ok_or(ArithmeticError::Overflow)?;
+					ensure!(
+						*bucket_signature_count < limit,
+						Error::<T>::SignatureRegistryLimitExceeded
+					);
+					let new_count =
+						bucket_signature_count.checked_add(1).ok_or(ArithmeticError::Overflow)?;
 					*bucket_signature_count = new_count;
 
 					// Tests for noop fail with "storage has been mutated"
@@ -1273,9 +1276,12 @@ impl<T: Config> Pallet<T> {
 			T::MaxSignaturesPerBucket::get(),
 			None,
 		);
-		<PayloadSignatureBucketStorageCount<T>>::mutate(prior_bucket_num, |bucket_signature_count| {
-			*bucket_signature_count = 0;
-		});
+		<PayloadSignatureBucketStorageCount<T>>::mutate(
+			prior_bucket_num,
+			|bucket_signature_count| {
+				*bucket_signature_count = 0;
+			},
+		);
 		T::WeightInfo::on_initialize(multi_removal_result.unique)
 	}
 
