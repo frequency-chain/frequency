@@ -89,9 +89,9 @@ Stakes some amount of tokens to the network and generates Capacity.
 ///
 /// ### Errors
 ///
-/// - Returns Error::AlreadyStakedBalance if staker tried to decrease stake amount.
-/// - Returns Error::InsufficientBalance if the sender does not have enough to cover the amount wanting to stake.
-/// - Returns Error::InvalidMsa if attempting to stake to a non-registered provider MSA account.
+/// - Returns Error::InsufficientBalance if the sender does not have free balance amount needed to stake.
+/// - Returns Error::InvalidTarget if attempting to stake to an invalid target.
+/// - Returns Error::InsufficientStakingAmount if attempting to stake an amount below the minimum amount.
 pub fn stake(origin: OriginFor<T>, target: MessageSourceId, amount: BalanceOf<T>) -> DispatchResult {}
 
 ```
@@ -159,14 +159,12 @@ Acceptance Criteria are listed below but can evolve.
 ```rust
 
 pub enum Error<T> {
-  /// Staker tried to decrease stake.
-  AlreadyStakedBalance,
   /// Staker has insufficient balance to cover the amount wanting to stake.
   InsufficientBalance,
   /// Staker attempted to stake to an invalid staking target.
-  NotRegisteredTarget,
+  InvalidTarget,
   /// Staking amount is below the minimum amount required.
-  StakedBelowMinimumAmount,
+  InsufficientStakingAmount,
   /// Unstaking amount should be greater than zero.
   UnstakedAmountIsZero,
   /// Attempting to unstake from a target that has not been staked to.
