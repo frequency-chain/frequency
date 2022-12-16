@@ -193,7 +193,7 @@ pub enum Event<T: Config> {
   },
 
   /// A token account has unstaked to an MSA.
-  UnStake {
+  UnStaked {
     /// The token account that staked tokens to the network.
     account: T::AccountId,
     /// The MSA that a token account targeted to receive Capacity.
