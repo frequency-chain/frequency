@@ -53,6 +53,9 @@ pub trait Config: frame_system::Config {
     /// The maximum number of `unlocking` chunks a `StakingAccountLedger` can have. It determines how many unique Epochs a Staker may be unstaked in.
     #[pallet::constant]
     type MaxUnlockingChunks: Get<u32>;
+    
+    /// Validates that a target can be staked to.
+    type TargetValidator: TargetValidator<MessageSourceId>;
 
     /// The epoch number provider.
     type EpochProvider: BlockNumberProvider<EpochNumber = u32>
