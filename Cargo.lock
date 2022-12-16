@@ -5691,6 +5691,8 @@ dependencies = [
  "sp-blockchain",
  "sp-runtime",
  "sp-std",
+ "substrate-test-runtime-client",
+ "tokio",
 ]
 
 [[package]]
@@ -5944,6 +5946,8 @@ dependencies = [
  "sp-rpc",
  "sp-runtime",
  "sp-std",
+ "substrate-test-runtime-client",
+ "tokio",
 ]
 
 [[package]]
