@@ -182,17 +182,17 @@ pub enum Error<T> {
 ```rust
 
 pub enum Event<T: Config> {
-  /// Tokens have been staked to a target MSA.
+  /// Tokens have been staked to the Frequency network.
   Staked {
     /// The token account that staked tokens to the network.
     account: T::AccountId,
-    /// The MSA that a token account targeted to receive Capacity.
+    /// The MSA that a token account targeted to receive Capacity based on this staking amount.
     target: MessageSourceId,
     /// An amount that was staked.
     amount: BalanceOf<T>
   },
 
-  /// A token account has unstaked from a target MSA.
+  /// A token account has unstaked the Frequency network.
   UnStaked {
     /// The token account that staked tokens to the network.
     account: T::AccountId,
