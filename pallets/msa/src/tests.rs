@@ -6,7 +6,8 @@ use frame_support::{
 };
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Encode, Pair};
 use sp_runtime::{
-	traits::SignedExtension, transaction_validity::TransactionValidity, MultiSignature,
+	traits::SignedExtension, transaction_validity::TransactionValidity, ArithmeticError,
+	MultiSignature,
 };
 
 use crate::{
@@ -14,7 +15,7 @@ use crate::{
 	mock::*,
 	types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, CurrentMsaIdentifierMaximum, DispatchResult, Error, Event,
-	PayloadSignatureRegistry, ProviderToRegistryEntry, ValidityError,
+	ProviderToRegistryEntry, ValidityError,
 };
 
 use common_primitives::{
@@ -255,7 +256,7 @@ fn add_key_with_more_than_allowed_should_panic() {
 				new_key_signature,
 				add_new_key_data
 			),
-			Error::<Test>::KeyLimitExceeded
+			ArithmeticError::Overflow
 		);
 	});
 }
@@ -2140,201 +2141,6 @@ pub fn is_registered_provider_is_true() {
 
 		assert!(Msa::is_registered_provider(provider.into()));
 	});
-}
-
-fn register_signature_and_validate(
-	current_block: BlockNumber,
-	expected_bucket: u64,
-	signature: &MultiSignature,
-) {
-	let signature_expiration_block = current_block + 51;
-	assert_ok!(Msa::register_signature(signature, signature_expiration_block.into()));
-
-	let actual = <PayloadSignatureRegistry<Test>>::get(expected_bucket, signature);
-	assert_eq!(Some(signature_expiration_block as u64), actual);
-}
-
-#[test]
-pub fn stores_signature_in_expected_bucket() {
-	struct TestCase {
-		current_block: BlockNumber,
-		expected_bucket_number: u64,
-	}
-
-	new_test_ext().execute_with(|| {
-		let test_cases: Vec<TestCase> = vec![
-			TestCase { current_block: 999_899, expected_bucket_number: 1 }, // signature-expiration = 999_950
-			TestCase { current_block: 128_999_799, expected_bucket_number: 0 }, // signature-expiration = 128_999_850
-			TestCase { current_block: 4_294_965_098, expected_bucket_number: 1 }, // signature-expiration = 4_294_965_149
-		];
-		for tc in test_cases {
-			System::set_block_number(tc.current_block as u64);
-			let signature_expiration_block = tc.current_block + 51;
-			let signature = generate_test_signature();
-			assert_ok!(Msa::register_signature(&signature, signature_expiration_block.into()));
-
-			let actual =
-				<PayloadSignatureRegistry<Test>>::get(tc.expected_bucket_number, &signature);
-			assert_eq!(Some(signature_expiration_block as u64), actual);
-		}
-	})
-}
-
-#[test]
-// for illustration purposes of what buckets + bucket size does
-pub fn bucket_for() {
-	struct TestCase {
-		block: u64,
-		expected_bucket: u64,
-	}
-	new_test_ext().execute_with(|| {
-		let test_cases: Vec<TestCase> = vec![
-			TestCase { block: 1_010, expected_bucket: 0 },
-			TestCase { block: 1_110, expected_bucket: 1 },
-			TestCase { block: 1_201, expected_bucket: 0 },
-			TestCase { block: 1_301, expected_bucket: 1 },
-			TestCase { block: 1_401, expected_bucket: 0 },
-			TestCase { block: 1_501, expected_bucket: 1 },
-			TestCase { block: 1_601, expected_bucket: 0 },
-			TestCase { block: 1_701, expected_bucket: 1 },
-			TestCase { block: 1_801, expected_bucket: 0 },
-			TestCase { block: 1_901, expected_bucket: 1 },
-		];
-		for tc in test_cases {
-			assert_eq!(tc.expected_bucket, Msa::bucket_for(tc.block));
-		}
-	});
-}
-
-#[test]
-pub fn clears_stale_signatures_after_mortality_limit() {
-	new_test_ext().execute_with(|| {
-		let sig1 = &generate_test_signature();
-		let sig2 = &generate_test_signature();
-
-		let mut current_block: BlockNumber = 667;
-		let signature_expiration_block = (current_block + 51) as u64;
-
-		System::set_block_number(current_block as u64);
-		register_signature_and_validate(current_block, 1u64, sig1);
-		register_signature_and_validate(current_block, 1u64, sig2);
-
-		current_block = 707;
-		run_to_block(current_block.into());
-		// the old signature should not be able to be registered
-		assert_noop!(
-			Msa::register_signature(sig1, signature_expiration_block),
-			Error::<Test>::SignatureAlreadySubmitted
-		);
-
-		current_block = 876;
-		run_to_block(current_block.into());
-
-		assert_eq!(false, <PayloadSignatureRegistry<Test>>::contains_key(1u64, sig1));
-		assert_eq!(false, <PayloadSignatureRegistry<Test>>::contains_key(1u64, sig2));
-	})
-}
-
-#[test]
-pub fn cannot_register_signature_with_mortality_out_of_bounds() {
-	new_test_ext().execute_with(|| {
-		System::set_block_number(11_122);
-		let mut mortality_block: BlockNumber = 11_323;
-
-		let sig1 = &generate_test_signature();
-		assert_noop!(
-			Msa::register_signature(sig1, mortality_block.into()),
-			Error::<Test>::ProofNotYetValid
-		);
-
-		mortality_block = 11_122;
-		assert_noop!(
-			Msa::register_signature(sig1, mortality_block.into()),
-			Error::<Test>::ProofHasExpired
-		);
-	})
-}
-
-#[test]
-pub fn add_msa_key_replay_fails() {
-	struct TestCase {
-		current: u64,
-		mortality: u64,
-		run_to: u64,
-		expected_ok: bool,
-	}
-	new_test_ext().execute_with(|| {
-		// these should all fail replay
-		let test_cases: Vec<TestCase> = vec![
-			TestCase {
-				current: 10_949u64,
-				mortality: 11_001u64,
-				run_to: 10_848u64,
-				expected_ok: true,
-			},
-			TestCase { current: 1u64, mortality: 3u64, run_to: 5u64, expected_ok: false },
-			TestCase { current: 99u64, mortality: 101u64, run_to: 100u64, expected_ok: true },
-			TestCase {
-				current: 1_100u64,
-				mortality: 1_199u64,
-				run_to: 1_198u64,
-				expected_ok: true,
-			},
-			TestCase {
-				current: 1_102u64,
-				mortality: 1_201u64,
-				run_to: 1_200u64,
-				expected_ok: true,
-			},
-			TestCase {
-				current: 1_099u64,
-				mortality: 1_148u64,
-				run_to: 1_101u64,
-				expected_ok: true,
-			},
-			TestCase {
-				current: 1_000_000u64,
-				mortality: 1_000_000u64,
-				run_to: 1_000_000u64,
-				expected_ok: false,
-			},
-		];
-
-		let (new_msa_id, key_pair_provider) = create_account();
-		let account_provider = key_pair_provider.public();
-		for tc in test_cases {
-			System::set_block_number(tc.current);
-
-			let (new_key_pair, _) = sr25519::Pair::generate();
-
-			let add_new_key_data = AddKeyData {
-				msa_id: new_msa_id,
-				expiration: tc.mortality,
-				new_public_key: new_key_pair.public().into(),
-			};
-
-			let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
-
-			let signature_owner: MultiSignature =
-				key_pair_provider.sign(&encode_data_new_key_data).into();
-
-			let signature_new_key: MultiSignature =
-				new_key_pair.sign(&encode_data_new_key_data).into();
-
-			run_to_block(tc.run_to);
-
-			let add_key_response: bool = Msa::add_public_key_to_msa(
-				RuntimeOrigin::signed(account_provider.into()),
-				account_provider.into(),
-				signature_owner.clone(),
-				signature_new_key,
-				add_new_key_data.clone(),
-			)
-			.is_ok();
-
-			assert_eq!(add_key_response, tc.expected_ok);
-		}
-	})
 }
 
 #[test]
