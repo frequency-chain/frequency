@@ -42,6 +42,24 @@ jobs:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
 
+  # Workaround to handle skipped required check inside matrix
+  # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks
+  build-binaries-dummy:
+    needs: changes
+    if: needs.changes.outputs.build-binary != 'true'
+    runs-on: ubuntu-20.04
+    name: "Build Binary on ${{matrix.branch_name}} Branch"
+    strategy:
+      matrix:
+        git_branch: ["${{github.head_ref}}", main]
+        include:
+          - git_branch: ${{github.head_ref}}
+            branch_name: PR
+          - git_branch: main
+            branch_name: Main
+    steps:
+      - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
+
   build-binaries:
     needs: changes
     if: needs.changes.outputs.build-binary == 'true'
@@ -160,7 +178,7 @@ jobs:
       - name: Install Required Packages
         run: |
           sudo apt-get update
-          sudo apt install -y protobuf-compiler 
+          sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -189,7 +207,7 @@ jobs:
       - name: Install Required Packages
         run: |
           sudo apt-get update
-          sudo apt install -y protobuf-compiler 
+          sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -218,7 +236,7 @@ jobs:
       - name: Install Required Packages
         run: |
           sudo apt-get update
-          sudo apt install -y protobuf-compiler 
+          sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -291,6 +309,19 @@ jobs:
         with:
           fail_ci_if_error: false # optional (default = false)
           verbose: true # optional (default = false)
+
+  # Workaround to handle skipped required check inside matrix
+  # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks
+  verify-build-runtimes-dummy:
+    needs: changes
+    if: needs.changes.outputs.rust != 'true'
+    name: Verify Build Runtime for ${{matrix.network}}
+    strategy:
+      matrix:
+        network: [rococo, mainnet]
+    runs-on: ubuntu-20.04
+    steps:
+      - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
   verify-build-runtimes:
     needs: changes
