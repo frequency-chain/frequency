@@ -192,11 +192,11 @@ pub enum Event<T: Config> {
     amount: BalanceOf<T>
   },
 
-  /// A token account has unstaked to an MSA.
+  /// A token account has unstaked from a target MSA.
   UnStaked {
     /// The token account that staked tokens to the network.
     account: T::AccountId,
-    /// The MSA that a token account targeted to receive Capacity.
+    /// The MSA that a token account targeted to receive Capacity to unstake from.
     target: MessageSourceId,
     /// An amount that was unstaked.
     amount: BalanceOf<T>
