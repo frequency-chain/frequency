@@ -22,6 +22,8 @@ use common_primitives::{
 };
 
 pub use pallet_msa::Call as MsaCall;
+use crate::pallet::PayloadSignatureBucketStorageCount;
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -114,10 +116,10 @@ impl pallet_msa::Config for Test {
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
 	type MortalityWindowSize = ConstU32<100>;
-	type MaxSignaturesPerBucket = ConstU32<20>;
+	type MaxSignaturesPerBucket = ConstU32<10>;
 	type NumberOfBuckets = ConstU32<2>;
-	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
-	type MaxSignaturesStored = ConstU32<40>;
+	// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
+	type MaxSignaturesStored = ConstU32<20>;
 }
 #[test]
 pub fn cannot_register_too_many_signatures_in_one_bucket() {
@@ -152,17 +154,19 @@ fn register_signature_and_validate(
 }
 
 #[test]
-pub fn stores_signature_in_expected_bucket() {
+pub fn stores_signature_in_expected_bucket_and_increments_count() {
 	struct TestCase {
 		current_block: BlockNumber,
 		expected_bucket_number: u64,
+		expected_signatures: u32,
 	}
 
 	new_test_ext().execute_with(|| {
 		let test_cases: Vec<TestCase> = vec![
-			TestCase { current_block: 999_899, expected_bucket_number: 1 }, // signature-expiration = 999_950
-			TestCase { current_block: 128_999_799, expected_bucket_number: 0 }, // signature-expiration = 128_999_850
-			TestCase { current_block: 4_294_965_098, expected_bucket_number: 1 }, // signature-expiration = 4_294_965_149
+			TestCase { current_block: 999_899, expected_bucket_number: 1, expected_signatures: 1 }, // signature-expiration = 999_950
+			TestCase { current_block: 128_999_799, expected_bucket_number: 0, expected_signatures: 1 }, // signature-expiration = 128_999_850
+			// signature-expiration = 4_294_965_149, expect 2 signatures because it's the second one in bucket 1 and we're not running on_initialize
+			TestCase { current_block: 4_294_965_098, expected_bucket_number: 1, expected_signatures: 2 },
 		];
 		for tc in test_cases {
 			System::set_block_number(tc.current_block as u64);
@@ -173,6 +177,7 @@ pub fn stores_signature_in_expected_bucket() {
 			let actual =
 				<PayloadSignatureRegistry<Test>>::get(tc.expected_bucket_number, &signature);
 			assert_eq!(Some(signature_expiration_block as u64), actual);
+			assert_eq!(tc.expected_signatures, <PayloadSignatureBucketStorageCount<Test>>::get(tc.expected_bucket_number));
 		}
 	})
 }
@@ -204,7 +209,7 @@ pub fn bucket_for() {
 }
 
 #[test]
-pub fn clears_stale_signatures_after_mortality_limit() {
+pub fn clears_stale_signatures_and_resets_signature_count_after_mortality_limit() {
 	new_test_ext().execute_with(|| {
 		let sig1 = &generate_test_signature();
 		let sig2 = &generate_test_signature();
@@ -223,12 +228,16 @@ pub fn clears_stale_signatures_after_mortality_limit() {
 			Msa::register_signature(sig1, signature_expiration_block),
 			Error::<Test>::SignatureAlreadySubmitted
 		);
+		assert_eq!(2, <PayloadSignatureBucketStorageCount<Test>>::get(1));
 
 		current_block = 876;
 		run_to_block(current_block.into());
 
 		assert_eq!(false, <PayloadSignatureRegistry<Test>>::contains_key(1u64, sig1));
 		assert_eq!(false, <PayloadSignatureRegistry<Test>>::contains_key(1u64, sig2));
+
+		// check that the bucket count has been cleared
+		assert_eq!(0, <PayloadSignatureBucketStorageCount<Test>>::get(1));
 	})
 }
 

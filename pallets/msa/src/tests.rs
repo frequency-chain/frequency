@@ -5,9 +5,7 @@ use frame_support::{
 	BoundedBTreeMap,
 };
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Encode, Pair};
-use sp_runtime::{
-	traits::SignedExtension, transaction_validity::TransactionValidity, MultiSignature,
-};
+use sp_runtime::{traits::SignedExtension, transaction_validity::TransactionValidity, MultiSignature, ArithmeticError};
 
 use crate::{
 	ensure,
@@ -255,7 +253,7 @@ fn add_key_with_more_than_allowed_should_panic() {
 				new_key_signature,
 				add_new_key_data
 			),
-			Error::<Test>::KeyLimitExceeded
+			ArithmeticError::Overflow
 		);
 	});
 }

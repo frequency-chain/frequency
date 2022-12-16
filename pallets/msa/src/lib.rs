@@ -68,13 +68,10 @@ use common_primitives::benchmarks::MsaBenchmarkHelper;
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
-use sp_runtime::{
-	traits::{
-		Convert, DispatchInfoOf, Dispatchable, One, SaturatedConversion, SignedExtension, Verify,
-		Zero,
-	},
-	DispatchError, MultiSignature,
-};
+use sp_runtime::{traits::{
+	Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify,
+	Zero,
+}, DispatchError, MultiSignature, ArithmeticError};
 use sp_std::prelude::*;
 
 use common_primitives::{
@@ -159,7 +156,7 @@ pub mod pallet {
 		type NumberOfBuckets: Get<u32>;
 
 		/// The maximum number of signatures that can be stored in PayloadSignatureRegistry.
-		/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
+		/// This MUST be MaxSignaturesPerBucket * NumberOfBuckets.
 		/// It's separate because this config is provided to signature storage and cannot be a
 		/// calculated value.
 		#[pallet::constant]
@@ -242,9 +239,13 @@ pub mod pallet {
 
 	/// Records how many signatures are currently stored in each virtual signature registration bucket
 	#[pallet::storage]
-	#[pallet::getter(fn get_bucket_signature_count)]
-	pub(super) type PayloadSignatureBucketsSignatureCount<T: Config> =
-		StorageValue<_, BoundedVec<u32, T::NumberOfBuckets>, ValueQuery>;
+	pub(super) type PayloadSignatureBucketStorageCount<T: Config> =
+		StorageMap<_,
+			Twox64Concat,
+			T::BlockNumber, // bucket number
+			u32, // number of signatures
+			ValueQuery
+		>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -385,6 +386,7 @@ pub mod pallet {
 
 		/// Cryptographic signature verification failed for proving ownership of new public-key.
 		NewKeyOwnershipInvalidSignature,
+
 		/// Attempted to request validity of schema permission or delegation in the future.
 		CannotPredictValidityPastCurrentBlock,
 
@@ -393,12 +395,6 @@ pub mod pallet {
 
 		/// Attempted to add a new signature to a full virtual signature registration bucket
 		SignatureRegistryLimitExceeded,
-
-		/// Failed overflow check when adding to a bucket signature count
-		FailedBucketSignatureCountOverflowCheck,
-
-		/// Failed overflow check when adding a new key
-		FailedKeyOverflowCheck,
 	}
 
 	#[pallet::hooks]
@@ -950,7 +946,7 @@ impl<T: Config> Pallet<T> {
 			<PublicKeyCountForMsaId<T>>::try_mutate(msa_id, |key_count| {
 				// key_count:u8 should default to 0 if it does not exist
 				let incremented_key_count =
-					key_count.checked_add(1).ok_or(Error::<T>::FailedKeyOverflowCheck)?;
+					key_count.checked_add(1).ok_or(ArithmeticError::Overflow)?;
 
 				ensure!(
 					incremented_key_count <= T::MaxPublicKeysPerMsa::get(),
@@ -1228,27 +1224,13 @@ impl<T: Config> Pallet<T> {
 			Err(Error::<T>::ProofHasExpired.into())
 		} else {
 			let bucket_num = Self::bucket_for(signature_expires_at.into());
-
-			<PayloadSignatureBucketsSignatureCount<T>>::try_mutate(
-				|bucket_signatures: &mut BoundedVec<u32, T::NumberOfBuckets>| -> DispatchResult {
-					if bucket_signatures.len() == 0 {
-						for _i in 0..T::NumberOfBuckets::get() {
-							bucket_signatures.force_push(0);
-						}
-					}
-
-					let bucket_index = bucket_num.saturated_into::<u32>() as usize;
-					let bucket_signature_count =
-						bucket_signatures.get_mut(bucket_index).ok_or(Error::<T>::NoSuchBucket)?;
-
+			<PayloadSignatureBucketStorageCount<T>>::try_mutate(bucket_num,
+				|bucket_signature_count: &mut u32| -> DispatchResult {
 					let limit = T::MaxSignaturesPerBucket::get();
-					ensure!(
-						*bucket_signature_count < limit,
-						Error::<T>::SignatureRegistryLimitExceeded
-					);
+					ensure!(*bucket_signature_count < limit, Error::<T>::SignatureRegistryLimitExceeded);
 					let new_count = bucket_signature_count
 						.checked_add(1)
-						.ok_or(Error::<T>::FailedBucketSignatureCountOverflowCheck)?;
+						.ok_or(ArithmeticError::Overflow)?;
 					*bucket_signature_count = new_count;
 
 					// Tests for noop fail with "storage has been mutated"
@@ -1274,7 +1256,7 @@ impl<T: Config> Pallet<T> {
 	/// Check if enough blocks have passed to reset bucket mortality storage.
 	/// If so:
 	///     1. delete all the stored bucket/signature values with key1 = bucket num
-	///       2. add the WeightInfo proportional to the storage read/writes to the block weight
+	///     2. add the WeightInfo proportional to the storage read/writes to the block weight
 	/// If not, don't do anything.
 	///
 	fn reset_virtual_bucket_if_needed(current_block: T::BlockNumber) -> Weight {
@@ -1291,6 +1273,9 @@ impl<T: Config> Pallet<T> {
 			T::MaxSignaturesPerBucket::get(),
 			None,
 		);
+		<PayloadSignatureBucketStorageCount<T>>::mutate(prior_bucket_num, |bucket_signature_count| {
+			*bucket_signature_count = 0;
+		});
 		T::WeightInfo::on_initialize(multi_removal_result.unique)
 	}
 
