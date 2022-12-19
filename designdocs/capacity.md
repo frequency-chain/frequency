@@ -108,7 +108,8 @@ Acceptance Criteria are listed below but can evolve:
 8. Target Registered Provider is issued generated Capacity.
 9. Target Registered Provider issued Capacity becomes available at the start of the next Epoch.
 10. Stakers can increase their staked amount for a given target.
-11. Note: MinimumStakingAmount should be greater or equal to the existential deposit.
+11. Emits Stake event. 
+12. Note: MinimumStakingAmount should be greater or equal to the existential deposit.
 
 Note that we are considering allowing locked tokens to be used to pay transaction fees.
 
@@ -139,7 +140,8 @@ Acceptance Criteria are listed below but can evolve:
 5. The amount unstaked cannot exceed the amount staked.
 6. If the result of the unstaking would be to leave a balance below `config::MinimumStakingAmount`, the entire amount will be unstaked to avoid leaving dust.
 7. when an account has never been a staking account and an attempt to call unstake an error message of NotAStakingAccount should be returned. 
-8. if you have a staking account and your active balance is zero, then an error message of AmountToUnstakeExceedsAmountStaked should be returned (the test should include unlocking).
+8. If you have a staking account and your active balance is zero, then an error message of AmountToUnstakeExceedsAmountStaked should be returned (the test should include unlocking).
+9. Emits Unstake event.
 
 **withdraw_unstaked**
 
