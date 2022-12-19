@@ -137,6 +137,8 @@ Acceptance Criteria are listed below but can evolve:
 4. Issued Capacity to the target is reduced by the same amount originally issued
 5. The amount unstaked cannot exceed the amount staked.
 6. If the result of the unstaking would be to leave a balance below `config::MinimumStakingAmount`, the entire amount will be unstaked to avoid leaving dust.
+7. when an account has never been a staking account and an attempt to call unstake an error message of NotAStakingAccount should be returned. 
+8. if you have a staking account and your active balance is zero, then an error message of AmountToUnstakeExceedsAmountStaked should be returned (the test should include unlocking).
 
 **withdraw_unstaked**
 
