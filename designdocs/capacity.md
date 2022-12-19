@@ -108,6 +108,7 @@ Acceptance Criteria are listed below but can evolve:
 8. Target Registered Provider is issued generated Capacity.
 9. Target Registered Provider issued Capacity becomes available at the start of the next Epoch.
 10. Stakers can increase their staked amount for a given target.
+11. Note: MinimumStakingAmount should be greater or equal to the existential deposit.
 
 Note that we are considering allowing locked tokens to be used to pay transaction fees.
 
