@@ -278,9 +278,9 @@ pub struct UnlockChunk<Balance: HasCompact> {
   /// Amount to be unlocked.
   #[codec(compact)]
   value: Balance,
-  /// Epoch number at which point funds are unlocked.
+  /// Block number at which point funds are unlocked.
   #[codec(compact)]
-  epoch: EpochIndex,
+  thaw_at: BlockNumber,
 }
 
 ```
