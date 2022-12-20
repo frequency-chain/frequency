@@ -8,8 +8,6 @@ use crate::Pallet as SchemasPallet;
 
 use super::*;
 
-const SCHEMAS: u32 = 1000;
-
 fn generate_schema<T: Config>(
 	size: usize,
 ) -> BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> {
@@ -32,36 +30,28 @@ fn generate_schema<T: Config>(
 	json.try_into().unwrap()
 }
 
-fn register_some_schema<T: Config>(
-	sender: T::AccountId,
-	model_type: ModelType,
-	payload_location: PayloadLocation,
-) -> DispatchResult {
-	let schema_size: usize = (T::SchemaModelMaxBytesBoundedVecLimit::get() / 2) as usize;
-	SchemasPallet::<T>::create_schema(
-		RawOrigin::Signed(sender).into(),
-		generate_schema::<T>(schema_size),
-		model_type,
-		payload_location,
-	)
-}
-
 benchmarks! {
 	create_schema {
 		let m in (T::MinSchemaModelSizeBytes::get() + 8) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
-		let n in 1 .. SCHEMAS;
 		let sender: T::AccountId = whitelisted_caller();
 		let model_type = ModelType::AvroBinary;
 		let payload_location = PayloadLocation::OnChain;
 		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
-		for j in 0..(n) {
-			assert_ok!(register_some_schema::<T>(sender.clone(), model_type, payload_location));
-		}
 		let schema_input = generate_schema::<T>(m as usize);
 	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location)
 	verify {
 		ensure!(SchemasPallet::<T>::get_current_schema_identifier_maximum() > 0, "Registered schema count should be > 0");
+		ensure!(SchemasPallet::<T>::get_schema(1).is_some(), "Registered schema should exist");
 	}
+
+	set_max_schema_model_bytes {
+		let sender = RawOrigin::Root;
+		let max_size = T::SchemaModelMaxBytesBoundedVecLimit::get();
+	}: _(sender, max_size)
+	verify {
+		ensure!(SchemasPallet::<T>::get_schema_model_max_bytes() == T::SchemaModelMaxBytesBoundedVecLimit::get(), "Schema model max should be updated!");
+	}
+
 	impl_benchmark_test_suite!(
 		SchemasPallet,
 		crate::mock::new_test_ext(),
