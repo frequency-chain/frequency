@@ -31,7 +31,7 @@ As a Registered Provider, you can receive Capacity by staking your tokens to the
 
 When staking tokens to the network, the network generates Capacity based on a Capacity-generating function that considers usage and other criteria. When you stake tokens, you will also provide a target Registered Provider to receive the Capacity generated. In exchange for staking Token to the network, you receive rewards.  Rewards are deferred to a supplemental [staking design doc](https://github.com/LibertyDSNP/frequency/issues/40). You may increase your stake to network many times and target different Service Providers each time you stake. Note every time you stake to network your tokens are locked until you decide to unstake.
 
-Unstaking tokens allow you to schedule a number of tokens to be unlocked from your balance. There is no limit on the amount that you can schedule to be unlocked but there is a limit on how many scheduled requests you can make. After scheduling tokens to be unlocked you can receive those tokens after a thaw period has passed by calling the **`withdraw_unstaked`** extrinsic. If the call is successful the tokens become unlocked and increase the ability to make more scheduled requests.
+Unstaking tokens allow you to schedule a number of tokens to be unlocked from your balance. There is no limit on the amount that you can schedule to be unlocked but there is a limit on how many scheduled requests you can make. After scheduling tokens to be unlocked you can receive those tokens after a thaw period has withdraw_unstaked`** extrinsic. If the call is successful the tokens become unlocked and increase the ability to make more scheduled requests.
 
 Note that the thaw period is measured in Epoch Periods. An Epoch Period is composed of a set number of blocks. The number of blocks for an Epoch will be approximately 100 blocks and can be adjusted through governance.
 
@@ -145,11 +145,16 @@ Acceptance Criteria are listed below but can evolve:
 
 **withdraw_unstaked**
 
-Remove locks from unstaked chunks which have completed UnstakingThawPeriod.
+Remove locks from unstaked chunks which have completed the UnstakingThawPeriod.
 
 ```rust
 
 /// Remove locks from unstaked chunks which have completed UnstakingThawPeriod.
+/// Schedules an amount of the stake to be unlocked.
+/// ### Errors
+///
+/// - Returns `Error::NoUnstakedTokensAvailable` if there are no unstaking tokens available to withdraw.
+/// - Returns `Error:: NotAStakingAccount` if `origin` has nothing staked
 pub fn withdraw_unstaked(origin: OriginFor<T>) -> DispatchResultWithPostInfo {}
 
 ```
@@ -180,7 +185,9 @@ pub enum Error<T> {
   /// Amount to unstake is greater than the amount staked.
   AmountToUnstakeExceedsAmountStaked,
   /// Staker reached the limit number for the allowed amount of unlocking chunks.
-  MaxUnlockingChunks
+  MaxUnlockingChunks,
+  /// If there are no unstaking tokens available to withdraw.
+  NoUnstakedTokensAvailable
 }
 
 ```
