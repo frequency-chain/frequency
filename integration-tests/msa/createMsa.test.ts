@@ -8,7 +8,7 @@ import { addPublicKeyToMsa, createMsa, createSchema, deletePublicKey, signAndSen
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 
 describe("Create Accounts", function () {
-    this.timeout(150000);
+    this.timeout(15000);
 
     const context = this.title;
     const amount = INITIAL_FUNDING;

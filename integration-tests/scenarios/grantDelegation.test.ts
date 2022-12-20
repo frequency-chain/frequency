@@ -18,7 +18,7 @@ describe("Delegation Scenario Tests", function () {
     let keys: KeyringPair;
     let schemaId: Codec;
 
-    before(async () => {
+    before(async function () {
         let connectApi = await connect(process.env.WS_PROVIDER_URL);
         api = connectApi
         const accountKeys = createAndFundAccount({ api, amount, source, context });
