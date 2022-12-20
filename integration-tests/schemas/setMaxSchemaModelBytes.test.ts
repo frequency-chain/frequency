@@ -1,33 +1,31 @@
 import "@frequency-chain/api-augment";
 import { ApiRx } from "@polkadot/api";
 import assert from "assert";
-import { filter, firstValueFrom } from "rxjs";
 import { connect, createKeys } from "../scaffolding/apiConnection";
-import { groupEventsByKey } from "../scaffolding/helpers";
+import { signAndSend } from "../scaffolding/extrinsicHelpers";
+import { DevAccounts, EventError, showTotalCost } from "../scaffolding/helpers";
 
-describe("#setMaxSchemaModelBytes", () => {
+describe("#setMaxSchemaModelBytes", function () {
+    this.timeout(15000);
+
+    const context = this.title;
     let api: ApiRx;
     let keys: any;
 
-    before(async () => {
+    before(async function () {
         let connectApi = await connect(process.env.WS_PROVIDER_URL);
         api = connectApi
-        keys = createKeys("//Alice")
+        keys = createKeys(DevAccounts.Alice)
     })
 
-    after(() => {
-        api.disconnect()
+    after(async function () {
+        await showTotalCost(api, context);
+        await api.disconnect()
     })
 
-    it("should fail to set the schema size because of lack of root authority", async () => {
-        const chainEvents = await firstValueFrom(api.tx.schemas.setMaxSchemaModelBytes(1000000).signAndSend(keys).pipe(
-                filter(({status}) => status.isInBlock || status.isFinalized),
-                groupEventsByKey()))
-
-        assert.notEqual(chainEvents["system.ExtrinsicFailed"], undefined);
-        assert.equal(chainEvents["system.ExtrinsicSuccess"], undefined);
-
-    }).timeout(15000);
+    it("should fail to set the schema size because of lack of root authority", async function () {
+        await assert.rejects(signAndSend(() => api.tx.schemas.setMaxSchemaModelBytes(1000000), keys), EventError);
+    });
 
     // NOTE: We need a governance account or a sudo call to test the positive case
 });
