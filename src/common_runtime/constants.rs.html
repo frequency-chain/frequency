@@ -296,6 +296,11 @@
 <span id="296">296</span>
 <span id="297">297</span>
 <span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::prod_or_testnet_or_local;
 <span class="kw">use </span>common_primitives::{
 	node::{Balance, BlockNumber},
@@ -581,14 +586,19 @@
 }
 <span class="comment">// -end- Messages Pallet ---
 
+// --- MSA Pallet ---
 </span><span class="doccomment">/// The number of blocks per virtual bucket
 </span><span class="kw">pub type </span>MSAMortalityWindowSize = ConstU32&lt;<span class="number">100</span>&gt;;
 <span class="doccomment">/// The maximum number of signatures per virtual bucket
 </span><span class="kw">pub type </span>MSAMaxSignaturesPerBucket = ConstU32&lt;<span class="number">50_000</span>&gt;;
 <span class="doccomment">/// The total number of virtual buckets
 </span><span class="kw">pub type </span>MSANumberOfBuckets = ConstU32&lt;<span class="number">2</span>&gt;;
+<span class="doccomment">/// The upper limit on total stored signatures.
+/// This MUST be MaxSignaturesPerBucket * NumberOfBuckets.
+</span><span class="kw">pub type </span>MSAMaxSignaturesStored = ConstU32&lt;<span class="number">100_000</span>&gt;;
+<span class="comment">// -end- MSA Pallet ---
 
-<span class="macro">parameter_types! </span>{
+</span><span class="macro">parameter_types! </span>{
 	<span class="doccomment">/// SS58 Prefix for the for Frequency Network
 	/// 90 is the prefix for the Frequency Network on Polkadot
 	/// 42 is the prefix for the Frequency Network on Rococo

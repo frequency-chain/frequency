@@ -758,6 +758,8 @@
 <span id="758">758</span>
 <span id="759">759</span>
 <span id="760">760</span>
+<span id="761">761</span>
+<span id="762">762</span>
 </pre><pre class="rust"><code><span class="attribute">#![allow(unused_imports)]
 </span><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 </span><span class="comment">// std
@@ -1068,7 +1070,7 @@
 	<span class="kw">let </span>prometheus_registry = parachain_config.prometheus_registry().cloned();
 	<span class="kw">let </span>transaction_pool = params.transaction_pool.clone();
 	<span class="kw">let </span>import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
-	<span class="kw">let </span>(network, system_rpc_tx, start_network) =
+	<span class="kw">let </span>(network, system_rpc_tx, tx_handler_controller, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: <span class="kw-2">&amp;</span>parachain_config,
 			client: client.clone(),
@@ -1107,6 +1109,7 @@
 		backend: backend.clone(),
 		network: network.clone(),
 		system_rpc_tx,
+		tx_handler_controller,
 		telemetry: telemetry.as_mut(),
 	})<span class="question-mark">?</span>;
 
@@ -1221,23 +1224,21 @@
 		<span class="kw">_</span>,
 		<span class="kw">_</span>,
 		<span class="kw">_</span>,
-		<span class="kw">_</span>,
 	&gt;(cumulus_client_consensus_aura::ImportQueueParams {
 		block_import: client.clone(),
 		client: client.clone(),
 		create_inherent_data_providers: <span class="kw">move </span>|<span class="kw">_</span>, <span class="kw">_</span>| <span class="kw">async move </span>{
-			<span class="kw">let </span>time = sp_timestamp::InherentDataProvider::from_system_time();
+			<span class="kw">let </span>timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
 			<span class="kw">let </span>slot =
 				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-					<span class="kw-2">*</span>time,
+					<span class="kw-2">*</span>timestamp,
 					slot_duration,
 				);
 
-			<span class="prelude-val">Ok</span>((time, slot))
+			<span class="prelude-val">Ok</span>((slot, timestamp))
 		},
 		registry: config.prometheus_registry(),
-		can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
 		spawner: <span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
 		telemetry,
 	})
@@ -1317,11 +1318,11 @@
 								<span class="kw-2">&amp;</span>validation_data,
 								id,
 							).<span class="kw">await</span>;
-							<span class="kw">let </span>time = sp_timestamp::InherentDataProvider::from_system_time();
+							<span class="kw">let </span>timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
 							<span class="kw">let </span>slot =
 						sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-							<span class="kw-2">*</span>time,
+							<span class="kw-2">*</span>timestamp,
 							slot_duration,
 						);
 
@@ -1330,7 +1331,7 @@
 									<span class="string">&quot;Failed to create parachain inherent&quot;</span>,
 								)
 							})<span class="question-mark">?</span>;
-							<span class="prelude-val">Ok</span>((time, slot, parachain_inherent))
+							<span class="prelude-val">Ok</span>((slot, timestamp, parachain_inherent))
 						}
 					},
 					block_import: client.clone(),
@@ -1372,7 +1373,7 @@
 		<span class="bool-val">true</span>,
 	)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>(network, system_rpc_tx, network_starter) =
+	<span class="kw">let </span>(network, system_rpc_tx, tx_handler_controller, network_starter) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: <span class="kw-2">&amp;</span>parachain_config,
 			client: client.clone(),
@@ -1451,8 +1452,10 @@
 					<span class="kw">async move </span>{
 						<span class="kw">let </span>mocked_parachain = MockValidationDataInherentDataProvider {
 							current_para_block,
+							para_blocks_per_relay_epoch: <span class="number">0</span>,
 							relay_offset: <span class="number">1000</span>,
 							relay_blocks_per_para_block: <span class="number">2</span>,
+							relay_randomness_config: (),
 							xcm_config: Default::default(),
 							raw_downward_messages: <span class="macro">vec!</span>[],
 							raw_horizontal_messages: <span class="macro">vec!</span>[],
@@ -1501,6 +1504,7 @@
 		backend,
 		network,
 		system_rpc_tx,
+		tx_handler_controller,
 		telemetry: telemetry.as_mut(),
 	})<span class="question-mark">?</span>;
 

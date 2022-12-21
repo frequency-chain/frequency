@@ -26,7 +26,7 @@
 
 <span class="kw">use </span>codec::{Decode, Encode, MaxEncodedLen};
 
-<span class="attribute">#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+<span class="attribute">#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxModelSize))]
 </span><span class="doccomment">/// A structure defining a Schema
 </span><span class="kw">pub struct </span>Schema&lt;MaxModelSize&gt;

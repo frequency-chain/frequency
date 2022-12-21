@@ -47,6 +47,9 @@
 <span id="47">47</span>
 <span id="48">48</span>
 <span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
 </pre><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) 2022 Parity Technologies (UK) Ltd.
@@ -88,11 +91,14 @@
 
 			<span class="comment">// At least 10 µs.
 			</span><span class="macro">assert!</span>(
-				w &gt;= constants::WEIGHT_PER_MICROS.saturating_mul(<span class="number">10</span>),
+				w.ref_time() &gt;= constants::WEIGHT_PER_MICROS.saturating_mul(<span class="number">10</span>).ref_time(),
 				<span class="string">&quot;Weight should be at least 10 µs.&quot;
 			</span>);
 			<span class="comment">// At most 1 ms.
-			</span><span class="macro">assert!</span>(w &lt;= constants::WEIGHT_PER_MILLIS, <span class="string">&quot;Weight should be at most 1 ms.&quot;</span>);
+			</span><span class="macro">assert!</span>(
+				w.ref_time() &lt;= constants::WEIGHT_PER_MILLIS.ref_time(),
+				<span class="string">&quot;Weight should be at most 1 ms.&quot;
+			</span>);
 		}
 	}
 }

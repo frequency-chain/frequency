@@ -1591,6 +1591,60 @@
 <span id="1591">1591</span>
 <span id="1592">1592</span>
 <span id="1593">1593</span>
+<span id="1594">1594</span>
+<span id="1595">1595</span>
+<span id="1596">1596</span>
+<span id="1597">1597</span>
+<span id="1598">1598</span>
+<span id="1599">1599</span>
+<span id="1600">1600</span>
+<span id="1601">1601</span>
+<span id="1602">1602</span>
+<span id="1603">1603</span>
+<span id="1604">1604</span>
+<span id="1605">1605</span>
+<span id="1606">1606</span>
+<span id="1607">1607</span>
+<span id="1608">1608</span>
+<span id="1609">1609</span>
+<span id="1610">1610</span>
+<span id="1611">1611</span>
+<span id="1612">1612</span>
+<span id="1613">1613</span>
+<span id="1614">1614</span>
+<span id="1615">1615</span>
+<span id="1616">1616</span>
+<span id="1617">1617</span>
+<span id="1618">1618</span>
+<span id="1619">1619</span>
+<span id="1620">1620</span>
+<span id="1621">1621</span>
+<span id="1622">1622</span>
+<span id="1623">1623</span>
+<span id="1624">1624</span>
+<span id="1625">1625</span>
+<span id="1626">1626</span>
+<span id="1627">1627</span>
+<span id="1628">1628</span>
+<span id="1629">1629</span>
+<span id="1630">1630</span>
+<span id="1631">1631</span>
+<span id="1632">1632</span>
+<span id="1633">1633</span>
+<span id="1634">1634</span>
+<span id="1635">1635</span>
+<span id="1636">1636</span>
+<span id="1637">1637</span>
+<span id="1638">1638</span>
+<span id="1639">1639</span>
+<span id="1640">1640</span>
+<span id="1641">1641</span>
+<span id="1642">1642</span>
+<span id="1643">1643</span>
+<span id="1644">1644</span>
+<span id="1645">1645</span>
+<span id="1646">1646</span>
+<span id="1647">1647</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet
 //! The MSA pallet provides functionality for handling Message Source Accounts.
 //!
@@ -1649,7 +1703,10 @@
 
 </span><span class="kw">use </span>codec::{Decode, Encode};
 <span class="kw">use </span>frame_support::{
-	dispatch::DispatchResult, ensure, pallet_prelude::<span class="kw-2">*</span>, traits::IsSubType, weights::DispatchInfo,
+	dispatch::{DispatchInfo, DispatchResult},
+	ensure,
+	pallet_prelude::<span class="kw-2">*</span>,
+	traits::IsSubType,
 };
 
 <span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
@@ -1660,7 +1717,7 @@
 <span class="kw">use </span>sp_core::crypto::AccountId32;
 <span class="kw">use </span>sp_runtime::{
 	traits::{Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify, Zero},
-	DispatchError, MultiSignature,
+	ArithmeticError, DispatchError, MultiSignature,
 };
 <span class="kw">use </span>sp_std::prelude::<span class="kw-2">*</span>;
 
@@ -1684,10 +1741,15 @@
 </span><span class="kw">mod </span>mock;
 <span class="attribute">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
+
 <span class="kw">pub mod </span>types;
 
 <span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>audit_replay_tests;
+<span class="attribute">#[cfg(test)]
 </span><span class="kw">mod </span>replay_tests;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>signature_registry_tests;
 
 <span class="kw">pub mod </span>weights;
 
@@ -1700,7 +1762,7 @@
 	<span class="attribute">#[pallet::config]
 	</span><span class="kw">pub trait </span>Config: frame_system::Config {
 		<span class="doccomment">/// The overarching event type.
-		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
+		</span><span class="kw">type </span>RuntimeEvent: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
 
 		<span class="doccomment">/// Weight information for extrinsics in this pallet.
 		</span><span class="kw">type </span>WeightInfo: WeightInfo;
@@ -1739,6 +1801,13 @@
 		/// There are exactly NumberOfBuckets first-key values in PayloadSignatureRegistry.
 		</span><span class="attribute">#[pallet::constant]
 		</span><span class="kw">type </span>NumberOfBuckets: Get&lt;u32&gt;;
+
+		<span class="doccomment">/// The maximum number of signatures that can be stored in PayloadSignatureRegistry.
+		/// This MUST be MaxSignaturesPerBucket * NumberOfBuckets.
+		/// It&#39;s separate because this config is provided to signature storage and cannot be a
+		/// calculated value.
+		</span><span class="attribute">#[pallet::constant]
+		</span><span class="kw">type </span>MaxSignaturesStored: Get&lt;<span class="prelude-ty">Option</span>&lt;u32&gt;&gt;;
 	}
 
 	<span class="attribute">#[pallet::pallet]
@@ -1804,13 +1873,25 @@
 	</span><span class="attribute">#[pallet::storage]
 	#[pallet::getter(<span class="kw">fn </span>get_payload_signature_registry)]
 	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>PayloadSignatureRegistry&lt;T: Config&gt; = StorageDoubleMap&lt;
+		<span class="kw">_</span>,                      <span class="comment">// prefix
+		</span>Twox64Concat,           <span class="comment">// hasher for key1
+		</span>T::BlockNumber, <span class="comment">// Bucket number. Stored as BlockNumber because I&#39;m done arguing with rust about it.
+		</span>Twox64Concat,   <span class="comment">// hasher for key2
+		</span>MultiSignature, <span class="comment">// An externally-created Signature for an external payload, provided by an extrinsic
+		</span>T::BlockNumber, <span class="comment">// An actual flipping block number.
+		</span>OptionQuery,    <span class="comment">// The type for the query
+		</span>GetDefault,     <span class="comment">// OnEmpty return type, defaults to None
+		</span>T::MaxSignaturesStored, <span class="comment">// Maximum total signatures to store
+	</span>&gt;;
+
+	<span class="doccomment">/// Records how many signatures are currently stored in each virtual signature registration bucket
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>PayloadSignatureBucketCount&lt;T: Config&gt; = StorageMap&lt;
 		<span class="kw">_</span>,
 		Twox64Concat,
-		T::BlockNumber, <span class="comment">// Bucket number. Stored as BlockNumber because I&#39;m done arguing with rust about it.
-		</span>Twox64Concat,
-		MultiSignature, <span class="comment">// An externally-created Signature for an external payload, provided by an extrinsic
-		</span>T::BlockNumber, <span class="comment">// An actual flipping block number.
-		</span>OptionQuery,
+		T::BlockNumber, <span class="comment">// bucket number
+		</span>u32,            <span class="comment">// number of signatures
+		</span>ValueQuery,
 	&gt;;
 
 	<span class="attribute">#[pallet::event]
@@ -1952,8 +2033,12 @@
 
 		<span class="doccomment">/// Cryptographic signature verification failed for proving ownership of new public-key.
 		</span>NewKeyOwnershipInvalidSignature,
+
 		<span class="doccomment">/// Attempted to request validity of schema permission or delegation in the future.
 		</span>CannotPredictValidityPastCurrentBlock,
+
+		<span class="doccomment">/// Attempted to add a new signature to a full virtual signature registration bucket
+		</span>SignatureRegistryLimitExceeded,
 	}
 
 	<span class="attribute">#[pallet::hooks]
@@ -2008,7 +2093,7 @@
 		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used
 		///
 		</span><span class="attribute">#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation(
-			T::MaxSchemaGrantsPerDelegation::get()
+		add_provider_payload.schema_ids.len() <span class="kw">as </span>u32
 		))]
 		</span><span class="kw">pub fn </span>create_sponsored_account_with_delegation(
 			origin: OriginFor&lt;T&gt;,
@@ -2349,7 +2434,7 @@
 		/// - [`SchemaNotGranted`](Error::SchemaNotGranted) - If attempting to revoke a schema that has not previously been granted.
 		///
 		</span><span class="attribute">#[pallet::weight(T::WeightInfo::revoke_schema_permissions(
-			schema_ids.len() <span class="kw">as </span>u32
+		schema_ids.len() <span class="kw">as </span>u32
 		))]
 		</span><span class="kw">pub fn </span>revoke_schema_permissions(
 			origin: OriginFor&lt;T&gt;,
@@ -2505,7 +2590,7 @@
 			</span>&lt;PublicKeyCountForMsaId&lt;T&gt;&gt;::try_mutate(msa_id, |key_count| {
 				<span class="comment">// key_count:u8 should default to 0 if it does not exist
 				</span><span class="kw">let </span>incremented_key_count =
-					key_count.checked_add(<span class="number">1</span>).ok_or(Error::&lt;T&gt;::KeyLimitExceeded)<span class="question-mark">?</span>;
+					key_count.checked_add(<span class="number">1</span>).ok_or(ArithmeticError::Overflow)<span class="question-mark">?</span>;
 
 				<span class="macro">ensure!</span>(
 					incremented_key_count &lt;= T::MaxPublicKeysPerMsa::get(),
@@ -2783,12 +2868,32 @@
 			<span class="prelude-val">Err</span>(Error::&lt;T&gt;::ProofHasExpired.into())
 		} <span class="kw">else </span>{
 			<span class="kw">let </span>bucket_num = <span class="self">Self</span>::bucket_for(signature_expires_at.into());
-			&lt;PayloadSignatureRegistry&lt;T&gt;&gt;::try_mutate(
+			&lt;PayloadSignatureBucketCount&lt;T&gt;&gt;::try_mutate(
 				bucket_num,
-				signature,
-				|maybe_mortality_block| -&gt; DispatchResult {
-					<span class="macro">ensure!</span>(maybe_mortality_block.is_none(), Error::&lt;T&gt;::SignatureAlreadySubmitted);
-					<span class="kw-2">*</span>maybe_mortality_block = <span class="prelude-val">Some</span>(signature_expires_at);
+				|bucket_signature_count: <span class="kw-2">&amp;mut </span>u32| -&gt; DispatchResult {
+					<span class="kw">let </span>limit = T::MaxSignaturesPerBucket::get();
+					<span class="macro">ensure!</span>(
+						<span class="kw-2">*</span>bucket_signature_count &lt; limit,
+						Error::&lt;T&gt;::SignatureRegistryLimitExceeded
+					);
+					<span class="kw">let </span>new_count =
+						bucket_signature_count.checked_add(<span class="number">1</span>).ok_or(ArithmeticError::Overflow)<span class="question-mark">?</span>;
+					<span class="kw-2">*</span>bucket_signature_count = new_count;
+
+					<span class="comment">// Tests for noop fail with &quot;storage has been mutated&quot;
+					// if this try_mutate does not live inside this block
+					</span>&lt;PayloadSignatureRegistry&lt;T&gt;&gt;::try_mutate(
+						bucket_num,
+						signature,
+						|maybe_mortality_block| -&gt; DispatchResult {
+							<span class="macro">ensure!</span>(
+								maybe_mortality_block.is_none(),
+								Error::&lt;T&gt;::SignatureAlreadySubmitted
+							);
+							<span class="kw-2">*</span>maybe_mortality_block = <span class="prelude-val">Some</span>(signature_expires_at);
+							<span class="prelude-val">Ok</span>(())
+						},
+					)<span class="question-mark">?</span>;
 					<span class="prelude-val">Ok</span>(())
 				},
 			)
@@ -2798,7 +2903,7 @@
 	<span class="doccomment">/// Check if enough blocks have passed to reset bucket mortality storage.
 	/// If so:
 	///     1. delete all the stored bucket/signature values with key1 = bucket num
-	///       2. add the WeightInfo proportional to the storage read/writes to the block weight
+	///     2. add the WeightInfo proportional to the storage read/writes to the block weight
 	/// If not, don&#39;t do anything.
 	///
 	</span><span class="kw">fn </span>reset_virtual_bucket_if_needed(current_block: T::BlockNumber) -&gt; Weight {
@@ -2815,6 +2920,9 @@
 			T::MaxSignaturesPerBucket::get(),
 			<span class="prelude-val">None</span>,
 		);
+		&lt;PayloadSignatureBucketCount&lt;T&gt;&gt;::mutate(prior_bucket_num, |bucket_signature_count| {
+			<span class="kw-2">*</span>bucket_signature_count = <span class="number">0</span>;
+		});
 		T::WeightInfo::on_initialize(multi_removal_result.unique)
 	}
 
@@ -3130,10 +3238,10 @@
 
 <span class="kw">impl</span>&lt;T: Config + Send + Sync&gt; SignedExtension <span class="kw">for </span>CheckFreeExtrinsicUse&lt;T&gt;
 <span class="kw">where
-	</span>T::Call: Dispatchable&lt;Info = DispatchInfo&gt; + IsSubType&lt;Call&lt;T&gt;&gt;,
+	</span>T::RuntimeCall: Dispatchable&lt;Info = DispatchInfo&gt; + IsSubType&lt;Call&lt;T&gt;&gt;,
 {
 	<span class="kw">type </span>AccountId = T::AccountId;
-	<span class="kw">type </span>Call = T::Call;
+	<span class="kw">type </span>Call = T::RuntimeCall;
 	<span class="kw">type </span>AdditionalSigned = ();
 	<span class="kw">type </span>Pre = ();
 	<span class="kw">const </span>IDENTIFIER: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;CheckFreeExtrinsicUse&quot;</span>;

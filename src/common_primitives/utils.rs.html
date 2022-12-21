@@ -193,6 +193,21 @@
 <span id="193">193</span>
 <span id="194">194</span>
 <span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
 </pre><pre class="rust"><code><span class="kw">use </span>sp_std::vec::Vec;
 
 <span class="doccomment">/// Handle serializing and deserializing from `Vec&lt;u8&gt;` to hexadecimal
@@ -311,6 +326,13 @@
 		</span><span class="kw">pub </span>data: <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;,
 	}
 
+	<span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
+	#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+	</span><span class="kw">struct </span>TestAsHexOptionNull {
+		<span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, serde(with = <span class="string">&quot;as_hex_option&quot;</span>, default))]
+		</span><span class="kw">pub </span>data: <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;,
+	}
+
 	<span class="attribute">#[test]
 	</span><span class="kw">fn </span>as_hex_option_can_serialize() {
 		<span class="kw">let </span>test_data = TestAsHexOption { data: <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>]) };
@@ -328,11 +350,19 @@
 	}
 
 	<span class="attribute">#[test]
-	</span><span class="kw">fn </span>as_hex_option_can_serialize_nothing() {
+	</span><span class="kw">fn </span>as_hex_option_can_serialize_nothing_with_skip() {
 		<span class="kw">let </span>test_data = TestAsHexOption { data: <span class="prelude-val">None </span>};
 		<span class="kw">let </span>result = serde_json::to_string(<span class="kw-2">&amp;</span>test_data);
 		<span class="macro">assert!</span>(result.is_ok());
 		<span class="macro">assert_eq!</span>(<span class="string">&quot;{}&quot;</span>, result.unwrap());
+	}
+
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>as_hex_option_can_serialize_nothing_as_null() {
+		<span class="kw">let </span>test_data = TestAsHexOptionNull { data: <span class="prelude-val">None </span>};
+		<span class="kw">let </span>result = serde_json::to_string(<span class="kw-2">&amp;</span>test_data);
+		<span class="macro">assert!</span>(result.is_ok());
+		<span class="macro">assert_eq!</span>(<span class="string">&quot;{\&quot;data\&quot;:null}&quot;</span>, result.unwrap());
 	}
 
 	<span class="attribute">#[test]

@@ -97,6 +97,9 @@
 <span id="97">97</span>
 <span id="98">98</span>
 <span id="99">99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
 </pre><pre class="rust"><code><span class="comment">// Strong Documentation Lints
 </span><span class="attribute">#![deny(
 	rustdoc::broken_intra_doc_links,
@@ -120,6 +123,9 @@
 <span class="kw">use </span>sp_runtime::{generic::BlockId, traits::Block <span class="kw">as </span>BlockT};
 <span class="kw">use </span>sp_std::vec::Vec;
 <span class="kw">use </span>std::sync::Arc;
+
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests;
 
 <span class="doccomment">/// Errors that occur on the client RPC
 </span><span class="kw">pub enum </span>SchemaRpcError {

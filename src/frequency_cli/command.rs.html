@@ -585,6 +585,15 @@
 <span id="585">585</span>
 <span id="586">586</span>
 <span id="587">587</span>
+<span id="588">588</span>
+<span id="589">589</span>
+<span id="590">590</span>
+<span id="591">591</span>
+<span id="592">592</span>
+<span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
+<span id="596">596</span>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cli::{Cli, RelayChainCli, Subcommand};
 <span class="kw">use </span>codec::Encode;
 <span class="kw">use </span>cumulus_client_cli::generate_genesis_block;
@@ -926,7 +935,16 @@
 						)<span class="question-mark">?</span>;
 					cmd.run(partials.client)
 				}),
-				frame_benchmarking_cli::BenchmarkCmd::Storage(cmd) =&gt; runner.sync_run(|config| {
+				<span class="attribute">#[cfg(not(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>))]
+				</span>frame_benchmarking_cli::BenchmarkCmd::Storage(<span class="kw">_</span>) =&gt;
+					<span class="kw">return </span><span class="prelude-val">Err</span>(sc_cli::Error::Input(
+						<span class="string">&quot;Compile with --features=runtime-benchmarks \
+						to enable storage benchmarks.&quot;
+							</span>.into(),
+					)
+					.into()),
+				<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+				</span>frame_benchmarking_cli::BenchmarkCmd::Storage(cmd) =&gt; runner.sync_run(|config| {
 					<span class="kw">let </span>partials =
 						frequency_service::service::new_partial::&lt;RuntimeApi, Executor, <span class="kw">_</span>&gt;(
 							<span class="kw-2">&amp;</span>config,

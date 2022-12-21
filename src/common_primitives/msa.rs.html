@@ -210,6 +210,39 @@
 <span id="210">210</span>
 <span id="211">211</span>
 <span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
 </pre><pre class="rust"><code><span class="kw">use </span>codec::{Decode, Encode, EncodeLike, Error, MaxEncodedLen};
 <span class="kw">use </span>frame_support::{
 	dispatch::DispatchResult, traits::Get, BoundedBTreeMap, BoundedVec, RuntimeDebug,
@@ -421,6 +454,39 @@
 	</span><span class="kw">pub </span>key: AccountId,
 	<span class="doccomment">/// The MSA associated with the `key`
 	</span><span class="kw">pub </span>msa_id: MessageSourceId,
+}
+
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>decoding_provider_id_failure() {
+		<span class="kw">let </span><span class="kw-2">mut </span>da: <span class="kw-2">&amp;</span>[u8] = <span class="string">b&quot;\xf6\xf5&quot;</span>;
+		<span class="kw">let </span>decoded = DelegatorId::decode(<span class="kw-2">&amp;mut </span>da);
+		<span class="macro">assert!</span>(decoded.is_err());
+	}
+
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>decoding_provider_id_success() {
+		<span class="kw">let </span>val = <span class="number">16777215_u64</span>.encode();
+		<span class="kw">let </span>decoded = ProviderId::decode(<span class="kw-2">&amp;mut &amp;</span>val[..]);
+		<span class="macro">assert_eq!</span>(decoded, <span class="prelude-val">Ok</span>(ProviderId(<span class="number">16777215</span>)))
+	}
+
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>decoding_delegate_id_failure() {
+		<span class="kw">let </span><span class="kw-2">mut </span>da: <span class="kw-2">&amp;</span>[u8] = <span class="string">b&quot;\xf6\xf5&quot;</span>;
+		<span class="kw">let </span>decoded = DelegatorId::decode(<span class="kw-2">&amp;mut </span>da);
+		<span class="macro">assert!</span>(decoded.is_err());
+	}
+
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>decoding_delegator_id_success() {
+		<span class="kw">let </span>val = <span class="number">42_u64</span>.encode();
+		<span class="kw">let </span>decoded = DelegatorId::decode(<span class="kw-2">&amp;mut &amp;</span>val[..]);
+		<span class="macro">assert_eq!</span>(decoded, <span class="prelude-val">Ok</span>(DelegatorId(<span class="number">42</span>)))
+	}
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="common_primitives" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>

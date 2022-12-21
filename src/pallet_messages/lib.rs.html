@@ -386,34 +386,6 @@
 <span id="386">386</span>
 <span id="387">387</span>
 <span id="388">388</span>
-<span id="389">389</span>
-<span id="390">390</span>
-<span id="391">391</span>
-<span id="392">392</span>
-<span id="393">393</span>
-<span id="394">394</span>
-<span id="395">395</span>
-<span id="396">396</span>
-<span id="397">397</span>
-<span id="398">398</span>
-<span id="399">399</span>
-<span id="400">400</span>
-<span id="401">401</span>
-<span id="402">402</span>
-<span id="403">403</span>
-<span id="404">404</span>
-<span id="405">405</span>
-<span id="406">406</span>
-<span id="407">407</span>
-<span id="408">408</span>
-<span id="409">409</span>
-<span id="410">410</span>
-<span id="411">411</span>
-<span id="412">412</span>
-<span id="413">413</span>
-<span id="414">414</span>
-<span id="415">415</span>
-<span id="416">416</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # Messages pallet
 //! A pallet for storing messages.
 //!
@@ -472,8 +444,8 @@
 <span class="kw">mod </span>types;
 
 <span class="kw">use </span>frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
-<span class="kw">use </span>sp_runtime::{traits::One, DispatchError};
-<span class="kw">use </span>sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::<span class="kw-2">*</span>};
+<span class="kw">use </span>sp_runtime::DispatchError;
+<span class="kw">use </span>sp_std::{convert::TryInto, prelude::<span class="kw-2">*</span>};
 
 <span class="kw">use </span>codec::Encode;
 <span class="kw">use </span>common_primitives::{
@@ -483,6 +455,7 @@
 	},
 	schema::<span class="kw-2">*</span>,
 };
+<span class="kw">use </span>frame_support::dispatch::DispatchResult;
 
 <span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">use </span>common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
@@ -500,7 +473,7 @@
 	<span class="attribute">#[pallet::config]
 	</span><span class="kw">pub trait </span>Config: frame_system::Config {
 		<span class="doccomment">/// The overarching event type.
-		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
+		</span><span class="kw">type </span>RuntimeEvent: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
 
 		<span class="doccomment">/// Weight information for extrinsics in this pallet.
 		</span><span class="kw">type </span>WeightInfo: WeightInfo;
@@ -536,17 +509,6 @@
 	#[pallet::without_storage_info]
 	</span><span class="kw">pub struct </span>Pallet&lt;T&gt;(<span class="kw">_</span>);
 
-	<span class="doccomment">/// A temporary storage of messages, given a schema id, for a duration of block period.
-	/// At the start of the next block this storage is cleared and moved into Messages storage.
-	/// - Value: List of Messages
-	</span><span class="attribute">#[pallet::storage]
-	#[pallet::getter(<span class="kw">fn </span>get_block_messages)]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>BlockMessages&lt;T: Config&gt; = StorageValue&lt;
-		<span class="kw">_</span>,
-		BoundedVec&lt;(Message&lt;T::MaxMessagePayloadSizeBytes&gt;, SchemaId), T::MaxMessagesPerBlock&gt;,
-		ValueQuery,
-	&gt;;
-
 	<span class="doccomment">/// A permanent storage for messages mapped by block number and schema id.
 	/// - Keys: BlockNumber, Schema Id
 	/// - Value: List of Messages
@@ -561,6 +523,13 @@
 		BoundedVec&lt;Message&lt;T::MaxMessagePayloadSizeBytes&gt;, T::MaxMessagesPerBlock&gt;,
 		ValueQuery,
 	&gt;;
+
+	<span class="doccomment">/// A temporary storage for getting the index for messages
+	/// At the start of the next block this storage is set to 0
+	</span><span class="attribute">#[pallet::storage]
+	#[pallet::whitelist_storage]
+	#[pallet::getter(<span class="kw">fn </span>get_message_index)]
+	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>BlockMessageIndex&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, u16, ValueQuery&gt;;
 
 	<span class="attribute">#[pallet::error]
 	</span><span class="kw">pub enum </span>Error&lt;T&gt; {
@@ -595,16 +564,18 @@
 			</span>schema_id: SchemaId,
 			<span class="doccomment">/// The block number for these messages
 			</span>block_number: T::BlockNumber,
-			<span class="doccomment">/// Number of messages in this block for this schema
+			<span class="doccomment">/// `DEPRECATED` - Number of messages in this block for this schema
+			/// Value does not reflect the actual count and it will be removed in June 2023
 			</span>count: u16,
 		},
 	}
 
 	<span class="attribute">#[pallet::hooks]
 	</span><span class="kw">impl</span>&lt;T: Config&gt; Hooks&lt;BlockNumberFor&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
-		<span class="kw">fn </span>on_initialize(current: T::BlockNumber) -&gt; Weight {
-			<span class="kw">let </span>prev_block = current - T::BlockNumber::one();
-			<span class="self">Self</span>::move_messages_into_final_storage(prev_block)
+		<span class="kw">fn </span>on_initialize(_current: T::BlockNumber) -&gt; Weight {
+			&lt;BlockMessageIndex&lt;T&gt;&gt;::set(<span class="number">0u16</span>);
+			<span class="comment">// allocates 1 read and 1 write for any access of `MessageIndex` in every block
+			</span>T::DbWeight::get().reads(<span class="number">1u64</span>).saturating_add(T::DbWeight::get().writes(<span class="number">1u64</span>))
 			<span class="comment">// TODO: add retention policy execution GitHub Issue: #126 and #25
 		</span>}
 	}
@@ -650,7 +621,15 @@
 			);
 
 			<span class="kw">let </span>provider_msa_id = <span class="self">Self</span>::find_msa_id(<span class="kw-2">&amp;</span>provider_key)<span class="question-mark">?</span>;
-			<span class="self">Self</span>::add_message(provider_msa_id, <span class="prelude-val">None</span>, bounded_payload, schema_id)<span class="question-mark">?</span>;
+			<span class="kw">let </span>current_block = frame_system::Pallet::&lt;T&gt;::block_number();
+			<span class="kw">if </span><span class="self">Self</span>::add_message(provider_msa_id, <span class="prelude-val">None</span>, bounded_payload, schema_id, current_block)<span class="question-mark">?
+			</span>{
+				<span class="self">Self</span>::deposit_event(Event::MessagesStored {
+					schema_id,
+					block_number: current_block,
+					count: <span class="number">1</span>, <span class="comment">// hardcoded to 1 for backwards compatibility
+				</span>});
+			}
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -707,12 +686,19 @@
 				<span class="prelude-val">None </span>=&gt; DelegatorId(provider_msa_id), <span class="comment">// Delegate is also the Provider
 			</span>};
 
-			<span class="self">Self</span>::add_message(
+			<span class="kw">if </span><span class="self">Self</span>::add_message(
 				provider_msa_id,
 				<span class="prelude-val">Some</span>(maybe_delegator.into()),
 				bounded_payload,
 				schema_id,
-			)<span class="question-mark">?</span>;
+				current_block,
+			)<span class="question-mark">? </span>{
+				<span class="self">Self</span>::deposit_event(Event::MessagesStored {
+					schema_id,
+					block_number: current_block,
+					count: <span class="number">1</span>, <span class="comment">// hardcoded to 1 for backwards compatibility
+				</span>});
+			}
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -721,7 +707,7 @@
 
 <span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
 	<span class="doccomment">/// Stores a message for a given schema id.
-	///
+	/// returns true if it needs to emit an event
 	/// # Errors
 	/// * [`Error::TooManyMessagesInBlock`]
 	/// * [`Error::TypeConversionOverflow`]
@@ -731,26 +717,28 @@
 		msa_id: <span class="prelude-ty">Option</span>&lt;MessageSourceId&gt;,
 		payload: BoundedVec&lt;u8, T::MaxMessagePayloadSizeBytes&gt;,
 		schema_id: SchemaId,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;Message&lt;T::MaxMessagePayloadSizeBytes&gt;, DispatchError&gt; {
-		&lt;BlockMessages&lt;T&gt;&gt;::try_mutate(
-			|existing_messages| -&gt; <span class="prelude-ty">Result</span>&lt;Message&lt;T::MaxMessagePayloadSizeBytes&gt;, DispatchError&gt; {
-				<span class="kw">let </span>current_size: u16 = existing_messages
-					.len()
-					.try_into()
-					.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::TypeConversionOverflow)<span class="question-mark">?</span>;
-
+		current_block: T::BlockNumber,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;bool, DispatchError&gt; {
+		&lt;Messages&lt;T&gt;&gt;::try_mutate(
+			current_block,
+			schema_id,
+			|existing_messages| -&gt; <span class="prelude-ty">Result</span>&lt;bool, DispatchError&gt; {
+				<span class="comment">// first message for any schema_id is going to trigger an event
+				</span><span class="kw">let </span>need_event = existing_messages.len() == <span class="number">0</span>;
+				<span class="kw">let </span>index = BlockMessageIndex::&lt;T&gt;::get();
 				<span class="kw">let </span>msg = Message {
 					payload, <span class="comment">// size is checked on top of extrinsic
 					</span>provider_msa_id,
 					msa_id,
-					index: current_size,
+					index,
 				};
 
 				existing_messages
-					.try_push((msg.clone(), schema_id))
+					.try_push(msg)
 					.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::TooManyMessagesInBlock)<span class="question-mark">?</span>;
 
-				<span class="prelude-val">Ok</span>(msg)
+				BlockMessageIndex::&lt;T&gt;::put(index.saturating_add(<span class="number">1</span>));
+				<span class="prelude-val">Ok</span>(need_event)
 			},
 		)
 	}
@@ -784,50 +772,6 @@
 			.iter()
 			.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
 			.collect()
-	}
-
-	<span class="doccomment">/// Moves messages from temporary storage `BlockMessages` into final storage `Messages`
-	/// and calculates execution weight
-	///
-	/// Called inside of `on_initialize`
-	///
-	/// # Events
-	/// * [`Event::MessagesStored`]
-	///
-	/// Returns execution weights
-	///
-	</span><span class="kw">fn </span>move_messages_into_final_storage(block_number: T::BlockNumber) -&gt; Weight {
-		<span class="kw">let </span><span class="kw-2">mut </span>map = BTreeMap::new();
-		<span class="kw">let </span>block_messages = BlockMessages::&lt;T&gt;::get();
-		<span class="kw">let </span>message_count = block_messages.len() <span class="kw">as </span>u32;
-		<span class="kw">let </span><span class="kw-2">mut </span>schema_count = <span class="number">0u32</span>;
-
-		<span class="kw">if </span>message_count == <span class="number">0 </span>{
-			<span class="kw">return </span>T::DbWeight::get().reads(<span class="number">1</span>)
-		}
-
-		<span class="comment">// grouping messages by schema_id
-		</span><span class="kw">for </span>(m, schema_id) <span class="kw">in </span>block_messages {
-			<span class="kw">let </span>list = map.entry(schema_id).or_insert(<span class="macro">vec!</span>[]);
-			list.push(m);
-		}
-
-		<span class="comment">// insert into storage and create events
-		</span><span class="kw">for </span>(schema_id, messages) <span class="kw">in </span>map {
-			<span class="kw">let </span>count = messages.len() <span class="kw">as </span>u16;
-			<span class="kw">let </span>bounded_vec: BoundedVec&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt; = messages.try_into().unwrap_or_default();
-
-			<span class="kw">if </span>bounded_vec.is_empty() {
-				<span class="macro">log::warn!</span>(<span class="string">&quot;empty bounded_vec for schema id {}&quot;</span>, schema_id);
-				<span class="kw">continue
-			</span>}
-			Messages::&lt;T&gt;::insert(<span class="kw-2">&amp;</span>block_number, schema_id, <span class="kw-2">&amp;</span>bounded_vec);
-			<span class="self">Self</span>::deposit_event(Event::MessagesStored { schema_id, block_number, count });
-			schema_count += <span class="number">1</span>;
-		}
-
-		BlockMessages::&lt;T&gt;::set(BoundedVec::default());
-		T::WeightInfo::on_initialize(message_count, schema_count)
 	}
 }
 </code></pre></div>

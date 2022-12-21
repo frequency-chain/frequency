@@ -91,12 +91,12 @@
 
 			<span class="comment">// At least 100 µs.
 			</span><span class="macro">assert!</span>(
-				w &gt;= constants::WEIGHT_PER_MICROS.saturating_mul(<span class="number">100</span>),
+				w.ref_time() &gt;= constants::WEIGHT_PER_MICROS.saturating_mul(<span class="number">100</span>).ref_time(),
 				<span class="string">&quot;Weight should be at least 100 µs.&quot;
 			</span>);
 			<span class="comment">// At most 50 ms.
 			</span><span class="macro">assert!</span>(
-				w &lt;= constants::WEIGHT_PER_MILLIS.saturating_mul(<span class="number">50</span>),
+				w.ref_time() &lt;= constants::WEIGHT_PER_MILLIS.saturating_mul(<span class="number">50</span>).ref_time(),
 				<span class="string">&quot;Weight should be at most 50 ms.&quot;
 			</span>);
 		}

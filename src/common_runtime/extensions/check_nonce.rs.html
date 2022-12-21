@@ -160,8 +160,8 @@
 <span class="kw">use </span>frame_system::Config;
 
 <span class="kw">use </span>frame_support::{
+	dispatch::{DispatchInfo, Pays},
 	sp_runtime,
-	weights::{DispatchInfo, Pays},
 };
 <span class="kw">use </span>scale_info::TypeInfo;
 <span class="kw">use </span>sp_runtime::{
@@ -205,10 +205,10 @@
 
 <span class="kw">impl</span>&lt;T: Config&gt; SignedExtension <span class="kw">for </span>CheckNonce&lt;T&gt;
 <span class="kw">where
-	</span>T::Call: Dispatchable&lt;Info = DispatchInfo&gt;,
+	</span>T::RuntimeCall: Dispatchable&lt;Info = DispatchInfo&gt;,
 {
 	<span class="kw">type </span>AccountId = T::AccountId;
-	<span class="kw">type </span>Call = T::Call;
+	<span class="kw">type </span>Call = T::RuntimeCall;
 	<span class="kw">type </span>AdditionalSigned = ();
 	<span class="kw">type </span>Pre = ();
 	<span class="kw">const </span>IDENTIFIER: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;CheckNonce&quot;</span>;

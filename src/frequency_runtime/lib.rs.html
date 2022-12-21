@@ -1037,6 +1037,39 @@
 <span id="1037">1037</span>
 <span id="1038">1038</span>
 <span id="1039">1039</span>
+<span id="1040">1040</span>
+<span id="1041">1041</span>
+<span id="1042">1042</span>
+<span id="1043">1043</span>
+<span id="1044">1044</span>
+<span id="1045">1045</span>
+<span id="1046">1046</span>
+<span id="1047">1047</span>
+<span id="1048">1048</span>
+<span id="1049">1049</span>
+<span id="1050">1050</span>
+<span id="1051">1051</span>
+<span id="1052">1052</span>
+<span id="1053">1053</span>
+<span id="1054">1054</span>
+<span id="1055">1055</span>
+<span id="1056">1056</span>
+<span id="1057">1057</span>
+<span id="1058">1058</span>
+<span id="1059">1059</span>
+<span id="1060">1060</span>
+<span id="1061">1061</span>
+<span id="1062">1062</span>
+<span id="1063">1063</span>
+<span id="1064">1064</span>
+<span id="1065">1065</span>
+<span id="1066">1066</span>
+<span id="1067">1067</span>
+<span id="1068">1068</span>
+<span id="1069">1069</span>
+<span id="1070">1070</span>
+<span id="1071">1071</span>
+<span id="1072">1072</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attribute">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
@@ -1080,9 +1113,11 @@
 };
 
 <span class="kw">use </span>frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime,
+	dispatch::DispatchClass,
+	parameter_types,
 	traits::{ConstU128, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
-	weights::{constants::RocksDbWeight, ConstantMultiplier, DispatchClass, Weight},
+	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
 };
 
 <span class="kw">use </span>frame_system::{
@@ -1111,8 +1146,8 @@
 /// For non mainnet [--features frequency] all transactions are allowed
 </span><span class="kw">pub struct </span>BaseCallFilter;
 
-<span class="kw">impl </span>Contains&lt;Call&gt; <span class="kw">for </span>BaseCallFilter {
-	<span class="kw">fn </span>contains(_call: <span class="kw-2">&amp;</span>Call) -&gt; bool {
+<span class="kw">impl </span>Contains&lt;RuntimeCall&gt; <span class="kw">for </span>BaseCallFilter {
+	<span class="kw">fn </span>contains(_call: <span class="kw-2">&amp;</span>RuntimeCall) -&gt; bool {
 		<span class="attribute">#[cfg(not(feature = <span class="string">&quot;frequency&quot;</span>))]
 		</span>{
 			<span class="bool-val">true
@@ -1121,12 +1156,16 @@
 		</span>{
 			<span class="macro">matches!</span>(
 				_call,
-				Call::System(..) |
-					Call::Timestamp(..) | Call::ParachainSystem(..) |
-					Call::Sudo(..) | Call::TechnicalCommittee(..) |
-					Call::Council(..) | Call::Democracy(..) |
-					Call::Session(..) | Call::Preimage(..) |
-					Call::Scheduler(..)
+				RuntimeCall::System(..) |
+					RuntimeCall::Timestamp(..) |
+					RuntimeCall::ParachainSystem(..) |
+					RuntimeCall::Sudo(..) |
+					RuntimeCall::TechnicalCommittee(..) |
+					RuntimeCall::Council(..) |
+					RuntimeCall::Democracy(..) |
+					RuntimeCall::Session(..) |
+					RuntimeCall::Preimage(..) |
+					RuntimeCall::Scheduler(..)
 			)
 		}
 	}
@@ -1154,10 +1193,11 @@
 </span><span class="kw">pub type </span>Block = generic::Block&lt;Header, UncheckedExtrinsic&gt;;
 
 <span class="doccomment">/// Unchecked extrinsic type as expected by this runtime.
-</span><span class="kw">pub type </span>UncheckedExtrinsic = generic::UncheckedExtrinsic&lt;Address, Call, Signature, SignedExtra&gt;;
+</span><span class="kw">pub type </span>UncheckedExtrinsic =
+	generic::UncheckedExtrinsic&lt;Address, RuntimeCall, Signature, SignedExtra&gt;;
 
 <span class="doccomment">/// Extrinsic type that has already been checked.
-</span><span class="kw">pub type </span>CheckedExtrinsic = generic::CheckedExtrinsic&lt;AccountId, Call, SignedExtra&gt;;
+</span><span class="kw">pub type </span>CheckedExtrinsic = generic::CheckedExtrinsic&lt;AccountId, RuntimeCall, SignedExtra&gt;;
 
 <span class="doccomment">/// Executive: handles dispatch to the various modules.
 </span><span class="kw">pub type </span>Executive = frame_executive::Executive&lt;
@@ -1196,7 +1236,7 @@
 	spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;frequency&quot;</span>),
 	impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;frequency&quot;</span>),
 	authoring_version: <span class="number">1</span>,
-	spec_version: <span class="number">3</span>,
+	spec_version: <span class="number">5</span>,
 	impl_version: <span class="number">0</span>,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: <span class="number">1</span>,
@@ -1248,7 +1288,7 @@
 	</span><span class="comment">// enable for cfg feature &quot;frequency&quot; only
 	</span><span class="kw">type </span>BaseCallFilter = BaseCallFilter;
 	<span class="doccomment">/// The aggregated dispatch type that is available for extrinsics.
-	</span><span class="kw">type </span>Call = Call;
+	</span><span class="kw">type </span>RuntimeCall = RuntimeCall;
 	<span class="doccomment">/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
 	</span><span class="kw">type </span>Lookup = AccountIdLookup&lt;AccountId, ()&gt;;
 	<span class="doccomment">/// The index type for storing how many extrinsics an account has signed.
@@ -1262,9 +1302,9 @@
 	<span class="doccomment">/// The header type.
 	</span><span class="kw">type </span>Header = generic::Header&lt;BlockNumber, BlakeTwo256&gt;;
 	<span class="doccomment">/// The ubiquitous event type.
-	</span><span class="kw">type </span>Event = Event;
+	</span><span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="doccomment">/// The ubiquitous origin type.
-	</span><span class="kw">type </span>Origin = Origin;
+	</span><span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
 	<span class="doccomment">/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	</span><span class="kw">type </span>BlockHashCount = BlockHashCount;
 	<span class="doccomment">/// Runtime version.
@@ -1293,9 +1333,8 @@
 }
 
 <span class="kw">impl </span>pallet_msa::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
-	<span class="comment">// The weights info
-	</span><span class="kw">type </span>WeightInfo = pallet_msa::weights::SubstrateWeight&lt;Runtime&gt;;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>WeightInfo = pallet_msa::weights::SubstrateWeight&lt;Runtime&gt;;
 	<span class="comment">// The conversion to a 32 byte AccountId
 	</span><span class="kw">type </span>ConvertIntoAccountId32 = ConvertInto;
 	<span class="comment">// The maximum number of public keys per MSA
@@ -1312,14 +1351,15 @@
 	</span><span class="kw">type </span>MaxSignaturesPerBucket = MSAMaxSignaturesPerBucket;
 	<span class="comment">// The total number of virtual buckets
 	</span><span class="kw">type </span>NumberOfBuckets = MSANumberOfBuckets;
+	<span class="comment">// The maximum number of signatures that can be stored in the payload signature registry
+	</span><span class="kw">type </span>MaxSignaturesStored = MSAMaxSignaturesStored;
 }
 
 <span class="kw">pub use </span>common_primitives::schema::SchemaId;
 
 <span class="kw">impl </span>pallet_schemas::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
-	<span class="comment">// The weights info
-	</span><span class="kw">type </span>WeightInfo = pallet_schemas::weights::SubstrateWeight&lt;Runtime&gt;;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>WeightInfo = pallet_schemas::weights::SubstrateWeight&lt;Runtime&gt;;
 	<span class="comment">// The mininum size (in bytes) for a schema model
 	</span><span class="kw">type </span>MinSchemaModelSizeBytes = SchemasMinModelSizeBytes;
 	<span class="comment">// The maximum number of schemas that can be registered
@@ -1329,22 +1369,22 @@
 }
 
 <span class="kw">pub struct </span>RootAsVestingPallet;
-<span class="kw">impl </span>EnsureOrigin&lt;Origin&gt; <span class="kw">for </span>RootAsVestingPallet {
+<span class="kw">impl </span>EnsureOrigin&lt;RuntimeOrigin&gt; <span class="kw">for </span>RootAsVestingPallet {
 	<span class="kw">type </span>Success = AccountId;
 
-	<span class="kw">fn </span>try_origin(o: Origin) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Success, Origin&gt; {
-		Into::&lt;<span class="prelude-ty">Result</span>&lt;RawOrigin&lt;AccountId&gt;, Origin&gt;&gt;::into(o).and_then(|o| <span class="kw">match </span>o {
+	<span class="kw">fn </span>try_origin(o: RuntimeOrigin) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Success, RuntimeOrigin&gt; {
+		Into::&lt;<span class="prelude-ty">Result</span>&lt;RawOrigin&lt;AccountId&gt;, RuntimeOrigin&gt;&gt;::into(o).and_then(|o| <span class="kw">match </span>o {
 			RawOrigin::Root =&gt; <span class="prelude-val">Ok</span>(VestingPalletId::get().into_account_truncating()),
-			r =&gt; <span class="prelude-val">Err</span>(Origin::from(r)),
+			r =&gt; <span class="prelude-val">Err</span>(RuntimeOrigin::from(r)),
 		})
 	}
 
 	<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
-	</span><span class="kw">fn </span>successful_origin() -&gt; Origin {
+	</span><span class="kw">fn </span>successful_origin() -&gt; RuntimeOrigin {
 		<span class="kw">let </span>zero_account_id =
 			AccountId::decode(<span class="kw-2">&amp;mut </span>sp_runtime::traits::TrailingZeroInput::zeroes())
 				.expect(<span class="string">&quot;infinite length input; no invalid inputs for type; qed&quot;</span>);
-		Origin::from(RawOrigin::Signed(zero_account_id))
+		RuntimeOrigin::from(RawOrigin::Signed(zero_account_id))
 	}
 }
 
@@ -1356,7 +1396,7 @@
 <span class="comment">// See https://paritytech.github.io/substrate/master/pallet_vesting/index.html for
 // the descriptions of these configs.
 </span><span class="kw">impl </span>orml_vesting::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>Currency = Balances;
 	<span class="kw">type </span>MinVestedTransfer = MinVestedTransfer;
 	<span class="kw">type </span>VestedTransferOrigin = RootAsVestingPallet;
@@ -1389,7 +1429,7 @@
 	<span class="doccomment">/// The type for recording an account&#39;s balance.
 	</span><span class="kw">type </span>Balance = Balance;
 	<span class="doccomment">/// The ubiquitous event type.
-	</span><span class="kw">type </span>Event = Event;
+	</span><span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>DustRemoval = ();
 	<span class="kw">type </span>ExistentialDeposit = ConstU128&lt;EXISTENTIAL_DEPOSIT&gt;;
 	<span class="kw">type </span>AccountStore = System;
@@ -1408,10 +1448,10 @@
 
 <span class="comment">// See also https://docs.rs/pallet-scheduler/latest/pallet_scheduler/trait.Config.html
 </span><span class="kw">impl </span>pallet_scheduler::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
-	<span class="kw">type </span>Origin = Origin;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
 	<span class="kw">type </span>PalletsOrigin = OriginCaller;
-	<span class="kw">type </span>Call = Call;
+	<span class="kw">type </span>RuntimeCall = RuntimeCall;
 	<span class="kw">type </span>MaximumWeight = MaximumSchedulerWeight;
 	<span class="doccomment">/// Origin to schedule or cancel calls
 	/// Set to Root or a simple majority of the Frequency Council
@@ -1431,7 +1471,7 @@
 // the descriptions of these configs.
 </span><span class="kw">impl </span>pallet_preimage::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>WeightInfo = weights::pallet_preimage::SubstrateWeight&lt;Runtime&gt;;
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>Currency = Balances;
 	<span class="comment">// Allow the Technical council to request preimages without deposit or fees
 	</span><span class="kw">type </span>ManagerOrigin = EitherOfDiverse&lt;
@@ -1448,9 +1488,9 @@
 // the descriptions of these configs.
 </span><span class="kw">type </span>CouncilCollective = pallet_collective::Instance1;
 <span class="kw">impl </span>pallet_collective::Config&lt;CouncilCollective&gt; <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Origin = Origin;
-	<span class="kw">type </span>Proposal = Call;
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
+	<span class="kw">type </span>Proposal = RuntimeCall;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>MotionDuration = CouncilMotionDuration;
 	<span class="kw">type </span>MaxProposals = CouncilMaxProposals;
 	<span class="kw">type </span>MaxMembers = ConstU32&lt;<span class="number">10</span>&gt;;
@@ -1460,9 +1500,9 @@
 
 <span class="kw">type </span>TechnicalCommitteeCollective = pallet_collective::Instance2;
 <span class="kw">impl </span>pallet_collective::Config&lt;TechnicalCommitteeCollective&gt; <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Origin = Origin;
-	<span class="kw">type </span>Proposal = Call;
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
+	<span class="kw">type </span>Proposal = RuntimeCall;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>MotionDuration = TCMotionDuration;
 	<span class="kw">type </span>MaxProposals = TCMaxProposals;
 	<span class="kw">type </span>MaxMembers = TCMaxMembers;
@@ -1477,7 +1517,7 @@
 	<span class="kw">type </span>CooloffPeriod = CooloffPeriod;
 	<span class="kw">type </span>Currency = Balances;
 	<span class="kw">type </span>EnactmentPeriod = EnactmentPeriod;
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>FastTrackVotingPeriod = FastTrackVotingPeriod;
 	<span class="kw">type </span>InstantAllowed = frame_support::traits::ConstBool&lt;<span class="bool-val">true</span>&gt;;
 	<span class="kw">type </span>LaunchPeriod = LaunchPeriod;
@@ -1485,7 +1525,7 @@
 	<span class="kw">type </span>MaxVotes = DemocracyMaxVotes;
 	<span class="kw">type </span>MinimumDeposit = MinimumDeposit;
 	<span class="kw">type </span>PreimageByteDeposit = PreimageByteDeposit;
-	<span class="kw">type </span>Proposal = Call;
+	<span class="kw">type </span>Proposal = RuntimeCall;
 	<span class="kw">type </span>Scheduler = Scheduler;
 	<span class="kw">type </span>Slash = (); <span class="comment">// Treasury;
 	</span><span class="kw">type </span>WeightInfo = weights::pallet_democracy::SubstrateWeight&lt;Runtime&gt;;
@@ -1555,7 +1595,7 @@
 	<span class="doccomment">/// Treasury Account: 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z
 	</span><span class="kw">type </span>PalletId = TreasuryPalletId;
 	<span class="kw">type </span>Currency = Balances;
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>WeightInfo = weights::pallet_treasury::SubstrateWeight&lt;Runtime&gt;;
 
 	<span class="doccomment">/// Who approves treasury proposals?
@@ -1614,7 +1654,7 @@
 <span class="comment">// See https://paritytech.github.io/substrate/master/pallet_transaction_payment/index.html for
 // the descriptions of these configs.
 </span><span class="kw">impl </span>pallet_transaction_payment::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter&lt;Balances, ()&gt;;
 	<span class="kw">type </span>WeightToFee = WeightToFee;
 	<span class="kw">type </span>LengthToFee = ConstantMultiplier&lt;Balance, TransactionByteFee&gt;;
@@ -1625,7 +1665,7 @@
 <span class="comment">// See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
 // the descriptions of these configs.
 </span><span class="kw">impl </span>cumulus_pallet_parachain_system::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>OnSystemEvent = ();
 	<span class="kw">type </span>SelfParaId = parachain_info::Pallet&lt;Runtime&gt;;
 	<span class="kw">type </span>DmpMessageHandler = ();
@@ -1643,7 +1683,7 @@
 <span class="comment">// See https://paritytech.github.io/substrate/master/pallet_session/index.html for
 // the descriptions of these configs.
 </span><span class="kw">impl </span>pallet_session::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>ValidatorId = &lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::AccountId;
 	<span class="comment">// we don&#39;t have stash and controller, thus we don&#39;t need the convert as well.
 	</span><span class="kw">type </span>ValidatorIdOf = pallet_collator_selection::IdentityCollator;
@@ -1667,7 +1707,7 @@
 <span class="comment">// See https://paritytech.github.io/substrate/master/pallet_collator_selection/index.html for
 // the descriptions of these configs.
 </span><span class="kw">impl </span>pallet_collator_selection::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>Currency = Balances;
 
 	<span class="comment">// Origin that can dictate updating parameters of this pallet.
@@ -1713,9 +1753,8 @@
 }
 
 <span class="kw">impl </span>pallet_messages::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
-	<span class="comment">// The weights info
-	</span><span class="kw">type </span>WeightInfo = pallet_messages::weights::SubstrateWeight&lt;Runtime&gt;;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>WeightInfo = pallet_messages::weights::SubstrateWeight&lt;Runtime&gt;;
 	<span class="comment">// The type that supplies MSA info
 	</span><span class="kw">type </span>MsaInfoProvider = Msa;
 	<span class="comment">// The type that validates schema grants
@@ -1737,15 +1776,15 @@
 <span class="comment">// See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for
 // the descriptions of these configs.
 </span><span class="kw">impl </span>pallet_sudo::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
-	<span class="kw">type </span>Call = Call;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>RuntimeCall = RuntimeCall;
 }
 
 <span class="comment">// See https://paritytech.github.io/substrate/master/pallet_utility/index.html for
 // the descriptions of these configs.
 </span><span class="kw">impl </span>pallet_utility::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
-	<span class="kw">type </span>Call = Call;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>RuntimeCall = RuntimeCall;
 	<span class="kw">type </span>PalletsOrigin = OriginCaller;
 	<span class="kw">type </span>WeightInfo = weights::pallet_utility::SubstrateWeight&lt;Runtime&gt;;
 }
@@ -2024,18 +2063,8 @@
 			<span class="kw">impl </span>cumulus_pallet_session_benchmarking::Config <span class="kw">for </span>Runtime {}
 			<span class="kw">use </span>orml_benchmarking::{add_benchmark <span class="kw">as </span>orml_add_benchmark};
 
-			<span class="kw">let </span>whitelist: Vec&lt;TrackedStorageKey&gt; = <span class="macro">vec!</span>[
-				<span class="comment">// Block Number
-				</span><span class="macro">hex_literal::hex!</span>(<span class="string">&quot;26aa394eea5630e07c48ae0c9558cef702a5c1b19ab7a04f536c519aca4983ac&quot;</span>).to_vec().into(),
-				<span class="comment">// Total Issuance
-				</span><span class="macro">hex_literal::hex!</span>(<span class="string">&quot;c2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80&quot;</span>).to_vec().into(),
-				<span class="comment">// Execution Phase
-				</span><span class="macro">hex_literal::hex!</span>(<span class="string">&quot;26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a&quot;</span>).to_vec().into(),
-				<span class="comment">// Event Count
-				</span><span class="macro">hex_literal::hex!</span>(<span class="string">&quot;26aa394eea5630e07c48ae0c9558cef70a98fdbe9ce6c55837576c60c7af3850&quot;</span>).to_vec().into(),
-				<span class="comment">// System Events
-				</span><span class="macro">hex_literal::hex!</span>(<span class="string">&quot;26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7&quot;</span>).to_vec().into(),
-			];
+			<span class="kw">use </span>frame_support::traits::WhitelistedStorageKeys;
+			<span class="kw">let </span>whitelist: Vec&lt;TrackedStorageKey&gt; = AllPalletsWithSystem::whitelisted_storage_keys();
 
 			<span class="kw">let </span><span class="kw-2">mut </span>batches = Vec::&lt;BenchmarkBatch&gt;::new();
 			<span class="kw">let </span>params = (<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>whitelist);
@@ -2075,6 +2104,43 @@
 	Runtime = Runtime,
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::&lt;Runtime, Executive&gt;,
 	CheckInherents = CheckInherents,
+}
+
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use </span>frame_support::traits::WhitelistedStorageKeys;
+	<span class="kw">use </span>sp_core::hexdisplay::HexDisplay;
+	<span class="kw">use </span>std::collections::HashSet;
+
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>check_whitelist() {
+		<span class="kw">let </span>whitelist: HashSet&lt;String&gt; = <span class="macro">dbg!</span>(AllPalletsWithSystem::whitelisted_storage_keys()
+			.iter()
+			.map(|e| HexDisplay::from(<span class="kw-2">&amp;</span>e.key).to_string())
+			.collect());
+
+		<span class="comment">// Block Number
+		</span><span class="macro">assert!</span>(
+			whitelist.contains(<span class="string">&quot;26aa394eea5630e07c48ae0c9558cef702a5c1b19ab7a04f536c519aca4983ac&quot;</span>)
+		);
+		<span class="comment">// Total Issuance
+		</span><span class="macro">assert!</span>(
+			whitelist.contains(<span class="string">&quot;c2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80&quot;</span>)
+		);
+		<span class="comment">// Execution Phase
+		</span><span class="macro">assert!</span>(
+			whitelist.contains(<span class="string">&quot;26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a&quot;</span>)
+		);
+		<span class="comment">// Event Count
+		</span><span class="macro">assert!</span>(
+			whitelist.contains(<span class="string">&quot;26aa394eea5630e07c48ae0c9558cef70a98fdbe9ce6c55837576c60c7af3850&quot;</span>)
+		);
+		<span class="comment">// System Events
+		</span><span class="macro">assert!</span>(
+			whitelist.contains(<span class="string">&quot;26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7&quot;</span>)
+		);
+	}
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="frequency_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>
