@@ -15,15 +15,15 @@ targets = ["x86_64-unknown-linux-gnu"]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.1.5", default-features = false, features = [
-	"derive",
-] }
-hex-literal = { version = "0.3.4", optional = true }
-log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.2.0", default-features = false, features = [
-	"derive",
-] }
-serde = { version = "1.0.145", optional = true, features = ["derive"] }
+codec = {package = "parity-scale-codec", version = "3.1.5", default-features = false, features = [
+  "derive",
+]}
+hex-literal = {version = "0.3.4", optional = true}
+log = {version = "0.4.17", default-features = false}
+scale-info = {version = "2.2.0", default-features = false, features = [
+  "derive",
+]}
+serde = {version = "1.0.145", optional = true, features = ["derive"]}
 smallvec = "1.10.0"
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.36" }
@@ -65,6 +65,7 @@ pallet-time-release = { path = "../../pallets/time-release", default-features = 
 # Frequency
 common-primitives = { default-features = false, path = "../../common/primitives" }
 common-runtime = { path = "../common", default-features = false }
+pallet-capacity = {path = "../../pallets/capacity", default-features = false}
 pallet-messages = { path = "../../pallets/messages", default-features = false }
 pallet-messages-runtime-api = { path = "../../pallets/messages/src/runtime-api", default-features = false }
 pallet-msa = { path = "../../pallets/msa", default-features = false }
@@ -108,6 +109,7 @@ std = [
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
+  "pallet-capacity/std",
 	"pallet-collective/std",
 	"pallet-democracy/std",
 	"pallet-collator-selection/std",
@@ -156,6 +158,7 @@ runtime-benchmarks = [
 	"frame-system-benchmarking/runtime-benchmarks",
 	"pallet-time-release/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
+  "pallet-capacity/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
@@ -200,9 +203,6 @@ try-runtime = [
 	"pallet-democracy/try-runtime",
 	"pallet-utility/try-runtime",
 ]
-frequency = ["common-runtime/frequency"]
-frequency-rococo-testnet = ["common-runtime/frequency-rococo-testnet"]
-frequency-rococo-local = ["common-runtime/frequency-rococo-local"]
 # Following features are used in generating lean wasms
 no-metadata-docs = ["frame-support/no-metadata-docs"]
 on-chain-release-build = ["sp-api/disable-logging"]

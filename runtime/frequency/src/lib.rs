@@ -65,6 +65,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
+pub use pallet_capacity;
 pub use pallet_msa;
 pub use pallet_schemas;
 pub use pallet_time_release;
@@ -538,6 +539,12 @@ impl pallet_msa::Config for Runtime {
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
 	>;
+}
+
+impl pallet_capacity::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_capacity::weights::SubstrateWeight<Runtime>;
+	type Currency = Balances;
 }
 
 impl pallet_schemas::Config for Runtime {
@@ -1063,6 +1070,7 @@ construct_runtime!(
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 62,
 		StatefulStorage: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>} = 63,
+		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>} = 64,
 	}
 );
 
