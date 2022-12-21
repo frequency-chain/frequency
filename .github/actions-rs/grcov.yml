@@ -1,0 +1,7 @@
+ignore-not-existing: true
+llvm: true
+ignore:
+  - "**/weights.rs"
+  - "**/weights/*"
+  - "**/benchmarking.rs"
+excl-line: '#\[pallet::weight.*'
