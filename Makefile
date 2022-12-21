@@ -80,6 +80,9 @@ benchmarks-messages:
 benchmarks-schemas:
 	./scripts/run_benchmark.sh -p schemas
 
+benchmarks-capacity:
+	./scripts/run_benchmark.sh -p capacity
+
 .PHONY: docs
 docs:
 	RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --features frequency
