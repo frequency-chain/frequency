@@ -4,4 +4,6 @@ ignore:
   - "**/weights.rs"
   - "**/weights/*"
   - "**/benchmarking.rs"
+  - "**/*mock.rs"
+  - "target/**/*"
 excl-line: '#\[pallet::weight.*'
