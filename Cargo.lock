@@ -2801,6 +2801,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-capacity",
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
@@ -5324,6 +5325,24 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-treasury",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-capacity"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "common-runtime",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
