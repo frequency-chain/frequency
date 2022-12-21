@@ -84,16 +84,8 @@ jobs:
           profile: minimal
           target: wasm32-unknown-unknown
           toolchain: stable
-      - name: Run cargo-tarpaulin
-        uses: actions-rs/tarpaulin@044a1e5bdace8dd2f727b1af63c1d9a1d3572068
-        with:
-          version: "0.22.0"
-          # Tarpaulin Docs https://github.com/xd009642/tarpaulin
-          # -e for exclude
-          args: |
-            -v --no-fail-fast --workspace
-            -e frequency frequency-cli frequency-runtime frequency-service
-            --exclude-files **/mock.rs **/weights.rs **/weights/* **/benchmarking.rs
+      - name: Run grcov
+        uses: rraval/actions-rs-grcov@e96292badb0d33512d16654efb0ee3032a9a3cff
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
         with:
