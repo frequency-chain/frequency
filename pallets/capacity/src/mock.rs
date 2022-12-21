@@ -67,6 +67,8 @@ impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type Currency = pallet_balances::Pallet<Self>;
+	type MinimumStakingAmount = ConstU64<1>;
+	type MaxUnlockingChunks = ConstU32<4>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
