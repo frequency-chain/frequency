@@ -92,6 +92,9 @@ benchmarks-stateful-storage:
 benchmarks-overhead:
 	./scripts/run_benchmark.sh -p overhead
 
+benchmarks-capacity:
+	./scripts/run_benchmark.sh -p capacity
+
 .PHONY: docs
 docs:
 	RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --features frequency
