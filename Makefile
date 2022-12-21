@@ -134,3 +134,17 @@ test:
 
 integration-test:
 	./scripts/run_integration_tests.sh
+
+PHONY: version
+version:
+ifndef v
+	@echo "Please set the version with v=X.X.X-X"
+	@exit 1
+endif
+ifneq (,$(findstring v,  $(v)))
+	@echo "Please don't prefix with a 'v'. Use: v=X.X.X-X"
+	@exit 1
+endif
+	find ./ -type f -name 'Cargo.toml' -exec sed -i '' 's/^version = \"0\.0\.0\"/version = \"$(v)\"/g' {} \;
+	cargo check
+	@echo "All done. Don't forget to double check that the automated replacement worked."

@@ -279,6 +279,8 @@ impl pallet_msa::Config for Runtime {
 	type MaxSignaturesPerBucket = MSAMaxSignaturesPerBucket;
 	// The total number of virtual buckets
 	type NumberOfBuckets = MSANumberOfBuckets;
+	// The maximum number of signatures that can be stored in the payload signature registry
+	type MaxSignaturesStored = MSAMaxSignaturesStored;
 }
 
 pub use common_primitives::schema::SchemaId;
