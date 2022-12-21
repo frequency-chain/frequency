@@ -16,27 +16,6 @@ env:
   RUST_TOOLCHAIN: nightly-2022-09-22
 
 jobs:
-  changes:
-    name: Determine Changed Files
-    runs-on: ubuntu-20.04
-    outputs:
-      js-api-augment: ${{steps.filter.outputs.js-api-augment}}
-      rust: ${{steps.filter.outputs.rust}}
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-      - name: Check for Changed Files
-        uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            js-api-augment:
-              - "js/api-augment/**"
-            rust:
-              - "**/*.rs"
-              - "**/Cargo.toml"
-              - "**/Cargo.lock"
-
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
     runs-on: [self-hosted, Linux, X64]
@@ -47,7 +26,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
           toolchain: ${{env.RUST_TOOLCHAIN}}
           default: true
@@ -56,7 +35,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Save/Restore Dependencies from Cache
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
         with:
           shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Output Metadata
@@ -99,14 +78,14 @@ jobs:
           sudo apt-get update
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
           toolchain: stable
       - name: Run cargo-tarpaulin
-        uses: actions-rs/tarpaulin@v0.1
+        uses: actions-rs/tarpaulin@044a1e5bdace8dd2f727b1af63c1d9a1d3572068
         with:
           version: "0.22.0"
           # Tarpaulin Docs https://github.com/xd009642/tarpaulin
