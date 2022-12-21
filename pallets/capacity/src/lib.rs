@@ -51,7 +51,10 @@ use frame_support::{
 
 pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 pub use pallet::*;
+pub use types::*;
 pub use weights::*;
+
+pub mod types;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -69,7 +72,7 @@ type BalanceOf<T> =
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::pallet_prelude::*;
+	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
@@ -82,7 +85,38 @@ pub mod pallet {
 
 		/// Function that allows a balance to be locked.
 		type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
+
+		/// The minimum required token amount to stake. It facilitates cleaning dust when unstaking.
+		#[pallet::constant]
+		type MinimumStakingAmount: Get<BalanceOf<Self>>;
+
+		/// The maximum number of unlocking chunks a StakingAccountLedger can have. It determines how many concurrent unstaked chunks may exist.
+		#[pallet::constant]
+		type MaxUnlockingChunks: Get<u32>;
 	}
+
+	/// Storage for keeping a ledger of staked token amounts for accounts.
+	#[pallet::storage]
+	#[pallet::getter(fn get_staking_ledger)]
+	pub type StakingAccountLedger<T: Config> =
+		StorageMap<_, Twox64Concat, T::AccountId, StakingAccountDetails<T>>;
+
+	/// Storage to record how many tokens were targeted to an MSA.
+	#[pallet::storage]
+	#[pallet::getter(fn get_target_ledger)]
+	pub type StakingTargetLedger<T: Config> = StorageDoubleMap<
+		_,
+		Twox64Concat,
+		T::AccountId,
+		Twox64Concat,
+		MessageSourceId,
+		StakingTargetDetails<BalanceOf<T>>,
+	>;
+
+	/// Storage for target Capacity usage.
+	#[pallet::storage]
+	pub type CapacityOf<T: Config> =
+		StorageMap<_, Twox64Concat, MessageSourceId, CapacityDetails<BalanceOf<T>, T::BlockNumber>>;
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
