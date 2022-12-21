@@ -62,6 +62,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
+pub use pallet_capacity;
 pub use pallet_msa;
 pub use pallet_schemas;
 // Polkadot Imports
@@ -314,6 +315,12 @@ impl pallet_msa::Config for Runtime {
 }
 
 pub use common_primitives::schema::SchemaId;
+
+impl pallet_capacity::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_capacity::weights::SubstrateWeight<Runtime>;
+	type Currency = Balances;
+}
 
 impl pallet_schemas::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -788,6 +795,7 @@ construct_runtime!(
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 62,
+		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>} = 63,
 	}
 );
 
