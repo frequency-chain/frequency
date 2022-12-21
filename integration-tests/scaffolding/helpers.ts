@@ -1,11 +1,10 @@
 import { ApiRx, Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { Compact, u128 } from "@polkadot/types";
 import { DispatchError, Event } from "@polkadot/types/interfaces";
-import { AnyNumber, Codec, ISubmittableResult } from "@polkadot/types/types";
+import { Codec, ISubmittableResult } from "@polkadot/types/types";
 import { u8aToHex, u8aWrapBytes } from "@polkadot/util";
 import { mnemonicGenerate } from '@polkadot/util-crypto';
-import { pipe, map, tap, of } from "rxjs";
+import { pipe, map, tap } from "rxjs";
 import { createKeys } from "./apiConnection";
 import { getAccountInfo, transferFunds } from "./extrinsicHelpers";
 
@@ -19,6 +18,21 @@ export enum DevAccounts {
     Eve = "//Eve",
     Ferdie = "//Ferdie",
 }
+
+export interface AccountFundingInputs {
+    api: ApiRx;
+    amount: bigint;
+    source: string;
+    name?: string;
+    context?: string;
+}
+
+export const generateFundingInputs = (api: ApiRx, context?: string) => ({
+    api,
+    amount: INITIAL_FUNDING,
+    source: DevAccounts.Alice,
+    context
+});
 
 export class EventError extends Error {
     name: string = '';
@@ -58,6 +72,13 @@ interface BeginEndBalances {
     endBalance?: bigint;
 }
 let balancesMap = new Map<string, Map<string, BeginEndBalances>>;
+let doTxAccounting = false;
+export let txAccountingHook = async (api, context?): Promise<void> => { };
+
+if (process.env.ENABLE_TX_ACCOUNTING === 'true' || process.env.ENABLE_TX_ACCOUNTING === '1') {
+    doTxAccounting = true;
+    txAccountingHook = async (api, context?) => showTotalCost(api, context);
+}
 
 export function parseResult() {
     return pipe(
@@ -104,8 +125,7 @@ export function createAccount(name: string = 'first pair') {
     return keypair;
 }
 
-export async function createAndFundAccount({ api, amount, source, name, context }:
-    { api: ApiRx, amount: bigint, source: DevAccounts, name?: string, context?: string }) {
+export async function createAndFundAccount({ api, amount, source, name, context }: AccountFundingInputs) {
     const keypair = createAccount(name);
 
     // Get keypair for pre-funded dev account
@@ -113,13 +133,16 @@ export async function createAndFundAccount({ api, amount, source, name, context 
 
     // Transfer funds from pre-funded dev account to new account
     await transferFunds(api, devKeys, keypair, amount);
-    let map = balancesMap.get(context || 'undefined');
-    if (!map) {
-        map = new Map<string, BeginEndBalances>();
-    }
 
-    map.set(keypair.address, { beginBalance: amount });
-    balancesMap.set(context || 'undefined', map);
+    if (doTxAccounting) {
+        let map = balancesMap.get(context || 'undefined');
+        if (!map) {
+            map = new Map<string, BeginEndBalances>();
+        }
+
+        map.set(keypair.address, { beginBalance: amount });
+        balancesMap.set(context || 'undefined', map);
+    }
 
     return { newAccount: keypair, devAccount: devKeys };
 }

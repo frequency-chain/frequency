@@ -7,14 +7,12 @@ import assert from "assert";
 import { AVRO_GRAPH_CHANGE } from "./fixtures/avroGraphChangeSchemaType";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { createSchema } from "../scaffolding/extrinsicHelpers";
-import { createAndFundAccount, DevAccounts, INITIAL_FUNDING, showTotalCost } from "../scaffolding/helpers";
+import { AccountFundingInputs, createAndFundAccount, generateFundingInputs, txAccountingHook } from "../scaffolding/helpers";
 
 describe("#createSchema", function () {
     this.timeout(15000);
 
-    const context = this.title;
-    const amount = INITIAL_FUNDING;
-    const source = DevAccounts.Alice;
+    let fundingInputs: AccountFundingInputs;
 
     let api: ApiRx;
     let keys: KeyringPair;
@@ -22,12 +20,12 @@ describe("#createSchema", function () {
     before(async function () {
         let connectApi = await connect(process.env.WS_PROVIDER_URL);
         api = connectApi
-        const accounts = await createAndFundAccount({ api, amount, source, context });
-        keys = accounts.devAccount;
+        fundingInputs = generateFundingInputs(api, this.title);
+        keys = (await createAndFundAccount(fundingInputs)).newAccount;
     })
 
     after(async function () {
-        await showTotalCost(api, context);
+        await txAccountingHook(api, fundingInputs.context);
         await api.disconnect()
     });
 

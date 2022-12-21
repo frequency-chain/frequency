@@ -5,14 +5,12 @@ import { Codec } from "@polkadot/types/types";
 import assert from "assert";
 import { connect } from "../scaffolding/apiConnection";
 import { createMsa, createProvider, createSchema, grantDelegation, grantSchemaPermissions, revokeDelegationByDelegator } from "../scaffolding/extrinsicHelpers";
-import { createAndFundAccount, DevAccounts, INITIAL_FUNDING, showTotalCost, signPayloadSr25519 } from "../scaffolding/helpers";
+import { AccountFundingInputs, createAndFundAccount, generateFundingInputs, txAccountingHook, signPayloadSr25519 } from "../scaffolding/helpers";
 
 describe("Delegation Scenario Tests", function () {
     this.timeout(15000);
 
-    const context = this.title;
-    const source = DevAccounts.Alice;
-    const amount = INITIAL_FUNDING;
+    let fundingInputs: AccountFundingInputs;
 
     let api: ApiRx;
     let keys: KeyringPair;
@@ -21,7 +19,8 @@ describe("Delegation Scenario Tests", function () {
     before(async function () {
         let connectApi = await connect(process.env.WS_PROVIDER_URL);
         api = connectApi
-        const accountKeys = createAndFundAccount({ api, amount, source, context });
+        fundingInputs = generateFundingInputs(api, this.title);
+        const accountKeys = createAndFundAccount(fundingInputs);
         keys = (await accountKeys).newAccount;
         await createMsa(api, keys);
 
@@ -63,12 +62,12 @@ describe("Delegation Scenario Tests", function () {
     })
 
     after(async function () {
-        await showTotalCost(api, context);
+        await txAccountingHook(api, fundingInputs.context);
         await api.disconnect()
     })
 
     it("should grant a delegation to a provider", async function () {
-        const { newAccount: providerKeys } = await createAndFundAccount({ api, amount, source, context });
+        const providerKeys = (await createAndFundAccount(fundingInputs)).newAccount;
         await createMsa(api, providerKeys);
 
 
@@ -90,7 +89,7 @@ describe("Delegation Scenario Tests", function () {
     });
 
     it("should grant permissions to a provider for a specific set of schemas", async function () {
-        const { newAccount: providerKeys } = await createAndFundAccount({ api, amount, source, context });
+        const providerKeys = (await createAndFundAccount(fundingInputs)).newAccount;
         await createMsa(api, providerKeys);
 
         let createProviderEvents = await createProvider(api, providerKeys, "MyPoster");
@@ -114,7 +113,7 @@ describe("Delegation Scenario Tests", function () {
     });
 
     it("should revoke a delegation by delegator", async function () {
-        const { newAccount: providerKeys } = await createAndFundAccount({ api, amount, source, context });
+        const providerKeys = (await createAndFundAccount(fundingInputs)).newAccount;
         await createMsa(api, providerKeys);
 
         let createProviderEvents = await createProvider(api, providerKeys, "MyPoster");

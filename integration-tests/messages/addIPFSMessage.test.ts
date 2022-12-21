@@ -6,14 +6,12 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { createSchema, addIPFSMessage, createMsa } from "../scaffolding/extrinsicHelpers";
 import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
 import assert from "assert";
-import { createAndFundAccount, DevAccounts, EventMap, INITIAL_FUNDING, showTotalCost } from "../scaffolding/helpers";
+import { AccountFundingInputs, createAndFundAccount, DevAccounts, EventMap, generateFundingInputs, txAccountingHook } from "../scaffolding/helpers";
 
 describe("Add Offchain Message", function () {
     this.timeout(15000);
 
-    const context = this.title;
-    const amount = INITIAL_FUNDING;
-    const source = DevAccounts.Alice;
+    let fundingInputs: AccountFundingInputs;
 
     let api: ApiRx;
     let keys: KeyringPair;
@@ -33,9 +31,9 @@ describe("Add Offchain Message", function () {
     before(async function () {
         let connectApi = await connect(process.env.WS_PROVIDER_URL);
         api = connectApi
+        fundingInputs = generateFundingInputs(api, this.title);
 
-        const accounts = await createAndFundAccount({ api, amount, source, context });
-        keys = accounts.newAccount;
+        keys = (await createAndFundAccount(fundingInputs)).newAccount;
 
         // Create a new MSA
         await createMsa(api, keys);
@@ -47,13 +45,13 @@ describe("Add Offchain Message", function () {
     })
 
     after(async function () {
-        await showTotalCost(api, context);
+        await txAccountingHook(api, fundingInputs.context);
         await api.disconnect()
     })
 
     it('should fail if MSA is not valid', async function () {
-        const bogusKey = createKeys(DevAccounts.Eve);
-        await assert.rejects(addIPFSMessage(api, bogusKey, schemaId, ipfs_cid, ipfs_payload_len + 1), {
+        const accountWithNoMsa = createKeys(DevAccounts.Eve);
+        await assert.rejects(addIPFSMessage(api, accountWithNoMsa, schemaId, ipfs_cid, ipfs_payload_len + 1), {
             name: 'InvalidMessageSourceAccount',
             section: 'messages',
         });

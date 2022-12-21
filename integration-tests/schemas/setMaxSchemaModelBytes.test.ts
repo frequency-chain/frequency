@@ -1,25 +1,27 @@
 import "@frequency-chain/api-augment";
 import { ApiRx } from "@polkadot/api";
+import { KeyringPair } from "@polkadot/keyring/types";
 import assert from "assert";
 import { connect, createKeys } from "../scaffolding/apiConnection";
 import { signAndSend } from "../scaffolding/extrinsicHelpers";
-import { DevAccounts, EventError, showTotalCost } from "../scaffolding/helpers";
+import { AccountFundingInputs, DevAccounts, EventError, generateFundingInputs, txAccountingHook } from "../scaffolding/helpers";
 
 describe("#setMaxSchemaModelBytes", function () {
     this.timeout(15000);
 
-    const context = this.title;
+    let fundingInputs: AccountFundingInputs;
     let api: ApiRx;
-    let keys: any;
+    let keys: KeyringPair;
 
     before(async function () {
         let connectApi = await connect(process.env.WS_PROVIDER_URL);
         api = connectApi
+        fundingInputs = generateFundingInputs(api, this.title);
         keys = createKeys(DevAccounts.Alice)
     })
 
     after(async function () {
-        await showTotalCost(api, context);
+        await txAccountingHook(api, fundingInputs.context);
         await api.disconnect()
     })
 
