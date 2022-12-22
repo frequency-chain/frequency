@@ -313,7 +313,7 @@ jobs:
           fetch-depth: 0
       - name: Full Release?
         run: |
-          is_full_release=$([[ "$NEW_RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] && \
+          is_full_release=$([[ "$NEW_RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\-[0-9]+)?$ ]] && \
             echo 'true' || echo 'false')
           echo "is_full_release: $is_full_release"
           echo "IS_FULL_RELEASE=$is_full_release" >> $GITHUB_ENV
