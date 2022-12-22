@@ -219,6 +219,8 @@ jobs:
         uses: actions/checkout@v3
       - name: Reset Runner
         uses: ./.github/workflows/common/reset-self-hosted-runner
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
       - name: Install Required Packages
         run: |
           sudo apt-get update
@@ -234,11 +236,9 @@ jobs:
         run: |
           RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --features frequency
       - name: Upload Docs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-pages-artifact@v1
         with:
-          name: rust-developer-docs-${{github.run_id}}
           path: ./target/doc
-          if-no-files-found: error
 
   build-js-api-augment:
     needs: build-binaries
@@ -750,24 +750,22 @@ jobs:
           repository: ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}
           readme-filepath: docker/${{matrix.node}}.overview.md
 
+  # Published to https://libertydsnp.github.io/frequency/
   release-rust-developer-docs:
     needs: wait-for-all-builds
     name: Release Rust Developer Docs
     runs-on: ubuntu-20.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-      - name: Download Docs
-        id: download
-        uses: actions/download-artifact@v3
-        with:
-          name: rust-developer-docs-${{github.run_id}}
-          path: ./target/doc
-      - name: Deploy Frequency docs to gh-pages
-        uses: JamesIves/github-pages-deploy-action@ba1486788b0490a235422264426c45848eac35c6
-        with:
-          branch: gh-pages
-          folder: ./target/doc
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
 
   release-js-api-augment:
     needs: wait-for-all-builds
