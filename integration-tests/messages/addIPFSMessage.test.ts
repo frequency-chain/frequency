@@ -1,52 +1,73 @@
 import "@frequency-chain/api-augment";
 import { ApiRx } from "@polkadot/api";
+import type { Codec } from '@polkadot/types-codec/types';
 import { connect, createKeys } from "../scaffolding/apiConnection"
 import { KeyringPair } from "@polkadot/keyring/types";
 import { createSchema, addIPFSMessage, createMsa } from "../scaffolding/extrinsicHelpers";
 import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
 import assert from "assert";
-import { GenericEvent } from "@polkadot/types";
-import { EventMap } from "../scaffolding/helpers";
-import { Event } from "@polkadot/types/interfaces";
+import { AccountFundingInputs, createAndFundAccount, DevAccounts, EventMap, generateFundingInputs, txAccountingHook } from "../scaffolding/helpers";
 
-describe("Add Offchain Message", () => {
+describe("Add Offchain Message", function () {
+    this.timeout(15000);
+
+    let fundingInputs: AccountFundingInputs;
+
     let api: ApiRx;
     let keys: KeyringPair;
+    let schemaId: Codec;
 
-    before(async () => {
+    // This is how the IPFS data was created:
+    //
+    // echo "This is a test of Frequency." > frequency_test
+    // % ipfs add frequency_test
+    // added QmYzm8KGxRHr7nGn5g5Z9Zv9r8nN5WNn7Ajya6x7RxmAB1 frequency_test
+    // % wc -c frequency_test
+    // 29 frequency_test
+    const ipfs_cid = "QmYzm8KGxRHr7nGn5g5Z9Zv9r8nN5WNn7Ajya6x7RxmAB1";
+    const ipfs_payload_data = "This is a test of Frequency.";
+    const ipfs_payload_len = ipfs_payload_data.length;
+
+    before(async function () {
         let connectApi = await connect(process.env.WS_PROVIDER_URL);
         api = connectApi
-    })
+        fundingInputs = generateFundingInputs(api, this.title);
 
-    after(() => {
-        api.disconnect()
-    })
+        keys = (await createAndFundAccount(fundingInputs)).newAccount;
 
-    it("should successfully add an IPFS message", async () => {
-        keys = createKeys("//Eve")
-
-        // Create MSA
-        const createMsaEvents = await createMsa(api, keys);
-        assert.notEqual(createMsaEvents["msa.MsaCreated"], undefined);
+        // Create a new MSA
+        await createMsa(api, keys);
 
         // Create a schema
         const createSchemaEvents = await createSchema(api, keys, PARQUET_BROADCAST, "Parquet", "IPFS");
-        const schemaId = createSchemaEvents["schemas.SchemaCreated"][1];
+        const event = createSchemaEvents["schemas.SchemaCreated"];
+        schemaId = event[1];
+    })
 
-        // This is how the IPFS data was created:
-        //
-        // echo "This is a test of Frequency." > frequency_test
-        // % ipfs add frequency_test
-        // added QmYzm8KGxRHr7nGn5g5Z9Zv9r8nN5WNn7Ajya6x7RxmAB1 frequency_test
-        // % wc -c frequency_test
-        // 29 frequency_test
+    after(async function () {
+        await txAccountingHook(api, fundingInputs.context);
+        await api.disconnect()
+    })
 
-        const payload = "This is a test of Frequency.";
-        const chainEvents: EventMap = await addIPFSMessage(api, keys, schemaId, "QmYzm8KGxRHr7nGn5g5Z9Zv9r8nN5WNn7Ajya6x7RxmAB1", payload.length + 1);
+    it('should fail if MSA is not valid', async function () {
+        const accountWithNoMsa = createKeys(DevAccounts.Eve);
+        await assert.rejects(addIPFSMessage(api, accountWithNoMsa, schemaId, ipfs_cid, ipfs_payload_len + 1), {
+            name: 'InvalidMessageSourceAccount',
+            section: 'messages',
+        });
+    });
 
-        assert.equal(chainEvents["system.ExtrinsicFailed"], undefined);
+    it('should fail if schema does not exist', async function () {
+        await assert.rejects(addIPFSMessage(api, keys, 2, ipfs_cid, ipfs_payload_len + 1), {
+            name: 'InvalidSchemaId',
+            section: 'messages',
+        });
+    });
+
+    it("should successfully add an IPFS message", async function () {
+        const chainEvents: EventMap = await addIPFSMessage(api, keys, schemaId, ipfs_cid, ipfs_payload_len + 1);
+
         assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined);
-
-    }).timeout(15000)
+    });
 })
 
