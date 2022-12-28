@@ -1,30 +1,33 @@
 import "@frequency-chain/api-augment";
-import { ApiRx } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { Codec } from "@polkadot/types/types";
+import { u16, u64 } from "@polkadot/types";
 import assert from "assert";
-import { connect } from "../scaffolding/apiConnection";
-import { createMsa, createProvider, createSchema, grantDelegation, grantSchemaPermissions, revokeDelegationByDelegator } from "../scaffolding/extrinsicHelpers";
-import { AccountFundingInputs, createAndFundAccount, generateFundingInputs, txAccountingHook, signPayloadSr25519 } from "../scaffolding/helpers";
+import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
+import { createAndFundKeypair, signPayloadSr25519 } from "../scaffolding/helpers";
 
 describe("Delegation Scenario Tests", function () {
-    this.timeout(15000);
-
-    let fundingInputs: AccountFundingInputs;
-
-    let api: ApiRx;
     let keys: KeyringPair;
-    let schemaId: Codec;
+    let providerKeys: KeyringPair;
+    let schemaId: u16;
+    let providerId: u64;
 
     before(async function () {
-        let connectApi = await connect(process.env.WS_PROVIDER_URL);
-        api = connectApi
-        fundingInputs = generateFundingInputs(api, this.title);
-        const accountKeys = createAndFundAccount(fundingInputs);
-        keys = (await accountKeys).newAccount;
-        await createMsa(api, keys);
+        keys = await createAndFundKeypair();
+        const createMsaOp = ExtrinsicHelper.createMsa(keys);
+        await createMsaOp.fundAndSend();
 
-        let createSchemaEvents = await createSchema(api, keys, {
+        providerKeys = await createAndFundKeypair();
+        const createProviderMsaOp = ExtrinsicHelper.createMsa(providerKeys);
+        await createProviderMsaOp.fundAndSend();
+        const createProviderOp = ExtrinsicHelper.createProvider(providerKeys, "MyPoster");
+        const providerEvent = (await createProviderOp.fundAndSend())?.["msa.ProviderCreated"];
+        assert.notEqual(providerEvent, undefined, "setup should return a ProviderCreated event");
+        if (ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerEvent)) {
+            providerId = providerEvent.data.providerId;
+        }
+        assert.notEqual(providerId, undefined, "setup should populate providerId");
+
+        const createSchemaOp = ExtrinsicHelper.createSchema(keys, {
             type: "record",
             name: "Post",
             fields: [
@@ -56,82 +59,36 @@ describe("Delegation Scenario Tests", function () {
                 },
             ]
         }, "AvroBinary", "OnChain");
-        assert.notEqual(createSchemaEvents["schemas.SchemaCreated"], undefined);
-
-        schemaId = createSchemaEvents["schemas.SchemaCreated"][1];
-    })
-
-    after(async function () {
-        await txAccountingHook(api, fundingInputs.context);
-        await api.disconnect()
-    })
+        const createSchemaEvent = (await createSchemaOp.fundAndSend())["schemas.SchemaCreated"];
+        assert.notEqual(createSchemaEvent, undefined, "setup should return SchemaCreated event");
+        if (ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
+            schemaId = createSchemaEvent.data[1];
+        }
+        assert.notEqual(schemaId, undefined, "setup should populate schemaId");
+    });
 
     it("should grant a delegation to a provider", async function () {
-        const providerKeys = (await createAndFundAccount(fundingInputs)).newAccount;
-        await createMsa(api, providerKeys);
-
-
-        let createProviderEvents = await createProvider(api, providerKeys, "MyPoster");
-        const providerId = createProviderEvents["msa.ProviderCreated"][0];
-        assert.notEqual(providerId, undefined);
-
-
         const payload = {
             authorizedMsaId: providerId,
             schemaIds: [schemaId],
-            // If we ever have tests that exceed Block 24, this test will start failing
-            expiration: 24
+            expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + 5,
         }
-        const addProviderData = api.registry.createType("PalletMsaAddProvider", payload);
+        const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
-        const grantDelegationEvents = await grantDelegation(api, keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload)
-        assert.notEqual(grantDelegationEvents["msa.DelegationGranted"], undefined);
+        const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
+        const grantDelegationEvents = await grantDelegationOp.fundAndSend();
+        assert.notEqual(grantDelegationEvents["msa.DelegationGranted"], undefined, "should have returned DelegationGranted event");
     });
 
     it("should grant permissions to a provider for a specific set of schemas", async function () {
-        const providerKeys = (await createAndFundAccount(fundingInputs)).newAccount;
-        await createMsa(api, providerKeys);
-
-        let createProviderEvents = await createProvider(api, providerKeys, "MyPoster");
-        const providerId = createProviderEvents["msa.ProviderCreated"][0];
-        assert.notEqual(providerId, undefined);
-
-
-        const payload = {
-            authorizedMsaId: providerId,
-            schemaIds: [schemaId],
-            // If we ever have tests that exceed Block 50, this test will start failing
-            expiration: 50
-        }
-        const addProviderData = api.registry.createType("PalletMsaAddProvider", payload);
-
-        const grantDelegationEvents = await grantDelegation(api, keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload)
-        assert.notEqual(grantDelegationEvents["msa.DelegationGranted"], undefined);
-
-        const grantSchemaPermissionsEvents = await grantSchemaPermissions(api, keys, providerId, [schemaId])
-        assert.notEqual(grantSchemaPermissionsEvents["msa.DelegationUpdated"], undefined);
+        const grantSchemaPermissionsOp = ExtrinsicHelper.grantSchemaPermissions(keys, providerId, [schemaId]);
+        const grantSchemaPermissionsEvents = await grantSchemaPermissionsOp.fundAndSend();
+        assert.notEqual(grantSchemaPermissionsEvents["msa.DelegationUpdated"], undefined, "should have returned DelegationUpdated event");
     });
 
     it("should revoke a delegation by delegator", async function () {
-        const providerKeys = (await createAndFundAccount(fundingInputs)).newAccount;
-        await createMsa(api, providerKeys);
-
-        let createProviderEvents = await createProvider(api, providerKeys, "MyPoster");
-        const providerId = createProviderEvents["msa.ProviderCreated"][0];
-        assert.notEqual(providerId, undefined);
-
-
-        const payload = {
-            authorizedMsaId: providerId,
-            schemaIds: [schemaId],
-            expiration: 36
-        }
-        const addProviderData = api.registry.createType("PalletMsaAddProvider", payload);
-
-        const grantDelegationEvents = await grantDelegation(api, keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload)
-        assert.notEqual(grantDelegationEvents["msa.DelegationGranted"], undefined);
-
-        const revokeDelegationEvents = await revokeDelegationByDelegator(api, keys, providerId)
-        assert.notEqual(revokeDelegationEvents["msa.DelegationRevoked"], undefined);
+        const revokeDelegationOp = ExtrinsicHelper.revokeDelegationByDelegator(keys, providerId);
+        const revokeDelegationEvents = await revokeDelegationOp.fundAndSend();
+        assert.notEqual(revokeDelegationEvents["msa.DelegationRevoked"], undefined, "should have returned DelegationRevoked event");
     });
 })

@@ -1,36 +1,65 @@
 import "@frequency-chain/api-augment";
-import { ApiRx } from "@polkadot/api";
-import { connect } from "../scaffolding/apiConnection"
 
 import assert from "assert";
 
 import { AVRO_GRAPH_CHANGE } from "./fixtures/avroGraphChangeSchemaType";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { createSchema } from "../scaffolding/extrinsicHelpers";
-import { AccountFundingInputs, createAndFundAccount, generateFundingInputs, txAccountingHook } from "../scaffolding/helpers";
+import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
+import { createKeys, createAndFundKeypair } from "../scaffolding/helpers";
 
 describe("#createSchema", function () {
-    this.timeout(15000);
-
-    let fundingInputs: AccountFundingInputs;
-
-    let api: ApiRx;
     let keys: KeyringPair;
+    let accountWithNoFunds: KeyringPair;
 
     before(async function () {
-        let connectApi = await connect(process.env.WS_PROVIDER_URL);
-        api = connectApi
-        fundingInputs = generateFundingInputs(api, this.title);
-        keys = (await createAndFundAccount(fundingInputs)).newAccount;
-    })
+        keys = await createAndFundKeypair();
+        accountWithNoFunds = createKeys();
+    });
 
-    after(async function () {
-        await txAccountingHook(api, fundingInputs.context);
-        await api.disconnect()
+    it("should fail if account does not have enough tokens", async function () {
+
+        await assert.rejects(ExtrinsicHelper.createSchema(accountWithNoFunds, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain").signAndSend(), {
+            name: 'RpcError',
+            message: /Inability to pay some fees/,
+        });
+    });
+
+    it("should fail to create invalid schema", async function () {
+        const f = ExtrinsicHelper.createSchema(keys, new Array(1000, 3), "AvroBinary", "OnChain");
+
+        await assert.rejects(f.fundAndSend(), {
+            name: 'InvalidSchema',
+        });
+    });
+
+    it("should fail to create schema less than minimum size", async function () {
+        const f = ExtrinsicHelper.createSchema(keys, {}, "AvroBinary", "OnChain");
+        await assert.rejects(f.fundAndSend(), {
+            name: 'LessThanMinSchemaModelBytes',
+        });
+    });
+
+    it("should fail to create schema greater than maximum size", async function () {
+        const maxBytes = (await ExtrinsicHelper.getSchemaMaxBytes()).toNumber();
+
+        // Create a schema whose JSON representation is exactly 1 byte larger than the max allowed
+        const hugeSchema = {
+            type: "record",
+            fields: [],
+        }
+        const hugeSize = JSON.stringify(hugeSchema).length;
+        const sizeToFill = maxBytes - hugeSize - ',"name":""'.length + 1;
+        hugeSchema["name"] = Array.from(Array(sizeToFill).keys()).map(i => 'a').join('');
+
+        const f = ExtrinsicHelper.createSchema(keys, hugeSchema, "AvroBinary", "OnChain");
+        await assert.rejects(f.fundAndSend(), {
+            name: 'ExceedsMaxSchemaModelBytes',
+        });
     });
 
     it("should successfully create an Avro GraphChange schema", async function () {
-        const chainEvents = await createSchema(api, keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain")
+        const f = ExtrinsicHelper.createSchema(keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain");
+        const chainEvents = await f.fundAndSend();
 
         assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined);
         assert.notEqual(chainEvents["schemas.SchemaCreated"], undefined);
