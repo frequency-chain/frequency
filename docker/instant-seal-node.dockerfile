@@ -9,6 +9,8 @@ LABEL description="Frequency collator node in instant seal mode"
 
 RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates
 
+RUN echo "hello there"
+
 # This is the 2nd stage: a very small image where we copy the Frequency binary
 FROM --platform=linux/amd64 ubuntu:20.04
 
@@ -25,6 +27,11 @@ COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificat
 COPY --chown=frequency target/release/frequency ./frequency/
 RUN chmod +x ./frequency/frequency
 
+COPY --chown=frequency test.sh ./frequency/
+RUN chmod +x ./frequency/test.sh
+
+RUN git clone https://github.com/LibertyDSNP/schemas.git
+
 # 9933 P2P port
 # 9944 for RPC call
 # 30333 for Websocket
@@ -32,24 +39,7 @@ EXPOSE 9933 9944 30333
 
 VOLUME ["/data"]
 
-ENTRYPOINT ["/frequency/frequency", \
-	# Required params for starting the chain
-	"--dev", \
-	"-lruntime=debug", \
-	"--instant-sealing", \
-	"--wasm-execution=compiled", \
-	"--execution=wasm", \
-	"--no-telemetry", \
-	"--no-prometheus", \
-	"--port=30333", \
-	"--rpc-port=9933", \
-	"--ws-port=9944", \
-	"--rpc-external", \
-	"--rpc-cors=all", \
-	"--ws-external", \
-	"--rpc-methods=Unsafe", \
-	"--tmp" \
-	]
+ENTRYPOINT ["/frequency/test.sh", "--"]
 
 # Params which can be overriden from CLI
-# CMD ["", "", ...]
+# CMD ["echo", "hello world"]
