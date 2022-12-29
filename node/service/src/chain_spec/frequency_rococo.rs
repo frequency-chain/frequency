@@ -16,8 +16,10 @@ pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConf
 use super::{get_properties, Extensions};
 
 pub fn load_frequency_rococo_spec() -> ChainSpec {
-	ChainSpec::from_json_bytes(&include_bytes!("../../../../resources/frequency-rococo.json")[..])
-		.unwrap()
+	ChainSpec::from_json_bytes(
+		&include_bytes!("../../../../resources/frequency-rococo.raw.json")[..],
+	)
+	.unwrap()
 }
 
 pub mod public_testnet_keys {
