@@ -112,7 +112,7 @@ pub mod foundation_keys {
 }
 
 pub fn load_frequency_spec() -> ChainSpec {
-	ChainSpec::from_json_bytes(&include_bytes!("../../../../resources/frequency.json")[..]).unwrap()
+	ChainSpec::from_json_bytes(&include_bytes!("../../../../resources/frequency.raw.json")[..]).unwrap()
 }
 
 pub fn frequency() -> ChainSpec {
