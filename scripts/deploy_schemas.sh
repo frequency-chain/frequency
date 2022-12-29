@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
 echo "hello"
-ls
+
+## This doesn't work yet, but the idea is to start frequency, move it to the background, go to the schemas directory
+## npm install and then deploy schemas, then switch back to the frequency container
 ./frequency/frequency --dev \
     -lruntime=debug \
     --instant-sealing \
@@ -16,5 +18,10 @@ ls
     --rpc-cors=al \
     --ws-external \
     --rpc-methods=Unsafe \
-    --tmp
+    --tmp \
+    &
 
+cd schemas
+npm install && npm run deploy
+
+fg %1
