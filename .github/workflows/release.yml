@@ -386,6 +386,17 @@ jobs:
           tag: "latest"
           force_push_tag: true
           message: "Latest full release"
+      - name: Trigger Auto-signer Workflow
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GHA_WORKFLOW_TRIGGER }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'LibertyDSNP',
+              repo: 'metadata-portal',
+              workflow_id: 'auto-sign.yml',
+              ref: 'main'
+            })
 
   release-node-images:
     needs: wait-for-all-builds
