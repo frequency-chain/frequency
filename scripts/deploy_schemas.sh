@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
 echo "hello"
+ldd --version
 
 ## This doesn't work yet, but the idea is to start frequency, move it to the background, go to the schemas directory
 ## npm install and then deploy schemas, then switch back to the frequency container
-./frequency/frequency --dev \
+/frequency/frequency --dev \
     -lruntime=debug \
     --instant-sealing \
     --wasm-execution=compiled \
@@ -21,7 +22,7 @@ echo "hello"
     --tmp \
     &
 
-cd schemas
+cd /frequency/schemas
 npm install && npm run deploy
 
 fg %1
