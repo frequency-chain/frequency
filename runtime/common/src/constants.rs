@@ -112,6 +112,15 @@ pub type FrameSystemMaxConsumers = ConstU32<16>;
 pub type MsaMaxPublicKeysPerMsa = ConstU8<25>;
 /// The maximum size of the provider name (in bytes)
 pub type MsaMaxProviderNameSize = ConstU32<16>;
+/// The number of blocks per virtual bucket
+pub type MSAMortalityWindowSize = ConstU32<100>;
+/// The maximum number of signatures per virtual bucket
+pub type MSAMaxSignaturesPerBucket = ConstU32<50_000>;
+/// The total number of virtual buckets
+pub type MSANumberOfBuckets = ConstU32<2>;
+/// The upper limit on total stored signatures.
+/// This MUST be MaxSignaturesPerBucket * NumberOfBuckets.
+pub type MSAMaxSignaturesStored = ConstU32<100_000>;
 // -end- MSA Pallet ---
 
 // --- Schemas Pallet ---
@@ -283,13 +292,6 @@ impl Clone for MessagesMaxPayloadSizeBytes {
 	}
 }
 // -end- Messages Pallet ---
-
-/// The number of blocks per virtual bucket
-pub type MSAMortalityWindowSize = ConstU32<100>;
-/// The maximum number of signatures per virtual bucket
-pub type MSAMaxSignaturesPerBucket = ConstU32<50_000>;
-/// The total number of virtual buckets
-pub type MSANumberOfBuckets = ConstU32<2>;
 
 parameter_types! {
 	/// SS58 Prefix for the for Frequency Network

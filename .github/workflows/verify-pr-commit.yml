@@ -21,7 +21,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Check for Changed Files
-        uses: dorny/paths-filter@v2
+        uses: dorny/paths-filter@4512585405083f25c027a35db413c2b3b9006d50
         id: filter
         with:
           filters: |
@@ -41,6 +41,24 @@ jobs:
             cargo-lock:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
+
+  # Workaround to handle skipped required check inside matrix
+  # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks
+  build-binaries-dummy:
+    needs: changes
+    if: needs.changes.outputs.build-binary != 'true'
+    runs-on: ubuntu-20.04
+    name: "Build Binary on ${{matrix.branch_name}} Branch"
+    strategy:
+      matrix:
+        git_branch: ["${{github.head_ref}}", main]
+        include:
+          - git_branch: ${{github.head_ref}}
+            branch_name: PR
+          - git_branch: main
+            branch_name: Main
+    steps:
+      - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
   build-binaries:
     needs: changes
@@ -81,7 +99,7 @@ jobs:
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
           default: true
           profile: minimal
@@ -89,7 +107,7 @@ jobs:
           toolchain: stable
       - name: Cache Rust Dependencies
         if: steps.cache-binary.outputs.cache-hit != 'true'
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
         with:
           shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Compile Binary
@@ -137,7 +155,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
           default: true
           profile: minimal
@@ -160,9 +178,9 @@ jobs:
       - name: Install Required Packages
         run: |
           sudo apt-get update
-          sudo apt install -y protobuf-compiler 
+          sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
           default: true
           profile: minimal
@@ -189,16 +207,16 @@ jobs:
       - name: Install Required Packages
         run: |
           sudo apt-get update
-          sudo apt install -y protobuf-compiler 
+          sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
           toolchain: stable
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
       - name: Cache Rust Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
         with:
           shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Build Rust Docs
@@ -218,9 +236,9 @@ jobs:
       - name: Install Required Packages
         run: |
           sudo apt-get update
-          sudo apt install -y protobuf-compiler 
+          sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
           default: true
           profile: minimal
@@ -244,14 +262,14 @@ jobs:
           sudo apt-get update
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
           toolchain: stable
       - name: Restore Dependencies from Cache
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
         with:
           shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Run Tests
@@ -270,14 +288,14 @@ jobs:
           sudo apt-get update
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
           toolchain: stable
       - name: Run cargo-tarpaulin
-        uses: actions-rs/tarpaulin@v0.1
+        uses: actions-rs/tarpaulin@044a1e5bdace8dd2f727b1af63c1d9a1d3572068
         with:
           version: "0.22.0"
           # Tarpaulin Docs https://github.com/xd009642/tarpaulin
@@ -291,6 +309,19 @@ jobs:
         with:
           fail_ci_if_error: false # optional (default = false)
           verbose: true # optional (default = false)
+
+  # Workaround to handle skipped required check inside matrix
+  # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks
+  verify-build-runtimes-dummy:
+    needs: changes
+    if: needs.changes.outputs.rust != 'true'
+    name: Verify Build Runtime for ${{matrix.network}}
+    strategy:
+      matrix:
+        network: [rococo, mainnet]
+    runs-on: ubuntu-20.04
+    steps:
+      - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
   verify-build-runtimes:
     needs: changes
@@ -318,7 +349,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
           default: true
           profile: minimal
@@ -427,13 +458,13 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
           default: true
           profile: minimal
           toolchain: stable
       - name: Restore Dependencies from Cache
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
         with:
           shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Download Binary
@@ -480,7 +511,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
           default: true
           profile: minimal
@@ -542,7 +573,7 @@ jobs:
           echo "metadata_match=$match" >> $GITHUB_OUTPUT
       - name: Assign Metadata Mismatch Label
         if: steps.compare-metadata.outputs.metadata_match != 'true'
-        uses: actions-ecosystem/action-add-labels@v1
+        uses: actions-ecosystem/action-add-labels@18f1af5e3544586314bbe15c0273249c770b2daf
         with:
           labels: ${{env.GITHUB_PR_LABEL}}
       - name: Check Spec Version
@@ -559,6 +590,6 @@ jobs:
         if: |
           (steps.compare-metadata.outputs.metadata_match == 'true') &&
             contains(github.event.pull_request.labels.*.name, env.GITHUB_PR_LABEL)
-        uses: actions-ecosystem/action-remove-labels@v1
+        uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0
         with:
           labels: ${{env.GITHUB_PR_LABEL}}

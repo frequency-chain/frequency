@@ -201,7 +201,7 @@ pub mod pallet {
 		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		///
-		#[pallet::weight(< T as Config >::WeightInfo::create_schema(model.len() as u32, 1000))]
+		#[pallet::weight(T::WeightInfo::create_schema(model.len() as u32))]
 		pub fn create_schema(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
@@ -238,7 +238,7 @@ pub mod pallet {
 		/// # Errors
 		/// * [`Error::ExceedsMaxSchemaModelBytes`] - Cannot set to above the hard coded maximum [`Config::SchemaModelMaxBytesBoundedVecLimit`]
 		///
-		#[pallet::weight((30_000, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::set_max_schema_model_bytes(), DispatchClass::Operational))]
 		pub fn set_max_schema_model_bytes(
 			origin: OriginFor<T>,
 			#[pallet::compact] max_size: u32,

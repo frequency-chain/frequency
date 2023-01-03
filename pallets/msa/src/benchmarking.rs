@@ -67,13 +67,6 @@ fn create_msa_account_and_keys<T: Config>() -> (T::AccountId, SignerId, MessageS
 	(account_id, key_pair, msa_id)
 }
 
-pub fn generate_test_signature() -> MultiSignature {
-	let account = SignerId::generate_pair(None);
-	let fake_data = vec![4u8; 32];
-	let signature = account.sign(&fake_data).unwrap();
-	MultiSignature::Sr25519(signature.into())
-}
-
 benchmarks! {
 	create {
 		let caller: T::AccountId = whitelisted_caller();
@@ -205,11 +198,13 @@ benchmarks! {
 	on_initialize {
 		// we should not need to max out storage for this benchmark, see:
 		// https://substrate.stackexchange.com/a/4430/2060
-		let m in 1 .. 3_000;
+		let m in 1 .. T::MaxSignaturesPerBucket::get();
 		for j in 0 .. m {
 			let mortality_block = 49 as u32;
-			let sig = generate_test_signature();
-			assert_ok!(Msa::<T>::register_signature(&sig, T::BlockNumber::from(mortality_block)));
+			let mut data = [0u8; 64];
+			data[0..8].copy_from_slice(&(m, j).encode());
+			let multi_sig = MultiSignature::Sr25519(sp_core::sr25519::Signature::from_raw(data));
+			assert_ok!(Msa::<T>::register_signature(&multi_sig, T::BlockNumber::from(mortality_block)));
 		}
 
 		let bucket_zero_iter = PayloadSignatureRegistry::<T>::iter_prefix(T::BlockNumber::from(0u32));

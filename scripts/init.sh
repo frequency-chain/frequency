@@ -169,7 +169,7 @@ upgrade-frequency)
     --locked \
     --profile release \
     --package frequency-runtime \
-    --features frequency-rococo-local
+    --features frequency-rococo-local \
     --target-dir $root_dir/target/upgrade \
     -Z unstable-options
 
