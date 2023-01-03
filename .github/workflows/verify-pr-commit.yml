@@ -17,6 +17,7 @@ jobs:
       rust: ${{steps.filter.outputs.rust}}
       build-binary: ${{steps.filter.outputs.build-binary}}
       cargo-lock: ${{steps.filter.outputs.cargo-lock}}
+      run-integration-tests: ${{steps.filter.outputs.run-integration-tests}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -38,9 +39,14 @@ jobs:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
               - 'js/api-augment/**'
+              - 'integration-tests/**/*.test.ts'
             cargo-lock:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
+            run-integration-tests:
+              - '**/*.rs'
+              - '**/Cargo.toml'
+              - 'integration-tests/**/*.[ts,json]'
 
   # Workaround to handle skipped required check inside matrix
   # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks
@@ -69,8 +75,10 @@ jobs:
         git_branch: ["${{github.head_ref}}", main]
         include:
           - git_branch: ${{github.head_ref}}
+            spec: frequency-rococo-local
             branch_name: PR
           - git_branch: main
+            spec: frequency-rococo-local
             branch_name: Main
     runs-on: [self-hosted, Linux, X64]
     env:
@@ -110,7 +118,7 @@ jobs:
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
           CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release \
-            --features  frequency
+            --features ${{matrix.spec}}
       - name: Run Sanity Checks
         working-directory: ${{env.BIN_DIR}}
         run: |
@@ -585,3 +593,64 @@ jobs:
         uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0
         with:
           labels: ${{env.GITHUB_PR_LABEL}}
+
+  run-integration-tests:
+    if: needs.changes.outputs.run-integration-tests == 'true'
+    needs: build-binaries
+    name: Run Integration Tests
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Set Env Vars
+        run: |
+          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
+          export BIN_FILENAME=frequency; echo "BIN_FILENAME=$BIN_FILENAME" >> $GITHUB_ENV
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Download Binaries
+        uses: actions/download-artifact@v3
+        with:
+          name: artifacts-${{github.run_id}}
+          path: ${{env.BIN_DIR}}
+      - name: Set Binaries Permissions
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          set -x
+          chmod 755 $BIN_FILENAME
+      - name: Start Local Node
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          ./${{env.BIN_FILENAME}} \
+            --dev \
+            -lruntime=debug \
+            --instant-sealing \
+            --wasm-execution=compiled \
+            --execution=wasm \
+            --no-telemetry \
+            --no-prometheus \
+            --port $((30333)) \
+            --rpc-port $((9933)) \
+            --ws-port $((9944)) \
+            --rpc-external \
+            --rpc-cors all \
+            --ws-external \
+            --rpc-methods=Unsafe \
+            --tmp \
+            &
+      - name: Set up NodeJs
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: "npm"
+          cache-dependency-path: integration-tests/package-lock.json
+      - name: Install NPM Modules
+        run: npm ci
+        working-directory: integration-tests
+      - name: Run Integration Tests
+        working-directory: integration-tests
+        run: |
+          WS_PROVIDER_URL="ws://127.0.0.1:9944" npm test
+      - name: Stop Local Node
+        if: always()
+        run: pkill ${{env.BIN_FILENAME}}
