@@ -59,9 +59,9 @@ describe("#createSchema", function () {
 
     it("should successfully create an Avro GraphChange schema", async function () {
         const f = ExtrinsicHelper.createSchema(keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain");
-        const chainEvents = await f.fundAndSend();
+        const [createSchemaEvent, eventMap] = await f.fundAndSend();
 
-        assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined);
-        assert.notEqual(chainEvents["schemas.SchemaCreated"], undefined);
+        assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
+        assert.notEqual(createSchemaEvent, undefined);
     });
 })

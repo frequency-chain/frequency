@@ -1,8 +1,8 @@
 import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
 import assert from "assert";
-import { Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { devAccounts, EventError } from "../scaffolding/helpers";
+import { EventError, Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
+import { devAccounts } from "../scaffolding/helpers";
 
 describe("#setMaxSchemaModelBytes", function () {
     let keys: KeyringPair;

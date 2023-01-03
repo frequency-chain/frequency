@@ -29,3 +29,26 @@ with the following methods:
 6. Expiration block numbers
     Rather than hard-coding block number expirations into test cases, it's better to query the last block in the chain for the current
     block number & then add or subtract as the use case dictates.
+
+    EXAMPLE:
+    ```
+            const payload = {
+            authorizedMsaId: providerId,
+            schemaIds: [schemaId],
+            expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + 5,
+        }
+    ```
+7. Extrinsic helper methods & returned events
+Many of the extrinsic helper methods pass an event type to the underlying Extrincic object that can be used to parse the targeted event type
+from the resulting stream and return it specifically. The `Extrinsic::signAndSend()` method returns an array of `[targetEvent, eventMap]` where
+`targetEvent` will be the parsed target event *if present*. The `eventMap` is a map of <string, event> with the keys being `paletteName.eventName`.
+A special key "defaultEvent" is added to also contain the target event, if present.
+Events may be used with type guards to access the event-specific structure. Event types are in the `ApiRx.events.<palette>.*` structure, and can be
+accessed like so:
+    ```
+    const extrinsic = ExtrinsicHelper.createMsa(keypair);
+    const [targetEvent, eventMap] = await extrinsic.fundAndSend();
+    if (targetEvent && ExtrinsicHelper.api.events.msa.MsaCreated.is(targetEvent)) {
+        const msaId = targetEvent.data.msaId;
+    }
+    ```

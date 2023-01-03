@@ -2,7 +2,7 @@ import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
 import assert from "assert";
-import { createAndFundKeypair, devAccounts, EventMap } from "../scaffolding/helpers";
+import { createAndFundKeypair, devAccounts } from "../scaffolding/helpers";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { u16 } from "@polkadot/types";
 
@@ -30,9 +30,8 @@ describe("Add Offchain Message", function () {
 
         // Create a schema
         const createSchema = ExtrinsicHelper.createSchema(devAccounts[0].keys, PARQUET_BROADCAST, "Parquet", "IPFS");
-        const createSchemaEvents = await createSchema.fundAndSend();
-        const event = createSchemaEvents["schemas.SchemaCreated"];
-        if (ExtrinsicHelper.api.events.schemas.SchemaCreated.is(event)) {
+        const [event] = await createSchema.fundAndSend();
+        if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
             [, schemaId] = event.data;
         }
     })
@@ -62,7 +61,7 @@ describe("Add Offchain Message", function () {
 
     it("should successfully add an IPFS message", async function () {
         const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid, ipfs_payload_len + 1);
-        const chainEvents: EventMap = await f.fundAndSend();
+        const [_, chainEvents] = await f.fundAndSend();
 
         assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined);
     });
