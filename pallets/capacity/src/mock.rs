@@ -134,6 +134,7 @@ impl Config for Test {
 	type TargetValidator = Msa;
 	type MinimumStakingAmount = ConstU64<5>;
 	type MaxUnlockingChunks = ConstU32<4>;
+	type UnstakingThawPeriod = ConstU16<2>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

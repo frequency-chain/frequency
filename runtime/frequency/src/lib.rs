@@ -311,6 +311,8 @@ impl pallet_capacity::Config for Runtime {
 	type MinimumStakingAmount = ConstU128<1>;
 	type TargetValidator = Msa;
 	type MaxUnlockingChunks = ConstU32<4>;
+	// TODO: Update
+	type UnstakingThawPeriod = ConstU32<2>;
 }
 
 impl pallet_schemas::Config for Runtime {
