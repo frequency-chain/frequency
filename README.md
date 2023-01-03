@@ -99,7 +99,8 @@ Install the required plugins for asdf:
 ```sh
 asdf plugin-add rust
 asdf plugin-add make
-asdf plugin-add cmake [https://github.com/srivathsanmurali/asdf-cmake.git](https://github.com/srivathsanmurali/asdf-cmake.git)
+asdf plugin-add cmake https://github.com/srivathsanmurali/asdf-cmake.git
+asdf plugin-add protoc https://github.com/paxosglobal/asdf-protoc.git
 ```
 
 Install the dependency versions declared in `.tool-versions`
