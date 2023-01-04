@@ -135,6 +135,9 @@ test:
 integration-test:
 	./scripts/run_integration_tests.sh
 
+# Pull the Polkadot version from the polkadot-cli package and remove the leading v
+POLKADOT_VERSION=$(shell cargo tree --depth 0 --manifest-path ./node/service/Cargo.toml --package polkadot-cli | grep polkadot-cli | cut -d " " -f 2 | tr -d "v")
+
 PHONY: version
 version:
 ifndef v
@@ -145,6 +148,15 @@ ifneq (,$(findstring v,  $(v)))
 	@echo "Please don't prefix with a 'v'. Use: v=X.X.X-X"
 	@exit 1
 endif
-	find ./ -type f -name 'Cargo.toml' -exec sed -i '' 's/^version = \"0\.0\.0\"/version = \"$(v)\"/g' {} \;
-	cargo check
+ifeq (,$(POLKADOT_VERSION))
+	@echo "Error: Having trouble finding the Polkadot version. Sorry about that.\nCheck my POLKADOT_VERSION variable command."
+	@exit 1
+endif
+	@echo "Setting the crate versions to "$(v)+polkadot-$(POLKADOT_VERSION)
+	find ./ -type f -name 'Cargo.toml' -exec sed -i '' 's/^version = \"0\.0\.0\"/version = \"$(v)+polkadot-$(POLKADOT_VERSION)\"/g' {} \;
+	# cargo check
 	@echo "All done. Don't forget to double check that the automated replacement worked."
+
+PHONY: version-reset
+version-reset:
+	find ./ -type f -name 'Cargo.toml' -exec sed -i '' 's/^version = \".*+polkadot.*\"/version = \"0.0.0\"/g' {} \;
