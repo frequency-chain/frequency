@@ -3,4 +3,4 @@
 
 changelog=$1
 
-CHANGELOG="$changelog" tera -a --env --env-key env --env-only --template release-notes.md.tera
+CHANGELOG="$changelog" POLKADOT_VERSION="$(make version-polkadot)" tera -a --env --env-key env --env-only --template release-notes.md.tera
