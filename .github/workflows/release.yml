@@ -6,8 +6,7 @@ on:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+" # ex. v0.29.9
-      - "v[0-9]+.[0-9]+.[0-9]+-[0-9]+" # ex. v0.29.9-1
-      - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-1-rc1
+      - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-rc1
       - "vX.X.X" # used for testing only
 env:
   RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
@@ -322,7 +321,7 @@ jobs:
           fetch-depth: 0
       - name: Full Release?
         run: |
-          is_full_release=$([[ "$NEW_RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\-[0-9]+)?$ ]] && \
+          is_full_release=$([[ "$NEW_RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] && \
             echo 'true' || echo 'false')
           echo "is_full_release: $is_full_release"
           echo "IS_FULL_RELEASE=$is_full_release" >> $GITHUB_ENV
