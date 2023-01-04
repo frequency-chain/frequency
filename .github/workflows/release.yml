@@ -83,11 +83,11 @@ jobs:
       - name: Testing version match
         run: |
           EXPECTED_VERSION="${{NEW_RELEASE_VERSION}}+polkadot-$(make version-polkadot)"
-          ACTUAL_VERSION="v$(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version | cut -d " " -f 2 | cut -d "-" -f 1)"
+          ACTUAL_VERSION="v$(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version | cut -d " " -f 2)"
           echo "v$(./target/release/frequency --version | cut -d " " -f 2 | cut -d "-" -f 1)"
           echo "Expected: ${EXPECTED_VERSION}"
-          echo "Actual: ${ACTUAL_VERSION}"
-          [[ ${{ACTUAL_VERSION}} == ${EXPECTED_VERSION} ]]
+          echo "Actual: ${ACTUAL_VERSION%-*}"
+          [[ ${{ACTUAL_VERSION%-*}} == ${EXPECTED_VERSION} ]]
       - name: Rename Binary
         run: |
           cp -p ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} \
