@@ -83,13 +83,6 @@ jobs:
         run: |
           file ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} && \
             ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version
-      - name: Testing Version Match
-        run: |
-          EXPECTED_VERSION="${{env.NEW_RELEASE_VERSION}}+polkadot$(make version-polkadot)"
-          ACTUAL_VERSION="v$(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version | cut -d " " -f 2)"
-          echo "Expected: ${EXPECTED_VERSION}"
-          echo "  Actual: ${ACTUAL_VERSION%-*}"
-          [[ ${ACTUAL_VERSION%-*} == ${EXPECTED_VERSION} ]]
       - name: Rename Binary
         run: |
           cp -p ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} \
@@ -309,8 +302,52 @@ jobs:
           path: js/api-augment/dist
           if-no-files-found: error
 
+  version-check:
+    needs: [build-binaries]
+    name: Test Version Matches Release
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        network: [mainnet]
+        include:
+          - network: mainnet
+            spec: frequency
+            build-profile: production
+            release-file-name-prefix: frequency
+          - os: ubuntu-20.04
+            arch: amd64
+    runs-on: ${{matrix.os}}
+    steps:
+      - name: Set Env Vars
+        run: |
+          echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
+          echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
+          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Download Binary Artifacts
+        id: download
+        uses: actions/download-artifact@v3
+        with:
+          name: artifacts-${{github.run_id}}
+          path: .
+      - name: Move Binary to Target Dir
+        run: |
+          mkdir -p ${{env.BIN_DIR}}
+          mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+          chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+      - name: Testing Version Match
+        run: |
+          EXPECTED_VERSION="${{env.NEW_RELEASE_VERSION}}+polkadot$(make version-polkadot)"
+          ACTUAL_VERSION="v$(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version | cut -d " " -f 2)"
+          echo "Expected: ${EXPECTED_VERSION}"
+          echo "  Actual: ${ACTUAL_VERSION%-*}"
+          [[ ${ACTUAL_VERSION%-*} == ${EXPECTED_VERSION} ]]
+
   wait-for-all-builds:
-    needs: [build-binaries, build-runtimes, build-rust-developer-docs, build-js-api-augment]
+    needs: [version-check, build-binaries, build-runtimes, build-rust-developer-docs, build-js-api-augment]
     name: Wait for All Builds to Finish
     runs-on: ubuntu-20.04
     steps:
