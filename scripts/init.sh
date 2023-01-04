@@ -164,6 +164,7 @@ offboard-frequency)
 upgrade-frequency)
 
   root_dir=$(git rev-parse --show-toplevel)
+  echo "root_dir is set to $root_dir"
 
   cargo build \
     --locked \
