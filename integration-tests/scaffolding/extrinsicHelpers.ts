@@ -3,15 +3,15 @@ import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/ty
 import { KeyringPair } from "@polkadot/keyring/types";
 import { Compact, u128, u16, u64 } from "@polkadot/types";
 import { FrameSystemAccountInfo } from "@polkadot/types/lookup";
-import { AnyNumber, AnyTuple, Codec, IEvent, IEventLike, ISubmittableResult } from "@polkadot/types/types";
+import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
 import { devAccounts, log, Sr25519Signature } from "./helpers";
 import { connect } from "./apiConnection";
 import { DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
 
-export type AddKeyData = { msaId?: any; expiration?: any; newPublicKey?: any; }
-type AddProviderPayload = { authorizedMsaId?: u64; schemaIds?: u16[], expiration?: any; }
+export type AddKeyData = { msaId?: u64; expiration?: any; newPublicKey?: any; }
+export type AddProviderPayload = { authorizedMsaId?: u64; schemaIds?: u16[], expiration?: any; }
 
 export class EventError extends Error {
     name: string = '';
@@ -198,6 +198,10 @@ export class ExtrinsicHelper {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.createProvider(providerName), keys, ExtrinsicHelper.api.events.msa.ProviderCreated);
     }
 
+    public static createSponsoredAccountWithDelegation(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: AddProviderPayload): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.msa.MsaCreated);
+    }
+
     public static grantDelegation(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: AddProviderPayload): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.grantDelegation(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.msa.DelegationGranted);
     }
@@ -212,6 +216,10 @@ export class ExtrinsicHelper {
 
     public static revokeDelegationByDelegator(keys: KeyringPair, providerMsaId: any): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.revokeDelegationByDelegator(providerMsaId), keys, ExtrinsicHelper.api.events.msa.DelegationRevoked);
+    }
+
+    public static revokeDelegationByProvider(delegatorMsaId: u64, providerKeys: KeyringPair): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.revokeDelegationByProvider(delegatorMsaId), providerKeys, ExtrinsicHelper.api.events.msa.DelegationRevoked);
     }
 
     /** Messages Extrinsics */

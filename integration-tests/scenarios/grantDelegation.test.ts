@@ -1,15 +1,14 @@
 import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { u16, u64 } from "@polkadot/types";
-import { BN } from "@polkadot/util";
 import assert from "assert";
-import { max } from "rxjs";
-import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { createAndFundKeypair, signPayloadSr25519 } from "../scaffolding/helpers";
+import { AddProviderPayload, Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
+import { createAndFundKeypair, createKeys, generatePayload, signPayloadSr25519 } from "../scaffolding/helpers";
 
 describe("Delegation Scenario Tests", function () {
     let keys: KeyringPair;
     let otherMsaKeys: KeyringPair;
+    let noMsaKeys: KeyringPair;
     let providerKeys: KeyringPair;
     let otherProviderKeys: KeyringPair;
     let schemaId: u16;
@@ -19,6 +18,8 @@ describe("Delegation Scenario Tests", function () {
     let otherMsaId: u64;
 
     before(async function () {
+        noMsaKeys = await createAndFundKeypair();
+
         keys = await createAndFundKeypair();
         const createMsaOp = ExtrinsicHelper.createMsa(keys);
         let [msaCreatedEvent] = await createMsaOp.fundAndSend();
@@ -99,11 +100,10 @@ describe("Delegation Scenario Tests", function () {
     describe("delegation grants", function () {
 
         it("should fail to grant delegation if payload not signed by delegator (AddProviderSignatureVerificationFailed)", async function () {
-            const payload = {
+            const payload = await generatePayload({
                 authorizedMsaId: providerId,
                 schemaIds: [schemaId],
-                expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + 5,
-            }
+            });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(providerKeys, addProviderData), payload);
@@ -111,11 +111,10 @@ describe("Delegation Scenario Tests", function () {
         });
 
         it("should fail to delegate to self (InvalidSelfProvider)", async function () {
-            const payload = {
+            const payload = await generatePayload({
                 authorizedMsaId: providerId,
                 schemaIds: [schemaId],
-                expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + 5,
-            }
+            });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             const grantDelegationOp = ExtrinsicHelper.grantDelegation(providerKeys, providerKeys, signPayloadSr25519(providerKeys, addProviderData), payload);
@@ -123,11 +122,10 @@ describe("Delegation Scenario Tests", function () {
         });
 
         it("should fail to grant delegation to an MSA that is not a registered provider (ProviderNotRegistered)", async function () {
-            const payload = {
+            const payload = await generatePayload({
                 authorizedMsaId: otherMsaId,
                 schemaIds: [schemaId],
-                expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + 5,
-            }
+            });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, otherMsaKeys, signPayloadSr25519(keys, addProviderData), payload);
@@ -135,11 +133,10 @@ describe("Delegation Scenario Tests", function () {
         });
 
         it("should fail to grant delegation if ID in payload does not match origin (UnauthorizedDelegator)", async function () {
-            const payload = {
+            const payload = await generatePayload({
                 authorizedMsaId: otherMsaId,
                 schemaIds: [schemaId],
-                expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + 5,
-            }
+            });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
@@ -147,11 +144,10 @@ describe("Delegation Scenario Tests", function () {
         });
 
         it("should grant a delegation to a provider", async function () {
-            const payload = {
+            const payload = await generatePayload({
                 authorizedMsaId: providerId,
                 schemaIds: [schemaId],
-                expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + 5,
-            }
+            });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
@@ -164,11 +160,10 @@ describe("Delegation Scenario Tests", function () {
         });
 
         it("should fail to grant a duplicate delegation to a provider (DuplicateProvider)", async function () {
-            const payload = {
+            const payload = await generatePayload({
                 authorizedMsaId: providerId,
                 schemaIds: [schemaId],
-                expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + 5,
-            }
+            });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
@@ -279,5 +274,103 @@ describe("Delegation Scenario Tests", function () {
             const op = ExtrinsicHelper.revokeDelegationByDelegator(keys, otherProviderId);
             await assert.rejects(op.fundAndSend(), { name: 'RpcError', message: /Custom error: 0$/ });
         });
+
+        it("should revoke a delegation by provider", async function () {
+            const newKeys = createKeys();
+            const payload = await generatePayload({ authorizedMsaId: providerId, schemaIds: [schemaId] });
+            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+            let op = ExtrinsicHelper.createSponsoredAccountWithDelegation(newKeys, providerKeys, signPayloadSr25519(newKeys, addProviderData), payload);
+            const [msaEvent] = await op.fundAndSend();
+            const msaId = (msaEvent && op.api.events.msa.MsaCreated.is(msaEvent) ? msaEvent.data.msaId : undefined);
+            assert.notEqual(msaId, undefined, 'should have returned an MSA');
+            op = ExtrinsicHelper.revokeDelegationByProvider(msaId as u64, providerKeys);
+            const [revokeEvent] = await op.fundAndSend();
+            assert.notEqual(revokeEvent, undefined, "should have returned a DelegationRevoked event");
+            if (revokeEvent && op.api.events.msa.DelegationRevoked.is(revokeEvent)) {
+                assert.deepEqual(revokeEvent.data.delegatorId, msaId, 'delegator ids should match');
+                assert.deepEqual(revokeEvent.data.providerId, providerId, 'provider ids should match');
+            }
+        });
     });
+
+    describe("createSponsoredAccountWithDelegation", function () {
+        let sponsorKeys: KeyringPair;
+        let op: Extrinsic;
+        let defaultPayload: AddProviderPayload;
+
+        before(async function () {
+            sponsorKeys = await createAndFundKeypair();
+            defaultPayload = {
+                authorizedMsaId: providerId,
+                schemaIds: [schemaId],
+            }
+        });
+
+        it("should fail to create delegated account if provider ids don't match (UnauthorizedProvider)", async function () {
+            const payload = await generatePayload({ ...defaultPayload, authorizedMsaId: otherProviderId });
+            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+
+            op = ExtrinsicHelper.createSponsoredAccountWithDelegation(sponsorKeys, providerKeys, signPayloadSr25519(sponsorKeys, addProviderData), payload);
+            await assert.rejects(op.fundAndSend(), { name: 'UnauthorizedProvider' });
+        });
+
+        it("should fail to create delegated account if payload signature cannot be verified (InvalidSignature)", async function () {
+            const payload = await generatePayload({ ...defaultPayload, schemaIds: [] });
+            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+
+            op = ExtrinsicHelper.createSponsoredAccountWithDelegation(sponsorKeys, providerKeys, signPayloadSr25519(sponsorKeys, addProviderData), { ...payload, ...defaultPayload });
+            await assert.rejects(op.fundAndSend(), { name: 'InvalidSignature' });
+        });
+
+        it("should fail to create delegated account if no MSA exists for origin (NoKeyExists)", async function () {
+            const payload = await generatePayload(defaultPayload);
+            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+
+            op = ExtrinsicHelper.createSponsoredAccountWithDelegation(sponsorKeys, noMsaKeys, signPayloadSr25519(sponsorKeys, addProviderData), payload);
+            await assert.rejects(op.fundAndSend(), { name: 'NoKeyExists' });
+        });
+
+        it("should fail to create delegated account if MSA already exists for delegator (KeyAlreadyRegistered)", async function () {
+            const payload = await generatePayload(defaultPayload);
+            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+
+            op = ExtrinsicHelper.createSponsoredAccountWithDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
+            await assert.rejects(op.fundAndSend(), { name: 'KeyAlreadyRegistered' });
+        })
+
+        it("should fail to create delegated account if provider is not registered (ProviderNotRegistered)", async function () {
+            const payload = await generatePayload({ ...defaultPayload, authorizedMsaId: otherMsaId });
+            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+
+            op = ExtrinsicHelper.createSponsoredAccountWithDelegation(keys, otherMsaKeys, signPayloadSr25519(keys, addProviderData), payload);
+            await assert.rejects(op.fundAndSend(), { name: 'ProviderNotRegistered' });
+        })
+
+        it("should fail to create delegated account if provider if payload proof is too far in the future (ProofNotYetValid)", async function () {
+            const payload = await generatePayload(defaultPayload, 999);
+            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+
+            op = ExtrinsicHelper.createSponsoredAccountWithDelegation(sponsorKeys, providerKeys, signPayloadSr25519(sponsorKeys, addProviderData), payload);
+            await assert.rejects(op.fundAndSend(), { name: 'ProofNotYetValid' });
+        })
+
+        it("should fail to create delegated account if provider if payload proof has expired (ProofHasExpired))", async function () {
+            const payload = await generatePayload(defaultPayload, -1);
+            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+
+            op = ExtrinsicHelper.createSponsoredAccountWithDelegation(sponsorKeys, providerKeys, signPayloadSr25519(sponsorKeys, addProviderData), payload);
+            await assert.rejects(op.fundAndSend(), { name: 'ProofHasExpired' });
+        })
+
+        it("should successfully create a delegated account", async function () {
+            const payload = await generatePayload(defaultPayload);
+            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+
+            op = ExtrinsicHelper.createSponsoredAccountWithDelegation(sponsorKeys, providerKeys, signPayloadSr25519(sponsorKeys, addProviderData), payload);
+            const [event, eventMap] = await op.fundAndSend();
+            assert.notEqual(event, undefined, 'should have returned MsaCreated event');
+            assert.notEqual(eventMap["msa.DelegationGranted"], undefined, 'should have returned DelegationGranted event');
+            await assert.rejects(op.fundAndSend(), { name: 'SignatureAlreadySubmitted' }, "should reject double submission");
+        })
+    })
 })

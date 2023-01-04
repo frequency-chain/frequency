@@ -89,7 +89,7 @@ describe("Create Accounts", function () {
         it("should fail to add public key if origin does not own MSA", async function () {
             const newPayload = {
                 ...payload,
-                msaId: 999, // If we create more than 999 MSAs in our test suites, this will fail
+                msaId: new u64(ExtrinsicHelper.api.registry, 999), // If we create more than 999 MSAs in our test suites, this will fail
             }
             addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", newPayload);
             ownerSig = signPayloadSr25519(keys, addKeyData);

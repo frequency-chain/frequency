@@ -4,7 +4,7 @@ import { Codec } from "@polkadot/types/types";
 import { u8aToHex, u8aWrapBytes } from "@polkadot/util";
 import { mnemonicGenerate } from '@polkadot/util-crypto';
 import { env } from "./env";
-import { ExtrinsicHelper } from "./extrinsicHelpers";
+import { AddProviderPayload, ExtrinsicHelper } from "./extrinsicHelpers";
 import { EXISTENTIAL_DEPOSIT } from "./rootHooks";
 
 export interface DevAccount {
@@ -19,6 +19,18 @@ export type Sr25519Signature = { Sr25519: `0x${string}` }
 
 export function signPayloadSr25519(keys: KeyringPair, data: Codec): Sr25519Signature {
     return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) }
+}
+
+export async function generatePayload(payloadInputs: AddProviderPayload, expirationOffet?: number): Promise<AddProviderPayload> {
+    let { expiration, ...payload } = payloadInputs;
+    if (!expiration) {
+        expiration = (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + (expirationOffet || 5);
+    }
+
+    return {
+        expiration,
+        ...payload,
+    }
 }
 
 export function createKeys(name: string = 'first pair'): KeyringPair {
