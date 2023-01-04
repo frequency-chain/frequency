@@ -1,6 +1,6 @@
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import { createKeys, createAndFundKeypair, signPayloadSr25519, Sr25519Signature } from "../scaffolding/helpers";
+import { createKeys, createAndFundKeypair, signPayloadSr25519, Sr25519Signature, generateAddKeyPayload } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { AddKeyData, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { u64 } from "@polkadot/types";
@@ -41,7 +41,8 @@ describe("Create Accounts", function () {
 
     describe("addPublicKeyToMsa", function () {
         let badKeys: KeyringPair;
-        let payload: AddKeyData = {};
+        let defaultPayload: AddKeyData = {};
+        let payload: AddKeyData;
         let ownerSig: Sr25519Signature;
         let newSig: Sr25519Signature;
         let badSig: Sr25519Signature;
@@ -50,12 +51,15 @@ describe("Create Accounts", function () {
         before(async function () {
             authorizedKeys.push(await createAndFundKeypair());
             badKeys = createKeys();
-            payload.msaId = msaId;
-            payload.newPublicKey = authorizedKeys[0].publicKey;
-            payload.expiration = (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + 30;
+            defaultPayload.msaId = msaId;
+            defaultPayload.newPublicKey = authorizedKeys[0].publicKey;
         });
 
-        it("should fail to add public key if origin is not one of the signers of the payload", async function () {
+        beforeEach(async function () {
+            payload = await generateAddKeyPayload(defaultPayload);
+        });
+
+        it("should fail to add public key if origin is not one of the signers of the payload (MsaOwnershipInvalidSignature)", async function () {
             addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", payload);
             newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
             badSig = signPayloadSr25519(badKeys, addKeyData);
@@ -65,7 +69,7 @@ describe("Create Accounts", function () {
             });
         })
 
-        it("should fail to add public key if new keypair is not one of the signers of the payload", async function () {
+        it("should fail to add public key if new keypair is not one of the signers of the payload (NewKeyOwnershipInvalidSignature)", async function () {
             addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", payload);
             ownerSig = signPayloadSr25519(keys, addKeyData);
             badSig = signPayloadSr25519(badKeys, addKeyData);
@@ -75,7 +79,7 @@ describe("Create Accounts", function () {
             });
         });
 
-        it("should fail to add public key if origin does not have an MSA", async function () {
+        it("should fail to add public key if origin does not have an MSA (NoKeyExists)", async function () {
             const newOriginKeys = await createAndFundKeypair();
             addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", payload);
             ownerSig = signPayloadSr25519(newOriginKeys, addKeyData);
@@ -86,11 +90,11 @@ describe("Create Accounts", function () {
             });
         })
 
-        it("should fail to add public key if origin does not own MSA", async function () {
-            const newPayload = {
-                ...payload,
+        it("should fail to add public key if origin does not own MSA (NotMsaOwner)", async function () {
+            const newPayload = await generateAddKeyPayload({
+                ...defaultPayload,
                 msaId: new u64(ExtrinsicHelper.api.registry, 999), // If we create more than 999 MSAs in our test suites, this will fail
-            }
+            });
             addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", newPayload);
             ownerSig = signPayloadSr25519(keys, addKeyData);
             newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
@@ -100,11 +104,11 @@ describe("Create Accounts", function () {
             });
         });
 
-        it("should fail if expiration has passed", async function () {
-            const newPayload = {
-                ...payload,
+        it("should fail if expiration has passed (ProofHasExpired)", async function () {
+            const newPayload = await generateAddKeyPayload({
+                ...defaultPayload,
                 expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber(),
-            }
+            });
             addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", newPayload);
             ownerSig = signPayloadSr25519(keys, addKeyData);
             newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
@@ -114,12 +118,12 @@ describe("Create Accounts", function () {
             });
         })
 
-        it("should fail if expiration is not yet valid", async function () {
+        it("should fail if expiration is not yet valid (ProofNotYetValid)", async function () {
             const maxMortality = ExtrinsicHelper.api.consts.msa.mortalityWindowSize.toNumber();
-            const newPayload = {
-                ...payload,
+            const newPayload = await generateAddKeyPayload({
+                ...defaultPayload,
                 expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + maxMortality + 5,
-            }
+            });
             addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", newPayload);
             ownerSig = signPayloadSr25519(keys, addKeyData);
             newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
@@ -129,7 +133,7 @@ describe("Create Accounts", function () {
             });
         })
 
-        it("should successfully add a new public key to an existing MSA", async function () {
+        it("should successfully add a new public key to an existing MSA & disallow duplicate signed payload submission (SignatureAlreadySubmitted)", async function () {
             addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", payload);
 
             ownerSig = signPayloadSr25519(keys, addKeyData);
@@ -139,17 +143,10 @@ describe("Create Accounts", function () {
             const [publicKeyEvents] = await addPublicKeyOp.fundAndSend();
 
             assert.notEqual(publicKeyEvents, undefined, 'should have added public key');
+            await assert.rejects(addPublicKeyOp.fundAndSend(), { name: 'SignatureAlreadySubmitted' }, "should reject sending the same signed payload twiced");
         });
 
-        // NOTE: This test depends on signature & payload variables remaining set from the immediately preceding test
-        it("should fail if submitting the same signature more than once", async function () {
-            const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, payload);
-            await assert.rejects(addPublicKeyOp.fundAndSend(), {
-                name: 'SignatureAlreadySubmitted',
-            });
-        })
-
-        it("should fail if attempting to add the same key more than once", async function () {
+        it("should fail if attempting to add the same key more than once (KeyAlreadyRegistered)", async function () {
             const addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", payload);
 
             const ownerSig = signPayloadSr25519(keys, addKeyData);
@@ -163,10 +160,10 @@ describe("Create Accounts", function () {
 
         it("should allow new keypair to act for/on MSA", async function () {
             const additionalKeys = createKeys();
-            const newPayload = {
-                ...payload,
+            const newPayload = await generateAddKeyPayload({
+                ...defaultPayload,
                 newPublicKey: additionalKeys.publicKey,
-            }
+            });
             addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", newPayload);
             ownerSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
             newSig = signPayloadSr25519(additionalKeys, addKeyData);

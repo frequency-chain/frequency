@@ -98,6 +98,13 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
         ))
     }
 
+    public async sudoSignAndSend(): Promise<[ParsedEvent<C, N> | undefined, EventMap]> {
+        return firstValueFrom(this.api.tx.sudo.sudo(this.extrinsic()).signAndSend(this.keys).pipe(
+            filter(({ status }) => status.isInBlock || status.isFinalized),
+            this.parseResult(this.event),
+        ))
+    }
+
     public async getEstimatedTxFee(): Promise<bigint> {
         return firstValueFrom(this.extrinsic().paymentInfo(this.keys).pipe(
             map((info) => info.partialFee.toBigInt())

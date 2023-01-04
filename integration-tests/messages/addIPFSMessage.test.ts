@@ -29,7 +29,7 @@ describe("Add Offchain Message", function () {
         await createMsa.fundAndSend();
 
         // Create a schema
-        const createSchema = ExtrinsicHelper.createSchema(devAccounts[0].keys, PARQUET_BROADCAST, "Parquet", "IPFS");
+        const createSchema = ExtrinsicHelper.createSchema(keys, PARQUET_BROADCAST, "Parquet", "IPFS");
         const [event] = await createSchema.fundAndSend();
         if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
             [, schemaId] = event.data;
@@ -61,8 +61,13 @@ describe("Add Offchain Message", function () {
 
     it("should successfully add an IPFS message", async function () {
         const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid, ipfs_payload_len + 1);
-        const [_, chainEvents] = await f.fundAndSend();
+        const [event] = await f.fundAndSend();
 
-        assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined);
+        assert.notEqual(event, undefined, "should have returned a MessagesStored event");
+        if (event && f.api.events.messages.MessagesStored.is(event)) {
+            assert.deepEqual(event.data.schemaId, schemaId, 'schema ids should be equal');
+            assert.notEqual(event.data.blockNumber, undefined, 'should have a block number');
+            assert.equal(event.data.count.toNumber(), 1, "message count should be 1");
+        }
     });
 })
