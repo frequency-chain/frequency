@@ -375,10 +375,13 @@ jobs:
           echo "sanitized: $clean"
           echo "2---------------------"
           echo "sanitized=$clean" >> $GITHUB_OUTPUT
+      - name: Get Polkadot Version
+        id: polkadot-version
+        run: echo "version=$(make version-polkadot)" >> $GITHUB_OUTPUT
       - name: Generate Release Notes
         working-directory: tools/ci/release-notes
         run: |
-          ./build-release-notes.sh '${{steps.sanitize-changelog.outputs.sanitized}}' > \
+          ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' '${{steps.sanitize-changelog.outputs.sanitized}}' > \
           release-notes.md
       - name: Download Binary Artifacts
         id: download

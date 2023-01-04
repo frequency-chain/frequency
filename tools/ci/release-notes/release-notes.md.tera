@@ -4,7 +4,7 @@ Full changelog: https://github.com/LibertyDSNP/frequency/compare/{{env.PREVIOUS_
 
 ## Versions
 - Rust Toolchain: `{{env.RUST_TOOLCHAIN}}`
-- Polkadot Version: `v{{env.POLKADOT_VERSION}}`
+- Substrate/Polkadot: `v{{env.POLKADOT_VERSION}}`
 
 ## What's Changed
 {% set changelog = env.CHANGELOG | split(pat='|n|') | safe %}
