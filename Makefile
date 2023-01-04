@@ -128,7 +128,7 @@ build-rococo-release:
 build-mainnet-release:
 	cargo build --locked --features  frequency --profile production
 
-PHONY: test
+.PHONY: test
 test:
 	cargo test --workspace --locked --features all-frequency-features
 
@@ -138,7 +138,7 @@ integration-test:
 # Pull the Polkadot version from the polkadot-cli package and remove the leading v
 POLKADOT_VERSION=$(shell cargo tree --depth 0 --manifest-path ./node/service/Cargo.toml --package polkadot-cli | grep polkadot-cli | cut -d " " -f 2 | tr -d "v")
 
-PHONY: version
+.PHONY: version
 version:
 ifndef v
 	@echo "Please set the version with v=X.X.X-X"
@@ -152,11 +152,15 @@ ifeq (,$(POLKADOT_VERSION))
 	@echo "Error: Having trouble finding the Polkadot version. Sorry about that.\nCheck my POLKADOT_VERSION variable command."
 	@exit 1
 endif
-	@echo "Setting the crate versions to "$(v)+polkadot-$(POLKADOT_VERSION)
-	find ./ -type f -name 'Cargo.toml' -exec sed -i '' 's/^version = \"0\.0\.0\"/version = \"$(v)+polkadot-$(POLKADOT_VERSION)\"/g' {} \;
-	# cargo check
+	@echo "Setting the crate versions to "$(v)+polkadot$(POLKADOT_VERSION)
+	find ./ -type f -name 'Cargo.toml' -exec sed -i '' 's/^version = \"0\.0\.0\"/version = \"$(v)+polkadot$(POLKADOT_VERSION)\"/g' {} \;
+	cargo check
 	@echo "All done. Don't forget to double check that the automated replacement worked."
 
-PHONY: version-reset
+.PHONY: version-polkadot
+version-polkadot:
+	@echo $(POLKADOT_VERSION)
+
+.PHONY: version-reset
 version-reset:
 	find ./ -type f -name 'Cargo.toml' -exec sed -i '' 's/^version = \".*+polkadot.*\"/version = \"0.0.0\"/g' {} \;
