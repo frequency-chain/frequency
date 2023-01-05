@@ -6,8 +6,7 @@ on:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+" # ex. v0.29.9
-      - "v[0-9]+.[0-9]+.[0-9]+-[0-9]+" # ex. v0.29.9-1
-      - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-1-rc1
+      - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-rc1
       - "vX.X.X" # used for testing only
 env:
   RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
@@ -303,8 +302,52 @@ jobs:
           path: js/api-augment/dist
           if-no-files-found: error
 
+  version-check:
+    needs: build-binaries
+    name: Test Version Matches Release
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        network: [mainnet]
+        include:
+          - network: mainnet
+            spec: frequency
+            build-profile: production
+            release-file-name-prefix: frequency
+          - os: ubuntu-20.04
+            arch: amd64
+    runs-on: ${{matrix.os}}
+    steps:
+      - name: Set Env Vars
+        run: |
+          echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
+          echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
+          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Download Binary Artifacts
+        id: download
+        uses: actions/download-artifact@v3
+        with:
+          name: artifacts-${{github.run_id}}
+          path: .
+      - name: Move Binary to Target Dir
+        run: |
+          mkdir -p ${{env.BIN_DIR}}
+          mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+          chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+      - name: Testing Version Match
+        run: |
+          EXPECTED_VERSION="${{env.NEW_RELEASE_VERSION}}+polkadot$(make version-polkadot)"
+          ACTUAL_VERSION="v$(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version | cut -d " " -f 2)"
+          echo "Expected: ${EXPECTED_VERSION}"
+          echo "  Actual: ${ACTUAL_VERSION%-*}"
+          [[ ${ACTUAL_VERSION%-*} == ${EXPECTED_VERSION} ]]
+
   wait-for-all-builds:
-    needs: [build-binaries, build-runtimes, build-rust-developer-docs, build-js-api-augment]
+    needs: [version-check, build-binaries, build-runtimes, build-rust-developer-docs, build-js-api-augment]
     name: Wait for All Builds to Finish
     runs-on: ubuntu-20.04
     steps:
@@ -322,7 +365,7 @@ jobs:
           fetch-depth: 0
       - name: Full Release?
         run: |
-          is_full_release=$([[ "$NEW_RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\-[0-9]+)?$ ]] && \
+          is_full_release=$([[ "$NEW_RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] && \
             echo 'true' || echo 'false')
           echo "is_full_release: $is_full_release"
           echo "IS_FULL_RELEASE=$is_full_release" >> $GITHUB_ENV
@@ -369,10 +412,13 @@ jobs:
           echo "sanitized: $clean"
           echo "2---------------------"
           echo "sanitized=$clean" >> $GITHUB_OUTPUT
+      - name: Get Polkadot Version
+        id: polkadot-version
+        run: echo "version=$(make version-polkadot)" >> $GITHUB_OUTPUT
       - name: Generate Release Notes
         working-directory: tools/ci/release-notes
         run: |
-          ./build-release-notes.sh '${{steps.sanitize-changelog.outputs.sanitized}}' > \
+          ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' '${{steps.sanitize-changelog.outputs.sanitized}}' > \
           release-notes.md
       - name: Download Binary Artifacts
         id: download
