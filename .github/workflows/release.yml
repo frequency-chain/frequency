@@ -303,7 +303,7 @@ jobs:
           if-no-files-found: error
 
   version-check:
-    needs: [build-binaries]
+    needs: build-binaries
     name: Test Version Matches Release
     strategy:
       matrix:
