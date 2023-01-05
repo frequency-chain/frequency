@@ -135,8 +135,9 @@ test:
 integration-test:
 	./scripts/run_integration_tests.sh
 
-# Pull the Polkadot version from the polkadot-cli package and remove the leading v
-POLKADOT_VERSION=$(shell cargo tree --depth 0 --manifest-path ./node/service/Cargo.toml --package polkadot-cli | grep polkadot-cli | cut -d " " -f 2 | tr -d "v")
+# Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
+# This will break if the lock file format changes
+POLKADOT_VERSION=$(shell grep -oz '\[\[package\]\]\nname = "polkadot-cli"\nversion = ".*\..*\..*"' Cargo.lock | tail -n 1 | cut -d " " -f 3 | tr -d \")
 
 .PHONY: version
 version:
@@ -159,6 +160,10 @@ endif
 
 .PHONY: version-polkadot
 version-polkadot:
+ifeq (,$(POLKADOT_VERSION))
+	@echo "Error: Having trouble finding the Polkadot version. Sorry about that.\nCheck my POLKADOT_VERSION variable command."
+	@exit 1
+endif
 	@echo $(POLKADOT_VERSION)
 
 .PHONY: version-reset
