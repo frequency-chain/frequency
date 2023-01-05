@@ -136,8 +136,8 @@ integration-test:
 	./scripts/run_integration_tests.sh
 
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
-# This will break if the lock file format changes
-POLKADOT_VERSION=$(shell grep -oz '\[\[package\]\]\nname = "polkadot-cli"\nversion = ".*\..*\..*"' Cargo.lock | tail -n 1 | cut -d " " -f 3 | tr -d \")
+# This will break if the lock file format
+POLKADOT_VERSION=$(shell awk -F "=" '/name = "polkadot-cli"/,/version = ".*"/{ print $2 }' Cargo.lock | tail -n 1 | cut -d " " -f 3 | tr -d \")
 
 .PHONY: version
 version:
