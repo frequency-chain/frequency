@@ -468,6 +468,7 @@
 <span id="468">468</span>
 <span id="469">469</span>
 <span id="470">470</span>
+<span id="471">471</span>
 </pre><pre class="rust"><code><span class="attribute">#![allow(missing_docs)]
 </span><span class="kw">use </span>common_primitives::node::{AccountId, Balance};
 <span class="kw">use </span>common_runtime::constants::{
@@ -582,7 +583,8 @@
 }
 
 <span class="kw">pub fn </span>load_frequency_spec() -&gt; ChainSpec {
-	ChainSpec::from_json_bytes(<span class="kw-2">&amp;</span><span class="macro">include_bytes!</span>(<span class="string">&quot;../../../../resources/frequency.json&quot;</span>)[..]).unwrap()
+	ChainSpec::from_json_bytes(<span class="kw-2">&amp;</span><span class="macro">include_bytes!</span>(<span class="string">&quot;../../../../resources/frequency.raw.json&quot;</span>)[..])
+		.unwrap()
 }
 
 <span class="kw">pub fn </span>frequency() -&gt; ChainSpec {

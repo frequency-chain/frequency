@@ -1070,6 +1070,24 @@
 <span id="1070">1070</span>
 <span id="1071">1071</span>
 <span id="1072">1072</span>
+<span id="1073">1073</span>
+<span id="1074">1074</span>
+<span id="1075">1075</span>
+<span id="1076">1076</span>
+<span id="1077">1077</span>
+<span id="1078">1078</span>
+<span id="1079">1079</span>
+<span id="1080">1080</span>
+<span id="1081">1081</span>
+<span id="1082">1082</span>
+<span id="1083">1083</span>
+<span id="1084">1084</span>
+<span id="1085">1085</span>
+<span id="1086">1086</span>
+<span id="1087">1087</span>
+<span id="1088">1088</span>
+<span id="1089">1089</span>
+<span id="1090">1090</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attribute">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
@@ -1231,9 +1249,27 @@
 	}
 }
 
+<span class="comment">// The duplicate macros are annoying, but #[sp_version::runtime_version]
+// has fairly string limits on what can go in there.
+
+// Override the spec name when not mainnet to be frequency-rococo
+</span><span class="attribute">#[cfg(not(feature = <span class="string">&quot;frequency&quot;</span>))]
+</span><span class="macro">macro_rules! </span>spec_name {
+	( <span class="macro-nonterminal">$y</span>:expr ) =&gt; {{
+		<span class="macro">create_runtime_str!</span>(<span class="string">&quot;frequency-rococo&quot;</span>)
+	}};
+}
+
+<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency&quot;</span>)]
+</span><span class="macro">macro_rules! </span>spec_name {
+	( <span class="macro-nonterminal">$y</span>:expr ) =&gt; {{
+		<span class="macro">create_runtime_str!</span>(<span class="macro-nonterminal">$y</span>)
+	}};
+}
+
 <span class="attribute">#[sp_version::runtime_version]
 </span><span class="kw">pub const </span>VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;frequency&quot;</span>),
+	spec_name: <span class="macro">spec_name!</span>(<span class="string">&quot;frequency&quot;</span>),
 	impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;frequency&quot;</span>),
 	authoring_version: <span class="number">1</span>,
 	spec_version: <span class="number">5</span>,
