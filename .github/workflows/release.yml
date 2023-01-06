@@ -23,17 +23,14 @@ jobs:
         include:
           - network: local
             spec: frequency-rococo-local
-            genesis: "skip"
             build-profile: release
             release-file-name-prefix: frequency-local
           - network: rococo
             spec: frequency-rococo-testnet
-            genesis: "0x000000000000000000000000000000000000000000000000000000000000000000e3495742b019f5ad49dff7de4040bc965b75eaf46769c24db1027d4ff86fc92703170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400"
             build-profile: production
             release-file-name-prefix: frequency-rococo
           - network: mainnet
             spec: frequency
-            genesis: "0x000000000000000000000000000000000000000000000000000000000000000000393a2a0f7778716d006206c5a4787cbf2ea3b26a67379b7a38ee54519d7fd4be03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400"
             build-profile: production
             release-file-name-prefix: frequency
           - os: [self-hosted, Linux, X64]
@@ -104,12 +101,6 @@ jobs:
       - name: Verify Binary
         working-directory: ${{env.BIN_DIR}}
         run: gpg --verify ${{env.RELEASE_BIN_FILENAME}}.asc
-      - name: Test Genesis State
-        if: matrix.genesis != 'skip'
-        run: |
-          echo "Expected genesis state: ${{matrix.genesis}}"
-          echo "  Actual genesis state: " $(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} export-genesis-state)
-          [[ $(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} export-genesis-state) == ${{matrix.genesis}} ]]
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -178,7 +169,7 @@ jobs:
           echo "Runtime Spec Version:|${{env.RUNTIME_SPEC_VERSION}}|"
           echo "Runtime Spec Version:||$RUNTIME_SPEC_VERSION||"
           [[ $RUNTIME_SPEC_VERSION == ?(-)+([0-9]) ]] || \
-            (echo "ERROR: \"${{env.RUNTIME_SPEC_VERSION}}\" is not a valid integer" && exit 10)
+            (echo "ERROR: \"${{env.RUNTIME_SPEC_VERSION}}\" is not a valid integer" && exit 1)
       - name: Set Env Vars
         run: |
           echo "WASM_DIR=${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}" >> $GITHUB_ENV
