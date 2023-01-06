@@ -392,6 +392,8 @@ jobs:
       - name: Set Env Vars
         run: |
           echo "WASM_DIR=${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}" >> $GITHUB_ENV
+          echo "BUILT_WASM_FILENAME=frequency_runtime.compact.compressed.wasm" >> $GITHUB_ENV
+
       # # XXX Keep this step as it lets us skip WASM builds during development/testing
       # - name: Cache WASM for Testing
       #   id: cache-wasm
@@ -407,12 +409,19 @@ jobs:
       - name: Build Deterministic WASM with srtool
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          docker run --rm -e PACKAGE=${{matrix.package}} \
+          docker run --rm \
+            -e PACKAGE=${{matrix.package}} \
             -e RUNTIME_DIR=${{matrix.runtime-dir}} \
             -e PROFILE=${{matrix.build-profile}} \
             -e BUILD_OPTS="--features on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
             -v $PWD:/build \
-            -v /tmp/cargo:/cargo-home paritytech/srtool:$1.64.0 build
+            -v /tmp/cargo:/cargo-home paritytech/srtool:1.64.0 build
+      - name: Release wasm artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{matrix.network}}-wasm
+          path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
+          retention-days: 1  
 
   verify-js-api-augment:
     needs: build-binaries
