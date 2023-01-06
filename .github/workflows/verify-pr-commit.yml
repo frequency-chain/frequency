@@ -409,7 +409,7 @@ jobs:
         run: |
           set -ex
           srtool build \
-            --default-features="on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
+            --default-features="--features on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
             --profile=${{matrix.build-profile}} \
             --package=${{matrix.package}} \
             --root
