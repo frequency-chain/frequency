@@ -399,20 +399,20 @@ jobs:
       #   with:
       #     path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
       #     key: ${{runner.os}}-${{matrix.network}}-${{github.head_ref}}
-      - name: Install srtool-cli
+      # - name: Install srtool-cli
+      #   if: steps.cache-wasm.outputs.cache-hit != 'true'
+      #   run: |
+      #     cargo install --git https://github.com/chevdor/srtool-cli
+      #     srtool --version
+      - name: Build Deterministic WASM with srtool
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          cargo install --git https://github.com/chevdor/srtool-cli
-          srtool --version
-      - name: Build Deterministic WASM
-        if: steps.cache-wasm.outputs.cache-hit != 'true'
-        run: |
-          set -ex
-          srtool build \
-            --default-features="on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
-            --profile=${{matrix.build-profile}} \
-            --package=${{matrix.package}} \
-            --root
+          docker run --rm -e PACKAGE=${{matrix.package}} \
+            -e RUNTIME_DIR=${{matrix.runtime-dir}} \
+            -e PROFILE=${{matrix.build-profile}} \
+            -e BUILD_OPTS="--features on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
+            -v $PWD:/build \
+            -v /tmp/cargo:/cargo-home paritytech/srtool:$1.64.0 build
 
   verify-js-api-augment:
     needs: build-binaries
