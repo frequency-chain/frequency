@@ -190,7 +190,7 @@ jobs:
         run: |
           set -ex
           srtool build \
-            --default-features="on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
+            --default-features="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
             --package=${{matrix.package}} \
             --root
@@ -198,6 +198,14 @@ jobs:
         run: |
           cp -p ./${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} \
             ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
+      - name: Install subwasm
+        run: |
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.18.0
+          subwasm --version
+      - name: Test WASM file
+        run: |
+          subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
+          subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}} | grep "Core version:.*${{matrix.package}}-${{env.RUNTIME_SPEC_VERSION}}"
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
