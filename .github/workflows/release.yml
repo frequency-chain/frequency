@@ -9,7 +9,7 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-rc1
       - "vX.X.X" # used for testing only
     branches:
-      - "bug/fix-srtool-issue-882"
+      - "bug-fix-srtool-issue-882"
 env:
   RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
   NEW_RELEASE_VERSION: ${{github.ref_name}}
