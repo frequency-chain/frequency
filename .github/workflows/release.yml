@@ -124,6 +124,7 @@ jobs:
             built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency-rococo_runtime
             features: frequency-rococo-testnet
+            wasm-core-version: frequency-rococo
           - network: mainnet
             build-profile: production
             package: frequency-runtime
@@ -131,6 +132,7 @@ jobs:
             built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency_runtime
             features: frequency
+            wasm-core-version: frequency
     runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Set Ubuntu Env Vars
@@ -189,8 +191,8 @@ jobs:
       - name: Build Deterministic WASM
         run: |
           set -ex
-          srtool build \
-            --default-features="on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
+          RUST_LOG=debug srtool build \
+            --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
             --package=${{matrix.package}} \
             --root
@@ -198,6 +200,15 @@ jobs:
         run: |
           cp -p ./${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} \
             ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
+      - name: Install subwasm
+        run: |
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.18.0
+          subwasm --version
+      - name: Test WASM file
+        run: |
+          subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
+          subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
+            (echo "ERROR: WASM Core version didn't match ${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" && exit 1)
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
