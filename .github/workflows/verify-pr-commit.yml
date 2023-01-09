@@ -7,7 +7,7 @@ on:
     branches:
       - main
 env:
-  BUILD_PROFILE: release
+  BIN_DIR: target/release
   RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
 jobs:
   changes:
@@ -54,41 +54,49 @@ jobs:
     needs: changes
     if: needs.changes.outputs.build-binary != 'true'
     runs-on: ubuntu-20.04
-    name: "Build Binary on ${{matrix.branch_name}} Branch"
+    name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
     strategy:
       matrix:
+        network: [rococo, mainnet]
         git_branch: ["${{github.head_ref}}", main]
         include:
           - git_branch: ${{github.head_ref}}
-            branch_name: PR
+            branch_alias: pr
           - git_branch: main
-            branch_name: Main
+            branch_alias: main
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
   build-binaries:
     needs: changes
     if: needs.changes.outputs.build-binary == 'true'
-    name: Build Binary on ${{matrix.branch_name}} Branch
+    name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
     strategy:
       matrix:
-        git_branch: ["${{github.head_ref}}", main]
+        network: [rococo, mainnet]
         include:
           - git_branch: ${{github.head_ref}}
             spec: frequency-rococo-local
-            branch_name: PR
+            branch_alias: pr
+            network: local
           - git_branch: main
             spec: frequency-rococo-local
-            branch_name: Main
+            branch_alias: main
+            network: local
+          - network: rococo
+            spec: frequency-rococo-testnet
+            branch_alias: pr
+          - network: mainnet
+            spec: frequency
+            branch_alias: pr
     runs-on: [self-hosted, Linux, X64]
     env:
       NETWORK: mainnet
     steps:
       - name: Set Env Vars
         run: |
-          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
           export BUILT_BIN_FILENAME=frequency; echo "BUILT_BIN_FILENAME=$BUILT_BIN_FILENAME" >> $GITHUB_ENV
-          echo "REF_BIN_FILENAME=$BUILT_BIN_FILENAME-ref" >> $GITHUB_ENV
+          echo "FINAL_BIN_FILENAME=$BUILT_BIN_FILENAME.${{matrix.network}}-${{matrix.branch_alias}}" >> $GITHUB_ENV
           echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -99,8 +107,11 @@ jobs:
       #   id: cache-binary
       #   uses: actions/cache@v3
       #   with:
+
       #     path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
       #     key: ${{runner.os}}-${{env.NETWORK}}-${{github.ref_name}}
+      #     path: ${{env.BIN_DIR}}/${{env.FINAL_BIN_FILENAME}}
+      #     key: ${{runner.os}}-${{env.NETWORK}}-${{github.head_ref}}
       - name: Install Required Packages
         run: |
           sudo apt-get update
@@ -124,19 +135,20 @@ jobs:
           CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release \
             --features ${{matrix.spec}}
       - name: Run Sanity Checks
+        if: steps.cache-binary.outputs.cache-hit != 'true'
         working-directory: ${{env.BIN_DIR}}
         run: |
           file ${{env.BUILT_BIN_FILENAME}} && \
             ./${{env.BUILT_BIN_FILENAME}} --version
       - name: Rename Reference Binary
-        if: matrix.git_branch == 'main'
+        if: steps.cache-binary.outputs.cache-hit != 'true'
         working-directory: ${{env.BIN_DIR}}
-        run: mv ${{env.BUILT_BIN_FILENAME}} ${{env.REF_BIN_FILENAME}}
+        run: cp ${{env.BUILT_BIN_FILENAME}} ${{env.FINAL_BIN_FILENAME}}
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
-          path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}*
+          path: ${{env.BIN_DIR}}/${{env.FINAL_BIN_FILENAME}}*
           if-no-files-found: error
 
   check-for-vulnerable-crates:
@@ -387,7 +399,7 @@ jobs:
           echo "Runtime Spec Version:|${{env.RUNTIME_SPEC_VERSION}}|"
           echo "Runtime Spec Version:||$RUNTIME_SPEC_VERSION||"
           [[ $RUNTIME_SPEC_VERSION == ?(-)+([0-9]) ]] || \
-            (echo "ERROR: \"${{env.RUNTIME_SPEC_VERSION}}\" is not a valid integer" && exit 10)
+            (echo "ERROR: \"${{env.RUNTIME_SPEC_VERSION}}\" is not a valid integer" && exit 1)
       - name: Set Env Vars
         run: |
           echo "WASM_DIR=${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}" >> $GITHUB_ENV
@@ -397,12 +409,14 @@ jobs:
       #   uses: actions/cache@v3
       #   with:
       #     path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
-      #     key: ${{runner.os}}-${{matrix.network}}-${{env.NEW_RELEASE_VERSION}}
+      #     key: ${{runner.os}}-${{matrix.network}}-${{github.head_ref}}
       - name: Install srtool-cli
+        if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
           cargo install --git https://github.com/chevdor/srtool-cli
           srtool --version
       - name: Build Deterministic WASM
+        if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
           set -ex
           srtool build \
@@ -418,7 +432,7 @@ jobs:
     steps:
       - name: Set Env Vars
         run: |
-          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
+          echo "BIN_FILENAME=frequency.mainnet-pr" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Set up NodeJs
@@ -442,9 +456,9 @@ jobs:
         working-directory: ${{env.BIN_DIR}}
         run: |
           set -x
-          chmod 755 frequency
+          chmod 755 ${{env.BIN_FILENAME}}
       - name: Output Metadata
-        run: ${{env.BIN_DIR}}/frequency export-metadata ./js/api-augment/metadata.json
+        run: ${{env.BIN_DIR}}/${{env.BIN_FILENAME}} export-metadata ./js/api-augment/metadata.json
       - name: Build
         run: npm run build
         working-directory: js/api-augment
@@ -462,7 +476,8 @@ jobs:
     steps:
       - name: Set Env Vars
         run: |
-          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
+          echo "BUILT_BIN_FILENAME=frequency.mainnet-pr" >> $GITHUB_ENV
+          echo "DOCKER_BIN_FILENAME=frequency" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
@@ -480,11 +495,14 @@ jobs:
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.BIN_DIR}}
+      - name: Rename Binary
+        working-directory: ${{env.BIN_DIR}}
+        run: mv ${{env.BUILT_BIN_FILENAME}} ${{env.DOCKER_BIN_FILENAME}}
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
           set -x
-          chmod 755 frequency
+          chmod 755 ${{env.DOCKER_BIN_FILENAME}}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
         with:
@@ -515,7 +533,7 @@ jobs:
     steps:
       - name: Set Env Vars
         run: |
-          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
+          echo "TEST_BIN_FILENAME=frequency.mainnet-pr" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
@@ -533,11 +551,11 @@ jobs:
         working-directory: ${{env.BIN_DIR}}
         run: |
           set -x
-          chmod 755 frequency
+          chmod 755 ${{env.TEST_BIN_FILENAME}}
       - name: Output Binary Version
         working-directory: ${{env.BIN_DIR}}
         run: |
-          file ./frequency && ./frequency --version
+          file ./${{env.TEST_BIN_FILENAME}} && ./${{env.TEST_BIN_FILENAME}} --version
 
   check-metadata-and-spec-version:
     needs: build-binaries
@@ -550,14 +568,13 @@ jobs:
     steps:
       - name: Set Env Vars
         run: |
-          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
-          export TEST_BIN_FILENAME=frequency; echo "TEST_BIN_FILENAME=$TEST_BIN_FILENAME" >> $GITHUB_ENV
-          echo "REF_BIN_FILENAME=$TEST_BIN_FILENAME-ref" >> $GITHUB_ENV
+          echo "TEST_BIN_FILENAME=frequency.local-pr" >> $GITHUB_ENV
+          echo "REF_BIN_FILENAME=frequency.local-main" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Download Test Binary
+      - name: Download Binaries
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
@@ -593,7 +610,7 @@ jobs:
           spec_version=$(./$TEST_BIN_FILENAME export-runtime-version | jq -r .specVersion)
           [[ $spec_version -gt $spec_version_ref  ]] || \
             (echo "ERROR: When metadata is updated, the new spec version \($spec_version\) \
-            must be greater than the latest version on main \($spec_version_ref\)" && exit 10)
+            must be greater than the latest version on main \($spec_version_ref\)" && exit 1)
       - name: Remove Metadata Mismatch Label
         if: |
           (steps.compare-metadata.outputs.metadata_match == 'true') &&
@@ -610,8 +627,8 @@ jobs:
     steps:
       - name: Set Env Vars
         run: |
-          echo "BIN_DIR=target/$BUILD_PROFILE" >> $GITHUB_ENV
-          export BIN_FILENAME=frequency; echo "BIN_FILENAME=$BIN_FILENAME" >> $GITHUB_ENV
+          echo "BIN_FILENAME=frequency.local-pr" >> $GITHUB_ENV
+          echo "FREQUENCY_PROCESS_NAME=frequency" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
@@ -661,4 +678,45 @@ jobs:
           WS_PROVIDER_URL="ws://127.0.0.1:9944" npm test
       - name: Stop Local Node
         if: always()
-        run: pkill ${{env.BIN_FILENAME}}
+        run: pkill ${{env.FREQUENCY_PROCESS_NAME}}
+
+  verify-genesis-state:
+    needs: build-binaries
+    name: Verify Genesis State
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Set Env Vars
+        run: |
+          echo "EXPECTED_GENESIS_STATE_ROCOCO=0x000000000000000000000000000000000000000000000000000000000000000000e3495742b019f5ad49dff7de4040bc965b75eaf46769c24db1027d4ff86fc92703170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
+          echo "EXPECTED_GENESIS_STATE_MAINNET=0x000000000000000000000000000000000000000000000000000000000000000000393a2a0f7778716d006206c5a4787cbf2ea3b26a67379b7a38ee54519d7fd4be03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
+          echo "BIN_FILENAME_ROCOCO=frequency.rococo-pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME_MAINNET=frequency.mainnet-pr" >> $GITHUB_ENV
+      - name: Download Binaries
+        uses: actions/download-artifact@v3
+        with:
+          name: artifacts-${{github.run_id}}
+          path: ${{env.BIN_DIR}}
+      - name: Set Binary Permissions
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          set -x
+          chmod 755 $BIN_FILENAME_ROCOCO
+          chmod 755 $BIN_FILENAME_MAINNET
+      - name: Test Rococo Genesis State
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          expected_genesis_state=${{env.EXPECTED_GENESIS_STATE_ROCOCO}}
+          echo "Expected genesis state: $expected_genesis_state"
+          actual_genesis_state=$(./${{env.BIN_FILENAME_ROCOCO}} export-genesis-state)
+          echo "Actual genesis state: $actual_genesis_state"
+          [[ $actual_genesis_state == $expected_genesis_state ]] || \
+            (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
+      - name: Test Mainnet Genesis State
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          expected_genesis_state=${{env.EXPECTED_GENESIS_STATE_MAINNET}}
+          echo "Expected genesis state: $expected_genesis_state"
+          actual_genesis_state=$(./${{env.BIN_FILENAME_MAINNET}} export-genesis-state)
+          echo "Actual genesis state: $actual_genesis_state"
+          [[ $actual_genesis_state == $expected_genesis_state ]] || \
+            (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
