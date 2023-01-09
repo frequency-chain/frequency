@@ -6,8 +6,7 @@ on:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+" # ex. v0.29.9
-      - "v[0-9]+.[0-9]+.[0-9]+-[0-9]+" # ex. v0.29.9-1
-      - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-1-rc1
+      - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-rc1
       - "vX.X.X" # used for testing only
 env:
   RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
@@ -24,17 +23,14 @@ jobs:
         include:
           - network: local
             spec: frequency-rococo-local
-            genesis: "skip"
             build-profile: release
             release-file-name-prefix: frequency-local
           - network: rococo
             spec: frequency-rococo-testnet
-            genesis: "0x000000000000000000000000000000000000000000000000000000000000000000e3495742b019f5ad49dff7de4040bc965b75eaf46769c24db1027d4ff86fc92703170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400"
             build-profile: production
             release-file-name-prefix: frequency-rococo
           - network: mainnet
             spec: frequency
-            genesis: "0x000000000000000000000000000000000000000000000000000000000000000000393a2a0f7778716d006206c5a4787cbf2ea3b26a67379b7a38ee54519d7fd4be03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400"
             build-profile: production
             release-file-name-prefix: frequency
           - os: [self-hosted, Linux, X64]
@@ -105,12 +101,6 @@ jobs:
       - name: Verify Binary
         working-directory: ${{env.BIN_DIR}}
         run: gpg --verify ${{env.RELEASE_BIN_FILENAME}}.asc
-      - name: Test Genesis State
-        if: matrix.genesis != 'skip'
-        run: |
-          echo "Expected genesis state: ${{matrix.genesis}}"
-          echo "  Actual genesis state: " $(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} export-genesis-state)
-          [[ $(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} export-genesis-state) == ${{matrix.genesis}} ]]
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -134,6 +124,7 @@ jobs:
             built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency-rococo_runtime
             features: frequency-rococo-testnet
+            wasm-core-version: frequency-rococo
           - network: mainnet
             build-profile: production
             package: frequency-runtime
@@ -141,6 +132,7 @@ jobs:
             built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency_runtime
             features: frequency
+            wasm-core-version: frequency
     runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Set Ubuntu Env Vars
@@ -179,7 +171,7 @@ jobs:
           echo "Runtime Spec Version:|${{env.RUNTIME_SPEC_VERSION}}|"
           echo "Runtime Spec Version:||$RUNTIME_SPEC_VERSION||"
           [[ $RUNTIME_SPEC_VERSION == ?(-)+([0-9]) ]] || \
-            (echo "ERROR: \"${{env.RUNTIME_SPEC_VERSION}}\" is not a valid integer" && exit 10)
+            (echo "ERROR: \"${{env.RUNTIME_SPEC_VERSION}}\" is not a valid integer" && exit 1)
       - name: Set Env Vars
         run: |
           echo "WASM_DIR=${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}" >> $GITHUB_ENV
@@ -199,8 +191,8 @@ jobs:
       - name: Build Deterministic WASM
         run: |
           set -ex
-          srtool build \
-            --default-features="on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
+          RUST_LOG=debug srtool build \
+            --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
             --package=${{matrix.package}} \
             --root
@@ -208,6 +200,15 @@ jobs:
         run: |
           cp -p ./${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} \
             ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
+      - name: Install subwasm
+        run: |
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.18.0
+          subwasm --version
+      - name: Test WASM file
+        run: |
+          subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
+          subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
+            (echo "ERROR: WASM Core version didn't match ${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" && exit 1)
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
@@ -303,8 +304,52 @@ jobs:
           path: js/api-augment/dist
           if-no-files-found: error
 
+  version-check:
+    needs: build-binaries
+    name: Test Version Matches Release
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        network: [mainnet]
+        include:
+          - network: mainnet
+            spec: frequency
+            build-profile: production
+            release-file-name-prefix: frequency
+          - os: ubuntu-20.04
+            arch: amd64
+    runs-on: ${{matrix.os}}
+    steps:
+      - name: Set Env Vars
+        run: |
+          echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
+          echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
+          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Download Binary Artifacts
+        id: download
+        uses: actions/download-artifact@v3
+        with:
+          name: artifacts-${{github.run_id}}
+          path: .
+      - name: Move Binary to Target Dir
+        run: |
+          mkdir -p ${{env.BIN_DIR}}
+          mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+          chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+      - name: Testing Version Match
+        run: |
+          EXPECTED_VERSION="${{env.NEW_RELEASE_VERSION}}+polkadot$(make version-polkadot)"
+          ACTUAL_VERSION="v$(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version | cut -d " " -f 2)"
+          echo "Expected: ${EXPECTED_VERSION}"
+          echo "  Actual: ${ACTUAL_VERSION%-*}"
+          [[ ${ACTUAL_VERSION%-*} == ${EXPECTED_VERSION} ]]
+
   wait-for-all-builds:
-    needs: [build-binaries, build-runtimes, build-rust-developer-docs, build-js-api-augment]
+    needs: [version-check, build-binaries, build-runtimes, build-rust-developer-docs, build-js-api-augment]
     name: Wait for All Builds to Finish
     runs-on: ubuntu-20.04
     steps:
@@ -322,7 +367,7 @@ jobs:
           fetch-depth: 0
       - name: Full Release?
         run: |
-          is_full_release=$([[ "$NEW_RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\-[0-9]+)?$ ]] && \
+          is_full_release=$([[ "$NEW_RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] && \
             echo 'true' || echo 'false')
           echo "is_full_release: $is_full_release"
           echo "IS_FULL_RELEASE=$is_full_release" >> $GITHUB_ENV
@@ -369,10 +414,13 @@ jobs:
           echo "sanitized: $clean"
           echo "2---------------------"
           echo "sanitized=$clean" >> $GITHUB_OUTPUT
+      - name: Get Polkadot Version
+        id: polkadot-version
+        run: echo "version=$(make version-polkadot)" >> $GITHUB_OUTPUT
       - name: Generate Release Notes
         working-directory: tools/ci/release-notes
         run: |
-          ./build-release-notes.sh '${{steps.sanitize-changelog.outputs.sanitized}}' > \
+          ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' '${{steps.sanitize-changelog.outputs.sanitized}}' > \
           release-notes.md
       - name: Download Binary Artifacts
         id: download

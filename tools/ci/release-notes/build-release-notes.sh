@@ -1,6 +1,7 @@
 #!/bin/sh
 # set -ex
 
-changelog=$1
+polkadot_version=$1
+changelog=$2
 
-CHANGELOG="$changelog" tera -a --env --env-key env --env-only --template release-notes.md.tera
+CHANGELOG="$changelog" POLKADOT_VERSION="$polkadot_version" tera -a --env --env-key env --env-only --template release-notes.md.tera
