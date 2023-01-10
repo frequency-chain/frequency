@@ -1,15 +1,51 @@
 import { ApiRx } from "@polkadot/api";
-import { SubmittableExtrinsic } from "@polkadot/api/types";
+import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
-import RpcError from "@polkadot/rpc-provider/coder/error";
-import { Compact, u128 } from "@polkadot/types";
+import { Compact, u128, u16, u64 } from "@polkadot/types";
 import { FrameSystemAccountInfo } from "@polkadot/types/lookup";
-import { AnyNumber, ISubmittableResult } from "@polkadot/types/types";
-import { firstValueFrom, filter, catchError, Observable } from "rxjs";
-import { EventMap, parseResult, Sr25519Signature } from "./helpers";
+import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
+import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
+import { devAccounts, log, Sr25519Signature } from "./helpers";
+import { connect } from "./apiConnection";
+import { DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
+import { IsEvent } from "@polkadot/types/metadata/decorate/types";
 
-type AddKeyData = { msaId?: any; expiration?: any; newPublicKey?: any; }
-type AddProviderPayload = { authorizedMsaId?: any; schemaIds?: any; expiration?: any; }
+export type AddKeyData = { msaId?: u64; expiration?: any; newPublicKey?: any; }
+export type AddProviderPayload = { authorizedMsaId?: u64; schemaIds?: u16[], expiration?: any; }
+
+export class EventError extends Error {
+    name: string = '';
+    message: string = '';
+    stack?: string = '';
+    section?: string = '';
+    rawError: DispatchError;
+
+    constructor(source: DispatchError) {
+        super();
+
+        if (source.isModule) {
+            const decoded = source.registry.findMetaError(source.asModule);
+            this.name = decoded.name;
+            this.message = decoded.docs.join(' ');
+            this.section = decoded.section;
+        } else {
+            this.name = source.type;
+            this.message = source.type;
+            this.section = '';
+        }
+        this.rawError = source;
+    }
+
+    public toString() {
+        return `${this.section}.${this.name}: ${this.message}`;
+    }
+}
+
+export type EventMap = { [key: string]: Event }
+
+function eventKey(event: Event): string {
+    return `${event.section}.${event.method}`;
+}
 
 /**
  * These helpers return a map of events, some of which contain useful data, some of which don't.
@@ -22,6 +58,14 @@ type AddProviderPayload = { authorizedMsaId?: any; schemaIds?: any; expiration?:
  * a set of arbitrary indices. Should an object at any level of that querying be undefined, the helper
  * will throw an unchecked exception.
  *
+ * To get type checking and cast a returned event as a specific event type, you can utilize TypeScripts
+ * type guard functionality like so:
+ *
+ *      const msaCreatedEvent = events.defaultEvent;
+ *      if (ExtrinsicHelper.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
+ *          msaId = msaCreatedEvent.data.msaId;
+ *      }
+ *
  * Normally, I'd say the best experience is for the helper to return both the ID of the created entity
  * along with a map of emitted events. But in this case, returning that value will increase the complexity
  * of each helper, since each would have to check for undefined values at every lookup. So, this may be
@@ -29,76 +73,164 @@ type AddProviderPayload = { authorizedMsaId?: any; schemaIds?: any; expiration?:
  * up in the test.
  */
 
+type ParsedEvent<C extends Codec[] = Codec[], N = unknown> = IEvent<C, N>;
+type ParsedEventResult<C extends Codec[] = Codec[], N = unknown> = [ParsedEvent<C, N> | undefined, EventMap];
 
-/** Generic wrapper **/
-export async function signAndSend<T extends ISubmittableResult>(
-    f: () => SubmittableExtrinsic<"rxjs", T>,
-    keys: KeyringPair,
-    customErrorHandler: (err: RpcError, caught: Observable<T>) => Observable<T> = (err, caught) => caught): Promise<EventMap> {
-    return firstValueFrom(f().signAndSend(keys).pipe(
-        filter(({ status }) => status.isInBlock || status.isFinalized),
-        catchError((err: RpcError, caught) => {
-            console.log(`code: ${err.code}, name: ${err.name}, message: ${err.message}`);
-            if (customErrorHandler) {
-                return customErrorHandler(err, caught);
-            }
-            throw err;
-        }),
-        parseResult(),
-    ));
+
+export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C extends Codec[] = Codec[], N = unknown> {
+
+    private event?: IsEvent<C, N>;
+    private extrinsic: () => SubmittableExtrinsic<"rxjs", T>;
+    private keys: KeyringPair;
+    public api: ApiRx;
+
+    constructor(extrinsic: () => SubmittableExtrinsic<"rxjs", T>, keys: KeyringPair, targetEvent?: IsEvent<C, N>) {
+        this.extrinsic = extrinsic;
+        this.keys = keys;
+        this.event = targetEvent;
+        this.api = ExtrinsicHelper.api;
+    }
+
+    public async signAndSend(): Promise<[ParsedEvent<C, N> | undefined, EventMap]> {
+        return firstValueFrom(this.extrinsic().signAndSend(this.keys).pipe(
+            filter(({ status }) => status.isInBlock || status.isFinalized),
+            this.parseResult(this.event),
+        ))
+    }
+
+    public async sudoSignAndSend(): Promise<[ParsedEvent<C, N> | undefined, EventMap]> {
+        return firstValueFrom(this.api.tx.sudo.sudo(this.extrinsic()).signAndSend(this.keys).pipe(
+            filter(({ status }) => status.isInBlock || status.isFinalized),
+            this.parseResult(this.event),
+        ))
+    }
+
+    public async getEstimatedTxFee(): Promise<bigint> {
+        return firstValueFrom(this.extrinsic().paymentInfo(this.keys).pipe(
+            map((info) => info.partialFee.toBigInt())
+        ));
+    }
+
+    public async fundOperation(source?: KeyringPair): Promise<void> {
+        const amount = await this.getEstimatedTxFee();
+        await ExtrinsicHelper.transferFunds(source || devAccounts[0].keys, this.keys, amount).signAndSend();
+    }
+
+    public async fundAndSend(source?: KeyringPair): Promise<[IEvent<C, N> | undefined, EventMap]> {
+        await this.fundOperation(source);
+        return this.signAndSend();
+    }
+
+    private parseResult<ApiType extends ApiTypes = "rxjs", T extends AnyTuple = AnyTuple, N = unknown>(targetEvent?: AugmentedEvent<ApiType, T, N>) {
+        return pipe(
+            tap((result: ISubmittableResult) => {
+                if (result.dispatchError) {
+                    let err = new EventError(result.dispatchError);
+                    log(err.toString());
+                    throw err;
+                }
+            }),
+            map((result: ISubmittableResult) => result.events.reduce((acc, { event }) => {
+                acc[eventKey(event)] = event;
+                if (targetEvent && targetEvent.is(event)) {
+                    acc["defaultEvent"] = event;
+                }
+                return acc;
+            }, {} as EventMap)),
+            map((em) => {
+                let result: ParsedEventResult<T, N> = [undefined, {}];
+                if (targetEvent && targetEvent.is(em?.defaultEvent)) {
+                    result[0] = em.defaultEvent;
+                }
+                result[1] = em;
+                return result;
+            }),
+            tap((events) => log(events)),
+        );
+    }
+
 }
 
-/** Query Extrinsics */
-export async function getAccountInfo(api: ApiRx, address: string): Promise<FrameSystemAccountInfo> {
-    return firstValueFrom(api.query.system.account(address));
-}
+export class ExtrinsicHelper {
+    public static api: ApiRx;
 
-/** Balance Extrinsics */
-export async function transferFunds(api: ApiRx, keys: KeyringPair, dest: KeyringPair, amount: Compact<u128> | AnyNumber): Promise<EventMap> {
-    return signAndSend(() => api.tx.balances.transfer(dest.address, amount), keys);
-}
+    constructor() { }
 
-/** Schema Extrinsics */
-export async function createSchema(api: ApiRx, keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS"): Promise<EventMap> {
-    return signAndSend(() => api.tx.schemas.createSchema(JSON.stringify(model), modelType, payloadLocation), keys);
-}
+    public static async initialize(providerUrl?: string | string[] | undefined) {
+        ExtrinsicHelper.api = await connect(providerUrl);
+    }
 
-/** MSA Extrinsics */
-export async function createMsa(api: ApiRx, keys: KeyringPair, ignore_already_exist = true): Promise<EventMap> {
-    return signAndSend(() => api.tx.msa.create(), keys, (err, caught) => {
-        if (!ignore_already_exist || err.name !== 'KeyAlreadyRegistered') {
-            throw err;
-        }
+    public static getLastBlock(): Promise<SignedBlock> {
+        return firstValueFrom(ExtrinsicHelper.api.rpc.chain.getBlock());
+    }
 
-        return caught;
-    });
-}
+    /** Query Extrinsics */
+    public static getAccountInfo(address: string): Promise<FrameSystemAccountInfo> {
+        return firstValueFrom(ExtrinsicHelper.api.query.system.account(address));
+    }
 
-export function addPublicKeyToMsa(api: ApiRx, keys: KeyringPair, ownerSignature: Sr25519Signature, newSignature: Sr25519Signature, payload: AddKeyData): Promise<EventMap> {
-    return signAndSend(() => api.tx.msa.addPublicKeyToMsa(keys.publicKey, ownerSignature, newSignature, payload), keys);
-}
+    public static getSchemaMaxBytes() {
+        return firstValueFrom(ExtrinsicHelper.api.query.schemas.governanceSchemaModelMaxBytes());
+    }
 
-export function deletePublicKey(api: ApiRx, keys: KeyringPair, publicKey: Uint8Array): Promise<EventMap> {
-    return signAndSend(() => api.tx.msa.deleteMsaPublicKey(publicKey), keys);
-}
+    /** Balance Extrinsics */
+    public static transferFunds(keys: KeyringPair, dest: KeyringPair, amount: Compact<u128> | AnyNumber): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transfer(dest.address, amount), keys, ExtrinsicHelper.api.events.balances.Transfer);
+    }
 
-export function createProvider(api: ApiRx, keys: KeyringPair, providerName: string): Promise<EventMap> {
-    return signAndSend(() => api.tx.msa.createProvider(providerName), keys);
-}
+    /** Schema Extrinsics */
+    public static createSchema(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS"): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.createSchema(JSON.stringify(model), modelType, payloadLocation), keys, ExtrinsicHelper.api.events.schemas.SchemaCreated);
+    }
 
-export function grantDelegation(api: ApiRx, delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: AddProviderPayload): Promise<EventMap> {
-    return signAndSend(() => api.tx.msa.grantDelegation(delegatorKeys.publicKey, signature, payload), providerKeys);
-}
+    /** MSA Extrinsics */
+    public static createMsa(keys: KeyringPair): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.create(), keys, ExtrinsicHelper.api.events.msa.MsaCreated);
+    }
 
-export function grantSchemaPermissions(api: ApiRx, delegatorKeys: KeyringPair, providerMsaId: any, schemaIds: any): Promise<EventMap> {
-    return signAndSend(() => api.tx.msa.grantSchemaPermissions(providerMsaId, schemaIds), delegatorKeys);
-}
+    public static addPublicKeyToMsa(keys: KeyringPair, ownerSignature: Sr25519Signature, newSignature: Sr25519Signature, payload: AddKeyData): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.addPublicKeyToMsa(keys.publicKey, ownerSignature, newSignature, payload), keys, ExtrinsicHelper.api.events.msa.PublicKeyAdded);
+    }
 
-export function revokeDelegationByDelegator(api: ApiRx, keys: KeyringPair, providerMsaId: any): Promise<EventMap> {
-    return signAndSend(() => api.tx.msa.revokeDelegationByDelegator(providerMsaId), keys);
-}
+    public static deletePublicKey(keys: KeyringPair, publicKey: Uint8Array): Extrinsic {
+        ExtrinsicHelper.api.query.msa
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.deleteMsaPublicKey(publicKey), keys, ExtrinsicHelper.api.events.msa.PublicKeyDeleted);
+    }
 
-/** Messages Extrinsics */
-export async function addIPFSMessage(api: ApiRx, keys: KeyringPair, schemaId: any, cid: string, payload_length: number): Promise<EventMap> {
-    return signAndSend(() => api.tx.messages.addIpfsMessage(schemaId, cid, payload_length), keys);
+    public static retireMsa(keys: KeyringPair): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.retireMsa(), keys, ExtrinsicHelper.api.events.msa.MsaRetired);
+    }
+
+    public static createProvider(keys: KeyringPair, providerName: string): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.createProvider(providerName), keys, ExtrinsicHelper.api.events.msa.ProviderCreated);
+    }
+
+    public static createSponsoredAccountWithDelegation(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: AddProviderPayload): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.msa.MsaCreated);
+    }
+
+    public static grantDelegation(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: AddProviderPayload): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.grantDelegation(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.msa.DelegationGranted);
+    }
+
+    public static grantSchemaPermissions(delegatorKeys: KeyringPair, providerMsaId: any, schemaIds: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.grantSchemaPermissions(providerMsaId, schemaIds), delegatorKeys, ExtrinsicHelper.api.events.msa.DelegationUpdated);
+    }
+
+    public static revokeSchemaPermissions(delegatorKeys: KeyringPair, providerMsaId: any, schemaIds: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.revokeSchemaPermissions(providerMsaId, schemaIds), delegatorKeys, ExtrinsicHelper.api.events.msa.DelegationUpdated);
+    }
+
+    public static revokeDelegationByDelegator(keys: KeyringPair, providerMsaId: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.revokeDelegationByDelegator(providerMsaId), keys, ExtrinsicHelper.api.events.msa.DelegationRevoked);
+    }
+
+    public static revokeDelegationByProvider(delegatorMsaId: u64, providerKeys: KeyringPair): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.revokeDelegationByProvider(delegatorMsaId), providerKeys, ExtrinsicHelper.api.events.msa.DelegationRevoked);
+    }
+
+    /** Messages Extrinsics */
+    public static addIPFSMessage(keys: KeyringPair, schemaId: any, cid: string, payload_length: number): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addIpfsMessage(schemaId, cid, payload_length), keys, ExtrinsicHelper.api.events.messages.MessagesStored);
+    }
 }
