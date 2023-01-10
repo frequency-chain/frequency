@@ -39,14 +39,14 @@ jobs:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
               - 'js/api-augment/**'
-              - 'integration-tests/**/*.test.ts'
+              - 'integration-tests/**/*.{ts,json}'
             cargo-lock:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
             run-integration-tests:
               - '**/*.rs'
               - '**/Cargo.toml'
-              - 'integration-tests/**/*.[ts,json]'
+              - 'integration-tests/**/*.{ts,json}'
 
   # Workaround to handle skipped required check inside matrix
   # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks
