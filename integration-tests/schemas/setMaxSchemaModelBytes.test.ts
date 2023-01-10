@@ -1,33 +1,35 @@
 import "@frequency-chain/api-augment";
-import { ApiRx } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import assert from "assert";
-import { connect, createKeys } from "../scaffolding/apiConnection";
-import { signAndSend } from "../scaffolding/extrinsicHelpers";
-import { AccountFundingInputs, DevAccounts, EventError, generateFundingInputs, txAccountingHook } from "../scaffolding/helpers";
+import { firstValueFrom } from "rxjs";
+import { keyring } from "../scaffolding/apiConnection";
+import { Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 
 describe("#setMaxSchemaModelBytes", function () {
-    this.timeout(15000);
-
-    let fundingInputs: AccountFundingInputs;
-    let api: ApiRx;
     let keys: KeyringPair;
 
     before(async function () {
-        let connectApi = await connect(process.env.WS_PROVIDER_URL);
-        api = connectApi
-        fundingInputs = generateFundingInputs(api, this.title);
-        keys = createKeys(DevAccounts.Alice)
+        const sudoKey = (await firstValueFrom(ExtrinsicHelper.api.query.sudo.key())).unwrap();
+        keys = keyring.getPair(sudoKey.toString());
     })
 
-    after(async function () {
-        await txAccountingHook(api, fundingInputs.context);
-        await api.disconnect()
-    })
-
-    it("should fail to set the schema size because of lack of root authority", async function () {
-        await assert.rejects(signAndSend(() => api.tx.schemas.setMaxSchemaModelBytes(1000000), keys), EventError);
+    it("should fail to set the schema size because of lack of root authority (BadOrigin)", async function () {
+        const operation = new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.setMaxSchemaModelBytes(1000000), keys);
+        await assert.rejects(operation.signAndSend(), { name: 'BadOrigin' });
     });
 
-    // NOTE: We need a governance account or a sudo call to test the positive case
+    it("should fail to set max schema size > hard-coded limit (SchemaModelMaxBytesBoundedVecLimit)", async function () {
+        const limit = ExtrinsicHelper.api.consts.schemas.schemaModelMaxBytesBoundedVecLimit.toBigInt();
+        const op = new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.setMaxSchemaModelBytes(limit + 1n), keys);
+        await op.sudoSignAndSend();
+    })
+
+    it("should successfully set the max schema size", async function () {
+        const size = (await firstValueFrom(ExtrinsicHelper.api.query.schemas.governanceSchemaModelMaxBytes())).toBigInt();
+        const op = new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.setMaxSchemaModelBytes(size + 1n), keys);
+        await op.sudoSignAndSend();
+        assert.equal(true, true, 'operation should not have thrown error');
+        const newSize = (await firstValueFrom(ExtrinsicHelper.api.query.schemas.governanceSchemaModelMaxBytes())).toBigInt();
+        assert.equal(size + 1n, newSize, 'new size should have been set');
+    });
 });

@@ -1,69 +1,241 @@
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import { ApiRx } from "@polkadot/api";
-import { connect } from "../scaffolding/apiConnection"
-import { AccountFundingInputs, createAccount, createAndFundAccount, generateFundingInputs, txAccountingHook, signPayloadSr25519 } from "../scaffolding/helpers";
+import { createKeys, createAndFundKeypair, signPayloadSr25519, Sr25519Signature, generateAddKeyPayload } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { addPublicKeyToMsa, createMsa, createSchema, deletePublicKey, signAndSend } from "../scaffolding/extrinsicHelpers";
-import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
+import { AddKeyData, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
+import { u64 } from "@polkadot/types";
+import { Codec } from "@polkadot/types/types";
 
 describe("Create Accounts", function () {
-    this.timeout(15000);
-
-    let fundingInputs: AccountFundingInputs;
-
-    let api: ApiRx;
+    let keys: KeyringPair;
+    let msaId: u64;
+    let authorizedKeys: KeyringPair[] = [];
 
     before(async function () {
-        let connectApi = await connect(process.env.WS_PROVIDER_URL);
-        api = connectApi
-        fundingInputs = generateFundingInputs(api, this.title);
-    })
-
-    after(async function () {
-        await txAccountingHook(api, fundingInputs.context);
-        await api.disconnect()
-    })
-
-    // NOTE: We will need a sustainable way to create new keys for every test,
-    // since there is only one node instance per test suite.
-    it("should successfully create an MSA account", async function () {
-        const keys = (await createAndFundAccount(fundingInputs)).newAccount;
-        const chainEvents = await createMsa(api, keys);
-
-        assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined);
-        assert.notEqual(chainEvents["msa.MsaCreated"], undefined);
-        assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined);
+        keys = await createAndFundKeypair();
     });
 
-    it("should successfully mimic a user's path using tokens", async function () {
-        const keys = (await createAndFundAccount(fundingInputs)).newAccount;
-        const createMsaEvents = await createMsa(api, keys);
-        const msaId = createMsaEvents["msa.MsaCreated"][0]
-        assert.notEqual(msaId, undefined);
+    describe("createMsa", function () {
 
-        const newKeys: KeyringPair = createAccount();
-        const payload = { msaId: msaId, newPublicKey: newKeys.publicKey, expiration: 50 }
+        it("should successfully create an MSA account", async function () {
+            const f = ExtrinsicHelper.createMsa(keys);
+            await f.fundOperation();
+            const [msaCreatedEvent, chainEvents] = await f.signAndSend();
 
-        const addKeyData = api.registry.createType("PalletMsaAddKeyData", payload);
+            assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
+            assert.notEqual(msaCreatedEvent, undefined, "should have returned  an MsaCreated event");
+            assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
 
-        const ownerSig = signPayloadSr25519(keys, addKeyData);
-        const newSig = signPayloadSr25519(newKeys, addKeyData);
+            if (msaCreatedEvent && ExtrinsicHelper.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
+                msaId = msaCreatedEvent.data.msaId;
+            }
+        });
 
-        const publicKeyEvents = await addPublicKeyToMsa(api, keys, ownerSig, newSig, payload);
+        it("should fail to create an MSA for a keypair already associated with an MSA", async function () {
+            const op = ExtrinsicHelper.createMsa(keys);
+            await assert.rejects(op.fundAndSend(), {
+                name: 'KeyAlreadyRegistered',
+            });
+        });
+    });
 
-        assert.notEqual(publicKeyEvents["msa.PublicKeyAdded"], undefined, 'should have added public key');
+    describe("addPublicKeyToMsa", function () {
+        let badKeys: KeyringPair;
+        let defaultPayload: AddKeyData = {};
+        let payload: AddKeyData;
+        let ownerSig: Sr25519Signature;
+        let newSig: Sr25519Signature;
+        let badSig: Sr25519Signature;
+        let addKeyData: Codec;
 
-        const deleteEvents = await deletePublicKey(api, keys, newKeys.publicKey);
+        before(async function () {
+            authorizedKeys.push(await createAndFundKeypair());
+            badKeys = createKeys();
+            defaultPayload.msaId = msaId;
+            defaultPayload.newPublicKey = authorizedKeys[0].publicKey;
+        });
 
-        assert.notEqual(deleteEvents["msa.PublicKeyDeleted"], undefined, 'should have deleted public key');
+        beforeEach(async function () {
+            payload = await generateAddKeyPayload(defaultPayload);
+        });
 
-        const createSchemaEvents = await createSchema(api, keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain");
-        assert.notEqual(createSchemaEvents["schemas.SchemaCreated"], undefined, 'should have created schema');
+        it("should fail to add public key if origin is not one of the signers of the payload (MsaOwnershipInvalidSignature)", async function () {
+            addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", payload);
+            newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
+            badSig = signPayloadSr25519(badKeys, addKeyData);
+            const op = ExtrinsicHelper.addPublicKeyToMsa(keys, badSig, newSig, payload);
+            await assert.rejects(op.fundAndSend(), {
+                name: 'MsaOwnershipInvalidSignature',
+            });
+        })
 
-        const retireMsaEvents = await signAndSend(() => api.tx.msa.retireMsa(), keys);
+        it("should fail to add public key if new keypair is not one of the signers of the payload (NewKeyOwnershipInvalidSignature)", async function () {
+            addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", payload);
+            ownerSig = signPayloadSr25519(keys, addKeyData);
+            badSig = signPayloadSr25519(badKeys, addKeyData);
+            const op = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, badSig, payload);
+            await assert.rejects(op.fundAndSend(), {
+                name: 'NewKeyOwnershipInvalidSignature',
+            });
+        });
 
-        assert.notEqual(retireMsaEvents["msa.PublicKeyDeleted"], undefined, 'should have deleted public key (retired)');
-        assert.notEqual(retireMsaEvents["msa.MsaRetired"], undefined, 'should have retired msa');
+        it("should fail to add public key if origin does not have an MSA (NoKeyExists)", async function () {
+            const newOriginKeys = await createAndFundKeypair();
+            addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", payload);
+            ownerSig = signPayloadSr25519(newOriginKeys, addKeyData);
+            newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
+            const op = ExtrinsicHelper.addPublicKeyToMsa(newOriginKeys, ownerSig, newSig, payload);
+            await assert.rejects(op.fundAndSend(), {
+                name: 'NoKeyExists',
+            });
+        })
+
+        it("should fail to add public key if origin does not own MSA (NotMsaOwner)", async function () {
+            const newPayload = await generateAddKeyPayload({
+                ...defaultPayload,
+                msaId: new u64(ExtrinsicHelper.api.registry, 999), // If we create more than 999 MSAs in our test suites, this will fail
+            });
+            addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", newPayload);
+            ownerSig = signPayloadSr25519(keys, addKeyData);
+            newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
+            const op = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, newPayload);
+            await assert.rejects(op.fundAndSend(), {
+                name: 'NotMsaOwner',
+            });
+        });
+
+        it("should fail if expiration has passed (ProofHasExpired)", async function () {
+            const newPayload = await generateAddKeyPayload({
+                ...defaultPayload,
+                expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber(),
+            });
+            addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", newPayload);
+            ownerSig = signPayloadSr25519(keys, addKeyData);
+            newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
+            const op = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, newPayload);
+            await assert.rejects(op.fundAndSend(), {
+                name: 'ProofHasExpired',
+            });
+        })
+
+        it("should fail if expiration is not yet valid (ProofNotYetValid)", async function () {
+            const maxMortality = ExtrinsicHelper.api.consts.msa.mortalityWindowSize.toNumber();
+            const newPayload = await generateAddKeyPayload({
+                ...defaultPayload,
+                expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + maxMortality + 5,
+            });
+            addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", newPayload);
+            ownerSig = signPayloadSr25519(keys, addKeyData);
+            newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
+            const op = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, newPayload);
+            await assert.rejects(op.fundAndSend(), {
+                name: 'ProofNotYetValid',
+            });
+        })
+
+        it("should successfully add a new public key to an existing MSA & disallow duplicate signed payload submission (SignatureAlreadySubmitted)", async function () {
+            addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", payload);
+
+            ownerSig = signPayloadSr25519(keys, addKeyData);
+            newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
+            const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, payload);
+
+            const [publicKeyEvents] = await addPublicKeyOp.fundAndSend();
+
+            assert.notEqual(publicKeyEvents, undefined, 'should have added public key');
+            await assert.rejects(addPublicKeyOp.fundAndSend(), { name: 'SignatureAlreadySubmitted' }, "should reject sending the same signed payload twiced");
+        });
+
+        it("should fail if attempting to add the same key more than once (KeyAlreadyRegistered)", async function () {
+            const addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", payload);
+
+            const ownerSig = signPayloadSr25519(keys, addKeyData);
+            const newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
+            const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, payload);
+
+            await assert.rejects(addPublicKeyOp.fundAndSend(), {
+                name: 'KeyAlreadyRegistered',
+            })
+        });
+
+        it("should allow new keypair to act for/on MSA", async function () {
+            const additionalKeys = createKeys();
+            const newPayload = await generateAddKeyPayload({
+                ...defaultPayload,
+                newPublicKey: additionalKeys.publicKey,
+            });
+            addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", newPayload);
+            ownerSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
+            newSig = signPayloadSr25519(additionalKeys, addKeyData);
+            const op = ExtrinsicHelper.addPublicKeyToMsa(authorizedKeys[0], ownerSig, newSig, newPayload);
+            const [event] = await op.fundAndSend();
+            assert.notEqual(event, undefined, 'should have added public key');
+            authorizedKeys.push(additionalKeys);
+        });
+    });
+
+    describe("retire/delete keys", function () {
+        let providerKeys: KeyringPair;
+
+        before(async function () {
+            providerKeys = await createAndFundKeypair();
+            const createMsaOp = ExtrinsicHelper.createMsa(providerKeys);
+            await createMsaOp.fundAndSend();
+
+            const createProviderOp = ExtrinsicHelper.createProvider(providerKeys, 'Test Provider');
+            await createProviderOp.fundAndSend();
+        });
+
+        it("should disallow retiring MSA belonging to a provider", async function () {
+            const retireOp = ExtrinsicHelper.retireMsa(providerKeys);
+            await assert.rejects(retireOp.fundAndSend(), {
+                name: 'RpcError',
+                message: /Custom error: 2/,
+            });
+        });
+
+        it("should disallow retiring an MSA with more than one key authorized", async function () {
+            const retireOp = ExtrinsicHelper.retireMsa(keys);
+            await assert.rejects(retireOp.fundAndSend(), {
+                name: 'RpcError',
+                message: /Custom error: 3/,
+            });
+        });
+
+        it("should fail to delete public key for self", async function () {
+            const op = ExtrinsicHelper.deletePublicKey(keys, keys.publicKey);
+            await assert.rejects(op.fundAndSend(), {
+                name: 'RpcError',
+                message: /Custom error: 4/,
+            });
+        });
+
+        it("should fail to delete key if not authorized for key's MSA", async function () {
+            const op = ExtrinsicHelper.deletePublicKey(providerKeys, keys.publicKey);
+            await assert.rejects(op.fundAndSend(), {
+                name: 'RpcError',
+                message: /Custom error: 5/,
+            });
+        });
+
+        it("should test for 'NoKeyExists' error");
+
+        it("should delete all other authorized keys", async function () {
+            for (const key of authorizedKeys) {
+                const op = ExtrinsicHelper.deletePublicKey(keys, key.publicKey);
+                const [event] = await op.fundAndSend();
+                assert.notEqual(event, undefined, "should have returned PublicKeyDeleted event");
+            };
+            authorizedKeys = [];
+        });
+
+        it("should allow retiring MSA after additional keys have been deleted", async function () {
+            const retireMsaOp = ExtrinsicHelper.retireMsa(keys);
+            const [event, eventMap] = await retireMsaOp.fundAndSend();
+
+            assert.notEqual(eventMap["msa.PublicKeyDeleted"], undefined, 'should have deleted public key (retired)');
+            assert.notEqual(event, undefined, 'should have retired msa');
+        });
+
     });
 })
