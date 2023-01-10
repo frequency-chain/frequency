@@ -100,7 +100,7 @@ Acceptance Criteria are listed below but can evolve:
 
 1. Dispatched origin is Signed by Staker.
 2. A Target MSA account must be a Registered Provider.
-3. A token amount staked must not be greater than the free balance.
+3. When stake amount is greater than the available free-balance, it stakes all available free-balance.
 4. A Staker can stake multiple times and target different providers.
 5. Additional staking increases total locked amount.
 6. The token amount staked is to remain [locked](https://paritytech.github.io/substrate/master/frame_support/traits/trait.LockableCurrency.html) with reason [WithdrawReasons::all()](https://paritytech.github.io/substrate/master/frame_support/traits/tokens/struct.WithdrawReasons.html#method.all).
@@ -136,7 +136,12 @@ Acceptance Criteria are listed below but can evolve:
 1. Dispatched origin is Signed by Staker.
 2. Schedules a portion of the stake to be unlocked and ready for transfer after the `confg::UnstakingThawPeriod` ends.
 3. The amount unstaked must be greater than 0.
-4. Issued Capacity to the target is reduced by the same amount originally issued
+4. Issued Capacity to the target is reduced by using a weighted average:
+
+   - `CapacityReduction =
+         TotalCapacity * (1 - (UnstakingAmount / TotalStakedAmount))`
+
+
 5. The amount unstaked cannot exceed the amount staked.
 6. If the result of the unstaking would be to leave a balance below `config::MinimumStakingAmount`, the entire amount will be unstaked to avoid leaving dust.
 7. when an account has never been a staking account and an attempt to call unstake an error message of NotAStakingAccount should be returned. 
@@ -187,7 +192,7 @@ pub enum Error<T> {
   /// Staker reached the limit number for the allowed amount of unlocking chunks.
   MaxUnlockingChunks,
   /// If there are no unstaking tokens available to withdraw.
-  NoUnstakedTokensAvailable
+  NoUnstakedTokensAvailable,
 }
 
 ```
@@ -204,7 +209,9 @@ pub enum Event<T: Config> {
     /// The MSA that a token account targeted to receive Capacity based on this staking amount.
     target: MessageSourceId,
     /// An amount that was staked.
-    amount: BalanceOf<T>
+    amount: BalanceOf<T>,
+    /// The amount of Capacity issued to target.
+    capacity: BalanceOf<T>,
   },
 
   /// A token account has unstaked the Frequency network.
@@ -214,7 +221,9 @@ pub enum Event<T: Config> {
     /// The MSA that a token account targeted to receive Capacity to unstake from.
     target: MessageSourceId,
     /// An amount that was unstaked.
-    amount: BalanceOf<T>
+    amount: BalanceOf<T>,
+    /// The Capacity amount that was reduced from a target.
+    capacity: BalanceOf<T>,
    },
 
   /// The token amount that was previously unstaked and now withdrawn by unlocking.
@@ -273,7 +282,7 @@ The type used for storing information about staking details.
 
 pub struct StakingAccountDetails<Balance, BlockNumber> {
   /// The amount a Staker has staked, minus the sum of all tokens in `unlocking`.
-  pub active: Balance
+  pub active: Balance,
   /// The total amount of tokens in `active` and `unlocking`
   pub total: Balance,
   /// Unstaked balances that are thawing or awaiting withdrawal.

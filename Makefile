@@ -128,14 +128,18 @@ build-rococo-release:
 build-mainnet-release:
 	cargo build --locked --features  frequency --profile production
 
-PHONY: test
+.PHONY: test
 test:
 	cargo test --workspace --locked --features all-frequency-features
 
 integration-test:
 	./scripts/run_integration_tests.sh
 
-PHONY: version
+# Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
+# This will break if the lock file format
+POLKADOT_VERSION=$(shell awk -F "=" '/name = "polkadot-cli"/,/version = ".*"/{ print $2 }' Cargo.lock | tail -n 1 | cut -d " " -f 3 | tr -d \")
+
+.PHONY: version
 version:
 ifndef v
 	@echo "Please set the version with v=X.X.X-X"
@@ -145,6 +149,23 @@ ifneq (,$(findstring v,  $(v)))
 	@echo "Please don't prefix with a 'v'. Use: v=X.X.X-X"
 	@exit 1
 endif
-	find ./ -type f -name 'Cargo.toml' -exec sed -i '' 's/^version = \"0\.0\.0\"/version = \"$(v)\"/g' {} \;
+ifeq (,$(POLKADOT_VERSION))
+	@echo "Error: Having trouble finding the Polkadot version. Sorry about that.\nCheck my POLKADOT_VERSION variable command."
+	@exit 1
+endif
+	@echo "Setting the crate versions to "$(v)+polkadot$(POLKADOT_VERSION)
+	find ./ -type f -name 'Cargo.toml' -exec sed -i '' 's/^version = \"0\.0\.0\"/version = \"$(v)+polkadot$(POLKADOT_VERSION)\"/g' {} \;
 	cargo check
 	@echo "All done. Don't forget to double check that the automated replacement worked."
+
+.PHONY: version-polkadot
+version-polkadot:
+ifeq (,$(POLKADOT_VERSION))
+	@echo "Error: Having trouble finding the Polkadot version. Sorry about that.\nCheck my POLKADOT_VERSION variable command."
+	@exit 1
+endif
+	@echo $(POLKADOT_VERSION)
+
+.PHONY: version-reset
+version-reset:
+	find ./ -type f -name 'Cargo.toml' -exec sed -i '' 's/^version = \".*+polkadot.*\"/version = \"0.0.0\"/g' {} \;
