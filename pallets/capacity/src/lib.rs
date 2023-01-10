@@ -46,15 +46,25 @@
 
 use frame_support::{
 	dispatch::DispatchResult,
-	traits::{Currency, LockableCurrency},
+	ensure,
+	traits::{Currency, Get, LockIdentifier, LockableCurrency, WithdrawReasons},
 };
 
-pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
+use sp_runtime::{
+	traits::{CheckedAdd, Zero},
+	ArithmeticError, DispatchError,
+};
+
+pub use common_primitives::{
+	capacity::TargetValidator, msa::MessageSourceId, utils::wrap_binary_data,
+};
 pub use pallet::*;
 pub use types::*;
 pub use weights::*;
-
 pub mod types;
+
+#[cfg(any(feature = "runtime-benchmarks", test))]
+pub mod testing_utils;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -69,9 +79,11 @@ pub mod weights;
 type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
+const STAKING_ID: LockIdentifier = *b"netstkng";
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 
@@ -86,6 +98,9 @@ pub mod pallet {
 		/// Function that allows a balance to be locked.
 		type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 
+		/// Function that checks if an MSA is a valid target.
+		type TargetValidator: TargetValidator;
+
 		/// The minimum required token amount to stake. It facilitates cleaning dust when unstaking.
 		#[pallet::constant]
 		type MinimumStakingAmount: Get<BalanceOf<Self>>;
@@ -96,14 +111,18 @@ pub mod pallet {
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
+	/// - Keys: AccountId
+	/// - Value: [`StakingAccountDetails`](types::StakingAccountDetails)
 	#[pallet::storage]
-	#[pallet::getter(fn get_staking_ledger)]
+	#[pallet::getter(fn get_staking_account_for)]
 	pub type StakingAccountLedger<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, StakingAccountDetails<T>>;
 
 	/// Storage to record how many tokens were targeted to an MSA.
+	/// - Keys: AccountId, MSA Id
+	/// - Value: [`StakingTargetDetails`](types::StakingTargetDetails)
 	#[pallet::storage]
-	#[pallet::getter(fn get_target_ledger)]
+	#[pallet::getter(fn get_target_for)]
 	pub type StakingTargetLedger<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
@@ -114,8 +133,11 @@ pub mod pallet {
 	>;
 
 	/// Storage for target Capacity usage.
+	/// - Keys: MSA Id
+	/// - Value: [`CapacityDetails`](types::CapacityDetails)
 	#[pallet::storage]
-	pub type CapacityOf<T: Config> =
+	#[pallet::getter(fn get_capacity_for)]
+	pub type CapacityLedger<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, CapacityDetails<BalanceOf<T>, T::BlockNumber>>;
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -126,10 +148,29 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
-	pub enum Event<T: Config> {}
+	pub enum Event<T: Config> {
+		/// Tokens have been staked to the Frequency network.
+		Staked {
+			/// The token account that staked tokens to the network.
+			account: T::AccountId,
+			/// The MSA that a token account targeted to receive Capacity based on this staking amount.
+			target: MessageSourceId,
+			/// An amount that was staked.
+			amount: BalanceOf<T>,
+		},
+	}
 
 	#[pallet::error]
-	pub enum Error<T> {}
+	pub enum Error<T> {
+		/// Staker attempted to stake to an invalid staking target.
+		InvalidTarget,
+		/// Staker has insufficient balance to cover the amount wanting to stake.
+		InsufficientBalance,
+		/// Staker is attempting to stake an amount below the minimum amount.
+		InsufficientStakingAmount,
+		/// Staker is attempting to stake a zero amount.
+		ZeroAmountNotAllowed,
+	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -137,18 +178,117 @@ pub mod pallet {
 		///
 		/// ### Errors
 		///
-		/// - Returns Error::InsufficientBalance if the sender does not have free balance amount needed to stake.
+		/// - Returns Error::ZeroAmountNotAllowed if the staker is attempting to stake a zero amount.
 		/// - Returns Error::InvalidTarget if attempting to stake to an invalid target.
 		/// - Returns Error::InsufficientStakingAmount if attempting to stake an amount below the minimum amount.
 		#[pallet::weight(T::WeightInfo::stake())]
 		pub fn stake(
-			_origin: OriginFor<T>,
-			_target: MessageSourceId,
-			_amount: BalanceOf<T>,
+			origin: OriginFor<T>,
+			target: MessageSourceId,
+			amount: BalanceOf<T>,
 		) -> DispatchResult {
+			let staker = ensure_signed(origin)?;
+
+			let (mut staking_account, actual_amount) =
+				Self::ensure_can_stake(&staker, target, amount)?;
+
+			Self::increase_stake_and_issue_capacity(
+				&staker,
+				&mut staking_account,
+				target,
+				actual_amount,
+			)?;
+
+			Self::deposit_event(Event::Staked { account: staker, amount: actual_amount, target });
+
 			Ok(())
 		}
 	}
 }
 
-impl<T: Config> Pallet<T> {}
+impl<T: Config> Pallet<T> {
+	/// Checks to see if staker has sufficient free-balance to stake the minimum required staking amount.
+	///
+	/// # Errors
+	/// * [`Error::ZeroAmountNotAllowed`]
+	/// * [`Error::InvalidTarget`]
+	///
+	fn ensure_can_stake(
+		staker: &T::AccountId,
+		target: MessageSourceId,
+		amount: BalanceOf<T>,
+	) -> Result<(StakingAccountDetails<T>, BalanceOf<T>), DispatchError> {
+		ensure!(amount > Zero::zero(), Error::<T>::ZeroAmountNotAllowed);
+		ensure!(T::TargetValidator::validate(target), Error::<T>::InvalidTarget);
+
+		let staking_account = Self::get_staking_account_for(&staker).unwrap_or_default();
+		let stakable_amount = staking_account.get_stakable_amount_for(&staker, amount);
+
+		let new_active_staking_amount = staking_account
+			.active
+			.checked_add(&stakable_amount)
+			.ok_or(ArithmeticError::Overflow)?;
+
+		ensure!(
+			new_active_staking_amount >= T::MinimumStakingAmount::get(),
+			Error::<T>::InsufficientStakingAmount
+		);
+
+		Ok((staking_account, stakable_amount))
+	}
+
+	/// Increase a staking account and target account balances by amount.
+	/// Additionally, it issues Capacity to the MSA target.
+	fn increase_stake_and_issue_capacity(
+		staker: &T::AccountId,
+		staking_account: &mut StakingAccountDetails<T>,
+		target: MessageSourceId,
+		amount: BalanceOf<T>,
+	) -> DispatchResult {
+		staking_account.increase_by(amount).ok_or(ArithmeticError::Overflow)?;
+
+		let mut target_details = Self::get_target_for(&staker, &target).unwrap_or_default();
+		target_details
+			.increase_by(amount, Self::calculate_capacity(amount))
+			.ok_or(ArithmeticError::Overflow)?;
+
+		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
+		capacity_details
+			.increase_by(amount, frame_system::Pallet::<T>::block_number())
+			.ok_or(ArithmeticError::Overflow)?;
+
+		Self::set_staking_account(&staker, staking_account);
+		Self::set_target_details_for(&staker, target, target_details);
+		Self::set_capacity_for(target, capacity_details);
+
+		Ok(())
+	}
+
+	/// Sets staking account details.
+	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingAccountDetails<T>) {
+		T::Currency::set_lock(STAKING_ID, &staker, staking_account.total, WithdrawReasons::all());
+		StakingAccountLedger::<T>::insert(staker, staking_account);
+	}
+
+	/// Sets target account details.
+	fn set_target_details_for(
+		staker: &T::AccountId,
+		target: MessageSourceId,
+		target_details: StakingTargetDetails<BalanceOf<T>>,
+	) {
+		StakingTargetLedger::<T>::insert(staker, target, target_details);
+	}
+
+	/// Sets targets Capacity.
+	fn set_capacity_for(
+		target: MessageSourceId,
+		capacity_details: CapacityDetails<BalanceOf<T>, T::BlockNumber>,
+	) {
+		CapacityLedger::<T>::insert(target, capacity_details);
+	}
+
+	/// Calculates Capacity.
+	fn calculate_capacity(amount: BalanceOf<T>) -> BalanceOf<T> {
+		amount
+	}
+}
