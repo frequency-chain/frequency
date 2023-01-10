@@ -1,21 +1,14 @@
 import "@frequency-chain/api-augment";
-import { ApiRx } from "@polkadot/api";
-import type { Codec } from '@polkadot/types-codec/types';
-import { connect, createKeys } from "../scaffolding/apiConnection"
 import { KeyringPair } from "@polkadot/keyring/types";
-import { createSchema, addIPFSMessage, createMsa } from "../scaffolding/extrinsicHelpers";
 import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
 import assert from "assert";
-import { AccountFundingInputs, createAndFundAccount, DevAccounts, EventMap, generateFundingInputs, txAccountingHook } from "../scaffolding/helpers";
+import { createAndFundKeypair, devAccounts } from "../scaffolding/helpers";
+import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
+import { u16 } from "@polkadot/types";
 
 describe("Add Offchain Message", function () {
-    this.timeout(15000);
-
-    let fundingInputs: AccountFundingInputs;
-
-    let api: ApiRx;
     let keys: KeyringPair;
-    let schemaId: Codec;
+    let schemaId: u16;
 
     // This is how the IPFS data was created:
     //
@@ -29,45 +22,52 @@ describe("Add Offchain Message", function () {
     const ipfs_payload_len = ipfs_payload_data.length;
 
     before(async function () {
-        let connectApi = await connect(process.env.WS_PROVIDER_URL);
-        api = connectApi
-        fundingInputs = generateFundingInputs(api, this.title);
-
-        keys = (await createAndFundAccount(fundingInputs)).newAccount;
+        keys = await createAndFundKeypair();
 
         // Create a new MSA
-        await createMsa(api, keys);
+        const createMsa = ExtrinsicHelper.createMsa(keys);
+        await createMsa.fundAndSend();
 
         // Create a schema
-        const createSchemaEvents = await createSchema(api, keys, PARQUET_BROADCAST, "Parquet", "IPFS");
-        const event = createSchemaEvents["schemas.SchemaCreated"];
-        schemaId = event[1];
+        const createSchema = ExtrinsicHelper.createSchema(keys, PARQUET_BROADCAST, "Parquet", "IPFS");
+        const [event] = await createSchema.fundAndSend();
+        if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+            [, schemaId] = event.data;
+        }
     })
 
-    after(async function () {
-        await txAccountingHook(api, fundingInputs.context);
-        await api.disconnect()
+    it('should fail if insufficient funds', async function () {
+        await assert.rejects(ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid, ipfs_payload_len + 1).signAndSend(), {
+            message: /Inability to pay some fees/,
+        });
     })
 
     it('should fail if MSA is not valid', async function () {
-        const accountWithNoMsa = createKeys(DevAccounts.Eve);
-        await assert.rejects(addIPFSMessage(api, accountWithNoMsa, schemaId, ipfs_cid, ipfs_payload_len + 1), {
+        const accountWithNoMsa = devAccounts[0].keys;
+        await assert.rejects(ExtrinsicHelper.addIPFSMessage(accountWithNoMsa, schemaId, ipfs_cid, ipfs_payload_len + 1).signAndSend(), {
             name: 'InvalidMessageSourceAccount',
             section: 'messages',
         });
     });
 
     it('should fail if schema does not exist', async function () {
-        await assert.rejects(addIPFSMessage(api, keys, 2, ipfs_cid, ipfs_payload_len + 1), {
+        // If we ever create more than 999 schemas in a test suite/single Frequency instance, this test will fail.
+        const f = ExtrinsicHelper.addIPFSMessage(keys, 999, ipfs_cid, ipfs_payload_len + 1);
+        await assert.rejects(f.fundAndSend(), {
             name: 'InvalidSchemaId',
             section: 'messages',
         });
     });
 
     it("should successfully add an IPFS message", async function () {
-        const chainEvents: EventMap = await addIPFSMessage(api, keys, schemaId, ipfs_cid, ipfs_payload_len + 1);
+        const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid, ipfs_payload_len + 1);
+        const [event] = await f.fundAndSend();
 
-        assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined);
+        assert.notEqual(event, undefined, "should have returned a MessagesStored event");
+        if (event && f.api.events.messages.MessagesStored.is(event)) {
+            assert.deepEqual(event.data.schemaId, schemaId, 'schema ids should be equal');
+            assert.notEqual(event.data.blockNumber, undefined, 'should have a block number');
+            assert.equal(event.data.count.toNumber(), 1, "message count should be 1");
+        }
     });
 })
-
