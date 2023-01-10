@@ -164,17 +164,18 @@ offboard-frequency)
 upgrade-frequency)
 
   root_dir=$(git rev-parse --show-toplevel)
+  echo "root_dir is set to $root_dir"
 
   cargo build \
     --locked \
     --profile release \
     --package frequency-runtime \
     --features frequency-rococo-local \
-    --target-dir $root_dir/target/upgrade \
+    --target-dir $root_dir/target/release \
     -Z unstable-options
 
 
-  wasm_location=$root_dir/target/upgrade/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
+  wasm_location=$root_dir/target/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
 
   ./scripts/runtime-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
 
