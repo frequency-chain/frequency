@@ -462,6 +462,16 @@ jobs:
       - name: Build & Publish Dry Run
         run: npm publish --dry-run
         working-directory: js/api-augment/dist
+      - name: Generate npm tarball
+        run: npm pack
+        working-directory: js/api-augment/dist
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts-${{github.run_id}}
+          path: js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
+          if-no-files-found: error
+
 
   verify-docker-images:
     needs: build-binaries
@@ -609,7 +619,7 @@ jobs:
 
   run-integration-tests:
     if: needs.changes.outputs.run-integration-tests == 'true'
-    needs: build-binaries
+    needs: [build-binaries, verify-js-api-augment]
     name: Run Integration Tests
     runs-on: ubuntu-20.04
     steps:
@@ -626,6 +636,11 @@ jobs:
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.BIN_DIR}}
+      - name: Download api-augment tarball
+        uses: actions/download-artifact@v3
+        with:
+          name: artifacts-${{github.run_id}}
+          path: js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
       - name: Set Binaries Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
@@ -659,6 +674,9 @@ jobs:
           cache-dependency-path: integration-tests/package-lock.json
       - name: Install NPM Modules
         run: npm ci
+        working-directory: integration-tests
+      - name: Install Built api-augment
+        run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
         working-directory: integration-tests
       - name: Run Integration Tests
         working-directory: integration-tests
