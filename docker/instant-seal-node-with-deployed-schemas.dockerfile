@@ -49,8 +49,8 @@ EXPOSE 9933 9944 30333
 
 VOLUME ["/data"]
 
-##TODO: figure out why this errors out do to not existing
-#ENTRYPOINT ["/usr/bin/tini", "--"]
+##TODO: figure out why this errors out due to not existing
+#ENTRYPOINT ["/usr/local/bin/tini", "--"]
 
 # Params which can be overriden from CLI
 CMD ["/bin/bash", "/frequency/deploy_schemas.sh"]
