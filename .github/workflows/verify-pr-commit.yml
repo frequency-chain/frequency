@@ -468,7 +468,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: artifacts-${{github.run_id}}
+          name: artifacts-api-augment-${{github.run_id}}
           path: js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
           if-no-files-found: error
 
@@ -639,8 +639,8 @@ jobs:
       - name: Download api-augment tarball
         uses: actions/download-artifact@v3
         with:
-          name: artifacts-${{github.run_id}}
-          path: js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
+          name: artifacts-api-augment-${{github.run_id}}
+          path: js/api-augment/dist
       - name: Set Binaries Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
