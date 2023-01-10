@@ -75,6 +75,7 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 use common_primitives::{
+	capacity::TargetValidator,
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
 		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator, SignatureRegistryPointer,
@@ -920,6 +921,18 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Create Register Provider
+	pub fn create_registered_provider(
+		provider_id: ProviderId,
+		name: BoundedVec<u8, T::MaxProviderNameSize>,
+	) -> DispatchResult {
+		ProviderToRegistryEntry::<T>::try_mutate(provider_id, |maybe_metadata| -> DispatchResult {
+			ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderRegistryEntry);
+			*maybe_metadata = Some(ProviderRegistryEntry { provider_name: name });
+			Ok(())
+		})
+	}
+
 	/// Adds a list of schema permissions to a delegation relationship.
 	pub fn grant_permissions_for_schemas(
 		delegator_id: DelegatorId,
@@ -1508,6 +1521,12 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
 
 		Ok(info)
+	}
+}
+
+impl<T: Config> TargetValidator for Pallet<T> {
+	fn validate(target: MessageSourceId) -> bool {
+		Self::is_registered_provider(target)
 	}
 }
 
