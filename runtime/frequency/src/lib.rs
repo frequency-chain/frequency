@@ -546,6 +546,7 @@ impl pallet_capacity::Config for Runtime {
 	type WeightInfo = pallet_capacity::weights::SubstrateWeight<Runtime>;
 	type Currency = Balances;
 	type MinimumStakingAmount = ConstU128<1>;
+	type TargetValidator = Msa;
 	type MaxUnlockingChunks = ConstU32<4>;
 }
 

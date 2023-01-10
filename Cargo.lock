@@ -5343,6 +5343,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-balances",
+ "pallet-msa",
  "parity-scale-codec",
  "scale-info",
  "sp-core",

@@ -1,11 +1,20 @@
 use super::*;
 use crate as pallet_capacity;
 
-use frame_support::traits::{ConstU16, ConstU32, ConstU64, OnFinalize, OnInitialize};
-use sp_core::H256;
+use common_primitives::{
+	node::{AccountId, ProposalProvider},
+	schema::{SchemaId, SchemaValidator},
+};
+use frame_support::{
+	parameter_types,
+	traits::{ConstU16, ConstU32, ConstU64},
+};
+use frame_system::EnsureSigned;
+use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, Convert, IdentityLookup},
+	AccountId32,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -20,6 +29,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
 		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -63,18 +73,99 @@ impl pallet_balances::Config for Test {
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
+}
+impl Clone for MaxSchemaGrantsPerDelegation {
+	fn clone(&self) -> Self {
+		MaxSchemaGrantsPerDelegation {}
+	}
+}
+
+impl Eq for MaxSchemaGrantsPerDelegation {
+	fn assert_receiver_is_total_eq(&self) -> () {}
+}
+
+impl PartialEq for MaxSchemaGrantsPerDelegation {
+	fn eq(&self, _other: &Self) -> bool {
+		true
+	}
+}
+
+impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
+}
+pub struct TestAccountId;
+
+impl Convert<u64, AccountId> for TestAccountId {
+	fn convert(_x: u64) -> AccountId32 {
+		AccountId32::new([1u8; 32])
+	}
+}
+pub struct Schemas;
+impl SchemaValidator<SchemaId> for Schemas {
+	fn are_all_schema_ids_valid(_schema_id: &Vec<SchemaId>) -> bool {
+		true
+	}
+
+	fn set_schema_count(_n: SchemaId) {}
+}
+
+pub struct CouncilProposalProvider;
+
+impl ProposalProvider<u64, RuntimeCall> for CouncilProposalProvider {
+	fn propose(
+		_who: u64,
+		_threshold: u32,
+		_proposal: Box<RuntimeCall>,
+	) -> Result<(u32, u32), DispatchError> {
+		Ok((1u32, 1u32))
+	}
+
+	fn propose_with_simple_majority(
+		_who: u64,
+		_proposal: Box<RuntimeCall>,
+	) -> Result<(u32, u32), DispatchError> {
+		Ok((1u32, 1u32))
+	}
+
+	#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+	fn proposal_count() -> u32 {
+		1u32
+	}
+}
+
+impl pallet_msa::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
+	type ConvertIntoAccountId32 = TestAccountId;
+	type MaxPublicKeysPerMsa = ConstU8<255>;
+	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type MaxProviderNameSize = ConstU32<16>;
+	type SchemaValidator = Schemas;
+	type MortalityWindowSize = ConstU32<100>;
+	type Proposal = RuntimeCall;
+	type ProposalProvider = CouncilProposalProvider;
+	type CreateProviderViaGovernanceOrigin = EnsureSigned<u64>;
+	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
+	type MaxSignaturesStored = ConstU32<8000>;
+}
+
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type Currency = pallet_balances::Pallet<Self>;
-	type MinimumStakingAmount = ConstU64<1>;
+	type TargetValidator = Msa;
+	type MinimumStakingAmount = ConstU64<5>;
 	type MaxUnlockingChunks = ConstU32<4>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	pallet_balances::GenesisConfig::<Test> {
-		balances: vec![(1, 10), (2, 20), (3, 30), (4, 40), (5, 50), (6, 60)],
+		balances: vec![(100, 10), (200, 20), (300, 30), (400, 40), (500, 50), (600, 60)],
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
@@ -82,15 +173,4 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
-}
-
-pub fn run_to_block(n: u64) {
-	while System::block_number() < n {
-		if System::block_number() > 1 {
-			System::on_finalize(System::block_number());
-		}
-		System::set_block_number(System::block_number() + 1);
-		System::on_initialize(System::block_number());
-		Capacity::on_initialize(System::block_number());
-	}
 }
