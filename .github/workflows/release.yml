@@ -438,7 +438,7 @@ jobs:
           files: /tmp/frequency*.*
       - name: Update latest tag
         if: env.IS_FULL_RELEASE == 'true'
-        uses: rickstaa/action-create-tag@87a112438ed8b80a2ae25dcf8f11d4949dc4f740
+        uses: rickstaa/action-create-tag@06019d3a86c96bc16d442177e1474cae2353e1fd
         with:
           tag: "latest"
           force_push_tag: true
