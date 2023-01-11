@@ -1,10 +1,10 @@
 #!/bin/bash
 
+set -m
 echo "hello"
 ldd --version
 
-## This doesn't work yet, but the idea is to start frequency, move it to the background, go to the schemas directory
-## npm install and then deploy schemas, then switch back to the frequency container
+chmod +x /frequency/frequency
 /frequency/frequency --dev \
     -lruntime=debug \
     --instant-sealing \

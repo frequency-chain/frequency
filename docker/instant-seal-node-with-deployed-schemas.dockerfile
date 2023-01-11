@@ -32,6 +32,7 @@ RUN npm --version
 
 COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 # For local testing only
+# If you get frequency-local.amd64 from the frequency repo and put it in the target/release directory, you can run this locally
 #COPY --chown=frequency target/release/frequency.amd64 ./frequency/frequency
 COPY --chown=frequency target/release/frequency ./frequency/
 RUN chmod +x ./frequency/frequency
