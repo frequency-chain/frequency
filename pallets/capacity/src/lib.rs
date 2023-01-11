@@ -78,6 +78,9 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod withdraw_unstaked_tests;
+
 pub mod weights;
 
 type BalanceOf<T> =
@@ -166,6 +169,13 @@ pub mod pallet {
 			/// An amount that was staked.
 			amount: BalanceOf<T>,
 		},
+		/// Unsstaked token that has thawed was unlocked for the given account
+		StakeWithdrawn {
+			/// the account that withdrew its stake
+			account: T::AccountId,
+			/// the total amount withdrawn, i.e. put back into free balance.
+			amount: BalanceOf<T>,
+		},
 	}
 
 	#[pallet::error]
@@ -178,6 +188,8 @@ pub mod pallet {
 		InsufficientStakingAmount,
 		/// Staker is attempting to stake a zero amount.
 		ZeroAmountNotAllowed,
+		/// Origin has no Staking Account
+		NotAStakingAccount,
 	}
 
 	#[pallet::call]
@@ -209,6 +221,35 @@ pub mod pallet {
 
 			Self::deposit_event(Event::Staked { account: staker, amount: actual_amount, target });
 
+			Ok(())
+		}
+
+		#[pallet::weight(T::WeightInfo::stake())]
+		/// removes all thawed UnlockChunks from caller's StakingAccount and unlocks the sum of the thawed values
+		/// in the caller's token account.
+		///
+		/// ### Errors
+		///     * NotAStakingAccount if no StakingAccountDetails are associated with `origin`
+		///
+		pub fn withdraw_unstaked(origin: OriginFor<T>) -> DispatchResult {
+			let staker = ensure_signed(origin)?;
+			let mut amount_withdrawn: BalanceOf<T> = 0u32.into();
+			let current_block = frame_system::Pallet::<T>::block_number();
+			StakingAccountLedger::<T>::try_mutate(
+				&staker,
+				|maybe_staking_account| -> DispatchResult {
+					if let Some(details) = maybe_staking_account {
+						amount_withdrawn = details.reap_thawed(current_block).unwrap_or_default();
+						Ok(())
+					} else {
+						Err(Error::<T>::NotAStakingAccount.into())
+					}
+				},
+			)?;
+			Self::deposit_event(Event::<T>::StakeWithdrawn {
+				account: staker,
+				amount: amount_withdrawn,
+			});
 			Ok(())
 		}
 	}

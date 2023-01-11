@@ -3,7 +3,7 @@ use super::*;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebug, RuntimeDebugNoBound};
 use scale_info::TypeInfo;
-use sp_runtime::traits::{CheckedAdd, Saturating, Zero};
+use sp_runtime::traits::{CheckedAdd, CheckedSub, Saturating, Zero};
 
 /// The type used for storing information about staking details.
 #[derive(
@@ -45,6 +45,47 @@ impl<T: Config> StakingAccountDetails<T> {
 		let account_balance = T::Currency::free_balance(&staker);
 		let available_staking_balance = account_balance.saturating_sub(self.total);
 		available_staking_balance.min(proposed_amount)
+	}
+
+	#[cfg(test)]
+	///  tmp fn for testing only
+	/// set unlock chunks with (balance, thaw_at). increases total by sum of balances.
+	/// returns true on success, false on failure (?)
+	// TODO: remove this when finished and use production fn
+	pub fn set_unlock_chunks(&mut self, chunks: &Vec<(u32, u32)>) -> bool {
+		let result: Vec<UnlockChunk<BalanceOf<T>, <T>::BlockNumber>> = chunks
+			.into_iter()
+			.map(|chunk| {
+				self.total.add_assign(chunk.0.into());
+				UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() }
+			})
+			.collect();
+		self.unlocking = BoundedVec::try_from(result).unwrap();
+		self.unlocking.len() == chunks.len()
+	}
+
+	/// deletes thawed chunks, updates `total`, Caller is responsible for updating free/locked
+	/// balance on the token account.
+	/// Returns: the total amount reaped from `unlocking`updates `total`
+	/// TODO: currently never fails; see about propagating errors.
+	pub fn reap_thawed(
+		&mut self,
+		current_block: <T>::BlockNumber,
+	) -> Result<BalanceOf<T>, DispatchError> {
+		let mut total_reaped: BalanceOf<T> = 0u32.into();
+		self.unlocking.retain(|chunk| {
+			if current_block.ge(&chunk.thaw_at) {
+				total_reaped = total_reaped + chunk.value;
+				// adjust the account total
+				match self.total.checked_sub(&chunk.value) {
+					Some(new_total) => self.total = new_total,
+					None => return false, // delete a thawed chunk that fails the check (?)
+				}
+				return false
+			}
+			true
+		});
+		Ok(total_reaped)
 	}
 }
 
