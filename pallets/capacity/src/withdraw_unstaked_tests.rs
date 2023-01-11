@@ -11,16 +11,16 @@ fn staking_account_details_reap_thawed_happy_path() {
 
 		let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
 		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
-		assert_eq!(16, staking_account.total);
+		assert_eq!(10, staking_account.total);
 		assert_eq!(3, staking_account.unlocking.len());
 
 		assert_eq!(Ok(1u64), staking_account.reap_thawed(2));
 		assert_eq!(2, staking_account.unlocking.len());
-		assert_eq!(15, staking_account.total);
+		assert_eq!(9, staking_account.total);
 
 		assert_eq!(Ok(5u64), staking_account.reap_thawed(5));
 		assert_eq!(0, staking_account.unlocking.len());
-		assert_eq!(10, staking_account.total);
+		assert_eq!(4, staking_account.total);
 	})
 }
 
@@ -35,7 +35,7 @@ fn happy_path() {
 		let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
 
 		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
-		assert_eq!(16u64, staking_account.total);
+		assert_eq!(10u64, staking_account.total);
 
 		Capacity::set_staking_account(&staker, &staking_account);
 		run_to_block(3);
@@ -44,9 +44,7 @@ fn happy_path() {
 		let current_account: StakingAccountDetails<Test> =
 			Capacity::get_staking_account_for(&staker).unwrap();
 		let expected_reaped_value = 3u64;
-		let expected_total = staking_account.total - expected_reaped_value;
-		assert_eq!(expected_total, current_account.total);
-
+		assert_eq!(staking_account.total - expected_reaped_value, current_account.total);
 		System::assert_last_event(
 			Event::StakeWithdrawn { account: staker, amount: expected_reaped_value }.into(),
 		);
@@ -54,9 +52,45 @@ fn happy_path() {
 }
 
 #[test]
-fn cleans_up_storage_if_no_stake_left() {
+fn correctly_sets_lock_state() {
 	new_test_ext().execute_with(|| {
-		assert!(false, "TODO");
+		let staker = 500;
+		let mut staking_account = StakingAccountDetails::<Test>::default();
+		staking_account.increase_by(10);
+
+		// set new unlock chunks using tuples of (value, thaw_at)
+		let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
+		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
+
+		Capacity::set_staking_account(&staker, &staking_account);
+		assert_eq!(1, Balances::locks(&staker).len());
+		assert_eq!(10u64, Balances::locks(&staker)[0].amount);
+
+		run_to_block(3);
+		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
+
+		assert_eq!(1, Balances::locks(&staker).len());
+		assert_eq!(7u64, Balances::locks(&staker)[0].amount);
+	})
+}
+
+#[test]
+fn cleans_up_storage_and_removes_all_locks_if_no_stake_left() {
+	new_test_ext().execute_with(|| {
+		let mut staking_account = StakingAccountDetails::<Test>::default();
+		staking_account.increase_by(10);
+
+		// set new unlock chunks using tuples of (value, thaw_at)
+		let new_unlocks: Vec<(u32, u32)> = vec![(10u32, 2u32)];
+		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
+
+		let staker = 500;
+		Capacity::set_staking_account(&staker, &staking_account);
+		run_to_block(3);
+		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
+		assert!(Capacity::get_staking_account_for(&staker).is_none());
+
+		assert_eq!(0, Balances::locks(&staker).len());
 	})
 }
 

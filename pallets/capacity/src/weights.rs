@@ -54,6 +54,7 @@ use sp_std::marker::PhantomData;
 /// Weight functions needed for pallet_capacity.
 pub trait WeightInfo {
 	fn stake() -> Weight;
+	fn withdraw_unstaked() -> Weight;
 }
 
 /// Weights for pallet_capacity using the Substrate node and recommended hardware.
@@ -69,6 +70,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(5 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
+
+	fn withdraw_unstaked() -> Weight {
+		Weight::from_ref_time(20_000_000 as u64)
+	}
 }
 
 // For backwards compatibility and tests
@@ -82,5 +87,8 @@ impl WeightInfo for () {
 		Weight::from_ref_time(47_613_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(5 as u64))
 			.saturating_add(RocksDbWeight::get().writes(4 as u64))
+	}
+	fn withdraw_unstaked() -> Weight {
+		Weight::from_ref_time(20_000_000 as u64)
 	}
 }

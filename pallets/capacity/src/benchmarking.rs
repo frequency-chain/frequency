@@ -44,6 +44,23 @@ benchmarks! {
 		assert_last_event::<T>(Event::<T>::Staked {account: caller, amount, target }.into());
 	}
 
+	withdraw_unstaked {
+		let caller: T::AccountId = whitelisted_caller();
+		let staking_amount: BalanceOf<T> = 10u32.into();
+		let mut staking_account = StakingAccountDetails::<T>::default();
+		staking_account.increase_by(10u32.into());
+
+		// set new unlock chunks using tuples of (value, thaw_at)
+		let new_unlocks: Vec<(u32, u32)> = vec![(50u32, 1u32), (50u32, 1u32)];
+		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
+
+		Capacity::set_staking_account(&caller, &staking_account);
+
+	}: _ (RawOrigin::Signed(caller.clone()))
+	verify {
+		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+	}
+
 	impl_benchmark_test_suite!(Capacity,
 		crate::mock::new_test_ext(),
 		crate::mock::Test);

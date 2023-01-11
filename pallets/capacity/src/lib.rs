@@ -227,25 +227,28 @@ pub mod pallet {
 			Ok(())
 		}
 
+		// TODO: real weights
 		#[pallet::weight(T::WeightInfo::stake())]
 		/// removes all thawed UnlockChunks from caller's StakingAccount and unlocks the sum of the thawed values
 		/// in the caller's token account.
 		///
 		/// ### Errors
-		///     * NotAStakingAccount if no StakingAccountDetails are associated with `origin`
+		///   - Returns `Error::NotAStakingAccount` if no StakingAccountDetails are found for `origin`.
 		///
 		pub fn withdraw_unstaked(origin: OriginFor<T>) -> DispatchResult {
 			let staker = ensure_signed(origin)?;
 			let mut amount_withdrawn: BalanceOf<T> = 0u32.into();
 			let current_block = frame_system::Pallet::<T>::block_number();
-			StakingAccountLedger::<T>::try_mutate(
+			StakingAccountLedger::<T>::mutate_exists(
 				&staker,
 				|maybe_staking_account| -> DispatchResult {
 					if let Some(details) = maybe_staking_account {
 						amount_withdrawn = details.reap_thawed(current_block).unwrap_or_default();
 						ensure!(!amount_withdrawn.is_zero(), Error::<T>::NoUnstakedTokensAvailable);
-						// TODO: move amount_withdrawn from locked to free
-						// TODO: If an account has nothing at stake (i.e. details.total == 0 now), clean up storage by removing StakingLedger and TargetLedger entries.
+						Self::unlock_staking_amount_for(&staker, details.total);
+						if details.total.is_zero() {
+							*maybe_staking_account = None;
+						}
 						Ok(())
 					} else {
 						Err(Error::<T>::NotAStakingAccount.into())
@@ -323,6 +326,19 @@ impl<T: Config> Pallet<T> {
 	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingAccountDetails<T>) {
 		T::Currency::set_lock(STAKING_ID, &staker, staking_account.total, WithdrawReasons::all());
 		StakingAccountLedger::<T>::insert(staker, staking_account);
+	}
+
+	fn unlock_staking_amount_for(who: &T::AccountId, currently_staked_amount: BalanceOf<T>) {
+		if currently_staked_amount.is_zero() {
+			T::Currency::remove_lock(STAKING_ID, &who)
+		} else {
+			T::Currency::set_lock(
+				STAKING_ID,
+				who,
+				currently_staked_amount,
+				WithdrawReasons::all().into(),
+			);
+		}
 	}
 
 	/// Sets target account details.

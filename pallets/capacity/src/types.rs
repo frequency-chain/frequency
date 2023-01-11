@@ -49,16 +49,14 @@ impl<T: Config> StakingAccountDetails<T> {
 
 	#[cfg(test)]
 	///  tmp fn for testing only
-	/// set unlock chunks with (balance, thaw_at). increases total by sum of balances.
+	/// set unlock chunks with (balance, thaw_at).  does not check that the unlock chunks
+	/// don't exceed total.
 	/// returns true on success, false on failure (?)
 	// TODO: remove this when finished and use production fn
 	pub fn set_unlock_chunks(&mut self, chunks: &Vec<(u32, u32)>) -> bool {
 		let result: Vec<UnlockChunk<BalanceOf<T>, <T>::BlockNumber>> = chunks
 			.into_iter()
-			.map(|chunk| {
-				self.total = self.total + chunk.0.into();
-				UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() }
-			})
+			.map(|chunk| UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() })
 			.collect();
 		self.unlocking = BoundedVec::try_from(result).unwrap();
 		self.unlocking.len() == chunks.len()
