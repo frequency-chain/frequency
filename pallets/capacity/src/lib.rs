@@ -190,6 +190,9 @@ pub mod pallet {
 		ZeroAmountNotAllowed,
 		/// Origin has no Staking Account
 		NotAStakingAccount,
+		/// No staked value is available for withdrawal; either nothing is being unstaked,
+		/// or nothing has passed the thaw period.
+		NoUnstakedTokensAvailable,
 	}
 
 	#[pallet::call]
@@ -240,6 +243,9 @@ pub mod pallet {
 				|maybe_staking_account| -> DispatchResult {
 					if let Some(details) = maybe_staking_account {
 						amount_withdrawn = details.reap_thawed(current_block).unwrap_or_default();
+						ensure!(!amount_withdrawn.is_zero(), Error::<T>::NoUnstakedTokensAvailable);
+						// TODO: move amount_withdrawn from locked to free
+						// TODO: If an account has nothing at stake (i.e. details.total == 0 now), clean up storage by removing StakingLedger and TargetLedger entries.
 						Ok(())
 					} else {
 						Err(Error::<T>::NotAStakingAccount.into())

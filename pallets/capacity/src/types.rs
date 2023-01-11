@@ -56,7 +56,7 @@ impl<T: Config> StakingAccountDetails<T> {
 		let result: Vec<UnlockChunk<BalanceOf<T>, <T>::BlockNumber>> = chunks
 			.into_iter()
 			.map(|chunk| {
-				self.total.add_assign(chunk.0.into());
+				self.total = self.total + chunk.0.into();
 				UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() }
 			})
 			.collect();
