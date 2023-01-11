@@ -2704,6 +2704,7 @@ dependencies = [
  "cumulus-primitives-core",
  "derive_more",
  "frame-benchmarking-cli",
+ "frame-try-runtime",
  "frequency-service",
  "hex-literal",
  "log",
@@ -2790,6 +2791,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+ "try-runtime-cli",
 ]
 
 [[package]]
@@ -2867,7 +2869,6 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
- "try-runtime-cli",
 ]
 
 [[package]]
