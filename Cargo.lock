@@ -897,8 +897,19 @@ checksum = "f6ed9c8b2d17acb8110c46f1da5bf4a696d745e1474a16db0cd2b49cd0249bf2"
 dependencies = [
  "core2",
  "multibase",
- "multihash",
+ "multihash 0.16.3",
  "serde",
+ "unsigned-varint",
+]
+
+[[package]]
+name = "cid"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd94671561e36e4e7de75f753f577edafb0e7c05d6e4547229fdf7938fbcd2c3"
+dependencies = [
+ "core2",
+ "multihash 0.18.0",
  "unsigned-varint",
 ]
 
@@ -4009,7 +4020,7 @@ dependencies = [
  "lazy_static",
  "log",
  "multiaddr",
- "multihash",
+ "multihash 0.16.3",
  "multistream-select",
  "parking_lot 0.12.1",
  "pin-project",
@@ -4681,7 +4692,7 @@ dependencies = [
  "bs58",
  "byteorder",
  "data-encoding",
- "multihash",
+ "multihash 0.16.3",
  "percent-encoding",
  "serde",
  "static_assertions",
@@ -4714,6 +4725,16 @@ dependencies = [
  "multihash-derive",
  "sha2 0.10.6",
  "sha3",
+ "unsigned-varint",
+]
+
+[[package]]
+name = "multihash"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "15e5d911412e631e1de11eb313e4dd71f73fd964401102aab23d6c8327c431ba"
+dependencies = [
+ "core2",
  "unsigned-varint",
 ]
 
@@ -5560,11 +5581,13 @@ dependencies = [
 name = "pallet-messages"
 version = "0.0.0"
 dependencies = [
+ "cid 0.10.1",
  "common-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
+ "multibase",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
@@ -9096,7 +9119,7 @@ dependencies = [
  "asynchronous-codec",
  "bitflags",
  "bytes",
- "cid",
+ "cid 0.8.6",
  "either",
  "fnv",
  "fork-tree",
@@ -9138,7 +9161,7 @@ name = "sc-network-bitswap"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.32#5ea6d95309aaccfa399c5f72e5a14a4b7c6c4ca1"
 dependencies = [
- "cid",
+ "cid 0.8.6",
  "futures",
  "libp2p",
  "log",
