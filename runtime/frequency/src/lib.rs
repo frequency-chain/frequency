@@ -320,9 +320,11 @@ impl pallet_capacity::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_capacity::weights::SubstrateWeight<Runtime>;
 	type Currency = Balances;
-	type MinimumStakingAmount = ConstU128<1>;
+	type MinimumStakingAmount = ConstU128<EXISTENTIAL_DEPOSIT>;
 	type TargetValidator = Msa;
 	type MaxUnlockingChunks = ConstU32<4>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = Msa;
 }
 
 impl pallet_schemas::Config for Runtime {
@@ -826,6 +828,7 @@ mod benches {
 		[pallet_msa, Msa]
 		[pallet_schemas, Schemas]
 		[pallet_messages, Messages]
+		[pallet_capacity, Capacity]
 	);
 }
 
