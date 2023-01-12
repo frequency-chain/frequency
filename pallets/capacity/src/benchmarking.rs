@@ -51,10 +51,11 @@ benchmarks! {
 		staking_account.increase_by(10u32.into());
 
 		// set new unlock chunks using tuples of (value, thaw_at)
-		let new_unlocks: Vec<(u32, u32)> = vec![(50u32, 1u32), (50u32, 1u32)];
+		let new_unlocks: Vec<(u32, u32)> = vec![(50u32, 3u32), (50u32, 4u32)];
 		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
 
 		Capacity::set_staking_account(&caller, &staking_account);
+		// System::<T>::set_block_number(block_number);
 
 	}: _ (RawOrigin::Signed(caller.clone()))
 	verify {

@@ -64,7 +64,7 @@ impl<T: Config> StakingAccountDetails<T> {
 
 	/// deletes thawed chunks, updates `total`, Caller is responsible for updating free/locked
 	/// balance on the token account.
-	/// Returns: the total amount reaped from `unlocking`updates `total`
+	/// Returns: the total amount reaped from `unlocking`
 	/// TODO: currently never fails; see about propagating errors.
 	pub fn reap_thawed(
 		&mut self,

@@ -27,17 +27,21 @@ fn staking_account_details_reap_thawed_happy_path() {
 #[test]
 fn happy_path() {
 	new_test_ext().execute_with(|| {
+		// set up staker and staking account
 		let staker = 500;
-		let mut staking_account = StakingAccountDetails::<Test>::default();
-		staking_account.increase_by(10);
-
+		let staking_amount: BalanceOf<Test> = 10;
 		// set new unlock chunks using tuples of (value, thaw_at)
-		let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
+		let unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
 
-		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
+		// setup_staking_account_for::<Test>(staker, staking_amount, &unlocks);
+		let mut staking_account = StakingAccountDetails::<Test>::default();
+		staking_account.increase_by(staking_amount);
+		assert_eq!(true, staking_account.set_unlock_chunks(&unlocks));
 		assert_eq!(10u64, staking_account.total);
+		Capacity::set_staking_account(&staker, &staking_account.into());
 
-		Capacity::set_staking_account(&staker, &staking_account);
+		let staking_account = Capacity::get_staking_account_for(&staker).unwrap();
+
 		run_to_block(3);
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
 
@@ -52,7 +56,7 @@ fn happy_path() {
 }
 
 #[test]
-fn correctly_sets_lock_state() {
+fn correctly_sets_new_lock_state() {
 	new_test_ext().execute_with(|| {
 		let staker = 500;
 		let mut staking_account = StakingAccountDetails::<Test>::default();
@@ -78,7 +82,8 @@ fn correctly_sets_lock_state() {
 fn cleans_up_storage_and_removes_all_locks_if_no_stake_left() {
 	new_test_ext().execute_with(|| {
 		let mut staking_account = StakingAccountDetails::<Test>::default();
-		staking_account.increase_by(10);
+		let staking_amount: BalanceOf<Test> = 10;
+		staking_account.increase_by(staking_amount);
 
 		// set new unlock chunks using tuples of (value, thaw_at)
 		let new_unlocks: Vec<(u32, u32)> = vec![(10u32, 2u32)];
@@ -86,6 +91,7 @@ fn cleans_up_storage_and_removes_all_locks_if_no_stake_left() {
 
 		let staker = 500;
 		Capacity::set_staking_account(&staker, &staking_account);
+
 		run_to_block(3);
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
 		assert!(Capacity::get_staking_account_for(&staker).is_none());
@@ -97,7 +103,6 @@ fn cleans_up_storage_and_removes_all_locks_if_no_stake_left() {
 #[test]
 fn cannot_withdraw_if_no_unstaking_chunks() {
 	new_test_ext().execute_with(|| {
-		// - Returns `Error::NoUnstakedTokensAvailable` if there are no unstaking tokens available to withdraw.
 		let staker = 500;
 		let mut staking_account = StakingAccountDetails::<Test>::default();
 		staking_account.increase_by(10);
