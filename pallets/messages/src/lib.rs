@@ -76,6 +76,8 @@ pub use pallet::*;
 pub use types::*;
 pub use weights::*;
 
+use cid::Cid;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -165,6 +167,12 @@ pub mod pallet {
 
 		/// Invalid payload location
 		InvalidPayloadLocation,
+
+		/// Unsupported CID version
+		UnsupportedCidVersion,
+
+		/// Invalid CID
+		InvalidCid,
 	}
 
 	#[pallet::event]
@@ -210,6 +218,8 @@ pub mod pallet {
 		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA
 		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
 		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
+		/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
+		/// * [`Error::InvalidCid`] - Unable to parse provided CID
 		///
 		#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() as u32))]
 		pub fn add_ipfs_message(
@@ -233,6 +243,7 @@ pub mod pallet {
 			);
 
 			let provider_msa_id = Self::find_msa_id(&provider_key)?;
+			Self::validate_cid(cid).map_err(|e| e)?;
 			let current_block = frame_system::Pallet::<T>::block_number();
 			if Self::add_message(provider_msa_id, None, bounded_payload, schema_id, current_block)?
 			{
@@ -384,5 +395,26 @@ impl<T: Config> Pallet<T> {
 			.iter()
 			.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
 			.collect()
+	}
+
+	/// Validates a CID to conform to IPFS CIDv1 formatting (does not validate decoded CID fields)
+	///
+	pub fn validate_cid(cid: Vec<u8>) -> DispatchResult {
+		// Decode SCALE encoded CID into string slice
+		let ba: &[u8] = &cid;
+		let cstr: &str = sp_std::str::from_utf8(ba).map_err(|_| Error::<T>::InvalidCid)?;
+
+		// Fail CID v0 (string encoding starts with 'Qm')
+		match &cstr[0..2] {
+			"Qm" => Err(Error::<T>::UnsupportedCidVersion),
+			_ => Ok(()),
+		}?;
+
+		// Else, assume it's a multibase-encoded string. Decode it to a byte array so we can parse the CID.
+		let data: &[u8] = &multibase::decode(cstr).map_err(|_| Error::<T>::InvalidCid)?.1;
+
+		Cid::try_from(data).map_err(|_| Error::<T>::InvalidCid)?;
+
+		Ok(())
 	}
 }

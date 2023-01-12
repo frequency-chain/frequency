@@ -5,7 +5,7 @@
     "scripts": {
         "clean": "rm -Rf dist",
         "build": "tsc -p ./tsconfig.json",
-        "test": "mocha --require ts-node/register  './{,!(node_modules)/**}/*.test.ts' --exit",
+        "test": "mocha",
         "format": "tsc --noEmit --pretty",
         "lint": "tsc --noEmit --pretty"
     },
@@ -17,6 +17,7 @@
         "@polkadot/api": "9.10.2",
         "@polkadot/types": "9.10.2",
         "@polkadot/util": "10.2.1",
+        "ipfs": "^0.65.0",
         "rxjs": "^7.5.7"
     },
     "devDependencies": {

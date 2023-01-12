@@ -29,6 +29,8 @@ pub const IPFS_SCHEMA_ID: SchemaId = 50;
 
 pub const IPFS_PAYLOAD_LENGTH: u32 = 1200;
 
+pub const DUMMY_CID: &str = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq";
+
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
 	pub enum Test where

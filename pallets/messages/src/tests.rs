@@ -21,11 +21,7 @@ fn populate_messages(
 	let payload = match payload_location {
 		PayloadLocation::OnChain =>
 			Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes()),
-		PayloadLocation::IPFS => (
-			Vec::from("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes()),
-			IPFS_PAYLOAD_LENGTH,
-		)
-			.encode(),
+		PayloadLocation::IPFS => (Vec::from(DUMMY_CID.as_bytes()), IPFS_PAYLOAD_LENGTH).encode(),
 	};
 
 	let mut counter = 0;
@@ -179,6 +175,26 @@ fn add_message_with_invalid_msa_account_errors() {
 }
 
 #[test]
+fn add_ipfs_message_with_invalid_msa_account_errors() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1000;
+		let schema_id_1: SchemaId = IPFS_SCHEMA_ID;
+
+		// act
+		assert_noop!(
+			MessagesPallet::add_ipfs_message(
+				RuntimeOrigin::signed(caller_1),
+				schema_id_1,
+				DUMMY_CID.as_bytes().to_vec(),
+				15
+			),
+			Error::<Test>::InvalidMessageSourceAccount
+		);
+	});
+}
+
+#[test]
 fn add_message_with_maxed_out_storage_errors() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -201,6 +217,34 @@ fn add_message_with_maxed_out_storage_errors() {
 				None,
 				schema_id_1,
 				message_payload_1
+			),
+			Error::<Test>::TooManyMessagesInBlock
+		);
+	});
+}
+
+#[test]
+fn add_ipfs_message_with_maxed_out_storage_errors() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 5;
+		let schema_id_1: SchemaId = IPFS_SCHEMA_ID;
+
+		// act
+		for _ in 0..<Test as Config>::MaxMessagesPerBlock::get() {
+			assert_ok!(MessagesPallet::add_ipfs_message(
+				RuntimeOrigin::signed(caller_1),
+				schema_id_1,
+				DUMMY_CID.as_bytes().to_vec(),
+				15
+			));
+		}
+		assert_noop!(
+			MessagesPallet::add_ipfs_message(
+				RuntimeOrigin::signed(caller_1),
+				schema_id_1,
+				DUMMY_CID.as_bytes().to_vec(),
+				15
 			),
 			Error::<Test>::TooManyMessagesInBlock
 		);
@@ -312,14 +356,34 @@ fn add_message_with_invalid_schema_id_should_error() {
 }
 
 #[test]
-fn valid_payload_location() {
+fn add_ipfs_message_with_invalid_schema_id_should_error() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 5;
+		let schema_id_1: SchemaId = INVALID_SCHEMA_ID;
+
+		// act
+		assert_err!(
+			MessagesPallet::add_ipfs_message(
+				RuntimeOrigin::signed(caller_1),
+				schema_id_1,
+				DUMMY_CID.as_bytes().to_vec(),
+				15
+			),
+			Error::<Test>::InvalidSchemaId
+		);
+	});
+}
+
+#[test]
+fn valid_payload_location_ipfs() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = IPFS_SCHEMA_ID;
 		let info_result = MessagesPallet::add_ipfs_message(
 			RuntimeOrigin::signed(caller_1),
 			schema_id_1,
-			Vec::from("foo"),
+			DUMMY_CID.as_bytes().to_vec(),
 			1,
 		);
 
@@ -361,6 +425,63 @@ fn invalid_payload_location_onchain() {
 			Error::<Test>::InvalidPayloadLocation
 		);
 	});
+}
+
+#[test]
+fn add_ipfs_message_with_large_payload_errors() {
+	new_test_ext().execute_with(|| {
+		let caller_1 = 5u64;
+		let mut big_cid = String::from("a");
+
+		for _ in 0..<Test as Config>::MaxMessagePayloadSizeBytes::get() {
+			big_cid.push('a');
+		}
+
+		assert_noop!(
+			MessagesPallet::add_ipfs_message(
+				RuntimeOrigin::signed(caller_1),
+				IPFS_SCHEMA_ID,
+				big_cid.as_bytes().to_vec(),
+				15
+			),
+			Error::<Test>::ExceedsMaxMessagePayloadSizeBytes
+		);
+	})
+}
+
+#[test]
+fn add_ipfs_message_cid_v0_errors() {
+	new_test_ext().execute_with(|| {
+		let caller_1 = 5u64;
+		const CIDV0: &str = "QmYzm8KGxRHr7nGn5g5Z9Zv9r8nN5WNn7Ajya6x7RxmAB1";
+
+		assert_noop!(
+			MessagesPallet::add_ipfs_message(
+				RuntimeOrigin::signed(caller_1),
+				IPFS_SCHEMA_ID,
+				CIDV0.as_bytes().to_vec(),
+				15
+			),
+			Error::<Test>::UnsupportedCidVersion
+		);
+	})
+}
+
+#[test]
+fn add_ipfs_message_bad_cid_errors() {
+	new_test_ext().execute_with(|| {
+		let caller_1 = 5u64;
+
+		assert_noop!(
+			MessagesPallet::add_ipfs_message(
+				RuntimeOrigin::signed(caller_1),
+				IPFS_SCHEMA_ID,
+				"foo".as_bytes().to_vec(),
+				15
+			),
+			Error::<Test>::InvalidCid
+		);
+	})
 }
 
 #[test]

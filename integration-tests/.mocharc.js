@@ -1,6 +1,9 @@
 module.exports = {
+    exit: true,
+    extension: ["ts"],
     parallel: false,
-    require:  ['scaffolding/rootHooks.ts', 'scaffolding/extrinsicHelpers.ts'],
+    require:  ['ts-node/register','scaffolding/rootHooks.ts', 'scaffolding/extrinsicHelpers.ts'],
+    spec: ["./{,!(node_modules)/**}/*.test.ts"],
     timeout: 500,
 }
 
