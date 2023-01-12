@@ -24,6 +24,7 @@ ALL_CUSTOM_PALLETS=( \
   msa \
   schemas \
   stateful-storage \
+  capacity \
 )
 
 declare -a CUSTOM_PALLETS

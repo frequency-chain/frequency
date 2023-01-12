@@ -58,12 +58,16 @@ use sp_runtime::{
 pub use common_primitives::{
 	capacity::TargetValidator, msa::MessageSourceId, utils::wrap_binary_data,
 };
+
+#[cfg(feature = "runtime-benchmarks")]
+use common_primitives::benchmarks::RegisterProviderBenchmarkHelper;
+
 pub use pallet::*;
 pub use types::*;
 pub use weights::*;
 pub mod types;
 
-#[cfg(any(feature = "runtime-benchmarks", test))]
+#[cfg(test)]
 pub mod testing_utils;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -108,6 +112,10 @@ pub mod pallet {
 		/// The maximum number of unlocking chunks a StakingAccountLedger can have. It determines how many concurrent unstaked chunks may exist.
 		#[pallet::constant]
 		type MaxUnlockingChunks: Get<u32>;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		/// A set of helper functions for benchmarking.
+		type BenchmarkHelper: RegisterProviderBenchmarkHelper;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.

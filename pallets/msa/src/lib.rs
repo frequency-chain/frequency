@@ -63,7 +63,7 @@ use frame_support::{
 };
 
 #[cfg(feature = "runtime-benchmarks")]
-use common_primitives::benchmarks::MsaBenchmarkHelper;
+use common_primitives::benchmarks::{MsaBenchmarkHelper, RegisterProviderBenchmarkHelper};
 
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
@@ -1448,6 +1448,17 @@ impl<T: Config> MsaBenchmarkHelper<T::AccountId> for Pallet<T> {
 	/// adds a new key to specified msa
 	fn add_key(msa_id: MessageSourceId, key: T::AccountId) -> DispatchResult {
 		Self::add_key(msa_id, &key, EMPTY_FUNCTION)?;
+		Ok(())
+	}
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl<T: Config> RegisterProviderBenchmarkHelper for Pallet<T> {
+	/// Create a registered provider for benchmarks
+	fn create(provider_id: MessageSourceId, name: Vec<u8>) -> DispatchResult {
+		let name = BoundedVec::<u8, T::MaxProviderNameSize>::try_from(name).expect("error");
+		Self::create_registered_provider(provider_id.into(), name)?;
+
 		Ok(())
 	}
 }
