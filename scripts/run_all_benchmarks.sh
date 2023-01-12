@@ -8,7 +8,7 @@ BENCHMARK="$RUNTIME benchmark pallet "
 # TODO: pallet_collator_selection and pallet_collective benchmarks fail due to errors in the
 #  actual benchmark code. See Issue #608
 EXTERNAL_PALLETS=(orml_vesting pallet_balances pallet_timestamp pallet_session pallet_scheduler pallet_democracy pallet_treasury pallet_preimage pallet_utility)
-CUSTOM_PALLETS=(messages msa schemas)
+CUSTOM_PALLETS=(messages msa schemas capacity)
 
 function exit_err() { echo "❌ 💔" ; exit 1; }
 
