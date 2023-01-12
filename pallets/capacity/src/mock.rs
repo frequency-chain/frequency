@@ -160,6 +160,9 @@ impl Config for Test {
 	type TargetValidator = Msa;
 	type MinimumStakingAmount = ConstU64<5>;
 	type MaxUnlockingChunks = ConstU32<4>;
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = Msa;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

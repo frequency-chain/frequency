@@ -25,6 +25,7 @@ ALL_CUSTOM_PALLETS=( \
   schemas \
   stateful-storage \
   time-release \
+  capacity \
 )
 
 declare -a CUSTOM_PALLETS
