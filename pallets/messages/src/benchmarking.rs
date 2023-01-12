@@ -91,9 +91,32 @@ benchmarks! {
 	}
 
 	add_ipfs_message {
-		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - IPFS_PAYLOAD_LENGTH;
 		let caller: T::AccountId = whitelisted_caller();
-		let cid = vec![1; n as usize];
+		let cid = "bafybeierhgbz4zp2x2u67urqrgfnrnlukciupzenpqpipiz5nwtq7uxpx4".as_bytes().to_vec();
+
+		// schema ids start from 1, and we need to add that many to make sure our desired id exists
+		for j in 0 ..=IPFS_SCHEMA_ID {
+			assert_ok!(create_schema::<T>(PayloadLocation::IPFS));
+		}
+		assert_ok!(T::MsaBenchmarkHelper::add_key(ProviderId(1).into(), caller.clone()));
+
+		for j in 1 .. AVERAGE_NUMBER_OF_MESSAGES {
+			assert_ok!(ipfs_message::<T>(IPFS_SCHEMA_ID));
+		}
+	}: _ (RawOrigin::Signed(caller),IPFS_SCHEMA_ID, cid, IPFS_PAYLOAD_LENGTH)
+	verify {
+		assert_eq!(
+			MessagesPallet::<T>::get_messages(
+				<T as frame_system::Config>::BlockNumber::one(), IPFS_SCHEMA_ID).len(),
+			AVERAGE_NUMBER_OF_MESSAGES as usize
+		);
+	}
+
+	add_ipfs_message_binary {
+		let caller: T::AccountId = whitelisted_caller();
+		let cid_str = "bafybeierhgbz4zp2x2u67urqrgfnrnlukciupzenpqpipiz5nwtq7uxpx4";
+		let cid: Vec::<u8> = multibase::decode(cid_str).unwrap().1;
+
 
 		// schema ids start from 1, and we need to add that many to make sure our desired id exists
 		for j in 0 ..=IPFS_SCHEMA_ID {
