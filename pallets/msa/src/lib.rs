@@ -85,7 +85,16 @@ use common_primitives::{
 
 pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 pub use pallet::*;
-pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
+use sp_runtime::{
+	offchain::{
+		storage::StorageValueRef,
+		storage_lock::{BlockAndTime, StorageLock},
+	},
+	traits::Hash,
+};
+pub use types::{
+	AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION, MSA_OFF_CHAIN_KEY,
+};
 pub use weights::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -398,6 +407,13 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(current: T::BlockNumber) -> Weight {
 			Self::reset_virtual_bucket_if_needed(current)
+		}
+
+		fn offchain_worker(block_number: T::BlockNumber) {
+			let key = Self::derive_storage_key(block_number);
+			let storage_ref = StorageValueRef::persistent(&key);
+
+			//if let Ok(Some(data)) = storage_ref.get::<IndexingData<T::AccountId, T::Hash>>() {}
 		}
 	}
 
@@ -1146,7 +1162,17 @@ impl<T: Config> Pallet<T> {
 		);
 		result.unique
 	}
-
+	#[deny(clippy::clone_double_ref)]
+	pub(crate) fn derive_storage_key(block_number: T::BlockNumber) -> Vec<u8> {
+		block_number.using_encoded(|encoded_bn| {
+			MSA_OFF_CHAIN_KEY
+				.iter()
+				.chain(b"/".iter())
+				.chain(encoded_bn)
+				.copied()
+				.collect::<Vec<u8>>()
+		})
+	}
 	/// Retrieves the MSA Id for a given `AccountId`
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
 		Self::get_msa_by_public_key(&key)
