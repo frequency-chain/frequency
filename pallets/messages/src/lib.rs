@@ -397,7 +397,11 @@ impl<T: Config> Pallet<T> {
 			.collect()
 	}
 
-	/// Validates a CID to conform to IPFS CIDv1 formatting (does not validate decoded CID fields)
+	/// Validates a CID to conform to IPFS CIDv1 (or higher) formatting (does not validate decoded CID fields)
+	///
+	/// # Errors
+	/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
+	/// * [`Error::InvalidCid`] - Unable to parse provided CID
 	///
 	pub fn validate_cid(cid: Vec<u8>) -> DispatchResult {
 		// Decode SCALE encoded CID into string slice
