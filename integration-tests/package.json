@@ -6,8 +6,8 @@
         "clean": "rm -Rf dist",
         "build": "tsc -p ./tsconfig.json",
         "test": "mocha",
-        "format": "eslint --fix",
-        "lint": "eslint"
+        "format": "tsc --noEmit --pretty",
+        "lint": "tsc --noEmit --pretty"
     },
     "keywords": [],
     "author": "",
