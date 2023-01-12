@@ -1,15 +1,10 @@
 use super::*;
 use crate::mock::*;
+
 use frame_support::{
 	assert_ok,
-	traits::{ConstU32, OnFinalize, OnInitialize},
-	BoundedVec,
+	traits::{OnFinalize, OnInitialize},
 };
-
-pub fn register_provider(target_id: MessageSourceId, name: String) {
-	let name: BoundedVec<u8, ConstU32<16>> = Vec::from(name).try_into().expect("error");
-	assert_ok!(Msa::create_registered_provider(target_id.into(), name));
-}
 
 pub fn staking_events() -> Vec<Event<Test>> {
 	let result = System::events()
@@ -33,4 +28,9 @@ pub fn run_to_block(n: u64) {
 		System::on_initialize(System::block_number());
 		Capacity::on_initialize(System::block_number());
 	}
+}
+
+pub fn register_provider(target_id: MessageSourceId, name: String) {
+	let name = Vec::from(name).try_into().expect("error");
+	assert_ok!(Msa::create_registered_provider(target_id.into(), name));
 }
