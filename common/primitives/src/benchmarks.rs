@@ -67,3 +67,16 @@ impl SchemaBenchmarkHelper for () {
 		Ok(())
 	}
 }
+
+/// A trait for helping setup state for running benchmarks in Capacity.
+pub trait RegisterProviderBenchmarkHelper {
+	/// Registers a provider
+	fn create(target_id: MessageSourceId, name: Vec<u8>) -> DispatchResult;
+}
+
+/// A blank implementation
+impl RegisterProviderBenchmarkHelper for () {
+	fn create(_target_id: MessageSourceId, _name: Vec<u8>) -> DispatchResult {
+		Ok(())
+	}
+}
