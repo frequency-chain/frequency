@@ -3,7 +3,7 @@
 set -m
 echo "hello"
 ldd --version
-
+docker -v
 chmod +x /frequency/frequency
 /frequency/frequency --dev \
     -lruntime=debug \

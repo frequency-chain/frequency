@@ -13,6 +13,10 @@ RUN apt-get -y install git
 
 RUN git clone https://github.com/LibertyDSNP/schemas.git
 
+ENV TINI_VERSION v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+
+FROM frequencychain/instant-seal-node as frequency-image
 # This is the 2nd stage: a very small image where we copy the Frequency binary
 FROM --platform=linux/amd64 node:18.12.1
 
@@ -34,14 +38,19 @@ COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificat
 # For local testing only
 # If you get frequency-local.amd64 from the frequency repo and put it in the target/release directory, you can run this locally
 #COPY --chown=frequency target/release/frequency.amd64 ./frequency/frequency
-COPY --chown=frequency target/release/frequency ./frequency/
-RUN chmod +x ./frequency/frequency
+#COPY --chown=frequency target/release/frequency ./frequency/
+#RUN chmod +x ./frequency/frequency
 
 COPY --chown=frequency scripts/deploy_schemas.sh ./frequency/
 RUN chmod +x ./frequency/deploy_schemas.sh
 
 COPY --from=base --chown=frequency /schemas/ /frequency/schemas
-#RUN chmod +x ./frequency/schemas
+RUN chmod +x /frequency/schemas
+COPY --from=base --chown=frequency /tini/ /tini/
+RUN chmod +x /tini/
+
+COPY --from=frequency-image --chown=frequency /frequency/frequency /frequency/frequency
+RUN chmod +x /frequency/frequency
 
 # 9933 P2P port
 # 9944 for RPC call
@@ -50,8 +59,9 @@ EXPOSE 9933 9944 30333
 
 VOLUME ["/data"]
 
+
 ##TODO: figure out why this errors out due to not existing
-#ENTRYPOINT ["/usr/local/bin/tini", "--"]
+#ENTRYPOINT ["ls", "-a"]
 
 # Params which can be overriden from CLI
-CMD ["/bin/bash", "/frequency/deploy_schemas.sh"]
+CMD ["/bin/bash", "frequency/deploy_schemas.sh"]
