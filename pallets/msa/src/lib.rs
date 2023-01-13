@@ -124,7 +124,9 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type RuntimeEvent: From<Event<Self>>
+			+ IsType<<Self as frame_system::Config>::RuntimeEvent>
+			+ TryInto<Event<Self>>;
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
@@ -410,10 +412,20 @@ pub mod pallet {
 		}
 
 		fn offchain_worker(block_number: T::BlockNumber) {
-			let key = Self::derive_storage_key(block_number);
-			let storage_ref = StorageValueRef::persistent(&key);
-
-			//if let Ok(Some(data)) = storage_ref.get::<IndexingData<T::AccountId, T::Hash>>() {}
+			if <frame_system::Pallet<T>>::read_events_no_consensus()
+				.into_iter()
+				.filter_map(|event_record| {
+					let local_event = <T as Config>::RuntimeEvent::from(event_record.event);
+					local_event.try_into().ok()
+				})
+				.any(|msa_event| {
+					matches!(
+						msa_event,
+						Event::PublicKeyAdded { .. } | Event::PublicKeyDeleted { .. }
+					)
+				}) {
+				//TODO
+			}
 		}
 	}
 
