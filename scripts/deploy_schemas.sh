@@ -1,9 +1,10 @@
 #!/bin/bash
 
 set -m
-echo "hello"
+
+npm --version
 ldd --version
-docker -v
+
 chmod +x /frequency/frequency
 /frequency/frequency --dev \
     -lruntime=debug \
@@ -16,13 +17,13 @@ chmod +x /frequency/frequency
     --rpc-port=9933 \
     --ws-port=9944 \
     --rpc-external \
-    --rpc-cors=al \
+    --rpc-cors=all \
     --ws-external \
     --rpc-methods=Unsafe \
     --tmp \
     &
 
-cd /frequency/schemas
+cd schemas
 npm install && npm run deploy
 
 fg %1
