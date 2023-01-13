@@ -229,7 +229,7 @@ pub mod pallet {
 			#[pallet::compact] payload_length: u32,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
-			let cid_binary: Vec<u8> = Self::validate_cid(cid).map_err(|e| e)?;
+			let cid_binary: Vec<u8> = Self::validate_cid(cid)?;
 			let payload_tuple: OffchainPayloadType = (cid_binary, payload_length);
 			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = payload_tuple
 				.encode()
