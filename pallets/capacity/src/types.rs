@@ -7,6 +7,9 @@ use frame_support::{
 use scale_info::TypeInfo;
 use sp_runtime::traits::{CheckedAdd, CheckedSub, Saturating, Zero};
 
+#[cfg(any(feature = "runtime-benchmarks", test))]
+use sp_std::vec::Vec;
+
 /// The type used for storing information about staking details.
 #[derive(
 	TypeInfo, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound, Clone, Decode, Encode, MaxEncodedLen,
@@ -49,7 +52,7 @@ impl<T: Config> StakingAccountDetails<T> {
 		available_staking_balance.min(proposed_amount)
 	}
 
-	#[cfg(test)]
+	#[cfg(any(feature = "runtime-benchmarks", test))]
 	///  tmp fn for testing only
 	/// set unlock chunks with (balance, thaw_at).  does not check that the unlock chunks
 	/// don't exceed total.
