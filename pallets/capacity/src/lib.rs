@@ -238,10 +238,8 @@ pub mod pallet {
 		pub fn withdraw_unstaked(origin: OriginFor<T>) -> DispatchResult {
 			let staker = ensure_signed(origin)?;
 
-			let maybe_staking_account = Self::get_staking_account_for(&staker);
-			ensure!(maybe_staking_account.is_some(), Error::<T>::NotAStakingAccount);
-
-			let mut staking_account = maybe_staking_account.unwrap();
+			let mut staking_account =
+				Self::get_staking_account_for(&staker).ok_or(Error::<T>::NotAStakingAccount)?;
 			let current_block = frame_system::Pallet::<T>::block_number();
 
 			let amount_withdrawn = staking_account.reap_thawed(current_block);
