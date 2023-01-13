@@ -14,11 +14,11 @@ fn staking_account_details_reap_thawed_happy_path() {
 		assert_eq!(10, staking_account.total);
 		assert_eq!(3, staking_account.unlocking.len());
 
-		assert_eq!(Ok(1u64), staking_account.reap_thawed(2));
+		assert_eq!(1u64, staking_account.reap_thawed(2));
 		assert_eq!(2, staking_account.unlocking.len());
 		assert_eq!(9, staking_account.total);
 
-		assert_eq!(Ok(5u64), staking_account.reap_thawed(5));
+		assert_eq!(5u64, staking_account.reap_thawed(5));
 		assert_eq!(0, staking_account.unlocking.len());
 		assert_eq!(4, staking_account.total);
 	})

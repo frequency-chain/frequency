@@ -237,24 +237,21 @@ pub mod pallet {
 		///
 		pub fn withdraw_unstaked(origin: OriginFor<T>) -> DispatchResult {
 			let staker = ensure_signed(origin)?;
-			let mut amount_withdrawn: BalanceOf<T> = 0u32.into();
+
+			let maybe_staking_account = Self::get_staking_account_for(&staker);
+			ensure!(maybe_staking_account.is_some(), Error::<T>::NotAStakingAccount);
+
+			let mut staking_account = maybe_staking_account.unwrap();
 			let current_block = frame_system::Pallet::<T>::block_number();
-			StakingAccountLedger::<T>::mutate_exists(
-				&staker,
-				|maybe_staking_account| -> DispatchResult {
-					if let Some(details) = maybe_staking_account {
-						amount_withdrawn = details.reap_thawed(current_block).unwrap_or_default();
-						ensure!(!amount_withdrawn.is_zero(), Error::<T>::NoUnstakedTokensAvailable);
-						Self::unlock_staking_amount_for(&staker, details.total);
-						if details.total.is_zero() {
-							*maybe_staking_account = None;
-						}
-						Ok(())
-					} else {
-						Err(Error::<T>::NotAStakingAccount.into())
-					}
-				},
-			)?;
+
+			let amount_withdrawn = staking_account.reap_thawed(current_block);
+			ensure!(!amount_withdrawn.is_zero(), Error::<T>::NoUnstakedTokensAvailable);
+
+			if staking_account.total.is_zero() {
+				Self::remove_staking_account(&staker);
+			} else {
+				Self::set_staking_account(&staker, &staking_account)
+			}
 			Self::deposit_event(Event::<T>::StakeWithdrawn {
 				account: staker,
 				amount: amount_withdrawn,
@@ -328,17 +325,9 @@ impl<T: Config> Pallet<T> {
 		StakingAccountLedger::<T>::insert(staker, staking_account);
 	}
 
-	fn unlock_staking_amount_for(who: &T::AccountId, currently_staked_amount: BalanceOf<T>) {
-		if currently_staked_amount.is_zero() {
-			T::Currency::remove_lock(STAKING_ID, &who)
-		} else {
-			T::Currency::set_lock(
-				STAKING_ID,
-				who,
-				currently_staked_amount,
-				WithdrawReasons::all().into(),
-			);
-		}
+	fn remove_staking_account(staker: &T::AccountId) {
+		T::Currency::remove_lock(STAKING_ID, &staker);
+		StakingAccountLedger::<T>::remove(&staker);
 	}
 
 	/// Sets target account details.
