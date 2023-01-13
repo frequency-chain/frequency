@@ -202,11 +202,11 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Adds a message for a resource hosted on IPFS. The payload storage will
-		/// contain both a
-		/// [CID](https://docs.ipfs.io/concepts/content-addressing/#identifier-formats)
-		/// as well as a 32-bit payload length.
-		/// The actual payload will be on IPFS
+		/// Adds a message for a resource hosted on IPFS. The input consists of
+		/// both a Base32-encoded [CID](https://docs.ipfs.tech/concepts/content-addressing/#version-1-v1)
+		/// as well as a 32-bit content length. The stored payload will contain the
+		/// CID encoded as binary, as well as the 32-bit message content length.
+		/// The actual message content will be on IPFS.
 		///
 		/// # Events
 		/// * [`Event::MessagesStored`] - In the next block

@@ -34,7 +34,7 @@ pub struct MessageResponse {
 		serde(with = "as_hex_option", skip_serializing_if = "Option::is_none", default)
 	)]
 	pub payload: Option<Vec<u8>>,
-	/// The content address for an IPFS payload
+	/// The content address for an IPFS payload in Base32. Will always be CIDv1.
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
 	pub cid: Option<Vec<u8>>,
 	///  Offchain payload length (IPFS).
