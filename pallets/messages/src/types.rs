@@ -3,6 +3,7 @@ use common_primitives::{
 	messages::MessageResponse, msa::MessageSourceId, node::BlockNumber, schema::PayloadLocation,
 };
 use frame_support::{traits::Get, BoundedVec};
+use multibase::Base;
 use scale_info::TypeInfo;
 use sp_std::prelude::*;
 
@@ -56,7 +57,7 @@ where
 					provider_msa_id: self.provider_msa_id,
 					index: self.index,
 					block_number,
-					cid: Some(cid),
+					cid: Some(multibase::encode(Base::Base32Lower, cid).as_bytes().to_vec()),
 					payload_length: Some(payload_length),
 					msa_id: None,
 					payload: None,

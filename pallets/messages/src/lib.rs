@@ -229,7 +229,8 @@ pub mod pallet {
 			#[pallet::compact] payload_length: u32,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
-			let payload_tuple: OffchainPayloadType = (cid.clone(), payload_length);
+			let cid_binary: Vec<u8> = Self::validate_cid(cid).map_err(|e| e)?;
+			let payload_tuple: OffchainPayloadType = (cid_binary, payload_length);
 			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = payload_tuple
 				.encode()
 				.try_into()
@@ -243,7 +244,6 @@ pub mod pallet {
 			);
 
 			let provider_msa_id = Self::find_msa_id(&provider_key)?;
-			Self::validate_cid(cid).map_err(|e| e)?;
 			let current_block = frame_system::Pallet::<T>::block_number();
 			if Self::add_message(provider_msa_id, None, bounded_payload, schema_id, current_block)?
 			{
@@ -256,6 +256,7 @@ pub mod pallet {
 
 			Ok(())
 		}
+
 		/// Add an on-chain message for a given schema id.
 		///
 		/// # Events
@@ -403,22 +404,18 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
 	/// * [`Error::InvalidCid`] - Unable to parse provided CID
 	///
-	pub fn validate_cid(cid: Vec<u8>) -> DispatchResult {
+	pub fn validate_cid(in_cid: Vec<u8>) -> Result<Vec<u8>, DispatchError> {
 		// Decode SCALE encoded CID into string slice
-		let ba: &[u8] = &cid;
+		let ba: &[u8] = &in_cid;
+
 		let cstr: &str = sp_std::str::from_utf8(ba).map_err(|_| Error::<T>::InvalidCid)?;
+		ensure!(cstr.len() > 2, Error::<T>::InvalidCid);
+		ensure!(&cstr[0..2] != "Qm", Error::<T>::UnsupportedCidVersion);
 
-		// Fail CID v0 (string encoding starts with 'Qm')
-		match &cstr[0..2] {
-			"Qm" => Err(Error::<T>::UnsupportedCidVersion),
-			_ => Ok(()),
-		}?;
+		// Assume it's a multibase-encoded string. Decode it to a byte array so we can parse the CID.
+		let cid_b = multibase::decode(cstr).map_err(|_| Error::<T>::InvalidCid)?.1;
+		ensure!(Cid::read_bytes(&cid_b as &[u8]).is_ok(), Error::<T>::InvalidCid);
 
-		// Else, assume it's a multibase-encoded string. Decode it to a byte array so we can parse the CID.
-		let data: &[u8] = &multibase::decode(cstr).map_err(|_| Error::<T>::InvalidCid)?.1;
-
-		Cid::try_from(data).map_err(|_| Error::<T>::InvalidCid)?;
-
-		Ok(())
+		Ok(cid_b)
 	}
 }
