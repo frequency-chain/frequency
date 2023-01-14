@@ -1009,7 +1009,6 @@ dependencies = [
  "common-primitives",
  "jsonrpsee",
  "sp-api",
- "sp-io",
  "sp-runtime",
  "thiserror",
 ]
@@ -1027,6 +1026,7 @@ dependencies = [
  "smallvec",
  "sp-api",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -5646,6 +5646,7 @@ dependencies = [
  "pallet-schemas",
  "parity-scale-codec",
  "scale-info",
+ "serde_json",
  "sp-core",
  "sp-io",
  "sp-keystore",

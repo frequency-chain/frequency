@@ -85,13 +85,6 @@ use common_primitives::{
 
 pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 pub use pallet::*;
-use sp_runtime::{
-	offchain::{
-		storage::StorageValueRef,
-		storage_lock::{BlockAndTime, StorageLock},
-	},
-	traits::Hash,
-};
 pub use types::{
 	AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION, MSA_OFF_CHAIN_KEY,
 };
@@ -103,6 +96,9 @@ mod benchmarking;
 mod mock;
 #[cfg(test)]
 mod tests;
+
+/// Offchain module for MSA pallet.
+pub mod offchain_storage;
 
 pub mod types;
 
@@ -411,20 +407,23 @@ pub mod pallet {
 			Self::reset_virtual_bucket_if_needed(current)
 		}
 
-		fn offchain_worker(block_number: T::BlockNumber) {
-			if <frame_system::Pallet<T>>::read_events_no_consensus()
-				.into_iter()
-				.filter_map(|event_record| {
-					let local_event = <T as Config>::RuntimeEvent::from(event_record.event);
-					local_event.try_into().ok()
-				})
-				.any(|msa_event| {
-					matches!(
-						msa_event,
-						Event::PublicKeyAdded { .. } | Event::PublicKeyDeleted { .. }
-					)
-				}) {
-				//TODO
+		fn offchain_worker(_block_number: T::BlockNumber) {
+			let filtered_events: Vec<Event<T>> =
+				<frame_system::Pallet<T>>::read_events_no_consensus()
+					.into_iter()
+					.filter_map(|event_record| {
+						let local_event = <T as Config>::RuntimeEvent::from(event_record.event);
+						local_event.try_into().ok()
+					})
+					.filter(|msa_event| {
+						matches!(
+							msa_event,
+							Event::PublicKeyAdded { .. } | Event::PublicKeyDeleted { .. }
+						)
+					})
+					.collect();
+			if !filtered_events.is_empty() {
+				for event in filtered_events {}
 			}
 		}
 	}
@@ -1174,17 +1173,7 @@ impl<T: Config> Pallet<T> {
 		);
 		result.unique
 	}
-	#[deny(clippy::clone_double_ref)]
-	pub(crate) fn derive_storage_key(block_number: T::BlockNumber) -> Vec<u8> {
-		block_number.using_encoded(|encoded_bn| {
-			MSA_OFF_CHAIN_KEY
-				.iter()
-				.chain(b"/".iter())
-				.chain(encoded_bn)
-				.copied()
-				.collect::<Vec<u8>>()
-		})
-	}
+
 	/// Retrieves the MSA Id for a given `AccountId`
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
 		Self::get_msa_by_public_key(&key)
