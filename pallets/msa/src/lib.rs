@@ -275,6 +275,8 @@ pub mod pallet {
 		},
 		/// An AccountId had all permissions revoked from its MessageSourceId
 		PublicKeyDeleted {
+			/// The MSA for the Event
+			msa_id: MessageSourceId,
 			/// The key no longer approved for the associated MSA
 			key: T::AccountId,
 		},
@@ -423,7 +425,17 @@ pub mod pallet {
 					})
 					.collect();
 			if !filtered_events.is_empty() {
-				for event in filtered_events {}
+				for event in filtered_events {
+					match event {
+						Event::PublicKeyAdded { msa_id, key } => {
+							//offchain_storage::dal::process_msa_key_event(msa_id, key.into());
+						},
+						Event::PublicKeyDeleted { msa_id, key } => {
+							//offchain_storage::dal::process_msa_key_event(msa_id, key.into());
+						},
+						_ => {},
+					}
+				}
 			}
 		}
 	}
@@ -729,7 +741,10 @@ pub mod pallet {
 					Self::delete_key_for_msa(who_msa_id, &public_key_to_delete)?;
 
 					// Deposit the event
-					Self::deposit_event(Event::PublicKeyDeleted { key: public_key_to_delete });
+					Self::deposit_event(Event::PublicKeyDeleted {
+						msa_id: who_msa_id,
+						key: public_key_to_delete,
+					});
 				},
 				None => {
 					log_err!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
@@ -860,7 +875,7 @@ pub mod pallet {
 				Some(msa_id) => {
 					num_deletions = Self::delete_delegation_relationship(DelegatorId(msa_id));
 					Self::delete_key_for_msa(msa_id, &who)?;
-					Self::deposit_event(Event::PublicKeyDeleted { key: who });
+					Self::deposit_event(Event::PublicKeyDeleted { msa_id, key: who });
 					Self::deposit_event(Event::MsaRetired { msa_id });
 				},
 				None => {

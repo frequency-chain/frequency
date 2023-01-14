@@ -1,7 +1,5 @@
 extern crate alloc;
-use alloc::string::String;
 use codec::Decode;
-use core::str::FromStr;
 use sp_io::{offchain, offchain_index};
 use sp_runtime::offchain::{
 	storage::{StorageRetrievalError, StorageValueRef},
