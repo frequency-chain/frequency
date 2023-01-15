@@ -42,5 +42,8 @@ sp_api::decl_runtime_apis! {
 
 		/// Get the list of schema ids (if any) that exist in any delegation between the delegator and provider
 		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaId>>;
+
+		/// Get the list of public keys for a given MSA ID
+		fn get_msa_public_keys(msa_id: MessageSourceId) -> Vec<AccountId>;
 	}
 }

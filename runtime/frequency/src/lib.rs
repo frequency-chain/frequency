@@ -946,6 +946,10 @@ impl_runtime_apis! {
 				Err(_) => None,
 			}
 		}
+
+		fn get_msa_public_keys(msa_id: MessageSourceId) -> Option<Vec<AccountId>> {
+			Msa::get_msa_public_keys(msa_id)
+		}
 	}
 
 	#[cfg(feature = "try-runtime")]

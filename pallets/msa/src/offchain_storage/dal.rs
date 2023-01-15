@@ -69,3 +69,22 @@ where
 	offchain_common::set_index_value(derived_key, msa_keys_updated.encode().as_slice());
 	Ok(())
 }
+
+/// Get MSA public keys from offchain storage
+pub fn get_msa_keys<K, V>(msa_id: K) -> Result<Vec<V>, StorageRetrievalError>
+where
+	K: Encode + Clone + Ord + Decode + Eq,
+	V: Encode + Clone + Decode + Eq,
+{
+	let key_binding = derive_storage_key::<K>(msa_id.clone()).encode();
+	let derived_key = key_binding.as_slice();
+	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V>>(
+		StorageKind::PERSISTENT,
+		derived_key,
+	);
+
+	let msa_key_data = msa_keys.unwrap();
+	let msa_key_map = msa_key_data.0;
+	let keys = msa_key_map.get(&msa_id).unwrap();
+	Ok(keys.clone())
+}

@@ -1346,6 +1346,15 @@ impl<T: Config> Pallet<T> {
 		block_number / (T::BlockNumber::from(T::MortalityWindowSize::get())) %
 			T::BlockNumber::from(T::NumberOfBuckets::get())
 	}
+
+	/// Get reverse mapping of msa vs public keys via offchain storage
+	pub fn get_msa_public_keys(msa_id: MessageSourceId) -> Option<Vec<T::AccountId>> {
+		let msa_keys = offchain_storage::dal::get_msa_keys::<MessageSourceId, T::AccountId>(msa_id);
+		match msa_keys {
+			Ok(keys) => Some(keys),
+			Err(_) => None,
+		}
+	}
 }
 
 #[cfg(feature = "runtime-benchmarks")]
