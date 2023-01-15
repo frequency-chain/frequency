@@ -947,7 +947,7 @@ impl_runtime_apis! {
 			}
 		}
 
-		fn get_msa_public_keys(msa_id: MessageSourceId) -> Option<Vec<AccountId>> {
+		fn get_msa_public_keys(msa_id: MessageSourceId) -> Vec<AccountId> {
 			Msa::get_msa_public_keys(msa_id)
 		}
 	}
