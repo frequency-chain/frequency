@@ -52,6 +52,7 @@ std = [
   "sp-runtime/std",
   "sp-std/std",
   "sp-core/std",
+  "sp-io/std",
   "pallet-schemas/std",
   "common-primitives/std",
 ]
