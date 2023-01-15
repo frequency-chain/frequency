@@ -428,10 +428,22 @@ pub mod pallet {
 				for event in filtered_events {
 					match event {
 						Event::PublicKeyAdded { msa_id, key } => {
-							//offchain_storage::dal::process_msa_key_event(msa_id, key.into());
+							let add_result = offchain_storage::dal::process_msa_key_event(
+								offchain_storage::data::MSAPublicKeyDataOperation::Add(msa_id, key),
+							);
+							if let Err(e) = add_result {
+								log::error!("Error adding key to offchain storage: {:?}", e);
+							}
 						},
 						Event::PublicKeyDeleted { msa_id, key } => {
-							//offchain_storage::dal::process_msa_key_event(msa_id, key.into());
+							let delete_result = offchain_storage::dal::process_msa_key_event(
+								offchain_storage::data::MSAPublicKeyDataOperation::Remove(
+									msa_id, key,
+								),
+							);
+							if let Err(e) = delete_result {
+								log::error!("Error deleting key from offchain storage: {:?}", e);
+							}
 						},
 						_ => {},
 					}

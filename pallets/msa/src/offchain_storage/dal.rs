@@ -1,22 +1,71 @@
 extern crate alloc;
-use crate::offchain_storage::{data::MSAPublicKeyData, keys::derive_storage_key};
-use codec::Encode;
+use crate::offchain_storage::{
+	data::{MSAPublicKeyData, MSAPublicKeyDataOperation},
+	keys::derive_storage_key,
+};
+use codec::{Decode, Encode};
 use common_primitives::offchain as offchain_common;
 use sp_runtime::offchain::{storage::StorageRetrievalError, StorageKind};
 
 /// Process MSA key event and update offchain storage
-pub fn process_msa_key_event(msa_id: u64, key: &[u8]) -> Result<(), StorageRetrievalError> {
-	let derived_key = derive_storage_key(msa_id);
-	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData>(
+pub fn process_msa_key_event<K, V>(
+	ops: MSAPublicKeyDataOperation<K, V>,
+) -> Result<(), StorageRetrievalError>
+where
+	K: Encode + Clone + Ord + Decode + Eq,
+	V: Encode + Clone + Decode + Eq,
+{
+	match ops {
+		MSAPublicKeyDataOperation::Add(msa_id, key) => return add_msa_key(msa_id, key),
+		MSAPublicKeyDataOperation::Remove(msa_id, key) => return remove_msa_key(msa_id, key),
+	}
+}
+
+fn add_msa_key<K, V>(msa_id: K, key: V) -> Result<(), StorageRetrievalError>
+where
+	K: Encode + Clone + Ord + Decode + Eq,
+	V: Encode + Clone + Decode + Eq,
+{
+	let key_binding = derive_storage_key::<K>(msa_id.clone()).encode();
+	let derived_key = key_binding.as_slice();
+	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V>>(
 		StorageKind::PERSISTENT,
-		derived_key.as_slice(),
+		derived_key,
 	);
 
-	let msa_key_data = msa_keys.unwrap_or_default();
+	let msa_key_data = msa_keys.unwrap();
 	let mut msa_key_map = msa_key_data.0;
-	msa_key_map.insert(msa_id, key.to_vec());
-	let msa_keys_updated = MSAPublicKeyData(msa_key_map).encode();
+	msa_key_map.get_mut(&msa_id).unwrap().push(key);
+	let msa_keys_updated = MSAPublicKeyData(msa_key_map);
 
-	offchain_common::set_index_value(derived_key.as_slice(), msa_keys_updated.as_slice());
+	offchain_common::set_index_value(derived_key, msa_keys_updated.encode().as_slice());
+	Ok(())
+}
+
+fn remove_msa_key<K, V>(msa_id: K, key: V) -> Result<(), StorageRetrievalError>
+where
+	K: Encode + Clone + Ord + Decode + Eq,
+	V: Encode + Clone + Decode + Eq,
+{
+	let key_binding = derive_storage_key::<K>(msa_id.clone()).encode();
+	let derived_key = key_binding.as_slice();
+	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V>>(
+		StorageKind::PERSISTENT,
+		derived_key,
+	);
+
+	let msa_key_data = msa_keys.unwrap();
+	let mut msa_key_map = msa_key_data.0;
+	if let Some(keys) = msa_key_map.get_mut(&msa_id.clone()) {
+		if let Some(index) = keys.iter().position(|k| k == &key) {
+			keys.remove(index);
+		}
+	}
+	if msa_key_map.get(&msa_id).unwrap().is_empty() {
+		msa_key_map.remove(&msa_id);
+		return Ok(())
+	}
+	let msa_keys_updated = MSAPublicKeyData(msa_key_map);
+	offchain_common::set_index_value(derived_key, msa_keys_updated.encode().as_slice());
 	Ok(())
 }
