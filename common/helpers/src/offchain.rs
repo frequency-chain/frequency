@@ -1,4 +1,3 @@
-extern crate alloc;
 use codec::Decode;
 use sp_io::{offchain, offchain_index};
 use sp_runtime::offchain::{

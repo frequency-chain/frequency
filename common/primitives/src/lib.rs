@@ -20,8 +20,6 @@ pub mod messages;
 pub mod msa;
 /// Node level primitives.
 pub mod node;
-/// Implementation of offchain storage
-pub mod offchain;
 /// Structs and traits for parquet
 pub mod parquet;
 /// Structs and traits for the Schema pallet

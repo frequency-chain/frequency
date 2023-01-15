@@ -85,9 +85,7 @@ use common_primitives::{
 
 pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 pub use pallet::*;
-pub use types::{
-	AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION, MSA_OFF_CHAIN_KEY,
-};
+pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
 pub use weights::*;
 
 #[cfg(feature = "runtime-benchmarks")]

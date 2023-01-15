@@ -1008,7 +1008,9 @@ dependencies = [
  "apache-avro",
  "common-primitives",
  "jsonrpsee",
+ "parity-scale-codec",
  "sp-api",
+ "sp-io",
  "sp-runtime",
  "thiserror",
 ]
@@ -1026,7 +1028,6 @@ dependencies = [
  "smallvec",
  "sp-api",
  "sp-core",
- "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -5638,6 +5639,7 @@ dependencies = [
 name = "pallet-msa"
 version = "0.0.0"
 dependencies = [
+ "common-helpers",
  "common-primitives",
  "common-runtime",
  "frame-benchmarking",

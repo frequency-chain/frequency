@@ -16,9 +16,6 @@ use scale_info::TypeInfo;
 /// Dispatch Empty
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 
-/// Offchain storage key for MSA
-pub const MSA_OFF_CHAIN_KEY: &[u8] = b"msa_offchain_key";
-
 /// A type definition for the payload of adding an MSA key - `pallet_msa::add_public_key_to_msa`
 #[derive(TypeInfo, RuntimeDebugNoBound, Clone, Decode, Encode, PartialEq, Eq)]
 #[scale_info(skip_type_params(T))]

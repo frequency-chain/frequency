@@ -1,10 +1,9 @@
-extern crate alloc;
 use crate::offchain_storage::{
 	data::{MSAPublicKeyData, MSAPublicKeyDataOperation},
 	keys::derive_storage_key,
 };
 use codec::{Decode, Encode};
-use common_primitives::offchain as offchain_common;
+use common_helpers::offchain as offchain_common;
 use sp_runtime::offchain::{storage::StorageRetrievalError, StorageKind};
 
 /// Process MSA key event and update offchain storage
