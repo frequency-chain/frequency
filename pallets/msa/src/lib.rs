@@ -104,6 +104,10 @@ mod replay_tests;
 #[cfg(test)]
 mod signature_registry_tests;
 
+/// Offchain storage for MSA pallet
+pub mod offchain_storage;
+pub use offchain_storage::*;
+
 pub mod weights;
 
 #[frame_support::pallet]
@@ -420,25 +424,24 @@ pub mod pallet {
 					})
 					.collect();
 			if !filtered_events.is_empty() {
+				// TODO acquire lock before processing events
 				for event in filtered_events {
 					match event {
 						Event::PublicKeyAdded { msa_id, key } => {
-							//let add_result = offchain_storage::dal::process_msa_key_event(
-							//offchain_storage::data::MSAPublicKeyDataOperation::Add(msa_id, key),
-							//);
-							//if let Err(e) = add_result {
-							//	log::error!("Error adding key to offchain storage: {:?}", e);
-							//}
+							let add_result = offchain_storage::process_msa_key_event(
+								offchain_storage::MSAPublicKeyDataOperation::Add(msa_id, key),
+							);
+							if let Err(e) = add_result {
+								log_err!("Error adding key to offchain storage: {:?}", e);
+							}
 						},
 						Event::PublicKeyDeleted { msa_id, key } => {
-							//let delete_result = offchain_storage::dal::process_msa_key_event(
-							//	offchain_storage::data::MSAPublicKeyDataOperation::Remove(
-							//		msa_id, key,
-							//	),
-							//);
-							//if let Err(e) = delete_result {
-							//	log::error!("Error deleting key from offchain storage: {:?}", e);
-							//}
+							let delete_result = offchain_storage::process_msa_key_event(
+								offchain_storage::MSAPublicKeyDataOperation::Remove(msa_id, key),
+							);
+							if let Err(e) = delete_result {
+								log_err!("Error deleting key from offchain storage: {:?}", e);
+							}
 						},
 						_ => {},
 					}
