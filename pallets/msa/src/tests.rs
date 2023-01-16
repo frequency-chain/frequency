@@ -384,7 +384,9 @@ fn it_deletes_msa_key_successfully() {
 
 		assert_eq!(info, None);
 
-		System::assert_last_event(Event::PublicKeyDeleted { key: test_public(2) }.into());
+		System::assert_last_event(
+			Event::PublicKeyDeleted { msa_id: 2, key: test_public(2) }.into(),
+		);
 	})
 }
 
@@ -405,7 +407,9 @@ fn test_retire_msa_success() {
 		assert_ok!(Msa::retire_msa(origin));
 
 		// Check if PublicKeyDeleted event was dispatched.
-		System::assert_has_event(Event::PublicKeyDeleted { key: test_account.clone() }.into());
+		System::assert_has_event(
+			Event::PublicKeyDeleted { msa_id, key: test_account.clone() }.into(),
+		);
 
 		// Check if MsaRetired event was dispatched.
 		System::assert_last_event(Event::MsaRetired { msa_id }.into());

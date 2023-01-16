@@ -115,7 +115,9 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type RuntimeEvent: From<Event<Self>>
+			+ IsType<<Self as frame_system::Config>::RuntimeEvent>
+			+ TryInto<Event<Self>>;
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
@@ -268,6 +270,8 @@ pub mod pallet {
 		},
 		/// An AccountId had all permissions revoked from its MessageSourceId
 		PublicKeyDeleted {
+			/// The MSA for the Event
+			msa_id: MessageSourceId,
 			/// The key no longer approved for the associated MSA
 			key: T::AccountId,
 		},
@@ -398,6 +402,48 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(current: T::BlockNumber) -> Weight {
 			Self::reset_virtual_bucket_if_needed(current)
+		}
+
+		fn offchain_worker(_block_number: T::BlockNumber) {
+			let filtered_events: Vec<Event<T>> =
+				<frame_system::Pallet<T>>::read_events_no_consensus()
+					.into_iter()
+					.filter_map(|event_record| {
+						let local_event = <T as Config>::RuntimeEvent::from(event_record.event);
+						local_event.try_into().ok()
+					})
+					.filter(|msa_event| {
+						matches!(
+							msa_event,
+							Event::PublicKeyAdded { .. } | Event::PublicKeyDeleted { .. }
+						)
+					})
+					.collect();
+			if !filtered_events.is_empty() {
+				for event in filtered_events {
+					match event {
+						Event::PublicKeyAdded { msa_id, key } => {
+							//let add_result = offchain_storage::dal::process_msa_key_event(
+							//offchain_storage::data::MSAPublicKeyDataOperation::Add(msa_id, key),
+							//);
+							//if let Err(e) = add_result {
+							//	log::error!("Error adding key to offchain storage: {:?}", e);
+							//}
+						},
+						Event::PublicKeyDeleted { msa_id, key } => {
+							//let delete_result = offchain_storage::dal::process_msa_key_event(
+							//	offchain_storage::data::MSAPublicKeyDataOperation::Remove(
+							//		msa_id, key,
+							//	),
+							//);
+							//if let Err(e) = delete_result {
+							//	log::error!("Error deleting key from offchain storage: {:?}", e);
+							//}
+						},
+						_ => {},
+					}
+				}
+			}
 		}
 	}
 
@@ -702,7 +748,10 @@ pub mod pallet {
 					Self::delete_key_for_msa(who_msa_id, &public_key_to_delete)?;
 
 					// Deposit the event
-					Self::deposit_event(Event::PublicKeyDeleted { key: public_key_to_delete });
+					Self::deposit_event(Event::PublicKeyDeleted {
+						msa_id: who_msa_id,
+						key: public_key_to_delete,
+					});
 				},
 				None => {
 					log_err!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
@@ -833,7 +882,7 @@ pub mod pallet {
 				Some(msa_id) => {
 					num_deletions = Self::delete_delegation_relationship(DelegatorId(msa_id));
 					Self::delete_key_for_msa(msa_id, &who)?;
-					Self::deposit_event(Event::PublicKeyDeleted { key: who });
+					Self::deposit_event(Event::PublicKeyDeleted { msa_id, key: who });
 					Self::deposit_event(Event::MsaRetired { msa_id });
 				},
 				None => {
