@@ -83,7 +83,9 @@ use common_primitives::{
 	schema::{SchemaId, SchemaValidator},
 };
 
-pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
+pub use common_primitives::{
+	msa::MessageSourceId, offchain as offchain_common, utils::wrap_binary_data,
+};
 pub use pallet::*;
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
 pub use weights::*;
@@ -106,13 +108,13 @@ mod signature_registry_tests;
 
 /// Offchain storage for MSA pallet
 pub mod offchain_storage;
+use frame_support::log::error as log_err;
 pub use offchain_storage::*;
 
 pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::log::error as log_err;
 
 	use super::*;
 
@@ -424,27 +426,22 @@ pub mod pallet {
 					})
 					.collect();
 			if !filtered_events.is_empty() {
-				// TODO acquire lock before processing events
+				let mut add_events: Vec<(MessageSourceId, T::AccountId)> = vec![];
+				let mut delete_events: Vec<(MessageSourceId, T::AccountId)> = vec![];
+
 				for event in filtered_events {
 					match event {
-						Event::PublicKeyAdded { msa_id, key } => {
-							let add_result = offchain_storage::process_msa_key_event(
-								offchain_storage::MSAPublicKeyDataOperation::Add(msa_id, key),
-							);
-							if let Err(e) = add_result {
-								log_err!("Error adding key to offchain storage: {:?}", e);
-							}
-						},
-						Event::PublicKeyDeleted { msa_id, key } => {
-							let delete_result = offchain_storage::process_msa_key_event(
-								offchain_storage::MSAPublicKeyDataOperation::Remove(msa_id, key),
-							);
-							if let Err(e) = delete_result {
-								log_err!("Error deleting key from offchain storage: {:?}", e);
-							}
-						},
+						Event::PublicKeyAdded { msa_id, key } => add_events.push((msa_id, key)),
+						Event::PublicKeyDeleted { msa_id, key } =>
+							delete_events.push((msa_id, key)),
 						_ => {},
 					}
+				}
+				if !add_events.is_empty() {
+					Self::process_add_events(add_events);
+				}
+				if !delete_events.is_empty() {
+					Self::process_delete_events(delete_events);
 				}
 			}
 		}
@@ -1343,6 +1340,38 @@ impl<T: Config> Pallet<T> {
 	pub fn bucket_for(block_number: T::BlockNumber) -> T::BlockNumber {
 		block_number / (T::BlockNumber::from(T::MortalityWindowSize::get())) %
 			T::BlockNumber::from(T::NumberOfBuckets::get())
+	}
+
+	fn process_add_events(events: Vec<(MessageSourceId, T::AccountId)>) {
+		for (msa_id, key) in events {
+			let lock_status = offchain_common::lock(msa_id.encode().as_slice(), || {
+				let add_result = offchain_storage::process_msa_key_event(
+					offchain_storage::MSAPublicKeyDataOperation::Add(msa_id, key.clone()),
+				);
+				if let Err(e) = add_result {
+					log_err!("Error adding key to offchain storage: {:?}", e);
+				}
+			});
+			if let offchain_common::LockStatus::Locked = lock_status {
+				log_err!("Unable to acquire lock, skipping event processing");
+			}
+		}
+	}
+
+	fn process_delete_events(events: Vec<(MessageSourceId, T::AccountId)>) {
+		for (msa_id, key) in events {
+			let lock_status = offchain_common::lock(msa_id.encode().as_slice(), || {
+				let delete_result = offchain_storage::process_msa_key_event(
+					offchain_storage::MSAPublicKeyDataOperation::Remove(msa_id, key.clone()),
+				);
+				if let Err(e) = delete_result {
+					log_err!("Error deleting key from offchain storage: {:?}", e);
+				}
+			});
+			if let offchain_common::LockStatus::Locked = lock_status {
+				log_err!("Unable to acquire lock, skipping event processing");
+			}
+		}
 	}
 }
 

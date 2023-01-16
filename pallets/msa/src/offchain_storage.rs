@@ -43,8 +43,9 @@ where
 	V: Encode + Clone + Decode + Eq,
 {
 	match ops {
-		MSAPublicKeyDataOperation::Add(msa_id, key) => return add_msa_key(msa_id, key),
-		MSAPublicKeyDataOperation::Remove(msa_id, key) => return remove_msa_key(msa_id, key),
+		MSAPublicKeyDataOperation::Add(msa_id, key) => return add_msa_key(msa_id, key.clone()),
+		MSAPublicKeyDataOperation::Remove(msa_id, key) =>
+			return remove_msa_key(msa_id, key.clone()),
 	}
 }
 
