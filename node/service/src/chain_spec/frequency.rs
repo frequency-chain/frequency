@@ -116,7 +116,7 @@ pub fn load_frequency_spec() -> ChainSpec {
 		.unwrap()
 }
 
-pub fn frequency() -> ChainSpec {
+pub fn benchmark_mainnet_config() -> ChainSpec {
 	let properties =
 		get_properties(FREQUENCY_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
 	let para_id: ParaId = 2091.into();
