@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/frequency/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../frequency_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../frequency_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../frequency_runtime/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/frequency/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../frequency_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../frequency_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../frequency_runtime/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -1079,15 +1079,6 @@
 <span id="1079">1079</span>
 <span id="1080">1080</span>
 <span id="1081">1081</span>
-<span id="1082">1082</span>
-<span id="1083">1083</span>
-<span id="1084">1084</span>
-<span id="1085">1085</span>
-<span id="1086">1086</span>
-<span id="1087">1087</span>
-<span id="1088">1088</span>
-<span id="1089">1089</span>
-<span id="1090">1090</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attribute">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
@@ -1272,7 +1263,7 @@
 	spec_name: <span class="macro">spec_name!</span>(<span class="string">&quot;frequency&quot;</span>),
 	impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;frequency&quot;</span>),
 	authoring_version: <span class="number">1</span>,
-	spec_version: <span class="number">5</span>,
+	spec_version: <span class="number">6</span>,
 	impl_version: <span class="number">0</span>,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: <span class="number">1</span>,
@@ -1476,10 +1467,6 @@
 <span class="macro">parameter_types! </span>{
 	<span class="comment">// The maximum weight that may be scheduled per block for any dispatchables of less priority than schedule::HARD_DEADLINE.
 	</span><span class="kw">pub </span>MaximumSchedulerWeight: Weight = Perbill::from_percent(<span class="number">10</span>) * RuntimeBlockWeights::get().max_block;
-	<span class="comment">// The maximum number of scheduled calls in the queue for a single block. Not strictly enforced, but used for weight estimation.
-	// Retry a scheduled item every 25 blocks (5 minute) until the preimage exists.
-	// Will be removed in v0.9.30
-	</span><span class="kw">pub const </span>NoPreimagePostponement: <span class="prelude-ty">Option</span>&lt;u32&gt; = <span class="prelude-val">Some</span>(<span class="number">5 </span>* MINUTES);
 }
 
 <span class="comment">// See also https://docs.rs/pallet-scheduler/latest/pallet_scheduler/trait.Config.html
@@ -1498,9 +1485,7 @@
 	<span class="kw">type </span>MaxScheduledPerBlock = SchedulerMaxScheduledPerBlock;
 	<span class="kw">type </span>WeightInfo = weights::pallet_scheduler::SubstrateWeight&lt;Runtime&gt;;
 	<span class="kw">type </span>OriginPrivilegeCmp = EqualPrivilegeOnly;
-	<span class="kw">type </span>PreimageProvider = Preimage;
-	<span class="comment">// Will be removed in v0.9.30
-	</span><span class="kw">type </span>NoPreimagePostponement = NoPreimagePostponement;
+	<span class="kw">type </span>Preimages = Preimage;
 }
 
 <span class="comment">// See https://paritytech.github.io/substrate/master/pallet_preimage/index.html for
@@ -1514,8 +1499,6 @@
 		EnsureRoot&lt;AccountId&gt;,
 		pallet_collective::EnsureMember&lt;AccountId, TechnicalCommitteeCollective&gt;,
 	&gt;;
-	<span class="doccomment">/// Expected to be removed in Polkadot v0.9.31
-	</span><span class="kw">type </span>MaxSize = PreimageMaxSize;
 	<span class="kw">type </span>BaseDeposit = PreimageBaseDeposit;
 	<span class="kw">type </span>ByteDeposit = PreimageByteDeposit;
 }
@@ -1560,13 +1543,14 @@
 	<span class="kw">type </span>MaxProposals = DemocracyMaxProposals;
 	<span class="kw">type </span>MaxVotes = DemocracyMaxVotes;
 	<span class="kw">type </span>MinimumDeposit = MinimumDeposit;
-	<span class="kw">type </span>PreimageByteDeposit = PreimageByteDeposit;
-	<span class="kw">type </span>Proposal = RuntimeCall;
 	<span class="kw">type </span>Scheduler = Scheduler;
 	<span class="kw">type </span>Slash = (); <span class="comment">// Treasury;
 	</span><span class="kw">type </span>WeightInfo = weights::pallet_democracy::SubstrateWeight&lt;Runtime&gt;;
 	<span class="kw">type </span>VoteLockingPeriod = EnactmentPeriod; <span class="comment">// Same as EnactmentPeriod
 	</span><span class="kw">type </span>VotingPeriod = VotingPeriod;
+	<span class="kw">type </span>Preimages = Preimage;
+	<span class="kw">type </span>MaxDeposits = ConstU32&lt;<span class="number">100</span>&gt;;
+	<span class="kw">type </span>MaxBlacklisted = ConstU32&lt;<span class="number">100</span>&gt;;
 
 	<span class="comment">// See https://paritytech.github.io/substrate/master/pallet_democracy/index.html for
 	// the descriptions of these origins.
@@ -1621,8 +1605,6 @@
 	<span class="doccomment">/// Any single technical committee member may veto a coming council proposal, however they can
 	/// only do it once and it lasts only for the cool-off period.
 	</span><span class="kw">type </span>VetoOrigin = pallet_collective::EnsureMember&lt;AccountId, TechnicalCommitteeCollective&gt;;
-
-	<span class="kw">type </span>OperationalPreimageOrigin = pallet_collective::EnsureMember&lt;AccountId, CouncilCollective&gt;;
 }
 
 <span class="comment">// See https://paritytech.github.io/substrate/master/pallet_treasury/index.html for
@@ -2179,4 +2161,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="frequency_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="frequency_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8796e7a9c 2022-10-08)" ></div></body></html>
