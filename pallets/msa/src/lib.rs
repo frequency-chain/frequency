@@ -421,7 +421,8 @@ pub mod pallet {
 					.filter(|msa_event| {
 						matches!(
 							msa_event,
-							Event::PublicKeyAdded { .. } | Event::PublicKeyDeleted { .. }
+							Event::PublicKeyAdded { .. } |
+								Event::PublicKeyDeleted { .. } | Event::MsaCreated { .. }
 						)
 					})
 					.collect();
@@ -431,6 +432,7 @@ pub mod pallet {
 
 				for event in filtered_events {
 					match event {
+						Event::MsaCreated { msa_id, key } => add_events.push((msa_id, key)),
 						Event::PublicKeyAdded { msa_id, key } => add_events.push((msa_id, key)),
 						Event::PublicKeyDeleted { msa_id, key } =>
 							delete_events.push((msa_id, key)),

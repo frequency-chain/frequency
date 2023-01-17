@@ -1,6 +1,7 @@
 /// Offchain Storage for MSA
 use codec::{Decode, Encode};
 use common_primitives::offchain as offchain_common;
+use frame_support::log::error as log_err;
 use sp_runtime::offchain::{storage::StorageRetrievalError, StorageKind};
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
@@ -61,8 +62,15 @@ where
 		derived_key,
 	);
 
-	let msa_key_data = msa_keys.unwrap();
+	let mut msa_key_data = MSAPublicKeyData::<K, V>(BTreeMap::new());
+	if msa_keys.is_ok() {
+		msa_key_data = msa_keys.unwrap();
+	}
 	let mut msa_key_map = msa_key_data.0;
+
+	if !msa_key_map.contains_key(&msa_id) {
+		msa_key_map.insert(msa_id.clone(), Vec::new());
+	}
 	msa_key_map.get_mut(&msa_id).unwrap().push(key);
 	let msa_keys_updated = MSAPublicKeyData(msa_key_map);
 
@@ -81,8 +89,10 @@ where
 		StorageKind::PERSISTENT,
 		derived_key,
 	);
-
-	let msa_key_data = msa_keys.unwrap();
+	let mut msa_key_data = MSAPublicKeyData::<K, V>(BTreeMap::new());
+	if msa_keys.is_ok() {
+		msa_key_data = msa_keys.unwrap();
+	}
 	let mut msa_key_map = msa_key_data.0;
 	if let Some(keys) = msa_key_map.get_mut(&msa_id.clone()) {
 		if let Some(index) = keys.iter().position(|k| k == &key) {
@@ -110,8 +120,10 @@ where
 		StorageKind::PERSISTENT,
 		derived_key,
 	);
-
-	let msa_key_data = msa_keys.unwrap();
+	let mut msa_key_data = MSAPublicKeyData::<K, V>(BTreeMap::new());
+	if msa_keys.is_ok() {
+		msa_key_data = msa_keys.unwrap();
+	}
 	let msa_key_map = msa_key_data.0;
 	let keys = msa_key_map.get(&msa_id).unwrap();
 	Ok(keys.clone())

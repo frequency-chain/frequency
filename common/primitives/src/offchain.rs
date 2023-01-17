@@ -102,5 +102,8 @@ pub fn set_index_value(key: &[u8], value: &[u8]) {
 fn get_impl<T: Decode>(key: &[u8]) -> Result<T, StorageRetrievalError> {
 	let oci_mem = StorageValueRef::persistent(&key);
 	let val = oci_mem.get::<T>()?;
-	Ok(val.unwrap())
+	match val {
+		Some(value) => Ok(value),
+		None => Err(StorageRetrievalError::Undecodable),
+	}
 }
