@@ -22,8 +22,7 @@ fn populate_messages(
 	let payload = match payload_location {
 		PayloadLocation::OnChain =>
 			Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes()),
-		PayloadLocation::IPFS =>
-			(multibase::decode(DUMMY_CID).unwrap().1, IPFS_PAYLOAD_LENGTH).encode(),
+		PayloadLocation::IPFS => (DUMMY_CID, IPFS_PAYLOAD_LENGTH).encode(),
 	};
 
 	let mut counter = 0;
@@ -303,10 +302,7 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_fail_bad_schema() {
 			index: 0,
 		};
 		let mapped_response = bad_message.map_to_response(0, PayloadLocation::IPFS);
-		assert_eq!(
-			mapped_response.cid,
-			Some(multibase::encode(Base::Base32Lower, Vec::new()).as_bytes().to_vec())
-		);
+		assert_eq!(mapped_response.cid, Some(Vec::new()));
 	});
 }
 
