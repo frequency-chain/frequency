@@ -1357,9 +1357,13 @@ impl<T: Config> Pallet<T> {
 	fn process_add_events(events: Vec<(MessageSourceId, T::AccountId)>) {
 		for (msa_id, key) in events {
 			let lock_status = offchain_common::lock(msa_id.encode().as_slice(), || {
-				let add_result = offchain_storage::process_msa_key_event(
-					offchain_storage::MSAPublicKeyDataOperation::Add(msa_id, key.clone()),
-				);
+				let add_result = offchain_storage::process_msa_key_event::<
+					MessageSourceId,
+					T::AccountId,
+				>(offchain_storage::MSAPublicKeyDataOperation::Add::<
+					MessageSourceId,
+					T::AccountId,
+				>(msa_id, key.clone()));
 				if let Err(e) = add_result {
 					log_err!("Error adding key to offchain storage: {:?}", e);
 				}
@@ -1373,9 +1377,13 @@ impl<T: Config> Pallet<T> {
 	fn process_delete_events(events: Vec<(MessageSourceId, T::AccountId)>) {
 		for (msa_id, key) in events {
 			let lock_status = offchain_common::lock(msa_id.encode().as_slice(), || {
-				let delete_result = offchain_storage::process_msa_key_event(
-					offchain_storage::MSAPublicKeyDataOperation::Remove(msa_id, key.clone()),
-				);
+				let delete_result = offchain_storage::process_msa_key_event::<
+					MessageSourceId,
+					T::AccountId,
+				>(offchain_storage::MSAPublicKeyDataOperation::Remove::<
+					MessageSourceId,
+					T::AccountId,
+				>(msa_id, key.clone()));
 				if let Err(e) = delete_result {
 					log_err!("Error deleting key from offchain storage: {:?}", e);
 				}

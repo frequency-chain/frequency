@@ -69,7 +69,7 @@ where
 		msa_key_map.insert(msa_id.clone(), Vec::new());
 	}
 	msa_key_map.get_mut(&msa_id).unwrap().push(key);
-	let msa_keys_updated = MSAPublicKeyData(msa_key_map);
+	let msa_keys_updated = MSAPublicKeyData::<K, V>(msa_key_map);
 
 	offchain_common::set_index_value(derived_key, msa_keys_updated.encode().as_slice());
 	Ok(())
@@ -100,7 +100,7 @@ where
 		msa_key_map.remove(&msa_id);
 		return Ok(())
 	}
-	let msa_keys_updated = MSAPublicKeyData(msa_key_map);
+	let msa_keys_updated = MSAPublicKeyData::<K, V>(msa_key_map);
 	offchain_common::set_index_value(derived_key, msa_keys_updated.encode().as_slice());
 	Ok(())
 }
