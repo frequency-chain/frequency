@@ -218,7 +218,7 @@ pub mod pallet {
 		/// Attempting to unstake from a target that has not been staked to.
  		NotStakingAccount,
 		/// Staker reached the limit number for the allowed amount of unlocking chunks.
-  		MaxUnlockingChunks,
+  		MaxUnlockingChunksExceeded,
 	}
 
 	#[pallet::call]
