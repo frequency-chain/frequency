@@ -51,9 +51,9 @@ use frame_support::{
 };
 
 use sp_runtime::{
-	Percent, Perbill,
-	traits::{CheckedAdd, CheckedDiv, Saturating, Zero},
-	ArithmeticError, DispatchError, SaturatedConversion,
+	Perbill,
+	traits::{CheckedAdd, Saturating, Zero},
+	ArithmeticError, DispatchError,
 };
 
 pub use common_primitives::{
