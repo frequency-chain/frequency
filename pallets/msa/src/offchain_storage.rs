@@ -16,11 +16,9 @@ where
 	[MSA_INDEX_KEY, msa_id.encode().as_slice()].concat()
 }
 
-/// MSA Public Key Data, stored in offchain storage
-/// Key: MSA ID
-/// Value: Public Key
-/// Note: MSA ID is the same as the MSA Account ID
-/// Note: Public Key is the same as the MSA Account Public Key
+/// MSA Public Key Data
+/// BTreeMap<MSA ID, Vec<Public Key>>  type structure
+/// Support scale encoding and decoding for efficient storage
 #[derive(Debug, Encode, Decode, Clone, PartialEq, Eq, Default)]
 pub struct MSAPublicKeyData<K, V>(pub BTreeMap<K, Vec<V>>);
 
