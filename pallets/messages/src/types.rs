@@ -57,7 +57,7 @@ where
 					provider_msa_id: self.provider_msa_id,
 					index: self.index,
 					block_number,
-					cid: Some(multibase::encode(Base::Base32Lower, cid).as_bytes().to_vec()),
+					cid: Some(cid),
 					payload_length: Some(payload_length),
 					msa_id: None,
 					payload: None,
