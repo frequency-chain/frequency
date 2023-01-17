@@ -122,6 +122,6 @@ where
 		msa_key_data = msa_keys.unwrap();
 	}
 	let msa_key_map = msa_key_data.0;
-	let keys = msa_key_map.get(&msa_id).unwrap();
+	let keys = msa_key_map.get(&msa_id).unwrap_or(&Vec::new()).clone();
 	Ok(keys.clone())
 }
