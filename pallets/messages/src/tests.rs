@@ -159,7 +159,8 @@ fn add_message_with_invalid_msa_account_errors() {
 		let caller_1 = 1000;
 		let schema_id_1: SchemaId = 1;
 		let message_payload_1 = Vec::from(
-			"{'fromId': 123, 'content': '2323231'}{'fromId': 123, 'content': '232323'}".as_bytes(),
+			"{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}"
+				.as_bytes(),
 		);
 
 		// act
@@ -341,7 +342,8 @@ fn add_message_with_invalid_schema_id_should_error() {
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = INVALID_SCHEMA_ID;
 		let message_payload_1 = Vec::from(
-			"{'fromId': 123, 'content': '2323231'}{'fromId': 123, 'content': '232323'}".as_bytes(),
+			"{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}"
+				.as_bytes(),
 		);
 
 		// act
@@ -432,16 +434,18 @@ fn add_ipfs_message_with_large_payload_errors() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5u64;
 
+		let old_max_size = MaxMessagePayloadSizeBytes::get();
+		MaxMessagePayloadSizeBytes::set(10u32);
 		assert_noop!(
 			MessagesPallet::add_ipfs_message(
 				RuntimeOrigin::signed(caller_1),
 				IPFS_SCHEMA_ID,
-				// Explicitly use CIDv1 with SHA2-512 hash so as to exceed test-specific configured max payload size
-				"bafkrgqb76pscorjihsk77zpyst3p364zlti6aojlu4nga34vhp7t5orzwbwwytvp7ej44r5yhjzneanqwb5arcnvuvfwo2d4qgzyx5hymvto4".as_bytes().to_vec(),
+				DUMMY_CID.as_bytes().to_vec(),
 				15
 			),
 			Error::<Test>::ExceedsMaxMessagePayloadSizeBytes
 		);
+		MaxMessagePayloadSizeBytes::set(old_max_size);
 	})
 }
 

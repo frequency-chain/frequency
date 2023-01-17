@@ -72,10 +72,7 @@ impl system::Config for Test {
 
 parameter_types! {
 	pub const MaxMessagesPerBlock: u32 = 500;
-	// In order to test max payload size for IPFS messages, this needs to be set
-	// to 1 byte less than the max IPFS payload (which would be using the largest
-	// hash size, SHA2-512). (We use SHA2-256 hashes for all other CIDs in the test suite).
-	pub const MaxMessagePayloadSizeBytes: u32 = 73;
+	pub static MaxMessagePayloadSizeBytes: u32 = 100;
 	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
 }
 
