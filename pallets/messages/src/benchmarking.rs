@@ -91,7 +91,6 @@ benchmarks! {
 	}
 
 	add_ipfs_message {
-		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - IPFS_PAYLOAD_LENGTH;
 		let caller: T::AccountId = whitelisted_caller();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes().to_vec();
 

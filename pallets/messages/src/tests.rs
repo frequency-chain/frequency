@@ -270,7 +270,7 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_return_offchain_payl
 		let list =
 			MessagesPallet::get_messages_by_schema_and_block(schema_id, PayloadLocation::IPFS, 0);
 
-		let cid = Vec::from(DUMMY_CID.as_bytes());
+		let cid = DUMMY_CID.as_bytes().to_vec();
 
 		// IPFS messages should return the payload length that was encoded in a tuple along
 		// with the CID: (cid, payload_length).
@@ -520,7 +520,7 @@ fn validate_cid_invalid_utf8_errors() {
 	new_test_ext().execute_with(|| {
 		let bad_cid = vec![0xfc, 0xa1, 0xa1, 0xa1, 0xa1, 0xa1];
 
-		assert_noop!(MessagesPallet::validate_cid(bad_cid), Error::<Test>::InvalidCid);
+		assert_noop!(MessagesPallet::validate_cid(&bad_cid), Error::<Test>::InvalidCid);
 	})
 }
 
@@ -529,7 +529,7 @@ fn validate_cid_too_short_errors() {
 	new_test_ext().execute_with(|| {
 		let bad_cid = "a".as_bytes().to_vec();
 
-		assert_noop!(MessagesPallet::validate_cid(bad_cid), Error::<Test>::InvalidCid);
+		assert_noop!(MessagesPallet::validate_cid(&bad_cid), Error::<Test>::InvalidCid);
 	})
 }
 
@@ -538,7 +538,7 @@ fn validate_cid_v0_errors() {
 	new_test_ext().execute_with(|| {
 		let bad_cid = "Qmxxx".as_bytes().to_vec();
 
-		assert_noop!(MessagesPallet::validate_cid(bad_cid), Error::<Test>::UnsupportedCidVersion);
+		assert_noop!(MessagesPallet::validate_cid(&bad_cid), Error::<Test>::UnsupportedCidVersion);
 	})
 }
 
@@ -547,7 +547,7 @@ fn validate_cid_invalid_multibase_errors() {
 	new_test_ext().execute_with(|| {
 		let bad_cid = "aaaa".as_bytes().to_vec();
 
-		assert_noop!(MessagesPallet::validate_cid(bad_cid), Error::<Test>::InvalidCid);
+		assert_noop!(MessagesPallet::validate_cid(&bad_cid), Error::<Test>::InvalidCid);
 	})
 }
 
@@ -556,7 +556,7 @@ fn validate_cid_invalid_cid_errors() {
 	new_test_ext().execute_with(|| {
 		let bad_cid = multibase::encode(Base::Base32Lower, "foo").as_bytes().to_vec();
 
-		assert_noop!(MessagesPallet::validate_cid(bad_cid), Error::<Test>::InvalidCid);
+		assert_noop!(MessagesPallet::validate_cid(&bad_cid), Error::<Test>::InvalidCid);
 	})
 }
 
@@ -565,6 +565,6 @@ fn validate_cid_valid_cid_succeeds() {
 	new_test_ext().execute_with(|| {
 		let bad_cid = DUMMY_CID.as_bytes().to_vec();
 
-		assert_ok!(MessagesPallet::validate_cid(bad_cid));
+		assert_ok!(MessagesPallet::validate_cid(&bad_cid));
 	})
 }

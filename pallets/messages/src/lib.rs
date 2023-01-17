@@ -229,8 +229,10 @@ pub mod pallet {
 			#[pallet::compact] payload_length: u32,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
-			let cid_binary: Vec<u8> = Self::validate_cid(cid)?;
-			let payload_tuple: OffchainPayloadType = (cid_binary, payload_length);
+			// validate_cid returns the binary CID representation. We'll use that in an upcoming PR, not now.
+			// For now we just store the input CID in the payload.
+			Self::validate_cid(&cid)?;
+			let payload_tuple: OffchainPayloadType = (cid, payload_length);
 			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = payload_tuple
 				.encode()
 				.try_into()
@@ -404,7 +406,7 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
 	/// * [`Error::InvalidCid`] - Unable to parse provided CID
 	///
-	pub fn validate_cid(in_cid: Vec<u8>) -> Result<Vec<u8>, DispatchError> {
+	pub fn validate_cid(in_cid: &Vec<u8>) -> Result<Vec<u8>, DispatchError> {
 		// Decode SCALE encoded CID into string slice
 		let cstr: &str = sp_std::str::from_utf8(&in_cid[..]).map_err(|_| Error::<T>::InvalidCid)?;
 		ensure!(cstr.len() > 2, Error::<T>::InvalidCid);
