@@ -1,9 +1,11 @@
 use codec::Decode;
+use frame_support::log::error as log_err;
 use sp_io::{offchain, offchain_index};
 use sp_runtime::offchain::{
 	storage::{StorageRetrievalError, StorageValueRef},
 	StorageKind,
 };
+use sp_std::fmt::Debug;
 
 /// Storage keys for offchain worker
 /// THe tx_id is used to identify the transaction
@@ -73,20 +75,21 @@ where
 }
 
 /// Wrapper for offchain get operations
-pub fn get_index_value<T: Decode>(
+pub fn get_index_value<V: Decode + Debug>(
 	kind: StorageKind,
 	key: &[u8],
-) -> Result<T, StorageRetrievalError> {
+) -> Result<V, StorageRetrievalError> {
 	match kind {
 		StorageKind::PERSISTENT => {
-			let indexed_value = get_impl::<T>(key);
+			let indexed_value = get_impl::<V>(key);
+			log_err!("key: {:?}", key);
 			indexed_value
 		},
 		StorageKind::LOCAL => {
 			let indexed_value = offchain::local_storage_get(kind, key);
 			match indexed_value {
 				Some(value) =>
-					T::decode(&mut &value[..]).map_err(|_| StorageRetrievalError::Undecodable),
+					V::decode(&mut &value[..]).map_err(|_| StorageRetrievalError::Undecodable),
 				None => Err(StorageRetrievalError::Undecodable),
 			}
 		},
@@ -95,15 +98,19 @@ pub fn get_index_value<T: Decode>(
 
 /// Sets a value by the key to offchain index
 pub fn set_index_value(key: &[u8], value: &[u8]) {
+	log_err!("key: {:?}", key);
+	log_err!("set_index value: {:?}", value);
 	offchain_index::set(key, value);
 }
 
 /// Gets a value by the key from persistent storage
-fn get_impl<T: Decode>(key: &[u8]) -> Result<T, StorageRetrievalError> {
-	let oci_mem = StorageValueRef::persistent(&key);
-	let val = oci_mem.get::<T>()?;
-	match val {
-		Some(value) => Ok(value),
-		None => Err(StorageRetrievalError::Undecodable),
+fn get_impl<V: Decode + Debug>(key: &[u8]) -> Result<V, StorageRetrievalError> {
+	let oci_mem = StorageValueRef::persistent(key);
+	log_err!("key from get_impl: {:?}", key);
+	if let Ok(Some(data)) = oci_mem.get::<V>() {
+		log_err!("data from get_impl: {:?}", data);
+		return Ok(data)
+	} else {
+		return Err(StorageRetrievalError::Undecodable)
 	}
 }

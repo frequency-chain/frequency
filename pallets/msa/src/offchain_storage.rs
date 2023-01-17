@@ -1,8 +1,13 @@
 /// Offchain Storage for MSA
 use codec::{Decode, Encode};
 use common_primitives::offchain as offchain_common;
+use frame_support::log::error as log_err;
 use sp_runtime::offchain::{storage::StorageRetrievalError, StorageKind};
-use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
+use sp_std::{
+	collections::btree_map::BTreeMap,
+	fmt::{Debug, Formatter},
+	vec::Vec,
+};
 
 /// Generic prefix for MSA index storage
 pub const MSA_INDEX_KEY: &[u8] = b"frequency::msa::";
@@ -19,8 +24,14 @@ where
 /// MSA Public Key Data
 /// BTreeMap<MSA ID, Vec<Public Key>>  type structure
 /// Support scale encoding and decoding for efficient storage
-#[derive(Debug, Encode, Decode, Clone, PartialEq, Eq, Default)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Default)]
 pub struct MSAPublicKeyData<K, V>(pub BTreeMap<K, Vec<V>>);
+
+impl<K: Debug, V: Debug> Debug for MSAPublicKeyData<K, V> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> sp_std::fmt::Result {
+		write!(f, "MSAPublicKeyData({:?})", self.0)
+	}
+}
 
 /// Operations enum for MSA Offchain Storage
 /// Add: Add MSA Public Key
@@ -37,8 +48,8 @@ pub fn process_msa_key_event<K, V>(
 	ops: MSAPublicKeyDataOperation<K, V>,
 ) -> Result<(), StorageRetrievalError>
 where
-	K: Encode + Clone + Ord + Decode + Eq,
-	V: Encode + Clone + Decode + Eq,
+	K: Encode + Clone + Ord + Decode + Eq + Debug,
+	V: Encode + Clone + Decode + Eq + Debug,
 {
 	match ops {
 		MSAPublicKeyDataOperation::Add(msa_id, key) => return add_msa_key(msa_id, key.clone()),
@@ -49,8 +60,8 @@ where
 
 fn add_msa_key<K, V>(msa_id: K, key: V) -> Result<(), StorageRetrievalError>
 where
-	K: Encode + Clone + Ord + Decode + Eq,
-	V: Encode + Clone + Decode + Eq,
+	K: Encode + Clone + Ord + Decode + Eq + Debug,
+	V: Encode + Clone + Decode + Eq + Debug,
 {
 	let key_binding = derive_storage_key::<K>(msa_id.clone());
 	let derived_key = key_binding.as_slice();
@@ -58,7 +69,6 @@ where
 		StorageKind::PERSISTENT,
 		derived_key,
 	);
-
 	let mut msa_key_data = MSAPublicKeyData::<K, V>(BTreeMap::new());
 	if msa_keys.is_ok() {
 		msa_key_data = msa_keys.unwrap();
@@ -77,8 +87,8 @@ where
 
 fn remove_msa_key<K, V>(msa_id: K, key: V) -> Result<(), StorageRetrievalError>
 where
-	K: Encode + Clone + Ord + Decode + Eq,
-	V: Encode + Clone + Decode + Eq,
+	K: Encode + Clone + Ord + Decode + Eq + Debug,
+	V: Encode + Clone + Decode + Eq + Debug,
 {
 	let key_binding = derive_storage_key::<K>(msa_id.clone());
 	let derived_key = key_binding.as_slice();
@@ -108,8 +118,8 @@ where
 /// Get MSA public keys from offchain storage
 pub fn get_msa_keys<K, V>(msa_id: K) -> Result<Vec<V>, StorageRetrievalError>
 where
-	K: Encode + Clone + Ord + Decode + Eq,
-	V: Encode + Clone + Decode + Eq,
+	K: Encode + Clone + Ord + Decode + Eq + Debug,
+	V: Encode + Clone + Decode + Eq + Debug,
 {
 	let key_binding = derive_storage_key::<K>(msa_id.clone());
 	let derived_key = key_binding.as_slice();
@@ -118,10 +128,17 @@ where
 		derived_key,
 	);
 	let mut msa_key_data = MSAPublicKeyData::<K, V>(BTreeMap::new());
+
 	if msa_keys.is_ok() {
 		msa_key_data = msa_keys.unwrap();
 	}
 	let msa_key_map = msa_key_data.0;
-	let keys = msa_key_map.get(&msa_id).unwrap_or(&Vec::new()).clone();
-	Ok(keys.clone())
+	let optional_keys = msa_key_map.get(&msa_id);
+	match optional_keys {
+		Some(keys) => {
+			log_err!("keys: {:?}", keys);
+			return Ok(keys.clone())
+		},
+		None => return Ok(Vec::new()),
+	}
 }
