@@ -1344,6 +1344,16 @@ impl<T: Config> Pallet<T> {
 			T::BlockNumber::from(T::NumberOfBuckets::get())
 	}
 
+	/// Get list of account ids that are associated with a given msa
+	pub fn get_msa_keys_offchain(msa_id: MessageSourceId) -> Vec<T::AccountId> {
+		let msa_keys_res = offchain_storage::get_msa_keys(msa_id);
+		if let Err(e) = msa_keys_res {
+			log_err!("Error getting msa keys from offchain storage: {:?}", e);
+			return Vec::new()
+		}
+		msa_keys_res.unwrap()
+	}
+
 	fn process_add_events(events: Vec<(MessageSourceId, T::AccountId)>) {
 		for (msa_id, key) in events {
 			let lock_status = offchain_common::lock(msa_id.encode().as_slice(), || {

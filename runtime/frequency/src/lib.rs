@@ -946,6 +946,10 @@ impl_runtime_apis! {
 				Err(_) => None,
 			}
 		}
+
+		fn get_msa_keys_offchain(msa_id: MessageSourceId) -> Vec<AccountId> {
+			Msa::get_msa_keys_offchain(msa_id)
+		}
 	}
 
 	#[cfg(feature = "try-runtime")]

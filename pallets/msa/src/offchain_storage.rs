@@ -1,7 +1,6 @@
 /// Offchain Storage for MSA
 use codec::{Decode, Encode};
 use common_primitives::offchain as offchain_common;
-use frame_support::log::error as log_err;
 use sp_runtime::offchain::{storage::StorageRetrievalError, StorageKind};
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
