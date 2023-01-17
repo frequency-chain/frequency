@@ -69,19 +69,18 @@ where
 		StorageKind::PERSISTENT,
 		derived_key,
 	);
-	let mut msa_key_data = MSAPublicKeyData::<K, V>(BTreeMap::new());
-	if msa_keys.is_ok() {
-		msa_key_data = msa_keys.unwrap();
-	}
-	let mut msa_key_map = msa_key_data.0;
+	let mut msa_key_map = BTreeMap::<K, Vec<V>>::new();
 
+	if msa_keys.is_ok() {
+		msa_key_map = msa_keys.unwrap().0;
+	}
 	if !msa_key_map.contains_key(&msa_id) {
 		msa_key_map.insert(msa_id.clone(), Vec::new());
 	}
 	msa_key_map.get_mut(&msa_id).unwrap().push(key);
-	let msa_keys_updated = MSAPublicKeyData::<K, V>(msa_key_map);
-
-	offchain_common::set_index_value(derived_key, msa_keys_updated.encode().as_slice());
+	let msa_key_data = MSAPublicKeyData::<K, V>(msa_key_map);
+	log_err!("set_index value add msa: {:?}", msa_key_data);
+	offchain_common::set_index_value(derived_key, msa_key_data);
 	Ok(())
 }
 
@@ -96,11 +95,10 @@ where
 		StorageKind::PERSISTENT,
 		derived_key,
 	);
-	let mut msa_key_data = MSAPublicKeyData::<K, V>(BTreeMap::new());
+	let mut msa_key_map = BTreeMap::<K, Vec<V>>::new();
 	if msa_keys.is_ok() {
-		msa_key_data = msa_keys.unwrap();
+		msa_key_map = msa_keys.unwrap().0;
 	}
-	let mut msa_key_map = msa_key_data.0;
 	if let Some(keys) = msa_key_map.get_mut(&msa_id.clone()) {
 		if let Some(index) = keys.iter().position(|k| k == &key) {
 			keys.remove(index);
@@ -111,7 +109,7 @@ where
 		return Ok(())
 	}
 	let msa_keys_updated = MSAPublicKeyData::<K, V>(msa_key_map);
-	offchain_common::set_index_value(derived_key, msa_keys_updated.encode().as_slice());
+	offchain_common::set_index_value(derived_key, msa_keys_updated);
 	Ok(())
 }
 

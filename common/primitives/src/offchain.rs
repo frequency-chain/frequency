@@ -1,6 +1,6 @@
-use codec::Decode;
+use codec::{Decode, Encode};
 use frame_support::log::error as log_err;
-use sp_io::{offchain, offchain_index};
+use sp_io::offchain;
 use sp_runtime::offchain::{
 	storage::{StorageRetrievalError, StorageValueRef},
 	StorageKind,
@@ -83,6 +83,7 @@ pub fn get_index_value<V: Decode + Debug>(
 		StorageKind::PERSISTENT => {
 			let indexed_value = get_impl::<V>(key);
 			log_err!("key: {:?}", key);
+			log_err!("indexed_value: {:?}", indexed_value);
 			indexed_value
 		},
 		StorageKind::LOCAL => {
@@ -97,10 +98,14 @@ pub fn get_index_value<V: Decode + Debug>(
 }
 
 /// Sets a value by the key to offchain index
-pub fn set_index_value(key: &[u8], value: &[u8]) {
+pub fn set_index_value<V>(key: &[u8], value: V)
+where
+	V: Encode + Debug,
+{
 	log_err!("key: {:?}", key);
 	log_err!("set_index value: {:?}", value);
-	offchain_index::set(key, value);
+	let oci_mem = StorageValueRef::persistent(key);
+	oci_mem.set(&value.encode());
 }
 
 /// Gets a value by the key from persistent storage
