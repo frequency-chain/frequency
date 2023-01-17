@@ -97,7 +97,7 @@ impl<T: Config> StakingAccountDetails<T> {
 		let new_active = self.active.saturating_sub(amount);
 
 		let unlock_chunk = UnlockChunk {
-			value: new_active,
+			value: amount,
 			thaw_at: thaw_at,
 		};
 
