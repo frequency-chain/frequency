@@ -578,3 +578,94 @@ fn unstake_success() {
 		);
 	});
 }
+
+#[test]
+fn unstake_errors_unstaking_amount_is_zero() {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let target: MessageSourceId = 1;
+		let staking_amount = 10;
+		let unstaking_amount = 0;
+
+		register_provider(target, String::from("Test Target"));
+
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount));
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
+			Error::<Test>::UnstakedAmountIsZero
+		);
+	});
+}
+
+#[test]
+fn unstake_errors_max_unlocking_chunks_exceeded() {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let target: MessageSourceId = 1;
+		let staking_amount = 10;
+		let unstaking_amount = 1;
+
+		register_provider(target, String::from("Test Target"));
+
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount));
+
+		for n in 0 .. <Test as pallet_capacity::Config>::MaxUnlockingChunks::get() {
+			assert_ok!(Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount));
+		}
+
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
+			Error::<Test>::MaxUnlockingChunksExceeded
+		);
+	});
+}
+
+#[test]
+fn unstake_errors_amount_to_unstake_exceeds_amount_staked() {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let target: MessageSourceId = 1;
+		let staking_amount = 10;
+		let unstaking_amount = 11;
+
+		register_provider(target, String::from("Test Target"));
+
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount));
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
+			Error::<Test>::AmountToUnstakeExceedsAmountStaked
+		);
+	});
+}
+
+#[test]
+fn unstake_errors_invalid_target() {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let target: MessageSourceId = 2;
+
+		let unstaking_amount = 11;
+
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
+			Error::<Test>::InvalidTarget
+		);
+	});
+}
+
+#[test]
+fn unstake_errors_not_a_staking_amount() {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let target: MessageSourceId = 1;
+
+		let unstaking_amount = 11;
+
+		register_provider(target, String::from("Test Target"));
+
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
+			Error::<Test>::NotStakingAccount
+		);
+	});
+}

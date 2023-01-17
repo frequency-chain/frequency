@@ -102,7 +102,7 @@ impl<T: Config> StakingAccountDetails<T> {
 		};
 
 		self.active = new_active;
-		self.unlocking.try_push(unlock_chunk).map_err(|_| Error::<T>::MaxUnlockingChunks)?;
+		self.unlocking.try_push(unlock_chunk).map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
 
 		Ok(())
 	}
