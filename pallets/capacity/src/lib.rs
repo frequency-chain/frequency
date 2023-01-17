@@ -79,7 +79,10 @@ mod mock;
 mod tests;
 
 #[cfg(test)]
-mod withdraw_unstaked_tests;
+mod extrinsics_tests;
+
+#[cfg(test)]
+mod types_tests;
 
 pub mod weights;
 
@@ -227,13 +230,13 @@ pub mod pallet {
 			Ok(())
 		}
 
-		// TODO: real weights
-		#[pallet::weight(T::WeightInfo::stake())]
+		#[pallet::weight(T::WeightInfo::withdraw_unstaked())]
 		/// removes all thawed UnlockChunks from caller's StakingAccount and unlocks the sum of the thawed values
 		/// in the caller's token account.
 		///
 		/// ### Errors
 		///   - Returns `Error::NotAStakingAccount` if no StakingAccountDetails are found for `origin`.
+		///   - Returns `Error::NoUnstakedTokensAvailable` if the account has no unstaking chunks or none are thawed.
 		///
 		pub fn withdraw_unstaked(origin: OriginFor<T>) -> DispatchResult {
 			let staker = ensure_signed(origin)?;
@@ -245,11 +248,7 @@ pub mod pallet {
 			let amount_withdrawn = staking_account.reap_thawed(current_block);
 			ensure!(!amount_withdrawn.is_zero(), Error::<T>::NoUnstakedTokensAvailable);
 
-			if staking_account.total.is_zero() {
-				Self::remove_staking_account(&staker);
-			} else {
-				Self::set_staking_account(&staker, &staking_account)
-			}
+			Self::update_or_delete_staking_account(&staker, &mut staking_account);
 			Self::deposit_event(Event::<T>::StakeWithdrawn {
 				account: staker,
 				amount: amount_withdrawn,
@@ -323,9 +322,22 @@ impl<T: Config> Pallet<T> {
 		StakingAccountLedger::<T>::insert(staker, staking_account);
 	}
 
-	fn remove_staking_account(staker: &T::AccountId) {
+	/// Deletes staking account details
+	fn delete_staking_account(staker: &T::AccountId) {
 		T::Currency::remove_lock(STAKING_ID, &staker);
 		StakingAccountLedger::<T>::remove(&staker);
+	}
+
+	/// If the staking account total is zero we reap storage, otherwise set the acount to the new details.
+	fn update_or_delete_staking_account(
+		staker: &<T>::AccountId,
+		staking_account: &StakingAccountDetails<T>,
+	) {
+		if staking_account.total.is_zero() {
+			Self::delete_staking_account(&staker);
+		} else {
+			Self::set_staking_account(&staker, &staking_account)
+		}
 	}
 
 	/// Sets target account details.
