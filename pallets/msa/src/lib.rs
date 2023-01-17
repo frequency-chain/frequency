@@ -1346,7 +1346,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Get list of account ids that are associated with a given msa
 	pub fn get_msa_keys_offchain(msa_id: MessageSourceId) -> Vec<T::AccountId> {
-		let msa_keys_res = offchain_storage::get_msa_keys(msa_id);
+		let msa_keys_res = offchain_storage::get_msa_keys::<MessageSourceId, T::AccountId>(msa_id);
 		if let Err(e) = msa_keys_res {
 			log_err!("Error getting msa keys from offchain storage: {:?}", e);
 			return Vec::new()

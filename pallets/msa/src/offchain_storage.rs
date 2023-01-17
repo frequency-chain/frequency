@@ -13,7 +13,7 @@ pub(crate) fn derive_storage_key<K>(msa_id: K) -> Vec<u8>
 where
 	K: Encode + Clone + Ord + Decode,
 {
-	[MSA_INDEX_KEY, msa_id.encode().as_slice()].concat()
+	[MSA_INDEX_KEY, msa_id.encode().as_slice()].concat().encode().to_vec()
 }
 
 /// MSA Public Key Data
@@ -52,7 +52,7 @@ where
 	K: Encode + Clone + Ord + Decode + Eq,
 	V: Encode + Clone + Decode + Eq,
 {
-	let key_binding = derive_storage_key::<K>(msa_id.clone()).encode();
+	let key_binding = derive_storage_key::<K>(msa_id.clone());
 	let derived_key = key_binding.as_slice();
 	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V>>(
 		StorageKind::PERSISTENT,
@@ -80,7 +80,7 @@ where
 	K: Encode + Clone + Ord + Decode + Eq,
 	V: Encode + Clone + Decode + Eq,
 {
-	let key_binding = derive_storage_key::<K>(msa_id.clone()).encode();
+	let key_binding = derive_storage_key::<K>(msa_id.clone());
 	let derived_key = key_binding.as_slice();
 	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V>>(
 		StorageKind::PERSISTENT,
@@ -111,7 +111,7 @@ where
 	K: Encode + Clone + Ord + Decode + Eq,
 	V: Encode + Clone + Decode + Eq,
 {
-	let key_binding = derive_storage_key::<K>(msa_id.clone()).encode();
+	let key_binding = derive_storage_key::<K>(msa_id.clone());
 	let derived_key = key_binding.as_slice();
 	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V>>(
 		StorageKind::PERSISTENT,
