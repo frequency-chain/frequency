@@ -672,7 +672,7 @@ fn unstake_errors_not_a_staking_account() {
 }
 
 #[test]
-fn impl_staking_account_details_decrease_by() {
+fn staking_account_details_decrease_by_reduces_active_staking_balance_and_creates_unlock_chunk() {
 	new_test_ext().execute_with(|| {
 		let mut staking_account_details = StakingAccountDetails::<Test> {
 			active: BalanceOf::<Test>::from(10u64),
@@ -702,7 +702,7 @@ fn impl_staking_account_details_decrease_by() {
 }
 
 #[test]
-fn impl_staking_target_details_decrease_by() {
+fn staking_target_details_decrease_by_reduces_staking_and_capacity_amounts() {
 	new_test_ext().execute_with(|| {
 		let mut staking_target_details = StakingTargetDetails::<BalanceOf<Test>> {
 			amount: BalanceOf::<Test>::from(15u64),
@@ -721,7 +721,7 @@ fn impl_staking_target_details_decrease_by() {
 }
 
 #[test]
-fn impl_staking_capacity_details_decrease_by() {
+fn staking_capacity_details_decrease_by_reduces_total_tokens_staked_and_total_tokens_available() {
 	new_test_ext().execute_with(|| {
 		let mut capacity_details = CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
 				remaining: BalanceOf::<Test>::from(10u64),
