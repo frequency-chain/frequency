@@ -187,6 +187,7 @@ try-runtime = [
   "pallet-msa/try-runtime",
   "pallet-messages/try-runtime",
   "pallet-schemas/try-runtime",
+  "pallet-capacity/try-runtime",
   "pallet-timestamp/try-runtime",
   "pallet-transaction-payment/try-runtime",
   "pallet-treasury/try-runtime",
