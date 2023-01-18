@@ -216,9 +216,13 @@ pub mod pallet {
 		/// Amount to unstake is greater than the amount staked.
   		AmountToUnstakeExceedsAmountStaked,
 		/// Attempting to unstake from a target that has not been staked to.
- 		NotStakingAccount,
+ 		StakingAccountNotFound,
 		/// Staker reached the limit number for the allowed amount of unlocking chunks.
   		MaxUnlockingChunksExceeded,
+		/// Attempting to get a staker / target relationship that does not exist.
+		StakerTargetRelationshipNotFound,
+		/// Attempting to get the target's capacity that does not exist.
+		TargetCapacityNotFound,
 	}
 
 	#[pallet::call]
@@ -408,7 +412,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Decrease a staking account's active token and create an unlocking chunk to be thawed at some future block.
 	fn decrease_active_staking_balance(unstaker: &T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
-		let mut staking_account_details = Self::get_staking_account_for(unstaker).ok_or(Error::<T>::NotStakingAccount)?;
+		let mut staking_account_details = Self::get_staking_account_for(unstaker).ok_or(Error::<T>::StakingAccountNotFound)?;
 		ensure!(amount <= staking_account_details.active, Error::<T>::AmountToUnstakeExceedsAmountStaked);
 
 		let current_block: T::BlockNumber = frame_system::Pallet::<T>::block_number();
@@ -422,8 +426,8 @@ impl<T: Config> Pallet<T> {
 
 	/// Reduce available capacity of target and return the amount of capacity reduction.
 	fn reduce_capacity(unstaker: &T::AccountId, target: MessageSourceId, amount: BalanceOf<T>) -> Result<BalanceOf<T>, DispatchError>  {
-		let mut staking_target_details = Self::get_target_for(&unstaker, &target).ok_or(Error::<T>::NotStakingAccount)?;
-		let mut capacity_details = Self::get_capacity_for(target).ok_or(Error::<T>::NotStakingAccount)?;
+		let mut staking_target_details = Self::get_target_for(&unstaker, &target).ok_or(Error::<T>::StakerTargetRelationshipNotFound)?;
+		let mut capacity_details = Self::get_capacity_for(target).ok_or(Error::<T>::CapacityDetailsInvalid)?;
 		let capacity_reduction = Self::calculate_capacity_reduction(amount, capacity_details.total_tokens_staked, capacity_details.total_available)?;
 		staking_target_details.decrease_by(amount, capacity_reduction);
 		capacity_details.decrease_by(capacity_reduction, amount);
