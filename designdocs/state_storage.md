@@ -36,47 +36,51 @@ storage costs for any data stored for another `MSA`.
 * `DSNP`: Decentralized Social Networking Protocol
 * `MSA`: Message Source Account. A registered identifier with the MSA pallet.
 
-## Proposal
-Creating a double map of (`SchemaId` and `PageNumber`) as keys and `vec<u8>` as stored values.
-
-Using mentioned double-map will allow storing data using a variety of schemas using pagination.To
-be able to achieve goal number 2 we will need to create a child-tree for each `MSA` and store this
-double map under these child trees for each `MSA`.
-
 ### Modes of Storage
-- **Batch**: In this mode we are storing each entity of that schemaId as an item inside an array.
-This is recommended for items that are relatively small and there are more than a few of them.
-- **Single**: In this mode we are storing each entity individually, and it is recommended for items
-that are relatively large and there are a few of them.
+- **Itemized**: In this mode we are storing each entity of that schemaId as an item in a blob with a
+maximum size of `MAX_ITEMIZED_BLOB_SIZE`.
+This is recommended for entities witch have relatively small size compared to
+`MAX_ITEMIZED_BLOB_SIZE` and there are more than a few of them.
+- **Paginated**: In this mode we are storing each entity individually and inside a separate page.
+This mode is recommended for entities that are relatively large and there are a few of them.
 
-![image](https://user-images.githubusercontent.com/9152501/211664660-1d4aa9ac-ed11-44eb-a8f4-66c972750ac3.jpg)
+![image](https://user-images.githubusercontent.com/9152501/213291600-98229ee4-6358-4e0e-abe2-d6da9abe179e.png)
 
 The rationale behind separating these modes is based on two reasons:
-- _Performance_: Batch modes always need 1 on-chain DB_READ and 1 DB_WRITE but Single mode might be
-done with only 1 DB_WRITE.
-- _Composability_: Batch mode allows better composability due to on-chain read requirement and smaller
-size of each item.
+- _Performance_: **Itemized** mode always need 1 on-chain DB_READ and 1 DB_WRITE but **Paginated**
+mode might be done with only 1 DB_WRITE.
+- _Composability_: **Itemized** mode allows better composability due to on-chain read requirement
+and smaller size of each.
+
+### On chain Storage Details
+- **Itemized**: Creating a Map of `SchemaId` as keys and `vec<u8>` as stored value containing all
+items.
+- **Paginated**: Creating a DoubleMap of `SchemaId` and `PageNumber` as keys and `vec<u8>` as
+stored page.
+
+To be able to achieve goal number 2 we will need to create a child-tree for each `MSA` and store
+these Map and DoubleMap under these child trees for each `MSA`.
 
 ### Actions
 1. **Append Item**
-    - _Modes_: Batch
-    - _input_: Serialized data `vec<u8>`
-    - _Purpose_: Adds a new item to existing array
+    - _Modes_: Itemized
+    - _input_: `SchemaId` and serialized data as `vec<u8>`
+    - _Purpose_: Appends a new item to existing blob
 1. **Remove Item**
-    - _Modes_: Batch
-    - _input_: Index of item in array
+    - _Modes_: Itemized
+    - _input_: `SchemaId` and Index of item in blob
     - _Purpose_: Removes an existing item from array
-1. **Replace Item**
-    - _Modes_: Batch
-    - _input_: index of item to replace and `vec<u8>` of new data
-    - _Purpose_: Updates an item in the array
 1. **Upsert**
-    - _Modes_: Single
-    - _input_: Serialized data `vec<u8>`
+    - _Modes_: Paginated
+    - _input_: `SchemaId` and `PageNumber` and serialized data as `vec<u8>`
     - _Purpose_: Creates or updates an item
-1. **Remove**
-    - _Modes_: Single, Batch
-    - _Purpose_: Removes a Single or Batch node.
+1. **RemovePage**
+    - _Modes_: Paginated
+    - _input_: `SchemaId` and `PageNumber`
+    - _Purpose_: Removes a Page
+
+For itemized Actions it is recommended to have a batch of actions for any schemaId to improve
+performance and reduce the possibility of data races.
 
 ### Pre Checks
 1. Checking schema (id and structure) against submitted data
@@ -97,5 +101,7 @@ checks offchain. (Permission grant check will need to be on-chain due to importa
 scalability
 - A mechanism to prune data for non-active users (maybe migrate data to IPFS or S3 for long term
 storage)
+- In Itemized Storage Mode the append action will fail if we've reached `MAX_ITEMIZED_BLOB_SIZE`
+size limit.
 - The responsibility of data format and page management will be shifted towards offchain side which
 might compromise the integrity of stored data for malicious clients.
