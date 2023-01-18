@@ -19,32 +19,38 @@ pub enum LockStatus {
 	Release,
 }
 
-/// Acquires a lock on the execution of the function
 pub fn lock<F>(prefix: &[u8], f: F) -> LockStatus
 where
 	F: Fn(),
 {
+	// The key used to store the lock in the persistent storage
 	let lock_key = [prefix, DB_LOCK].concat();
 	let mut lock_storage = StorageValueRef::persistent(&lock_key);
 
+	// Check the execution id in the persistent storage
 	let exec_id_opt = StorageValueRef::persistent(DB_TX_ID).get();
 	if let Ok(Some(exec_id)) = exec_id_opt {
+		// The key used to store the execution id in the persistent storage
 		let id_key = [prefix, TX_ID].concat();
 		let id_storage = StorageValueRef::persistent(&id_key);
+
+		// Check if the lock needs to be cleared due to a new execution id
 		let need_to_clear_lock =
-			id_storage.mutate(|id: Result<Option<[u8; 32]>, StorageRetrievalError>| match id {
-				Ok(Some(val)) => {
-					if val != exec_id {
-						// new id we need to clear lock because of first launch
+			id_storage.mutate(|id: Result<Option<[u8; 32]>, StorageRetrievalError>| {
+				match id {
+					Ok(Some(val)) => {
+						if val != exec_id {
+							// new id we need to clear lock because of first launch
+							Ok(exec_id)
+						} else {
+							Err(())
+						}
+					},
+					_ => {
+						// no id we need to clear lock because of first launch
 						Ok(exec_id)
-					} else {
-						Err(())
-					}
-				},
-				_ => {
-					// no id we need to clear lock because of first launch
-					Ok(exec_id)
-				},
+					},
+				}
 			});
 
 		if need_to_clear_lock.is_ok() {
@@ -52,6 +58,7 @@ where
 		}
 	}
 
+	// Try to acquire the lock
 	let can_process = lock_storage.mutate(
 		|is_locked: Result<Option<bool>, StorageRetrievalError>| match is_locked {
 			Ok(Some(true)) => Err(()),
@@ -59,6 +66,7 @@ where
 		},
 	);
 
+	// If the lock is acquired, execute the function else return the lock status
 	match can_process {
 		Ok(true) => {
 			f();
