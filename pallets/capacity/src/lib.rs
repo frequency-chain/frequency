@@ -217,12 +217,12 @@ pub mod pallet {
   		AmountToUnstakeExceedsAmountStaked,
 		/// Attempting to unstake from a target that has not been staked to.
  		StakingAccountNotFound,
-		/// Staker reached the limit number for the allowed amount of unlocking chunks.
-  		MaxUnlockingChunksExceeded,
 		/// Attempting to get a staker / target relationship that does not exist.
 		StakerTargetRelationshipNotFound,
 		/// Attempting to get the target's capacity that does not exist.
 		TargetCapacityNotFound,
+		/// Staker reached the limit number for the allowed amount of unlocking chunks.
+  		MaxUnlockingChunksExceeded,
 	}
 
 	#[pallet::call]
@@ -427,8 +427,8 @@ impl<T: Config> Pallet<T> {
 	/// Reduce available capacity of target and return the amount of capacity reduction.
 	fn reduce_capacity(unstaker: &T::AccountId, target: MessageSourceId, amount: BalanceOf<T>) -> Result<BalanceOf<T>, DispatchError>  {
 		let mut staking_target_details = Self::get_target_for(&unstaker, &target).ok_or(Error::<T>::StakerTargetRelationshipNotFound)?;
-		let mut capacity_details = Self::get_capacity_for(target).ok_or(Error::<T>::CapacityDetailsInvalid)?;
-		let capacity_reduction = Self::calculate_capacity_reduction(amount, capacity_details.total_tokens_staked, capacity_details.total_available)?;
+		let mut capacity_details = Self::get_capacity_for(target).ok_or(Error::<T>::TargetCapacityNotFound)?;
+		let capacity_reduction = Self::calculate_capacity_reduction(amount, capacity_details.total_tokens_staked, capacity_details.total_available);
 		staking_target_details.decrease_by(amount, capacity_reduction);
 		capacity_details.decrease_by(capacity_reduction, amount);
 
@@ -439,11 +439,12 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Determine the capacity reduction when given total_capacity, unstaking_amount, and total_amount_staked.
-	fn calculate_capacity_reduction(unstaking_amount: BalanceOf<T>, total_amount_staked: BalanceOf<T>, total_capacity: BalanceOf<T>) -> Result<BalanceOf<T>, DispatchError> {
+	fn calculate_capacity_reduction(unstaking_amount: BalanceOf<T>, total_amount_staked: BalanceOf<T>, total_capacity: BalanceOf<T>) -> BalanceOf<T> {
 		let rate = Perbill::from_rational(unstaking_amount, total_amount_staked);
 		let result = total_capacity.saturating_sub(rate.mul_ceil(total_capacity));
+		//TODO: switch to this: total_capacity.saturating_sub(rate.mul_ceil(total_capacity))
+		result
 
-		Ok(result)
 	}
 }
 

@@ -186,7 +186,11 @@ pub enum Error<T> {
   /// Unstaking amount should be greater than zero.
   UnstakedAmountIsZero,
   /// Attempting to unstake from a target that has not been staked to.
-  NotStakingAccount,
+  StakingAccountNotFound,
+  /// Attempting to get a staker / target relationship that does not exist.
+  StakerTargetRelationshipNotFound,
+  /// Attempting to get the target's capacity that does not exist.
+  TargetCapacityNotFound,
   /// Amount to unstake is greater than the amount staked.
   AmountToUnstakeExceedsAmountStaked,
   /// Staker reached the limit number for the allowed amount of unlocking chunks.
