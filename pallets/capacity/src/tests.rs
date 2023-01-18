@@ -542,7 +542,8 @@ fn unstake_success() {
 			UnlockChunk::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
 				value: BalanceOf::<Test>::from(5u64),
 				thaw_at: <Test as frame_system::Config>::BlockNumber::from(3u64),
-			});
+			}
+		);
 
 		assert_eq!(
 			staking_account_details,
@@ -667,5 +668,77 @@ fn unstake_errors_not_a_staking_amount() {
 			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
 			Error::<Test>::NotStakingAccount
 		);
+	});
+}
+
+#[test]
+fn impl_staking_account_details_decrease_by() {
+	new_test_ext().execute_with(|| {
+		let mut staking_account_details = StakingAccountDetails::<Test> {
+			active: BalanceOf::<Test>::from(10u64),
+			total: BalanceOf::<Test>::from(10u64),
+			unlocking: BoundedVec::default(),
+		};
+		staking_account_details.decrease_by(3, 3);
+		let mut chunks: BoundedVec<UnlockChunk<BalanceOf<Test>,
+						<Test as frame_system::Config>::BlockNumber>,
+						<Test as pallet_capacity::Config>::MaxUnlockingChunks> = BoundedVec::default();
+
+		chunks.try_push(
+			UnlockChunk::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+				value: BalanceOf::<Test>::from(3u64),
+				thaw_at: <Test as frame_system::Config>::BlockNumber::from(3u64),
+			});
+
+		assert_eq!(
+			staking_account_details,
+			StakingAccountDetails::<Test> {
+				active: BalanceOf::<Test>::from(7u64),
+				total: BalanceOf::<Test>::from(10u64),
+				unlocking: chunks,
+			}
+		)
+	});
+}
+
+#[test]
+fn impl_staking_target_details_decrease_by() {
+	new_test_ext().execute_with(|| {
+		let mut staking_target_details = StakingTargetDetails::<BalanceOf<Test>> {
+			amount: BalanceOf::<Test>::from(15u64),
+			capacity: BalanceOf::<Test>::from(20u64),
+		};
+		staking_target_details.decrease_by(10, 10);
+
+		assert_eq!(
+			staking_target_details,
+			StakingTargetDetails::<BalanceOf<Test>> {
+				amount: BalanceOf::<Test>::from(5u64),
+				capacity: BalanceOf::<Test>::from(10u64),
+			}
+		)
+	});
+}
+
+#[test]
+fn impl_staking_capacity_details_decrease_by() {
+	new_test_ext().execute_with(|| {
+		let mut capacity_details = CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+				remaining: BalanceOf::<Test>::from(10u64),
+				total_tokens_staked: BalanceOf::<Test>::from(10u64),
+				total_available: BalanceOf::<Test>::from(10u64),
+				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u32)
+			};
+		capacity_details.decrease_by(4, 5);
+
+		assert_eq!(
+			capacity_details,
+			CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+				remaining: BalanceOf::<Test>::from(10u64),
+				total_tokens_staked: BalanceOf::<Test>::from(5u64),
+				total_available: BalanceOf::<Test>::from(6u64),
+				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u32)
+			}
+		)
 	});
 }
