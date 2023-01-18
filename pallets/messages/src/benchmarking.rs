@@ -20,8 +20,7 @@ fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 	let message_source_id = DelegatorId(1);
 	let provider_id = ProviderId(1);
 	let payload = Vec::from(
-		"{'fromId': 123, 'content': '232323114432', 'fromId': 123, 'content': '232323114432'}"
-			.as_bytes(),
+		"{'fromId': 123, 'content': '232323', 'fromId': 123, 'content': '232323'}".as_bytes(),
 	);
 	let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> =
 		payload.try_into().expect("Invalid payload");

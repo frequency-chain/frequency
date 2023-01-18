@@ -5,12 +5,14 @@ use common_primitives::{messages::MessageResponse, schema::*};
 use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize, BoundedVec};
 use frame_system::{EventRecord, Phase};
 use multibase::Base;
+#[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use rand::Rng;
 use serde::Serialize;
 use sp_std::vec::Vec;
 
 #[derive(Serialize)]
+#[allow(non_snake_case)]
 struct Payload {
 	// Normally would be u64, but we keep it to u8 in order to keep payload size down in tests.
 	fromId: u8,
