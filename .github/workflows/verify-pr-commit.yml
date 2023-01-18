@@ -6,6 +6,7 @@ on:
   pull_request:
     branches:
       - main
+      - capacity-development
 env:
   BIN_DIR: target/release
   RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
