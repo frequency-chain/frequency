@@ -1,14 +1,14 @@
 use codec::{Decode, Encode};
-use sp_runtime::offchain::storage::{StorageRetrievalError, StorageValueRef};
+use sp_runtime::offchain::{
+	storage::{StorageRetrievalError, StorageValueRef},
+	storage_lock::{StorageLock, Time},
+	Duration,
+};
 use sp_std::fmt::Debug;
 
-/// Storage keys for offchain worker
-/// THe tx_id is used to identify the transaction
-const TX_ID: &[u8] = b"tx_id";
-/// The lock is used to prevent the execution of the function
 const DB_LOCK: &[u8] = b"lock";
-/// The tx_id is used to identify the transaction in persistent storage
-const DB_TX_ID: &[u8] = b"tx-id/";
+
+const LOCK_DEADLINE: u64 = 1000;
 
 /// Locks the execution of the function
 #[derive(Debug)]
@@ -16,7 +16,7 @@ pub enum LockStatus {
 	/// Lock is acquired
 	Locked,
 	/// Lock is released
-	Release,
+	Released,
 }
 
 /// Locks the execution of the function
@@ -24,58 +24,19 @@ pub fn lock<F>(prefix: &[u8], f: F) -> LockStatus
 where
 	F: Fn(),
 {
-	// The key used to store the lock in the persistent storage
-	let lock_key = [prefix, DB_LOCK].concat();
-	let mut lock_storage = StorageValueRef::persistent(&lock_key);
-
-	// Check the execution id in the persistent storage
-	let exec_id_opt = StorageValueRef::persistent(DB_TX_ID).get();
-	if let Ok(Some(exec_id)) = exec_id_opt {
-		// The key used to store the execution id in the persistent storage
-		let id_key = [prefix, TX_ID].concat();
-		let id_storage = StorageValueRef::persistent(&id_key);
-
-		// Check if the lock needs to be cleared due to a new execution id
-		let need_to_clear_lock =
-			id_storage.mutate(|id: Result<Option<[u8; 32]>, StorageRetrievalError>| {
-				match id {
-					Ok(Some(val)) => {
-						if val != exec_id {
-							// new id we need to clear lock because of first launch
-							Ok(exec_id)
-						} else {
-							Err(())
-						}
-					},
-					_ => {
-						// no id we need to clear lock because of first launch
-						Ok(exec_id)
-					},
-				}
-			});
-
-		if need_to_clear_lock.is_ok() {
-			lock_storage.clear();
-		}
-	}
-
-	// Try to acquire the lock
-	let can_process = lock_storage.mutate(
-		|is_locked: Result<Option<bool>, StorageRetrievalError>| match is_locked {
-			Ok(Some(true)) => Err(()),
-			_ => Ok(true),
-		},
+	let locked_tx = [prefix, DB_LOCK].concat();
+	let locked_tx_key = locked_tx.encode();
+	let mut lock = StorageLock::<Time>::with_deadline(
+		locked_tx_key.as_slice(),
+		Duration::from_millis(LOCK_DEADLINE),
 	);
-
-	// If the lock is acquired, execute the function else return the lock status
-	match can_process {
-		Ok(true) => {
-			f();
-			lock_storage.clear();
-			LockStatus::Release
-		},
-		_ => LockStatus::Locked,
-	}
+	let lock_status = if let Ok(_guard) = lock.try_lock() {
+		f();
+		LockStatus::Released
+	} else {
+		LockStatus::Locked
+	};
+	lock_status
 }
 
 /// Wrapper for offchain get operations
