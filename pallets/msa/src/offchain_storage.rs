@@ -1,9 +1,9 @@
 /// Offchain Storage for MSA
 use codec::{Decode, Encode};
 use common_primitives::offchain as offchain_common;
+use frame_support::log::error as log_err;
 use sp_runtime::offchain::storage::StorageRetrievalError;
 use sp_std::{
-	collections::btree_map::BTreeMap,
 	fmt::{Debug, Formatter},
 	vec::Vec,
 };
@@ -24,11 +24,32 @@ where
 /// BTreeMap<MSA ID, Vec<Public Key>>  type structure
 /// Support scale encoding and decoding for efficient storage
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default)]
-pub struct MSAPublicKeyData<K, V>(pub BTreeMap<K, Vec<V>>);
+pub struct MSAPublicKeyData<K, V, B>
+where
+	K: Encode + Clone + Ord + Decode + Eq + Debug,
+	V: Encode + Clone + Decode + Eq + Debug,
+	B: Encode + Clone + Decode + Eq + Debug + Default,
+{
+	/// msa_id is the key for the index
+	pub msa_id: K,
+	/// public_keys is the value for the index
+	pub public_keys: Vec<V>,
+	/// block_number is the block number of the last update
+	pub block_number: B,
+}
 
-impl<K: Debug, V: Debug> Debug for MSAPublicKeyData<K, V> {
+impl<K, V, B> Debug for MSAPublicKeyData<K, V, B>
+where
+	K: Encode + Clone + Ord + Decode + Eq + Debug,
+	V: Encode + Clone + Decode + Eq + Debug,
+	B: Encode + Clone + Decode + Eq + Debug + Default,
+{
 	fn fmt(&self, f: &mut Formatter<'_>) -> sp_std::fmt::Result {
-		write!(f, "MSAPublicKeyData({:?})", self.0)
+		write!(
+			f,
+			"MSA Public Key Data: {{ msa_id: {:?}, public_keys: {:?}, block_number: {:?} }}",
+			self.msa_id, self.public_keys, self.block_number
+		)
 	}
 }
 /// Event Type on MSA Public Key Data
@@ -42,94 +63,92 @@ pub enum EventType {
 /// Operations enum for MSA Offchain Storage
 /// Add: Add MSA Public Key
 /// Remove: Remove MSA Public Key. Note: if only one key is present, the entire MSA ID is removed from index
-pub enum MSAPublicKeyDataOperation<K, V> {
+pub enum MSAPublicKeyDataOperation<K, V, B> {
 	/// Add MSA Public Key
-	Add(K, V),
+	Add(K, V, B),
 	/// Remove MSA Public Key
-	Remove(K, V),
+	Remove(K, V, B),
 }
 
 /// Process MSA key event and update offchain storage
-pub fn process_msa_key_event<K, V>(
-	ops: MSAPublicKeyDataOperation<K, V>,
+pub fn process_msa_key_event<K, V, B>(
+	ops: MSAPublicKeyDataOperation<K, V, B>,
 ) -> Result<(), StorageRetrievalError>
 where
 	K: Encode + Clone + Ord + Decode + Eq + Debug,
 	V: Encode + Clone + Decode + Eq + Debug,
+	B: Encode + Clone + Decode + Eq + Debug + Default,
 {
 	match ops {
-		MSAPublicKeyDataOperation::Add(msa_id, key) => return add_msa_key(msa_id, key.clone()),
-		MSAPublicKeyDataOperation::Remove(msa_id, key) =>
-			return remove_msa_key(msa_id, key.clone()),
+		MSAPublicKeyDataOperation::Add(msa_id, key, block) =>
+			return add_msa_key(msa_id, key, block),
+		MSAPublicKeyDataOperation::Remove(msa_id, key, block) =>
+			return remove_msa_key(msa_id, key, block),
 	}
 }
 
-fn add_msa_key<K, V>(msa_id: K, key: V) -> Result<(), StorageRetrievalError>
+fn add_msa_key<K, V, B>(msa_id: K, key: V, block: B) -> Result<(), StorageRetrievalError>
 where
 	K: Encode + Clone + Ord + Decode + Eq + Debug,
 	V: Encode + Clone + Decode + Eq + Debug,
+	B: Encode + Clone + Decode + Eq + Debug + Default,
 {
 	let key_binding = derive_storage_key::<K>(msa_id.clone());
 	let derived_key = key_binding.as_slice();
-	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V>>(derived_key);
-	let mut msa_key_map = BTreeMap::<K, Vec<V>>::new();
+	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V, B>>(derived_key);
+	let mut msa_key_map = Vec::new();
 
 	if msa_keys.is_ok() {
-		msa_key_map = msa_keys.unwrap().0;
+		msa_key_map = msa_keys.unwrap().public_keys;
 	}
-	if !msa_key_map.contains_key(&msa_id) {
-		msa_key_map.insert(msa_id.clone(), Vec::new());
-	}
-	msa_key_map.get_mut(&msa_id).unwrap().push(key);
-	let msa_key_data = MSAPublicKeyData::<K, V>(msa_key_map);
+	msa_key_map.push(key);
+	let msa_key_data =
+		MSAPublicKeyData::<K, V, B> { msa_id, public_keys: msa_key_map, block_number: block };
 	offchain_common::set_index_value(derived_key, msa_key_data);
 	Ok(())
 }
 
-fn remove_msa_key<K, V>(msa_id: K, key: V) -> Result<(), StorageRetrievalError>
+fn remove_msa_key<K, V, B>(msa_id: K, key: V, block: B) -> Result<(), StorageRetrievalError>
 where
 	K: Encode + Clone + Ord + Decode + Eq + Debug,
 	V: Encode + Clone + Decode + Eq + Debug,
+	B: Encode + Clone + Decode + Eq + Debug + Default,
 {
 	let key_binding = derive_storage_key::<K>(msa_id.clone());
 	let derived_key = key_binding.as_slice();
-	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V>>(derived_key);
-	let mut msa_key_map = BTreeMap::<K, Vec<V>>::new();
+	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V, B>>(derived_key);
+	let mut msa_key_map = Vec::new();
 	if msa_keys.is_ok() {
-		msa_key_map = msa_keys.unwrap().0;
+		msa_key_map = msa_keys.unwrap().public_keys;
 	}
-	if let Some(keys) = msa_key_map.get_mut(&msa_id.clone()) {
-		if let Some(index) = keys.iter().position(|k| k == &key) {
-			keys.remove(index);
-		}
-	}
-	if msa_key_map.get(&msa_id).unwrap().is_empty() {
-		msa_key_map.remove(&msa_id);
-		return Ok(())
-	}
-	let msa_keys_updated = MSAPublicKeyData::<K, V>(msa_key_map);
+	msa_key_map.retain(|x| x != &key);
+
+	let msa_keys_updated =
+		MSAPublicKeyData::<K, V, B> { msa_id, public_keys: msa_key_map, block_number: block };
 	offchain_common::set_index_value(derived_key, msa_keys_updated);
 	Ok(())
 }
 
 /// Get MSA public keys from offchain storage
-pub fn get_msa_keys<K, V>(msa_id: K) -> Result<Vec<V>, StorageRetrievalError>
+pub fn get_msa_keys<K, V, B>(msa_id: K) -> Result<(B, Vec<V>), StorageRetrievalError>
 where
 	K: Encode + Clone + Ord + Decode + Eq + Debug,
 	V: Encode + Clone + Decode + Eq + Debug,
+	B: Encode + Clone + Decode + Eq + Debug + Default,
 {
 	let key_binding = derive_storage_key::<K>(msa_id.clone());
 	let derived_key = key_binding.as_slice();
-	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V>>(derived_key);
-	let mut msa_key_data = MSAPublicKeyData::<K, V>(BTreeMap::new());
-
-	if msa_keys.is_ok() {
-		msa_key_data = msa_keys.unwrap();
+	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V, B>>(derived_key);
+	let mut msa_key_map = Vec::new();
+	let mut block_number = B::default();
+	match msa_keys {
+		Ok(keys) => {
+			msa_key_map = keys.public_keys;
+			block_number = keys.block_number;
+		},
+		Err(e) => {
+			log_err!("Error in getting MSA keys from offchain storage: {:?}", e);
+		},
 	}
-	let msa_key_map = msa_key_data.0;
-	let optional_keys = msa_key_map.get(&msa_id);
-	match optional_keys {
-		Some(keys) => return Ok(keys.clone()),
-		None => return Ok(Vec::new()),
-	}
+	Ok((block_number, msa_key_map))
 }

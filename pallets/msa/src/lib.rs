@@ -409,7 +409,7 @@ pub mod pallet {
 			Self::reset_virtual_bucket_if_needed(current)
 		}
 
-		fn offchain_worker(_block_number: T::BlockNumber) {
+		fn offchain_worker(block_number: T::BlockNumber) {
 			let filtered_events: Vec<Event<T>> =
 				<frame_system::Pallet<T>>::read_events_no_consensus()
 					.into_iter()
@@ -427,22 +427,22 @@ pub mod pallet {
 					.collect();
 			let mut events_by_msa_id: BTreeMap<
 				MessageSourceId,
-				Vec<(T::AccountId, offchain_storage::EventType)>,
+				Vec<(T::AccountId, EventType, T::BlockNumber)>,
 			> = BTreeMap::new();
 
 			for event in filtered_events {
 				match event {
 					Event::MsaCreated { msa_id, key } => {
 						let events = events_by_msa_id.entry(msa_id).or_default();
-						events.push((key, offchain_storage::EventType::Add));
+						events.push((key, EventType::Add, block_number));
 					},
 					Event::PublicKeyAdded { msa_id, key } => {
 						let events = events_by_msa_id.entry(msa_id).or_default();
-						events.push((key, offchain_storage::EventType::Add));
+						events.push((key, EventType::Add, block_number));
 					},
 					Event::PublicKeyDeleted { msa_id, key } => {
 						let events = events_by_msa_id.entry(msa_id).or_default();
-						events.push((key, offchain_storage::EventType::Remove));
+						events.push((key, EventType::Remove, block_number));
 					},
 					_ => {},
 				}
@@ -1351,44 +1351,44 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Get list of account ids that are associated with a given msa
-	pub fn get_msa_keys_offchain(msa_id: MessageSourceId) -> Vec<T::AccountId> {
-		let msa_keys_res = offchain_storage::get_msa_keys::<MessageSourceId, T::AccountId>(msa_id);
+	pub fn get_msa_keys_offchain(msa_id: MessageSourceId) -> (T::BlockNumber, Vec<T::AccountId>) {
+		let msa_keys_res = get_msa_keys::<MessageSourceId, T::AccountId, T::BlockNumber>(msa_id);
 		if let Err(e) = msa_keys_res {
 			log_err!("Error getting msa keys from offchain storage: {:?}", e);
-			return Vec::new()
+			return (T::BlockNumber::zero(), vec![])
 		}
 		msa_keys_res.unwrap()
 	}
 
 	fn process_events(
 		msa_id: MessageSourceId,
-		events: Vec<(T::AccountId, offchain_storage::EventType)>,
+		events: Vec<(T::AccountId, EventType, T::BlockNumber)>,
 	) {
 		let lock_status = offchain_common::lock(msa_id.encode().as_slice(), || {
-			for (key, event_type) in &events {
+			for (key, event_type, block) in &events {
 				match event_type {
-					offchain_storage::EventType::Add => {
-						let add_result = offchain_storage::process_msa_key_event::<
-							MessageSourceId,
-							T::AccountId,
-						>(offchain_storage::MSAPublicKeyDataOperation::Add::<
-							MessageSourceId,
-							T::AccountId,
-						>(msa_id, key.clone()));
+					EventType::Add => {
+						let add_result =
+							process_msa_key_event::<MessageSourceId, T::AccountId, T::BlockNumber>(
+								MSAPublicKeyDataOperation::Add::<
+									MessageSourceId,
+									T::AccountId,
+									T::BlockNumber,
+								>(msa_id, key.clone(), block.clone()),
+							);
 						if let Err(e) = add_result {
 							log_err!("Error adding key to offchain storage: {:?}", e);
 						}
 					},
-					offchain_storage::EventType::Remove => {
-						let delete_result = offchain_storage::process_msa_key_event::<
-							MessageSourceId,
-							T::AccountId,
-						>(
-							offchain_storage::MSAPublicKeyDataOperation::Remove::<
-								MessageSourceId,
-								T::AccountId,
-							>(msa_id, key.clone()),
-						);
+					EventType::Remove => {
+						let delete_result =
+							process_msa_key_event::<MessageSourceId, T::AccountId, T::BlockNumber>(
+								MSAPublicKeyDataOperation::Remove::<
+									MessageSourceId,
+									T::AccountId,
+									T::BlockNumber,
+								>(msa_id, key.clone(), block.clone()),
+							);
 						if let Err(e) = delete_result {
 							log_err!("Error deleting key from offchain storage: {:?}", e);
 						}

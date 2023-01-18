@@ -947,7 +947,7 @@ impl_runtime_apis! {
 			}
 		}
 
-		fn get_msa_keys_offchain(msa_id: MessageSourceId) -> Vec<AccountId> {
+		fn get_msa_keys_offchain(msa_id: MessageSourceId) -> (BlockNumber, Vec<AccountId>) {
 			Msa::get_msa_keys_offchain(msa_id)
 		}
 	}
