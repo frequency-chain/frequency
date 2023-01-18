@@ -78,6 +78,12 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod extrinsics_tests;
+
+#[cfg(test)]
+mod types_tests;
+
 pub mod weights;
 
 type BalanceOf<T> =
@@ -166,6 +172,13 @@ pub mod pallet {
 			/// An amount that was staked.
 			amount: BalanceOf<T>,
 		},
+		/// Unsstaked token that has thawed was unlocked for the given account
+		StakeWithdrawn {
+			/// the account that withdrew its stake
+			account: T::AccountId,
+			/// the total amount withdrawn, i.e. put back into free balance.
+			amount: BalanceOf<T>,
+		},
 	}
 
 	#[pallet::error]
@@ -178,6 +191,11 @@ pub mod pallet {
 		InsufficientStakingAmount,
 		/// Staker is attempting to stake a zero amount.
 		ZeroAmountNotAllowed,
+		/// Origin has no Staking Account
+		NotAStakingAccount,
+		/// No staked value is available for withdrawal; either nothing is being unstaked,
+		/// or nothing has passed the thaw period.
+		NoUnstakedTokensAvailable,
 	}
 
 	#[pallet::call]
@@ -209,6 +227,31 @@ pub mod pallet {
 
 			Self::deposit_event(Event::Staked { account: staker, amount: actual_amount, target });
 
+			Ok(())
+		}
+
+		#[pallet::weight(T::WeightInfo::withdraw_unstaked())]
+		/// removes all thawed UnlockChunks from caller's StakingAccount and unlocks the sum of the thawed values
+		/// in the caller's token account.
+		///
+		/// ### Errors
+		///   - Returns `Error::NotAStakingAccount` if no StakingAccountDetails are found for `origin`.
+		///   - Returns `Error::NoUnstakedTokensAvailable` if the account has no unstaking chunks or none are thawed.
+		pub fn withdraw_unstaked(origin: OriginFor<T>) -> DispatchResult {
+			let staker = ensure_signed(origin)?;
+
+			let mut staking_account =
+				Self::get_staking_account_for(&staker).ok_or(Error::<T>::NotAStakingAccount)?;
+			let current_block = frame_system::Pallet::<T>::block_number();
+
+			let amount_withdrawn = staking_account.reap_thawed(current_block);
+			ensure!(!amount_withdrawn.is_zero(), Error::<T>::NoUnstakedTokensAvailable);
+
+			Self::update_or_delete_staking_account(&staker, &mut staking_account);
+			Self::deposit_event(Event::<T>::StakeWithdrawn {
+				account: staker,
+				amount: amount_withdrawn,
+			});
 			Ok(())
 		}
 	}
@@ -276,6 +319,24 @@ impl<T: Config> Pallet<T> {
 	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingAccountDetails<T>) {
 		T::Currency::set_lock(STAKING_ID, &staker, staking_account.total, WithdrawReasons::all());
 		StakingAccountLedger::<T>::insert(staker, staking_account);
+	}
+
+	/// Deletes staking account details
+	fn delete_staking_account(staker: &T::AccountId) {
+		T::Currency::remove_lock(STAKING_ID, &staker);
+		StakingAccountLedger::<T>::remove(&staker);
+	}
+
+	/// If the staking account total is zero we reap storage, otherwise set the acount to the new details.
+	fn update_or_delete_staking_account(
+		staker: &<T>::AccountId,
+		staking_account: &StakingAccountDetails<T>,
+	) {
+		if staking_account.total.is_zero() {
+			Self::delete_staking_account(&staker);
+		} else {
+			Self::set_staking_account(&staker, &staking_account)
+		}
 	}
 
 	/// Sets target account details.

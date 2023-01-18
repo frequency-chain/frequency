@@ -1,9 +1,14 @@
 //! Types for the Capacity Pallet
 use super::*;
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebug, RuntimeDebugNoBound};
+use frame_support::{
+	log::warn, BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebug, RuntimeDebugNoBound,
+};
 use scale_info::TypeInfo;
-use sp_runtime::traits::{CheckedAdd, Saturating, Zero};
+use sp_runtime::traits::{CheckedAdd, CheckedSub, Saturating, Zero};
+
+#[cfg(any(feature = "runtime-benchmarks", test))]
+use sp_std::vec::Vec;
 
 /// The type used for storing information about staking details.
 #[derive(
@@ -45,6 +50,46 @@ impl<T: Config> StakingAccountDetails<T> {
 		let account_balance = T::Currency::free_balance(&staker);
 		let available_staking_balance = account_balance.saturating_sub(self.total);
 		available_staking_balance.min(proposed_amount)
+	}
+
+	#[cfg(any(feature = "runtime-benchmarks", test))]
+	///  tmp fn for testing only
+	/// set unlock chunks with (balance, thaw_at).  does not check that the unlock chunks
+	/// don't exceed total.
+	/// returns true on success, false on failure (?)
+	// TODO: remove this when finished and use production fn
+	pub fn set_unlock_chunks(&mut self, chunks: &Vec<(u32, u32)>) -> bool {
+		let result: Vec<UnlockChunk<BalanceOf<T>, <T>::BlockNumber>> = chunks
+			.into_iter()
+			.map(|chunk| UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() })
+			.collect();
+		self.unlocking = BoundedVec::try_from(result).unwrap();
+		self.unlocking.len() == chunks.len()
+	}
+
+	/// deletes thawed chunks, updates `total`, Caller is responsible for updating free/locked
+	/// balance on the token account.
+	/// Returns: the total amount reaped from `unlocking`
+	pub fn reap_thawed(&mut self, current_block: <T>::BlockNumber) -> BalanceOf<T> {
+		let mut total_reaped: BalanceOf<T> = 0u32.into();
+		self.unlocking.retain(|chunk| {
+			if current_block.ge(&chunk.thaw_at) {
+				total_reaped = total_reaped + chunk.value;
+				match self.total.checked_sub(&chunk.value) {
+					Some(new_total) => self.total = new_total,
+					None => {
+						warn!(
+							"Underflow when subtracting {:?} from staking total {:?}",
+							chunk.value, self.total
+						);
+						return false
+					},
+				}
+				return false
+			}
+			true
+		});
+		total_reaped
 	}
 }
 

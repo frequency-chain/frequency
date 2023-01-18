@@ -6,6 +6,7 @@ on:
   pull_request:
     branches:
       - main
+      - capacity-development
 env:
   BIN_DIR: target/release
 jobs:
