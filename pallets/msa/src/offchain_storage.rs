@@ -31,6 +31,13 @@ impl<K: Debug, V: Debug> Debug for MSAPublicKeyData<K, V> {
 		write!(f, "MSAPublicKeyData({:?})", self.0)
 	}
 }
+/// Event Type on MSA Public Key Data
+pub enum EventType {
+	/// Add MSA Public Key
+	Add,
+	/// Remove MSA Public Key
+	Remove,
+}
 
 /// Operations enum for MSA Offchain Storage
 /// Add: Add MSA Public Key

@@ -65,15 +65,6 @@ use frame_support::{
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::MsaBenchmarkHelper;
 
-use frame_system::pallet_prelude::*;
-use scale_info::TypeInfo;
-use sp_core::crypto::AccountId32;
-use sp_runtime::{
-	traits::{Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify, Zero},
-	ArithmeticError, DispatchError, MultiSignature,
-};
-use sp_std::prelude::*;
-
 use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
@@ -82,6 +73,14 @@ use common_primitives::{
 	},
 	schema::{SchemaId, SchemaValidator},
 };
+use frame_system::pallet_prelude::*;
+use scale_info::TypeInfo;
+use sp_core::crypto::AccountId32;
+use sp_runtime::{
+	traits::{Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify, Zero},
+	ArithmeticError, DispatchError, MultiSignature,
+};
+use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 pub use common_primitives::{
 	msa::MessageSourceId, offchain as offchain_common, utils::wrap_binary_data,
@@ -426,26 +425,31 @@ pub mod pallet {
 						)
 					})
 					.collect();
-			if !filtered_events.is_empty() {
-				let mut add_events: Vec<(MessageSourceId, T::AccountId)> = vec![];
-				let mut delete_events: Vec<(MessageSourceId, T::AccountId)> = vec![];
+			let mut events_by_msa_id: BTreeMap<
+				MessageSourceId,
+				Vec<(T::AccountId, offchain_storage::EventType)>,
+			> = BTreeMap::new();
 
-				for event in filtered_events {
-					match event {
-						Event::MsaCreated { msa_id, key } => add_events.push((msa_id, key)),
-						Event::PublicKeyAdded { msa_id, key } => add_events.push((msa_id, key)),
-						Event::PublicKeyDeleted { msa_id, key } =>
-							delete_events.push((msa_id, key)),
-						_ => {},
-					}
+			for event in filtered_events {
+				match event {
+					Event::MsaCreated { msa_id, key } => {
+						let events = events_by_msa_id.entry(msa_id).or_default();
+						events.push((key, offchain_storage::EventType::Add));
+					},
+					Event::PublicKeyAdded { msa_id, key } => {
+						let events = events_by_msa_id.entry(msa_id).or_default();
+						events.push((key, offchain_storage::EventType::Add));
+					},
+					Event::PublicKeyDeleted { msa_id, key } => {
+						let events = events_by_msa_id.entry(msa_id).or_default();
+						events.push((key, offchain_storage::EventType::Remove));
+					},
+					_ => {},
 				}
-				if !add_events.is_empty() {
-					add_events.sort_by(|a, b| a.0.cmp(&b.0));
-					Self::process_add_events(add_events);
-				}
-				if !delete_events.is_empty() {
-					delete_events.sort_by(|a, b| a.0.cmp(&b.0));
-					Self::process_delete_events(delete_events);
+			}
+			if !events_by_msa_id.is_empty() {
+				for (msa_id, events) in events_by_msa_id {
+					Self::process_events(msa_id, events);
 				}
 			}
 		}
@@ -1356,43 +1360,44 @@ impl<T: Config> Pallet<T> {
 		msa_keys_res.unwrap()
 	}
 
-	fn process_add_events(events: Vec<(MessageSourceId, T::AccountId)>) {
-		for (msa_id, key) in events {
-			let lock_status = offchain_common::lock(msa_id.encode().as_slice(), || {
-				let add_result = offchain_storage::process_msa_key_event::<
-					MessageSourceId,
-					T::AccountId,
-				>(offchain_storage::MSAPublicKeyDataOperation::Add::<
-					MessageSourceId,
-					T::AccountId,
-				>(msa_id, key.clone()));
-				if let Err(e) = add_result {
-					log_err!("Error adding key to offchain storage: {:?}", e);
+	fn process_events(
+		msa_id: MessageSourceId,
+		events: Vec<(T::AccountId, offchain_storage::EventType)>,
+	) {
+		let lock_status = offchain_common::lock(msa_id.encode().as_slice(), || {
+			for (key, event_type) in &events {
+				match event_type {
+					offchain_storage::EventType::Add => {
+						let add_result = offchain_storage::process_msa_key_event::<
+							MessageSourceId,
+							T::AccountId,
+						>(offchain_storage::MSAPublicKeyDataOperation::Add::<
+							MessageSourceId,
+							T::AccountId,
+						>(msa_id, key.clone()));
+						if let Err(e) = add_result {
+							log_err!("Error adding key to offchain storage: {:?}", e);
+						}
+					},
+					offchain_storage::EventType::Remove => {
+						let delete_result = offchain_storage::process_msa_key_event::<
+							MessageSourceId,
+							T::AccountId,
+						>(
+							offchain_storage::MSAPublicKeyDataOperation::Remove::<
+								MessageSourceId,
+								T::AccountId,
+							>(msa_id, key.clone()),
+						);
+						if let Err(e) = delete_result {
+							log_err!("Error deleting key from offchain storage: {:?}", e);
+						}
+					},
 				}
-			});
-			if let offchain_common::LockStatus::Locked = lock_status {
-				log_err!("Unable to acquire lock, skipping event processing");
 			}
-		}
-	}
-
-	fn process_delete_events(events: Vec<(MessageSourceId, T::AccountId)>) {
-		for (msa_id, key) in events {
-			let lock_status = offchain_common::lock(msa_id.encode().as_slice(), || {
-				let delete_result = offchain_storage::process_msa_key_event::<
-					MessageSourceId,
-					T::AccountId,
-				>(offchain_storage::MSAPublicKeyDataOperation::Remove::<
-					MessageSourceId,
-					T::AccountId,
-				>(msa_id, key.clone()));
-				if let Err(e) = delete_result {
-					log_err!("Error deleting key from offchain storage: {:?}", e);
-				}
-			});
-			if let offchain_common::LockStatus::Locked = lock_status {
-				log_err!("Unable to acquire lock, skipping event processing");
-			}
+		});
+		if let offchain_common::LockStatus::Locked = lock_status {
+			log_err!("Unable to acquire lock, skipping event processing");
 		}
 	}
 }
