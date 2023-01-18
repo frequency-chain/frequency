@@ -57,7 +57,7 @@ jobs:
     name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
     strategy:
       matrix:
-        network: [rococo, mainnet]
+        network: [local, rococo, mainnet]
         git_branch: ["${{github.head_ref}}", main]
         include:
           - git_branch: ${{github.head_ref}}
