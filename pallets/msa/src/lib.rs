@@ -440,9 +440,11 @@ pub mod pallet {
 					}
 				}
 				if !add_events.is_empty() {
+					add_events.sort_by(|a, b| a.0.cmp(&b.0));
 					Self::process_add_events(add_events);
 				}
 				if !delete_events.is_empty() {
+					delete_events.sort_by(|a, b| a.0.cmp(&b.0));
 					Self::process_delete_events(delete_events);
 				}
 			}
