@@ -6,8 +6,36 @@ Full changelog: https://github.com/LibertyDSNP/frequency/compare/{{env.PREVIOUS_
 - Rust Toolchain: `{{env.RUST_TOOLCHAIN}}`
 - Substrate/Polkadot: `v{{env.POLKADOT_VERSION}}`
 
+## Deployed
+
+- Frequency-Rococo: [TBD]()
+- Frequency-Mainnet: [TBD]()
+
 ## What's Changed
-{% set changelog = env.CHANGELOG | split(pat='|n|') | safe %}
+
+{% set changelog = env.CHANGELOG | split(pat='|n|') -%}
 {% for line in changelog -%}
-	{{ line }}
-{% endfor %}
+	{{ line | safe }}
+{% endfor -%}
+
+## Runtimes
+
+The information about the runtimes included in this release can be found below.
+
+### Rococo
+
+{% set runtime = env.RUNTIME_ROCOCO_INFO | split(pat='|') -%}
+```
+{% for line in runtime -%}
+	{{ line | safe }}
+{% endfor -%}
+```
+
+### Mainnet
+
+{% set runtime = env.RUNTIME_MAINNET_INFO | split(pat='|') -%}
+```
+{% for line in runtime -%}
+	{{ line | safe }}
+{% endfor -%}
+```
