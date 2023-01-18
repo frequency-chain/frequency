@@ -655,7 +655,7 @@ fn unstake_errors_invalid_target() {
 }
 
 #[test]
-fn unstake_errors_not_a_staking_amount() {
+fn unstake_errors_not_a_staking_account() {
 	new_test_ext().execute_with(|| {
 		let token_account = 200;
 		let target: MessageSourceId = 1;
