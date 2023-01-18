@@ -5,7 +5,17 @@ use common_primitives::{messages::MessageResponse, schema::*};
 use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize, BoundedVec};
 use frame_system::{EventRecord, Phase};
 use multibase::Base;
+use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
+use rand::Rng;
+use serde::Serialize;
 use sp_std::vec::Vec;
+
+#[derive(Serialize)]
+struct Payload {
+	// Normally would be u64, but we keep it to u8 in order to keep payload size down in tests.
+	fromId: u8,
+	content: String,
+}
 
 /// Populate mocked Messages storage with message data.
 ///
@@ -20,9 +30,8 @@ fn populate_messages(
 	payload_location: PayloadLocation,
 ) {
 	let payload = match payload_location {
-		PayloadLocation::OnChain =>
-			Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes()),
-		PayloadLocation::IPFS => (DUMMY_CID, IPFS_PAYLOAD_LENGTH).encode(),
+		PayloadLocation::OnChain => generate_payload(1, None),
+		PayloadLocation::IPFS => (DUMMY_CID.to_vec(), IPFS_PAYLOAD_LENGTH).encode(),
 	};
 
 	let mut counter = 0;
@@ -42,6 +51,29 @@ fn populate_messages(
 	}
 }
 
+/// Helper function to generate message payloads
+///
+/// # Arguments
+/// * `num_items` - Number of message to include in payload
+/// * `content_len` - Length of content string to generate
+fn generate_payload(num_items: u8, content_len: Option<u8>) -> Vec<u8> {
+	let mut result_str = String::new();
+	let size = content_len.unwrap_or_else(|| 3);
+	let mut rng = rand::thread_rng();
+
+	for _ in 0..num_items {
+		let payload = serde_json::to_string(&Payload {
+			fromId: rng.gen(),
+			content: (0..size).map(|_| "X").collect::<String>(),
+		})
+		.unwrap();
+
+		result_str.push_str(payload.as_str());
+	}
+
+	result_str.as_bytes().to_vec()
+}
+
 #[test]
 fn add_message_should_store_message_in_storage() {
 	new_test_ext().execute_with(|| {
@@ -50,9 +82,9 @@ fn add_message_should_store_message_in_storage() {
 		let caller_2 = 2;
 		let schema_id_1: SchemaId = 1;
 		let schema_id_2: SchemaId = 2;
-		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
-		let message_payload_2 = Vec::from("{'fromId': 343, 'content': '34333'}".as_bytes());
-		let message_payload_3 = Vec::from("{'fromId': 422, 'content': '23222'}".as_bytes());
+		let message_payload_1 = generate_payload(1, None);
+		let message_payload_2 = generate_payload(1, None);
+		let message_payload_3 = generate_payload(1, None);
 
 		// act
 		assert_ok!(MessagesPallet::add_onchain_message(
@@ -144,10 +176,18 @@ fn add_message_with_too_large_message_should_panic() {
 		// arrange
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = 1;
-		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}".as_bytes());
+		let message_payload_1 = generate_payload(3, None);
 
 		// act
-		assert_noop!(MessagesPallet::add_onchain_message(RuntimeOrigin::signed(caller_1), None, schema_id_1, message_payload_1), Error::<Test>::ExceedsMaxMessagePayloadSizeBytes);
+		assert_noop!(
+			MessagesPallet::add_onchain_message(
+				RuntimeOrigin::signed(caller_1),
+				None,
+				schema_id_1,
+				message_payload_1
+			),
+			Error::<Test>::ExceedsMaxMessagePayloadSizeBytes
+		);
 	});
 }
 
@@ -157,9 +197,12 @@ fn add_message_with_invalid_msa_account_errors() {
 		// arrange
 		let caller_1 = 1000;
 		let schema_id_1: SchemaId = 1;
-		let message_payload_1 = Vec::from(
-			"{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}"
-				.as_bytes(),
+		let message_payload_1 = generate_payload(2, None);
+		println!(
+			"payload size is: {}
+		{}",
+			message_payload_1.len(),
+			sp_std::str::from_utf8(&message_payload_1).unwrap()
 		);
 
 		// act
@@ -187,7 +230,7 @@ fn add_ipfs_message_with_invalid_msa_account_errors() {
 			MessagesPallet::add_ipfs_message(
 				RuntimeOrigin::signed(caller_1),
 				schema_id_1,
-				DUMMY_CID.as_bytes().to_vec(),
+				DUMMY_CID.to_vec(),
 				15
 			),
 			Error::<Test>::InvalidMessageSourceAccount
@@ -201,7 +244,7 @@ fn add_message_with_maxed_out_storage_errors() {
 		// arrange
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = 1;
-		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
+		let message_payload_1 = generate_payload(1, None);
 
 		// act
 		for _ in 0..<Test as Config>::MaxMessagesPerBlock::get() {
@@ -236,7 +279,7 @@ fn add_ipfs_message_with_maxed_out_storage_errors() {
 			assert_ok!(MessagesPallet::add_ipfs_message(
 				RuntimeOrigin::signed(caller_1),
 				schema_id_1,
-				DUMMY_CID.as_bytes().to_vec(),
+				DUMMY_CID.to_vec(),
 				15
 			));
 		}
@@ -244,7 +287,7 @@ fn add_ipfs_message_with_maxed_out_storage_errors() {
 			MessagesPallet::add_ipfs_message(
 				RuntimeOrigin::signed(caller_1),
 				schema_id_1,
-				DUMMY_CID.as_bytes().to_vec(),
+				DUMMY_CID.to_vec(),
 				15
 			),
 			Error::<Test>::TooManyMessagesInBlock
@@ -269,7 +312,7 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_return_offchain_payl
 		let list =
 			MessagesPallet::get_messages_by_schema_and_block(schema_id, PayloadLocation::IPFS, 0);
 
-		let cid = DUMMY_CID.as_bytes().to_vec();
+		let cid = DUMMY_CID.to_vec();
 
 		// IPFS messages should return the payload length that was encoded in a tuple along
 		// with the CID: (cid, payload_length).
@@ -313,7 +356,7 @@ fn add_message_via_non_delegate_should_fail() {
 		let message_producer = 1;
 		let message_provider = 2000;
 		let schema_id_1: SchemaId = 1;
-		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
+		let message_payload_1 = generate_payload(1, None);
 		// act
 		assert_err!(
 			MessagesPallet::add_onchain_message(
@@ -337,10 +380,7 @@ fn add_message_with_invalid_schema_id_should_error() {
 		// arrange
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = INVALID_SCHEMA_ID;
-		let message_payload_1 = Vec::from(
-			"{'fromId': 123, 'content': '232323114432'}{'fromId': 123, 'content': '232323114432'}"
-				.as_bytes(),
-		);
+		let message_payload_1 = generate_payload(2, None);
 
 		// act
 		assert_err!(
@@ -367,7 +407,7 @@ fn add_ipfs_message_with_invalid_schema_id_should_error() {
 			MessagesPallet::add_ipfs_message(
 				RuntimeOrigin::signed(caller_1),
 				schema_id_1,
-				DUMMY_CID.as_bytes().to_vec(),
+				DUMMY_CID.to_vec(),
 				15
 			),
 			Error::<Test>::InvalidSchemaId
@@ -383,7 +423,7 @@ fn valid_payload_location_ipfs() {
 		assert_ok!(MessagesPallet::add_ipfs_message(
 			RuntimeOrigin::signed(caller_1),
 			schema_id_1,
-			DUMMY_CID.as_bytes().to_vec(),
+			DUMMY_CID.to_vec(),
 			1,
 		));
 	});
@@ -399,7 +439,7 @@ fn invalid_payload_location_ipfs() {
 			MessagesPallet::add_ipfs_message(
 				RuntimeOrigin::signed(caller_1),
 				schema_id_1,
-				DUMMY_CID.as_bytes().to_vec(),
+				DUMMY_CID.to_vec(),
 				1
 			),
 			Error::<Test>::InvalidPayloadLocation
@@ -411,7 +451,7 @@ fn invalid_payload_location_ipfs() {
 fn invalid_payload_location_onchain() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5;
-		let payload: Vec<u8> = Vec::from("foo");
+		let payload = generate_payload(1, None);
 
 		assert_noop!(
 			MessagesPallet::add_onchain_message(
@@ -430,18 +470,16 @@ fn add_ipfs_message_with_large_payload_errors() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5u64;
 
-		let old_max_size = MaxMessagePayloadSizeBytes::get();
-		MaxMessagePayloadSizeBytes::set(10u32);
+		let big_cid = b"bafkrgqb76pscorjihsk77zpyst3p364zlti6aojlu4nga34vhp7t5orzwbwwytvp7ej44r5yhjzneanqwb5arcnvuvfwo2d4qgzyx5hymvto4".to_vec();
 		assert_noop!(
 			MessagesPallet::add_ipfs_message(
 				RuntimeOrigin::signed(caller_1),
 				IPFS_SCHEMA_ID,
-				DUMMY_CID.as_bytes().to_vec(),
+				big_cid,
 				15
 			),
 			Error::<Test>::ExceedsMaxMessagePayloadSizeBytes
 		);
-		MaxMessagePayloadSizeBytes::set(old_max_size);
 	})
 }
 
@@ -488,8 +526,8 @@ fn on_initialize_should_clean_up_temporary_storages() {
 		let caller_2 = 2;
 		let schema_id_1: SchemaId = 1;
 		let schema_id_2: SchemaId = 2;
-		let message_payload_1 = Vec::from("{'fromId': 123, 'content': '232323114432'}".as_bytes());
-		let message_payload_2 = Vec::from("{'fromId': 343, 'content': '34333'}".as_bytes());
+		let message_payload_1 = generate_payload(1, None);
+		let message_payload_2 = generate_payload(1, None);
 		assert_ok!(MessagesPallet::add_onchain_message(
 			RuntimeOrigin::signed(caller_1),
 			None,
@@ -559,7 +597,7 @@ fn validate_cid_invalid_cid_errors() {
 #[test]
 fn validate_cid_valid_cid_succeeds() {
 	new_test_ext().execute_with(|| {
-		let bad_cid = DUMMY_CID.as_bytes().to_vec();
+		let bad_cid = DUMMY_CID.to_vec();
 
 		assert_ok!(MessagesPallet::validate_cid(&bad_cid));
 	})
