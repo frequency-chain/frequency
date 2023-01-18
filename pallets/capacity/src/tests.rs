@@ -742,3 +742,14 @@ fn staking_capacity_details_decrease_by_reduces_total_tokens_staked_and_total_to
 		)
 	});
 }
+
+#[test]
+fn calculate_capacity_reduction_determines_the_correct_capacity_reduction_amount() {
+	let unstaking_amount = 10;
+	let total_amount_staked = 100;
+	let total_capacity = 200;
+
+	let capacity_reduction = Capacity::calculate_capacity_reduction(unstaking_amount, total_amount_staked, total_capacity);
+
+	assert_eq!(capacity_reduction, 180);
+}

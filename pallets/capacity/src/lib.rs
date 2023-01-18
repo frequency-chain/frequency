@@ -441,10 +441,7 @@ impl<T: Config> Pallet<T> {
 	/// Determine the capacity reduction when given total_capacity, unstaking_amount, and total_amount_staked.
 	fn calculate_capacity_reduction(unstaking_amount: BalanceOf<T>, total_amount_staked: BalanceOf<T>, total_capacity: BalanceOf<T>) -> BalanceOf<T> {
 		let rate = Perbill::from_rational(unstaking_amount, total_amount_staked);
-		let result = total_capacity.saturating_sub(rate.mul_ceil(total_capacity));
-		//TODO: switch to this: total_capacity.saturating_sub(rate.mul_ceil(total_capacity))
-		result
-
+		total_capacity.saturating_sub(rate.mul_ceil(total_capacity))
 	}
 }
 
