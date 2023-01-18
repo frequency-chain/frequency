@@ -1,7 +1,7 @@
 /// Offchain Storage for MSA
 use codec::{Decode, Encode};
 use common_primitives::offchain as offchain_common;
-use sp_runtime::offchain::{storage::StorageRetrievalError, StorageKind};
+use sp_runtime::offchain::storage::StorageRetrievalError;
 use sp_std::{
 	collections::btree_map::BTreeMap,
 	fmt::{Debug, Formatter},
@@ -64,10 +64,7 @@ where
 {
 	let key_binding = derive_storage_key::<K>(msa_id.clone());
 	let derived_key = key_binding.as_slice();
-	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V>>(
-		StorageKind::PERSISTENT,
-		derived_key,
-	);
+	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V>>(derived_key);
 	let mut msa_key_map = BTreeMap::<K, Vec<V>>::new();
 
 	if msa_keys.is_ok() {
@@ -89,10 +86,7 @@ where
 {
 	let key_binding = derive_storage_key::<K>(msa_id.clone());
 	let derived_key = key_binding.as_slice();
-	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V>>(
-		StorageKind::PERSISTENT,
-		derived_key,
-	);
+	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V>>(derived_key);
 	let mut msa_key_map = BTreeMap::<K, Vec<V>>::new();
 	if msa_keys.is_ok() {
 		msa_key_map = msa_keys.unwrap().0;
@@ -119,10 +113,7 @@ where
 {
 	let key_binding = derive_storage_key::<K>(msa_id.clone());
 	let derived_key = key_binding.as_slice();
-	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V>>(
-		StorageKind::PERSISTENT,
-		derived_key,
-	);
+	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V>>(derived_key);
 	let mut msa_key_data = MSAPublicKeyData::<K, V>(BTreeMap::new());
 
 	if msa_keys.is_ok() {

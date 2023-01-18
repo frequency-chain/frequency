@@ -1,9 +1,5 @@
 use codec::{Decode, Encode};
-use sp_io::offchain;
-use sp_runtime::offchain::{
-	storage::{StorageRetrievalError, StorageValueRef},
-	StorageKind,
-};
+use sp_runtime::offchain::storage::{StorageRetrievalError, StorageValueRef};
 use sp_std::fmt::Debug;
 
 /// Storage keys for offchain worker
@@ -74,24 +70,9 @@ where
 }
 
 /// Wrapper for offchain get operations
-pub fn get_index_value<V: Decode + Debug>(
-	kind: StorageKind,
-	key: &[u8],
-) -> Result<V, StorageRetrievalError> {
-	match kind {
-		StorageKind::PERSISTENT => {
-			let indexed_value = get_impl::<V>(key);
-			indexed_value
-		},
-		StorageKind::LOCAL => {
-			let indexed_value = offchain::local_storage_get(kind, key);
-			match indexed_value {
-				Some(value) =>
-					V::decode(&mut &value[..]).map_err(|_| StorageRetrievalError::Undecodable),
-				None => Err(StorageRetrievalError::Undecodable),
-			}
-		},
-	}
+pub fn get_index_value<V: Decode + Debug>(key: &[u8]) -> Result<V, StorageRetrievalError> {
+	let indexed_value = get_impl::<V>(key);
+	indexed_value
 }
 
 /// Sets a value by the key to offchain index
