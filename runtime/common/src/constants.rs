@@ -179,6 +179,8 @@ parameter_types! {
 // --- Council ---
 // The maximum number of council proposals
 pub type CouncilMaxProposals = ConstU32<25>;
+// The maximum number of council members
+pub type CouncilMaxMembers = ConstU32<10>;
 
 parameter_types! {
 	pub const CouncilMotionDuration: BlockNumber = 5 * DAYS;
@@ -189,7 +191,7 @@ parameter_types! {
 // The maximum number of technical committee proposals
 pub type TCMaxProposals = ConstU32<25>;
 // The maximum number of technical committee members
-pub type TCMaxMembers = ConstU32<3>;
+pub type TCMaxMembers = ConstU32<10>;
 
 parameter_types! {
 	pub const TCMotionDuration: BlockNumber = 5 * DAYS;
