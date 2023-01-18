@@ -51,12 +51,14 @@ use frame_support::{
 };
 
 use sp_runtime::{
-	traits::{CheckedAdd, Saturating, Zero},
+	traits::{CheckedAdd, CheckedSub, Saturating, Zero},
 	ArithmeticError, DispatchError, Perbill,
 };
 
 pub use common_primitives::{
-	capacity::TargetValidator, msa::MessageSourceId, utils::wrap_binary_data,
+	capacity::{Nontransferable, Replenishable, TargetValidator},
+	msa::MessageSourceId,
+	utils::wrap_binary_data,
 };
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -223,6 +225,8 @@ pub mod pallet {
 		TargetCapacityNotFound,
 		/// Staker reached the limit number for the allowed amount of unlocking chunks.
 		MaxUnlockingChunksExceeded,
+		/// Increase Capacity increase exceeds the total available Capacity for target.
+		IncreaseExceedsAvailable,
 	}
 
 	#[pallet::call]
@@ -473,5 +477,79 @@ impl<T: Config> Pallet<T> {
 	) -> BalanceOf<T> {
 		let rate = Perbill::from_rational(unstaking_amount, total_amount_staked);
 		total_capacity.saturating_sub(rate.mul_ceil(total_capacity))
+	}
+}
+
+impl<T: Config> Nontransferable for Pallet<T> {
+	type Balance = BalanceOf<T>;
+
+	fn balance(msa_id: MessageSourceId) -> Self::Balance {
+		match Self::get_capacity_for(msa_id) {
+			Some(capacity_details) => capacity_details.remaining,
+			None => BalanceOf::<T>::zero(),
+		}
+	}
+
+	fn deduct(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
+		let mut capacity_details =
+			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
+
+		capacity_details.remaining = capacity_details
+			.remaining
+			.checked_sub(&amount)
+			.ok_or(Error::<T>::InsufficientBalance)?;
+
+		Self::set_capacity_for(msa_id, capacity_details);
+		Ok(())
+	}
+
+	fn deposit(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
+		let mut capacity_details =
+			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
+
+		let new_balance = capacity_details
+			.remaining
+			.checked_add(&amount)
+			.ok_or(ArithmeticError::Overflow)?;
+
+		ensure!(
+			new_balance <= capacity_details.total_available,
+			Error::<T>::IncreaseExceedsAvailable
+		);
+
+		capacity_details.remaining = new_balance;
+
+		Self::set_capacity_for(msa_id, capacity_details);
+
+		Ok(())
+	}
+}
+
+impl<T: Config> Replenishable for Pallet<T> {
+	type Balance = BalanceOf<T>;
+
+	fn replenish_all_for(msa_id: MessageSourceId) -> Result<(), DispatchError> {
+		let mut capacity_details =
+			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
+
+		capacity_details.remaining = capacity_details.total_available;
+
+		Self::set_capacity_for(msa_id, capacity_details);
+
+		Ok(())
+	}
+
+	fn replenish_by_amount(
+		msa_id: MessageSourceId,
+		amount: Self::Balance,
+	) -> Result<(), DispatchError> {
+		Self::deposit(msa_id, amount)?;
+		Ok(())
+	}
+
+	fn can_replenish(_msa_id: MessageSourceId) -> bool {
+		// TODO: this depends on being able to see if a target
+		// has filled during an Epoch Period
+		true
 	}
 }

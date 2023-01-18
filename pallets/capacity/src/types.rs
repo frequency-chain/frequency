@@ -140,7 +140,9 @@ impl<Balance: Saturating + Copy + CheckedAdd> StakingTargetDetails<Balance> {
 }
 
 /// The type for storing Registered Provider Capacity balance:
-#[derive(PartialEq, Eq, Clone, Default, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(
+	PartialEq, Eq, Clone, Copy, Default, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
 pub struct CapacityDetails<Balance, BlockNumber> {
 	/// The Capacity remaining for the `last_replenished_epoch`.
 	pub remaining: Balance,
