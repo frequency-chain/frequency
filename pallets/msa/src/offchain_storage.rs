@@ -1,7 +1,6 @@
 /// Offchain Storage for MSA
 use codec::{Decode, Encode};
 use common_primitives::offchain as offchain_common;
-use frame_support::log::error as log_err;
 use sp_runtime::offchain::{storage::StorageRetrievalError, StorageKind};
 use sp_std::{
 	collections::btree_map::BTreeMap,
@@ -79,7 +78,6 @@ where
 	}
 	msa_key_map.get_mut(&msa_id).unwrap().push(key);
 	let msa_key_data = MSAPublicKeyData::<K, V>(msa_key_map);
-	log_err!("set_index value add msa: {:?}", msa_key_data);
 	offchain_common::set_index_value(derived_key, msa_key_data);
 	Ok(())
 }
@@ -133,10 +131,7 @@ where
 	let msa_key_map = msa_key_data.0;
 	let optional_keys = msa_key_map.get(&msa_id);
 	match optional_keys {
-		Some(keys) => {
-			log_err!("keys: {:?}", keys);
-			return Ok(keys.clone())
-		},
+		Some(keys) => return Ok(keys.clone()),
 		None => return Ok(Vec::new()),
 	}
 }
