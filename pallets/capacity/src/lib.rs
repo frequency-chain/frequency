@@ -237,7 +237,6 @@ pub mod pallet {
 		/// ### Errors
 		///   - Returns `Error::NotAStakingAccount` if no StakingAccountDetails are found for `origin`.
 		///   - Returns `Error::NoUnstakedTokensAvailable` if the account has no unstaking chunks or none are thawed.
-		///
 		pub fn withdraw_unstaked(origin: OriginFor<T>) -> DispatchResult {
 			let staker = ensure_signed(origin)?;
 
