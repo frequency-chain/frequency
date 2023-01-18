@@ -19,6 +19,7 @@ pub enum LockStatus {
 	Release,
 }
 
+/// Locks the execution of the function
 pub fn lock<F>(prefix: &[u8], f: F) -> LockStatus
 where
 	F: Fn(),
