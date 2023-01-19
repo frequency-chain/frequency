@@ -27,9 +27,9 @@ pub struct StakingAccountDetails<T: Config> {
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct UnlockChunk<Balance, BlockNumber> {
 	/// Amount to be unlocked.
-	value: Balance,
+	pub value: Balance,
 	/// Block number at which point funds are unlocked.
-	thaw_at: BlockNumber,
+	pub thaw_at: BlockNumber,
 }
 
 impl<T: Config> StakingAccountDetails<T> {
@@ -91,6 +91,20 @@ impl<T: Config> StakingAccountDetails<T> {
 		});
 		total_reaped
 	}
+
+	/// Decrease the amount of active stake by an amount and createa an UnlockChunk.
+	pub fn decrease_by(&mut self, amount: BalanceOf<T>, thaw_at: T::BlockNumber) -> DispatchResult {
+		let new_active = self.active.saturating_sub(amount);
+
+		let unlock_chunk = UnlockChunk { value: amount, thaw_at };
+
+		self.active = new_active;
+		self.unlocking
+			.try_push(unlock_chunk)
+			.map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
+
+		Ok(())
+	}
 }
 
 impl<T: Config> Default for StakingAccountDetails<T> {
@@ -117,6 +131,12 @@ impl<Balance: Saturating + Copy + CheckedAdd> StakingTargetDetails<Balance> {
 
 		Some(())
 	}
+
+	/// Decrease an MSA target Staking total and Capacity amount.
+	pub fn decrease_by(&mut self, amount: Balance, capacity: Balance) {
+		self.amount = self.amount.saturating_sub(amount);
+		self.capacity = self.capacity.saturating_sub(capacity);
+	}
 }
 
 /// The type for storing Registered Provider Capacity balance:
@@ -124,6 +144,8 @@ impl<Balance: Saturating + Copy + CheckedAdd> StakingTargetDetails<Balance> {
 pub struct CapacityDetails<Balance, BlockNumber> {
 	/// The Capacity remaining for the `last_replenished_epoch`.
 	pub remaining: Balance,
+	/// The amount of tokens staked to an MSA.
+	pub total_tokens_staked: Balance,
 	/// The total Capacity issued to an MSA.
 	pub total_available: Balance,
 	/// The last block-number that an MSA was replenished with Capacity.
@@ -134,9 +156,16 @@ impl<Balance: Saturating + Copy + CheckedAdd, BlockNumber> CapacityDetails<Balan
 	/// Increase a targets Capacity balance by an amount.
 	pub fn increase_by(&mut self, amount: Balance, replenish_at: BlockNumber) -> Option<()> {
 		self.remaining = amount.checked_add(&self.remaining)?;
+		self.total_tokens_staked = amount.checked_add(&self.total_tokens_staked)?;
 		self.total_available = amount.checked_add(&self.total_available)?;
 		self.last_replenished_epoch = replenish_at;
 
 		Some(())
+	}
+
+	/// Decrease a target's total available capacity.
+	pub fn decrease_by(&mut self, amount: Balance, token_reduction_amount: Balance) {
+		self.total_tokens_staked = self.total_tokens_staked.saturating_sub(token_reduction_amount);
+		self.total_available = self.total_available.saturating_sub(amount);
 	}
 }
