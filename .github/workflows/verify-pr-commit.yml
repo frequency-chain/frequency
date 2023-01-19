@@ -57,13 +57,23 @@ jobs:
     name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
     strategy:
       matrix:
-        network: [local, rococo, mainnet]
-        git_branch: ["${{github.head_ref}}", main]
+        network: [rococo, mainnet]
+        # Match this include to the real build-binaries job
         include:
           - git_branch: ${{github.head_ref}}
+            spec: frequency-rococo-local
             branch_alias: pr
+            network: local
           - git_branch: main
+            spec: frequency-rococo-local
             branch_alias: main
+            network: local
+          - network: rococo
+            spec: frequency-rococo-testnet
+            branch_alias: pr
+          - network: mainnet
+            spec: frequency
+            branch_alias: pr
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
