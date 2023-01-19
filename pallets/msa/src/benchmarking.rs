@@ -99,8 +99,8 @@ benchmarks! {
 		let delegator_account = create_account::<T>("account", 1);
 		let (delegator_msa_id, _) = Msa::<T>::create_account(delegator_account.into(), EMPTY_FUNCTION).unwrap();
 
-		assert_ok!(Msa::<T>::add_provider(ProviderId(provider_msa_id.clone()), DelegatorId(delegator_msa_id.clone()), vec![]));
-	}: _ (RawOrigin::Signed(provider_public_key), delegator_msa_id.clone())
+		assert_ok!(Msa::<T>::add_provider(ProviderId(provider_msa_id), DelegatorId(delegator_msa_id), vec![]));
+	}: _ (RawOrigin::Signed(provider_public_key), delegator_msa_id)
 	verify {
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
 		assert_eq!(Msa::<T>::get_delegation(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).unwrap().revoked_at, T::BlockNumber::from(1u32));
