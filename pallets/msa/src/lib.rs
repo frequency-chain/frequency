@@ -420,7 +420,10 @@ pub mod pallet {
 		}
 
 		fn offchain_worker(block_number: T::BlockNumber) {
+			// read the event count for the block
 			let block_event_count = <MSAEventCount<T>>::get();
+
+			// if there are events, read them and process them
 			if block_event_count > 0 {
 				let filtered_events: Vec<Event<T>> =
 					Self::read_events(block_number, block_event_count);
@@ -1421,9 +1424,8 @@ impl<T: Config> Pallet<T> {
 
 	fn index_event(event: Event<T>) {
 		let block_number = <frame_system::Pallet<T>>::block_number();
-		let mut current_event_count = <MSAEventCount<T>>::get();
-		<MSAEventCount<T>>::put(current_event_count.saturating_add(1));
-		current_event_count += 1;
+		let mut current_event_count: u16 = <MSAEventCount<T>>::get().saturating_add(1);
+		<MSAEventCount<T>>::put(current_event_count);
 		let key = [
 			BLOCK_EVENT_KEY,
 			block_number.encode().as_slice(),
