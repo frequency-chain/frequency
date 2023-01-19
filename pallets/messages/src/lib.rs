@@ -246,7 +246,6 @@ pub mod pallet {
 			);
 
 			let provider_msa_id = Self::find_msa_id(&provider_key)?;
-			Self::validate_cid(cid).map_err(|e| e)?;
 			let current_block = frame_system::Pallet::<T>::block_number();
 			if Self::add_message(provider_msa_id, None, bounded_payload, schema_id, current_block)?
 			{
