@@ -55,7 +55,7 @@ where
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 
-	// Unfinished RPCs
+	// Frequency RPCs
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
 	use pallet_schemas_rpc::{SchemasApiServer, SchemasHandler};

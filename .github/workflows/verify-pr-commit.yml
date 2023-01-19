@@ -216,7 +216,7 @@ jobs:
       - name: Lint
         run: |
           SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy \
-            --features all-frequency-features \
+            --features all-frequency-features,std \
             -- \
             -D warnings
 
