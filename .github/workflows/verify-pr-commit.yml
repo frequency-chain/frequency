@@ -271,7 +271,7 @@ jobs:
           profile: minimal
           toolchain: stable
       - name: Check
-        run: SKIP_WASM_BUILD= cargo check --all-features
+        run: SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,all-frequency-features,std
 
   run-rust-tests:
     needs: changes
@@ -300,7 +300,7 @@ jobs:
       #   with:
       #     shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Run Tests
-        run: cargo test --all-features --workspace --release
+        run: cargo test --features runtime-benchmarks,all-frequency-features,std --workspace --release
 
   calc-code-coverage:
     needs: changes
