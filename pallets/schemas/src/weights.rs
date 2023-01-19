@@ -19,7 +19,6 @@
 //!
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-01-18, STEPS: `20`, REPEAT: 10, LOW RANGE: `[]`, HIGH RANGE: `[]`
-//! DATE: 2023-01-18, STEPS: `20`, REPEAT: 10, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("frequency-bench"), DB CACHE: 1024
 
 // Executed Command:
@@ -65,15 +64,15 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:1)
 	// Storage: Schemas Schemas (r:0 w:1)
 	fn create_schema(m: u32, ) -> Weight {
-		Weight::from_ref_time(10_264_719 as u64)
-			// Standard Error: 62
-			.saturating_add(Weight::from_ref_time(28_259 as u64).saturating_mul(m as u64))
+		Weight::from_ref_time(7_898_462 as u64)
+			// Standard Error: 55
+			.saturating_add(Weight::from_ref_time(27_559 as u64).saturating_mul(m as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: Schemas GovernanceSchemaModelMaxBytes (r:0 w:1)
 	fn set_max_schema_model_bytes() -> Weight {
-		Weight::from_ref_time(14_755_000 as u64)
+		Weight::from_ref_time(14_768_000 as u64)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 }
@@ -84,15 +83,15 @@ impl WeightInfo for () {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:1)
 	// Storage: Schemas Schemas (r:0 w:1)
 	fn create_schema(m: u32, ) -> Weight {
-		Weight::from_ref_time(10_264_719 as u64)
-			// Standard Error: 62
-			.saturating_add(Weight::from_ref_time(28_259 as u64).saturating_mul(m as u64))
+		Weight::from_ref_time(7_898_462 as u64)
+			// Standard Error: 55
+			.saturating_add(Weight::from_ref_time(27_559 as u64).saturating_mul(m as u64))
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
 	// Storage: Schemas GovernanceSchemaModelMaxBytes (r:0 w:1)
 	fn set_max_schema_model_bytes() -> Weight {
-		Weight::from_ref_time(14_755_000 as u64)
+		Weight::from_ref_time(14_768_000 as u64)
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 }

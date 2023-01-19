@@ -2,7 +2,6 @@
 //!
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-01-18, STEPS: `50`, REPEAT: 20, LOW RANGE: `[]`, HIGH RANGE: `[]`
-//! DATE: 2023-01-18, STEPS: `50`, REPEAT: 20, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("frequency-bench"), DB CACHE: 1024
 
 // Executed Command:
@@ -39,7 +38,7 @@ impl<T: frame_system::Config> orml_vesting::WeightInfo for SubstrateWeight<T> {
 	// Storage: System Account (r:2 w:2)
 	// Storage: Balances Locks (r:1 w:1)
 	fn vested_transfer() -> Weight {
-		Weight::from_ref_time(62_893_000 as u64)
+		Weight::from_ref_time(62_193_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(5 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
@@ -48,9 +47,9 @@ impl<T: frame_system::Config> orml_vesting::WeightInfo for SubstrateWeight<T> {
 	// Storage: Balances Locks (r:1 w:1)
 	/// The range of component `i` is `[1, 50]`.
 	fn claim(i: u32, ) -> Weight {
-		Weight::from_ref_time(40_494_100 as u64)
-			// Standard Error: 1_742
-			.saturating_add(Weight::from_ref_time(81_330 as u64).saturating_mul(i as u64))
+		Weight::from_ref_time(40_320_410 as u64)
+			// Standard Error: 1_836
+			.saturating_add(Weight::from_ref_time(73_808 as u64).saturating_mul(i as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -59,9 +58,9 @@ impl<T: frame_system::Config> orml_vesting::WeightInfo for SubstrateWeight<T> {
 	// Storage: Vesting VestingSchedules (r:0 w:1)
 	/// The range of component `i` is `[1, 50]`.
 	fn update_vesting_schedules(i: u32, ) -> Weight {
-		Weight::from_ref_time(34_645_593 as u64)
-			// Standard Error: 1_287
-			.saturating_add(Weight::from_ref_time(57_256 as u64).saturating_mul(i as u64))
+		Weight::from_ref_time(33_961_985 as u64)
+			// Standard Error: 1_369
+			.saturating_add(Weight::from_ref_time(66_754 as u64).saturating_mul(i as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
