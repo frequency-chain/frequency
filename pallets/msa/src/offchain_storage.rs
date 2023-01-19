@@ -109,6 +109,11 @@ where
 	None
 }
 
+/// Remove offchain index value, used to store MSA Events to be process by offchain worker
+pub fn remove_offchain_index(key: &[u8]) {
+	offchain_common::remove_offchain_index_value(key);
+}
+
 fn add_msa_key<K, V, B>(msa_id: K, key: V, block: B) -> Result<(), StorageRetrievalError>
 where
 	K: Encode + Clone + Ord + Decode + Eq + Debug,

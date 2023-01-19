@@ -46,6 +46,11 @@ pub fn get_index_value<V: Decode + Debug>(key: &[u8]) -> Result<V, StorageRetrie
 	indexed_value
 }
 
+/// Wrapper for offchain_index remove operations
+pub fn remove_offchain_index_value(key: &[u8]) {
+	offchain_index::clear(key);
+}
+
 /// Wrapper for offchain_index set operations
 pub fn set_offchain_index_value(key: &[u8], value: &[u8]) {
 	offchain_index::clear(key);
