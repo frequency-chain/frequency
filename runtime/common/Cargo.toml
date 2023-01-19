@@ -57,6 +57,7 @@ std = [
 try-runtime = [
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
+	"pallet-collective/try-runtime",
 	"pallet-democracy/try-runtime",
 	"pallet-preimage/try-runtime",
 	"pallet-scheduler/try-runtime",
