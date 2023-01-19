@@ -20,8 +20,7 @@ fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 	let message_source_id = DelegatorId(1);
 	let provider_id = ProviderId(1);
 	let payload = Vec::from(
-		"{'fromId': 123, 'content': '232323114432', 'fromId': 123, 'content': '232323114432'}"
-			.as_bytes(),
+		"{'fromId': 123, 'content': '232323', 'fromId': 123, 'content': '232323'}".as_bytes(),
 	);
 	let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> =
 		payload.try_into().expect("Invalid payload");
@@ -91,9 +90,8 @@ benchmarks! {
 	}
 
 	add_ipfs_message {
-		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - IPFS_PAYLOAD_LENGTH;
 		let caller: T::AccountId = whitelisted_caller();
-		let cid = vec![1; n as usize];
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes().to_vec();
 
 		// schema ids start from 1, and we need to add that many to make sure our desired id exists
 		for j in 0 ..=IPFS_SCHEMA_ID {
