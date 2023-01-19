@@ -29,6 +29,8 @@ pub const IPFS_SCHEMA_ID: SchemaId = 50;
 
 pub const IPFS_PAYLOAD_LENGTH: u32 = 1200;
 
+pub const DUMMY_CID: &[u8; 59] = b"bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq";
+
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
 	pub enum Test where
@@ -70,7 +72,13 @@ impl system::Config for Test {
 
 parameter_types! {
 	pub const MaxMessagesPerBlock: u32 = 500;
-	pub const MaxMessagePayloadSizeBytes: u32 = 100;
+	// Max payload size was picked specifically to be large enough to accomodate
+	// a CIDv1 using SHA2-256, but too small to accomodate CIDv1 w/SHA2-512.
+	// This is purely so that we can test the error condition. Real world configuration
+	// should have this set large enough to accomodate the largest possible CID.
+	// Take care when adding new tests for on-chain (not IPFS) messages that the payload
+	// is not too big.
+	pub static MaxMessagePayloadSizeBytes: u32 = 73;
 	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
 }
 
