@@ -221,7 +221,7 @@ pub mod pallet {
 		/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
 		/// * [`Error::InvalidCid`] - Unable to parse provided CID
 		///
-		#[pallet::weight(T::WeightInfo::add_ipfs_message())]
+		#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() as u32))]
 		pub fn add_ipfs_message(
 			origin: OriginFor<T>,
 			#[pallet::compact] schema_id: SchemaId,

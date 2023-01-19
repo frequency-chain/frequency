@@ -55,7 +55,7 @@ use sp_std::marker::PhantomData;
 /// Weight functions needed for pallet_messages.
 pub trait WeightInfo {
 	fn add_onchain_message(n: u32, ) -> Weight;
-	fn add_ipfs_message() -> Weight;
+	fn add_ipfs_message(n: u32) -> Weight;
 }
 
 /// Weights for pallet_messages using the Substrate node and recommended hardware.
@@ -75,7 +75,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas Schemas (r:1 w:0)
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Messages Messages (r:1 w:1)
-	fn add_ipfs_message() -> Weight {
+	fn add_ipfs_message(n: u32) -> Weight {
 		Weight::from_ref_time(113_062_719 as u64)
 			// Standard Error: 19
 			.saturating_add(Weight::from_ref_time(1_191 as u64).saturating_mul(n as u64))
@@ -100,7 +100,7 @@ impl WeightInfo for () {
 	// Storage: Schemas Schemas (r:1 w:0)
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Messages Messages (r:1 w:1)
-	fn add_ipfs_message() -> Weight {
+	fn add_ipfs_message(n: u32) -> Weight {
 		Weight::from_ref_time(113_062_719 as u64)
 			// Standard Error: 19
 			.saturating_add(Weight::from_ref_time(1_191 as u64).saturating_mul(n as u64))
