@@ -51,8 +51,8 @@ use frame_support::{
 };
 
 use sp_runtime::{
-	traits::{CheckedAdd, Zero},
-	ArithmeticError, DispatchError,
+	traits::{CheckedAdd, Saturating, Zero},
+	ArithmeticError, DispatchError, Perbill,
 };
 
 pub use common_primitives::{
@@ -122,6 +122,10 @@ pub mod pallet {
 		#[cfg(feature = "runtime-benchmarks")]
 		/// A set of helper functions for benchmarking.
 		type BenchmarkHelper: RegisterProviderBenchmarkHelper;
+
+		/// The number of Epochs before you can unlock tokens after unstaking.
+		#[pallet::constant]
+		type UnstakingThawPeriod: Get<u16>;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
@@ -179,6 +183,17 @@ pub mod pallet {
 			/// the total amount withdrawn, i.e. put back into free balance.
 			amount: BalanceOf<T>,
 		},
+		/// A token account has unstaked the Frequency network.
+		UnStaked {
+			/// The token account that staked tokens to the network.
+			account: T::AccountId,
+			/// The MSA that a token account targeted to receive Capacity to unstake from.
+			target: MessageSourceId,
+			/// An amount that was unstaked.
+			amount: BalanceOf<T>,
+			/// The Capacity amount that was reduced from a target.
+			capacity: BalanceOf<T>,
+		},
 	}
 
 	#[pallet::error]
@@ -196,6 +211,18 @@ pub mod pallet {
 		/// No staked value is available for withdrawal; either nothing is being unstaked,
 		/// or nothing has passed the thaw period.
 		NoUnstakedTokensAvailable,
+		/// Unstaking amount should be greater than zero.
+		UnstakedAmountIsZero,
+		/// Amount to unstake is greater than the amount staked.
+		AmountToUnstakeExceedsAmountStaked,
+		/// Attempting to unstake from a target that has not been staked to.
+		StakingAccountNotFound,
+		/// Attempting to get a staker / target relationship that does not exist.
+		StakerTargetRelationshipNotFound,
+		/// Attempting to get the target's capacity that does not exist.
+		TargetCapacityNotFound,
+		/// Staker reached the limit number for the allowed amount of unlocking chunks.
+		MaxUnlockingChunksExceeded,
 	}
 
 	#[pallet::call]
@@ -251,6 +278,37 @@ pub mod pallet {
 			Self::deposit_event(Event::<T>::StakeWithdrawn {
 				account: staker,
 				amount: amount_withdrawn,
+			});
+			Ok(())
+		}
+
+		/// Schedules an amount of the stake to be unlocked.
+		/// ### Errors
+		///
+		/// - Returns `Error::UnstakedAmountIsZero` if `amount` is not greater than zero.
+		/// - Returns `Error::MaxUnlockingChunksExceeded` if attempting to unlock more times than config::MaxUnlockingChunks.
+		/// - Returns `Error::AmountToUnstakeExceedsAmountStaked` if `amount` exceeds the amount currently staked.
+		/// - Returns `Error::InvalidTarget` if `target` is not a valid staking target
+		/// - Returns `Error:: NotAStakingAccount` if `origin` has nothing staked
+		#[pallet::weight(T::WeightInfo::unstake())]
+		pub fn unstake(
+			origin: OriginFor<T>,
+			target: MessageSourceId,
+			amount: BalanceOf<T>,
+		) -> DispatchResult {
+			let unstaker = ensure_signed(origin)?;
+
+			ensure!(T::TargetValidator::validate(target), Error::<T>::InvalidTarget);
+			ensure!(amount > Zero::zero(), Error::<T>::UnstakedAmountIsZero);
+
+			Self::decrease_active_staking_balance(&unstaker, amount)?;
+			let capacity_reduction = Self::reduce_capacity(&unstaker, target, amount)?;
+
+			Self::deposit_event(Event::UnStaked {
+				account: unstaker,
+				target,
+				amount,
+				capacity: capacity_reduction,
 			});
 			Ok(())
 		}
@@ -359,5 +417,61 @@ impl<T: Config> Pallet<T> {
 	/// Calculates Capacity.
 	fn calculate_capacity(amount: BalanceOf<T>) -> BalanceOf<T> {
 		amount
+	}
+
+	/// Decrease a staking account's active token and create an unlocking chunk to be thawed at some future block.
+	fn decrease_active_staking_balance(
+		unstaker: &T::AccountId,
+		amount: BalanceOf<T>,
+	) -> DispatchResult {
+		let mut staking_account_details =
+			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::StakingAccountNotFound)?;
+		ensure!(
+			amount <= staking_account_details.active,
+			Error::<T>::AmountToUnstakeExceedsAmountStaked
+		);
+
+		let current_block: T::BlockNumber = frame_system::Pallet::<T>::block_number();
+		let thaw_at =
+			current_block.saturating_add(T::BlockNumber::from(T::UnstakingThawPeriod::get()));
+
+		staking_account_details.decrease_by(amount, thaw_at)?;
+		Self::set_staking_account(&unstaker, &staking_account_details);
+
+		Ok(())
+	}
+
+	/// Reduce available capacity of target and return the amount of capacity reduction.
+	fn reduce_capacity(
+		unstaker: &T::AccountId,
+		target: MessageSourceId,
+		amount: BalanceOf<T>,
+	) -> Result<BalanceOf<T>, DispatchError> {
+		let mut staking_target_details = Self::get_target_for(&unstaker, &target)
+			.ok_or(Error::<T>::StakerTargetRelationshipNotFound)?;
+		let mut capacity_details =
+			Self::get_capacity_for(target).ok_or(Error::<T>::TargetCapacityNotFound)?;
+		let capacity_reduction = Self::calculate_capacity_reduction(
+			amount,
+			capacity_details.total_tokens_staked,
+			capacity_details.total_available,
+		);
+		staking_target_details.decrease_by(amount, capacity_reduction);
+		capacity_details.decrease_by(capacity_reduction, amount);
+
+		Self::set_capacity_for(target, capacity_details);
+		Self::set_target_details_for(unstaker, target, staking_target_details);
+
+		Ok(capacity_reduction)
+	}
+
+	/// Determine the capacity reduction when given total_capacity, unstaking_amount, and total_amount_staked.
+	fn calculate_capacity_reduction(
+		unstaking_amount: BalanceOf<T>,
+		total_amount_staked: BalanceOf<T>,
+		total_capacity: BalanceOf<T>,
+	) -> BalanceOf<T> {
+		let rate = Perbill::from_rational(unstaking_amount, total_amount_staked);
+		total_capacity.saturating_sub(rate.mul_ceil(total_capacity))
 	}
 }

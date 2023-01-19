@@ -47,7 +47,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::{DispatchClass, DispatchError},
 	parameter_types,
-	traits::{ConstU128, ConstU32, EitherOfDiverse, EqualPrivilegeOnly},
+	traits::{ConstU128, ConstU16, ConstU32, EitherOfDiverse, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
 	Twox128,
 };
@@ -548,8 +548,11 @@ impl pallet_capacity::Config for Runtime {
 	type MinimumStakingAmount = ConstU128<EXISTENTIAL_DEPOSIT>;
 	type TargetValidator = Msa;
 	type MaxUnlockingChunks = ConstU32<4>;
+
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = Msa;
+
+	type UnstakingThawPeriod = ConstU16<2>;
 }
 
 impl pallet_schemas::Config for Runtime {

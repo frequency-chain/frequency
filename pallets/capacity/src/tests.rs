@@ -508,9 +508,265 @@ fn impl_staking_capacity_details_increase_by() {
 			capacity_details,
 			CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
 				remaining: BalanceOf::<Test>::from(10u64),
+				total_tokens_staked: BalanceOf::<Test>::from(10u64),
 				total_available: BalanceOf::<Test>::from(10u64),
 				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u32)
 			}
 		)
 	});
+}
+
+#[test]
+fn unstake_success() {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let target: MessageSourceId = 1;
+		let staking_amount = 10;
+		let unstaking_amount = 5;
+
+		register_provider(target, String::from("Test Target"));
+
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount));
+		assert_ok!(Capacity::unstake(
+			RuntimeOrigin::signed(token_account),
+			target,
+			unstaking_amount
+		));
+
+		// Assert that staking account detail values are decremented correctly after unstaking
+		let staking_account_details = Capacity::get_staking_account_for(token_account).unwrap();
+
+		assert_eq!(staking_account_details.unlocking.len(), 1);
+		let mut chunks: BoundedVec<
+			UnlockChunk<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber>,
+			<Test as pallet_capacity::Config>::MaxUnlockingChunks,
+		> = BoundedVec::default();
+
+		chunks.try_push(UnlockChunk::<
+			BalanceOf<Test>,
+			<Test as frame_system::Config>::BlockNumber,
+		> {
+			value: BalanceOf::<Test>::from(5u64),
+			thaw_at: <Test as frame_system::Config>::BlockNumber::from(3u64),
+		});
+
+		assert_eq!(
+			staking_account_details,
+			StakingAccountDetails::<Test> {
+				active: BalanceOf::<Test>::from(5u64),
+				total: BalanceOf::<Test>::from(10u64),
+				unlocking: chunks,
+			}
+		);
+
+		// Assert that staking target detail values are decremented correctly after unstaking
+		let staking_target_details = Capacity::get_target_for(token_account, target).unwrap();
+
+		assert_eq!(
+			staking_target_details,
+			StakingTargetDetails::<BalanceOf<Test>> {
+				amount: BalanceOf::<Test>::from(5u64),
+				capacity: BalanceOf::<Test>::from(5u64),
+			}
+		);
+
+		// Assert that the capacity detail values for the target are decremented properly after unstaking
+		let capacity_details = Capacity::get_capacity_for(target).unwrap();
+
+		assert_eq!(
+			capacity_details,
+			CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+				remaining: BalanceOf::<Test>::from(10u64),
+				total_tokens_staked: BalanceOf::<Test>::from(5u64),
+				total_available: BalanceOf::<Test>::from(5u64),
+				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u64),
+			}
+		);
+	});
+}
+
+#[test]
+fn unstake_errors_unstaking_amount_is_zero() {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let target: MessageSourceId = 1;
+		let staking_amount = 10;
+		let unstaking_amount = 0;
+
+		register_provider(target, String::from("Test Target"));
+
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount));
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
+			Error::<Test>::UnstakedAmountIsZero
+		);
+	});
+}
+
+#[test]
+fn unstake_errors_max_unlocking_chunks_exceeded() {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let target: MessageSourceId = 1;
+		let staking_amount = 10;
+		let unstaking_amount = 1;
+
+		register_provider(target, String::from("Test Target"));
+
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount));
+
+		for n in 0..<Test as pallet_capacity::Config>::MaxUnlockingChunks::get() {
+			assert_ok!(Capacity::unstake(
+				RuntimeOrigin::signed(token_account),
+				target,
+				unstaking_amount
+			));
+		}
+
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
+			Error::<Test>::MaxUnlockingChunksExceeded
+		);
+	});
+}
+
+#[test]
+fn unstake_errors_amount_to_unstake_exceeds_amount_staked() {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let target: MessageSourceId = 1;
+		let staking_amount = 10;
+		let unstaking_amount = 11;
+
+		register_provider(target, String::from("Test Target"));
+
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount));
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
+			Error::<Test>::AmountToUnstakeExceedsAmountStaked
+		);
+	});
+}
+
+#[test]
+fn unstake_errors_invalid_target() {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let target: MessageSourceId = 2;
+
+		let unstaking_amount = 11;
+
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
+			Error::<Test>::InvalidTarget
+		);
+	});
+}
+
+#[test]
+fn unstake_errors_not_a_staking_account() {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let target: MessageSourceId = 1;
+
+		let unstaking_amount = 11;
+
+		register_provider(target, String::from("Test Target"));
+
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
+			Error::<Test>::StakingAccountNotFound
+		);
+	});
+}
+
+#[test]
+fn staking_account_details_decrease_by_reduces_active_staking_balance_and_creates_unlock_chunk() {
+	new_test_ext().execute_with(|| {
+		let mut staking_account_details = StakingAccountDetails::<Test> {
+			active: BalanceOf::<Test>::from(10u64),
+			total: BalanceOf::<Test>::from(10u64),
+			unlocking: BoundedVec::default(),
+		};
+		staking_account_details.decrease_by(3, 3);
+		let mut chunks: BoundedVec<
+			UnlockChunk<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber>,
+			<Test as pallet_capacity::Config>::MaxUnlockingChunks,
+		> = BoundedVec::default();
+
+		chunks.try_push(UnlockChunk::<
+			BalanceOf<Test>,
+			<Test as frame_system::Config>::BlockNumber,
+		> {
+			value: BalanceOf::<Test>::from(3u64),
+			thaw_at: <Test as frame_system::Config>::BlockNumber::from(3u64),
+		});
+
+		assert_eq!(
+			staking_account_details,
+			StakingAccountDetails::<Test> {
+				active: BalanceOf::<Test>::from(7u64),
+				total: BalanceOf::<Test>::from(10u64),
+				unlocking: chunks,
+			}
+		)
+	});
+}
+
+#[test]
+fn staking_target_details_decrease_by_reduces_staking_and_capacity_amounts() {
+	new_test_ext().execute_with(|| {
+		let mut staking_target_details = StakingTargetDetails::<BalanceOf<Test>> {
+			amount: BalanceOf::<Test>::from(15u64),
+			capacity: BalanceOf::<Test>::from(20u64),
+		};
+		staking_target_details.decrease_by(10, 10);
+
+		assert_eq!(
+			staking_target_details,
+			StakingTargetDetails::<BalanceOf<Test>> {
+				amount: BalanceOf::<Test>::from(5u64),
+				capacity: BalanceOf::<Test>::from(10u64),
+			}
+		)
+	});
+}
+
+#[test]
+fn staking_capacity_details_decrease_by_reduces_total_tokens_staked_and_total_tokens_available() {
+	new_test_ext().execute_with(|| {
+		let mut capacity_details =
+			CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+				remaining: BalanceOf::<Test>::from(10u64),
+				total_tokens_staked: BalanceOf::<Test>::from(10u64),
+				total_available: BalanceOf::<Test>::from(10u64),
+				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u32),
+			};
+		capacity_details.decrease_by(4, 5);
+
+		assert_eq!(
+			capacity_details,
+			CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+				remaining: BalanceOf::<Test>::from(10u64),
+				total_tokens_staked: BalanceOf::<Test>::from(5u64),
+				total_available: BalanceOf::<Test>::from(6u64),
+				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u32)
+			}
+		)
+	});
+}
+
+#[test]
+fn calculate_capacity_reduction_determines_the_correct_capacity_reduction_amount() {
+	let unstaking_amount = 10;
+	let total_amount_staked = 100;
+	let total_capacity = 200;
+
+	let capacity_reduction = Capacity::calculate_capacity_reduction(
+		unstaking_amount,
+		total_amount_staked,
+		total_capacity,
+	);
+
+	assert_eq!(capacity_reduction, 180);
 }
