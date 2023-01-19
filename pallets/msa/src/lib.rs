@@ -429,7 +429,6 @@ pub mod pallet {
 			// if there are events, read them and process them
 			if block_event_count > 0 {
 				event_to_process = Self::read_events(current_bucket_num, block_event_count);
-				log_err!("event_to_process: {:?}", event_to_process.len());
 			}
 			// collect a replay of all events by MSA id
 			let mut events_by_msa_id: BTreeMap<

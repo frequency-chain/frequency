@@ -174,7 +174,7 @@ where
 			block_number = keys.block_number;
 		},
 		Err(e) => {
-			log_err!("Error in getting MSA keys from offchain storage: {:?}", e);
+			log_err!("Error in getting MSA for msa_id: {:?}, error: {:?}", msa_id, e);
 		},
 	}
 	Ok((block_number, msa_key_map))
