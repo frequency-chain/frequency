@@ -16,11 +16,11 @@ pub const MSA_INDEX_KEY: &[u8] = b"frequency::msa::";
 
 /// Derive storage key for MSA index
 #[deny(clippy::clone_double_ref)]
-pub(crate) fn derive_storage_key<K>(msa_id: K) -> Vec<u8>
+pub(crate) fn derive_storage_key<K>(prefix: &[u8], suffix: K) -> Vec<u8>
 where
 	K: Encode + Clone + Ord + Decode,
 {
-	[MSA_INDEX_KEY, msa_id.encode().as_slice()].concat().encode().to_vec()
+	[prefix, suffix.encode().as_slice()].concat().encode().to_vec()
 }
 
 /// MSA Public Key Data
@@ -120,7 +120,7 @@ where
 	V: Encode + Clone + Decode + Eq + Debug,
 	B: Encode + Clone + Decode + Eq + Debug + Default,
 {
-	let key_binding = derive_storage_key::<K>(msa_id.clone());
+	let key_binding = derive_storage_key::<K>(MSA_INDEX_KEY, msa_id.clone());
 	let derived_key = key_binding.as_slice();
 	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V, B>>(derived_key);
 	let mut msa_key_map = Vec::new();
@@ -141,7 +141,7 @@ where
 	V: Encode + Clone + Decode + Eq + Debug,
 	B: Encode + Clone + Decode + Eq + Debug + Default,
 {
-	let key_binding = derive_storage_key::<K>(msa_id.clone());
+	let key_binding = derive_storage_key::<K>(MSA_INDEX_KEY, msa_id.clone());
 	let derived_key = key_binding.as_slice();
 	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V, B>>(derived_key);
 	let mut msa_key_map = Vec::new();
@@ -163,7 +163,7 @@ where
 	V: Encode + Clone + Decode + Eq + Debug,
 	B: Encode + Clone + Decode + Eq + Debug + Default,
 {
-	let key_binding = derive_storage_key::<K>(msa_id.clone());
+	let key_binding = derive_storage_key::<K>(MSA_INDEX_KEY, msa_id.clone());
 	let derived_key = key_binding.as_slice();
 	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V, B>>(derived_key);
 	let mut msa_key_map = Vec::new();
