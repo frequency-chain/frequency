@@ -96,13 +96,12 @@ impl<T: Config> StakingAccountDetails<T> {
 	pub fn decrease_by(&mut self, amount: BalanceOf<T>, thaw_at: T::BlockNumber) -> DispatchResult {
 		let new_active = self.active.saturating_sub(amount);
 
-		let unlock_chunk = UnlockChunk {
-			value: amount,
-			thaw_at: thaw_at,
-		};
+		let unlock_chunk = UnlockChunk { value: amount, thaw_at };
 
 		self.active = new_active;
-		self.unlocking.try_push(unlock_chunk).map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
+		self.unlocking
+			.try_push(unlock_chunk)
+			.map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
 
 		Ok(())
 	}

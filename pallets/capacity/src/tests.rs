@@ -527,23 +527,28 @@ fn unstake_success() {
 		register_provider(target, String::from("Test Target"));
 
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount));
-		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount));
+		assert_ok!(Capacity::unstake(
+			RuntimeOrigin::signed(token_account),
+			target,
+			unstaking_amount
+		));
 
 		// Assert that staking account detail values are decremented correctly after unstaking
 		let staking_account_details = Capacity::get_staking_account_for(token_account).unwrap();
 
-
 		assert_eq!(staking_account_details.unlocking.len(), 1);
-		let mut chunks: BoundedVec<UnlockChunk<BalanceOf<Test>,
-						<Test as frame_system::Config>::BlockNumber>,
-						<Test as pallet_capacity::Config>::MaxUnlockingChunks> = BoundedVec::default();
+		let mut chunks: BoundedVec<
+			UnlockChunk<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber>,
+			<Test as pallet_capacity::Config>::MaxUnlockingChunks,
+		> = BoundedVec::default();
 
-		chunks.try_push(
-			UnlockChunk::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
-				value: BalanceOf::<Test>::from(5u64),
-				thaw_at: <Test as frame_system::Config>::BlockNumber::from(3u64),
-			}
-		);
+		chunks.try_push(UnlockChunk::<
+			BalanceOf<Test>,
+			<Test as frame_system::Config>::BlockNumber,
+		> {
+			value: BalanceOf::<Test>::from(5u64),
+			thaw_at: <Test as frame_system::Config>::BlockNumber::from(3u64),
+		});
 
 		assert_eq!(
 			staking_account_details,
@@ -610,8 +615,12 @@ fn unstake_errors_max_unlocking_chunks_exceeded() {
 
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount));
 
-		for n in 0 .. <Test as pallet_capacity::Config>::MaxUnlockingChunks::get() {
-			assert_ok!(Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount));
+		for n in 0..<Test as pallet_capacity::Config>::MaxUnlockingChunks::get() {
+			assert_ok!(Capacity::unstake(
+				RuntimeOrigin::signed(token_account),
+				target,
+				unstaking_amount
+			));
 		}
 
 		assert_noop!(
@@ -680,15 +689,18 @@ fn staking_account_details_decrease_by_reduces_active_staking_balance_and_create
 			unlocking: BoundedVec::default(),
 		};
 		staking_account_details.decrease_by(3, 3);
-		let mut chunks: BoundedVec<UnlockChunk<BalanceOf<Test>,
-						<Test as frame_system::Config>::BlockNumber>,
-						<Test as pallet_capacity::Config>::MaxUnlockingChunks> = BoundedVec::default();
+		let mut chunks: BoundedVec<
+			UnlockChunk<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber>,
+			<Test as pallet_capacity::Config>::MaxUnlockingChunks,
+		> = BoundedVec::default();
 
-		chunks.try_push(
-			UnlockChunk::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
-				value: BalanceOf::<Test>::from(3u64),
-				thaw_at: <Test as frame_system::Config>::BlockNumber::from(3u64),
-			});
+		chunks.try_push(UnlockChunk::<
+			BalanceOf<Test>,
+			<Test as frame_system::Config>::BlockNumber,
+		> {
+			value: BalanceOf::<Test>::from(3u64),
+			thaw_at: <Test as frame_system::Config>::BlockNumber::from(3u64),
+		});
 
 		assert_eq!(
 			staking_account_details,
@@ -723,11 +735,12 @@ fn staking_target_details_decrease_by_reduces_staking_and_capacity_amounts() {
 #[test]
 fn staking_capacity_details_decrease_by_reduces_total_tokens_staked_and_total_tokens_available() {
 	new_test_ext().execute_with(|| {
-		let mut capacity_details = CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+		let mut capacity_details =
+			CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
 				remaining: BalanceOf::<Test>::from(10u64),
 				total_tokens_staked: BalanceOf::<Test>::from(10u64),
 				total_available: BalanceOf::<Test>::from(10u64),
-				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u32)
+				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u32),
 			};
 		capacity_details.decrease_by(4, 5);
 
@@ -749,7 +762,11 @@ fn calculate_capacity_reduction_determines_the_correct_capacity_reduction_amount
 	let total_amount_staked = 100;
 	let total_capacity = 200;
 
-	let capacity_reduction = Capacity::calculate_capacity_reduction(unstaking_amount, total_amount_staked, total_capacity);
+	let capacity_reduction = Capacity::calculate_capacity_reduction(
+		unstaking_amount,
+		total_amount_staked,
+		total_capacity,
+	);
 
 	assert_eq!(capacity_reduction, 180);
 }

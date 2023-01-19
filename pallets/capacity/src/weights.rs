@@ -55,6 +55,7 @@ use sp_std::marker::PhantomData;
 pub trait WeightInfo {
 	fn stake() -> Weight;
 	fn withdraw_unstaked() -> Weight;
+	fn unstake() -> Weight;
 }
 
 /// Weights for pallet_capacity using the Substrate node and recommended hardware.
