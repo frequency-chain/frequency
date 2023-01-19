@@ -8,6 +8,9 @@ use sp_std::{
 	vec::Vec,
 };
 
+/// Block event storage prefix
+pub const BLOCK_EVENT_KEY: &[u8] = b"frequency::block_event::msa::";
+
 /// Generic prefix for MSA index storage
 pub const MSA_INDEX_KEY: &[u8] = b"frequency::msa::";
 
@@ -85,6 +88,26 @@ where
 		MSAPublicKeyDataOperation::Remove(msa_id, key, block) =>
 			return remove_msa_key(msa_id, key, block),
 	}
+}
+/// Set offchain index value, used to store MSA Events to be process by offchain worker
+pub fn set_offchain_index<K, V>(key: K, value: V)
+where
+	K: Encode + Clone + Ord + Decode + Eq + Debug,
+	V: Encode + Clone + Decode + Eq + Debug,
+{
+	offchain_common::set_offchain_index_value(key.encode().as_slice(), value.encode().as_slice());
+}
+
+/// Get offchain index value, used to store MSA Events to be process by offchain worker
+pub fn get_offchain_index<V>(key: &[u8]) -> Option<V>
+where
+	V: Encode + Clone + Decode + Eq + Debug,
+{
+	let value = offchain_common::get_index_value::<V>(key);
+	if value.is_ok() {
+		return Some(value.unwrap())
+	}
+	None
 }
 
 fn add_msa_key<K, V, B>(msa_id: K, key: V, block: B) -> Result<(), StorageRetrievalError>

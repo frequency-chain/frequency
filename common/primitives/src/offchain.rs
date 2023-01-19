@@ -1,4 +1,5 @@
 use codec::{Decode, Encode};
+use sp_io::offchain_index;
 use sp_runtime::offchain::{
 	storage::{StorageRetrievalError, StorageValueRef},
 	storage_lock::{StorageLock, Time},
@@ -43,6 +44,12 @@ where
 pub fn get_index_value<V: Decode + Debug>(key: &[u8]) -> Result<V, StorageRetrievalError> {
 	let indexed_value = get_impl::<V>(key);
 	indexed_value
+}
+
+/// Wrapper for offchain_index set operations
+pub fn set_offchain_index_value(key: &[u8], value: &[u8]) {
+	offchain_index::clear(key);
+	offchain_index::set(key, value);
 }
 
 /// Sets a value by the key to offchain index

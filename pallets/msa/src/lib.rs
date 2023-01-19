@@ -254,6 +254,13 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
+	/// A temporary storage for looking up relevant events from off-chain index
+	/// At the start of the next block this storage is set to 0
+	#[pallet::storage]
+	#[pallet::whitelist_storage]
+	#[pallet::getter(fn get_event_count)]
+	pub(super) type MSAEventCount<T: Config> = StorageValue<_, u16, ValueQuery>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -410,6 +417,12 @@ pub mod pallet {
 		}
 
 		fn offchain_worker(block_number: T::BlockNumber) {
+			let block_event_count = <MSAEventCount<T>>::get();
+			if block_event_count > 0 {
+				let filtered_events: Vec<Event<T>> =
+					Self::read_events(block_number, block_event_count);
+				log_err!("filtered_events: {:?}", filtered_events);
+			}
 			let filtered_events: Vec<Event<T>> =
 				<frame_system::Pallet<T>>::read_events_no_consensus()
 					.into_iter()
@@ -535,16 +548,14 @@ pub mod pallet {
 					)?;
 					Ok(())
 				})?;
-
-			Self::deposit_event(Event::MsaCreated {
-				msa_id: new_delegator_msa_id,
-				key: new_delegator_public_key,
-			});
-
+			let event =
+				Event::MsaCreated { msa_id: new_delegator_msa_id, key: new_delegator_public_key };
+			Self::deposit_event(event.clone());
 			Self::deposit_event(Event::DelegationGranted {
 				delegator_id: DelegatorId(new_delegator_msa_id),
 				provider_id: ProviderId(provider_msa_id),
 			});
+			Self::index_event(event);
 
 			Ok(())
 		}
@@ -719,10 +730,12 @@ pub mod pallet {
 				msa_id,
 				&add_key_payload.new_public_key.clone(),
 				|msa_id| -> DispatchResult {
-					Self::deposit_event(Event::PublicKeyAdded {
+					let event = Event::PublicKeyAdded {
 						msa_id,
 						key: add_key_payload.new_public_key.clone(),
-					});
+					};
+					Self::deposit_event(event.clone());
+					Self::index_event(event);
 					Ok(())
 				},
 			)?;
@@ -756,10 +769,10 @@ pub mod pallet {
 					Self::delete_key_for_msa(who_msa_id, &public_key_to_delete)?;
 
 					// Deposit the event
-					Self::deposit_event(Event::PublicKeyDeleted {
-						msa_id: who_msa_id,
-						key: public_key_to_delete,
-					});
+					let event =
+						Event::PublicKeyDeleted { msa_id: who_msa_id, key: public_key_to_delete };
+					Self::deposit_event(event.clone());
+					Self::index_event(event);
 				},
 				None => {
 					log_err!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
@@ -890,7 +903,9 @@ pub mod pallet {
 				Some(msa_id) => {
 					num_deletions = Self::delete_delegation_relationship(DelegatorId(msa_id));
 					Self::delete_key_for_msa(msa_id, &who)?;
-					Self::deposit_event(Event::PublicKeyDeleted { msa_id, key: who });
+					let event = Event::PublicKeyDeleted { msa_id, key: who };
+					Self::deposit_event(event.clone());
+					Self::index_event(event);
 					Self::deposit_event(Event::MsaRetired { msa_id });
 				},
 				None => {
@@ -1399,6 +1414,34 @@ impl<T: Config> Pallet<T> {
 		if let offchain_common::LockStatus::Locked = lock_status {
 			log_err!("Unable to acquire lock, skipping event processing");
 		}
+	}
+
+	fn index_event(event: Event<T>) {
+		let block_number = <frame_system::Pallet<T>>::block_number();
+		let mut current_event_count = <MSAEventCount<T>>::get();
+		<MSAEventCount<T>>::put(current_event_count.saturating_add(1));
+		current_event_count += 1;
+		let key = [
+			BLOCK_EVENT_KEY,
+			block_number.encode().as_slice(),
+			current_event_count.encode().as_slice(),
+		]
+		.concat();
+		// set the event in offchain storage
+		set_offchain_index(key, event);
+	}
+
+	fn read_events(block_number: T::BlockNumber, event_count: u16) -> Vec<Event<T>> {
+		let mut events = vec![];
+		for i in 1..event_count {
+			let key =
+				[BLOCK_EVENT_KEY, block_number.encode().as_slice(), i.encode().as_slice()].concat();
+			let optional_decoded_event = get_offchain_index::<Event<T>>(key.encode().as_slice());
+			if let Some(decoded_event) = optional_decoded_event {
+				events.push(decoded_event);
+			}
+		}
+		events
 	}
 }
 
