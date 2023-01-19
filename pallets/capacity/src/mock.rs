@@ -163,6 +163,8 @@ impl Config for Test {
 
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = Msa;
+
+	type UnstakingThawPeriod = ConstU16<2>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
