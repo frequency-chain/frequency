@@ -413,6 +413,9 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(current: T::BlockNumber) -> Weight {
+			<MSAEventCount<T>>::set(0u16);
+			// allocates 1 read and 1 write for any access of `MSAEventCount` in every block
+			T::DbWeight::get().reads(1u64).saturating_add(T::DbWeight::get().writes(1u64));
 			Self::reset_virtual_bucket_if_needed(current)
 		}
 
