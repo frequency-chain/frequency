@@ -169,3 +169,14 @@ impl<Balance: Saturating + Copy + CheckedAdd, BlockNumber> CapacityDetails<Balan
 		self.total_available = self.total_available.saturating_sub(amount);
 	}
 }
+
+/// The type for storing details about an epoch.
+#[derive(
+	PartialEq, Eq, Clone, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
+pub struct Epoch<BlockNumber> {
+	/// The number of the current epoch
+	pub current_epoch: BlockNumber,
+	/// The block number when this epoch started.
+	pub epoch_start: BlockNumber,
+}
