@@ -47,7 +47,7 @@ This mode is recommended for entities that are relatively large and there are a 
 ![image](https://user-images.githubusercontent.com/9152501/213291600-98229ee4-6358-4e0e-abe2-d6da9abe179e.png)
 
 The rationale behind separating these modes is based on two reasons:
-- _Performance_: **Itemized** mode always need 1 on-chain DB_READ and 1 DB_WRITE but **Paginated**
+- _Performance_: **Itemized** mode always needs 1 on-chain DB_READ and 1 DB_WRITE but **Paginated**
 mode might be done with only 1 DB_WRITE.
 - _Composability_: **Itemized** mode allows better composability due to on-chain read requirement
 and smaller size of each.
