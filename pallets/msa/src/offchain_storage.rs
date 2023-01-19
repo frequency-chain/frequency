@@ -90,12 +90,11 @@ where
 	}
 }
 /// Set offchain index value, used to store MSA Events to be process by offchain worker
-pub fn set_offchain_index<K, V>(key: K, value: V)
+pub fn set_offchain_index<V>(key: &[u8], value: V)
 where
-	K: Encode + Clone + Ord + Decode + Eq + Debug,
 	V: Encode + Clone + Decode + Eq + Debug,
 {
-	offchain_common::set_offchain_index_value(key.encode().as_slice(), value.encode().as_slice());
+	offchain_common::set_offchain_index_value(key, value.encode().as_slice());
 }
 
 /// Get offchain index value, used to store MSA Events to be process by offchain worker

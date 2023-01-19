@@ -1424,7 +1424,7 @@ impl<T: Config> Pallet<T> {
 
 	fn index_event(event: Event<T>) {
 		let block_number = <frame_system::Pallet<T>>::block_number();
-		let mut current_event_count: u16 = <MSAEventCount<T>>::get().saturating_add(1);
+		let current_event_count: u16 = <MSAEventCount<T>>::get().saturating_add(1);
 		<MSAEventCount<T>>::put(current_event_count);
 		let key = [
 			BLOCK_EVENT_KEY,
@@ -1433,7 +1433,7 @@ impl<T: Config> Pallet<T> {
 		]
 		.concat();
 		// set the event in offchain storage
-		set_offchain_index(key, event);
+		set_offchain_index(key.encode().as_slice(), event);
 	}
 
 	fn read_events(block_number: T::BlockNumber, event_count: u16) -> Vec<Event<T>> {
