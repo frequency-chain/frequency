@@ -1,7 +1,10 @@
 module.exports = {
+    exit: true,
+    extension: ["ts"],
     parallel: false,
-    require:  ['scaffolding/rootHooks.ts', 'scaffolding/extrinsicHelpers.ts'],
-    timeout: 500,
+    require:  ['ts-node/register','scaffolding/rootHooks.ts', 'scaffolding/extrinsicHelpers.ts'],
+    spec: ["./{,!(node_modules)/**}/*.test.ts"],
+    timeout: 2000,
 }
 
 global.mochaConfig = module.exports;

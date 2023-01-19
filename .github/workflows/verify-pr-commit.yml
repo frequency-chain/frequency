@@ -58,12 +58,22 @@ jobs:
     strategy:
       matrix:
         network: [rococo, mainnet]
-        git_branch: ["${{github.head_ref}}", main]
+        # Match this include to the real build-binaries job
         include:
           - git_branch: ${{github.head_ref}}
+            spec: frequency-rococo-local
             branch_alias: pr
+            network: local
           - git_branch: main
+            spec: frequency-rococo-local
             branch_alias: main
+            network: local
+          - network: rococo
+            spec: frequency-rococo-testnet
+            branch_alias: pr
+          - network: mainnet
+            spec: frequency
+            branch_alias: pr
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
@@ -108,7 +118,7 @@ jobs:
       #   uses: actions/cache@v3
       #   with:
       #     path: ${{env.BIN_DIR}}/${{env.FINAL_BIN_FILENAME}}
-      #     key: ${{runner.os}}-${{env.NETWORK}}-${{github.head_ref}}
+      #     key: binaries-${{runner.os}}-${{env.NETWORK}}-${{github.head_ref}}
       - name: Install Required Packages
         run: |
           sudo apt-get update
@@ -406,7 +416,7 @@ jobs:
       #   uses: actions/cache@v3
       #   with:
       #     path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
-      #     key: ${{runner.os}}-${{matrix.network}}-${{github.head_ref}}
+      #     key: runtimes-${{runner.os}}-${{matrix.network}}-${{github.head_ref}}
       - name: Install srtool-cli
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
