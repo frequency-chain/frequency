@@ -5,7 +5,6 @@ set -m
 npm --version
 ldd --version
 
-chmod +x /frequency/frequency
 /frequency/frequency --dev \
     -lruntime=debug \
     --instant-sealing \
