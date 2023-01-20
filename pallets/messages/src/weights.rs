@@ -65,9 +65,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: Messages Messages (r:1 w:1)
 	fn add_onchain_message(n: u32, ) -> Weight {
-		Weight::from_ref_time(129_034_355 as u64)
-			// Standard Error: 24
-			.saturating_add(Weight::from_ref_time(1_261 as u64).saturating_mul(n as u64))
+		Weight::from_ref_time(120_896_677 as u64)
+			// Standard Error: 28
+			.saturating_add(Weight::from_ref_time(1_083 as u64).saturating_mul(n as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -75,7 +75,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Messages Messages (r:1 w:1)
 	fn add_ipfs_message() -> Weight {
-		Weight::from_ref_time(125_310_000 as u64)
+		Weight::from_ref_time(117_204_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -88,9 +88,9 @@ impl WeightInfo for () {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: Messages Messages (r:1 w:1)
 	fn add_onchain_message(n: u32, ) -> Weight {
-		Weight::from_ref_time(129_034_355 as u64)
-			// Standard Error: 24
-			.saturating_add(Weight::from_ref_time(1_261 as u64).saturating_mul(n as u64))
+		Weight::from_ref_time(120_896_677 as u64)
+			// Standard Error: 28
+			.saturating_add(Weight::from_ref_time(1_083 as u64).saturating_mul(n as u64))
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -98,7 +98,7 @@ impl WeightInfo for () {
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Messages Messages (r:1 w:1)
 	fn add_ipfs_message() -> Weight {
-		Weight::from_ref_time(125_310_000 as u64)
+		Weight::from_ref_time(117_204_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}

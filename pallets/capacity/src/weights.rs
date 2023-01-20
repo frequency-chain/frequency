@@ -55,7 +55,6 @@ use sp_std::marker::PhantomData;
 pub trait WeightInfo {
 	fn stake() -> Weight;
 	fn withdraw_unstaked() -> Weight;
-	fn unstake() -> Weight;
 	fn on_initialize() -> Weight;
 }
 
@@ -68,29 +67,22 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Capacity CapacityLedger (r:1 w:1)
 	// Storage: Balances Locks (r:1 w:1)
 	fn stake() -> Weight {
-		Weight::from_ref_time(50_206_000 as u64)
+		Weight::from_ref_time(47_941_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(5 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
 	// Storage: Capacity StakingAccountLedger (r:1 w:1)
 	// Storage: Balances Locks (r:1 w:1)
 	fn withdraw_unstaked() -> Weight {
-		Weight::from_ref_time(43_061_000 as u64)
+		Weight::from_ref_time(57_224_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
-	}
-	fn unstake() -> Weight {
-		Weight::from_ref_time(20_829_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(3 as u64))
-			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
 	// Storage: Capacity CurrentEpochInfo (r:1 w:1)
 	// Storage: Capacity CurrentEpoch (r:1 w:1)
 	// Storage: Capacity CurrentEpochUsedCapacity (r:0 w:1)
 	fn on_initialize() -> Weight {
-		Weight::from_ref_time(7_602_035 as u64)
-			// Standard Error: 3_808
-			.saturating_add(Weight::from_ref_time(15_423 as u64))
+		Weight::from_ref_time(10_255_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -104,29 +96,22 @@ impl WeightInfo for () {
 	// Storage: Capacity CapacityLedger (r:1 w:1)
 	// Storage: Balances Locks (r:1 w:1)
 	fn stake() -> Weight {
-		Weight::from_ref_time(50_206_000 as u64)
+		Weight::from_ref_time(47_941_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(5 as u64))
 			.saturating_add(RocksDbWeight::get().writes(4 as u64))
 	}
 	// Storage: Capacity StakingAccountLedger (r:1 w:1)
 	// Storage: Balances Locks (r:1 w:1)
 	fn withdraw_unstaked() -> Weight {
-		Weight::from_ref_time(43_061_000 as u64)
+		Weight::from_ref_time(57_224_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
-	}
-	fn unstake() -> Weight {
-		Weight::from_ref_time(20_829_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(3 as u64))
-			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
 	// Storage: Capacity CurrentEpochInfo (r:1 w:1)
 	// Storage: Capacity CurrentEpoch (r:1 w:1)
 	// Storage: Capacity CurrentEpochUsedCapacity (r:0 w:1)
 	fn on_initialize() -> Weight {
-		Weight::from_ref_time(7_602_035 as u64)
-			// Standard Error: 3_808
-			.saturating_add(Weight::from_ref_time(15_423 as u64))
+		Weight::from_ref_time(10_255_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}

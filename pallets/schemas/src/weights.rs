@@ -64,15 +64,15 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:1)
 	// Storage: Schemas Schemas (r:0 w:1)
 	fn create_schema(m: u32, ) -> Weight {
-		Weight::from_ref_time(8_894_797 as u64)
-			// Standard Error: 58
-			.saturating_add(Weight::from_ref_time(27_307 as u64).saturating_mul(m as u64))
+		Weight::from_ref_time(4_816_285 as u64)
+			// Standard Error: 72
+			.saturating_add(Weight::from_ref_time(27_537 as u64).saturating_mul(m as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: Schemas GovernanceSchemaModelMaxBytes (r:0 w:1)
 	fn set_max_schema_model_bytes() -> Weight {
-		Weight::from_ref_time(15_063_000 as u64)
+		Weight::from_ref_time(14_675_000 as u64)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 }
@@ -83,15 +83,15 @@ impl WeightInfo for () {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:1)
 	// Storage: Schemas Schemas (r:0 w:1)
 	fn create_schema(m: u32, ) -> Weight {
-		Weight::from_ref_time(8_894_797 as u64)
-			// Standard Error: 58
-			.saturating_add(Weight::from_ref_time(27_307 as u64).saturating_mul(m as u64))
+		Weight::from_ref_time(4_816_285 as u64)
+			// Standard Error: 72
+			.saturating_add(Weight::from_ref_time(27_537 as u64).saturating_mul(m as u64))
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
 	// Storage: Schemas GovernanceSchemaModelMaxBytes (r:0 w:1)
 	fn set_max_schema_model_bytes() -> Weight {
-		Weight::from_ref_time(15_063_000 as u64)
+		Weight::from_ref_time(14_675_000 as u64)
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 }
