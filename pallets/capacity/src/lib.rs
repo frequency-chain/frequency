@@ -518,7 +518,7 @@ impl<T: Config> Pallet<T> {
 			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
 			CurrentEpochInfo::<T>::set(EpochInfo { epoch_start: current });
 			CurrentEpochUsedCapacity::<T>::set(0u32.into());
-			T::WeightInfo::on_initialize(1u32)
+			T::WeightInfo::on_initialize()
 		} else {
 			RocksDbWeight::get().reads(1u64)
 		}

@@ -11,7 +11,7 @@ use frame_support::{
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 	PalletId,
 };
-use sp_core::ConstU128;
+use sp_core::{ConstU128, ConstU16};
 
 pub const FREQUENCY_ROCOCO_TOKEN: &str = "XRQCY";
 pub const FREQUENCY_LOCAL_TOKEN: &str = "UNIT";
@@ -306,3 +306,4 @@ parameter_types! {
 pub type CapacityMinimumStakingAmount = ConstU128<{ currency::EXISTENTIAL_DEPOSIT }>;
 pub type CapacityMaxUnlockingChunks = ConstU32<4>;
 pub type CapacityMaxEpochLength = ConstU32<100>;
+pub type CapacityUnstakingThawPeriod = ConstU16<2>;

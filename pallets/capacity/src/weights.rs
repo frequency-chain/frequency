@@ -56,7 +56,7 @@ pub trait WeightInfo {
 	fn stake() -> Weight;
 	fn withdraw_unstaked() -> Weight;
 	fn unstake() -> Weight;
-	fn on_initialize(m: u32, ) -> Weight;
+	fn on_initialize() -> Weight;
 }
 
 /// Weights for pallet_capacity using the Substrate node and recommended hardware.
@@ -87,10 +87,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Capacity CurrentEpochInfo (r:1 w:1)
 	// Storage: Capacity CurrentEpoch (r:1 w:1)
 	// Storage: Capacity CurrentEpochUsedCapacity (r:0 w:1)
-	fn on_initialize(m: u32, ) -> Weight {
+	fn on_initialize() -> Weight {
 		Weight::from_ref_time(7_602_035 as u64)
 			// Standard Error: 3_808
-			.saturating_add(Weight::from_ref_time(15_423 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_ref_time(15_423 as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -123,10 +123,10 @@ impl WeightInfo for () {
 	// Storage: Capacity CurrentEpochInfo (r:1 w:1)
 	// Storage: Capacity CurrentEpoch (r:1 w:1)
 	// Storage: Capacity CurrentEpochUsedCapacity (r:0 w:1)
-	fn on_initialize(m: u32, ) -> Weight {
+	fn on_initialize() -> Weight {
 		Weight::from_ref_time(7_602_035 as u64)
 			// Standard Error: 3_808
-			.saturating_add(Weight::from_ref_time(15_423 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_ref_time(15_423 as u64))
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}

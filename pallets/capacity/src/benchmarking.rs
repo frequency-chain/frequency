@@ -74,9 +74,8 @@ benchmarks! {
 	}
 
 	on_initialize {
-		let m in 1 .. 10;
-		let current_block: T::BlockNumber = (100_000 * m).into();
-		let current_epoch: T::BlockNumber = (10_000 * m).into();
+		let current_block: T::BlockNumber = 100_000u32.into();
+		let current_epoch: T::BlockNumber = 10_000u32.into();
 		set_up_epoch::<T>(current_block, current_epoch);
 	}: {
 		Capacity::<T>::on_initialize(current_block);
