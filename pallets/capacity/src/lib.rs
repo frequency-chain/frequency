@@ -48,6 +48,7 @@ use frame_support::{
 	dispatch::DispatchResult,
 	ensure,
 	traits::{Currency, Get, Hooks, LockIdentifier, LockableCurrency, WithdrawReasons},
+	weights::{constants::RocksDbWeight, Weight},
 };
 
 use sp_runtime::{
@@ -248,8 +249,7 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(current: T::BlockNumber) -> Weight {
-			Self::start_new_epoch_if_needed(current);
-			T::WeightInfo::on_initialize()
+			Self::start_new_epoch_if_needed(current)
 		}
 	}
 
@@ -508,7 +508,7 @@ impl<T: Config> Pallet<T> {
 		<T>::MaxEpochLength::get()
 	}
 
-	fn start_new_epoch_if_needed(current: T::BlockNumber) {
+	fn start_new_epoch_if_needed(current: T::BlockNumber) -> Weight {
 		if Self::get_current_epoch_info()
 			.epoch_start
 			.saturating_add(Self::get_epoch_length())
@@ -518,6 +518,9 @@ impl<T: Config> Pallet<T> {
 			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
 			CurrentEpochInfo::<T>::set(EpochInfo { epoch_start: current });
 			CurrentEpochUsedCapacity::<T>::set(0u32.into());
+			T::WeightInfo::on_initialize(1u32)
+		} else {
+			RocksDbWeight::get().reads(1u64)
 		}
 	}
 }
