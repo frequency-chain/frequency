@@ -127,13 +127,9 @@ where
 	let derived_key = key_binding.as_slice();
 	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V, B>>(derived_key);
 	let mut msa_key_map = Vec::new();
-	match msa_keys {
-		Ok(keys) => {
-			msa_key_map = keys.public_keys;
-		},
-		Err(e) => {
-			log_err!("Error getting MSA Public Key Data: {:?}", e);
-		},
+
+	if let Ok(keys) = msa_keys {
+		msa_key_map = keys.public_keys;
 	}
 	msa_key_map.push(key);
 	let msa_key_data =
@@ -152,15 +148,10 @@ where
 	let derived_key = key_binding.as_slice();
 	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V, B>>(derived_key);
 	let mut msa_key_map = Vec::new();
-	match msa_keys {
-		Ok(keys) => {
-			msa_key_map = keys.public_keys;
-		},
-		Err(e) => {
-			log_err!("Error getting MSA Public Key Data: {:?}", e);
-		},
+	if let Ok(keys) = msa_keys {
+		msa_key_map = keys.public_keys;
+		msa_key_map.retain(|x| x != &key);
 	}
-	msa_key_map.retain(|x| x != &key);
 
 	let msa_keys_updated =
 		MSAPublicKeyData::<K, V, B> { msa_id, public_keys: msa_key_map, block_number: block };
