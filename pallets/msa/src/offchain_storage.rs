@@ -103,10 +103,13 @@ where
 	V: Encode + Clone + Decode + Eq + Debug,
 {
 	let value = offchain_common::get_index_value::<V>(key);
-	if value.is_ok() {
-		return Some(value.unwrap())
+	match value {
+		Ok(v) => Some(v),
+		Err(e) => {
+			log_err!("Error getting offchain index value: {:?}", e);
+			None
+		},
 	}
-	None
 }
 
 /// Remove offchain index value, used to store MSA Events to be process by offchain worker
@@ -124,9 +127,13 @@ where
 	let derived_key = key_binding.as_slice();
 	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V, B>>(derived_key);
 	let mut msa_key_map = Vec::new();
-
-	if msa_keys.is_ok() {
-		msa_key_map = msa_keys.unwrap().public_keys;
+	match msa_keys {
+		Ok(keys) => {
+			msa_key_map = keys.public_keys;
+		},
+		Err(e) => {
+			log_err!("Error getting MSA Public Key Data: {:?}", e);
+		},
 	}
 	msa_key_map.push(key);
 	let msa_key_data =
@@ -145,8 +152,13 @@ where
 	let derived_key = key_binding.as_slice();
 	let msa_keys = offchain_common::get_index_value::<MSAPublicKeyData<K, V, B>>(derived_key);
 	let mut msa_key_map = Vec::new();
-	if msa_keys.is_ok() {
-		msa_key_map = msa_keys.unwrap().public_keys;
+	match msa_keys {
+		Ok(keys) => {
+			msa_key_map = keys.public_keys;
+		},
+		Err(e) => {
+			log_err!("Error getting MSA Public Key Data: {:?}", e);
+		},
 	}
 	msa_key_map.retain(|x| x != &key);
 

@@ -1385,7 +1385,7 @@ impl<T: Config> Pallet<T> {
 									MessageSourceId,
 									T::AccountId,
 									T::BlockNumber,
-								>(msa_id, key.clone(), block.clone()),
+								>(msa_id, key.clone(), *block),
 							);
 						if let Err(e) = add_result {
 							log_err!("Error adding key to offchain storage: {:?}", e);
@@ -1398,7 +1398,7 @@ impl<T: Config> Pallet<T> {
 									MessageSourceId,
 									T::AccountId,
 									T::BlockNumber,
-								>(msa_id, key.clone(), block.clone()),
+								>(msa_id, key.clone(), *block),
 							);
 						if let Err(e) = delete_result {
 							log_err!("Error deleting key from offchain storage: {:?}", e);
