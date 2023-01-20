@@ -671,6 +671,7 @@ fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_servic
 		});
 
 		let client_for_cidp = client.clone();
+		let block_import = ParachainBlockImport::new(client.clone());
 
 		let authorship_future =
 			sc_consensus_manual_seal::run_manual_seal(sc_consensus_manual_seal::ManualSealParams {
