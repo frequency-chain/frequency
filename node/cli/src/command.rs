@@ -369,6 +369,8 @@ pub fn run() -> Result<()> {
 					Err("Benchmarking command not implemented.".into()),
 			}
 		},
+		
+		#[cfg(feature = "try-runtime")]
 		Some(Subcommand::TryRuntime(cmd)) => {
 			if cfg!(feature = "try-runtime") {
 				let runner = cli.create_runner(cmd)?;

@@ -11,7 +11,7 @@ use cumulus_client_cli::CollatorOptions;
 use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
 // Cumulus Imports
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
-use cumulus_client_consensus_common::ParachainConsensus;
+use cumulus_client_consensus_common::{ParachainConsensus, ParachainBlockImport};
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
@@ -451,6 +451,7 @@ where
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 {
 	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+	let block_import = ParachainBlockImport::new(client.clone());
 
 	cumulus_client_consensus_aura::import_queue::<
 		sp_consensus_aura::sr25519::AuthorityPair,
@@ -460,7 +461,7 @@ where
 		_,
 		_,
 	>(cumulus_client_consensus_aura::ImportQueueParams {
-		block_import: client.clone(),
+		block_import: block_import,
 		client: client.clone(),
 		create_inherent_data_providers: move |_, _| async move {
 			let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
@@ -540,6 +541,7 @@ where
 				telemetry.clone(),
 			);
 
+			let block_import = ParachainBlockImport::new(client.clone());
 			Ok(AuraConsensus::build::<sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _>(
 				BuildAuraConsensusParams {
 					proposer_factory,
@@ -569,7 +571,7 @@ where
 							Ok((slot, timestamp, parachain_inherent))
 						}
 					},
-					block_import: client.clone(),
+					block_import: block_import,
 					para_client: client,
 					backoff_authoring_blocks: Option::<()>::None,
 					sync_oracle,
@@ -672,7 +674,7 @@ fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_servic
 
 		let authorship_future =
 			sc_consensus_manual_seal::run_manual_seal(sc_consensus_manual_seal::ManualSealParams {
-				block_import: client.clone(),
+				block_import: block_import,
 				env: proposer_factory,
 				client: client.clone(),
 				pool: transaction_pool.clone(),

@@ -20,32 +20,32 @@ serde = { version = "1.0.145", features = ["derive"] }
 common-primitives = { default-features = false, path = "../../common/primitives" }
 frequency-service = { package = "frequency-service", path = "../service", default-features = false, optional = true }
 # Substrate
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.32" }
+frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33" }
 sc-cli = { git = "https://github.com/paritytech/substrate", features = [
   "wasmtime"
-], optional = true, branch = "polkadot-v0.9.32" }
+], optional = true, branch = "polkadot-v0.9.33" }
 sc-service = { git = "https://github.com/paritytech/substrate", features = [
   "wasmtime"
-], optional = true, branch = "polkadot-v0.9.32" }
-sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.32" }
-sp-core = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.32" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
-try-runtime-cli = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.32" }
+], optional = true, branch = "polkadot-v0.9.33" }
+sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
+sp-core = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
+try-runtime-cli = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33" }
 # Polkadot
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.32" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.32" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.32" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.32" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
 # Cumulus
-cumulus-client-cli = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.32" }
-cumulus-client-service = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.32" }
-cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.32" }
+cumulus-client-cli = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.33" }
+cumulus-client-service = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.33" }
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.33" }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 
 [features]
 std = ["sp-api/std"]
