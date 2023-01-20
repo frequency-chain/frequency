@@ -61,11 +61,11 @@ jobs:
         working-directory: js/api-augment/dist
         env:
           FULL_SHA: ${{github.sha}}
-      # - name: Publish on NPM @next
-      #   run: npm publish --tag next --access public
-      #   working-directory: js/api-augment/dist
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+      - name: Publish on NPM @next
+        run: npm publish --tag next --access public
+        working-directory: js/api-augment/dist
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
 
   calc-code-coverage-main:
     name: Merge - Calculate Code Coverage
@@ -94,8 +94,8 @@ jobs:
             -v --no-fail-fast --workspace
             -e frequency frequency-cli frequency-runtime frequency-service
             --exclude-files **/mock.rs **/weights.rs **/weights/* **/benchmarking.rs
-      # - name: Upload to codecov.io
-      #   uses: codecov/codecov-action@v3
-      #   with:
-      #     fail_ci_if_error: false # optional (default = false)
-      #     verbose: true # optional (default = false)
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: false # optional (default = false)
+          verbose: true # optional (default = false)
