@@ -56,6 +56,7 @@ pub trait WeightInfo {
 	fn stake() -> Weight;
 	fn withdraw_unstaked() -> Weight;
 	fn unstake() -> Weight;
+	fn on_initialize() -> Weight;
 }
 
 /// Weights for pallet_capacity using the Substrate node and recommended hardware.
@@ -83,6 +84,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
+	fn on_initialize() -> Weight {
+		Weight::from_ref_time(20_000 as u64)
+	}
+
 }
 
 // For backwards compatibility and tests
@@ -108,5 +113,8 @@ impl WeightInfo for () {
 		Weight::from_ref_time(20_829_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(3 as u64))
+	}
+	fn on_initialize() -> Weight {
+		Weight::from_ref_time(20_000 as u64)
 	}
 }

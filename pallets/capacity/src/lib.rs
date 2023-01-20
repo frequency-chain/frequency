@@ -47,12 +47,12 @@
 use frame_support::{
 	dispatch::DispatchResult,
 	ensure,
-	traits::{Currency, Get, LockIdentifier, LockableCurrency, WithdrawReasons},
+	traits::{Currency, Get, Hooks, LockIdentifier, LockableCurrency, WithdrawReasons},
 };
 
 use sp_runtime::{
-	traits::{CheckedAdd, Saturating, Zero},
-	ArithmeticError, DispatchError, Perbill,
+	traits::{CheckedAdd, Zero},
+	ArithmeticError, DispatchError, Perbill, Saturating,
 };
 
 pub use common_primitives::{
@@ -166,7 +166,17 @@ pub mod pallet {
 	/// Storage for the current epoch number
 	#[pallet::storage]
 	#[pallet::getter(fn get_current_epoch)]
-	pub type CurrentEpoch<T: Config> = StorageValue<_, Epoch<T::BlockNumber>, ValueQuery>;
+	pub type CurrentEpoch<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
+
+	/// Storage for the current epoch info
+	#[pallet::storage]
+	#[pallet::getter(fn get_current_epoch_info)]
+	pub type CurrentEpochInfo<T: Config> = StorageValue<_, EpochInfo<T::BlockNumber>, ValueQuery>;
+
+	/// Storage for the current epoch number
+	#[pallet::storage]
+	#[pallet::getter(fn get_current_epoch_used_capacity)]
+	pub type CurrentEpochUsedCapacity<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
@@ -239,7 +249,7 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(current: T::BlockNumber) -> Weight {
 			Self::start_new_epoch_if_needed(current);
-			T::DbWeight::get().reads(1u64).saturating_add(T::DbWeight::get().writes(1u64))
+			T::WeightInfo::on_initialize()
 		}
 	}
 
@@ -493,18 +503,21 @@ impl<T: Config> Pallet<T> {
 		total_capacity.saturating_sub(rate.mul_ceil(total_capacity))
 	}
 
+	/// Get current epoch length.
 	fn get_epoch_length() -> T::BlockNumber {
 		<T>::MaxEpochLength::get()
 	}
 
 	fn start_new_epoch_if_needed(current: T::BlockNumber) {
-		let epoch: Epoch<T::BlockNumber> = Self::get_current_epoch();
-		if epoch.epoch_start.saturating_add(Self::get_epoch_length()).eq(&current) {
-			// start a new epoch
-			CurrentEpoch::<T>::set(Epoch {
-				current_epoch: epoch.current_epoch.saturating_add(1u32.into()),
-				epoch_start: current,
-			});
+		if Self::get_current_epoch_info()
+			.epoch_start
+			.saturating_add(Self::get_epoch_length())
+			.eq(&current)
+		{
+			let current_epoch = Self::get_current_epoch();
+			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
+			CurrentEpochInfo::<T>::set(EpochInfo { epoch_start: current });
+			CurrentEpochUsedCapacity::<T>::set(0u32.into());
 		}
 	}
 }

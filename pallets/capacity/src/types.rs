@@ -174,9 +174,10 @@ impl<Balance: Saturating + Copy + CheckedAdd, BlockNumber> CapacityDetails<Balan
 #[derive(
 	PartialEq, Eq, Clone, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
-pub struct Epoch<BlockNumber> {
-	/// The number of the current epoch
-	pub current_epoch: BlockNumber,
+
+/// Information about the current epoch.
+/// May evolve to store other needed data such as epoch_end.
+pub struct EpochInfo<BlockNumber> {
 	/// The block number when this epoch started.
 	pub epoch_start: BlockNumber,
 }
