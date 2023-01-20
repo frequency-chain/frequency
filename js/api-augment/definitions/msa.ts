@@ -1,16 +1,15 @@
 export default {
   rpc: {
-    // // *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418
-    // getMsaKeys: {
-    //   description: "Fetch Keys for an MSA Id",
-    //   params: [
-    //     {
-    //       name: "msa_id",
-    //       type: "MessageSourceId",
-    //     },
-    //   ],
-    //   type: "Vec<KeyInfoResponse>",
-    // },
+    getMsaKeys: {
+      description: "Fetch Keys for an MSA Id",
+      params: [
+        {
+          name: "msa_id",
+          type: "MessageSourceId",
+        },
+      ],
+      type: "Vec<(BlockNumber, Vec<AccountId>)>",
+    },
     checkDelegations: {
       description: "Test a list of MSAs to see if they have delegated to the provider MSA",
       params: [
