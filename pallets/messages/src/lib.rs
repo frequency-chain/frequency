@@ -229,10 +229,8 @@ pub mod pallet {
 			#[pallet::compact] payload_length: u32,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
-			// validate_cid returns the binary CID representation. We'll use that in an upcoming PR, not now.
-			// For now we just store the input CID in the payload.
-			Self::validate_cid(&cid)?;
-			let payload_tuple: OffchainPayloadType = (cid, payload_length);
+			let cid_binary = Self::validate_cid(&cid)?;
+			let payload_tuple: OffchainPayloadType = (cid_binary, payload_length);
 			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = payload_tuple
 				.encode()
 				.try_into()
