@@ -34,10 +34,10 @@ jobs:
           target: wasm32-unknown-unknown
       - name: Check Out Repo
         uses: actions/checkout@v3
-      - name: Save/Restore Dependencies from Cache
-        uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
-        with:
-          shared-key: ${{env.RUST_TOOLCHAIN}}
+      # - name: Save/Restore Dependencies from Cache
+      #   uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
+      #   with:
+      #     shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Output Metadata
         # Run the cargo command and ignore any extra lines outside of the json result
         run: CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo run --features frequency export-metadata ./js/api-augment/metadata.json
@@ -61,11 +61,11 @@ jobs:
         working-directory: js/api-augment/dist
         env:
           FULL_SHA: ${{github.sha}}
-      - name: Publish on NPM @next
-        run: npm publish --tag next --access public
-        working-directory: js/api-augment/dist
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+      # - name: Publish on NPM @next
+      #   run: npm publish --tag next --access public
+      #   working-directory: js/api-augment/dist
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
 
   calc-code-coverage-main:
     name: Merge - Calculate Code Coverage
@@ -94,8 +94,8 @@ jobs:
             -v --no-fail-fast --workspace
             -e frequency frequency-cli frequency-runtime frequency-service
             --exclude-files **/mock.rs **/weights.rs **/weights/* **/benchmarking.rs
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v3
-        with:
-          fail_ci_if_error: false # optional (default = false)
-          verbose: true # optional (default = false)
+      # - name: Upload to codecov.io
+      #   uses: codecov/codecov-action@v3
+      #   with:
+      #     fail_ci_if_error: false # optional (default = false)
+      #     verbose: true # optional (default = false)

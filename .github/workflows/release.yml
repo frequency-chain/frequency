@@ -64,11 +64,11 @@ jobs:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
-      - name: Cache Rust Dependencies
-        if: steps.cache-binary.outputs.cache-hit != 'true'
-        uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
-        with:
-          shared-key: ${{env.RUST_TOOLCHAIN}}
+      # - name: Cache Rust Dependencies
+      #   if: steps.cache-binary.outputs.cache-hit != 'true'
+      #   uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
+      #   with:
+      #     shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Compile for ${{matrix.network}}
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
@@ -230,10 +230,10 @@ jobs:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
-      - name: Cache Rust Dependencies
-        uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
-        with:
-          shared-key: ${{env.RUST_TOOLCHAIN}}
+      # - name: Cache Rust Dependencies
+      #   uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
+      #   with:
+      #     shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Build Docs
         run: |
           RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps
