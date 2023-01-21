@@ -1375,7 +1375,9 @@ impl<T: Config> Pallet<T> {
 		msa_id: MessageSourceId,
 		events: Vec<(T::AccountId, EventType, T::BlockNumber)>,
 	) {
-		let lock_status = offchain_common::lock(msa_id.encode().as_slice(), || {
+		// Lock will specifically prevent multiple offchain workers from
+		// processing the same msa events at the same time
+		let lock_status = offchain_common::lock(b"msa::", msa_id.encode().as_slice(), || {
 			for (key, event_type, block) in &events {
 				match event_type {
 					EventType::Add => {

@@ -7,7 +7,7 @@ use sp_runtime::offchain::{
 };
 use sp_std::fmt::Debug;
 
-const DB_LOCK: &[u8] = b"lock";
+const DB_LOCK: &[u8] = b"lock::pallet::";
 
 const LOCK_DEADLINE: u64 = 1000;
 
@@ -21,11 +21,11 @@ pub enum LockStatus {
 }
 
 /// Locks the execution of the function
-pub fn lock<F>(prefix: &[u8], f: F) -> LockStatus
+pub fn lock<F>(pallet: &[u8], suffix: &[u8], f: F) -> LockStatus
 where
 	F: Fn(),
 {
-	let locked_tx = [prefix, DB_LOCK].concat();
+	let locked_tx = [DB_LOCK, pallet, suffix].concat();
 	let locked_tx_key = locked_tx.encode();
 	let mut lock = StorageLock::<Time>::with_deadline(
 		locked_tx_key.as_slice(),
@@ -53,7 +53,6 @@ pub fn remove_offchain_index_value(key: &[u8]) {
 
 /// Wrapper for offchain_index set operations
 pub fn set_offchain_index_value(key: &[u8], value: &[u8]) {
-	offchain_index::clear(key);
 	offchain_index::set(key, value);
 }
 

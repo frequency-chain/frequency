@@ -8,6 +8,9 @@ use sp_std::{
 	vec::Vec,
 };
 
+/// Pallet MSA lock prefix
+pub const MSA_LOCK_PREFIX: &[u8] = b"pallet::msa::";
+
 /// Block event storage prefix
 pub const BLOCK_EVENT_KEY: &[u8] = b"frequency::block_event::msa::";
 
@@ -24,7 +27,6 @@ where
 }
 
 /// MSA Public Key Data
-/// BTreeMap<MSA ID, Vec<Public Key>>  type structure
 /// Support scale encoding and decoding for efficient storage
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default)]
 pub struct MSAPublicKeyData<K, V, B>
@@ -35,9 +37,9 @@ where
 {
 	/// msa_id is the key for the index
 	pub msa_id: K,
-	/// public_keys is the value for the index
+	/// public_keys is the collection of public keys for the MSA
 	pub public_keys: Vec<V>,
-	/// block_number is the block number of the last update
+	/// block_number is the block number of the last update of this map
 	pub block_number: B,
 }
 
