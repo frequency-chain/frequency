@@ -59,7 +59,7 @@ cli = [
 ]
 default = ["std", "wasmtime", "cli"]
 runtime-benchmarks = ["polkadot-cli/runtime-benchmarks"]
-try-runtime = ["frequency-service/try-runtime", "try-runtime-cli"]
+try-runtime = ["frequency-service/try-runtime", "try-runtime-cli",  "try-runtime-cli/try-runtime"]
 wasmtime = ["sc-cli/wasmtime"]
 on-chain-release-build = ["sp-api/disable-logging"]
 frequency = ["frequency-service/frequency"]
@@ -71,3 +71,4 @@ all-frequency-features = [
   "frequency-rococo-testnet",
   "frequency-service/all-frequency-features"
 ]
+
