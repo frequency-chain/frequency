@@ -17,6 +17,9 @@ pub const BLOCK_EVENT_KEY: &[u8] = b"frequency::block_event::msa::";
 /// Generic prefix for MSA index storage
 pub const MSA_INDEX_KEY: &[u8] = b"frequency::msa::";
 
+/// Offchain index for MSA events count
+pub const BLOCK_EVENT_COUNT_KEY: &[u8] = b"frequency::block_event::msa::count::";
+
 /// Derive storage key for MSA index
 #[deny(clippy::clone_double_ref)]
 pub(crate) fn derive_storage_key<K>(prefix: &[u8], suffix: K) -> Vec<u8>

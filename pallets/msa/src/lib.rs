@@ -420,16 +420,9 @@ pub mod pallet {
 		}
 
 		fn offchain_worker(block_number: T::BlockNumber) {
-			let mut event_to_process: Vec<Event<T>> = Vec::new();
+			// read the events indexed for the current block
+			let events_to_process: Vec<Event<T>> = Self::read_events(block_number);
 
-			// read the event count for the block
-			let block_event_count = <MSAEventCount<T>>::get();
-			let current_bucket_num: u32 = block_number.try_into().unwrap_or_default();
-
-			// if there are events, read them and process them
-			if block_event_count > 0 {
-				event_to_process = Self::read_events(current_bucket_num, block_event_count);
-			}
 			// collect a replay of all events by MSA id
 			let mut events_by_msa_id: BTreeMap<
 				MessageSourceId,
@@ -437,7 +430,7 @@ pub mod pallet {
 			> = BTreeMap::new();
 
 			// collect relevant events
-			for event in event_to_process {
+			for event in events_to_process {
 				match event {
 					Event::MsaCreated { msa_id, key } => {
 						let events = events_by_msa_id.entry(msa_id).or_default();
@@ -1419,18 +1412,28 @@ impl<T: Config> Pallet<T> {
 			<frame_system::Pallet<T>>::block_number().try_into().unwrap_or_default();
 		let current_event_count: u16 = <MSAEventCount<T>>::get().saturating_add(1);
 		<MSAEventCount<T>>::put(current_event_count);
-		let key = [
+		let event_key = [
 			BLOCK_EVENT_KEY,
 			block_number.encode().as_slice(),
 			current_event_count.encode().as_slice(),
 		]
 		.concat();
 		// set the event in offchain storage
-		set_offchain_index(key.encode().as_slice(), event);
+		set_offchain_index(event_key.encode().as_slice(), event);
+
+		let count_key = [BLOCK_EVENT_COUNT_KEY, block_number.encode().as_slice()].concat();
+		// Set the latest count of event in current block
+		set_offchain_index(count_key.encode().as_slice(), current_event_count);
 	}
 
-	fn read_events(block_number: u32, event_count: u16) -> Vec<Event<T>> {
+	fn read_events(block_number: T::BlockNumber) -> Vec<Event<T>> {
+		let current_block: u32 = block_number.try_into().unwrap_or_default();
+		let count_key = [BLOCK_EVENT_COUNT_KEY, current_block.encode().as_slice()].concat();
+		let optional_event_count = get_offchain_index::<u16>(count_key.encode().as_slice());
 		let mut events = vec![];
+		let event_count =
+			if let Some(event_count) = optional_event_count { event_count } else { return events };
+
 		for i in 1..event_count + 1 {
 			let key =
 				[BLOCK_EVENT_KEY, block_number.encode().as_slice(), i.encode().as_slice()].concat();
