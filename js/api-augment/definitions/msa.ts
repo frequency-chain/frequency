@@ -1,15 +1,5 @@
 export default {
   rpc: {
-    getMsaKeys: {
-      description: "Fetch Keys for an MSA Id",
-      params: [
-        {
-          name: "msa_id",
-          type: "MessageSourceId",
-        },
-      ],
-      type: "Vec<(BlockNumber, Vec<AccountId>)>",
-    },
     checkDelegations: {
       description: "Test a list of MSAs to see if they have delegated to the provider MSA",
       params: [
@@ -45,6 +35,16 @@ export default {
         },
       ],
       type: "Option<Vec<SchemaId>>",
+    },
+    getMsaKeys: {
+      description: "Fetch Keys for an MSA Id",
+      params: [
+        {
+          name: "msa_id",
+          type: "MessageSourceId",
+        },
+      ],
+      type: "Vec<(BlockNumber, Vec<AccountId>)>",
     },
   },
   types: {
@@ -97,6 +97,16 @@ export default {
               },
             ],
             type: "Option<Vec<SchemaId>>",
+          },
+          get_msa_keys: {
+            description: "Get the list of keys associated with an MSA Id",
+            params: [
+              {
+                name: "msa_id",
+                type: "MessageSourceId",
+              },
+            ],
+            type: "Vec<(BlockNumber, Vec<AccountId>)>",
           },
         },
         version: 1,
