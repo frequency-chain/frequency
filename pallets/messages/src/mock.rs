@@ -29,7 +29,9 @@ pub const IPFS_SCHEMA_ID: SchemaId = 50;
 
 pub const IPFS_PAYLOAD_LENGTH: u32 = 1200;
 
-pub const DUMMY_CID: &[u8; 59] = b"bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq";
+pub const DUMMY_CID_BASE32: &[u8; 59] =
+	b"bafkreieb2x7yyuhy6hmct4j7tkmgnthrfpqyo4mt5nscx7pvc6oiweiwjq";
+pub const DUMMY_CID_BASE64: &[u8; 49] = b"mAVUSIIHV/4xQ+PHYKfE/mphmzPEr4Ydxk+tkK/31F5yLERZM";
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
