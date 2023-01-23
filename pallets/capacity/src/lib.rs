@@ -47,12 +47,13 @@
 use frame_support::{
 	dispatch::DispatchResult,
 	ensure,
-	traits::{Currency, Get, LockIdentifier, LockableCurrency, WithdrawReasons},
+	traits::{Currency, Get, Hooks, LockIdentifier, LockableCurrency, WithdrawReasons},
+	weights::{constants::RocksDbWeight, Weight},
 };
 
 use sp_runtime::{
-	traits::{CheckedAdd, Saturating, Zero},
-	ArithmeticError, DispatchError, Perbill,
+	traits::{CheckedAdd, Zero},
+	ArithmeticError, DispatchError, Perbill, Saturating,
 };
 
 pub use common_primitives::{
@@ -74,13 +75,13 @@ pub mod testing_utils;
 mod benchmarking;
 
 #[cfg(test)]
+mod extrinsics_tests;
+#[cfg(test)]
+mod helpers_tests;
+#[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
-
-#[cfg(test)]
-mod extrinsics_tests;
-
 #[cfg(test)]
 mod types_tests;
 
@@ -126,6 +127,11 @@ pub mod pallet {
 		/// The number of Epochs before you can unlock tokens after unstaking.
 		#[pallet::constant]
 		type UnstakingThawPeriod: Get<u16>;
+
+		/// Maximum number of blocks an epoch can be
+		/// currently used as the actual value of epoch length.
+		#[pallet::constant]
+		type MaxEpochLength: Get<Self::BlockNumber>;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
@@ -157,6 +163,21 @@ pub mod pallet {
 	#[pallet::getter(fn get_capacity_for)]
 	pub type CapacityLedger<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, CapacityDetails<BalanceOf<T>, T::BlockNumber>>;
+
+	/// Storage for the current epoch number
+	#[pallet::storage]
+	#[pallet::getter(fn get_current_epoch)]
+	pub type CurrentEpoch<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
+
+	/// Storage for the current epoch info
+	#[pallet::storage]
+	#[pallet::getter(fn get_current_epoch_info)]
+	pub type CurrentEpochInfo<T: Config> = StorageValue<_, EpochInfo<T::BlockNumber>, ValueQuery>;
+
+	/// Storage for the current epoch number
+	#[pallet::storage]
+	#[pallet::getter(fn get_current_epoch_used_capacity)]
+	pub type CurrentEpochUsedCapacity<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
@@ -223,6 +244,13 @@ pub mod pallet {
 		TargetCapacityNotFound,
 		/// Staker reached the limit number for the allowed amount of unlocking chunks.
 		MaxUnlockingChunksExceeded,
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(current: T::BlockNumber) -> Weight {
+			Self::start_new_epoch_if_needed(current)
+		}
 	}
 
 	#[pallet::call]
@@ -473,5 +501,26 @@ impl<T: Config> Pallet<T> {
 	) -> BalanceOf<T> {
 		let rate = Perbill::from_rational(unstaking_amount, total_amount_staked);
 		total_capacity.saturating_sub(rate.mul_ceil(total_capacity))
+	}
+
+	/// Get current epoch length.
+	fn get_epoch_length() -> T::BlockNumber {
+		<T>::MaxEpochLength::get()
+	}
+
+	fn start_new_epoch_if_needed(current: T::BlockNumber) -> Weight {
+		if Self::get_current_epoch_info()
+			.epoch_start
+			.saturating_add(Self::get_epoch_length())
+			.eq(&current)
+		{
+			let current_epoch = Self::get_current_epoch();
+			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
+			CurrentEpochInfo::<T>::set(EpochInfo { epoch_start: current });
+			CurrentEpochUsedCapacity::<T>::set(0u32.into());
+			T::WeightInfo::on_initialize()
+		} else {
+			RocksDbWeight::get().reads(1u64)
+		}
 	}
 }
