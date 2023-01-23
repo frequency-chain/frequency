@@ -11,6 +11,7 @@ use frame_support::{
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 	PalletId,
 };
+use sp_core::{ConstU128, ConstU16};
 
 pub const FREQUENCY_ROCOCO_TOKEN: &str = "XRQCY";
 pub const FREQUENCY_LOCAL_TOKEN: &str = "UNIT";
@@ -301,3 +302,8 @@ parameter_types! {
 	/// 42 is the prefix for the Frequency Network on Rococo
 	pub const Ss58Prefix: u16 = prod_or_testnet_or_local!(90, 42, 42);
 }
+
+pub type CapacityMinimumStakingAmount = ConstU128<{ currency::EXISTENTIAL_DEPOSIT }>;
+pub type CapacityMaxUnlockingChunks = ConstU32<4>;
+pub type CapacityMaxEpochLength = ConstU32<100>;
+pub type CapacityUnstakingThawPeriod = ConstU16<2>;
