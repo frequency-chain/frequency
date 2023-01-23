@@ -7,11 +7,14 @@ use std::{sync::Arc, time::Duration};
 use jsonrpsee::RpcModule;
 
 use cumulus_client_cli::CollatorOptions;
+use frequency_runtime::RuntimeApi;
 
 use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
 // Cumulus Imports
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
-use cumulus_client_consensus_common::{ParachainBlockImport, ParachainConsensus};
+use cumulus_client_consensus_common::{
+	ParachainBlockImport as TParachainBlockImport, ParachainConsensus,
+};
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
@@ -23,7 +26,7 @@ use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayC
 use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
 // Substrate Imports
 pub use futures::stream::StreamExt;
-use polkadot_service::CollatorPair;
+use polkadot_service::{CollatorPair, SelectChain};
 use sc_client_api::ExecutorProvider;
 use sc_consensus::LongestChain;
 use sc_executor::NativeElseWasmExecutor;
@@ -69,6 +72,8 @@ type ParachainClient = TFullClient<Block, RuntimeApi, ParachainExecutor>;
 
 type ParachainBackend = TFullBackend<Block>;
 
+type ParachainBlockImport = TParachainBlockImport<Arc<ParachainClient>>;
+
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
@@ -80,7 +85,7 @@ pub fn new_partial(
 	PartialComponents<
 		ParachainClient,
 		ParachainBackend,
-		(),
+		MaybeFullSelectChain,
 		sc_consensus::DefaultImportQueue<Block, ParachainClient>,
 		sc_transaction_pool::FullPool<Block, ParachainClient>,
 		(Option<Telemetry>, Option<TelemetryWorkerHandle>),
@@ -337,6 +342,8 @@ fn build_import_queue(
 ) -> Result<sc_consensus::DefaultImportQueue<Block, ParachainClient>, sc_service::Error> {
 	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
 
+	//let block_import = ParachainBlockImport(client.clone());
+
 	cumulus_client_consensus_aura::import_queue::<
 		sp_consensus_aura::sr25519::AuthorityPair,
 		_,
@@ -457,7 +464,7 @@ fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_servic
 		select_chain: maybe_select_chain,
 		transaction_pool,
 		other: (mut telemetry, _),
-	} = new_partial::<frequency_runtime::RuntimeApi, FrequencyRuntimeExecutor, _>(
+	} = new_partial(
 		&parachain_config,
 		true,
 	)?;
