@@ -29,6 +29,14 @@ pub fn create_funded_account<T: Config>(
 	user
 }
 
+// In the benchmarks we expect a new epoch to always start so as to test worst case scenario.
+pub fn set_up_epoch<T: Config>(current_block: T::BlockNumber, current_epoch: T::BlockNumber) {
+	CurrentEpoch::<T>::set(current_epoch);
+	let epoch_start = current_block.saturating_sub(<T>::MaxEpochLength::get());
+	CurrentEpochInfo::<T>::set(EpochInfo { epoch_start });
+	CurrentEpochUsedCapacity::<T>::set(450_000u32.into());
+}
+
 benchmarks! {
 	stake {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
@@ -63,6 +71,18 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(caller.clone()))
 	verify {
 		assert_last_event::<T>(Event::<T>::StakeWithdrawn {account: caller, amount: 100u32.into() }.into());
+	}
+
+	on_initialize {
+		let current_block: T::BlockNumber = 100_000u32.into();
+		let current_epoch: T::BlockNumber = 10_000u32.into();
+		set_up_epoch::<T>(current_block, current_epoch);
+	}: {
+		Capacity::<T>::on_initialize(current_block);
+	} verify {
+		assert_eq!(current_epoch.saturating_add(1u32.into()), Capacity::<T>::get_current_epoch());
+		assert_eq!(current_block, CurrentEpochInfo::<T>::get().epoch_start);
+		assert!(Capacity::<T>::get_current_epoch_used_capacity().eq(&0u32.into()));
 	}
 
 	impl_benchmark_test_suite!(Capacity,
