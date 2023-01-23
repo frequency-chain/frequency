@@ -165,6 +165,7 @@ impl Config for Test {
 	type BenchmarkHelper = Msa;
 
 	type UnstakingThawPeriod = ConstU16<2>;
+	type MaxEpochLength = ConstU64<10>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
