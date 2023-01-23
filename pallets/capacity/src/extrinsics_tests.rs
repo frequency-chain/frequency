@@ -433,6 +433,17 @@ fn unstake_happy_path() {
 				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u64),
 			}
 		);
+
+		let events = staking_events();
+		assert_eq!(
+			events.last().unwrap(),
+			&Event::UnStaked {
+				account: token_account,
+				target,
+				amount: unstaking_amount,
+				capacity: BalanceOf::<Test>::from(5u64)
+			}
+		);
 	});
 }
 
