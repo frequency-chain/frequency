@@ -80,7 +80,7 @@ type ParachainBlockImport = TParachainBlockImport<Arc<ParachainClient>>;
 /// be able to perform chain operations.
 pub fn new_partial(
 	config: &Configuration,
-	instant_sealing: bool
+	instant_sealing: bool,
 ) -> Result<
 	PartialComponents<
 		ParachainClient,
@@ -92,7 +92,6 @@ pub fn new_partial(
 	>,
 	sc_service::Error,
 > {
-
 	let telemetry = config
 		.telemetry_endpoints
 		.clone()
@@ -134,8 +133,11 @@ pub fn new_partial(
 		client.clone(),
 	);
 
+	let block_import = ParachainBlockImport::new(client.clone());
+
 	let import_queue = build_import_queue(
 		client.clone(),
+		block_import.clone(),
 		config,
 		telemetry.as_ref().map(|telemetry| telemetry.handle()),
 		&task_manager,
@@ -336,6 +338,7 @@ async fn start_node_impl(
 /// Build the import queue for the parachain runtime.
 fn build_import_queue(
 	client: Arc<ParachainClient>,
+	block_import: ParachainBlockImport,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
@@ -352,7 +355,7 @@ fn build_import_queue(
 		_,
 		_,
 	>(cumulus_client_consensus_aura::ImportQueueParams {
-		block_import: client.clone(),
+		block_import,
 		client: client.clone(),
 		create_inherent_data_providers: move |_, _| async move {
 			let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
@@ -464,10 +467,7 @@ fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_servic
 		select_chain: maybe_select_chain,
 		transaction_pool,
 		other: (mut telemetry, _),
-	} = new_partial(
-		&parachain_config,
-		true,
-	)?;
+	} = new_partial(&parachain_config, true)?;
 
 	let (network, system_rpc_tx, tx_handler_controller, network_starter) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
