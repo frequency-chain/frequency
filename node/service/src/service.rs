@@ -88,7 +88,7 @@ pub fn new_partial(
 		MaybeFullSelectChain,
 		sc_consensus::DefaultImportQueue<Block, ParachainClient>,
 		sc_transaction_pool::FullPool<Block, ParachainClient>,
-		(Option<Telemetry>, Option<TelemetryWorkerHandle>),
+		(ParachainBlockImport, Option<Telemetry>, Option<TelemetryWorkerHandle>),
 	>,
 	sc_service::Error,
 > {
@@ -195,7 +195,7 @@ async fn start_node_impl(
 	let parachain_config = prepare_node_config(parachain_config);
 
 	let params = new_partial(&parachain_config, false)?;
-	let (mut telemetry, telemetry_worker_handle) = params.other;
+	let (block_import, mut telemetry, telemetry_worker_handle) = params.other;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -288,6 +288,7 @@ async fn start_node_impl(
 	if validator {
 		let parachain_consensus = build_consensus(
 			client.clone(),
+			block_import,
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|t| t.handle()),
 			&task_manager,
@@ -377,6 +378,7 @@ fn build_import_queue(
 
 fn build_consensus(
 	client: Arc<ParachainClient>,
+	block_import: ParachainBlockImport,
 	prometheus_registry: Option<&Registry>,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
@@ -426,7 +428,7 @@ fn build_consensus(
 				Ok((slot, timestamp, parachain_inherent))
 			}
 		},
-		block_import: client.clone(),
+		block_import,
 		para_client: client,
 		backoff_authoring_blocks: Option::<()>::None,
 		sync_oracle,
@@ -466,7 +468,7 @@ fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_servic
 		keystore_container,
 		select_chain: maybe_select_chain,
 		transaction_pool,
-		other: (mut telemetry, _),
+		other: (_block_import, mut telemetry, _),
 	} = new_partial(&parachain_config, true)?;
 
 	let (network, system_rpc_tx, tx_handler_controller, network_starter) =

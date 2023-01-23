@@ -2,15 +2,13 @@ use crate::cli::{Cli, RelayChainCli, Subcommand};
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
+use frame_benchmarking_cli::BenchmarkCmd;
 use log::info;
 
 use common_primitives::node::Block;
 use frequency_service::{
 	chain_spec,
-	service::{
-		frequency_runtime::{RuntimeApi, VERSION},
-		FrequencyRuntimeExecutor as Executor,
-	},
+	service::{frequency_runtime::VERSION, new_partial, FrequencyRuntimeExecutor as Executor},
 };
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
@@ -222,11 +220,7 @@ macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
 		runner.async_run(|$config| {
-				let $components = frequency_service::service::new_partial::<RuntimeApi, Executor, _>(
-					&$config,
-					frequency_service::service::parachain_build_import_queue,
-					false,
-				)?;
+				let $components = new_partial(&$config, false)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
 			})
@@ -271,11 +265,7 @@ pub fn run() -> Result<()> {
 				let task_manager =
 					sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
 						.map_err(|e| format!("Error: {:?}", e))?;
-				let partials = frequency_service::service::new_partial::<RuntimeApi, Executor, _>(
-					&config,
-					frequency_service::service::parachain_build_import_queue,
-					false,
-				)?;
+				let partials = new_partial(&config, false)?;
 				Ok((cmd.run(partials.client), task_manager))
 			})
 		},
@@ -322,7 +312,7 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(cmd)?;
 
 			match cmd {
-				frame_benchmarking_cli::BenchmarkCmd::Pallet(cmd) =>
+				BenchmarkCmd::Pallet(cmd) =>
 					if cfg!(feature = "runtime-benchmarks") {
 						runner.sync_run(|config| cmd.run::<Block, Executor>(config))
 					} else {
@@ -330,17 +320,12 @@ pub fn run() -> Result<()> {
 									You can enable it with `--features runtime-benchmarks`."
 							.into())
 					},
-				frame_benchmarking_cli::BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
-					let partials =
-						frequency_service::service::new_partial::<RuntimeApi, Executor, _>(
-							&config,
-							frequency_service::service::parachain_build_import_queue,
-							false,
-						)?;
+				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
+					let partials = new_partial(&config, false)?;
 					cmd.run(partials.client)
 				}),
 				#[cfg(not(feature = "runtime-benchmarks"))]
-				frame_benchmarking_cli::BenchmarkCmd::Storage(_) =>
+				BenchmarkCmd::Storage(_) =>
 					return Err(sc_cli::Error::Input(
 						"Compile with --features=runtime-benchmarks \
 						to enable storage benchmarks."
@@ -348,7 +333,7 @@ pub fn run() -> Result<()> {
 					)
 					.into()),
 				#[cfg(feature = "runtime-benchmarks")]
-				frame_benchmarking_cli::BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
+				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
 					let partials =
 						frequency_service::service::new_partial::<RuntimeApi, Executor, _>(
 							&config,
@@ -360,12 +345,11 @@ pub fn run() -> Result<()> {
 
 					cmd.run(config, partials.client.clone(), db, storage)
 				}),
-				frame_benchmarking_cli::BenchmarkCmd::Overhead(_) =>
-					Err("Unsupported benchmarking command".into()),
-				frame_benchmarking_cli::BenchmarkCmd::Machine(cmd) => runner.sync_run(|config| {
+				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
+				BenchmarkCmd::Machine(cmd) => runner.sync_run(|config| {
 					cmd.run(&config, frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE.clone())
 				}),
-				frame_benchmarking_cli::BenchmarkCmd::Extrinsic(_cmd) =>
+				BenchmarkCmd::Extrinsic(_cmd) =>
 					Err("Benchmarking command not implemented.".into()),
 			}
 		},
@@ -441,7 +425,7 @@ pub fn run() -> Result<()> {
 				} else {
 					None
 				};
-				frequency_service::service::start_parachain_node::<RuntimeApi, Executor>(
+				frequency_service::service::start_parachain_node(
 					config,
 					polkadot_config,
 					collator_options,
