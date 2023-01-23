@@ -1,10 +1,7 @@
 use super::*;
 use crate::mock::*;
 
-use frame_support::{
-	assert_ok,
-	traits::{OnFinalize, OnInitialize},
-};
+use frame_support::assert_ok;
 
 pub fn staking_events() -> Vec<Event<Test>> {
 	let result = System::events()

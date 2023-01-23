@@ -542,13 +542,12 @@ fn unstake_success() {
 			<Test as pallet_capacity::Config>::MaxUnlockingChunks,
 		> = BoundedVec::default();
 
-		chunks.try_push(UnlockChunk::<
-			BalanceOf<Test>,
-			<Test as frame_system::Config>::BlockNumber,
-		> {
-			value: BalanceOf::<Test>::from(5u64),
-			thaw_at: <Test as frame_system::Config>::BlockNumber::from(3u64),
-		});
+		chunks
+			.try_push(UnlockChunk::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+				value: BalanceOf::<Test>::from(5u64),
+				thaw_at: <Test as frame_system::Config>::BlockNumber::from(3u64),
+			})
+			.expect("try_push failed");
 
 		assert_eq!(
 			staking_account_details,
@@ -615,7 +614,7 @@ fn unstake_errors_max_unlocking_chunks_exceeded() {
 
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount));
 
-		for n in 0..<Test as pallet_capacity::Config>::MaxUnlockingChunks::get() {
+		for _n in 0..<Test as pallet_capacity::Config>::MaxUnlockingChunks::get() {
 			assert_ok!(Capacity::unstake(
 				RuntimeOrigin::signed(token_account),
 				target,
@@ -688,19 +687,18 @@ fn staking_account_details_decrease_by_reduces_active_staking_balance_and_create
 			total: BalanceOf::<Test>::from(10u64),
 			unlocking: BoundedVec::default(),
 		};
-		staking_account_details.decrease_by(3, 3);
+		staking_account_details.decrease_by(3, 3).expect("decrease_by failed");
 		let mut chunks: BoundedVec<
 			UnlockChunk<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber>,
 			<Test as pallet_capacity::Config>::MaxUnlockingChunks,
 		> = BoundedVec::default();
 
-		chunks.try_push(UnlockChunk::<
-			BalanceOf<Test>,
-			<Test as frame_system::Config>::BlockNumber,
-		> {
-			value: BalanceOf::<Test>::from(3u64),
-			thaw_at: <Test as frame_system::Config>::BlockNumber::from(3u64),
-		});
+		chunks
+			.try_push(UnlockChunk::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+				value: BalanceOf::<Test>::from(3u64),
+				thaw_at: <Test as frame_system::Config>::BlockNumber::from(3u64),
+			})
+			.expect("try_push failed");
 
 		assert_eq!(
 			staking_account_details,
