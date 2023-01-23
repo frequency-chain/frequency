@@ -5,6 +5,7 @@
 use std::{sync::Arc, time::Duration};
 
 use cumulus_client_cli::CollatorOptions;
+use frequency_runtime::RuntimeApi;
 
 pub use futures::stream::StreamExt;
 // Local Runtime Types
@@ -324,6 +325,8 @@ fn build_import_queue(
 	task_manager: &TaskManager,
 ) -> Result<sc_consensus::DefaultImportQueue<Block, ParachainClient>, sc_service::Error> {
 	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+
+	//let block_import = ParachainBlockImport(client.clone());
 
 	cumulus_client_consensus_aura::import_queue::<
 		sp_consensus_aura::sr25519::AuthorityPair,
