@@ -334,12 +334,7 @@ pub fn run() -> Result<()> {
 					.into()),
 				#[cfg(feature = "runtime-benchmarks")]
 				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
-					let partials =
-						frequency_service::service::new_partial::<RuntimeApi, Executor, _>(
-							&config,
-							frequency_service::service::parachain_build_import_queue,
-							false,
-						)?;
+					let partials = new_partial(&config,false)?;
 					let db = partials.backend.expose_db();
 					let storage = partials.backend.expose_storage();
 
