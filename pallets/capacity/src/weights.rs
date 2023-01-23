@@ -55,7 +55,9 @@ use sp_std::marker::PhantomData;
 pub trait WeightInfo {
 	fn stake() -> Weight;
 	fn withdraw_unstaked() -> Weight;
+	fn unstake() -> Weight;
 	fn on_initialize() -> Weight;
+
 }
 
 /// Weights for pallet_capacity using the Substrate node and recommended hardware.
@@ -77,6 +79,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_ref_time(57_224_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
+	}
+	fn unstake() -> Weight {
+		Weight::from_ref_time(20_829_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(3 as u64))
+			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
 	// Storage: Capacity CurrentEpochInfo (r:1 w:1)
 	// Storage: Capacity CurrentEpoch (r:1 w:1)
@@ -106,6 +113,11 @@ impl WeightInfo for () {
 		Weight::from_ref_time(57_224_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
+	}
+	fn unstake() -> Weight {
+		Weight::from_ref_time(20_829_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(3 as u64))
+			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
 	// Storage: Capacity CurrentEpochInfo (r:1 w:1)
 	// Storage: Capacity CurrentEpoch (r:1 w:1)
