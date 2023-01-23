@@ -17,11 +17,11 @@ In this document, I will introduce the concept of [Capacity](https://forums.proj
 
 Frequency explains how Capacity can be acquired through staking, refills, and used to perform certain transactions.  This approach is addressed in each section below:
 
-- [Implementation of how to acquire through staking](#staking)
-- [Implementation of how to replenish Capacity](#replenish)
+- [Implementation of acquiring Capacity through staking](#staking)
+- [Implementation of replenishing Capacity](#replenish)
 - [Prioritization of Capacity transactions](#priority)
 - [Block space allocation for Capacity transactions](#block-space)
-- [Implementation of using Capacity to perform transactions](#capacity-transactions)
+- [Implementation of spending Capacity to perform transactions](#capacity-transactions)
 
  **Implementation of how to acquire through staking:** <a id='staking'></a>
 
@@ -385,7 +385,13 @@ traits Nontransferable {
 ```
 
 **Implementation of how to Replenish** <a id='replenish'></a>
-Replenishable means that all Capacity is replenished after a fixed period called an Epoch Period. An Epoch Period is composed of a set number of blocks. In the example below, the Epoch Period is three blocks. The initial Epoch Period will be around 100 blocks. This Epoch Period can be modified through governance.
+Replenishable means that all Capacity is replenished after a fixed period called an Epoch Period. An Epoch Period is composed of a set number of blocks. In the example below, the Epoch Period is three blocks. The initial Epoch Period will be around 100 blocks. This Epoch Period may be modified through governance.
+
+To support scaling, Capacity is replenished lazily for each Capacity Target.  When the Target attempts to post a message, their remaining capacity and last_replenished_epoch is checked. If they are out of capacity _and_ their last_replenished_epoch is less than the current epoch, then the Target's capacity is automatically replenished to their total allowed, minus the amount needed for the current transaction.  The last_replenished_epoch is then set to the current epoch.
+
+Consumers of Capacity may choose a strategy for posting transactions:
+1. Query capacity remaining before posting any capacity-based transaction to ensure transactions never fail
+2. Occasionally query, cache and track epoch info and capacity usage off-chain for faster transaction submission, at the risk of some transactions failing due to being out of sync
 
 ![https://user-images.githubusercontent.com/3433442/189949840-cafc3b2f-5af7-4a65-8610-81dbe42a69ce.png](https://user-images.githubusercontent.com/3433442/189949840-cafc3b2f-5af7-4a65-8610-81dbe42a69ce.png)
 
@@ -813,22 +819,22 @@ pub type CurrentEpochUsedCapacity<T: Config> =
 
 #[pallet::hooks]
 impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-  fn on_finalize(_now: BlockNumberFor<T>) -> Weight {}
+  fn on_initialize(_now: BlockNumberFor<T>) -> Weight {}
 }
 
 ```
 
 Acceptance Criteria are listed below but can evolve:
 
-1. After a fixed number of blocks, a new Epoch Period begins.
-2. At the end of an Epoch Period, `EpochNumber` storage is increased by 1.
-3. At the end of an Epoch Period, calculate the next epoch length.
-4. At the end of a new block, `CurrentBlockUsedCapacity` storage is reset.
-5. At the end of a new block, `CurrentEpochUsedCapacity` storage is incremented with the total Capacity used in the previous block.
+1. After a fixed number of blocks, a new Epoch begins.
+2. At the start of an Epoch Period, `CurrentEpoch` storage is increased by 1.
+3. At the start of an Epoch Period, calculate the next epoch length.
+4. At the start of a new block, `CurrentBlockUsedCapacity` storage is reset.
+5. At the start of a new block, `CurrentEpochUsedCapacity` storage is incremented with the total Capacity used in the previous block.
 
-**Create a new Epoch Period based on the moving average of used Capacity**
+**Create a new Epoch based on the moving average of used Capacity**
 
-To manage congestion, the following solution uses the moving average of Capacity used after each block to calculate the next Epoch Period. Unlike the previous implementation, a new Epoch Period is created after the moving average of used Capacity goes below a configurable threshold called `config::MovingAverageBound`. An essential difference from the other solutions is that it becomes less predictable to know when a new Epoch Period starts.
+To manage congestion, the following solution uses the moving average of Capacity used after each block to calculate the next Epoch Period. Unlike the previous implementation, a new Epoch  is created after the moving average of used Capacity goes below a configurable threshold called `config::MovingAverageBound`. An essential difference from the other solutions is that it becomes less predictable to know when a new Epoch Period starts.
 
 To compute the moving average, an additional configuration is necessary to set the window size of the moving average called `config::MovingAverageWindowSize`.
 
