@@ -53,7 +53,7 @@ format:
 .PHONY: lint
 lint:
 	cargo fmt --check
-	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features all-frequency-features,std -- -D warnings
+	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features runtime-benchmarks,all-frequency-features,std -- -D warnings
 	RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps
 
 lint-audit:
