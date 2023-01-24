@@ -105,3 +105,12 @@ storage)
 size limit.
 - The responsibility of data format and page management will be shifted towards offchain side which
 might compromise the integrity of stored data for malicious clients.
+
+## Using Itemized Storage for keys
+To be able to add a new key we need a signature from valid control keys to ensure that this request
+has end user's approval. To support this use case we will need to check if some schemas require
+signature.
+
+In general, we will need to be able to store different settings for schemas when creating and check
+those settings against the actions applied to any data stored for that schema. This will allow us to
+customize actions and checks that needs to happen for any certain schema.
