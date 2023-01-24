@@ -258,7 +258,7 @@ pub mod pallet {
 	/// At the start of the next block this storage is set to 0
 	#[pallet::storage]
 	#[pallet::whitelist_storage]
-	#[pallet::getter(fn get_event_count)]
+	#[pallet::getter(fn get_msa_event_count)]
 	pub(super) type MSAEventCount<T: Config> = StorageValue<_, u16, ValueQuery>;
 
 	#[pallet::event]
@@ -420,40 +420,8 @@ pub mod pallet {
 		}
 
 		fn offchain_worker(block_number: T::BlockNumber) {
-			// read the events indexed for the current block
-			let events_to_process: Vec<Event<T>> = Self::read_events(block_number);
-
-			// collect a replay of all events by MSA id
-			let mut events_by_msa_id: BTreeMap<
-				MessageSourceId,
-				Vec<(T::AccountId, EventType, T::BlockNumber)>,
-			> = BTreeMap::new();
-
-			// collect relevant events
-			for event in events_to_process {
-				match event {
-					Event::MsaCreated { msa_id, key } => {
-						let events = events_by_msa_id.entry(msa_id).or_default();
-						events.push((key, EventType::Add, block_number));
-					},
-					Event::PublicKeyAdded { msa_id, key } => {
-						let events = events_by_msa_id.entry(msa_id).or_default();
-						events.push((key, EventType::Add, block_number));
-					},
-					Event::PublicKeyDeleted { msa_id, key } => {
-						let events = events_by_msa_id.entry(msa_id).or_default();
-						events.push((key, EventType::Remove, block_number));
-					},
-					_ => {},
-				}
-			}
-
-			// process and save to offchain db
-			if !events_by_msa_id.is_empty() {
-				for (msa_id, events) in events_by_msa_id {
-					Self::process_events(msa_id, events);
-				}
-			}
+			// worker path for offchain indexing of ms_id and its keys
+			Self::reverse_map_msa_keys(block_number);
 		}
 	}
 
@@ -1362,6 +1330,44 @@ impl<T: Config> Pallet<T> {
 			return (T::BlockNumber::zero(), vec![])
 		}
 		msa_keys_res.unwrap()
+	}
+
+	/// offchain worker callback for indexing msa keys
+	pub fn reverse_map_msa_keys(block_number: T::BlockNumber) {
+		// read the events indexed for the current block
+		let events_to_process: Vec<Event<T>> = Self::read_events(block_number);
+
+		// collect a replay of all events by MSA id
+		let mut events_by_msa_id: BTreeMap<
+			MessageSourceId,
+			Vec<(T::AccountId, EventType, T::BlockNumber)>,
+		> = BTreeMap::new();
+
+		// collect relevant events
+		for event in events_to_process {
+			match event {
+				Event::MsaCreated { msa_id, key } => {
+					let events = events_by_msa_id.entry(msa_id).or_default();
+					events.push((key, EventType::Add, block_number));
+				},
+				Event::PublicKeyAdded { msa_id, key } => {
+					let events = events_by_msa_id.entry(msa_id).or_default();
+					events.push((key, EventType::Add, block_number));
+				},
+				Event::PublicKeyDeleted { msa_id, key } => {
+					let events = events_by_msa_id.entry(msa_id).or_default();
+					events.push((key, EventType::Remove, block_number));
+				},
+				_ => {},
+			}
+		}
+
+		// process and save to offchain db
+		if !events_by_msa_id.is_empty() {
+			for (msa_id, events) in events_by_msa_id {
+				Self::process_events(msa_id, events);
+			}
+		}
 	}
 
 	fn process_events(

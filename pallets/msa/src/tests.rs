@@ -2683,3 +2683,59 @@ pub fn ensure_valid_schema_grant_errors_delegation_revoked_when_delegation_relat
 		);
 	});
 }
+
+#[test]
+pub fn add_msa_should_add_key_to_offchain_storage() {
+	let (mut ext, _pool_state, _offchain_state) = new_test_ext_with_ocw();
+	ext.execute_with(|| {
+		// arrange
+		let msa_id = 1u64;
+		let _key = test_public(msa_id as u8);
+		// assert
+		assert_ok!(Msa::create(test_origin_signed(1)));
+		assert_eq!(Msa::get_msa_by_public_key(test_public(1)), Some(1 as MessageSourceId));
+		assert_eq!(Msa::get_msa_event_count(), 1);
+		// act
+		Msa::reverse_map_msa_keys(1u64);
+		run_to_block(2);
+		// assert
+		assert_eq!(Msa::get_msa_event_count(), 0);
+	});
+	ext.persist_offchain_overlay();
+	register_offchain_ext(&mut ext);
+}
+
+#[test]
+pub fn remove_msa_should_remove_key_to_offchain_storage() {
+	let (mut ext, _pool_state, _offchain_state) = new_test_ext_with_ocw();
+	ext.execute_with(|| {
+		// Create an account
+		let (test_account_key_pair, _) = sr25519::Pair::generate();
+		let test_account = AccountId32::new(test_account_key_pair.public().into());
+		let origin = RuntimeOrigin::signed(test_account.clone());
+
+		// Create an MSA so this account has one key associated with it
+		assert_ok!(Msa::create(origin.clone()));
+		let _msa_id = Msa::get_owner_of(&test_account).unwrap();
+
+		// map events to offchain storage
+		Msa::reverse_map_msa_keys(1u64);
+		run_to_block(2);
+
+		// assert
+		assert_eq!(Msa::get_msa_event_count(), 0);
+
+		// Retire the MSA
+		assert_ok!(Msa::retire_msa(origin));
+
+		// assert
+		assert_eq!(Msa::get_msa_event_count(), 1);
+		// act
+		Msa::reverse_map_msa_keys(1u64);
+		run_to_block(3);
+		// assert
+		assert_eq!(Msa::get_msa_event_count(), 0);
+	});
+	ext.persist_offchain_overlay();
+	register_offchain_ext(&mut ext);
+}
