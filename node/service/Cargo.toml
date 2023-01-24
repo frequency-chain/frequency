@@ -86,7 +86,7 @@ pallet-schemas-runtime-api = { path = "../../pallets/schemas/src/runtime-api" }
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 
 [features]
-default = ["std", "frequency"]
+default = ["std"]
 std = []
 runtime-benchmarks = [
   "frequency-runtime/runtime-benchmarks",
@@ -98,6 +98,6 @@ frequency-rococo-testnet = ["frequency-runtime"]
 all-frequency-features = [
   "frequency",
   "frequency-rococo-local",
-  "frequency-rococo-testnet"
+  "frequency-rococo-testnet",
 ]
 try-runtime = ["frequency-runtime/try-runtime", "polkadot-service/try-runtime"]

@@ -13,7 +13,6 @@ pub use futures::stream::StreamExt;
 
 // RPC
 use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
-use frequency_runtime::RuntimeApi;
 use jsonrpsee::RpcModule;
 
 // Cumulus Imports
