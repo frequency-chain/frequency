@@ -62,14 +62,8 @@ pub trait WeightInfo {
 /// Weights for pallet-stateful-message-storage using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-	// Storage: Msa CurrentMsaIdentifierMaximum (r:1 w:1)
-	// Storage: Msa PublicKeyToMsaId (r:1 w:1)
-	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	fn add_item(_n: u32) -> Weight {
         Weight::default()
-		// Weight::from_ref_time(20_829_000 as u64)
-		// 	.saturating_add(T::DbWeight::get().reads(3 as u64))
-		// 	.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 
     fn remove_item() -> Weight {
@@ -86,13 +80,20 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 }
 
 // // For backwards compatibility and tests
-// impl WeightInfo for () {
-// 	// Storage: Msa CurrentMsaIdentifierMaximum (r:1 w:1)
-// 	// Storage: Msa PublicKeyToMsaId (r:1 w:1)
-// 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
-// 	fn stake() -> Weight {
-// 		Weight::from_ref_time(20_829_000 as u64)
-// 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
-// 			.saturating_add(RocksDbWeight::get().writes(3 as u64))
-// 	}
-// }
+impl WeightInfo for () {
+	fn add_item(_n: u32) -> Weight {
+        Weight::default()
+	}
+
+    fn remove_item() -> Weight {
+        Weight::default()
+    }
+
+    fn upsert_page() -> Weight {
+        Weight::default()
+    }
+
+    fn remove_page() -> Weight {
+        Weight::default()
+    }
+}

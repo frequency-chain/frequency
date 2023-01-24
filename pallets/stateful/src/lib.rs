@@ -61,7 +61,6 @@ pub use weights::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
@@ -94,10 +93,6 @@ pub mod pallet {
 	#[pallet::pallet]
 	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(_);
-
-	#[pallet::event]
-	#[pallet::generate_deposit(pub (super) fn deposit_event)]
-	pub enum Event<T: Config> {}
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -133,23 +128,23 @@ pub mod pallet {
 		/// - Returns Error::InsufficientBalance if the sender does not have free balance amount needed to stake.
 		/// - Returns Error::InvalidTarget if attempting to stake to an invalid target.
 		/// - Returns Error::InsufficientStakingAmount if attempting to stake an amount below the minimum amount.
-		#[pallet::weight(T::WeightInfo::add_item(n: u32))]
-		pub fn add_item(origin: OriginFor<T>, _payload: Vec<u8>) -> DispatchResult {
+		#[pallet::weight(0)]
+		pub fn add_item(_origin: OriginFor<T>, _payload: Vec<u8>) -> DispatchResult {
 			Ok(())
 		}
 
-		#[pallet::weight(T::WeightInfo::remove_item())]
-		pub fn remove_item(origin: OriginFor<T>) -> DispatchResult {
+		#[pallet::weight(0)]
+		pub fn remove_item(_origin: OriginFor<T>) -> DispatchResult {
 			Ok(())
 		}
 
-		#[pallet::weight(T::WeightInfo::upsert_page())]
-		pub fn upsert_page(origin: OriginFor<T>) -> DispatchResult {
+		#[pallet::weight(0)]
+		pub fn upsert_page(_origin: OriginFor<T>) -> DispatchResult {
 			Ok(())
 		}
 
-		#[pallet::weight(T::WeightInfo::remove_page())]
-		pub fn remove_page(origin: OriginFor<T>) -> DispatchResult {
+		#[pallet::weight(0)]
+		pub fn remove_page(_origin: OriginFor<T>) -> DispatchResult {
 			Ok(())
 		}
 	}

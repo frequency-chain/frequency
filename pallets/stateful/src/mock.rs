@@ -1,25 +1,15 @@
 use crate as pallet_stateful;
-use common_primitives::{
-	msa::{
-		Delegation, DelegationValidator, DelegatorId, MessageSourceId, MsaLookup, MsaValidator,
-		ProviderId, ProviderLookup, SchemaGrantValidator,
-	},
-	schema::*,
-};
 
 use frame_support::{
-	dispatch::DispatchResult,
 	parameter_types,
-	traits::{ConstU16, ConstU64, OnFinalize, OnInitialize},
+	traits::{ConstU16, ConstU64},
 };
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
-	DispatchError,
 };
-use std::fmt::Formatter;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
