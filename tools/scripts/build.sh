@@ -25,12 +25,12 @@ case $TARGET in
     ;;
 
   tests)
-    cargo test --all-features --workspace --release
+    cargo test --features runtime-benchmarks,all-frequency-features,std --workspace --release
     ;;
 
   lint)
     cargo fmt -- --check
-    SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features all-frequency-features -- -D warnings
+    SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features all-frequency-features,std -- -D warnings
     RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps
     ;;
 esac

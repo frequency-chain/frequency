@@ -236,11 +236,10 @@ make stop-frequency-docker
 ## Run Tests
 
 ```sh
+# Run all the tests
+make test
 # Activate selected features
-cargo test --features runtime-benchmarks, std
-
-# Activate all features and test all packages in the workspace
-cargo test --all-features --workspace --release
+cargo test --features frequency
 ```
 
 ### Integration Tests
