@@ -97,6 +97,7 @@ pub mod pallet {
 
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
+	use sp_runtime::traits::{AtLeast32BitUnsigned, Bounded, MaybeDisplay};
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -132,6 +133,21 @@ pub mod pallet {
 		/// currently used as the actual value of epoch length.
 		#[pallet::constant]
 		type MaxEpochLength: Get<Self::BlockNumber>;
+
+		/// A type that provides an Epoch number
+		/// traits pulled from frame_system::Config::BlockNumber
+		type EpochNumber: Parameter
+			+ Member
+			+ MaybeSerializeDeserialize
+			+ MaybeDisplay
+			+ AtLeast32BitUnsigned
+			+ Default
+			+ Bounded
+			+ Copy
+			+ sp_std::hash::Hash
+			+ sp_std::str::FromStr
+			+ MaxEncodedLen
+			+ TypeInfo;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
@@ -167,7 +183,7 @@ pub mod pallet {
 	/// Storage for the current epoch number
 	#[pallet::storage]
 	#[pallet::getter(fn get_current_epoch)]
-	pub type CurrentEpoch<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
+	pub type CurrentEpoch<T: Config> = StorageValue<_, T::EpochNumber, ValueQuery>;
 
 	/// Storage for the current epoch info
 	#[pallet::storage]
@@ -508,15 +524,15 @@ impl<T: Config> Pallet<T> {
 		<T>::MaxEpochLength::get()
 	}
 
-	fn start_new_epoch_if_needed(current: T::BlockNumber) -> Weight {
+	fn start_new_epoch_if_needed(current_block: T::BlockNumber) -> Weight {
 		if Self::get_current_epoch_info()
 			.epoch_start
 			.saturating_add(Self::get_epoch_length())
-			.eq(&current)
+			.eq(&current_block)
 		{
 			let current_epoch = Self::get_current_epoch();
 			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
-			CurrentEpochInfo::<T>::set(EpochInfo { epoch_start: current });
+			CurrentEpochInfo::<T>::set(EpochInfo { epoch_start: current_block });
 			CurrentEpochUsedCapacity::<T>::set(0u32.into());
 			T::WeightInfo::on_initialize()
 		} else {
