@@ -11,6 +11,9 @@ start-frequency:
 start-frequency-docker:
 	./scripts/init.sh start-frequency-docker
 
+start-manual:
+	./scripts/init.sh start-frequency-manual
+
 .PHONY: stop
 stop-relay:
 	./scripts/init.sh stop-relay-chain
