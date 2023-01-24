@@ -11,12 +11,12 @@ edition = "2021"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.1.5" }
-jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
-# unfinished
+jsonrpsee = { version = "0.16.2", features = ["client-core", "server", "macros"] }
+# Frequency crates
 pallet-schemas-runtime-api = { path = "../runtime-api", default-features = false }
 common-primitives = { path = '../../../../common/primitives', default-features = false }
 common-helpers = { path = '../../../../common/helpers', default-features = false }
-# Substrate
+# Substrate crates
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
