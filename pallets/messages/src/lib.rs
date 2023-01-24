@@ -221,6 +221,7 @@ pub mod pallet {
 		/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
 		/// * [`Error::InvalidCid`] - Unable to parse provided CID
 		///
+		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::add_ipfs_message())]
 		pub fn add_ipfs_message(
 			origin: OriginFor<T>,
@@ -271,6 +272,7 @@ pub mod pallet {
 		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
 		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
 		///
+		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() as u32))]
 		pub fn add_onchain_message(
 			origin: OriginFor<T>,

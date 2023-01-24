@@ -412,6 +412,7 @@ pub mod pallet {
 		///
 		/// * [`Error::KeyAlreadyRegistered`] - MSA is already registered to the Origin.
 		///
+		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::create())]
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
 			let public_key = ensure_signed(origin)?;
@@ -445,6 +446,7 @@ pub mod pallet {
 		/// * [`Error::ProofHasExpired`] - `add_provider_payload` expiration is in the past
 		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used
 		///
+		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation(
 		add_provider_payload.schema_ids.len() as u32
 		))]
@@ -506,6 +508,7 @@ pub mod pallet {
 		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		///
+		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::create_provider(provider_name.len() as u32))]
 		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
@@ -550,6 +553,7 @@ pub mod pallet {
 		/// * [`Error::ProviderNotRegistered`] - the a non-provider MSA is used as the provider
 		/// * [`Error::UnauthorizedDelegator`] - Origin attempted to add a delegate for someone else's MSA
 		///
+		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::grant_delegation(add_provider_payload.schema_ids.len() as u32))]
 		pub fn grant_delegation(
 			origin: OriginFor<T>,
@@ -588,6 +592,7 @@ pub mod pallet {
 		/// * [`Error::DelegationRevoked`] - the delegation has already been revoked.
 		/// * [`Error::DelegationNotFound`] - there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
 		///
+		#[pallet::call_index(4)]
 		#[pallet::weight((T::WeightInfo::revoke_delegation_by_delegator(), DispatchClass::Normal, Pays::No))]
 		pub fn revoke_delegation_by_delegator(
 			origin: OriginFor<T>,
@@ -630,6 +635,7 @@ pub mod pallet {
 		/// * [`Error::ProofNotYetValid`] - the `expired` block number set in `AddKeyData` is greater than the current block number plus mortality_block_limit().
 		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used.
 		///
+		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::add_public_key_to_msa())]
 		pub fn add_public_key_to_msa(
 			origin: OriginFor<T>,
@@ -690,6 +696,7 @@ pub mod pallet {
 		/// * [`Error::NotKeyOwner`] - `origin` does not own the MSA ID associated with `key`.
 		/// * [`Error::NoKeyExists`] - `origin` or `key` are not associated with `origin`'s MSA ID.
 		///
+		#[pallet::call_index(6)]
 		#[pallet::weight((T::WeightInfo::delete_msa_public_key(), DispatchClass::Normal, Pays::No))]
 		pub fn delete_msa_public_key(
 			origin: OriginFor<T>,
@@ -722,6 +729,7 @@ pub mod pallet {
 		/// * [`Error::DelegationRevoked`] - delegation is already revoked
 		/// * [`Error::DelegationNotFound`] - no Delegation found between origin MSA and delegator MSA.
 		///
+		#[pallet::call_index(7)]
 		#[pallet::weight((T::WeightInfo::revoke_delegation_by_provider(), DispatchClass::Normal, Pays::No))]
 		pub fn revoke_delegation_by_provider(
 			origin: OriginFor<T>,
@@ -758,6 +766,7 @@ pub mod pallet {
 		/// * [`Error::DelegationNotFound`] no delegation relationship between Origin and Delegator or Origin and Delegator are the same.
 		/// * [`Error::ExceedsMaxSchemaGrantsPerDelegation`] the limit of maximum allowed grants per delegation relationship has been exceeded.
 		///
+		#[pallet::call_index(8)]
 		#[pallet::weight(T::WeightInfo::grant_schema_permissions(schema_ids.len() as u32))]
 		pub fn grant_schema_permissions(
 			origin: OriginFor<T>,
@@ -786,6 +795,7 @@ pub mod pallet {
 		/// - [`DelegationNotFound`](Error::DelegationNotFound) - If there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
 		/// - [`SchemaNotGranted`](Error::SchemaNotGranted) - If attempting to revoke a schema that has not previously been granted.
 		///
+		#[pallet::call_index(9)]
 		#[pallet::weight(T::WeightInfo::revoke_schema_permissions(
 		schema_ids.len() as u32
 		))]
@@ -821,6 +831,7 @@ pub mod pallet {
 		/// # Errors
 		/// * [`Error::NoKeyExists`] - `delegator` does not have an MSA key.
 		///
+		#[pallet::call_index(10)]
 		#[pallet::weight((T::WeightInfo::retire_msa(EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR), DispatchClass::Normal, Pays::No))]
 		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			// Check and get the account id from the origin
