@@ -347,9 +347,9 @@ jobs:
   wait-for-all-builds:
     needs:
       [
-        version-check,
         build-binaries,
         build-runtimes,
+        version-check,
         build-rust-developer-docs,
         build-js-api-augment,
       ]
@@ -402,7 +402,13 @@ jobs:
           toTag: ${{env.NEW_RELEASE_TAG}}
           configurationJson: |
             {
-              "template": "#{{UNCATEGORIZED}}",
+              "categories": [
+                {
+                  "title": "### Major Changes|n|",
+                  "labels": ["change/major"]
+                }
+              ],
+              "template": "#{{CHANGELOG}}|n||n|### Uncategorized Changes|n||n| #{{UNCATEGORIZED}}",
               "pr_template": "- #{{TITLE}} ##{{NUMBER}}",
               "empty_template": "- No changes",
               "transformers": [
