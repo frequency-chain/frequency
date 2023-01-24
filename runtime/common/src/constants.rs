@@ -96,8 +96,9 @@ pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 
 /// We allow for 0.5 of a second of compute with a 12 second average block time.
-pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_div(2);
-
+pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND
+	.saturating_div(2)
+	.set_proof_size(cumulus_primitives_core::relay_chain::v2::MAX_POV_SIZE as u64);
 pub type ZERO = ConstU32<0>;
 pub type FIFTY = ConstU32<50>;
 pub type HUNDRED = ConstU32<100>;
@@ -178,6 +179,8 @@ parameter_types! {
 // --- Council ---
 // The maximum number of council proposals
 pub type CouncilMaxProposals = ConstU32<25>;
+// The maximum number of council members
+pub type CouncilMaxMembers = ConstU32<10>;
 
 parameter_types! {
 	pub const CouncilMotionDuration: BlockNumber = 5 * DAYS;
@@ -188,7 +191,7 @@ parameter_types! {
 // The maximum number of technical committee proposals
 pub type TCMaxProposals = ConstU32<25>;
 // The maximum number of technical committee members
-pub type TCMaxMembers = ConstU32<3>;
+pub type TCMaxMembers = ConstU32<10>;
 
 parameter_types! {
 	pub const TCMotionDuration: BlockNumber = 5 * DAYS;

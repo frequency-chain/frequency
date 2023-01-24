@@ -55,7 +55,7 @@ jobs:
       #   uses: actions/cache@v3
       #   with:
       #     path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-      #     key: ${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.NEW_RELEASE_VERSION}}
+      #     key: binaries-${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.NEW_RELEASE_VERSION}}
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
@@ -64,11 +64,11 @@ jobs:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
-      - name: Cache Rust Dependencies
-        if: steps.cache-binary.outputs.cache-hit != 'true'
-        uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
-        with:
-          shared-key: ${{env.RUST_TOOLCHAIN}}
+      # - name: Cache Rust Dependencies
+      #   if: steps.cache-binary.outputs.cache-hit != 'true'
+      #   uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
+      #   with:
+      #     shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Compile for ${{matrix.network}}
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
@@ -113,6 +113,9 @@ jobs:
 
   build-runtimes:
     name: Build Runtime for ${{matrix.network}}
+    outputs:
+      runtime_filename_rococo: ${{steps.set-env-vars.outputs.runtime_filename_rococo}}
+      runtime_filename_mainnet: ${{steps.set-env-vars.outputs.runtime_filename_mainnet}}
     strategy:
       matrix:
         network: [rococo, mainnet]
@@ -146,22 +149,6 @@ jobs:
           default: true
           profile: minimal
           toolchain: stable
-      - name: Install Docker
-        run: |
-          curl -fsSL https://get.docker.com -o get-docker.sh
-          sudo sh get-docker.sh
-      - name: Prune Docker Resources
-        run: |
-          set -x
-          containers=$(docker ps -q)
-          if [ ! -z $containers ]; then
-            docker kill $containers;
-          fi
-          docker container prune -f
-          docker image prune -a -f
-          docker system prune -a --volumes -f
-          docker container ls
-          docker image ls
       - name: Extract Runtime Spec Version
         run: |
           echo "RUNTIME_SPEC_VERSION=$(sed -nr 's/spec_version:\s*([0-9]+),/\1/p' \
@@ -173,22 +160,28 @@ jobs:
           [[ $RUNTIME_SPEC_VERSION == ?(-)+([0-9]) ]] || \
             (echo "ERROR: \"${{env.RUNTIME_SPEC_VERSION}}\" is not a valid integer" && exit 1)
       - name: Set Env Vars
+        id: set-env-vars
         run: |
+          set -x
           echo "WASM_DIR=${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}" >> $GITHUB_ENV
           echo "BUILT_WASM_FILENAME=${{matrix.built-wasm-file-name-prefix}}.compact.compressed.wasm" >> $GITHUB_ENV
-          echo "RELEASE_WASM_FILENAME=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.NEW_RELEASE_VERSION}}.compact.compressed.wasm" >> $GITHUB_ENV
+          release_wasm_filename=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.NEW_RELEASE_VERSION}}.compact.compressed.wasm
+          echo "RELEASE_WASM_FILENAME=$release_wasm_filename" >> $GITHUB_ENV
+          echo "runtime_filename_${{matrix.network}}=$release_wasm_filename" >> $GITHUB_OUTPUT
       # # XXX Keep this step as it lets us skip WASM builds during development/testing
       # - name: Cache WASM for Testing
       #   id: cache-wasm
       #   uses: actions/cache@v3
       #   with:
       #     path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
-      #     key: ${{runner.os}}-${{matrix.network}}-${{env.NEW_RELEASE_VERSION}}
+      #     key: runtimes-${{runner.os}}-${{matrix.network}}-${{env.NEW_RELEASE_VERSION}}
       - name: Install srtool-cli
+        if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
           cargo install --git https://github.com/chevdor/srtool-cli
           srtool --version
       - name: Build Deterministic WASM
+        if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
           set -ex
           RUST_LOG=debug srtool build \
@@ -201,10 +194,12 @@ jobs:
           cp -p ./${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} \
             ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
       - name: Install subwasm
+        if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.18.0
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.18.0 --force
           subwasm --version
       - name: Test WASM file
+        if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
           subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
           subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
@@ -235,10 +230,10 @@ jobs:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
-      - name: Cache Rust Dependencies
-        uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
-        with:
-          shared-key: ${{env.RUST_TOOLCHAIN}}
+      # - name: Cache Rust Dependencies
+      #   uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
+      #   with:
+      #     shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Build Docs
         run: |
           RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps
@@ -341,6 +336,7 @@ jobs:
           mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
           chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
       - name: Testing Version Match
+        if: env.NEW_RELEASE_TAG != 'vX.X.X'
         run: |
           EXPECTED_VERSION="${{env.NEW_RELEASE_VERSION}}+polkadot$(make version-polkadot)"
           ACTUAL_VERSION="v$(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version | cut -d " " -f 2)"
@@ -349,9 +345,19 @@ jobs:
           [[ ${ACTUAL_VERSION%-*} == ${EXPECTED_VERSION} ]]
 
   wait-for-all-builds:
-    needs: [version-check, build-binaries, build-runtimes, build-rust-developer-docs, build-js-api-augment]
+    needs:
+      [
+        build-binaries,
+        build-runtimes,
+        version-check,
+        build-rust-developer-docs,
+        build-js-api-augment,
+      ]
     name: Wait for All Builds to Finish
     runs-on: ubuntu-20.04
+    outputs:
+      runtime_filename_rococo: ${{needs.build-runtimes.outputs.runtime_filename_rococo}}
+      runtime_filename_mainnet: ${{needs.build-runtimes.outputs.runtime_filename_mainnet}}
     steps:
       - name: Proceed Forward
         run: echo "All build jobs have finished, proceeding with the release"
@@ -367,12 +373,14 @@ jobs:
           fetch-depth: 0
       - name: Full Release?
         run: |
+          set -x
           is_full_release=$([[ "$NEW_RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] && \
             echo 'true' || echo 'false')
           echo "is_full_release: $is_full_release"
           echo "IS_FULL_RELEASE=$is_full_release" >> $GITHUB_ENV
       - name: Get Latest Release Tag
         run: |
+          set -x
           git show-ref --tags -d
           latest_tag_commit=$(git show-ref --tags -d | grep latest^{} | cut -d' ' -f1)
           latest_release_tag=$(git show-ref --tags -d | grep "^$latest_tag_commit" | \
@@ -386,7 +394,7 @@ jobs:
           tera --version
       - name: Build Changelog
         id: build-changelog
-        uses: mikepenz/release-changelog-builder-action@d0814e580b0dffbc99d2b25e54cd42d2eb533a97
+        uses: mikepenz/release-changelog-builder-action@da6847f9fdcb3211124cd0c078c1d0359b103ee5
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:
@@ -394,7 +402,13 @@ jobs:
           toTag: ${{env.NEW_RELEASE_TAG}}
           configurationJson: |
             {
-              "template": "#{{UNCATEGORIZED}}",
+              "categories": [
+                {
+                  "title": "### Major Changes|n|",
+                  "labels": ["change/major"]
+                }
+              ],
+              "template": "#{{CHANGELOG}}|n||n|### Uncategorized Changes|n||n| #{{UNCATEGORIZED}}",
               "pr_template": "- #{{TITLE}} ##{{NUMBER}}",
               "empty_template": "- No changes",
               "transformers": [
@@ -417,11 +431,6 @@ jobs:
       - name: Get Polkadot Version
         id: polkadot-version
         run: echo "version=$(make version-polkadot)" >> $GITHUB_OUTPUT
-      - name: Generate Release Notes
-        working-directory: tools/ci/release-notes
-        run: |
-          ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' '${{steps.sanitize-changelog.outputs.sanitized}}' > \
-          release-notes.md
       - name: Download Binary Artifacts
         id: download
         uses: actions/download-artifact@v3
@@ -429,8 +438,33 @@ jobs:
           name: artifacts-${{github.run_id}}
           path: /tmp
       - name: List Downloaded Artifacts
+        working-directory: /tmp
         run: |
-          ls -la /tmp/frequency*.*
+          ls -la frequency*.*
+      - name: Install subwasm
+        run: |
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.18.0 --force
+          subwasm --version
+      - name: Get Runtimes Info
+        id: get-runtimes-info
+        working-directory: /tmp
+        run: |
+          set -x
+          runtime_filename_rococo=${{needs.wait-for-all-builds.outputs.runtime_filename_rococo}}
+          runtime_info_rococo=$(subwasm info $runtime_filename_rococo | sed -Ez '$ s/\n+$//' | tr '\n' '|')
+          echo "runtime_info_rococo=$runtime_info_rococo" >> $GITHUB_OUTPUT
+          runtime_filename_mainnet=${{needs.wait-for-all-builds.outputs.runtime_filename_mainnet}}
+          runtime_info_mainnet=$(subwasm info $runtime_filename_mainnet | sed -Ez '$ s/\n+$//' | tr '\n' '|')
+          echo "runtime_info_mainnet=$runtime_info_mainnet" >> $GITHUB_OUTPUT
+      - name: Generate Release Notes
+        working-directory: tools/ci/release-notes
+        run: |
+          set -x
+          ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' \
+            '${{steps.sanitize-changelog.outputs.sanitized}}' \
+            '${{steps.get-runtimes-info.outputs.runtime_info_rococo}}' \
+            '${{steps.get-runtimes-info.outputs.runtime_info_mainnet}}' \
+            > release-notes.md
       - name: Publish Release on GitHub
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
@@ -627,9 +661,11 @@ jobs:
           name: js-api-augment-${{github.run_id}}
           path: js/api-augment/dist
       - name: Version Package
+        if: env.NEW_RELEASE_TAG != 'vX.X.X'
         run: npm version --new-version "${{env.NEW_RELEASE_VERSION}}" --no-git-tag-version
         working-directory: js/api-augment/dist
       - name: Release on NPM @latest
+        if: env.NEW_RELEASE_TAG != 'vX.X.X'
         run: npm publish --tag latest --access public
         working-directory: ./js/api-augment/dist
         env:

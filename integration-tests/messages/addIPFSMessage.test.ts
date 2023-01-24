@@ -1,73 +1,114 @@
 import "@frequency-chain/api-augment";
-import { ApiRx } from "@polkadot/api";
-import type { Codec } from '@polkadot/types-codec/types';
-import { connect, createKeys } from "../scaffolding/apiConnection"
 import { KeyringPair } from "@polkadot/keyring/types";
-import { createSchema, addIPFSMessage, createMsa } from "../scaffolding/extrinsicHelpers";
 import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
 import assert from "assert";
-import { AccountFundingInputs, createAndFundAccount, DevAccounts, EventMap, generateFundingInputs, txAccountingHook } from "../scaffolding/helpers";
+import { createAndFundKeypair, devAccounts } from "../scaffolding/helpers";
+import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
+import { u16, u32 } from "@polkadot/types";
+import { loadIpfs, getBases } from "./loadIPFS";
+import { firstValueFrom } from "rxjs";
+import { MessageResponse } from "@frequency-chain/api-augment/interfaces";
 
-describe("Add Offchain Message", function () {
-    this.timeout(15000);
+describe.only("Add Offchain Message", function () {
+    this.timeout(5000); // Override default timeout of 500ms to allow for IPFS node startup
 
-    let fundingInputs: AccountFundingInputs;
-
-    let api: ApiRx;
     let keys: KeyringPair;
-    let schemaId: Codec;
+    let schemaId: u16;
+    let dummySchemaId: u16;
+    let messageBlockNumber: u32;
 
-    // This is how the IPFS data was created:
-    //
-    // echo "This is a test of Frequency." > frequency_test
-    // % ipfs add frequency_test
-    // added QmYzm8KGxRHr7nGn5g5Z9Zv9r8nN5WNn7Ajya6x7RxmAB1 frequency_test
-    // % wc -c frequency_test
-    // 29 frequency_test
-    const ipfs_cid = "QmYzm8KGxRHr7nGn5g5Z9Zv9r8nN5WNn7Ajya6x7RxmAB1";
+    let ipfs_cid_64: string;
+    let ipfs_cid_32: string;
+    let ipfs_node: any;
     const ipfs_payload_data = "This is a test of Frequency.";
-    const ipfs_payload_len = ipfs_payload_data.length;
+    const ipfs_payload_len = ipfs_payload_data.length + 1;
 
     before(async function () {
-        let connectApi = await connect(process.env.WS_PROVIDER_URL);
-        api = connectApi
-        fundingInputs = generateFundingInputs(api, this.title);
+        ipfs_node = await loadIpfs();
+        const { base64, base32 } = await getBases();
+        const file = await ipfs_node.add({ path: 'integration_test.txt', content: ipfs_payload_data }, { cidVersion: 1, onlyHash: true });
+        ipfs_cid_64 = file.cid.toString(base64);
+        ipfs_cid_32 = file.cid.toString(base32);
 
-        keys = (await createAndFundAccount(fundingInputs)).newAccount;
+        keys = await createAndFundKeypair();
 
         // Create a new MSA
-        await createMsa(api, keys);
+        const createMsa = ExtrinsicHelper.createMsa(keys);
+        await createMsa.fundAndSend();
 
-        // Create a schema
-        const createSchemaEvents = await createSchema(api, keys, PARQUET_BROADCAST, "Parquet", "IPFS");
-        const event = createSchemaEvents["schemas.SchemaCreated"];
-        schemaId = event[1];
+        // Create a schema for IPFS
+        const createSchema = ExtrinsicHelper.createSchema(keys, PARQUET_BROADCAST, "Parquet", "IPFS");
+        const [event] = await createSchema.fundAndSend();
+        if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+            [, schemaId] = event.data;
+        }
+
+        // Create a dummy on-chain schema
+        const createDummySchema = ExtrinsicHelper.createSchema(keys, { type: "record", name: "Dummy on-chain schema", fields: [] }, "AvroBinary", "OnChain");
+        const [dummySchemaEvent] = await createDummySchema.fundAndSend();
+        if (dummySchemaEvent && createDummySchema.api.events.schemas.SchemaCreated.is(dummySchemaEvent)) {
+            [, dummySchemaId] = dummySchemaEvent.data;
+        }
     })
 
-    after(async function () {
-        await txAccountingHook(api, fundingInputs.context);
-        await api.disconnect()
-    })
+    it('should fail if insufficient funds', async function () {
+        await assert.rejects(ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid_64, ipfs_payload_len).signAndSend(), {
+            message: /Inability to pay some fees/,
+        });
+    }).timeout(500);
 
-    it('should fail if MSA is not valid', async function () {
-        const accountWithNoMsa = createKeys(DevAccounts.Eve);
-        await assert.rejects(addIPFSMessage(api, accountWithNoMsa, schemaId, ipfs_cid, ipfs_payload_len + 1), {
+    it('should fail if MSA is not valid (InvalidMessageSourceAccount)', async function () {
+        const accountWithNoMsa = devAccounts[0].keys;
+        await assert.rejects(ExtrinsicHelper.addIPFSMessage(accountWithNoMsa, schemaId, ipfs_cid_64, ipfs_payload_len).signAndSend(), {
             name: 'InvalidMessageSourceAccount',
             section: 'messages',
         });
-    });
+    }).timeout(500);
 
-    it('should fail if schema does not exist', async function () {
-        await assert.rejects(addIPFSMessage(api, keys, 2, ipfs_cid, ipfs_payload_len + 1), {
+    it('should fail if schema does not exist (InvalidSchemaId)', async function () {
+        // Pick an arbitrarily high schemaId, such that it won't exist on the test chain.
+        // If we ever create more than 999 schemas in a test suite/single Frequency instance, this test will fail.
+        const f = ExtrinsicHelper.addIPFSMessage(keys, 999, ipfs_cid_64, ipfs_payload_len);
+        await assert.rejects(f.fundAndSend(), {
             name: 'InvalidSchemaId',
             section: 'messages',
         });
-    });
+    }).timeout(500);
+
+    it("should fail if schema payload location is not IPFS (InvalidPayloadLocation)", async function () {
+        const op = ExtrinsicHelper.addIPFSMessage(keys, dummySchemaId, ipfs_cid_64, ipfs_payload_len);
+        await assert.rejects(op.fundAndSend(), { name: "InvalidPayloadLocation" });
+    }).timeout(500);
+
+    it("should fail if CID cannot be decoded (InvalidCid)", async function () {
+        const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, "foo", ipfs_payload_len);
+        await assert.rejects(f.fundAndSend(), { name: "InvalidCid" });
+    }).timeout(500);
+
+    it("should fail if CID is CIDv0 (UnsupportedCidVersion)", async function () {
+        const file = await ipfs_node.add({ path: 'integration_test.txt', content: ipfs_payload_data }, { cidVersion: 0 });
+        const cidV0 = file.cid.toString();
+        const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, cidV0, ipfs_payload_len);
+        await assert.rejects(f.fundAndSend(), { name: "UnsupportedCidVersion" });
+    }).timeout(500);
 
     it("should successfully add an IPFS message", async function () {
-        const chainEvents: EventMap = await addIPFSMessage(api, keys, schemaId, ipfs_cid, ipfs_payload_len + 1);
+        const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid_64, ipfs_payload_len);
+        const [event] = await f.fundAndSend();
 
-        assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined);
+        assert.notEqual(event, undefined, "should have returned a MessagesStored event");
+        if (event && f.api.events.messages.MessagesStored.is(event)) {
+            messageBlockNumber = event.data.blockNumber;
+            assert.deepEqual(event.data.schemaId, schemaId, 'schema ids should be equal');
+            assert.notEqual(event.data.blockNumber, undefined, 'should have a block number');
+            assert.equal(event.data.count.toNumber(), 1, "message count should be 1");
+        }
     });
-})
 
+    it("should successfully retrieve added message and returned CID should have Base32 encoding", async function () {
+        const f = await firstValueFrom(ExtrinsicHelper.api.rpc.messages.getBySchemaId(schemaId, { from_block: 0, from_index: 0, to_block: 999, page_size: 999 }));
+        const response: MessageResponse = f.content[0];
+        const cid = Buffer.from(response.cid.unwrap()).toString();
+        assert.equal(cid, ipfs_cid_32, 'returned CID should match base32-encoded CID');
+    })
+});

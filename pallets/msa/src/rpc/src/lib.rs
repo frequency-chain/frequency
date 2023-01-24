@@ -22,6 +22,7 @@ use jsonrpsee::{
 	tracing::warn,
 };
 use pallet_msa_runtime_api::MsaRuntimeApi;
+use rayon::prelude::*;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
@@ -92,17 +93,16 @@ where
 		block_number: BlockNumber,
 		schema_id: Option<SchemaId>,
 	) -> RpcResult<Vec<(DelegatorId, bool)>> {
-		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-
-		Ok(delegator_msa_ids
-			.iter() // TODO: Change back to par_iter() which has borrow panic GitHub Issue: #519
-			.map(|&delegator_msa_id| {
+		let results = delegator_msa_ids
+			.par_iter()
+			.map(|delegator_msa_id| {
+				let api = self.client.runtime_api();
 				// api.has_delegation returns  Result<bool, ApiError>), so _or(false) should not happen,
 				// but just in case, protect against panic
 				let has_delegation: bool = match api.has_delegation(
 					&at,
-					delegator_msa_id,
+					*delegator_msa_id,
 					provider_msa_id,
 					block_number,
 					schema_id,
@@ -113,9 +113,10 @@ where
 						false
 					},
 				};
-				(delegator_msa_id, has_delegation)
+				(*delegator_msa_id, has_delegation)
 			})
-			.collect())
+			.collect();
+		Ok(results)
 	}
 
 	fn get_granted_schemas_by_msa_id(

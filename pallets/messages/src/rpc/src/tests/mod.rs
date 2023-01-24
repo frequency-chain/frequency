@@ -10,6 +10,7 @@ use substrate_test_runtime_client::runtime::Block;
 
 const SCHEMA_ID_EMPTY: u16 = 1;
 const SCHEMA_ID_HAS_MESSAGES: u16 = 2;
+const DUMMY_CID: &str = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq";
 
 fn test_messages() -> Vec<MessageResponse> {
 	vec![
@@ -19,7 +20,7 @@ fn test_messages() -> Vec<MessageResponse> {
 			provider_msa_id: 1,
 			index: 0,
 			block_number: 1,
-			cid: Some(vec![0, 1, 2, 3]),
+			cid: Some(DUMMY_CID.as_bytes().to_vec()),
 			payload_length: Some(42),
 		},
 		MessageResponse {
@@ -28,7 +29,7 @@ fn test_messages() -> Vec<MessageResponse> {
 			provider_msa_id: 1,
 			index: 1,
 			block_number: 1,
-			cid: Some(vec![0, 1, 2, 3]),
+			cid: Some(DUMMY_CID.as_bytes().to_vec()),
 			payload_length: Some(42),
 		},
 	]

@@ -12,6 +12,7 @@ SHOULD_KILL=false
 
 if [ -z "$PID" ]
 then
+    make build-local
     echo -e "Starting a Frequency Node..."
     make start >& frequency.log &
     SHOULD_KILL=true

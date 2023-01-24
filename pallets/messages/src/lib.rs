@@ -76,6 +76,8 @@ pub use pallet::*;
 pub use types::*;
 pub use weights::*;
 
+use cid::Cid;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -165,6 +167,12 @@ pub mod pallet {
 
 		/// Invalid payload location
 		InvalidPayloadLocation,
+
+		/// Unsupported CID version
+		UnsupportedCidVersion,
+
+		/// Invalid CID
+		InvalidCid,
 	}
 
 	#[pallet::event]
@@ -194,11 +202,11 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Adds a message for a resource hosted on IPFS. The payload storage will
-		/// contain both a
-		/// [CID](https://docs.ipfs.io/concepts/content-addressing/#identifier-formats)
-		/// as well as a 32-bit payload length.
-		/// The actual payload will be on IPFS
+		/// Adds a message for a resource hosted on IPFS. The input consists of
+		/// both a Base32-encoded [CID](https://docs.ipfs.tech/concepts/content-addressing/#version-1-v1)
+		/// as well as a 32-bit content length. The stored payload will contain the
+		/// CID encoded as binary, as well as the 32-bit message content length.
+		/// The actual message content will be on IPFS.
 		///
 		/// # Events
 		/// * [`Event::MessagesStored`] - In the next block
@@ -210,8 +218,10 @@ pub mod pallet {
 		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA
 		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
 		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
+		/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
+		/// * [`Error::InvalidCid`] - Unable to parse provided CID
 		///
-		#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() as u32))]
+		#[pallet::weight(T::WeightInfo::add_ipfs_message())]
 		pub fn add_ipfs_message(
 			origin: OriginFor<T>,
 			#[pallet::compact] schema_id: SchemaId,
@@ -219,7 +229,8 @@ pub mod pallet {
 			#[pallet::compact] payload_length: u32,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
-			let payload_tuple: OffchainPayloadType = (cid.clone(), payload_length);
+			let cid_binary = Self::validate_cid(&cid)?;
+			let payload_tuple: OffchainPayloadType = (cid_binary, payload_length);
 			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = payload_tuple
 				.encode()
 				.try_into()
@@ -245,6 +256,7 @@ pub mod pallet {
 
 			Ok(())
 		}
+
 		/// Add an on-chain message for a given schema id.
 		///
 		/// # Events
@@ -384,5 +396,24 @@ impl<T: Config> Pallet<T> {
 			.iter()
 			.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
 			.collect()
+	}
+
+	/// Validates a CID to conform to IPFS CIDv1 (or higher) formatting (does not validate decoded CID fields)
+	///
+	/// # Errors
+	/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
+	/// * [`Error::InvalidCid`] - Unable to parse provided CID
+	///
+	pub fn validate_cid(in_cid: &Vec<u8>) -> Result<Vec<u8>, DispatchError> {
+		// Decode SCALE encoded CID into string slice
+		let cstr: &str = sp_std::str::from_utf8(&in_cid[..]).map_err(|_| Error::<T>::InvalidCid)?;
+		ensure!(cstr.len() > 2, Error::<T>::InvalidCid);
+		ensure!(&cstr[0..2] != "Qm", Error::<T>::UnsupportedCidVersion);
+
+		// Assume it's a multibase-encoded string. Decode it to a byte array so we can parse the CID.
+		let cid_b = multibase::decode(cstr).map_err(|_| Error::<T>::InvalidCid)?.1;
+		ensure!(Cid::read_bytes(&cid_b[..]).is_ok(), Error::<T>::InvalidCid);
+
+		Ok(cid_b)
 	}
 }
