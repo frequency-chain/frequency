@@ -5,7 +5,7 @@ use common_runtime::constants::{
 	FREQUENCY_TOKEN, TOKEN_DECIMALS,
 };
 use cumulus_primitives_core::ParaId;
-use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig};
+use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, TechnicalCommitteeConfig};
 
 use hex::FromHex;
 use sc_service::ChainType;
@@ -19,8 +19,6 @@ pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConf
 use super::{get_properties, Extensions};
 
 pub mod frequency_mainnet_keys {
-	pub const MAINNET_FRQ_SUDO: &str =
-		"0xd64279ee49fc11521ab7272190f8c11fdff7ab554d5490254f292613b36dab30";
 
 	// Unfinished Collator 1 public key (sr25519) and session key
 	pub const UNFINISHED_COLLATOR_1_SR25519: &str =
@@ -116,7 +114,7 @@ pub fn load_frequency_spec() -> ChainSpec {
 		.unwrap()
 }
 
-pub fn frequency() -> ChainSpec {
+pub fn benchmark_mainnet_config() -> ChainSpec {
 	let properties =
 		get_properties(FREQUENCY_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
 	let para_id: ParaId = 2091.into();
@@ -220,8 +218,6 @@ pub fn frequency() -> ChainSpec {
 						.unwrap(),
 					),
 				],
-				// Sudo Account
-				Some(frequency_mainnet_keys::MAINNET_FRQ_SUDO.parse::<AccountId>().unwrap().into()),
 				// Total initial tokens: 1_000_000_000 FRQCY
 				vec![
 					// Project Liberty (5% Total)
@@ -318,14 +314,6 @@ pub fn frequency() -> ChainSpec {
 						529_988_600 * DOLLARS,
 					),
 					(
-						// Sudo, remainder returned to Treasury before sudo removed
-						frequency_mainnet_keys::MAINNET_FRQ_SUDO
-							.parse::<AccountId>()
-							.unwrap()
-							.into(),
-						10_000 * DOLLARS,
-					),
-					(
 						// Council Member
 						frequency_mainnet_keys::FREQUENCY_COUNCIL_1
 							.parse::<AccountId>()
@@ -419,7 +407,6 @@ pub fn frequency() -> ChainSpec {
 
 fn frequency_genesis(
 	initial_authorities: Vec<(AccountId, AuraId)>,
-	root_key: Option<AccountId>,
 	endowed_accounts: Vec<(AccountId, Balance)>,
 	council_members: Vec<AccountId>,
 	technical_committee_members: Vec<AccountId>,
@@ -454,10 +441,9 @@ fn frequency_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		sudo: SudoConfig {
-			// Assign network admin rights.
-			key: root_key,
-		},
+		// SUDO removed Jan 2023, but needed when testing and checking with all-frequency-features
+		#[cfg(any(not(feature = "frequency"), feature = "all-frequency-features"))]
+		sudo: Default::default(),
 		schemas: Default::default(),
 		vesting: Default::default(),
 		democracy: Default::default(),

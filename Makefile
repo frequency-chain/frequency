@@ -53,7 +53,7 @@ format:
 .PHONY: lint
 lint:
 	cargo fmt --check
-	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features all-frequency-features -- -D warnings
+	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features runtime-benchmarks,all-frequency-features,std -- -D warnings
 	RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps
 
 lint-audit:
@@ -82,7 +82,7 @@ benchmarks-schemas:
 
 .PHONY: docs
 docs:
-	RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps
+	RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --features frequency
 
 # Cleans unused docker resources and artifacts
 .PHONY: docs
@@ -91,7 +91,7 @@ docker-prune:
 
 .PHONY: check
 check:
-	SKIP_WASM_BUILD= cargo check --features all-frequency-features
+	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,all-frequency-features,std
 
 check-local:
 	SKIP_WASM_BUILD= cargo check --features  frequency-rococo-local
@@ -130,7 +130,7 @@ build-mainnet-release:
 
 .PHONY: test
 test:
-	cargo test --workspace --locked --features all-frequency-features
+	cargo test --workspace --locked --features runtime-benchmarks,all-frequency-features,std
 
 integration-test:
 	./scripts/run_integration_tests.sh
