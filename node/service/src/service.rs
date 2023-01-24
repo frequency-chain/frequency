@@ -20,6 +20,9 @@ use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, Slo
 use cumulus_client_consensus_common::{
 	ParachainBlockImport as TParachainBlockImport, ParachainConsensus,
 };
+use cumulus_client_consensus_common::{
+	ParachainBlockImport as TParachainBlockImport, ParachainConsensus,
+};
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	build_relay_chain_interface, prepare_node_config, start_collator, start_full_node,
@@ -85,12 +88,18 @@ pub fn new_partial(
 	PartialComponents<
 		ParachainClient,
 		ParachainBackend,
+		ParachainClient,
+		ParachainBackend,
 		MaybeFullSelectChain,
+		sc_consensus::DefaultImportQueue<Block, ParachainClient>,
+		sc_transaction_pool::FullPool<Block, ParachainClient>,
+		(ParachainBlockImport, Option<Telemetry>, Option<TelemetryWorkerHandle>),
 		sc_consensus::DefaultImportQueue<Block, ParachainClient>,
 		sc_transaction_pool::FullPool<Block, ParachainClient>,
 		(ParachainBlockImport, Option<Telemetry>, Option<TelemetryWorkerHandle>),
 	>,
 	sc_service::Error,
+> {
 > {
 	let telemetry = config
 		.telemetry_endpoints
@@ -103,6 +112,7 @@ pub fn new_partial(
 		})
 		.transpose()?;
 
+	let executor = ParachainExecutor::new(
 	let executor = ParachainExecutor::new(
 		config.wasm_method,
 		config.default_heap_pages,
@@ -138,6 +148,7 @@ pub fn new_partial(
 	let import_queue = build_import_queue(
 		client.clone(),
 		block_import.clone(),
+		block_import.clone(),
 		config,
 		telemetry.as_ref().map(|telemetry| telemetry.handle()),
 		&task_manager,
@@ -154,6 +165,7 @@ pub fn new_partial(
 		task_manager,
 		transaction_pool,
 		select_chain,
+		other: (block_import, telemetry, telemetry_worker_handle),
 		other: (block_import, telemetry, telemetry_worker_handle),
 	};
 
@@ -173,6 +185,8 @@ async fn start_node_impl(
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
 	let parachain_config = prepare_node_config(parachain_config);
 
+	let params = new_partial(&parachain_config, false)?;
+	let (block_import, mut telemetry, telemetry_worker_handle) = params.other;
 	let params = new_partial(&parachain_config, false)?;
 	let (block_import, mut telemetry, telemetry_worker_handle) = params.other;
 
@@ -268,6 +282,7 @@ async fn start_node_impl(
 		let parachain_consensus = build_consensus(
 			client.clone(),
 			block_import,
+			block_import,
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|t| t.handle()),
 			&task_manager,
@@ -276,6 +291,7 @@ async fn start_node_impl(
 			network,
 			params.keystore_container.sync_keystore(),
 			force_authoring,
+			id,
 			id,
 		)?;
 
@@ -319,9 +335,13 @@ async fn start_node_impl(
 fn build_import_queue(
 	client: Arc<ParachainClient>,
 	block_import: ParachainBlockImport,
+fn build_import_queue(
+	client: Arc<ParachainClient>,
+	block_import: ParachainBlockImport,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
+) -> Result<sc_consensus::DefaultImportQueue<Block, ParachainClient>, sc_service::Error> {
 ) -> Result<sc_consensus::DefaultImportQueue<Block, ParachainClient>, sc_service::Error> {
 	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
 
@@ -335,6 +355,7 @@ fn build_import_queue(
 		_,
 		_,
 	>(cumulus_client_consensus_aura::ImportQueueParams {
+		block_import,
 		block_import,
 		client: client.clone(),
 		create_inherent_data_providers: move |_, _| async move {
@@ -366,10 +387,30 @@ fn build_consensus(
 	sync_oracle: Arc<NetworkService<Block, Hash>>,
 	keystore: SyncCryptoStorePtr,
 	force_authoring: bool,
+fn build_consensus(
+	client: Arc<ParachainClient>,
+	block_import: ParachainBlockImport,
+	prometheus_registry: Option<&Registry>,
+	telemetry: Option<TelemetryHandle>,
+	task_manager: &TaskManager,
+	relay_chain_interface: Arc<dyn RelayChainInterface>,
+	transaction_pool: Arc<sc_transaction_pool::FullPool<Block, ParachainClient>>,
+	sync_oracle: Arc<NetworkService<Block, Hash>>,
+	keystore: SyncCryptoStorePtr,
+	force_authoring: bool,
 	id: ParaId,
 ) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error> {
 	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error> {
+	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
 
+	let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
+		task_manager.spawn_handle(),
+		client.clone(),
+		transaction_pool,
+		prometheus_registry,
+		telemetry.clone(),
+	);
 	let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
 		task_manager.spawn_handle(),
 		client.clone(),
@@ -392,13 +433,62 @@ fn build_consensus(
 					)
 					.await;
 				let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+	let params = BuildAuraConsensusParams {
+		proposer_factory,
+		create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
+			let relay_chain_interface = relay_chain_interface.clone();
+			async move {
+				let parachain_inherent =
+					cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+						relay_parent,
+						&relay_chain_interface,
+						&validation_data,
+						id,
+					)
+					.await;
+				let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
+				let slot =
 				let slot =
 						sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 							*timestamp,
 							slot_duration,
 						);
 
+				let parachain_inherent = parachain_inherent.ok_or_else(|| {
+					Box::<dyn std::error::Error + Send + Sync>::from(
+						"Failed to create parachain inherent",
+					)
+				})?;
+				Ok((slot, timestamp, parachain_inherent))
+			}
+		},
+		block_import,
+		para_client: client,
+		backoff_authoring_blocks: Option::<()>::None,
+		sync_oracle,
+		keystore,
+		force_authoring,
+		slot_duration,
+		// We got around 500ms for proposing
+		block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+		// And a maximum of 750ms if slots are skipped
+		max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
+		telemetry,
+	};
+
+	Ok(AuraConsensus::build::<sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _>(params))
+}
+
+/// Start a parachain node.
+pub async fn start_parachain_node(
+	parachain_config: Configuration,
+	polkadot_config: Configuration,
+	collator_options: CollatorOptions,
+	id: ParaId,
+	hwbench: Option<sc_sysinfo::HwBench>,
+) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
+	start_node_impl(parachain_config, polkadot_config, collator_options, id, hwbench).await
 				let parachain_inherent = parachain_inherent.ok_or_else(|| {
 					Box::<dyn std::error::Error + Send + Sync>::from(
 						"Failed to create parachain inherent",
@@ -447,6 +537,8 @@ fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_servic
 		keystore_container,
 		select_chain: maybe_select_chain,
 		transaction_pool,
+		other: (_block_import, mut telemetry, _),
+	} = new_partial(&parachain_config, true)?;
 		other: (_block_import, mut telemetry, _),
 	} = new_partial(&parachain_config, true)?;
 
