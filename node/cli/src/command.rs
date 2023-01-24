@@ -385,8 +385,7 @@ pub fn run() -> Result<()> {
 				if cli.instant_sealing {
 					return frequency_service::service::frequency_dev_instant_sealing(config, true)
 						.map_err(Into::into)
-				}
-				else if cli.manual_sealing {
+				} else if cli.manual_sealing {
 					return frequency_service::service::frequency_dev_instant_sealing(config, false)
 						.map_err(Into::into)
 				}

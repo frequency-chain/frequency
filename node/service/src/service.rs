@@ -623,7 +623,7 @@ fn frequency_dev_instant(
 #[cfg(feature = "frequency-rococo-local")]
 pub fn frequency_dev_instant_sealing(
 	config: Configuration,
-	is_instant: bool
+	is_instant: bool,
 ) -> Result<TaskManager, sc_service::error::Error> {
 	frequency_dev_instant(config, is_instant)
 }
