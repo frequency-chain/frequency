@@ -1,5 +1,4 @@
 use super::*;
-use crate::Pallet as StatefulMessageStorage;
 
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_system::RawOrigin;
