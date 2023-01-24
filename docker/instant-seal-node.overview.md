@@ -11,7 +11,7 @@ This is also a great option to run with an example client.
 ## Run
 
 ```sh
-docker run --rm -p 9944:9944 -p 9933:9933 -p 30333:30333 frequencychain/instant-seal-node
+docker run --rm -p 9944:9944 -p 9933:9933 -p 30333:30333 frequencychain/instant-seal-node:<version.tag>
 ```
 
 | **Node**                |             **Ports**             | **Explorer URL**                                                                          |
