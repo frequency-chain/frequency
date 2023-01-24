@@ -6291,6 +6291,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet_stateful-message-storage"
+version = "0.1.0"
+dependencies = [
+ "common-primitives",
+ "common-runtime",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "parachain-info"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33#27721d794ee63aae42317a7eeda21595dd3200d9"
