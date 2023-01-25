@@ -63,7 +63,7 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	match id {
 		#[cfg(feature = "frequency")]
-		"frequency-bench" => return Ok(Box::new(chain_spec::frequency::frequency())),
+		"frequency-bench" => return Ok(Box::new(chain_spec::frequency::benchmark_mainnet_config())),
 		#[cfg(feature = "frequency")]
 		"frequency" => return Ok(Box::new(chain_spec::frequency::load_frequency_spec())),
 		#[cfg(feature = "frequency-rococo-local")]
