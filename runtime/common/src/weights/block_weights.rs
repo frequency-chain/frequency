@@ -18,12 +18,7 @@
 pub mod constants {
 	use frame_support::{
 		parameter_types,
-		weights::{
-			constants::{
-				WEIGHT_REF_TIME_PER_MICROS, WEIGHT_REF_TIME_PER_MILLIS, WEIGHT_REF_TIME_PER_NANOS,
-			},
-			Weight,
-		},
+		weights::{constants::WEIGHT_REF_TIME_PER_NANOS, Weight},
 	};
 
 	parameter_types! {
@@ -33,7 +28,10 @@ pub mod constants {
 
 	#[cfg(test)]
 	mod test_weights {
-
+		use frame_support::weights::{
+			constants::{WEIGHT_REF_TIME_PER_MICROS, WEIGHT_REF_TIME_PER_MILLIS},
+			Weight,
+		};
 		/// Checks that the weight exists and is sane.
 		// NOTE: If this test fails but you are sure that the generated values are fine,
 		// you can delete it.
