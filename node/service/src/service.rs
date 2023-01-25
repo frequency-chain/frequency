@@ -433,7 +433,10 @@ pub async fn start_parachain_node(
 }
 
 #[cfg(feature = "frequency-rococo-local")]
-fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_service::error::Error> {
+fn frequency_dev_instant(
+	config: Configuration,
+	is_instant: bool,
+) -> Result<TaskManager, sc_service::error::Error> {
 	let parachain_config = prepare_node_config(config);
 
 	let sc_service::PartialComponents {
@@ -498,15 +501,16 @@ fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_servic
 		let (command_sink, commands_stream) = futures::channel::mpsc::channel(1024);
 
 		let pool = transaction_pool.pool().clone();
-
-		let import_stream = pool.validated_pool().import_notification_stream().map(|_| {
-			sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
+		let import_stream = pool
+			.validated_pool()
+			.import_notification_stream()
+			.filter(move |_| futures::future::ready(is_instant))
+			.map(|_| sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
 				create_empty: false,
 				finalize: true,
 				parent_hash: None,
 				sender: None,
-			}
-		});
+			});
 
 		let client_for_cidp = client.clone();
 		let block_import = ParachainBlockImport::new(client.clone(), backend.clone());
@@ -545,7 +549,7 @@ fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_servic
 			});
 		// we spawn the future on a background thread managed by service.
 		task_manager.spawn_essential_handle().spawn_blocking(
-			"instant-seal",
+			if is_instant { "instant-seal" } else { "manual-seal" },
 			Some("block-authoring"),
 			authorship_future,
 		);
@@ -595,6 +599,7 @@ fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_servic
 #[cfg(feature = "frequency-rococo-local")]
 pub fn frequency_dev_instant_sealing(
 	config: Configuration,
+	is_instant: bool,
 ) -> Result<TaskManager, sc_service::error::Error> {
-	frequency_dev_instant(config)
+	frequency_dev_instant(config, is_instant)
 }
