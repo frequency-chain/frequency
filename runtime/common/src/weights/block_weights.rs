@@ -18,7 +18,12 @@
 pub mod constants {
 	use frame_support::{
 		parameter_types,
-		weights::{constants, Weight},
+		weights::{
+			constants::{
+				WEIGHT_REF_TIME_PER_MICROS, WEIGHT_REF_TIME_PER_MILLIS, WEIGHT_REF_TIME_PER_NANOS,
+			},
+			Weight,
+		},
 	};
 
 	parameter_types! {
