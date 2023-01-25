@@ -4,12 +4,24 @@ use frame_support::{
 	assert_ok, parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64, OnFinalize, OnInitialize},
 };
-use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
+use sp_core::{
+	offchain::{
+		testing::{self, OffchainState, PoolState, TestOffchainExt},
+		OffchainDbExt, OffchainWorkerExt, TransactionPoolExt,
+	},
+	sr25519,
+	sr25519::Public,
+	Encode, Pair, H256,
+};
 use sp_runtime::{
-	testing::Header,
+	testing::{Header, TestXt},
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
 	AccountId32, MultiSignature,
 };
+use std::sync::Arc;
+
+use parking_lot::RwLock;
+use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStorePtr};
 
 pub use pallet_msa::Call as MsaCall;
 
@@ -113,11 +125,45 @@ impl pallet_msa::Config for Test {
 	type MaxSignaturesStored = ConstU32<8000>;
 }
 
+type Extrinsic = TestXt<MsaCall<Test>, ()>;
+
+impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
+where
+	MsaCall<Test>: From<LocalCall>,
+{
+	type OverarchingCall = MsaCall<Test>;
+	type Extrinsic = Extrinsic;
+}
+
+pub fn register_offchain_ext(ext: &mut sp_io::TestExternalities) {
+	let (offchain, _offchain_state) = TestOffchainExt::with_offchain_db(ext.offchain_db());
+	ext.register_extension(OffchainDbExt::new(offchain.clone()));
+	ext.register_extension(OffchainWorkerExt::new(offchain));
+}
+
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
+}
+
+pub fn new_test_ext_with_ocw(
+) -> (sp_io::TestExternalities, Arc<RwLock<PoolState>>, Arc<RwLock<OffchainState>>) {
+	let (offchain, offchain_state) = testing::TestOffchainExt::new();
+	let (pool, pool_state) = testing::TestTransactionPoolExt::new();
+
+	let keystore = KeyStore::new();
+
+	let mut t = sp_io::TestExternalities::default();
+	t.register_extension(OffchainDbExt::new(offchain.clone()));
+	t.register_extension(OffchainWorkerExt::new(offchain));
+	t.register_extension(TransactionPoolExt::new(pool));
+	t.register_extension(KeystoreExt(Arc::new(keystore)));
+
+	t.execute_with(|| System::set_block_number(1));
+
+	(t, pool_state, offchain_state)
 }
 
 pub fn run_to_block(n: u64) {
@@ -219,9 +265,6 @@ pub fn generate_test_signature() -> MultiSignature {
 
 #[cfg(feature = "runtime-benchmarks")]
 pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
-	use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStorePtr};
-	use sp_std::sync::Arc;
-
 	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.register_extension(KeystoreExt(Arc::new(KeyStore::new()) as SyncCryptoStorePtr));

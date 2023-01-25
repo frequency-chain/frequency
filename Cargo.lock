@@ -1029,6 +1029,7 @@ dependencies = [
  "smallvec",
  "sp-api",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -5692,6 +5693,7 @@ dependencies = [
  "frame-system",
  "pallet-schemas",
  "parity-scale-codec",
+ "parking_lot 0.12.1",
  "scale-info",
  "sp-core",
  "sp-io",
