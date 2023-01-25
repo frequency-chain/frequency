@@ -8,7 +8,7 @@ benchmarks! {
 		let n in 0 .. 5;
 		let caller: T::AccountId = whitelisted_caller();
 
-		let payload = vec![1; n as usize];
+		let payload = vec![1u8; n as usize];
 	}: _ (RawOrigin::Signed(caller), payload)
 	verify {
 		assert_eq!(false, false);
@@ -16,19 +16,22 @@ benchmarks! {
 
 	remove_item {
 		let caller: T::AccountId = whitelisted_caller();
-	}: _ (RawOrigin::Signed(caller.clone()))
+	}: _ (RawOrigin::Signed(caller))
 	verify {
 	}
 
 	upsert_page {
+		let n in 0 .. 5;
 		let caller: T::AccountId = whitelisted_caller();
-	}: _ (RawOrigin::Signed(caller.clone()))
+
+		let payload = vec![1u8; n as usize];
+	}: _ (RawOrigin::Signed(caller), payload)
 	verify {
 	}
 
 	remove_page {
 		let caller: T::AccountId = whitelisted_caller();
-	}: _ (RawOrigin::Signed(caller.clone()))
+	}: _ (RawOrigin::Signed(caller))
 	verify {
 	}
 

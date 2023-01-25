@@ -52,15 +52,16 @@ mod benchmarking;
 
 pub mod weights;
 
-// use frame_system::{Config, Pallet};
+use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get};
+use sp_std::prelude::*;
 
-use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 pub use pallet::*;
 pub use weights::*;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
@@ -121,15 +122,14 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Stakes some amount of tokens to the network and generates Capacity.
-		///
-		/// ### Errors
-		///
-		/// - Returns Error::InsufficientBalance if the sender does not have free balance amount needed to stake.
-		/// - Returns Error::InvalidTarget if attempting to stake to an invalid target.
-		/// - Returns Error::InsufficientStakingAmount if attempting to stake an amount below the minimum amount.
-		#[pallet::weight(0)]
-		pub fn add_item(_origin: OriginFor<T>, _payload: Vec<u8>) -> DispatchResult {
+		#[pallet::weight(Weight::default())]
+		pub fn add_item(_origin: OriginFor<T>, payload: Vec<u8>) -> DispatchResult {
+			let v = vec![1; 5];
+			ensure!(
+				payload.len() <= T::MaxItemizedBlobSizeBytes,
+				Error::<T>::ItemExceedsMaxBlobSizeBytes
+			);
+
 			Ok(())
 		}
 
@@ -139,7 +139,11 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(0)]
-		pub fn upsert_page(_origin: OriginFor<T>) -> DispatchResult {
+		pub fn upsert_page(_origin: OriginFor<T>, payload: Vec<u8>) -> DispatchResult {
+			ensure!(
+				payload.len() <= T::MaxPaginatedPageSizeBytes,
+				Error::<T>::PageExceedsMaxPageSizeBytes
+			);
 			Ok(())
 		}
 

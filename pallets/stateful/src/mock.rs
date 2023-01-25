@@ -55,7 +55,7 @@ impl system::Config for Test {
 
 parameter_types! {
 	pub const MaxItemizedPageSizeBytes: u32 = 1024;
-	pub static MaxPaginatedPageSizeBytes: u32 = 1024;
+	pub const MaxPaginatedPageSizeBytes: u32 = 1024;
 	pub const MaxItemizedBlobSizeBytes: u32 = 64;
 	pub const MaxPaginatedPageCount: u8 = 32;
 }

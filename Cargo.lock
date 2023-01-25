@@ -2796,6 +2796,8 @@ dependencies = [
  "pallet-schemas",
  "pallet-schemas-runtime-api",
  "pallet-session",
+ "pallet-stateful",
+ "pallet-stateful-runtime-api",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -6288,23 +6290,6 @@ dependencies = [
  "sp-std",
  "xcm",
  "xcm-executor",
-]
-
-[[package]]
-name = "pallet_stateful-message-storage"
-version = "0.1.0"
-dependencies = [
- "common-primitives",
- "common-runtime",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]

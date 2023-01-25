@@ -80,7 +80,7 @@ parameter_types! {
 	// should have this set large enough to accomodate the largest possible CID.
 	// Take care when adding new tests for on-chain (not IPFS) messages that the payload
 	// is not too big.
-	pub static MaxMessagePayloadSizeBytes: u32 = 73;
+	pub const MaxMessagePayloadSizeBytes: u32 = 73;
 	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
 }
 
