@@ -153,6 +153,11 @@ as soon as it goes into a queue. This is also a great option to run with an exam
 make start
 ```
 
+If you want to run Frequency in manual seal mode, run
+```sh
+make start-manual
+```
+
 ### In Docker Container
 
 ```sh

@@ -111,6 +111,11 @@ start-frequency-manual)
     rm -rf $parachain_dir
   fi
 
+  echo "---------------------------------------"
+  echo "Running Frequency in manual seal mode."
+  echo "Run 'make local-block' to seal a block."
+  echo "---------------------------------------"
+
   ./target/release/frequency \
     --dev \
     -lruntime=debug \

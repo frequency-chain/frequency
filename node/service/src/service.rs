@@ -573,7 +573,7 @@ fn frequency_dev_instant(
 			});
 		// we spawn the future on a background thread managed by service.
 		task_manager.spawn_essential_handle().spawn_blocking(
-			"instant-seal", // This should be changed once we have our commandline arg
+			if is_instant { "instant-seal" } else { "manual-seal" },
 			Some("block-authoring"),
 			authorship_future,
 		);
