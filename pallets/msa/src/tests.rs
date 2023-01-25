@@ -1,11 +1,3 @@
-use crate::{
-	ensure,
-	mock::*,
-	offchain_storage::*,
-	types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
-	CheckFreeExtrinsicUse, Config, CurrentMsaIdentifierMaximum, DispatchResult, Error, Event,
-	ProviderToRegistryEntry, ValidityError,
-};
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	dispatch::{DispatchInfo, GetDispatchInfo, Pays, Weight},
@@ -13,10 +5,17 @@ use frame_support::{
 	BoundedBTreeMap,
 };
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Encode, Pair};
-use sp_io::offchain_index;
 use sp_runtime::{
-	offchain::storage::StorageValueRef, traits::SignedExtension,
-	transaction_validity::TransactionValidity, ArithmeticError, MultiSignature,
+	traits::SignedExtension, transaction_validity::TransactionValidity, ArithmeticError,
+	MultiSignature,
+};
+
+use crate::{
+	ensure,
+	mock::*,
+	types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
+	CheckFreeExtrinsicUse, Config, CurrentMsaIdentifierMaximum, DispatchResult, Error, Event,
+	ProviderToRegistryEntry, ValidityError,
 };
 
 use common_primitives::{
@@ -385,9 +384,7 @@ fn it_deletes_msa_key_successfully() {
 
 		assert_eq!(info, None);
 
-		System::assert_last_event(
-			Event::PublicKeyDeleted { msa_id: 2, key: test_public(2) }.into(),
-		);
+		System::assert_last_event(Event::PublicKeyDeleted { key: test_public(2) }.into());
 	})
 }
 
@@ -408,9 +405,7 @@ fn test_retire_msa_success() {
 		assert_ok!(Msa::retire_msa(origin));
 
 		// Check if PublicKeyDeleted event was dispatched.
-		System::assert_has_event(
-			Event::PublicKeyDeleted { msa_id, key: test_account.clone() }.into(),
-		);
+		System::assert_has_event(Event::PublicKeyDeleted { key: test_account.clone() }.into());
 
 		// Check if MsaRetired event was dispatched.
 		System::assert_last_event(Event::MsaRetired { msa_id }.into());
@@ -2682,75 +2677,5 @@ pub fn ensure_valid_schema_grant_errors_delegation_revoked_when_delegation_relat
 			Msa::ensure_valid_schema_grant(provider, delegator, 1, 7),
 			Error::<Test>::DelegationRevoked
 		);
-	});
-}
-
-#[test]
-pub fn add_msa_should_add_key_to_offchain_storage() {
-	let (mut ext, _pool_state, _offchain_state) = new_test_ext_with_ocw();
-	ext.execute_with(|| {
-		// arrange
-		let msa_id = 1u64;
-		let _key = test_public(msa_id as u8);
-		// assert
-		assert_ok!(Msa::create(test_origin_signed(1)));
-		assert_eq!(Msa::get_msa_by_public_key(test_public(1)), Some(1 as MessageSourceId));
-		assert_eq!(Msa::get_msa_event_count(), 1);
-		// act
-		Msa::reverse_map_msa_keys(1u64);
-		run_to_block(2);
-		// assert
-		assert_eq!(Msa::get_msa_event_count(), 0);
-	});
-	ext.persist_offchain_overlay();
-	register_offchain_ext(&mut ext);
-}
-
-#[test]
-pub fn remove_msa_should_remove_key_to_offchain_storage() {
-	let (mut ext, _pool_state, _offchain_state) = new_test_ext_with_ocw();
-	let block_count_key = [BLOCK_EVENT_COUNT_KEY, 1u64.encode().as_slice()].concat();
-	let event_key = [BLOCK_EVENT_KEY, 1u64.encode().as_slice(), 1.encode().as_slice()].concat();
-
-	// set some offchain data for testing
-	ext.execute_with(|| {
-		let event_count = 1u64;
-		offchain_index::set(block_count_key.as_slice(), event_count.encode().as_slice());
-		let event_msa_created = Event::MsaCreated::<Test> { msa_id: 1, key: test_public(1) };
-		offchain_index::set(event_key.as_slice(), event_msa_created.encode().as_slice());
-	});
-	ext.persist_offchain_overlay();
-	register_offchain_ext(&mut ext);
-
-	ext.execute_with(|| {
-		assert_eq!(
-			StorageValueRef::persistent(block_count_key.as_slice())
-				.get::<u64>()
-				.unwrap()
-				.unwrap(),
-			1u64
-		);
-
-		assert_eq!(
-			StorageValueRef::persistent(event_key.as_slice())
-				.get::<Event<Test>>()
-				.unwrap()
-				.unwrap(),
-			Event::MsaCreated::<Test> { msa_id: 1, key: test_public(1) }
-		);
-
-		// Create an account
-		let (test_account_key_pair, _) = sr25519::Pair::generate();
-		let test_account = AccountId32::new(test_account_key_pair.public().into());
-		let origin = RuntimeOrigin::signed(test_account.clone());
-
-		// Create an MSA so this account has one key associated with it
-		assert_ok!(Msa::create(origin.clone()));
-
-		// map events to offchain storage
-		Msa::reverse_map_msa_keys(1u64);
-
-		// assert
-		assert_eq!(Msa::get_msa_event_count(), 1);
 	});
 }

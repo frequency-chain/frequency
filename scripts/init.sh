@@ -83,7 +83,6 @@ start-frequency-instant)
 
   ./target/release/frequency \
     --dev \
-    --enable-offchain-indexing true \
     -lruntime=debug \
     --instant-sealing \
     --wasm-execution=compiled \

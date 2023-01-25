@@ -11,7 +11,7 @@
 use codec::Codec;
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
-	msa::{DelegatorId, MessageSourceId, ProviderId},
+	msa::{DelegatorId, ProviderId},
 	node::BlockNumber,
 	schema::SchemaId,
 };
@@ -53,10 +53,6 @@ pub trait MsaApi<BlockHash, AccountId> {
 		delegator_msa_id: DelegatorId,
 		provider_msa_id: ProviderId,
 	) -> RpcResult<Option<Vec<SchemaId>>>;
-
-	/// Retrieve a list of MSA keys for a given MSA ID
-	#[method(name = "msa_getMsaKeys")]
-	fn get_msa_keys(&self, msa_id: MessageSourceId) -> RpcResult<(BlockNumber, Vec<AccountId>)>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -132,13 +128,6 @@ where
 		let at = BlockId::hash(self.client.info().best_hash);
 		let runtime_api_result =
 			api.get_granted_schemas_by_msa_id(&at, delegator_msa_id, provider_msa_id);
-		map_rpc_result(runtime_api_result)
-	}
-
-	fn get_msa_keys(&self, msa_id: MessageSourceId) -> RpcResult<(BlockNumber, Vec<AccountId>)> {
-		let api = self.client.runtime_api();
-		let at = BlockId::hash(self.client.info().best_hash);
-		let runtime_api_result = api.get_msa_keys_offchain(&at, msa_id);
 		map_rpc_result(runtime_api_result)
 	}
 }

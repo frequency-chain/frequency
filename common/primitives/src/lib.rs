@@ -11,20 +11,19 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
-#[cfg(feature = "runtime-benchmarks")]
-/// Benchmarking helper trait
-pub mod benchmarks;
 /// Structs and traits for the Messages pallet.
 pub mod messages;
 /// Structs and traits for the MSA pallet.
 pub mod msa;
 /// Node level primitives.
 pub mod node;
-/// Implementation of the offchain primitives
-pub mod offchain;
 /// Structs and traits for parquet
 pub mod parquet;
 /// Structs and traits for the Schema pallet
 pub mod schema;
 /// Structs and traits for the utility package.
 pub mod utils;
+
+#[cfg(feature = "runtime-benchmarks")]
+/// Benchmarking helper trait
+pub mod benchmarks;

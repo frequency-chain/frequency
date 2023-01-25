@@ -185,7 +185,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 10,
+	spec_version: 9,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -953,10 +953,6 @@ impl_runtime_apis! {
 				Ok(x) => x,
 				Err(_) => None,
 			}
-		}
-
-		fn get_msa_keys_offchain(msa_id: MessageSourceId) -> (BlockNumber, Vec<AccountId>) {
-			Msa::get_msa_keys_offchain(msa_id)
 		}
 	}
 
