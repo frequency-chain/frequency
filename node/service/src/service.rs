@@ -432,7 +432,7 @@ pub async fn start_parachain_node(
 	start_node_impl(parachain_config, polkadot_config, collator_options, id, hwbench).await
 }
 
-// #[cfg(feature = "frequency-rococo-local")]
+#[cfg(feature = "frequency-rococo-local")]
 fn frequency_dev_instant(config: Configuration) -> Result<TaskManager, sc_service::error::Error> {
 	let parachain_config = prepare_node_config(config);
 
