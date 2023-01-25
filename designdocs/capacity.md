@@ -214,7 +214,7 @@ pub enum Event<T: Config> {
     target: MessageSourceId,
     /// An amount that was staked.
     amount: BalanceOf<T>,
-    /// The amount of Capacity issued to target.
+    /// The Capacity amount issued to the target as a result of the stake.
     capacity: BalanceOf<T>,
   },
 
