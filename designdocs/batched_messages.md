@@ -212,4 +212,4 @@ pub struct MessageResponse<AccountId, BlockNumber> {
 ### Glossary
 * *IPFS* [InterPlanetary File System](https://docs.ipfs.io/), a decentralized file system for building the next generation of the internet
 * *CID* [Content IDentifier](https://github.com/multiformats/cid/), Self-describing content-addressed identifiers for distributed systems
-* *MsaId* [Message Source Account ID](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/ACCOUNTS.md) an identifier for a MSA.
+* *MsaId* [Message Source Account ID](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/accounts.md) an identifier for a MSA.
