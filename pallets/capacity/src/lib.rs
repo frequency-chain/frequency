@@ -297,7 +297,12 @@ pub mod pallet {
 				actual_amount,
 			)?;
 
-			Self::deposit_event(Event::Staked { account: staker, amount: actual_amount, target, capacity });
+			Self::deposit_event(Event::Staked {
+				account: staker,
+				amount: actual_amount,
+				target,
+				capacity,
+			});
 
 			Ok(())
 		}
@@ -405,9 +410,7 @@ impl<T: Config> Pallet<T> {
 
 		let capacity = Self::calculate_capacity(amount);
 		let mut target_details = Self::get_target_for(&staker, &target).unwrap_or_default();
-		target_details
-			.increase_by(amount, capacity)
-			.ok_or(ArithmeticError::Overflow)?;
+		target_details.increase_by(amount, capacity).ok_or(ArithmeticError::Overflow)?;
 
 		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
 		capacity_details
