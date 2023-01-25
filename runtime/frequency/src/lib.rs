@@ -6,6 +6,10 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+// Don't allow both frequency and all-frequency-features so that we always have a good mainnet runtime
+#[cfg(all(feature = "frequency", feature = "all-frequency-features"))]
+compile_error!("feature \"frequency\" and feature \"all-frequency-features\" cannot be enabled at the same time");
+
 mod benchmarking;
 
 use cumulus_pallet_parachain_system::{
@@ -87,7 +91,6 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 				RuntimeCall::System(..) |
 					RuntimeCall::Timestamp(..) |
 					RuntimeCall::ParachainSystem(..) |
-					RuntimeCall::Sudo(..) |
 					RuntimeCall::TechnicalCommittee(..) |
 					RuntimeCall::Council(..) |
 					RuntimeCall::Democracy(..) |
@@ -182,7 +185,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 8,
+	spec_version: 9,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -712,6 +715,7 @@ impl pallet_messages::Config for Runtime {
 
 // See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for
 // the descriptions of these configs.
+#[cfg(any(not(feature = "frequency"), feature = "all-frequency-features"))]
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
@@ -740,7 +744,11 @@ construct_runtime!(
 		} = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
+
+		// Sudo removed from mainnet Jan 2023
+		#[cfg(any(not(feature = "frequency"), feature = "all-frequency-features"))]
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T> }= 4,
+
 		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 5,
 		Democracy: pallet_democracy::{Pallet, Call, Config<T>, Storage, Event<T> } = 6,
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T> } = 8,
@@ -909,7 +917,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	// Unfinished runtime APIs
+	// Frequency runtime APIs
 	impl pallet_messages_runtime_api::MessagesRuntimeApi<Block> for Runtime {
 		fn get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber,) ->
 			Vec<MessageResponse> {

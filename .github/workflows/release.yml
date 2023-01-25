@@ -236,7 +236,7 @@ jobs:
       #     shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Build Docs
         run: |
-          RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps
+          RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --features frequency
       - name: Upload Docs
         uses: actions/upload-artifact@v3
         with:
