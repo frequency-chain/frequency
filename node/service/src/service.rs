@@ -8,8 +8,6 @@ use cumulus_client_cli::CollatorOptions;
 use frequency_runtime::RuntimeApi;
 
 pub use futures::stream::StreamExt;
-// Local Runtime Types
-// use parachain_template_runtime::{opaque::Block, Hash, RuntimeApi};
 
 // RPC
 use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
