@@ -1,21 +1,21 @@
 use super::*;
 use crate::mock::*;
 
-struct TestCase {
+struct TestCase<T: Config> {
 	name: &'static str,
-	starting_epoch: u64,
-	epoch_start_block: u64,
-	expected_epoch: u64,
-	expected_epoch_start_block: u64,
+	starting_epoch: <T>::EpochNumber,
+	epoch_start_block: <T>::BlockNumber,
+	expected_epoch: <T>::EpochNumber,
+	expected_epoch_start_block: <T>::BlockNumber,
 	expected_capacity: u64,
-	at_block: u64,
+	at_block: <T>::BlockNumber,
 }
 
 #[test]
 fn start_new_epoch_works() {
 	new_test_ext().execute_with(|| {
 		// assumes the mock epoch length is 10 blocks.
-		let test_cases: Vec<TestCase> = vec![
+		let test_cases: Vec<TestCase<Test>> = vec![
 			TestCase {
 				name: "epoch changes at the right time",
 				starting_epoch: 2,

@@ -97,7 +97,7 @@ pub mod pallet {
 
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
-	use sp_runtime::traits::{AtLeast32BitUnsigned, Bounded, MaybeDisplay};
+	use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -142,10 +142,8 @@ pub mod pallet {
 			+ MaybeDisplay
 			+ AtLeast32BitUnsigned
 			+ Default
-			+ Bounded
 			+ Copy
 			+ sp_std::hash::Hash
-			+ sp_std::str::FromStr
 			+ MaxEncodedLen
 			+ TypeInfo;
 	}
@@ -519,7 +517,7 @@ impl<T: Config> Pallet<T> {
 		total_capacity.saturating_sub(rate.mul_ceil(total_capacity))
 	}
 
-	/// Get current epoch length.
+	/// Get current epoch length in blocks.
 	fn get_epoch_length() -> T::BlockNumber {
 		<T>::MaxEpochLength::get()
 	}
