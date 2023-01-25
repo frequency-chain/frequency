@@ -99,6 +99,41 @@ start-frequency-instant)
     --tmp
   ;;
 
+start-frequency-manual)
+  printf "\nBuilding frequency with runtime manual sealing ...\n"
+  cargo build --release --features frequency-rococo-local
+
+  parachain_dir=$base_dir/parachain/${para_id}
+  mkdir -p $parachain_dir;
+
+  if [ "$2" == "purge" ]; then
+    echo "purging parachain..."
+    rm -rf $parachain_dir
+  fi
+
+  echo "---------------------------------------"
+  echo "Running Frequency in manual seal mode."
+  echo "Run 'make local-block' to seal a block."
+  echo "---------------------------------------"
+
+  ./target/release/frequency \
+    --dev \
+    -lruntime=debug \
+    --manual-sealing \
+    --wasm-execution=compiled \
+    --execution=wasm \
+    --no-telemetry \
+    --no-prometheus \
+    --port $((30333)) \
+    --rpc-port $((9933)) \
+    --ws-port $((9944)) \
+    --rpc-external \
+    --rpc-cors all \
+    --ws-external \
+    --rpc-methods=Unsafe \
+    --tmp
+  ;;
+
 start-frequency-container)
 
   parachain_dir=$base_dir/parachain/${para_id}

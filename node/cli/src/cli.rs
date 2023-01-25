@@ -82,6 +82,10 @@ pub struct Cli {
 	#[cfg(feature = "frequency-rococo-local")]
 	#[clap(long = "instant-sealing", requires = "dev")]
 	pub instant_sealing: bool,
+
+	#[cfg(feature = "frequency-rococo-local")]
+	#[clap(long = "manual-sealing", requires = "dev")]
+	pub manual_sealing: bool,
 }
 
 #[derive(Debug)]
