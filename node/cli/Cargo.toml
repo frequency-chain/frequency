@@ -2,7 +2,7 @@
 authors = ["Frequency"]
 description = "Substrate cli for frequency node"
 edition = "2021"
-homepage = "https://unfinishedlabs.io/"
+homepage = "https://frequency.xyz/"
 license = "Apache-2.0"
 name = "frequency-cli"
 repository = "https://github.com/LibertyDSNP/frequency/"
