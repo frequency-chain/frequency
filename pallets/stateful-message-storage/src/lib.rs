@@ -124,9 +124,8 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(Weight::default())]
 		pub fn add_item(_origin: OriginFor<T>, payload: Vec<u8>) -> DispatchResult {
-			let v = vec![1; 5];
 			ensure!(
-				payload.len() <= T::MaxItemizedBlobSizeBytes,
+				payload.len() as u32 <= T::MaxItemizedBlobSizeBytes::get(),
 				Error::<T>::ItemExceedsMaxBlobSizeBytes
 			);
 
@@ -141,7 +140,7 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn upsert_page(_origin: OriginFor<T>, payload: Vec<u8>) -> DispatchResult {
 			ensure!(
-				payload.len() <= T::MaxPaginatedPageSizeBytes,
+				payload.len() as u32 <= T::MaxPaginatedPageSizeBytes::get(),
 				Error::<T>::PageExceedsMaxPageSizeBytes
 			);
 			Ok(())

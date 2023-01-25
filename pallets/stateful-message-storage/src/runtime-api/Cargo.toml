@@ -1,5 +1,5 @@
 [package]
-name = "pallet-stateful-runtime-api"
+name = "pallet-stateful-message-storage-runtime-api"
 version = "0.0.0"
 description = "A package that adds Runtime Api for the Stateful Message Storage pallet"
 authors = ["Frequency"]

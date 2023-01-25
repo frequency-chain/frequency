@@ -713,9 +713,9 @@ impl pallet_messages::Config for Runtime {
 	type SchemaBenchmarkHelper = Schemas;
 }
 
-impl pallet_stateful::Config for Runtime {
+impl pallet_stateful_message_storage::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_stateful::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_stateful_message_storage::weights::SubstrateWeight<Runtime>;
 	/// The maximum size of a page (in bytes) for an Itemized storage model
 	type MaxItemizedPageSizeBytes = MaxItemizedPageSizeBytes;
 	/// The maximum size of a page (in bytes) for a Paginated storage model
@@ -792,7 +792,7 @@ construct_runtime!(
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 62,
-		StatefulMessageStorage: pallet_stateful::{Pallet, Call, Storage, Event<T>, Config} = 63,
+		StatefulMessageStorage: pallet_stateful_message_storage::{Pallet, Call, Storage, Event<T>} = 63,
 	}
 );
 
@@ -821,7 +821,7 @@ mod benches {
 		[pallet_msa, Msa]
 		[pallet_schemas, Schemas]
 		[pallet_messages, Messages]
-		[pallet_stateful, StatefulMessageStorage]
+		[pallet_stateful_message_storage, StatefulMessageStorage]
 	);
 }
 
@@ -971,7 +971,11 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_stateful_runtime_api::StatefulMessgeStorageRuntimeApi<Block> for Runtime {}
+	impl pallet_stateful_message_storage_runtime_api::StatefulMessgeStorageRuntimeApi<Block> for Runtime {
+		fn dummy() {
+			todo!()
+		}
+	}
 
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {

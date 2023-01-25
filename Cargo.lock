@@ -2796,8 +2796,8 @@ dependencies = [
  "pallet-schemas",
  "pallet-schemas-runtime-api",
  "pallet-session",
- "pallet-stateful",
- "pallet-stateful-runtime-api",
+ "pallet-stateful-message-storage",
+ "pallet-stateful-message-storage-runtime-api",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -6097,6 +6097,16 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-stateful-message-storage-runtime-api"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "frame-support",
+ "parity-scale-codec",
+ "sp-api",
 ]
 
 [[package]]

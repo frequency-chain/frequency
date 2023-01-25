@@ -81,7 +81,7 @@ benchmarks-schemas:
 	./scripts/run_benchmark.sh -p schemas
 
 benchmarks-stateful-message-storage:
-	./scripts/run_benchmark.sh -p stateful
+	./scripts/run_benchmark.sh -p stateful-message-storage
 
 .PHONY: docs
 docs:

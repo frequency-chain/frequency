@@ -1,4 +1,4 @@
-use crate as pallet_stateful;
+use crate as pallet_stateful_message_storage;
 
 use frame_support::{
 	parameter_types,
@@ -22,7 +22,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		StatefulMessageStoragePallet: pallet_stateful::{Pallet, Call, Storage, Event<T>},
+		StatefulMessageStoragePallet: pallet_stateful_message_storage::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -148,7 +148,7 @@ impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
 	}
 }
 
-impl pallet_stateful::Config for Test {
+impl pallet_stateful_message_storage::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type MaxItemizedBlobSizeBytes = MaxItemizedBlobSizeBytes;
