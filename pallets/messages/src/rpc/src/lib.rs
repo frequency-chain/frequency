@@ -13,7 +13,7 @@ use common_helpers::rpc::map_rpc_result;
 use common_primitives::{messages::*, schema::*};
 use frame_support::{ensure, fail};
 use jsonrpsee::{
-	core::{Error as JsonRpseeError, RpcResult},
+	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 };
 use pallet_messages_runtime_api::MessagesRuntimeApi;
@@ -67,6 +67,7 @@ impl From<MessageRpcError> for JsonRpseeError {
 	}
 }
 
+#[async_trait]
 impl<C, Block> MessagesApiServer for MessagesHandler<C, Block>
 where
 	Block: BlockT,
