@@ -56,11 +56,11 @@ format:
 .PHONY: lint
 lint:
 	cargo fmt --check
-	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features runtime-benchmarks,all-frequency-features,std -- -D warnings
-	RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps
+	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features runtime-benchmarks,all-frequency-features -- -D warnings
+	RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
 
 lint-audit:
-	cargo deny -c .cargo-deny.toml
+	cargo deny check -c .cargo-deny.toml
 
 .PHONY: format-lint
 format-lint: format lint
@@ -94,7 +94,7 @@ docker-prune:
 
 .PHONY: check
 check:
-	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,all-frequency-features,std
+	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,all-frequency-features
 
 check-local:
 	SKIP_WASM_BUILD= cargo check --features  frequency-rococo-local
@@ -133,13 +133,13 @@ build-mainnet-release:
 
 .PHONY: test
 test:
-	cargo test --workspace --locked --features runtime-benchmarks,all-frequency-features,std
+	cargo test --workspace --locked --features runtime-benchmarks,all-frequency-features
 
 integration-test:
 	./scripts/run_integration_tests.sh
 
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
-# This will break if the lock file format
+# This will break if the lock file format changes
 POLKADOT_VERSION=$(shell awk -F "=" '/name = "polkadot-cli"/,/version = ".*"/{ print $2 }' Cargo.lock | tail -n 1 | cut -d " " -f 3 | tr -d \")
 
 .PHONY: version

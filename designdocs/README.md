@@ -3,13 +3,13 @@ To create a new design document, Please see the [Design Doc README](https://gith
 
 ## Accepted Design Documents
 
-* [Accounts](./ACCOUNTS.md)
+* [Accounts](./accounts.md)
   * [PR](https://github.com/LibertyDSNP/frequency/pull/13)
-* [On Chain Message Storage](MESSAGE_STORAGE.md)
+* [On Chain Message Storage](message_storage.md)
   * [Merged Pull Request](https://github.com/LibertyDSNP/frequency/pull/15)
 * [Delegation](./delegation.md)
   * [PR](https://github.com/LibertyDSNP/frequency/pull/14)
-* [Message Schema(s)](./SCHEMA.md)
+* [Message Schema(s)](./schema.md)
   * [Merged Pull Request](https://github.com/LibertyDSNP/frequency/pull/17)
 * [Provider Permissions and Grants](./provider_permissions.md)
   * [Merged Pull Request](https://github.com/LibertyDSNP/frequency/pull/150)
@@ -17,6 +17,8 @@ To create a new design document, Please see the [Design Doc README](https://gith
   * [Merged Pull Request](https://github.com/LibertyDSNP/frequency/pull/208)
 * [Capacity](./capacity.md)
   * [Merged Pull Request](https://github.com/LibertyDSNP/frequency/pull/426)
+* [State Storage](./state_Storage.md)
+    * [PR](https://github.com/LibertyDSNP/frequency/pull/900)
 
 ## Basic Data Model
 
