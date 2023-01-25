@@ -67,7 +67,8 @@ where
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 	module.merge(MessagesHandler::new(client.clone()).into_rpc())?;
 	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;
-	module.merge(MsaHandler::new(client).into_rpc())?;
+	module.merge(MsaHandler::new(client.clone()).into_rpc())?;
+	module.merge(AdditionalRpcsHandler::new(client).into_rpc())?;
 	if let Some(command_sink) = command_sink {
 		module.merge(
 			// We provide the rpc handler with the sending end of the channel to allow the rpc
@@ -76,4 +77,63 @@ where
 		)?;
 	}
 	Ok(module)
+}
+
+
+use jsonrpsee::{
+	core::{async_trait, RpcResult},
+	proc_macros::rpc,
+	tracing::warn,
+};
+use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_api::StateBackend;
+
+/// Frequency MSA Custom RPC API
+#[rpc(client, server)]
+pub trait AdditionalRpcsApi<BlockHash> {
+	#[method(name = "extra_true")]
+	fn extra_true(
+		&self,
+	) -> RpcResult<bool>;
+}
+
+
+/// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
+pub struct AdditionalRpcsHandler<C, M> {
+	client: Arc<C>,
+	_marker: std::marker::PhantomData<M>,
+}
+
+impl<C, M> AdditionalRpcsHandler<C, M> {
+	/// Create new instance with the given reference to the client.
+	pub fn new(client: Arc<C>) -> Self {
+		Self { client, _marker: Default::default() }
+	}
+}
+
+#[async_trait]
+impl<C, Block> AdditionalRpcsApiServer<<Block as BlockT>::Hash> for AdditionalRpcsHandler<C, Block>
+where
+	Block: BlockT,
+	C: Send + Sync + 'static,
+	C: ProvideRuntimeApi<Block>,
+	C: HeaderBackend<Block>,
+	C::Api: sc_client_api::StateBackend<sp_runtime::traits::HashFor<Block>>,
+{
+
+	fn extra_true(
+		&self,
+	) -> RpcResult<bool> {
+		let api = self.client.runtime_api();
+		api.storage();
+		Ok(true)
+	}
+
+	// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
+	// fn get_msa_keys(&self, msa_id: MessageSourceId) -> RpcResult<Vec<KeyInfoResponse<AccountId>>> {
+	// 	let api = self.client.runtime_api();
+	// 	let at = BlockId::hash(self.client.info().best_hash);
+	// 	let runtime_api_result = api.get_msa_keys(&at, msa_id);
+	// 	map_rpc_result(runtime_api_result)
+	// }
 }
