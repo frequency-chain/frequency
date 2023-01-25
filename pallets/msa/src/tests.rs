@@ -15,8 +15,8 @@ use frame_support::{
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Encode, Pair};
 use sp_io::offchain_index;
 use sp_runtime::{
-	traits::SignedExtension, transaction_validity::TransactionValidity, ArithmeticError,
-	MultiSignature,
+	offchain::storage::StorageValueRef, traits::SignedExtension,
+	transaction_validity::TransactionValidity, ArithmeticError, MultiSignature,
 };
 
 use common_primitives::{
@@ -2714,7 +2714,7 @@ pub fn remove_msa_should_remove_key_to_offchain_storage() {
 
 	// set some offchain data for testing
 	ext.execute_with(|| {
-		let event_count = 1;
+		let event_count = 1u64;
 		offchain_index::set(block_count_key.as_slice(), event_count.encode().as_slice());
 		let event_msa_created = Event::MsaCreated::<Test> { msa_id: 1, key: test_public(1) };
 		offchain_index::set(event_key.as_slice(), event_msa_created.encode().as_slice());
@@ -2723,6 +2723,22 @@ pub fn remove_msa_should_remove_key_to_offchain_storage() {
 	register_offchain_ext(&mut ext);
 
 	ext.execute_with(|| {
+		assert_eq!(
+			StorageValueRef::persistent(block_count_key.as_slice())
+				.get::<u64>()
+				.unwrap()
+				.unwrap(),
+			1u64
+		);
+
+		assert_eq!(
+			StorageValueRef::persistent(event_key.as_slice())
+				.get::<Event<Test>>()
+				.unwrap()
+				.unwrap(),
+			Event::MsaCreated::<Test> { msa_id: 1, key: test_public(1) }
+		);
+
 		// Create an account
 		let (test_account_key_pair, _) = sr25519::Pair::generate();
 		let test_account = AccountId32::new(test_account_key_pair.public().into());
@@ -2730,7 +2746,6 @@ pub fn remove_msa_should_remove_key_to_offchain_storage() {
 
 		// Create an MSA so this account has one key associated with it
 		assert_ok!(Msa::create(origin.clone()));
-		let _msa_id = Msa::get_owner_of(&test_account).unwrap();
 
 		// map events to offchain storage
 		Msa::reverse_map_msa_keys(1u64);
