@@ -23,7 +23,7 @@ pub mod constants {
 
 	parameter_types! {
 		/// Importing a block with 0 Extrinsics.
-		pub const BlockExecutionWeight: Weight = Weight::from_ref_time(constants::WEIGHT_REF_TIME_PER_NANOS).saturating_mul(5_000_000);
+		pub const BlockExecutionWeight: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_NANOS).saturating_mul(5_000_000);
 	}
 
 	#[cfg(test)]
@@ -34,12 +34,12 @@ pub mod constants {
 		// you can delete it.
 		#[test]
 		fn sane() {
-			let w = super::constants::BlockExecutionWeight::get();
+			let w = super::BlockExecutionWeight::get();
 
 			// At least 100 µs.
 			assert!(
 				w.ref_time() >=
-					Weight::from_ref_time(constants::WEIGHT_REF_TIME_PER_MICROS)
+					Weight::from_ref_time(WEIGHT_REF_TIME_PER_MICROS)
 						.saturating_mul(100)
 						.ref_time(),
 				"Weight should be at least 100 µs."
@@ -47,7 +47,7 @@ pub mod constants {
 			// At most 50 ms.
 			assert!(
 				w.ref_time() <=
-					Weight::from_ref_time(constants::WEIGHT_REF_TIME_PER_MILLIS)
+					Weight::from_ref_time(WEIGHT_REF_TIME_PER_MILLIS)
 						.saturating_mul(50)
 						.ref_time(),
 				"Weight should be at most 50 ms."
