@@ -8,7 +8,7 @@
         "test": "mocha",
         "format": "tsc --noEmit --pretty",
         "lint": "tsc --noEmit --pretty",
-        "preinstall": "echo \"---------------------------------------------\" && echo \"NOTICE: THIS REQUIRES ../js/api-augment to have been built and packaged\""
+        "preinstall": "echo \"NOTICE: THIS REQUIRES ../js/api-augment to have been built and packaged\""
     },
     "keywords": [],
     "author": "",
