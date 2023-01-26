@@ -672,11 +672,11 @@ jobs:
           node-version: 16
           cache: "npm"
           cache-dependency-path: integration-tests/package-lock.json
-      - name: Install NPM Modules
-        run: npm ci
-        working-directory: integration-tests
       - name: Install Built api-augment
         run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
+        working-directory: integration-tests
+      - name: Install NPM Modules
+        run: npm ci
         working-directory: integration-tests
       - name: Run Integration Tests
         working-directory: integration-tests

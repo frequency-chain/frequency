@@ -42,6 +42,7 @@ cd ../../..
 cd integration-tests
 echo "Installing js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz"
 npm i ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
+npm install
 echo "---------------------------------------------"
 echo "Starting Tests..."
 echo "---------------------------------------------"
