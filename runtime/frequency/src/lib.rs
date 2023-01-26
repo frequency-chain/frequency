@@ -722,6 +722,19 @@ impl pallet_messages::Config for Runtime {
 	type SchemaBenchmarkHelper = Schemas;
 }
 
+impl pallet_stateful_storage::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_stateful_storage::weights::SubstrateWeight<Runtime>;
+	/// The maximum size of a page (in bytes) for an Itemized storage model
+	type MaxItemizedPageSizeBytes = MaxItemizedPageSizeBytes;
+	/// The maximum size of a page (in bytes) for a Paginated storage model
+	type MaxPaginatedPageSizeBytes = MaxPaginatedPageSizeBytes;
+	/// The maximum size of a single item in an itemized storage model (in bytes)
+	type MaxItemizedBlobSizeBytes = MaxItemizedBlobSizeBytes;
+	/// The maximum number of pages in a Paginated storage model
+	type MaxPaginatedPageCount = MaxPaginatedPageCount;
+}
+
 // See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for
 // the descriptions of these configs.
 #[cfg(any(not(feature = "frequency"), feature = "all-frequency-features"))]
@@ -788,6 +801,7 @@ construct_runtime!(
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 62,
+		StatefulStorage: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>} = 63,
 	}
 );
 
@@ -816,6 +830,7 @@ mod benches {
 		[pallet_msa, Msa]
 		[pallet_schemas, Schemas]
 		[pallet_messages, Messages]
+		[pallet_stateful_storage, StatefulStorage]
 	);
 }
 
@@ -962,6 +977,12 @@ impl_runtime_apis! {
 				Ok(x) => x,
 				Err(_) => None,
 			}
+		}
+	}
+
+	impl pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block> for Runtime {
+		fn dummy() {
+			todo!()
 		}
 	}
 
