@@ -106,7 +106,7 @@ pub mod pallet {
 		type MaxSchemaRegistrations: Get<SchemaId>;
 
 		/// The origin allowed to create schemas
-		type CreateSchemaOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+		type CreateSchemaOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
 	}
 
 	#[pallet::event]
@@ -121,8 +121,8 @@ pub mod pallet {
 		/// Emitted when a schema is approved by governance and created
 		SchemaCreatedViaGovernance {
 			/// the ID of the new schema
-			schema_id: SchemaId
-		}
+			schema_id: SchemaId,
+		},
 	}
 
 	#[derive(PartialEq, Eq)] // for testing
@@ -278,12 +278,15 @@ pub mod pallet {
 			Self::deposit_event(Event::SchemaCreatedViaGovernance { schema_id });
 			Ok(())
 		}
-
 	}
 
 	impl<T: Config> Pallet<T> {
 		/// Performs the work of schema creation
-		pub fn do_create_schema(model: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>, model_type: &ModelType, payload_location: PayloadLocation) -> Result<SchemaId, DispatchError> {
+		pub fn do_create_schema(
+			model: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+			model_type: &ModelType,
+			payload_location: PayloadLocation,
+		) -> Result<SchemaId, DispatchError> {
 			ensure!(
 				model.len() >= T::MinSchemaModelSizeBytes::get() as usize,
 				Error::<T>::LessThanMinSchemaModelBytes
@@ -293,8 +296,8 @@ pub mod pallet {
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 
-			Self::ensure_valid_model(&model_type, model)?;
-			let schema_id = Self::add_schema(model.clone(), model_type.clone(), payload_location)?;
+			Self::ensure_valid_model(model_type, model)?;
+			let schema_id = Self::add_schema(model.clone(), *model_type, payload_location)?;
 			Ok(schema_id)
 		}
 

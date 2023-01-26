@@ -108,6 +108,8 @@ pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
+	use crate::types::ProviderData;
+	use common_primitives::node::Signature;
 	use frame_support::log::error as log_err;
 
 	use super::*;
@@ -161,6 +163,9 @@ pub mod pallet {
 		/// calculated value.
 		#[pallet::constant]
 		type MaxSignaturesStored: Get<Option<u32>>;
+
+		/// The origin that is allowed to create providers
+		type CreateProviderOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
 	}
 
 	#[pallet::pallet]
@@ -852,6 +857,51 @@ pub mod pallet {
 				},
 			}
 			Ok(Some(T::WeightInfo::retire_msa(num_deletions)).into())
+		}
+
+		/// create a provider by means of governance approval
+		#[pallet::call_index(11)]
+		#[pallet::weight(T::WeightInfo::create_provider(100_000))]
+		pub fn create_provider_via_governance(
+			origin: OriginFor<T>,
+			create_provider_proof: Signature,
+			create_provider_payload: ProviderData<T>,
+		) -> DispatchResult {
+			let _ = T::CreateProviderOrigin::ensure_origin(origin)?;
+
+			let create_provider_key = create_provider_payload.clone().provider_key;
+
+			// TODO: new Error message
+			Self::verify_signature(
+				&create_provider_proof,
+				&create_provider_key,
+				create_provider_payload.encode(),
+			)
+			.map_err(|_| Error::<T>::NewKeyOwnershipInvalidSignature)?;
+
+			let provider_msa_id = Self::ensure_valid_msa_key(&create_provider_key)?;
+
+			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> = create_provider_payload
+				.clone()
+				.provider_name
+				.try_into()
+				.map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
+
+			ProviderToRegistryEntry::<T>::try_mutate(
+				ProviderId(provider_msa_id),
+				|maybe_metadata| -> DispatchResult {
+					ensure!(
+						maybe_metadata.take().is_none(),
+						Error::<T>::DuplicateProviderRegistryEntry
+					);
+					*maybe_metadata = Some(ProviderRegistryEntry { provider_name: bounded_name });
+					Ok(())
+				},
+			)?;
+			Self::deposit_event(Event::ProviderCreated {
+				provider_id: ProviderId(provider_msa_id),
+			});
+			Ok(())
 		}
 	}
 }

@@ -118,3 +118,13 @@ impl<T: Config> PermittedDelegationSchemas<T>
 		Ok(())
 	}
 }
+
+/// A type definition for the payload of creating a new provider - `pallet_msa::create_provider_via_governance`
+#[derive(TypeInfo, RuntimeDebugNoBound, Clone, Decode, Encode, PartialEq, Eq)]
+#[scale_info(skip_type_params(T))]
+pub struct ProviderData<T: Config> {
+	/// name to be used for the new provider
+	pub provider_name: Vec<u8>,
+	/// MessageSourceId to be associated with the provider
+	pub provider_key: T::AccountId,
+}

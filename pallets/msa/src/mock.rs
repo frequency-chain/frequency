@@ -4,6 +4,7 @@ use frame_support::{
 	assert_ok, parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64, OnFinalize, OnInitialize},
 };
+use frame_system::EnsureSigned;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
 	testing::Header,
@@ -64,6 +65,7 @@ impl pallet_schemas::Config for Test {
 	type MinSchemaModelSizeBytes = ConstU32<10>;
 	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<10>;
 	type MaxSchemaRegistrations = ConstU16<10>;
+	type CreateSchemaOrigin = EnsureSigned<<Test>::AccountId>;
 }
 
 parameter_types! {
@@ -111,6 +113,7 @@ impl pallet_msa::Config for Test {
 	type NumberOfBuckets = ConstU32<2>;
 	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<8000>;
+	type CreateProviderOrigin = EnsureSigned<<Test>::AccountId>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
