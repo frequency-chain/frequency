@@ -166,6 +166,7 @@ impl Config for Test {
 
 	type UnstakingThawPeriod = ConstU16<2>;
 	type MaxEpochLength = ConstU64<10>;
+	type EpochNumber = u32;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
