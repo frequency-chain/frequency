@@ -277,6 +277,7 @@ pub mod pallet {
 		/// - Returns Error::ZeroAmountNotAllowed if the staker is attempting to stake a zero amount.
 		/// - Returns Error::InvalidTarget if attempting to stake to an invalid target.
 		/// - Returns Error::InsufficientStakingAmount if attempting to stake an amount below the minimum amount.
+		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::stake())]
 		pub fn stake(
 			origin: OriginFor<T>,
@@ -300,13 +301,14 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(T::WeightInfo::withdraw_unstaked())]
 		/// removes all thawed UnlockChunks from caller's StakingAccount and unlocks the sum of the thawed values
 		/// in the caller's token account.
 		///
 		/// ### Errors
 		///   - Returns `Error::NotAStakingAccount` if no StakingAccountDetails are found for `origin`.
 		///   - Returns `Error::NoUnstakedTokensAvailable` if the account has no unstaking chunks or none are thawed.
+		#[pallet::call_index(1)]
+		#[pallet::weight(T::WeightInfo::withdraw_unstaked())]
 		pub fn withdraw_unstaked(origin: OriginFor<T>) -> DispatchResult {
 			let staker = ensure_signed(origin)?;
 
@@ -333,6 +335,7 @@ pub mod pallet {
 		/// - Returns `Error::AmountToUnstakeExceedsAmountStaked` if `amount` exceeds the amount currently staked.
 		/// - Returns `Error::InvalidTarget` if `target` is not a valid staking target
 		/// - Returns `Error:: NotAStakingAccount` if `origin` has nothing staked
+		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::unstake())]
 		pub fn unstake(
 			origin: OriginFor<T>,
