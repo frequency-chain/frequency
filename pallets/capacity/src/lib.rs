@@ -166,6 +166,7 @@ pub mod pallet {
 
 	/// Storage for the current epoch number
 	#[pallet::storage]
+	#[pallet::whitelist_storage]
 	#[pallet::getter(fn get_current_epoch)]
 	pub type CurrentEpoch<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
 
