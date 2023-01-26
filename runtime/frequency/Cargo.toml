@@ -65,6 +65,7 @@ orml-vesting = { git = "https://github.com/open-web3-stack/open-runtime-module-l
 # Frequency
 common-primitives = { default-features = false, path = "../../common/primitives" }
 common-runtime = { path = '../common', default-features = false }
+system-runtime-api = { path = '../system-runtime-api', default-features = false }
 pallet-messages = { path = "../../pallets/messages", default-features = false }
 pallet-messages-runtime-api = { path = "../../pallets/messages/src/runtime-api", default-features = false }
 pallet-msa = { path = "../../pallets/msa", default-features = false }

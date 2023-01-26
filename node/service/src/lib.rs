@@ -19,3 +19,4 @@ compile_error!(
 pub mod chain_spec;
 pub mod rpc;
 pub mod service;
+mod frequency_rpc;
