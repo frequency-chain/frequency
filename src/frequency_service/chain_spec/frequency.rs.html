@@ -455,20 +455,6 @@
 <span id="455">455</span>
 <span id="456">456</span>
 <span id="457">457</span>
-<span id="458">458</span>
-<span id="459">459</span>
-<span id="460">460</span>
-<span id="461">461</span>
-<span id="462">462</span>
-<span id="463">463</span>
-<span id="464">464</span>
-<span id="465">465</span>
-<span id="466">466</span>
-<span id="467">467</span>
-<span id="468">468</span>
-<span id="469">469</span>
-<span id="470">470</span>
-<span id="471">471</span>
 </pre><pre class="rust"><code><span class="attribute">#![allow(missing_docs)]
 </span><span class="kw">use </span>common_primitives::node::{AccountId, Balance};
 <span class="kw">use </span>common_runtime::constants::{
@@ -476,7 +462,7 @@
 	FREQUENCY_TOKEN, TOKEN_DECIMALS,
 };
 <span class="kw">use </span>cumulus_primitives_core::ParaId;
-<span class="kw">use </span>frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig};
+<span class="kw">use </span>frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, TechnicalCommitteeConfig};
 
 <span class="kw">use </span>hex::FromHex;
 <span class="kw">use </span>sc_service::ChainType;
@@ -490,8 +476,6 @@
 <span class="kw">use super</span>::{get_properties, Extensions};
 
 <span class="kw">pub mod </span>frequency_mainnet_keys {
-	<span class="kw">pub const </span>MAINNET_FRQ_SUDO: <span class="kw-2">&amp;</span>str =
-		<span class="string">&quot;0xd64279ee49fc11521ab7272190f8c11fdff7ab554d5490254f292613b36dab30&quot;</span>;
 
 	<span class="comment">// Unfinished Collator 1 public key (sr25519) and session key
 	</span><span class="kw">pub const </span>UNFINISHED_COLLATOR_1_SR25519: <span class="kw-2">&amp;</span>str =
@@ -587,7 +571,7 @@
 		.unwrap()
 }
 
-<span class="kw">pub fn </span>frequency() -&gt; ChainSpec {
+<span class="kw">pub fn </span>benchmark_mainnet_config() -&gt; ChainSpec {
 	<span class="kw">let </span>properties =
 		get_properties(FREQUENCY_TOKEN, TOKEN_DECIMALS <span class="kw">as </span>u32, Ss58Prefix::get().into());
 	<span class="kw">let </span>para_id: ParaId = <span class="number">2091</span>.into();
@@ -691,8 +675,6 @@
 						.unwrap(),
 					),
 				],
-				<span class="comment">// Sudo Account
-				</span><span class="prelude-val">Some</span>(frequency_mainnet_keys::MAINNET_FRQ_SUDO.parse::&lt;AccountId&gt;().unwrap().into()),
 				<span class="comment">// Total initial tokens: 1_000_000_000 FRQCY
 				</span><span class="macro">vec!</span>[
 					<span class="comment">// Project Liberty (5% Total)
@@ -789,14 +771,6 @@
 						<span class="number">529_988_600 </span>* DOLLARS,
 					),
 					(
-						<span class="comment">// Sudo, remainder returned to Treasury before sudo removed
-						</span>frequency_mainnet_keys::MAINNET_FRQ_SUDO
-							.parse::&lt;AccountId&gt;()
-							.unwrap()
-							.into(),
-						<span class="number">10_000 </span>* DOLLARS,
-					),
-					(
 						<span class="comment">// Council Member
 						</span>frequency_mainnet_keys::FREQUENCY_COUNCIL_1
 							.parse::&lt;AccountId&gt;()
@@ -890,7 +864,6 @@
 
 <span class="kw">fn </span>frequency_genesis(
 	initial_authorities: Vec&lt;(AccountId, AuraId)&gt;,
-	root_key: <span class="prelude-ty">Option</span>&lt;AccountId&gt;,
 	endowed_accounts: Vec&lt;(AccountId, Balance)&gt;,
 	council_members: Vec&lt;AccountId&gt;,
 	technical_committee_members: Vec&lt;AccountId&gt;,
@@ -925,10 +898,9 @@
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		sudo: SudoConfig {
-			<span class="comment">// Assign network admin rights.
-			</span>key: root_key,
-		},
+		<span class="comment">// SUDO removed Jan 2023, but needed when testing and checking with all-frequency-features
+		</span><span class="attribute">#[cfg(any(not(feature = <span class="string">&quot;frequency&quot;</span>), feature = <span class="string">&quot;all-frequency-features&quot;</span>))]
+		</span>sudo: Default::default(),
 		schemas: Default::default(),
 		vesting: Default::default(),
 		democracy: Default::default(),

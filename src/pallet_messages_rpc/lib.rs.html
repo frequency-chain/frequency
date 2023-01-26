@@ -144,7 +144,7 @@
 <span class="kw">use </span>common_primitives::{messages::<span class="kw-2">*</span>, schema::<span class="kw-2">*</span>};
 <span class="kw">use </span>frame_support::{ensure, fail};
 <span class="kw">use </span>jsonrpsee::{
-	core::{async_trait, error::Error <span class="kw">as </span>RpcError, RpcResult},
+	core::{async_trait, Error <span class="kw">as </span>JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 };
 <span class="kw">use </span>pallet_messages_runtime_api::MessagesRuntimeApi;
@@ -192,9 +192,9 @@
 	</span>InvalidSchemaId,
 }
 
-<span class="kw">impl </span>From&lt;MessageRpcError&gt; <span class="kw">for </span>RpcError {
+<span class="kw">impl </span>From&lt;MessageRpcError&gt; <span class="kw">for </span>JsonRpseeError {
 	<span class="kw">fn </span>from(e: MessageRpcError) -&gt; <span class="self">Self </span>{
-		RpcError::Custom(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))
+		JsonRpseeError::Custom(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))
 	}
 }
 

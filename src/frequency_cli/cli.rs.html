@@ -108,6 +108,11 @@
 <span id="108">108</span>
 <span id="109">109</span>
 <span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Frequency CLI library.
 </span><span class="kw">use </span>std::path::PathBuf;
 
@@ -152,6 +157,7 @@
 	</span>Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 
 	<span class="doccomment">/// Try some testing command against a specified runtime state.
+	</span><span class="attribute">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
 	</span>TryRuntime(try_runtime_cli::TryRuntimeCmd),
 
 	<span class="doccomment">/// Get current runtime spec version.
@@ -191,6 +197,10 @@
 	</span><span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
 	#[clap(long = <span class="string">&quot;instant-sealing&quot;</span>, requires = <span class="string">&quot;dev&quot;</span>)]
 	</span><span class="kw">pub </span>instant_sealing: bool,
+
+	<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
+	#[clap(long = <span class="string">&quot;manual-sealing&quot;</span>, requires = <span class="string">&quot;dev&quot;</span>)]
+	</span><span class="kw">pub </span>manual_sealing: bool,
 }
 
 <span class="attribute">#[derive(Debug)]

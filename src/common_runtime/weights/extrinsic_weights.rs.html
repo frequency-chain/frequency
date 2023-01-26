@@ -50,6 +50,14 @@
 <span id="50">50</span>
 <span id="51">51</span>
 <span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
 </pre><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) 2022 Parity Technologies (UK) Ltd.
@@ -70,33 +78,41 @@
 </span><span class="kw">pub mod </span>constants {
 	<span class="kw">use </span>frame_support::{
 		parameter_types,
-		weights::{constants, Weight},
+		weights::{constants::WEIGHT_REF_TIME_PER_NANOS, Weight},
 	};
 
 	<span class="macro">parameter_types! </span>{
 		<span class="doccomment">/// Executing a NO-OP `System::remarks` Extrinsic.
-		</span><span class="kw">pub const </span>ExtrinsicBaseWeight: Weight = constants::WEIGHT_PER_NANOS.saturating_mul(<span class="number">125_000</span>);
+		</span><span class="kw">pub const </span>ExtrinsicBaseWeight: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_NANOS).saturating_mul(<span class="number">125_000</span>);
 	}
 
 	<span class="attribute">#[cfg(test)]
 	</span><span class="kw">mod </span>test_weights {
-		<span class="kw">use </span>frame_support::weights::constants;
+		<span class="kw">use </span>frame_support::weights::{
+			constants::{
+				ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_MICROS, WEIGHT_REF_TIME_PER_MILLIS,
+			},
+			Weight,
+		};
 
 		<span class="doccomment">/// Checks that the weight exists and is sane.
 		</span><span class="comment">// NOTE: If this test fails but you are sure that the generated values are fine,
 		// you can delete it.
 		</span><span class="attribute">#[test]
 		</span><span class="kw">fn </span>sane() {
-			<span class="kw">let </span>w = <span class="kw">super</span>::constants::ExtrinsicBaseWeight::get();
+			<span class="kw">let </span>w = ExtrinsicBaseWeight::get();
 
 			<span class="comment">// At least 10 µs.
 			</span><span class="macro">assert!</span>(
-				w.ref_time() &gt;= constants::WEIGHT_PER_MICROS.saturating_mul(<span class="number">10</span>).ref_time(),
+				w.ref_time() &gt;=
+					Weight::from_ref_time(WEIGHT_REF_TIME_PER_MICROS)
+						.saturating_mul(<span class="number">10</span>)
+						.ref_time(),
 				<span class="string">&quot;Weight should be at least 10 µs.&quot;
 			</span>);
 			<span class="comment">// At most 1 ms.
 			</span><span class="macro">assert!</span>(
-				w.ref_time() &lt;= constants::WEIGHT_PER_MILLIS.ref_time(),
+				w.ref_time() &lt;= Weight::from_ref_time(WEIGHT_REF_TIME_PER_MILLIS).ref_time(),
 				<span class="string">&quot;Weight should be at most 1 ms.&quot;
 			</span>);
 		}

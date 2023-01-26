@@ -574,39 +574,17 @@
 <span id="574">574</span>
 <span id="575">575</span>
 <span id="576">576</span>
-<span id="577">577</span>
-<span id="578">578</span>
-<span id="579">579</span>
-<span id="580">580</span>
-<span id="581">581</span>
-<span id="582">582</span>
-<span id="583">583</span>
-<span id="584">584</span>
-<span id="585">585</span>
-<span id="586">586</span>
-<span id="587">587</span>
-<span id="588">588</span>
-<span id="589">589</span>
-<span id="590">590</span>
-<span id="591">591</span>
-<span id="592">592</span>
-<span id="593">593</span>
-<span id="594">594</span>
-<span id="595">595</span>
-<span id="596">596</span>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cli::{Cli, RelayChainCli, Subcommand};
 <span class="kw">use </span>codec::Encode;
 <span class="kw">use </span>cumulus_client_cli::generate_genesis_block;
 <span class="kw">use </span>cumulus_primitives_core::ParaId;
+<span class="kw">use </span>frame_benchmarking_cli::BenchmarkCmd;
 <span class="kw">use </span>log::info;
 
 <span class="kw">use </span>common_primitives::node::Block;
 <span class="kw">use </span>frequency_service::{
 	chain_spec,
-	service::{
-		frequency_runtime::{RuntimeApi, VERSION},
-		FrequencyRuntimeExecutor <span class="kw">as </span>Executor,
-	},
+	service::{frequency_runtime::VERSION, new_partial, FrequencyRuntimeExecutor <span class="kw">as </span>Executor},
 };
 <span class="kw">use </span>sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
@@ -661,7 +639,7 @@
 <span class="kw">fn </span>load_spec(id: <span class="kw-2">&amp;</span>str) -&gt; std::result::Result&lt;Box&lt;<span class="kw">dyn </span>ChainSpec&gt;, String&gt; {
 	<span class="kw">match </span>id {
 		<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency&quot;</span>)]
-		</span><span class="string">&quot;frequency-bench&quot; </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(Box::new(chain_spec::frequency::frequency())),
+		</span><span class="string">&quot;frequency-bench&quot; </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(Box::new(chain_spec::frequency::benchmark_mainnet_config())),
 		<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency&quot;</span>)]
 		</span><span class="string">&quot;frequency&quot; </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(Box::new(chain_spec::frequency::load_frequency_spec())),
 		<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
@@ -818,11 +796,7 @@
 	(|<span class="macro-nonterminal">$components</span>:ident, <span class="macro-nonterminal">$cli</span>:ident, <span class="macro-nonterminal">$cmd</span>:ident, <span class="macro-nonterminal">$config</span>:ident| $( <span class="macro-nonterminal">$code</span>:tt )* ) =&gt; {{
 		<span class="kw">let </span>runner = <span class="macro-nonterminal">$cli</span>.create_runner(<span class="macro-nonterminal">$cmd</span>)<span class="question-mark">?</span>;
 		runner.async_run(|<span class="macro-nonterminal">$config</span>| {
-				<span class="kw">let </span><span class="macro-nonterminal">$components </span>= frequency_service::service::new_partial::&lt;RuntimeApi, Executor, <span class="kw">_</span>&gt;(
-					<span class="kw-2">&amp;</span><span class="macro-nonterminal">$config</span>,
-					frequency_service::service::parachain_build_import_queue,
-					<span class="bool-val">false</span>,
-				)<span class="question-mark">?</span>;
+				<span class="kw">let </span><span class="macro-nonterminal">$components </span>= new_partial(<span class="kw-2">&amp;</span><span class="macro-nonterminal">$config</span>, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
 				<span class="kw">let </span>task_manager = <span class="macro-nonterminal">$components</span>.task_manager;
 				{ $( <span class="macro-nonterminal">$code </span>)* }.map(|v| (v, task_manager))
 			})
@@ -867,11 +841,7 @@
 				<span class="kw">let </span>task_manager =
 					sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
 						.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;Error: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
-				<span class="kw">let </span>partials = frequency_service::service::new_partial::&lt;RuntimeApi, Executor, <span class="kw">_</span>&gt;(
-					<span class="kw-2">&amp;</span>config,
-					frequency_service::service::parachain_build_import_queue,
-					<span class="bool-val">false</span>,
-				)<span class="question-mark">?</span>;
+				<span class="kw">let </span>partials = new_partial(<span class="kw-2">&amp;</span>config, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
 				<span class="prelude-val">Ok</span>((cmd.run(partials.client), task_manager))
 			})
 		},
@@ -918,7 +888,7 @@
 			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
 
 			<span class="kw">match </span>cmd {
-				frame_benchmarking_cli::BenchmarkCmd::Pallet(cmd) =&gt;
+				BenchmarkCmd::Pallet(cmd) =&gt;
 					<span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>) {
 						runner.sync_run(|config| cmd.run::&lt;Block, Executor&gt;(config))
 					} <span class="kw">else </span>{
@@ -926,17 +896,12 @@
 									You can enable it with `--features runtime-benchmarks`.&quot;
 							</span>.into())
 					},
-				frame_benchmarking_cli::BenchmarkCmd::Block(cmd) =&gt; runner.sync_run(|config| {
-					<span class="kw">let </span>partials =
-						frequency_service::service::new_partial::&lt;RuntimeApi, Executor, <span class="kw">_</span>&gt;(
-							<span class="kw-2">&amp;</span>config,
-							frequency_service::service::parachain_build_import_queue,
-							<span class="bool-val">false</span>,
-						)<span class="question-mark">?</span>;
+				BenchmarkCmd::Block(cmd) =&gt; runner.sync_run(|config| {
+					<span class="kw">let </span>partials = new_partial(<span class="kw-2">&amp;</span>config, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
 					cmd.run(partials.client)
 				}),
 				<span class="attribute">#[cfg(not(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>))]
-				</span>frame_benchmarking_cli::BenchmarkCmd::Storage(<span class="kw">_</span>) =&gt;
+				</span>BenchmarkCmd::Storage(<span class="kw">_</span>) =&gt;
 					<span class="kw">return </span><span class="prelude-val">Err</span>(sc_cli::Error::Input(
 						<span class="string">&quot;Compile with --features=runtime-benchmarks \
 						to enable storage benchmarks.&quot;
@@ -944,40 +909,32 @@
 					)
 					.into()),
 				<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
-				</span>frame_benchmarking_cli::BenchmarkCmd::Storage(cmd) =&gt; runner.sync_run(|config| {
-					<span class="kw">let </span>partials =
-						frequency_service::service::new_partial::&lt;RuntimeApi, Executor, <span class="kw">_</span>&gt;(
-							<span class="kw-2">&amp;</span>config,
-							frequency_service::service::parachain_build_import_queue,
-							<span class="bool-val">false</span>,
-						)<span class="question-mark">?</span>;
+				</span>BenchmarkCmd::Storage(cmd) =&gt; runner.sync_run(|config| {
+					<span class="kw">let </span>partials = new_partial(<span class="kw-2">&amp;</span>config, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
 					<span class="kw">let </span>db = partials.backend.expose_db();
 					<span class="kw">let </span>storage = partials.backend.expose_storage();
 
 					cmd.run(config, partials.client.clone(), db, storage)
 				}),
-				frame_benchmarking_cli::BenchmarkCmd::Overhead(<span class="kw">_</span>) =&gt;
-					<span class="prelude-val">Err</span>(<span class="string">&quot;Unsupported benchmarking command&quot;</span>.into()),
-				frame_benchmarking_cli::BenchmarkCmd::Machine(cmd) =&gt; runner.sync_run(|config| {
+				BenchmarkCmd::Overhead(<span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(<span class="string">&quot;Unsupported benchmarking command&quot;</span>.into()),
+				BenchmarkCmd::Machine(cmd) =&gt; runner.sync_run(|config| {
 					cmd.run(<span class="kw-2">&amp;</span>config, frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE.clone())
 				}),
-				frame_benchmarking_cli::BenchmarkCmd::Extrinsic(_cmd) =&gt;
+				BenchmarkCmd::Extrinsic(_cmd) =&gt;
 					<span class="prelude-val">Err</span>(<span class="string">&quot;Benchmarking command not implemented.&quot;</span>.into()),
 			}
 		},
-		<span class="prelude-val">Some</span>(Subcommand::TryRuntime(cmd)) =&gt; {
-			<span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;try-runtime&quot;</span>) {
-				<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
 
-				<span class="comment">// grab the task manager.
-				</span><span class="kw">let </span>registry = <span class="kw-2">&amp;</span>runner.config().prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry);
-				<span class="kw">let </span>task_manager =
-					sc_service::TaskManager::new(runner.config().tokio_handle.clone(), <span class="kw-2">*</span>registry)
-						.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;Error: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
-				runner.async_run(|config| <span class="prelude-val">Ok</span>((cmd.run::&lt;Block, Executor&gt;(config), task_manager)))
-			} <span class="kw">else </span>{
-				<span class="prelude-val">Err</span>(<span class="string">&quot;Try-runtime must be enabled by `--features try-runtime`.&quot;</span>.into())
-			}
+		<span class="attribute">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
+		</span><span class="prelude-val">Some</span>(Subcommand::TryRuntime(cmd)) =&gt; {
+			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+
+			<span class="comment">// grab the task manager.
+			</span><span class="kw">let </span>registry = <span class="kw-2">&amp;</span>runner.config().prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry);
+			<span class="kw">let </span>task_manager =
+				sc_service::TaskManager::new(runner.config().tokio_handle.clone(), <span class="kw-2">*</span>registry)
+					.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;Error: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
+			runner.async_run(|config| <span class="prelude-val">Ok</span>((cmd.run::&lt;Block, Executor&gt;(config), task_manager)))
 		},
 		<span class="prelude-val">Some</span>(Subcommand::ExportRuntimeVersion(cmd)) =&gt; {
 			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
@@ -1002,7 +959,10 @@
 
 				<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
 				</span><span class="kw">if </span>cli.instant_sealing {
-					<span class="kw">return </span>frequency_service::service::frequency_dev_instant_sealing(config)
+					<span class="kw">return </span>frequency_service::service::frequency_dev_instant_sealing(config, <span class="bool-val">true</span>)
+						.map_err(Into::into)
+				} <span class="kw">else if </span>cli.manual_sealing {
+					<span class="kw">return </span>frequency_service::service::frequency_dev_instant_sealing(config, <span class="bool-val">false</span>)
 						.map_err(Into::into)
 				}
 
@@ -1039,7 +999,7 @@
 				} <span class="kw">else </span>{
 					<span class="prelude-val">None
 				</span>};
-				frequency_service::service::start_parachain_node::&lt;RuntimeApi, Executor&gt;(
+				frequency_service::service::start_parachain_node(
 					config,
 					polkadot_config,
 					collator_options,

@@ -1645,6 +1645,17 @@
 <span id="1645">1645</span>
 <span id="1646">1646</span>
 <span id="1647">1647</span>
+<span id="1648">1648</span>
+<span id="1649">1649</span>
+<span id="1650">1650</span>
+<span id="1651">1651</span>
+<span id="1652">1652</span>
+<span id="1653">1653</span>
+<span id="1654">1654</span>
+<span id="1655">1655</span>
+<span id="1656">1656</span>
+<span id="1657">1657</span>
+<span id="1658">1658</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # MSA Pallet
 //! The MSA pallet provides functionality for handling Message Source Accounts.
 //!
@@ -2059,7 +2070,8 @@
 		///
 		/// * [`Error::KeyAlreadyRegistered`] - MSA is already registered to the Origin.
 		///
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::create())]
+		</span><span class="attribute">#[pallet::call_index(<span class="number">0</span>)]
+		#[pallet::weight(T::WeightInfo::create())]
 		</span><span class="kw">pub fn </span>create(origin: OriginFor&lt;T&gt;) -&gt; DispatchResult {
 			<span class="kw">let </span>public_key = ensure_signed(origin)<span class="question-mark">?</span>;
 
@@ -2092,7 +2104,8 @@
 		/// * [`Error::ProofHasExpired`] - `add_provider_payload` expiration is in the past
 		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used
 		///
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation(
+		</span><span class="attribute">#[pallet::call_index(<span class="number">1</span>)]
+		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation(
 		add_provider_payload.schema_ids.len() <span class="kw">as </span>u32
 		))]
 		</span><span class="kw">pub fn </span>create_sponsored_account_with_delegation(
@@ -2153,7 +2166,8 @@
 		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		///
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::create_provider(provider_name.len() <span class="kw">as </span>u32))]
+		</span><span class="attribute">#[pallet::call_index(<span class="number">2</span>)]
+		#[pallet::weight(T::WeightInfo::create_provider(provider_name.len() <span class="kw">as </span>u32))]
 		</span><span class="kw">pub fn </span>create_provider(origin: OriginFor&lt;T&gt;, provider_name: Vec&lt;u8&gt;) -&gt; DispatchResult {
 			<span class="kw">let </span>provider_key = ensure_signed(origin)<span class="question-mark">?</span>;
 			<span class="kw">let </span>bounded_name: BoundedVec&lt;u8, T::MaxProviderNameSize&gt; =
@@ -2197,7 +2211,8 @@
 		/// * [`Error::ProviderNotRegistered`] - the a non-provider MSA is used as the provider
 		/// * [`Error::UnauthorizedDelegator`] - Origin attempted to add a delegate for someone else&#39;s MSA
 		///
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::grant_delegation(add_provider_payload.schema_ids.len() <span class="kw">as </span>u32))]
+		</span><span class="attribute">#[pallet::call_index(<span class="number">3</span>)]
+		#[pallet::weight(T::WeightInfo::grant_delegation(add_provider_payload.schema_ids.len() <span class="kw">as </span>u32))]
 		</span><span class="kw">pub fn </span>grant_delegation(
 			origin: OriginFor&lt;T&gt;,
 			delegator_key: T::AccountId,
@@ -2235,7 +2250,8 @@
 		/// * [`Error::DelegationRevoked`] - the delegation has already been revoked.
 		/// * [`Error::DelegationNotFound`] - there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
 		///
-		</span><span class="attribute">#[pallet::weight((T::WeightInfo::revoke_delegation_by_delegator(), DispatchClass::Normal, Pays::No))]
+		</span><span class="attribute">#[pallet::call_index(<span class="number">4</span>)]
+		#[pallet::weight((T::WeightInfo::revoke_delegation_by_delegator(), DispatchClass::Normal, Pays::No))]
 		</span><span class="kw">pub fn </span>revoke_delegation_by_delegator(
 			origin: OriginFor&lt;T&gt;,
 			<span class="attribute">#[pallet::compact] </span>provider_msa_id: MessageSourceId,
@@ -2277,7 +2293,8 @@
 		/// * [`Error::ProofNotYetValid`] - the `expired` block number set in `AddKeyData` is greater than the current block number plus mortality_block_limit().
 		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used.
 		///
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::add_public_key_to_msa())]
+		</span><span class="attribute">#[pallet::call_index(<span class="number">5</span>)]
+		#[pallet::weight(T::WeightInfo::add_public_key_to_msa())]
 		</span><span class="kw">pub fn </span>add_public_key_to_msa(
 			origin: OriginFor&lt;T&gt;,
 			msa_owner_public_key: T::AccountId,
@@ -2337,7 +2354,8 @@
 		/// * [`Error::NotKeyOwner`] - `origin` does not own the MSA ID associated with `key`.
 		/// * [`Error::NoKeyExists`] - `origin` or `key` are not associated with `origin`&#39;s MSA ID.
 		///
-		</span><span class="attribute">#[pallet::weight((T::WeightInfo::delete_msa_public_key(), DispatchClass::Normal, Pays::No))]
+		</span><span class="attribute">#[pallet::call_index(<span class="number">6</span>)]
+		#[pallet::weight((T::WeightInfo::delete_msa_public_key(), DispatchClass::Normal, Pays::No))]
 		</span><span class="kw">pub fn </span>delete_msa_public_key(
 			origin: OriginFor&lt;T&gt;,
 			public_key_to_delete: T::AccountId,
@@ -2369,7 +2387,8 @@
 		/// * [`Error::DelegationRevoked`] - delegation is already revoked
 		/// * [`Error::DelegationNotFound`] - no Delegation found between origin MSA and delegator MSA.
 		///
-		</span><span class="attribute">#[pallet::weight((T::WeightInfo::revoke_delegation_by_provider(), DispatchClass::Normal, Pays::No))]
+		</span><span class="attribute">#[pallet::call_index(<span class="number">7</span>)]
+		#[pallet::weight((T::WeightInfo::revoke_delegation_by_provider(), DispatchClass::Normal, Pays::No))]
 		</span><span class="kw">pub fn </span>revoke_delegation_by_provider(
 			origin: OriginFor&lt;T&gt;,
 			<span class="attribute">#[pallet::compact] </span>delegator: MessageSourceId,
@@ -2405,7 +2424,8 @@
 		/// * [`Error::DelegationNotFound`] no delegation relationship between Origin and Delegator or Origin and Delegator are the same.
 		/// * [`Error::ExceedsMaxSchemaGrantsPerDelegation`] the limit of maximum allowed grants per delegation relationship has been exceeded.
 		///
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::grant_schema_permissions(schema_ids.len() <span class="kw">as </span>u32))]
+		</span><span class="attribute">#[pallet::call_index(<span class="number">8</span>)]
+		#[pallet::weight(T::WeightInfo::grant_schema_permissions(schema_ids.len() <span class="kw">as </span>u32))]
 		</span><span class="kw">pub fn </span>grant_schema_permissions(
 			origin: OriginFor&lt;T&gt;,
 			provider_msa_id: MessageSourceId,
@@ -2433,7 +2453,8 @@
 		/// - [`DelegationNotFound`](Error::DelegationNotFound) - If there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
 		/// - [`SchemaNotGranted`](Error::SchemaNotGranted) - If attempting to revoke a schema that has not previously been granted.
 		///
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::revoke_schema_permissions(
+		</span><span class="attribute">#[pallet::call_index(<span class="number">9</span>)]
+		#[pallet::weight(T::WeightInfo::revoke_schema_permissions(
 		schema_ids.len() <span class="kw">as </span>u32
 		))]
 		</span><span class="kw">pub fn </span>revoke_schema_permissions(
@@ -2468,7 +2489,8 @@
 		/// # Errors
 		/// * [`Error::NoKeyExists`] - `delegator` does not have an MSA key.
 		///
-		</span><span class="attribute">#[pallet::weight((T::WeightInfo::retire_msa(EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR), DispatchClass::Normal, Pays::No))]
+		</span><span class="attribute">#[pallet::call_index(<span class="number">10</span>)]
+		#[pallet::weight((T::WeightInfo::retire_msa(EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR), DispatchClass::Normal, Pays::No))]
 		</span><span class="kw">pub fn </span>retire_msa(origin: OriginFor&lt;T&gt;) -&gt; DispatchResultWithPostInfo {
 			<span class="comment">// Check and get the account id from the origin
 			</span><span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;

@@ -331,6 +331,10 @@
 <span id="331">331</span>
 <span id="332">332</span>
 <span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
 </pre><pre class="rust"><code><span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span><span class="kw">crate</span>::utils;
 <span class="kw">use crate</span>::{msa::MessageSourceId, node::BlockNumber};
@@ -367,7 +371,7 @@
 		serde(with = <span class="string">&quot;as_hex_option&quot;</span>, skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>, default)
 	)]
 	</span><span class="kw">pub </span>payload: <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;,
-	<span class="doccomment">/// The content address for an IPFS payload
+	<span class="doccomment">/// The content address for an IPFS payload in Base32. Will always be CIDv1.
 	</span><span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>, default))]
 	</span><span class="kw">pub </span>cid: <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;,
 	<span class="doccomment">///  Offchain payload length (IPFS).
@@ -485,11 +489,15 @@
 			provider_msa_id: <span class="number">1</span>,
 			index: <span class="number">1</span>,
 			block_number: <span class="number">1</span>,
-			cid: <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]),
+			cid: <span class="prelude-val">Some</span>(
+				<span class="string">&quot;bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq&quot;
+					</span>.as_bytes()
+					.to_vec(),
+			),
 			payload_length: <span class="prelude-val">Some</span>(<span class="number">42</span>),
 		};
 		<span class="kw">let </span>serialized = serde_json::to_string(<span class="kw-2">&amp;</span>msg).unwrap();
-		<span class="macro">assert_eq!</span>(serialized, <span class="string">&quot;{\&quot;provider_msa_id\&quot;:1,\&quot;index\&quot;:1,\&quot;block_number\&quot;:1,\&quot;cid\&quot;:[0,1,2,3],\&quot;payload_length\&quot;:42}&quot;</span>);
+		<span class="macro">assert_eq!</span>(serialized, <span class="string">&quot;{\&quot;provider_msa_id\&quot;:1,\&quot;index\&quot;:1,\&quot;block_number\&quot;:1,\&quot;cid\&quot;:[98,97,102,107,114,101,105,100,103,118,112,107,106,97,119,108,120,122,54,115,102,102,120,122,119,103,111,111,111,119,101,53,121,116,55,105,54,119,115,121,103,50,51,54,109,102,111,107,115,55,55,110,121,119,107,112,116,100,113],\&quot;payload_length\&quot;:42}&quot;</span>);
 
 		<span class="kw">let </span>deserialized: MessageResponse = serde_json::from_str(<span class="kw-2">&amp;</span>serialized).unwrap();
 		<span class="macro">assert_eq!</span>(deserialized, msg);

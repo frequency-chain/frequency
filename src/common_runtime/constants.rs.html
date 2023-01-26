@@ -299,6 +299,8 @@
 <span id="299">299</span>
 <span id="300">300</span>
 <span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::prod_or_testnet_or_local;
 <span class="kw">use </span>common_primitives::{
 	node::{Balance, BlockNumber},
@@ -309,7 +311,7 @@
 	parameter_types,
 	sp_runtime::{Perbill, Permill},
 	traits::{ConstU32, ConstU8},
-	weights::{constants::WEIGHT_PER_SECOND, Weight},
+	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight},
 	PalletId,
 };
 
@@ -397,7 +399,7 @@
 </span><span class="kw">pub const </span>NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(<span class="number">75</span>);
 
 <span class="doccomment">/// We allow for 0.5 of a second of compute with a 12 second average block time.
-</span><span class="kw">pub const </span>MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND
+</span><span class="kw">pub const </span>MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND)
 	.saturating_div(<span class="number">2</span>)
 	.set_proof_size(cumulus_primitives_core::relay_chain::v2::MAX_POV_SIZE <span class="kw">as </span>u64);
 <span class="kw">pub type </span>ZERO = ConstU32&lt;<span class="number">0</span>&gt;;
@@ -480,6 +482,8 @@
 // --- Council ---
 // The maximum number of council proposals
 </span><span class="kw">pub type </span>CouncilMaxProposals = ConstU32&lt;<span class="number">25</span>&gt;;
+<span class="comment">// The maximum number of council members
+</span><span class="kw">pub type </span>CouncilMaxMembers = ConstU32&lt;<span class="number">10</span>&gt;;
 
 <span class="macro">parameter_types! </span>{
 	<span class="kw">pub const </span>CouncilMotionDuration: BlockNumber = <span class="number">5 </span>* DAYS;
@@ -490,7 +494,7 @@
 // The maximum number of technical committee proposals
 </span><span class="kw">pub type </span>TCMaxProposals = ConstU32&lt;<span class="number">25</span>&gt;;
 <span class="comment">// The maximum number of technical committee members
-</span><span class="kw">pub type </span>TCMaxMembers = ConstU32&lt;<span class="number">3</span>&gt;;
+</span><span class="kw">pub type </span>TCMaxMembers = ConstU32&lt;<span class="number">10</span>&gt;;
 
 <span class="macro">parameter_types! </span>{
 	<span class="kw">pub const </span>TCMotionDuration: BlockNumber = <span class="number">5 </span>* DAYS;

@@ -386,6 +386,39 @@
 <span id="386">386</span>
 <span id="387">387</span>
 <span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # Messages pallet
 //! A pallet for storing messages.
 //!
@@ -463,6 +496,8 @@
 <span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
 <span class="kw">pub use </span>types::<span class="kw-2">*</span>;
 <span class="kw">pub use </span>weights::<span class="kw-2">*</span>;
+
+<span class="kw">use </span>cid::Cid;
 
 <span class="attribute">#[frame_support::pallet]
 </span><span class="kw">pub mod </span>pallet {
@@ -553,6 +588,12 @@
 
 		<span class="doccomment">/// Invalid payload location
 		</span>InvalidPayloadLocation,
+
+		<span class="doccomment">/// Unsupported CID version
+		</span>UnsupportedCidVersion,
+
+		<span class="doccomment">/// Invalid CID
+		</span>InvalidCid,
 	}
 
 	<span class="attribute">#[pallet::event]
@@ -582,11 +623,11 @@
 
 	<span class="attribute">#[pallet::call]
 	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
-		<span class="doccomment">/// Adds a message for a resource hosted on IPFS. The payload storage will
-		/// contain both a
-		/// [CID](https://docs.ipfs.io/concepts/content-addressing/#identifier-formats)
-		/// as well as a 32-bit payload length.
-		/// The actual payload will be on IPFS
+		<span class="doccomment">/// Adds a message for a resource hosted on IPFS. The input consists of
+		/// both a Base32-encoded [CID](https://docs.ipfs.tech/concepts/content-addressing/#version-1-v1)
+		/// as well as a 32-bit content length. The stored payload will contain the
+		/// CID encoded as binary, as well as the 32-bit message content length.
+		/// The actual message content will be on IPFS.
 		///
 		/// # Events
 		/// * [`Event::MessagesStored`] - In the next block
@@ -598,8 +639,11 @@
 		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA
 		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
 		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
+		/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
+		/// * [`Error::InvalidCid`] - Unable to parse provided CID
 		///
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::add_ipfs_message(cid.len() <span class="kw">as </span>u32))]
+		</span><span class="attribute">#[pallet::call_index(<span class="number">0</span>)]
+		#[pallet::weight(T::WeightInfo::add_ipfs_message())]
 		</span><span class="kw">pub fn </span>add_ipfs_message(
 			origin: OriginFor&lt;T&gt;,
 			<span class="attribute">#[pallet::compact] </span>schema_id: SchemaId,
@@ -607,7 +651,8 @@
 			<span class="attribute">#[pallet::compact] </span>payload_length: u32,
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>provider_key = ensure_signed(origin)<span class="question-mark">?</span>;
-			<span class="kw">let </span>payload_tuple: OffchainPayloadType = (cid.clone(), payload_length);
+			<span class="kw">let </span>cid_binary = <span class="self">Self</span>::validate_cid(<span class="kw-2">&amp;</span>cid)<span class="question-mark">?</span>;
+			<span class="kw">let </span>payload_tuple: OffchainPayloadType = (cid_binary, payload_length);
 			<span class="kw">let </span>bounded_payload: BoundedVec&lt;u8, T::MaxMessagePayloadSizeBytes&gt; = payload_tuple
 				.encode()
 				.try_into()
@@ -633,6 +678,7 @@
 
 			<span class="prelude-val">Ok</span>(())
 		}
+
 		<span class="doccomment">/// Add an on-chain message for a given schema id.
 		///
 		/// # Events
@@ -647,7 +693,8 @@
 		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
 		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
 		///
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() <span class="kw">as </span>u32))]
+		</span><span class="attribute">#[pallet::call_index(<span class="number">1</span>)]
+		#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() <span class="kw">as </span>u32))]
 		</span><span class="kw">pub fn </span>add_onchain_message(
 			origin: OriginFor&lt;T&gt;,
 			on_behalf_of: <span class="prelude-ty">Option</span>&lt;MessageSourceId&gt;,
@@ -772,6 +819,25 @@
 			.iter()
 			.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
 			.collect()
+	}
+
+	<span class="doccomment">/// Validates a CID to conform to IPFS CIDv1 (or higher) formatting (does not validate decoded CID fields)
+	///
+	/// # Errors
+	/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
+	/// * [`Error::InvalidCid`] - Unable to parse provided CID
+	///
+	</span><span class="kw">pub fn </span>validate_cid(in_cid: <span class="kw-2">&amp;</span>Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, DispatchError&gt; {
+		<span class="comment">// Decode SCALE encoded CID into string slice
+		</span><span class="kw">let </span>cstr: <span class="kw-2">&amp;</span>str = sp_std::str::from_utf8(<span class="kw-2">&amp;</span>in_cid[..]).map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InvalidCid)<span class="question-mark">?</span>;
+		<span class="macro">ensure!</span>(cstr.len() &gt; <span class="number">2</span>, Error::&lt;T&gt;::InvalidCid);
+		<span class="macro">ensure!</span>(<span class="kw-2">&amp;</span>cstr[<span class="number">0</span>..<span class="number">2</span>] != <span class="string">&quot;Qm&quot;</span>, Error::&lt;T&gt;::UnsupportedCidVersion);
+
+		<span class="comment">// Assume it&#39;s a multibase-encoded string. Decode it to a byte array so we can parse the CID.
+		</span><span class="kw">let </span>cid_b = multibase::decode(cstr).map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InvalidCid)<span class="question-mark">?</span>.<span class="number">1</span>;
+		<span class="macro">ensure!</span>(Cid::read_bytes(<span class="kw-2">&amp;</span>cid_b[..]).is_ok(), Error::&lt;T&gt;::InvalidCid);
+
+		<span class="prelude-val">Ok</span>(cid_b)
 	}
 }
 </code></pre></div>

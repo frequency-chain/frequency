@@ -1079,6 +1079,14 @@
 <span id="1079">1079</span>
 <span id="1080">1080</span>
 <span id="1081">1081</span>
+<span id="1082">1082</span>
+<span id="1083">1083</span>
+<span id="1084">1084</span>
+<span id="1085">1085</span>
+<span id="1086">1086</span>
+<span id="1087">1087</span>
+<span id="1088">1088</span>
+<span id="1089">1089</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attribute">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
@@ -1086,6 +1094,10 @@
 </span><span class="comment">// Make the WASM binary available.
 </span><span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;OUT_DIR&quot;</span>), <span class="string">&quot;/wasm_binary.rs&quot;</span>));
+
+<span class="comment">// Don&#39;t allow both frequency and all-frequency-features so that we always have a good mainnet runtime
+</span><span class="attribute">#[cfg(all(feature = <span class="string">&quot;frequency&quot;</span>, feature = <span class="string">&quot;all-frequency-features&quot;</span>))]
+</span><span class="macro">compile_error!</span>(<span class="string">&quot;feature \&quot;frequency\&quot; and feature \&quot;all-frequency-features\&quot; cannot be enabled at the same time&quot;</span>);
 
 <span class="kw">mod </span>benchmarking;
 
@@ -1168,7 +1180,6 @@
 				RuntimeCall::System(..) |
 					RuntimeCall::Timestamp(..) |
 					RuntimeCall::ParachainSystem(..) |
-					RuntimeCall::Sudo(..) |
 					RuntimeCall::TechnicalCommittee(..) |
 					RuntimeCall::Council(..) |
 					RuntimeCall::Democracy(..) |
@@ -1263,7 +1274,7 @@
 	spec_name: <span class="macro">spec_name!</span>(<span class="string">&quot;frequency&quot;</span>),
 	impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;frequency&quot;</span>),
 	authoring_version: <span class="number">1</span>,
-	spec_version: <span class="number">6</span>,
+	spec_version: <span class="number">10</span>,
 	impl_version: <span class="number">0</span>,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: <span class="number">1</span>,
@@ -1512,7 +1523,7 @@
 	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>MotionDuration = CouncilMotionDuration;
 	<span class="kw">type </span>MaxProposals = CouncilMaxProposals;
-	<span class="kw">type </span>MaxMembers = ConstU32&lt;<span class="number">10</span>&gt;;
+	<span class="kw">type </span>MaxMembers = CouncilMaxMembers;
 	<span class="kw">type </span>DefaultVote = pallet_collective::PrimeDefaultVote;
 	<span class="kw">type </span>WeightInfo = pallet_collective::weights::SubstrateWeight&lt;Runtime&gt;;
 }
@@ -1793,6 +1804,7 @@
 
 <span class="comment">// See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for
 // the descriptions of these configs.
+</span><span class="attribute">#[cfg(any(not(feature = <span class="string">&quot;frequency&quot;</span>), feature = <span class="string">&quot;all-frequency-features&quot;</span>))]
 </span><span class="kw">impl </span>pallet_sudo::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>RuntimeCall = RuntimeCall;
@@ -1821,7 +1833,11 @@
 		} = <span class="number">1</span>,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = <span class="number">2</span>,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = <span class="number">3</span>,
-		Sudo: pallet_sudo::{Pallet, Call, Config&lt;T&gt;, Storage, Event&lt;T&gt; }= <span class="number">4</span>,
+
+		<span class="comment">// Sudo removed from mainnet Jan 2023
+		</span><span class="attribute">#[cfg(any(not(feature = <span class="string">&quot;frequency&quot;</span>), feature = <span class="string">&quot;all-frequency-features&quot;</span>))]
+		</span>Sudo: pallet_sudo::{Pallet, Call, Config&lt;T&gt;, Storage, Event&lt;T&gt; }= <span class="number">4</span>,
+
 		Preimage: pallet_preimage::{Pallet, Call, Storage, Event&lt;T&gt;} = <span class="number">5</span>,
 		Democracy: pallet_democracy::{Pallet, Call, Config&lt;T&gt;, Storage, Event&lt;T&gt; } = <span class="number">6</span>,
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event&lt;T&gt; } = <span class="number">8</span>,
@@ -1990,7 +2006,7 @@
 		}
 	}
 
-	<span class="comment">// Unfinished runtime APIs
+	<span class="comment">// Frequency runtime APIs
 	</span><span class="kw">impl </span>pallet_messages_runtime_api::MessagesRuntimeApi&lt;Block&gt; <span class="kw">for </span>Runtime {
 		<span class="kw">fn </span>get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber,) -&gt;
 			Vec&lt;MessageResponse&gt; {
