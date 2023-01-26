@@ -18,33 +18,41 @@
 pub mod constants {
 	use frame_support::{
 		parameter_types,
-		weights::{constants, Weight},
+		weights::{constants::WEIGHT_REF_TIME_PER_NANOS, Weight},
 	};
 
 	parameter_types! {
 		/// Importing a block with 0 Extrinsics.
-		pub const BlockExecutionWeight: Weight = constants::WEIGHT_PER_NANOS.saturating_mul(5_000_000);
+		pub const BlockExecutionWeight: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_NANOS).saturating_mul(5_000_000);
 	}
 
 	#[cfg(test)]
 	mod test_weights {
-		use frame_support::weights::constants;
-
+		use frame_support::weights::{
+			constants::{WEIGHT_REF_TIME_PER_MICROS, WEIGHT_REF_TIME_PER_MILLIS},
+			Weight,
+		};
 		/// Checks that the weight exists and is sane.
 		// NOTE: If this test fails but you are sure that the generated values are fine,
 		// you can delete it.
 		#[test]
 		fn sane() {
-			let w = super::constants::BlockExecutionWeight::get();
+			let w = super::BlockExecutionWeight::get();
 
 			// At least 100 µs.
 			assert!(
-				w.ref_time() >= constants::WEIGHT_PER_MICROS.saturating_mul(100).ref_time(),
+				w.ref_time() >=
+					Weight::from_ref_time(WEIGHT_REF_TIME_PER_MICROS)
+						.saturating_mul(100)
+						.ref_time(),
 				"Weight should be at least 100 µs."
 			);
 			// At most 50 ms.
 			assert!(
-				w.ref_time() <= constants::WEIGHT_PER_MILLIS.saturating_mul(50).ref_time(),
+				w.ref_time() <=
+					Weight::from_ref_time(WEIGHT_REF_TIME_PER_MILLIS)
+						.saturating_mul(50)
+						.ref_time(),
 				"Weight should be at most 50 ms."
 			);
 		}

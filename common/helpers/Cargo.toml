@@ -15,10 +15,10 @@ targets = ['x86_64-unknown-linux-gnu']
 [dependencies]
 apache-avro = { version = "0.14.0", features = ["snappy"] }
 thiserror = "1.0.34"
-jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
+jsonrpsee = { version = "0.16.2", features = ["client-core", "server", "macros"] }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 common-primitives = { path = "../primitives", default-features = false }
 
 [features]

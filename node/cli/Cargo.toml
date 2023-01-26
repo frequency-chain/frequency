@@ -20,32 +20,28 @@ serde = { version = "1.0.145", features = ["derive"] }
 common-primitives = { default-features = false, path = "../../common/primitives" }
 frequency-service = { package = "frequency-service", path = "../service", default-features = false, optional = true }
 # Substrate
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33" }
-sc-cli = { git = "https://github.com/paritytech/substrate", features = [
-  "wasmtime"
-], optional = true, branch = "polkadot-v0.9.33" }
-sc-service = { git = "https://github.com/paritytech/substrate", features = [
-  "wasmtime"
-], optional = true, branch = "polkadot-v0.9.33" }
-sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
-sp-core = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
-try-runtime-cli = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33" }
+frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.36" }
+sc-cli = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.36" }
+sc-service = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.36" }
+sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
+sp-core = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.36" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+try-runtime-cli = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.36" }
 # Polkadot
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
 # Cumulus
-cumulus-client-cli = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.33" }
-cumulus-client-service = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.33" }
-cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.33" }
+cumulus-client-cli = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.36" }
+cumulus-client-service = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.36" }
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.36" }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 
 [features]
 std = ["sp-api/std"]
@@ -57,10 +53,9 @@ cli = [
   "frame-benchmarking-cli",
   "try-runtime-cli",
 ]
-default = ["std", "wasmtime", "cli"]
+default = ["std", "cli"]
 runtime-benchmarks = ["polkadot-cli/runtime-benchmarks"]
 try-runtime = ["frequency-service/try-runtime", "try-runtime-cli",  "try-runtime-cli/try-runtime"]
-wasmtime = ["sc-cli/wasmtime"]
 on-chain-release-build = ["sp-api/disable-logging"]
 frequency = ["frequency-service/frequency"]
 frequency-rococo-local = ["frequency-service/frequency-rococo-local"]

@@ -13,7 +13,7 @@ use common_helpers::rpc::map_rpc_result;
 use common_primitives::{messages::*, schema::*};
 use frame_support::{ensure, fail};
 use jsonrpsee::{
-	core::{async_trait, error::Error as RpcError, RpcResult},
+	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 };
 use pallet_messages_runtime_api::MessagesRuntimeApi;
@@ -61,9 +61,9 @@ pub enum MessageRpcError {
 	InvalidSchemaId,
 }
 
-impl From<MessageRpcError> for RpcError {
+impl From<MessageRpcError> for JsonRpseeError {
 	fn from(e: MessageRpcError) -> Self {
-		RpcError::Custom(format!("{:?}", e))
+		JsonRpseeError::Custom(format!("{:?}", e))
 	}
 }
 
