@@ -79,25 +79,34 @@ use frame_support::traits::Contains;
 pub struct BaseCallFilter;
 
 impl Contains<RuntimeCall> for BaseCallFilter {
-	fn contains(_call: &RuntimeCall) -> bool {
+	fn contains(call: &RuntimeCall) -> bool {
 		#[cfg(not(feature = "frequency"))]
 		{
-			true
+			match call {
+				// Utility Calls are blocked. Issue #599
+				RuntimeCall::Utility(..) => false,
+				_ => true,
+			}
 		}
 		#[cfg(feature = "frequency")]
 		{
-			matches!(
-				_call,
+			match call {
+				// Utility Calls are blocked. Issue #599
+				RuntimeCall::Utility(..) => false,
+				// Allowed Mainnet
 				RuntimeCall::System(..) |
-					RuntimeCall::Timestamp(..) |
-					RuntimeCall::ParachainSystem(..) |
-					RuntimeCall::TechnicalCommittee(..) |
-					RuntimeCall::Council(..) |
-					RuntimeCall::Democracy(..) |
-					RuntimeCall::Session(..) |
-					RuntimeCall::Preimage(..) |
-					RuntimeCall::Scheduler(..)
-			)
+				RuntimeCall::Timestamp(..) |
+				RuntimeCall::ParachainSystem(..) |
+				RuntimeCall::TechnicalCommittee(..) |
+				RuntimeCall::Council(..) |
+				RuntimeCall::Democracy(..) |
+				RuntimeCall::Session(..) |
+				RuntimeCall::Preimage(..) |
+				RuntimeCall::Scheduler(..) |
+				RuntimeCall::Treasury(..) => true,
+				// General Mainnet Calls will be enabled with Issue #877
+				_ => false,
+			}
 		}
 	}
 }
