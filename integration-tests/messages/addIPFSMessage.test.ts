@@ -9,7 +9,7 @@ import { loadIpfs, getBases } from "./loadIPFS";
 import { firstValueFrom } from "rxjs";
 import { MessageResponse } from "@frequency-chain/api-augment/interfaces";
 
-describe.only("Add Offchain Message", function () {
+describe("Add Offchain Message", function () {
     this.timeout(5000); // Override default timeout of 500ms to allow for IPFS node startup
 
     let keys: KeyringPair;
