@@ -9,7 +9,7 @@
 	missing_docs
 )]
 
-//! Runtime API definition for [Stateful Message Storage](../pallet_stateful_message_storage/index.html)
+//! Runtime API definition for [Stateful  Storage](../pallet_stateful_storage/index.html)
 //!
 //! This api must be implemented by the node runtime.
 //! Runtime APIs Provide:
@@ -20,14 +20,14 @@
 // runtime files (the `runtime` folder)
 sp_api::decl_runtime_apis! {
 
-	/// Runtime Version for Stateful Message Storage
+	/// Runtime Version for Stateful Storage
 	/// - MUST be incremented if anything changes
 	/// - Also update in js/api-augment
 	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
 	#[api_version(1)]
 
-	/// Runtime APIs for [Stateful Message Storage](../pallet_stateful_message_storage/index.html)
-	pub trait StatefulMessgeStorageRuntimeApi
+	/// Runtime APIs for [Stateful Storage](../pallet_stateful_storage/index.html)
+	pub trait StatefulStorageRuntimeApi
 	{
 		/// dummy
 		fn dummy();

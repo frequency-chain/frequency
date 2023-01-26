@@ -302,7 +302,7 @@ parameter_types! {
 	pub const Ss58Prefix: u16 = prod_or_testnet_or_local!(90, 42, 42);
 }
 
-// --- Stateful Message Storage Pallet ---
+// --- Stateful Storage Pallet ---
 parameter_types! {
 /// The maximum size of a page (in bytes) for an Itemized storage model
 pub const MaxItemizedPageSizeBytes: u32 = 4096;
@@ -313,4 +313,4 @@ pub const MaxItemizedBlobSizeBytes: u32 = 512;
 /// The maximum number of pages in a Paginated storage model
 pub const MaxPaginatedPageCount: u32 = 64;
 }
-// -end- Stateful Message Storage Pallet
+// -end- Stateful Storage Pallet

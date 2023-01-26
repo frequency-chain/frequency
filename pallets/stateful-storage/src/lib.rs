@@ -1,9 +1,9 @@
-//! # Stateful Message Storage Pallet
-//! The Stateful Message Storage pallet provides functionality for reading and writing messages
+//! # Stateful Storage Pallet
+//! The Stateful Storage pallet provides functionality for reading and writing messages
 //! representing stateful data for which we are only ever interested in the latest state.
 //!
 //! ## Overview
-//! For state transitions for which we only care about the latest state, Stateful Message Storage provides a way to store and retrieve such data
+//! For state transitions for which we only care about the latest state, Stateful Storage provides a way to store and retrieve such data
 //! outside of the existing Announcement mechanism, which would require the latest state to be tracked using some kind of 3rd-party indexer.
 //!
 //! This pallet supports two models for storing stateful data:
@@ -19,7 +19,7 @@
 //! * High read throughput.
 //! * Data race condition protection
 //!
-//! The Stateful Message Storage pallet provides functions for:
+//! The Stateful Storage pallet provides functions for:
 //!
 //! - Appending items in an **itemized** model
 //! - Removing items in an **itemized** model

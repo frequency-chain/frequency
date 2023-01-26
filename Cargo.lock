@@ -2796,8 +2796,8 @@ dependencies = [
  "pallet-schemas",
  "pallet-schemas-runtime-api",
  "pallet-session",
- "pallet-stateful-message-storage",
- "pallet-stateful-message-storage-runtime-api",
+ "pallet-stateful-storage",
+ "pallet-stateful-storage-runtime-api",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -6100,7 +6100,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-stateful-message-storage-runtime-api"
+name = "pallet-stateful-storage"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-stateful-storage-runtime-api"
 version = "0.0.0"
 dependencies = [
  "common-primitives",

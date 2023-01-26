@@ -8,10 +8,7 @@ fn add_item_ok() {
 		let caller_1 = 5u64;
 		let payload = vec![1; 64];
 
-		assert_ok!(StatefulMessageStoragePallet::add_item(
-			RuntimeOrigin::signed(caller_1),
-			payload
-		));
+		assert_ok!(StatefulStoragePallet::add_item(RuntimeOrigin::signed(caller_1), payload));
 	})
 }
 
@@ -27,7 +24,7 @@ fn add_item_with_large_payload_errors() {
 			];
 
 		assert_err!(
-			StatefulMessageStoragePallet::add_item(RuntimeOrigin::signed(caller_1), payload),
+			StatefulStoragePallet::add_item(RuntimeOrigin::signed(caller_1), payload),
 			Error::<Test>::ItemExceedsMaxBlobSizeBytes
 		)
 	})
@@ -45,7 +42,7 @@ fn upsert_page_too_large_errors() {
 			];
 
 		assert_err!(
-			StatefulMessageStoragePallet::upsert_page(RuntimeOrigin::signed(caller_1), payload),
+			StatefulStoragePallet::upsert_page(RuntimeOrigin::signed(caller_1), payload),
 			Error::<Test>::PageExceedsMaxPageSizeBytes
 		)
 	})

@@ -1,5 +1,5 @@
 use super::*;
-
+use crate::Pallet as StatefulStoragePallet;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_system::RawOrigin;
 
@@ -35,7 +35,7 @@ benchmarks! {
 	verify {
 	}
 
-	impl_benchmark_test_suite!(StatefulMessageStorage,
+	impl_benchmark_test_suite!(StatefulStoragePallet,
 		crate::mock::new_test_ext(),
 		crate::mock::Test);
 }

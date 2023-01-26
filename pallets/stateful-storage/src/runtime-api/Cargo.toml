@@ -1,7 +1,7 @@
 [package]
-name = "pallet-stateful-message-storage-runtime-api"
+name = "pallet-stateful-storage-runtime-api"
 version = "0.0.0"
-description = "A package that adds Runtime Api for the Stateful Message Storage pallet"
+description = "A package that adds Runtime Api for the Stateful Storage pallet"
 authors = ["Frequency"]
 license = "Apache-2.0"
 publish = false
@@ -14,8 +14,8 @@ codec = { package = "parity-scale-codec", version = "3.1.5", default-features = 
 	"derive"
 ] }
 # Substrate
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.32" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.32" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../../../common/primitives" }
 
