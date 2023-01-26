@@ -13,7 +13,8 @@ use common_primitives::{
 	schema::{ModelType, PayloadLocation, SchemaId},
 };
 
-use crate::{Config, Error, Event as AnnouncementEvent};
+use crate::{Config, Error, Event as AnnouncementEvent, Schema};
+use crate::child_tree_storage::ChildTreeStorage;
 
 use super::mock::*;
 
@@ -348,4 +349,69 @@ fn dsnp_broadcast() {
 		&create_bounded_schema_vec(test_str_raw),
 	);
 	assert_ok!(result);
+}
+
+
+use scale_info::TypeInfo;
+use codec::{Decode, Encode, MaxEncodedLen};
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, MaxEncodedLen)]
+/// A structure defining a Schema
+struct TestStruct
+{
+	pub model_type: ModelType,
+	pub payload_location: PayloadLocation,
+	pub number: u64
+}
+
+#[test]
+fn child_tree_write_read() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let msa_id = 1;
+		let k1 = b"key1";
+		let val = TestStruct {
+			model_type:ModelType::AvroBinary,
+			payload_location: PayloadLocation::OnChain,
+			number: 8276387272
+		};
+
+		// act
+		ChildTreeStorage::write(&msa_id,k1, &val);
+
+		// assert
+		let read = ChildTreeStorage::read::<TestStruct>(&msa_id,k1);
+		assert_eq!(Some(val), read);
+	});
+}
+
+#[test]
+fn child_tree_iterator() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let msa_id = 1;
+		let mut arr : Vec<(Vec<u8>, TestStruct)> = Vec::new();
+		for i in 1..=10 {
+			let k = [b"key", &i.encode()[..]].concat();
+			arr.push(
+				(k,TestStruct {
+				model_type:ModelType::AvroBinary,
+				payload_location: PayloadLocation::OnChain,
+				number: i
+				})
+			);
+		}
+		for (k,t) in arr.as_slice() {
+			ChildTreeStorage::write(&msa_id,k, t);
+		}
+
+		// act
+		let mut v = Vec::new();
+		let nodes = ChildTreeStorage::prefix_iterator::<TestStruct>(&msa_id,&[]);
+		for n in nodes {
+			v.push(n);
+		}
+
+		// assert
+		assert_eq!(v, arr);
+	});
 }

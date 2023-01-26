@@ -71,6 +71,7 @@ mod benchmarking;
 use common_primitives::benchmarks::SchemaBenchmarkHelper;
 
 mod types;
+mod child_tree_storage;
 
 pub use pallet::*;
 pub mod weights;
