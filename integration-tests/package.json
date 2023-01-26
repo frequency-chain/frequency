@@ -7,13 +7,14 @@
         "build": "tsc -p ./tsconfig.json",
         "test": "mocha",
         "format": "tsc --noEmit --pretty",
-        "lint": "tsc --noEmit --pretty"
+        "lint": "tsc --noEmit --pretty",
+        "preinstall": "echo \"---------------------------------------------\" && echo \"NOTICE: THIS REQUIRES ../js/api-augment to have been built and packaged\""
     },
     "keywords": [],
     "author": "",
     "license": "Apache-2.0",
     "dependencies": {
-        "@frequency-chain/api-augment": "^v0.9.29",
+        "@frequency-chain/api-augment": "file:../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz",
         "@polkadot/api": "9.10.2",
         "@polkadot/types": "9.10.2",
         "@polkadot/util": "10.2.1",
