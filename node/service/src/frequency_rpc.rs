@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use std::sync::Arc;
-use codec::{Codec, EncodeLike};
+use codec::{Codec, EncodeLike, Decode};
 use frame_benchmarking::frame_support::pallet_prelude::TypeInfo;
 use jsonrpsee::{
 	proc_macros::rpc,
@@ -11,10 +11,15 @@ use sc_client_api::{Backend, StorageProvider};
 use sp_runtime::{traits::Block as BlockT};
 use sp_core::storage::{StorageData, StorageKey};
 use frame_system::EventRecord;
+use serde::{Deserialize, Deserializer};
 
 /// Frequency MSA Custom RPC API
 #[rpc(client, server)]
-pub trait FrequencyRpcApi<BlockHash, RuntimeEvent, Hash> {
+pub trait FrequencyRpcApi<BlockHash, RuntimeEvent, Hash>
+where
+	Hash: Decode + Sync + Send + TypeInfo,
+	RuntimeEvent: Decode + Sync + Send + TypeInfo + Debug + Eq + Clone + EncodeLike + 'static
+{
 	/// gets the events for a block hash
 	#[method(name = "frequency_getEvents")]
 	fn get_events(
@@ -44,8 +49,8 @@ impl<Block, Client, BE, RuntimeEvent, Hash> FrequencyRpcApiServer<<Block as Bloc
 		Block::Hash: Unpin,
 		BE: Backend<Block> + 'static,
 		Client: StorageProvider<Block, BE> + Send + Sync + 'static,
-		Hash: Codec + Sync + Send + TypeInfo,
-		RuntimeEvent: Codec + Sync + Send + TypeInfo + Debug + Eq + Clone + EncodeLike + 'static
+		Hash: Decode + Sync + Send + TypeInfo,
+		RuntimeEvent: Decode + Sync + Send + TypeInfo + Debug + Eq + Clone + EncodeLike + 'static
 {
 	fn get_events(
 		&self,
@@ -63,9 +68,18 @@ impl<Block, Client, BE, RuntimeEvent, Hash> FrequencyRpcApiServer<<Block as Bloc
 				)))
 			})?;
 		if let Some(data) = storage {
-
+			return Ok(<Vec<EventRecord<RuntimeEvent, Hash>>>::codec::Decode(&mut &data.0[..]).unwrap())
 		}
 		Ok(None)
 	}
 }
 
+// impl Deserialize for EventRecord<E, T> {
+// 	fn deserialize<D>(deserializer: D) -> Result<Self, serde::de::Error> where D: Deserializer<'de> {
+// 		todo!()
+// 	}
+//
+// 	fn deserialize_in_place<D>(deserializer: D, place: &mut Self) -> Result<(), serde::de::Error> where D: Deserializer<'de> {
+// 		todo!()
+// 	}
+// }
