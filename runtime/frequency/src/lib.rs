@@ -552,6 +552,7 @@ impl pallet_capacity::Config for Runtime {
 	type BenchmarkHelper = Msa;
 	type UnstakingThawPeriod = CapacityUnstakingThawPeriod;
 	type MaxEpochLength = CapacityMaxEpochLength;
+	type EpochNumber = u32;
 }
 
 impl pallet_schemas::Config for Runtime {

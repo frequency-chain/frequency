@@ -30,7 +30,7 @@ pub fn create_funded_account<T: Config>(
 }
 
 // In the benchmarks we expect a new epoch to always start so as to test worst case scenario.
-pub fn set_up_epoch<T: Config>(current_block: T::BlockNumber, current_epoch: T::BlockNumber) {
+pub fn set_up_epoch<T: Config>(current_block: T::BlockNumber, current_epoch: T::EpochNumber) {
 	CurrentEpoch::<T>::set(current_epoch);
 	let epoch_start = current_block.saturating_sub(<T>::MaxEpochLength::get());
 	CurrentEpochInfo::<T>::set(EpochInfo { epoch_start });
@@ -75,7 +75,7 @@ benchmarks! {
 
 	on_initialize {
 		let current_block: T::BlockNumber = 100_000u32.into();
-		let current_epoch: T::BlockNumber = 10_000u32.into();
+		let current_epoch: T::EpochNumber = 10_000u32.into();
 		set_up_epoch::<T>(current_block, current_epoch);
 	}: {
 		Capacity::<T>::on_initialize(current_block);
