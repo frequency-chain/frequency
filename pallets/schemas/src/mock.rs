@@ -3,6 +3,7 @@ use frame_support::{
 	traits::{ConstU16, ConstU32, ConstU64},
 	weights::{WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial},
 };
+use frame_system::EnsureRoot;
 
 use smallvec::smallvec;
 use sp_core::H256;
@@ -58,6 +59,9 @@ impl pallet_schemas::Config for Test {
 	// is actually allowed.
 	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<65_500>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
+
+	// a single council member can approve creation of schemas
+	type CreateSchemaOrigin = pallet_collective::EnsureMember<<Test>::AccountId, CouncilCollective>;
 }
 
 impl frame_system::Config for Test {

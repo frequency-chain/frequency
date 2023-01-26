@@ -104,16 +104,25 @@ pub mod pallet {
 		/// Maximum number of schemas that can be registered
 		#[pallet::constant]
 		type MaxSchemaRegistrations: Get<SchemaId>;
+
+		/// The origin allowed to create schemas
+		type CreateSchemaOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Emitted when a schema is registered. [who, schemas id]
+		/// Emitted when a schema is created. [who, schemas id]
 		SchemaCreated(T::AccountId, SchemaId),
 
 		/// Emitted when maximum size for schema model is changed.
 		SchemaMaxSizeChanged(u32),
+
+		/// Emitted when a schema is approved by governance and created
+		SchemaCreatedViaGovernance {
+			/// the ID of the new schema
+			schema_id: SchemaId
+		}
 	}
 
 	#[derive(PartialEq, Eq)] // for testing
@@ -254,9 +263,41 @@ pub mod pallet {
 			Self::deposit_event(Event::SchemaMaxSizeChanged(max_size));
 			Ok(())
 		}
+
+		/// Adds a given schema to storage by governance approval
+		#[pallet::call_index(2)]
+		#[pallet::weight(T::WeightInfo::create_schema(model.len() as u32))]
+		pub fn create_schema_via_governance(
+			origin: OriginFor<T>,
+			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+			model_type: ModelType,
+			payload_location: PayloadLocation,
+		) -> DispatchResult {
+			let _ = T::CreateSchemaOrigin::ensure_origin(origin)?;
+			let schema_id = Self::do_create_schema(&model, &model_type, payload_location)?;
+			Self::deposit_event(Event::SchemaCreatedViaGovernance { schema_id });
+			Ok(())
+		}
+
 	}
 
 	impl<T: Config> Pallet<T> {
+		/// Performs the work of schema creation
+		pub fn do_create_schema(model: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>, model_type: &ModelType, payload_location: PayloadLocation) -> Result<SchemaId, DispatchError> {
+			ensure!(
+				model.len() >= T::MinSchemaModelSizeBytes::get() as usize,
+				Error::<T>::LessThanMinSchemaModelBytes
+			);
+			ensure!(
+				model.len() <= Self::get_schema_model_max_bytes() as usize,
+				Error::<T>::ExceedsMaxSchemaModelBytes
+			);
+
+			Self::ensure_valid_model(&model_type, model)?;
+			let schema_id = Self::add_schema(model.clone(), model_type.clone(), payload_location)?;
+			Ok(schema_id)
+		}
+
 		/// Set the schema count to something in particular.
 		#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
 		pub fn set_schema_count(n: SchemaId) {

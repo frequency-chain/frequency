@@ -52,10 +52,7 @@ use frame_support::{
 	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
 };
 
-use frame_system::{
-	limits::{BlockLength, BlockWeights},
-	EnsureRoot, RawOrigin,
-};
+use frame_system::{limits::{BlockLength, BlockWeights}, EnsureRoot, RawOrigin, EnsureSigned};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
@@ -315,6 +312,14 @@ impl pallet_msa::Config for Runtime {
 
 pub use common_primitives::schema::SchemaId;
 
+// a single council member can approve schema creation
+#[cfg(feature = "frequency")]
+type SchemasCreationOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
+
+// anyone can create a schema
+#[cfg(not(feature = "frequency"))]
+type SchemasCreationOrigin = EnsureSigned<AccountId>;
+
 impl pallet_schemas::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
@@ -324,6 +329,8 @@ impl pallet_schemas::Config for Runtime {
 	type MaxSchemaRegistrations = SchemasMaxRegistrations;
 	// The maximum length of a schema model (in bytes)
 	type SchemaModelMaxBytesBoundedVecLimit = SchemasMaxBytesBoundedVecLimit;
+
+	type CreateSchemaOrigin = SchemasCreationOrigin;
 }
 
 pub struct RootAsVestingPallet;
