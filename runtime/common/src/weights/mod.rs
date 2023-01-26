@@ -22,6 +22,7 @@ pub mod extrinsic_weights;
 pub mod orml_vesting;
 pub mod pallet_balances;
 pub mod pallet_collective;
+pub mod pallet_collator_selection;
 pub mod pallet_democracy;
 pub mod pallet_preimage;
 pub mod pallet_scheduler;

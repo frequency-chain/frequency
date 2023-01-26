@@ -41,6 +41,7 @@ pallet-treasury = { git = "https://github.com/paritytech/substrate", default-fea
 pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 # cumulus
 cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.36" }
+pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.36" }
 # ORML
 orml-vesting = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.36" }
 
