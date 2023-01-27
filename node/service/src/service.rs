@@ -44,6 +44,8 @@ type MaybeFullSelectChain = Option<LongestChain<FullBackend, Block>>;
 
 /// Native executor instance for frequency.
 pub mod frequency_executor {
+	use sc_executor::sp_wasm_interface;
+	use sc_executor::sp_wasm_interface::{Function, HostFunctionRegistry, HostFunctions};
 	pub use frequency_runtime;
 
 	/// Native executor instance for frequency mainnet.
@@ -58,6 +60,17 @@ pub mod frequency_executor {
 
 		fn native_version() -> sc_executor::NativeVersion {
 			frequency_runtime::native_version()
+		}
+	}
+
+	#[cfg(feature="try-runtime")]
+	impl HostFunctions for FrequencyRuntimeExecutor {
+		fn host_functions() -> Vec<&'static dyn Function> {
+			Vec::new()
+		}
+
+		fn register_static<T: HostFunctionRegistry>(_registry: &mut T) -> Result<(), T::Error> {
+			Ok(())
 		}
 	}
 }

@@ -72,7 +72,10 @@ pub use common_runtime::{
 	weights,
 	weights::{BlockExecutionWeight, ExtrinsicBaseWeight},
 };
-use frame_support::traits::Contains;
+use frame_support::traits::{Contains, OnRuntimeUpgrade};
+
+#[cfg(feature = "try-runtime")]
+use frame_support::traits::TryStateSelect;
 
 /// Basefilter to only allow specified transactions call to be executed
 /// For non mainnet [--features frequency] all transactions are allowed
@@ -146,7 +149,40 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	RemoveSudo,
 >;
+
+// ==============================================
+//        RUNTIME STORAGE MIGRATION
+// ==============================================
+pub struct RemoveSudo;
+
+impl OnRuntimeUpgrade for RemoveSudo {
+	fn on_runtime_upgrade() -> Weight {
+		System::deposit_event(frame_system::Event::CodeUpdated);
+		Weight::from_ref_time(100)
+	}
+
+	#[cfg(feature = "try-runtime")]
+	fn try_on_runtime_upgrade(_checks: bool) -> Result<Weight, &'static str> {
+		Ok(Weight::zero())
+	}
+
+	// #[cfg(feature="try-runtime")]
+	// fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+	// 	Ok(vec![1u8,2u8,3u8])
+	// }
+	//
+	// #[cfg(feature="try-runtime")]
+	// fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+	// 	log::warn!("==============================================================  state: {:?}", state);
+	// 	Ok(())
+	// }
+}
+
+// ==============================================
+//       END RUNTIME STORAGE MIGRATION
+// ==============================================
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -966,20 +1002,25 @@ impl_runtime_apis! {
 
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
-		fn on_runtime_upgrade() -> (Weight, Weight) {
+		fn on_runtime_upgrade(_checks: bool) -> (Weight, Weight) {
 			log::info!("try-runtime::on_runtime_upgrade frequency.");
-			let weight = Executive::try_runtime_upgrade().unwrap();
+			let weight = Executive::try_runtime_upgrade(true).unwrap();
 			(weight, RuntimeBlockWeights::get().max_block)
 		}
-		fn execute_block(block: Block, state_root_check: bool, select: frame_try_runtime::TryStateSelect) -> Weight {
+
+		fn execute_block(block: Block,
+						state_root_check: bool,
+						signature_check: bool,
+						try_state: TryStateSelect,
+		) -> Weight {
 			log::info!(
 				target: "runtime::frequency", "try-runtime: executing block #{} ({:?}) / root checks: {:?} / sanity-checks: {:?}",
 				block.header.number,
 				block.header.hash(),
 				state_root_check,
-				select,
+				try_state,
 			);
-			Executive::try_execute_block(block, state_root_check, select).expect("try_execute_block failed")
+			Executive::try_execute_block(block, state_root_check, signature_check, try_state).expect("try_execute_block failed")
 		}
 	}
 

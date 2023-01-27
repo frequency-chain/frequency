@@ -2888,6 +2888,7 @@ dependencies = [
  "sp-session",
  "sp-timestamp",
  "sp-transaction-pool",
+ "sp-wasm-interface",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
