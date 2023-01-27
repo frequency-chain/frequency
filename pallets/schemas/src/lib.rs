@@ -110,10 +110,19 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Emitted when a schema is registered. [who, schemas id]
-		SchemaCreated(T::AccountId, SchemaId),
+		SchemaCreated {
+			/// Account ID
+			key: T::AccountId,
+
+			/// Schema ID of newly-created schema
+			schema_id: SchemaId,
+		},
 
 		/// Emitted when maximum size for schema model is changed.
-		SchemaMaxSizeChanged(u32),
+		SchemaMaxSizeChanged {
+			/// Max size of schema document
+			max_size: u32,
+		},
 	}
 
 	#[derive(PartialEq, Eq)] // for testing
@@ -223,7 +232,7 @@ pub mod pallet {
 			Self::ensure_valid_model(&model_type, &model)?;
 			let schema_id = Self::add_schema(model, model_type, payload_location)?;
 
-			Self::deposit_event(Event::SchemaCreated(sender, schema_id));
+			Self::deposit_event(Event::SchemaCreated { key: sender, schema_id });
 			Ok(())
 		}
 
@@ -251,7 +260,7 @@ pub mod pallet {
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 			GovernanceSchemaModelMaxBytes::<T>::set(max_size);
-			Self::deposit_event(Event::SchemaMaxSizeChanged(max_size));
+			Self::deposit_event(Event::SchemaMaxSizeChanged { max_size });
 			Ok(())
 		}
 	}
