@@ -80,8 +80,7 @@ mod extrinsics_tests;
 mod helpers_tests;
 #[cfg(test)]
 mod mock;
-#[cfg(test)]
-mod tests;
+
 #[cfg(test)]
 mod types_tests;
 
