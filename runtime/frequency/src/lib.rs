@@ -24,6 +24,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult,
 };
 
+#[cfg(feature = "runtime-benchmarks")]
 use codec::Decode;
 
 use sp_std::prelude::*;
@@ -55,7 +56,6 @@ use frame_support::{
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot, RawOrigin,
-	EventRecord,
 };
 
 #[cfg(feature = "frequency")]
@@ -1131,12 +1131,6 @@ impl_runtime_apis! {
 	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
 		fn account_nonce(account: AccountId) -> Index {
 			System::account_nonce(account)
-		}
-	}
-
-	impl system_runtime_api::AdditionalRuntimeApi<Block, RuntimeEvent, Hash> for Runtime {
-		fn get_events(encoded: Vec<u8>) -> Vec<EventRecord<RuntimeEvent, Hash>> {
-			<Vec<EventRecord<RuntimeEvent, Hash>>>::decode(&mut &encoded[..]).unwrap()
 		}
 	}
 
