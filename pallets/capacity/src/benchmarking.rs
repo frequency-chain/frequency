@@ -41,6 +41,7 @@ benchmarks! {
 	stake {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
 		let amount: BalanceOf<T> = T::MinimumStakingAmount::get();
+		let capacity: BalanceOf<T> = Capacity::<T>::calculate_capacity(amount);
 		let target = 1;
 
 		register_provider::<T>(target, "Foo");
@@ -50,7 +51,7 @@ benchmarks! {
 		assert!(StakingAccountLedger::<T>::contains_key(&caller));
 		assert!(StakingTargetLedger::<T>::contains_key(&caller, target));
 		assert!(CapacityLedger::<T>::contains_key(target));
-		assert_last_event::<T>(Event::<T>::Staked {account: caller, amount, target }.into());
+		assert_last_event::<T>(Event::<T>::Staked {account: caller, amount, target, capacity}.into());
 	}
 
 	withdraw_unstaked {
