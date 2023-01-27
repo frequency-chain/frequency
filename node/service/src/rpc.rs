@@ -42,7 +42,7 @@ where
 		+ HeaderBackend<Block>
 		+ AuxStore
 		+ HeaderMetadata<Block, Error = BlockChainError>
-	    + StorageProvider<Block, DbBackend<Block>>
+		+ StorageProvider<Block, DbBackend<Block>>
 		+ Send
 		+ Sync
 		+ 'static,
@@ -58,15 +58,10 @@ where
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 
 	// Frequency RPCs
+	use crate::frequency_rpc::{FrequencyRpcApiServer, FrequencyRpcHandler};
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
 	use pallet_schemas_rpc::{SchemasApiServer, SchemasHandler};
-	use crate::frequency_rpc::{FrequencyRpcApiServer, FrequencyRpcHandler};
-
-	use sp_runtime::OpaqueExtrinsic;
-	use common_primitives::node::BlakeTwo256;
-	use sp_core::H256;
-	use frequency_runtime::RuntimeEvent;
 
 	let mut module = RpcExtension::new(());
 	let FullDeps { client, pool, deny_unsafe, command_sink } = deps;
@@ -76,7 +71,7 @@ where
 	module.merge(MessagesHandler::new(client.clone()).into_rpc())?;
 	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;
 	module.merge(MsaHandler::new(client.clone()).into_rpc())?;
-	module.merge(<FrequencyRpcHandler<sp_runtime::generic::Block<sp_runtime::generic::Header<u32, BlakeTwo256>, OpaqueExtrinsic>, C, sc_client_db::Backend<sp_runtime::generic::Block<sp_runtime::generic::Header<u32, BlakeTwo256>, OpaqueExtrinsic>>> as FrequencyRpcApiServer<H256, RuntimeEvent, Hash>>::into_rpc(FrequencyRpcHandler::new(client)))?;
+	module.merge(FrequencyRpcHandler::new(client).into_rpc())?;
 	if let Some(command_sink) = command_sink {
 		module.merge(
 			// We provide the rpc handler with the sending end of the channel to allow the rpc
