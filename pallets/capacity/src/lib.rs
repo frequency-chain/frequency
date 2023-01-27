@@ -210,6 +210,8 @@ pub mod pallet {
 			target: MessageSourceId,
 			/// An amount that was staked.
 			amount: BalanceOf<T>,
+			/// The Capacity amount issued to the target as a result of the stake.
+			capacity: BalanceOf<T>,
 		},
 		/// Unsstaked token that has thawed was unlocked for the given account
 		StakeWithdrawn {
@@ -288,14 +290,19 @@ pub mod pallet {
 			let (mut staking_account, actual_amount) =
 				Self::ensure_can_stake(&staker, target, amount)?;
 
-			Self::increase_stake_and_issue_capacity(
+			let capacity = Self::increase_stake_and_issue_capacity(
 				&staker,
 				&mut staking_account,
 				target,
 				actual_amount,
 			)?;
 
-			Self::deposit_event(Event::Staked { account: staker, amount: actual_amount, target });
+			Self::deposit_event(Event::Staked {
+				account: staker,
+				amount: actual_amount,
+				target,
+				capacity,
+			});
 
 			Ok(())
 		}
@@ -398,13 +405,12 @@ impl<T: Config> Pallet<T> {
 		staking_account: &mut StakingAccountDetails<T>,
 		target: MessageSourceId,
 		amount: BalanceOf<T>,
-	) -> DispatchResult {
+	) -> Result<BalanceOf<T>, DispatchError> {
 		staking_account.increase_by(amount).ok_or(ArithmeticError::Overflow)?;
 
+		let capacity = Self::calculate_capacity(amount);
 		let mut target_details = Self::get_target_for(&staker, &target).unwrap_or_default();
-		target_details
-			.increase_by(amount, Self::calculate_capacity(amount))
-			.ok_or(ArithmeticError::Overflow)?;
+		target_details.increase_by(amount, capacity).ok_or(ArithmeticError::Overflow)?;
 
 		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
 		capacity_details
@@ -415,7 +421,7 @@ impl<T: Config> Pallet<T> {
 		Self::set_target_details_for(&staker, target, target_details);
 		Self::set_capacity_for(target, capacity_details);
 
-		Ok(())
+		Ok(capacity)
 	}
 
 	/// Sets staking account details.

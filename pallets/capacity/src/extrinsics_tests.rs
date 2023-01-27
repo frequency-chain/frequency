@@ -130,6 +130,7 @@ fn stake_works() {
 		let account = 200;
 		let target: MessageSourceId = 1;
 		let amount = 5;
+		let capacity = 5;
 		register_provider(target, String::from("Foo"));
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, amount));
 
@@ -148,7 +149,7 @@ fn stake_works() {
 		assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 1);
 
 		let events = staking_events();
-		assert_eq!(events.first().unwrap(), &Event::Staked { account, target, amount });
+		assert_eq!(events.first().unwrap(), &Event::Staked { account, target, amount, capacity });
 
 		assert_eq!(Balances::locks(&account)[0].amount, amount);
 		assert_eq!(Balances::locks(&account)[0].reasons, WithdrawReasons::all().into());
@@ -201,6 +202,7 @@ fn stake_increase_stake_amount_works() {
 		let account = 200;
 		let target: MessageSourceId = 1;
 		let initial_amount = 5;
+		let capacity = 5;
 		register_provider(target, String::from("Foo"));
 
 		// First Stake
@@ -208,7 +210,7 @@ fn stake_increase_stake_amount_works() {
 		let events = staking_events();
 		assert_eq!(
 			events.first().unwrap(),
-			&Event::Staked { account, target, amount: initial_amount }
+			&Event::Staked { account, target, amount: initial_amount, capacity }
 		);
 
 		assert_eq!(Balances::locks(&account)[0].amount, 5);
@@ -217,6 +219,7 @@ fn stake_increase_stake_amount_works() {
 		run_to_block(2);
 
 		let additional_amount = 10;
+		let capacity = 10;
 		// Additional Stake
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, additional_amount));
 
@@ -237,7 +240,7 @@ fn stake_increase_stake_amount_works() {
 		let events = staking_events();
 		assert_eq!(
 			events.first().unwrap(),
-			&Event::Staked { account, target, amount: additional_amount }
+			&Event::Staked { account, target, amount: additional_amount, capacity }
 		);
 
 		assert_eq!(Balances::locks(&account)[0].amount, 15);
