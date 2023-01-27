@@ -54,11 +54,13 @@ std = [
 	"frame-support/std",
 	"cumulus-primitives-core/std",
 	"pallet-democracy/std",
+	"pallet-collator-selection/std",
 	"pallet-collective/std",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
+	"pallet-collator-selection/try-runtime",
 	"pallet-collective/try-runtime",
 	"pallet-democracy/try-runtime",
 	"pallet-preimage/try-runtime",
