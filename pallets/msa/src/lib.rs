@@ -165,7 +165,7 @@ pub mod pallet {
 		type MaxSignaturesStored: Get<Option<u32>>;
 
 		/// The origin that is allowed to create providers
-		type CreateProviderOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
+		type CreateProviderOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
 	#[pallet::pallet]
