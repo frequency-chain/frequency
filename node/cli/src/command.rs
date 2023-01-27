@@ -257,17 +257,7 @@ pub fn run() -> Result<()> {
 			})
 		},
 		Some(Subcommand::ExportMetadata(cmd)) => {
-			let runner = cli.create_runner(cmd)?;
-
-			runner.async_run(|config| {
-				// grab the task manager.
-				let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
-				let task_manager =
-					sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-						.map_err(|e| format!("Error: {:?}", e))?;
-				let partials = new_partial(&config, false)?;
-				Ok((cmd.run(partials.client), task_manager))
-			})
+			construct_async_run!(|components, cli, cmd, config| Ok(cmd.run(components.client)))
 		},
 		Some(Subcommand::PurgeChain(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
