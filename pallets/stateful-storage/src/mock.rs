@@ -1,4 +1,8 @@
 use crate as pallet_stateful_storage;
+use common_primitives::{
+	msa::{MessageSourceId, MsaLookup, MsaValidator},
+	schema::*,
+};
 
 use frame_support::{
 	parameter_types,
@@ -9,6 +13,7 @@ use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
+	DispatchError,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -57,7 +62,7 @@ parameter_types! {
 	pub const MaxItemizedPageSizeBytes: u32 = 1024;
 	pub const MaxPaginatedPageSizeBytes: u32 = 1024;
 	pub const MaxItemizedBlobSizeBytes: u32 = 64;
-	pub const MaxPaginatedPageCount: u8 = 32;
+	pub const MaxPaginatedPageCount: u16 = 32;
 }
 
 impl Clone for MaxPaginatedPageCount {
@@ -148,13 +153,60 @@ impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
 	}
 }
 
+pub struct MsaInfoHandler;
+impl MsaLookup for MsaInfoHandler {
+	type AccountId = u64;
+
+	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
+		if *key == 2000 {
+			return Some(2000 as MessageSourceId)
+		}
+		Some(get_msa_from_account(*key) as MessageSourceId)
+	}
+}
+
+impl MsaValidator for MsaInfoHandler {
+	type AccountId = u64;
+
+	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError> {
+		if *key == 1000 {
+			return Err(DispatchError::Other("some error"))
+		}
+		if *key == 2000 {
+			return Ok(2000)
+		}
+
+		Ok(get_msa_from_account(*key))
+	}
+}
+
+pub struct SchemaHandler;
+impl SchemaProvider<u16> for SchemaHandler {
+	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+		Some(SchemaResponse {
+			schema_id,
+			model: r#"schema"#.to_string().as_bytes().to_vec(),
+			model_type: ModelType::AvroBinary,
+			payload_location: PayloadLocation::OnChain,
+		})
+	}
+}
+
 impl pallet_stateful_storage::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
+	type MsaInfoProvider = MsaInfoHandler;
+	type SchemaProvider = SchemaHandler;
 	type WeightInfo = ();
 	type MaxItemizedBlobSizeBytes = MaxItemizedBlobSizeBytes;
 	type MaxPaginatedPageCount = MaxPaginatedPageCount;
 	type MaxItemizedPageSizeBytes = MaxItemizedPageSizeBytes;
 	type MaxPaginatedPageSizeBytes = MaxPaginatedPageSizeBytes;
+
+	/// A set of helper functions for benchmarking.
+	#[cfg(feature = "runtime-benchmarks")]
+	type MsaBenchmarkHelper = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type SchemaBenchmarkHelper = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -162,4 +214,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
+}
+
+pub fn get_msa_from_account(account_id: u64) -> u64 {
+	account_id + 100
 }

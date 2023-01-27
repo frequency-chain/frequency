@@ -311,6 +311,6 @@ pub const MaxPaginatedPageSizeBytes: u32 = 4096;
 /// The maximum size of a single item in an itemized storage model (in bytes)
 pub const MaxItemizedBlobSizeBytes: u32 = 512;
 /// The maximum number of pages in a Paginated storage model
-pub const MaxPaginatedPageCount: u32 = 64;
+pub const MaxPaginatedPageCount: u16 = 64;
 }
 // -end- Stateful Storage Pallet

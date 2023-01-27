@@ -21,6 +21,8 @@ pub mod node;
 pub mod parquet;
 /// Structs and traits for the Schema pallet
 pub mod schema;
+/// Types, structs and traits for the Stateful Storage pallet
+pub mod stateful_storage;
 /// Structs and traits for the utility package.
 pub mod utils;
 

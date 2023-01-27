@@ -52,8 +52,19 @@ mod benchmarking;
 
 pub mod weights;
 
-use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get};
+use common_primitives::{
+	msa::{MessageSourceId, MsaLookup, MsaValidator},
+	schema::*,
+	stateful_storage::*,
+};
+use frame_support::{
+	dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get, BoundedVec,
+};
+use sp_runtime::DispatchError;
 use sp_std::prelude::*;
+
+#[cfg(feature = "runtime-benchmarks")]
+use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
 
 pub use pallet::*;
 pub use weights::*;
@@ -72,6 +83,12 @@ pub mod pallet {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
+		/// A type that will supply MSA related information
+		type MsaInfoProvider: MsaLookup + MsaValidator<AccountId = Self::AccountId>;
+
+		/// A type that will supply schema related information.
+		type SchemaProvider: SchemaProvider<SchemaId>;
+
 		/// The maximum size of a page (in bytes) for an Itemized storage model
 		#[pallet::constant]
 		type MaxItemizedPageSizeBytes: Get<u32>;
@@ -86,7 +103,15 @@ pub mod pallet {
 
 		/// The maximum number of pages in a Paginated storage model
 		#[pallet::constant]
-		type MaxPaginatedPageCount: Get<u32>;
+		type MaxPaginatedPageCount: Get<u16>;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		/// A set of helper functions for benchmarking.
+		type MsaBenchmarkHelper: MsaBenchmarkHelper<Self::AccountId>;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		/// A set of helper functions for benchmarking.
+		type SchemaBenchmarkHelper: SchemaBenchmarkHelper;
 	}
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -97,6 +122,12 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
+		/// Invalid Message Source Account
+		InvalidMessageSourceAccount,
+
+		/// Schema ID does not identify a valid, existent schema
+		InvalidSchemaId,
+
 		/// Item payload exceeds max item blob size
 		ItemExceedsMaxBlobSizeBytes,
 
@@ -108,6 +139,9 @@ pub mod pallet {
 
 		/// Page size exceeds max allowable page size
 		PageExceedsMaxPageSizeBytes,
+
+		/// Schema is not valid for storage location
+		InvalidSchemaForPayloadLocation,
 	}
 
 	#[pallet::event]
@@ -115,13 +149,14 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		ItemAppended,
 		ItemRemoved,
-		PageAppended,
-		PageUpdated,
-		PageRemoved,
+		PageCreated { page_id: PageId },
+		PageUpdated { page_id: PageId },
+		PageRemoved { page_id: PageId },
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		#[pallet::call_index(0)]
 		#[pallet::weight(Weight::default())]
 		pub fn add_item(_origin: OriginFor<T>, payload: Vec<u8>) -> DispatchResult {
 			ensure!(
@@ -132,23 +167,72 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(1)]
 		#[pallet::weight(0)]
 		pub fn remove_item(_origin: OriginFor<T>) -> DispatchResult {
 			Ok(())
 		}
 
+		#[pallet::call_index(2)]
 		#[pallet::weight(0)]
-		pub fn upsert_page(_origin: OriginFor<T>, payload: Vec<u8>) -> DispatchResult {
-			ensure!(
-				payload.len() as u32 <= T::MaxPaginatedPageSizeBytes::get(),
-				Error::<T>::PageExceedsMaxPageSizeBytes
-			);
+		pub fn upsert_page(
+			origin: OriginFor<T>,
+			#[pallet::compact] schema_id: SchemaId,
+			#[pallet::compact] page_id: PageId,
+			payload: Vec<u8>,
+		) -> DispatchResult {
+			let requestor_key = ensure_signed(origin)?;
+			let bounded_payload: BoundedVec<u8, T::MaxPaginatedPageSizeBytes> =
+				payload.try_into().map_err(|_| Error::<T>::PageExceedsMaxPageSizeBytes)?;
+			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
+			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
+			// TODO: check that schema payload location is Paginated
+			// ensure!(
+			// 	schema.unwrap().payload_location == PayloadLocation::Paginated,
+			// 	Error::<T>::InvalidSchemaForPayloadLocation
+			// );
+
+			let owner_msa_id = Self::find_msa_id(&requestor_key)?;
+			if (Self::write_page(owner_msa_id, bounded_payload, schema_id, page_id))? {
+				Self::deposit_event(Event::PageUpdated { page_id });
+			}
+
 			Ok(())
 		}
 
+		#[pallet::call_index(3)]
 		#[pallet::weight(0)]
 		pub fn remove_page(_origin: OriginFor<T>) -> DispatchResult {
 			Ok(())
 		}
+	}
+}
+
+impl<T: Config> Pallet<T> {
+	/// Store a page for a given MSA + schema.
+	/// Returns true if it needs to emit an event.
+	///
+	/// # Errors
+	/// * [`Error::PageCountOverflow`]
+	/// * [`Error::InvalidSchemaForPayloadLocation`]
+	///
+	pub fn write_page(
+		_msa_id: MessageSourceId,
+		_payload: BoundedVec<u8, T::MaxPaginatedPageSizeBytes>,
+		_schema_id: SchemaId,
+		_page_id: PageId,
+	) -> Result<bool, DispatchError> {
+		Ok(true)
+	}
+
+	/// Resolve an MSA from an account key(key)
+	/// An MSA Id associated with the account key is returned, if one exists.
+	///
+	/// # Errors
+	/// * [`Error::InvalidMessageSourceAccount`]
+	///
+	pub fn find_msa_id(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
+		Ok(T::MsaInfoProvider::ensure_valid_msa_key(key)
+			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?)
 	}
 }
