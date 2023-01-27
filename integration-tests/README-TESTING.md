@@ -52,3 +52,22 @@ accessed like so:
         const msaId = targetEvent.data.msaId;
     }
     ```
+
+Load Testing - WIP
+==================
+We currently have one load test in the `scenarios/` directory. The test suite is marked `skip` because it is configured to run in manual-sealing mode only. To run the tests, do the following:
+
+1. Start the chain in manual sealing mode
+```
+make start-manual
+```
+
+2. Remove `.skip` from the `msaInitializerLoad.test.ts` test suite.
+
+3. Run 
+```
+make integration-test
+```
+
+Notes:
+As of now, the MSA initializer load tests inject 100k signatures into a single block (via `addPublicKeyToMsa`). The UI does not show all 100k, instead only 644 transactions are logged.
