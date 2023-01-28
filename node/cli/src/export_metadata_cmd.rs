@@ -1,8 +1,7 @@
 use clap::Parser;
-use polkadot_cli::ProvideRuntimeApi;
 use sc_cli::{CliConfiguration, Error, GenericNumber, SharedParams};
 use serde_json::{json, to_writer};
-use sp_api::Metadata;
+use sp_api::{Metadata, ProvideRuntimeApi};
 use sp_core::Bytes;
 use sp_runtime::{
 	generic::BlockId,
@@ -34,7 +33,7 @@ impl ExportMetadataCmd {
 	where
 		B: BlockT,
 		C: ProvideRuntimeApi<B>,
-		C::Api: sp_api::Metadata<B> + 'static,
+		C::Api: Metadata<B> + 'static,
 		<<B::Header as HeaderT>::Number as FromStr>::Err: Debug,
 	{
 		let from = self.from.as_ref().and_then(|f| f.parse().ok()).unwrap_or(0u32);
@@ -53,5 +52,10 @@ impl ExportMetadataCmd {
 impl CliConfiguration for ExportMetadataCmd {
 	fn shared_params(&self) -> &SharedParams {
 		&self.shared_params
+	}
+
+	// We never want to use any stored data. Always just use fresh.
+	fn base_path(&self) -> Result<Option<sc_service::BasePath>, sc_cli::Error> {
+		Ok(Some(sc_service::BasePath::new_temp_dir()?))
 	}
 }
