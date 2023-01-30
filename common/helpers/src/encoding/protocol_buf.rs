@@ -4,6 +4,12 @@ use std::time::Instant;
 
 pub struct ProtocolBufEncoding;
 
+impl ProtocolBufEncoding {
+	pub fn new() -> Self {
+		Self {}
+	}
+}
+
 impl<T: Message> Encoding<T> for ProtocolBufEncoding {
 	fn encode(&self, data: &T) -> Vec<u8> {
 		data.write_to_bytes().unwrap()
