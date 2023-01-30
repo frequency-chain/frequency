@@ -445,7 +445,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MaxProposals = CouncilMaxProposals;
 	type MaxMembers = CouncilMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
-	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
 }
 
 type TechnicalCommitteeCollective = pallet_collective::Instance2;
@@ -697,7 +697,7 @@ impl pallet_collator_selection::Config for Runtime {
 	// Validate a user is registered
 	type ValidatorRegistration = Session;
 
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_collator_selection::SubstrateWeight<Runtime>;
 }
 
 impl pallet_messages::Config for Runtime {
