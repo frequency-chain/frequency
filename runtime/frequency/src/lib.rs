@@ -36,6 +36,7 @@ use common_primitives::{
 	messages::*,
 	msa::*,
 	node::*,
+	rpc::RpcEvent,
 	schema::{PayloadLocation, SchemaResponse},
 };
 
@@ -1169,6 +1170,12 @@ impl_runtime_apis! {
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
 		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			Schemas::get_schema_by_id(schema_id)
+		}
+	}
+
+	impl system_runtime_api::AdditionalRuntimeApi<Block> for Runtime {
+		fn get_events() -> Vec<RpcEvent> {
+			System::read_events_no_consensus().into_iter().map(|e| (*e).into()).collect()
 		}
 	}
 

@@ -2827,6 +2827,7 @@ name = "frequency-service"
 version = "0.0.0"
 dependencies = [
  "clap",
+ "common-helpers",
  "common-primitives",
  "common-runtime",
  "cumulus-client-cli",
@@ -2878,6 +2879,7 @@ dependencies = [
  "sc-tracing",
  "sc-transaction-pool",
  "sc-transaction-pool-api",
+ "scale-info",
  "serde",
  "sp-api",
  "sp-block-builder",
@@ -2894,6 +2896,9 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
+ "substrate-test-runtime-client",
+ "system-runtime-api",
+ "tokio",
  "try-runtime-cli",
 ]
 

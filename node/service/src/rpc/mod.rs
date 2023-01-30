@@ -18,6 +18,11 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
+mod frequency_rpc;
+
+#[cfg(test)]
+mod tests;
+
 /// A type representing all RPC extensions.
 pub type RpcExtension = jsonrpsee::RpcModule<()>;
 
@@ -51,6 +56,7 @@ where
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_messages_runtime_api::MessagesRuntimeApi<Block>,
 	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block>,
+	C::Api: system_runtime_api::AdditionalRuntimeApi<Block>,
 	C::Api: pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId>,
 	P: TransactionPool + Sync + Send + 'static,
 {
@@ -58,7 +64,7 @@ where
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 
 	// Frequency RPCs
-	use crate::frequency_rpc::{FrequencyRpcApiServer, FrequencyRpcHandler};
+	use frequency_rpc::{FrequencyRpcApiServer, FrequencyRpcHandler};
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
 	use pallet_schemas_rpc::{SchemasApiServer, SchemasHandler};
@@ -80,4 +86,63 @@ where
 		)?;
 	}
 	Ok(module)
+}
+
+
+use jsonrpsee::{
+	core::{async_trait, RpcResult},
+	proc_macros::rpc,
+	tracing::warn,
+};
+use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_api::StateBackend;
+
+/// Frequency MSA Custom RPC API
+#[rpc(client, server)]
+pub trait AdditionalRpcsApi<BlockHash> {
+	#[method(name = "extra_true")]
+	fn extra_true(
+		&self,
+	) -> RpcResult<bool>;
+}
+
+
+/// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
+pub struct AdditionalRpcsHandler<C, M> {
+	client: Arc<C>,
+	_marker: std::marker::PhantomData<M>,
+}
+
+impl<C, M> AdditionalRpcsHandler<C, M> {
+	/// Create new instance with the given reference to the client.
+	pub fn new(client: Arc<C>) -> Self {
+		Self { client, _marker: Default::default() }
+	}
+}
+
+#[async_trait]
+impl<C, Block> AdditionalRpcsApiServer<<Block as BlockT>::Hash> for AdditionalRpcsHandler<C, Block>
+where
+	Block: BlockT,
+	C: Send + Sync + 'static,
+	C: ProvideRuntimeApi<Block>,
+	C: HeaderBackend<Block>,
+	C::Api: sc_client_api::StateBackend<sp_runtime::traits::HashFor<Block>>,
+{
+
+	fn extra_true(
+		&self,
+	) -> RpcResult<bool> {
+		let api = self.client.runtime_api();
+		api.storage();
+		Ok(true)
+	}
+
+	// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
+	// fn get_msa_keys(&self, msa_id: MessageSourceId) -> RpcResult<Vec<KeyInfoResponse<AccountId>>> {
+	// 	let api = self.client.runtime_api();
+	// 	let at = BlockId::hash(self.client.info().best_hash);
+	// 	let runtime_api_result = api.get_msa_keys(&at, msa_id);
+	// 	map_rpc_result(runtime_api_result)
+	// }
 }
