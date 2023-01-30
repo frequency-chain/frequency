@@ -37,7 +37,7 @@
 <span class="kw">use </span>serde_json::{json, to_writer};
 <span class="kw">use </span>std::{fmt::Debug, fs, io, path::PathBuf};
 
-<span class="doccomment">/// The `export-metadata` command used to export chain metadata.
+<span class="doccomment">/// The `export-runtime-version` command used to export the runtime version.
 </span><span class="attribute">#[derive(Debug, Clone, Parser)]
 </span><span class="kw">pub struct </span>ExportRuntimeVersionCmd {
 	<span class="doccomment">/// Output file name or stdout if unspecified.
@@ -50,7 +50,7 @@
 }
 
 <span class="kw">impl </span>ExportRuntimeVersionCmd {
-	<span class="doccomment">/// Run the get-runtime-version command.
+	<span class="doccomment">/// Run the export-runtime-version command.
 	</span><span class="kw">pub async fn </span>run(<span class="kw-2">&amp;</span><span class="self">self</span>, runtime_version: <span class="kw-2">&amp;</span>RuntimeVersion) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
 		<span class="kw">let </span>result = <span class="macro">json!</span>(runtime_version);
 		<span class="kw">let </span>file: Box&lt;<span class="kw">dyn </span>io::Write&gt; = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.output {

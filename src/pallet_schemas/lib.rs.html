@@ -367,6 +367,15 @@
 <span id="367">367</span>
 <span id="368">368</span>
 <span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # Schemas Pallet
 //! The Schemas pallet provides functionality for handling schemas.
 //!
@@ -479,10 +488,19 @@
 	#[pallet::generate_deposit(<span class="kw">pub </span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]
 	</span><span class="kw">pub enum </span>Event&lt;T: Config&gt; {
 		<span class="doccomment">/// Emitted when a schema is registered. [who, schemas id]
-		</span>SchemaCreated(T::AccountId, SchemaId),
+		</span>SchemaCreated {
+			<span class="doccomment">/// Account ID
+			</span>key: T::AccountId,
+
+			<span class="doccomment">/// Schema ID of newly-created schema
+			</span>schema_id: SchemaId,
+		},
 
 		<span class="doccomment">/// Emitted when maximum size for schema model is changed.
-		</span>SchemaMaxSizeChanged(u32),
+		</span>SchemaMaxSizeChanged {
+			<span class="doccomment">/// Max size of schema document
+			</span>max_size: u32,
+		},
 	}
 
 	<span class="attribute">#[derive(PartialEq, Eq)] </span><span class="comment">// for testing
@@ -592,7 +610,7 @@
 			<span class="self">Self</span>::ensure_valid_model(<span class="kw-2">&amp;</span>model_type, <span class="kw-2">&amp;</span>model)<span class="question-mark">?</span>;
 			<span class="kw">let </span>schema_id = <span class="self">Self</span>::add_schema(model, model_type, payload_location)<span class="question-mark">?</span>;
 
-			<span class="self">Self</span>::deposit_event(Event::SchemaCreated(sender, schema_id));
+			<span class="self">Self</span>::deposit_event(Event::SchemaCreated { key: sender, schema_id });
 			<span class="prelude-val">Ok</span>(())
 		}
 
@@ -620,7 +638,7 @@
 				Error::&lt;T&gt;::ExceedsMaxSchemaModelBytes
 			);
 			GovernanceSchemaModelMaxBytes::&lt;T&gt;::set(max_size);
-			<span class="self">Self</span>::deposit_event(Event::SchemaMaxSizeChanged(max_size));
+			<span class="self">Self</span>::deposit_event(Event::SchemaMaxSizeChanged { max_size });
 			<span class="prelude-val">Ok</span>(())
 		}
 	}

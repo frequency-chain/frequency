@@ -564,16 +564,6 @@
 <span id="564">564</span>
 <span id="565">565</span>
 <span id="566">566</span>
-<span id="567">567</span>
-<span id="568">568</span>
-<span id="569">569</span>
-<span id="570">570</span>
-<span id="571">571</span>
-<span id="572">572</span>
-<span id="573">573</span>
-<span id="574">574</span>
-<span id="575">575</span>
-<span id="576">576</span>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cli::{Cli, RelayChainCli, Subcommand};
 <span class="kw">use </span>codec::Encode;
 <span class="kw">use </span>cumulus_client_cli::generate_genesis_block;
@@ -833,17 +823,7 @@
 			})
 		},
 		<span class="prelude-val">Some</span>(Subcommand::ExportMetadata(cmd)) =&gt; {
-			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
-
-			runner.async_run(|config| {
-				<span class="comment">// grab the task manager.
-				</span><span class="kw">let </span>registry = config.prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry);
-				<span class="kw">let </span>task_manager =
-					sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-						.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;Error: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
-				<span class="kw">let </span>partials = new_partial(<span class="kw-2">&amp;</span>config, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
-				<span class="prelude-val">Ok</span>((cmd.run(partials.client), task_manager))
-			})
+			<span class="macro">construct_async_run!</span>(|components, cli, cmd, config| <span class="prelude-val">Ok</span>(cmd.run(components.client)))
 		},
 		<span class="prelude-val">Some</span>(Subcommand::PurgeChain(cmd)) =&gt; {
 			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;

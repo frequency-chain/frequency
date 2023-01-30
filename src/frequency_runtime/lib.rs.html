@@ -1087,6 +1087,15 @@
 <span id="1087">1087</span>
 <span id="1088">1088</span>
 <span id="1089">1089</span>
+<span id="1090">1090</span>
+<span id="1091">1091</span>
+<span id="1092">1092</span>
+<span id="1093">1093</span>
+<span id="1094">1094</span>
+<span id="1095">1095</span>
+<span id="1096">1096</span>
+<span id="1097">1097</span>
+<span id="1098">1098</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attribute">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
@@ -1168,25 +1177,34 @@
 </span><span class="kw">pub struct </span>BaseCallFilter;
 
 <span class="kw">impl </span>Contains&lt;RuntimeCall&gt; <span class="kw">for </span>BaseCallFilter {
-	<span class="kw">fn </span>contains(_call: <span class="kw-2">&amp;</span>RuntimeCall) -&gt; bool {
+	<span class="kw">fn </span>contains(call: <span class="kw-2">&amp;</span>RuntimeCall) -&gt; bool {
 		<span class="attribute">#[cfg(not(feature = <span class="string">&quot;frequency&quot;</span>))]
 		</span>{
-			<span class="bool-val">true
-		</span>}
+			<span class="kw">match </span>call {
+				<span class="comment">// Utility Calls are blocked. Issue #599
+				</span>RuntimeCall::Utility(..) =&gt; <span class="bool-val">false</span>,
+				<span class="kw">_ </span>=&gt; <span class="bool-val">true</span>,
+			}
+		}
 		<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency&quot;</span>)]
 		</span>{
-			<span class="macro">matches!</span>(
-				_call,
-				RuntimeCall::System(..) |
-					RuntimeCall::Timestamp(..) |
-					RuntimeCall::ParachainSystem(..) |
-					RuntimeCall::TechnicalCommittee(..) |
-					RuntimeCall::Council(..) |
-					RuntimeCall::Democracy(..) |
-					RuntimeCall::Session(..) |
-					RuntimeCall::Preimage(..) |
-					RuntimeCall::Scheduler(..)
-			)
+			<span class="kw">match </span>call {
+				<span class="comment">// Utility Calls are blocked. Issue #599
+				</span>RuntimeCall::Utility(..) =&gt; <span class="bool-val">false</span>,
+				<span class="comment">// Allowed Mainnet
+				</span>RuntimeCall::System(..) |
+				RuntimeCall::Timestamp(..) |
+				RuntimeCall::ParachainSystem(..) |
+				RuntimeCall::TechnicalCommittee(..) |
+				RuntimeCall::Council(..) |
+				RuntimeCall::Democracy(..) |
+				RuntimeCall::Session(..) |
+				RuntimeCall::Preimage(..) |
+				RuntimeCall::Scheduler(..) |
+				RuntimeCall::Treasury(..) =&gt; <span class="bool-val">true</span>,
+				<span class="comment">// General Mainnet Calls will be enabled with Issue #877
+				</span><span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
+			}
 		}
 	}
 }
@@ -1274,7 +1292,7 @@
 	spec_name: <span class="macro">spec_name!</span>(<span class="string">&quot;frequency&quot;</span>),
 	impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;frequency&quot;</span>),
 	authoring_version: <span class="number">1</span>,
-	spec_version: <span class="number">10</span>,
+	spec_version: <span class="number">11</span>,
 	impl_version: <span class="number">0</span>,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: <span class="number">1</span>,

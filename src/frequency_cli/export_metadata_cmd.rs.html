@@ -55,11 +55,14 @@
 <span id="55">55</span>
 <span id="56">56</span>
 <span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
 </pre><pre class="rust"><code><span class="kw">use </span>clap::Parser;
-<span class="kw">use </span>polkadot_cli::ProvideRuntimeApi;
 <span class="kw">use </span>sc_cli::{CliConfiguration, Error, GenericNumber, SharedParams};
 <span class="kw">use </span>serde_json::{json, to_writer};
-<span class="kw">use </span>sp_api::Metadata;
+<span class="kw">use </span>sp_api::{Metadata, ProvideRuntimeApi};
 <span class="kw">use </span>sp_core::Bytes;
 <span class="kw">use </span>sp_runtime::{
 	generic::BlockId,
@@ -91,7 +94,7 @@
 	<span class="kw">where
 		</span>B: BlockT,
 		C: ProvideRuntimeApi&lt;B&gt;,
-		C::Api: sp_api::Metadata&lt;B&gt; + <span class="lifetime">&#39;static</span>,
+		C::Api: Metadata&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 		&lt;&lt;B::Header <span class="kw">as </span>HeaderT&gt;::Number <span class="kw">as </span>FromStr&gt;::Err: Debug,
 	{
 		<span class="kw">let </span>from = <span class="self">self</span>.from.as_ref().and_then(|f| f.parse().ok()).unwrap_or(<span class="number">0u32</span>);
@@ -110,6 +113,11 @@
 <span class="kw">impl </span>CliConfiguration <span class="kw">for </span>ExportMetadataCmd {
 	<span class="kw">fn </span>shared_params(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>SharedParams {
 		<span class="kw-2">&amp;</span><span class="self">self</span>.shared_params
+	}
+
+	<span class="comment">// We never want to use any stored data. Always just use fresh.
+	</span><span class="kw">fn </span>base_path(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;sc_service::BasePath&gt;, sc_cli::Error&gt; {
+		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(sc_service::BasePath::new_temp_dir()<span class="question-mark">?</span>))
 	}
 }
 </code></pre></div>
