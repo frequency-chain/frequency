@@ -397,8 +397,6 @@ jobs:
             --rpc-methods=Unsafe \
             --no-telemetry \
             --no-prometheus \
-            --port $((30333)) \
-            --rpc-port $((9933)) \
             --ws-port $((9944)) \
             --reserved-only \
             --tmp \
@@ -415,8 +413,6 @@ jobs:
             --rpc-methods=Unsafe \
             --no-telemetry \
             --no-prometheus \
-            --port $((30334)) \
-            --rpc-port $((9934)) \
             --ws-port $((9946)) \
             --reserved-only \
             --tmp \
