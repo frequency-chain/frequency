@@ -1,10 +1,10 @@
 use crate::{
+	avro,
 	encoding::{
 		avro_binary::AvroBinaryEncoding, protocol_buf::ProtocolBufEncoding, traits::Encoding,
 	},
 	types::SchemaValue,
 };
-use apache_avro::Schema;
 use protobuf::{well_known_types::timestamp::Timestamp, Message};
 use std::collections::HashMap;
 
@@ -30,26 +30,34 @@ fn protobuf_encoding_base_test() {
 
 #[test]
 fn avro_encoding_base_test() {
-	let schema = r#"
+	let raw_schema = r#"
     {
         "type": "record",
-        "name": "User",
+        "name": "test",
         "fields": [
-            {"name": "name", "type": "string"},
-            {"name": "favorite_number",  "type": ["int", "null"]},
-            {"name": "favorite_color", "type": ["string", "null"]}
+            {"name": "a", "type": "long", "default": 42},
+            {"name": "b", "type": "string"}
         ]
     }
     "#;
+	let schema_result = avro::fingerprint_raw_schema(raw_schema);
+	assert!(schema_result.is_ok());
+	let schema_res = schema_result.unwrap();
+	let translate_schema = avro::translate_schema(schema_res.1);
+	assert!(translate_schema.is_ok());
+	let translated_schema = translate_schema.unwrap();
+	let writer = avro::get_schema_data_writer(&translated_schema);
+	assert_eq!(writer.schema(), &translated_schema);
+	// hashmap to store the data
+	let mut data_map = HashMap::new();
+	// the Record type models our Record schema
+	data_map.insert("a".to_string(), SchemaValue::Long(27i64));
+	data_map.insert("b".to_string(), SchemaValue::String("foo".to_string()));
 	let codec = apache_avro::Codec::Snappy;
-	let encoder = AvroBinaryEncoding::new(Schema::parse_str(schema).unwrap(), codec);
-	let mut data = HashMap::<String, SchemaValue>::new();
-	data.insert("name".to_string(), SchemaValue::String("Avro".to_string()));
-	data.insert("favorite_number".to_string(), SchemaValue::Int(256));
-	data.insert("favorite_color".to_string(), SchemaValue::String("spectrum".to_string()));
-	let encoded = encoder.encode(&data);
+	let encoder = AvroBinaryEncoding::new(translated_schema, codec);
+	let encoded = encoder.encode(&data_map);
 	let encoded_size = encoded.len();
-	let metrics = encoder.get_metrics(&data, data.len());
+	let metrics = encoder.get_metrics(&data_map, data_map.len());
 	assert_eq!(metrics.encoded_size, encoded_size);
 	print_metrics(&metrics);
 }

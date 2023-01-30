@@ -22,12 +22,12 @@ impl Encoding<AvroHashMap> for AvroBinaryEncoding {
 	fn encode(&self, data: &AvroHashMap) -> Vec<u8> {
 		let writer = Writer::with_codec(&self.schema, Vec::new(), self.codec);
 		match Record::new(writer.schema()) {
-			None => Vec::new(),
+			None => return to_avro_datum(&self.schema, SchemaValue::Null).unwrap_or_default(),
 			Some(mut record_list) => {
 				for (field_name, field_value) in data.iter() {
 					record_list.put(field_name, field_value.clone());
 				}
-				to_avro_datum(&self.schema, record_list).unwrap_or(Vec::new())
+				return to_avro_datum(&self.schema, record_list).unwrap_or_default()
 			},
 		}
 	}
