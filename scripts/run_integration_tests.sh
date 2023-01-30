@@ -30,7 +30,7 @@ echo "---------------------------------------------"
 
 echo "Building js/api-augment..."
 cd js/api-augment
-npm ci
+npm i
 npm run fetch:local
 npm run --silent build
 cd dist
