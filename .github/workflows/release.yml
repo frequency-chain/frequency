@@ -417,7 +417,7 @@ jobs:
             --no-prometheus \
             --port $((30334)) \
             --rpc-port $((9934)) \
-            --ws-port $((9945)) \
+            --ws-port $((9946)) \
             --reserved-only \
             --tmp \
             --  \
