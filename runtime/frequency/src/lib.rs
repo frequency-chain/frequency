@@ -457,7 +457,7 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 	type MaxProposals = TCMaxProposals;
 	type MaxMembers = TCMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
-	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
 }
 
 // see https://paritytech.github.io/substrate/master/pallet_democracy/pallet/trait.Config.html
