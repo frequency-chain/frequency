@@ -31,7 +31,7 @@ using [StorageDoubleMap](https://docs.substrate.io/rustdocs/latest/frame_support
     - _Type_: `StorageMap<SchemaId, BlockNumber>`
     - _Purpose_: To store the retention period for each SchemaId (allows future adjustments)
     - _Defaults_: If a schema doesn't have any retention period it means there is no retention policy
-  for it, and it will be remained in chain DB indefinitely.
+  for it, and it will remain in chain DB indefinitely.
 - **StartingBlocks**
     - _Type_: `StorageMap<SchemaId, BlockNumber>`
     - _Usage_: To store the starting block number for each SchemaId (will allow future adjustments to

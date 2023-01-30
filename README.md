@@ -264,7 +264,7 @@ make benchmarks
 # Format, Lint and Audit Source Code
 
 -   Format code with `make format` according to style guidelines and configurations in `rustfmt.toml`.
--   Lint code with with `make lint` to catch common mistakes and improve your [Rust](https://github.com/rust-lang/rust) code.
+-   Lint code with `make lint` to catch common mistakes and improve your [Rust](https://github.com/rust-lang/rust) code.
 -   Alternatively, run `make format-lint` to run both at the same time.
 -   Run `cargo-deny` to audit Cargo.lock files for crates with security vulnerabilities reported to the RustSec Advisory Database. [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
 
