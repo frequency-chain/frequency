@@ -24,6 +24,8 @@ use sp_runtime::{
 	ApplyExtrinsicResult,
 };
 
+use codec::Encode;
+
 #[cfg(feature = "runtime-benchmarks")]
 use codec::Decode;
 

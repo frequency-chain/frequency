@@ -17,6 +17,5 @@ compile_error!(
 );
 
 pub mod chain_spec;
-mod frequency_rpc;
 pub mod rpc;
 pub mod service;

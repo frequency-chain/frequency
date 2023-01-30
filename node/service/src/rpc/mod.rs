@@ -18,6 +18,11 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
+mod frequency_rpc;
+
+#[cfg(test)]
+mod tests;
+
 /// A type representing all RPC extensions.
 pub type RpcExtension = jsonrpsee::RpcModule<()>;
 
@@ -51,6 +56,7 @@ where
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_messages_runtime_api::MessagesRuntimeApi<Block>,
 	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block>,
+	C::Api: system_runtime_api::AdditionalRuntimeApi<Block>,
 	C::Api: pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId>,
 	P: TransactionPool + Sync + Send + 'static,
 {
@@ -58,7 +64,7 @@ where
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 
 	// Frequency RPCs
-	use crate::frequency_rpc::{FrequencyRpcApiServer, FrequencyRpcHandler};
+	use frequency_rpc::{FrequencyRpcApiServer, FrequencyRpcHandler};
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
 	use pallet_schemas_rpc::{SchemasApiServer, SchemasHandler};
