@@ -10,5 +10,5 @@ pub struct EncodingMetrics {
 pub trait Encoding<T> {
 	fn encode(&self, data: &T) -> Vec<u8>;
 	fn decode(&self, data: &[u8]) -> T;
-	fn get_metrics(&self, data: &T) -> EncodingMetrics;
+	fn get_metrics(&self, data: &T, input_size: usize) -> EncodingMetrics;
 }

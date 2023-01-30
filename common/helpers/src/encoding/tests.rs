@@ -1,38 +1,21 @@
-use crate::protocol_buf::ProtocolBufEncoding;
+use crate::encoding::{protocol_buf::ProtocolBufEncoding, traits::Encoding};
+use protobuf::{well_known_types::timestamp::Timestamp, Message};
+
+fn print_metrics(metrics: &crate::encoding::traits::EncodingMetrics) {
+	println!("Encoded size: {}", metrics.encoded_size);
+	println!("Decoding time: {}", metrics.decoding_time);
+	println!("Compression ratio: {}", metrics.compression_ratio);
+	println!("Encoding time: {}", metrics.encoding_time);
+}
 
 #[test]
-fn test_protocol_buf_encoding() {
-    let data_sizes = [10, 100, 1000, 10000, 100000];
-    let encoder = ProtocolBufEncoding;
-    let mut results = vec![];
-
-    for size in data_sizes.iter() {
-        let data = vec![0u8; *size];
-        let start = Instant::now();
-        let encoded = encoder.encode(&data);
-        let end = start.elapsed();
-        let encoding_time = end.as_secs_f64();
-
-        let start = Instant::now();
-        let decoded = encoder.decode(&encoded);
-        let end = start.elapsed();
-        let decoding_time = end.as_secs_f64();
-
-        let metrics = encoder.get_metrics(&data);
-        results.push((
-            size,
-            metrics.encoded_size,
-            encoding_time,
-            decoding_time,
-            metrics.compression_ratio,
-        ));
-    }
-
-    println!("Data size | Encoded size | Encoding time | Decoding time | Compression ratio");
-    for result in results.iter() {
-        println!(
-            "{} | {} | {} | {} | {}",
-            result.0, result.1, result.2, result.3, result.4
-        );
-    }
+fn protobuf_encoding_base_test() {
+	let data = Timestamp::now();
+	let encoded = ProtocolBufEncoding.encode(&data);
+	let encoded_size = encoded.len();
+	let compression_ratio = (data.compute_size() as f64) / (encoded_size as f64);
+	let metrics = ProtocolBufEncoding.get_metrics(&data, data.compute_size() as usize);
+	assert_eq!(metrics.encoded_size, encoded_size);
+	assert_eq!(metrics.compression_ratio, compression_ratio);
+	print_metrics(&metrics);
 }
