@@ -69,8 +69,7 @@ impl CliConfiguration for ExportMetadataCmd {
 	fn base_path(&self) -> Result<Option<sc_service::BasePath>, sc_cli::Error> {
 		match &self.tmp {
 			true => Ok(Some(sc_service::BasePath::new_temp_dir()?)),
-			false => self.shared_params.base_path()
+			false => self.shared_params.base_path(),
 		}
 	}
-
 }
