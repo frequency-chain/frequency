@@ -94,19 +94,17 @@ fn impl_staking_target_details_increase_by() {
 #[test]
 fn impl_staking_capacity_details_increase_by() {
 	new_test_ext().execute_with(|| {
-		let mut capacity_details = CapacityDetails::<
-			BalanceOf<Test>,
-			<Test as frame_system::Config>::BlockNumber,
-		>::default();
+		let mut capacity_details =
+			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber>::default();
 		assert_eq!(capacity_details.increase_by(10, 1), Some(()));
 
 		assert_eq!(
 			capacity_details,
-			CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
 				remaining: BalanceOf::<Test>::from(10u64),
 				total_tokens_staked: BalanceOf::<Test>::from(10u64),
 				total_available: BalanceOf::<Test>::from(10u64),
-				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u32)
+				last_replenished_epoch: <Test as Config>::EpochNumber::from(1u32)
 			}
 		)
 	});
@@ -122,14 +120,14 @@ fn staking_account_details_decrease_by_reduces_active_staking_balance_and_create
 		};
 		staking_account_details.decrease_by(3, 3).expect("decrease_by failed");
 		let mut chunks: BoundedVec<
-			UnlockChunk<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber>,
+			UnlockChunk<BalanceOf<Test>, <Test as Config>::EpochNumber>,
 			<Test as pallet_capacity::Config>::MaxUnlockingChunks,
 		> = BoundedVec::default();
 
 		chunks
-			.try_push(UnlockChunk::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+			.try_push(UnlockChunk::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
 				value: BalanceOf::<Test>::from(3u64),
-				thaw_at: <Test as frame_system::Config>::BlockNumber::from(3u64),
+				thaw_at: <Test as Config>::EpochNumber::from(3u32),
 			})
 			.expect("try_push failed");
 
@@ -167,21 +165,21 @@ fn staking_target_details_decrease_by_reduces_staking_and_capacity_amounts() {
 fn staking_capacity_details_decrease_by_reduces_total_tokens_staked_and_total_tokens_available() {
 	new_test_ext().execute_with(|| {
 		let mut capacity_details =
-			CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
 				remaining: BalanceOf::<Test>::from(10u64),
 				total_tokens_staked: BalanceOf::<Test>::from(10u64),
 				total_available: BalanceOf::<Test>::from(10u64),
-				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u32),
+				last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32),
 			};
 		capacity_details.decrease_by(4, 5);
 
 		assert_eq!(
 			capacity_details,
-			CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
 				remaining: BalanceOf::<Test>::from(10u64),
 				total_tokens_staked: BalanceOf::<Test>::from(5u64),
 				total_available: BalanceOf::<Test>::from(6u64),
-				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u32)
+				last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32)
 			}
 		)
 	});
