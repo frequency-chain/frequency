@@ -58,8 +58,7 @@ fn avro_encoding_base_test() {
         "type": "record",
         "name": "test",
         "fields": [
-            {"name": "a", "type": "long", "default": 42},
-            {"name": "b", "type": "string"}
+            {"name": "data", "type": "bytes"}
         ]
     }
     "#;
@@ -73,30 +72,42 @@ fn avro_encoding_base_test() {
 	assert_eq!(writer.schema(), &translated_schema);
 	// hashmap to store the data
 	let mut data_map = HashMap::new();
-	// the Record type models our Record schema
-	data_map.insert("a".to_string(), SchemaValue::Long(27i64));
-	data_map.insert("b".to_string(), SchemaValue::String("foo".to_string()));
+	let sizes = [5_000, 10_000, 20_000, 40_000, 64_000];
+	let mut results = vec![];
+
+	// using snappy compression
 	let codec = apache_avro::Codec::Snappy;
 	let encoder = AvroBinaryEncoding::new(translated_schema, codec);
-	let encoded = encoder.encode(&data_map);
-	let encoded_size = encoded.len();
-	let metrics = encoder.get_metrics(&data_map, data_map.len());
-	assert_eq!(metrics.encoded_size, encoded_size);
-	print_metrics(&metrics);
+	for &size in sizes.iter() {
+		let mut data = vec![];
+		for _ in 0..size {
+			data.push(0);
+		}
+		data_map.insert("data".to_string(), SchemaValue::Bytes(data));
+		let encoded = encoder.encode(&data_map);
+		let encoded_size = encoded.len();
+		let metrics = encoder.get_metrics(&data_map, data_map.len());
+		assert_eq!(metrics.encoded_size, encoded_size);
+		results.push((size, metrics));
+	}
+	for (size, metrics) in results {
+		println!("Data size: {:6} bytes", size);
+		print_metrics(&metrics);
+	}
 }
 
 #[test]
 fn test_thrift_encoding_size() {
 	let thrift_encoding = ThriftEncoding::new();
+	let sizes = [5_000, 10_000, 20_000, 40_000, 64_000];
 	let mut results = vec![];
 
-	for size in [5_000, 10_000, 20_000, 32_000, 64_000].iter() {
-		let test_message = TestMessage::new(*size);
+	for &size in sizes.iter() {
+		let test_message = TestMessage::new(size);
 		let message = thrift_codec::message::Message::oneway("test_method", 1, test_message.into());
 		thrift_encoding.encode(&message);
-		let input_size = *size;
-		let metrics = thrift_encoding.get_metrics(&message, input_size);
-		results.push((input_size, metrics));
+		let metrics = thrift_encoding.get_metrics(&message, size);
+		results.push((size, metrics));
 	}
 	for (size, metrics) in results {
 		println!("Data size: {:6} bytes", size);

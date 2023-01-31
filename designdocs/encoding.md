@@ -7,6 +7,16 @@ transmitted. In this research, we will compare various encoding techniques and t
 metrics to help developers make informed decisions about the best encoding method
 for their use case.
 
+## Run Tests
+
+To run the tests for this research, run the following command:
+
+``` {.sourceCode .bash}
+
+    cargo test -p common-helpers -- --nocapture
+
+```
+
 ## Encoding Techniques
 
 There are many encoding techniques available, some of which include:

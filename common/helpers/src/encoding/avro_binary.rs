@@ -47,13 +47,12 @@ impl Encoding<AvroHashMap> for AvroBinaryEncoding {
 		result_record
 	}
 
-	fn get_metrics(&self, data: &AvroHashMap, _input_size: usize) -> EncodingMetrics {
+	fn get_metrics(&self, data: &AvroHashMap, input_size: usize) -> EncodingMetrics {
 		let start_encode = Instant::now();
 		let encoded = self.encode(data);
 		let encoding_time = start_encode.elapsed().as_secs_f64();
 
 		let encoded_size = encoded.len();
-		let input_size = self.encode(data).len();
 		let compression_ratio = (input_size as f64) / (encoded_size as f64);
 
 		let start_decode = Instant::now();
