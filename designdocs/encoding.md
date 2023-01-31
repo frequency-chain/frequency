@@ -82,7 +82,11 @@ Data Structure:
     }
 ```
 
-Note: It would be much better to pin down a proper data structure for the tests that would implement some derived traits required by the serialization libraries(avro, serde, protobuf, etc). This would help us to get more accurate results and really test the performance of the serialization libraries.
+Note:
+
+It is assumed that the data structure is already serialized to support encoders' types and ready to be encoded.
+
+It would be much better to pin down a proper data structure for the tests that would implement some derived traits required by the serialization libraries(avro, serde, protobuf, etc). This would help us to get more accurate results and really test the performance of the serialization libraries.
 
 ### Table: Thrift
 
