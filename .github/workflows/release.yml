@@ -15,6 +15,8 @@ env:
 jobs:
   build-binaries:
     name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
+    env:
+      HOME: /root
     strategy:
       matrix:
         # os: [[self-hosted, Linux, X64], [self-hosted, Linux, ARM64]]
@@ -39,16 +41,15 @@ jobs:
           #   arch: arm64
     runs-on: ${{matrix.os}}
     steps:
-      - name: Set Global Env Vars
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Reset Runner
+        uses: ./.github/workflows/common/reset-self-hosted-runner
+      - name: Set Env Vars
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
-      - name: Set Ubuntu Env Vars
-        run: |
-          echo "HOME=/root" >> $GITHUB_ENV
-      - name: Check Out Repo
-        uses: actions/checkout@v3
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
       # - name: Cache Binary for Testing
       #   id: cache-binary
@@ -111,6 +112,8 @@ jobs:
     outputs:
       runtime_filename_rococo: ${{steps.set-env-vars.outputs.runtime_filename_rococo}}
       runtime_filename_mainnet: ${{steps.set-env-vars.outputs.runtime_filename_mainnet}}
+    env:
+      HOME: /root
     strategy:
       matrix:
         network: [rococo, mainnet]
@@ -133,11 +136,10 @@ jobs:
             wasm-core-version: frequency
     runs-on: [self-hosted, Linux, X64]
     steps:
-      - name: Set Ubuntu Env Vars
-        run: |
-          echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Reset Runner
+        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
@@ -209,11 +211,13 @@ jobs:
   build-rust-developer-docs:
     name: Build Rust Developer Docs
     runs-on: [self-hosted, Linux, X64]
+    env:
+      HOME: /root
     steps:
-      - name: Set Ubuntu Env Vars
-        run: echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Reset Runner
+        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Required Packages
         run: |
           sudo apt-get update
