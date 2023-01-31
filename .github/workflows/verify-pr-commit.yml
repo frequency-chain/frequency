@@ -39,14 +39,14 @@ jobs:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
               - 'js/api-augment/**'
-              - 'integration-tests/**/*.test.ts'
+              - 'integration-tests/**/*.{ts,json}'
             cargo-lock:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
             run-integration-tests:
               - '**/*.rs'
               - '**/Cargo.toml'
-              - 'integration-tests/**/*.[ts,json]'
+              - 'integration-tests/**/*.{ts,json}'
 
   # Workaround to handle skipped required check inside matrix
   # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks
@@ -502,7 +502,7 @@ jobs:
       - name: Build collator image in instant seal mode
         env:
           IMAGE_NAME: instant-seal-node
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           push: false
@@ -510,7 +510,7 @@ jobs:
       - name: Build collator image for local relay chain
         env:
           IMAGE_NAME: collator-node-local
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           push: false
