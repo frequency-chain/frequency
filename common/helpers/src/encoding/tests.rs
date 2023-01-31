@@ -1,11 +1,12 @@
 use crate::{
 	avro,
 	encoding::{
-		avro_binary::AvroBinaryEncoding, protocol_buf::ProtocolBufEncoding, thrift::ThriftEncoding,
-		traits::Encoding,
+		avro_binary::AvroBinaryEncoding, message_pack::MessagePackEncoding,
+		protocol_buf::ProtocolBufEncoding, thrift::ThriftEncoding, traits::Encoding,
 	},
 	types::SchemaValue,
 };
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 fn print_metrics(metrics: &crate::encoding::traits::EncodingMetrics) {
@@ -66,6 +67,7 @@ fn avro_encoding_base_test() {
 #[test]
 fn test_thrift_encoding_size() {
 	let thrift_encoding = ThriftEncoding::new();
+	let mut results = vec![];
 
 	for size in [5_000, 10_000, 20_000, 32_000, 64_000].iter() {
 		let message = thrift_codec::message::Message::oneway(
@@ -76,6 +78,44 @@ fn test_thrift_encoding_size() {
 		thrift_encoding.encode(&message);
 		let input_size = *size;
 		let metrics = thrift_encoding.get_metrics(&message, input_size);
+		results.push((input_size, metrics));
+	}
+	for (size, metrics) in results {
+		println!("Data size: {:6} bytes", size);
+		print_metrics(&metrics);
+	}
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct TestMessage {
+	data: Vec<u8>,
+}
+
+impl TestMessage {
+	fn new(size: usize) -> Self {
+		let mut data = vec![];
+		for _ in 0..size {
+			data.push(0);
+		}
+		Self { data }
+	}
+}
+
+#[test]
+fn test_message_pack_encoding() {
+	let sizes = [5_000, 10_000, 20_000, 40_000, 64_000];
+	let mut results = vec![];
+
+	for &size in sizes.iter() {
+		let test_message = TestMessage::new(size);
+		let message_pack = MessagePackEncoding::new();
+
+		let metrics = message_pack.get_metrics(&test_message, size);
+		results.push((size, metrics));
+	}
+
+	for (size, metrics) in results {
+		println!("Data size: {:6} bytes", size);
 		print_metrics(&metrics);
 	}
 }
