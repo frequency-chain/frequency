@@ -887,27 +887,16 @@ pub mod pallet {
 			// log::info!("request_to_be_provider()");
 			let public_key = ensure_signed(origin)?;
 
-			//			let council_members;
-
-			// let council_member: Option<T::AccountId> =
-			// 	T::MyCouncilMembers::members().into_iter().next();
-			// match council_member {
-			// 	Some(council_member_account_id) => {
-			// 		info!("council_member_account_id={}", council_member_account_id);
-			// 	},
-			// 	None => {},
-			// }
-
 			Ok(())
 
 			// 			// create the proposal data
 			// 			let proposal = RuntimeCall {
-			// //				data: RuntimeCall::System(Msa::create_provider(origin, provider_name)),
+			// 				data: RuntimeCall::System(Msa::create_provider(origin, provider_name)),
 			// 			};
 			// 			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
 
 			// 			// pick first council member.
-			// 			// Question: should this be a random member?  is it possible to use a multiaddress for all council members?
+			// 			// Questions: should this be a random member?  is it possible to use a multiaddress for all council members?
 			// 			// TODO: handle case when there are no members
 
 			// 			let proposal_call =
