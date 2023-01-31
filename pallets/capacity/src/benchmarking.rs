@@ -1,6 +1,5 @@
 use super::*;
 use crate::Pallet as Capacity;
-use frame_system::Pallet as System;
 
 use frame_benchmarking::{account, benchmarks, whitelist_account, Vec};
 use frame_support::{assert_ok, traits::Currency};
@@ -57,17 +56,16 @@ benchmarks! {
 	withdraw_unstaked {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
 		let amount: BalanceOf<T> = T::MinimumStakingAmount::get();
-		let block_number = 4u32;
 
 		let mut staking_account = StakingAccountDetails::<T>::default();
 		staking_account.increase_by(500u32.into());
 
 		// set new unlock chunks using tuples of (value, thaw_at)
-		let new_unlocks: Vec<(u32, u32)> = Vec::from([(50u32, 3u32), (50u32, block_number)]);
+		let new_unlocks: Vec<(u32, u32)> = Vec::from([(50u32, 3u32), (50u32, 5u32)]);
 		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
 
 		Capacity::<T>::set_staking_account(&caller.clone(), &staking_account);
-		System::<T>::set_block_number(block_number.into());
+		CurrentEpoch::<T>::set(T::EpochNumber::from(5u32));
 
 	}: _ (RawOrigin::Signed(caller.clone()))
 	verify {

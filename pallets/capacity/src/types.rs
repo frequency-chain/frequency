@@ -21,15 +21,15 @@ pub struct StakingAccountDetails<T: Config> {
 	/// The total amount of tokens in `active` and `unlocking`
 	pub total: BalanceOf<T>,
 	/// Unstaked balances that are thawing or awaiting withdrawal.
-	pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::BlockNumber>, T::MaxUnlockingChunks>,
+	pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
 }
 /// The type that is used to record a single request for a number of tokens to be unlocked.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub struct UnlockChunk<Balance, BlockNumber> {
+pub struct UnlockChunk<Balance, EpochNumber> {
 	/// Amount to be unlocked.
 	pub value: Balance,
 	/// Block number at which point funds are unlocked.
-	pub thaw_at: BlockNumber,
+	pub thaw_at: EpochNumber,
 }
 
 impl<T: Config> StakingAccountDetails<T> {
@@ -59,7 +59,7 @@ impl<T: Config> StakingAccountDetails<T> {
 	/// returns true on success, false on failure (?)
 	// TODO: remove this when finished and use production fn
 	pub fn set_unlock_chunks(&mut self, chunks: &Vec<(u32, u32)>) -> bool {
-		let result: Vec<UnlockChunk<BalanceOf<T>, <T>::BlockNumber>> = chunks
+		let result: Vec<UnlockChunk<BalanceOf<T>, <T>::EpochNumber>> = chunks
 			.into_iter()
 			.map(|chunk| UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() })
 			.collect();
@@ -70,10 +70,10 @@ impl<T: Config> StakingAccountDetails<T> {
 	/// deletes thawed chunks, updates `total`, Caller is responsible for updating free/locked
 	/// balance on the token account.
 	/// Returns: the total amount reaped from `unlocking`
-	pub fn reap_thawed(&mut self, current_block: <T>::BlockNumber) -> BalanceOf<T> {
+	pub fn reap_thawed(&mut self, current_epoch: <T>::EpochNumber) -> BalanceOf<T> {
 		let mut total_reaped: BalanceOf<T> = 0u32.into();
 		self.unlocking.retain(|chunk| {
-			if current_block.ge(&chunk.thaw_at) {
+			if current_epoch.ge(&chunk.thaw_at) {
 				total_reaped = total_reaped + chunk.value;
 				match self.total.checked_sub(&chunk.value) {
 					Some(new_total) => self.total = new_total,
@@ -93,7 +93,7 @@ impl<T: Config> StakingAccountDetails<T> {
 	}
 
 	/// Decrease the amount of active stake by an amount and createa an UnlockChunk.
-	pub fn decrease_by(&mut self, amount: BalanceOf<T>, thaw_at: T::BlockNumber) -> DispatchResult {
+	pub fn decrease_by(&mut self, amount: BalanceOf<T>, thaw_at: T::EpochNumber) -> DispatchResult {
 		let new_active = self.active.saturating_sub(amount);
 
 		let unlock_chunk = UnlockChunk { value: amount, thaw_at };
@@ -141,20 +141,20 @@ impl<Balance: Saturating + Copy + CheckedAdd> StakingTargetDetails<Balance> {
 
 /// The type for storing Registered Provider Capacity balance:
 #[derive(PartialEq, Eq, Clone, Default, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub struct CapacityDetails<Balance, BlockNumber> {
+pub struct CapacityDetails<Balance, EpochNumber> {
 	/// The Capacity remaining for the `last_replenished_epoch`.
 	pub remaining: Balance,
 	/// The amount of tokens staked to an MSA.
 	pub total_tokens_staked: Balance,
 	/// The total Capacity issued to an MSA.
 	pub total_available: Balance,
-	/// The last block-number that an MSA was replenished with Capacity.
-	pub last_replenished_epoch: BlockNumber,
+	/// The last Epoch that an MSA was replenished with Capacity.
+	pub last_replenished_epoch: EpochNumber,
 }
 
-impl<Balance: Saturating + Copy + CheckedAdd, BlockNumber> CapacityDetails<Balance, BlockNumber> {
+impl<Balance: Saturating + Copy + CheckedAdd, EpochNumber> CapacityDetails<Balance, EpochNumber> {
 	/// Increase a targets Capacity balance by an amount.
-	pub fn increase_by(&mut self, amount: Balance, replenish_at: BlockNumber) -> Option<()> {
+	pub fn increase_by(&mut self, amount: Balance, replenish_at: EpochNumber) -> Option<()> {
 		self.remaining = amount.checked_add(&self.remaining)?;
 		self.total_tokens_staked = amount.checked_add(&self.total_tokens_staked)?;
 		self.total_available = amount.checked_add(&self.total_available)?;

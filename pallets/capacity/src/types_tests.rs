@@ -8,17 +8,22 @@ fn staking_account_details_reap_thawed_happy_path() {
 	let mut staking_account = StakingAccountDetails::<Test>::default();
 	staking_account.increase_by(10);
 
+	// 10 token total, 6 token unstaked
 	let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
 	assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
 	assert_eq!(10, staking_account.total);
 	assert_eq!(3, staking_account.unlocking.len());
 
-	assert_eq!(1u64, staking_account.reap_thawed(2));
-	assert_eq!(2, staking_account.unlocking.len());
-	assert_eq!(9, staking_account.total);
+	// At epoch 3, the first two chunks should be thawed.
+	assert_eq!(3u64, staking_account.reap_thawed(3u32));
+	assert_eq!(1, staking_account.unlocking.len());
+	// ...leaving 10-3 = 7 total in staking
+	assert_eq!(7, staking_account.total);
 
-	assert_eq!(5u64, staking_account.reap_thawed(5));
+	// At epoch 5, all unstaking is done.
+	assert_eq!(3u64, staking_account.reap_thawed(5u32));
 	assert_eq!(0, staking_account.unlocking.len());
+	// ...leaving 7-3 = 4 total
 	assert_eq!(4, staking_account.total);
 }
 
@@ -89,19 +94,17 @@ fn impl_staking_target_details_increase_by() {
 #[test]
 fn impl_staking_capacity_details_increase_by() {
 	new_test_ext().execute_with(|| {
-		let mut capacity_details = CapacityDetails::<
-			BalanceOf<Test>,
-			<Test as frame_system::Config>::BlockNumber,
-		>::default();
+		let mut capacity_details =
+			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber>::default();
 		assert_eq!(capacity_details.increase_by(10, 1), Some(()));
 
 		assert_eq!(
 			capacity_details,
-			CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
 				remaining: BalanceOf::<Test>::from(10u64),
 				total_tokens_staked: BalanceOf::<Test>::from(10u64),
 				total_available: BalanceOf::<Test>::from(10u64),
-				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u32)
+				last_replenished_epoch: <Test as Config>::EpochNumber::from(1u32)
 			}
 		)
 	});
@@ -117,14 +120,14 @@ fn staking_account_details_decrease_by_reduces_active_staking_balance_and_create
 		};
 		staking_account_details.decrease_by(3, 3).expect("decrease_by failed");
 		let mut chunks: BoundedVec<
-			UnlockChunk<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber>,
+			UnlockChunk<BalanceOf<Test>, <Test as Config>::EpochNumber>,
 			<Test as pallet_capacity::Config>::MaxUnlockingChunks,
 		> = BoundedVec::default();
 
 		chunks
-			.try_push(UnlockChunk::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+			.try_push(UnlockChunk::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
 				value: BalanceOf::<Test>::from(3u64),
-				thaw_at: <Test as frame_system::Config>::BlockNumber::from(3u64),
+				thaw_at: <Test as Config>::EpochNumber::from(3u32),
 			})
 			.expect("try_push failed");
 
@@ -162,21 +165,21 @@ fn staking_target_details_decrease_by_reduces_staking_and_capacity_amounts() {
 fn staking_capacity_details_decrease_by_reduces_total_tokens_staked_and_total_tokens_available() {
 	new_test_ext().execute_with(|| {
 		let mut capacity_details =
-			CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
 				remaining: BalanceOf::<Test>::from(10u64),
 				total_tokens_staked: BalanceOf::<Test>::from(10u64),
 				total_available: BalanceOf::<Test>::from(10u64),
-				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u32),
+				last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32),
 			};
 		capacity_details.decrease_by(4, 5);
 
 		assert_eq!(
 			capacity_details,
-			CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
 				remaining: BalanceOf::<Test>::from(10u64),
 				total_tokens_staked: BalanceOf::<Test>::from(5u64),
 				total_available: BalanceOf::<Test>::from(6u64),
-				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u32)
+				last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32)
 			}
 		)
 	});
