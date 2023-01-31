@@ -175,7 +175,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_capacity_for)]
 	pub type CapacityLedger<T: Config> =
-		StorageMap<_, Twox64Concat, MessageSourceId, CapacityDetails<BalanceOf<T>, T::BlockNumber>>;
+		StorageMap<_, Twox64Concat, MessageSourceId, CapacityDetails<BalanceOf<T>, T::EpochNumber>>;
 
 	/// Storage for the current epoch number
 	#[pallet::storage]
@@ -320,9 +320,9 @@ pub mod pallet {
 
 			let mut staking_account =
 				Self::get_staking_account_for(&staker).ok_or(Error::<T>::NotAStakingAccount)?;
-			let current_block = frame_system::Pallet::<T>::block_number();
 
-			let amount_withdrawn = staking_account.reap_thawed(current_block);
+			let current_epoch = Self::get_current_epoch();
+			let amount_withdrawn = staking_account.reap_thawed(current_epoch);
 			ensure!(!amount_withdrawn.is_zero(), Error::<T>::NoUnstakedTokensAvailable);
 
 			Self::update_or_delete_staking_account(&staker, &mut staking_account);
@@ -414,7 +414,7 @@ impl<T: Config> Pallet<T> {
 
 		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
 		capacity_details
-			.increase_by(amount, frame_system::Pallet::<T>::block_number())
+			.increase_by(amount, Self::get_current_epoch())
 			.ok_or(ArithmeticError::Overflow)?;
 
 		Self::set_staking_account(&staker, staking_account);
@@ -460,7 +460,7 @@ impl<T: Config> Pallet<T> {
 	/// Sets targets Capacity.
 	fn set_capacity_for(
 		target: MessageSourceId,
-		capacity_details: CapacityDetails<BalanceOf<T>, T::BlockNumber>,
+		capacity_details: CapacityDetails<BalanceOf<T>, T::EpochNumber>,
 	) {
 		CapacityLedger::<T>::insert(target, capacity_details);
 	}
@@ -479,9 +479,9 @@ impl<T: Config> Pallet<T> {
 			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::StakingAccountNotFound)?;
 		ensure!(amount <= staking_account.active, Error::<T>::AmountToUnstakeExceedsAmountStaked);
 
-		let current_block: T::BlockNumber = frame_system::Pallet::<T>::block_number();
+		let current_epoch: T::EpochNumber = Self::get_current_epoch();
 		let thaw_at =
-			current_block.saturating_add(T::BlockNumber::from(T::UnstakingThawPeriod::get()));
+			current_epoch.saturating_add(T::EpochNumber::from(T::UnstakingThawPeriod::get()));
 
 		staking_account.decrease_by(amount, thaw_at)?;
 		Self::set_staking_account(&unstaker, &staking_account);
