@@ -56,7 +56,7 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-	dispatch::{DispatchInfo, DispatchResult},
+	dispatch::{DispatchInfo, DispatchResult, GetDispatchInfo, PostDispatchInfo},
 	ensure,
 	pallet_prelude::*,
 	traits::IsSubType,
@@ -106,6 +106,17 @@ mod signature_registry_tests;
 
 pub mod weights;
 
+/// The provider of a collective action interface, for example an instance of `pallet-collective`.
+pub trait ProposalProvider<AccountId, Hash, Proposal> {
+	/// Add a new proposal.
+	/// Returns a proposal length and active proposals count if successful.
+	fn propose_proposal(
+		who: AccountId,
+		threshold: u32,
+		proposal: Box<Proposal>,
+		length_bound: u32,
+	) -> Result<(u32, u32), DispatchError>;
+}
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::log::error as log_err;
@@ -117,11 +128,23 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
+		/// The runtime call dispatch type.
+		type Proposal: Parameter
+			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin, PostInfo = PostDispatchInfo>
+			+ From<frame_system::Call<Self>>
+			+ From<Call<Self>>
+			+ GetDispatchInfo
+			+ IsSubType<Call<Self>>
+			+ IsType<<Self as frame_system::Config>::RuntimeCall>;
+
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
 		/// AccountId truncated to 32 bytes
 		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
+
+		/// The Council proposal provider interface
+		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Hash, Self::Proposal>;
 
 		/// Maximum count of keys allowed per MSA
 		#[pallet::constant]
@@ -852,6 +875,62 @@ pub mod pallet {
 				},
 			}
 			Ok(Some(T::WeightInfo::retire_msa(num_deletions)).into())
+		}
+
+		/// Request to be a provider
+		#[pallet::call_index(11)]
+		#[pallet::weight(1000)]
+		pub fn request_to_be_provider(
+			origin: OriginFor<T>,
+			provider_name: Vec<u8>,
+		) -> DispatchResult {
+			// log::info!("request_to_be_provider()");
+			let public_key = ensure_signed(origin)?;
+
+			//			let council_members;
+
+			// let council_member: Option<T::AccountId> =
+			// 	T::MyCouncilMembers::members().into_iter().next();
+			// match council_member {
+			// 	Some(council_member_account_id) => {
+			// 		info!("council_member_account_id={}", council_member_account_id);
+			// 	},
+			// 	None => {},
+			// }
+
+			Ok(())
+
+			// 			// create the proposal data
+			// 			let proposal = RuntimeCall {
+			// //				data: RuntimeCall::System(Msa::create_provider(origin, provider_name)),
+			// 			};
+			// 			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
+
+			// 			// pick first council member.
+			// 			// Question: should this be a random member?  is it possible to use a multiaddress for all council members?
+			// 			// TODO: handle case when there are no members
+
+			// 			let proposal_call =
+			// 				T::CouncilProvider::Call::propose(1, Box::new(proposal.clone(), proposal_len));
+
+			// 			// create the origin of the call as a Council member
+			// 			let origin = frame_system::RawOrigin::Signed(T::CouncilProvider::ensure_signed(
+			// 				council_member_account_id,
+			// 			));
+
+			// 			// bypass the dispatch filters for this call
+			// 			let result = proposal_call.dispatch_bypass_filter(origin);
+
+			// 			// check if the dispatch was successful
+			// 			match result {
+			// 				Ok(()) => {
+			// 					// handle success
+			// 				},
+			// 				Err(error) => {
+			// 					// handle error
+			// 					// log::error!("Dispatch error: {}", error);
+			// 				},
+			// 			}
 		}
 	}
 }
