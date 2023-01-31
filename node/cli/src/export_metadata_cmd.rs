@@ -10,6 +10,7 @@ use sp_runtime::{
 use std::{fmt::Debug, fs, io, path::PathBuf, str::FromStr, sync::Arc};
 
 /// The `export-metadata` command used to export chain metadata.
+/// Remember that this uses the chain database. So it will pull the _current_ metadata from that database.
 #[derive(Debug, Clone, Parser)]
 pub struct ExportMetadataCmd {
 	/// Output file name or stdout if unspecified.
@@ -25,6 +26,16 @@ pub struct ExportMetadataCmd {
 	#[allow(missing_docs)]
 	#[clap(flatten)]
 	pub shared_params: SharedParams,
+
+	/// Use a temporary directory for the db
+	///
+	/// A temporary directory will be created to store the configuration and will be deleted
+	/// at the end of the process.
+	///
+	/// Note: the directory is random per process execution. This directory is used as base path
+	/// which includes: database, node key and keystore.
+	#[arg(long, conflicts_with = "base_path")]
+	pub tmp: bool,
 }
 
 impl ExportMetadataCmd {
@@ -54,8 +65,11 @@ impl CliConfiguration for ExportMetadataCmd {
 		&self.shared_params
 	}
 
-	// We never want to use any stored data. Always just use fresh.
+	// Enabling `--tmp` on this command
 	fn base_path(&self) -> Result<Option<sc_service::BasePath>, sc_cli::Error> {
-		Ok(Some(sc_service::BasePath::new_temp_dir()?))
+		match &self.tmp {
+			true => Ok(Some(sc_service::BasePath::new_temp_dir()?)),
+			false => self.shared_params.base_path(),
+		}
 	}
 }
