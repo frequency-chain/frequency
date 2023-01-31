@@ -475,19 +475,16 @@ impl<T: Config> Pallet<T> {
 		unstaker: &T::AccountId,
 		amount: BalanceOf<T>,
 	) -> DispatchResult {
-		let mut staking_account_details =
+		let mut staking_account =
 			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::StakingAccountNotFound)?;
-		ensure!(
-			amount <= staking_account_details.active,
-			Error::<T>::AmountToUnstakeExceedsAmountStaked
-		);
+		ensure!(amount <= staking_account.active, Error::<T>::AmountToUnstakeExceedsAmountStaked);
 
 		let current_block: T::BlockNumber = frame_system::Pallet::<T>::block_number();
 		let thaw_at =
 			current_block.saturating_add(T::BlockNumber::from(T::UnstakingThawPeriod::get()));
 
-		staking_account_details.decrease_by(amount, thaw_at)?;
-		Self::set_staking_account(&unstaker, &staking_account_details);
+		staking_account.decrease_by(amount, thaw_at)?;
+		Self::set_staking_account(&unstaker, &staking_account);
 
 		Ok(())
 	}

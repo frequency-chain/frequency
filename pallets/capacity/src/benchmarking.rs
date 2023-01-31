@@ -60,7 +60,7 @@ benchmarks! {
 		let block_number = 4u32;
 
 		let mut staking_account = StakingAccountDetails::<T>::default();
-		staking_account.increase_by(10u32.into());
+		staking_account.increase_by(500u32.into());
 
 		// set new unlock chunks using tuples of (value, thaw_at)
 		let new_unlocks: Vec<(u32, u32)> = Vec::from([(50u32, 3u32), (50u32, block_number)]);
@@ -84,6 +84,31 @@ benchmarks! {
 		assert_eq!(current_epoch.saturating_add(1u32.into()), Capacity::<T>::get_current_epoch());
 		assert_eq!(current_block, CurrentEpochInfo::<T>::get().epoch_start);
 		assert!(Capacity::<T>::get_current_epoch_used_capacity().eq(&0u32.into()));
+	}
+	unstake {
+		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
+		let staking_amount: BalanceOf<T> = T::MinimumStakingAmount::get();
+		let unstaking_amount = 5u32;
+		let capacity_amount: BalanceOf<T> = Capacity::<T>::calculate_capacity(staking_amount);
+		let target = 1;
+		let block_number = 4u32;
+		register_provider::<T>(target, "Foo");
+
+		let mut staking_account = StakingAccountDetails::<T>::default();
+		let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
+		let mut capacity_details = CapacityDetails::<BalanceOf<T>, <T as frame_system::Config>::BlockNumber>::default();
+
+		staking_account.increase_by(staking_amount);
+		target_details.increase_by(staking_amount, capacity_amount);
+		capacity_details.increase_by(capacity_amount, block_number.into());
+
+		Capacity::<T>::set_staking_account(&caller.clone(), &staking_account);
+		Capacity::<T>::set_target_details_for(&caller.clone(), target, target_details);
+		Capacity::<T>::set_capacity_for(target, capacity_details);
+
+	}: _ (RawOrigin::Signed(caller.clone()), target, unstaking_amount.into())
+	verify {
+		assert_last_event::<T>(Event::<T>::UnStaked {account: caller, target: target, amount: unstaking_amount.into(), capacity: Capacity::<T>::calculate_capacity_reduction(unstaking_amount.into(), staking_amount, capacity_amount) }.into());
 	}
 
 	impl_benchmark_test_suite!(Capacity,
