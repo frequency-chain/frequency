@@ -82,6 +82,8 @@ Data Structure:
     }
 ```
 
+Note: It would be much better to pin down a proper data structure for the tests that would implement some derived traits required by the serialization libraries(avro, serde, protobuf, etc). This would help us to get more accurate results and really test the performance of the serialization libraries.
+
 ### Table: Thrift
 
 | Encoding Time(ms) | Decoding Time(ms) | Compression Ratio |
