@@ -1,0 +1,16 @@
+name: Test Benchmark Runners
+
+concurrency:
+  group: ${{github.workflow}}
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: [self-hosted, benchmark]
+    steps:
+      - name: Test Run
+        run: |
+          echo "The workflow has been successfully triggered"
