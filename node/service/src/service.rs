@@ -430,8 +430,11 @@ pub async fn start_parachain_node(
 	start_node_impl(parachain_config, polkadot_config, collator_options, id, hwbench).await
 }
 
+/// Function to start frequency parachain with instant sealing in dev mode.
+/// This function is called when --chain dev --instant-sealing is passed.
+/// This function is called when --chain frequency_dev --instant-sealing is passed.
 #[cfg(feature = "frequency-rococo-local")]
-fn frequency_dev_instant(
+pub fn frequency_dev_instant_sealing(
 	config: Configuration,
 	is_instant: bool,
 ) -> Result<TaskManager, sc_service::error::Error> {
@@ -589,15 +592,4 @@ fn frequency_dev_instant(
 	network_starter.start_network();
 
 	Ok(task_manager)
-}
-
-/// Function to start frequency parachain with instant sealing in dev mode.
-/// This function is called when --chain dev --instant-sealing is passed.
-/// This function is called when --chain frequency_dev --instant-sealing is passed.
-#[cfg(feature = "frequency-rococo-local")]
-pub fn frequency_dev_instant_sealing(
-	config: Configuration,
-	is_instant: bool,
-) -> Result<TaskManager, sc_service::error::Error> {
-	frequency_dev_instant(config, is_instant)
 }
