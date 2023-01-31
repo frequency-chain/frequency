@@ -886,43 +886,11 @@ pub mod pallet {
 		) -> DispatchResult {
 			// log::info!("request_to_be_provider()");
 			let proposor = ensure_signed(origin)?;
-			let proposal = RuntimeCall::System(Msa::create_provider(proposor, provider_name));
+			let proposal = RuntimeCall::System(Msa::create_provider(origin, provider_name));
 			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
 			let threshold = 3;
 			T::ProposalProvider::propose_proposal(proposor, threshold, proposal, proposal_len)?;
 			Ok(())
-
-			// 			// create the proposal data
-			// 			let proposal = RuntimeCall {
-			// 				data: RuntimeCall::System(Msa::create_provider(origin, provider_name)),
-			// 			};
-			// 			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
-
-			// 			// pick first council member.
-			// 			// Questions: should this be a random member?  is it possible to use a multiaddress for all council members?
-			// 			// TODO: handle case when there are no members
-
-			// 			let proposal_call =
-			// 				T::CouncilProvider::Call::propose(1, Box::new(proposal.clone(), proposal_len));
-
-			// 			// create the origin of the call as a Council member
-			// 			let origin = frame_system::RawOrigin::Signed(T::CouncilProvider::ensure_signed(
-			// 				council_member_account_id,
-			// 			));
-
-			// 			// bypass the dispatch filters for this call
-			// 			let result = proposal_call.dispatch_bypass_filter(origin);
-
-			// 			// check if the dispatch was successful
-			// 			match result {
-			// 				Ok(()) => {
-			// 					// handle success
-			// 				},
-			// 				Err(error) => {
-			// 					// handle error
-			// 					// log::error!("Dispatch error: {}", error);
-			// 				},
-			// 			}
 		}
 	}
 }
