@@ -26,6 +26,16 @@ pub struct ExportMetadataCmd {
 	#[allow(missing_docs)]
 	#[clap(flatten)]
 	pub shared_params: SharedParams,
+
+	/// Use a temporary directory for the db
+	///
+	/// A temporary directory will be created to store the configuration and will be deleted
+	/// at the end of the process.
+	///
+	/// Note: the directory is random per process execution. This directory is used as base path
+	/// which includes: database, node key and keystore.
+	#[arg(long, conflicts_with = "base_path")]
+	pub tmp: bool,
 }
 
 impl ExportMetadataCmd {
@@ -54,4 +64,13 @@ impl CliConfiguration for ExportMetadataCmd {
 	fn shared_params(&self) -> &SharedParams {
 		&self.shared_params
 	}
+
+	// Enabling `--tmp` on this command
+	fn base_path(&self) -> Result<Option<sc_service::BasePath>, sc_cli::Error> {
+		match &self.tmp {
+			true => Ok(Some(sc_service::BasePath::new_temp_dir()?)),
+			false => self.shared_params.base_path()
+		}
+	}
+
 }
