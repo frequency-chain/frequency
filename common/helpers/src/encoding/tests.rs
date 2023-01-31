@@ -39,9 +39,9 @@ fn protobuf_encoding_test() {
 	let encoder = ProtocolBufEncoding::new();
 	let sizes = [5_000, 10_000, 20_000, 40_000, 64_000];
 	let mut results = vec![];
-
+	
 	for &size in sizes.iter() {
-		let data: Vec<u8> = (0..size).map(|_| b'a').collect();
+		let data: Vec<u8> = (0..size).map(|_| rand::random::<u8>()).collect();
 		let test_message: protobuf::well_known_types::wrappers::BytesValue = data.into();
 		let encoded = encoder.encode(&test_message);
 		let encoded_size = encoded.len();
@@ -83,7 +83,7 @@ fn avro_encoding_base_test() {
 	let codec = apache_avro::Codec::Snappy;
 	let encoder = AvroBinaryEncoding::new(translated_schema, codec);
 	for &size in sizes.iter() {
-		let data: Vec<u8> = (0..size).map(|_| b'a').collect();
+		let data: Vec<u8> = (0..size).map(|_| rand::random::<u8>()).collect();
 		data_map.insert("data".to_string(), SchemaValue::Bytes(data));
 		let encoded = encoder.encode(&data_map);
 		let encoded_size = encoded.len();
@@ -104,7 +104,7 @@ fn test_thrift_encoding_size() {
 	let mut results = vec![];
 
 	for &size in sizes.iter() {
-		let data: Vec<u8> = (0..size).map(|_| b'a').collect();
+		let data: Vec<u8> = (0..size).map(|_| rand::random::<u8>()).collect();
 		let test_message = TestMessage::new(data);
 		let message = thrift_codec::message::Message::oneway("test_method", 1, test_message.into());
 		thrift_encoding.encode(&message);
@@ -123,7 +123,7 @@ fn test_message_pack_encoding() {
 	let mut results = vec![];
 
 	for &size in sizes.iter() {
-		let data: Vec<u8> = (0..size).map(|_| b'a').collect();
+		let data: Vec<u8> = (0..size).map(|_| rand::random::<u8>()).collect();
 		let test_message = TestMessage::new(data);
 		let message_pack = MessagePackEncoding::new();
 

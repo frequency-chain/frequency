@@ -970,6 +970,7 @@ dependencies = [
  "common-primitives",
  "jsonrpsee",
  "protobuf",
+ "rand 0.8.5",
  "rmp-serde",
  "serde",
  "sp-api",

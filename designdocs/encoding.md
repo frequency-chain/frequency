@@ -71,12 +71,41 @@ transmitted.
 
 The following table shows the results of our encoding comparison:
 
-| Encoding | Encoded Size | Decoding Time | Compression Ratio | Encoding Time |
-|----------|--------------|---------------|-------------------|---------------|
-| Protocol Buffers | - | - | - | - |
-| Avro Binary | - | - | - | - |
-| Thrift | - | - | - | - |
-| MessagePack | - | - | - | - |
+Note: Random data sizes used: 5 kb, 10 kb, 20 kb, 40 kb, 64 kb.
+
+### Table: Thrift
+
+| Encoding Time(ms) | Decoding Time(ms) | Compression Ratio |
+|---------------|---------------|-------------------|
+| 0.013319       | 0.050818       | 1.005           |
+| 0.020193       | 0.085289       | 1.0025          |
+| 0.024242       | 0.102876       | 1.00125         |
+| 0.026642       | 0.120463       | 1.00065         |
+| 0.02873        | 0.188488       | 1.0004          |
+
+### Table: Protocol Buffers
+
+| Encoding Time(ms) | Decoding Time(ms) | Compression Ratio |
+|---------------|---------------|-------------------|
+| 0.013319       | 0.038698       | 1               |
+| 0.025822       | 0.039751       | 1               |
+| 0.025822       | 0.102876       | 1               |
+| 0.103987       | 0.130529       | 1               |
+| 0.145138       | 0.159849       | 1               |
+
+### Table: Avro Binary
+
+| Encoding Time(ms) | Decoding Time(ms) | Compression Ratio |
+|---------------|---------------|-------------------|
+| 0.155745       | 0.076576       | 1               |
+| 0.099921       | 0.057653       | 1               |
+| 0.11366        | 0.093713       | 1               |
+| 0.231289       | 0.130208       | 1               |
+| 0.224128       | 0.193390       | 1               |
+
+### Table: MessagePack
+
+Seems to be a bug in the library, so the results are not accurate.
 
 ## Conclusion
 

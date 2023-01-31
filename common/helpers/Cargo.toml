@@ -18,6 +18,7 @@ protobuf = { version = "3.2.0", features = ["with-bytes"] }
 thrift_codec = "0.2.0"
 rmp-serde = "1.1.1"
 serde = "1.0.152"
+rand = "0.8.4"
 thiserror = "1.0.34"
 jsonrpsee = { version = "0.16.2", features = ["client-core", "server", "macros"] }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
