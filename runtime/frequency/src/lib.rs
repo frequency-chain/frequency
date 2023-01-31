@@ -78,16 +78,17 @@ use frame_support::traits::Contains;
 /// Adapter from collective pallet to alliance proposal provider trait.
 pub struct CouncilProposalProvider;
 
-impl ProposalProvider<AccountId, Hash, RuntimeCall> for CouncilProposalProvider {
+impl pallet_msa::ProposalProvider<AccountId, Hash, RuntimeCall> for CouncilProposalProvider {
 	fn propose_proposal(
 		who: AccountId,
 		threshold: u32,
 		proposal: Box<RuntimeCall>,
 		length_bound: u32,
 	) -> Result<(u32, u32), DispatchError> {
-		pallet_collective::do_propose_proposed(who, threshold, proposal, length_bound)
+		Council::do_propose_proposed(who, threshold, proposal, length_bound)
 	}
 }
+
 /// Basefilter to only allow specified transactions call to be executed
 /// For non mainnet [--features frequency] all transactions are allowed
 pub struct BaseCallFilter;
@@ -309,10 +310,10 @@ impl pallet_msa::Config for Runtime {
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 	// The conversion to a 32 byte AccountId
 	type ConvertIntoAccountId32 = ConvertInto;
+	// The proposal type
+	type Proposal = RuntimeCall;
 	// The Council proposal provider interface
-	type ProviderProposal = CouncilProposalProvider;
-	// RuntimeCall
-	type RuntimeCall: RuntimeCall;
+	type ProposalProvider = CouncilProposalProvider;
 	// The maximum number of public keys per MSA
 	type MaxPublicKeysPerMsa = MsaMaxPublicKeysPerMsa;
 	// The maximum number of schema grants per delegation
