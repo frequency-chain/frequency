@@ -39,7 +39,7 @@ fn protobuf_encoding_test() {
 	let encoder = ProtocolBufEncoding::new();
 	let sizes = [5_000, 10_000, 20_000, 40_000, 64_000];
 	let mut results = vec![];
-	
+
 	for &size in sizes.iter() {
 		let data: Vec<u8> = (0..size).map(|_| rand::random::<u8>()).collect();
 		let test_message: protobuf::well_known_types::wrappers::BytesValue = data.into();
