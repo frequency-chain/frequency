@@ -577,14 +577,23 @@ jobs:
             '${{steps.get-runtimes-info.outputs.runtime_info_rococo}}' \
             '${{steps.get-runtimes-info.outputs.runtime_info_mainnet}}' \
             > release-notes.md
-      - name: Publish Release on GitHub
+      - name: Publish Release Candidate on GitHub
+        if: env.IS_FULL_RELEASE != 'true'
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
+        with:
+          name: "[Release Candidate] ${{env.NEW_RELEASE_TAG}}"
+          prerelease: true
+          body_path: tools/ci/release-notes/release-notes.md
+          files: /tmp/frequency*.*
+      - name: Publish Full Release on GitHub
+        if: env.IS_FULL_RELEASE == 'true'
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
           body_path: tools/ci/release-notes/release-notes.md
           files: |
             /tmp/frequency*.*
             /tmp/metadata-compare-*
-      - name: Update latest tag
+      - name: Update Git latest tag
         if: env.IS_FULL_RELEASE == 'true'
         uses: rickstaa/action-create-tag@87a112438ed8b80a2ae25dcf8f11d4949dc4f740
         with:
