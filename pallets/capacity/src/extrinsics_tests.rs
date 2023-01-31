@@ -9,26 +9,30 @@ fn withdraw_unstaked_happy_path() {
 	new_test_ext().execute_with(|| {
 		// set up staker and staking account
 		let staker = 500;
-		let staking_amount: BalanceOf<Test> = 10;
-		// set new unlock chunks using tuples of (value, thaw_at)
+		// set new unlock chunks using tuples of (value, thaw_at in number of Epochs)
 		let unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
 
 		// setup_staking_account_for::<Test>(staker, staking_amount, &unlocks);
 		let mut staking_account = StakingAccountDetails::<Test>::default();
-		staking_account.increase_by(staking_amount);
+
+		// we have 10 total staked, and 6 of those are unstaking.
+		staking_account.increase_by(10);
 		assert_eq!(true, staking_account.set_unlock_chunks(&unlocks));
 		assert_eq!(10u64, staking_account.total);
 		Capacity::set_staking_account(&staker, &staking_account.into());
 
-		let staking_account = Capacity::get_staking_account_for(&staker).unwrap();
+		let starting_account = Capacity::get_staking_account_for(&staker).unwrap();
 
-		run_to_block(3);
+		// In Test mock, EpochLength = 10
+		// We want to advance to epoch 3 to unlock the first two sets.
+		run_to_block(31);
+		assert_eq!(3u32, Capacity::get_current_epoch());
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
 
 		let current_account: StakingAccountDetails<Test> =
 			Capacity::get_staking_account_for(&staker).unwrap();
 		let expected_reaped_value = 3u64;
-		assert_eq!(staking_account.total - expected_reaped_value, current_account.total);
+		assert_eq!(starting_account.total - expected_reaped_value, current_account.total);
 		System::assert_last_event(
 			Event::StakeWithdrawn { account: staker, amount: expected_reaped_value }.into(),
 		);
@@ -50,7 +54,8 @@ fn withdraw_unstaked_correctly_sets_new_lock_state() {
 		assert_eq!(1, Balances::locks(&staker).len());
 		assert_eq!(10u64, Balances::locks(&staker)[0].amount);
 
-		run_to_block(3);
+		// Epoch length = 10, we want to run to epoch 3
+		run_to_block(31);
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
 
 		assert_eq!(1, Balances::locks(&staker).len());
@@ -72,7 +77,8 @@ fn withdraw_unstaked_cleans_up_storage_and_removes_all_locks_if_no_stake_left() 
 		let staker = 500;
 		Capacity::set_staking_account(&staker, &staking_account);
 
-		run_to_block(3);
+		// Epoch Length = 10 and UnstakingThawPeriod = 2 (epochs)
+		run_to_block(30);
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
 		assert!(Capacity::get_staking_account_for(&staker).is_none());
 

@@ -8,17 +8,22 @@ fn staking_account_details_reap_thawed_happy_path() {
 	let mut staking_account = StakingAccountDetails::<Test>::default();
 	staking_account.increase_by(10);
 
+	// 10 token total, 6 token unstaked
 	let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
 	assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
 	assert_eq!(10, staking_account.total);
 	assert_eq!(3, staking_account.unlocking.len());
 
-	assert_eq!(1u64, staking_account.reap_thawed(2));
-	assert_eq!(2, staking_account.unlocking.len());
-	assert_eq!(9, staking_account.total);
+	// At epoch 3, the first two chunks should be thawed.
+	assert_eq!(3u64, staking_account.reap_thawed(3u32));
+	assert_eq!(1, staking_account.unlocking.len());
+	// ...leaving 10-3 = 7 total in staking
+	assert_eq!(7, staking_account.total);
 
-	assert_eq!(5u64, staking_account.reap_thawed(5));
+	// At epoch 5, all unstaking is done.
+	assert_eq!(3u64, staking_account.reap_thawed(5u32));
 	assert_eq!(0, staking_account.unlocking.len());
+	// ...leaving 7-3 = 4 total
 	assert_eq!(4, staking_account.total);
 }
 
