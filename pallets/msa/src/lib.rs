@@ -885,8 +885,11 @@ pub mod pallet {
 			provider_name: Vec<u8>,
 		) -> DispatchResult {
 			// log::info!("request_to_be_provider()");
-			let public_key = ensure_signed(origin)?;
-
+			let proposor = ensure_signed(origin)?;
+			let proposal = RuntimeCall::System(Msa::create_provider(proposor, provider_name));
+			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
+			let threshold = 3;
+			T::ProposalProvider::propose_proposal(proposor, threshold, proposal, proposal_len)?;
 			Ok(())
 
 			// 			// create the proposal data
