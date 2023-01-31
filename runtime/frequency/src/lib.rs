@@ -311,6 +311,8 @@ impl pallet_msa::Config for Runtime {
 	type ConvertIntoAccountId32 = ConvertInto;
 	// The Council proposal provider interface
 	type ProviderProposal = CouncilProposalProvider;
+	// RuntimeCall
+	type RuntimeCall: RuntimeCall;
 	// The maximum number of public keys per MSA
 	type MaxPublicKeysPerMsa = MsaMaxPublicKeysPerMsa;
 	// The maximum number of schema grants per delegation
