@@ -73,6 +73,15 @@ The following table shows the results of our encoding comparison:
 
 Note: Random data sizes used: 5 kb, 10 kb, 20 kb, 40 kb, 64 kb.
 
+Data Structure:
+
+``` rust
+    #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+    struct TestMessage {
+        data: Vec<u8>,
+    }
+```
+
 ### Table: Thrift
 
 | Encoding Time(ms) | Decoding Time(ms) | Compression Ratio |
@@ -109,9 +118,8 @@ Seems to be a bug in the library, so the results are not accurate.
 
 ## Conclusion
 
-In conclusion, choosing the right encoding technique will depend on the requirements of
-the use case. When evaluating encoding techniques, the metrics discussed in this
-research should be considered. Additionally, it is important to keep in mind that the
-choice of encoding technique may also be influenced by factors such as the
-compatibility of the encoding with existing systems and the support available for the
-encoding technique.
+The results show the performance of three serialization formats: Thrift, Protocol Buffers and Avro Binary. The data size used in the tests vary from 5,000 to 64,000 bytes.
+
+In terms of encoding time, Protocol Buffers is the fastest, followed by Thrift, while Avro Binary has the slowest encoding time. The decoding time is faster in Thrift compared to the other two formats. The compression ratios of Thrift, Protocol Buffers and Avro Binary are 1.005, 1 and 1 respectively, with the highest compression ratio in Thrift.
+
+Overall, the results suggest that Protocol Buffers is the fastest in terms of encoding time, Thrift is faster in decoding time and has a higher compression ratio, while Avro Binary has the slowest encoding time but reasonable decoding time. The choice of the serialization format would depend on the specific requirements and trade-offs between encoding time, decoding time, and compression ratio.
