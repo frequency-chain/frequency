@@ -9,26 +9,30 @@ fn withdraw_unstaked_happy_path() {
 	new_test_ext().execute_with(|| {
 		// set up staker and staking account
 		let staker = 500;
-		let staking_amount: BalanceOf<Test> = 10;
-		// set new unlock chunks using tuples of (value, thaw_at)
+		// set new unlock chunks using tuples of (value, thaw_at in number of Epochs)
 		let unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
 
 		// setup_staking_account_for::<Test>(staker, staking_amount, &unlocks);
 		let mut staking_account = StakingAccountDetails::<Test>::default();
-		staking_account.increase_by(staking_amount);
+
+		// we have 10 total staked, and 6 of those are unstaking.
+		staking_account.increase_by(10);
 		assert_eq!(true, staking_account.set_unlock_chunks(&unlocks));
 		assert_eq!(10u64, staking_account.total);
 		Capacity::set_staking_account(&staker, &staking_account.into());
 
-		let staking_account = Capacity::get_staking_account_for(&staker).unwrap();
+		let starting_account = Capacity::get_staking_account_for(&staker).unwrap();
 
-		run_to_block(3);
+		// In Test mock, EpochLength = 10
+		// We want to advance to epoch 3 to unlock the first two sets.
+		run_to_block(31);
+		assert_eq!(3u32, Capacity::get_current_epoch());
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
 
 		let current_account: StakingAccountDetails<Test> =
 			Capacity::get_staking_account_for(&staker).unwrap();
 		let expected_reaped_value = 3u64;
-		assert_eq!(staking_account.total - expected_reaped_value, current_account.total);
+		assert_eq!(starting_account.total - expected_reaped_value, current_account.total);
 		System::assert_last_event(
 			Event::StakeWithdrawn { account: staker, amount: expected_reaped_value }.into(),
 		);
@@ -50,7 +54,8 @@ fn withdraw_unstaked_correctly_sets_new_lock_state() {
 		assert_eq!(1, Balances::locks(&staker).len());
 		assert_eq!(10u64, Balances::locks(&staker)[0].amount);
 
-		run_to_block(3);
+		// Epoch length = 10, we want to run to epoch 3
+		run_to_block(31);
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
 
 		assert_eq!(1, Balances::locks(&staker).len());
@@ -72,7 +77,8 @@ fn withdraw_unstaked_cleans_up_storage_and_removes_all_locks_if_no_stake_left() 
 		let staker = 500;
 		Capacity::set_staking_account(&staker, &staking_account);
 
-		run_to_block(3);
+		// Epoch Length = 10 and UnstakingThawPeriod = 2 (epochs)
+		run_to_block(30);
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
 		assert!(Capacity::get_staking_account_for(&staker).is_none());
 
@@ -146,7 +152,7 @@ fn stake_works() {
 		// Check that CapacityLedger is updated.
 		assert_eq!(Capacity::get_capacity_for(target).unwrap().remaining, amount);
 		assert_eq!(Capacity::get_capacity_for(target).unwrap().total_available, amount);
-		assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 1);
+		assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 0);
 
 		let events = staking_events();
 		assert_eq!(events.first().unwrap(), &Event::Staked { account, target, amount, capacity });
@@ -216,7 +222,8 @@ fn stake_increase_stake_amount_works() {
 		assert_eq!(Balances::locks(&account)[0].amount, 5);
 		assert_eq!(Balances::locks(&account)[0].reasons, WithdrawReasons::all().into());
 
-		run_to_block(2);
+		// run to epoch 2
+		run_to_block(21);
 
 		let additional_amount = 10;
 		let capacity = 10;
@@ -271,9 +278,10 @@ fn stake_multiple_accounts_can_stake_to_the_same_target() {
 			// Check that CapacityLedger is updated.
 			assert_eq!(Capacity::get_capacity_for(target).unwrap().remaining, 5);
 			assert_eq!(Capacity::get_capacity_for(target).unwrap().total_available, 5);
-			assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 1);
+			assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 0);
 
-			run_to_block(2);
+			// run to epoch 2
+			run_to_block(21);
 
 			let account_2 = 300;
 			let stake_amount_2 = 10;
@@ -312,7 +320,8 @@ fn stake_an_account_can_stake_to_multiple_targets() {
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target_1, amount_1));
 		assert_eq!(Capacity::get_staking_account_for(account).unwrap().total, 10);
 
-		run_to_block(2);
+		// run to epoch 2
+		run_to_block(21);
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target_2, amount_2));
 
 		// Check that StakingAccountLedger is updated.
@@ -331,10 +340,9 @@ fn stake_an_account_can_stake_to_multiple_targets() {
 		// Check that CapacityLedger is updated for target 1.
 		assert_eq!(Capacity::get_capacity_for(target_1).unwrap().remaining, 10);
 		assert_eq!(Capacity::get_capacity_for(target_1).unwrap().total_available, 10);
-		assert_eq!(Capacity::get_capacity_for(target_1).unwrap().last_replenished_epoch, 1);
+		assert_eq!(Capacity::get_capacity_for(target_1).unwrap().last_replenished_epoch, 0);
 
 		// Check that CapacityLedger is updated for target 2.
-
 		assert_eq!(Capacity::get_capacity_for(target_2).unwrap().remaining, 7);
 		assert_eq!(Capacity::get_capacity_for(target_2).unwrap().total_available, 7);
 		assert_eq!(Capacity::get_capacity_for(target_2).unwrap().last_replenished_epoch, 2);
@@ -364,7 +372,7 @@ fn stake_when_staking_amount_is_greater_than_free_balance_it_stakes_maximum() {
 		// Check that CapacityLedger is updated.
 		assert_eq!(Capacity::get_capacity_for(target).unwrap().remaining, 10);
 		assert_eq!(Capacity::get_capacity_for(target).unwrap().total_available, 10);
-		assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 1);
+		assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 0);
 	});
 }
 
@@ -389,24 +397,17 @@ fn unstake_happy_path() {
 		let staking_account_details = Capacity::get_staking_account_for(token_account).unwrap();
 
 		assert_eq!(staking_account_details.unlocking.len(), 1);
-		let mut chunks: BoundedVec<
-			UnlockChunk<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber>,
-			<Test as pallet_capacity::Config>::MaxUnlockingChunks,
-		> = BoundedVec::default();
-
-		chunks
-			.try_push(UnlockChunk::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
-				value: BalanceOf::<Test>::from(5u64),
-				thaw_at: <Test as frame_system::Config>::BlockNumber::from(3u64),
-			})
-			.expect("try_push failed");
+		let expected_unlocking_chunks: BoundedVec<
+			UnlockChunk<BalanceOf<Test>, <Test as Config>::EpochNumber>,
+			<Test as Config>::MaxUnlockingChunks,
+		> = BoundedVec::try_from(vec![UnlockChunk { value: 5u64, thaw_at: 2u32 }]).unwrap();
 
 		assert_eq!(
 			staking_account_details,
 			StakingAccountDetails::<Test> {
 				active: BalanceOf::<Test>::from(5u64),
 				total: BalanceOf::<Test>::from(10u64),
-				unlocking: chunks,
+				unlocking: expected_unlocking_chunks,
 			}
 		);
 
@@ -426,11 +427,11 @@ fn unstake_happy_path() {
 
 		assert_eq!(
 			capacity_details,
-			CapacityDetails::<BalanceOf<Test>, <Test as frame_system::Config>::BlockNumber> {
+			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
 				remaining: BalanceOf::<Test>::from(10u64),
 				total_tokens_staked: BalanceOf::<Test>::from(5u64),
 				total_available: BalanceOf::<Test>::from(5u64),
-				last_replenished_epoch: <Test as frame_system::Config>::BlockNumber::from(1u64),
+				last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32),
 			}
 		);
 

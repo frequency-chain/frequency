@@ -299,13 +299,13 @@ The type that is used to record a single request for a number of tokens to be un
 
 ```rust
 
-pub struct UnlockChunk<Balance: HasCompact> {
+pub struct UnlockChunk<Balance, EpochNumber> {
   /// Amount to be unlocked.
   #[codec(compact)]
   value: Balance,
-  /// Block number at which point funds are unlocked.
+  /// Epoch at which point funds are unlocked.
   #[codec(compact)]
-  thaw_at: BlockNumber,
+  thaw_at: EpochNumber,
 }
 
 ```
@@ -357,7 +357,7 @@ pub struct CapacityDetails<Balance> {
   pub remaining: Balance,
   /// The total Capacity issued to an MSA.
   pub total_available: Balance,
-  /// The last Epoch that an MSA was replenished.
+  /// The last Epoch that an MSA's Capacity was replenished.
   pub last_replenished_epoch: u32,
 }
 
