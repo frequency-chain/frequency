@@ -1,7 +1,8 @@
 use crate::{
 	avro,
 	encoding::{
-		avro_binary::AvroBinaryEncoding, protocol_buf::ProtocolBufEncoding, traits::Encoding,
+		avro_binary::AvroBinaryEncoding, protocol_buf::ProtocolBufEncoding, thrift::ThriftEncoding,
+		traits::Encoding,
 	},
 	types::SchemaValue,
 };
@@ -60,4 +61,25 @@ fn avro_encoding_base_test() {
 	let metrics = encoder.get_metrics(&data_map, data_map.len());
 	assert_eq!(metrics.encoded_size, encoded_size);
 	print_metrics(&metrics);
+}
+
+use thrift_codec::data::{Field, Struct};
+
+#[derive(Debug, PartialEq, Struct)]
+struct TestMessage {
+	#[thrift_field(1)]
+	field1: String,
+}
+
+#[test]
+fn test_thrift_encoding_size() {
+	let thrift_encoding = ThriftEncoding::new();
+
+	for size in [5_000, 10_000, 20_000, 32_000, 64_000].iter() {
+		let message = TestMessage { field1: "a".repeat(*size) };
+		let data = thrift_encoding.encode(&message);
+		let input_size = *size;
+		let metrics = thrift_encoding.get_metrics(&data, input_size);
+		print_metrics(&metrics);
+	}
 }

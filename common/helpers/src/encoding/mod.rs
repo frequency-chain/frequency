@@ -6,6 +6,8 @@ pub use traits::*;
 pub mod avro_binary;
 /// Protocol buffer encoding
 pub mod protocol_buf;
+/// Thrift encoding
+pub mod thrift;
 
 #[cfg(test)]
 mod tests;

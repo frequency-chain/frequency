@@ -15,6 +15,8 @@ targets = ['x86_64-unknown-linux-gnu']
 [dependencies]
 apache-avro = { version = "0.14.0", features = ["snappy"] }
 protobuf = { version = "3.2.0", features = ["with-bytes"] }
+thrift = "0.17.0"
+thrift_codec = "0.2.0"
 thiserror = "1.0.34"
 jsonrpsee = { version = "0.16.2", features = ["client-core", "server", "macros"] }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }

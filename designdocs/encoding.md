@@ -14,8 +14,7 @@ There are many encoding techniques available, some of which include:
 ``` {.sourceCode .text}
 ● Protocol Buffers
 ● Avro Binary
-● JSON
-● BSON
+● Thrift
 ● MessagePack
 ```
 
@@ -66,8 +65,7 @@ The following table shows the results of our encoding comparison:
 |----------|--------------|---------------|-------------------|---------------|
 | Protocol Buffers | - | - | - | - |
 | Avro Binary | - | - | - | - |
-| JSON | - | - | - | - |
-| BSON | - | - | - | - |
+| Thrift | - | - | - | - |
 | MessagePack | - | - | - | - |
 
 ## Conclusion
