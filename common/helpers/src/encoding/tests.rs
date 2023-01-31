@@ -9,6 +9,27 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct TestMessage {
+	data: Vec<u8>,
+}
+
+impl TestMessage {
+	fn new(size: usize) -> Self {
+		let mut data = vec![];
+		for _ in 0..size {
+			data.push(0);
+		}
+		Self { data }
+	}
+}
+
+impl Into<thrift_codec::data::Struct> for TestMessage {
+	fn into(self) -> thrift_codec::data::Struct {
+		thrift_codec::data::Struct::from(("data", self.data))
+	}
+}
+
 fn print_metrics(metrics: &crate::encoding::traits::EncodingMetrics) {
 	println!("Encoded size: {}", metrics.encoded_size);
 	println!("Decoding time: {}", metrics.decoding_time);
@@ -70,11 +91,8 @@ fn test_thrift_encoding_size() {
 	let mut results = vec![];
 
 	for size in [5_000, 10_000, 20_000, 32_000, 64_000].iter() {
-		let message = thrift_codec::message::Message::oneway(
-			"test_method",
-			1,
-			thrift_codec::data::Struct::from(("arg1", "a".repeat(*size))),
-		);
+		let test_message = TestMessage::new(*size);
+		let message = thrift_codec::message::Message::oneway("test_method", 1, test_message.into());
 		thrift_encoding.encode(&message);
 		let input_size = *size;
 		let metrics = thrift_encoding.get_metrics(&message, input_size);
@@ -83,21 +101,6 @@ fn test_thrift_encoding_size() {
 	for (size, metrics) in results {
 		println!("Data size: {:6} bytes", size);
 		print_metrics(&metrics);
-	}
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct TestMessage {
-	data: Vec<u8>,
-}
-
-impl TestMessage {
-	fn new(size: usize) -> Self {
-		let mut data = vec![];
-		for _ in 0..size {
-			data.push(0);
-		}
-		Self { data }
 	}
 }
 
