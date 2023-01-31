@@ -9,17 +9,13 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 struct TestMessage {
 	data: Vec<u8>,
 }
 
 impl TestMessage {
-	fn new(size: usize) -> Self {
-		let mut data = vec![];
-		for _ in 0..size {
-			data.push(0);
-		}
+	fn new(data: Vec<u8>) -> Self {
 		Self { data }
 	}
 }
@@ -38,17 +34,25 @@ fn print_metrics(metrics: &crate::encoding::traits::EncodingMetrics) {
 }
 
 #[test]
-fn protobuf_encoding_base_test() {
+fn protobuf_encoding_test() {
 	use protobuf::Message;
 	let encoder = ProtocolBufEncoding::new();
-	let data = protobuf::well_known_types::timestamp::Timestamp::now();
-	let encoded = encoder.encode(&data);
-	let encoded_size = encoded.len();
-	let compression_ratio = (data.compute_size() as f64) / (encoded_size as f64);
-	let metrics = encoder.get_metrics(&data, data.compute_size() as usize);
-	assert_eq!(metrics.encoded_size, encoded_size);
-	assert_eq!(metrics.compression_ratio, compression_ratio);
-	print_metrics(&metrics);
+	let sizes = [5_000, 10_000, 20_000, 40_000, 64_000];
+	let mut results = vec![];
+
+	for &size in sizes.iter() {
+		let data: Vec<u8> = (0..size).map(|_| b'a').collect();
+		let test_message: protobuf::well_known_types::wrappers::BytesValue = data.into();
+		let encoded = encoder.encode(&test_message);
+		let encoded_size = encoded.len();
+		let metrics = encoder.get_metrics(&test_message, test_message.compute_size() as usize);
+		assert_eq!(metrics.encoded_size, encoded_size);
+		results.push((size, metrics));
+	}
+	for (size, metrics) in results {
+		println!("Data size: {:6} bytes", size);
+		print_metrics(&metrics);
+	}
 }
 
 #[test]
@@ -79,14 +83,11 @@ fn avro_encoding_base_test() {
 	let codec = apache_avro::Codec::Snappy;
 	let encoder = AvroBinaryEncoding::new(translated_schema, codec);
 	for &size in sizes.iter() {
-		let mut data = vec![];
-		for _ in 0..size {
-			data.push(0);
-		}
+		let data: Vec<u8> = (0..size).map(|_| b'a').collect();
 		data_map.insert("data".to_string(), SchemaValue::Bytes(data));
 		let encoded = encoder.encode(&data_map);
 		let encoded_size = encoded.len();
-		let metrics = encoder.get_metrics(&data_map, data_map.len());
+		let metrics = encoder.get_metrics(&data_map, size);
 		assert_eq!(metrics.encoded_size, encoded_size);
 		results.push((size, metrics));
 	}
@@ -103,7 +104,8 @@ fn test_thrift_encoding_size() {
 	let mut results = vec![];
 
 	for &size in sizes.iter() {
-		let test_message = TestMessage::new(size);
+		let data: Vec<u8> = (0..size).map(|_| b'a').collect();
+		let test_message = TestMessage::new(data);
 		let message = thrift_codec::message::Message::oneway("test_method", 1, test_message.into());
 		thrift_encoding.encode(&message);
 		let metrics = thrift_encoding.get_metrics(&message, size);
@@ -121,7 +123,8 @@ fn test_message_pack_encoding() {
 	let mut results = vec![];
 
 	for &size in sizes.iter() {
-		let test_message = TestMessage::new(size);
+		let data: Vec<u8> = (0..size).map(|_| b'a').collect();
+		let test_message = TestMessage::new(data);
 		let message_pack = MessagePackEncoding::new();
 
 		let metrics = message_pack.get_metrics(&test_message, size);
