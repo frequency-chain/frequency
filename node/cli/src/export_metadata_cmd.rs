@@ -10,6 +10,7 @@ use sp_runtime::{
 use std::{fmt::Debug, fs, io, path::PathBuf, str::FromStr, sync::Arc};
 
 /// The `export-metadata` command used to export chain metadata.
+/// Remember that this uses the chain database. So it will pull the _current_ metadata from that database.
 #[derive(Debug, Clone, Parser)]
 pub struct ExportMetadataCmd {
 	/// Output file name or stdout if unspecified.
@@ -52,10 +53,5 @@ impl ExportMetadataCmd {
 impl CliConfiguration for ExportMetadataCmd {
 	fn shared_params(&self) -> &SharedParams {
 		&self.shared_params
-	}
-
-	// We never want to use any stored data. Always just use fresh.
-	fn base_path(&self) -> Result<Option<sc_service::BasePath>, sc_cli::Error> {
-		Ok(Some(sc_service::BasePath::new_temp_dir()?))
 	}
 }
