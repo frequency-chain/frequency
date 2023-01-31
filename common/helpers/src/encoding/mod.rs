@@ -4,6 +4,8 @@ pub mod traits;
 pub use traits::*;
 /// Avro encoding
 pub mod avro_binary;
+/// MessagePack encoding
+pub mod message_pack;
 /// Protocol buffer encoding
 pub mod protocol_buf;
 /// Thrift encoding

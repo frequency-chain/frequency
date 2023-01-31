@@ -73,7 +73,7 @@ fn test_thrift_encoding_size() {
 			1,
 			thrift_codec::data::Struct::from(("arg1", "a".repeat(*size))),
 		);
-		let data = thrift_encoding.encode(&message);
+		thrift_encoding.encode(&message);
 		let input_size = *size;
 		let metrics = thrift_encoding.get_metrics(&message, input_size);
 		print_metrics(&metrics);
