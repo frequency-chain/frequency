@@ -131,11 +131,6 @@ jobs:
           profile: minimal
           target: wasm32-unknown-unknown
           toolchain: stable
-      # - name: Cache Rust Dependencies
-      #   if: steps.cache-binary.outputs.cache-hit != 'true'
-      #   uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
-      #   with:
-      #     shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Compile Binary
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
@@ -242,10 +237,6 @@ jobs:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
-      # - name: Cache Rust Dependencies
-      #   uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
-      #   with:
-      #     shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Build Rust Docs
         run: RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
 
@@ -295,10 +286,6 @@ jobs:
           profile: minimal
           target: wasm32-unknown-unknown
           toolchain: stable
-      # - name: Restore Dependencies from Cache
-      #   uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
-      #   with:
-      #     shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Run Tests
         run: cargo test --features runtime-benchmarks,all-frequency-features,std --workspace --release
 
@@ -454,7 +441,7 @@ jobs:
       - name: Lint
         run: npm run lint
         working-directory: js/api-augment
-      - name: Download Binary
+      - name: Download Binaries
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
@@ -493,11 +480,7 @@ jobs:
           default: true
           profile: minimal
           toolchain: stable
-      # - name: Restore Dependencies from Cache
-      #   uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
-      #   with:
-      #     shared-key: ${{env.RUST_TOOLCHAIN}}
-      - name: Download Binary
+      - name: Download Binaries
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
@@ -549,7 +532,7 @@ jobs:
           default: true
           profile: minimal
           toolchain: stable
-      - name: Download Binary
+      - name: Download Binaries
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
@@ -569,8 +552,6 @@ jobs:
     name: Check Metadata and Spec Version
     runs-on: ubuntu-20.04
     env:
-      REF_TAG: latest # tag to obtain reference binary to test against
-      NETWORK: mainnet
       GITHUB_PR_LABEL: metadata-mismatch
     steps:
       - name: Set Env Vars

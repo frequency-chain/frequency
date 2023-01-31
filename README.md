@@ -6,6 +6,7 @@
 *** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
+
 [![Release][release-shield]][release-url]
 [![Docker][docker-shield]][docker-url]
 [![Issues][issues-shield]][issues-url]
@@ -72,10 +73,12 @@ We run benchmarks with and recommend the same [reference hardware specified by P
 5. Build Wasm and native code.
 
     _Note, if you get errors complaining about missing
-    dependencies (cmake, yarn, node, jq, etc.) install them with your favorite package
+    dependencies (protobuf, cmake, yarn, node, jq, etc.) install them with your favorite package
     manager(e.g. Homebrew on Mac) and re-run the command again._
 
     ```sh
+    rustup update
+    cargo clean
     make build
     ```
 
@@ -154,6 +157,7 @@ make start
 ```
 
 If you want to run Frequency in manual seal mode, run
+
 ```sh
 make start-manual
 ```
@@ -314,6 +318,7 @@ lsof -i -P | grep -i "listen" | grep frequency
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+
 [issues-shield]: https://img.shields.io/github/issues/LibertyDSNP/frequency.svg?style=for-the-badge
 [issues-url]: https://github.com/LibertyDSNP/frequency/issues
 [codecov-shield]: https://img.shields.io/codecov/c/github/LibertyDSNP/frequency?style=for-the-badge
@@ -322,4 +327,3 @@ lsof -i -P | grep -i "listen" | grep frequency
 [release-url]: https://github.com/LibertyDSNP/frequency/releases
 [docker-shield]: https://img.shields.io/docker/v/frequencychain/parachain-node-mainnet/latest?color=1c90ed&label=Docker&style=for-the-badge
 [docker-url]: https://hub.docker.com/u/frequencychain
-

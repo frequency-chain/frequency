@@ -5,8 +5,8 @@ concurrency:
 on:
   push:
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+" # ex. v0.29.9
-      - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v0.29.9-rc1
+      - "v[0-9]+.[0-9]+.[0-9]+" # ex. v1.0.0
+      - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v1.1.0-rc1
       - "vX.X.X" # used for testing only
 env:
   RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
@@ -64,11 +64,6 @@ jobs:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
-      # - name: Cache Rust Dependencies
-      #   if: steps.cache-binary.outputs.cache-hit != 'true'
-      #   uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
-      #   with:
-      #     shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Compile for ${{matrix.network}}
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
@@ -230,10 +225,6 @@ jobs:
           default: true
           profile: minimal
           target: wasm32-unknown-unknown
-      # - name: Cache Rust Dependencies
-      #   uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
-      #   with:
-      #     shared-key: ${{env.RUST_TOOLCHAIN}}
       - name: Build Docs
         run: |
           RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --features frequency
@@ -276,7 +267,7 @@ jobs:
       - name: Install
         run: npm install # DO NOT use `npm ci` as we want the latest polkadot/api possible
         working-directory: js/api-augment
-      - name: Download Binary Artifacts
+      - name: Download Binaries
         id: download
         uses: actions/download-artifact@v3
         with:
@@ -299,7 +290,7 @@ jobs:
           path: js/api-augment/dist
           if-no-files-found: error
 
-  version-check:
+  test-version-matches-release:
     needs: build-binaries
     name: Test Version Matches Release
     strategy:
@@ -324,7 +315,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Download Binary Artifacts
+      - name: Download Binaries
         id: download
         uses: actions/download-artifact@v3
         with:
@@ -344,12 +335,133 @@ jobs:
           echo "  Actual: ${ACTUAL_VERSION%-*}"
           [[ ${ACTUAL_VERSION%-*} == ${EXPECTED_VERSION} ]]
 
+  compare-metadata:
+    needs: build-binaries
+    name: Compare Metadata
+    runs-on: ubuntu-20.04
+    env:
+      BIN_DIR: target/production
+      BIN_FILENAME: frequency.amd64
+      TEST_BIN_FILENAME: frequency.amd64
+      TEST_DOWNLOAD_DIR: download-test
+      REF_BIN_FILENAME: frequency-ref.amd64
+      REF_DOWNLOAD_DIR: download-ref
+      OUTPUT_DIR: target/production
+      FREQUENCY_PROCESS_NAME: frequency
+    steps:
+      - name: Set Env Vars
+        run: |
+          export NETWORK=mainnet; echo "NETWORK=$NETWORK" >> $GITHUB_ENV
+          echo "OUTPUT_FILENAME=metadata-compare-$NETWORK.txt" >> $GITHUB_ENV
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Get Previous Full Release Tag
+        run: |
+          git show-ref --tags -d
+          latest_tag_commit=$(git show-ref --tags -d | grep latest^{} | cut -d' ' -f1)
+          latest_release_tag=$(git show-ref --tags -d | grep "^$latest_tag_commit" | \
+            grep refs/tags/v | sed -e 's,.* refs/tags/,,' -e 's/\^{}//')
+          echo "latest_release_tag: $latest_release_tag"
+          echo "PREVIOUS_FULL_RELEASE_TAG=$latest_release_tag" >> $GITHUB_ENV
+      - name: Fetch Reference Binary
+        uses: robinraju/release-downloader@768b85c8d69164800db5fc00337ab917daf3ce68
+        with:
+          tag: ${{env.PREVIOUS_FULL_RELEASE_TAG}}
+          fileName: ${{env.BIN_FILENAME}}
+          out-file-path: ${{env.REF_DOWNLOAD_DIR}}
+      - name: Download Test Binary
+        uses: actions/download-artifact@v3
+        with:
+          name: artifacts-${{github.run_id}}
+          path: ${{env.TEST_DOWNLOAD_DIR}}
+      - name: Rename and Move Binaries
+        run: |
+          mkdir -p ${{env.BIN_DIR}}
+          mv ${{env.REF_DOWNLOAD_DIR}}/${{env.BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.REF_BIN_FILENAME}}
+          mv ${{env.TEST_DOWNLOAD_DIR}}/${{env.BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.TEST_BIN_FILENAME}}
+      - name: Set Binary Permissions
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          set -x
+          chmod 755 $TEST_BIN_FILENAME
+          chmod 755 $REF_BIN_FILENAME
+      - name: Start Test Node
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          ./${{env.TEST_BIN_FILENAME}} \
+            --rpc-external \
+            --rpc-cors=all \
+            --ws-external \
+            --rpc-methods=Unsafe \
+            --no-telemetry \
+            --no-prometheus \
+            --ws-port $((9944)) \
+            --reserved-only \
+            --tmp \
+            -- \
+            --reserved-only \
+            &
+      - name: Start Reference Node
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          ./${{env.REF_BIN_FILENAME}} \
+            --rpc-external \
+            --rpc-cors=all \
+            --ws-external \
+            --rpc-methods=Unsafe \
+            --no-telemetry \
+            --no-prometheus \
+            --ws-port $((9946)) \
+            --reserved-only \
+            --tmp \
+            --  \
+            --reserved-only \
+            &
+      - name: Prepare Output
+        working-directory: ${{env.OUTPUT_DIR}}
+        run: |
+          REF_VERSION=$(./${{env.REF_BIN_FILENAME}} --version)
+          BIN_VERSION=$(./${{env.TEST_BIN_FILENAME}} --version)
+          echo "Metadata comparison against previous full release:" >> ${{env.OUTPUT_FILENAME}}
+          echo "Date: $(date)" >> ${{env.OUTPUT_FILENAME}}
+          echo "Ref. version: $REF_VERSION" >> ${{env.OUTPUT_FILENAME}}
+          echo "Test version: $BIN_VERSION" >> ${{env.OUTPUT_FILENAME}}
+          echo "----------------------------------------------------------------------" >> ${{env.OUTPUT_FILENAME}}
+      - name: Compare Metadata
+        run: |
+          CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata ws://localhost:9946 ws://localhost:9944"
+          echo -e "Running:\n$CMD"
+          $CMD >> ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
+          sed -z -i 's/\n\n/\n/g' ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
+          cat ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}} | egrep -n -i ''
+          SUMMARY=$(./tools/ci/scripts/extrinsic-ordering-filter.sh ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}})
+          echo -e $SUMMARY
+          echo -e $SUMMARY >> ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
+      - name: Show Result
+        working-directory: ${{env.OUTPUT_DIR}}
+        run: |
+          cat ${{env.OUTPUT_FILENAME}}
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts-${{github.run_id}}
+          path: ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
+          if-no-files-found: error
+      - name: Stop Local Nodes
+        if: always()
+        run: |
+          echo "Attempting to kill all frequency processes..."
+          pkill -9 ${{env.FREQUENCY_PROCESS_NAME}}
+
   wait-for-all-builds:
     needs:
       [
         build-binaries,
         build-runtimes,
-        version-check,
+        compare-metadata,
+        test-version-matches-release,
         build-rust-developer-docs,
         build-js-api-augment,
       ]
@@ -378,9 +490,9 @@ jobs:
             echo 'true' || echo 'false')
           echo "is_full_release: $is_full_release"
           echo "IS_FULL_RELEASE=$is_full_release" >> $GITHUB_ENV
-      - name: Get Latest Release Tag
+      # TODO: Move repetitive steps like this to a local action
+      - name: Get Previous Full Release Tag
         run: |
-          set -x
           git show-ref --tags -d
           latest_tag_commit=$(git show-ref --tags -d | grep latest^{} | cut -d' ' -f1)
           latest_release_tag=$(git show-ref --tags -d | grep "^$latest_tag_commit" | \
@@ -422,16 +534,16 @@ jobs:
         id: sanitize-changelog
         run: |
           echo "original: ${{steps.build-changelog.outputs.changelog}}"
-          echo "1---------------------"
+          echo "-------------------------------------------------"
           changelog='${{steps.build-changelog.outputs.changelog}}'
           clean="${changelog//[\`\[\]$'\n']/}"
           echo "sanitized: $clean"
-          echo "2---------------------"
+          echo "-------------------------------------------------"
           echo "sanitized=$clean" >> $GITHUB_OUTPUT
       - name: Get Polkadot Version
         id: polkadot-version
         run: echo "version=$(make version-polkadot)" >> $GITHUB_OUTPUT
-      - name: Download Binary Artifacts
+      - name: Download Artifacts
         id: download
         uses: actions/download-artifact@v3
         with:
@@ -440,7 +552,7 @@ jobs:
       - name: List Downloaded Artifacts
         working-directory: /tmp
         run: |
-          ls -la frequency*.*
+          ls -la
       - name: Install subwasm
         run: |
           cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.18.0 --force
@@ -469,7 +581,9 @@ jobs:
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
           body_path: tools/ci/release-notes/release-notes.md
-          files: /tmp/frequency*.*
+          files: |
+            /tmp/frequency*.*
+            /tmp/metadata-compare-*
       - name: Update latest tag
         if: env.IS_FULL_RELEASE == 'true'
         uses: rickstaa/action-create-tag@87a112438ed8b80a2ae25dcf8f11d4949dc4f740
@@ -517,7 +631,7 @@ jobs:
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
-      - name: Download Binary Artifacts
+      - name: Download Binaries
         id: download
         uses: actions/download-artifact@v3
         with:
@@ -581,7 +695,7 @@ jobs:
           echo "RELEASE_BIN_FILENAME=frequency-${{matrix.network}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
-      - name: Download Binary Artifacts
+      - name: Download Binaries
         id: download
         uses: actions/download-artifact@v3
         with:
