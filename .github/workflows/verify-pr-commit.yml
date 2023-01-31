@@ -426,7 +426,7 @@ jobs:
     steps:
       - name: Set Env Vars
         run: |
-          echo "BIN_FILENAME=frequency.mainnet-pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME=frequency.local-pr" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Set up NodeJs
