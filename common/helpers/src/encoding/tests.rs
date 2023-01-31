@@ -6,7 +6,6 @@ use crate::{
 	},
 	types::SchemaValue,
 };
-use protobuf::{well_known_types::timestamp::Timestamp, Message};
 use std::collections::HashMap;
 
 fn print_metrics(metrics: &crate::encoding::traits::EncodingMetrics) {
@@ -18,8 +17,9 @@ fn print_metrics(metrics: &crate::encoding::traits::EncodingMetrics) {
 
 #[test]
 fn protobuf_encoding_base_test() {
+	use protobuf::Message;
 	let encoder = ProtocolBufEncoding::new();
-	let data = Timestamp::now();
+	let data = protobuf::well_known_types::timestamp::Timestamp::now();
 	let encoded = encoder.encode(&data);
 	let encoded_size = encoded.len();
 	let compression_ratio = (data.compute_size() as f64) / (encoded_size as f64);
@@ -63,23 +63,19 @@ fn avro_encoding_base_test() {
 	print_metrics(&metrics);
 }
 
-use thrift_codec::data::{Field, Struct};
-
-#[derive(Debug, PartialEq, Struct)]
-struct TestMessage {
-	#[thrift_field(1)]
-	field1: String,
-}
-
 #[test]
 fn test_thrift_encoding_size() {
 	let thrift_encoding = ThriftEncoding::new();
 
 	for size in [5_000, 10_000, 20_000, 32_000, 64_000].iter() {
-		let message = TestMessage { field1: "a".repeat(*size) };
+		let message = thrift_codec::message::Message::oneway(
+			"test_method",
+			1,
+			thrift_codec::data::Struct::from(("arg1", "a".repeat(*size))),
+		);
 		let data = thrift_encoding.encode(&message);
 		let input_size = *size;
-		let metrics = thrift_encoding.get_metrics(&data, input_size);
+		let metrics = thrift_encoding.get_metrics(&message, input_size);
 		print_metrics(&metrics);
 	}
 }
