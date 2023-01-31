@@ -171,7 +171,7 @@ fn increase_stake_and_issue_capacity_is_successful() {
 
 		assert_eq!(capacity_details.remaining, 55);
 		assert_eq!(capacity_details.total_available, 55);
-		assert_eq!(capacity_details.last_replenished_epoch, 1);
+		assert_eq!(capacity_details.last_replenished_epoch, 0);
 
 		let target_details = Capacity::get_target_for(&staker, &target).unwrap();
 
@@ -221,14 +221,13 @@ fn set_capacity_details_is_successful() {
 
 		assert_eq!(Capacity::get_capacity_for(target), None);
 
-		let mut capacity_details = CapacityDetails::<
-			BalanceOf<Test>,
-			<Test as frame_system::Config>::BlockNumber,
-		>::default();
-
-		capacity_details.remaining = 10;
-		capacity_details.total_available = 10;
-		capacity_details.last_replenished_epoch = 1;
+		let capacity_details: CapacityDetails<BalanceOf<Test>, <Test as Config>::EpochNumber> =
+			CapacityDetails {
+				remaining: 10u64,
+				total_tokens_staked: 10u64,
+				total_available: 10u64,
+				last_replenished_epoch: 1u32,
+			};
 
 		Capacity::set_capacity_for(target, capacity_details);
 
