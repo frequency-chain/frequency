@@ -887,7 +887,7 @@ pub mod pallet {
 			let proposal: Box<T::Proposal> =
 				Box::new((Call::<T>::create_provider { provider_name }).into());
 			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
-			let threshold = 3;
+			let threshold = 1;
 			T::ProposalProvider::propose_proposal(proposer, threshold, proposal, proposal_len)?;
 			Ok(())
 		}
