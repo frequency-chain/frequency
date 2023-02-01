@@ -62,6 +62,15 @@ where
 					msa_id: None,
 					payload: None,
 				}
+			}, // TODO: Add support for itemized and paginated payloads
+			_ => MessageResponse {
+				provider_msa_id: self.provider_msa_id,
+				index: self.index,
+				block_number,
+				msa_id: None,
+				payload: None,
+				cid: None,
+				payload_length: None,
 			},
 		}
 	}
