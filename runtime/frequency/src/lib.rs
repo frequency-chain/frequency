@@ -78,7 +78,7 @@ use frame_support::traits::Contains;
 /// Adapter from collective pallet to alliance proposal provider trait.
 pub struct CouncilProposalProvider;
 
-impl pallet_msa::ProposalProvider<AccountId, Hash, RuntimeCall> for CouncilProposalProvider {
+impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
 	fn propose_proposal(
 		who: AccountId,
 		threshold: u32,

@@ -107,7 +107,7 @@ mod signature_registry_tests;
 pub mod weights;
 
 /// The provider of a collective action interface, for example an instance of `pallet-collective`.
-pub trait ProposalProvider<AccountId, Hash, Proposal> {
+pub trait ProposalProvider<AccountId, Proposal> {
 	/// Add a new proposal.
 	/// Returns a proposal length and active proposals count if successful.
 	fn propose_proposal(
@@ -142,7 +142,7 @@ pub mod pallet {
 		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
 
 		/// The Council proposal provider interface
-		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Hash, Self::Proposal>;
+		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Proposal>;
 
 		/// Maximum count of keys allowed per MSA
 		#[pallet::constant]
