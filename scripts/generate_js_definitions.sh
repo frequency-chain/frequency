@@ -41,4 +41,8 @@ else
     npm install # in case things have changed
     npm run fetch:local
     npm run build
+
+    # Generate the new packed tgz
+    cd dist
+    npm pack
 fi
