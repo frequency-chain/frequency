@@ -182,6 +182,9 @@ pub mod pallet {
 		/// calculated value.
 		#[pallet::constant]
 		type MaxSignaturesStored: Get<Option<u32>>;
+
+		/// The origin that is allowed to create providers
+		type CreateProviderOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
 	#[pallet::pallet]

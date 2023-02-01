@@ -54,7 +54,7 @@ use frame_support::{
 
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureRoot, RawOrigin,
+	EnsureRoot, EnsureSigned, RawOrigin,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
@@ -305,6 +305,12 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = FrameSystemMaxConsumers;
 }
 
+#[cfg(feature = "frequency")]
+type MsaCreateProviderOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
+
+#[cfg(not(feature = "frequency"))]
+type MsaCreateProviderOrigin = EnsureSigned<AccountId>;
+
 impl pallet_msa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
@@ -330,6 +336,8 @@ impl pallet_msa::Config for Runtime {
 	type NumberOfBuckets = MSANumberOfBuckets;
 	// The maximum number of signatures that can be stored in the payload signature registry
 	type MaxSignaturesStored = MSAMaxSignaturesStored;
+	// The origin that is allowed to create providers
+	type CreateProviderOrigin = MsaCreateProviderOrigin;
 }
 
 pub use common_primitives::schema::SchemaId;
