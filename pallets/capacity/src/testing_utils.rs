@@ -31,3 +31,23 @@ pub fn register_provider(target_id: MessageSourceId, name: String) {
 	let name = Vec::from(name).try_into().expect("error");
 	assert_ok!(Msa::create_registered_provider(target_id.into(), name));
 }
+
+/// Create Capacity account and set remaining and available amounts.
+pub fn create_capacity_account_and_fund(
+	target_msa_id: MessageSourceId,
+	remaining: BalanceOf<Test>,
+	available: BalanceOf<Test>,
+	last_replenished: <Test as Config>::EpochNumber,
+) -> CapacityDetails<BalanceOf<Test>, <Test as Config>::EpochNumber> {
+	let mut capacity_details =
+		CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber>::default();
+
+	capacity_details.remaining = remaining;
+	capacity_details.total_tokens_staked = available;
+	capacity_details.total_available = available;
+	capacity_details.last_replenished_epoch = last_replenished.into();
+
+	Capacity::set_capacity_for(target_msa_id, capacity_details.clone());
+
+	capacity_details
+}

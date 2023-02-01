@@ -94,7 +94,7 @@ benchmarks! {
 
 		let mut staking_account = StakingAccountDetails::<T>::default();
 		let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
-		let mut capacity_details = CapacityDetails::<BalanceOf<T>, <T as frame_system::Config>::BlockNumber>::default();
+		let mut capacity_details = CapacityDetails::<BalanceOf<T>, <T as Config>::EpochNumber>::default();
 
 		staking_account.increase_by(staking_amount);
 		target_details.increase_by(staking_amount, capacity_amount);
