@@ -123,9 +123,6 @@ pub mod pallet {
 
 	use super::*;
 
-	/// Proposal Type
-	pub type ProposalOf<T> = <T as Config>::Proposal;
-
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
@@ -145,7 +142,7 @@ pub mod pallet {
 		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
 
 		/// The Council proposal provider interface
-		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Hash, ProposalOf<Self>>;
+		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Hash, Self::Proposal>;
 
 		/// Maximum count of keys allowed per MSA
 		#[pallet::constant]
@@ -884,22 +881,14 @@ pub mod pallet {
 		pub fn request_to_be_provider(
 			origin: OriginFor<T>,
 			provider_name: Vec<u8>,
-		) -> DispatchResult
-		where
-			T::Proposal: Dispatchable<RuntimeOrigin = T::RuntimeOrigin, PostInfo = PostDispatchInfo>
-				+ IsSubType<Call<T>>,
-		{
+		) -> DispatchResult {
 			// log::info!("request_to_be_provider()");
 			let proposer = ensure_signed(origin)?;
-			let proposal: Box<T::Proposal> = Box::new((self::Call::create_provider::<T> { provider_name }).into());
+			let proposal: Box<T::Proposal> =
+				Box::new((Call::<T>::create_provider { provider_name }).into());
 			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
 			let threshold = 3;
-			T::ProposalProvider::propose_proposal(
-				proposer,
-				threshold,
-				proposal,
-				proposal_len,
-			)?;
+			T::ProposalProvider::propose_proposal(proposer, threshold, proposal, proposal_len)?;
 			Ok(())
 		}
 	}
