@@ -50,6 +50,8 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+pub mod types;
+
 pub mod weights;
 
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get};
