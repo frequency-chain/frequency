@@ -891,13 +891,13 @@ pub mod pallet {
 		{
 			// log::info!("request_to_be_provider()");
 			let proposer = ensure_signed(origin)?;
-			let proposal = self::Call::create_provider::<T> { provider_name };
+			let proposal: Box<T::Proposal> = Box::new((self::Call::create_provider::<T> { provider_name }).into());
 			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
 			let threshold = 3;
 			T::ProposalProvider::propose_proposal(
 				proposer,
 				threshold,
-				Box::new(proposal.into()),
+				proposal,
 				proposal_len,
 			)?;
 			Ok(())
