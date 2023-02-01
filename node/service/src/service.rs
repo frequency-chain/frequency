@@ -432,7 +432,6 @@ pub async fn start_parachain_node(
 
 /// Function to start frequency parachain with instant sealing in dev mode.
 /// This function is called when --chain dev --instant-sealing is passed.
-/// This function is called when --chain frequency_dev --instant-sealing is passed.
 #[cfg(feature = "frequency-rococo-local")]
 pub fn frequency_dev_instant_sealing(
 	config: Configuration,
