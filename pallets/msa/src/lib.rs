@@ -56,7 +56,7 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-	dispatch::{DispatchInfo, DispatchResult, GetDispatchInfo, PostDispatchInfo},
+	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	ensure,
 	pallet_prelude::*,
 	traits::IsSubType,
@@ -123,6 +123,9 @@ pub mod pallet {
 
 	use super::*;
 
+	/// Proposal Type
+	pub type ProposalOf<T> = <T as Config>::Proposal;
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
@@ -131,18 +134,9 @@ pub mod pallet {
 		/// The runtime call dispatch type.
 		type Proposal: Parameter
 			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin, PostInfo = PostDispatchInfo>
-			+ From<frame_system::Call<Self>>
 			+ From<Call<Self>>
-			+ GetDispatchInfo
 			+ IsSubType<Call<Self>>
 			+ IsType<<Self as frame_system::Config>::RuntimeCall>;
-
-		// type Proposal: Parameter
-		// 	+ Dispatchable<
-		// 		RuntimeOrigin = <Self as frame_system::Config>::RuntimeOrigin,
-		// 		PostInfo = PostDispatchInfo,
-		// 	> + From<frame_system::Call<Self>>
-		// 	+ GetDispatchInfo;
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
@@ -151,7 +145,7 @@ pub mod pallet {
 		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
 
 		/// The Council proposal provider interface
-		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Hash, Self::Proposal>;
+		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Hash, ProposalOf<Self>>;
 
 		/// Maximum count of keys allowed per MSA
 		#[pallet::constant]
@@ -890,19 +884,20 @@ pub mod pallet {
 		pub fn request_to_be_provider(
 			origin: OriginFor<T>,
 			provider_name: Vec<u8>,
-		) -> DispatchResult {
+		) -> DispatchResult
+		where
+			T::Proposal: Dispatchable<RuntimeOrigin = T::RuntimeOrigin, PostInfo = PostDispatchInfo>
+				+ IsSubType<Call<T>>,
+		{
 			// log::info!("request_to_be_provider()");
-			let proposor = ensure_signed(origin)?;
-			// let proposal: T::Proposal = ;
-			// // let proposal = Box::new(T::Proposal(Call::create_provider { provider_name }));
-			// // let proposal = <T as Config>::RuntimeCall::Msa(Call::create_provider { provider_name });
-			// // //			let proposal = RuntimeCall::System(Call::create_provider { provider_name });
-			let proposal_len: u32 = 12; //proposal.using_encoded(|p| p.len() as u32);
+			let proposer = ensure_signed(origin)?;
+			let proposal = self::Call::create_provider::<T> { provider_name };
+			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
 			let threshold = 3;
 			T::ProposalProvider::propose_proposal(
-				proposor,
+				proposer,
 				threshold,
-				Box::new(Call::create_provider { provider_name }),
+				Box::new(proposal.into()),
 				proposal_len,
 			)?;
 			Ok(())
