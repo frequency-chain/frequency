@@ -54,8 +54,12 @@ use frame_support::{
 
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureRoot, EnsureSigned, RawOrigin,
+	EnsureRoot, RawOrigin,
 };
+
+#[cfg(feature = "frequency-rococo-testnet")]
+use frame_system::EnsureSigned;
+
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
@@ -306,9 +310,12 @@ impl frame_system::Config for Runtime {
 }
 
 #[cfg(feature = "frequency")]
-type MsaCreateProviderOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
+type MsaCreateProviderOrigin = pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>;
 
-#[cfg(not(feature = "frequency"))]
+#[cfg(feature = "frequency-rococo-local")]
+type MsaCreateProviderOrigin = pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>;
+
+#[cfg(feature = "frequency-rococo-testnet")]
 type MsaCreateProviderOrigin = EnsureSigned<AccountId>;
 
 impl pallet_msa::Config for Runtime {

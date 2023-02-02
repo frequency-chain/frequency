@@ -84,8 +84,11 @@ use common_primitives::{
 };
 
 pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
+use frame_support::log;
 pub use pallet::*;
-pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, ProviderData, EMPTY_FUNCTION};
+pub use types::{
+	AddKeyData, AddProvider, PermittedDelegationSchemas, ProviderData, EMPTY_FUNCTION,
+};
 pub use weights::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -119,7 +122,6 @@ pub trait ProposalProvider<AccountId, Proposal> {
 }
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::log::error as log_err;
 
 	use super::*;
 
@@ -632,7 +634,10 @@ pub mod pallet {
 					Self::deposit_event(Event::DelegationRevoked { delegator_id, provider_id });
 				},
 				None => {
-					log_err!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
+					log::error!(
+						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						who
+					);
 				},
 			}
 
@@ -736,7 +741,10 @@ pub mod pallet {
 					Self::deposit_event(Event::PublicKeyDeleted { key: public_key_to_delete });
 				},
 				None => {
-					log_err!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
+					log::error!(
+						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						who
+					);
 				},
 			}
 			Ok(())
@@ -772,7 +780,10 @@ pub mod pallet {
 					Self::deposit_event(Event::DelegationRevoked { provider_id, delegator_id })
 				},
 				None => {
-					log_err!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
+					log::error!(
+						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						who
+					);
 				},
 			}
 
@@ -872,7 +883,10 @@ pub mod pallet {
 					Self::deposit_event(Event::MsaRetired { msa_id });
 				},
 				None => {
-					log_err!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
+					log::error!(
+						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						who
+					);
 				},
 			}
 			Ok(Some(T::WeightInfo::retire_msa(num_deletions)).into())
@@ -885,10 +899,15 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			provider_name: Vec<u8>,
 		) -> DispatchResult {
-			// log::info!("request_to_be_provider()");
+			log::info!("request_to_be_provider()");
 			let proposer = ensure_signed(origin)?;
-			let proposal: Box<T::Proposal> =
-				Box::new((Call::<T>::create_provider { provider_name }).into());
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::create_provider_via_governance {
+					provider_key: proposer.clone(),
+					provider_name,
+				})
+				.into(),
+			);
 			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
 			let threshold = 1;
 			T::ProposalProvider::propose_proposal(proposer, threshold, proposal, proposal_len)?;
@@ -900,24 +919,14 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::create_provider(100_000))]
 		pub fn create_provider_via_governance(
 			origin: OriginFor<T>,
-			proof: MultiSignature,
-			payload: ProviderData<T>,
+			provider_key: T::AccountId,
+			provider_name: Vec<u8>,
 		) -> DispatchResult {
 			let _ = T::CreateProviderOrigin::ensure_origin(origin)?;
 
-			let provider_key = payload.clone().provider_key;
-
-			// TODO: new Error message
-			Self::verify_signature(&proof, &provider_key, payload.encode())
-				.map_err(|_| Error::<T>::NewKeyOwnershipInvalidSignature)?;
-
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-
-			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> = payload
-				.clone()
-				.provider_name
-				.try_into()
-				.map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
+			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
+				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
 			ProviderToRegistryEntry::<T>::try_mutate(
 				ProviderId(provider_msa_id),
