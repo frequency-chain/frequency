@@ -60,6 +60,7 @@ use frame_support::{
 	ensure,
 	pallet_prelude::*,
 	traits::IsSubType,
+	log
 };
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -84,7 +85,6 @@ use common_primitives::{
 };
 
 pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
-use frame_support::log;
 pub use pallet::*;
 pub use types::{
 	AddKeyData, AddProvider, PermittedDelegationSchemas, ProviderData, EMPTY_FUNCTION,
@@ -537,26 +537,9 @@ pub mod pallet {
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::create_provider(provider_name.len() as u32))]
 		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
+			#[cfg(not(feature = "frequency"))]
 			let provider_key = ensure_signed(origin)?;
-			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
-				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
-
-			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			ProviderToRegistryEntry::<T>::try_mutate(
-				ProviderId(provider_msa_id),
-				|maybe_metadata| -> DispatchResult {
-					ensure!(
-						maybe_metadata.take().is_none(),
-						Error::<T>::DuplicateProviderRegistryEntry
-					);
-					*maybe_metadata = Some(ProviderRegistryEntry { provider_name: bounded_name });
-					Ok(())
-				},
-			)?;
-			Self::deposit_event(Event::ProviderCreated {
-				provider_id: ProviderId(provider_msa_id),
-			});
-			Ok(())
+			Self::do_create_provider(provider_key, provider_name)
 		}
 
 		/// Creates a new Delegation for an existing MSA, with `origin` as the Provider and `delegator_key` is the delegator.
@@ -923,25 +906,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let _ = T::CreateProviderOrigin::ensure_origin(origin)?;
 
-			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
-				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
-
-			ProviderToRegistryEntry::<T>::try_mutate(
-				ProviderId(provider_msa_id),
-				|maybe_metadata| -> DispatchResult {
-					ensure!(
-						maybe_metadata.take().is_none(),
-						Error::<T>::DuplicateProviderRegistryEntry
-					);
-					*maybe_metadata = Some(ProviderRegistryEntry { provider_name: bounded_name });
-					Ok(())
-				},
-			)?;
-			Self::deposit_event(Event::ProviderCreated {
-				provider_id: ProviderId(provider_msa_id),
-			});
-			Ok(())
+			Self::do_create_provider(provider_key, provider_name)
 		}
 	}
 }
@@ -1156,6 +1121,40 @@ impl<T: Config> Pallet<T> {
 
 			Ok(())
 		})
+	}
+
+	/// Adds an association between MSA id and ProviderRegistryEntry. As of now, the
+	/// only piece of metadata we are recording is provider name.
+	///
+	/// # Events
+	/// * [`Event::ProviderCreated`]
+	///
+	/// # Errors
+	/// * [`Error::NoKeyExists`] - account does not have an MSA
+	/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
+	/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
+	///
+	pub fn do_create_provider(
+		provider_key: T::AccountId,
+		provider_name: Vec<u8>,
+	) -> DispatchResult {
+		let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
+			provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
+
+		let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+		ProviderToRegistryEntry::<T>::try_mutate(
+			ProviderId(provider_msa_id),
+			|maybe_metadata| -> DispatchResult {
+				ensure!(
+					maybe_metadata.take().is_none(),
+					Error::<T>::DuplicateProviderRegistryEntry
+				);
+				*maybe_metadata = Some(ProviderRegistryEntry { provider_name: bounded_name });
+				Ok(())
+			},
+		)?;
+		Self::deposit_event(Event::ProviderCreated { provider_id: ProviderId(provider_msa_id) });
+		Ok(())
 	}
 
 	/// Mutates the delegation relationship storage item only when the supplied function returns an 'Ok()' result.
