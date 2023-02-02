@@ -733,6 +733,14 @@ impl pallet_stateful_storage::Config for Runtime {
 	type MaxItemizedBlobSizeBytes = MaxItemizedBlobSizeBytes;
 	/// The maximum number of pages in a Paginated storage model
 	type MaxPaginatedPageCount = MaxPaginatedPageCount;
+	/// The maximum number of actions in itemized actions
+	type MaxItemizedActionsCount = MaxItemizedActionsCount;
+	/// The type that supplies MSA info
+	type MsaInfoProvider = Msa;
+	/// The type that validates schema grants
+	type SchemaGrantValidator = Msa;
+	/// The type that provides schema info
+	type SchemaProvider = Schemas;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for
