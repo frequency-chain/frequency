@@ -21,7 +21,7 @@ then
     echo -e "${NC}"
     echo -e "${STEP_COLOR}Generating using CLI...${NC}"
     rm -f ./js/api-augment/metadata.json
-    cargo run --features frequency export-metadata > ./js/api-augment/metadata.json
+    cargo run --features frequency-rococo-local -- export-metadata --tmp --chain=frequency-local ./js/api-augment/metadata.json
     # cd into js dir
     cd "js/api-augment"
     npm install # in case things have changed
@@ -41,4 +41,8 @@ else
     npm install # in case things have changed
     npm run fetch:local
     npm run build
+
+    # Generate the new packed tgz
+    cd dist
+    npm pack
 fi

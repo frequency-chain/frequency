@@ -13,10 +13,7 @@ pub type DummyChainSpec = sc_service::GenericChainSpec<(), Extensions>;
 #[cfg(feature = "frequency")]
 pub mod frequency;
 
-#[cfg(feature = "frequency-rococo-local")]
-pub mod frequency_local;
-
-#[cfg(feature = "frequency-rococo-testnet")]
+#[cfg(any(feature = "frequency-rococo-testnet", feature = "frequency-rococo-local"))]
 pub mod frequency_rococo;
 
 /// Helper function to generate a crypto pair from seed

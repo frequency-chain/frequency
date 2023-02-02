@@ -32,7 +32,7 @@ This document aims to explore what a system that does that could look like.
 This specifies how messages are to be announced on chain; what is required and
 how a batch may be partially verified based on on-chain information.
 
-This document specifes how messages can be inferred from both schema format type
+This document specifies how messages can be inferred from both schema format type
 and payload location.
 
 This document also specifies how schemas will constrain the shape of off chain
@@ -188,7 +188,7 @@ of the `MessageResponse` to be more like the following:
 
 ```rust
 pub struct MessageResponse<AccountId, BlockNumber> {
-	/// Serialized data in a the schemas.
+	/// Serialized data in the schemas.
 	#[cfg_attr(feature = "std", serde(with = "as_hex_option", skip_serializing_if = "Option::is_none", default))]
 	pub payload: Option<Vec<u8>>,
   /// The content address for an IPFS payload

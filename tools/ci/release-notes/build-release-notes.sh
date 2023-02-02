@@ -6,7 +6,6 @@ changelog=$2
 runtime_rococo_info=$3
 runtime_mainnet_info=$4
 
-
 CHANGELOG="$changelog" \
     POLKADOT_VERSION="$polkadot_version" \
     RUNTIME_ROCOCO_INFO="$runtime_rococo_info" \
