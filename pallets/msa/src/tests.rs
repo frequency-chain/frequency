@@ -1780,6 +1780,17 @@ fn add_removed_key_to_msa_pass() {
 }
 
 #[test]
+fn create_provider_via_governance() {
+	new_test_ext().execute_with(|| {
+		let (_new_msa_id, key_pair) = create_account();
+		_ = Msa::request_to_be_provider(
+			RuntimeOrigin::signed(key_pair.public().into()),
+			Vec::from("ACME Widgets"),
+		);
+	})
+}
+
+#[test]
 fn create_provider() {
 	new_test_ext().execute_with(|| {
 		let (_new_msa_id, key_pair) = create_account();

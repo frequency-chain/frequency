@@ -78,8 +78,7 @@ pub use common_runtime::{
 };
 use frame_support::traits::Contains;
 
-/// Proposal provider from alliance pallet.
-/// Adapter from collective pallet to alliance proposal provider trait.
+/// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;
 
 impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
