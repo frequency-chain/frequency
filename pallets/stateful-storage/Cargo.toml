@@ -31,6 +31,9 @@ sp-std = { git = "https://github.com/paritytech/substrate", default-features = f
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
 
+[dev-dependencies]
+pretty_assertions = "1"
+
 [features]
 default = ['std']
 runtime-benchmarks = [
