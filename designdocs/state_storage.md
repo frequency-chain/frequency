@@ -113,4 +113,4 @@ signature.
 
 In general, we will need to be able to store different settings for schemas when creating and check
 those settings against the actions applied to any data stored for that schema. This will allow us to
-customize actions and checks that needs to happen for any certain schema.
+customize actions and checks that need to happen for any certain schema.

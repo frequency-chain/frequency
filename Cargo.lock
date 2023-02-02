@@ -1002,6 +1002,7 @@ dependencies = [
  "frame-system",
  "orml-vesting",
  "pallet-balances",
+ "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
  "pallet-preimage",

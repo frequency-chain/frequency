@@ -6,8 +6,9 @@ PROJECT=${1:-$THIS_DIR/..}
 RUNTIME=$PROJECT/target/production/frequency
 BENCHMARK="$RUNTIME benchmark pallet "
 # TODO: pallet_collator_selection benchmarks fail due to errors in the actual benchmark code. See Issue #608
-EXTERNAL_PALLETS=(pallet_collective orml_vesting pallet_balances pallet_timestamp pallet_session pallet_scheduler pallet_democracy pallet_treasury pallet_preimage pallet_utility)
 CUSTOM_PALLETS=(messages msa schemas stateful-message-storage)
+EXTERNAL_PALLETS=(pallet_collator_selection pallet_collective orml_vesting pallet_balances pallet_timestamp pallet_session pallet_scheduler pallet_democracy pallet_treasury pallet_preimage pallet_utility)
+CUSTOM_PALLETS=(messages msa schemas)
 
 function exit_err() { echo "❌ 💔" ; exit 1; }
 

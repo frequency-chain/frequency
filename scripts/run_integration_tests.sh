@@ -28,8 +28,24 @@ echo "Frequency running here:"
 echo "PID: ${PID}"
 echo "---------------------------------------------"
 
-cd integration-tests
+echo "Building js/api-augment..."
+cd js/api-augment
 npm i
+npm run fetch:local
+npm run --silent build
+cd dist
+echo "Packaging up into js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz"
+npm pack --silent
+cd ../../..
+
+
+cd integration-tests
+echo "Installing js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz"
+npm i ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
+npm install
+echo "---------------------------------------------"
+echo "Starting Tests..."
+echo "---------------------------------------------"
 WS_PROVIDER_URL="ws://127.0.0.1:9944" npm test
 
 if $SHOULD_KILL

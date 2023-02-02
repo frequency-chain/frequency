@@ -271,8 +271,8 @@ pub type AuraMaxAuthorities = ConstU32<100_000>;
 // Example CollatorMaxInvulnerables are 16 in production(mainnet),
 // 5 in rococo testnet and 5 in rococo local
 parameter_types! {
-	pub CollatorMaxCandidates: u32 = prod_or_testnet_or_local!(0, 0, 0);
-	pub CollatorMinCandidates: u32 = prod_or_testnet_or_local!(0, 0, 0);
+	pub CollatorMaxCandidates: u32 = 50;
+	pub CollatorMinCandidates: u32 = 1;
 	pub CollatorMaxInvulnerables: u32 = prod_or_testnet_or_local!(16, 5, 5);
 	pub CollatorKickThreshold: BlockNumber = prod_or_testnet_or_local!(
 		6 * HOURS,
