@@ -393,11 +393,15 @@ impl<T: Config> Pallet<T> {
 	) -> Vec<MessageResponse> {
 		let block_number_value: u32 = block_number.try_into().unwrap_or_default();
 
-		<Messages<T>>::get(block_number, schema_id)
-			.into_inner()
-			.iter()
-			.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
-			.collect()
+		match schema_payload_location {
+			PayloadLocation::Itemized | PayloadLocation::Paginated => return Vec::new(),
+			_ =>
+				return <Messages<T>>::get(block_number, schema_id)
+					.into_inner()
+					.iter()
+					.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
+					.collect(),
+		}
 	}
 
 	/// Validates a CID to conform to IPFS CIDv1 (or higher) formatting (does not validate decoded CID fields)

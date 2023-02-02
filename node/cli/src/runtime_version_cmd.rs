@@ -3,7 +3,7 @@ use sc_cli::{CliConfiguration, Error, RuntimeVersion, SharedParams};
 use serde_json::{json, to_writer};
 use std::{fmt::Debug, fs, io, path::PathBuf};
 
-/// The `export-metadata` command used to export chain metadata.
+/// The `export-runtime-version` command used to export the runtime version.
 #[derive(Debug, Clone, Parser)]
 pub struct ExportRuntimeVersionCmd {
 	/// Output file name or stdout if unspecified.
@@ -16,7 +16,7 @@ pub struct ExportRuntimeVersionCmd {
 }
 
 impl ExportRuntimeVersionCmd {
-	/// Run the get-runtime-version command.
+	/// Run the export-runtime-version command.
 	pub async fn run(&self, runtime_version: &RuntimeVersion) -> Result<(), Error> {
 		let result = json!(runtime_version);
 		let file: Box<dyn io::Write> = match &self.output {

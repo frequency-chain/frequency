@@ -252,7 +252,7 @@ pub type StakingAccountLedger<T: Config> =
 
 ```
 
-Storage for to record how many tokens were targeted to an MSA.
+Storage to record how many tokens were targeted to an MSA.
 
 ```rust
 
