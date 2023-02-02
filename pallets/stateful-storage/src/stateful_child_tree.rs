@@ -10,8 +10,8 @@ use sp_std::prelude::*;
 pub type StatefulPageKeyPart = Vec<u8>;
 
 /// Paginated Stateful data access utility
-pub struct StatefulStorageTree;
-impl StatefulStorageTree {
+pub struct StatefulChildTree;
+impl StatefulChildTree {
 	pub fn concat_keys(keys: &[StatefulPageKeyPart]) -> Vec<u8> {
 		let mut key = Vec::<u8>::new();
 		for k in keys {

@@ -1,9 +1,9 @@
 use super::mock::*;
 use crate::{
-	stateful_child_tree::{StatefulPageKeyPart, StatefulStorageTree},
+	stateful_child_tree::{StatefulChildTree, StatefulPageKeyPart},
 	Config, Error,
 };
-use common_primitives::schema::{ModelType, PayloadLocation};
+use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
 use frame_support::{assert_err, assert_ok};
 
 #[test]
@@ -67,8 +67,11 @@ fn child_tree_write_read() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let msa_id = 1;
-		let k1: StatefulPageKeyPart = 1u16.to_be_bytes().to_vec();
-		let keys = &[k1];
+		let schema_id: SchemaId = 2;
+		let page_id: u8 = 3;
+		let k1: StatefulPageKeyPart = schema_id.to_be_bytes().to_vec();
+		let k2: StatefulPageKeyPart = page_id.to_be_bytes().to_vec();
+		let keys = &[k1, k2];
 		let val = TestStruct {
 			model_type: ModelType::AvroBinary,
 			payload_location: PayloadLocation::OnChain,
@@ -76,10 +79,10 @@ fn child_tree_write_read() {
 		};
 
 		// act
-		StatefulStorageTree::write(&msa_id, keys, &val);
+		StatefulChildTree::write(&msa_id, keys, &val);
 
 		// assert
-		let read = StatefulStorageTree::read::<TestStruct>(&msa_id, keys);
+		let read = StatefulChildTree::read::<TestStruct>(&msa_id, keys);
 		assert_eq!(Some(val), read);
 	});
 }
@@ -103,12 +106,12 @@ fn child_tree_iterator() {
 		}
 		for (k, t) in arr.as_slice() {
 			let keys = &[k.to_owned()];
-			StatefulStorageTree::write(&msa_id, keys, t);
+			StatefulChildTree::write(&msa_id, keys, t);
 		}
 
 		// act
 		let mut v = Vec::new();
-		let nodes = StatefulStorageTree::prefix_iterator::<TestStruct>(&msa_id, &[]);
+		let nodes = StatefulChildTree::prefix_iterator::<TestStruct>(&msa_id, &[]);
 		for n in nodes {
 			v.push(n);
 		}
