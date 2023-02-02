@@ -50,6 +50,7 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+mod stateful_child_tree;
 pub mod types;
 
 pub mod weights;
