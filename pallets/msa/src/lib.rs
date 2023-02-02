@@ -899,7 +899,6 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			provider_name: Vec<u8>,
 		) -> DispatchResult {
-			log::info!("request_to_be_provider()");
 			let proposer = ensure_signed(origin)?;
 			let proposal: Box<T::Proposal> = Box::new(
 				(Call::<T>::create_provider_via_governance {
