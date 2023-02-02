@@ -740,6 +740,12 @@ impl pallet_stateful_storage::Config for Runtime {
 	type SchemaGrantValidator = Msa;
 	/// The type that provides schema info
 	type SchemaProvider = Schemas;
+
+	/// A set of helper functions for benchmarking.
+	#[cfg(feature = "runtime-benchmarks")]
+	type MsaBenchmarkHelper = Msa;
+	#[cfg(feature = "runtime-benchmarks")]
+	type SchemaBenchmarkHelper = Schemas;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for

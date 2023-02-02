@@ -67,7 +67,10 @@ impl<T: Config> ItemPage<T> {
 		current_block: T::BlockNumber,
 		actions: &[ItemAction],
 	) -> Result<ItemPage<T>, ItemPageError> {
-		ensure!(self.last_update < current_block, ItemPageError::InvalidAction("action against obsolete page"));
+		ensure!(
+			self.last_update < current_block,
+			ItemPageError::InvalidAction("action against obsolete page")
+		);
 		let mut parsed = self.parse()?;
 
 		let mut updated_page_buffer = Vec::with_capacity(parsed.page_size);

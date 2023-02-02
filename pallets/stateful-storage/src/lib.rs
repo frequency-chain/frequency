@@ -49,6 +49,8 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+#[cfg(feature = "runtime-benchmarks")]
+use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
 
 pub mod types;
 
@@ -113,6 +115,14 @@ pub mod pallet {
 		/// The maximum number of actions in itemized actions
 		#[pallet::constant]
 		type MaxItemizedActionsCount: Get<u32>;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		/// A set of helper functions for benchmarking.
+		type MsaBenchmarkHelper: MsaBenchmarkHelper<Self::AccountId>;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		/// A set of helper functions for benchmarking.
+		type SchemaBenchmarkHelper: SchemaBenchmarkHelper;
 	}
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -154,8 +164,8 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		PageUpdated { msa_id: MessageSourceId, schema_id: SchemaId},
-		PageRemoved { msa_id: MessageSourceId, schema_id: SchemaId},
+		PageUpdated { msa_id: MessageSourceId, schema_id: SchemaId },
+		PageRemoved { msa_id: MessageSourceId, schema_id: SchemaId },
 	}
 
 	#[pallet::call]
@@ -212,11 +222,17 @@ pub mod pallet {
 			match updated_page.is_empty() {
 				true => {
 					ChildTreeStorage::kill(&state_owner_msa_id, storage_key);
-					Self::deposit_event(Event::PageRemoved { msa_id: state_owner_msa_id, schema_id });
+					Self::deposit_event(Event::PageRemoved {
+						msa_id: state_owner_msa_id,
+						schema_id,
+					});
 				},
 				false => {
 					ChildTreeStorage::write(&state_owner_msa_id, storage_key, updated_page);
-					Self::deposit_event(Event::PageUpdated { msa_id: state_owner_msa_id, schema_id });
+					Self::deposit_event(Event::PageUpdated {
+						msa_id: state_owner_msa_id,
+						schema_id,
+					});
 				},
 			};
 			Ok(())

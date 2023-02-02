@@ -1,12 +1,14 @@
 use super::mock::*;
-use crate::{child_tree_storage::ChildTreeStorage, Config, Error};
+use crate::{
+	child_tree_storage::ChildTreeStorage,
+	types::{ItemAction, ItemHeader, ItemPage, ItemPageError},
+	Config, Error,
+};
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{assert_err, assert_ok};
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
 use sp_runtime::traits::One;
-use crate::types::{ItemAction, ItemHeader, ItemPage, ItemPageError};
-
 
 #[test]
 fn upsert_page_too_large_errors() {
@@ -82,8 +84,9 @@ fn create_page_from<T: Config>(payloads: &[Vec<u8>]) -> ItemPage<T> {
 		buffer.extend_from_slice(&ItemHeader { payload_len: p.len() as u16 }.encode()[..]);
 		buffer.extend_from_slice(p);
 	}
-	let bounded: BoundedVec<u8, T::MaxItemizedPageSizeBytes> = BoundedVec::try_from(buffer).unwrap();
-	ItemPage::new(T::BlockNumber::one(),payloads.len() as u16,bounded)
+	let bounded: BoundedVec<u8, T::MaxItemizedPageSizeBytes> =
+		BoundedVec::try_from(buffer).unwrap();
+	ItemPage::new(T::BlockNumber::one(), payloads.len() as u16, bounded)
 }
 
 #[test]
@@ -120,12 +123,10 @@ fn parsing_wrong_payload_size_page_should_return_parsing_error() {
 	// arrange
 	let payload = "{'type':2, 'description':'another test description 1'}".as_bytes().to_vec();
 	let mut buffer: Vec<u8> = vec![];
-	buffer.extend_from_slice(
-		&ItemHeader { payload_len: (payload.len() + 1) as u16 }.encode()[..],
-	);
+	buffer.extend_from_slice(&ItemHeader { payload_len: (payload.len() + 1) as u16 }.encode()[..]);
 	buffer.extend_from_slice(&payload);
 	let bounded: BoundedVec<u8, _> = BoundedVec::try_from(buffer).unwrap();
-	let page = ItemPage::<Test>::new(1,1u16,bounded);
+	let page = ItemPage::<Test>::new(1, 1u16, bounded);
 
 	// act
 	let parsed = page.parse();
@@ -139,12 +140,10 @@ fn parsing_wrong_header_size_page_should_return_parsing_error() {
 	// arrange
 	let payload = "{'type':2, 'description':'another test description 1'}".as_bytes().to_vec();
 	let mut buffer: Vec<u8> = vec![];
-	buffer.extend_from_slice(
-		&ItemHeader { payload_len: (payload.len() - 1) as u16 }.encode()[..],
-	);
+	buffer.extend_from_slice(&ItemHeader { payload_len: (payload.len() - 1) as u16 }.encode()[..]);
 	buffer.extend_from_slice(&payload);
-	let bounded: BoundedVec<u8,_> = BoundedVec::try_from(buffer).unwrap();
-	let page = ItemPage::<Test>::new(1,1u16,bounded);
+	let bounded: BoundedVec<u8, _> = BoundedVec::try_from(buffer).unwrap();
+	let page = ItemPage::<Test>::new(1, 1u16, bounded);
 
 	// act
 	let parsed = page.parse();
@@ -165,7 +164,7 @@ fn applying_remove_action_with_exisitng_index_should_remove_item() {
 	let actions = vec![ItemAction::Remove { index: 0 }];
 
 	// act
-	let result = page.apply_actions(2,&actions[..]);
+	let result = page.apply_actions(2, &actions[..]);
 
 	// assert
 	assert_ok!(&result);
@@ -181,11 +180,12 @@ fn applying_add_action_should_add_item_to_the_end_of_the_page() {
 	let page = create_page_from::<Test>(payload1.as_slice());
 	let payload2 =
 		vec!["{'type':4, 'description':'another test description 2'}".as_bytes().to_vec()];
-	let expecting_page = create_page_from::<Test>(&vec![payload1[0].clone(), payload2[0].clone()][..]);
+	let expecting_page =
+		create_page_from::<Test>(&vec![payload1[0].clone(), payload2[0].clone()][..]);
 	let actions = vec![ItemAction::Add { data: payload2[0].clone() }];
 
 	// act
-	let result = page.apply_actions(2,&actions[..]);
+	let result = page.apply_actions(2, &actions[..]);
 
 	// assert
 	assert_ok!(&result);
@@ -204,7 +204,7 @@ fn applying_remove_action_with_non_existing_index_should_fail() {
 	let actions = vec![ItemAction::Remove { index: 2 }];
 
 	// act
-	let result = page.apply_actions(2,&actions[..]);
+	let result = page.apply_actions(2, &actions[..]);
 
 	// assert
 	assert_eq!(result.is_err(), true);
@@ -224,7 +224,7 @@ fn applying_add_action_with_full_page_should_fail() {
 	let actions = vec![ItemAction::Add { data: payload.clone() }];
 
 	// act
-	let result = page.apply_actions(2,&actions[..]);
+	let result = page.apply_actions(2, &actions[..]);
 
 	// assert
 	assert_eq!(result.is_err(), true);
