@@ -62,7 +62,7 @@ where
 					msa_id: None,
 					payload: None,
 				}
-			}, // TODO: Add support for itemized and paginated payloads
+			}, // Message types of Itemized and Paginated are retrieved differently
 			_ => MessageResponse {
 				provider_msa_id: self.provider_msa_id,
 				index: self.index,
