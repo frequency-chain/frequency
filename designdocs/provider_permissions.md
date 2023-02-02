@@ -149,7 +149,7 @@ An extrinsic (or rpc if revoking is paid off while adding) to allow a provider o
 ## Time bounded permissions
 
 - Expiry time on permissions for version 1 can be a fixed number of blocks set in Frequency.
-- This expiry time can be update via governance or runtime upgrades. Since this is not important for the scope of the design doc, implementation details can define, how Frequency is handling expiry time in first version.
+- This expiry time can be updated via governance or runtime upgrades. Since this is not important for the scope of the design doc, implementation details can define, how Frequency is handling expiry time in first version.
 - However, expiry time can be baked in the above extrinsic call and can be set as a parameter.
 
 ## Validation

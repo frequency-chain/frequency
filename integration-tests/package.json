@@ -7,22 +7,23 @@
         "build": "tsc -p ./tsconfig.json",
         "test": "mocha",
         "format": "tsc --noEmit --pretty",
-        "lint": "tsc --noEmit --pretty"
+        "lint": "tsc --noEmit --pretty",
+        "preinstall": "echo \"NOTICE: Integration tests REQUIRE ../js/api-augment to have been built and packaged\""
     },
     "keywords": [],
     "author": "",
     "license": "Apache-2.0",
     "dependencies": {
-        "@frequency-chain/api-augment": "^v0.9.29",
-        "@polkadot/api": "9.10.2",
-        "@polkadot/types": "9.10.2",
+        "@frequency-chain/api-augment": "file:../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz",
+        "@polkadot/api": "9.13.2",
+        "@polkadot/types": "9.13.2",
         "@polkadot/util": "10.2.1",
         "ipfs": "^0.65.0",
         "multiformats": "^11.0.1",
         "rxjs": "^7.5.7"
     },
     "devDependencies": {
-        "@polkadot/typegen": "9.10.2",
+        "@polkadot/typegen": "9.13.2",
         "@types/mocha": "^10.0.0",
         "@typescript-eslint/eslint-plugin": "^5.48.1",
         "@typescript-eslint/parser": "^5.48.1",

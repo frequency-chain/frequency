@@ -62,6 +62,15 @@ where
 					msa_id: None,
 					payload: None,
 				}
+			}, // Message types of Itemized and Paginated are retrieved differently
+			_ => MessageResponse {
+				provider_msa_id: self.provider_msa_id,
+				index: self.index,
+				block_number,
+				msa_id: None,
+				payload: None,
+				cid: None,
+				payload_length: None,
 			},
 		}
 	}

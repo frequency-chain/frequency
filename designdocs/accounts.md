@@ -66,7 +66,7 @@ The benefits are that it allow for users to create an MSA without the need to ac
 
 An alternative solution could be to combine both MSAId and AccountId into one identifier.
 
-This would require accounts to be created deterministically. This could be become a bottleneck for adoption as most users are accustomed an Ethereum/Bitcoin account creation flow.
+This would require accounts to be created deterministically. This could become a bottleneck for adoption as most users are accustomed an Ethereum/Bitcoin account creation flow.
 
 Moreover, by combining an MSAId and AccountId into one identifier it limits the
 ability to dissociate from an MSAId.

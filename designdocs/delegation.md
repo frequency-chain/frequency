@@ -59,7 +59,7 @@ Creates a new MSA on behalf of a delegator and adds the origin held MSA as its p
       1. `add_provider_payload` - this is what the holder of delegator_key must sign and provide to the provider beforehand.
           * `authorized_msa_id` - the provider, of type `MessageSourceId`
       2. `delegator_key` - The authorizing key used to create `proof`
-      3. `proof` - The signature of the hash of `add_provider_payload` by the delgator
+      3. `proof` - The signature of the hash of `add_provider_payload` by the delegator
 
   * Events:
       1. `MsaCreated`
@@ -160,7 +160,7 @@ This was ruled out as the sole solution because:
 1. The average person can't or won't pay to use social media.
 2. Making End Users pay to send messages would require people to sign transactions every time they make any updates — all posts, all reactions, all replies, all profile changes, all follows/unfollows, etc. Having to do this would be too annoying for the End User.
 
-This design still include some direct pay endpoints, so even if an End User did not want to trust a provider, they could still pay for all of their messages if they want to assume the cost of running a node and pay directly.
+This design still includes some direct pay endpoints, so even if an End User did not want to trust a provider, they could still pay for all of their messages if they want to assume the cost of running a node and pay directly.
 
 ### Permissioned delegation is an industry standard
 Furthermore, permissioned delegation via verifiable strong cryptographic signature is a well-known and tested feature in smart contracts of distributed blockchain-based applications.

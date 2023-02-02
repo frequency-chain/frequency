@@ -29,6 +29,10 @@ pub enum PayloadLocation {
 	OnChain,
 	/// Message payload is located on IPFS
 	IPFS,
+	/// Itemized payload location for onchain storage in itemized form
+	Itemized,
+	/// Paginated payload location for onchain storage in paginated form
+	Paginated,
 }
 
 /// RPC Response form for a Schema
