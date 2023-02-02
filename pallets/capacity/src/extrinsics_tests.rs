@@ -512,21 +512,6 @@ fn unstake_errors_amount_to_unstake_exceeds_amount_staked() {
 }
 
 #[test]
-fn unstake_errors_invalid_target() {
-	new_test_ext().execute_with(|| {
-		let token_account = 200;
-		let target: MessageSourceId = 2;
-
-		let unstaking_amount = 11;
-
-		assert_noop!(
-			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
-			Error::<Test>::InvalidTarget
-		);
-	});
-}
-
-#[test]
 fn unstake_errors_not_a_staking_account() {
 	new_test_ext().execute_with(|| {
 		let token_account = 200;

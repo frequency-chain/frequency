@@ -90,7 +90,6 @@ benchmarks! {
 		let capacity_amount: BalanceOf<T> = Capacity::<T>::calculate_capacity(staking_amount);
 		let target = 1;
 		let block_number = 4u32;
-		register_provider::<T>(target, "Foo");
 
 		let mut staking_account = StakingAccountDetails::<T>::default();
 		let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();

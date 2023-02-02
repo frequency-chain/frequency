@@ -354,7 +354,6 @@ pub mod pallet {
 		) -> DispatchResult {
 			let unstaker = ensure_signed(origin)?;
 
-			ensure!(T::TargetValidator::validate(target), Error::<T>::InvalidTarget);
 			ensure!(amount > Zero::zero(), Error::<T>::UnstakedAmountIsZero);
 
 			Self::decrease_active_staking_balance(&unstaker, amount)?;
