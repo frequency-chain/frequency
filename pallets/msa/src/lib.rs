@@ -57,10 +57,9 @@
 use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
-	ensure,
+	ensure, log,
 	pallet_prelude::*,
 	traits::IsSubType,
-	log
 };
 
 #[cfg(feature = "runtime-benchmarks")]
