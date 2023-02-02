@@ -85,7 +85,7 @@ use common_primitives::{
 
 pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 pub use pallet::*;
-pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
+pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, ProviderData, EMPTY_FUNCTION};
 pub use weights::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -892,6 +892,47 @@ pub mod pallet {
 			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
 			let threshold = 1;
 			T::ProposalProvider::propose_proposal(proposer, threshold, proposal, proposal_len)?;
+			Ok(())
+		}
+
+		/// Create a provider by means of governance approval
+		#[pallet::call_index(12)]
+		#[pallet::weight(T::WeightInfo::create_provider(100_000))]
+		pub fn create_provider_via_governance(
+			origin: OriginFor<T>,
+			proof: MultiSignature,
+			payload: ProviderData<T>,
+		) -> DispatchResult {
+			let _ = T::CreateProviderOrigin::ensure_origin(origin)?;
+
+			let provider_key = payload.clone().provider_key;
+
+			// TODO: new Error message
+			Self::verify_signature(&proof, &provider_key, payload.encode())
+				.map_err(|_| Error::<T>::NewKeyOwnershipInvalidSignature)?;
+
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+
+			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> = payload
+				.clone()
+				.provider_name
+				.try_into()
+				.map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
+
+			ProviderToRegistryEntry::<T>::try_mutate(
+				ProviderId(provider_msa_id),
+				|maybe_metadata| -> DispatchResult {
+					ensure!(
+						maybe_metadata.take().is_none(),
+						Error::<T>::DuplicateProviderRegistryEntry
+					);
+					*maybe_metadata = Some(ProviderRegistryEntry { provider_name: bounded_name });
+					Ok(())
+				},
+			)?;
+			Self::deposit_event(Event::ProviderCreated {
+				provider_id: ProviderId(provider_msa_id),
+			});
 			Ok(())
 		}
 	}
