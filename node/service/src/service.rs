@@ -52,9 +52,9 @@ pub mod frequency_executor {
 	};
 
 	/// Native executor instance for frequency mainnet.
-	pub struct FrequencyRuntimeExecutor;
+	pub struct FrequencyExecutorDispatch;
 
-	impl sc_executor::NativeExecutionDispatch for FrequencyRuntimeExecutor {
+	impl sc_executor::NativeExecutionDispatch for FrequencyExecutorDispatch {
 		#[cfg(feature = "runtime-benchmarks")]
 		type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -65,14 +65,11 @@ pub mod frequency_executor {
 			frequency_runtime::api::dispatch(method, data)
 		}
 
-		fn native_version() -> sc_executor::NativeVersion {
-			debug!("calling native_version");
-			frequency_runtime::native_version()
-		}
+		fn native_version() -> sc_executor::NativeVersion { frequency_runtime::native_version() }
 	}
 
 	#[cfg(feature = "try-runtime")]
-	impl HostFunctions for FrequencyRuntimeExecutor {
+	impl HostFunctions for FrequencyExecutorDispatch {
 		fn host_functions() -> Vec<&'static dyn Function> {
 			Vec::new()
 		}
@@ -85,7 +82,7 @@ pub mod frequency_executor {
 
 pub use frequency_executor::*;
 
-type ParachainExecutor = NativeElseWasmExecutor<FrequencyRuntimeExecutor>;
+type ParachainExecutor = NativeElseWasmExecutor<FrequencyExecutorDispatch>;
 
 type ParachainClient = TFullClient<Block, RuntimeApi, ParachainExecutor>;
 

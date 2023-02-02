@@ -8,7 +8,7 @@ use log::info;
 use common_primitives::node::Block;
 use frequency_service::{
 	chain_spec,
-	service::{frequency_runtime::VERSION, new_partial, FrequencyRuntimeExecutor as Executor},
+	service::{frequency_runtime::VERSION, new_partial, FrequencyExecutorDispatch as ExecutorDispatch},
 };
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
@@ -304,7 +304,7 @@ pub fn run() -> Result<()> {
 			match cmd {
 				BenchmarkCmd::Pallet(cmd) =>
 					if cfg!(feature = "runtime-benchmarks") {
-						runner.sync_run(|config| cmd.run::<Block, Executor>(config))
+						runner.sync_run(|config| cmd.run::<Block, ExecutorDispatch>(config))
 					} else {
 						return Err("Benchmarking wasn't enabled when building the node. \
 									You can enable it with `--features runtime-benchmarks`."
@@ -353,7 +353,7 @@ pub fn run() -> Result<()> {
 				Ok((
 					cmd.run::<Block, ExtendedHostFunctions<
 						sp_io::SubstrateHostFunctions,
-						<Executor as NativeExecutionDispatch>::ExtendHostFunctions,
+						<ExecutorDispatch as NativeExecutionDispatch>::ExtendHostFunctions,
 					>>(),
 					task_manager,
 				))

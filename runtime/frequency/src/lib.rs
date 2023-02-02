@@ -163,21 +163,23 @@ impl OnRuntimeUpgrade for RemoveSudo {
 		Weight::from_ref_time(100)
 	}
 
-	#[cfg(feature = "try-runtime")]
-	fn try_on_runtime_upgrade(_checks: bool) -> Result<Weight, &'static str> {
-		Ok(Weight::zero())
+	#[cfg(feature="try-runtime")]
+	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+		// here we could find out how much token is in Sudo account.
+		Ok(vec![1u8,2u8,3u8])
 	}
 
-	// #[cfg(feature="try-runtime")]
-	// fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-	// 	Ok(vec![1u8,2u8,3u8])
-	// }
-	//
-	// #[cfg(feature="try-runtime")]
-	// fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
-	// 	log::warn!("==============================================================  state: {:?}", state);
-	// 	Ok(())
-	// }
+	#[cfg(feature="try-runtime")]
+	// if try_on_runtime_update function is defined,
+	// pre_ and post_upgrade must be called explicitly.
+	// see default function at:
+	// https://github.com/paritytech/substrate/blob/master/frame/support/src/traits/hooks.rs#L139
+	fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+		log::warn!("==============================================================  state: {:?}", state);
+		// here we could verify that the Sudo account has no token left
+		// and that the storage has been removed.
+		Ok(())
+	}
 }
 
 // ==============================================
@@ -230,7 +232,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 11,
+	spec_version: 12,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
