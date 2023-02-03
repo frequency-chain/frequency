@@ -141,6 +141,16 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalPro
 	}
 }
 
+#[cfg(not(feature = "frequency"))]
+type MsaCreateProviderOrigin = EnsureSigned<AccountId>;
+#[cfg(feature = "frequency")]
+type MsaCreateProviderOrigin = EnsureNever<AccountId>;
+
+type MsaCreateProviderViaGovernanceOrigin = EitherOfDiverse<
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
+>;
+
 impl pallet_msa::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
@@ -158,7 +168,9 @@ impl pallet_msa::Config for Test {
 	type NumberOfBuckets = ConstU32<2>;
 	// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<20>;
-	type CreateProviderOrigin = EnsureSigned<AccountId>;
+	type CreateProviderOrigin = MsaCreateProviderOrigin;
+	// The origin that is allowed to create providers via governance
+	type CreateProviderViaGovernanceOrigin = MsaCreateProviderViaGovernanceOrigin;
 }
 #[test]
 pub fn cannot_register_too_many_signatures_in_one_bucket() {

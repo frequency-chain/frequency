@@ -131,6 +131,16 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalPro
 	}
 }
 
+#[cfg(not(feature = "frequency"))]
+type MsaCreateProviderOrigin = EnsureSigned<AccountId>;
+#[cfg(feature = "frequency")]
+type MsaCreateProviderOrigin = EnsureNever<AccountId>;
+
+type MsaCreateProviderViaGovernanceOrigin = EitherOfDiverse<
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
+>;
+
 impl pallet_msa::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
@@ -148,7 +158,9 @@ impl pallet_msa::Config for Test {
 	type Proposal = RuntimeCall;
 	// The Council proposal provider interface
 	type ProposalProvider = CouncilProposalProvider;
-	type CreateProviderOrigin = EnsureSigned<AccountId>;
+	type CreateProviderOrigin = MsaCreateProviderOrigin;
+	// The origin that is allowed to create providers via governance
+	type CreateProviderViaGovernanceOrigin = MsaCreateProviderViaGovernanceOrigin;
 }
 
 #[test]
