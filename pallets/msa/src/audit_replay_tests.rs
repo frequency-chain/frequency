@@ -8,17 +8,22 @@ use frame_support::{
 	assert_noop, assert_ok,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64, Everything},
+	traits::{ConstU16, ConstU32, ConstU64, Get, EitherOfDiverse, OnFinalize, OnInitialize},
 };
 use frame_system::EnsureSigned;
+use pallet_collective;
+
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
+	MultiSignature,
 };
 
 pub use common_runtime::constants::*;
 pub use pallet_msa::Call as MsaCall;
+
+use common_primitives::node::AccountId;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;

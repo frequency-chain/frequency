@@ -9,10 +9,11 @@ use frame_support::{
 	assert_noop, assert_ok,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64, Get},
+	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, OnFinalize, OnInitialize},
 };
 use frame_system::EnsureSigned;
 use pallet_collective;
+
 use sp_core::{sr25519, Encode, Pair, H256};
 use sp_runtime::{
 	testing::Header,
