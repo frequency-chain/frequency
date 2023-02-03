@@ -10,7 +10,7 @@ fi
 
 
 echo "🏭 installing subwasm..."
-cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.16.1
+cargo install --locked --git https://github.com/chevdor/subwasm
 
 sudo_secret=$1
 ws_provider=$2
@@ -18,6 +18,6 @@ wasm_location=$3
 
 hash=$(subwasm info --json $wasm_location | jq -r .blake2_256)
 
-cd scripts/js/onboard 
+cd scripts/js/onboard
 
-yarn && yarn upgrade-auth $ws_provider $sudo_secret $hash 
+yarn && yarn upgrade-auth $ws_provider $sudo_secret $hash
