@@ -19,14 +19,6 @@ pub struct ItemHeader {
 	payload_len: u16,
 }
 
-/// This header is used to specify how much data is in a page and is inserted into the buffer
-/// before every page in a Paginated model.
-#[derive(Clone, Encode, Decode, PartialEq, MaxEncodedLen, Debug)]
-pub struct PageHeader {
-	/// The length of this item, not including the size of this header.
-	payload_len: u16,
-}
-
 #[derive(Debug, PartialEq)]
 pub enum PageError {
 	ErrorParsing(&'static str),
@@ -41,7 +33,6 @@ pub enum PageError {
 #[codec(mel_bound(PageDataSize: MaxEncodedLen))]
 pub struct Page<PageDataSize: Get<u32>> {
 	data: BoundedVec<u8, PageDataSize>,
-	page_type: PhantomData<P>,
 }
 
 /// an internal struct which contains the parsed items in a page
@@ -286,7 +277,7 @@ mod tests {
 		{
 			arr.push(payload.clone());
 		}
-		let page = create_itemized_page_from(arr.as_slice());
+		let page = create_page_from(arr.as_slice());
 		let actions = vec![ItemAction::Add { data: payload.clone() }];
 
 		// act
