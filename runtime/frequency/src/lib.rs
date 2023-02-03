@@ -212,7 +212,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 11,
+	spec_version: 12,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -308,14 +308,11 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = FrameSystemMaxConsumers;
 }
 
-#[cfg(feature = "frequency")]
-type MsaCreateProviderOrigin = pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>;
-
-#[cfg(feature = "frequency-rococo-local")]
-type MsaCreateProviderOrigin = pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>;
-
 #[cfg(feature = "frequency-rococo-testnet")]
 type MsaCreateProviderOrigin = EnsureSigned<AccountId>;
+
+#[cfg(not(feature = "frequency-rococo-testnet"))]
+type MsaCreateProviderOrigin = pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>;
 
 impl pallet_msa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
