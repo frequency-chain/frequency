@@ -65,6 +65,9 @@ lint-audit:
 .PHONY: format-lint
 format-lint: format lint
 
+.PHONY: ci-local
+ci-local: check lint lint-audit test integration-test
+
 .PHONY: upgrade
 upgrade-local:
 	./scripts/init.sh upgrade-frequency
