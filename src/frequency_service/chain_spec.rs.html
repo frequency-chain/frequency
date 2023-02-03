@@ -65,9 +65,6 @@
 <span id="65">65</span>
 <span id="66">66</span>
 <span id="67">67</span>
-<span id="68">68</span>
-<span id="69">69</span>
-<span id="70">70</span>
 </pre><pre class="rust"><code><span class="attribute">#![allow(missing_docs)]
 </span><span class="kw">use </span>common_primitives::node::{AccountId, Signature};
 <span class="kw">use </span>sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
@@ -83,10 +80,7 @@
 <span class="attribute">#[cfg(feature = <span class="string">&quot;frequency&quot;</span>)]
 </span><span class="kw">pub mod </span>frequency;
 
-<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
-</span><span class="kw">pub mod </span>frequency_local;
-
-<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>)]
+<span class="attribute">#[cfg(any(feature = <span class="string">&quot;frequency-rococo-testnet&quot;</span>, feature = <span class="string">&quot;frequency-rococo-local&quot;</span>))]
 </span><span class="kw">pub mod </span>frequency_rococo;
 
 <span class="doccomment">/// Helper function to generate a crypto pair from seed

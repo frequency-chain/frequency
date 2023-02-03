@@ -574,8 +574,8 @@
 // Example CollatorMaxInvulnerables are 16 in production(mainnet),
 // 5 in rococo testnet and 5 in rococo local
 </span><span class="macro">parameter_types! </span>{
-	<span class="kw">pub </span>CollatorMaxCandidates: u32 = <span class="macro">prod_or_testnet_or_local!</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);
-	<span class="kw">pub </span>CollatorMinCandidates: u32 = <span class="macro">prod_or_testnet_or_local!</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);
+	<span class="kw">pub </span>CollatorMaxCandidates: u32 = <span class="number">50</span>;
+	<span class="kw">pub </span>CollatorMinCandidates: u32 = <span class="number">1</span>;
 	<span class="kw">pub </span>CollatorMaxInvulnerables: u32 = <span class="macro">prod_or_testnet_or_local!</span>(<span class="number">16</span>, <span class="number">5</span>, <span class="number">5</span>);
 	<span class="kw">pub </span>CollatorKickThreshold: BlockNumber = <span class="macro">prod_or_testnet_or_local!</span>(
 		<span class="number">6 </span>* HOURS,

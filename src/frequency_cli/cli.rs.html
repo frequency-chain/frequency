@@ -113,6 +113,12 @@
 <span id="113">113</span>
 <span id="114">114</span>
 <span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Frequency CLI library.
 </span><span class="kw">use </span>std::path::PathBuf;
 
@@ -192,13 +198,19 @@
 	</span><span class="kw">pub </span>relay_chain_args: Vec&lt;String&gt;,
 
 	<span class="doccomment">/// Instant block sealing
+	/// Blocks are triggered to be formed each time a transaction hits the validated transaction pool
+	/// Empty blocks can also be formed using the `engine_createBlock` RPC
 	///
 	/// Can only be used with `--dev` and turned on with frequency-rococo-local feature flag
 	</span><span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
 	#[clap(long = <span class="string">&quot;instant-sealing&quot;</span>, requires = <span class="string">&quot;dev&quot;</span>)]
 	</span><span class="kw">pub </span>instant_sealing: bool,
 
-	<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
+	<span class="doccomment">/// Manual block sealing
+	/// Blocks are only formed using the `engine_createBlock` RPC
+	///
+	/// Can only be used with `--dev` and turned on with frequency-rococo-local feature flag
+	</span><span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
 	#[clap(long = <span class="string">&quot;manual-sealing&quot;</span>, requires = <span class="string">&quot;dev&quot;</span>)]
 	</span><span class="kw">pub </span>manual_sealing: bool,
 }

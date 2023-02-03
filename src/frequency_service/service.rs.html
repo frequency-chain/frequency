@@ -592,15 +592,6 @@
 <span id="592">592</span>
 <span id="593">593</span>
 <span id="594">594</span>
-<span id="595">595</span>
-<span id="596">596</span>
-<span id="597">597</span>
-<span id="598">598</span>
-<span id="599">599</span>
-<span id="600">600</span>
-<span id="601">601</span>
-<span id="602">602</span>
-<span id="603">603</span>
 </pre><pre class="rust"><code><span class="attribute">#![allow(unused_imports)]
 </span><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
@@ -1033,8 +1024,10 @@
 	start_node_impl(parachain_config, polkadot_config, collator_options, id, hwbench).<span class="kw">await
 </span>}
 
-<span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
-</span><span class="kw">fn </span>frequency_dev_instant(
+<span class="doccomment">/// Function to start frequency parachain with instant sealing in dev mode.
+/// This function is called when --chain dev --instant-sealing is passed.
+</span><span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
+</span><span class="kw">pub fn </span>frequency_dev_instant_sealing(
 	config: Configuration,
 	is_instant: bool,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, sc_service::error::Error&gt; {
@@ -1192,17 +1185,6 @@
 	network_starter.start_network();
 
 	<span class="prelude-val">Ok</span>(task_manager)
-}
-
-<span class="doccomment">/// Function to start frequency parachain with instant sealing in dev mode.
-/// This function is called when --chain dev --instant-sealing is passed.
-/// This function is called when --chain frequency_dev --instant-sealing is passed.
-</span><span class="attribute">#[cfg(feature = <span class="string">&quot;frequency-rococo-local&quot;</span>)]
-</span><span class="kw">pub fn </span>frequency_dev_instant_sealing(
-	config: Configuration,
-	is_instant: bool,
-) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, sc_service::error::Error&gt; {
-	frequency_dev_instant(config, is_instant)
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="frequency_service" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8796e7a9c 2022-10-08)" ></div></body></html>

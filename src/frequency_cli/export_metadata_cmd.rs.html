@@ -59,6 +59,20 @@
 <span id="59">59</span>
 <span id="60">60</span>
 <span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
 </pre><pre class="rust"><code><span class="kw">use </span>clap::Parser;
 <span class="kw">use </span>sc_cli::{CliConfiguration, Error, GenericNumber, SharedParams};
 <span class="kw">use </span>serde_json::{json, to_writer};
@@ -71,6 +85,7 @@
 <span class="kw">use </span>std::{fmt::Debug, fs, io, path::PathBuf, str::FromStr, sync::Arc};
 
 <span class="doccomment">/// The `export-metadata` command used to export chain metadata.
+/// Remember that this uses the chain database. So it will pull the _current_ metadata from that database.
 </span><span class="attribute">#[derive(Debug, Clone, Parser)]
 </span><span class="kw">pub struct </span>ExportMetadataCmd {
 	<span class="doccomment">/// Output file name or stdout if unspecified.
@@ -86,6 +101,16 @@
 	<span class="attribute">#[allow(missing_docs)]
 	#[clap(flatten)]
 	</span><span class="kw">pub </span>shared_params: SharedParams,
+
+	<span class="doccomment">/// Use a temporary directory for the db
+	///
+	/// A temporary directory will be created to store the configuration and will be deleted
+	/// at the end of the process.
+	///
+	/// Note: the directory is random per process execution. This directory is used as base path
+	/// which includes: database, node key and keystore.
+	</span><span class="attribute">#[arg(long, conflicts_with = <span class="string">&quot;base_path&quot;</span>)]
+	</span><span class="kw">pub </span>tmp: bool,
 }
 
 <span class="kw">impl </span>ExportMetadataCmd {
@@ -115,9 +140,12 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>.shared_params
 	}
 
-	<span class="comment">// We never want to use any stored data. Always just use fresh.
+	<span class="comment">// Enabling `--tmp` on this command
 	</span><span class="kw">fn </span>base_path(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;sc_service::BasePath&gt;, sc_cli::Error&gt; {
-		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(sc_service::BasePath::new_temp_dir()<span class="question-mark">?</span>))
+		<span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.tmp {
+			<span class="bool-val">true </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(sc_service::BasePath::new_temp_dir()<span class="question-mark">?</span>)),
+			<span class="bool-val">false </span>=&gt; <span class="self">self</span>.shared_params.base_path(),
+		}
 	}
 }
 </code></pre></div>
