@@ -503,3 +503,24 @@ fn impl_can_replenish_is_true_when_last_replenished_at_is_less_than_current_epoc
 		assert_eq!(Capacity::can_replenish(target_msa_id), true);
 	});
 }
+
+#[test]
+fn get_epoch_length_should_return_max_epoch_length_when_unset() {
+	new_test_ext().execute_with(|| {
+		let epoch_length: <Test as frame_system::Config>::BlockNumber =
+			Capacity::get_epoch_length();
+		let max_epoch_length: u64 = <Test as pallet_capacity::Config>::MaxEpochLength::get();
+
+		assert_eq!(epoch_length, max_epoch_length);
+	});
+}
+#[test]
+fn get_epoch_length_should_return_storage_epoch_length() {
+	new_test_ext().execute_with(|| {
+		EpochLength::<Test>::set(101u64);
+		let epoch_length: <Test as frame_system::Config>::BlockNumber =
+			Capacity::get_epoch_length();
+
+		assert_eq!(epoch_length, 101u64);
+	});
+}

@@ -197,6 +197,8 @@ pub enum Error<T> {
   MaxUnlockingChunksExceeded,
   /// If there are no unstaking tokens available to withdraw.
   NoUnstakedTokensAvailable,
+  /// Attempting to set the epoch length to a value greater than the max epoch length.
+	MaxEpochLengthExceeded,
 }
 
 ```
@@ -264,6 +266,15 @@ Storage to record how many tokens were targeted to an MSA.
 #[pallet::storage]
 pub type StakingTargetLedger<T: Config> =
   StorageDoubleMap<_, Twox64Concat, T::AccountId, Twox64Concat, MessageSourceId, StakingTargetDetails<T::Balance>>;
+```
+
+Storage for epoch length
+
+```rust
+/// Storage for the epoch length
+#[pallet::storage]
+#[pallet::getter(fn get_epoch_length)]
+	pub type EpochLength<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery, EpochLengthDefault<T>>;
 ```
 
 The type used for storing information about the targeted MSA that received Capacity.
