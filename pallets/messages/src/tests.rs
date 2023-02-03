@@ -40,7 +40,9 @@ fn populate_messages(
 	};
 
 	let payload = match payload_location {
-		PayloadLocation::OnChain => generate_payload(1, None),
+		// Just stick Itemized & Paginated here for coverage; we don't use them for Messages
+		PayloadLocation::OnChain | PayloadLocation::Itemized | PayloadLocation::Paginated =>
+			generate_payload(1, None),
 		PayloadLocation::IPFS => (
 			multibase::decode(sp_std::str::from_utf8(cid).unwrap()).unwrap().1,
 			IPFS_PAYLOAD_LENGTH,

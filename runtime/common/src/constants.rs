@@ -316,3 +316,9 @@ parameter_types! {
 	pub const MaxItemizedActionsCount: u32 = 7;
 }
 // -end- Stateful Storage Pallet
+
+impl Default for MaxItemizedPageSizeBytes {
+	fn default() -> Self {
+		Self
+	}
+}

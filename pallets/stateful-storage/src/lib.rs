@@ -52,6 +52,7 @@ mod benchmarking;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
 
+mod stateful_child_tree;
 pub mod types;
 
 pub mod weights;
@@ -70,7 +71,7 @@ pub mod pallet {
 	use super::*;
 	use crate::{
 		child_tree_storage::ChildTreeStorage,
-		types::{ItemAction, ItemPage},
+		types::{ItemAction, Page},
 	};
 	use common_primitives::{
 		msa::{MessageSourceId, MsaLookup, MsaValidator, SchemaGrantValidator},
@@ -98,7 +99,7 @@ pub mod pallet {
 
 		/// The maximum size of a page (in bytes) for an Itemized storage model
 		#[pallet::constant]
-		type MaxItemizedPageSizeBytes: Get<u32>;
+		type MaxItemizedPageSizeBytes: Get<u32> + Default;
 
 		/// The maximum size of a page (in bytes) for a Paginated storage model
 		#[pallet::constant]
@@ -205,19 +206,21 @@ pub mod pallet {
 			.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
 
 			let storage_key = &schema_id.encode()[..];
-			let updated_page =
-				ChildTreeStorage::try_read::<ItemPage<T>>(&state_owner_msa_id, storage_key)
-					.map_err(|_| {
-						log::warn!(
-							"failed decoding Itemized msa={:?} schema_id={:?}",
-							state_owner_msa_id,
-							schema_id
-						);
-						Error::<T>::CorruptedState
-					})?
-					.unwrap_or_default()
-					.apply_actions(current_block, &actions[..])
-					.map_err(|_| Error::<T>::InvalidItemAction)?;
+			let updated_page = ChildTreeStorage::try_read::<Page<T::MaxItemizedPageSizeBytes>>(
+				&state_owner_msa_id,
+				storage_key,
+			)
+			.map_err(|_| {
+				log::warn!(
+					"failed decoding Itemized msa={:?} schema_id={:?}",
+					state_owner_msa_id,
+					schema_id
+				);
+				Error::<T>::CorruptedState
+			})?
+			.unwrap_or_default()
+			.apply_item_actions(&actions[..])
+			.map_err(|_| Error::<T>::InvalidItemAction)?;
 
 			match updated_page.is_empty() {
 				true => {
@@ -256,20 +259,23 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		pub fn get_itemized_page(msa_id: MessageSourceId, schema_id: SchemaId) -> ItemPage<T> {
-			let storage_key = &schema_id.encode()[..];
-			ChildTreeStorage::try_read::<ItemPage<T>>(&msa_id, storage_key)
-				.map_err(|_| {
-					log::warn!(
-						"failed decoding Itemized msa={:?} schema_id={:?}",
-						msa_id,
-						schema_id
-					);
-					Error::<T>::CorruptedState
-				})
-				.unwrap_or_default()
-				.unwrap_or_default()
-		}
+		// pub fn get_itemized_page(
+		// 	msa_id: MessageSourceId,
+		// 	schema_id: SchemaId,
+		// ) -> Page<T::MaxItemizedPageSizeBytes> {
+		// 	let storage_key = &schema_id.encode()[..];
+		// 	ChildTreeStorage::try_read::<Page<T::MaxItemizedPageSizeBytes>>(&msa_id, storage_key)
+		// 		.map_err(|_| {
+		// 			log::warn!(
+		// 				"failed decoding Itemized msa={:?} schema_id={:?}",
+		// 				msa_id,
+		// 				schema_id
+		// 			);
+		// 			Error::<T>::CorruptedState
+		// 		})
+		// 		.unwrap_or_default()
+		// 		.unwrap_or_default()
+		// }
 	}
 }
 

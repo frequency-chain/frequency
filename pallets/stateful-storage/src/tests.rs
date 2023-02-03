@@ -1,10 +1,12 @@
 use super::mock::*;
 use crate::{
 	child_tree_storage::ChildTreeStorage,
-	types::{ItemAction, ItemHeader, ItemPage, ItemPageError},
+	stateful_child_tree::{StatefulChildTree, StatefulPageKeyPart},
+	types::{ItemAction, ItemHeader, ItemPage, PageError},
 	Config, Error,
 };
 use codec::{Decode, Encode, MaxEncodedLen};
+use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
 use frame_support::{assert_err, assert_ok};
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
@@ -132,7 +134,7 @@ fn parsing_wrong_payload_size_page_should_return_parsing_error() {
 	let parsed = page.parse();
 
 	// assert
-	assert_eq!(parsed, Err(ItemPageError::ErrorParsing("wrong payload size")));
+	assert_eq!(parsed, Err(PageError::ErrorParsing("wrong payload size")));
 }
 
 #[test]
@@ -149,7 +151,7 @@ fn parsing_wrong_header_size_page_should_return_parsing_error() {
 	let parsed = page.parse();
 
 	// assert
-	assert_eq!(parsed, Err(ItemPageError::ErrorParsing("wrong header size")));
+	assert_eq!(parsed, Err(PageError::ErrorParsing("wrong header size")));
 }
 
 #[test]
@@ -228,4 +230,73 @@ fn applying_add_action_with_full_page_should_fail() {
 
 	// assert
 	assert_eq!(result.is_err(), true);
+}
+
+use codec::{Decode, Encode, MaxEncodedLen};
+use scale_info::TypeInfo;
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, MaxEncodedLen)]
+/// A structure defining a Schema
+struct TestStruct {
+	pub model_type: ModelType,
+	pub payload_location: PayloadLocation,
+	pub number: u64,
+}
+
+#[test]
+fn child_tree_write_read() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let msa_id = 1;
+		let schema_id: SchemaId = 2;
+		let page_id: u8 = 3;
+		let k1: StatefulPageKeyPart = schema_id.to_be_bytes().to_vec();
+		let k2: StatefulPageKeyPart = page_id.to_be_bytes().to_vec();
+		let keys = &[k1, k2];
+		let val = TestStruct {
+			model_type: ModelType::AvroBinary,
+			payload_location: PayloadLocation::OnChain,
+			number: 8276387272,
+		};
+
+		// act
+		StatefulChildTree::write(&msa_id, keys, &val);
+
+		// assert
+		let read = StatefulChildTree::try_read::<TestStruct>(&msa_id, keys).unwrap();
+		assert_eq!(Some(val), read);
+	});
+}
+
+#[test]
+fn child_tree_iterator() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let msa_id = 1;
+		let mut arr: Vec<(Vec<u8>, TestStruct)> = Vec::new();
+		for i in 1..=10 {
+			let k = [b"key", &i.encode()[..]].concat();
+			arr.push((
+				k,
+				TestStruct {
+					model_type: ModelType::AvroBinary,
+					payload_location: PayloadLocation::OnChain,
+					number: i,
+				},
+			));
+		}
+		for (k, t) in arr.as_slice() {
+			let keys = &[k.to_owned()];
+			StatefulChildTree::write(&msa_id, keys, t);
+		}
+
+		// act
+		let mut v = Vec::new();
+		let nodes = StatefulChildTree::prefix_iterator::<TestStruct>(&msa_id, &[]);
+		for n in nodes {
+			v.push(n);
+		}
+
+		// assert
+		assert_eq!(v, arr);
+	});
 }

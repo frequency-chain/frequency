@@ -21,57 +21,55 @@ pub struct ItemHeader {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum ItemPageError {
+pub enum PageError {
 	ErrorParsing(&'static str),
 	InvalidAction(&'static str),
 	ArithmeticOverflow,
+	PageSizeOverflow,
 }
 
-/// A page of items
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, Debug, DefaultNoBound)]
-#[scale_info(skip_type_params(T))]
-#[codec(mel_bound(T::MaxItemizedPageSizeBytes: MaxEncodedLen))]
-pub struct ItemPage<T: Config> {
-	/// last updated block number to avoid race conditions
-	pub last_update: T::BlockNumber,
-	/// number of items in page
-	pub item_count: u16,
-	/// the items data stored in the page
-	pub data: BoundedVec<u8, T::MaxItemizedPageSizeBytes>,
+/// A page of data
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, Debug, Default)]
+#[scale_info(skip_type_params(PageDataSize))]
+#[codec(mel_bound(PageDataSize: MaxEncodedLen))]
+pub struct Page<PageDataSize: Get<u32>> {
+	data: BoundedVec<u8, PageDataSize>,
 }
 
 /// an internal struct which contains the parsed items in a page
 #[derive(Debug, PartialEq)]
-pub struct ParsedPage<'a> {
+struct ParsedItemPage<'a> {
 	/// page current size
 	pub page_size: usize,
-	/// number of items
-	pub item_count: u16,
 	/// a map of item index to a slice of blob (header included)
 	pub items: BTreeMap<u16, &'a [u8]>,
 }
 
-impl<T: Config> ItemPage<T> {
-	/// creates new itemPage from BoundedVec
-	pub fn new(
-		current_block: T::BlockNumber,
-		item_count: u16,
-		data: BoundedVec<u8, T::MaxItemizedPageSizeBytes>,
-	) -> Self {
-		Self { last_update: current_block, item_count, data }
+impl<PageDataSize: Get<u32>> Page<PageDataSize> {
+	pub fn is_empty(&self) -> bool {
+		self.data.is_empty()
 	}
+}
 
+impl<PageDataSize: Get<u32>> From<BoundedVec<u8, PageDataSize>> for Page<PageDataSize> {
+	fn from(bounded: BoundedVec<u8, PageDataSize>) -> Self {
+		Self { data: bounded }
+	}
+}
+
+impl<PageDataSize: Get<u32>> TryFrom<Vec<u8>> for Page<PageDataSize> {
+	type Error = ();
+
+	fn try_from(data: Vec<u8>) -> Result<Self, Self::Error> {
+		let bounded: BoundedVec<u8, PageDataSize> = BoundedVec::try_from(data).map_err(|_| ())?;
+		Ok(Page::from(bounded))
+	}
+}
+
+impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	/// applies all actions to specified page and returns the updated page
-	pub fn apply_actions(
-		&self,
-		current_block: T::BlockNumber,
-		actions: &[ItemAction],
-	) -> Result<ItemPage<T>, ItemPageError> {
-		ensure!(
-			self.last_update < current_block,
-			ItemPageError::InvalidAction("action against obsolete page")
-		);
-		let mut parsed = self.parse()?;
+	pub fn apply_item_actions(&self, actions: &[ItemAction]) -> Result<Self, PageError> {
+		let mut parsed = self.parse_as_itemized()?;
 
 		let mut updated_page_buffer = Vec::with_capacity(parsed.page_size);
 		let mut add_buffer = Vec::new();
@@ -81,24 +79,19 @@ impl<T: Config> ItemPage<T> {
 				ItemAction::Remove { index } => {
 					ensure!(
 						parsed.items.contains_key(&index),
-						ItemPageError::InvalidAction("item index is invalid")
+						PageError::InvalidAction("item index is invalid")
 					);
 					parsed.items.remove(&index);
-					parsed.item_count = parsed.item_count.saturating_sub(1);
 				},
 				ItemAction::Add { data } => {
 					let header = ItemHeader {
 						payload_len: data
 							.len()
 							.try_into()
-							.map_err(|_| ItemPageError::InvalidAction("invalid payload size"))?,
+							.map_err(|_| PageError::InvalidAction("invalid payload size"))?,
 					};
 					add_buffer.extend_from_slice(&header.encode()[..]);
 					add_buffer.extend_from_slice(&data[..]);
-					parsed.item_count = parsed
-						.item_count
-						.checked_add(1)
-						.ok_or(ItemPageError::ArithmeticOverflow)?;
 				},
 			}
 		}
@@ -109,42 +102,203 @@ impl<T: Config> ItemPage<T> {
 		}
 		updated_page_buffer.append(&mut add_buffer);
 
-		Ok(ItemPage::<T>::new(
-			current_block,
-			parsed.item_count,
-			updated_page_buffer
-				.try_into()
-				.map_err(|_| ItemPageError::InvalidAction("page size exceeded"))?,
-		))
+		Page::<PageDataSize>::try_from(updated_page_buffer)
+			.map_err(|_| PageError::InvalidAction("page size exceeded"))
 	}
 
 	/// Parses all the items inside an ItemPage
-	pub fn parse(&self) -> Result<ParsedPage, ItemPageError> {
-		let mut item_count = 0u16;
+	fn parse_as_itemized(&self) -> Result<ParsedItemPage, PageError> {
+		let mut count = 0u16;
 		let mut items = BTreeMap::new();
 		let mut offset = 0;
 		while offset < self.data.len() {
 			ensure!(
 				offset + ItemHeader::max_encoded_len() <= self.data.len(),
-				ItemPageError::ErrorParsing("wrong header size")
+				PageError::ErrorParsing("wrong header size")
 			);
 			let header = <ItemHeader>::decode(&mut &self.data[offset..])
-				.map_err(|_| ItemPageError::ErrorParsing("decoding header"))?;
+				.map_err(|_| PageError::ErrorParsing("decoding header"))?;
 			let item_total_length = ItemHeader::max_encoded_len() + header.payload_len as usize;
 			ensure!(
 				offset + item_total_length <= self.data.len(),
-				ItemPageError::ErrorParsing("wrong payload size")
+				PageError::ErrorParsing("wrong payload size")
 			);
 
-			items.insert(item_count, &self.data[offset..(offset + item_total_length)]);
+			items.insert(count, &self.data[offset..(offset + item_total_length)]);
 			offset += item_total_length;
-			item_count = item_count.checked_add(1).ok_or(ItemPageError::ArithmeticOverflow)?;
+			count = count.checked_add(1).ok_or(PageError::ArithmeticOverflow)?;
 		}
 
-		Ok(ParsedPage { page_size: self.data.len(), item_count, items })
+		Ok(ParsedItemPage { page_size: self.data.len(), items })
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use frame_support::assert_ok;
+	use pretty_assertions::assert_eq;
+
+	type TestPageSize = ConstU32<2048>;
+	type TestPage = Page<TestPageSize>;
+
+	fn generate_payload_bytes(id: u8) -> Vec<u8> {
+		format!("{{'type':{id}, 'description':'another test description {id}'}}")
+			.as_bytes()
+			.to_vec()
 	}
 
-	pub fn is_empty(&self) -> bool {
-		self.data.is_empty()
+	fn create_page_from(payloads: &[Vec<u8>]) -> TestPage {
+		let mut buffer: Vec<u8> = vec![];
+		for p in payloads {
+			buffer.extend_from_slice(&ItemHeader { payload_len: p.len() as u16 }.encode()[..]);
+			buffer.extend_from_slice(p);
+		}
+		TestPage::try_from(buffer).unwrap()
+	}
+
+	#[test]
+	fn parsing_a_well_formed_item_page_should_work() {
+		// arrange
+		let payloads = vec![generate_payload_bytes(1), generate_payload_bytes(2)];
+		let page = create_page_from(payloads.as_slice());
+
+		// act
+		let parsed = page.parse_as_itemized();
+
+		// assert
+		assert_ok!(&parsed);
+		assert_eq!(
+			parsed.as_ref().unwrap().page_size,
+			payloads.len() * ItemHeader::max_encoded_len() +
+				payloads.iter().map(|p| p.len()).sum::<usize>()
+		);
+
+		let items = parsed.unwrap().items;
+		for index in 0..payloads.len() {
+			assert_eq!(
+				items.get(&(index as u16)).unwrap()[ItemHeader::max_encoded_len()..],
+				payloads[index][..]
+			);
+		}
+	}
+
+	#[test]
+	fn parsing_item_with_wrong_payload_size_should_return_parsing_error() {
+		// arrange
+		let payload = generate_payload_bytes(1);
+		let mut buffer: Vec<u8> = vec![];
+		buffer.extend_from_slice(
+			&ItemHeader { payload_len: (payload.len() + 1) as u16 }.encode()[..],
+		);
+		buffer.extend_from_slice(&payload);
+		let page: TestPage = Page::try_from(buffer).unwrap();
+
+		// act
+		let parsed = page.parse_as_itemized();
+
+		// assert
+		assert_eq!(parsed, Err(PageError::ErrorParsing("wrong payload size")));
+	}
+
+	#[test]
+	fn parsing_wrong_item_header_size_page_should_return_parsing_error() {
+		// arrange
+		let payload = generate_payload_bytes(2);
+		let mut buffer: Vec<u8> = vec![];
+		buffer.extend_from_slice(
+			&ItemHeader { payload_len: (payload.len() - 1) as u16 }.encode()[..],
+		);
+		buffer.extend_from_slice(&payload);
+		let page = TestPage::try_from(buffer).unwrap();
+
+		// act
+		let parsed = page.parse_as_itemized();
+
+		// assert
+		assert_eq!(parsed, Err(PageError::ErrorParsing("wrong header size")));
+	}
+
+	#[test]
+	fn applying_remove_action_with_existing_index_should_remove_item() {
+		// arrange
+		let payloads = vec![generate_payload_bytes(2), generate_payload_bytes(4)];
+		let page = create_page_from(payloads.as_slice());
+		let expecting_page = create_page_from(&payloads[1..]);
+		let actions = vec![ItemAction::Remove { index: 0 }];
+
+		// act
+		let result = page.apply_item_actions(&actions);
+
+		// assert
+		assert_ok!(&result);
+		let updated = result.unwrap();
+		assert_eq!(expecting_page.data, updated.data);
+	}
+
+	#[test]
+	fn applying_add_action_should_add_item_to_the_end_of_the_page() {
+		// arrange
+		let payload1 = vec![generate_payload_bytes(2)];
+		let page = create_page_from(payload1.as_slice());
+		let payload2 = vec![generate_payload_bytes(4)];
+		let expecting_page = create_page_from(&vec![payload1[0].clone(), payload2[0].clone()][..]);
+		let actions = vec![ItemAction::Add { data: payload2[0].clone() }];
+
+		// act
+		let result = page.apply_item_actions(&actions[..]);
+
+		// assert
+		assert_ok!(&result);
+		let updated = result.unwrap();
+		assert_eq!(expecting_page.data, updated.data);
+	}
+
+	#[test]
+	fn applying_remove_action_with_non_existing_index_should_fail() {
+		// arrange
+		let payloads = vec![generate_payload_bytes(2), generate_payload_bytes(4)];
+		let page = create_page_from(payloads.as_slice());
+		let actions = vec![ItemAction::Remove { index: 2 }];
+
+		// act
+		let result = page.apply_item_actions(&actions[..]);
+
+		// assert
+		assert_eq!(result.is_err(), true);
+	}
+
+	#[test]
+	fn applying_add_action_with_full_page_should_fail() {
+		// arrange
+		let mut arr: Vec<Vec<u8>> = vec![];
+		let payload = generate_payload_bytes(2);
+		while (arr.len() + 1) * (&payload.len() + ItemHeader::max_encoded_len()) <
+			<TestPageSize as sp_core::Get<u32>>::get() as usize
+		{
+			arr.push(payload.clone());
+		}
+		let page = create_page_from(arr.as_slice());
+		let actions = vec![ItemAction::Add { data: payload.clone() }];
+
+		// act
+		let result = page.apply_item_actions(&actions[..]);
+
+		// assert
+		assert_eq!(result.is_err(), true);
+	}
+
+	#[test]
+	fn is_empty_false_for_non_empty_page() {
+		let page: TestPage = vec![1].try_into().unwrap();
+
+		assert_eq!(page.is_empty(), false);
+	}
+
+	#[test]
+	fn is_empty_true_for_empty_page() {
+		let page: TestPage = Vec::<u8>::new().try_into().unwrap();
+
+		assert_eq!(page.is_empty(), true);
 	}
 }
