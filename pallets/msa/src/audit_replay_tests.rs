@@ -8,16 +8,15 @@ use frame_support::{
 	assert_noop, assert_ok,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, Get, OnFinalize, OnInitialize},
+	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, Everything},
 };
-use frame_system::EnsureSigned;
+use frame_system::{EnsureRoot, EnsureSigned};
 use pallet_collective;
 
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
-	MultiSignature,
 };
 
 pub use common_runtime::constants::*;
