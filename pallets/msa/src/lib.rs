@@ -185,10 +185,10 @@ pub mod pallet {
 		type MaxSignaturesStored: Get<Option<u32>>;
 
 		/// The origin that is allowed to create providers
-		type CreateProviderOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = AccountId32>;
+		type CreateProviderOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
 
-		// The origin that is allowed to create providers via governance
-		type CreateProviderViaGovernanceOrigin = EnsureOrigin<Self::RuntimeOrigin>;
+		/// The origin that is allowed to create providers via governance
+		type CreateProviderViaGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
 	#[pallet::pallet]
@@ -905,7 +905,7 @@ pub mod pallet {
 			provider_key: T::AccountId,
 			provider_name: Vec<u8>,
 		) -> DispatchResult {
-			let _ = T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
+			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
 
 			Self::do_create_provider(provider_key, provider_name)
 		}

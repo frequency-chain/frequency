@@ -54,10 +54,12 @@ use frame_support::{
 
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureNever, EnsureRoot, RawOrigin,
+	EnsureRoot, RawOrigin,
 };
 
-#[cfg(feature = "frequency-rococo-testnet")]
+#[cfg(feature = "frequency")]
+use frame_system::EnsureNever;
+#[cfg(not(feature = "frequency"))]
 use frame_system::EnsureSigned;
 
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -311,7 +313,7 @@ impl frame_system::Config for Runtime {
 #[cfg(not(feature = "frequency"))]
 type MsaCreateProviderOrigin = EnsureSigned<AccountId>;
 #[cfg(feature = "frequency")]
-type MsaCreateProviderOrigin = EnsureNever<()>;
+type MsaCreateProviderOrigin = EnsureNever<AccountId>;
 
 type MsaCreateProviderViaGovernanceOrigin = EitherOfDiverse<
 	EnsureRoot<AccountId>,
