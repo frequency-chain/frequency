@@ -63,7 +63,7 @@ impl pallet_collective::Config<CouncilCollective> for Test {
 }
 
 impl frame_system::Config for Test {
-	type BaseCallFilter = frame_support::traits::Everything;
+	type BaseCallFilter = Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
