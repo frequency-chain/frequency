@@ -185,7 +185,10 @@ pub mod pallet {
 		type MaxSignaturesStored: Get<Option<u32>>;
 
 		/// The origin that is allowed to create providers
-		type CreateProviderOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+		type CreateProviderOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = AccountId32>;
+
+		// The origin that is allowed to create providers via governance
+		type CreateProviderViaGovernanceOrigin = EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
 	#[pallet::pallet]
@@ -536,8 +539,7 @@ pub mod pallet {
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::create_provider(provider_name.len() as u32))]
 		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
-			#[cfg(not(feature = "frequency"))]
-			let provider_key = ensure_signed(origin)?;
+			let provider_key = T::CreateProviderOrigin::ensure_origin(origin)?;
 			Self::do_create_provider(provider_key, provider_name)
 		}
 
@@ -903,7 +905,7 @@ pub mod pallet {
 			provider_key: T::AccountId,
 			provider_name: Vec<u8>,
 		) -> DispatchResult {
-			let _ = T::CreateProviderOrigin::ensure_origin(origin)?;
+			let _ = T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
 
 			Self::do_create_provider(provider_key, provider_name)
 		}

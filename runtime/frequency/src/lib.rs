@@ -54,7 +54,7 @@ use frame_support::{
 
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureRoot, RawOrigin,
+	EnsureNever, EnsureRoot, RawOrigin,
 };
 
 #[cfg(feature = "frequency-rococo-testnet")]
@@ -308,11 +308,15 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = FrameSystemMaxConsumers;
 }
 
-#[cfg(feature = "frequency-rococo-testnet")]
+#[cfg(not(feature = "frequency"))]
 type MsaCreateProviderOrigin = EnsureSigned<AccountId>;
+#[cfg(feature = "frequency")]
+type MsaCreateProviderOrigin = EnsureNever<()>;
 
-#[cfg(not(feature = "frequency-rococo-testnet"))]
-type MsaCreateProviderOrigin = pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>;
+type MsaCreateProviderViaGovernanceOrigin = EitherOfDiverse<
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
+>;
 
 impl pallet_msa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -341,6 +345,8 @@ impl pallet_msa::Config for Runtime {
 	type MaxSignaturesStored = MSAMaxSignaturesStored;
 	// The origin that is allowed to create providers
 	type CreateProviderOrigin = MsaCreateProviderOrigin;
+	// The origin that is allowed to create providers via governance
+	type CreateProviderViaGovernanceOrigin = MsaCreateProviderViaGovernanceOrigin;
 }
 
 pub use common_primitives::schema::SchemaId;
