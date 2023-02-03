@@ -1,6 +1,6 @@
 use super::*;
 use crate::{types::ItemAction, Pallet as StatefulStoragePallet};
-use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
+use common_primitives::schema::{ModelType, PayloadLocation};
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
@@ -43,7 +43,8 @@ benchmarks! {
 		let actions = itemized_actions_add::<T>(n, s as usize);
 	}: _ (RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, actions)
 	verify {
-		//TODO verify storage
+		let page_result = StatefulStoragePallet::<T>::get_itemized_page(delegator_msa_id, schema_id);
+		assert!(u32::from(page_result.item_count) == n);// TODO update with new changes 
 	}
 
 	impl_benchmark_test_suite!(StatefulStoragePallet,

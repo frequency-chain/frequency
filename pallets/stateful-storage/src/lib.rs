@@ -254,6 +254,23 @@ pub mod pallet {
 			Ok(())
 		}
 	}
+
+	impl<T: Config> Pallet<T> {
+		pub fn get_itemized_page(msa_id: MessageSourceId, schema_id: SchemaId) -> ItemPage<T> {
+			let storage_key = &schema_id.encode()[..];
+			ChildTreeStorage::try_read::<ItemPage<T>>(&msa_id, storage_key)
+				.map_err(|_| {
+					log::warn!(
+						"failed decoding Itemized msa={:?} schema_id={:?}",
+						msa_id,
+						schema_id
+					);
+					Error::<T>::CorruptedState
+				})
+				.unwrap_or_default()
+				.unwrap_or_default()
+		}
+	}
 }
 
 impl<T: Config> Pallet<T> {}
