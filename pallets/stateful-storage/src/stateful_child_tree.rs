@@ -22,16 +22,20 @@ impl StatefulChildTree {
 		key
 	}
 
-	/// Reads a child tree node
+	/// Reads a child tree node and tries to decode it
 	///
 	/// The read is performed from the `msa_id` only. The `key` is not required. If the
 	/// data doesn't store under the given `key` `None` is returned.
-	pub fn read<V: Decode + Sized>(
+	pub fn try_read<V: Decode + Sized>(
 		msa_id: &MessageSourceId,
 		keys: &[StatefulPageKeyPart],
-	) -> Option<V> {
+	) -> Result<Option<V>, ()> {
 		let child = Self::get_child_tree(*msa_id);
-		child::get::<V>(&child, &Identity::hash(Self::concat_keys(keys).as_bytes_ref()))
+		let value = child::get_raw(&child, &Identity::hash(Self::concat_keys(keys).as_bytes_ref()));
+		match value {
+			None => Ok(None),
+			Some(v) => Ok(Decode::decode(&mut &v[..]).map(Some).map_err(|_| ())?),
+		}
 	}
 
 	/// Prefix Iterator for a child tree

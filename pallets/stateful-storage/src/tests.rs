@@ -82,7 +82,7 @@ fn child_tree_write_read() {
 		StatefulChildTree::write(&msa_id, keys, &val);
 
 		// assert
-		let read = StatefulChildTree::read::<TestStruct>(&msa_id, keys);
+		let read = StatefulChildTree::try_read::<TestStruct>(&msa_id, keys).unwrap();
 		assert_eq!(Some(val), read);
 	});
 }
