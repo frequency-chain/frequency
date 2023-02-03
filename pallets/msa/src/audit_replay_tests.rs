@@ -22,8 +22,6 @@ use sp_runtime::{
 pub use common_runtime::constants::*;
 pub use pallet_msa::Call as MsaCall;
 
-use common_primitives::node::AccountId;
-
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 

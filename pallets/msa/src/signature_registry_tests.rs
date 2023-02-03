@@ -11,7 +11,7 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, Everything, Get},
 };
-use frame_system::EnsureSigned;
+use frame_system::{EnsureRoot, EnsureSigned};
 use pallet_collective;
 
 use sp_core::{sr25519, Encode, Pair, H256};

@@ -876,7 +876,7 @@ pub mod pallet {
 			Ok(Some(T::WeightInfo::retire_msa(num_deletions)).into())
 		}
 
-		/// Request to be a provider
+		/// Request to be a provider.  Creates a proposal for council approval to create a provider from a MSA
 		#[pallet::call_index(11)]
 		#[pallet::weight(1000)]
 		pub fn request_to_be_provider(
