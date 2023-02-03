@@ -120,7 +120,7 @@ build-benchmarks:
 	cargo build --profile production --features runtime-benchmarks --features all-frequency-features --workspace
 
 build-local:
-	cargo build --locked --release --features  frequency-rococo-local
+	cargo build --locked --features  frequency-rococo-local
 
 build-rococo:
 	cargo build --locked --release --features  frequency-rococo-testnet
