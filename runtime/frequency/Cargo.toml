@@ -62,7 +62,7 @@ sp-version = { git = "https://github.com/paritytech/substrate", default-features
 #ORML
 orml-benchmarking = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, optional = true, branch = "polkadot-v0.9.36" }
 orml-vesting = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.36" }
-# Unfinished
+# Frequency
 common-primitives = { default-features = false, path = "../../common/primitives" }
 common-runtime = { path = '../common', default-features = false }
 pallet-messages = { path = "../../pallets/messages", default-features = false }
