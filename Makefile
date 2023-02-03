@@ -158,7 +158,7 @@ ifeq (,$(POLKADOT_VERSION))
 endif
 	@echo "Setting the crate versions to "$(v)+polkadot$(POLKADOT_VERSION)
 	find ./ -type f -name 'Cargo.toml' -exec sed -i '' 's/^version = \"0\.0\.0\"/version = \"$(v)+polkadot$(POLKADOT_VERSION)\"/g' {} \;
-	cargo check
+	$(MAKE) check
 	@echo "All done. Don't forget to double check that the automated replacement worked."
 
 .PHONY: version-polkadot
