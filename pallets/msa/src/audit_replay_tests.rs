@@ -8,7 +8,7 @@ use frame_support::{
 	assert_noop, assert_ok,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64, Get, EitherOfDiverse, OnFinalize, OnInitialize},
+	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, Get, OnFinalize, OnInitialize},
 };
 use frame_system::EnsureSigned;
 use pallet_collective;
