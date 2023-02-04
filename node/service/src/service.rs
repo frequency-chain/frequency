@@ -65,7 +65,9 @@ pub mod frequency_executor {
 			frequency_runtime::api::dispatch(method, data)
 		}
 
-		fn native_version() -> sc_executor::NativeVersion { frequency_runtime::native_version() }
+		fn native_version() -> sc_executor::NativeVersion {
+			frequency_runtime::native_version()
+		}
 	}
 
 	#[cfg(feature = "try-runtime")]

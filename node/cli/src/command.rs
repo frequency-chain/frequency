@@ -8,7 +8,9 @@ use log::info;
 use common_primitives::node::Block;
 use frequency_service::{
 	chain_spec,
-	service::{frequency_runtime::VERSION, new_partial, FrequencyExecutorDispatch as ExecutorDispatch},
+	service::{
+		frequency_runtime::VERSION, new_partial, FrequencyExecutorDispatch as ExecutorDispatch,
+	},
 };
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,

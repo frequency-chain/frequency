@@ -149,36 +149,134 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	RemoveSudo,
+	remove_sudo::RemoveSudo,
 >;
 
 // ==============================================
 //        RUNTIME STORAGE MIGRATION
 // ==============================================
-pub struct RemoveSudo;
+mod remove_sudo {
+	use super::*;
+	use frame_support::{dispatch::Vec, migration::clear_storage_prefix, pallet_prelude::Weight};
+	use sp_io::MultiRemovalResults;
 
-impl OnRuntimeUpgrade for RemoveSudo {
-	fn on_runtime_upgrade() -> Weight {
-		System::deposit_event(frame_system::Event::CodeUpdated);
-		Weight::from_ref_time(100)
+	const SUDO_PREFIX: [u8; 16] = [
+		0x5c, 0x0d, 0x11, 0x76, 0xa5, 0x68, 0xc1, 0xf9, 0x29, 0x44, 0x34, 0x0d, 0xbf, 0xed, 0x9e,
+		0x9c,
+	];
+	const KEY_PREFIX: [u8; 16] = [
+		0x53, 0x0e, 0xbc, 0xa7, 0x03, 0xc8, 0x59, 0x10, 0xe7, 0x16, 0x4c, 0xb7, 0xd1, 0xc9, 0xe4,
+		0x7b,
+	];
+	const PALLET_VERSION_PREFIX: [u8; 16] = [
+		0x4e, 0x7b, 0x90, 0x12, 0x09, 0x6b, 0x41, 0xc4, 0xeb, 0x3a, 0xaf, 0x94, 0x7f, 0x6e, 0xa4,
+		0x29,
+	];
+
+	pub struct RemoveSudo;
+	impl RemoveSudo {
+		fn join_keys(key1: &[u8; 16], key2: &[u8; 16]) -> Vec<u8> {
+			let mut res: Vec<u8> = Vec::from(*key1);
+			for c in key2 {
+				res.push(*c);
+			}
+			res
+		}
+
+		fn transfer_sudo_balance_to_treasury() {
+			// pub fn account_id() -> T::AccountId {
+			// 	T::PalletId::get().into_account_truncating()
+			// }
+			// Sudo::key() is how to get it, but which sudo?
+			if let Some(from) = SudoConfig::key() {
+				let to: AccountId = Treasury::account_id();
+				// ?? this is how, according to https://substrate.stackexchange.com/questions/5185/token-distribution-to-many-users-in-substrate/5194#5194
+				Balances::transfer_all(RuntimeOrigin::signed(from), to.into(), false);
+			} else {
+				log::warn!("No Sudo key found");
+			}
+			// TODO: weight
+		}
 	}
 
-	#[cfg(feature="try-runtime")]
-	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-		// here we could find out how much token is in Sudo account.
-		Ok(vec![1u8,2u8,3u8])
-	}
+	impl OnRuntimeUpgrade for RemoveSudo {
+		fn on_runtime_upgrade() -> Weight {
+			// TODO: move storage removal to fn in struct above
+			let sudo_key_prefix: Vec<u8> = RemoveSudo::join_keys(&SUDO_PREFIX, &KEY_PREFIX);
+			let sudo_pallet_version: Vec<u8> =
+				RemoveSudo::join_keys(&SUDO_PREFIX, &PALLET_VERSION_PREFIX);
 
-	#[cfg(feature="try-runtime")]
-	// if try_on_runtime_update function is defined,
-	// pre_ and post_upgrade must be called explicitly.
-	// see default function at:
-	// https://github.com/paritytech/substrate/blob/master/frame/support/src/traits/hooks.rs#L139
-	fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
-		log::warn!("==============================================================  state: {:?}", state);
-		// here we could verify that the Sudo account has no token left
-		// and that the storage has been removed.
-		Ok(())
+			// TODO: Weight: two reads
+			if !frame_support::storage::unhashed::exists(sudo_key_prefix.as_slice()) &&
+				!frame_support::storage::unhashed::exists(sudo_pallet_version.as_slice())
+			{
+				log::warn!("Sudo Storage Migration run on already migrated database. This migration should be removed.");
+				Weight::zero()
+			} else {
+				let mut result: MultiRemovalResults = clear_storage_prefix(
+					"Sudo".as_bytes(), // this is correct
+					b"Key",            // this is correct
+					&[],               // this is correct
+					None,
+					None,
+				);
+				match result.backend {
+					0 => log::info!("❌        Key not removed."),
+					_ => log::info!(
+						"❎        Key removed: {:?}, unique: {:?}",
+						result.backend,
+						result.unique
+					), // <-- nonzero weight
+				}
+				// TODO: WHAT @*#@&(! do we use?
+				// b"StorageVersion", b"PalletVersion", b"palletVersion", b":__PALLET_VERSION__:", PALLET_VERSION_PREFIX and sudo_pallet_version don't work.
+				result = clear_storage_prefix(
+					"Sudo".as_bytes(), // this is correct
+					b"PalletVersion",
+					&[], // this is correct
+					None,
+					None,
+				);
+				match result.backend {
+					0 => log::info!("❌        Pallet/StorageVersion not removed."),
+					_ => log::info!(
+						"❎        Pallet/StorageVersion removed: {:?}, unique: {:?}",
+						result.backend,
+						result.unique
+					), // <-- nonzero weight
+				}
+				RemoveSudo::transfer_sudo_balance_to_treasury();
+				System::deposit_event(frame_system::Event::CodeUpdated);
+				// TODO: correct weight calc
+				Weight::from_ref_time(100)
+			}
+		}
+
+		#[cfg(feature = "try-runtime")]
+		fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+			Ok(vec![])
+		}
+
+		#[cfg(feature = "try-runtime")]
+		// if try_on_runtime_update function is defined,
+		// pre_ and post_upgrade must be called explicitly.
+		// see default function at:
+		// https://github.com/paritytech/substrate/blob/master/frame/support/src/traits/hooks.rs#L139
+		fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
+			let sudo_key_prefix: Vec<u8> = RemoveSudo::join_keys(&SUDO_PREFIX, &KEY_PREFIX);
+			let sudo_pallet_version: Vec<u8> =
+				RemoveSudo::join_keys(&SUDO_PREFIX, &PALLET_VERSION_PREFIX);
+			// Verify they are really removed.
+			log::info!(
+				"❓Sudo Key storage exists ===>  {:?}",
+				frame_support::storage::unhashed::exists(sudo_key_prefix.as_slice())
+			);
+			log::info!(
+				"❓Sudo PalletVersion storage exists ===>  {:?}",
+				frame_support::storage::unhashed::exists(sudo_pallet_version.as_slice())
+			);
+			Ok(())
+		}
 	}
 }
 
@@ -192,9 +290,8 @@ impl OnRuntimeUpgrade for RemoveSudo {
 /// to even the core data structures.
 pub mod opaque {
 	use super::*;
-	use sp_runtime::{generic, traits::BlakeTwo256};
-
 	pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
+	use sp_runtime::{generic, traits::BlakeTwo256};
 	/// Opaque block header type.
 	pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 	/// Opaque block type.
@@ -512,9 +609,11 @@ impl pallet_democracy::Config for Runtime {
 	type MaxVotes = DemocracyMaxVotes;
 	type MinimumDeposit = MinimumDeposit;
 	type Scheduler = Scheduler;
-	type Slash = (); // Treasury;
+	type Slash = ();
+	// Treasury;
 	type WeightInfo = weights::pallet_democracy::SubstrateWeight<Runtime>;
-	type VoteLockingPeriod = EnactmentPeriod; // Same as EnactmentPeriod
+	type VoteLockingPeriod = EnactmentPeriod;
+	// Same as EnactmentPeriod
 	type VotingPeriod = VotingPeriod;
 	type Preimages = Preimage;
 	type MaxDeposits = ConstU32<100>;
