@@ -33,7 +33,7 @@ pub enum PageError {
 #[scale_info(skip_type_params(PageDataSize))]
 #[codec(mel_bound(PageDataSize: MaxEncodedLen))]
 pub struct Page<PageDataSize: Get<u32>> {
-	data: BoundedVec<u8, PageDataSize>,
+	pub data: BoundedVec<u8, PageDataSize>,
 }
 
 /// an internal struct which contains the parsed items in a page

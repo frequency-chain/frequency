@@ -59,7 +59,10 @@ pub mod weights;
 
 pub mod child_tree_storage;
 
-use common_primitives::msa::{DelegatorId, ProviderId};
+use common_primitives::{
+	msa::{DelegatorId, ProviderId},
+	schema::PayloadLocation,
+};
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get};
 use sp_std::prelude::*;
 
@@ -194,7 +197,10 @@ pub mod pallet {
 
 			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
-			// TODO: check schema location
+			ensure!(
+				schema.unwrap().payload_location == PayloadLocation::Itemized,
+				Error::<T>::InvalidSchemaId
+			);
 
 			let current_block = frame_system::Pallet::<T>::block_number();
 			T::SchemaGrantValidator::ensure_valid_schema_grant(
@@ -259,23 +265,18 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		// pub fn get_itemized_page(
-		// 	msa_id: MessageSourceId,
-		// 	schema_id: SchemaId,
-		// ) -> Page<T::MaxItemizedPageSizeBytes> {
-		// 	let storage_key = &schema_id.encode()[..];
-		// 	ChildTreeStorage::try_read::<Page<T::MaxItemizedPageSizeBytes>>(&msa_id, storage_key)
-		// 		.map_err(|_| {
-		// 			log::warn!(
-		// 				"failed decoding Itemized msa={:?} schema_id={:?}",
-		// 				msa_id,
-		// 				schema_id
-		// 			);
-		// 			Error::<T>::CorruptedState
-		// 		})
-		// 		.unwrap_or_default()
-		// 		.unwrap_or_default()
-		// }
+		pub fn get_itemized_page(
+			msa_id: MessageSourceId,
+			schema_id: SchemaId,
+		) -> Page<T::MaxItemizedPageSizeBytes> {
+			let storage_key = &schema_id.encode()[..];
+			let page_response = ChildTreeStorage::try_read::<Page<T::MaxItemizedPageSizeBytes>>(
+				&msa_id,
+				storage_key,
+			)
+			.map_or_else(|_| Page::default(), |page| page.unwrap_or_default());
+			page_response
+		}
 	}
 }
 
