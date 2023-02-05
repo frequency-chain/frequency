@@ -175,7 +175,12 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		#[pallet::weight(Weight::default())]
+		#[pallet::weight(T::WeightInfo::apply_item_actions( actions.len() as u32 ,
+			actions.iter().fold(0, |acc, a| acc + match a {
+				ItemAction::Add { data } => data.len() as u32,
+				_ => 0,
+			})
+		))]
 		pub fn apply_item_actions(
 			origin: OriginFor<T>,
 			state_owner_msa_id: MessageSourceId,
