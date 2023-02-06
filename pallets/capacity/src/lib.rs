@@ -196,9 +196,9 @@ pub mod pallet {
 	pub type CurrentEpochUsedCapacity<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
 	#[pallet::type_value]
-	/// EpochLength defaults to T::MaxEpochLength when not set
+	/// EpochLength defaults to 100 blocks when not set
 	pub fn EpochLengthDefault<T: Config>() -> T::BlockNumber {
-		T::MaxEpochLength::get()
+		100u32.into()
 	}
 
 	/// Storage for the epoch length

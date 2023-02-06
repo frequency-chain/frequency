@@ -24,9 +24,9 @@ fn withdraw_unstaked_happy_path() {
 
 		let starting_account = Capacity::get_staking_account_for(&staker).unwrap();
 
-		// In Test mock, EpochLength = 10
+		// EpochLength = 100
 		// We want to advance to epoch 3 to unlock the first two sets.
-		run_to_block(31);
+		run_to_block(301);
 		assert_eq!(3u32, Capacity::get_current_epoch());
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
 
@@ -56,7 +56,7 @@ fn withdraw_unstaked_correctly_sets_new_lock_state() {
 		assert_eq!(10u64, Balances::locks(&staker)[0].amount);
 
 		// Epoch length = 10, we want to run to epoch 3
-		run_to_block(31);
+		run_to_block(301);
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
 
 		assert_eq!(1, Balances::locks(&staker).len());
@@ -78,8 +78,8 @@ fn withdraw_unstaked_cleans_up_storage_and_removes_all_locks_if_no_stake_left() 
 		let staker = 500;
 		Capacity::set_staking_account(&staker, &staking_account);
 
-		// Epoch Length = 10 and UnstakingThawPeriod = 2 (epochs)
-		run_to_block(30);
+		// Epoch Length = 100 and UnstakingThawPeriod = 2 (epochs)
+		run_to_block(300);
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
 		assert!(Capacity::get_staking_account_for(&staker).is_none());
 
@@ -224,7 +224,7 @@ fn stake_increase_stake_amount_works() {
 		assert_eq!(Balances::locks(&account)[0].reasons, WithdrawReasons::all().into());
 
 		// run to epoch 2
-		run_to_block(21);
+		run_to_block(201);
 
 		let additional_amount = 10;
 		let capacity = 10;
@@ -282,7 +282,7 @@ fn stake_multiple_accounts_can_stake_to_the_same_target() {
 			assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 0);
 
 			// run to epoch 2
-			run_to_block(21);
+			run_to_block(201);
 
 			let account_2 = 300;
 			let stake_amount_2 = 10;
@@ -322,7 +322,7 @@ fn stake_an_account_can_stake_to_multiple_targets() {
 		assert_eq!(Capacity::get_staking_account_for(account).unwrap().total, 10);
 
 		// run to epoch 2
-		run_to_block(21);
+		run_to_block(201);
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target_2, amount_2));
 
 		// Check that StakingAccountLedger is updated.
@@ -546,7 +546,7 @@ fn set_epoch_length_happy_path() {
 #[test]
 fn set_epoch_length_errors_when_greater_than_max_epoch_length() {
 	new_test_ext().execute_with(|| {
-		let epoch_length: <Test as frame_system::Config>::BlockNumber = 11;
+		let epoch_length: <Test as frame_system::Config>::BlockNumber = 101;
 
 		assert_noop!(
 			Capacity::set_epoch_length(RuntimeOrigin::root(), epoch_length),

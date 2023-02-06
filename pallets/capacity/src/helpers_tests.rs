@@ -17,24 +17,24 @@ struct TestCase<T: Config> {
 #[test]
 fn start_new_epoch_works() {
 	new_test_ext().execute_with(|| {
-		// assumes the mock epoch length is 10 blocks.
+		// assumes the mock epoch length is 100 blocks.
 		let test_cases: Vec<TestCase<Test>> = vec![
 			TestCase {
 				name: "epoch changes at the right time",
 				starting_epoch: 2,
-				epoch_start_block: 299,
+				epoch_start_block: 201,
 				expected_epoch: 3,
-				expected_epoch_start_block: 309,
+				expected_epoch_start_block: 301,
 				expected_capacity: 0,
-				at_block: 309,
+				at_block: 301,
 			},
 			TestCase {
 				//
 				name: "epoch does not change",
 				starting_epoch: 2,
-				epoch_start_block: 211,
+				epoch_start_block: 201,
 				expected_epoch: 2,
-				expected_epoch_start_block: 211,
+				expected_epoch_start_block: 201,
 				expected_capacity: 45,
 				at_block: 215,
 			},
