@@ -71,12 +71,13 @@ pub use weights::*;
 pub mod pallet {
 	use super::*;
 	use crate::{
-		stateful_child_tree::StatefulChildTree,
+		stateful_child_tree::{StatefulChildTree, StatefulPageKeyPart},
 		types::{ItemAction, Page},
 	};
 	use common_primitives::{
 		msa::{MessageSourceId, MsaLookup, MsaValidator, SchemaGrantValidator},
 		schema::{SchemaId, SchemaProvider},
+		stateful_storage::PageId,
 	};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
@@ -112,7 +113,7 @@ pub mod pallet {
 
 		/// The maximum number of pages in a Paginated storage model
 		#[pallet::constant]
-		type MaxPaginatedPageCount: Get<u32>;
+		type MaxPaginatedPageId: Get<u32>;
 
 		/// The maximum number of actions in itemized actions
 		#[pallet::constant]
@@ -141,14 +142,17 @@ pub mod pallet {
 		/// Additional item unable to fit in item page
 		ItemPageFull,
 
-		/// Additional page would exceed maximum number of allowable pages
-		PageCountOverflow,
+		/// Page would exceed the highest allowable PageId
+		PageIdExceedsMaxAllowed,
 
 		/// Page size exceeds max allowable page size
 		PageExceedsMaxPageSizeBytes,
 
 		/// Invalid SchemaId or Schema not found
 		InvalidSchemaId,
+
+		/// Schema is not valid for storage model
+		SchemaPayloadLocationMismatch,
 
 		/// Invalid Message Source Account
 		InvalidMessageSourceAccount,
@@ -166,8 +170,10 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		PageUpdated { msa_id: MessageSourceId, schema_id: SchemaId },
-		PageRemoved { msa_id: MessageSourceId, schema_id: SchemaId },
+		ItemizedPageUpdated { msa_id: MessageSourceId, schema_id: SchemaId },
+		ItemizedPageRemoved { msa_id: MessageSourceId, schema_id: SchemaId },
+		PaginatedPageUpdated { msa_id: MessageSourceId, schema_id: SchemaId, page_id: PageId },
+		PaginatedPageRemoved { msa_id: MessageSourceId, schema_id: SchemaId, page_id: PageId },
 	}
 
 	#[pallet::call]
@@ -202,7 +208,7 @@ pub mod pallet {
 			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
 			ensure!(
 				schema.unwrap().payload_location == PayloadLocation::Itemized,
-				Error::<T>::InvalidSchemaId
+				Error::<T>::SchemaPayloadLocationMismatch
 			);
 
 			let current_block = frame_system::Pallet::<T>::block_number();
@@ -234,11 +240,8 @@ pub mod pallet {
 
 			match updated_page.is_empty() {
 				true => {
-					StatefulChildTree::kill::<Page<T::MaxItemizedPageSizeBytes>>(
-						&state_owner_msa_id,
-						&keys,
-					);
-					Self::deposit_event(Event::PageRemoved {
+					StatefulChildTree::kill(&state_owner_msa_id, &keys);
+					Self::deposit_event(Event::ItemizedPageRemoved {
 						msa_id: state_owner_msa_id,
 						schema_id,
 					});
@@ -249,7 +252,7 @@ pub mod pallet {
 						&keys,
 						updated_page,
 					);
-					Self::deposit_event(Event::PageUpdated {
+					Self::deposit_event(Event::ItemizedPageUpdated {
 						msa_id: state_owner_msa_id,
 						schema_id,
 					});
@@ -260,17 +263,94 @@ pub mod pallet {
 
 		#[pallet::call_index(1)]
 		#[pallet::weight(0)]
-		pub fn upsert_page(_origin: OriginFor<T>, payload: Vec<u8>) -> DispatchResult {
+		pub fn upsert_page(
+			origin: OriginFor<T>,
+			state_owner_msa_id: MessageSourceId,
+			schema_id: SchemaId,
+			page_id: PageId,
+			payload: Vec<u8>,
+		) -> DispatchResult {
 			ensure!(
 				payload.len() as u32 <= T::MaxPaginatedPageSizeBytes::get(),
 				Error::<T>::PageExceedsMaxPageSizeBytes
 			);
+			ensure!(
+				page_id as u32 <= T::MaxPaginatedPageId::get(),
+				Error::<T>::PageIdExceedsMaxAllowed
+			);
+			let provider_key = ensure_signed(origin)?;
+			let provider_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+
+			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
+			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
+			ensure!(
+				schema.unwrap().payload_location == PayloadLocation::Paginated,
+				Error::<T>::SchemaPayloadLocationMismatch
+			);
+
+			let current_block = frame_system::Pallet::<T>::block_number();
+			T::SchemaGrantValidator::ensure_valid_schema_grant(
+				ProviderId(provider_msa_id),
+				DelegatorId(state_owner_msa_id),
+				schema_id,
+				current_block,
+			)
+			.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
+
+			let schema_key: StatefulPageKeyPart = schema_id.encode();
+			let page_key: StatefulPageKeyPart = page_id.encode();
+
+			StatefulChildTree::write(&state_owner_msa_id, &[schema_key, page_key], payload);
+			Self::deposit_event(Event::PaginatedPageUpdated {
+				msa_id: state_owner_msa_id,
+				schema_id,
+				page_id,
+			});
 			Ok(())
 		}
 
 		#[pallet::call_index(2)]
 		#[pallet::weight(0)]
-		pub fn remove_page(_origin: OriginFor<T>) -> DispatchResult {
+		pub fn remove_page(
+			origin: OriginFor<T>,
+			state_owner_msa_id: MessageSourceId,
+			schema_id: SchemaId,
+			page_id: PageId,
+		) -> DispatchResult {
+			ensure!(
+				page_id as u32 <= T::MaxPaginatedPageId::get(),
+				Error::<T>::PageIdExceedsMaxAllowed
+			);
+			let provider_key = ensure_signed(origin)?;
+			let provider_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+
+			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
+			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
+			ensure!(
+				schema.unwrap().payload_location == PayloadLocation::Paginated,
+				Error::<T>::SchemaPayloadLocationMismatch
+			);
+
+			let current_block = frame_system::Pallet::<T>::block_number();
+			T::SchemaGrantValidator::ensure_valid_schema_grant(
+				ProviderId(provider_msa_id),
+				DelegatorId(state_owner_msa_id),
+				schema_id,
+				current_block,
+			)
+			.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
+
+			let schema_key = schema_id.encode();
+			let page_key = page_id.encode();
+
+			StatefulChildTree::kill(&state_owner_msa_id, &[schema_key, page_key]);
+			Self::deposit_event(Event::PaginatedPageRemoved {
+				msa_id: state_owner_msa_id,
+				schema_id,
+				page_id,
+			});
 			Ok(())
 		}
 	}

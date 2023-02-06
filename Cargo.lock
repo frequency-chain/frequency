@@ -6098,6 +6098,7 @@ name = "pallet-stateful-storage"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
+ "env_logger 0.10.0",
  "frame-benchmarking",
  "frame-support",
  "frame-system",

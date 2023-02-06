@@ -66,7 +66,7 @@ parameter_types! {
 	pub const MaxItemizedPageSizeBytes: u32 = 1024;
 	pub const MaxPaginatedPageSizeBytes: u32 = 1024;
 	pub const MaxItemizedBlobSizeBytes: u32 = 64;
-	pub const MaxPaginatedPageCount: u8 = 32;
+	pub const MaxPaginatedPageId: u8 = 32;
 	pub const MaxItemizedActionsCount: u32 = 6;
 
 	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
@@ -182,23 +182,23 @@ impl SchemaProvider<u16> for SchemaHandler {
 	}
 }
 
-impl Clone for MaxPaginatedPageCount {
+impl Clone for MaxPaginatedPageId {
 	fn clone(&self) -> Self {
-		MaxPaginatedPageCount {}
+		MaxPaginatedPageId {}
 	}
 }
 
-impl Eq for MaxPaginatedPageCount {
+impl Eq for MaxPaginatedPageId {
 	fn assert_receiver_is_total_eq(&self) -> () {}
 }
 
-impl PartialEq for MaxPaginatedPageCount {
+impl PartialEq for MaxPaginatedPageId {
 	fn eq(&self, _other: &Self) -> bool {
 		true
 	}
 }
 
-impl sp_std::fmt::Debug for MaxPaginatedPageCount {
+impl sp_std::fmt::Debug for MaxPaginatedPageId {
 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
 		Ok(())
 	}
@@ -299,7 +299,7 @@ impl pallet_stateful_storage::Config for Test {
 	type SchemaProvider = SchemaHandler;
 	type WeightInfo = ();
 	type MaxItemizedBlobSizeBytes = MaxItemizedBlobSizeBytes;
-	type MaxPaginatedPageCount = MaxPaginatedPageCount;
+	type MaxPaginatedPageId = MaxPaginatedPageId;
 	type MaxItemizedPageSizeBytes = MaxItemizedPageSizeBytes;
 	type MaxPaginatedPageSizeBytes = MaxPaginatedPageSizeBytes;
 	type MaxItemizedActionsCount = MaxItemizedActionsCount;

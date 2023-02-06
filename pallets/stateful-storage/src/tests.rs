@@ -7,9 +7,11 @@ use crate::{
 use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
 use frame_support::{assert_err, assert_ok};
+#[allow(unused_imports)]
+use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use scale_info::TypeInfo;
 
-type TestPageSize = frame_support::traits::ConstU32<2048>;
+type TestPageSize = <Test as Config>::MaxItemizedPageSizeBytes;
 type TestPage = Page<TestPageSize>;
 
 fn create_page_from(payloads: &[Vec<u8>]) -> TestPage {
@@ -32,7 +34,11 @@ struct TestStruct {
 #[test]
 fn upsert_page_too_large_errors() {
 	new_test_ext().execute_with(|| {
-		let caller_1 = 5u64;
+		// setup
+		let caller_1 = 5;
+		let msa_id = 1;
+		let schema_id = 1;
+		let page_id = 0;
 		let payload =
 			vec![
 				1;
@@ -41,7 +47,13 @@ fn upsert_page_too_large_errors() {
 			];
 
 		assert_err!(
-			StatefulStoragePallet::upsert_page(RuntimeOrigin::signed(caller_1), payload),
+			StatefulStoragePallet::upsert_page(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				page_id,
+				payload
+			),
 			Error::<Test>::PageExceedsMaxPageSizeBytes
 		)
 	})
@@ -107,9 +119,11 @@ fn applying_remove_action_with_non_existing_index_should_fail() {
 #[test]
 fn applying_add_action_with_full_page_should_fail() {
 	// arrange
+	env_logger::init();
 	let mut arr: Vec<Vec<u8>> = vec![];
 	let payload = "{'type':2, 'description':'another test description 1'}".as_bytes().to_vec();
-	while (arr.len() + 1) * (&payload.len() + ItemHeader::max_encoded_len()) <
+	let header = ItemHeader { payload_len: payload.len() as u16 }.encode().to_vec();
+	while (arr.len() + 1) * (&payload.len() + header.len()) <
 		<Test as Config>::MaxItemizedPageSizeBytes::get() as usize
 	{
 		arr.push(payload.clone());
@@ -121,6 +135,10 @@ fn applying_add_action_with_full_page_should_fail() {
 	let result = page.apply_item_actions(&actions[..]);
 
 	// assert
+	assert_eq!(
+		result.as_ref().unwrap().data.len(),
+		<Test as Config>::MaxItemizedPageSizeBytes::get() as usize
+	);
 	assert_eq!(result.is_err(), true);
 }
 
