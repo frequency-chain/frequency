@@ -1,5 +1,6 @@
+use super::*;
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::pallet_prelude::*;
+use frame_support::{pallet_prelude::*, DefaultNoBound};
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
 use sp_std::{cmp::*, collections::btree_map::BTreeMap, fmt::Debug, prelude::*};
