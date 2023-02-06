@@ -139,30 +139,36 @@ There are 2 options to run the chain locally:
 
 _Note, Running frequency via following options does not require binary to be built or chain specs to be generated separately, and is programmed within the scripts for simplicity._
 
-1.  Collator Node in Instant Sealing Mode,
+1.  Collator Node in Instant/Manual Sealing Mode,
 2.  Collator Node with Local Relay Chain
 
-## 1. Collator Node in Instant Sealing Mode
+## 1. Collator Node in Instant/Manual Sealing Mode
 
 ![](docs/images/local-dev-env-option-1.jpg)
 
-This option runs just one collator node in instant seal mode and nothing more.
-A "collator node" is a Frequency parachain node that is actively collating (aka forming blocks to submit to the relay chain). The instant seal mode allows a blockchain node to author a block
-as soon as it goes into a queue. This is also a great option to run with an example client.
+This option runs just one collator node without the need for a relay chain.
 
-### In Terminal
+Blocks can be triggered by calling the `engine_createBlock` RPC
+
+```sh
+curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d   '{ \
+    "jsonrpc":"2.0", \
+    "id":1, \
+    "method":"engine_createBlock", \
+    "params": [true, true] \
+    }'
+```
+
+### Terminal: Instant Sealing
+
+Same as Manual Sealing, but will also automatically trigger the formation of a block whenever a transaction is added to the validated transaction pool.
+Great for most testing.
 
 ```sh
 make start
 ```
 
-If you want to run Frequency in manual seal mode, run
-
-```sh
-make start-manual
-```
-
-### In Docker Container
+Also available as a Docker image: [`frequencychain/instant-seal-node`](https://hub.docker.com/r/frequencychain/instant-seal-node)
 
 ```sh
 docker run --rm -p 9944:9944 -p 9933:9933 -p 30333:30333 frequencychain/instant-seal-node
@@ -173,6 +179,15 @@ To stop running chain hit [Ctrl+C] in terminal where the chain was started.
 | **Node**                |             **Ports**             | **Explorer URL**                                                                          |
 | ----------------------- | :-------------------------------: | ----------------------------------------------------------------------------------------- |
 | Frequency Collator Node | ws:`9944`, rpc`:9933`, p2p:`3033` | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
+
+### Terminal: Manual Sealing
+
+Will only form a block when the `engine_createBlock` RPC is called.
+Great for testing multiple items in the same block or other block formation tests.
+
+```sh
+make start-manual
+```
 
 ## 2. Collator Node with Local Relay Chain
 
