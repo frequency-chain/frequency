@@ -38,6 +38,24 @@ struct TestStruct {
 }
 
 #[test]
+fn upsert_page_too_large_errors() {
+	new_test_ext().execute_with(|| {
+		let caller_1 = 5u64;
+		let payload =
+			vec![
+				1;
+				TryInto::<usize>::try_into(<Test as Config>::MaxPaginatedPageSizeBytes::get())
+					.unwrap() + 1
+			];
+
+		assert_err!(
+			StatefulStoragePallet::upsert_page(RuntimeOrigin::signed(caller_1), payload),
+			Error::<Test>::PageExceedsMaxPageSizeBytes
+		)
+	})
+}
+
+#[test]
 fn child_tree_write_read() {
 	new_test_ext().execute_with(|| {
 		// arrange
