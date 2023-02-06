@@ -72,6 +72,12 @@ parameter_types! {
 	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
 }
 
+impl Default for MaxItemizedPageSizeBytes {
+	fn default() -> Self {
+		Self
+	}
+}
+
 pub struct MsaInfoHandler;
 pub struct DelegationInfoHandler;
 pub struct SchemaGrantValidationHandler;
@@ -297,6 +303,11 @@ impl pallet_stateful_storage::Config for Test {
 	type MaxItemizedPageSizeBytes = MaxItemizedPageSizeBytes;
 	type MaxPaginatedPageSizeBytes = MaxPaginatedPageSizeBytes;
 	type MaxItemizedActionsCount = MaxItemizedActionsCount;
+	/// A set of helper functions for benchmarking.
+	#[cfg(feature = "runtime-benchmarks")]
+	type MsaBenchmarkHelper = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type SchemaBenchmarkHelper = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

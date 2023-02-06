@@ -57,13 +57,11 @@ pub mod types;
 
 pub mod weights;
 
-pub mod child_tree_storage;
-
 use common_primitives::{
 	msa::{DelegatorId, ProviderId},
 	schema::PayloadLocation,
 };
-use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get};
+use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
 use sp_std::prelude::*;
 
 pub use pallet::*;
@@ -73,7 +71,7 @@ pub use weights::*;
 pub mod pallet {
 	use super::*;
 	use crate::{
-		child_tree_storage::ChildTreeStorage,
+		stateful_child_tree::StatefulChildTree,
 		types::{ItemAction, Page},
 	};
 	use common_primitives::{
@@ -217,9 +215,10 @@ pub mod pallet {
 			.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
 
 			let storage_key = &schema_id.encode()[..];
-			let updated_page = ChildTreeStorage::try_read::<Page<T::MaxItemizedPageSizeBytes>>(
+			let keys = vec![storage_key.to_vec()];
+			let updated_page = StatefulChildTree::try_read::<Page<T::MaxItemizedPageSizeBytes>>(
 				&state_owner_msa_id,
-				storage_key,
+				&keys,
 			)
 			.map_err(|_| {
 				log::warn!(
@@ -235,14 +234,21 @@ pub mod pallet {
 
 			match updated_page.is_empty() {
 				true => {
-					ChildTreeStorage::kill(&state_owner_msa_id, storage_key);
+					StatefulChildTree::kill::<Page<T::MaxItemizedPageSizeBytes>>(
+						&state_owner_msa_id,
+						&keys,
+					);
 					Self::deposit_event(Event::PageRemoved {
 						msa_id: state_owner_msa_id,
 						schema_id,
 					});
 				},
 				false => {
-					ChildTreeStorage::write(&state_owner_msa_id, storage_key, updated_page);
+					StatefulChildTree::write::<Page<T::MaxItemizedPageSizeBytes>>(
+						&state_owner_msa_id,
+						&keys,
+						updated_page,
+					);
 					Self::deposit_event(Event::PageUpdated {
 						msa_id: state_owner_msa_id,
 						schema_id,
@@ -275,11 +281,10 @@ pub mod pallet {
 			schema_id: SchemaId,
 		) -> Page<T::MaxItemizedPageSizeBytes> {
 			let storage_key = &schema_id.encode()[..];
-			let page_response = ChildTreeStorage::try_read::<Page<T::MaxItemizedPageSizeBytes>>(
-				&msa_id,
-				storage_key,
-			)
-			.map_or_else(|_| Page::default(), |page| page.unwrap_or_default());
+			let keys = vec![storage_key.to_vec()];
+			let page_response =
+				StatefulChildTree::try_read::<Page<T::MaxItemizedPageSizeBytes>>(&msa_id, &keys)
+					.map_or_else(|_| Page::default(), |page| page.unwrap_or_default());
 			page_response
 		}
 	}
