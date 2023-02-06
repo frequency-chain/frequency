@@ -1,7 +1,8 @@
+use super::*;
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::pallet_prelude::*;
+use frame_support::{pallet_prelude::*, DefaultNoBound};
 use scale_info::TypeInfo;
-use sp_core::{bounded::BoundedVec, Get};
+use sp_core::bounded::BoundedVec;
 use sp_std::{cmp::*, collections::btree_map::BTreeMap, fmt::Debug, prelude::*};
 
 /// Defines the actions that can be applied to an Itemized storage
@@ -16,7 +17,7 @@ pub enum ItemAction {
 #[derive(Encode, Decode, PartialEq, MaxEncodedLen, Debug)]
 pub struct ItemHeader {
 	/// The length of this item, not including the size of this header.
-	payload_len: u16,
+	pub payload_len: u16,
 }
 
 #[derive(Debug, PartialEq)]
@@ -28,20 +29,20 @@ pub enum PageError {
 }
 
 /// A page of data
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, Debug)]
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, Debug, Default)]
 #[scale_info(skip_type_params(PageDataSize))]
 #[codec(mel_bound(PageDataSize: MaxEncodedLen))]
 pub struct Page<PageDataSize: Get<u32>> {
-	data: BoundedVec<u8, PageDataSize>,
+	pub data: BoundedVec<u8, PageDataSize>,
 }
 
 /// an internal struct which contains the parsed items in a page
 #[derive(Debug, PartialEq)]
 struct ParsedItemPage<'a> {
 	/// page current size
-	page_size: usize,
+	pub page_size: usize,
 	/// a map of item index to a slice of blob (header included)
-	items: BTreeMap<u16, &'a [u8]>,
+	pub items: BTreeMap<u16, &'a [u8]>,
 }
 
 impl<PageDataSize: Get<u32>> Page<PageDataSize> {
@@ -227,7 +228,7 @@ mod tests {
 		let actions = vec![ItemAction::Remove { index: 0 }];
 
 		// act
-		let result = page.apply_item_actions(&actions[..]);
+		let result = page.apply_item_actions(&actions);
 
 		// assert
 		assert_ok!(&result);

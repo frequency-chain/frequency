@@ -49,12 +49,20 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+#[cfg(feature = "runtime-benchmarks")]
+use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
 
 mod stateful_child_tree;
 pub mod types;
 
 pub mod weights;
 
+pub mod child_tree_storage;
+
+use common_primitives::{
+	msa::{DelegatorId, ProviderId},
+	schema::PayloadLocation,
+};
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::Weight, traits::Get};
 use sp_std::prelude::*;
 
@@ -64,6 +72,14 @@ pub use weights::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use crate::{
+		child_tree_storage::ChildTreeStorage,
+		types::{ItemAction, Page},
+	};
+	use common_primitives::{
+		msa::{MessageSourceId, MsaLookup, MsaValidator, SchemaGrantValidator},
+		schema::{SchemaId, SchemaProvider},
+	};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -75,9 +91,18 @@ pub mod pallet {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
+		/// A type that will supply MSA related information
+		type MsaInfoProvider: MsaLookup + MsaValidator<AccountId = Self::AccountId>;
+
+		/// A type that will validate schema grants
+		type SchemaGrantValidator: SchemaGrantValidator<Self::BlockNumber>;
+
+		/// A type that will supply schema related information.
+		type SchemaProvider: SchemaProvider<SchemaId>;
+
 		/// The maximum size of a page (in bytes) for an Itemized storage model
 		#[pallet::constant]
-		type MaxItemizedPageSizeBytes: Get<u32>;
+		type MaxItemizedPageSizeBytes: Get<u32> + Default;
 
 		/// The maximum size of a page (in bytes) for a Paginated storage model
 		#[pallet::constant]
@@ -90,6 +115,18 @@ pub mod pallet {
 		/// The maximum number of pages in a Paginated storage model
 		#[pallet::constant]
 		type MaxPaginatedPageCount: Get<u32>;
+
+		/// The maximum number of actions in itemized actions
+		#[pallet::constant]
+		type MaxItemizedActionsCount: Get<u32>;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		/// A set of helper functions for benchmarking.
+		type MsaBenchmarkHelper: MsaBenchmarkHelper<Self::AccountId>;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		/// A set of helper functions for benchmarking.
+		type SchemaBenchmarkHelper: SchemaBenchmarkHelper;
 	}
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -111,35 +148,111 @@ pub mod pallet {
 
 		/// Page size exceeds max allowable page size
 		PageExceedsMaxPageSizeBytes,
+
+		/// Invalid SchemaId or Schema not found
+		InvalidSchemaId,
+
+		/// Invalid Message Source Account
+		InvalidMessageSourceAccount,
+
+		/// UnAuthorizedDelegate
+		UnAuthorizedDelegate,
+
+		/// Corrupted State
+		CorruptedState,
+
+		/// Invalid item action
+		InvalidItemAction,
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		ItemAppended,
-		ItemRemoved,
-		PageAppended,
-		PageUpdated,
-		PageRemoved,
+		PageUpdated { msa_id: MessageSourceId, schema_id: SchemaId },
+		PageRemoved { msa_id: MessageSourceId, schema_id: SchemaId },
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(Weight::default())]
-		pub fn add_item(_origin: OriginFor<T>, payload: Vec<u8>) -> DispatchResult {
+		#[pallet::call_index(0)]
+		#[pallet::weight(T::WeightInfo::apply_item_actions( actions.len() as u32 ,
+			actions.iter().fold(0, |acc, a| acc + match a {
+				ItemAction::Add { data } => data.len() as u32,
+				_ => 0,
+			})
+		))]
+		pub fn apply_item_actions(
+			origin: OriginFor<T>,
+			state_owner_msa_id: MessageSourceId,
+			#[pallet::compact] schema_id: SchemaId,
+			actions: BoundedVec<ItemAction, T::MaxItemizedActionsCount>,
+		) -> DispatchResult {
+			let provider_key = ensure_signed(origin)?;
 			ensure!(
-				payload.len() as u32 <= T::MaxItemizedBlobSizeBytes::get(),
+				actions.as_slice().iter().all(|a| match a {
+					ItemAction::Add { data } =>
+						data.len() <= T::MaxItemizedBlobSizeBytes::get() as usize,
+					_ => true,
+				}),
 				Error::<T>::ItemExceedsMaxBlobSizeBytes
 			);
 
+			let provider_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+
+			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
+			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
+			ensure!(
+				schema.unwrap().payload_location == PayloadLocation::Itemized,
+				Error::<T>::InvalidSchemaId
+			);
+
+			let current_block = frame_system::Pallet::<T>::block_number();
+			T::SchemaGrantValidator::ensure_valid_schema_grant(
+				ProviderId(provider_msa_id),
+				DelegatorId(state_owner_msa_id),
+				schema_id,
+				current_block,
+			)
+			.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
+
+			let storage_key = &schema_id.encode()[..];
+			let updated_page = ChildTreeStorage::try_read::<Page<T::MaxItemizedPageSizeBytes>>(
+				&state_owner_msa_id,
+				storage_key,
+			)
+			.map_err(|_| {
+				log::warn!(
+					"failed decoding Itemized msa={:?} schema_id={:?}",
+					state_owner_msa_id,
+					schema_id
+				);
+				Error::<T>::CorruptedState
+			})?
+			.unwrap_or_default()
+			.apply_item_actions(&actions[..])
+			.map_err(|_| Error::<T>::InvalidItemAction)?;
+
+			match updated_page.is_empty() {
+				true => {
+					ChildTreeStorage::kill(&state_owner_msa_id, storage_key);
+					Self::deposit_event(Event::PageRemoved {
+						msa_id: state_owner_msa_id,
+						schema_id,
+					});
+				},
+				false => {
+					ChildTreeStorage::write(&state_owner_msa_id, storage_key, updated_page);
+					Self::deposit_event(Event::PageUpdated {
+						msa_id: state_owner_msa_id,
+						schema_id,
+					});
+				},
+			};
 			Ok(())
 		}
 
-		#[pallet::weight(0)]
-		pub fn remove_item(_origin: OriginFor<T>) -> DispatchResult {
-			Ok(())
-		}
-
+		#[pallet::call_index(1)]
 		#[pallet::weight(0)]
 		pub fn upsert_page(_origin: OriginFor<T>, payload: Vec<u8>) -> DispatchResult {
 			ensure!(
@@ -149,9 +262,27 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(2)]
 		#[pallet::weight(0)]
 		pub fn remove_page(_origin: OriginFor<T>) -> DispatchResult {
 			Ok(())
 		}
 	}
+
+	impl<T: Config> Pallet<T> {
+		pub fn get_itemized_page(
+			msa_id: MessageSourceId,
+			schema_id: SchemaId,
+		) -> Page<T::MaxItemizedPageSizeBytes> {
+			let storage_key = &schema_id.encode()[..];
+			let page_response = ChildTreeStorage::try_read::<Page<T::MaxItemizedPageSizeBytes>>(
+				&msa_id,
+				storage_key,
+			)
+			.map_or_else(|_| Page::default(), |page| page.unwrap_or_default());
+			page_response
+		}
+	}
 }
+
+impl<T: Config> Pallet<T> {}

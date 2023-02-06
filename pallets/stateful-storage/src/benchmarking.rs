@@ -1,38 +1,50 @@
 use super::*;
-use crate::Pallet as StatefulStoragePallet;
+use crate::{types::ItemAction, Pallet as StatefulStoragePallet};
+use common_primitives::schema::{ModelType, PayloadLocation};
 use frame_benchmarking::{benchmarks, whitelisted_caller};
+use frame_support::assert_ok;
 use frame_system::RawOrigin;
+use sp_core::bounded::BoundedVec;
+
+fn itemized_actions_add<T: Config>(
+	n: u32,
+	s: usize,
+) -> BoundedVec<ItemAction, T::MaxItemizedActionsCount> {
+	let mut actions = vec![];
+	for _ in 0..n {
+		let payload = vec![0u8; s];
+		actions.push(ItemAction::Add { data: payload.into() });
+	}
+	actions.try_into().expect("Invalid actions")
+}
+
+fn create_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
+	T::SchemaBenchmarkHelper::create_schema(
+		Vec::from(r#"{"Message": "some-random-hash"}"#.as_bytes()),
+		ModelType::AvroBinary,
+		location,
+	)
+}
 
 benchmarks! {
-	add_item {
-		let n in 0 .. 5;
+	apply_item_actions {
+		let n in 1 .. T::MaxItemizedActionsCount::get() - 1;
+		let s in 1 .. T::MaxItemizedBlobSizeBytes::get()- 1;
+		let provider_msa_id = 1u64;
+		let delegator_msa_id = 2u64;
+		let schema_id = 1u16;
 		let caller: T::AccountId = whitelisted_caller();
+		let payload = vec![0u8; s as usize];
 
-		let payload = vec![1u8; n as usize];
-	}: _ (RawOrigin::Signed(caller), payload)
+		assert_ok!(create_schema::<T>(PayloadLocation::Itemized)); // TODO change this to itemized
+		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
+
+		let actions = itemized_actions_add::<T>(n, s as usize);
+	}: _ (RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, actions)
 	verify {
-		assert_eq!(false, false);
-	}
-
-	remove_item {
-		let caller: T::AccountId = whitelisted_caller();
-	}: _ (RawOrigin::Signed(caller))
-	verify {
-	}
-
-	upsert_page {
-		let n in 0 .. 5;
-		let caller: T::AccountId = whitelisted_caller();
-
-		let payload = vec![1u8; n as usize];
-	}: _ (RawOrigin::Signed(caller), payload)
-	verify {
-	}
-
-	remove_page {
-		let caller: T::AccountId = whitelisted_caller();
-	}: _ (RawOrigin::Signed(caller))
-	verify {
+		let page_result = StatefulStoragePallet::<T>::get_itemized_page(delegator_msa_id, schema_id);
+		assert!(page_result.data.len() > 0);
 	}
 
 	impl_benchmark_test_suite!(StatefulStoragePallet,
