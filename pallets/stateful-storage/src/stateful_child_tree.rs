@@ -65,7 +65,7 @@ impl StatefulChildTree {
 	}
 
 	/// Kills a child tree node
-	pub fn kill<V: Encode + Sized>(msa_id: &MessageSourceId, keys: &[StatefulPageKeyPart]) {
+	pub fn kill(msa_id: &MessageSourceId, keys: &[StatefulPageKeyPart]) {
 		let child_trie_info = &Self::get_child_tree(*msa_id);
 		child::kill(child_trie_info, &Identity::hash(Self::concat_keys(keys).as_bytes_ref()));
 	}

@@ -37,7 +37,7 @@ pub struct Page<PageDataSize: Get<u32>> {
 
 /// an internal struct which contains the parsed items in a page
 #[derive(Debug, PartialEq)]
-struct ParsedItemPage<'a> {
+pub struct ParsedItemPage<'a> {
 	/// page current size
 	pub page_size: usize,
 	/// a map of item index to a slice of blob (header included)
@@ -72,6 +72,7 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 
 		let mut updated_page_buffer = Vec::with_capacity(parsed.page_size);
 		let mut add_buffer = Vec::new();
+		log::info!("parsed page len: {:?}", parsed.page_size);
 
 		for action in actions {
 			match action {
@@ -94,19 +95,23 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 				},
 			}
 		}
+		log::info!("add_buffer len: {:?}", add_buffer.len());
 
 		// since BTreemap is sorted by key, all items will be kept in their old order
 		for (_, slice) in parsed.items.iter() {
 			updated_page_buffer.extend_from_slice(slice);
 		}
+		log::info!("rebuilt orig page buffer len: {:?}", updated_page_buffer.len());
 		updated_page_buffer.append(&mut add_buffer);
+		log::info!("new appended page buffer len: {:?}", updated_page_buffer.len());
+		log::info!("page size limit: {:?}", PageDataSize::get());
 
 		Page::<PageDataSize>::try_from(updated_page_buffer)
 			.map_err(|_| PageError::InvalidAction("page size exceeded"))
 	}
 
 	/// Parses all the items inside an ItemPage
-	fn parse_as_itemized(&self) -> Result<ParsedItemPage, PageError> {
+	pub fn parse_as_itemized(&self) -> Result<ParsedItemPage, PageError> {
 		let mut count = 0u16;
 		let mut items = BTreeMap::new();
 		let mut offset = 0;
