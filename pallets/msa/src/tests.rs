@@ -1818,9 +1818,12 @@ fn create_provider_via_governance() {
 
 		let proposal_len: u32 = proposal.encoded_size() as u32;
 
+		// For frequency_rococo, council members are ALICE, CHARLIE and EVE in the chain spec.
+		let council_member = test_public(1); // ALICE
+
 		// Vote YES on the proposal
 		assert_ok!(<Test as Config>::ProposalProvider::vote(
-			key_pair.public().into(),
+			council_member,
 			proposal_hash.clone(),
 			proposal_index,
 			true
@@ -1853,25 +1856,9 @@ fn create_provider_via_governance() {
 			proposal_len
 		));
 
-		// could potentially get the hash from the event by looking for Event::Proposed
-
-		// get hash of proposal.  we can asssume it's the last or only proposal in the list.
-		// let proposal_hash =
-		// what is proposal index??
-		// do_vote(origin, proposal_hash, index, true);
-		// Event::Voted
-
 		// what is index?   what is proposal_weight_bound?  what is length_bound?
 		// do_close(origin, proposal_hash, index, proposal_weight_bound, length_bound);
 		// Event::Closed
-
-		// check if user became a provider
-
-		// let key = twox_128("Collective") + twox_128("CouncilProposals");
-		// let encoded_key = scale_encode(key);
-
-		// let storage_key = blake2_128_concat(encoded_key);
-		// let proposals = state_getStorage(storage_key);
 	})
 }
 
