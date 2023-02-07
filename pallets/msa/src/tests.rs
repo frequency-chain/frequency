@@ -1819,7 +1819,7 @@ fn create_provider_via_governance() {
 		let proposal_len: u32 = proposal.encoded_size() as u32;
 
 		// For frequency_rococo, council members are ALICE, CHARLIE and EVE in the chain spec.
-		let council_member = test_public(1); // ALICE
+		let council_member = test_public(1); // Use ALICE as the council member
 
 		// Vote YES on the proposal
 		assert_ok!(<Test as Config>::ProposalProvider::vote(

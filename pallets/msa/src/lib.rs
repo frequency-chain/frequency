@@ -112,20 +112,20 @@ pub mod weights;
 pub trait ProposalProvider<AccountId, Proposal> {
 	/// Add a new proposal.
 	/// Returns a proposal length and active proposals count if successful.
-	fn propose_proposal(
-		who: AccountId,
+	fn propose(
+		origin: OriginFor<T>,
 		threshold: u32,
 		proposal: Box<Proposal>,
 		length_bound: u32,
-	) -> Result<(u32, u32), DispatchError>;
+	) -> DispatchResultWithPostInfo;
 
 	/// Vote on a proposal
 	fn vote(
-		who: AccountId,
+		origin: OriginFor<T>,
 		proposal: Hash,
 		index: u32,
 		approve: bool,
-	) -> Result<bool, DispatchError>;
+	) -> DispatchResultWithPostInfo;
 
 	/// Close voting on a proposal
 	fn close(
@@ -905,7 +905,7 @@ pub mod pallet {
 		pub fn request_to_be_provider(
 			origin: OriginFor<T>,
 			provider_name: Vec<u8>,
-		) -> DispatchResult {
+		) -> DispatchResultWithPostInfo {
 			let proposer = ensure_signed(origin)?;
 			let proposal: Box<T::Proposal> = Box::new(
 				(Call::<T>::create_provider_via_governance {
@@ -916,9 +916,7 @@ pub mod pallet {
 			);
 			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
 			let threshold = 1;
-			T::ProposalProvider::propose_proposal(proposer, threshold, proposal, proposal_len)?;
-
-			Ok(())
+			T::ProposalProvider::propose(proposer, threshold, proposal, proposal_len)
 		}
 
 		/// Create a provider by means of governance approval

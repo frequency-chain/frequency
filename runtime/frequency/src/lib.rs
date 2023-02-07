@@ -54,6 +54,7 @@ use frame_support::{
 
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
+	pallet_prelude::OriginFor,
 	EnsureRoot, RawOrigin,
 };
 
@@ -84,22 +85,22 @@ use frame_support::traits::Contains;
 pub struct CouncilProposalProvider;
 
 impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
-	fn propose_proposal(
-		who: AccountId,
+	fn propose(
+		origin: OriginFor<T>,
 		threshold: u32,
 		proposal: Box<RuntimeCall>,
 		length_bound: u32,
-	) -> Result<(u32, u32), DispatchError> {
-		Council::do_propose_proposed(who, threshold, proposal, length_bound)
+	) -> DispatchResultWithPostInfo {
+		Council::propose(origin, threshold, proposal, length_bound)
 	}
 
 	fn vote(
-		who: AccountId,
+		origin: OriginFor<T>,
 		proposal: Hash,
 		index: u32,
 		approve: bool,
-	) -> Result<bool, DispatchError> {
-		Council::do_vote(who, proposal, index, approve)
+	) -> DispatchResultWithPostInfo {
+		Council::vote(origin, proposal, index, approve)
 	}
 
 	fn close(
