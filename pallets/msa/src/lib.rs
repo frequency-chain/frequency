@@ -56,10 +56,10 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-	dispatch::{DispatchErrorWithPostInfo, DispatchInfo, DispatchResult, PostDispatchInfo},
+	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	ensure, log,
 	pallet_prelude::*,
-	traits::{Hash, IsSubType},
+	traits::IsSubType,
 };
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -118,24 +118,6 @@ pub trait ProposalProvider<AccountId, Proposal, RuntimeOrigin> {
 		proposal: Box<Proposal>,
 		length_bound: u32,
 	) -> Result<(u32, u32), DispatchError>;
-
-	/// Vote on a proposal
-	fn vote(
-		origin: RuntimeOrigin,
-		proposal: Hash,
-		index: u32,
-		approve: bool,
-	) -> DispatchResultWithPostInfo;
-
-	/// Close voting on a proposal
-	fn close(
-		proposal_hash: Hash,
-		index: u32,
-		length_bound: u32,
-	) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo>;
-
-	/// Get proposal by hash
-	fn proposal_of(hash: Hash) -> Option<Proposal>;
 }
 #[frame_support::pallet]
 pub mod pallet {

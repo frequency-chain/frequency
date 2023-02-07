@@ -17,7 +17,7 @@ use crate::{
 	mock::*,
 	types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, CurrentMsaIdentifierMaximum, DispatchResult, Error, Event,
-	ProposalProvider, ProviderToRegistryEntry, ValidityError,
+	ProviderToRegistryEntry, ValidityError,
 };
 
 use common_primitives::{
@@ -1814,7 +1814,8 @@ fn create_provider_via_governance() {
 		let proposal_hash = proposed_events[0].1;
 		println!("PROPOSAL HASH={:?}", proposal_hash);
 
-		let proposal = <Test as Config>::ProposalProvider::proposal_of(proposal_hash).unwrap();
+		// let proposal = <Test as Config>::ProposalProvider::proposal_of(proposal_hash).unwrap();
+		let proposal = Council::proposal_of(proposal_hash).unwrap();
 
 		let proposal_len: u32 = proposal.encoded_size() as u32;
 
@@ -1826,9 +1827,9 @@ fn create_provider_via_governance() {
 		Council::change_members(&incoming, &outgoing, vec![council_member.clone()]);
 
 		// Vote YES on the proposal
-		assert_ok!(<Test as Config>::ProposalProvider::vote(
-			RuntimeOrigin::signed(council_member),
-			proposal_hash.clone(),
+		assert_ok!(Council::vote(
+			RuntimeOrigin::signed(council_member.clone()),
+			proposal_hash,
 			proposal_index,
 			true
 		));
@@ -1854,11 +1855,18 @@ fn create_provider_via_governance() {
 		assert_eq!(voted_events[0].1, 1); // There should be one YES vote to pass
 
 		// Close the voting
-		assert_ok!(<Test as Config>::ProposalProvider::close(
+		assert_ok!(Council::close(
+			RuntimeOrigin::signed(council_member.clone()),
 			proposal_hash,
 			proposal_index,
+			Weight::MAX,
 			proposal_len
 		));
+		// assert_ok!(<Test as Config>::ProposalProvider::close(
+		// 	proposal_hash,
+		// 	proposal_index,
+		// 	proposal_len
+		// ));
 
 		// Find the Closed event and check if it passed
 		let closed_events: Vec<(u32, u32)> = System::events()
@@ -1876,10 +1884,6 @@ fn create_provider_via_governance() {
 		println!("CLOSED EVENTS={:?}", closed_events);
 		assert_eq!(closed_events.len(), 1);
 		assert_eq!(closed_events[0].0, 1); // There should be one YES vote to pass
-
-		// what is index?   what is proposal_weight_bound?  what is length_bound?
-		// do_close(origin, proposal_hash, index, proposal_weight_bound, length_bound);
-		// Event::Closed
 	})
 }
 

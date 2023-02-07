@@ -46,10 +46,7 @@ pub use common_runtime::{
 
 use frame_support::{
 	construct_runtime,
-	dispatch::{
-		DispatchClass, DispatchError, DispatchErrorWithPostInfo, DispatchResultWithPostInfo,
-		PostDispatchInfo,
-	},
+	dispatch::{DispatchClass, DispatchError},
 	parameter_types,
 	traits::{ConstU128, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
@@ -96,27 +93,6 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall, RuntimeOrigin>
 		length_bound: u32,
 	) -> Result<(u32, u32), DispatchError> {
 		Council::do_propose_proposed(who, threshold, proposal, length_bound)
-	}
-
-	fn vote(
-		origin: RuntimeOrigin,
-		proposal: Hash,
-		index: u32,
-		approve: bool,
-	) -> DispatchResultWithPostInfo {
-		Council::vote(origin, proposal, index, approve)
-	}
-
-	fn close(
-		proposal_hash: Hash,
-		index: u32,
-		length_bound: u32,
-	) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo> {
-		Council::do_close(proposal_hash, index, Weight::zero(), length_bound)
-	}
-
-	fn proposal_of(hash: Hash) -> Option<RuntimeCall> {
-		Council::proposal_of(hash)
 	}
 }
 
