@@ -6,6 +6,7 @@ use common_primitives::{
 		ProviderId, ProviderLookup, SchemaGrantValidator,
 	},
 	schema::{ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse},
+	stateful_storage::PageId,
 };
 use frame_support::{
 	dispatch::DispatchResult,
@@ -66,11 +67,16 @@ parameter_types! {
 	pub const MaxItemizedPageSizeBytes: u32 = 1024;
 	pub const MaxPaginatedPageSizeBytes: u32 = 1024;
 	pub const MaxItemizedBlobSizeBytes: u32 = 64;
-	pub const MaxPaginatedPageId: u8 = 32;
+	pub const MaxPaginatedPageId: PageId = 32;
 	pub const MaxItemizedActionsCount: u32 = 6;
 
 	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
 }
+
+pub const INVALID_SCHEMA_ID: SchemaId = SchemaId::MAX;
+pub const ITEMIZED_SCHEMA: SchemaId = 100; // keep in sync with benchmarking.rs. TODO: refactor
+pub const PAGINATED_SCHEMA: SchemaId = 101; // keep in sync with benchmarking.rs. TODO: refactor
+pub const UNDELEGATED_PAGINATED_SCHEMA: SchemaId = 102;
 
 impl Default for MaxItemizedPageSizeBytes {
 	fn default() -> Self {
@@ -148,9 +154,13 @@ impl<BlockNumber> SchemaGrantValidator<BlockNumber> for SchemaGrantValidationHan
 	fn ensure_valid_schema_grant(
 		provider: ProviderId,
 		delegator: DelegatorId,
-		_schema_id: SchemaId,
+		schema_id: SchemaId,
 		_block_number: BlockNumber,
 	) -> DispatchResult {
+		if schema_id == UNDELEGATED_PAGINATED_SCHEMA {
+			return Err(DispatchError::Other("no schema grant or delegation"))
+		}
+
 		match DelegationInfoHandler::get_delegation_of(delegator, provider) {
 			Some(_) => Ok(()),
 			None => Err(DispatchError::Other("no schema grant or delegation")),
@@ -160,25 +170,32 @@ impl<BlockNumber> SchemaGrantValidator<BlockNumber> for SchemaGrantValidationHan
 
 pub struct SchemaHandler;
 impl SchemaProvider<u16> for SchemaHandler {
+	// For testing/benchmarking. Zero value returns None, Odd for Itemized, Even for Paginated
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-		// if schema_id == INVALID_SCHEMA_ID {
-		// 	return None
-		// }
-		// if schema_id == IPFS_SCHEMA_ID {
-		// 	return Some(SchemaResponse {
-		// 		schema_id,
-		// 		model: r#"schema"#.to_string().as_bytes().to_vec(),
-		// 		model_type: ModelType::Parquet,
-		// 		payload_location: PayloadLocation::IPFS,
-		// 	})
-		// }
+		match schema_id {
+			ITEMIZED_SCHEMA => Some(SchemaResponse {
+				schema_id,
+				model: r#"schema"#.to_string().as_bytes().to_vec(),
+				model_type: ModelType::AvroBinary,
+				payload_location: PayloadLocation::Itemized,
+			}),
 
-		Some(SchemaResponse {
-			schema_id,
-			model: r#"schema"#.to_string().as_bytes().to_vec(),
-			model_type: ModelType::AvroBinary,
-			payload_location: PayloadLocation::OnChain,
-		})
+			PAGINATED_SCHEMA | UNDELEGATED_PAGINATED_SCHEMA => Some(SchemaResponse {
+				schema_id,
+				model: r#"schema"#.to_string().as_bytes().to_vec(),
+				model_type: ModelType::AvroBinary,
+				payload_location: PayloadLocation::Paginated,
+			}),
+
+			INVALID_SCHEMA_ID => None,
+
+			_ => Some(SchemaResponse {
+				schema_id,
+				model: r#"schema"#.to_string().as_bytes().to_vec(),
+				model_type: ModelType::AvroBinary,
+				payload_location: PayloadLocation::OnChain,
+			}),
+		}
 	}
 }
 

@@ -1,10 +1,13 @@
 use super::*;
 use crate::{types::ItemAction, Pallet as StatefulStoragePallet};
-use common_primitives::schema::{ModelType, PayloadLocation};
+use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
 use sp_core::bounded::BoundedVec;
+
+pub const ITEMIZED_SCHEMA: SchemaId = 100; // keep in sync with mock.rs. TODO: refactor
+pub const PAGINATED_SCHEMA: SchemaId = 101; // keep in sync with mock.rs. TODO: refactor
 
 fn itemized_actions_add<T: Config>(
 	n: u32,
@@ -32,13 +35,13 @@ benchmarks! {
 		let s in 1 .. T::MaxItemizedBlobSizeBytes::get()- 1;
 		let provider_msa_id = 1u64;
 		let delegator_msa_id = 2u64;
-		let schema_id = 1u16;
+		let schema_id = ITEMIZED_SCHEMA;
 		let caller: T::AccountId = whitelisted_caller();
 		let payload = vec![0u8; s as usize];
 
-		assert_ok!(create_schema::<T>(PayloadLocation::Itemized)); // TODO change this to itemized
+		// assert_ok!(create_schema::<T>(PayloadLocation::Itemized)); // TODO change this to itemized
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
-		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
+		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [ITEMIZED_SCHEMA].to_vec()));
 
 		let actions = itemized_actions_add::<T>(n, s as usize);
 	}: _ (RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, actions)

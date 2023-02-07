@@ -1,2 +1,2 @@
 /// PageId is the unique identifier for a Page in Stateful Storage
-pub type PageId = u8;
+pub type PageId = u16;
