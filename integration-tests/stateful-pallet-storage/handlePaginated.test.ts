@@ -6,7 +6,7 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "./fixtures/itemizedSchemaType";
 import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfaces";
-import { u16, u64 } from "@polkadot/types";
+import { u16, u32, u64 } from "@polkadot/types";
 
 describe("📗 Stateful Pallet Storage", () => {
     let schemaId: SchemaId;
@@ -150,6 +150,62 @@ describe("📗 Stateful Pallet Storage", () => {
             let bad_msa_id =  new u64(ExtrinsicHelper.api.registry, 999)
 
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, bad_msa_id, 0, payload_1);
+            await paginated_add_result_1.fundOperation();
+            await assert.rejects(async () => {
+                await paginated_add_result_1.signAndSend();
+            }
+            , (err) => {
+                assert.notEqual(err, undefined, "should have returned an error");
+                return true;
+            });
+        }).timeout(10000);
+
+        it("🛑 should fail to call remove page with invalid page index", async function () {
+            const payload_1 = {
+                "message": "Hello World",
+            }
+            let bad_page_index =  new u32(ExtrinsicHelper.api.registry, 999)
+
+            let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, msa_id, bad_page_index);
+            await paginated_add_result_1.fundOperation();
+            await assert.rejects(async () => {
+                await paginated_add_result_1.signAndSend();
+            }
+            , (err) => {
+                assert.notEqual(err, undefined, "should have returned an error");
+                return true;
+            });
+        }).timeout(10000);
+
+        it("🛑 should fail to call remove page with invalid schemaId", async function () {
+            let fake_schema_id = new u16(ExtrinsicHelper.api.registry, 999);      
+            let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, fake_schema_id, msa_id, 0);
+            await paginated_add_result_1.fundOperation();
+            await assert.rejects(async () => {
+                await paginated_add_result_1.signAndSend();
+            }
+            , (err) => {
+                assert.notEqual(err, undefined, "should have returned an error");
+                return true;
+            });
+        }).timeout(10000);
+
+        it("🛑 should fail to call remove page with invalid schema location", async function () {
+            let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId_unsupported, msa_id, 0);
+            await paginated_add_result_1.fundOperation();
+            await assert.rejects(async () => {
+                await paginated_add_result_1.signAndSend();
+            }
+            , (err) => {
+                assert.notEqual(err, undefined, "should have returned an error");
+                return true;
+            });
+        }).timeout(10000);
+
+        it("🛑 should fail to call remove page with for un-delegated attempts", async function () {
+            let bad_msa_id =  new u64(ExtrinsicHelper.api.registry, 999)
+
+            let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, bad_msa_id, 0);
             await paginated_add_result_1.fundOperation();
             await assert.rejects(async () => {
                 await paginated_add_result_1.signAndSend();
