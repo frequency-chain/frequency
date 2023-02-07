@@ -299,7 +299,9 @@ parameter_types! {
 	pub const Ss58Prefix: u16 = prod_or_testnet_or_local!(90, 42, 42);
 }
 
+// --- Capacity Pallet ---
 pub type CapacityMinimumStakingAmount = ConstU128<{ currency::EXISTENTIAL_DEPOSIT }>;
 pub type CapacityMaxUnlockingChunks = ConstU32<4>;
 pub type CapacityMaxEpochLength = ConstU32<100>;
 pub type CapacityUnstakingThawPeriod = ConstU16<2>;
+// -end- Capacity Pallet ---
