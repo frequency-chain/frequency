@@ -165,7 +165,7 @@ impl Config for Test {
 	type BenchmarkHelper = Msa;
 
 	type UnstakingThawPeriod = ConstU16<2>;
-	type MaxEpochLength = ConstU64<10>;
+	type MaxEpochLength = ConstU64<100>;
 	type EpochNumber = u32;
 }
 

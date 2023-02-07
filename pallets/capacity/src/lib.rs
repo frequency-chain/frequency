@@ -195,6 +195,18 @@ pub mod pallet {
 	#[pallet::getter(fn get_current_epoch_used_capacity)]
 	pub type CurrentEpochUsedCapacity<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
+	#[pallet::type_value]
+	/// EpochLength defaults to 100 blocks when not set
+	pub fn EpochLengthDefault<T: Config>() -> T::BlockNumber {
+		100u32.into()
+	}
+
+	/// Storage for the epoch length
+	#[pallet::storage]
+	#[pallet::getter(fn get_epoch_length)]
+	pub type EpochLength<T: Config> =
+		StorageValue<_, T::BlockNumber, ValueQuery, EpochLengthDefault<T>>;
+
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
 	#[pallet::pallet]
@@ -233,6 +245,11 @@ pub mod pallet {
 			/// The Capacity amount that was reduced from a target.
 			capacity: BalanceOf<T>,
 		},
+		/// The Capacity epoch length was changed.
+		EpochLengthUpdated {
+			/// The new length of an epoch in blocks.
+			blocks: T::BlockNumber,
+		},
 	}
 
 	#[pallet::error]
@@ -264,6 +281,8 @@ pub mod pallet {
 		MaxUnlockingChunksExceeded,
 		/// Increase Capacity increase exceeds the total available Capacity for target.
 		IncreaseExceedsAvailable,
+		/// Attempting to set the epoch length to a value greater than the max epoch length.
+		MaxEpochLengthExceeded,
 	}
 
 	#[pallet::hooks]
@@ -365,6 +384,25 @@ pub mod pallet {
 				amount,
 				capacity: capacity_reduction,
 			});
+			Ok(())
+		}
+
+		/// Sets the epoch period length (in blocks).
+		///
+		/// # Requires
+		/// * Root Origin
+		///
+		/// ### Errors
+		/// - Returns `Error::MaxEpochLengthExceeded` if `length` is greater than T::MaxEpochLength.
+		#[pallet::call_index(3)]
+		#[pallet::weight(T::WeightInfo::unstake())]
+		pub fn set_epoch_length(origin: OriginFor<T>, length: T::BlockNumber) -> DispatchResult {
+			ensure_root(origin)?;
+			ensure!(length <= T::MaxEpochLength::get(), Error::<T>::MaxEpochLengthExceeded);
+
+			EpochLength::<T>::set(length);
+
+			Self::deposit_event(Event::EpochLengthUpdated { blocks: length });
 			Ok(())
 		}
 	}
@@ -524,11 +562,6 @@ impl<T: Config> Pallet<T> {
 	) -> BalanceOf<T> {
 		let rate = Perbill::from_rational(unstaking_amount, total_amount_staked);
 		total_capacity.saturating_sub(rate.mul_ceil(total_capacity))
-	}
-
-	/// Get current epoch length in blocks.
-	fn get_epoch_length() -> T::BlockNumber {
-		<T>::MaxEpochLength::get()
 	}
 
 	fn start_new_epoch_if_needed(current_block: T::BlockNumber) -> Weight {
