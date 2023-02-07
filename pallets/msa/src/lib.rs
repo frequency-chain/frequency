@@ -109,19 +109,19 @@ mod signature_registry_tests;
 pub mod weights;
 
 /// The provider of a collective action interface, for example an instance of `pallet-collective`.
-pub trait ProposalProvider<AccountId, Proposal> {
+pub trait ProposalProvider<AccountId, Proposal, RuntimeOrigin> {
 	/// Add a new proposal.
 	/// Returns a proposal length and active proposals count if successful.
 	fn propose(
-		origin: OriginFor<T>,
+		who: AccountId,
 		threshold: u32,
 		proposal: Box<Proposal>,
 		length_bound: u32,
-	) -> DispatchResultWithPostInfo;
+	) -> Result<(u32, u32), DispatchError>;
 
 	/// Vote on a proposal
 	fn vote(
-		origin: OriginFor<T>,
+		origin: RuntimeOrigin,
 		proposal: Hash,
 		index: u32,
 		approve: bool,
@@ -161,7 +161,11 @@ pub mod pallet {
 		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
 
 		/// The Council proposal provider interface
-		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Proposal>;
+		type ProposalProvider: ProposalProvider<
+			Self::AccountId,
+			Self::Proposal,
+			Self::RuntimeOrigin,
+		>;
 
 		/// Maximum count of keys allowed per MSA
 		#[pallet::constant]
@@ -905,7 +909,7 @@ pub mod pallet {
 		pub fn request_to_be_provider(
 			origin: OriginFor<T>,
 			provider_name: Vec<u8>,
-		) -> DispatchResultWithPostInfo {
+		) -> DispatchResult {
 			let proposer = ensure_signed(origin)?;
 			let proposal: Box<T::Proposal> = Box::new(
 				(Call::<T>::create_provider_via_governance {
@@ -916,7 +920,8 @@ pub mod pallet {
 			);
 			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
 			let threshold = 1;
-			T::ProposalProvider::propose(proposer, threshold, proposal, proposal_len)
+			T::ProposalProvider::propose(proposer, threshold, proposal, proposal_len)?;
+			Ok(())
 		}
 
 		/// Create a provider by means of governance approval

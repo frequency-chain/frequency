@@ -46,7 +46,10 @@ pub use common_runtime::{
 
 use frame_support::{
 	construct_runtime,
-	dispatch::{DispatchClass, DispatchError, DispatchErrorWithPostInfo, PostDispatchInfo},
+	dispatch::{
+		DispatchClass, DispatchError, DispatchErrorWithPostInfo, DispatchResultWithPostInfo,
+		PostDispatchInfo,
+	},
 	parameter_types,
 	traits::{ConstU128, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
@@ -54,7 +57,6 @@ use frame_support::{
 
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	pallet_prelude::OriginFor,
 	EnsureRoot, RawOrigin,
 };
 
@@ -84,18 +86,20 @@ use frame_support::traits::Contains;
 /// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;
 
-impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
+impl pallet_msa::ProposalProvider<AccountId, RuntimeCall, RuntimeOrigin>
+	for CouncilProposalProvider
+{
 	fn propose(
-		origin: OriginFor<T>,
+		who: AccountId,
 		threshold: u32,
 		proposal: Box<RuntimeCall>,
 		length_bound: u32,
-	) -> DispatchResultWithPostInfo {
-		Council::propose(origin, threshold, proposal, length_bound)
+	) -> Result<(u32, u32), DispatchError> {
+		Council::do_propose_proposed(who, threshold, proposal, length_bound)
 	}
 
 	fn vote(
-		origin: OriginFor<T>,
+		origin: RuntimeOrigin,
 		proposal: Hash,
 		index: u32,
 		approve: bool,

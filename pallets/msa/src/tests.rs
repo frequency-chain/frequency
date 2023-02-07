@@ -2,7 +2,7 @@ use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	dispatch::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 	pallet_prelude::InvalidTransaction,
-	traits::Hash,
+	traits::{ChangeMembers, Hash},
 	BoundedBTreeMap,
 };
 
@@ -1818,12 +1818,16 @@ fn create_provider_via_governance() {
 
 		let proposal_len: u32 = proposal.encoded_size() as u32;
 
-		// For frequency_rococo, council members are ALICE, CHARLIE and EVE in the chain spec.
+		// Set up the council members
 		let council_member = test_public(1); // Use ALICE as the council member
+
+		let incoming = vec![];
+		let outgoing = vec![];
+		Council::change_members(&incoming, &outgoing, vec![council_member.clone()]);
 
 		// Vote YES on the proposal
 		assert_ok!(<Test as Config>::ProposalProvider::vote(
-			council_member,
+			RuntimeOrigin::signed(council_member),
 			proposal_hash.clone(),
 			proposal_index,
 			true
@@ -1855,6 +1859,23 @@ fn create_provider_via_governance() {
 			proposal_index,
 			proposal_len
 		));
+
+		// Find the Closed event and check if it passed
+		let closed_events: Vec<(u32, u32)> = System::events()
+			.iter()
+			.filter_map(|event| match event.event {
+				RuntimeEvent::Council(pallet_collective::Event::Closed {
+					proposal_hash: _,
+					yes,
+					no,
+				}) => Some((yes, no)),
+				_ => None,
+			})
+			.collect();
+
+		println!("CLOSED EVENTS={:?}", closed_events);
+		assert_eq!(closed_events.len(), 1);
+		assert_eq!(closed_events[0].0, 1); // There should be one YES vote to pass
 
 		// what is index?   what is proposal_weight_bound?  what is length_bound?
 		// do_close(origin, proposal_hash, index, proposal_weight_bound, length_bound);

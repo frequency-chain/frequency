@@ -6,12 +6,14 @@ use common_primitives::{
 };
 use frame_support::{
 	assert_ok,
-	dispatch::{DispatchErrorWithPostInfo, DispatchResultWithPostInfo, PostDispatchInfo},
+	dispatch::{
+		DispatchError, DispatchErrorWithPostInfo, DispatchResultWithPostInfo, PostDispatchInfo,
+	},
 	parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, OnFinalize, OnInitialize},
 	weights::Weight,
 };
-use frame_system::{pallet_prelude::OriginFor, EnsureRoot, EnsureSigned};
+use frame_system::{EnsureRoot, EnsureSigned};
 use pallet_collective;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
@@ -126,18 +128,20 @@ impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
 /// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;
 
-impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
+impl pallet_msa::ProposalProvider<AccountId, RuntimeCall, RuntimeOrigin>
+	for CouncilProposalProvider
+{
 	fn propose(
-		origin: OriginFor<T>,
+		who: AccountId,
 		threshold: u32,
 		proposal: Box<RuntimeCall>,
 		length_bound: u32,
-	) -> DispatchResultWithPostInfo {
-		Council::propose(origin, threshold, proposal, length_bound)
+	) -> Result<(u32, u32), DispatchError> {
+		Council::do_propose_proposed(who, threshold, proposal, length_bound)
 	}
 
 	fn vote(
-		origin: OriginFor<T>,
+		origin: RuntimeOrigin,
 		proposal: Hash,
 		index: u32,
 		approve: bool,
@@ -150,7 +154,7 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalPro
 		index: u32,
 		length_bound: u32,
 	) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo> {
-		Council::do_close(proposal_hash, index, Weight::zero(), length_bound)
+		Council::do_close(proposal_hash, index, Weight::MAX, length_bound)
 	}
 
 	fn proposal_of(hash: Hash) -> Option<RuntimeCall> {
