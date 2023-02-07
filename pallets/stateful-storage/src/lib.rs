@@ -276,6 +276,7 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		/// Get the itemized page for the given msa_id and schema_id.
 		pub fn get_itemized_page(
 			msa_id: MessageSourceId,
 			schema_id: SchemaId,

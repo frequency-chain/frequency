@@ -6,10 +6,11 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "../stateful-pallet-storage/fixtures/itemizedSchemaType";
 import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfaces";
-import { u16 } from "@polkadot/types";
+import { u16, u64 } from "@polkadot/types";
 
 describe("Stateful Pallet Storage", () => {
     let schemaId: SchemaId;
+    let schemaId_unsupported: SchemaId;
     let msa_id: MessageSourceId;
     let providerId: MessageSourceId;
     let providerKeys: KeyringPair;
@@ -34,7 +35,15 @@ describe("Stateful Pallet Storage", () => {
             [, schemaId] = event.data;
         }
         assert.notEqual(schemaId, undefined, "setup should populate schemaId");
-
+        // Create non supported schema
+        const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "OnChain");
+        const [event2] = await createSchema2.fundAndSend();
+        assert.notEqual(event2, undefined, "setup should return a SchemaCreated event");
+        if (event2 && createSchema2.api.events.schemas.SchemaCreated.is(event2)) {
+            const [, schemaId_unsupported] = event2.data;
+            assert.notEqual(schemaId_unsupported, undefined, "setup should populate schemaId_unsupported");
+        }
+        
         let keys = await createAndFundKeypair();
 
         // Create a  delegator msa
@@ -66,7 +75,8 @@ describe("Stateful Pallet Storage", () => {
         }
     });
 
-    describe("Itemized", () => {
+    describe("Itemized 😊/😥", () => {
+
         it("should be able to call applyItemizedAction and apply actions", async function () {
             
             // Add and update actions
@@ -88,10 +98,10 @@ describe("Stateful Pallet Storage", () => {
             let add_actions = [add_action, update_action];
             let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, msa_id, add_actions);
             await itemized_add_result_1.fundOperation();
-            const [palletEvent1, chainEvents ] = await itemized_add_result_1.signAndSend();
+            const [pageUpdateEvent1, chainEvents ] = await itemized_add_result_1.signAndSend();
             assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
-            assert.notEqual(palletEvent1, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
+            assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
             // Delete action
             const idx_1: u16 = new u16(ExtrinsicHelper.api.registry, 1)
             const remove_action_1 ={
@@ -100,10 +110,70 @@ describe("Stateful Pallet Storage", () => {
             let remove_actions = [remove_action_1];
             let itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, msa_id, remove_actions);
             await itemized_remove_result_1.fundOperation();
-            const [palletEvent2, chainEvents2 ] = await itemized_remove_result_1.signAndSend();
+            const [pageUpdateEvent2, chainEvents2 ] = await itemized_remove_result_1.signAndSend();
             assert.notEqual(chainEvents2["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents2["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
-            assert.notEqual(palletEvent2, undefined, "should have returned a event");
+            assert.notEqual(pageUpdateEvent2, undefined, "should have returned a event");
+        }).timeout(10000);
+
+        it("should fail to call applyItemizedAction with invalid schemaId", async function () {
+            const payload_1 = {
+                "message": "Hello World",
+            }
+            const add_action = {
+                "Add" : payload_1
+            }
+            let add_actions = [add_action];
+            let fake_schema_id = new u16(ExtrinsicHelper.api.registry, 999);      
+            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, fake_schema_id, msa_id, add_actions);
+            await itemized_add_result_1.fundOperation();
+            await assert.rejects(async () => {
+                await itemized_add_result_1.signAndSend();
+            }
+            , (err) => {
+                assert.notEqual(err, undefined, "should have returned an error");
+                return true;
+            });
+        }).timeout(10000);
+        
+        it("should fail to call applyItemizedAction with invalid schema location", async function () {
+            const payload_1 = {
+                "message": "Hello World",
+            }
+            const add_action = {
+                "Add" : payload_1
+            }
+            let add_actions = [add_action];    
+            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_unsupported, msa_id, add_actions);
+            await itemized_add_result_1.fundOperation();
+            await assert.rejects(async () => {
+                await itemized_add_result_1.signAndSend();
+            }
+            , (err) => {
+                assert.notEqual(err, undefined, "should have returned an error");
+                return true;
+            });
+        }).timeout(10000);
+
+        it("should fail to call applyItemizedAction with for un-delegated attempts", async function () {
+            const payload_1 = {
+                "message": "Hello World",
+            }
+            const add_action = {
+                "Add" : payload_1
+            }
+            let add_actions = [add_action];
+            let bad_msa_id =  new u64(ExtrinsicHelper.api.registry, 999)
+
+            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, bad_msa_id, add_actions);
+            await itemized_add_result_1.fundOperation();
+            await assert.rejects(async () => {
+                await itemized_add_result_1.signAndSend();
+            }
+            , (err) => {
+                assert.notEqual(err, undefined, "should have returned an error");
+                return true;
+            });
         }).timeout(10000);
     });
 });
