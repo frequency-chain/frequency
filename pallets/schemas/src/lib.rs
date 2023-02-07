@@ -82,6 +82,7 @@ mod serde;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use enumflags2::BitFlags;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -217,6 +218,7 @@ pub mod pallet {
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
+			settings: BoundedVec<SchemaSetting, T::SchemaModelMaxBytesBoundedVecLimit>,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
@@ -230,7 +232,7 @@ pub mod pallet {
 			);
 
 			Self::ensure_valid_model(&model_type, &model)?;
-			let schema_id = Self::add_schema(model, model_type, payload_location)?;
+			let schema_id = Self::add_schema(model, model_type, payload_location, settings)?;
 
 			Self::deposit_event(Event::SchemaCreated { key: sender, schema_id });
 			Ok(())
@@ -278,9 +280,14 @@ pub mod pallet {
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
+			settings_vec: BoundedVec<SchemaSetting, T::SchemaModelMaxBytesBoundedVecLimit>,
 		) -> Result<SchemaId, DispatchError> {
 			let schema_id = Self::get_next_schema_id()?;
-			let schema = Schema { model_type, model, payload_location };
+			let mut settings = SchemaSettings::all_disabled();
+			for i in settings_vec.into_inner() {
+				settings.set(i);
+			}
+			let schema = Schema { model_type, model, payload_location, settings };
 			<CurrentSchemaIdentifierMaximum<T>>::set(schema_id);
 			<Schemas<T>>::insert(schema_id, schema);
 			Ok(schema_id)

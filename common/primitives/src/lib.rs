@@ -11,6 +11,8 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
+/// macros
+pub mod macros;
 /// Structs and traits for the Messages pallet.
 pub mod messages;
 /// Structs and traits for the MSA pallet.
