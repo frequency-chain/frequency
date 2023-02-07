@@ -236,7 +236,7 @@ export class ExtrinsicHelper {
     }
 
     /** Stateful Storage Extrinsics */
-    public static applyItemizedAction(keys: KeyringPair, schemaId: SchemaId, msa_id: MessageSourceId, actions: any, ): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemizedAction( msa_id, schemaId, actions), keys, ExtrinsicHelper.api.events.statefulStorage.ItemizedActionApplied);
+    public static applyItemActions(keys: KeyringPair, schemaId: SchemaId, msa_id: MessageSourceId, actions: any, ): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActions( msa_id, schemaId, actions), keys, ExtrinsicHelper.api.events.statefulStorage.ItemizedActionApplied);
     }
 }

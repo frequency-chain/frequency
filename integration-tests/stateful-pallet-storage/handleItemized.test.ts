@@ -63,7 +63,7 @@ describe("Stateful Pallet Storage", () => {
                 }
             };
             let actions = [add_action, update_action, remove_action_0, remove_action_1];
-            let itemized_add_result = ExtrinsicHelper.applyItemizedAction(keys, schemaId, msa_id, actions);
+            let itemized_add_result = ExtrinsicHelper.applyItemActions(keys, schemaId, msa_id, actions);
             await itemized_add_result.fundOperation();
             const [ mutatableEvent, chainEvents ] = await itemized_add_result.signAndSend();
             assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
