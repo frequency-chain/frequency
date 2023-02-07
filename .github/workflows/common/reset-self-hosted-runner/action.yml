@@ -1,0 +1,19 @@
+name: Reset Self-hosted Runner
+description: Shared action that allows to reset a runner to its original state
+runs:
+  using: "composite"
+  steps:
+    - name: Remove Cargo Generated Artifacts
+      shell: bash
+      run: |
+        echo "Removing generated cargo artifacts..."
+        rm -fr ./target
+    - name: Remove NPM node Modules
+      shell: bash
+      run: |
+        find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +
+    - name: Prune docker Resources
+      shell: bash
+      run: |
+        docker system prune -a --volumes
+        docker image prune -a -f --filter "until=720h"
