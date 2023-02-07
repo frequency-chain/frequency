@@ -85,10 +85,9 @@ describe("📗 Stateful Pallet Storage", () => {
             await itemized_add_result_1.fundOperation();
             await assert.rejects(async () => {
                 await itemized_add_result_1.signAndSend();
-            }
-            , (err) => {
-                assert.notEqual(err, undefined, "should have returned an error");
-                return true;
+            },{
+                name: 'InvalidSchemaId',
+                section: 'statefulStorage',
             });
         }).timeout(10000);
         
@@ -104,10 +103,9 @@ describe("📗 Stateful Pallet Storage", () => {
             await itemized_add_result_1.fundOperation();
             await assert.rejects(async () => {
                 await itemized_add_result_1.signAndSend();
-            }
-            , (err) => {
-                assert.notEqual(err, undefined, "should have returned an error");
-                return true;
+            },{
+                name: 'SchemaPayloadLocationMismatch',
+                section: 'statefulStorage',
             });
         }).timeout(10000);
 
@@ -125,10 +123,9 @@ describe("📗 Stateful Pallet Storage", () => {
             await itemized_add_result_1.fundOperation();
             await assert.rejects(async () => {
                 await itemized_add_result_1.signAndSend();
-            }
-            , (err) => {
-                assert.notEqual(err, undefined, "should have returned an error");
-                return true;
+            },{
+                name: 'UnAuthorizedDelegate',
+                section: 'statefulStorage',
             });
         }).timeout(10000);
     });
