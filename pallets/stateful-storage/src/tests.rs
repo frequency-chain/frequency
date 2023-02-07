@@ -235,6 +235,169 @@ fn upsert_existing_page_modifies_page() {
 }
 
 #[test]
+fn remove_page_id_out_of_bounds_errors() {
+	new_test_ext().execute_with(|| {
+		// setup
+		let caller_1 = 1;
+		let msa_id = 2;
+		let schema_id = PAGINATED_SCHEMA;
+		let page_id = <Test as Config>::MaxPaginatedPageId::get() + 1;
+
+		assert_err!(
+			StatefulStoragePallet::remove_page(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				page_id,
+			),
+			Error::<Test>::PageIdExceedsMaxAllowed
+		);
+	})
+}
+
+#[test]
+fn remove_page_with_invalid_msa_errors() {
+	new_test_ext().execute_with(|| {
+		// setup
+		let caller_1 = 1000; // hard-coded in mocks to return None for MSA
+		let msa_id = 1;
+		let schema_id = 1;
+		let page_id = 1;
+
+		assert_err!(
+			StatefulStoragePallet::remove_page(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				page_id,
+			),
+			Error::<Test>::InvalidMessageSourceAccount
+		)
+	})
+}
+
+#[test]
+fn remove_page_with_invalid_schema_id_errors() {
+	new_test_ext().execute_with(|| {
+		// setup
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = INVALID_SCHEMA_ID;
+		let page_id = 1;
+
+		assert_err!(
+			StatefulStoragePallet::remove_page(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				page_id,
+			),
+			Error::<Test>::InvalidSchemaId
+		)
+	})
+}
+
+#[test]
+fn remove_page_with_invalid_schema_payload_location_errors() {
+	new_test_ext().execute_with(|| {
+		// setup
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let page_id = 1;
+
+		assert_err!(
+			StatefulStoragePallet::remove_page(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				page_id,
+			),
+			Error::<Test>::SchemaPayloadLocationMismatch
+		)
+	})
+}
+
+#[test]
+fn remove_page_with_no_delegation_errors() {
+	new_test_ext().execute_with(|| {
+		// setup
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = UNDELEGATED_PAGINATED_SCHEMA;
+		let page_id = 1;
+
+		assert_err!(
+			StatefulStoragePallet::remove_page(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				page_id,
+			),
+			Error::<Test>::UnAuthorizedDelegate
+		)
+	})
+}
+
+#[test]
+fn remove_nonexistent_page_succeeds_noop() {
+	new_test_ext().execute_with(|| {
+		// setup
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = PAGINATED_SCHEMA;
+		let page_id = 1`1	234l;'
+		 0 ;
+
+		// TODO: Get list of existing pages to verify the page doesn't already exist
+		// PROBLEM: Child Trie iterator doesn't appear to yield keys
+		// let key = schema_id.encode().to_vec();
+		// let i = StatefulChildTree::prefix_iterator::<Vec<u8>>(&msa_id, &[key]);
+		// let existing_node = i.filter(|k,v| {})
+
+		assert_ok!(StatefulStoragePallet::remove_page(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			page_id
+		));
+	})
+}
+
+#[test]
+fn remove_existing_page_succeeds() {
+	new_test_ext().execute_with(|| {
+		// setup
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = PAGINATED_SCHEMA;
+		let page_id = 11;
+		let payload = generate_payload_bytes(None);
+
+		assert_ok!(StatefulStoragePallet::upsert_page(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			page_id,
+			payload
+		));
+
+		assert_ok!(StatefulStoragePallet::remove_page(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			page_id
+		));
+
+		let schema_key = schema_id.encode().to_vec();
+		let page_key = page_id.encode().to_vec();
+		let page =
+			StatefulChildTree::try_read::<Vec<u8>>(&msa_id, &[schema_key, page_key]).unwrap();
+		assert_eq!(page, None);
+	})
+}
+
+#[test]
 fn parsing_a_well_formed_item_page_should_work() {
 	// arrange
 	let payloads = vec![generate_payload_bytes(Some(1)), generate_payload_bytes(Some(2))];
