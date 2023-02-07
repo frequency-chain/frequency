@@ -2,6 +2,7 @@ use super::*;
 use crate as pallet_capacity;
 use crate::mock::*;
 use frame_support::{assert_noop, assert_ok, BoundedVec};
+use sp_runtime::DispatchError::BadOrigin;
 use testing_utils::{register_provider, run_to_block, staking_events};
 
 #[test]
@@ -23,7 +24,8 @@ fn withdraw_unstaked_happy_path() {
 
 		let starting_account = Capacity::get_staking_account_for(&staker).unwrap();
 
-		// In Test mock, EpochLength = 10
+		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
+
 		// We want to advance to epoch 3 to unlock the first two sets.
 		run_to_block(31);
 		assert_eq!(3u32, Capacity::get_current_epoch());
@@ -54,6 +56,8 @@ fn withdraw_unstaked_correctly_sets_new_lock_state() {
 		assert_eq!(1, Balances::locks(&staker).len());
 		assert_eq!(10u64, Balances::locks(&staker)[0].amount);
 
+		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
+
 		// Epoch length = 10, we want to run to epoch 3
 		run_to_block(31);
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
@@ -76,6 +80,7 @@ fn withdraw_unstaked_cleans_up_storage_and_removes_all_locks_if_no_stake_left() 
 
 		let staker = 500;
 		Capacity::set_staking_account(&staker, &staking_account);
+		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
 
 		// Epoch Length = 10 and UnstakingThawPeriod = 2 (epochs)
 		run_to_block(30);
@@ -222,6 +227,8 @@ fn stake_increase_stake_amount_works() {
 		assert_eq!(Balances::locks(&account)[0].amount, 5);
 		assert_eq!(Balances::locks(&account)[0].reasons, WithdrawReasons::all().into());
 
+		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
+
 		// run to epoch 2
 		run_to_block(21);
 
@@ -246,7 +253,7 @@ fn stake_increase_stake_amount_works() {
 
 		let events = staking_events();
 		assert_eq!(
-			events.first().unwrap(),
+			events.last().unwrap(),
 			&Event::Staked { account, target, amount: additional_amount, capacity }
 		);
 
@@ -279,6 +286,8 @@ fn stake_multiple_accounts_can_stake_to_the_same_target() {
 			assert_eq!(Capacity::get_capacity_for(target).unwrap().remaining, 5);
 			assert_eq!(Capacity::get_capacity_for(target).unwrap().total_available, 5);
 			assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 0);
+
+			assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
 
 			// run to epoch 2
 			run_to_block(21);
@@ -319,6 +328,8 @@ fn stake_an_account_can_stake_to_multiple_targets() {
 
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target_1, amount_1));
 		assert_eq!(Capacity::get_staking_account_for(account).unwrap().total, 10);
+
+		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
 
 		// run to epoch 2
 		run_to_block(21);
@@ -525,5 +536,40 @@ fn unstake_errors_not_a_staking_account() {
 			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
 			Error::<Test>::StakingAccountNotFound
 		);
+	});
+}
+
+#[test]
+fn set_epoch_length_happy_path() {
+	new_test_ext().execute_with(|| {
+		let epoch_length: <Test as frame_system::Config>::BlockNumber = 9;
+		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), epoch_length));
+
+		let storage_epoch_length: <Test as frame_system::Config>::BlockNumber =
+			Capacity::get_epoch_length();
+		assert_eq!(epoch_length, storage_epoch_length);
+
+		System::assert_last_event(Event::EpochLengthUpdated { blocks: epoch_length }.into());
+	});
+}
+
+#[test]
+fn set_epoch_length_errors_when_greater_than_max_epoch_length() {
+	new_test_ext().execute_with(|| {
+		let epoch_length: <Test as frame_system::Config>::BlockNumber = 101;
+
+		assert_noop!(
+			Capacity::set_epoch_length(RuntimeOrigin::root(), epoch_length),
+			Error::<Test>::MaxEpochLengthExceeded
+		);
+	});
+}
+
+#[test]
+fn set_epoch_length_errors_when_not_submitted_as_root() {
+	new_test_ext().execute_with(|| {
+		let epoch_length: <Test as frame_system::Config>::BlockNumber = 11;
+
+		assert_noop!(Capacity::set_epoch_length(RuntimeOrigin::signed(1), epoch_length), BadOrigin);
 	});
 }
