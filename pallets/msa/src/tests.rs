@@ -1781,8 +1781,9 @@ fn add_removed_key_to_msa_pass() {
 	});
 }
 
+/// Test that a request to be a provider, makes the MSA a provider after the council approves it.
 #[test]
-fn create_provider_via_governance() {
+fn request_to_be_provider() {
 	new_test_ext().execute_with(|| {
 		// Create a new MSA account and request that it become a provider
 		let (_new_msa_id, key_pair) = create_account();
