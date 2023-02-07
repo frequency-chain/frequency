@@ -6,7 +6,7 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "../stateful-pallet-storage/fixtures/itemizedSchemaType";
 import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfaces";
-import { PalletStatefulStorageItemAction } from "@polkadot/types/lookup";
+import { u16 } from "@polkadot/types";
 
 describe("Stateful Pallet Storage", () => {
     let schemaId: SchemaId;
@@ -57,7 +57,8 @@ describe("Stateful Pallet Storage", () => {
         const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
         const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
-        const [grantDelegationEvent] = await grantDelegationOp.fundAndSend();
+        await grantDelegationOp.fundOperation();
+        const [grantDelegationEvent] = await grantDelegationOp.signAndSend();
         assert.notEqual(grantDelegationEvent, undefined, "should have returned DelegationGranted event");
         if (grantDelegationEvent && grantDelegationOp.api.events.msa.DelegationGranted.is(grantDelegationEvent)) {
             assert.deepEqual(grantDelegationEvent.data.providerId, providerId, 'provider IDs should match');
@@ -69,33 +70,40 @@ describe("Stateful Pallet Storage", () => {
         it("should be able to call applyItemizedAction and apply actions", async function () {
             
             // Add and update actions
-            const add_action =({
-                Add: "0x0000000000000000000000000000000000000000000000000000000000000001"
-            });
-            const update_action =({
-                Add: "0x0000000000000000000000000000000000000000000000000000000000000002"
-            });
-            let actions = [add_action, update_action];
-            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, msa_id, actions);
-            await itemized_add_result_1.fundAndSend();
-            const [ ,chainEvents ] = await itemized_add_result_1.fundAndSend();
+            const payload_1 = {
+                "message": "Hello World",
+            }
+            const add_action = {
+                "Add" : payload_1
+            }
+
+            const payload_2 =  {
+                "message": "Hello World Again",
+            }
+
+            const update_action = {
+                "Add" : payload_2
+            }
+
+            let add_actions = [add_action, update_action];
+            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, msa_id, add_actions);
+            await itemized_add_result_1.fundOperation();
+            const [palletEvent1, chainEvents ] = await itemized_add_result_1.signAndSend();
             assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
-
+            assert.notEqual(palletEvent1, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
             // Delete action
-            const remove_action_1 =({
-                Remove: 0,
-            });
-            const remove_action_2 =({
-                Remove: 1,
-            });
-            
-            let remove_actions = [remove_action_1, remove_action_2];
+            const idx_1: u16 = new u16(ExtrinsicHelper.api.registry, 1)
+            const remove_action_1 ={
+                "Remove": idx_1,
+            }
+            let remove_actions = [remove_action_1];
             let itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, msa_id, remove_actions);
-            await itemized_remove_result_1.fundAndSend();
-            const [ , chainEvents2 ] = await itemized_remove_result_1.fundAndSend();
+            await itemized_remove_result_1.fundOperation();
+            const [palletEvent2, chainEvents2 ] = await itemized_remove_result_1.signAndSend();
             assert.notEqual(chainEvents2["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents2["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
+            assert.notEqual(palletEvent2, undefined, "should have returned a event");
         }).timeout(10000);
     });
 });
