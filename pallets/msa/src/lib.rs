@@ -895,7 +895,6 @@ pub mod pallet {
 		/// - [`TooManyProposals`](Error::TooManyProposals) - Too many proposals.
 		/// - [`DuplicateProposal`](Error::TooManyProposals) - Duplicate proposal.
 		/// - [`WrongProposalLength`](Error::WrongProposalLength) - Duplicate proposal.
-		/// 
 		#[pallet::call_index(11)]
 		#[pallet::weight(1000)]
 		pub fn request_to_be_provider(
