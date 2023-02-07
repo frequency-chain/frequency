@@ -161,9 +161,6 @@ describe("📗 Stateful Pallet Storage", () => {
         }).timeout(10000);
 
         it("🛑 should fail to call remove page with invalid page index", async function () {
-            const payload_1 = {
-                "message": "Hello World",
-            }
             let bad_page_index =  new u32(ExtrinsicHelper.api.registry, 999)
 
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, msa_id, bad_page_index);
