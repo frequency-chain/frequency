@@ -2,8 +2,10 @@ use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	dispatch::{DispatchInfo, GetDispatchInfo, Pays, Weight},
 	pallet_prelude::InvalidTransaction,
+	traits::Hash,
 	BoundedBTreeMap,
 };
+
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Encode, Pair};
 use sp_runtime::{
 	traits::SignedExtension, transaction_validity::TransactionValidity, ArithmeticError,
@@ -15,7 +17,7 @@ use crate::{
 	mock::*,
 	types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, CurrentMsaIdentifierMaximum, DispatchResult, Error, Event,
-	ProviderToRegistryEntry, ValidityError,
+	ProposalProvider, ProviderToRegistryEntry, ValidityError,
 };
 
 use common_primitives::{
@@ -1782,11 +1784,94 @@ fn add_removed_key_to_msa_pass() {
 #[test]
 fn create_provider_via_governance() {
 	new_test_ext().execute_with(|| {
+		// Create a new MSA account and request that it become a provider
 		let (_new_msa_id, key_pair) = create_account();
 		_ = Msa::request_to_be_provider(
 			RuntimeOrigin::signed(key_pair.public().into()),
 			Vec::from("ACME Widgets"),
 		);
+
+		// Find the Proposed event and get it's hash and index so it can be voted on
+		let proposed_events: Vec<(u32, Hash)> = System::events()
+			.iter()
+			.filter_map(|event| match event.event {
+				RuntimeEvent::Council(pallet_collective::Event::Proposed {
+					account: _,
+					proposal_index,
+					proposal_hash,
+					threshold: _,
+				}) => Some((proposal_index, proposal_hash)),
+				_ => None,
+			})
+			.collect();
+
+		println!("PROPOSED EVENTS={:?}", proposed_events);
+		assert_eq!(proposed_events.len(), 1);
+
+		let proposal_index = proposed_events[0].0;
+		println!("PROPOSAL INDEX={:?}", proposal_index);
+
+		let proposal_hash = proposed_events[0].1;
+		println!("PROPOSAL HASH={:?}", proposal_hash);
+
+		let proposal = <Test as Config>::ProposalProvider::proposal_of(proposal_hash).unwrap();
+
+		let proposal_len: u32 = proposal.encoded_size() as u32;
+
+		// Vote YES on the proposal
+		assert_ok!(<Test as Config>::ProposalProvider::vote(
+			key_pair.public().into(),
+			proposal_hash.clone(),
+			proposal_index,
+			true
+		));
+
+		// Find the Voted event and check if it passed
+		let voted_events: Vec<(bool, u32, u32)> = System::events()
+			.iter()
+			.filter_map(|event| match event.event {
+				RuntimeEvent::Council(pallet_collective::Event::Voted {
+					account: _,
+					proposal_hash: _,
+					voted,
+					yes,
+					no,
+				}) => Some((voted, yes, no)),
+				_ => None,
+			})
+			.collect();
+
+		println!("VOTED EVENTS={:?}", voted_events);
+		assert_eq!(voted_events.len(), 1);
+		assert_eq!(voted_events[0].0, true); // Was it voted on?
+		assert_eq!(voted_events[0].1, 1); // There should be one YES vote to pass
+
+		// Close the voting
+		assert_ok!(<Test as Config>::ProposalProvider::close(
+			proposal_hash,
+			proposal_index,
+			proposal_len
+		));
+
+		// could potentially get the hash from the event by looking for Event::Proposed
+
+		// get hash of proposal.  we can asssume it's the last or only proposal in the list.
+		// let proposal_hash =
+		// what is proposal index??
+		// do_vote(origin, proposal_hash, index, true);
+		// Event::Voted
+
+		// what is index?   what is proposal_weight_bound?  what is length_bound?
+		// do_close(origin, proposal_hash, index, proposal_weight_bound, length_bound);
+		// Event::Closed
+
+		// check if user became a provider
+
+		// let key = twox_128("Collective") + twox_128("CouncilProposals");
+		// let encoded_key = scale_encode(key);
+
+		// let storage_key = blake2_128_concat(encoded_key);
+		// let proposals = state_getStorage(storage_key);
 	})
 }
 

@@ -1,10 +1,15 @@
 use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
-use common_primitives::{msa::MessageSourceId, node::BlockNumber, utils::wrap_binary_data};
+use common_primitives::{
+	msa::MessageSourceId,
+	node::{BlockNumber, Hash},
+	utils::wrap_binary_data,
+};
 use frame_support::{
 	assert_ok,
-	dispatch::DispatchError,
+	dispatch::{DispatchError, DispatchErrorWithPostInfo, PostDispatchInfo},
 	parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, OnFinalize, OnInitialize},
+	weights::Weight,
 };
 use frame_system::{EnsureRoot, EnsureSigned};
 use pallet_collective;
@@ -129,6 +134,27 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalPro
 		length_bound: u32,
 	) -> Result<(u32, u32), DispatchError> {
 		Council::do_propose_proposed(who, threshold, proposal, length_bound)
+	}
+
+	fn vote(
+		who: AccountId,
+		proposal: Hash,
+		index: u32,
+		approve: bool,
+	) -> Result<bool, DispatchError> {
+		Council::do_vote(who, proposal, index, approve)
+	}
+
+	fn close(
+		proposal_hash: Hash,
+		index: u32,
+		length_bound: u32,
+	) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo> {
+		Council::do_close(proposal_hash, index, Weight::zero(), length_bound)
+	}
+
+	fn proposal_of(hash: Hash) -> Option<RuntimeCall> {
+		Council::proposal_of(hash)
 	}
 }
 

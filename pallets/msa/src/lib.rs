@@ -56,10 +56,10 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
+	dispatch::{DispatchErrorWithPostInfo, DispatchInfo, DispatchResult, PostDispatchInfo},
 	ensure, log,
 	pallet_prelude::*,
-	traits::IsSubType,
+	traits::{Hash, IsSubType},
 };
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -118,6 +118,24 @@ pub trait ProposalProvider<AccountId, Proposal> {
 		proposal: Box<Proposal>,
 		length_bound: u32,
 	) -> Result<(u32, u32), DispatchError>;
+
+	/// Vote on a proposal
+	fn vote(
+		who: AccountId,
+		proposal: Hash,
+		index: u32,
+		approve: bool,
+	) -> Result<bool, DispatchError>;
+
+	/// Close voting on a proposal
+	fn close(
+		proposal_hash: Hash,
+		index: u32,
+		length_bound: u32,
+	) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo>;
+
+	/// Get proposal by hash
+	fn proposal_of(hash: Hash) -> Option<Proposal>;
 }
 #[frame_support::pallet]
 pub mod pallet {
@@ -332,6 +350,11 @@ pub mod pallet {
 
 			/// The Delegator MSA Id
 			delegator_id: DelegatorId,
+		},
+		/// A proposal motion has been created
+		CreateProviderProposalCreated {
+			/// A Blake H256 hash
+			proposal_hash: Vec<u8>,
 		},
 	}
 
@@ -894,6 +917,7 @@ pub mod pallet {
 			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
 			let threshold = 1;
 			T::ProposalProvider::propose_proposal(proposer, threshold, proposal, proposal_len)?;
+
 			Ok(())
 		}
 
