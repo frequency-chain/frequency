@@ -407,7 +407,7 @@ fn parsing_a_well_formed_item_page_should_work() {
 	let page = create_itemized_page_from(&payloads);
 
 	// act
-	let parsed = page.parse_as_itemized();
+	let parsed = page.parse_as_itemized(true);
 
 	// assert
 	assert_ok!(&parsed);
@@ -436,7 +436,7 @@ fn parsing_item_with_wrong_payload_size_should_return_parsing_error() {
 	let page: TestPage = Page::try_from(buffer).unwrap();
 
 	// act
-	let parsed = page.parse_as_itemized();
+	let parsed = page.parse_as_itemized(true);
 
 	// assert
 	assert_eq!(parsed, Err(PageError::ErrorParsing("wrong payload size")));
@@ -556,7 +556,7 @@ fn child_tree_iterator() {
 		let msa_id = 1;
 		let mut arr: Vec<(Vec<u8>, TestStruct)> = Vec::new();
 		for i in 1..=10 {
-			let k = [b"key", &i.encode()[..]].concat();
+			let k = i.encode();
 			arr.push((
 				k,
 				TestStruct {
@@ -567,18 +567,18 @@ fn child_tree_iterator() {
 			));
 		}
 		for (k, t) in arr.as_slice() {
-			let keys = &[k.to_owned()];
-			StatefulChildTree::write(&msa_id, keys, t);
+			let keys = vec![k.to_owned()];
+			StatefulChildTree::write(&msa_id, &keys[..], t);
 		}
 
 		// act
-		let mut v = Vec::new();
 		let nodes = StatefulChildTree::prefix_iterator::<TestStruct>(&msa_id, &[]);
-		for n in nodes {
-			v.push(n);
-		}
 
-		// assert
-		assert_eq!(v, arr);
+		let mut count = 0;
+		for n in nodes {
+			assert!(arr.contains(&n));
+			count += 1;
+		}
+		assert_eq!(count, arr.len());
 	});
 }

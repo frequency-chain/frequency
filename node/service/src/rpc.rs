@@ -49,6 +49,7 @@ where
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_messages_runtime_api::MessagesRuntimeApi<Block>,
 	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block>,
+	C::Api: pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block>,
 	C::Api: pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId>,
 	P: TransactionPool + Sync + Send + 'static,
 {
@@ -59,6 +60,7 @@ where
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
 	use pallet_schemas_rpc::{SchemasApiServer, SchemasHandler};
+	use pallet_stateful_storage_rpc::{StatefulStorageApiServer, StatefulStorageHandler};
 
 	let mut module = RpcExtension::new(());
 	let FullDeps { client, pool, deny_unsafe, command_sink } = deps;
@@ -67,7 +69,8 @@ where
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 	module.merge(MessagesHandler::new(client.clone()).into_rpc())?;
 	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;
-	module.merge(MsaHandler::new(client).into_rpc())?;
+	module.merge(MsaHandler::new(client.clone()).into_rpc())?;
+	module.merge(StatefulStorageHandler::new(client).into_rpc())?;
 	if let Some(command_sink) = command_sink {
 		module.merge(
 			// We provide the rpc handler with the sending end of the channel to allow the rpc

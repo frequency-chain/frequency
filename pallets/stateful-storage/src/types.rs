@@ -68,7 +68,7 @@ impl<PageDataSize: Get<u32>> TryFrom<Vec<u8>> for Page<PageDataSize> {
 impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	/// applies all actions to specified page and returns the updated page
 	pub fn apply_item_actions(&self, actions: &[ItemAction]) -> Result<Self, PageError> {
-		let mut parsed = self.parse_as_itemized()?;
+		let mut parsed = self.parse_as_itemized(true)?;
 
 		let mut updated_page_buffer = Vec::with_capacity(parsed.page_size);
 		let mut add_buffer = Vec::new();
@@ -105,7 +105,7 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	}
 
 	/// Parses all the items inside an ItemPage
-	pub fn parse_as_itemized(&self) -> Result<ParsedItemPage, PageError> {
+	pub fn parse_as_itemized(&self, include_header: bool) -> Result<ParsedItemPage, PageError> {
 		let mut count = 0u16;
 		let mut items = BTreeMap::new();
 		let mut offset = 0;
@@ -122,7 +122,15 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 				PageError::ErrorParsing("wrong payload size")
 			);
 
-			items.insert(count, &self.data[offset..(offset + item_total_length)]);
+			items.insert(
+				count,
+				match include_header {
+					true => &self.data[offset..(offset + item_total_length)],
+					false =>
+						&self.data
+							[(offset + ItemHeader::max_encoded_len())..(offset + item_total_length)],
+				},
+			);
 			offset += item_total_length;
 			count = count.checked_add(1).ok_or(PageError::ArithmeticOverflow)?;
 		}

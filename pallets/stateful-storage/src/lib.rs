@@ -50,23 +50,26 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+use codec::{Decode, Encode};
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
+use sp_std::prelude::*;
 
 mod stateful_child_tree;
 pub mod types;
 
 pub mod weights;
 
+use crate::{
+	stateful_child_tree::{StatefulChildTree, StatefulPageKeyPart},
+	types::Page,
+};
 use common_primitives::{
 	msa::{DelegatorId, MessageSourceId, MsaValidator, ProviderId, SchemaGrantValidator},
 	schema::{PayloadLocation, SchemaId, SchemaProvider},
+	stateful_storage::PageResponse,
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
-use frame_system::{ensure_signed, pallet_prelude::OriginFor};
-
-use sp_std::prelude::*;
-
 pub use pallet::*;
 pub use weights::*;
 
@@ -83,6 +86,7 @@ pub mod pallet {
 		stateful_storage::PageId,
 	};
 	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -319,23 +323,88 @@ pub mod pallet {
 			Ok(())
 		}
 	}
-
-	impl<T: Config> Pallet<T> {
-		pub fn get_itemized_page(
-			msa_id: MessageSourceId,
-			schema_id: SchemaId,
-		) -> Page<T::MaxItemizedPageSizeBytes> {
-			let storage_key = &schema_id.encode()[..];
-			let keys = vec![storage_key.to_vec()];
-			let page_response =
-				StatefulChildTree::try_read::<Page<T::MaxItemizedPageSizeBytes>>(&msa_id, &keys)
-					.map_or_else(|_| Page::default(), |page| page.unwrap_or_default());
-			page_response
-		}
-	}
 }
 
 impl<T: Config> Pallet<T> {
+	/// This function returns all the pages associated with `msa_id` and `schema_id` params
+	/// and support both storage types
+	/// Itemized - For this storage it parses all the items and returns each item with its index
+	/// Paginated - For this storage it finds all the pages and return each page with its pageId
+	///
+	/// [Warning] since this function iterates over all the potential keys it should never called
+	/// from runtime.
+	pub fn get_pages(msa_id: MessageSourceId, schema_id: SchemaId) -> Vec<PageResponse> {
+		let encoded = vec![schema_id.encode()];
+		let mut result = Vec::new();
+		if let Some(schema) = T::SchemaProvider::get_schema_by_id(schema_id) {
+			match schema.payload_location {
+				PayloadLocation::Itemized => {
+					if let Ok(Some(page)) = StatefulChildTree::try_read::<
+						Page<T::MaxItemizedPageSizeBytes>,
+					>(&msa_id, &encoded[..])
+					{
+						match page.parse_as_itemized(false) {
+							Ok(parsed) => {
+								let mut pages: Vec<PageResponse> = parsed
+									.items
+									.iter()
+									.map(|(key, v)| {
+										PageResponse::new(*key, msa_id, schema_id, v.to_vec())
+									})
+									.collect();
+								result.append(&mut pages);
+							},
+							Err(e) => {
+								log::debug!(
+								"error parsing itemized page for msa_id {} and schema_id {} with error {:?}",
+								msa_id,
+								schema_id,
+								e);
+							},
+						}
+					}
+				},
+				PayloadLocation::Paginated => {
+					let keys: Vec<StatefulPageKeyPart> = vec![schema_id.encode().to_vec()];
+					let mut pages: Vec<PageResponse> = StatefulChildTree::prefix_iterator::<
+						Page<T::MaxPaginatedPageSizeBytes>,
+					>(&msa_id, &keys[..])
+					.filter_map(|(key, v)| match <u16>::decode(&mut &key[..]) {
+						//TODO: decode to PageId
+						Ok(k) => Some(PageResponse::new(k, msa_id, schema_id, v.data.into_inner())),
+						Err(_) => {
+							log::debug!(
+								"error parsing pageId from key {:?} for msa_id {} and schema_id {}",
+								key,
+								msa_id,
+								schema_id
+							);
+							None
+						},
+					})
+					.collect();
+					result.append(&mut pages);
+				},
+				PayloadLocation::OnChain | PayloadLocation::IPFS => {
+					// ignoring these locations, since they are not associated with stateful pallet
+				},
+			};
+		}
+		result
+	}
+
+	pub fn get_itemized_page(
+		msa_id: MessageSourceId,
+		schema_id: SchemaId,
+	) -> Page<T::MaxItemizedPageSizeBytes> {
+		let storage_key = &schema_id.encode()[..];
+		let keys = vec![storage_key.to_vec()];
+		let page_response =
+			StatefulChildTree::try_read::<Page<T::MaxItemizedPageSizeBytes>>(&msa_id, &keys)
+				.map_or_else(|_| Page::default(), |page| page.unwrap_or_default());
+		page_response
+	}
+
 	fn check_schema_and_grants(
 		provider_key: T::AccountId,
 		state_owner_msa_id: MessageSourceId,
