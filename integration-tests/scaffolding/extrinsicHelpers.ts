@@ -239,4 +239,12 @@ export class ExtrinsicHelper {
     public static applyItemActions(keys: KeyringPair, schemaId: SchemaId, msa_id: MessageSourceId, actions: any, ): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActions( msa_id, schemaId, actions), keys, ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated);
     }
+
+    public static removePage(keys: KeyringPair, schemaId: SchemaId, msa_id: MessageSourceId, page_id: any, ): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.removePage( msa_id, schemaId, page_id), keys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageRemoved);
+    }
+
+    public static upsertPage(keys: KeyringPair, schemaId: SchemaId, msa_id: MessageSourceId, page_id: any, payload: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.upsertPage( msa_id, schemaId, page_id, payload), keys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated);
+    }
 }

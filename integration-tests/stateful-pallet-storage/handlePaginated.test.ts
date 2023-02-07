@@ -1,10 +1,10 @@
-// Integration tests for pallets/stateful-pallet-storage/handleItemized.ts
+// Integration tests for pallets/stateful-pallet-storage/handlepaginated.ts
 import "@frequency-chain/api-augment";
 import assert from "assert";
 import { createAndFundKeypair, generateDelegationPayload, signPayloadSr25519 } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { AVRO_CHAT_MESSAGE } from "../stateful-pallet-storage/fixtures/itemizedSchemaType";
+import { AVRO_CHAT_MESSAGE } from "./fixtures/itemizedSchemaType";
 import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfaces";
 import { u16, u64 } from "@polkadot/types";
 
@@ -28,8 +28,8 @@ describe("📗 Stateful Pallet Storage", () => {
         }
         assert.notEqual(providerId, undefined, "setup should populate providerId");
 
-        // Create a schema for Itemized PayloadLocation
-        const createSchema = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
+        // Create a schema for Paginated PayloadLocation
+        const createSchema = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
         const [event] = await createSchema.fundAndSend();
         if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
             [, schemaId] = event.data;
@@ -75,60 +75,52 @@ describe("📗 Stateful Pallet Storage", () => {
         }
     });
 
-    describe("Itemized Storage Tests 😊/😥", () => {
+    describe("Paginated Storage Upsert Tests 😊/😥", () => {
 
-        it("✅ should be able to call applyItemizedAction and apply actions", async function () {
+        it("✅ should be able to call upsert page and add a page and remove a page via id", async function () {
             
             // Add and update actions
             const payload_1 = {
                 "message": "Hello World",
-            }
-            const add_action = {
-                "Add" : payload_1
             }
 
             const payload_2 =  {
                 "message": "Hello World Again",
             }
 
-            const update_action = {
-                "Add" : payload_2
-            }
-
-            let add_actions = [add_action, update_action];
-            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, msa_id, add_actions);
-            await itemized_add_result_1.fundOperation();
-            const [pageUpdateEvent1, chainEvents ] = await itemized_add_result_1.signAndSend();
+            let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, msa_id, 0, payload_1);
+            await paginated_add_result_1.fundOperation();
+            const [pageUpdateEvent1, chainEvents ] = await paginated_add_result_1.signAndSend();
             assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
-            assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
-            // Delete action
-            const idx_1: u16 = new u16(ExtrinsicHelper.api.registry, 1)
-            const remove_action_1 ={
-                "Remove": idx_1,
-            }
-            let remove_actions = [remove_action_1];
-            let itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, msa_id, remove_actions);
-            await itemized_remove_result_1.fundOperation();
-            const [pageUpdateEvent2, chainEvents2 ] = await itemized_remove_result_1.signAndSend();
+            assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStoragepaginatedActionApplied event");
+            
+            // Add another page 
+            let paginated_add_result_2 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, msa_id, 1, payload_2);
+            await paginated_add_result_2.fundOperation();
+            const [pageUpdateEvent2, chainEvents2 ] = await paginated_add_result_2.signAndSend();
             assert.notEqual(chainEvents2["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents2["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
-            assert.notEqual(pageUpdateEvent2, undefined, "should have returned a event");
+            assert.notEqual(pageUpdateEvent2, undefined, "should have returned a PalletStatefulStoragepaginatedActionApplied event");
+
+            // Remove the second page
+            let paginated_remove_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, msa_id, 1);
+            await paginated_remove_result_1.fundOperation();
+            const [pageRemove, chainEvents3] = await paginated_remove_result_1.signAndSend();
+            assert.notEqual(chainEvents3["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
+            assert.notEqual(chainEvents3["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
+            assert.notEqual(pageRemove, undefined, "should have returned a event");
         }).timeout(10000);
 
-        it("🛑 should fail to call applyItemizedAction with invalid schemaId", async function () {
+        it("🛑 should fail to call upsert page with invalid schemaId", async function () {
             const payload_1 = {
                 "message": "Hello World",
             }
-            const add_action = {
-                "Add" : payload_1
-            }
-            let add_actions = [add_action];
             let fake_schema_id = new u16(ExtrinsicHelper.api.registry, 999);      
-            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, fake_schema_id, msa_id, add_actions);
-            await itemized_add_result_1.fundOperation();
+            let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, fake_schema_id, msa_id, 0, payload_1);
+            await paginated_add_result_1.fundOperation();
             await assert.rejects(async () => {
-                await itemized_add_result_1.signAndSend();
+                await paginated_add_result_1.signAndSend();
             }
             , (err) => {
                 assert.notEqual(err, undefined, "should have returned an error");
@@ -136,18 +128,14 @@ describe("📗 Stateful Pallet Storage", () => {
             });
         }).timeout(10000);
         
-        it("🛑 should fail to call applyItemizedAction with invalid schema location", async function () {
+        it("🛑 should fail to call upsert page with invalid schema location", async function () {
             const payload_1 = {
                 "message": "Hello World",
             }
-            const add_action = {
-                "Add" : payload_1
-            }
-            let add_actions = [add_action];    
-            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_unsupported, msa_id, add_actions);
-            await itemized_add_result_1.fundOperation();
+            let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId_unsupported, msa_id, 0, payload_1);
+            await paginated_add_result_1.fundOperation();
             await assert.rejects(async () => {
-                await itemized_add_result_1.signAndSend();
+                await paginated_add_result_1.signAndSend();
             }
             , (err) => {
                 assert.notEqual(err, undefined, "should have returned an error");
@@ -155,20 +143,16 @@ describe("📗 Stateful Pallet Storage", () => {
             });
         }).timeout(10000);
 
-        it("🛑 should fail to call applyItemizedAction with for un-delegated attempts", async function () {
+        it("🛑 should fail to call upsert page with for un-delegated attempts", async function () {
             const payload_1 = {
                 "message": "Hello World",
             }
-            const add_action = {
-                "Add" : payload_1
-            }
-            let add_actions = [add_action];
             let bad_msa_id =  new u64(ExtrinsicHelper.api.registry, 999)
 
-            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, bad_msa_id, add_actions);
-            await itemized_add_result_1.fundOperation();
+            let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, bad_msa_id, 0, payload_1);
+            await paginated_add_result_1.fundOperation();
             await assert.rejects(async () => {
-                await itemized_add_result_1.signAndSend();
+                await paginated_add_result_1.signAndSend();
             }
             , (err) => {
                 assert.notEqual(err, undefined, "should have returned an error");
