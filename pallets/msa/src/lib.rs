@@ -902,6 +902,7 @@ pub mod pallet {
 			);
 			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
 			let threshold = 1;
+
 			T::ProposalProvider::propose(proposer, threshold, proposal, proposal_len)?;
 			Ok(())
 		}

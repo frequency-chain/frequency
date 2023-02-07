@@ -1805,18 +1805,11 @@ fn create_provider_via_governance() {
 			})
 			.collect();
 
-		println!("PROPOSED EVENTS={:?}", proposed_events);
 		assert_eq!(proposed_events.len(), 1);
 
 		let proposal_index = proposed_events[0].0;
-		println!("PROPOSAL INDEX={:?}", proposal_index);
-
 		let proposal_hash = proposed_events[0].1;
-		println!("PROPOSAL HASH={:?}", proposal_hash);
-
-		// let proposal = <Test as Config>::ProposalProvider::proposal_of(proposal_hash).unwrap();
 		let proposal = Council::proposal_of(proposal_hash).unwrap();
-
 		let proposal_len: u32 = proposal.encoded_size() as u32;
 
 		// Set up the council members
@@ -1849,7 +1842,6 @@ fn create_provider_via_governance() {
 			})
 			.collect();
 
-		println!("VOTED EVENTS={:?}", voted_events);
 		assert_eq!(voted_events.len(), 1);
 		assert_eq!(voted_events[0].0, true); // Was it voted on?
 		assert_eq!(voted_events[0].1, 1); // There should be one YES vote to pass
@@ -1862,11 +1854,6 @@ fn create_provider_via_governance() {
 			Weight::MAX,
 			proposal_len
 		));
-		// assert_ok!(<Test as Config>::ProposalProvider::close(
-		// 	proposal_hash,
-		// 	proposal_index,
-		// 	proposal_len
-		// ));
 
 		// Find the Closed event and check if it passed
 		let closed_events: Vec<(u32, u32)> = System::events()
@@ -1881,9 +1868,11 @@ fn create_provider_via_governance() {
 			})
 			.collect();
 
-		println!("CLOSED EVENTS={:?}", closed_events);
 		assert_eq!(closed_events.len(), 1);
 		assert_eq!(closed_events[0].0, 1); // There should be one YES vote to pass
+
+		// Confirm that the MSA is now a provider
+		assert!(Msa::is_registered_provider(_new_msa_id));
 	})
 }
 
