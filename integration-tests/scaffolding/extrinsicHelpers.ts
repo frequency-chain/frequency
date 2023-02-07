@@ -1,14 +1,15 @@
 import { ApiRx } from "@polkadot/api";
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { Compact, u128, u16, u64 } from "@polkadot/types";
-import { FrameSystemAccountInfo } from "@polkadot/types/lookup";
+import { Compact, u128, u16, u64, Vec } from "@polkadot/types";
+import { FrameSystemAccountInfo, PalletStatefulStorageItemAction } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
 import { devAccounts, log, Sr25519Signature } from "./helpers";
 import { connect } from "./apiConnection";
 import { DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
+import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfaces";
 
 export type AddKeyData = { msaId?: u64; expiration?: any; newPublicKey?: any; }
 export type AddProviderPayload = { authorizedMsaId?: u64; schemaIds?: u16[], expiration?: any; }
@@ -179,7 +180,7 @@ export class ExtrinsicHelper {
     }
 
     /** Schema Extrinsics */
-    public static createSchema(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS"): Extrinsic {
+    public static createSchema(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS"| "Itemized" | "Paginated"): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.createSchema(JSON.stringify(model), modelType, payloadLocation), keys, ExtrinsicHelper.api.events.schemas.SchemaCreated);
     }
 
@@ -232,5 +233,10 @@ export class ExtrinsicHelper {
     /** Messages Extrinsics */
     public static addIPFSMessage(keys: KeyringPair, schemaId: any, cid: string, payload_length: number): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addIpfsMessage(schemaId, cid, payload_length), keys, ExtrinsicHelper.api.events.messages.MessagesStored);
+    }
+
+    /** Stateful Storage Extrinsics */
+    public static applyItemizedAction(keys: KeyringPair, schemaId: SchemaId, msa_id: MessageSourceId, actions: any, ): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemizedAction( msa_id, schemaId, actions), keys, ExtrinsicHelper.api.events.statefulStorage.ItemizedActionApplied);
     }
 }
