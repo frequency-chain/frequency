@@ -17,24 +17,24 @@ struct TestCase<T: Config> {
 #[test]
 fn start_new_epoch_works() {
 	new_test_ext().execute_with(|| {
-		// assumes the mock epoch length is 10 blocks.
+		// assumes the mock epoch length is 100 blocks.
 		let test_cases: Vec<TestCase<Test>> = vec![
 			TestCase {
 				name: "epoch changes at the right time",
 				starting_epoch: 2,
-				epoch_start_block: 299,
+				epoch_start_block: 201,
 				expected_epoch: 3,
-				expected_epoch_start_block: 309,
+				expected_epoch_start_block: 301,
 				expected_capacity: 0,
-				at_block: 309,
+				at_block: 301,
 			},
 			TestCase {
 				//
 				name: "epoch does not change",
 				starting_epoch: 2,
-				epoch_start_block: 211,
+				epoch_start_block: 201,
 				expected_epoch: 2,
-				expected_epoch_start_block: 211,
+				expected_epoch_start_block: 201,
 				expected_capacity: 45,
 				at_block: 215,
 			},
@@ -501,5 +501,26 @@ fn impl_can_replenish_is_true_when_last_replenished_at_is_less_than_current_epoc
 		CurrentEpoch::<Test>::set(3u32.into());
 
 		assert_eq!(Capacity::can_replenish(target_msa_id), true);
+	});
+}
+
+#[test]
+fn get_epoch_length_should_return_max_epoch_length_when_unset() {
+	new_test_ext().execute_with(|| {
+		let epoch_length: <Test as frame_system::Config>::BlockNumber =
+			Capacity::get_epoch_length();
+		let max_epoch_length: u64 = <Test as pallet_capacity::Config>::MaxEpochLength::get();
+
+		assert_eq!(epoch_length, max_epoch_length);
+	});
+}
+#[test]
+fn get_epoch_length_should_return_storage_epoch_length() {
+	new_test_ext().execute_with(|| {
+		EpochLength::<Test>::set(101u64);
+		let epoch_length: <Test as frame_system::Config>::BlockNumber =
+			Capacity::get_epoch_length();
+
+		assert_eq!(epoch_length, 101u64);
 	});
 }
