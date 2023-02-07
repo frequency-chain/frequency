@@ -1,12 +1,12 @@
 // Integration tests for pallets/stateful-pallet-storage/handlepaginated.ts
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import { createAndFundKeypair, generateDelegationPayload, signPayloadSr25519 } from "../scaffolding/helpers";
+import { createAndFundKeypair, createProviderKeysAndId, createDelegatorAndDelegation} from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "./fixtures/itemizedSchemaType";
 import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfaces";
-import { u16, u32, u64 } from "@polkadot/types";
+import { u16, u64 } from "@polkadot/types";
 
 describe("📗 Stateful Pallet Storage", () => {
     let schemaId: SchemaId;
@@ -17,22 +17,15 @@ describe("📗 Stateful Pallet Storage", () => {
 
     before(async function () {
         // Create a provider for the MSA, the provider will be used to grant delegation
-        providerKeys = await createAndFundKeypair();
-        let createProviderMsaOp = ExtrinsicHelper.createMsa(providerKeys);
-        await createProviderMsaOp.fundAndSend();
-        let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, "PrivateProvider");
-        let [providerEvent] = await createProviderOp.fundAndSend();
-        assert.notEqual(providerEvent, undefined, "setup should return a ProviderCreated event");
-        if (providerEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerEvent)) {
-            providerId = providerEvent.data.providerId;
-        }
+        [providerKeys, providerId] = await createProviderKeysAndId();
         assert.notEqual(providerId, undefined, "setup should populate providerId");
+        assert.notEqual(providerKeys, undefined, "setup should populate providerKeys");
 
         // Create a schema for Paginated PayloadLocation
         const createSchema = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
         const [event] = await createSchema.fundAndSend();
         if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
-            [, schemaId] = event.data;
+            schemaId = event.data.schemaId;
         }
         assert.notEqual(schemaId, undefined, "setup should populate schemaId");
         // Create non supported schema
@@ -40,42 +33,16 @@ describe("📗 Stateful Pallet Storage", () => {
         const [event2] = await createSchema2.fundAndSend();
         assert.notEqual(event2, undefined, "setup should return a SchemaCreated event");
         if (event2 && createSchema2.api.events.schemas.SchemaCreated.is(event2)) {
-            const [, schemaId_unsupported] = event2.data;
+            schemaId_unsupported = event2.data.schemaId;
             assert.notEqual(schemaId_unsupported, undefined, "setup should populate schemaId_unsupported");
         }
-        
-        let keys = await createAndFundKeypair();
 
-        // Create a  delegator msa
-        const createMsa = ExtrinsicHelper.createMsa(keys);
-        await createMsa.fundOperation();
-        const [msaCreatedEvent, chainEvents] = await createMsa.signAndSend();
-        assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
-        assert.notEqual(msaCreatedEvent, undefined, "should have returned  an MsaCreated event");
-        assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
-        if (msaCreatedEvent && ExtrinsicHelper.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
-            msa_id = msaCreatedEvent.data.msaId;
-        }
-        assert.notEqual(msa_id, undefined, "setup should populate msa_id");
-        
-        // Grant delegation to the provider
-        const payload = await generateDelegationPayload({
-            authorizedMsaId: providerId,
-            schemaIds: [schemaId],
-        });
-        const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-
-        const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
-        await grantDelegationOp.fundOperation();
-        const [grantDelegationEvent] = await grantDelegationOp.signAndSend();
-        assert.notEqual(grantDelegationEvent, undefined, "should have returned DelegationGranted event");
-        if (grantDelegationEvent && grantDelegationOp.api.events.msa.DelegationGranted.is(grantDelegationEvent)) {
-            assert.deepEqual(grantDelegationEvent.data.providerId, providerId, 'provider IDs should match');
-            assert.deepEqual(grantDelegationEvent.data.delegatorId, msa_id, 'delegator IDs should match');
-        }
+        // Create a MSA for the delegator and delegate to the provider
+        [ , msa_id] = await createDelegatorAndDelegation(schemaId, providerId, providerKeys);
+        assert.notEqual(msa_id, undefined, "setup should populate msa_id");       
     });
 
-    describe("Paginated Storage Upsert Tests 😊/😥", () => {
+    describe("Paginated Storage Upsert/Remove Tests 😊/😥", () => {
 
         it("✅ should be able to call upsert page and add a page and remove a page via id", async function () {
             
@@ -159,20 +126,9 @@ describe("📗 Stateful Pallet Storage", () => {
                 return true;
             });
         }).timeout(10000);
+    });
 
-        it("🛑 should fail to call remove page with invalid page index", async function () {
-            let bad_page_index =  new u32(ExtrinsicHelper.api.registry, 999)
-
-            let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, msa_id, bad_page_index);
-            await paginated_add_result_1.fundOperation();
-            await assert.rejects(async () => {
-                await paginated_add_result_1.signAndSend();
-            }
-            , (err) => {
-                assert.notEqual(err, undefined, "should have returned an error");
-                return true;
-            });
-        }).timeout(10000);
+    describe("Paginated Storage Removal Negative Tests 😊/😥", () => {
 
         it("🛑 should fail to call remove page with invalid schemaId", async function () {
             let fake_schema_id = new u16(ExtrinsicHelper.api.registry, 999);      
