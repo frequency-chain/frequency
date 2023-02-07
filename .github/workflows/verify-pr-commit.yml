@@ -101,17 +101,21 @@ jobs:
             branch_alias: pr
     runs-on: [self-hosted, Linux, X64]
     env:
+      HOME: /root
       NETWORK: mainnet
     steps:
-      - name: Set Env Vars
-        run: |
-          export BUILT_BIN_FILENAME=frequency; echo "BUILT_BIN_FILENAME=$BUILT_BIN_FILENAME" >> $GITHUB_ENV
-          echo "FINAL_BIN_FILENAME=$BUILT_BIN_FILENAME.${{matrix.network}}-${{matrix.branch_alias}}" >> $GITHUB_ENV
-          echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
           ref: ${{matrix.git_branch}}
+      - name: Reset Runner
+        # XXX Remove condition when reset-self-hosted-runner action is available on main
+        if: matrix.branch_alias == 'pr'
+        uses: ./.github/workflows/common/reset-self-hosted-runner
+      - name: Set Env Vars
+        run: |
+          export BUILT_BIN_FILENAME=frequency; echo "BUILT_BIN_FILENAME=$BUILT_BIN_FILENAME" >> $GITHUB_ENV
+          echo "FINAL_BIN_FILENAME=$BUILT_BIN_FILENAME.${{matrix.network}}-${{matrix.branch_alias}}" >> $GITHUB_ENV
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
       # - name: Cache Binary for Testing
       #   id: cache-binary
@@ -190,13 +194,14 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
+    env:
+      HOME: /root
     runs-on: [self-hosted, Linux, X64]
     steps:
-      - name: Set Env Vars
-        run: |
-          echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Reset Runner
+        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Required Packages
         run: |
           sudo apt-get update
@@ -219,13 +224,14 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
+    env:
+      HOME: /root
     runs-on: [self-hosted, Linux, X64]
     steps:
-      - name: Set Env Vars
-        run: |
-          echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Reset Runner
+        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Required Packages
         run: |
           sudo apt-get update
@@ -244,13 +250,14 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
+    env:
+      HOME: /root
     runs-on: [self-hosted, Linux, X64]
     steps:
-      - name: Set Env Vars
-        run: |
-          echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Reset Runner
+        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Required Packages
         run: |
           sudo apt-get update
@@ -268,13 +275,14 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
+    env:
+      HOME: /root
     runs-on: [self-hosted, Linux, X64]
     steps:
-      - name: Set Env Vars
-        run: |
-          echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Reset Runner
+        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Required Packages
         run: |
           sudo apt-get update
@@ -341,6 +349,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Build Runtime for ${{matrix.network}}
+    env:
+      HOME: /root
     strategy:
       matrix:
         network: [rococo, mainnet]
@@ -357,11 +367,10 @@ jobs:
             features: frequency
     runs-on: [self-hosted, Linux, X64]
     steps:
-      - name: Set Ubuntu Env Vars
-        run: |
-          echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Reset Runner
+        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
@@ -424,11 +433,11 @@ jobs:
     name: Verify JS API Augment
     runs-on: ubuntu-20.04
     steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Set Env Vars
         run: |
           echo "BIN_FILENAME=frequency.local-pr" >> $GITHUB_ENV
-      - name: Check Out Repo
-        uses: actions/checkout@v3
       - name: Set up NodeJs
         uses: actions/setup-node@v3
         with:
@@ -472,18 +481,17 @@ jobs:
           path: js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
           if-no-files-found: error
 
-
   verify-docker-images:
     needs: build-binaries
     name: Verify Docker Images
     runs-on: ubuntu-20.04
     steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Set Env Vars
         run: |
           echo "BUILT_BIN_FILENAME=frequency.mainnet-pr" >> $GITHUB_ENV
           echo "DOCKER_BIN_FILENAME=frequency" >> $GITHUB_ENV
-      - name: Check Out Repo
-        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
@@ -531,11 +539,11 @@ jobs:
     name: Execute Binary Checks
     runs-on: ubuntu-20.04
     steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Set Env Vars
         run: |
           echo "TEST_BIN_FILENAME=frequency.mainnet-pr" >> $GITHUB_ENV
-      - name: Check Out Repo
-        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
@@ -564,14 +572,14 @@ jobs:
     env:
       GITHUB_PR_LABEL: metadata-mismatch
     steps:
-      - name: Set Env Vars
-        run: |
-          echo "TEST_BIN_FILENAME=frequency.local-pr" >> $GITHUB_ENV
-          echo "REF_BIN_FILENAME=frequency.local-main" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: Set Env Vars
+        run: |
+          echo "TEST_BIN_FILENAME=frequency.local-pr" >> $GITHUB_ENV
+          echo "REF_BIN_FILENAME=frequency.local-main" >> $GITHUB_ENV
       - name: Download Binaries
         uses: actions/download-artifact@v3
         with:
@@ -623,14 +631,14 @@ jobs:
     name: Run Integration Tests
     runs-on: ubuntu-20.04
     steps:
-      - name: Set Env Vars
-        run: |
-          echo "BIN_FILENAME=frequency.local-pr" >> $GITHUB_ENV
-          echo "FREQUENCY_PROCESS_NAME=frequency" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: Set Env Vars
+        run: |
+          echo "BIN_FILENAME=frequency.local-pr" >> $GITHUB_ENV
+          echo "FREQUENCY_PROCESS_NAME=frequency" >> $GITHUB_ENV
       - name: Download Binaries
         uses: actions/download-artifact@v3
         with:
