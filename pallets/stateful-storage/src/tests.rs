@@ -346,8 +346,7 @@ fn remove_nonexistent_page_succeeds_noop() {
 		let caller_1 = 1;
 		let msa_id = 1;
 		let schema_id = PAGINATED_SCHEMA;
-		let page_id = 1`1	234l;'
-		 0 ;
+		let page_id = 1;
 
 		// TODO: Get list of existing pages to verify the page doesn't already exist
 		// PROBLEM: Child Trie iterator doesn't appear to yield keys
