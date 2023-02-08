@@ -196,18 +196,14 @@ benchmarks! {
 	}
 
 	create_provider_via_governance {
+		let s in 0 .. T::MaxProviderNameSize::get();
+		
+		let provider_name = (1 .. s as u8).collect::<Vec<_>>();
 		let account = create_account::<T>("account", 0);
 		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account.into(), EMPTY_FUNCTION).unwrap();
 
-		let s in 0 .. T::MaxProviderNameSize::get();
-		let provider_name = (1 .. s as u8).collect::<Vec<_>>();
-
-		// Set up the council members
-		let council_member = create_account::<T>("account", 1);
-		let incoming: Vec<T::AccountId> = vec![];
-		let outgoing: Vec<T::AccountId> = vec![];
-		// Council::change_members(&incoming, &outgoing, vec![council_member.clone()]);
-	}:	_ (RawOrigin::Signed(council_member), provider_public_key, provider_name)
+		let caller: T::AccountId = whitelisted_caller();
+	}:	_ (RawOrigin::Signed(caller), provider_public_key, provider_name)
 	verify {
 		assert!(Msa::<T>::is_registered_provider(provider_msa_id));
 	}
@@ -220,6 +216,7 @@ benchmarks! {
 		let provider_name = (1 .. s as u8).collect::<Vec<_>>();
 	}:	_ (RawOrigin::Signed(provider_public_key), provider_name)
 	verify {
+		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
 	}
 
 	on_initialize {
