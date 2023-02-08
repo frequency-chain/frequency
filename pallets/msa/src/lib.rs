@@ -918,7 +918,7 @@ pub mod pallet {
 
 		/// Create a provider by means of governance approval
 		#[pallet::call_index(12)]
-		#[pallet::weight(T::WeightInfo::create_provider(100_000))]
+		#[pallet::weight(1000)]
 		pub fn create_provider_via_governance(
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
