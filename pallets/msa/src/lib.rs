@@ -887,14 +887,9 @@ pub mod pallet {
 
 		/// Request to be a provider.  Creates a proposal for council approval to create a provider from a MSA
 		///
-		/// # Events
-		/// - [Proposed](Event::Proposed)
-		///
 		/// # Errors
 		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
-		/// - [`TooManyProposals`](Error::TooManyProposals) - Too many proposals.
-		/// - [`DuplicateProposal`](Error::TooManyProposals) - Duplicate proposal.
-		/// - [`WrongProposalLength`](Error::WrongProposalLength) - Duplicate proposal.
+
 		#[pallet::call_index(11)]
 		#[pallet::weight(T::WeightInfo::request_to_be_provider(provider_name.len() as u32))]
 		pub fn request_to_be_provider(
@@ -917,6 +912,14 @@ pub mod pallet {
 		}
 
 		/// Create a provider by means of governance approval
+		///
+		/// # Events
+		/// * [`Event::ProviderCreated`]
+		///
+		/// # Errors
+		/// * [`Error::NoKeyExists`] - account does not have an MSA
+		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
+		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		#[pallet::call_index(12)]
 		#[pallet::weight(T::WeightInfo::create_provider_via_governance(provider_name.len() as u32))]
 		pub fn create_provider_via_governance(
