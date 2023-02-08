@@ -1782,28 +1782,24 @@ fn add_removed_key_to_msa_pass() {
 }
 
 #[test]
-fn create_provider_via_governance() {
+fn create_provider_via_governance_happy_path() {
 	new_test_ext().execute_with(|| {
 		let (_new_msa_id, key_pair) = create_account();
 
-		// Set up the council members
-		let council_member = test_public(1); // Use ALICE as the council member
-
-		let incoming = vec![];
-		let outgoing = vec![];
-		Council::change_members(&incoming, &outgoing, vec![council_member.clone()]);
-
+		// Create the provider based on 1 yes vote by the council
 		assert_ok!(Msa::create_provider_via_governance(
-			RuntimeOrigin::signed(council_member.clone()),
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
 			key_pair.public().into(),
 			Vec::from("ACME Widgets")
 		));
+		// Confirm that the MSA is now a provider
+		assert!(Msa::is_registered_provider(_new_msa_id));
 	})
 }
 
 /// Test that a request to be a provider, makes the MSA a provider after the council approves it.
 #[test]
-fn request_to_be_provider() {
+fn request_to_be_provider_happy_path() {
 	new_test_ext().execute_with(|| {
 		// Create a new MSA account and request that it become a provider
 		let (_new_msa_id, key_pair) = create_account();
@@ -1869,7 +1865,7 @@ fn request_to_be_provider() {
 
 		// Close the voting
 		assert_ok!(Council::close(
-			RuntimeOrigin::signed(council_member.clone()),
+			RuntimeOrigin::signed(test_public(5)),
 			proposal_hash,
 			proposal_index,
 			Weight::MAX,

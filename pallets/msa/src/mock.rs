@@ -4,9 +4,9 @@ use frame_support::{
 	assert_ok,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, OnFinalize, OnInitialize},
+	traits::{ConstU16, ConstU32, ConstU64, OnFinalize, OnInitialize},
 };
-use frame_system::{EnsureRoot, EnsureSigned};
+use frame_system::EnsureSigned;
 use pallet_collective;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
@@ -134,15 +134,9 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall, RuntimeOrigin>
 	}
 }
 
-#[cfg(not(feature = "frequency"))]
 type MsaCreateProviderOrigin = EnsureSigned<AccountId>;
-#[cfg(feature = "frequency")]
-type MsaCreateProviderOrigin = EnsureNever<AccountId>;
-
-type MsaCreateProviderViaGovernanceOrigin = EitherOfDiverse<
-	EnsureRoot<AccountId>,
-	pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
->;
+type MsaCreateProviderViaGovernanceOrigin =
+	pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>;
 
 impl pallet_msa::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
