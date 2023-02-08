@@ -1781,6 +1781,26 @@ fn add_removed_key_to_msa_pass() {
 	});
 }
 
+#[test]
+fn create_provider_via_governance() {
+	new_test_ext().execute_with(|| {
+		let (_new_msa_id, key_pair) = create_account();
+
+		// Set up the council members
+		let council_member = test_public(1); // Use ALICE as the council member
+
+		let incoming = vec![];
+		let outgoing = vec![];
+		Council::change_members(&incoming, &outgoing, vec![council_member.clone()]);
+
+		assert_ok!(Msa::create_provider_via_governance(
+			RuntimeOrigin::signed(council_member.clone()),
+			key_pair.public().into(),
+			Vec::from("ACME Widgets")
+		));
+	})
+}
+
 /// Test that a request to be a provider, makes the MSA a provider after the council approves it.
 #[test]
 fn request_to_be_provider() {
