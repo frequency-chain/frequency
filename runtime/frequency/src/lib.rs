@@ -731,7 +731,7 @@ impl pallet_stateful_storage::Config for Runtime {
 	/// The maximum size of a single item in an itemized storage model (in bytes)
 	type MaxItemizedBlobSizeBytes = MaxItemizedBlobSizeBytes;
 	/// The maximum number of pages in a Paginated storage model
-	type MaxPaginatedPageCount = MaxPaginatedPageCount;
+	type MaxPaginatedPageId = MaxPaginatedPageId;
 	/// The maximum number of actions in itemized actions
 	type MaxItemizedActionsCount = MaxItemizedActionsCount;
 	/// The type that supplies MSA info
