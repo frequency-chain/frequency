@@ -66,6 +66,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 pub use sp_runtime::BuildStorage;
 
 pub use pallet_capacity;
+pub use pallet_frequency_tx_payment;
 pub use pallet_msa;
 pub use pallet_schemas;
 pub use pallet_time_release;
@@ -148,7 +149,8 @@ pub type SignedExtra = (
 	frame_system::CheckEra<Runtime>,
 	common_runtime::extensions::check_nonce::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
-	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+	// pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+	pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
 	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
 );
 /// A Block signed with a Justification
@@ -864,6 +866,10 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OperationalFeeMultiplier = TransactionPaymentOperationalFeeMultiplier;
 }
 
+impl pallet_frequency_tx_payment::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+}
+
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
 // the descriptions of these configs.
 impl cumulus_pallet_parachain_system::Config for Runtime {
@@ -1079,6 +1085,7 @@ construct_runtime!(
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 62,
 		StatefulStorage: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>} = 63,
 		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>} = 64,
+		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Event<T>} = 65,
 	}
 );
 
