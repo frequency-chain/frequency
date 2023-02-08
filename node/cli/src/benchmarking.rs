@@ -14,7 +14,6 @@ use sp_runtime::{OpaqueExtrinsic, SaturatedConversion};
 
 use pallet_balances::Call as BalancesCall;
 use pallet_msa;
-use pallet_transaction_payment;
 use sp_inherents::InherentDataProvider;
 use sp_timestamp;
 use std::{sync::Arc, time::Duration};
@@ -127,7 +126,7 @@ pub fn create_benchmark_extrinsic(
 		)),
 		common_runtime::extensions::check_nonce::CheckNonce::<runtime::Runtime>::from(nonce),
 		frame_system::CheckWeight::<runtime::Runtime>::new(),
-		pallet_transaction_payment::ChargeTransactionPayment::<runtime::Runtime>::from(0),
+		pallet_frequency_tx_payment::ChargeFrqTransactionPayment::<runtime::Runtime>::from(0),
 		pallet_msa::CheckFreeExtrinsicUse::<runtime::Runtime>::new(),
 	);
 
