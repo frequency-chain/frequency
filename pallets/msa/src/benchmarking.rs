@@ -197,13 +197,12 @@ benchmarks! {
 
 	create_provider_via_governance {
 		let s in 0 .. T::MaxProviderNameSize::get();
-		
+
 		let provider_name = (1 .. s as u8).collect::<Vec<_>>();
 		let account = create_account::<T>("account", 0);
 		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account.into(), EMPTY_FUNCTION).unwrap();
 
-		let caller: T::AccountId = whitelisted_caller();
-	}:	_ (RawOrigin::Signed(caller), provider_public_key, provider_name)
+	}:	_ (RawOrigin::Root, provider_public_key, provider_name)
 	verify {
 		assert!(Msa::<T>::is_registered_provider(provider_msa_id));
 	}

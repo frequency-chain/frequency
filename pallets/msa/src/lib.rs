@@ -896,7 +896,7 @@ pub mod pallet {
 		/// - [`DuplicateProposal`](Error::TooManyProposals) - Duplicate proposal.
 		/// - [`WrongProposalLength`](Error::WrongProposalLength) - Duplicate proposal.
 		#[pallet::call_index(11)]
-		#[pallet::weight(1000)]
+		#[pallet::weight(T::WeightInfo::request_to_be_provider(provider_name.len() as u32))]
 		pub fn request_to_be_provider(
 			origin: OriginFor<T>,
 			provider_name: Vec<u8>,
@@ -918,7 +918,7 @@ pub mod pallet {
 
 		/// Create a provider by means of governance approval
 		#[pallet::call_index(12)]
-		#[pallet::weight(1000)]
+		#[pallet::weight(T::WeightInfo::create_provider_via_governance(provider_name.len() as u32))]
 		pub fn create_provider_via_governance(
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
