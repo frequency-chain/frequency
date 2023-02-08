@@ -2784,6 +2784,7 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
+ "pallet-frequency-tx-payment",
  "pallet-messages",
  "pallet-messages-runtime-api",
  "pallet-msa",
@@ -5513,6 +5514,24 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-frequency-tx-payment"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
  "sp-std",
 ]
 

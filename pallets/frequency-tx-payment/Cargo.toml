@@ -1,10 +1,10 @@
 [package]
 authors = ["Frequency"]
-description = "Pallet for Capacity"
+description = "Pallet for paying fees"
 edition = "2021"
 homepage = "https://frequency.xyz"
 license = "Apache-2.0"
-name = "pallet-capacity"
+name = "pallet-frequency-tx-payment"
 publish = false
 repository = "https://github.com/libertyDSNP/frequency/"
 version = "0.0.0"
@@ -20,6 +20,7 @@ common-primitives = {default-features = false, path = "../../common/primitives"}
 frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.36"}
 frame-support = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
 frame-system = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
+pallet-transaction-payment = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
 scale-info = {version = "2.2.0", default-features = false, features = [
   "derive",
 ]}
@@ -29,16 +30,13 @@ sp-runtime = {default-features = false, git = "https://github.com/paritytech/sub
 sp-std = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
 
 [dev-dependencies]
-common-runtime = {path = '../../runtime/common', default-features = false}
 pallet-balances = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
-pallet-msa = {path = '../msa'}
 
 [features]
 default = ["std"]
 runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",
   "common-primitives/runtime-benchmarks",
-  "pallet-msa/runtime-benchmarks",
 ]
 std = [
   "codec/std",
@@ -50,6 +48,5 @@ std = [
   "sp-std/std",
   "sp-core/std",
   "common-primitives/std",
-  "common-runtime/std",
 ]
 try-runtime = ["frame-support/try-runtime"]
