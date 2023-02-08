@@ -65,7 +65,6 @@ use common_primitives::{
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
 use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 
-use sp_runtime::DispatchError;
 use sp_std::prelude::*;
 
 pub use pallet::*;
@@ -194,7 +193,7 @@ pub mod pallet {
 			#[pallet::compact] schema_id: SchemaId,
 			actions: BoundedVec<ItemAction, T::MaxItemizedActionsCount>,
 		) -> DispatchResult {
-			let provider_msa_id = Self::check_origin(origin)?;
+			let provider_key = ensure_signed(origin)?;
 			ensure!(
 				actions.as_slice().iter().all(|a| match a {
 					ItemAction::Add { data } =>
@@ -205,7 +204,7 @@ pub mod pallet {
 			);
 
 			Self::check_schema_and_grants(
-				provider_msa_id,
+				provider_key,
 				state_owner_msa_id,
 				schema_id,
 				PayloadLocation::Itemized,
@@ -253,7 +252,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::upsert_page(*page_id as u32, payload.len() as u32))]
 		pub fn upsert_page(
 			origin: OriginFor<T>,
 			state_owner_msa_id: MessageSourceId,
@@ -261,16 +260,16 @@ pub mod pallet {
 			page_id: PageId,
 			payload: Vec<u8>,
 		) -> DispatchResult {
+			let provider_key = ensure_signed(origin)?;
 			let page = Page::<T::MaxPaginatedPageSizeBytes>::try_from(payload)
 				.map_err(|_| Error::<T>::PageExceedsMaxPageSizeBytes)?;
 			ensure!(
 				page_id as u32 <= T::MaxPaginatedPageId::get(),
 				Error::<T>::PageIdExceedsMaxAllowed
 			);
-			let provider_msa_id = Self::check_origin(origin)?;
 
 			Self::check_schema_and_grants(
-				provider_msa_id,
+				provider_key,
 				state_owner_msa_id,
 				schema_id,
 				PayloadLocation::Paginated,
@@ -289,20 +288,20 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(2)]
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::remove_page(*page_id as u32))]
 		pub fn remove_page(
 			origin: OriginFor<T>,
 			state_owner_msa_id: MessageSourceId,
 			schema_id: SchemaId,
 			page_id: PageId,
 		) -> DispatchResult {
+			let provider_key = ensure_signed(origin)?;
 			ensure!(
 				page_id as u32 <= T::MaxPaginatedPageId::get(),
 				Error::<T>::PageIdExceedsMaxAllowed
 			);
-			let provider_msa_id = Self::check_origin(origin)?;
 			Self::check_schema_and_grants(
-				provider_msa_id,
+				provider_key,
 				state_owner_msa_id,
 				schema_id,
 				PayloadLocation::Paginated,
@@ -337,18 +336,14 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	fn check_origin(origin: OriginFor<T>) -> Result<MessageSourceId, DispatchError> {
-		let provider_key = ensure_signed(origin)?;
-		Ok(T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
-			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?)
-	}
-
 	fn check_schema_and_grants(
-		provider_msa_id: MessageSourceId,
+		provider_key: T::AccountId,
 		state_owner_msa_id: MessageSourceId,
 		schema_id: SchemaId,
 		payload_location: PayloadLocation,
 	) -> DispatchResult {
+		let provider_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
+			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 		let schema =
 			T::SchemaProvider::get_schema_by_id(schema_id).ok_or(Error::<T>::InvalidSchemaId)?;
 		ensure!(

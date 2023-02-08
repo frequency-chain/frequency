@@ -26,6 +26,14 @@ fn itemized_actions_add<T: Config>(
 	actions.try_into().expect("Invalid actions")
 }
 
+fn create_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
+	T::SchemaBenchmarkHelper::create_schema(
+		Vec::from(r#"{"Message": "some-random-hash"}"#.as_bytes()),
+		ModelType::AvroBinary,
+		location,
+	)
+}
+
 benchmarks! {
 	apply_item_actions {
 		let n in 1 .. T::MaxItemizedActionsCount::get() - 1;
@@ -36,8 +44,10 @@ benchmarks! {
 		let caller: T::AccountId = whitelisted_caller();
 		let payload = vec![0u8; s as usize];
 
+		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
+		assert_ok!(create_schema::<T>(PayloadLocation::Itemized));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
-		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [ITEMIZED_SCHEMA].to_vec()));
+		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
 
 		let actions = itemized_actions_add::<T>(n, s as usize);
 	}: _ (RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, actions)
@@ -56,8 +66,10 @@ benchmarks! {
 		let payload = vec![0u8; s as usize];
 		let schema_key = schema_id.encode().to_vec();
 
+		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
+		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
-		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [PAGINATED_SCHEMA].to_vec()));
+		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
 
 		for i in 0 .. n {
 			let page_key = (n as PageId).encode().to_vec();
@@ -65,6 +77,27 @@ benchmarks! {
 		}
 		let page_id: u16 = (n + 1).try_into().unwrap();
 	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id, payload)
+
+	remove_page {
+		let n in 0 .. T::MaxPaginatedPageId::get() - 1;
+		let provider_msa_id = 1u64;
+		let delegator_msa_id = 2u64;
+		let schema_id = PAGINATED_SCHEMA;
+		let caller: T::AccountId = whitelisted_caller();
+		let payload = vec![0u8; T::MaxPaginatedPageSizeBytes::get() as usize];
+		let schema_key = schema_id.encode().to_vec();
+
+		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
+		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
+
+		for i in 0 .. n {
+			let page_key = (n as PageId).encode().to_vec();
+			StatefulChildTree::write(&delegator_msa_id, &[schema_key.clone(), page_key], payload.clone());
+		}
+		let page_id: u16 = (n + 1).try_into().unwrap();
+	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id)
 
 	impl_benchmark_test_suite!(StatefulStoragePallet,
 		crate::mock::new_test_ext(),
