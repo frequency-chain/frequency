@@ -135,8 +135,11 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall, RuntimeOrigin>
 }
 
 type MsaCreateProviderOrigin = EnsureSigned<AccountId>;
-type MsaCreateProviderViaGovernanceOrigin =
-	pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>;
+// It has to be this way so benchmarks will pass in CI.
+type MsaCreateProviderViaGovernanceOrigin = EitherOfDiverse<
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
+>;
 
 impl pallet_msa::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
