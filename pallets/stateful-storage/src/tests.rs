@@ -6,7 +6,7 @@ use crate::{
 };
 use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
-use frame_support::{assert_err, assert_ok};
+use frame_support::{assert_err, assert_ok, BoundedVec};
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use scale_info::TypeInfo;
@@ -14,18 +14,20 @@ use scale_info::TypeInfo;
 type TestPageSize = <Test as Config>::MaxItemizedPageSizeBytes;
 type TestPage = Page<TestPageSize>;
 
-fn generate_payload_bytes(id: Option<u8>) -> Vec<u8> {
+fn generate_payload_bytes(id: Option<u8>) -> BoundedVec<u8, TestPageSize> {
 	let value = id.unwrap_or(1);
 	format!("{{'type':{value}, 'description':'another test description {value}'}}")
 		.as_bytes()
 		.to_vec()
+		.try_into()
+		.unwrap()
 }
 
-fn create_page_from(payloads: &[Vec<u8>]) -> TestPage {
+fn create_itemized_page_from(payloads: &[BoundedVec<u8, TestPageSize>]) -> TestPage {
 	let mut buffer: Vec<u8> = vec![];
 	for p in payloads {
 		buffer.extend_from_slice(&ItemHeader { payload_len: p.len() as u16 }.encode()[..]);
-		buffer.extend_from_slice(p);
+		buffer.extend_from_slice(p.as_slice());
 	}
 	TestPage::try_from(buffer).unwrap()
 }
@@ -190,18 +192,19 @@ fn upsert_new_page_succeeds() {
 		let schema_id = PAGINATED_SCHEMA;
 		let page_id = 1;
 		let payload = generate_payload_bytes(Some(100));
+		let page: TestPage = payload.clone().into();
 
 		assert_ok!(StatefulStoragePallet::upsert_page(
 			RuntimeOrigin::signed(caller_1),
 			msa_id,
 			schema_id,
 			page_id,
-			payload.clone()
+			payload.into()
 		));
 
 		let keys = [schema_id.encode().to_vec(), page_id.encode().to_vec()];
-		let page = StatefulChildTree::try_read::<Vec<u8>>(&msa_id, &keys).unwrap().unwrap();
-		assert_eq!(payload, page);
+		let new_page: TestPage = StatefulChildTree::try_read(&msa_id, &keys).unwrap().unwrap();
+		assert_eq!(page, new_page);
 	})
 }
 
@@ -215,22 +218,23 @@ fn upsert_existing_page_modifies_page() {
 		let page_id = 1;
 		let old_content = generate_payload_bytes(Some(200));
 		let new_content = generate_payload_bytes(Some(201));
+		let old_page: TestPage = old_content.clone().into();
 
 		let keys = [schema_id.encode().to_vec(), page_id.encode().to_vec()];
-		StatefulChildTree::write(&msa_id, &keys, old_content.clone());
-		let old_page = StatefulChildTree::try_read::<Vec<u8>>(&msa_id, &keys).unwrap().unwrap();
+		StatefulChildTree::write(&msa_id, &keys, old_page);
+		let old_page: TestPage = StatefulChildTree::try_read(&msa_id, &keys).unwrap().unwrap();
 
-		assert_eq!(old_content, old_page);
+		assert_eq!(old_content, old_page.data);
 		assert_ok!(StatefulStoragePallet::upsert_page(
 			RuntimeOrigin::signed(caller_1),
 			msa_id,
 			schema_id,
 			page_id,
-			new_content.clone()
+			new_content.clone().into()
 		));
 
-		let new_page = StatefulChildTree::try_read::<Vec<u8>>(&msa_id, &keys).unwrap().unwrap();
-		assert_eq!(new_content, new_page);
+		let new_page: TestPage = StatefulChildTree::try_read(&msa_id, &keys).unwrap().unwrap();
+		assert_eq!(new_content, new_page.data);
 	})
 }
 
@@ -346,8 +350,7 @@ fn remove_nonexistent_page_succeeds_noop() {
 		let caller_1 = 1;
 		let msa_id = 1;
 		let schema_id = PAGINATED_SCHEMA;
-		let page_id = 1`1	234l;'
-		 0 ;
+		let page_id = 10;
 
 		// TODO: Get list of existing pages to verify the page doesn't already exist
 		// PROBLEM: Child Trie iterator doesn't appear to yield keys
@@ -379,7 +382,7 @@ fn remove_existing_page_succeeds() {
 			msa_id,
 			schema_id,
 			page_id,
-			payload
+			payload.into()
 		));
 
 		assert_ok!(StatefulStoragePallet::remove_page(
@@ -401,7 +404,7 @@ fn remove_existing_page_succeeds() {
 fn parsing_a_well_formed_item_page_should_work() {
 	// arrange
 	let payloads = vec![generate_payload_bytes(Some(1)), generate_payload_bytes(Some(2))];
-	let page = create_page_from(payloads.as_slice());
+	let page = create_itemized_page_from(&payloads);
 
 	// act
 	let parsed = page.parse_as_itemized();
@@ -443,8 +446,8 @@ fn parsing_item_with_wrong_payload_size_should_return_parsing_error() {
 fn applying_remove_action_with_existing_index_should_remove_item() {
 	// arrange
 	let payloads = vec![generate_payload_bytes(Some(2)), generate_payload_bytes(Some(4))];
-	let page = create_page_from(payloads.as_slice());
-	let expecting_page = create_page_from(&payloads[1..]);
+	let page = create_itemized_page_from(payloads.as_slice());
+	let expecting_page = create_itemized_page_from(&payloads[1..]);
 	let actions = vec![ItemAction::Remove { index: 0 }];
 
 	// act
@@ -460,10 +463,11 @@ fn applying_remove_action_with_existing_index_should_remove_item() {
 fn applying_add_action_should_add_item_to_the_end_of_the_page() {
 	// arrange
 	let payload1 = vec![generate_payload_bytes(Some(2))];
-	let page = create_page_from(payload1.as_slice());
+	let page = create_itemized_page_from(payload1.as_slice());
 	let payload2 = vec![generate_payload_bytes(Some(4))];
-	let expecting_page = create_page_from(&vec![payload1[0].clone(), payload2[0].clone()][..]);
-	let actions = vec![ItemAction::Add { data: payload2[0].clone() }];
+	let expecting_page =
+		create_itemized_page_from(&vec![payload1[0].clone(), payload2[0].clone()][..]);
+	let actions = vec![ItemAction::Add { data: payload2[0].clone().into() }];
 
 	// act
 	let result = page.apply_item_actions(&actions[..]);
@@ -478,7 +482,7 @@ fn applying_add_action_should_add_item_to_the_end_of_the_page() {
 fn applying_remove_action_with_non_existing_index_should_fail() {
 	// arrange
 	let payloads = vec![generate_payload_bytes(Some(2)), generate_payload_bytes(Some(4))];
-	let page = create_page_from(payloads.as_slice());
+	let page = create_itemized_page_from(payloads.as_slice());
 	let actions = vec![ItemAction::Remove { index: 2 }];
 
 	// act
@@ -491,21 +495,19 @@ fn applying_remove_action_with_non_existing_index_should_fail() {
 #[test]
 fn applying_add_action_with_full_page_should_fail() {
 	// arrange
-	let mut arr: Vec<Vec<u8>> = vec![];
-	let payload = generate_payload_bytes(Some(2));
-	while (arr.len() + 1) * (&payload.len() + ItemHeader::max_encoded_len()) <
-		<TestPageSize as sp_core::Get<u32>>::get() as usize
-	{
-		arr.push(payload.clone());
-	}
-	let page = create_page_from(arr.as_slice());
-	let actions = vec![ItemAction::Add { data: payload.clone() }];
+	let new_payload = generate_payload_bytes(Some(2));
+	let page_len = TestPageSize::get() as usize - ItemHeader::max_encoded_len() - new_payload.len();
+	let existing_data = vec![1u8; page_len];
+	let existing_payload: BoundedVec<u8, TestPageSize> =
+		BoundedVec::try_from(existing_data).unwrap();
+	let page = create_itemized_page_from(&[existing_payload]);
+	let actions = vec![ItemAction::Add { data: new_payload.clone().into() }];
 
 	// act
 	let result = page.apply_item_actions(&actions[..]);
 
 	// assert
-	assert_eq!(result.is_err(), true);
+	assert_eq!(result, Err(PageError::PageSizeOverflow));
 }
 
 #[test]

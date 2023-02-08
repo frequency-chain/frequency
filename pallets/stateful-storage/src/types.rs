@@ -101,8 +101,7 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 		}
 		updated_page_buffer.append(&mut add_buffer);
 
-		Page::<PageDataSize>::try_from(updated_page_buffer)
-			.map_err(|_| PageError::InvalidAction("page size exceeded"))
+		Page::<PageDataSize>::try_from(updated_page_buffer).map_err(|_| PageError::PageSizeOverflow)
 	}
 
 	/// Parses all the items inside an ItemPage
