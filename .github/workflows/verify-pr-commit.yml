@@ -109,8 +109,6 @@ jobs:
         with:
           ref: ${{matrix.git_branch}}
       - name: Reset Runner
-        # XXX Remove condition when reset-self-hosted-runner action is available on main
-        if: matrix.branch_alias == 'pr'
         uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Set Env Vars
         run: |
