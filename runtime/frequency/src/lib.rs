@@ -21,7 +21,7 @@ use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
+	ApplyExtrinsicResult, DispatchError,
 };
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -993,8 +993,12 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block> for Runtime {
-		fn get_pages(msa_id: MessageSourceId, schema_id: SchemaId) -> Vec<StatefulStorageResponse> {
-			StatefulStorage::get_pages(msa_id, schema_id)
+		fn get_paginated_storages(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
+			StatefulStorage::get_paginated_storages(msa_id, schema_id)
+		}
+
+		fn get_itemized_storages(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError> {
+			StatefulStorage::get_itemized_storages(msa_id, schema_id)
 		}
 	}
 
