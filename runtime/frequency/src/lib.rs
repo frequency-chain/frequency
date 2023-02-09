@@ -36,7 +36,8 @@ use common_primitives::{
 	messages::*,
 	msa::*,
 	node::*,
-	schema::{PayloadLocation, SchemaResponse},
+	schema::{PayloadLocation, SchemaId, SchemaResponse},
+	stateful_storage::*,
 };
 
 pub use common_runtime::{
@@ -312,8 +313,6 @@ impl pallet_msa::Config for Runtime {
 	// The maximum number of signatures that can be stored in the payload signature registry
 	type MaxSignaturesStored = MSAMaxSignaturesStored;
 }
-
-pub use common_primitives::schema::SchemaId;
 
 impl pallet_schemas::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -994,8 +993,8 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block> for Runtime {
-		fn dummy() {
-			todo!()
+		fn get_pages(msa_id: MessageSourceId, schema_id: SchemaId) -> Vec<StatefulStorageResponse> {
+			StatefulStorage::get_pages(msa_id, schema_id)
 		}
 	}
 

@@ -304,16 +304,16 @@ parameter_types! {
 
 // --- Stateful Storage Pallet ---
 parameter_types! {
-	/// The maximum size of a page (in bytes) for an Itemized storage model
-	pub const MaxItemizedPageSizeBytes: u32 = 4096;
-	/// The maximum size of a page (in bytes) for a Paginated storage model
-	pub const MaxPaginatedPageSizeBytes: u32 = 4096;
+	/// The maximum size of a page (in bytes) for an Itemized storage model (64KB)
+	pub const MaxItemizedPageSizeBytes: u32 = 64 * 1024;
+	/// The maximum size of a page (in bytes) for a Paginated storage model (2KB)
+	pub const MaxPaginatedPageSizeBytes: u32 = 2 * 1024;
 	/// The maximum size of a single item in an itemized storage model (in bytes)
-	pub const MaxItemizedBlobSizeBytes: u32 = 512;
+	pub const MaxItemizedBlobSizeBytes: u32 = 1024;
 	/// The maximum number of pages in a Paginated storage model
-	pub const MaxPaginatedPageId: u32 = 64;
+	pub const MaxPaginatedPageId: u32 = 16;
 	/// The maximum number of actions in itemized actions
-	pub const MaxItemizedActionsCount: u32 = 7;
+	pub const MaxItemizedActionsCount: u32 = 5;
 }
 // -end- Stateful Storage Pallet
 

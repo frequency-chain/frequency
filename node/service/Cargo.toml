@@ -81,6 +81,8 @@ pallet-msa-rpc = { path = "../../pallets/msa/src/rpc" }
 pallet-msa-runtime-api = { path = "../../pallets/msa/src/runtime-api" }
 pallet-schemas-rpc = { path = "../../pallets/schemas/src/rpc" }
 pallet-schemas-runtime-api = { path = "../../pallets/schemas/src/runtime-api" }
+pallet-stateful-storage-rpc = { path = "../../pallets/stateful-storage/src/rpc" }
+pallet-stateful-storage-runtime-api = { path = "../../pallets/stateful-storage/src/runtime-api" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
