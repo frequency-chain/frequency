@@ -1,7 +1,7 @@
 // Integration tests for pallets/stateful-pallet-storage/handlepaginated.ts
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import { createAndFundKeypair, createProviderKeysAndId, createDelegatorAndDelegation} from "../scaffolding/helpers";
+import { createProviderKeysAndId, createDelegatorAndDelegation} from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "./fixtures/itemizedSchemaType";
@@ -161,6 +161,15 @@ describe("📗 Stateful Pallet Storage", () => {
                 name: 'UnAuthorizedDelegate',
                 section: 'statefulStorage',
             });
+        }).timeout(10000);
+    });
+
+    describe("Paginated Storage RPC Tests", () => {
+        it("✅ should be able to call get_paginated_storages", async function () {
+            const result = await ExtrinsicHelper.getPaginatedStorages(msa_id, schemaId);
+            assert.notEqual(result, undefined, "should have returned a valid response");
+            assert.notEqual(result.length, 0, "should have returned paginated responses");
+            assert.notEqual(result[0].hash, undefined, "should have returned a valid page");
         }).timeout(10000);
     });
 });

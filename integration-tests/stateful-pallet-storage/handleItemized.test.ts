@@ -220,4 +220,12 @@ describe("📗 Stateful Pallet Storage", () => {
             });
         }).timeout(10000);
     });
+
+    describe("Itemized Storage RPC Tests", () => {
+        it("✅ should be able to call get_itemized_storages", async function () {
+            const result = await ExtrinsicHelper.getItemizedStorages(msa_id, schemaId);
+            assert.notEqual(result.hash, undefined, "should have returned a hash");
+            assert.notEqual(result.size, undefined, "should have returned a itemized_storages");
+        }).timeout(10000);
+    });
 });

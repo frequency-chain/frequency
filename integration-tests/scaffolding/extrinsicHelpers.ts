@@ -9,7 +9,7 @@ import { devAccounts, log, Sr25519Signature } from "./helpers";
 import { connect } from "./apiConnection";
 import { DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
-import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfaces";
+import { ItemizedStoragePageResponse, MessageSourceId, PaginatedStorageResponse, SchemaId } from "@frequency-chain/api-augment/interfaces";
 
 export type AddKeyData = { msaId?: u64; expiration?: any; newPublicKey?: any; }
 export type AddProviderPayload = { authorizedMsaId?: u64; schemaIds?: u16[], expiration?: any; }
@@ -246,5 +246,13 @@ export class ExtrinsicHelper {
 
     public static upsertPage(keys: KeyringPair, schemaId: SchemaId, msa_id: MessageSourceId, page_id: any, payload: any): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.upsertPage( msa_id, schemaId, page_id, payload), keys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated);
+    }
+
+    public static getItemizedStorages(msa_id: MessageSourceId, schemaId: SchemaId): Promise<ItemizedStoragePageResponse> {
+        return firstValueFrom(ExtrinsicHelper.api.rpc.statefulStorage.getItemizedStorages(msa_id, schemaId));
+    }
+    
+    public static getPaginatedStorages(msa_id: MessageSourceId, schemaId: SchemaId): Promise<Vec<PaginatedStorageResponse>> {
+        return firstValueFrom(ExtrinsicHelper.api.rpc.statefulStorage.getPaginatedStorages(msa_id, schemaId));
     }
 }
