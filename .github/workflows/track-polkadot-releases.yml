@@ -1,7 +1,7 @@
 name: Track Polkadot Releases
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "0 0 * * *" # midnight
 env:
   REPO_URL: https://api.github.com/repos/paritytech/polkadot
   RELEASE_TRACK_FILENAME: .github/workflows/.polkadot-latest-full-release.txt
@@ -31,7 +31,7 @@ jobs:
           set -x
           modified=$([ -z "`git status --porcelain`" ] && echo "false" || echo "true")
           echo "repo_modified=$modified" >> $GITHUB_OUTPUT
-      - name: Commit latest release version
+      - name: Commit Latest Release Version
         if: steps.git-check.outputs.repo_modified == 'true'
         run: |
           git config --global user.name 'Frequency CI'
