@@ -155,11 +155,15 @@ pub type Executive = frame_executive::Executive<
 // ==============================================
 //        RUNTIME STORAGE MIGRATION
 // ==============================================
+#[allow(unused)]
 mod remove_sudo {
 	use super::*;
-	use frame_support::{dispatch::Vec, migration::clear_storage_prefix, pallet_prelude::Weight};
-	use sp_io::MultiRemovalResults;
+	use frame_support::{dispatch::Vec, pallet_prelude::Weight};
+	use frame_system::AccountInfo;
+	use pallet_balances::AccountData;
+	use sp_core::crypto::AccountId32;
 
+	// Known prefixes for Sudo storage.  See https://www.shawntabrizi.com/substrate-known-keys/
 	const SUDO_PREFIX: [u8; 16] = [
 		0x5c, 0x0d, 0x11, 0x76, 0xa5, 0x68, 0xc1, 0xf9, 0x29, 0x44, 0x34, 0x0d, 0xbf, 0xed, 0x9e,
 		0x9c,
@@ -183,98 +187,155 @@ mod remove_sudo {
 			res
 		}
 
-		fn transfer_sudo_balance_to_treasury() {
-			// pub fn account_id() -> T::AccountId {
-			// 	T::PalletId::get().into_account_truncating()
-			// }
-			// Sudo::key() is how to get it, but which sudo?
-			if let Some(from) = SudoConfig::key() {
-				let to: AccountId = Treasury::account_id();
-				// ?? this is how, according to https://substrate.stackexchange.com/questions/5185/token-distribution-to-many-users-in-substrate/5194#5194
-				Balances::transfer_all(RuntimeOrigin::signed(from), to.into(), false);
-			} else {
-				log::warn!("No Sudo key found");
+		#[cfg(feature = "frequency")]
+		fn transfer_sudo_balance_to_treasury(from: AccountId) {
+			// have to get the sudo key this way because the sudo pallet was removed
+			let to: AccountId = Treasury::account_id();
+			// this is how to transfer the balance, according to
+			// https://substrate.stackexchange.com/questions/5185/token-distribution-to-many-users-in-substrate/5194#5194
+			let transfer_result =
+				Balances::transfer_all(RuntimeOrigin::signed(from.into()), to.into(), false);
+			if let Err(e) = transfer_result {
+				log::warn!("‼️        transfer failed with {:?}", e);
+				// return false;
 			}
-			// TODO: weight
+			// true
+		}
+
+		// check sudo free balance, assuming the key is still in storage.
+		#[cfg(feature = "try-runtime")]
+		fn check_sudo_balance_pre_upgrade(sudo_key: &Vec<u8>) -> AccountId {
+			let storage_result: Option<AccountId> =
+				frame_support::storage::unhashed::get(sudo_key.as_slice());
+			if storage_result.is_some() {
+				let from: AccountId = storage_result.unwrap();
+				let account_data: AccountInfo<Index, AccountData<Balance>> = System::account(&from);
+				log::info!("🟢        Current Sudo account balance: free: {:?}, reserved: {:?}, fee_frozen: {:?}, misc_frozen: {:?}",
+					account_data.data.free, account_data.data.reserved, account_data.data.fee_frozen, account_data.data.misc_frozen);
+				from.clone()
+			} else {
+				log::warn!("This sudo key does not exist");
+				AccountId::from([0; 32])
+			}
+		}
+
+		// checks sudo balance post_upgrade, using the sudo AccountId passed from pre_upgrade results.
+		#[cfg(feature = "try-runtime")]
+		fn check_sudo_balance_post_upgrade(state: &Vec<u8>) {
+			// try_from is really the only way to try to get an AccountId[32] out of a byte vec;
+			// everything else is cfg-ed away in runtime.
+			match AccountId32::try_from(state.as_slice()) {
+				Ok(from) => {
+					let account_data: AccountInfo<Index, AccountData<Balance>> =
+						System::account(&from);
+					log::info!("‼️        Post-upgrade, Sudo account has a balance: free: {:?}, reserved: {:?}", account_data.data.free, account_data.data.reserved);
+				},
+				Err(_) => {
+					log::info!(
+						"❎        Post-upgrade, Sudo account could not be converted: {:?}",
+						state.as_slice()
+					);
+				},
+			}
+		}
+
+		// returns true if both Sudo storage keys are found, false otherwise.
+		fn keys_exist() -> bool {
+			let sudo_key: Vec<u8> = Self::join_keys(&SUDO_PREFIX, &KEY_PREFIX);
+			let sudo_pallet_version: Vec<u8> =
+				Self::join_keys(&SUDO_PREFIX, &PALLET_VERSION_PREFIX);
+
+			let mut keys_exist = frame_support::storage::unhashed::exists(sudo_key.as_slice());
+			log::info!("❓       Sudo Key storage exists ===>  {:?}", keys_exist);
+			keys_exist = frame_support::storage::unhashed::exists(sudo_pallet_version.as_slice());
+			log::info!("❓       Sudo PalletVersion storage exists ===>  {:?}", keys_exist);
+			keys_exist
+		}
+
+		#[cfg(not(feature = "frequency"))]
+		fn transfer_sudo_balance_to_treasury() {
+			log::warn!(
+				"‼️        transfer_sudo_balance_to_treasury was called but should not have been"
+			);
+		}
+
+		// TODO: correct weight
+		fn weights_from(reads: u64, writes: u64) -> Weight {
+			Weight::from_ref_time(0u64)
+				.saturating_add(RocksDbWeight::get().reads(reads))
+				.saturating_add(RocksDbWeight::get().writes(writes))
+		}
+
+		fn remove_storage(key: &Vec<u8>) {
+			frame_support::storage::unhashed::kill(key.as_slice());
 		}
 	}
 
 	impl OnRuntimeUpgrade for RemoveSudo {
+		// on_runtime_upgrade is the only OnRuntimeUpgrade trait function that must be defined for all configs
+		// do nothing if we are not on mainnet.
+		#[cfg(not(feature = "frequency"))]
+		fn on_runtime_upgrade() -> Weight {
+			Weight::zero()
+		}
+
+		// Do this if we are on mainnet
+		#[cfg(feature = "frequency")]
 		fn on_runtime_upgrade() -> Weight {
 			// TODO: move storage removal to fn in struct above
-			let sudo_key_prefix: Vec<u8> = RemoveSudo::join_keys(&SUDO_PREFIX, &KEY_PREFIX);
-			let sudo_pallet_version: Vec<u8> =
-				RemoveSudo::join_keys(&SUDO_PREFIX, &PALLET_VERSION_PREFIX);
 
-			// TODO: Weight: two reads
-			if !frame_support::storage::unhashed::exists(sudo_key_prefix.as_slice()) &&
-				!frame_support::storage::unhashed::exists(sudo_pallet_version.as_slice())
-			{
+			// keep track of reads/writes
+			let mut reads: u64 = 4; // from the two calls to keys_exist
+			let mut writes: u64 = 0;
+
+			if !Self::keys_exist() {
+				// we don't want to proceed if there is even a partial migration.
 				log::warn!("Sudo Storage Migration run on already migrated database. This migration should be removed.");
-				Weight::zero()
 			} else {
-				let mut result: MultiRemovalResults = clear_storage_prefix(
-					"Sudo".as_bytes(), // this is correct
-					b"Key",            // this is correct
-					&[],               // this is correct
-					None,
-					None,
-				);
-				match result.backend {
-					0 => log::info!("❌        Key not removed."),
-					_ => log::info!(
-						"❎        Key removed: {:?}, unique: {:?}",
-						result.backend,
-						result.unique
-					), // <-- nonzero weight
+				let sudo_key: Vec<u8> = Self::join_keys(&SUDO_PREFIX, &KEY_PREFIX);
+				// get the value out so we can transfer the funds later.
+				let storage_result: Option<AccountId> =
+					frame_support::storage::unhashed::get(sudo_key.as_slice());
+
+				let sudo_pallet_version: Vec<u8> =
+					Self::join_keys(&SUDO_PREFIX, &PALLET_VERSION_PREFIX);
+
+				Self::remove_storage(&sudo_key);
+				Self::remove_storage(&sudo_pallet_version);
+				writes += 2;
+
+				// "To ensure that this function results in a killed account, you might need to prepare the account by
+				// removing any reference counters, storage deposits, etc…"
+				// https://paritytech.github.io/substrate/master/pallet_balances/pallet/struct.Pallet.html#method.transfer_all
+				// Theoretical "ensure" with emphasis on "might"...
+				if storage_result.is_some() {
+					let from: AccountId = storage_result.unwrap();
+					// TODO: should extrinsic call be included in the weight? Surely it is added by the txn call.
+					Self::transfer_sudo_balance_to_treasury(from);
+					reads += 1;
+					writes += 1;
 				}
-				// TODO: WHAT @*#@&(! do we use?
-				// b"StorageVersion", b"PalletVersion", b"palletVersion", b":__PALLET_VERSION__:", PALLET_VERSION_PREFIX and sudo_pallet_version don't work.
-				result = clear_storage_prefix(
-					"Sudo".as_bytes(), // this is correct
-					b"PalletVersion",
-					&[], // this is correct
-					None,
-					None,
-				);
-				match result.backend {
-					0 => log::info!("❌        Pallet/StorageVersion not removed."),
-					_ => log::info!(
-						"❎        Pallet/StorageVersion removed: {:?}, unique: {:?}",
-						result.backend,
-						result.unique
-					), // <-- nonzero weight
-				}
-				RemoveSudo::transfer_sudo_balance_to_treasury();
 				System::deposit_event(frame_system::Event::CodeUpdated);
-				// TODO: correct weight calc
-				Weight::from_ref_time(100)
 			}
+			let _ = Self::keys_exist();
+			Self::weights_from(reads, writes)
 		}
 
-		#[cfg(feature = "try-runtime")]
-		fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-			Ok(vec![])
-		}
-
-		#[cfg(feature = "try-runtime")]
-		// if try_on_runtime_update function is defined,
-		// pre_ and post_upgrade must be called explicitly.
+		// if try_on_runtime_update function is defined, pre_ and post_upgrade must be called explicitly.
 		// see default function at:
 		// https://github.com/paritytech/substrate/blob/master/frame/support/src/traits/hooks.rs#L139
-		fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
-			let sudo_key_prefix: Vec<u8> = RemoveSudo::join_keys(&SUDO_PREFIX, &KEY_PREFIX);
-			let sudo_pallet_version: Vec<u8> =
-				RemoveSudo::join_keys(&SUDO_PREFIX, &PALLET_VERSION_PREFIX);
-			// Verify they are really removed.
-			log::info!(
-				"❓Sudo Key storage exists ===>  {:?}",
-				frame_support::storage::unhashed::exists(sudo_key_prefix.as_slice())
-			);
-			log::info!(
-				"❓Sudo PalletVersion storage exists ===>  {:?}",
-				frame_support::storage::unhashed::exists(sudo_pallet_version.as_slice())
-			);
+		#[cfg(feature = "try-runtime")]
+		fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+			let account_id =
+				Self::check_sudo_balance_pre_upgrade(&Self::join_keys(&SUDO_PREFIX, &KEY_PREFIX));
+			let account_id_ar: &[u8; 32] = account_id.as_ref();
+			let result: Vec<u8> = Vec::from(account_id_ar.clone());
+			Ok(result)
+		}
+
+		#[cfg(feature = "try-runtime")]
+		fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+			Self::check_sudo_balance_post_upgrade(&state);
 			Ok(())
 		}
 	}
