@@ -1,15 +1,12 @@
 use super::mock::*;
-use crate::{
-	stateful_child_tree::{StatefulChildTree, StatefulPageKeyPart},
-	types::*,
-	Config, Error,
-};
+use crate::{stateful_child_tree::StatefulChildTree, types::*, Config, Error};
 use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
 use frame_support::{assert_err, assert_ok, BoundedVec};
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use scale_info::TypeInfo;
+use sp_std::collections::{btree_map::BTreeMap, btree_set::BTreeSet};
 
 type TestPageSize = <Test as Config>::MaxItemizedPageSizeBytes;
 type TestPage = Page<TestPageSize>;
@@ -202,8 +199,8 @@ fn upsert_new_page_succeeds() {
 			payload.into()
 		));
 
-		let keys = [schema_id.encode().to_vec(), page_id.encode().to_vec()];
-		let new_page: TestPage = StatefulChildTree::try_read(&msa_id, &keys).unwrap().unwrap();
+		let keys = (schema_id, page_id);
+		let new_page: TestPage = <StatefulChildTree>::try_read(&msa_id, &keys).unwrap().unwrap();
 		assert_eq!(page, new_page);
 	})
 }
@@ -220,9 +217,9 @@ fn upsert_existing_page_modifies_page() {
 		let new_content = generate_payload_bytes(Some(201));
 		let old_page: TestPage = old_content.clone().into();
 
-		let keys = [schema_id.encode().to_vec(), page_id.encode().to_vec()];
-		StatefulChildTree::write(&msa_id, &keys, old_page);
-		let old_page: TestPage = StatefulChildTree::try_read(&msa_id, &keys).unwrap().unwrap();
+		let keys = (schema_id, page_id);
+		<StatefulChildTree>::write(&msa_id, &keys, old_page);
+		let old_page: TestPage = <StatefulChildTree>::try_read(&msa_id, &keys).unwrap().unwrap();
 
 		assert_eq!(old_content, old_page.data);
 		assert_ok!(StatefulStoragePallet::upsert_page(
@@ -233,7 +230,7 @@ fn upsert_existing_page_modifies_page() {
 			new_content.clone().into()
 		));
 
-		let new_page: TestPage = StatefulChildTree::try_read(&msa_id, &keys).unwrap().unwrap();
+		let new_page: TestPage = <StatefulChildTree>::try_read(&msa_id, &keys).unwrap().unwrap();
 		assert_eq!(new_content, new_page.data);
 	})
 }
@@ -392,10 +389,8 @@ fn remove_existing_page_succeeds() {
 			page_id
 		));
 
-		let schema_key = schema_id.encode().to_vec();
-		let page_key = page_id.encode().to_vec();
-		let page =
-			StatefulChildTree::try_read::<Vec<u8>>(&msa_id, &[schema_key, page_key]).unwrap();
+		let keys = (schema_id, page_id);
+		let page: Option<TestPage> = <StatefulChildTree>::try_read(&msa_id, &keys).unwrap();
 		assert_eq!(page, None);
 	})
 }
@@ -531,9 +526,7 @@ fn child_tree_write_read() {
 		let msa_id = 1;
 		let schema_id: SchemaId = 2;
 		let page_id: u8 = 3;
-		let k1: StatefulPageKeyPart = schema_id.to_be_bytes().to_vec();
-		let k2: StatefulPageKeyPart = page_id.to_be_bytes().to_vec();
-		let keys = &[k1, k2];
+		let keys = &(schema_id, page_id);
 		let val = TestStruct {
 			model_type: ModelType::AvroBinary,
 			payload_location: PayloadLocation::OnChain,
@@ -541,10 +534,10 @@ fn child_tree_write_read() {
 		};
 
 		// act
-		StatefulChildTree::write(&msa_id, keys, &val);
+		<StatefulChildTree>::write(&msa_id, keys, &val);
 
 		// assert
-		let read = StatefulChildTree::try_read::<TestStruct>(&msa_id, keys).unwrap();
+		let read = <StatefulChildTree>::try_read(&msa_id, keys).unwrap();
 		assert_eq!(Some(val), read);
 	});
 }
@@ -554,31 +547,48 @@ fn child_tree_iterator() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let msa_id = 1;
-		let mut arr: Vec<(Vec<u8>, TestStruct)> = Vec::new();
-		for i in 1..=10 {
-			let k = [b"key", &i.encode()[..]].concat();
-			arr.push((
-				k,
-				TestStruct {
-					model_type: ModelType::AvroBinary,
-					payload_location: PayloadLocation::OnChain,
-					number: i,
+		let mut arr: Vec<TestStruct> = Vec::new();
+		let prefix_1 = "part_1".to_string();
+		let prefix_2a = "part_2a".to_string();
+		let prefix_2b = "part_2b".to_string();
+
+		for i in 1u64..=10u64 {
+			let k = (
+				prefix_1.clone(),
+				match i % 2 {
+					0 => prefix_2a.clone(),
+					_ => prefix_2b.clone(),
 				},
-			));
-		}
-		for (k, t) in arr.as_slice() {
-			let keys = &[k.to_owned()];
-			StatefulChildTree::write(&msa_id, keys, t);
-		}
-
-		// act
-		let mut v = Vec::new();
-		let nodes = StatefulChildTree::prefix_iterator::<TestStruct>(&msa_id, &[]);
-		for n in nodes {
-			v.push(n);
+				i.clone(),
+			);
+			let s = TestStruct {
+				model_type: ModelType::AvroBinary,
+				payload_location: PayloadLocation::OnChain,
+				number: i,
+			};
+			arr.push(s.clone());
+			<StatefulChildTree>::write(&msa_id, &k, s);
 		}
 
-		// assert
-		assert_eq!(v, arr);
+		// Try 1-level prefix
+		let prefix_key = (prefix_1.clone(),);
+		// let mut v: Vec<((String, String, u64), TestStruct)> = Vec::new();
+		let nodes = <StatefulChildTree>::prefix_iterator::<_, TestStruct, (String, u64)>(
+			&msa_id,
+			&prefix_key.clone(),
+		);
+		let r0: BTreeSet<u64> = nodes.map(|(_, v)| v.number).collect();
+
+		// Should return all items
+		assert_eq!(r0, arr.iter().map(|s| s.number).collect());
+
+		// Try 2-level prefix
+		let prefix_key = (prefix_1.clone(), prefix_2a.clone());
+		let nodes2 =
+			<StatefulChildTree>::prefix_iterator::<_, TestStruct, (u64,)>(&msa_id, &prefix_key);
+		let r1: BTreeSet<u64> = nodes2.map(|(_, v)| v.number).collect();
+
+		// Should return only even-numbered items
+		assert_eq!(r1, arr.iter().filter(|s| s.number % 2 == 0).map(|s| s.number).collect());
 	});
 }

@@ -73,16 +73,15 @@ pub use weights::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::{
-		stateful_child_tree::{StatefulChildTree, StatefulPageKeyPart},
-		types::{ItemAction, Page},
-	};
+	use crate::{stateful_child_tree::StatefulChildTree, types::*};
 	use common_primitives::{
 		msa::{MessageSourceId, MsaLookup, MsaValidator, SchemaGrantValidator},
 		schema::{SchemaId, SchemaProvider},
 		stateful_storage::PageId,
 	};
 	use frame_support::pallet_prelude::*;
+
+	type Tree = StatefulChildTree<Identity>;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -210,38 +209,31 @@ pub mod pallet {
 				PayloadLocation::Itemized,
 			)?;
 
-			let storage_key = &schema_id.encode()[..];
-			let keys = vec![storage_key.to_vec()];
-			let updated_page = StatefulChildTree::try_read::<Page<T::MaxItemizedPageSizeBytes>>(
-				&state_owner_msa_id,
-				&keys,
-			)
-			.map_err(|_| {
-				log::warn!(
-					"failed decoding Itemized msa={:?} schema_id={:?}",
-					state_owner_msa_id,
-					schema_id
-				);
-				Error::<T>::CorruptedState
-			})?
-			.unwrap_or_default()
-			.apply_item_actions(&actions[..])
-			.map_err(|_| Error::<T>::InvalidItemAction)?;
+			let key = (schema_id,);
+			let updated_page =
+				Tree::try_read::<_, Page<T::MaxItemizedPageSizeBytes>>(&state_owner_msa_id, &key)
+					.map_err(|_| {
+						log::warn!(
+							"failed decoding Itemized msa={:?} schema_id={:?}",
+							state_owner_msa_id,
+							schema_id
+						);
+						Error::<T>::CorruptedState
+					})?
+					.unwrap_or_default()
+					.apply_item_actions(&actions[..])
+					.map_err(|_| Error::<T>::InvalidItemAction)?;
 
 			match updated_page.is_empty() {
 				true => {
-					StatefulChildTree::kill(&state_owner_msa_id, &keys);
+					Tree::kill(&state_owner_msa_id, &key);
 					Self::deposit_event(Event::ItemizedPageRemoved {
 						msa_id: state_owner_msa_id,
 						schema_id,
 					});
 				},
 				false => {
-					StatefulChildTree::write::<Page<T::MaxItemizedPageSizeBytes>>(
-						&state_owner_msa_id,
-						&keys,
-						updated_page,
-					);
+					Tree::write(&state_owner_msa_id, &key, updated_page);
 					Self::deposit_event(Event::ItemizedPageUpdated {
 						msa_id: state_owner_msa_id,
 						schema_id,
@@ -275,10 +267,8 @@ pub mod pallet {
 				PayloadLocation::Paginated,
 			)?;
 
-			let schema_key: StatefulPageKeyPart = schema_id.encode();
-			let page_key: StatefulPageKeyPart = page_id.encode();
-
-			StatefulChildTree::write(&state_owner_msa_id, &[schema_key, page_key], page);
+			let keys = (schema_id, page_id);
+			Tree::write(&state_owner_msa_id, &keys, page);
 			Self::deposit_event(Event::PaginatedPageUpdated {
 				msa_id: state_owner_msa_id,
 				schema_id,
@@ -307,10 +297,8 @@ pub mod pallet {
 				PayloadLocation::Paginated,
 			)?;
 
-			let schema_key = schema_id.encode();
-			let page_key = page_id.encode();
-
-			StatefulChildTree::kill(&state_owner_msa_id, &[schema_key, page_key]);
+			let keys = (schema_id, page_id);
+			Tree::kill(&state_owner_msa_id, &keys);
 			Self::deposit_event(Event::PaginatedPageRemoved {
 				msa_id: state_owner_msa_id,
 				schema_id,
@@ -325,10 +313,9 @@ pub mod pallet {
 			msa_id: MessageSourceId,
 			schema_id: SchemaId,
 		) -> Page<T::MaxItemizedPageSizeBytes> {
-			let storage_key = &schema_id.encode()[..];
-			let keys = vec![storage_key.to_vec()];
+			let key = (schema_id,);
 			let page_response =
-				StatefulChildTree::try_read::<Page<T::MaxItemizedPageSizeBytes>>(&msa_id, &keys)
+				Tree::try_read::<_, Page<T::MaxItemizedPageSizeBytes>>(&msa_id, &key)
 					.map_or_else(|_| Page::default(), |page| page.unwrap_or_default());
 			page_response
 		}

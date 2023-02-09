@@ -1,8 +1,12 @@
 use codec::{Decode, Encode, MaxEncodedLen};
+use common_primitives::{schema::SchemaId, stateful_storage::PageId};
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
 use sp_std::{cmp::*, collections::btree_map::BTreeMap, fmt::Debug, prelude::*};
+
+pub type ItemizedKey = (SchemaId,);
+pub type PaginatedKey = (SchemaId, PageId);
 
 /// Defines the actions that can be applied to an Itemized storage
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, PartialOrd, Ord)]

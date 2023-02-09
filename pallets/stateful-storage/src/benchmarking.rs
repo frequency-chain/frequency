@@ -72,8 +72,7 @@ benchmarks! {
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
 
 		for i in 0 .. n {
-			let page_key = (n as PageId).encode().to_vec();
-			StatefulChildTree::write(&delegator_msa_id, &[schema_key.clone(), page_key], payload.clone());
+			<StatefulChildTree>::write(&delegator_msa_id, &(schema_id, n as PageId), payload.clone());
 		}
 		let page_id: u16 = (n + 1).try_into().unwrap();
 	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id, payload)
@@ -93,8 +92,7 @@ benchmarks! {
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
 
 		for i in 0 .. n {
-			let page_key = (n as PageId).encode().to_vec();
-			StatefulChildTree::write(&delegator_msa_id, &[schema_key.clone(), page_key], payload.clone());
+			<StatefulChildTree>::write(&delegator_msa_id, &(schema_id, n as PageId), payload.clone());
 		}
 		let page_id: u16 = (n + 1).try_into().unwrap();
 	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id)
