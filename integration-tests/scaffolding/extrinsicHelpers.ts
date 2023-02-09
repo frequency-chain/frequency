@@ -241,7 +241,7 @@ export class ExtrinsicHelper {
     }
 
     public static removePage(keys: KeyringPair, schemaId: SchemaId, msa_id: MessageSourceId, page_id: any, ): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.removePage( msa_id, schemaId, page_id), keys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageRemoved);
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.deletePage( msa_id, schemaId, page_id), keys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted);
     }
 
     public static upsertPage(keys: KeyringPair, schemaId: SchemaId, msa_id: MessageSourceId, page_id: any, payload: any): Extrinsic {

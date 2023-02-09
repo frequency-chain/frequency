@@ -159,7 +159,7 @@ describe("📗 Stateful Pallet Storage", () => {
             // Delete action
             const idx_1: u16 = new u16(ExtrinsicHelper.api.registry, 1)
             const remove_action_1 ={
-                "Remove": idx_1,
+                "Delete": idx_1,
             }
             let remove_actions = [remove_action_1];
             let itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, msa_id, remove_actions);
@@ -173,7 +173,7 @@ describe("📗 Stateful Pallet Storage", () => {
         it("🛑 should fail to call remove action with invalid schemaId", async function () {
             const idx_1: u16 = new u16(ExtrinsicHelper.api.registry, 1)
             const remove_action_1 ={
-                "Remove": idx_1,
+                "Delete": idx_1,
             }
             let remove_actions = [remove_action_1];
             let fake_schema_id = new u16(ExtrinsicHelper.api.registry, 999);      
@@ -190,7 +190,7 @@ describe("📗 Stateful Pallet Storage", () => {
         it("🛑 should fail to call remove action with invalid schema location", async function () {
             const idx_1: u16 = new u16(ExtrinsicHelper.api.registry, 1)
             const remove_action_1 ={
-                "Remove": idx_1,
+                "Delete": idx_1,
             }
             let remove_actions = [remove_action_1];
             let itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_unsupported, msa_id, remove_actions);
@@ -206,7 +206,7 @@ describe("📗 Stateful Pallet Storage", () => {
         it("🛑 should fail to call remove action with invalid msa_id", async function () {
             const idx_1: u16 = new u16(ExtrinsicHelper.api.registry, 1)
             const remove_action_1 ={
-                "Remove": idx_1,
+                "Delete": idx_1,
             }
             let remove_actions = [remove_action_1];
             let bad_msa_id =  new u64(ExtrinsicHelper.api.registry, 999)
