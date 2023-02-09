@@ -165,7 +165,7 @@ describe("📗 Stateful Pallet Storage", () => {
     });
 
     describe("Paginated Storage RPC Tests", () => {
-        it("✅ should be able to call get_paginated_storages", async function () {
+        it("✅ should be able to call get_paginated_storages and get paginated data", async function () {
             const result = await ExtrinsicHelper.getPaginatedStorages(msa_id, schemaId);
             assert.notEqual(result, undefined, "should have returned a valid response");
             assert.notEqual(result.length, 0, "should have returned paginated responses");
