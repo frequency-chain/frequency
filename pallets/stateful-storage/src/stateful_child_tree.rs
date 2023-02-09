@@ -2,7 +2,7 @@ use codec::{Decode, Encode};
 use common_primitives::msa::MessageSourceId;
 use frame_support::{
 	storage::{child, child::ChildInfo, ChildTriePrefixIterator},
-	Identity, StorageHasher,
+	Identity, StorageHasher, Twox64Concat,
 };
 use sp_core::hexdisplay::AsBytesRef;
 use sp_std::prelude::*;
@@ -15,8 +15,8 @@ impl StatefulChildTree {
 	pub fn concat_keys(keys: &[StatefulPageKeyPart]) -> Vec<u8> {
 		let mut key = Vec::<u8>::new();
 		for k in keys {
-			let mut k2 = k.to_owned();
-			key.append(&mut k2);
+			let mut key1_hashed = k.to_owned().using_encoded(Twox64Concat::hash);
+			key.append(&mut key1_hashed);
 		}
 
 		key
@@ -31,7 +31,7 @@ impl StatefulChildTree {
 		keys: &[StatefulPageKeyPart],
 	) -> Result<Option<V>, ()> {
 		let child = Self::get_child_tree(*msa_id);
-		let value = child::get_raw(&child, &Identity::hash(Self::concat_keys(keys).as_bytes_ref()));
+		let value = child::get_raw(&child, Self::concat_keys(keys).as_bytes_ref());
 		match value {
 			None => Ok(None),
 			Some(v) => Ok(Decode::decode(&mut &v[..]).map(Some).map_err(|_| ())?),
@@ -47,7 +47,10 @@ impl StatefulChildTree {
 		keys: &[StatefulPageKeyPart],
 	) -> ChildTriePrefixIterator<(Vec<u8>, V)> {
 		let child = Self::get_child_tree(*msa_id);
-		ChildTriePrefixIterator::<_>::with_prefix(&child, Self::concat_keys(keys).as_bytes_ref())
+		ChildTriePrefixIterator::<_>::with_prefix_over_key::<Twox64Concat>(
+			&child,
+			Self::concat_keys(keys).as_bytes_ref(),
+		)
 	}
 
 	/// Writes directly into child tree node
@@ -59,7 +62,7 @@ impl StatefulChildTree {
 		let child_trie_info = &Self::get_child_tree(*msa_id);
 		child::put_raw(
 			child_trie_info,
-			&Identity::hash(Self::concat_keys(keys).as_bytes_ref()),
+			Self::concat_keys(keys).as_bytes_ref(),
 			new_value.encode().as_ref(),
 		);
 	}
@@ -67,7 +70,7 @@ impl StatefulChildTree {
 	/// Kills a child tree node
 	pub fn kill(msa_id: &MessageSourceId, keys: &[StatefulPageKeyPart]) {
 		let child_trie_info = &Self::get_child_tree(*msa_id);
-		child::kill(child_trie_info, &Identity::hash(Self::concat_keys(keys).as_bytes_ref()));
+		child::kill(child_trie_info, Self::concat_keys(keys).as_bytes_ref());
 	}
 
 	fn get_child_tree(msa_id: MessageSourceId) -> ChildInfo {
