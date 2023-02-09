@@ -44,8 +44,10 @@ benchmarks! {
 		let caller: T::AccountId = whitelisted_caller();
 		let payload = vec![0u8; s as usize];
 
+		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
+		assert_ok!(create_schema::<T>(PayloadLocation::Itemized));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
-		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [ITEMIZED_SCHEMA].to_vec()));
+		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
 
 		let actions = itemized_actions_add::<T>(n, s as usize);
 	}: _ (RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, actions)
@@ -65,8 +67,10 @@ benchmarks! {
 		let payload = vec![0u8; s as usize];
 		let schema_key = schema_id.encode().to_vec();
 
+		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
+		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
-		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [PAGINATED_SCHEMA].to_vec()));
+		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
 
 	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id, payload)
 	verify {
