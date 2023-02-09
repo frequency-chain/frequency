@@ -17,9 +17,12 @@
 //! - Runtime interfaces for end users beyond just State Queries
 
 use common_primitives::{
-	msa::MessageSourceId, schema::SchemaId, stateful_storage::StatefulStorageResponse,
+	msa::MessageSourceId,
+	schema::SchemaId,
+	stateful_storage::{ItemizedStoragePageResponse, PaginatedStorageResponse},
 };
-use frame_support::inherent::Vec;
+use frame_support::{inherent::Vec, sp_runtime::DispatchError};
+
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime files (the `runtime` folder)
 sp_api::decl_runtime_apis! {
@@ -33,7 +36,9 @@ sp_api::decl_runtime_apis! {
 	/// Runtime APIs for [Stateful Storage](../pallet_stateful_storage/index.html)
 	pub trait StatefulStorageRuntimeApi
 	{
-		/// Retrieve the stateful storages for a particular msa and schema
-		fn get_pages(msa_id: MessageSourceId, schema_id: SchemaId) -> Vec<StatefulStorageResponse>;
+		/// Retrieve the paginated storages for a particular msa and schema
+		fn get_paginated_storages(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<Vec<PaginatedStorageResponse>, DispatchError>;
+		/// Retrieve the itemized storages for a particular msa and schema
+		fn get_itemized_storages(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError>;
 	}
 }

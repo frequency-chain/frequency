@@ -67,10 +67,13 @@ use crate::{
 use common_primitives::{
 	msa::{DelegatorId, MessageSourceId, MsaValidator, ProviderId, SchemaGrantValidator},
 	schema::{PayloadLocation, SchemaId, SchemaProvider},
-	stateful_storage::{PageId, StatefulStorageResponse},
+	stateful_storage::{
+		ItemizedStoragePageResponse, ItemizedStorageResponse, PageId, PaginatedStorageResponse,
+	},
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
 pub use pallet::*;
+use sp_runtime::DispatchError;
 pub use weights::*;
 
 #[frame_support::pallet]
@@ -320,78 +323,61 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	/// This function returns all the pages associated with `msa_id` and `schema_id` params
-	/// and support both storage types
-	/// Itemized - For this storage it parses all the items and returns each item with its index
-	/// Paginated - For this storage it finds all the pages and return each page with its pageId
+	/// This function returns all the paginated storages associated with `msa_id` and `schema_id`
 	///
 	/// [Warning] since this function iterates over all the potential keys it should never called
 	/// from runtime.
-	pub fn get_pages(msa_id: MessageSourceId, schema_id: SchemaId) -> Vec<StatefulStorageResponse> {
-		let encoded = vec![schema_id.encode()];
-		let mut result = Vec::new();
-		if let Some(schema) = T::SchemaProvider::get_schema_by_id(schema_id) {
-			match schema.payload_location {
-				PayloadLocation::Itemized => {
-					if let Ok(Some(page)) =
-						StatefulChildTree::try_read::<ItemizedPage<T>>(&msa_id, &encoded[..])
-					{
-						match page.parse_as_itemized(false) {
-							Ok(parsed) => {
-								let mut pages: Vec<StatefulStorageResponse> = parsed
-									.items
-									.iter()
-									.map(|(key, v)| {
-										StatefulStorageResponse::new(
-											*key,
-											msa_id,
-											schema_id,
-											v.to_vec(),
-										)
-									})
-									.collect();
-								result.append(&mut pages);
-							},
-							Err(e) => {
-								log::debug!(
-								"error parsing itemized page for msa_id {} and schema_id {} with error {:?}",
-								msa_id,
-								schema_id,
-								e);
-							},
-						}
-					}
+	pub fn get_paginated_storages(
+		msa_id: MessageSourceId,
+		schema_id: SchemaId,
+	) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
+		let schema =
+			T::SchemaProvider::get_schema_by_id(schema_id).ok_or(Error::<T>::InvalidSchemaId)?;
+		ensure!(
+			schema.payload_location == PayloadLocation::Paginated,
+			Error::<T>::SchemaPayloadLocationMismatch
+		);
+		let keys: Vec<StatefulPageKeyPart> = vec![schema_id.encode().to_vec()];
+		Ok(StatefulChildTree::prefix_iterator::<PaginatedPage<T>>(&msa_id, &keys[..])
+			.filter_map(|(key, v)| match <PageId>::decode(&mut &key[..]) {
+				Ok(k) =>
+					Some(PaginatedStorageResponse::new(k, msa_id, schema_id, v.data.into_inner())),
+				Err(_) => {
+					log::debug!(
+						"error parsing pageId from key {:?} for msa_id {} and schema_id {}",
+						key,
+						msa_id,
+						schema_id
+					);
+					None
 				},
-				PayloadLocation::Paginated => {
-					let keys: Vec<StatefulPageKeyPart> = vec![schema_id.encode().to_vec()];
-					let mut pages: Vec<StatefulStorageResponse> =
-						StatefulChildTree::prefix_iterator::<PaginatedPage<T>>(&msa_id, &keys[..])
-							.filter_map(|(key, v)| match <PageId>::decode(&mut &key[..]) {
-								Ok(k) => Some(StatefulStorageResponse::new(
-									k,
-									msa_id,
-									schema_id,
-									v.data.into_inner(),
-								)),
-								Err(_) => {
-									log::debug!(
-								"error parsing pageId from key {:?} for msa_id {} and schema_id {}",
-								key,
-								msa_id,
-								schema_id
-							);
-									None
-								},
-							})
-							.collect();
-					result.append(&mut pages);
-				},
-				PayloadLocation::OnChain | PayloadLocation::IPFS => {
-					// ignoring these locations, since they are not associated with stateful pallet
-				},
-			};
-		}
-		result
+			})
+			.collect())
+	}
+
+	/// This function returns all the itemized storages associated with `msa_id` and `schema_id`
+	pub fn get_itemized_storages(
+		msa_id: MessageSourceId,
+		schema_id: SchemaId,
+	) -> Result<ItemizedStoragePageResponse, DispatchError> {
+		let schema =
+			T::SchemaProvider::get_schema_by_id(schema_id).ok_or(Error::<T>::InvalidSchemaId)?;
+		ensure!(
+			schema.payload_location == PayloadLocation::Itemized,
+			Error::<T>::SchemaPayloadLocationMismatch
+		);
+		let keys: Vec<StatefulPageKeyPart> = vec![schema_id.encode().to_vec()];
+		let items: Vec<ItemizedStorageResponse> =
+			StatefulChildTree::try_read::<ItemizedPage<T>>(&msa_id, &keys[..])
+				.map_err(|_| Error::<T>::CorruptedState)?
+				.unwrap_or_default()
+				.parse_as_itemized(false)
+				.map_err(|_| Error::<T>::CorruptedState)?
+				.items
+				.iter()
+				.map(|(key, v)| ItemizedStorageResponse::new(*key, v.to_vec()))
+				.collect();
+		Ok(ItemizedStoragePageResponse::new(msa_id, schema_id, items))
 	}
 
 	fn check_schema_and_grants(

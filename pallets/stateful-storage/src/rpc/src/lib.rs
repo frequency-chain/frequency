@@ -8,18 +8,20 @@
 
 //! Custom APIs for [Stateful-Storage](../pallet_stateful_storage/index.html)
 
-use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
-	msa::MessageSourceId, schema::*, stateful_storage::StatefulStorageResponse,
+	msa::MessageSourceId,
+	schema::*,
+	stateful_storage::{ItemizedStoragePageResponse, PaginatedStorageResponse},
 };
 use jsonrpsee::{
-	core::{async_trait, RpcResult},
+	core::{async_trait, Error as RpcError, RpcResult},
 	proc_macros::rpc,
+	types::error::{CallError, ErrorCode, ErrorObject},
 };
 use pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::{generic::BlockId, traits::Block as BlockT, DispatchError};
 use sp_std::vec::Vec;
 use std::sync::Arc;
 
@@ -30,12 +32,20 @@ mod tests;
 #[rpc(client, server)]
 pub trait StatefulStorageApi<BlockHash> {
 	/// retrieving pages of stateful storage
-	#[method(name = "statefulStorage_getPages")]
-	fn get_pages(
+	#[method(name = "statefulStorage_getPaginatedStorages")]
+	fn get_paginated_storages(
 		&self,
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
-	) -> RpcResult<Vec<StatefulStorageResponse>>;
+	) -> RpcResult<Vec<PaginatedStorageResponse>>;
+
+	/// retrieving itemized storages of stateful storage
+	#[method(name = "statefulStorage_getItemizedStorages")]
+	fn get_itemized_storages(
+		&self,
+		msa_id: MessageSourceId,
+		schema_id: SchemaId,
+	) -> RpcResult<ItemizedStoragePageResponse>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -59,14 +69,41 @@ where
 	C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
 	C::Api: StatefulStorageRuntimeApi<Block>,
 {
-	fn get_pages(
+	fn get_paginated_storages(
 		&self,
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
-	) -> RpcResult<Vec<StatefulStorageResponse>> {
+	) -> RpcResult<Vec<PaginatedStorageResponse>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		let schema_api_result = api.get_pages(&at, msa_id, schema_id);
-		map_rpc_result(schema_api_result)
+		let api_result = api.get_paginated_storages(&at, msa_id, schema_id);
+		map_result(api_result)
+	}
+
+	fn get_itemized_storages(
+		&self,
+		msa_id: MessageSourceId,
+		schema_id: SchemaId,
+	) -> RpcResult<ItemizedStoragePageResponse> {
+		let api = self.client.runtime_api();
+		let at = BlockId::hash(self.client.info().best_hash);
+		let api_result = api.get_itemized_storages(&at, msa_id, schema_id);
+		map_result(api_result)
+	}
+}
+
+fn map_result<T>(api_result: Result<Result<T, DispatchError>, ApiError>) -> RpcResult<T> {
+	match api_result {
+		Ok(Ok(result)) => Ok(result),
+		Ok(Err(e)) => Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
+			ErrorCode::ServerError(300).code(), // No real reason for this value
+			"Runtime Error",
+			Some(format!("{:?}", e)),
+		)))),
+		Err(e) => Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
+			ErrorCode::ServerError(301).code(), // No real reason for this value
+			"Api Error",
+			Some(format!("{:?}", e)),
+		)))),
 	}
 }
