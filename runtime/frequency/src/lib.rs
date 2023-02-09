@@ -993,7 +993,7 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block> for Runtime {
-		fn get_pages(msa_id: MessageSourceId, schema_id: SchemaId) -> Vec<PageResponse> {
+		fn get_pages(msa_id: MessageSourceId, schema_id: SchemaId) -> Vec<StatefulStorageResponse> {
 			StatefulStorage::get_pages(msa_id, schema_id)
 		}
 	}

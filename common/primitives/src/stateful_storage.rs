@@ -12,12 +12,14 @@ use utils::*;
 /// PageId is the unique identifier for a Page in Stateful Storage
 pub type PageId = u16;
 
-/// A type for responding with an single Message in an RPC-call dependent on schema model
+/// A type to expose different types of stateful storages
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct PageResponse {
-	///  index or number
-	pub index_number: u16,
+pub struct StatefulStorageResponse {
+	///  index or id of this storage
+	/// for Itemized storages this is going to be index of the item
+	/// for Paginated storages this is going to be the Id of the page
+	pub index_id: PageId,
 	///  Message source account id (the original source).
 	pub msa_id: MessageSourceId,
 	///  Schema id of the
@@ -27,7 +29,7 @@ pub struct PageResponse {
 	pub payload: Vec<u8>,
 }
 
-impl PageResponse {
+impl StatefulStorageResponse {
 	/// Returns a new instance with associated parameters
 	pub fn new(
 		index_number: u16,
@@ -35,6 +37,6 @@ impl PageResponse {
 		schema_id: SchemaId,
 		payload: Vec<u8>,
 	) -> Self {
-		PageResponse { index_number, msa_id, schema_id, payload }
+		StatefulStorageResponse { index_id: index_number, msa_id, schema_id, payload }
 	}
 }

@@ -6,10 +6,12 @@
 	missing_docs
 )]
 
-//! Custom APIs for [Schemas](../pallet_schemas/index.html)
+//! Custom APIs for [Stateful-Storage](../pallet_stateful_storage/index.html)
 
 use common_helpers::rpc::map_rpc_result;
-use common_primitives::{msa::MessageSourceId, schema::*, stateful_storage::PageResponse};
+use common_primitives::{
+	msa::MessageSourceId, schema::*, stateful_storage::StatefulStorageResponse,
+};
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
@@ -24,16 +26,16 @@ use std::sync::Arc;
 #[cfg(test)]
 mod tests;
 
-/// Frequency Schema Custom RPC API
+/// Frequency Stateful Storage Custom RPC API
 #[rpc(client, server)]
 pub trait StatefulStorageApi<BlockHash> {
-	/// retrieving schema by schema id
+	/// retrieving pages of stateful storage
 	#[method(name = "statefulStorage_getPages")]
 	fn get_pages(
 		&self,
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
-	) -> RpcResult<Vec<PageResponse>>;
+	) -> RpcResult<Vec<StatefulStorageResponse>>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -61,7 +63,7 @@ where
 		&self,
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
-	) -> RpcResult<Vec<PageResponse>> {
+	) -> RpcResult<Vec<StatefulStorageResponse>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 		let schema_api_result = api.get_pages(&at, msa_id, schema_id);
