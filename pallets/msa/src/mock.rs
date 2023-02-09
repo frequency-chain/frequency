@@ -6,7 +6,7 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, OnFinalize, OnInitialize},
 };
-use frame_system::{EnsureRoot,EnsureSigned};
+use frame_system::{EnsureRoot, EnsureSigned};
 use pallet_collective;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
