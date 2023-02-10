@@ -218,7 +218,7 @@ pub mod pallet {
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
-			settings: BoundedVec<SchemaSetting, T::SchemaModelMaxBytesBoundedVecLimit>,
+			acl: Option<BoundedVec<SchemaSetting, T::SchemaModelMaxBytesBoundedVecLimit>>,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
@@ -232,7 +232,8 @@ pub mod pallet {
 			);
 
 			Self::ensure_valid_model(&model_type, &model)?;
-			let schema_id = Self::add_schema(model, model_type, payload_location, settings)?;
+			let schema_id =
+				Self::add_schema(model, model_type, payload_location, acl.unwrap_or_default())?;
 
 			Self::deposit_event(Event::SchemaCreated { key: sender, schema_id });
 			Ok(())
@@ -361,7 +362,7 @@ impl<T: Config> SchemaBenchmarkHelper for Pallet<T> {
 		let model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> =
 			model.try_into().unwrap();
 		Self::ensure_valid_model(&model_type, &model)?;
-		Self::add_schema(model, model_type, payload_location)?;
+		Self::add_schema(model, model_type, payload_location, BoundedVec::default())?;
 		Ok(())
 	}
 }
