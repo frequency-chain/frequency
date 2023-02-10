@@ -5935,6 +5935,7 @@ name = "pallet-schemas"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
+ "enumflags2",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
