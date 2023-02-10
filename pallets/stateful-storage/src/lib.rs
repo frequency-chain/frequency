@@ -219,17 +219,21 @@ pub mod pallet {
 			let keys = vec![storage_key.to_vec()];
 			let updated_page =
 				StatefulChildTree::try_read::<ItemizedPage<T>>(&state_owner_msa_id, &keys)
-					.map_err(|_| {
-						log::warn!(
-							"failed decoding Itemized msa={:?} schema_id={:?}",
-							state_owner_msa_id,
-							schema_id
-						);
-						Error::<T>::CorruptedState
-					})?
+					.map_err(|_| Error::<T>::CorruptedState)?
 					.unwrap_or_default()
 					.apply_item_actions(&actions[..])
-					.map_err(|_| Error::<T>::InvalidItemAction)?;
+					.map_err(|e| match e {
+						PageError::ErrorParsing(err) => {
+							log::warn!(
+								"failed parsing Itemized msa={:?} schema_id={:?} {:?}",
+								state_owner_msa_id,
+								schema_id,
+								err
+							);
+							Error::<T>::CorruptedState
+						},
+						_ => Error::<T>::InvalidItemAction,
+					})?;
 
 			match updated_page.is_empty() {
 				true => {
@@ -395,14 +399,19 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::SchemaPayloadLocationMismatch
 		);
 
-		let current_block = frame_system::Pallet::<T>::block_number();
-		Ok(T::SchemaGrantValidator::ensure_valid_schema_grant(
-			ProviderId(provider_msa_id),
-			DelegatorId(state_owner_msa_id),
-			schema_id,
-			current_block,
-		)
-		.map_err(|_| Error::<T>::UnAuthorizedDelegate)?)
+		// if provider and owner are the same no delegation is needed
+		if provider_msa_id != state_owner_msa_id {
+			let current_block = frame_system::Pallet::<T>::block_number();
+			T::SchemaGrantValidator::ensure_valid_schema_grant(
+				ProviderId(provider_msa_id),
+				DelegatorId(state_owner_msa_id),
+				schema_id,
+				current_block,
+			)
+			.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
+		}
+
+		Ok(())
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
