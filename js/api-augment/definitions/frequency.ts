@@ -2,7 +2,12 @@ export default {
   rpc: {
     getEvents: {
       description: "Get block Events",
-      params: [],
+      params: [
+        {
+          name: "at",
+          type: "H256",
+        },
+      ],
       type: "Vec<RpcEvent>",
     },
   },
