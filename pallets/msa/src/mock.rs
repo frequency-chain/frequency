@@ -135,11 +135,6 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall, RuntimeOrigin>
 }
 
 type MsaCreateProviderOrigin = EnsureSigned<AccountId>;
-// It has to be this way so benchmarks will pass in CI.
-type MsaCreateProviderViaGovernanceOrigin = EitherOfDiverse<
-	EnsureRoot<AccountId>,
-	pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
->;
 
 impl pallet_msa::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
@@ -160,7 +155,11 @@ impl pallet_msa::Config for Test {
 	type MaxSignaturesStored = ConstU32<8000>;
 	type CreateProviderOrigin = MsaCreateProviderOrigin;
 	// The origin that is allowed to create providers via governance
-	type CreateProviderViaGovernanceOrigin = MsaCreateProviderViaGovernanceOrigin;
+	// It has to be this way so benchmarks will pass in CI.
+	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
+	>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

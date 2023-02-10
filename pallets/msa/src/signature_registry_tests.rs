@@ -148,11 +148,6 @@ type MsaCreateProviderOrigin = EnsureSigned<AccountId>;
 #[cfg(feature = "frequency")]
 type MsaCreateProviderOrigin = EnsureNever<AccountId>;
 
-type MsaCreateProviderViaGovernanceOrigin = EitherOfDiverse<
-	EnsureRoot<AccountId>,
-	pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
->;
-
 impl pallet_msa::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
@@ -172,7 +167,11 @@ impl pallet_msa::Config for Test {
 	type MaxSignaturesStored = ConstU32<20>;
 	type CreateProviderOrigin = MsaCreateProviderOrigin;
 	// The origin that is allowed to create providers via governance
-	type CreateProviderViaGovernanceOrigin = MsaCreateProviderViaGovernanceOrigin;
+	// It has to be this way so benchmarks will pass in CI.
+	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
+	>;
 }
 #[test]
 pub fn cannot_register_too_many_signatures_in_one_bucket() {
