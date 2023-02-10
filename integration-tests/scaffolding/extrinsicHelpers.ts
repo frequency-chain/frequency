@@ -2,7 +2,7 @@ import { ApiRx } from "@polkadot/api";
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { Compact, u128, u16, u64, Vec } from "@polkadot/types";
-import { FrameSystemAccountInfo } from "@polkadot/types/lookup";
+import { FrameSystemAccountInfo, PalletSchemasSchemaSetting } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
 import { devAccounts, log, Sr25519Signature } from "./helpers";
@@ -179,9 +179,14 @@ export class ExtrinsicHelper {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transfer(dest.address, amount), keys, ExtrinsicHelper.api.events.balances.Transfer);
     }
 
-    /** Schema Extrinsics */
+    /** Generic Schema Extrinsics */
     public static createSchema(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS"| "Itemized" | "Paginated"): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.createSchema(JSON.stringify(model), modelType, payloadLocation), keys, ExtrinsicHelper.api.events.schemas.SchemaCreated);
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.createSchema(JSON.stringify(model), modelType, payloadLocation, []), keys, ExtrinsicHelper.api.events.schemas.SchemaCreated);
+    }
+
+    /** Generic Schema Extrinsics */
+    public static createSchemaWithSettings(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS"| "Itemized" | "Paginated", settings: Vec<PalletSchemasSchemaSetting>): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.createSchema(JSON.stringify(model), modelType, payloadLocation, settings), keys, ExtrinsicHelper.api.events.schemas.SchemaCreated);
     }
 
     /** MSA Extrinsics */
