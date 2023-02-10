@@ -18,13 +18,14 @@ env:
 jobs:
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
+    env:
+      HOME: /root
     runs-on: [self-hosted, Linux, X64]
     steps:
-      - name: Set Env Vars
-        run: |
-          echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Reset Runner
+        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
