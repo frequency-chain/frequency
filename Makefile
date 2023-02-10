@@ -65,6 +65,9 @@ lint-audit:
 .PHONY: format-lint
 format-lint: format lint
 
+.PHONY: ci-local
+ci-local: check lint lint-audit test integration-test
+
 .PHONY: upgrade
 upgrade-local:
 	./scripts/init.sh upgrade-frequency
@@ -117,7 +120,7 @@ build-benchmarks:
 	cargo build --profile production --features runtime-benchmarks --features all-frequency-features --workspace
 
 build-local:
-	cargo build --locked --release --features  frequency-rococo-local
+	cargo build --locked --features  frequency-rococo-local
 
 build-rococo:
 	cargo build --locked --release --features  frequency-rococo-testnet
@@ -158,7 +161,7 @@ ifeq (,$(POLKADOT_VERSION))
 endif
 	@echo "Setting the crate versions to "$(v)+polkadot$(POLKADOT_VERSION)
 	find ./ -type f -name 'Cargo.toml' -exec sed -i '' 's/^version = \"0\.0\.0\"/version = \"$(v)+polkadot$(POLKADOT_VERSION)\"/g' {} \;
-	cargo check
+	$(MAKE) check
 	@echo "All done. Don't forget to double check that the automated replacement worked."
 
 .PHONY: version-polkadot

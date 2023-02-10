@@ -1,0 +1,42 @@
+name: Check Polkadot Releases
+on:
+  schedule:
+    - cron: "0 0 * * *" # midnight (UTC)
+env:
+  REPO_URL: https://api.github.com/repos/paritytech/polkadot
+  RELEASE_TRACK_FILENAME: .github/workflows/.polkadot-latest-full-release.txt
+jobs:
+  record-polkadot-latest-release-version:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Timestamp
+        run: date
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          token: ${{secrets.FREQUENCY_REPO_TRACK_POLKADOT_RELEASES}}
+      - name: Print Recorded Latest Polkadot Release
+        run: |
+          echo "Recorded Polkadot Latest Full Release:"
+          echo "--------------------------------------"
+          cat ${{env.RELEASE_TRACK_FILENAME}}
+      - name: Fetch Latest Release Version
+        run: |
+          curl -sL $REPO_URL/releases/latest | \
+          jq -r ".tag_name" > ${{env.RELEASE_TRACK_FILENAME}}
+          echo "Fetched Polkadot Latest Full Release:"
+          echo "-------------------------------------"
+          cat ${{env.RELEASE_TRACK_FILENAME}}
+      - name: Check for Modified Files
+        id: git-check
+        run: |
+          modified=$([ -z "`git status --porcelain`" ] && echo "false" || echo "true")
+          echo "repo_modified=$modified" >> $GITHUB_OUTPUT
+      - name: Commit Latest Release Version
+        if: steps.git-check.outputs.repo_modified == 'true'
+        run: |
+          git config --global user.name 'Frequency CI'
+          git config --global user.email 'do-not-reply@users.noreply.github.com'
+          git commit -am "Record new Polkadot release version"
+          git push origin
