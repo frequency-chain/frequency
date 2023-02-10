@@ -1,7 +1,7 @@
 name: Track Polkadot Releases
 on:
   schedule:
-    - cron: "0 0 * * *" # midnight
+    - cron: "0 18 * * *" # midnight
 env:
   REPO_URL: https://api.github.com/repos/paritytech/polkadot
   RELEASE_TRACK_FILENAME: .github/workflows/.polkadot-latest-full-release.txt
