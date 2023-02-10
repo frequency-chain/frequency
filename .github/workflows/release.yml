@@ -15,6 +15,8 @@ env:
 jobs:
   build-binaries:
     name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
+    env:
+      HOME: /root
     strategy:
       matrix:
         # os: [[self-hosted, Linux, X64], [self-hosted, Linux, ARM64]]
@@ -39,16 +41,15 @@ jobs:
           #   arch: arm64
     runs-on: ${{matrix.os}}
     steps:
-      - name: Set Global Env Vars
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Reset Runner
+        uses: ./.github/workflows/common/reset-self-hosted-runner
+      - name: Set Env Vars
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
-      - name: Set Ubuntu Env Vars
-        run: |
-          echo "HOME=/root" >> $GITHUB_ENV
-      - name: Check Out Repo
-        uses: actions/checkout@v3
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
       # - name: Cache Binary for Testing
       #   id: cache-binary
@@ -111,6 +112,8 @@ jobs:
     outputs:
       runtime_filename_rococo: ${{steps.set-env-vars.outputs.runtime_filename_rococo}}
       runtime_filename_mainnet: ${{steps.set-env-vars.outputs.runtime_filename_mainnet}}
+    env:
+      HOME: /root
     strategy:
       matrix:
         network: [rococo, mainnet]
@@ -133,11 +136,10 @@ jobs:
             wasm-core-version: frequency
     runs-on: [self-hosted, Linux, X64]
     steps:
-      - name: Set Ubuntu Env Vars
-        run: |
-          echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Reset Runner
+        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
@@ -209,11 +211,13 @@ jobs:
   build-rust-developer-docs:
     name: Build Rust Developer Docs
     runs-on: [self-hosted, Linux, X64]
+    env:
+      HOME: /root
     steps:
-      - name: Set Ubuntu Env Vars
-        run: echo "HOME=/root" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Reset Runner
+        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Required Packages
         run: |
           sudo apt-get update
@@ -238,23 +242,19 @@ jobs:
   build-js-api-augment:
     needs: build-binaries
     name: Build JS API Augment
-    strategy:
-      matrix:
-        os: [ubuntu-20.04]
-        network: [mainnet]
-        include:
-          - network: local
-            spec: frequency-rococo-local
-            build-profile: release
-            release-file-name-prefix: frequency-local
-          - os: ubuntu-20.04
-            arch: amd64
-    runs-on: ${{matrix.os}}
+    env:
+      NETWORK: local
+      CHAIN_SPEC: frequency-rococo-local
+      BUILD_PROFILE: release
+      BIN_DIR: target/release
+      RELEASE_FILENAME_PREFIX: frequency-local
+      ARCH: amd64
+    runs-on: ubuntu-20.04
     steps:
       - name: Set Env Vars
         run: |
-          echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
-          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
+          echo "BIN_DIR=target/${{env.BUILD_PROFILE}}" >> $GITHUB_ENV
+          echo "RELEASE_BIN_FILENAME=${{env.RELEASE_FILENAME_PREFIX}}.${{env.ARCH}}" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Set up NodeJs
@@ -279,7 +279,9 @@ jobs:
           mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}
           chmod 755 ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
       - name: Output Metadata
-        run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-local --tmp ./js/api-augment/metadata.json
+        # TODO: Enable this in 1.2.0+ release instead
+        # run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-local --tmp ./js/api-augment/metadata.json
+        run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-local ./js/api-augment/metadata.json
       - name: Build
         run: npm run build
         working-directory: js/api-augment
@@ -586,11 +588,15 @@ jobs:
           name: "[Release Candidate] ${{env.NEW_RELEASE_TAG}}"
           prerelease: true
           body_path: tools/ci/release-notes/release-notes.md
-          files: /tmp/frequency*.*
+          files: |
+            /tmp/frequency*.*
+            /tmp/metadata-compare-*
       - name: Publish Full Release on GitHub
         if: env.IS_FULL_RELEASE == 'true'
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
+          name: "[Release Candidate] ${{env.NEW_RELEASE_TAG}}"
+          prerelease: true
           body_path: tools/ci/release-notes/release-notes.md
           files: |
             /tmp/frequency*.*
