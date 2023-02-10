@@ -541,7 +541,7 @@ pub mod pallet {
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		///
 		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::create_provider(provider_name.len() as u32))]
+		#[pallet::weight(T::WeightInfo::create_provider())]
 		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
 			let provider_key = T::CreateProviderOrigin::ensure_origin(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
@@ -891,10 +891,8 @@ pub mod pallet {
 		///
 		/// # Errors
 		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
-
 		#[pallet::call_index(11)]
-		//		#[pallet::weight(T::WeightInfo::propose_to_be_provider(provider_name.len() as u32))]
-		#[pallet::weight(1000)]
+		#[pallet::weight(T::WeightInfo::propose_to_be_provider())]
 		pub fn propose_to_be_provider(
 			origin: OriginFor<T>,
 			provider_name: Vec<u8>,
@@ -926,8 +924,7 @@ pub mod pallet {
 		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		#[pallet::call_index(12)]
-		//#[pallet::weight(T::WeightInfo::create_provider_via_governance(provider_name.len() as u32))]
-		#[pallet::weight(1000)]
+		#[pallet::weight(T::WeightInfo::create_provider_via_governance())]
 		pub fn create_provider_via_governance(
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,

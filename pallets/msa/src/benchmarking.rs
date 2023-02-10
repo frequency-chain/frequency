@@ -185,7 +185,7 @@ benchmarks! {
 	}
 
 	create_provider {
-		let s in 0 .. T::MaxProviderNameSize::get();
+		let s = T::MaxProviderNameSize::get();
 
 		let provider_name = (1 .. s as u8).collect::<Vec<_>>();
 		let account = create_account::<T>("account", 0);
