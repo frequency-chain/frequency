@@ -200,6 +200,7 @@ pub trait SchemaGrantValidator<BlockNumber> {
 		block_number: BlockNumber,
 	) -> DispatchResult;
 }
+
 /// RPC Response for getting getting MSA ids
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]

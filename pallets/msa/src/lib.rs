@@ -336,12 +336,7 @@ pub mod pallet {
 
 			/// The Delegator MSA Id
 			delegator_id: DelegatorId,
-		},
-		/// A proposal motion has been created
-		CreateProviderProposalCreated {
-			/// A Blake H256 hash
-			proposal_hash: Vec<u8>,
-		},
+		}
 	}
 
 	#[pallet::error]
@@ -550,6 +545,7 @@ pub mod pallet {
 		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
 			let provider_key = T::CreateProviderOrigin::ensure_origin(origin)?;
 			Self::do_create_provider(provider_key, provider_name)
+			Self::deposit_event(Event::ProviderCreated { provider_id: ProviderId(provider_msa_id) });
 		}
 
 		/// Creates a new Delegation for an existing MSA, with `origin` as the Provider and `delegator_key` is the delegator.
@@ -885,14 +881,14 @@ pub mod pallet {
 			Ok(Some(T::WeightInfo::retire_msa(num_deletions)).into())
 		}
 
-		/// Request to be a provider.  Creates a proposal for council approval to create a provider from a MSA
+		/// Propose to be a provider.  Creates a proposal for council approval to create a provider from a MSA
 		///
 		/// # Errors
 		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
 
 		#[pallet::call_index(11)]
-		#[pallet::weight(T::WeightInfo::request_to_be_provider(provider_name.len() as u32))]
-		pub fn request_to_be_provider(
+		#[pallet::weight(T::WeightInfo::propose_to_be_provider(provider_name.len() as u32))]
+		pub fn propose_to_be_provider(
 			origin: OriginFor<T>,
 			provider_name: Vec<u8>,
 		) -> DispatchResult {
@@ -930,6 +926,7 @@ pub mod pallet {
 			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
 
 			Self::do_create_provider(provider_key, provider_name)
+			Self::deposit_event(Event::ProviderCreated { provider_id: ProviderId(provider_msa_id) });
 		}
 	}
 }
@@ -1176,7 +1173,6 @@ impl<T: Config> Pallet<T> {
 				Ok(())
 			},
 		)?;
-		Self::deposit_event(Event::ProviderCreated { provider_id: ProviderId(provider_msa_id) });
 		Ok(())
 	}
 
