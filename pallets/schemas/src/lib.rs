@@ -281,11 +281,11 @@ pub mod pallet {
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
-			settings_vec: BoundedVec<SchemaSetting, T::SchemaModelMaxBytesBoundedVecLimit>,
+			acl: BoundedVec<SchemaSetting, T::SchemaModelMaxBytesBoundedVecLimit>,
 		) -> Result<SchemaId, DispatchError> {
 			let schema_id = Self::get_next_schema_id()?;
 			let mut settings = SchemaSettings::all_disabled();
-			for i in settings_vec.into_inner() {
+			for i in acl.into_inner() {
 				settings.set(i);
 			}
 			let schema = Schema { model_type, model, payload_location, settings };
