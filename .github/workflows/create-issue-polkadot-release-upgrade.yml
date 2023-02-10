@@ -23,4 +23,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:
-          filename: .github/issues/new-polkadot-release-template.md
+          filename: .github/issues/new-polkadot-release.template.md
