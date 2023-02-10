@@ -1,0 +1,26 @@
+name: Create Upgrade Issue for New Polkadot Release
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/.polkadot-latest-full-release.txt
+env:
+  RELEASE_PAGE_PREFIX_URL: https://github.com/paritytech/polkadot/releases/tag
+  RELEASE_TRACK_FILENAME: .github/workflows/.polkadot-latest-full-release.txt
+jobs:
+  create-issue:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Set Env Vars
+        run: |
+          release_version=$(cat ${{env.RELEASE_TRACK_FILENAME}})
+          echo "NEW_POLKADOT_RELEASE_VERSION=$release_version" >> $GITHUB_ENV
+      - name: Create GitHub Issue
+        uses: JasonEtco/create-an-issue@e27dddc79c92bc6e4562f268fffa5ed752639abd
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          filename: .github/issues/new-polkadot-release-template.md
