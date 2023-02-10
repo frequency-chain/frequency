@@ -259,7 +259,7 @@ mod remove_sudo {
 			);
 		}
 
-		// TODO: correct weight
+		// TODO: correct weight?
 		fn weights_from(reads: u64, writes: u64) -> Weight {
 			Weight::from_ref_time(0u64)
 				.saturating_add(RocksDbWeight::get().reads(reads))
@@ -282,8 +282,6 @@ mod remove_sudo {
 		// Do this if we are on mainnet
 		#[cfg(feature = "frequency")]
 		fn on_runtime_upgrade() -> Weight {
-			// TODO: move storage removal to fn in struct above
-
 			// keep track of reads/writes
 			let mut reads: u64 = 4; // from the two calls to keys_exist
 			let mut writes: u64 = 0;
@@ -307,7 +305,6 @@ mod remove_sudo {
 				// "To ensure that this function results in a killed account, you might need to prepare the account by
 				// removing any reference counters, storage deposits, etc…"
 				// https://paritytech.github.io/substrate/master/pallet_balances/pallet/struct.Pallet.html#method.transfer_all
-				// Theoretical "ensure" with emphasis on "might"...
 				if storage_result.is_some() {
 					let from: AccountId = storage_result.unwrap();
 					// TODO: should extrinsic call be included in the weight? Surely it is added by the txn call.
