@@ -183,7 +183,7 @@ onboard-frequency)
       ./target/release/frequency export-genesis-wasm --chain="frequency-local" > $wasm_location
     fi
 
-  echo "WASM path:" "${parachain}-${para_id}.wasm"
+  echo "WASM path:" "${wasm_location}"
 
   cd scripts/js/onboard
   yarn && yarn onboard "ws://0.0.0.0:9946" "//Alice" ${para_id} "${genesis}" $wasm_location
@@ -201,14 +201,13 @@ upgrade-frequency)
   root_dir=$(git rev-parse --show-toplevel)
   echo "root_dir is set to $root_dir"
 
+  # Due to defaults and profile=release, the target directory will be $root_dir/target/release
   cargo build \
     --locked \
     --profile release \
     --package frequency-runtime \
     --features frequency-rococo-local \
-    --target-dir $root_dir/target/release \
     -Z unstable-options
-
 
   wasm_location=$root_dir/target/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
 
