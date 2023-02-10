@@ -893,13 +893,15 @@ pub mod pallet {
 		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
 
 		#[pallet::call_index(11)]
-//		#[pallet::weight(T::WeightInfo::propose_to_be_provider(provider_name.len() as u32))]
+		//		#[pallet::weight(T::WeightInfo::propose_to_be_provider(provider_name.len() as u32))]
 		#[pallet::weight(1000)]
 		pub fn propose_to_be_provider(
 			origin: OriginFor<T>,
 			provider_name: Vec<u8>,
 		) -> DispatchResult {
 			let proposer = ensure_signed(origin)?;
+			Self::ensure_valid_msa_key(&proposer)?;
+
 			let proposal: Box<T::Proposal> = Box::new(
 				(Call::<T>::create_provider_via_governance {
 					provider_key: proposer.clone(),
