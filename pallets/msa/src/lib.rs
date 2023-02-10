@@ -336,7 +336,7 @@ pub mod pallet {
 
 			/// The Delegator MSA Id
 			delegator_id: DelegatorId,
-		}
+		},
 	}
 
 	#[pallet::error]
@@ -544,8 +544,14 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::create_provider(provider_name.len() as u32))]
 		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
 			let provider_key = T::CreateProviderOrigin::ensure_origin(origin)?;
-			Self::do_create_provider(provider_key, provider_name)
-			Self::deposit_event(Event::ProviderCreated { provider_id: ProviderId(provider_msa_id) });
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			let result = Self::do_create_provider(provider_msa_id, provider_name);
+			if result.is_ok() {
+				Self::deposit_event(Event::ProviderCreated {
+					provider_id: ProviderId(provider_msa_id),
+				});
+			}
+			result
 		}
 
 		/// Creates a new Delegation for an existing MSA, with `origin` as the Provider and `delegator_key` is the delegator.
@@ -887,7 +893,8 @@ pub mod pallet {
 		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
 
 		#[pallet::call_index(11)]
-		#[pallet::weight(T::WeightInfo::propose_to_be_provider(provider_name.len() as u32))]
+//		#[pallet::weight(T::WeightInfo::propose_to_be_provider(provider_name.len() as u32))]
+		#[pallet::weight(1000)]
 		pub fn propose_to_be_provider(
 			origin: OriginFor<T>,
 			provider_name: Vec<u8>,
@@ -917,16 +924,22 @@ pub mod pallet {
 		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		#[pallet::call_index(12)]
-		#[pallet::weight(T::WeightInfo::create_provider_via_governance(provider_name.len() as u32))]
+		//#[pallet::weight(T::WeightInfo::create_provider_via_governance(provider_name.len() as u32))]
+		#[pallet::weight(1000)]
 		pub fn create_provider_via_governance(
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
 			provider_name: Vec<u8>,
 		) -> DispatchResult {
 			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
-
-			Self::do_create_provider(provider_key, provider_name)
-			Self::deposit_event(Event::ProviderCreated { provider_id: ProviderId(provider_msa_id) });
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			let result = Self::do_create_provider(provider_msa_id, provider_name);
+			if result.is_ok() {
+				Self::deposit_event(Event::ProviderCreated {
+					provider_id: ProviderId(provider_msa_id),
+				});
+			}
+			result
 		}
 	}
 }
@@ -1155,13 +1168,12 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 	///
 	pub fn do_create_provider(
-		provider_key: T::AccountId,
+		provider_msa_id: MessageSourceId,
 		provider_name: Vec<u8>,
 	) -> DispatchResult {
 		let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
 			provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
-		let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 		ProviderToRegistryEntry::<T>::try_mutate(
 			ProviderId(provider_msa_id),
 			|maybe_metadata| -> DispatchResult {

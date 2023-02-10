@@ -207,7 +207,7 @@ benchmarks! {
 		assert!(Msa::<T>::is_registered_provider(provider_msa_id));
 	}
 
-	request_to_be_provider {
+	propose_to_be_provider {
 		let account = create_account::<T>("account", 0);
 		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account.into(), EMPTY_FUNCTION).unwrap();
 

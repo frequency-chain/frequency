@@ -312,16 +312,6 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = FrameSystemMaxConsumers;
 }
 
-#[cfg(not(feature = "frequency"))]
-type MsaCreateProviderOrigin = EnsureSigned<AccountId>;
-#[cfg(feature = "frequency")]
-type MsaCreateProviderOrigin = EnsureNever<AccountId>;
-
-type MsaCreateProviderViaGovernanceOrigin = EitherOfDiverse<
-	EnsureRoot<AccountId>,
-	pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
->;
-
 impl pallet_msa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
@@ -348,9 +338,15 @@ impl pallet_msa::Config for Runtime {
 	// The maximum number of signatures that can be stored in the payload signature registry
 	type MaxSignaturesStored = MSAMaxSignaturesStored;
 	// The origin that is allowed to create providers
-	type CreateProviderOrigin = MsaCreateProviderOrigin;
+	#[cfg(not(feature = "frequency"))]
+	type CreateProviderOrigin = EnsureSigned<AccountId>;
+	#[cfg(feature = "frequency")]
+	type CreateProviderOrigin = EnsureNever<AccountId>;
 	// The origin that is allowed to create providers via governance
-	type CreateProviderViaGovernanceOrigin = MsaCreateProviderViaGovernanceOrigin;
+	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
+	>;
 }
 
 pub use common_primitives::schema::SchemaId;
