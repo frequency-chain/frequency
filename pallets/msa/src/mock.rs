@@ -134,8 +134,6 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall, RuntimeOrigin>
 	}
 }
 
-type MsaCreateProviderOrigin = EnsureSigned<AccountId>;
-
 impl pallet_msa::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
@@ -153,7 +151,7 @@ impl pallet_msa::Config for Test {
 	type NumberOfBuckets = ConstU32<2>;
 	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<8000>;
-	type CreateProviderOrigin = MsaCreateProviderOrigin;
+	type CreateProviderOrigin = EnsureSigned<AccountId>;
 	// The origin that is allowed to create providers via governance
 	// It has to be this way so benchmarks will pass in CI.
 	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
