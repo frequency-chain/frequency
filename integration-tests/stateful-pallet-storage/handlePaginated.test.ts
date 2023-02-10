@@ -6,7 +6,7 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "./fixtures/itemizedSchemaType";
 import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfaces";
-import { u16, u64 } from "@polkadot/types";
+import { Bytes, u16, u64 } from "@polkadot/types";
 
 describe("📗 Stateful Pallet Storage", () => {
     let schemaId: SchemaId;
@@ -47,14 +47,7 @@ describe("📗 Stateful Pallet Storage", () => {
         it("✅ should be able to call upsert page and add a page and remove a page via id", async function () {
             
             // Add and update actions
-            const payload_1 = {
-                "message": "Hello World",
-            }
-
-            const payload_2 =  {
-                "message": "Hello World Again",
-            }
-
+            let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, msa_id, 0, payload_1);
             await paginated_add_result_1.fundOperation();
             const [pageUpdateEvent1, chainEvents ] = await paginated_add_result_1.signAndSend();
@@ -63,7 +56,7 @@ describe("📗 Stateful Pallet Storage", () => {
             assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStoragepaginatedActionApplied event");
             
             // Add another page 
-            let paginated_add_result_2 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, msa_id, 1, payload_2);
+            let paginated_add_result_2 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, msa_id, 1, payload_1);
             await paginated_add_result_2.fundOperation();
             const [pageUpdateEvent2, chainEvents2 ] = await paginated_add_result_2.signAndSend();
             assert.notEqual(chainEvents2["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
@@ -80,9 +73,8 @@ describe("📗 Stateful Pallet Storage", () => {
         }).timeout(10000);
 
         it("🛑 should fail to call upsert page with invalid schemaId", async function () {
-            const payload_1 = {
-                "message": "Hello World",
-            }
+            
+            let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
             let fake_schema_id = new u16(ExtrinsicHelper.api.registry, 999);      
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, fake_schema_id, msa_id, 0, payload_1);
             await paginated_add_result_1.fundOperation();
@@ -95,9 +87,8 @@ describe("📗 Stateful Pallet Storage", () => {
         }).timeout(10000);
         
         it("🛑 should fail to call upsert page with invalid schema location", async function () {
-            const payload_1 = {
-                "message": "Hello World",
-            }
+
+            let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId_unsupported, msa_id, 0, payload_1);
             await paginated_add_result_1.fundOperation();
             await assert.rejects(async () => {
@@ -109,9 +100,8 @@ describe("📗 Stateful Pallet Storage", () => {
         }).timeout(10000);
 
         it("🛑 should fail to call upsert page with for un-delegated attempts", async function () {
-            const payload_1 = {
-                "message": "Hello World",
-            }
+
+            let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
             let bad_msa_id =  new u64(ExtrinsicHelper.api.registry, 999)
 
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, bad_msa_id, 0, payload_1);
