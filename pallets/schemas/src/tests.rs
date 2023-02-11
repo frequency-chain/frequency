@@ -24,6 +24,12 @@ fn create_bounded_schema_vec(
 	BoundedVec::try_from(fields_vec).unwrap()
 }
 
+fn create_bound_schema_settings_vec(
+	from_string: &str,
+) -> BoundedVec<PalletSchemaSchemaGrants, <Test as Config>::GrantsMaxBytesBoundedVecLimit> {
+	let fields_vec = Vec::from(from_string.as_bytes());
+	BoundedVec::try_from(fields_vec).unwrap()
+}
 fn sudo_set_max_schema_size() {
 	assert_ok!(SchemasPallet::set_max_schema_model_bytes(RawOrigin::Root.into(), 70));
 }
@@ -349,4 +355,26 @@ fn dsnp_broadcast() {
 		&create_bounded_schema_vec(test_str_raw),
 	);
 	assert_ok!(result);
+}
+
+#[test]
+fn create_schema_with_settings_should_work() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let test_str_raw = r#"{"name":"John Doe"}"#;
+		let schema = create_bounded_schema_vec(test_str_raw);
+		let settings = create_bounded_settings_vec(r#"{"name":"John Doe"}"#);
+
+		// act
+		let res = SchemasPallet::create_schema_with_settings(
+			Origin::signed(1),
+			"test".to_string(),
+			ModelType::AvroBinary,
+			schema,
+			settings,
+		);
+
+		// assert
+		assert_ok!(res);
+	})
 }

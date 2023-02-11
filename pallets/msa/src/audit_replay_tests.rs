@@ -65,6 +65,7 @@ impl pallet_schemas::Config for Test {
 	type MinSchemaModelSizeBytes = ConstU32<10>;
 	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<10>;
 	type MaxSchemaRegistrations = ConstU16<10>;
+	type MaxSchemaGrantsPerSchema = ConstU16<1>;
 }
 
 parameter_types! {

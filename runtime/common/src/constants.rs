@@ -7,7 +7,7 @@ use common_primitives::{
 use frame_support::{
 	parameter_types,
 	sp_runtime::{Perbill, Permill},
-	traits::{ConstU32, ConstU8},
+	traits::{ConstU16, ConstU32, ConstU8},
 	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight},
 	PalletId,
 };
@@ -132,6 +132,8 @@ parameter_types! {
 pub type SchemasMinModelSizeBytes = ConstU32<8>;
 /// The maximum length of a schema model (in bytes)
 pub type SchemasMaxBytesBoundedVecLimit = ConstU32<65_500>;
+/// The maximum number of grants allowed per schema
+pub type MaxSchemaGrantsPerSchema = ConstU16<1>;
 // -end- Schemas Pallet ---
 
 // --- Orml Vesting Pallet ---

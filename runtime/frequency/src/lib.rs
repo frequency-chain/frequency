@@ -323,6 +323,8 @@ impl pallet_schemas::Config for Runtime {
 	type MaxSchemaRegistrations = SchemasMaxRegistrations;
 	// The maximum length of a schema model (in bytes)
 	type SchemaModelMaxBytesBoundedVecLimit = SchemasMaxBytesBoundedVecLimit;
+	// Maximum number of schema grants that are allowed per schema
+	type MaxSchemaGrantsPerSchema = MaxSchemaGrantsPerSchema;
 }
 
 pub struct RootAsVestingPallet;

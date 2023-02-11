@@ -82,7 +82,6 @@ mod serde;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use enumflags2::BitFlags;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -105,6 +104,10 @@ pub mod pallet {
 		/// Maximum number of schemas that can be registered
 		#[pallet::constant]
 		type MaxSchemaRegistrations: Get<SchemaId>;
+
+		/// Maximum number of schema settings that can be registered per schema (if any)
+		#[pallet::constant]
+		type MaxSchemaGrantsPerSchema: Get<u16>;
 	}
 
 	#[pallet::event]
@@ -218,7 +221,7 @@ pub mod pallet {
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
-			acl: Option<BoundedVec<SchemaSetting, T::SchemaModelMaxBytesBoundedVecLimit>>,
+			acl: Option<BoundedVec<Grant, T::SchemaModelMaxBytesBoundedVecLimit>>,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
@@ -281,14 +284,14 @@ pub mod pallet {
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
-			acl: BoundedVec<SchemaSetting, T::SchemaModelMaxBytesBoundedVecLimit>,
+			acl: BoundedVec<Grant, T::SchemaModelMaxBytesBoundedVecLimit>,
 		) -> Result<SchemaId, DispatchError> {
 			let schema_id = Self::get_next_schema_id()?;
-			let mut settings = SchemaSettings::all_disabled();
+			let mut grants = Grants::all_disabled();
 			for i in acl.into_inner() {
-				settings.set(i);
+				grants.set(i);
 			}
-			let schema = Schema { model_type, model, payload_location, settings };
+			let schema = Schema { model_type, model, payload_location, grants };
 			<CurrentSchemaIdentifierMaximum<T>>::set(schema_id);
 			<Schemas<T>>::insert(schema_id, schema);
 			Ok(schema_id)

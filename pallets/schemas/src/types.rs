@@ -22,45 +22,45 @@ where
 	pub model: BoundedVec<u8, MaxModelSize>,
 	/// The payload location
 	pub payload_location: PayloadLocation,
-	/// settings for the schema
-	pub settings: SchemaSettings,
+	/// grants for the schema
+	pub grants: Grants,
 }
 
 /// Support for up to 16 user-enabled features on a collection.
 #[bitflags]
 #[repr(u16)]
 #[derive(Copy, Clone, RuntimeDebug, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
-pub enum SchemaSetting {
+pub enum Grant {
 	/// Items in this collection are transferable.
 	AppendOnly,
 	/// The metadata of this collection can be modified.
 	SignatureRequired,
 }
 
-/// Wrapper type for `BitFlags<SchemaSetting>` that implements `Codec`.
+/// Wrapper type for `BitFlags<Grant>` that implements `Codec`.
 #[derive(Clone, Copy, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct SchemaSettings(pub BitFlags<SchemaSetting>);
+pub struct Grants(pub BitFlags<Grant>);
 
-impl SchemaSettings {
+impl Grants {
 	/// some docs
 	pub fn all_disabled() -> Self {
 		Self(BitFlags::EMPTY)
 	}
 	/// some docs
-	pub fn get_enabled(&self) -> BitFlags<SchemaSetting> {
+	pub fn get_enabled(&self) -> BitFlags<Grant> {
 		self.0
 	}
 	/// some docs
-	pub fn is_enabled(&self, setting: SchemaSetting) -> bool {
+	pub fn is_enabled(&self, setting: Grant) -> bool {
 		self.0.contains(setting)
 	}
 	/// some docs
-	pub fn set(&mut self, setting: SchemaSetting) {
+	pub fn set(&mut self, setting: Grant) {
 		self.0.insert(setting)
 	}
 	/// some docs
-	pub fn from(settings: BitFlags<SchemaSetting>) -> Self {
+	pub fn from(settings: BitFlags<Grant>) -> Self {
 		Self(settings)
 	}
 }
-impl_codec_bitflags!(SchemaSettings, u16, SchemaSetting);
+impl_codec_bitflags!(Grants, u16, Grant);
