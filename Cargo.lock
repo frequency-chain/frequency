@@ -980,6 +980,7 @@ name = "common-primitives"
 version = "0.0.0"
 dependencies = [
  "frame-support",
+ "frame-system",
  "impl-serde",
  "parity-scale-codec",
  "scale-info",
@@ -2820,6 +2821,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+ "system-runtime-api",
 ]
 
 [[package]]
@@ -2844,6 +2846,7 @@ dependencies = [
  "derive_more",
  "frame-benchmarking",
  "frame-benchmarking-cli",
+ "frame-system",
  "frequency-runtime",
  "futures",
  "hex",
@@ -2865,6 +2868,7 @@ dependencies = [
  "sc-chain-spec",
  "sc-cli",
  "sc-client-api",
+ "sc-client-db",
  "sc-consensus",
  "sc-consensus-manual-seal",
  "sc-executor",
@@ -11200,6 +11204,20 @@ checksum = "a75fb188eb626b924683e3b95e3a48e63551fcfb51949de2f06a9d91dbee93c9"
 dependencies = [
  "core-foundation-sys",
  "libc",
+]
+
+[[package]]
+name = "system-runtime-api"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde_json",
+ "sp-api",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
