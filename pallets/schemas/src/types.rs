@@ -32,9 +32,9 @@ where
 #[derive(Copy, Clone, RuntimeDebug, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub enum SchemaSetting {
 	/// Items in this collection are transferable.
-	AppendOnly = 0b0000_0000_0000_0001, // 1
+	AppendOnly,
 	/// The metadata of this collection can be modified.
-	SignatureRequired = 0b0000_0000_0000_0010, // 2
+	SignatureRequired,
 }
 
 /// Wrapper type for `BitFlags<SchemaSetting>` that implements `Codec`.
