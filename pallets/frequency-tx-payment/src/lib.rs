@@ -79,7 +79,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			call: Box<<T as Config>::RuntimeCall>,
 		) -> DispatchResult {
-			let sender = ensure_signed(origin)?;
+			let sender = ensure_signed(origin.clone())?;
 			call.dispatch(origin);
 			Ok(())
 		}
@@ -128,12 +128,12 @@ impl<T: Config> sp_std::fmt::Debug for ChargeFrqTransactionPayment<T> {
 
 impl<T: Config> SignedExtension for ChargeFrqTransactionPayment<T>
 where
-	<T as Config>::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+	<T as frame_system::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand,
 {
 	const IDENTIFIER: &'static str = "ChargeTransactionPayment";
 	type AccountId = T::AccountId;
-	type Call = <T as Config>::RuntimeCall;
+	type Call = <T as frame_system::Config>::RuntimeCall;
 	type AdditionalSigned = ();
 	type Pre = (
 		// tip
