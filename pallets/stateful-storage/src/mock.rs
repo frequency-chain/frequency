@@ -77,6 +77,7 @@ pub const INVALID_SCHEMA_ID: SchemaId = SchemaId::MAX;
 pub const ITEMIZED_SCHEMA: SchemaId = 100; // keep in sync with benchmarking.rs. TODO: refactor
 pub const PAGINATED_SCHEMA: SchemaId = 101; // keep in sync with benchmarking.rs. TODO: refactor
 pub const UNDELEGATED_PAGINATED_SCHEMA: SchemaId = 102;
+pub const UNDELEGATED_ITEMIZED_SCHEMA: SchemaId = 103;
 
 impl Default for MaxItemizedPageSizeBytes {
 	fn default() -> Self {
@@ -157,7 +158,7 @@ impl<BlockNumber> SchemaGrantValidator<BlockNumber> for SchemaGrantValidationHan
 		schema_id: SchemaId,
 		_block_number: BlockNumber,
 	) -> DispatchResult {
-		if schema_id == UNDELEGATED_PAGINATED_SCHEMA {
+		if schema_id == UNDELEGATED_PAGINATED_SCHEMA || schema_id == UNDELEGATED_ITEMIZED_SCHEMA {
 			return Err(DispatchError::Other("no schema grant or delegation"))
 		}
 
@@ -173,7 +174,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 	// For testing/benchmarking. Zero value returns None, Odd for Itemized, Even for Paginated
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 		match schema_id {
-			ITEMIZED_SCHEMA => Some(SchemaResponse {
+			ITEMIZED_SCHEMA | UNDELEGATED_ITEMIZED_SCHEMA => Some(SchemaResponse {
 				schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,

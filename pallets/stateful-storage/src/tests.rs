@@ -1,4 +1,4 @@
-use super::mock::*;
+use super::{mock::*, Event as StatefulEvent};
 use crate::{
 	pallet,
 	stateful_child_tree::{StatefulChildTree, StatefulPageKeyPart},
@@ -591,5 +591,205 @@ fn child_tree_iterator() {
 			count += 1;
 		}
 		assert_eq!(count, arr.len());
+	});
+}
+
+#[test]
+fn apply_item_actions_with_add_item_action_bigger_than_expected_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload =
+			vec![1; (<Test as Config>::MaxItemizedBlobSizeBytes::get() + 1).try_into().unwrap()];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions).unwrap(),
+			),
+			Error::<Test>::ItemExceedsMaxBlobSizeBytes
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_invalid_msa_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1000; // hard-coded in mocks to return None for MSA
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions).unwrap(),
+			),
+			Error::<Test>::InvalidMessageSourceAccount
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_invalid_schema_id_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = INVALID_SCHEMA_ID;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions).unwrap(),
+			),
+			Error::<Test>::InvalidSchemaId
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_invalid_schema_location_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = PAGINATED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions).unwrap(),
+			),
+			Error::<Test>::SchemaPayloadLocationMismatch
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_no_delegation_and_different_caller_from_owner_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = UNDELEGATED_ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions).unwrap(),
+			),
+			Error::<Test>::UnAuthorizedDelegate
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_corrupted_state_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions1 = vec![ItemAction::Add { data: payload.clone() }];
+		let schema_key = schema_id.encode().to_vec();
+		StatefulChildTree::write::<Vec<u8>>(&msa_id, &[schema_key], payload);
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions1).unwrap(),
+			),
+			Error::<Test>::CorruptedState
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_valid_input_should_update_storage() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_ok!(StatefulStoragePallet::apply_item_actions(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			BoundedVec::try_from(actions).unwrap(),
+		));
+
+		// assert
+		let schema_key = schema_id.encode().to_vec();
+		let items = StatefulChildTree::try_read::<Vec<u8>>(&msa_id, &[schema_key]).unwrap();
+		assert!(items.is_some());
+		System::assert_last_event(StatefulEvent::ItemizedPageUpdated { msa_id, schema_id }.into());
+	});
+}
+
+#[test]
+fn apply_item_actions_with_valid_input_and_empty_items_should_remove_storage() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions1 = vec![ItemAction::Add { data: payload }];
+		let actions2 = vec![ItemAction::Delete { index: 0 }];
+		assert_ok!(StatefulStoragePallet::apply_item_actions(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			BoundedVec::try_from(actions1).unwrap(),
+		));
+
+		// act
+		assert_ok!(StatefulStoragePallet::apply_item_actions(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			BoundedVec::try_from(actions2).unwrap(),
+		));
+
+		// assert
+		let schema_key = schema_id.encode().to_vec();
+		let items = StatefulChildTree::try_read::<Vec<u8>>(&msa_id, &[schema_key]).unwrap();
+		assert!(items.is_none());
+		System::assert_last_event(StatefulEvent::ItemizedPageDeleted { msa_id, schema_id }.into());
 	});
 }
