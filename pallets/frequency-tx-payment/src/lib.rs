@@ -127,7 +127,8 @@ impl<T: Config> sp_std::fmt::Debug for ChargeFrqTransactionPayment<T> {
 
 impl<T: Config> SignedExtension for ChargeFrqTransactionPayment<T>
 where
-	<T as frame_system::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+	<T as frame_system::Config>::RuntimeCall:
+		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand,
 {
 	const IDENTIFIER: &'static str = "ChargeTransactionPayment";
