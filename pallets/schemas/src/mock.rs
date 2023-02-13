@@ -33,7 +33,6 @@ frame_support::construct_runtime!(
 
 parameter_types! {
 	pub const MaxSchemaRegistrations: SchemaId = 64_000;
-	pub const MaxSchemaGrantsPerSchema = ConstU16::<1>;
 }
 
 pub struct WeightToFee;
@@ -59,7 +58,7 @@ impl pallet_schemas::Config for Test {
 	// is actually allowed.
 	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<65_500>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
-	type MaxSchemaGrantsPerSchema = MaxSchemaGrantsPerSchema;
+	type MaxSchemaGrantsPerSchema = ConstU16<1>;
 }
 
 impl frame_system::Config for Test {

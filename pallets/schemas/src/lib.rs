@@ -222,7 +222,7 @@ pub mod pallet {
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
-			acl: Option<BoundedVec<Grant, T::SchemaModelMaxBytesBoundedVecLimit>>,
+			grants: Option<BoundedVec<Grant, T::SchemaModelMaxBytesBoundedVecLimit>>,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
@@ -237,7 +237,7 @@ pub mod pallet {
 
 			Self::ensure_valid_model(&model_type, &model)?;
 			let schema_id =
-				Self::add_schema(model, model_type, payload_location, acl.unwrap_or_default())?;
+				Self::add_schema(model, model_type, payload_location, grants.unwrap_or_default())?;
 
 			Self::deposit_event(Event::SchemaCreated { key: sender, schema_id });
 			Ok(())

@@ -10,7 +10,7 @@ use common_primitives::{
 		types::ParquetType,
 		ParquetModel,
 	},
-	schema::{ModelType, PayloadLocation, SchemaId},
+	schema::{Grant, ModelType, PayloadLocation, SchemaId},
 };
 
 use crate::{Config, Error, Event as AnnouncementEvent};
@@ -24,12 +24,6 @@ fn create_bounded_schema_vec(
 	BoundedVec::try_from(fields_vec).unwrap()
 }
 
-fn create_bound_schema_settings_vec(
-	from_string: &str,
-) -> BoundedVec<PalletSchemaSchemaGrants, <Test as Config>::GrantsMaxBytesBoundedVecLimit> {
-	let fields_vec = Vec::from(from_string.as_bytes());
-	BoundedVec::try_from(fields_vec).unwrap()
-}
 fn sudo_set_max_schema_size() {
 	assert_ok!(SchemasPallet::set_max_schema_model_bytes(RawOrigin::Root.into(), 70));
 }
@@ -58,7 +52,7 @@ fn require_valid_schema_size_errors() {
 		];
 		for tc in test_cases {
 			assert_noop!(
-				SchemasPallet::create_schema(RuntimeOrigin::signed(sender), create_bounded_schema_vec(tc.schema), ModelType::AvroBinary, PayloadLocation::OnChain),
+				SchemasPallet::create_schema(RuntimeOrigin::signed(sender), create_bounded_schema_vec(tc.schema), ModelType::AvroBinary, PayloadLocation::OnChain, None),
 				tc.expected.0);
 		}
 	})
@@ -73,7 +67,8 @@ fn register_schema_happy_path() {
 			RuntimeOrigin::signed(sender),
 			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
 			ModelType::AvroBinary,
-			PayloadLocation::OnChain
+			PayloadLocation::OnChain,
+			None
 		));
 	})
 }
@@ -89,7 +84,8 @@ fn register_schema_unhappy_path() {
 				// name key does not have a colon
 				create_bounded_schema_vec(r#"{"name", 54, "type": "none"}"#),
 				ModelType::AvroBinary,
-				PayloadLocation::OnChain
+				PayloadLocation::OnChain,
+				None,
 			),
 			Error::<Test>::InvalidSchema
 		);
@@ -148,7 +144,8 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 				RuntimeOrigin::signed(sender),
 				create_bounded_schema_vec(fields),
 				ModelType::AvroBinary,
-				PayloadLocation::OnChain
+				PayloadLocation::OnChain,
+				None,
 			));
 			System::assert_last_event(
 				AnnouncementEvent::SchemaCreated { key: sender, schema_id: expected_schema_id }
@@ -160,7 +157,8 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 			RuntimeOrigin::signed(sender),
 			create_bounded_schema_vec(r#"{"account":3050}"#),
 			ModelType::AvroBinary,
-			PayloadLocation::OnChain
+			PayloadLocation::OnChain,
+			None
 		));
 	})
 }
@@ -177,7 +175,8 @@ fn get_existing_schema_by_id_should_return_schema() {
 			RuntimeOrigin::signed(sender),
 			create_bounded_schema_vec(test_str),
 			ModelType::AvroBinary,
-			PayloadLocation::OnChain
+			PayloadLocation::OnChain,
+			None
 		));
 
 		// act
@@ -358,23 +357,21 @@ fn dsnp_broadcast() {
 }
 
 #[test]
-fn create_schema_with_settings_should_work() {
+fn create_schema_with_grants_should_work() {
 	new_test_ext().execute_with(|| {
+		sudo_set_max_schema_size();
+
 		// arrange
-		let test_str_raw = r#"{"name":"John Doe"}"#;
-		let schema = create_bounded_schema_vec(test_str_raw);
-		let settings = create_bounded_settings_vec(r#"{"name":"John Doe"}"#);
+		let grants = vec![Grant::AppendOnly];
+		let sender: AccountId = 1;
 
-		// act
-		let res = SchemasPallet::create_schema_with_settings(
-			Origin::signed(1),
-			"test".to_string(),
+		//  assert
+		assert_ok!(SchemasPallet::create_schema(
+			RuntimeOrigin::signed(sender),
+			create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
 			ModelType::AvroBinary,
-			schema,
-			settings,
-		);
-
-		// assert
-		assert_ok!(res);
+			PayloadLocation::Itemized,
+			Some(BoundedVec::try_from(grants).unwrap()),
+		));
 	})
 }
