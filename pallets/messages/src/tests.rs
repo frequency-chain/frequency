@@ -214,12 +214,6 @@ fn add_message_with_invalid_msa_account_errors() {
 		let caller_1 = 1000;
 		let schema_id_1: SchemaId = 1;
 		let message_payload_1 = generate_payload(2, None);
-		println!(
-			"payload size is: {}
-		{}",
-			message_payload_1.len(),
-			sp_std::str::from_utf8(&message_payload_1).unwrap()
-		);
 
 		// act
 		assert_noop!(

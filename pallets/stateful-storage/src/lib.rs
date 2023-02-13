@@ -81,8 +81,6 @@ pub mod pallet {
 	};
 	use frame_support::pallet_prelude::*;
 
-	type Tree = StatefulChildTree<Identity>;
-
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
@@ -127,6 +125,9 @@ pub mod pallet {
 		#[cfg(feature = "runtime-benchmarks")]
 		/// A set of helper functions for benchmarking.
 		type SchemaBenchmarkHelper: SchemaBenchmarkHelper;
+
+		/// Concrete storage tree type w/hasher
+		type Hasher: stateful_child_tree::MultipartKeyStorageHasher;
 	}
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -210,30 +211,32 @@ pub mod pallet {
 			)?;
 
 			let key = (schema_id,);
-			let updated_page =
-				Tree::try_read::<_, Page<T::MaxItemizedPageSizeBytes>>(&state_owner_msa_id, &key)
-					.map_err(|_| {
-						log::warn!(
-							"failed decoding Itemized msa={:?} schema_id={:?}",
-							state_owner_msa_id,
-							schema_id
-						);
-						Error::<T>::CorruptedState
-					})?
-					.unwrap_or_default()
-					.apply_item_actions(&actions[..])
-					.map_err(|_| Error::<T>::InvalidItemAction)?;
+			let updated_page = StatefulChildTree::<T::Hasher>::try_read::<
+				_,
+				Page<T::MaxItemizedPageSizeBytes>,
+			>(&state_owner_msa_id, &key)
+			.map_err(|_| {
+				log::warn!(
+					"failed decoding Itemized msa={:?} schema_id={:?}",
+					state_owner_msa_id,
+					schema_id
+				);
+				Error::<T>::CorruptedState
+			})?
+			.unwrap_or_default()
+			.apply_item_actions(&actions[..])
+			.map_err(|_| Error::<T>::InvalidItemAction)?;
 
 			match updated_page.is_empty() {
 				true => {
-					Tree::kill(&state_owner_msa_id, &key);
+					StatefulChildTree::<T::Hasher>::kill(&state_owner_msa_id, &key);
 					Self::deposit_event(Event::ItemizedPageRemoved {
 						msa_id: state_owner_msa_id,
 						schema_id,
 					});
 				},
 				false => {
-					Tree::write(&state_owner_msa_id, &key, updated_page);
+					StatefulChildTree::<T::Hasher>::write(&state_owner_msa_id, &key, updated_page);
 					Self::deposit_event(Event::ItemizedPageUpdated {
 						msa_id: state_owner_msa_id,
 						schema_id,
@@ -268,7 +271,7 @@ pub mod pallet {
 			)?;
 
 			let keys = (schema_id, page_id);
-			Tree::write(&state_owner_msa_id, &keys, page);
+			StatefulChildTree::<T::Hasher>::write(&state_owner_msa_id, &keys, page);
 			Self::deposit_event(Event::PaginatedPageUpdated {
 				msa_id: state_owner_msa_id,
 				schema_id,
@@ -298,7 +301,7 @@ pub mod pallet {
 			)?;
 
 			let keys = (schema_id, page_id);
-			Tree::kill(&state_owner_msa_id, &keys);
+			StatefulChildTree::<T::Hasher>::kill(&state_owner_msa_id, &keys);
 			Self::deposit_event(Event::PaginatedPageRemoved {
 				msa_id: state_owner_msa_id,
 				schema_id,
@@ -314,9 +317,11 @@ pub mod pallet {
 			schema_id: SchemaId,
 		) -> Page<T::MaxItemizedPageSizeBytes> {
 			let key = (schema_id,);
-			let page_response =
-				Tree::try_read::<_, Page<T::MaxItemizedPageSizeBytes>>(&msa_id, &key)
-					.map_or_else(|_| Page::default(), |page| page.unwrap_or_default());
+			let page_response = StatefulChildTree::<T::Hasher>::try_read::<
+				_,
+				Page<T::MaxItemizedPageSizeBytes>,
+			>(&msa_id, &key)
+			.map_or_else(|_| Page::default(), |page| page.unwrap_or_default());
 			page_response
 		}
 	}

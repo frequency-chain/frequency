@@ -1,12 +1,16 @@
 use super::mock::*;
 use crate::{stateful_child_tree::StatefulChildTree, types::*, Config, Error};
 use codec::{Decode, Encode, MaxEncodedLen};
-use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
+use common_primitives::{
+	schema::{ModelType, PayloadLocation, SchemaId},
+	stateful_storage::PageId,
+};
 use frame_support::{assert_err, assert_ok, BoundedVec};
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use scale_info::TypeInfo;
-use sp_std::collections::{btree_map::BTreeMap, btree_set::BTreeSet};
+use sp_core::ConstU32;
+use sp_std::collections::btree_set::BTreeSet;
 
 type TestPageSize = <Test as Config>::MaxItemizedPageSizeBytes;
 type TestPage = Page<TestPageSize>;
@@ -200,8 +204,9 @@ fn upsert_new_page_succeeds() {
 		));
 
 		let keys = (schema_id, page_id);
-		let new_page: TestPage = <StatefulChildTree>::try_read(&msa_id, &keys).unwrap().unwrap();
-		assert_eq!(page, new_page);
+		let new_page = <StatefulChildTree>::try_read(&msa_id, &keys).unwrap();
+		assert_eq!(new_page.is_some(), true, "new page is empty");
+		assert_eq!(page, new_page.unwrap(), "new page contents incorrect");
 	})
 }
 
@@ -211,8 +216,8 @@ fn upsert_existing_page_modifies_page() {
 		// setup
 		let caller_1 = 1;
 		let msa_id = 2;
-		let schema_id = PAGINATED_SCHEMA;
-		let page_id = 1;
+		let schema_id: SchemaId = PAGINATED_SCHEMA;
+		let page_id: PageId = 1;
 		let old_content = generate_payload_bytes(Some(200));
 		let new_content = generate_payload_bytes(Some(201));
 		let old_page: TestPage = old_content.clone().into();
@@ -542,18 +547,21 @@ fn child_tree_write_read() {
 	});
 }
 
+type TestKeyString = BoundedVec<u8, ConstU32<16>>;
+type TestKey = (TestKeyString, TestKeyString, u64);
+
 #[test]
 fn child_tree_iterator() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let msa_id = 1;
-		let mut arr: Vec<TestStruct> = Vec::new();
-		let prefix_1 = "part_1".to_string();
-		let prefix_2a = "part_2a".to_string();
-		let prefix_2b = "part_2b".to_string();
+		let mut arr: Vec<(TestKey, TestKey)> = Vec::new();
+		let prefix_1 = TestKeyString::try_from(b"part_1".to_vec()).unwrap();
+		let prefix_2a = TestKeyString::try_from(b"part_2a".to_vec()).unwrap();
+		let prefix_2b = TestKeyString::try_from(b"part_2b".to_vec()).unwrap();
 
 		for i in 1u64..=10u64 {
-			let k = (
+			let k: TestKey = (
 				prefix_1.clone(),
 				match i % 2 {
 					0 => prefix_2a.clone(),
@@ -561,34 +569,51 @@ fn child_tree_iterator() {
 				},
 				i.clone(),
 			);
-			let s = TestStruct {
-				model_type: ModelType::AvroBinary,
-				payload_location: PayloadLocation::OnChain,
-				number: i,
-			};
-			arr.push(s.clone());
+			let s = k.clone();
+			arr.push((k.clone(), s.clone()));
 			<StatefulChildTree>::write(&msa_id, &k, s);
 		}
 
+		// Try empty prefix
+		let all_nodes = <StatefulChildTree>::prefix_iterator::<TestKey, TestKey, _>(&msa_id, &());
+		let r: BTreeSet<u64> = all_nodes.map(|(_k, s)| s.2).collect::<BTreeSet<u64>>();
+
+		// Should return all items
+		assert_eq!(
+			r,
+			arr.iter().map(|(_k, s)| s.2).collect(),
+			"iterator with empty prefix should have returned all items with full key"
+		);
+
 		// Try 1-level prefix
 		let prefix_key = (prefix_1.clone(),);
-		// let mut v: Vec<((String, String, u64), TestStruct)> = Vec::new();
-		let nodes = <StatefulChildTree>::prefix_iterator::<_, TestStruct, (String, u64)>(
+		let mut nodes = <StatefulChildTree>::prefix_iterator::<TestKey, TestKey, _>(
 			&msa_id,
 			&prefix_key.clone(),
 		);
-		let r0: BTreeSet<u64> = nodes.map(|(_, v)| v.number).collect();
+		let r0: BTreeSet<u64> = nodes.by_ref().map(|(_k, v)| v.2).collect();
 
-		// Should return all items
-		assert_eq!(r0, arr.iter().map(|s| s.number).collect());
+		assert_eq!(
+			r0,
+			arr.iter().map(|(_k, s)| s.2).collect(),
+			"iterator over topmost key should have returned all items"
+		);
+
+		for (k, s) in nodes {
+			assert_eq!(k, (s.0, s.1, s.2), "iterated keys should have been decoded properly");
+		}
 
 		// Try 2-level prefix
 		let prefix_key = (prefix_1.clone(), prefix_2a.clone());
 		let nodes2 =
-			<StatefulChildTree>::prefix_iterator::<_, TestStruct, (u64,)>(&msa_id, &prefix_key);
-		let r1: BTreeSet<u64> = nodes2.map(|(_, v)| v.number).collect();
+			<StatefulChildTree>::prefix_iterator::<TestKey, TestKey, _>(&msa_id, &prefix_key);
+		let r1: BTreeSet<u64> = nodes2.map(|(_, v)| v.2).collect();
 
 		// Should return only even-numbered items
-		assert_eq!(r1, arr.iter().filter(|s| s.number % 2 == 0).map(|s| s.number).collect());
+		assert_eq!(
+			r1,
+			arr.iter().filter(|(k, _s)| k.2 % 2 == 0).map(|(k, _s)| k.2).collect(),
+			"iterator over second-level key should have returned only even-numbered items"
+		);
 	});
 }

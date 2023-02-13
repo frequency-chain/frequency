@@ -1,54 +1,238 @@
 use core::marker::PhantomData;
 
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::msa::MessageSourceId;
 use frame_support::{
 	storage::{child, child::ChildInfo, ChildTriePrefixIterator},
-	Identity, ReversibleStorageHasher,
+	Blake2_128, Blake2_256, Hashable, StorageHasher, Twox128, Twox256,
 };
+use sp_core::{ConstU8, Get};
 use sp_std::{fmt::Debug, prelude::*};
 
-pub trait IsStatefulKey: Debug + Encode + Decode + Eq + PartialEq {}
+pub trait MultipartKeyStorageHasher: StorageHasher {
+	type HashSize: Get<u8>;
+	fn reverse(x: &[u8], num_key_parts: u8) -> &[u8] {
+		let hash_len: usize = (Self::HashSize::get() * num_key_parts).into();
+		if x.len() < hash_len {
+			log::error!("Invalid reverse: hash length too short");
+			return &[]
+		}
+		&x[hash_len..]
+	}
+}
+/// 128-bit Blake2 hash.
+impl MultipartKeyStorageHasher for Blake2_128 {
+	type HashSize = ConstU8<16>;
+}
+/// 256-bit Blake2 hash.
+impl MultipartKeyStorageHasher for Blake2_256 {
+	type HashSize = ConstU8<32>;
+}
+/// 128-bit XX hash.
+impl MultipartKeyStorageHasher for Twox128 {
+	type HashSize = ConstU8<16>;
+}
+/// 256-bit XX hash.
+impl MultipartKeyStorageHasher for Twox256 {
+	type HashSize = ConstU8<32>;
+}
 
-impl IsStatefulKey for () {}
-impl<T1: Debug + Decode + Encode + Eq + PartialEq> IsStatefulKey for (T1,) {}
-impl<
-		T1: Debug + Decode + Encode + Eq + PartialEq,
-		T2: Debug + Decode + Encode + Eq + PartialEq,
-	> IsStatefulKey for (T1, T2)
+pub trait IsStatefulKey<H: MultipartKeyStorageHasher>:
+	Clone + Debug + Default + Encode + Decode + Eq + PartialEq + Sized + Hashable
 {
+	type Arity: Get<u8>;
+
+	fn arity(&self) -> u8 {
+		Self::Arity::get()
+	}
+
+	fn hash(&self) -> Vec<u8>;
+	fn hash_prefix_only(&self) -> Vec<u8>;
+
+	fn decode(hash: &[u8]) -> Result<Self, codec::Error> {
+		let mut key_material = H::reverse(hash, Self::Arity::get());
+		<Self as Decode>::decode(&mut key_material)
+	}
+
+	fn decode_without_prefix(hash: &[u8], prefix_len: u8) -> Result<Self, codec::Error> {
+		if prefix_len > Self::Arity::get() {
+			return Err("Prefix longer than total key length".into())
+		}
+
+		let mut key_material = H::reverse(hash, Self::Arity::get() - prefix_len);
+		<Self as Decode>::decode(&mut key_material)
+	}
 }
-impl<
-		T1: Debug + Decode + Encode + Eq + PartialEq,
-		T2: Debug + Decode + Encode + Eq + PartialEq,
-		T3: Debug + Decode + Encode + Eq + PartialEq,
-	> IsStatefulKey for (T1, T2, T3)
-{
+
+impl<H: MultipartKeyStorageHasher> IsStatefulKey<H> for () {
+	type Arity = ConstU8<0>;
+
+	fn hash(&self) -> Vec<u8> {
+		Vec::new()
+	}
+
+	fn hash_prefix_only(&self) -> Vec<u8> {
+		Vec::new()
+	}
+
+	fn decode(_hash: &[u8]) -> Result<Self, codec::Error> {
+		Ok(())
+	}
 }
+
 impl<
-		T1: Debug + Decode + Encode + Eq + PartialEq,
-		T2: Debug + Decode + Encode + Eq + PartialEq,
-		T3: Debug + Decode + Encode + Eq + PartialEq,
-		T4: Debug + Decode + Encode + Eq + PartialEq,
-	> IsStatefulKey for (T1, T2, T3, T4)
+		H: MultipartKeyStorageHasher,
+		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
+	> IsStatefulKey<H> for (T1,)
 {
+	type Arity = ConstU8<1>;
+
+	fn hash(&self) -> Vec<u8> {
+		let encoded_1 = self.0.encode();
+		<H as StorageHasher>::hash(&encoded_1)
+			.as_ref()
+			.iter()
+			.chain(self.encode().iter())
+			.cloned()
+			.collect::<Vec<_>>()
+	}
+
+	fn hash_prefix_only(&self) -> Vec<u8> {
+		let encoded_1 = self.0.encode();
+		<H as StorageHasher>::hash(&encoded_1)
+			.as_ref()
+			.iter()
+			.cloned()
+			.collect::<Vec<_>>()
+	}
+}
+
+impl<
+		H: MultipartKeyStorageHasher,
+		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
+		T2: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
+	> IsStatefulKey<H> for (T1, T2)
+{
+	type Arity = ConstU8<2>;
+
+	fn hash(&self) -> Vec<u8> {
+		let encoded_1 = self.0.encode();
+		let encoded_2 = self.1.encode();
+		H::hash(&encoded_1)
+			.as_ref()
+			.iter()
+			.chain(H::hash(&encoded_2).as_ref().iter())
+			.chain(self.encode().iter())
+			.cloned()
+			.collect::<Vec<_>>()
+	}
+
+	fn hash_prefix_only(&self) -> Vec<u8> {
+		let encoded_1 = self.0.encode();
+		let encoded_2 = self.1.encode();
+		<H as StorageHasher>::hash(&encoded_1)
+			.as_ref()
+			.iter()
+			.chain(H::hash(&encoded_2).as_ref().iter())
+			.cloned()
+			.collect::<Vec<_>>()
+	}
+}
+
+impl<
+		H: MultipartKeyStorageHasher,
+		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
+		T2: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
+		T3: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
+	> IsStatefulKey<H> for (T1, T2, T3)
+{
+	type Arity = ConstU8<3>;
+
+	fn hash(&self) -> Vec<u8> {
+		let encoded_1 = self.0.encode();
+		let encoded_2 = self.1.encode();
+		let encoded_3 = self.2.encode();
+		H::hash(&encoded_1)
+			.as_ref()
+			.iter()
+			.chain(H::hash(&encoded_2).as_ref().iter())
+			.chain(H::hash(&encoded_3).as_ref().iter())
+			.chain(self.encode().iter())
+			.cloned()
+			.collect::<Vec<_>>()
+	}
+
+	fn hash_prefix_only(&self) -> Vec<u8> {
+		let encoded_1 = self.0.encode();
+		let encoded_2 = self.1.encode();
+		let encoded_3 = self.2.encode();
+		<H as StorageHasher>::hash(&encoded_1)
+			.as_ref()
+			.iter()
+			.chain(H::hash(&encoded_2).as_ref().iter())
+			.chain(H::hash(&encoded_3).as_ref().iter())
+			.cloned()
+			.collect::<Vec<_>>()
+	}
+}
+
+impl<
+		H: MultipartKeyStorageHasher,
+		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
+		T2: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
+		T3: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
+		T4: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
+	> IsStatefulKey<H> for (T1, T2, T3, T4)
+{
+	type Arity = ConstU8<4>;
+
+	fn hash(&self) -> Vec<u8> {
+		let encoded_1 = self.0.encode();
+		let encoded_2 = self.1.encode();
+		let encoded_3 = self.2.encode();
+		let encoded_4 = self.3.encode();
+		H::hash(&encoded_1)
+			.as_ref()
+			.iter()
+			.chain(H::hash(&encoded_2).as_ref().iter())
+			.chain(H::hash(&encoded_3).as_ref().iter())
+			.chain(H::hash(&encoded_4).as_ref().iter())
+			.chain(self.encode().iter())
+			.cloned()
+			.collect::<Vec<_>>()
+	}
+
+	fn hash_prefix_only(&self) -> Vec<u8> {
+		let encoded_1 = self.0.encode();
+		let encoded_2 = self.1.encode();
+		let encoded_3 = self.2.encode();
+		let encoded_4 = self.3.encode();
+		<H as StorageHasher>::hash(&encoded_1)
+			.as_ref()
+			.iter()
+			.chain(H::hash(&encoded_2).as_ref().iter())
+			.chain(H::hash(&encoded_3).as_ref().iter())
+			.chain(H::hash(&encoded_4).as_ref().iter())
+			.cloned()
+			.collect::<Vec<_>>()
+	}
 }
 
 /// Paginated Stateful data access utility
-pub struct StatefulChildTree<H: ReversibleStorageHasher = Identity> {
+pub struct StatefulChildTree<H: MultipartKeyStorageHasher = Twox128> {
 	hasher: PhantomData<H>,
 }
-impl<H: ReversibleStorageHasher> StatefulChildTree<H> {
+impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 	/// Reads a child tree node and tries to decode it
 	///
 	/// The read is performed from the `msa_id` only. The `key` is not required. If the
 	/// data doesn't store under the given `key` `None` is returned.
-	pub fn try_read<K: IsStatefulKey, V: Decode + Sized>(
+	pub fn try_read<K: IsStatefulKey<H>, V: Decode + Sized>(
 		msa_id: &MessageSourceId,
 		keys: &K,
 	) -> Result<Option<V>, ()> {
 		let child = Self::get_child_tree(*msa_id);
-		let value = child::get_raw(&child, &H::hash(&keys.encode()).as_ref());
+		let value = child::get_raw(&child, &keys.hash());
 		match value {
 			None => Ok(None),
 			Some(v) => Ok(Decode::decode(&mut &v[..]).map(Some).map_err(|_| ())?),
@@ -60,38 +244,44 @@ impl<H: ReversibleStorageHasher> StatefulChildTree<H> {
 	/// Allows getting all the keys having the same prefix
 	/// Warning: This should not be used from any on-chain transaction!
 	pub fn prefix_iterator<
-		PrefixKey: IsStatefulKey,
 		V: Decode + Sized,
-		OutputKey: IsStatefulKey + Sized,
+		K: IsStatefulKey<H> + Sized,
+		PrefixKey: IsStatefulKey<H>,
 	>(
 		msa_id: &MessageSourceId,
-		keys: &PrefixKey,
-	) -> ChildTriePrefixIterator<(OutputKey, V)> {
+		prefix_keys: &PrefixKey,
+	) -> Box<impl Iterator<Item = (K, V)>> {
 		let child = Self::get_child_tree(*msa_id);
-		ChildTriePrefixIterator::with_prefix_over_key::<H>(
+		let result = ChildTriePrefixIterator::<(Vec<u8>, V)>::with_prefix(
 			&child,
-			&H::hash(&keys.encode()).as_ref(),
+			&prefix_keys.hash_prefix_only(),
 		)
+		.filter_map(|(k, v)| {
+			if let Ok(key) =
+				<K as IsStatefulKey<H>>::decode_without_prefix(&k, PrefixKey::Arity::get())
+			{
+				Some((key, v))
+			} else {
+				None
+			}
+		});
+		Box::new(result)
 	}
 
 	/// Writes directly into child tree node
-	pub fn write<K: IsStatefulKey, V: Encode + Sized>(
+	pub fn write<K: IsStatefulKey<H>, V: Encode + Sized>(
 		msa_id: &MessageSourceId,
 		keys: &K,
 		new_value: V,
 	) {
 		let child_trie_info = &Self::get_child_tree(*msa_id);
-		child::put_raw(
-			child_trie_info,
-			&H::hash(&keys.encode()).as_ref(),
-			new_value.encode().as_ref(),
-		);
+		child::put_raw(child_trie_info, &keys.hash(), new_value.encode().as_ref());
 	}
 
 	/// Kills a child tree node
-	pub fn kill<K: IsStatefulKey>(msa_id: &MessageSourceId, keys: &K) {
+	pub fn kill<K: IsStatefulKey<H>>(msa_id: &MessageSourceId, keys: &K) {
 		let child_trie_info = &Self::get_child_tree(*msa_id);
-		child::kill(child_trie_info, &H::hash(&keys.encode()).as_ref());
+		child::kill(child_trie_info, &keys.hash());
 	}
 
 	fn get_child_tree(msa_id: MessageSourceId) -> ChildInfo {

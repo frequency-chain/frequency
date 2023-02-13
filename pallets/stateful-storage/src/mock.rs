@@ -11,7 +11,7 @@ use common_primitives::{
 use frame_support::{
 	dispatch::DispatchResult,
 	parameter_types,
-	traits::{ConstU16, ConstU64},
+	traits::{ConstU16, ConstU64}, Twox128,
 };
 use frame_system as system;
 use sp_core::H256;
@@ -325,6 +325,7 @@ impl pallet_stateful_storage::Config for Test {
 	type MsaBenchmarkHelper = ();
 	#[cfg(feature = "runtime-benchmarks")]
 	type SchemaBenchmarkHelper = ();
+	type Hasher = Twox128;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
