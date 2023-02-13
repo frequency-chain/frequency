@@ -1,11 +1,10 @@
 use crate as pallet_stateful_storage;
-
 use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MessageSourceId, MsaLookup, MsaValidator,
 		ProviderId, ProviderLookup, SchemaGrantValidator,
 	},
-	schema::{ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse},
+	schema::{Grant, ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse},
 	stateful_storage::PageId,
 };
 use frame_support::{
@@ -178,6 +177,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Itemized,
+				grants: Vec::try_from(vec![Grant::AppendOnly]).unwrap(),
 			}),
 
 			PAGINATED_SCHEMA | UNDELEGATED_PAGINATED_SCHEMA => Some(SchemaResponse {
@@ -185,6 +185,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Paginated,
+				grants: Vec::try_from(vec![Grant::SignatureRequired]).unwrap(),
 			}),
 
 			INVALID_SCHEMA_ID => None,
@@ -194,6 +195,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::OnChain,
+				grants: Vec::from(vec![Grant::default()]),
 			}),
 		}
 	}
