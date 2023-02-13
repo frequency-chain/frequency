@@ -58,7 +58,7 @@ impl pallet_schemas::Config for Test {
 	// is actually allowed.
 	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<65_500>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
-	type MaxSchemaGrantsPerSchema = ConstU16<1>;
+	type MaxSchemaSettingsPerSchema = ConstU16<1>;
 }
 
 impl frame_system::Config for Test {

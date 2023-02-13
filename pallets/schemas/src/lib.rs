@@ -108,7 +108,7 @@ pub mod pallet {
 
 		/// Maximum number of schema settings that can be registered per schema (if any)
 		#[pallet::constant]
-		type MaxSchemaGrantsPerSchema: Get<u16>;
+		type MaxSchemaSettingsPerSchema: Get<u16>;
 	}
 
 	#[pallet::event]
@@ -285,7 +285,7 @@ pub mod pallet {
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
-			settings: BoundedVec<SchemaSetting, T::SchemaModelMaxBytesBoundedVecLimit>,
+			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
 		) -> DispatchResult {
 			Self::validate_schema_inputs(&model, &model_type)?;
 
