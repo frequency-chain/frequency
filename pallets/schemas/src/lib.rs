@@ -108,7 +108,7 @@ pub mod pallet {
 
 		/// Maximum number of schema settings that can be registered per schema (if any)
 		#[pallet::constant]
-		type MaxSchemaSettingsPerSchema: Get<u16>;
+		type MaxSchemaSettingsPerSchema: Get<u32>;
 	}
 
 	#[pallet::event]
@@ -311,7 +311,7 @@ pub mod pallet {
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
-			settings: BoundedVec<SchemaSetting, T::SchemaModelMaxBytesBoundedVecLimit>,
+			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
 		) -> Result<SchemaId, DispatchError> {
 			let schema_id = Self::get_next_schema_id()?;
 			let mut set_settings = SchemaSettings::all_disabled();
