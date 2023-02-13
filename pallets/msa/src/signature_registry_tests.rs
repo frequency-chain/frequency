@@ -21,6 +21,8 @@ use sp_runtime::{
 	MultiSignature,
 };
 
+use codec::Encode;
+
 pub use common_runtime::constants::*;
 
 use common_primitives::{

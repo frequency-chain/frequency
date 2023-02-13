@@ -19,6 +19,8 @@ use sp_runtime::{
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
 };
 
+use codec::Encode;
+
 pub use common_runtime::constants::*;
 pub use pallet_msa::Call as MsaCall;
 

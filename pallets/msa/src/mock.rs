@@ -15,6 +15,8 @@ use sp_runtime::{
 	AccountId32, MultiSignature,
 };
 
+use codec::Encode;
+
 pub use common_runtime::constants::*;
 
 pub use pallet_msa::Call as MsaCall;
