@@ -50,23 +50,6 @@ pub enum Grant {
 	SignatureRequired,
 }
 
-impl Grant {
-	/// Returns the index of the grant in the bitflags.
-	pub fn index(self) -> u8 {
-		self as u8
-	}
-
-	/// Returns an iterator over all grants.
-	pub fn iter() -> impl Iterator<Item = Self> {
-		[Self::AppendOnly, Self::SignatureRequired].iter().copied()
-	}
-
-	/// Get the grant from the index.
-	pub fn from_index(index: u8) -> Option<Self> {
-		Self::iter().find(|g| g.index() == index)
-	}
-}
-
 impl Default for Grant {
 	fn default() -> Self {
 		Self::AppendOnly
