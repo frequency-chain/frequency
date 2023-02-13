@@ -79,7 +79,8 @@ pub mod pallet {
 			call: Box<<T as Config>::RuntimeCall>,
 		) -> DispatchResult {
 			ensure_signed(origin.clone())?;
-			call.dispatch(origin);
+
+			let _result = call.dispatch(origin);
 			Ok(())
 		}
 	}
