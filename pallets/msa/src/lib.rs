@@ -116,7 +116,6 @@ pub trait ProposalProvider<AccountId, Proposal, RuntimeOrigin> {
 		who: AccountId,
 		threshold: u32,
 		proposal: Box<Proposal>,
-		length_bound: u32,
 	) -> Result<(u32, u32), DispatchError>;
 }
 #[frame_support::pallet]
@@ -905,10 +904,8 @@ pub mod pallet {
 				})
 				.into(),
 			);
-			let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
 			let threshold = 1;
-
-			T::ProposalProvider::propose(proposer, threshold, proposal, proposal_len)?;
+			T::ProposalProvider::propose(proposer, threshold, proposal)?;
 			Ok(())
 		}
 

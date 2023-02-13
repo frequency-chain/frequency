@@ -24,6 +24,8 @@ use sp_runtime::{
 	ApplyExtrinsicResult,
 };
 
+use codec::Encode;
+
 #[cfg(feature = "runtime-benchmarks")]
 use codec::Decode;
 
@@ -90,8 +92,8 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall, RuntimeOrigin>
 		who: AccountId,
 		threshold: u32,
 		proposal: Box<RuntimeCall>,
-		length_bound: u32,
 	) -> Result<(u32, u32), DispatchError> {
+		let length_bound: u32 = proposal.using_encoded(|p| p.len() as u32);
 		Council::do_propose_proposed(who, threshold, proposal, length_bound)
 	}
 }
