@@ -38,7 +38,7 @@ benchmarks! {
 		let payload_location = PayloadLocation::OnChain;
 		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
 		let schema_input = generate_schema::<T>(m as usize);
-	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location, None)
+	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location)
 	verify {
 		ensure!(SchemasPallet::<T>::get_current_schema_identifier_maximum() > 0, "Registered schema count should be > 0");
 		ensure!(SchemasPallet::<T>::get_schema(1).is_some(), "Registered schema should exist");

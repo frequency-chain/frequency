@@ -52,7 +52,7 @@ fn require_valid_schema_size_errors() {
 		];
 		for tc in test_cases {
 			assert_noop!(
-				SchemasPallet::create_schema(RuntimeOrigin::signed(sender), create_bounded_schema_vec(tc.schema), ModelType::AvroBinary, PayloadLocation::OnChain, None),
+				SchemasPallet::create_schema(RuntimeOrigin::signed(sender), create_bounded_schema_vec(tc.schema), ModelType::AvroBinary, PayloadLocation::OnChain),
 				tc.expected.0);
 		}
 	})
@@ -68,7 +68,6 @@ fn register_schema_happy_path() {
 			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
 			ModelType::AvroBinary,
 			PayloadLocation::OnChain,
-			None
 		));
 	})
 }
@@ -85,7 +84,6 @@ fn register_schema_unhappy_path() {
 				create_bounded_schema_vec(r#"{"name", 54, "type": "none"}"#),
 				ModelType::AvroBinary,
 				PayloadLocation::OnChain,
-				None,
 			),
 			Error::<Test>::InvalidSchema
 		);
@@ -145,7 +143,6 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 				create_bounded_schema_vec(fields),
 				ModelType::AvroBinary,
 				PayloadLocation::OnChain,
-				None,
 			));
 			System::assert_last_event(
 				AnnouncementEvent::SchemaCreated { key: sender, schema_id: expected_schema_id }
@@ -158,7 +155,6 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 			create_bounded_schema_vec(r#"{"account":3050}"#),
 			ModelType::AvroBinary,
 			PayloadLocation::OnChain,
-			None
 		));
 	})
 }
@@ -176,7 +172,6 @@ fn get_existing_schema_by_id_should_return_schema() {
 			create_bounded_schema_vec(test_str),
 			ModelType::AvroBinary,
 			PayloadLocation::OnChain,
-			None
 		));
 
 		// act
@@ -357,25 +352,25 @@ fn dsnp_broadcast() {
 }
 
 #[test]
-fn create_schema_with_grants_should_work() {
+fn create_schema_with_settings_should_work() {
 	new_test_ext().execute_with(|| {
 		sudo_set_max_schema_size();
 
 		// arrange
-		let grants = vec![SchemaSetting::AppendOnly];
+		let settings = vec![SchemaSetting::AppendOnly];
 		let sender: AccountId = 1;
 
 		//  assert
-		assert_ok!(SchemasPallet::create_schema(
+		assert_ok!(SchemasPallet::create_schema_with_settings(
 			RuntimeOrigin::signed(sender),
 			create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
 			ModelType::AvroBinary,
 			PayloadLocation::Itemized,
-			Some(BoundedVec::try_from(grants.clone()).unwrap()),
+			BoundedVec::try_from(settings.clone()).unwrap(),
 		));
 
 		// assert
 		let res = SchemasPallet::get_schema_by_id(1);
-		assert_eq!(res.unwrap().grants, grants);
+		assert_eq!(res.unwrap().settings, settings);
 	})
 }
