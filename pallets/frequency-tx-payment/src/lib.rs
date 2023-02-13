@@ -3,7 +3,7 @@
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
-	traits::{IsType, IsSubType}
+	traits::IsType,
 };
 
 use codec::{Decode, Encode};
@@ -58,7 +58,6 @@ pub mod pallet {
 			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
 			+ GetDispatchInfo
 			+ From<frame_system::Call<Self>>
-			+ IsSubType<Call<Self>>
 			+ IsType<<Self as frame_system::Config>::RuntimeCall>;
 	}
 
@@ -79,7 +78,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			call: Box<<T as Config>::RuntimeCall>,
 		) -> DispatchResult {
-			let sender = ensure_signed(origin.clone())?;
+			ensure_signed(origin.clone())?;
 			call.dispatch(origin);
 			Ok(())
 		}

@@ -120,6 +120,7 @@ impl pallet_transaction_payment::Config for Test {
 
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 }
 
 pub struct ExtBuilder {
