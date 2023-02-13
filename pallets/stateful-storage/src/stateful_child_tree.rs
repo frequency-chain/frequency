@@ -109,8 +109,8 @@ impl<
 
 impl<
 		H: MultipartKeyStorageHasher,
-		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
-		T2: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
+		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
+		T2: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
 	> IsStatefulKey<H> for (T1, T2)
 {
 	type Arity = ConstU8<2>;
@@ -141,9 +141,9 @@ impl<
 
 impl<
 		H: MultipartKeyStorageHasher,
-		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
-		T2: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
-		T3: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
+		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
+		T2: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
+		T3: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
 	> IsStatefulKey<H> for (T1, T2, T3)
 {
 	type Arity = ConstU8<3>;
@@ -178,10 +178,10 @@ impl<
 
 impl<
 		H: MultipartKeyStorageHasher,
-		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
-		T2: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
-		T3: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
-		T4: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable + MaxEncodedLen,
+		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
+		T2: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
+		T3: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
+		T4: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
 	> IsStatefulKey<H> for (T1, T2, T3, T4)
 {
 	type Arity = ConstU8<4>;

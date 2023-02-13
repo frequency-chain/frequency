@@ -178,6 +178,10 @@ pub mod pallet {
 		PaginatedPageRemoved { msa_id: MessageSourceId, schema_id: SchemaId, page_id: PageId },
 	}
 
+	type ItemizedFullKey = (SchemaId,);
+	type PaginatedFullKey = (SchemaId, PageId);
+	type PaginatedPartialKey = (SchemaId,);
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
@@ -210,7 +214,7 @@ pub mod pallet {
 				PayloadLocation::Itemized,
 			)?;
 
-			let key = (schema_id,);
+			let key: ItemizedFullKey = (schema_id,);
 			let updated_page = StatefulChildTree::<T::Hasher>::try_read::<
 				_,
 				Page<T::MaxItemizedPageSizeBytes>,
@@ -270,7 +274,7 @@ pub mod pallet {
 				PayloadLocation::Paginated,
 			)?;
 
-			let keys = (schema_id, page_id);
+			let keys: PaginatedFullKey = (schema_id, page_id);
 			StatefulChildTree::<T::Hasher>::write(&state_owner_msa_id, &keys, page);
 			Self::deposit_event(Event::PaginatedPageUpdated {
 				msa_id: state_owner_msa_id,
@@ -300,7 +304,7 @@ pub mod pallet {
 				PayloadLocation::Paginated,
 			)?;
 
-			let keys = (schema_id, page_id);
+			let keys: PaginatedFullKey = (schema_id, page_id);
 			StatefulChildTree::<T::Hasher>::kill(&state_owner_msa_id, &keys);
 			Self::deposit_event(Event::PaginatedPageRemoved {
 				msa_id: state_owner_msa_id,
@@ -316,7 +320,7 @@ pub mod pallet {
 			msa_id: MessageSourceId,
 			schema_id: SchemaId,
 		) -> Page<T::MaxItemizedPageSizeBytes> {
-			let key = (schema_id,);
+			let key: ItemizedFullKey = (schema_id,);
 			let page_response = StatefulChildTree::<T::Hasher>::try_read::<
 				_,
 				Page<T::MaxItemizedPageSizeBytes>,
