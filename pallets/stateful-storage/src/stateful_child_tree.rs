@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, Encode};
 use common_primitives::msa::MessageSourceId;
 use frame_support::{
 	storage::{child, child::ChildInfo, ChildTriePrefixIterator},

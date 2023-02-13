@@ -1,5 +1,5 @@
 //! # Stateful Storage Pallet
-//! The Stateful Storage pallet provides functionality for reading and writing messages
+//! The Stateful Storage pallet provides functionality for reading and writing stateful data
 //! representing stateful data for which we are only ever interested in the latest state.
 //!
 //! ## Overview
@@ -52,34 +52,37 @@ mod tests;
 mod benchmarking;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
+use sp_std::prelude::*;
 
 mod stateful_child_tree;
 pub mod types;
 
 pub mod weights;
 
+use crate::{stateful_child_tree::StatefulChildTree, types::*};
 use common_primitives::{
 	msa::{DelegatorId, MessageSourceId, MsaValidator, ProviderId, SchemaGrantValidator},
 	schema::{PayloadLocation, SchemaId, SchemaProvider},
+	stateful_storage::{
+		ItemizedStoragePageResponse, ItemizedStorageResponse, PageId, PaginatedStorageResponse,
+	},
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
-use frame_system::{ensure_signed, pallet_prelude::OriginFor};
-
-use sp_std::prelude::*;
-
 pub use pallet::*;
+use sp_runtime::DispatchError;
 pub use weights::*;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::{stateful_child_tree::StatefulChildTree, types::*};
+	use crate::{stateful_child_tree::StatefulChildTree, types::ItemAction};
 	use common_primitives::{
 		msa::{MessageSourceId, MsaLookup, MsaValidator, SchemaGrantValidator},
 		schema::{SchemaId, SchemaProvider},
 		stateful_storage::PageId,
 	};
 	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -141,9 +144,6 @@ pub mod pallet {
 		/// Item payload exceeds max item blob size
 		ItemExceedsMaxBlobSizeBytes,
 
-		/// Additional item unable to fit in item page
-		ItemPageFull,
-
 		/// Page would exceed the highest allowable PageId
 		PageIdExceedsMaxAllowed,
 
@@ -173,17 +173,14 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		ItemizedPageUpdated { msa_id: MessageSourceId, schema_id: SchemaId },
-		ItemizedPageRemoved { msa_id: MessageSourceId, schema_id: SchemaId },
+		ItemizedPageDeleted { msa_id: MessageSourceId, schema_id: SchemaId },
 		PaginatedPageUpdated { msa_id: MessageSourceId, schema_id: SchemaId, page_id: PageId },
-		PaginatedPageRemoved { msa_id: MessageSourceId, schema_id: SchemaId, page_id: PageId },
+		PaginatedPageDeleted { msa_id: MessageSourceId, schema_id: SchemaId, page_id: PageId },
 	}
-
-	type ItemizedFullKey = (SchemaId,);
-	type PaginatedFullKey = (SchemaId, PageId);
-	type PaginatedPartialKey = (SchemaId,);
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Applies the Add or Delete Actions on the requested Itemized page
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::apply_item_actions( actions.len() as u32 ,
 			actions.iter().fold(0, |acc, a| acc + match a {
@@ -193,7 +190,7 @@ pub mod pallet {
 		))]
 		pub fn apply_item_actions(
 			origin: OriginFor<T>,
-			state_owner_msa_id: MessageSourceId,
+			#[pallet::compact] state_owner_msa_id: MessageSourceId,
 			#[pallet::compact] schema_id: SchemaId,
 			actions: BoundedVec<ItemAction, T::MaxItemizedActionsCount>,
 		) -> DispatchResult {
@@ -214,27 +211,31 @@ pub mod pallet {
 				PayloadLocation::Itemized,
 			)?;
 
-			let key: ItemizedFullKey = (schema_id,);
-			let updated_page = StatefulChildTree::<T::Hasher>::try_read::<
-				_,
-				Page<T::MaxItemizedPageSizeBytes>,
-			>(&state_owner_msa_id, &key)
-			.map_err(|_| {
-				log::warn!(
-					"failed decoding Itemized msa={:?} schema_id={:?}",
-					state_owner_msa_id,
-					schema_id
-				);
-				Error::<T>::CorruptedState
-			})?
+			let key: ItemizedKey = (schema_id,);
+			let updated_page = StatefulChildTree::<T::Hasher>::try_read::<_, ItemizedPage<T>>(
+				&state_owner_msa_id,
+				&key,
+			)
+			.map_err(|_| Error::<T>::CorruptedState)?
 			.unwrap_or_default()
 			.apply_item_actions(&actions[..])
-			.map_err(|_| Error::<T>::InvalidItemAction)?;
+			.map_err(|e| match e {
+				PageError::ErrorParsing(err) => {
+					log::warn!(
+						"failed parsing Itemized msa={:?} schema_id={:?} {:?}",
+						state_owner_msa_id,
+						schema_id,
+						err
+					);
+					Error::<T>::CorruptedState
+				},
+				_ => Error::<T>::InvalidItemAction,
+			})?;
 
 			match updated_page.is_empty() {
 				true => {
 					StatefulChildTree::<T::Hasher>::kill(&state_owner_msa_id, &key);
-					Self::deposit_event(Event::ItemizedPageRemoved {
+					Self::deposit_event(Event::ItemizedPageDeleted {
 						msa_id: state_owner_msa_id,
 						schema_id,
 					});
@@ -250,17 +251,18 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Creates or updates an Paginated storage with new payload
 		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::upsert_page(*page_id as u32, payload.len() as u32))]
+		#[pallet::weight(T::WeightInfo::upsert_page(payload.len() as u32))]
 		pub fn upsert_page(
 			origin: OriginFor<T>,
-			state_owner_msa_id: MessageSourceId,
-			schema_id: SchemaId,
-			page_id: PageId,
+			#[pallet::compact] state_owner_msa_id: MessageSourceId,
+			#[pallet::compact] schema_id: SchemaId,
+			#[pallet::compact] page_id: PageId,
 			payload: Vec<u8>,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
-			let page = Page::<T::MaxPaginatedPageSizeBytes>::try_from(payload)
+			let page = PaginatedPage::<T>::try_from(payload)
 				.map_err(|_| Error::<T>::PageExceedsMaxPageSizeBytes)?;
 			ensure!(
 				page_id as u32 <= T::MaxPaginatedPageId::get(),
@@ -274,7 +276,7 @@ pub mod pallet {
 				PayloadLocation::Paginated,
 			)?;
 
-			let keys: PaginatedFullKey = (schema_id, page_id);
+			let keys: PaginatedKey = (schema_id, page_id);
 			StatefulChildTree::<T::Hasher>::write(&state_owner_msa_id, &keys, page);
 			Self::deposit_event(Event::PaginatedPageUpdated {
 				msa_id: state_owner_msa_id,
@@ -284,13 +286,14 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Deletes a Paginated storage
 		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::remove_page(*page_id as u32))]
-		pub fn remove_page(
+		#[pallet::weight(T::WeightInfo::delete_page())]
+		pub fn delete_page(
 			origin: OriginFor<T>,
-			state_owner_msa_id: MessageSourceId,
-			schema_id: SchemaId,
-			page_id: PageId,
+			#[pallet::compact] state_owner_msa_id: MessageSourceId,
+			#[pallet::compact] schema_id: SchemaId,
+			#[pallet::compact] page_id: PageId,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			ensure!(
@@ -304,9 +307,9 @@ pub mod pallet {
 				PayloadLocation::Paginated,
 			)?;
 
-			let keys: PaginatedFullKey = (schema_id, page_id);
+			let keys: PaginatedKey = (schema_id, page_id);
 			StatefulChildTree::<T::Hasher>::kill(&state_owner_msa_id, &keys);
-			Self::deposit_event(Event::PaginatedPageRemoved {
+			Self::deposit_event(Event::PaginatedPageDeleted {
 				msa_id: state_owner_msa_id,
 				schema_id,
 				page_id,
@@ -314,24 +317,58 @@ pub mod pallet {
 			Ok(())
 		}
 	}
-
-	impl<T: Config> Pallet<T> {
-		pub fn get_itemized_page(
-			msa_id: MessageSourceId,
-			schema_id: SchemaId,
-		) -> Page<T::MaxItemizedPageSizeBytes> {
-			let key: ItemizedFullKey = (schema_id,);
-			let page_response = StatefulChildTree::<T::Hasher>::try_read::<
-				_,
-				Page<T::MaxItemizedPageSizeBytes>,
-			>(&msa_id, &key)
-			.map_or_else(|_| Page::default(), |page| page.unwrap_or_default());
-			page_response
-		}
-	}
 }
 
 impl<T: Config> Pallet<T> {
+	/// This function returns all the paginated storages associated with `msa_id` and `schema_id`
+	///
+	/// [Warning] since this function iterates over all the potential keys it should never called
+	/// from runtime.
+	pub fn get_paginated_storages(
+		msa_id: MessageSourceId,
+		schema_id: SchemaId,
+	) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
+		let schema =
+			T::SchemaProvider::get_schema_by_id(schema_id).ok_or(Error::<T>::InvalidSchemaId)?;
+		ensure!(
+			schema.payload_location == PayloadLocation::Paginated,
+			Error::<T>::SchemaPayloadLocationMismatch
+		);
+		let prefix: PaginatedPrefixKey = (schema_id,);
+		Ok(StatefulChildTree::<T::Hasher>::prefix_iterator::<
+			PaginatedPage<T>,
+			PaginatedKey,
+			PaginatedPrefixKey,
+		>(&msa_id, &prefix)
+		.map(|(k, v)| PaginatedStorageResponse::new(k.1, msa_id, schema_id, v.data.into_inner()))
+		.collect())
+	}
+
+	/// This function returns all the itemized storages associated with `msa_id` and `schema_id`
+	pub fn get_itemized_storages(
+		msa_id: MessageSourceId,
+		schema_id: SchemaId,
+	) -> Result<ItemizedStoragePageResponse, DispatchError> {
+		let schema =
+			T::SchemaProvider::get_schema_by_id(schema_id).ok_or(Error::<T>::InvalidSchemaId)?;
+		ensure!(
+			schema.payload_location == PayloadLocation::Itemized,
+			Error::<T>::SchemaPayloadLocationMismatch
+		);
+		let key: ItemizedKey = (schema_id,);
+		let items: Vec<ItemizedStorageResponse> =
+			StatefulChildTree::<T::Hasher>::try_read::<ItemizedKey, ItemizedPage<T>>(&msa_id, &key)
+				.map_err(|_| Error::<T>::CorruptedState)?
+				.unwrap_or_default()
+				.parse_as_itemized(false)
+				.map_err(|_| Error::<T>::CorruptedState)?
+				.items
+				.iter()
+				.map(|(key, v)| ItemizedStorageResponse::new(*key, v.to_vec()))
+				.collect();
+		Ok(ItemizedStoragePageResponse::new(msa_id, schema_id, items))
+	}
+
 	fn check_schema_and_grants(
 		provider_key: T::AccountId,
 		state_owner_msa_id: MessageSourceId,
@@ -347,13 +384,39 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::SchemaPayloadLocationMismatch
 		);
 
-		let current_block = frame_system::Pallet::<T>::block_number();
-		Ok(T::SchemaGrantValidator::ensure_valid_schema_grant(
-			ProviderId(provider_msa_id),
-			DelegatorId(state_owner_msa_id),
-			schema_id,
-			current_block,
-		)
-		.map_err(|_| Error::<T>::UnAuthorizedDelegate)?)
+		// if provider and owner are the same no delegation is needed
+		if provider_msa_id != state_owner_msa_id {
+			let current_block = frame_system::Pallet::<T>::block_number();
+			T::SchemaGrantValidator::ensure_valid_schema_grant(
+				ProviderId(provider_msa_id),
+				DelegatorId(state_owner_msa_id),
+				schema_id,
+				current_block,
+			)
+			.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
+		}
+
+		Ok(())
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	pub fn get_itemized_page(
+		msa_id: MessageSourceId,
+		schema_id: SchemaId,
+	) -> Option<ItemizedPage<T>> {
+		let key: ItemizedKey = (schema_id,);
+		StatefulChildTree::<T::Hasher>::try_read::<_, ItemizedPage<T>>(&msa_id, &key)
+			.unwrap_or(None)
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	pub fn get_paginated_page(
+		msa_id: MessageSourceId,
+		schema_id: SchemaId,
+		page_id: PageId,
+	) -> Option<PaginatedPage<T>> {
+		let key: PaginatedKey = (schema_id, page_id);
+		StatefulChildTree::<T::Hasher>::try_read::<_, PaginatedPage<T>>(&msa_id, &key)
+			.unwrap_or(None)
 	}
 }

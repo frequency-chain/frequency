@@ -1,3 +1,4 @@
+use crate::Config;
 use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::{schema::SchemaId, stateful_storage::PageId};
 use frame_support::pallet_prelude::*;
@@ -7,16 +8,21 @@ use sp_std::{cmp::*, collections::btree_map::BTreeMap, fmt::Debug, prelude::*};
 
 pub type ItemizedKey = (SchemaId,);
 pub type PaginatedKey = (SchemaId, PageId);
+pub type PaginatedPrefixKey = (SchemaId,);
+/// Itemized page type
+pub type ItemizedPage<T> = Page<<T as Config>::MaxItemizedPageSizeBytes>;
+/// Paginated Page type
+pub type PaginatedPage<T> = Page<<T as Config>::MaxPaginatedPageSizeBytes>;
 
 /// Defines the actions that can be applied to an Itemized storage
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, PartialOrd, Ord)]
 pub enum ItemAction {
 	Add { data: Vec<u8> },
-	Remove { index: u16 },
+	Delete { index: u16 },
 }
 
-/// This header is used to specify how long an item is inside the buffer and inserted into buffer
-/// before every item
+/// This header is used to specify the byte size of an item stored inside the buffer
+/// All items will require this header to be inserted before the item data
 #[derive(Encode, Decode, PartialEq, MaxEncodedLen, Debug)]
 pub struct ItemHeader {
 	/// The length of this item, not including the size of this header.
@@ -31,7 +37,7 @@ pub enum PageError {
 	PageSizeOverflow,
 }
 
-/// A page of data
+/// A generic page of data which supports both Itemized and Paginated
 #[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, Debug, Default)]
 #[scale_info(skip_type_params(PageDataSize))]
 #[codec(mel_bound(PageDataSize: MaxEncodedLen))]
@@ -39,12 +45,12 @@ pub struct Page<PageDataSize: Get<u32>> {
 	pub data: BoundedVec<u8, PageDataSize>,
 }
 
-/// an internal struct which contains the parsed items in a page
+/// An internal struct which contains the parsed items in a page
 #[derive(Debug, PartialEq)]
 pub struct ParsedItemPage<'a> {
 	/// page current size
 	pub page_size: usize,
-	/// a map of item index to a slice of blob (header included)
+	/// a map of item index to a slice of blob (including header is optional)
 	pub items: BTreeMap<u16, &'a [u8]>,
 }
 
@@ -72,14 +78,14 @@ impl<PageDataSize: Get<u32>> TryFrom<Vec<u8>> for Page<PageDataSize> {
 impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	/// applies all actions to specified page and returns the updated page
 	pub fn apply_item_actions(&self, actions: &[ItemAction]) -> Result<Self, PageError> {
-		let mut parsed = self.parse_as_itemized()?;
+		let mut parsed = self.parse_as_itemized(true)?;
 
 		let mut updated_page_buffer = Vec::with_capacity(parsed.page_size);
 		let mut add_buffer = Vec::new();
 
 		for action in actions {
 			match action {
-				ItemAction::Remove { index } => {
+				ItemAction::Delete { index } => {
 					ensure!(
 						parsed.items.contains_key(&index),
 						PageError::InvalidAction("item index is invalid")
@@ -99,7 +105,7 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 			}
 		}
 
-		// since BTreemap is sorted by key, all items will be kept in their old order
+		// since BTreeMap is sorted by key, all items will be kept in their old order
 		for (_, slice) in parsed.items.iter() {
 			updated_page_buffer.extend_from_slice(slice);
 		}
@@ -109,7 +115,7 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	}
 
 	/// Parses all the items inside an ItemPage
-	pub fn parse_as_itemized(&self) -> Result<ParsedItemPage, PageError> {
+	pub fn parse_as_itemized(&self, include_header: bool) -> Result<ParsedItemPage, PageError> {
 		let mut count = 0u16;
 		let mut items = BTreeMap::new();
 		let mut offset = 0;
@@ -126,7 +132,15 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 				PageError::ErrorParsing("wrong payload size")
 			);
 
-			items.insert(count, &self.data[offset..(offset + item_total_length)]);
+			items.insert(
+				count,
+				match include_header {
+					true => &self.data[offset..(offset + item_total_length)],
+					false =>
+						&self.data
+							[(offset + ItemHeader::max_encoded_len())..(offset + item_total_length)],
+				},
+			);
 			offset += item_total_length;
 			count = count.checked_add(1).ok_or(PageError::ArithmeticOverflow)?;
 		}

@@ -1,5 +1,6 @@
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
+import { u16, u32, u64 } from "@polkadot/types";
 import { Codec } from "@polkadot/types/types";
 import { u8aToHex, u8aWrapBytes } from "@polkadot/util";
 import { mnemonicGenerate } from '@polkadot/util-crypto';
@@ -72,4 +73,42 @@ export function log(...args: any[]) {
     if (env.verbose) {
         console.log(...args);
     }
+}
+
+export async function createProviderKeysAndId(): Promise<[KeyringPair, u64]> {
+    let providerKeys = await createAndFundKeypair();
+    let createProviderMsaOp = ExtrinsicHelper.createMsa(providerKeys);
+    let providerId = new u64(ExtrinsicHelper.api.registry, 0)
+    await createProviderMsaOp.fundAndSend();
+    let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, "PrivateProvider");
+    let [providerEvent] = await createProviderOp.fundAndSend();
+    if (providerEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerEvent)) {
+        providerId = providerEvent.data.providerId;
+    }
+    return [providerKeys, providerId];
+}
+
+export async function createDelegatorAndDelegation(schemaId: u16, providerId: u64, providerKeys: KeyringPair): Promise<[KeyringPair, u64]> {
+    // Create a  delegator msa
+    let keys = await createAndFundKeypair();
+    let delegator_msa_id = new u64(ExtrinsicHelper.api.registry, 0);
+    const createMsa = ExtrinsicHelper.createMsa(keys);
+    await createMsa.fundOperation();
+    const [msaCreatedEvent, chainEvents] = await createMsa.signAndSend();
+    if (msaCreatedEvent && ExtrinsicHelper.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
+        delegator_msa_id = msaCreatedEvent.data.msaId;
+    }
+
+    // Grant delegation to the provider
+    const payload = await generateDelegationPayload({
+        authorizedMsaId: providerId,
+        schemaIds: [schemaId],
+    });
+    const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+
+    const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
+    await grantDelegationOp.fundOperation();
+    await grantDelegationOp.signAndSend();
+
+    return [keys, delegator_msa_id];
 }

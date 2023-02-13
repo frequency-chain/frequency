@@ -1,5 +1,5 @@
-use super::mock::*;
-use crate::{stateful_child_tree::StatefulChildTree, types::*, Config, Error};
+use super::{mock::*, Event as StatefulEvent};
+use crate::{pallet, stateful_child_tree::StatefulChildTree, types::*, Config, Error};
 use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::{
 	schema::{ModelType, PayloadLocation, SchemaId},
@@ -9,13 +9,13 @@ use frame_support::{assert_err, assert_ok, BoundedVec};
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use scale_info::TypeInfo;
-use sp_core::ConstU32;
+use sp_core::{ConstU32, Get};
 use sp_std::collections::btree_set::BTreeSet;
 
-type TestPageSize = <Test as Config>::MaxItemizedPageSizeBytes;
-type TestPage = Page<TestPageSize>;
+type ItemizedPageSize = <Test as Config>::MaxItemizedPageSizeBytes;
+type PaginatedPageSize = <Test as Config>::MaxPaginatedPageSizeBytes;
 
-fn generate_payload_bytes(id: Option<u8>) -> BoundedVec<u8, TestPageSize> {
+fn generate_payload_bytes<T: Get<u32>>(id: Option<u8>) -> BoundedVec<u8, T> {
 	let value = id.unwrap_or(1);
 	format!("{{'type':{value}, 'description':'another test description {value}'}}")
 		.as_bytes()
@@ -24,13 +24,15 @@ fn generate_payload_bytes(id: Option<u8>) -> BoundedVec<u8, TestPageSize> {
 		.unwrap()
 }
 
-fn create_itemized_page_from(payloads: &[BoundedVec<u8, TestPageSize>]) -> TestPage {
+fn create_itemized_page_from<T: pallet::Config>(
+	payloads: &[BoundedVec<u8, ItemizedPageSize>],
+) -> ItemizedPage<T> {
 	let mut buffer: Vec<u8> = vec![];
 	for p in payloads {
 		buffer.extend_from_slice(&ItemHeader { payload_len: p.len() as u16 }.encode()[..]);
 		buffer.extend_from_slice(p.as_slice());
 	}
-	TestPage::try_from(buffer).unwrap()
+	ItemizedPage::<T>::try_from(buffer).unwrap()
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, MaxEncodedLen)]
@@ -192,8 +194,8 @@ fn upsert_new_page_succeeds() {
 		let msa_id = 1;
 		let schema_id = PAGINATED_SCHEMA;
 		let page_id = 1;
-		let payload = generate_payload_bytes(Some(100));
-		let page: TestPage = payload.clone().into();
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
+		let page: PaginatedPage<Test> = payload.clone().into();
 
 		assert_ok!(StatefulStoragePallet::upsert_page(
 			RuntimeOrigin::signed(caller_1),
@@ -219,12 +221,13 @@ fn upsert_existing_page_modifies_page() {
 		let schema_id: SchemaId = PAGINATED_SCHEMA;
 		let page_id: PageId = 1;
 		let old_content = generate_payload_bytes(Some(200));
-		let new_content = generate_payload_bytes(Some(201));
-		let old_page: TestPage = old_content.clone().into();
+		let new_content = generate_payload_bytes::<PaginatedPageSize>(Some(201));
+		let old_page: PaginatedPage<Test> = old_content.clone().into();
 
 		let keys = (schema_id, page_id);
 		<StatefulChildTree>::write(&msa_id, &keys, old_page);
-		let old_page: TestPage = <StatefulChildTree>::try_read(&msa_id, &keys).unwrap().unwrap();
+		let old_page: PaginatedPage<Test> =
+			<StatefulChildTree>::try_read(&msa_id, &keys).unwrap().unwrap();
 
 		assert_eq!(old_content, old_page.data);
 		assert_ok!(StatefulStoragePallet::upsert_page(
@@ -235,13 +238,14 @@ fn upsert_existing_page_modifies_page() {
 			new_content.clone().into()
 		));
 
-		let new_page: TestPage = <StatefulChildTree>::try_read(&msa_id, &keys).unwrap().unwrap();
+		let new_page: PaginatedPage<Test> =
+			<StatefulChildTree>::try_read(&msa_id, &keys).unwrap().unwrap();
 		assert_eq!(new_content, new_page.data);
 	})
 }
 
 #[test]
-fn remove_page_id_out_of_bounds_errors() {
+fn delete_page_id_out_of_bounds_errors() {
 	new_test_ext().execute_with(|| {
 		// setup
 		let caller_1 = 1;
@@ -250,7 +254,7 @@ fn remove_page_id_out_of_bounds_errors() {
 		let page_id = <Test as Config>::MaxPaginatedPageId::get() + 1;
 
 		assert_err!(
-			StatefulStoragePallet::remove_page(
+			StatefulStoragePallet::delete_page(
 				RuntimeOrigin::signed(caller_1),
 				msa_id,
 				schema_id,
@@ -262,7 +266,7 @@ fn remove_page_id_out_of_bounds_errors() {
 }
 
 #[test]
-fn remove_page_with_invalid_msa_errors() {
+fn delete_page_with_invalid_msa_errors() {
 	new_test_ext().execute_with(|| {
 		// setup
 		let caller_1 = 1000; // hard-coded in mocks to return None for MSA
@@ -271,7 +275,7 @@ fn remove_page_with_invalid_msa_errors() {
 		let page_id = 1;
 
 		assert_err!(
-			StatefulStoragePallet::remove_page(
+			StatefulStoragePallet::delete_page(
 				RuntimeOrigin::signed(caller_1),
 				msa_id,
 				schema_id,
@@ -283,7 +287,7 @@ fn remove_page_with_invalid_msa_errors() {
 }
 
 #[test]
-fn remove_page_with_invalid_schema_id_errors() {
+fn delete_page_with_invalid_schema_id_errors() {
 	new_test_ext().execute_with(|| {
 		// setup
 		let caller_1 = 1;
@@ -292,7 +296,7 @@ fn remove_page_with_invalid_schema_id_errors() {
 		let page_id = 1;
 
 		assert_err!(
-			StatefulStoragePallet::remove_page(
+			StatefulStoragePallet::delete_page(
 				RuntimeOrigin::signed(caller_1),
 				msa_id,
 				schema_id,
@@ -304,7 +308,7 @@ fn remove_page_with_invalid_schema_id_errors() {
 }
 
 #[test]
-fn remove_page_with_invalid_schema_payload_location_errors() {
+fn delete_page_with_invalid_schema_payload_location_errors() {
 	new_test_ext().execute_with(|| {
 		// setup
 		let caller_1 = 1;
@@ -313,7 +317,7 @@ fn remove_page_with_invalid_schema_payload_location_errors() {
 		let page_id = 1;
 
 		assert_err!(
-			StatefulStoragePallet::remove_page(
+			StatefulStoragePallet::delete_page(
 				RuntimeOrigin::signed(caller_1),
 				msa_id,
 				schema_id,
@@ -325,7 +329,7 @@ fn remove_page_with_invalid_schema_payload_location_errors() {
 }
 
 #[test]
-fn remove_page_with_no_delegation_errors() {
+fn delete_page_with_no_delegation_errors() {
 	new_test_ext().execute_with(|| {
 		// setup
 		let caller_1 = 1;
@@ -334,7 +338,7 @@ fn remove_page_with_no_delegation_errors() {
 		let page_id = 1;
 
 		assert_err!(
-			StatefulStoragePallet::remove_page(
+			StatefulStoragePallet::delete_page(
 				RuntimeOrigin::signed(caller_1),
 				msa_id,
 				schema_id,
@@ -346,7 +350,7 @@ fn remove_page_with_no_delegation_errors() {
 }
 
 #[test]
-fn remove_nonexistent_page_succeeds_noop() {
+fn delete_nonexistent_page_succeeds_noop() {
 	new_test_ext().execute_with(|| {
 		// setup
 		let caller_1 = 1;
@@ -354,13 +358,7 @@ fn remove_nonexistent_page_succeeds_noop() {
 		let schema_id = PAGINATED_SCHEMA;
 		let page_id = 10;
 
-		// TODO: Get list of existing pages to verify the page doesn't already exist
-		// PROBLEM: Child Trie iterator doesn't appear to yield keys
-		// let key = schema_id.encode().to_vec();
-		// let i = StatefulChildTree::prefix_iterator::<Vec<u8>>(&msa_id, &[key]);
-		// let existing_node = i.filter(|k,v| {})
-
-		assert_ok!(StatefulStoragePallet::remove_page(
+		assert_ok!(StatefulStoragePallet::delete_page(
 			RuntimeOrigin::signed(caller_1),
 			msa_id,
 			schema_id,
@@ -370,14 +368,14 @@ fn remove_nonexistent_page_succeeds_noop() {
 }
 
 #[test]
-fn remove_existing_page_succeeds() {
+fn delete_existing_page_succeeds() {
 	new_test_ext().execute_with(|| {
 		// setup
 		let caller_1 = 1;
 		let msa_id = 1;
 		let schema_id = PAGINATED_SCHEMA;
 		let page_id = 11;
-		let payload = generate_payload_bytes(None);
+		let payload = generate_payload_bytes::<PaginatedPageSize>(None);
 
 		assert_ok!(StatefulStoragePallet::upsert_page(
 			RuntimeOrigin::signed(caller_1),
@@ -387,7 +385,7 @@ fn remove_existing_page_succeeds() {
 			payload.into()
 		));
 
-		assert_ok!(StatefulStoragePallet::remove_page(
+		assert_ok!(StatefulStoragePallet::delete_page(
 			RuntimeOrigin::signed(caller_1),
 			msa_id,
 			schema_id,
@@ -395,7 +393,8 @@ fn remove_existing_page_succeeds() {
 		));
 
 		let keys = (schema_id, page_id);
-		let page: Option<TestPage> = <StatefulChildTree>::try_read(&msa_id, &keys).unwrap();
+		let page: Option<PaginatedPage<Test>> =
+			<StatefulChildTree>::try_read(&msa_id, &keys).unwrap();
 		assert_eq!(page, None);
 	})
 }
@@ -403,11 +402,14 @@ fn remove_existing_page_succeeds() {
 #[test]
 fn parsing_a_well_formed_item_page_should_work() {
 	// arrange
-	let payloads = vec![generate_payload_bytes(Some(1)), generate_payload_bytes(Some(2))];
-	let page = create_itemized_page_from(&payloads);
+	let payloads = vec![
+		generate_payload_bytes::<ItemizedPageSize>(Some(1)),
+		generate_payload_bytes::<ItemizedPageSize>(Some(2)),
+	];
+	let page = create_itemized_page_from::<Test>(&payloads);
 
 	// act
-	let parsed = page.parse_as_itemized();
+	let parsed = page.parse_as_itemized(true);
 
 	// assert
 	assert_ok!(&parsed);
@@ -429,26 +431,29 @@ fn parsing_a_well_formed_item_page_should_work() {
 #[test]
 fn parsing_item_with_wrong_payload_size_should_return_parsing_error() {
 	// arrange
-	let payload = generate_payload_bytes(Some(1));
+	let payload = generate_payload_bytes::<ItemizedPageSize>(Some(1));
 	let mut buffer: Vec<u8> = vec![];
 	buffer.extend_from_slice(&ItemHeader { payload_len: (payload.len() + 1) as u16 }.encode()[..]);
 	buffer.extend_from_slice(&payload);
-	let page: TestPage = Page::try_from(buffer).unwrap();
+	let page: ItemizedPage<Test> = ItemizedPage::<Test>::try_from(buffer).unwrap();
 
 	// act
-	let parsed = page.parse_as_itemized();
+	let parsed = page.parse_as_itemized(true);
 
 	// assert
 	assert_eq!(parsed, Err(PageError::ErrorParsing("wrong payload size")));
 }
 
 #[test]
-fn applying_remove_action_with_existing_index_should_remove_item() {
+fn applying_delete_action_with_existing_index_should_delete_item() {
 	// arrange
-	let payloads = vec![generate_payload_bytes(Some(2)), generate_payload_bytes(Some(4))];
-	let page = create_itemized_page_from(payloads.as_slice());
-	let expecting_page = create_itemized_page_from(&payloads[1..]);
-	let actions = vec![ItemAction::Remove { index: 0 }];
+	let payloads = vec![
+		generate_payload_bytes::<ItemizedPageSize>(Some(2)),
+		generate_payload_bytes::<ItemizedPageSize>(Some(4)),
+	];
+	let page = create_itemized_page_from::<Test>(payloads.as_slice());
+	let expecting_page = create_itemized_page_from::<Test>(&payloads[1..]);
+	let actions = vec![ItemAction::Delete { index: 0 }];
 
 	// act
 	let result = page.apply_item_actions(&actions);
@@ -462,11 +467,11 @@ fn applying_remove_action_with_existing_index_should_remove_item() {
 #[test]
 fn applying_add_action_should_add_item_to_the_end_of_the_page() {
 	// arrange
-	let payload1 = vec![generate_payload_bytes(Some(2))];
-	let page = create_itemized_page_from(payload1.as_slice());
-	let payload2 = vec![generate_payload_bytes(Some(4))];
+	let payload1 = vec![generate_payload_bytes::<ItemizedPageSize>(Some(2))];
+	let page = create_itemized_page_from::<Test>(payload1.as_slice());
+	let payload2 = vec![generate_payload_bytes::<ItemizedPageSize>(Some(4))];
 	let expecting_page =
-		create_itemized_page_from(&vec![payload1[0].clone(), payload2[0].clone()][..]);
+		create_itemized_page_from::<Test>(&vec![payload1[0].clone(), payload2[0].clone()][..]);
 	let actions = vec![ItemAction::Add { data: payload2[0].clone().into() }];
 
 	// act
@@ -479,11 +484,14 @@ fn applying_add_action_should_add_item_to_the_end_of_the_page() {
 }
 
 #[test]
-fn applying_remove_action_with_non_existing_index_should_fail() {
+fn applying_delete_action_with_non_existing_index_should_fail() {
 	// arrange
-	let payloads = vec![generate_payload_bytes(Some(2)), generate_payload_bytes(Some(4))];
-	let page = create_itemized_page_from(payloads.as_slice());
-	let actions = vec![ItemAction::Remove { index: 2 }];
+	let payloads = vec![
+		generate_payload_bytes::<ItemizedPageSize>(Some(2)),
+		generate_payload_bytes::<ItemizedPageSize>(Some(4)),
+	];
+	let page = create_itemized_page_from::<Test>(payloads.as_slice());
+	let actions = vec![ItemAction::Delete { index: 2 }];
 
 	// act
 	let result = page.apply_item_actions(&actions[..]);
@@ -495,12 +503,13 @@ fn applying_remove_action_with_non_existing_index_should_fail() {
 #[test]
 fn applying_add_action_with_full_page_should_fail() {
 	// arrange
-	let new_payload = generate_payload_bytes(Some(2));
-	let page_len = TestPageSize::get() as usize - ItemHeader::max_encoded_len() - new_payload.len();
+	let new_payload = generate_payload_bytes::<ItemizedPageSize>(Some(2));
+	let page_len =
+		ItemizedPageSize::get() as usize - ItemHeader::max_encoded_len() - new_payload.len();
 	let existing_data = vec![1u8; page_len];
-	let existing_payload: BoundedVec<u8, TestPageSize> =
+	let existing_payload: BoundedVec<u8, ItemizedPageSize> =
 		BoundedVec::try_from(existing_data).unwrap();
-	let page = create_itemized_page_from(&[existing_payload]);
+	let page = create_itemized_page_from::<Test>(&[existing_payload]);
 	let actions = vec![ItemAction::Add { data: new_payload.clone().into() }];
 
 	// act
@@ -512,14 +521,14 @@ fn applying_add_action_with_full_page_should_fail() {
 
 #[test]
 fn is_empty_false_for_non_empty_page() {
-	let page: TestPage = vec![1].try_into().unwrap();
+	let page: ItemizedPage<Test> = vec![1].try_into().unwrap();
 
 	assert_eq!(page.is_empty(), false);
 }
 
 #[test]
 fn is_empty_true_for_empty_page() {
-	let page: TestPage = Vec::<u8>::new().try_into().unwrap();
+	let page: ItemizedPage<Test> = Vec::<u8>::new().try_into().unwrap();
 
 	assert_eq!(page.is_empty(), true);
 }
@@ -615,5 +624,214 @@ fn child_tree_iterator() {
 			arr.iter().filter(|(k, _s)| k.2 % 2 == 0).map(|(k, _s)| k.2).collect(),
 			"iterator over second-level key should have returned only even-numbered items"
 		);
+	});
+}
+
+#[test]
+fn apply_item_actions_with_add_item_action_bigger_than_expected_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload =
+			vec![1; (<Test as Config>::MaxItemizedBlobSizeBytes::get() + 1).try_into().unwrap()];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions).unwrap(),
+			),
+			Error::<Test>::ItemExceedsMaxBlobSizeBytes
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_invalid_msa_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1000; // hard-coded in mocks to return None for MSA
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions).unwrap(),
+			),
+			Error::<Test>::InvalidMessageSourceAccount
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_invalid_schema_id_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = INVALID_SCHEMA_ID;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions).unwrap(),
+			),
+			Error::<Test>::InvalidSchemaId
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_invalid_schema_location_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = PAGINATED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions).unwrap(),
+			),
+			Error::<Test>::SchemaPayloadLocationMismatch
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_no_delegation_and_different_caller_from_owner_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = UNDELEGATED_ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions).unwrap(),
+			),
+			Error::<Test>::UnAuthorizedDelegate
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_corrupted_state_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions1 = vec![ItemAction::Add { data: payload.clone() }];
+		StatefulChildTree::<<Test as Config>::Hasher>::write::<_, Vec<u8>>(
+			&msa_id,
+			&(schema_id,),
+			payload,
+		);
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions1).unwrap(),
+			),
+			Error::<Test>::CorruptedState
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_valid_input_should_update_storage() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_ok!(StatefulStoragePallet::apply_item_actions(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			BoundedVec::try_from(actions).unwrap(),
+		));
+
+		// assert
+		let items = StatefulChildTree::<<Test as Config>::Hasher>::try_read::<_, Vec<u8>>(
+			&msa_id,
+			&(schema_id,),
+		)
+		.unwrap();
+		assert!(items.is_some());
+		System::assert_last_event(StatefulEvent::ItemizedPageUpdated { msa_id, schema_id }.into());
+	});
+}
+
+#[test]
+fn apply_item_actions_with_valid_input_and_empty_items_should_remove_storage() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions1 = vec![ItemAction::Add { data: payload }];
+		let actions2 = vec![ItemAction::Delete { index: 0 }];
+		assert_ok!(StatefulStoragePallet::apply_item_actions(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			BoundedVec::try_from(actions1).unwrap(),
+		));
+
+		// act
+		assert_ok!(StatefulStoragePallet::apply_item_actions(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			BoundedVec::try_from(actions2).unwrap(),
+		));
+
+		// assert
+		let items = StatefulChildTree::<<Test as Config>::Hasher>::try_read::<_, Vec<u8>>(
+			&msa_id,
+			&(schema_id,),
+		)
+		.unwrap();
+		assert!(items.is_none());
+		System::assert_last_event(StatefulEvent::ItemizedPageDeleted { msa_id, schema_id }.into());
 	});
 }

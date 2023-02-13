@@ -21,7 +21,7 @@ use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
+	ApplyExtrinsicResult, DispatchError,
 };
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -36,7 +36,8 @@ use common_primitives::{
 	messages::*,
 	msa::*,
 	node::*,
-	schema::{PayloadLocation, SchemaResponse},
+	schema::{PayloadLocation, SchemaId, SchemaResponse},
+	stateful_storage::*,
 };
 
 pub use common_runtime::{
@@ -313,8 +314,6 @@ impl pallet_msa::Config for Runtime {
 	// The maximum number of signatures that can be stored in the payload signature registry
 	type MaxSignaturesStored = MSAMaxSignaturesStored;
 }
-
-pub use common_primitives::schema::SchemaId;
 
 impl pallet_schemas::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -997,8 +996,12 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block> for Runtime {
-		fn dummy() {
-			todo!()
+		fn get_paginated_storages(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
+			StatefulStorage::get_paginated_storages(msa_id, schema_id)
+		}
+
+		fn get_itemized_storages(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError> {
+			StatefulStorage::get_itemized_storages(msa_id, schema_id)
 		}
 	}
 
