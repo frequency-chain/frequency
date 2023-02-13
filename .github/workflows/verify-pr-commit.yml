@@ -82,6 +82,7 @@ jobs:
     if: needs.changes.outputs.build-binary == 'true'
     name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
     strategy:
+      fail-fast: true
       matrix:
         network: [rococo, mainnet]
         include:
@@ -101,7 +102,7 @@ jobs:
             branch_alias: pr
     runs-on: [self-hosted, Linux, X64]
     env:
-      HOME: /root
+      HOME: /home/runner
       NETWORK: mainnet
     steps:
       - name: Check Out Repo
@@ -193,7 +194,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
     env:
-      HOME: /root
+      HOME: /home/runner
     runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Check Out Repo
@@ -223,7 +224,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
     env:
-      HOME: /root
+      HOME: /home/runner
     runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Check Out Repo
@@ -249,7 +250,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
     env:
-      HOME: /root
+      HOME: /home/runner
     runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Check Out Repo
@@ -274,7 +275,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
     env:
-      HOME: /root
+      HOME: /home/runner
     runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Check Out Repo
@@ -348,8 +349,9 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Build Runtime for ${{matrix.network}}
     env:
-      HOME: /root
+      HOME: /home/runner
     strategy:
+      fail-fast: true
       matrix:
         network: [rococo, mainnet]
         include:
