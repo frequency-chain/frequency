@@ -197,9 +197,7 @@ mod remove_sudo {
 				Balances::transfer_all(RuntimeOrigin::signed(from.into()), to.into(), false);
 			if let Err(e) = transfer_result {
 				log::warn!("‼️        transfer failed with {:?}", e);
-				// return false;
 			}
-			// true
 		}
 
 		// check sudo free balance, assuming the key is still in storage.

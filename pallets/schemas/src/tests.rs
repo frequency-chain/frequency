@@ -354,16 +354,3 @@ fn dsnp_broadcast() {
 	);
 	assert_ok!(result);
 }
-
-#[test]
-fn test_foo() {
-	new_test_ext().execute_with(|| {
-		// can't use Ss58Codec because it requires feature="full_crypto" which isn't part of WASM
-		let ss58_ket: &str = "f6cNksdPwCHbdiNRk6EiUahnPXSR8tetB9iv9BDQoHZ4ScFTg";
-		let sudo_key = "0xd64279ee49fc11521ab7272190f8c11fdff7ab554d5490254f292613b36dab30";
-		let foo = AccountId32::from_ss58check(ss58_ket);
-		assert!(foo.is_ok());
-		let addr = foo.unwrap();
-		println!("foo: {:?}", addr);
-	})
-}

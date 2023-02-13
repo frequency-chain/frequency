@@ -4,8 +4,9 @@ use frame_system::RawOrigin;
 use numtoa::NumToA;
 use sp_std::vec::Vec;
 
-use super::*;
 use crate::Pallet as SchemasPallet;
+
+use super::*;
 
 fn generate_schema<T: Config>(
 	size: usize,
