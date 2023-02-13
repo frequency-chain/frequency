@@ -287,9 +287,9 @@ pub mod pallet {
 			payload_location: PayloadLocation,
 			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
 		) -> DispatchResult {
-			Self::validate_schema_inputs(&model, &model_type)?;
-
 			let sender = ensure_signed(origin)?;
+
+			Self::validate_schema_inputs(&model, &model_type)?;
 
 			let schema_id = Self::add_schema(model, model_type, payload_location, settings)?;
 
