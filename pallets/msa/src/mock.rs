@@ -15,8 +15,6 @@ use sp_runtime::{
 	AccountId32, MultiSignature,
 };
 
-use codec::Encode;
-
 pub use common_runtime::constants::*;
 
 pub use pallet_msa::Call as MsaCall;
@@ -123,9 +121,7 @@ impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
 /// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;
 
-impl pallet_msa::ProposalProvider<AccountId, RuntimeCall, RuntimeOrigin>
-	for CouncilProposalProvider
-{
+impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
 	fn propose(
 		who: AccountId,
 		threshold: u32,

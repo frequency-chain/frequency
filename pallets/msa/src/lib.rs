@@ -140,10 +140,7 @@ pub mod pallet {
 		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
 
 		/// The Council proposal provider interface
-		type ProposalProvider: ProposalProvider<
-			Self::AccountId,
-			Self::Proposal,
-		>;
+		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Proposal>;
 
 		/// Maximum count of keys allowed per MSA
 		#[pallet::constant]
