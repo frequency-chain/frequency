@@ -37,7 +37,7 @@ impl MultipartKeyStorageHasher for Twox256 {
 	type HashSize = ConstU8<32>;
 }
 
-pub trait IsStatefulKey<H: MultipartKeyStorageHasher>:
+pub trait MultipartKey<H: MultipartKeyStorageHasher>:
 	Clone + Debug + Default + Encode + Decode + Eq + PartialEq + Sized + Hashable
 {
 	type Arity: Get<u8>;
@@ -64,7 +64,7 @@ pub trait IsStatefulKey<H: MultipartKeyStorageHasher>:
 	}
 }
 
-impl<H: MultipartKeyStorageHasher> IsStatefulKey<H> for () {
+impl<H: MultipartKeyStorageHasher> MultipartKey<H> for () {
 	type Arity = ConstU8<0>;
 
 	fn hash(&self) -> Vec<u8> {
@@ -83,7 +83,7 @@ impl<H: MultipartKeyStorageHasher> IsStatefulKey<H> for () {
 impl<
 		H: MultipartKeyStorageHasher,
 		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
-	> IsStatefulKey<H> for (T1,)
+	> MultipartKey<H> for (T1,)
 {
 	type Arity = ConstU8<1>;
 
@@ -111,7 +111,7 @@ impl<
 		H: MultipartKeyStorageHasher,
 		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
 		T2: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
-	> IsStatefulKey<H> for (T1, T2)
+	> MultipartKey<H> for (T1, T2)
 {
 	type Arity = ConstU8<2>;
 
@@ -144,7 +144,7 @@ impl<
 		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
 		T2: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
 		T3: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
-	> IsStatefulKey<H> for (T1, T2, T3)
+	> MultipartKey<H> for (T1, T2, T3)
 {
 	type Arity = ConstU8<3>;
 
@@ -182,7 +182,7 @@ impl<
 		T2: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
 		T3: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
 		T4: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
-	> IsStatefulKey<H> for (T1, T2, T3, T4)
+	> MultipartKey<H> for (T1, T2, T3, T4)
 {
 	type Arity = ConstU8<4>;
 
@@ -227,7 +227,7 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 	///
 	/// The read is performed from the `msa_id` only. The `key` is not required. If the
 	/// data doesn't store under the given `key` `None` is returned.
-	pub fn try_read<K: IsStatefulKey<H>, V: Decode + Sized>(
+	pub fn try_read<K: MultipartKey<H>, V: Decode + Sized>(
 		msa_id: &MessageSourceId,
 		keys: &K,
 	) -> Result<Option<V>, ()> {
@@ -245,8 +245,8 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 	/// Warning: This should not be used from any on-chain transaction!
 	pub fn prefix_iterator<
 		V: Decode + Sized,
-		K: IsStatefulKey<H> + Sized,
-		PrefixKey: IsStatefulKey<H>,
+		K: MultipartKey<H> + Sized,
+		PrefixKey: MultipartKey<H>,
 	>(
 		msa_id: &MessageSourceId,
 		prefix_keys: &PrefixKey,
@@ -258,7 +258,7 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 		)
 		.filter_map(|(k, v)| {
 			if let Ok(key) =
-				<K as IsStatefulKey<H>>::decode_without_prefix(&k, PrefixKey::Arity::get())
+				<K as MultipartKey<H>>::decode_without_prefix(&k, PrefixKey::Arity::get())
 			{
 				Some((key, v))
 			} else {
@@ -269,7 +269,7 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 	}
 
 	/// Writes directly into child tree node
-	pub fn write<K: IsStatefulKey<H>, V: Encode + Sized>(
+	pub fn write<K: MultipartKey<H>, V: Encode + Sized>(
 		msa_id: &MessageSourceId,
 		keys: &K,
 		new_value: V,
@@ -279,7 +279,7 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 	}
 
 	/// Kills a child tree node
-	pub fn kill<K: IsStatefulKey<H>>(msa_id: &MessageSourceId, keys: &K) {
+	pub fn kill<K: MultipartKey<H>>(msa_id: &MessageSourceId, keys: &K) {
 		let child_trie_info = &Self::get_child_tree(*msa_id);
 		child::kill(child_trie_info, &keys.hash());
 	}
