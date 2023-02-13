@@ -17,6 +17,6 @@ where
 	pub model: BoundedVec<u8, MaxModelSize>,
 	/// The payload location
 	pub payload_location: PayloadLocation,
-	/// grants for the schema
+	/// settings for the schema
 	pub settings: SchemaSettings,
 }
