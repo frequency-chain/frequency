@@ -10,7 +10,7 @@ use common_primitives::{
 		types::ParquetType,
 		ParquetModel,
 	},
-	schema::{Grant, ModelType, PayloadLocation, SchemaId},
+	schema::{ModelType, PayloadLocation, SchemaId, SchemaSetting},
 };
 
 use crate::{Config, Error, Event as AnnouncementEvent};
@@ -362,7 +362,7 @@ fn create_schema_with_grants_should_work() {
 		sudo_set_max_schema_size();
 
 		// arrange
-		let grants = vec![Grant::AppendOnly];
+		let grants = vec![SchemaSetting::AppendOnly];
 		let sender: AccountId = 1;
 
 		//  assert

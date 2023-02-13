@@ -1,6 +1,6 @@
 //! Types for the Schema Pallet
 use codec::{Decode, Encode, MaxEncodedLen};
-use common_primitives::schema::{Grants, ModelType, PayloadLocation};
+use common_primitives::schema::{ModelType, PayloadLocation, SchemaSettings};
 use frame_support::{traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 
@@ -18,5 +18,5 @@ where
 	/// The payload location
 	pub payload_location: PayloadLocation,
 	/// grants for the schema
-	pub grants: Grants,
+	pub settings: SchemaSettings,
 }

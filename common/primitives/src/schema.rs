@@ -43,16 +43,16 @@ pub enum PayloadLocation {
 #[repr(u16)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, RuntimeDebug, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
-pub enum Grant {
+pub enum SchemaSetting {
 	/// Items in this collection are transferable.
 	AppendOnly,
 	/// The metadata of this collection can be modified.
 	SignatureRequired,
 }
 
-/// Wrapper type for `BitFlags<Grant>` that implements `Codec`.
+/// Wrapper type for `BitFlags<SchemaSetting>` that implements `Codec`.
 #[derive(Clone, Copy, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct Grants(pub BitFlags<Grant>);
+pub struct SchemaSettings(pub BitFlags<SchemaSetting>);
 
 /// RPC Response form for a Schema
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -68,7 +68,7 @@ pub struct SchemaResponse {
 	/// The payload location
 	pub payload_location: PayloadLocation,
 	/// grants for the schema
-	pub grants: Vec<Grant>,
+	pub settings: Vec<SchemaSetting>,
 }
 
 /// This allows other pallets to resolve Schema information. With generic SchemaId
@@ -87,26 +87,26 @@ pub trait SchemaValidator<SchemaId> {
 	fn set_schema_count(n: SchemaId);
 }
 
-impl Grants {
+impl SchemaSettings {
 	/// some docs
 	pub fn all_disabled() -> Self {
 		Self(BitFlags::EMPTY)
 	}
 	/// some docs
-	pub fn get_enabled(&self) -> BitFlags<Grant> {
+	pub fn get_enabled(&self) -> BitFlags<SchemaSetting> {
 		self.0
 	}
 	/// some docs
-	pub fn is_enabled(&self, grant: Grant) -> bool {
+	pub fn is_enabled(&self, grant: SchemaSetting) -> bool {
 		self.0.contains(grant)
 	}
 	/// some docs
-	pub fn set(&mut self, grant: Grant) {
+	pub fn set(&mut self, grant: SchemaSetting) {
 		self.0.insert(grant)
 	}
 	/// some docs
-	pub fn from(grants: BitFlags<Grant>) -> Self {
-		Self(grants)
+	pub fn from(settings: BitFlags<SchemaSetting>) -> Self {
+		Self(settings)
 	}
 }
-impl_codec_bitflags!(Grants, u16, Grant);
+impl_codec_bitflags!(SchemaSettings, u16, SchemaSetting);

@@ -52,8 +52,8 @@
 use common_primitives::{
 	parquet::ParquetModel,
 	schema::{
-		Grant, Grants, ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse,
-		SchemaValidator,
+		ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaSetting,
+		SchemaSettings, SchemaValidator,
 	},
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
@@ -222,7 +222,7 @@ pub mod pallet {
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
-			grants: Option<BoundedVec<Grant, T::SchemaModelMaxBytesBoundedVecLimit>>,
+			settings: Option<BoundedVec<SchemaSetting, T::SchemaModelMaxBytesBoundedVecLimit>>,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
@@ -236,8 +236,12 @@ pub mod pallet {
 			);
 
 			Self::ensure_valid_model(&model_type, &model)?;
-			let schema_id =
-				Self::add_schema(model, model_type, payload_location, grants.unwrap_or_default())?;
+			let schema_id = Self::add_schema(
+				model,
+				model_type,
+				payload_location,
+				settings.unwrap_or_default(),
+			)?;
 
 			Self::deposit_event(Event::SchemaCreated { key: sender, schema_id });
 			Ok(())
@@ -285,14 +289,14 @@ pub mod pallet {
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
-			grants: BoundedVec<Grant, T::SchemaModelMaxBytesBoundedVecLimit>,
+			settings: BoundedVec<SchemaSetting, T::SchemaModelMaxBytesBoundedVecLimit>,
 		) -> Result<SchemaId, DispatchError> {
 			let schema_id = Self::get_next_schema_id()?;
-			let mut set_grants = Grants::all_disabled();
-			for i in grants.into_inner() {
-				set_grants.set(i);
+			let mut set_settings = SchemaSettings::all_disabled();
+			for i in settings.into_inner() {
+				set_settings.set(i);
 			}
-			let schema = Schema { model_type, model, payload_location, grants: set_grants };
+			let schema = Schema { model_type, model, payload_location, settings: set_settings };
 			<CurrentSchemaIdentifierMaximum<T>>::set(schema_id);
 			<Schemas<T>>::insert(schema_id, schema);
 			Ok(schema_id)
@@ -302,14 +306,14 @@ pub mod pallet {
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			if let Some(schema) = Self::get_schema(schema_id) {
 				let model_vec: Vec<u8> = schema.model.into_inner();
-				let saved_grants = schema.grants;
-				let grants = saved_grants.0.iter().collect::<Vec<_>>();
+				let saved_settings = schema.settings;
+				let settings = saved_settings.0.iter().collect::<Vec<_>>();
 				let response = SchemaResponse {
 					schema_id,
 					model: model_vec,
 					model_type: schema.model_type,
 					payload_location: schema.payload_location,
-					grants,
+					settings,
 				};
 				return Some(response)
 			}
