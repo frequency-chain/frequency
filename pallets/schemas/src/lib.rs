@@ -302,8 +302,8 @@ pub mod pallet {
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			if let Some(schema) = Self::get_schema(schema_id) {
 				let model_vec: Vec<u8> = schema.model.into_inner();
-				let mut grants = Vec::new();
-				// TODO: implement send grants back to consumers as Vec
+				let saved_grants = schema.grants;
+				let mut grants = saved_grants.0.iter().collect::<Vec<_>>();
 				let response = SchemaResponse {
 					schema_id,
 					model: model_vec,
