@@ -109,7 +109,7 @@ mod signature_registry_tests;
 pub mod weights;
 
 /// The provider of a collective action interface, for example an instance of `pallet-collective`.
-pub trait ProposalProvider<AccountId, Proposal, RuntimeOrigin> {
+pub trait ProposalProvider<AccountId, Proposal> {
 	/// Add a new proposal.
 	/// Returns a proposal length and active proposals count if successful.
 	fn propose(
@@ -143,7 +143,6 @@ pub mod pallet {
 		type ProposalProvider: ProposalProvider<
 			Self::AccountId,
 			Self::Proposal,
-			Self::RuntimeOrigin,
 		>;
 
 		/// Maximum count of keys allowed per MSA

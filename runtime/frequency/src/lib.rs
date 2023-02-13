@@ -85,7 +85,7 @@ use frame_support::traits::Contains;
 /// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;
 
-impl pallet_msa::ProposalProvider<AccountId, RuntimeCall, RuntimeOrigin>
+impl pallet_msa::ProposalProvider<AccountId, RuntimeCall>
 	for CouncilProposalProvider
 {
 	fn propose(
