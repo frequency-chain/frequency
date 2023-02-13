@@ -52,7 +52,8 @@
 use common_primitives::{
 	parquet::ParquetModel,
 	schema::{
-		ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaValidator,
+		Grant, Grants, ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse,
+		SchemaValidator,
 	},
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
@@ -284,14 +285,14 @@ pub mod pallet {
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
-			acl: BoundedVec<Grant, T::SchemaModelMaxBytesBoundedVecLimit>,
+			grants: BoundedVec<Grant, T::SchemaModelMaxBytesBoundedVecLimit>,
 		) -> Result<SchemaId, DispatchError> {
 			let schema_id = Self::get_next_schema_id()?;
-			let mut grants = Grants::all_disabled();
-			for i in acl.into_inner() {
-				grants.set(i);
+			let mut set_grants = Grants::all_disabled();
+			for i in grants.into_inner() {
+				set_grants.set(i);
 			}
-			let schema = Schema { model_type, model, payload_location, grants };
+			let schema = Schema { model_type, model, payload_location, grants: set_grants };
 			<CurrentSchemaIdentifierMaximum<T>>::set(schema_id);
 			<Schemas<T>>::insert(schema_id, schema);
 			Ok(schema_id)
@@ -301,12 +302,14 @@ pub mod pallet {
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			if let Some(schema) = Self::get_schema(schema_id) {
 				let model_vec: Vec<u8> = schema.model.into_inner();
-
+				let mut grants = Vec::new();
+				// TODO: implement send grants back to consumers as Vec
 				let response = SchemaResponse {
 					schema_id,
 					model: model_vec,
 					model_type: schema.model_type,
 					payload_location: schema.payload_location,
+					grants,
 				};
 				return Some(response)
 			}

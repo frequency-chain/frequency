@@ -1,7 +1,10 @@
+use crate::impl_codec_bitflags;
 #[cfg(feature = "std")]
 use crate::utils;
-use codec::{Decode, Encode, MaxEncodedLen};
-use scale_info::TypeInfo;
+use codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
+use enumflags2::{bitflags, BitFlags};
+use frame_support::RuntimeDebug;
+use scale_info::{build::Fields, meta_type, Path, Type, TypeInfo, TypeParameter};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
@@ -35,6 +38,45 @@ pub enum PayloadLocation {
 	Paginated,
 }
 
+/// Support for up to 16 user-enabled features on a collection.
+#[bitflags]
+#[repr(u16)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Copy, Clone, RuntimeDebug, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
+pub enum Grant {
+	/// Items in this collection are transferable.
+	AppendOnly,
+	/// The metadata of this collection can be modified.
+	SignatureRequired,
+}
+
+impl Grant {
+	/// Returns the index of the grant in the bitflags.
+	pub fn index(self) -> u8 {
+		self as u8
+	}
+
+	/// Returns an iterator over all grants.
+	pub fn iter() -> impl Iterator<Item = Self> {
+		[Self::AppendOnly, Self::SignatureRequired].iter().copied()
+	}
+
+	/// Get the grant from the index.
+	pub fn from_index(index: u8) -> Option<Self> {
+		Self::iter().find(|g| g.index() == index)
+	}
+}
+
+impl Default for Grant {
+	fn default() -> Self {
+		Self::AppendOnly
+	}
+}
+
+/// Wrapper type for `BitFlags<Grant>` that implements `Codec`.
+#[derive(Clone, Copy, PartialEq, Eq, Default, RuntimeDebug)]
+pub struct Grants(pub BitFlags<Grant>);
+
 /// RPC Response form for a Schema
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
@@ -48,6 +90,8 @@ pub struct SchemaResponse {
 	pub model_type: ModelType,
 	/// The payload location
 	pub payload_location: PayloadLocation,
+	/// grants for the schema
+	pub grants: Vec<Grant>,
 }
 
 /// This allows other pallets to resolve Schema information. With generic SchemaId
@@ -65,3 +109,27 @@ pub trait SchemaValidator<SchemaId> {
 	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
 	fn set_schema_count(n: SchemaId);
 }
+
+impl Grants {
+	/// some docs
+	pub fn all_disabled() -> Self {
+		Self(BitFlags::EMPTY)
+	}
+	/// some docs
+	pub fn get_enabled(&self) -> BitFlags<Grant> {
+		self.0
+	}
+	/// some docs
+	pub fn is_enabled(&self, grant: Grant) -> bool {
+		self.0.contains(grant)
+	}
+	/// some docs
+	pub fn set(&mut self, grant: Grant) {
+		self.0.insert(grant)
+	}
+	/// some docs
+	pub fn from(grants: BitFlags<Grant>) -> Self {
+		Self(grants)
+	}
+}
+impl_codec_bitflags!(Grants, u16, Grant);
