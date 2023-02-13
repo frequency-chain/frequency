@@ -50,12 +50,6 @@ pub enum Grant {
 	SignatureRequired,
 }
 
-impl Default for Grant {
-	fn default() -> Self {
-		Self::AppendOnly
-	}
-}
-
 /// Wrapper type for `BitFlags<Grant>` that implements `Codec`.
 #[derive(Clone, Copy, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct Grants(pub BitFlags<Grant>);
