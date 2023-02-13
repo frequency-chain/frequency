@@ -371,7 +371,11 @@ fn create_schema_with_grants_should_work() {
 			create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
 			ModelType::AvroBinary,
 			PayloadLocation::Itemized,
-			Some(BoundedVec::try_from(grants).unwrap()),
+			Some(BoundedVec::try_from(grants.clone()).unwrap()),
 		));
+
+		// assert
+		let res = SchemasPallet::get_schema_by_id(1);
+		assert_eq!(res.unwrap().grants, grants);
 	})
 }

@@ -303,7 +303,7 @@ pub mod pallet {
 			if let Some(schema) = Self::get_schema(schema_id) {
 				let model_vec: Vec<u8> = schema.model.into_inner();
 				let saved_grants = schema.grants;
-				let mut grants = saved_grants.0.iter().collect::<Vec<_>>();
+				let grants = saved_grants.0.iter().collect::<Vec<_>>();
 				let response = SchemaResponse {
 					schema_id,
 					model: model_vec,
