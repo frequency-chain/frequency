@@ -5,7 +5,8 @@ on:
     branches:
       - main
     types: [opened, reopened]
-
+    paths:
+      - .github/workflows
 jobs:
   create-issue:
     runs-on: ubuntu-20.04
@@ -25,6 +26,7 @@ jobs:
         with:
           filename: .github/issues/dependabot-alert.template.md
       - name: Link PR to New Issue
+        if: github.event.pull_request.user.login  == 'dependabot[bot]'
         env:
           PR_BODY_FILENAME: /tmp/current-pr-body-${{github.run_id}}.txt
         run: |

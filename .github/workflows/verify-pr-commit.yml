@@ -82,6 +82,7 @@ jobs:
     if: needs.changes.outputs.build-binary == 'true'
     name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
     strategy:
+      fail-fast: true
       matrix:
         network: [rococo, mainnet]
         include:
@@ -350,6 +351,7 @@ jobs:
     env:
       HOME: /home/runner
     strategy:
+      fail-fast: true
       matrix:
         network: [rococo, mainnet]
         include:

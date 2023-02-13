@@ -18,6 +18,7 @@ jobs:
     env:
       HOME: /home/runner
     strategy:
+      fail-fast: true
       matrix:
         # os: [[self-hosted, Linux, X64], [self-hosted, Linux, ARM64]]
         os: [[self-hosted, Linux, X64]]
@@ -115,6 +116,7 @@ jobs:
     env:
       HOME: /home/runner
     strategy:
+      fail-fast: true
       matrix:
         network: [rococo, mainnet]
         include:
@@ -296,6 +298,7 @@ jobs:
     needs: build-binaries
     name: Test Version Matches Release
     strategy:
+      fail-fast: true
       matrix:
         os: [ubuntu-20.04]
         network: [mainnet]
@@ -622,6 +625,7 @@ jobs:
     needs: wait-for-all-builds
     name: Release ${{matrix.arch}} Node Docker Image for ${{matrix.network}}
     strategy:
+      fail-fast: true
       matrix:
         arch: [amd64]
         network: [rococo, mainnet]
@@ -690,6 +694,7 @@ jobs:
     needs: wait-for-all-builds
     name: Release Dev Docker Image for ${{matrix.node}}
     strategy:
+      fail-fast: true
       matrix:
         network: [local]
         arch: [amd64]
