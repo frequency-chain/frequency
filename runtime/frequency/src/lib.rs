@@ -51,6 +51,7 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstU128, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
+	Twox128,
 };
 
 use frame_system::{
@@ -739,6 +740,8 @@ impl pallet_stateful_storage::Config for Runtime {
 	type SchemaGrantValidator = Msa;
 	/// The type that provides schema info
 	type SchemaProvider = Schemas;
+	/// Hasher for Child Tree keys
+	type Hasher = Twox128;
 
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]

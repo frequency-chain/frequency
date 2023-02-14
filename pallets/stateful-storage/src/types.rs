@@ -1,10 +1,14 @@
 use crate::Config;
 use codec::{Decode, Encode, MaxEncodedLen};
+use common_primitives::{schema::SchemaId, stateful_storage::PageId};
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
 use sp_std::{cmp::*, collections::btree_map::BTreeMap, fmt::Debug, prelude::*};
 
+pub type ItemizedKey = (SchemaId,);
+pub type PaginatedKey = (SchemaId, PageId);
+pub type PaginatedPrefixKey = (SchemaId,);
 /// Itemized page type
 pub type ItemizedPage<T> = Page<<T as Config>::MaxItemizedPageSizeBytes>;
 /// Paginated Page type

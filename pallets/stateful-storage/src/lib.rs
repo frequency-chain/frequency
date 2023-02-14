@@ -50,7 +50,6 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-use codec::{Decode, Encode};
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
 use sp_std::prelude::*;
@@ -60,15 +59,15 @@ pub mod types;
 
 pub mod weights;
 
-use crate::{
-	stateful_child_tree::{StatefulChildTree, StatefulPageKeyPart},
-	types::*,
-};
+use crate::{stateful_child_tree::StatefulChildTree, types::*};
+// Weird compiler issue--warns about unused PageId import when building, but if missing here, `cargo test` fails due to missing import.
+#[allow(unused_imports)]
+use common_primitives::stateful_storage::PageId;
 use common_primitives::{
 	msa::{DelegatorId, MessageSourceId, MsaValidator, ProviderId, SchemaGrantValidator},
 	schema::{PayloadLocation, SchemaId, SchemaProvider},
 	stateful_storage::{
-		ItemizedStoragePageResponse, ItemizedStorageResponse, PageId, PaginatedStorageResponse,
+		ItemizedStoragePageResponse, ItemizedStorageResponse, PaginatedStorageResponse,
 	},
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
@@ -79,10 +78,7 @@ pub use weights::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::{
-		stateful_child_tree::{StatefulChildTree, StatefulPageKeyPart},
-		types::ItemAction,
-	};
+	use crate::{stateful_child_tree::StatefulChildTree, types::ItemAction};
 	use common_primitives::{
 		msa::{MessageSourceId, MsaLookup, MsaValidator, SchemaGrantValidator},
 		schema::{SchemaId, SchemaProvider},
@@ -135,6 +131,9 @@ pub mod pallet {
 		#[cfg(feature = "runtime-benchmarks")]
 		/// A set of helper functions for benchmarking.
 		type SchemaBenchmarkHelper: SchemaBenchmarkHelper;
+
+		/// Concrete storage tree type w/hasher
+		type Hasher: stateful_child_tree::MultipartKeyStorageHasher;
 	}
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -215,36 +214,37 @@ pub mod pallet {
 				PayloadLocation::Itemized,
 			)?;
 
-			let storage_key = &schema_id.encode()[..];
-			let keys = vec![storage_key.to_vec()];
-			let updated_page =
-				StatefulChildTree::try_read::<ItemizedPage<T>>(&state_owner_msa_id, &keys)
-					.map_err(|_| Error::<T>::CorruptedState)?
-					.unwrap_or_default()
-					.apply_item_actions(&actions[..])
-					.map_err(|e| match e {
-						PageError::ErrorParsing(err) => {
-							log::warn!(
-								"failed parsing Itemized msa={:?} schema_id={:?} {:?}",
-								state_owner_msa_id,
-								schema_id,
-								err
-							);
-							Error::<T>::CorruptedState
-						},
-						_ => Error::<T>::InvalidItemAction,
-					})?;
+			let key: ItemizedKey = (schema_id,);
+			let updated_page = StatefulChildTree::<T::Hasher>::try_read::<_, ItemizedPage<T>>(
+				&state_owner_msa_id,
+				&key,
+			)
+			.map_err(|_| Error::<T>::CorruptedState)?
+			.unwrap_or_default()
+			.apply_item_actions(&actions[..])
+			.map_err(|e| match e {
+				PageError::ErrorParsing(err) => {
+					log::warn!(
+						"failed parsing Itemized msa={:?} schema_id={:?} {:?}",
+						state_owner_msa_id,
+						schema_id,
+						err
+					);
+					Error::<T>::CorruptedState
+				},
+				_ => Error::<T>::InvalidItemAction,
+			})?;
 
 			match updated_page.is_empty() {
 				true => {
-					StatefulChildTree::kill(&state_owner_msa_id, &keys);
+					StatefulChildTree::<T::Hasher>::kill(&state_owner_msa_id, &key);
 					Self::deposit_event(Event::ItemizedPageDeleted {
 						msa_id: state_owner_msa_id,
 						schema_id,
 					});
 				},
 				false => {
-					StatefulChildTree::write(&state_owner_msa_id, &keys, updated_page);
+					StatefulChildTree::<T::Hasher>::write(&state_owner_msa_id, &key, updated_page);
 					Self::deposit_event(Event::ItemizedPageUpdated {
 						msa_id: state_owner_msa_id,
 						schema_id,
@@ -279,10 +279,8 @@ pub mod pallet {
 				PayloadLocation::Paginated,
 			)?;
 
-			let schema_key: StatefulPageKeyPart = schema_id.encode();
-			let page_key: StatefulPageKeyPart = page_id.encode();
-
-			StatefulChildTree::write(&state_owner_msa_id, &[schema_key, page_key], page);
+			let keys: PaginatedKey = (schema_id, page_id);
+			StatefulChildTree::<T::Hasher>::write(&state_owner_msa_id, &keys, page);
 			Self::deposit_event(Event::PaginatedPageUpdated {
 				msa_id: state_owner_msa_id,
 				schema_id,
@@ -312,10 +310,8 @@ pub mod pallet {
 				PayloadLocation::Paginated,
 			)?;
 
-			let schema_key = schema_id.encode();
-			let page_key = page_id.encode();
-
-			StatefulChildTree::kill(&state_owner_msa_id, &[schema_key, page_key]);
+			let keys: PaginatedKey = (schema_id, page_id);
+			StatefulChildTree::<T::Hasher>::kill(&state_owner_msa_id, &keys);
 			Self::deposit_event(Event::PaginatedPageDeleted {
 				msa_id: state_owner_msa_id,
 				schema_id,
@@ -341,22 +337,14 @@ impl<T: Config> Pallet<T> {
 			schema.payload_location == PayloadLocation::Paginated,
 			Error::<T>::SchemaPayloadLocationMismatch
 		);
-		let keys: Vec<StatefulPageKeyPart> = vec![schema_id.encode().to_vec()];
-		Ok(StatefulChildTree::prefix_iterator::<PaginatedPage<T>>(&msa_id, &keys[..])
-			.filter_map(|(key, v)| match <PageId>::decode(&mut &key[..]) {
-				Ok(k) =>
-					Some(PaginatedStorageResponse::new(k, msa_id, schema_id, v.data.into_inner())),
-				Err(_) => {
-					log::debug!(
-						"error parsing pageId from key {:?} for msa_id {} and schema_id {}",
-						key,
-						msa_id,
-						schema_id
-					);
-					None
-				},
-			})
-			.collect())
+		let prefix: PaginatedPrefixKey = (schema_id,);
+		Ok(StatefulChildTree::<T::Hasher>::prefix_iterator::<
+			PaginatedPage<T>,
+			PaginatedKey,
+			PaginatedPrefixKey,
+		>(&msa_id, &prefix)
+		.map(|(k, v)| PaginatedStorageResponse::new(k.1, msa_id, schema_id, v.data.into_inner()))
+		.collect())
 	}
 
 	/// This function returns all the itemized storages associated with `msa_id` and `schema_id`
@@ -370,9 +358,9 @@ impl<T: Config> Pallet<T> {
 			schema.payload_location == PayloadLocation::Itemized,
 			Error::<T>::SchemaPayloadLocationMismatch
 		);
-		let keys: Vec<StatefulPageKeyPart> = vec![schema_id.encode().to_vec()];
+		let key: ItemizedKey = (schema_id,);
 		let items: Vec<ItemizedStorageResponse> =
-			StatefulChildTree::try_read::<ItemizedPage<T>>(&msa_id, &keys[..])
+			StatefulChildTree::<T::Hasher>::try_read::<ItemizedKey, ItemizedPage<T>>(&msa_id, &key)
 				.map_err(|_| Error::<T>::CorruptedState)?
 				.unwrap_or_default()
 				.parse_as_itemized(false)
@@ -419,9 +407,9 @@ impl<T: Config> Pallet<T> {
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
 	) -> Option<ItemizedPage<T>> {
-		let storage_key = &schema_id.encode()[..];
-		let keys = vec![storage_key.to_vec()];
-		StatefulChildTree::try_read::<ItemizedPage<T>>(&msa_id, &keys).unwrap_or(None)
+		let key: ItemizedKey = (schema_id,);
+		StatefulChildTree::<T::Hasher>::try_read::<_, ItemizedPage<T>>(&msa_id, &key)
+			.unwrap_or(None)
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
@@ -430,9 +418,8 @@ impl<T: Config> Pallet<T> {
 		schema_id: SchemaId,
 		page_id: PageId,
 	) -> Option<PaginatedPage<T>> {
-		let schema_key: StatefulPageKeyPart = schema_id.encode();
-		let page_key: StatefulPageKeyPart = page_id.encode();
-		StatefulChildTree::try_read::<PaginatedPage<T>>(&msa_id, &[schema_key, page_key])
+		let key: PaginatedKey = (schema_id, page_id);
+		StatefulChildTree::<T::Hasher>::try_read::<_, PaginatedPage<T>>(&msa_id, &key)
 			.unwrap_or(None)
 	}
 }
