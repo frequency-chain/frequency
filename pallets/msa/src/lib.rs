@@ -536,13 +536,11 @@ pub mod pallet {
 		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
 			let provider_key = T::CreateProviderOrigin::ensure_origin(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			let result = Self::create_provider_for(provider_msa_id, provider_name);
-			if result.is_ok() {
-				Self::deposit_event(Event::ProviderCreated {
-					provider_id: ProviderId(provider_msa_id),
-				});
-			}
-			result
+			Self::create_provider_for(provider_msa_id, provider_name)?;
+			Self::deposit_event(Event::ProviderCreated {
+				provider_id: ProviderId(provider_msa_id),
+			});
+			Ok(())
 		}
 
 		/// Creates a new Delegation for an existing MSA, with `origin` as the Provider and `delegator_key` is the delegator.
@@ -921,13 +919,11 @@ pub mod pallet {
 		) -> DispatchResult {
 			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			let result = Self::create_provider_for(provider_msa_id, provider_name);
-			if result.is_ok() {
-				Self::deposit_event(Event::ProviderCreated {
-					provider_id: ProviderId(provider_msa_id),
-				});
-			}
-			result
+			Self::create_provider_for(provider_msa_id, provider_name)?;
+			Self::deposit_event(Event::ProviderCreated {
+				provider_id: ProviderId(provider_msa_id),
+			});
+			Ok(())
 		}
 	}
 }
