@@ -225,7 +225,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			Self::validate_schema_inputs(&model, &model_type)?;
+			Self::validate_schema_model(&model, &model_type)?;
 
 			let schema_id =
 				Self::add_schema(model, model_type, payload_location, BoundedVec::default())?;
@@ -289,7 +289,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			Self::validate_schema_inputs(&model, &model_type)?;
+			Self::validate_schema_model(&model, &model_type)?;
 
 			let schema_id = Self::add_schema(model, model_type, payload_location, settings)?;
 
@@ -376,7 +376,7 @@ pub mod pallet {
 			Ok(next)
 		}
 
-		fn validate_schema_inputs(
+		fn validate_schema_model(
 			model: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: &ModelType,
 		) -> Result<(), DispatchError> {
