@@ -80,6 +80,7 @@ use common_primitives::{
 		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
 		EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR,
 	},
+	node::ProposalProvider,
 	schema::{SchemaId, SchemaValidator},
 };
 
@@ -105,17 +106,6 @@ mod replay_tests;
 mod signature_registry_tests;
 
 pub mod weights;
-
-/// The provider of a collective action interface, for example an instance of `pallet-collective`.
-pub trait ProposalProvider<AccountId, Proposal> {
-	/// Add a new proposal.
-	/// Returns a proposal length and active proposals count if successful.
-	fn propose(
-		who: AccountId,
-		threshold: u32,
-		proposal: Box<Proposal>,
-	) -> Result<(u32, u32), DispatchError>;
-}
 #[frame_support::pallet]
 pub mod pallet {
 
@@ -126,19 +116,11 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		/// The runtime call dispatch type.
-		type Proposal: Parameter
-			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin, PostInfo = PostDispatchInfo>
-			+ From<Call<Self>>;
-
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
 		/// AccountId truncated to 32 bytes
 		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
-
-		/// The Council proposal provider interface
-		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Proposal>;
 
 		/// Maximum count of keys allowed per MSA
 		#[pallet::constant]
@@ -184,6 +166,14 @@ pub mod pallet {
 
 		/// The origin that is allowed to create providers via governance
 		type CreateProviderViaGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
+		/// The runtime call dispatch type.
+		type Proposal: Parameter
+			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin, PostInfo = PostDispatchInfo>
+			+ From<Call<Self>>;
+
+		/// The Council proposal provider interface
+		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Proposal>;
 	}
 
 	#[pallet::pallet]

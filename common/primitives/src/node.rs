@@ -4,6 +4,9 @@ pub use sp_runtime::{
 	traits::{BlakeTwo256, IdentifyAccount, Verify},
 	MultiAddress, MultiSignature, OpaqueExtrinsic,
 };
+use sp_std::boxed::Box;
+
+use frame_support::dispatch::DispatchError;
 
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
 /// to the public key of our transaction signing scheme.
@@ -35,3 +38,20 @@ pub type Index = u32;
 
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
+/// The provider of a collective action interface, for example an instance of `pallet-collective`.
+pub trait ProposalProvider<AccountId, Proposal> {
+	/// Add a new proposal with a threshold number of council votes.
+	/// Returns a proposal length and active proposals count if successful.
+	fn propose(
+		who: AccountId,
+		threshold: u32,
+		proposal: Box<Proposal>,
+	) -> Result<(u32, u32), DispatchError>;
+
+	/// Add a new proposal with a simple majority (>50%) of council votes.
+	/// Returns a proposal length and active proposals count if successful.
+	fn propose_with_simple_majority(
+		who: AccountId,
+		proposal: Box<Proposal>,
+	) -> Result<(u32, u32), DispatchError>;
+}
