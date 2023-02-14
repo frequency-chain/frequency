@@ -44,9 +44,9 @@ pub enum PayloadLocation {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, RuntimeDebug, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub enum SchemaSetting {
-	/// Items in this collection are transferable.
+	/// Schema may enforce append only type behavior.
 	AppendOnly,
-	/// The metadata of this collection can be modified.
+	/// Schema may enforce signature requirement on payload.
 	SignatureRequired,
 }
 
