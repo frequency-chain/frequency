@@ -4,7 +4,8 @@ on:
     - cron: "0 0 * * *" # midnight (UTC)
 env:
   REPO_URL: https://api.github.com/repos/paritytech/polkadot
-  RELEASE_TRACK_FILENAME: .github/workflows/.polkadot-latest-full-release.txt
+  TRACKING_GIT_BRANCH: ci/latest-polkadot-full-release
+  RELEASE_TRACK_FILENAME: .github/workflows/.latest-polkadot-full-release.txt
 jobs:
   record-polkadot-latest-release-version:
     runs-on: ubuntu-20.04
@@ -14,7 +15,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
-          ref: main
+          ref: ${{env.TRACKING_GIT_BRANCH}}
           token: ${{secrets.FREQUENCY_REPO_TRACK_POLKADOT_RELEASES}}
       - name: Print Recorded Latest Polkadot Release
         run: |
