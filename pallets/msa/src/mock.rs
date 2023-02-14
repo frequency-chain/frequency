@@ -1,15 +1,21 @@
 use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
 use common_primitives::{msa::MessageSourceId, node::BlockNumber, utils::wrap_binary_data};
 use frame_support::{
-	assert_ok, parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64, OnFinalize, OnInitialize},
+	assert_ok,
+	dispatch::DispatchError,
+	parameter_types,
+	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, OnFinalize, OnInitialize},
 };
+use frame_system::{EnsureRoot, EnsureSigned};
+use pallet_collective;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
 	AccountId32, MultiSignature,
 };
+
+pub use common_runtime::constants::*;
 
 pub use pallet_msa::Call as MsaCall;
 
@@ -28,8 +34,23 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>},
+		Council: pallet_collective::<Instance1>::{Pallet, Call, Config<T,I>, Storage, Event<T>, Origin<T>},
 	}
 );
+
+// See https://paritytech.github.io/substrate/master/pallet_collective/index.html for
+// the descriptions of these configs.
+type CouncilCollective = pallet_collective::Instance1;
+impl pallet_collective::Config<CouncilCollective> for Test {
+	type RuntimeOrigin = RuntimeOrigin;
+	type Proposal = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type MotionDuration = CouncilMotionDuration;
+	type MaxProposals = CouncilMaxProposals;
+	type MaxMembers = CouncilMaxMembers;
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type WeightInfo = ();
+}
 
 impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
@@ -97,11 +118,28 @@ impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
 		Ok(())
 	}
 }
+/// Interface to collective pallet to propose a proposal.
+pub struct CouncilProposalProvider;
+
+impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
+	fn propose(
+		who: AccountId,
+		threshold: u32,
+		proposal: Box<RuntimeCall>,
+	) -> Result<(u32, u32), DispatchError> {
+		let length_bound: u32 = proposal.using_encoded(|p| p.len() as u32);
+		Council::do_propose_proposed(who, threshold, proposal, length_bound)
+	}
+}
 
 impl pallet_msa::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = ConvertInto;
+	// The proposal type
+	type Proposal = RuntimeCall;
+	// The Council proposal provider interface
+	type ProposalProvider = CouncilProposalProvider;
 	type MaxPublicKeysPerMsa = MaxPublicKeysPerMsa;
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 	type MaxProviderNameSize = MaxProviderNameSize;
@@ -111,6 +149,13 @@ impl pallet_msa::Config for Test {
 	type NumberOfBuckets = ConstU32<2>;
 	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<8000>;
+	type CreateProviderOrigin = EnsureSigned<AccountId>;
+	// The origin that is allowed to create providers via governance
+	// It has to be this way so benchmarks will pass in CI.
+	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
+	>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

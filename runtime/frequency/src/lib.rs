@@ -24,6 +24,8 @@ use sp_runtime::{
 	ApplyExtrinsicResult,
 };
 
+use codec::Encode;
+
 #[cfg(feature = "runtime-benchmarks")]
 use codec::Decode;
 
@@ -46,7 +48,7 @@ pub use common_runtime::{
 
 use frame_support::{
 	construct_runtime,
-	dispatch::DispatchClass,
+	dispatch::{DispatchClass, DispatchError},
 	parameter_types,
 	traits::{ConstU128, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
@@ -56,6 +58,12 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot, RawOrigin,
 };
+
+#[cfg(feature = "frequency")]
+use frame_system::EnsureNever;
+#[cfg(not(feature = "frequency"))]
+use frame_system::EnsureSigned;
+
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
@@ -73,6 +81,20 @@ pub use common_runtime::{
 	weights::{BlockExecutionWeight, ExtrinsicBaseWeight},
 };
 use frame_support::traits::Contains;
+
+/// Interface to collective pallet to propose a proposal.
+pub struct CouncilProposalProvider;
+
+impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
+	fn propose(
+		who: AccountId,
+		threshold: u32,
+		proposal: Box<RuntimeCall>,
+	) -> Result<(u32, u32), DispatchError> {
+		let length_bound: u32 = proposal.using_encoded(|p| p.len() as u32);
+		Council::do_propose_proposed(who, threshold, proposal, length_bound)
+	}
+}
 
 /// Basefilter to only allow specified transactions call to be executed
 /// For non mainnet [--features frequency] all transactions are allowed
@@ -93,6 +115,8 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 			match call {
 				// Utility Calls are blocked. Issue #599
 				RuntimeCall::Utility(..) => false,
+				// Create provider is not allowed in mainnet for now. See propose_...
+				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				// Allowed Mainnet
 				RuntimeCall::System(..) |
 				RuntimeCall::Timestamp(..) |
@@ -194,7 +218,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 11,
+	spec_version: 12,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -295,6 +319,10 @@ impl pallet_msa::Config for Runtime {
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 	// The conversion to a 32 byte AccountId
 	type ConvertIntoAccountId32 = ConvertInto;
+	// The proposal type
+	type Proposal = RuntimeCall;
+	// The Council proposal provider interface
+	type ProposalProvider = CouncilProposalProvider;
 	// The maximum number of public keys per MSA
 	type MaxPublicKeysPerMsa = MsaMaxPublicKeysPerMsa;
 	// The maximum number of schema grants per delegation
@@ -311,6 +339,16 @@ impl pallet_msa::Config for Runtime {
 	type NumberOfBuckets = MSANumberOfBuckets;
 	// The maximum number of signatures that can be stored in the payload signature registry
 	type MaxSignaturesStored = MSAMaxSignaturesStored;
+	// The origin that is allowed to create providers
+	#[cfg(not(feature = "frequency"))]
+	type CreateProviderOrigin = EnsureSigned<AccountId>;
+	#[cfg(feature = "frequency")]
+	type CreateProviderOrigin = EnsureNever<AccountId>;
+	// The origin that is allowed to create providers via governance
+	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
+	>;
 }
 
 pub use common_primitives::schema::SchemaId;
