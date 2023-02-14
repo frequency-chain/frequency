@@ -130,8 +130,9 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 			match call {
 				// Utility Calls are blocked. Issue #599
 				RuntimeCall::Utility(..) => false,
-				// Create provider is not allowed in mainnet for now. See propose_...
+				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
+				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
 				// Allowed Mainnet
 				RuntimeCall::System(..) |
 				RuntimeCall::Timestamp(..) |
