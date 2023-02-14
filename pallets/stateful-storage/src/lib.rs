@@ -50,7 +50,6 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-use codec::{Decode, Encode};
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
 use sp_std::prelude::*;
@@ -61,11 +60,14 @@ pub mod types;
 pub mod weights;
 
 use crate::{stateful_child_tree::StatefulChildTree, types::*};
+// Weird compiler issue--warns about unused PageId import when building, but if missing here, `cargo test` fails due to missing import.
+#[allow(unused_imports)]
+use common_primitives::stateful_storage::PageId;
 use common_primitives::{
 	msa::{DelegatorId, MessageSourceId, MsaValidator, ProviderId, SchemaGrantValidator},
 	schema::{PayloadLocation, SchemaId, SchemaProvider},
 	stateful_storage::{
-		ItemizedStoragePageResponse, ItemizedStorageResponse, PageId, PaginatedStorageResponse,
+		ItemizedStoragePageResponse, ItemizedStorageResponse, PaginatedStorageResponse,
 	},
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
