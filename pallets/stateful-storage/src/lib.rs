@@ -82,7 +82,7 @@ pub mod pallet {
 	use common_primitives::{
 		msa::{MessageSourceId, MsaLookup, MsaValidator, SchemaGrantValidator},
 		schema::{SchemaId, SchemaProvider},
-		stateful_storage::PageId,
+		stateful_storage::{PageHash, PageId},
 	};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
@@ -170,15 +170,37 @@ pub mod pallet {
 
 		/// Invalid item action
 		InvalidItemAction,
+
+		/// Target page hash does not match current page hash
+		StalePageState,
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		ItemizedPageUpdated { msa_id: MessageSourceId, schema_id: SchemaId },
-		ItemizedPageDeleted { msa_id: MessageSourceId, schema_id: SchemaId },
-		PaginatedPageUpdated { msa_id: MessageSourceId, schema_id: SchemaId, page_id: PageId },
-		PaginatedPageDeleted { msa_id: MessageSourceId, schema_id: SchemaId, page_id: PageId },
+		ItemizedPageUpdated {
+			msa_id: MessageSourceId,
+			schema_id: SchemaId,
+			prev_content_hash: PageHash,
+			curr_content_hash: PageHash,
+		},
+		ItemizedPageDeleted {
+			msa_id: MessageSourceId,
+			schema_id: SchemaId,
+		},
+		PaginatedPageUpdated {
+			msa_id: MessageSourceId,
+			schema_id: SchemaId,
+			page_id: PageId,
+			prev_content_hash: PageHash,
+			curr_content_hash: PageHash,
+		},
+		PaginatedPageDeleted {
+			msa_id: MessageSourceId,
+			schema_id: SchemaId,
+			page_id: PageId,
+			prev_content_hash: PageHash,
+		},
 	}
 
 	#[pallet::call]
@@ -196,6 +218,7 @@ pub mod pallet {
 			#[pallet::compact] state_owner_msa_id: MessageSourceId,
 			#[pallet::compact] schema_id: SchemaId,
 			actions: BoundedVec<ItemAction, T::MaxItemizedActionsCount>,
+			#[pallet::compact] target_hash: PageHash,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			ensure!(
@@ -220,20 +243,24 @@ pub mod pallet {
 				&key,
 			)
 			.map_err(|_| Error::<T>::CorruptedState)?
-			.unwrap_or_default()
-			.apply_item_actions(&actions[..])
-			.map_err(|e| match e {
-				PageError::ErrorParsing(err) => {
-					log::warn!(
-						"failed parsing Itemized msa={:?} schema_id={:?} {:?}",
-						state_owner_msa_id,
-						schema_id,
-						err
-					);
-					Error::<T>::CorruptedState
-				},
-				_ => Error::<T>::InvalidItemAction,
-			})?;
+			.unwrap_or_default();
+
+			let prev_content_hash = updated_page.get_hash();
+			ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
+
+			let updated_page =
+				updated_page.apply_item_actions(&actions[..]).map_err(|e| match e {
+					PageError::ErrorParsing(err) => {
+						log::warn!(
+							"failed parsing Itemized msa={:?} schema_id={:?} {:?}",
+							state_owner_msa_id,
+							schema_id,
+							err
+						);
+						Error::<T>::CorruptedState
+					},
+					_ => Error::<T>::InvalidItemAction,
+				})?;
 
 			match updated_page.is_empty() {
 				true => {
@@ -244,10 +271,13 @@ pub mod pallet {
 					});
 				},
 				false => {
+					let curr_content_hash = updated_page.get_hash();
 					StatefulChildTree::<T::Hasher>::write(&state_owner_msa_id, &key, updated_page);
 					Self::deposit_event(Event::ItemizedPageUpdated {
 						msa_id: state_owner_msa_id,
 						schema_id,
+						prev_content_hash,
+						curr_content_hash,
 					});
 				},
 			};
@@ -262,6 +292,7 @@ pub mod pallet {
 			#[pallet::compact] state_owner_msa_id: MessageSourceId,
 			#[pallet::compact] schema_id: SchemaId,
 			#[pallet::compact] page_id: PageId,
+			#[pallet::compact] _target_hash: PageHash,
 			payload: Vec<u8>,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
@@ -279,12 +310,20 @@ pub mod pallet {
 				PayloadLocation::Paginated,
 			)?;
 
+			// TODO: CHeck target hash agains current hash
+			let prev_content_hash: PageHash = 0; // TODO: Read from state
+									 // ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
+			let curr_content_hash = page.get_hash();
+
 			let keys: PaginatedKey = (schema_id, page_id);
+
 			StatefulChildTree::<T::Hasher>::write(&state_owner_msa_id, &keys, page);
 			Self::deposit_event(Event::PaginatedPageUpdated {
 				msa_id: state_owner_msa_id,
 				schema_id,
 				page_id,
+				prev_content_hash,
+				curr_content_hash,
 			});
 			Ok(())
 		}
@@ -297,6 +336,7 @@ pub mod pallet {
 			#[pallet::compact] state_owner_msa_id: MessageSourceId,
 			#[pallet::compact] schema_id: SchemaId,
 			#[pallet::compact] page_id: PageId,
+			#[pallet::compact] target_hash: PageHash,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			ensure!(
@@ -311,13 +351,26 @@ pub mod pallet {
 			)?;
 
 			let keys: PaginatedKey = (schema_id, page_id);
-			StatefulChildTree::<T::Hasher>::kill(&state_owner_msa_id, &keys);
-			Self::deposit_event(Event::PaginatedPageDeleted {
-				msa_id: state_owner_msa_id,
-				schema_id,
-				page_id,
-			});
-			Ok(())
+
+			let page: Option<PaginatedPage<T>> =
+				StatefulChildTree::<T::Hasher>::try_read(&state_owner_msa_id, &keys)
+					.unwrap_or(None);
+			match page {
+				Some(page) => {
+					let prev_content_hash = page.get_hash();
+					ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
+
+					StatefulChildTree::<T::Hasher>::kill(&state_owner_msa_id, &keys);
+					Self::deposit_event(Event::PaginatedPageDeleted {
+						msa_id: state_owner_msa_id,
+						schema_id,
+						page_id,
+						prev_content_hash,
+					});
+					Ok(())
+				},
+				None => Ok(()),
+			}
 		}
 	}
 }
@@ -343,7 +396,10 @@ impl<T: Config> Pallet<T> {
 			PaginatedKey,
 			PaginatedPrefixKey,
 		>(&msa_id, &prefix)
-		.map(|(k, v)| PaginatedStorageResponse::new(k.1, msa_id, schema_id, v.data.into_inner()))
+		.map(|(k, v)| {
+			let content_hash = v.get_hash();
+			PaginatedStorageResponse::new(k.1, msa_id, schema_id, v.data.into_inner(), content_hash)
+		})
 		.collect())
 	}
 
@@ -359,17 +415,20 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::SchemaPayloadLocationMismatch
 		);
 		let key: ItemizedKey = (schema_id,);
-		let items: Vec<ItemizedStorageResponse> =
+		// let items: Vec<ItemizedStorageResponse> =
+		let page =
 			StatefulChildTree::<T::Hasher>::try_read::<ItemizedKey, ItemizedPage<T>>(&msa_id, &key)
 				.map_err(|_| Error::<T>::CorruptedState)?
-				.unwrap_or_default()
-				.parse_as_itemized(false)
-				.map_err(|_| Error::<T>::CorruptedState)?
-				.items
-				.iter()
-				.map(|(key, v)| ItemizedStorageResponse::new(*key, v.to_vec()))
-				.collect();
-		Ok(ItemizedStoragePageResponse::new(msa_id, schema_id, items))
+				.unwrap_or_default();
+		let content_hash = page.get_hash();
+		let items: Vec<ItemizedStorageResponse> = page
+			.parse_as_itemized(false)
+			.map_err(|_| Error::<T>::CorruptedState)?
+			.items
+			.iter()
+			.map(|(key, v)| ItemizedStorageResponse::new(*key, v.to_vec()))
+			.collect();
+		Ok(ItemizedStoragePageResponse::new(msa_id, schema_id, content_hash, items))
 	}
 
 	fn check_schema_and_grants(
