@@ -179,9 +179,6 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxSignaturesStored: Get<Option<u32>>;
 
-		/// The origin that is allowed to create providers
-		type CreateProviderOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
-
 		/// The origin that is allowed to create providers via governance
 		type CreateProviderViaGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
@@ -520,6 +517,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[cfg(not(feature = "frequency"))]
 		/// Adds an association between MSA id and ProviderRegistryEntry. As of now, the
 		/// only piece of metadata we are recording is provider name.
 		///
@@ -534,7 +532,7 @@ pub mod pallet {
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::create_provider())]
 		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
-			let provider_key = T::CreateProviderOrigin::ensure_origin(origin)?;
+			let provider_key = ensure_signed(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			Self::create_provider_for(provider_msa_id, provider_name)?;
 			Self::deposit_event(Event::ProviderCreated {

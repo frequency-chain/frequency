@@ -158,11 +158,7 @@ impl pallet_msa::Config for Test {
 	type NumberOfBuckets = ConstU32<2>;
 	// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<20>;
-	// The origin that is allowed to create providers
-	#[cfg(not(feature = "frequency"))]
-	type CreateProviderOrigin = EnsureSigned<AccountId>;
-	#[cfg(feature = "frequency")]
-	type CreateProviderOrigin = EnsureNever<AccountId>;
+
 	// The origin that is allowed to create providers via governance
 	// It has to be this way so benchmarks will pass in CI.
 	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<

@@ -59,11 +59,6 @@ use frame_system::{
 	EnsureRoot, RawOrigin,
 };
 
-#[cfg(feature = "frequency")]
-use frame_system::EnsureNever;
-#[cfg(not(feature = "frequency"))]
-use frame_system::EnsureSigned;
-
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
@@ -337,11 +332,6 @@ impl pallet_msa::Config for Runtime {
 	type NumberOfBuckets = MSANumberOfBuckets;
 	// The maximum number of signatures that can be stored in the payload signature registry
 	type MaxSignaturesStored = MSAMaxSignaturesStored;
-	// The origin that is allowed to create providers
-	#[cfg(not(feature = "frequency"))]
-	type CreateProviderOrigin = EnsureSigned<AccountId>;
-	#[cfg(feature = "frequency")]
-	type CreateProviderOrigin = EnsureNever<AccountId>;
 	// The origin that is allowed to create providers via governance
 	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
