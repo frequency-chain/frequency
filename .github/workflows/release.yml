@@ -161,7 +161,6 @@ jobs:
       - name: Set Env Vars
         id: set-env-vars
         run: |
-          set -x
           echo "WASM_DIR=${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}" >> $GITHUB_ENV
           echo "BUILT_WASM_FILENAME=${{matrix.built-wasm-file-name-prefix}}.compact.compressed.wasm" >> $GITHUB_ENV
           release_wasm_filename=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.NEW_RELEASE_VERSION}}.compact.compressed.wasm
@@ -389,7 +388,6 @@ jobs:
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           chmod 755 $TEST_BIN_FILENAME
           chmod 755 $REF_BIN_FILENAME
       - name: Start Test Node
@@ -492,7 +490,6 @@ jobs:
           fetch-depth: 0
       - name: Full Release?
         run: |
-          set -x
           is_full_release=$([[ "$NEW_RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] && \
             echo 'true' || echo 'false')
           echo "is_full_release: $is_full_release"
@@ -568,7 +565,6 @@ jobs:
         id: get-runtimes-info
         working-directory: /tmp
         run: |
-          set -x
           runtime_filename_rococo=${{needs.wait-for-all-builds.outputs.runtime_filename_rococo}}
           runtime_info_rococo=$(subwasm info $runtime_filename_rococo | sed -Ez '$ s/\n+$//' | tr '\n' '|')
           echo "runtime_info_rococo=$runtime_info_rococo" >> $GITHUB_OUTPUT
@@ -578,7 +574,6 @@ jobs:
       - name: Generate Release Notes
         working-directory: tools/ci/release-notes
         run: |
-          set -x
           ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' \
             '${{steps.sanitize-changelog.outputs.sanitized}}' \
             '${{steps.get-runtimes-info.outputs.runtime_info_rococo}}' \
