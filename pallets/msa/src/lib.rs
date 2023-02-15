@@ -161,7 +161,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxSignaturesStored: Get<Option<u32>>;
 
-		/// The origin that is allowed to create providers
+		/// The origin that is allowed to create providers.  It is blocked by a call filter for mainnet.
 		type CreateProviderOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
 
 		/// The origin that is allowed to create providers via governance

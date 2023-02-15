@@ -543,11 +543,8 @@ impl pallet_msa::Config for Runtime {
 	type Proposal = RuntimeCall;
 	// The Council proposal provider interface
 	type ProposalProvider = CouncilProposalProvider;
-	// The origin that is allowed to create providers directly (in Mainnet only)
-	#[cfg(not(feature = "frequency"))]
+	// The origin that is allowed to create providers.  It is blocked by a call filter for mainnet.
 	type CreateProviderOrigin = EnsureSigned<AccountId>;
-	#[cfg(feature = "frequency")]
-	type CreateProviderOrigin = EnsureNever<AccountId>;
 	// The origin that is allowed to create providers via governance
 	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
@@ -570,11 +567,8 @@ impl pallet_schemas::Config for Runtime {
 	type Proposal = RuntimeCall;
 	// The Council proposal provider interface
 	type ProposalProvider = CouncilProposalProvider;
-	// The origin that is allowed to create schemas directly (in Mainnet only)
-	#[cfg(not(feature = "frequency"))]
+	// The origin that is allowed to create schemas directly.  It is blocked by a call filter for mainnet.
 	type CreateSchemaOrigin = EnsureSigned<AccountId>;
-	#[cfg(feature = "frequency")]
-	type CreateSchemaOrigin = EnsureNever<AccountId>;
 	// The origin that is allowed to create schemas via governance
 	type CreateSchemaViaGovernanceOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,

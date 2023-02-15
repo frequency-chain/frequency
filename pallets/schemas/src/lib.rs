@@ -239,17 +239,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			ensure!(
-				model.len() >= T::MinSchemaModelSizeBytes::get() as usize,
-				Error::<T>::LessThanMinSchemaModelBytes
-			);
-			ensure!(
-				model.len() <= Self::get_schema_model_max_bytes() as usize,
-				Error::<T>::ExceedsMaxSchemaModelBytes
-			);
-
-			Self::ensure_valid_model(&model_type, &model)?;
-			let schema_id = Self::add_schema(model, model_type, payload_location)?;
+			let schema_id = Self::create_schema_for(model, model_type, payload_location)?;
 
 			Self::deposit_event(Event::SchemaCreated { key: sender, schema_id });
 			Ok(())
@@ -328,19 +318,8 @@ pub mod pallet {
 			payload_location: PayloadLocation,
 		) -> DispatchResult {
 			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
+			let schema_id = Self::create_schema_for(model, model_type, payload_location)?;
 
-			ensure!(
-				model.len() >= T::MinSchemaModelSizeBytes::get() as usize,
-				Error::<T>::LessThanMinSchemaModelBytes
-			);
-			ensure!(
-				model.len() <= Self::get_schema_model_max_bytes() as usize,
-				Error::<T>::ExceedsMaxSchemaModelBytes
-			);
-
-			Self::ensure_valid_model(&model_type, &model)?;
-
-			let schema_id = Self::add_schema(model, model_type, payload_location)?;
 			Self::deposit_event(Event::SchemaCreated { key: creator_key, schema_id });
 			Ok(())
 		}
@@ -417,17 +396,26 @@ pub mod pallet {
 			Ok(next)
 		}
 
+		/// Adds a given schema to storage. The schema in question must be of length
+		/// between the min and max model size allowed for schemas (see pallet
+		/// constants above). If the pallet's maximum schema limit has been
+		/// fulfilled by the time this extrinsic is called, a SchemaCountOverflow error
+		/// will be thrown.
 		///
+		/// # Errors
+		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
+		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
+		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
+		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		pub fn create_schema_for(
-			model: Vec<u8>,
+			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
-		) -> DispatchResult {
+		) -> Result<SchemaId, DispatchError> {
 			let model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> =
 				model.try_into().unwrap();
 			Self::ensure_valid_model(&model_type, &model)?;
-			Self::add_schema(model, model_type, payload_location)?;
-			Ok(())
+			Self::add_schema(model, model_type, payload_location)
 		}
 	}
 }
