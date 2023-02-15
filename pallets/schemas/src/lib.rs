@@ -330,8 +330,10 @@ pub mod pallet {
 		) -> Result<SchemaId, DispatchError> {
 			let schema_id = Self::get_next_schema_id()?;
 			let mut set_settings = SchemaSettings::all_disabled();
-			for i in settings.into_inner() {
-				set_settings.set(i);
+			if !settings.is_empty() {
+				for i in settings.into_inner() {
+					set_settings.set(i);
+				}
 			}
 			let schema = SchemaV2 { model_type, model, payload_location, settings: set_settings };
 			<CurrentSchemaIdentifierMaximum<T>>::set(schema_id);

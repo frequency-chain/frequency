@@ -1,7 +1,9 @@
 //! Migrations for the schemas pallet.
 //! Following migrations are required:
 //! - Schema struct from v1 to v2
-
+//! - #TODO: Post migration cleanup
+//! - Remove the Schema struct and respective storage once migration is complete
+//! - Rename SchemaV2 to Schema and respective storage once migration is complete
 use super::*;
 use crate::types::{Schema, SchemaV2};
 use codec::{Decode, Encode};
