@@ -276,7 +276,7 @@ pub mod pallet {
 		/// Propose to create a schema.  Creates a proposal for council approval to create a schema
 		///
 		#[pallet::call_index(2)]
-		#[pallet::weight(1000)]
+		#[pallet::weight(T::WeightInfo::propose_to_create_schema(model.len() as u32))]
 		pub fn propose_to_create_schema(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
@@ -309,7 +309,7 @@ pub mod pallet {
 		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		#[pallet::call_index(3)]
-		#[pallet::weight(1000)]
+		#[pallet::weight(T::WeightInfo::create_schema_via_governance(model.len() as u32))]
 		pub fn create_schema_via_governance(
 			origin: OriginFor<T>,
 			creator_key: T::AccountId,
