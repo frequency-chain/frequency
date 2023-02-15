@@ -10,7 +10,7 @@ use codec::{Decode, Encode};
 use common_primitives::schema::{SchemaId, SchemaSettings};
 use frame_support::pallet_prelude::Weight;
 
-fn migrate_schema_to_schema_v2<T: Config>() -> Weight {
+pub fn migrate_schema_to_schema_v2<T: Config>() -> Weight {
 	let mut weight: Weight = Weight::zero();
 	let schema_count = <Schemas<T>>::iter().count();
 	for i in 0..schema_count {
