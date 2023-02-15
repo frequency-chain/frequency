@@ -93,17 +93,26 @@ impl<T: Config> StakingAccountDetails<T> {
 	}
 
 	/// Decrease the amount of active stake by an amount and createa an UnlockChunk.
-	pub fn decrease_by(&mut self, amount: BalanceOf<T>, thaw_at: T::EpochNumber) -> DispatchResult {
-		let new_active = self.active.saturating_sub(amount);
+	pub fn decrease_by(
+		&mut self,
+		amount: BalanceOf<T>,
+		thaw_at: T::EpochNumber,
+	) -> Result<BalanceOf<T>, DispatchError> {
+		let maybe_active = self.active.saturating_sub(amount);
+		let mut actual_active: BalanceOf<T> = maybe_active;
 
-		let unlock_chunk = UnlockChunk { value: amount, thaw_at };
+		if maybe_active.le(&T::MinimumStakingAmount::get()) {
+			actual_active = Zero::zero();
+		}
+		let unlock_chunk = UnlockChunk { value: actual_active, thaw_at };
 
-		self.active = new_active;
+		// don't update the amount if we have maximum unlocking chunks.
 		self.unlocking
 			.try_push(unlock_chunk)
 			.map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
 
-		Ok(())
+		self.active = actual_active;
+		Ok(actual_active)
 	}
 }
 

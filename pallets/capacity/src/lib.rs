@@ -375,7 +375,9 @@ pub mod pallet {
 
 			ensure!(amount > Zero::zero(), Error::<T>::UnstakedAmountIsZero);
 
+			// 1. return actual amount unstaked here
 			Self::decrease_active_staking_balance(&unstaker, amount)?;
+			// 2. pass in the actual amount here
 			let capacity_reduction = Self::reduce_capacity(&unstaker, target, amount)?;
 
 			Self::deposit_event(Event::UnStaked {
@@ -515,7 +517,9 @@ impl<T: Config> Pallet<T> {
 	fn decrease_active_staking_balance(
 		unstaker: &T::AccountId,
 		amount: BalanceOf<T>,
-	) -> DispatchResult {
+	) -> Result<BalanceOf<T>, DispatchError> {
+		// ) -> DispatchResultWithInfo<Balance> {
+		// ^^ 1a. convert to DispatchResultWithInfo
 		let mut staking_account =
 			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::StakingAccountNotFound)?;
 		ensure!(amount <= staking_account.active, Error::<T>::AmountToUnstakeExceedsAmountStaked);
@@ -524,10 +528,12 @@ impl<T: Config> Pallet<T> {
 		let thaw_at =
 			current_epoch.saturating_add(T::EpochNumber::from(T::UnstakingThawPeriod::get()));
 
-		staking_account.decrease_by(amount, thaw_at)?;
+		// 1b. get the actual amount unstaked here
+		let unstake_result = staking_account.decrease_by(amount, thaw_at)?;
+
 		Self::set_staking_account(&unstaker, &staking_account);
 
-		Ok(())
+		Ok(unstake_result)
 	}
 
 	/// Reduce available capacity of target and return the amount of capacity reduction.
