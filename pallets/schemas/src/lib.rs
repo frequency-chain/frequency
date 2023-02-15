@@ -181,19 +181,6 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
-	/// Storage for SchemaV2
-	/// - Key: Schema Id
-	/// - Value: [`SchemaV2`](SchemaV2)
-	#[pallet::storage]
-	#[pallet::getter(fn get_schema_v2)]
-	pub(super) type SchemasV2<T: Config> = StorageMap<
-		_,
-		Twox64Concat,
-		SchemaId,
-		SchemaV2<T::SchemaModelMaxBytesBoundedVecLimit>,
-		OptionQuery,
-	>;
-
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {
 		/// Maximum schema size in bytes at genesis
@@ -216,7 +203,7 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_runtime_upgrade() -> Weight {
-			migrations::migrate_schema_to_schema_v2::<T>()
+			migrations::migrate_schemas_with_additional_settings::<T>()
 		}
 	}
 
@@ -342,15 +329,15 @@ pub mod pallet {
 					set_settings.set(i);
 				}
 			}
-			let schema = SchemaV2 { model_type, model, payload_location, settings: set_settings };
+			let schema = Schema { model_type, model, payload_location, settings: set_settings };
 			<CurrentSchemaIdentifierMaximum<T>>::set(schema_id);
-			<SchemasV2<T>>::insert(schema_id, schema);
+			<Schemas<T>>::insert(schema_id, schema);
 			Ok(schema_id)
 		}
 
 		/// Retrieve a schema by id
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-			if let Some(schema) = Self::get_schema_v2(schema_id) {
+			if let Some(schema) = Self::get_schema(schema_id) {
 				let model_vec: Vec<u8> = schema.model.into_inner();
 				let saved_settings = schema.settings;
 				let settings = saved_settings.0.iter().collect::<Vec<_>>();
