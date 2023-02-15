@@ -3,6 +3,7 @@ use crate::{mock::*, ChargeFrqTransactionPayment};
 use frame_support::{assert_noop, assert_ok, weights::Weight};
 
 use pallet_balances::Call as BalancesCall;
+use pallet_msa::Call as MsaCall;
 
 #[test]
 fn transaction_payment_validate_is_succesful() {
@@ -145,5 +146,20 @@ fn transaction_payment_with_token_and_post_dispatch_refund_is_succesful() {
 			//   - TransactionByteFee(1)* len(10)
 			//   + difference_of_actual_weight(5 - 2) = 83
 			assert_eq!(Balances::free_balance(1), 100 - 5 - 5 - 10 + 3);
+		});
+}
+
+#[test]
+fn pay_with_capacity_returns_weight_of_child_call() {
+	let balance_factor = 10;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			// TODO: Call the pay_with_capacity extrinsic with a child call and assert
+			// that the weight of pay_with_capacity is equal to the weight of the
+			// child call.
 		});
 }
