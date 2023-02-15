@@ -80,6 +80,8 @@ pub use weights::*;
 
 mod serde;
 
+mod migrations;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -176,6 +178,19 @@ pub mod pallet {
 		Twox64Concat,
 		SchemaId,
 		Schema<T::SchemaModelMaxBytesBoundedVecLimit>,
+		OptionQuery,
+	>;
+
+	/// Storage for SchemaV2
+	/// - Key: Schema Id
+	/// - Value: [`SchemaV2`](SchemaV2)
+	#[pallet::storage]
+	#[pallet::getter(fn get_schema_v2)]
+	pub(super) type SchemasV2<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		SchemaId,
+		SchemaV2<T::SchemaModelMaxBytesBoundedVecLimit>,
 		OptionQuery,
 	>;
 
@@ -318,15 +333,15 @@ pub mod pallet {
 			for i in settings.into_inner() {
 				set_settings.set(i);
 			}
-			let schema = Schema { model_type, model, payload_location, settings: set_settings };
+			let schema = SchemaV2 { model_type, model, payload_location, settings: set_settings };
 			<CurrentSchemaIdentifierMaximum<T>>::set(schema_id);
-			<Schemas<T>>::insert(schema_id, schema);
+			<SchemasV2<T>>::insert(schema_id, schema);
 			Ok(schema_id)
 		}
 
 		/// Retrieve a schema by id
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-			if let Some(schema) = Self::get_schema(schema_id) {
+			if let Some(schema) = Self::get_schema_v2(schema_id) {
 				let model_vec: Vec<u8> = schema.model.into_inner();
 				let saved_settings = schema.settings;
 				let settings = saved_settings.0.iter().collect::<Vec<_>>();
