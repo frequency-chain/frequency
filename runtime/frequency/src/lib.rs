@@ -57,15 +57,10 @@ use frame_support::{
 
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureRoot, RawOrigin,
+	EnsureRoot, EnsureSigned, RawOrigin,
 };
 
 use sp_std::boxed::Box;
-
-#[cfg(feature = "frequency")]
-use frame_system::EnsureNever;
-#[cfg(not(feature = "frequency"))]
-use frame_system::EnsureSigned;
 
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
