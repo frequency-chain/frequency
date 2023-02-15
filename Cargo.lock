@@ -5944,10 +5944,12 @@ name = "pallet-schemas"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
+ "common-runtime",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "numtoa",
+ "pallet-collective",
  "parity-scale-codec",
  "scale-info",
  "serde_json",

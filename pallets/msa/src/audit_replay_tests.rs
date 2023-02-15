@@ -74,6 +74,17 @@ impl pallet_schemas::Config for Test {
 	type MinSchemaModelSizeBytes = ConstU32<10>;
 	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<10>;
 	type MaxSchemaRegistrations = ConstU16<10>;
+	// The proposal type
+	type Proposal = RuntimeCall;
+	// The Council proposal provider interface
+	type ProposalProvider = CouncilProposalProvider;
+	// The origin that is allowed to create schemas directly (in Mainnet only)
+	type CreateSchemaOrigin = EnsureSigned<AccountId>;
+	// The origin that is allowed to create schemas via governance
+	type CreateSchemaViaGovernanceOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
+	>;
 }
 
 parameter_types! {
@@ -129,6 +140,15 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalPro
 		threshold: u32,
 		proposal: Box<RuntimeCall>,
 	) -> Result<(u32, u32), DispatchError> {
+		let length_bound: u32 = proposal.using_encoded(|p| p.len() as u32);
+		Council::do_propose_proposed(who, threshold, proposal, length_bound)
+	}
+
+	fn propose_with_simple_majority(
+		who: AccountId,
+		proposal: Box<RuntimeCall>,
+	) -> Result<(u32, u32), DispatchError> {
+		let threshold: u32 = ((Council::members().len() / 2) + 1) as u32;
 		let length_bound: u32 = proposal.using_encoded(|p| p.len() as u32);
 		Council::do_propose_proposed(who, threshold, proposal, length_bound)
 	}
