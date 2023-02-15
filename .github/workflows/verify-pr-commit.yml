@@ -383,7 +383,6 @@ jobs:
           sudo sh get-docker.sh
       - name: Prune Docker Resources
         run: |
-          set -x
           containers=$(docker ps -q)
           if [ ! -z $containers ]; then
             docker kill $containers;
@@ -458,7 +457,6 @@ jobs:
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           chmod 755 ${{env.BIN_FILENAME}}
       - name: Output Metadata
         run: ${{env.BIN_DIR}}/${{env.BIN_FILENAME}} export-metadata  --chain=frequency-local --tmp ./js/api-augment/metadata.json
@@ -509,7 +507,6 @@ jobs:
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           chmod 755 ${{env.DOCKER_BIN_FILENAME}}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -558,7 +555,6 @@ jobs:
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           chmod 755 ${{env.TEST_BIN_FILENAME}}
       - name: Output Binary Version
         working-directory: ${{env.BIN_DIR}}
@@ -588,7 +584,6 @@ jobs:
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           chmod 755 $TEST_BIN_FILENAME
           chmod 755 $REF_BIN_FILENAME
       - name: Compare Metadata
@@ -611,7 +606,6 @@ jobs:
         if: steps.compare-metadata.outputs.metadata_match != 'true'
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           spec_version_ref=$(./$REF_BIN_FILENAME export-runtime-version | jq -r .specVersion)
           spec_version=$(./$TEST_BIN_FILENAME export-runtime-version | jq -r .specVersion)
           [[ $spec_version -gt $spec_version_ref  ]] || \
@@ -652,7 +646,6 @@ jobs:
       - name: Set Binaries Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           chmod 755 $BIN_FILENAME
       - name: Start Local Node
         working-directory: ${{env.BIN_DIR}}
@@ -713,7 +706,6 @@ jobs:
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           chmod 755 $BIN_FILENAME_ROCOCO
           chmod 755 $BIN_FILENAME_MAINNET
       - name: Test Rococo Genesis State
