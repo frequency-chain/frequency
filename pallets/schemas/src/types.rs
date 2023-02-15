@@ -24,6 +24,7 @@ where
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxModelSize))]
 /// A structure defining a Schema
+/// TODO: merge with Schema struct once migration is complete
 pub struct SchemaV2<MaxModelSize>
 where
 	MaxModelSize: Get<u32>,
