@@ -14,7 +14,6 @@ pub fn migrate_schema_to_schema_v2<T: Config>() -> Weight {
 	let mut weight: Weight = Weight::zero();
 	let schema_count = <Schemas<T>>::iter().count();
 	for i in 0..schema_count {
-		weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
 		let schema_id: SchemaId = i as SchemaId;
 
 		let saved_schema = <Schemas<T>>::get(schema_id);
@@ -28,6 +27,7 @@ pub fn migrate_schema_to_schema_v2<T: Config>() -> Weight {
 			<SchemasV2<T>>::insert(schema_id, schema_v2);
 		}
 		<Schemas<T>>::remove(schema_id);
+		weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
 	}
 	weight
 }
