@@ -34,12 +34,16 @@ export default {
       model: "SchemaModel",
       model_type: "ModelType",
       payload_location: "PayloadLocation",
+      setting: "Vec<SchemaSetting>"
     },
     ModelType: {
       _enum: ["AvroBinary", "Parquet"],
     },
     PayloadLocation: {
-      _enum: ["OnChain", "IPFS"],
+      _enum: ["OnChain", "IPFS", "Itemized", "Paginated"],
+    },
+    SchemaSetting: {
+      _enum: ["AppendOnly", "SignatureRequired"],
     },
   },
   runtime: {
