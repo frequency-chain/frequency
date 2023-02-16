@@ -32,7 +32,6 @@ jobs:
               - '.rustfmt.toml'
               - '**/Cargo.toml'
               - '**/Cargo.lock'
-              - '.github/**/*.yml'
             build-binary:
               - '**/*.rs'
               - '**/*.hbs'
@@ -41,16 +40,13 @@ jobs:
               - '**/Cargo.lock'
               - 'js/api-augment/**'
               - 'integration-tests/**/*.{ts,json}'
-              - '.github/**/*.yml'
             cargo-lock:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
-              - '.github/**/*.yml'
             run-integration-tests:
               - '**/*.rs'
               - '**/Cargo.toml'
               - 'integration-tests/**/*.{ts,json}'
-              - '.github/**/*.yml'
 
   # Workaround to handle skipped required check inside matrix
   # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks
@@ -734,3 +730,106 @@ jobs:
           echo "Actual genesis state: $actual_genesis_state"
           [ $actual_genesis_state = $expected_genesis_state ] || \
             (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
+
+  run-benchmarks:
+    name: Run Benchmarks
+    runs-on: [self-hosted, Linux, X64, benchmark]
+    if: github.repository == 'LibertyDSNP/frequency'
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        with:
+          token: ${{secrets.GHA_GIT_COMMIT}}
+          ref: ${{github.event.pull_request.head.sha}}
+      - name: Run Benchmarks?
+        id: run-benchmarks
+        shell: bash
+        run: |
+          commit_message=$(git show -s --format=%s)
+          echo "commit_message: $commit_message"
+          regex='\[run-benchmarks (.*)\]$'
+          if [[ $commit_message =~ $regex ]]; then
+            echo "Need to run benchmarks."
+            pallets="${BASH_REMATCH[1]}"
+            echo "Pallets: $pallets"
+            echo "RUN_BENCHMARKS=true" >> $GITHUB_ENV
+            echo "pallets=$pallets" >> $GITHUB_OUTPUT
+          else
+            echo "Do not need to run benchmarks."
+            echo "RUN_BENCHMARKS=false" >> $GITHUB_ENV
+            exit 0
+          fi
+      - name: Get Current Job Log URL
+        id: jobs
+        if: env.RUN_BENCHMARKS == 'true'
+        uses: Tiryoh/gha-jobid-action@603885a199c331cc2f828bcebeb1c4a275f4d6e1
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          job_name: "Run Benchmarks"
+      - name: Set PR Commit Status to Pending
+        if: env.RUN_BENCHMARKS == 'true'
+        uses: ouzi-dev/commit-status-updater@219d3f932547cad092e384c7a36bf4d963739c35
+        with:
+          name: "GithubActions - Run Benchmarks"
+          status: "pending"
+          addHoldComment: "true"
+          pendingComment: >-
+            :hourglass_flowing_sand: [Running benchmarks](${{steps.jobs.outputs.html_url}})
+            and calculating weights. DO NOT MERGE! A new commit will be added upon completion...
+          failComment: "ERROR: Failed to set PR commit to pending status!"
+      - name: Install Required Packages
+        if: env.RUN_BENCHMARKS == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt install -y protobuf-compiler libclang-dev
+      - name: Install Rust Toolchain
+        if: env.RUN_BENCHMARKS == 'true'
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        with:
+          toolchain: stable
+      - name: Update Weights
+        if: env.RUN_BENCHMARKS == 'true'
+        env:
+          BENCHMARK_SCRIPT: ./tools/ci/scripts/run-benchmark.sh
+        run: |
+          set -x
+          pallets_str="${{steps.run-benchmarks.outputs.pallets}}"
+          echo "Pallets: $pallets_str"
+          if [ $pallets_str = 'all' ]; then
+            echo "Running benchmarks for all pallets..."
+            make benchmarks
+          else
+            IFS=',' read -r -a pallets <<< "$pallets_str"
+            for pallet in "${pallets[@]}"
+            do
+              echo "Running benchmarks for $pallet pallet..."
+              $BENCHMARK_SCRIPT -p $pallet
+              echo "Finished benchmarks for $pallet pallet."
+            done
+          fi
+      - name: Print Updated Weights
+        if: env.RUN_BENCHMARKS == 'true'
+        run: |
+          git status
+          git diff
+      - name: Commit Updated Weights
+        if: env.RUN_BENCHMARKS == 'true'
+        id: commit-updated-weights
+        uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
+        with:
+          commit_message: "Update weights for PR #${{github.event.pull_request.number}}"
+          commit_user_name: Frequency CI [bot]
+          commit_user_email: do-not-reply@users.noreply.github.com
+          commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
+      - name: Set PR Commit Status to Success
+        if: env.RUN_BENCHMARKS == 'true'
+        uses: ouzi-dev/commit-status-updater@219d3f932547cad092e384c7a36bf4d963739c35
+        with:
+          name: "GithubActions - Run Benchmarks"
+          status: "success"
+          addHoldComment: "true"
+          successComment: >-
+            :white_check_mark: [Finished running benchmarks](${{steps.jobs.outputs.html_url}}).
+            Updated weights have been committed to your PR branch in
+            commit ${{steps.commit-updated-weights.outputs.commit_hash}}.
+          failComment: "ERROR: Failed to set PR commit to success status!"

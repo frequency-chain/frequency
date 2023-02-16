@@ -37,7 +37,7 @@ jobs:
       - name: Commit Latest Release Version
         if: steps.git-check.outputs.repo_modified == 'true'
         run: |
-          git config --global user.name 'Frequency CI'
+          git config --global user.name 'Frequency CI [bot]'
           git config --global user.email 'do-not-reply@users.noreply.github.com'
           git commit -am "Record new Polkadot release version"
           git push origin
