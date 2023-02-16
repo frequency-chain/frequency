@@ -8,6 +8,7 @@ runs:
       run: |
         echo "Removing generated cargo artifacts..."
         sudo rm -fr ./target
+        sudo rm -rf ./runtime/frequency/target
     - name: Remove NPM node Modules
       shell: bash
       run: |
