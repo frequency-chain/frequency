@@ -88,23 +88,23 @@ pub trait SchemaValidator<SchemaId> {
 }
 
 impl SchemaSettings {
-	/// some docs
+	/// Set all settings to disabled
 	pub fn all_disabled() -> Self {
 		Self(BitFlags::EMPTY)
 	}
-	/// some docs
+	/// Get all setting enabled
 	pub fn get_enabled(&self) -> BitFlags<SchemaSetting> {
 		self.0
 	}
-	/// some docs
+	/// Check if a setting is enabled
 	pub fn is_enabled(&self, grant: SchemaSetting) -> bool {
 		self.0.contains(grant)
 	}
-	/// some docs
+	/// Enable a setting
 	pub fn set(&mut self, grant: SchemaSetting) {
 		self.0.insert(grant)
 	}
-	/// some docs
+	/// Copy the settings from a BitFlags
 	pub fn from(settings: BitFlags<SchemaSetting>) -> Self {
 		Self(settings)
 	}
