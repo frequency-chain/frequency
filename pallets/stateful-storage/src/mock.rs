@@ -11,7 +11,8 @@ use common_primitives::{
 use frame_support::{
 	dispatch::DispatchResult,
 	parameter_types,
-	traits::{ConstU16, ConstU64}, Twox128,
+	traits::{ConstU16, ConstU64},
+	Twox128,
 };
 use frame_system as system;
 use sp_core::H256;
@@ -80,6 +81,12 @@ pub const UNDELEGATED_PAGINATED_SCHEMA: SchemaId = 102;
 pub const UNDELEGATED_ITEMIZED_SCHEMA: SchemaId = 103;
 
 impl Default for MaxItemizedPageSizeBytes {
+	fn default() -> Self {
+		Self
+	}
+}
+
+impl Default for MaxPaginatedPageSizeBytes {
 	fn default() -> Self {
 		Self
 	}
@@ -326,7 +333,7 @@ impl pallet_stateful_storage::Config for Test {
 	type MsaBenchmarkHelper = ();
 	#[cfg(feature = "runtime-benchmarks")]
 	type SchemaBenchmarkHelper = ();
-	type Hasher = Twox128;
+	type KeyHasher = Twox128;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

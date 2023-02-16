@@ -132,8 +132,8 @@ pub mod pallet {
 		/// A set of helper functions for benchmarking.
 		type SchemaBenchmarkHelper: SchemaBenchmarkHelper;
 
-		/// Concrete storage tree type w/hasher
-		type Hasher: stateful_child_tree::MultipartKeyStorageHasher;
+		/// Hasher to use for MultipartKey
+		type KeyHasher: stateful_child_tree::MultipartKeyStorageHasher;
 	}
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -238,7 +238,7 @@ pub mod pallet {
 			)?;
 
 			let key: ItemizedKey = (schema_id,);
-			let updated_page = StatefulChildTree::<T::Hasher>::try_read::<_, ItemizedPage<T>>(
+			let updated_page = StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
 				&state_owner_msa_id,
 				&key,
 			)
@@ -264,7 +264,7 @@ pub mod pallet {
 
 			match updated_page.is_empty() {
 				true => {
-					StatefulChildTree::<T::Hasher>::kill(&state_owner_msa_id, &key);
+					StatefulChildTree::<T::KeyHasher>::kill(&state_owner_msa_id, &key);
 					Self::deposit_event(Event::ItemizedPageDeleted {
 						msa_id: state_owner_msa_id,
 						schema_id,
@@ -272,7 +272,11 @@ pub mod pallet {
 				},
 				false => {
 					let curr_content_hash = updated_page.get_hash();
-					StatefulChildTree::<T::Hasher>::write(&state_owner_msa_id, &key, updated_page);
+					StatefulChildTree::<T::KeyHasher>::write(
+						&state_owner_msa_id,
+						&key,
+						updated_page,
+					);
 					Self::deposit_event(Event::ItemizedPageUpdated {
 						msa_id: state_owner_msa_id,
 						schema_id,
@@ -317,7 +321,7 @@ pub mod pallet {
 
 			let keys: PaginatedKey = (schema_id, page_id);
 
-			StatefulChildTree::<T::Hasher>::write(&state_owner_msa_id, &keys, page);
+			StatefulChildTree::<T::KeyHasher>::write(&state_owner_msa_id, &keys, page);
 			Self::deposit_event(Event::PaginatedPageUpdated {
 				msa_id: state_owner_msa_id,
 				schema_id,
@@ -353,14 +357,14 @@ pub mod pallet {
 			let keys: PaginatedKey = (schema_id, page_id);
 
 			let page: Option<PaginatedPage<T>> =
-				StatefulChildTree::<T::Hasher>::try_read(&state_owner_msa_id, &keys)
+				StatefulChildTree::<T::KeyHasher>::try_read(&state_owner_msa_id, &keys)
 					.unwrap_or(None);
 			match page {
 				Some(page) => {
 					let prev_content_hash = page.get_hash();
 					ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
 
-					StatefulChildTree::<T::Hasher>::kill(&state_owner_msa_id, &keys);
+					StatefulChildTree::<T::KeyHasher>::kill(&state_owner_msa_id, &keys);
 					Self::deposit_event(Event::PaginatedPageDeleted {
 						msa_id: state_owner_msa_id,
 						schema_id,
@@ -391,7 +395,7 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::SchemaPayloadLocationMismatch
 		);
 		let prefix: PaginatedPrefixKey = (schema_id,);
-		Ok(StatefulChildTree::<T::Hasher>::prefix_iterator::<
+		Ok(StatefulChildTree::<T::KeyHasher>::prefix_iterator::<
 			PaginatedPage<T>,
 			PaginatedKey,
 			PaginatedPrefixKey,
@@ -416,10 +420,11 @@ impl<T: Config> Pallet<T> {
 		);
 		let key: ItemizedKey = (schema_id,);
 		// let items: Vec<ItemizedStorageResponse> =
-		let page =
-			StatefulChildTree::<T::Hasher>::try_read::<ItemizedKey, ItemizedPage<T>>(&msa_id, &key)
-				.map_err(|_| Error::<T>::CorruptedState)?
-				.unwrap_or_default();
+		let page = StatefulChildTree::<T::KeyHasher>::try_read::<ItemizedKey, ItemizedPage<T>>(
+			&msa_id, &key,
+		)
+		.map_err(|_| Error::<T>::CorruptedState)?
+		.unwrap_or_default();
 		let content_hash = page.get_hash();
 		let items: Vec<ItemizedStorageResponse> = page
 			.parse_as_itemized(false)
@@ -467,7 +472,7 @@ impl<T: Config> Pallet<T> {
 		schema_id: SchemaId,
 	) -> Option<ItemizedPage<T>> {
 		let key: ItemizedKey = (schema_id,);
-		StatefulChildTree::<T::Hasher>::try_read::<_, ItemizedPage<T>>(&msa_id, &key)
+		StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(&msa_id, &key)
 			.unwrap_or(None)
 	}
 
@@ -478,7 +483,7 @@ impl<T: Config> Pallet<T> {
 		page_id: PageId,
 	) -> Option<PaginatedPage<T>> {
 		let key: PaginatedKey = (schema_id, page_id);
-		StatefulChildTree::<T::Hasher>::try_read::<_, PaginatedPage<T>>(&msa_id, &key)
+		StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(&msa_id, &key)
 			.unwrap_or(None)
 	}
 }

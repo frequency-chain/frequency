@@ -741,7 +741,7 @@ impl pallet_stateful_storage::Config for Runtime {
 	/// The type that provides schema info
 	type SchemaProvider = Schemas;
 	/// Hasher for Child Tree keys
-	type Hasher = Twox128;
+	type KeyHasher = Twox128;
 
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
