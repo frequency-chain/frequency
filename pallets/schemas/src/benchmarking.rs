@@ -66,7 +66,7 @@ benchmarks! {
 		let schema_input = generate_schema::<T>(m as usize);
 	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location)
 	verify {
-		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+		assert_eq!(T::ProposalProvider::proposal_count(), 1);
 	}
 
 	set_max_schema_model_bytes {

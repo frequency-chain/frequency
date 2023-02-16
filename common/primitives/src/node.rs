@@ -54,4 +54,8 @@ pub trait ProposalProvider<AccountId, Proposal> {
 		who: AccountId,
 		proposal: Box<Proposal>,
 	) -> Result<(u32, u32), DispatchError>;
+
+	/// Get the number of proposals
+	#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+	fn proposal_count() -> u32;
 }

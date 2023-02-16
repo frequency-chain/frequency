@@ -104,6 +104,11 @@ impl ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
 		let length_bound: u32 = proposal.using_encoded(|p| p.len() as u32);
 		Council::do_propose_proposed(who, threshold, proposal, length_bound)
 	}
+
+	#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+	fn proposal_count() -> u32 {
+		Council::proposal_count()
+	}
 }
 
 /// Basefilter to only allow specified transactions call to be executed

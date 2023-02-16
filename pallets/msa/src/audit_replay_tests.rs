@@ -10,7 +10,7 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, Everything},
 };
-use frame_system::{EnsureRoot, EnsureSigned};
+use frame_system::EnsureRoot;
 use pallet_collective;
 
 use sp_core::H256;
@@ -149,6 +149,11 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalPro
 		let threshold: u32 = ((Council::members().len() / 2) + 1) as u32;
 		let length_bound: u32 = proposal.using_encoded(|p| p.len() as u32);
 		Council::do_propose_proposed(who, threshold, proposal, length_bound)
+	}
+
+	#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+	fn proposal_count() -> u32 {
+		Council::proposal_count()
 	}
 }
 
