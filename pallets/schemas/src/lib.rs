@@ -340,7 +340,7 @@ pub mod pallet {
 			if let Some(schema) = Self::get_schema(schema_id) {
 				let model_vec: Vec<u8> = schema.model.into_inner();
 				let saved_settings = schema.settings;
-				let settings = saved_settings.0.iter().collect::<Vec<_>>();
+				let settings = saved_settings.0.iter().collect::<Vec<SchemaSetting>>();
 				let response = SchemaResponse {
 					schema_id,
 					model: model_vec,
