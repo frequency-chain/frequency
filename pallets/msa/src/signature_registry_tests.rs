@@ -99,8 +99,6 @@ impl pallet_schemas::Config for Test {
 	type Proposal = RuntimeCall;
 	// The Council proposal provider interface
 	type ProposalProvider = CouncilProposalProvider;
-	// The origin that is allowed to create schemas directly (in Mainnet only)
-	type CreateSchemaOrigin = EnsureSigned<AccountId>;
 	// The origin that is allowed to create schemas via governance
 	type CreateSchemaViaGovernanceOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
