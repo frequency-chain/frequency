@@ -37,7 +37,7 @@ then
     SHOULD_KILL=true
 fi
 
-declare -i timeout_secs=10
+declare -i timeout_secs=30
 declare -i i=0
 while (( !PID && i < timeout_secs ))
 do
