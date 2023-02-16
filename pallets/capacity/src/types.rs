@@ -98,21 +98,27 @@ impl<T: Config> StakingAccountDetails<T> {
 		amount: BalanceOf<T>,
 		thaw_at: T::EpochNumber,
 	) -> Result<BalanceOf<T>, DispatchError> {
-		let maybe_active = self.active.saturating_sub(amount);
-		let mut actual_active: BalanceOf<T> = maybe_active;
+		// let's check for an early exit before doing all these calcs
+		ensure!(
+			self.unlocking.len() < T::MaxUnlockingChunks::get() as usize,
+			Error::<T>::MaxUnlockingChunksExceeded
+		);
+		let mut active = self.active.saturating_sub(amount);
+		let mut actual_unstaked: BalanceOf<T> = amount;
 
-		if maybe_active.le(&T::MinimumStakingAmount::get()) {
-			actual_active = Zero::zero();
+		if active.le(&T::MinimumStakingAmount::get()) {
+			actual_unstaked = amount.saturating_add(active);
+			active = Zero::zero();
 		}
-		let unlock_chunk = UnlockChunk { value: actual_active, thaw_at };
+		let unlock_chunk = UnlockChunk { value: actual_unstaked, thaw_at };
 
-		// don't update the amount if we have maximum unlocking chunks.
+		// we've already done the check but it's fine, we need to handle possible errors.
 		self.unlocking
 			.try_push(unlock_chunk)
 			.map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
 
-		self.active = actual_active;
-		Ok(actual_active)
+		self.active = active;
+		Ok(actual_unstaked)
 	}
 }
 

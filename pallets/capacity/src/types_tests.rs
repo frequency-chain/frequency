@@ -1,7 +1,11 @@
 use super::*;
-use crate as pallet_capacity;
 use crate::mock::*;
 use frame_support::{assert_noop, BoundedVec};
+
+type UnlockBVec<T> = BoundedVec<
+	UnlockChunk<BalanceOf<T>, <T as Config>::EpochNumber>,
+	<T as Config>::MaxUnlockingChunks,
+>;
 
 #[test]
 fn staking_account_details_reap_thawed_happy_path() {
@@ -118,18 +122,9 @@ fn staking_account_details_decrease_by_reduces_active_staking_balance_and_create
 			total: BalanceOf::<Test>::from(10u64),
 			unlocking: BoundedVec::default(),
 		};
-		assert_eq!(Ok(7u64), staking_account_details.decrease_by(3, 3));
-		let mut expected_chunks: BoundedVec<
-			UnlockChunk<BalanceOf<Test>, <Test as Config>::EpochNumber>,
-			<Test as pallet_capacity::Config>::MaxUnlockingChunks,
-		> = BoundedVec::default();
-
-		expected_chunks
-			.try_push(UnlockChunk::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
-				value: BalanceOf::<Test>::from(3u64),
-				thaw_at: <Test as Config>::EpochNumber::from(3u32),
-			})
-			.expect("try_push shouldn't have failed");
+		assert_eq!(Ok(3u64), staking_account_details.decrease_by(3, 3));
+		let mut expected_chunks: UnlockBVec<Test> =
+			BoundedVec::try_from(vec![UnlockChunk { value: 3u64, thaw_at: 3u32 }]).unwrap();
 
 		assert_eq!(
 			staking_account_details,
@@ -152,25 +147,20 @@ fn staking_account_details_decrease_by_goes_to_zero_when_result_below_minimum() 
 		};
 		assert_eq!(Ok(10u64), staking_account_details.decrease_by(6, 3));
 		assert_eq!(0u64, staking_account_details.active);
-		assert_eq!(0u64, staking_account_details.total);
+		assert_eq!(10u64, staking_account_details.total);
 	});
 }
 
 #[test]
 fn staking_account_details_decrease_by_returns_none_when_too_many_chunks() {
 	new_test_ext().execute_with(|| {
-		let mut maximum_chunks: BoundedVec<
-			UnlockChunk<BalanceOf<Test>, <Test as Config>::EpochNumber>,
-			<Test as pallet_capacity::Config>::MaxUnlockingChunks,
-		> = BoundedVec::default();
-		for i in [1u64..5u64] {
-			maximum_chunks
-				.try_push(UnlockChunk::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
-					value: BalanceOf::<Test>::from(1u64),
-					thaw_at: <Test as Config>::EpochNumber::from(3u32),
-				})
-				.expect("try_push shouldn't have failed");
-		}
+		let maximum_chunks: UnlockBVec<Test> = BoundedVec::try_from(vec![
+			UnlockChunk { value: 1u64, thaw_at: 3u32 },
+			UnlockChunk { value: 1u64, thaw_at: 3u32 },
+			UnlockChunk { value: 1u64, thaw_at: 3u32 },
+			UnlockChunk { value: 1u64, thaw_at: 3u32 },
+		])
+		.unwrap();
 
 		let mut staking_account_details = StakingAccountDetails::<Test> {
 			active: BalanceOf::<Test>::from(10u64),

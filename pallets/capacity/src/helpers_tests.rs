@@ -263,7 +263,7 @@ fn calculate_capacity_reduction_determines_the_correct_capacity_reduction_amount
 		total_capacity,
 	);
 
-	assert_eq!(capacity_reduction, 180);
+	assert_eq!(capacity_reduction, 20);
 }
 
 #[test]

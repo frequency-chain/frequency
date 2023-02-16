@@ -369,21 +369,19 @@ pub mod pallet {
 		pub fn unstake(
 			origin: OriginFor<T>,
 			target: MessageSourceId,
-			amount: BalanceOf<T>,
+			requested_amount: BalanceOf<T>,
 		) -> DispatchResult {
 			let unstaker = ensure_signed(origin)?;
 
-			ensure!(amount > Zero::zero(), Error::<T>::UnstakedAmountIsZero);
+			ensure!(requested_amount > Zero::zero(), Error::<T>::UnstakedAmountIsZero);
 
-			// 1. return actual amount unstaked here
-			Self::decrease_active_staking_balance(&unstaker, amount)?;
-			// 2. pass in the actual amount here
-			let capacity_reduction = Self::reduce_capacity(&unstaker, target, amount)?;
+			let actual_amount = Self::decrease_active_staking_balance(&unstaker, requested_amount)?;
+			let capacity_reduction = Self::reduce_capacity(&unstaker, target, actual_amount)?;
 
 			Self::deposit_event(Event::UnStaked {
 				account: unstaker,
 				target,
-				amount,
+				amount: actual_amount,
 				capacity: capacity_reduction,
 			});
 			Ok(())
@@ -518,8 +516,6 @@ impl<T: Config> Pallet<T> {
 		unstaker: &T::AccountId,
 		amount: BalanceOf<T>,
 	) -> Result<BalanceOf<T>, DispatchError> {
-		// ) -> DispatchResultWithInfo<Balance> {
-		// ^^ 1a. convert to DispatchResultWithInfo
 		let mut staking_account =
 			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::StakingAccountNotFound)?;
 		ensure!(amount <= staking_account.active, Error::<T>::AmountToUnstakeExceedsAmountStaked);
@@ -528,7 +524,6 @@ impl<T: Config> Pallet<T> {
 		let thaw_at =
 			current_epoch.saturating_add(T::EpochNumber::from(T::UnstakingThawPeriod::get()));
 
-		// 1b. get the actual amount unstaked here
 		let unstake_result = staking_account.decrease_by(amount, thaw_at)?;
 
 		Self::set_staking_account(&unstaker, &staking_account);
@@ -567,7 +562,7 @@ impl<T: Config> Pallet<T> {
 		total_capacity: BalanceOf<T>,
 	) -> BalanceOf<T> {
 		let rate = Perbill::from_rational(unstaking_amount, total_amount_staked);
-		total_capacity.saturating_sub(rate.mul_ceil(total_capacity))
+		rate.mul_ceil(total_capacity)
 	}
 
 	fn start_new_epoch_if_needed(current_block: T::BlockNumber) -> Weight {
