@@ -7,7 +7,7 @@ runs:
       shell: bash
       run: |
         echo "Removing generated cargo artifacts..."
-        rm -fr ./target
+        sudo rm -fr ./target
     - name: Remove NPM node Modules
       shell: bash
       run: |
