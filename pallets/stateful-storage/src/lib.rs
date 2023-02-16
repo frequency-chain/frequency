@@ -187,6 +187,7 @@ pub mod pallet {
 		ItemizedPageDeleted {
 			msa_id: MessageSourceId,
 			schema_id: SchemaId,
+			prev_content_hash: PageHash,
 		},
 		PaginatedPageUpdated {
 			msa_id: MessageSourceId,
@@ -268,6 +269,7 @@ pub mod pallet {
 					Self::deposit_event(Event::ItemizedPageDeleted {
 						msa_id: state_owner_msa_id,
 						schema_id,
+						prev_content_hash,
 					});
 				},
 				false => {
