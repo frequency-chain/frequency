@@ -1,14 +1,5 @@
 #!/usr/bin/env bash
 
-RUNDIR=$(dirname ${0})
-trap cleanup EXIT KILL INT
-
-echo "The integration test output will be logged on this console"
-echo "and the Frequency node output will be logged to the file frequency.log."
-echo "You can 'tail -f frequency.log' in another terminal to see both side-by-side."
-echo ""
-echo -e "Checking to see if Frequency is running..."
-
 function get_frequency_pid () {
     lsof -i tcp:9933 | grep frequency | xargs | awk '{print $2}'
 }
@@ -19,6 +10,24 @@ function cleanup () {
         ${RUNDIR}/kill_freq.sh
     fi
 }
+
+RUNDIR=$(dirname ${0})
+SKIP_JS_BUILD=
+trap cleanup EXIT KILL INT
+
+while getopts "s" OPTNAME
+do
+    case ${OPTNAME} in
+        "s") SKIP_JS_BUILD=1
+        ;;
+    esac
+done
+
+echo "The integration test output will be logged on this console"
+echo "and the Frequency node output will be logged to the file frequency.log."
+echo "You can 'tail -f frequency.log' in another terminal to see both side-by-side."
+echo ""
+echo -e "Checking to see if Frequency is running..."
 
 PID=$( get_frequency_pid )
 
@@ -57,21 +66,26 @@ echo "Frequency running here:"
 echo "PID: ${PID}"
 echo "---------------------------------------------"
 
-echo "Building js/api-augment..."
-( cd js/api-augment ;\
-npm i ;\
-npm run fetch:local ;\
-npm run --silent build ;\
-cd dist ;\
-echo "Packaging up into js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz" ;\
-npm pack --silent )
+if [ -z "${SKIP_JS_BUILD}" ]
+then
+    echo "Building js/api-augment..."
+    ( cd js/api-augment ;\
+    npm i ;\
+    npm run fetch:local ;\
+    npm run --silent build ;\
+    cd dist ;\
+    echo "Packaging up into js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz" ;\
+    npm pack --silent )
 
+
+    ( cd integration-tests ;\
+    echo "Installing js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz" ;\
+    npm i ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz ; )
+fi
 
 ( cd integration-tests ;\
-echo "Installing js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz" ;\
-npm i ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz ;\
-npm install ;\
-echo "---------------------------------------------" ;\
-echo "Starting Tests..." ;\
-echo "---------------------------------------------" ;\
-WS_PROVIDER_URL="ws://127.0.0.1:9944" npm test )
+    npm install ;\
+    echo "---------------------------------------------" ;\
+    echo "Starting Tests..." ;\
+    echo "---------------------------------------------" ;\
+    WS_PROVIDER_URL="ws://127.0.0.1:9944" npm test )

@@ -296,7 +296,7 @@ pub mod pallet {
 			#[pallet::compact] state_owner_msa_id: MessageSourceId,
 			#[pallet::compact] schema_id: SchemaId,
 			#[pallet::compact] page_id: PageId,
-			#[pallet::compact] _target_hash: PageHash,
+			#[pallet::compact] target_hash: PageHash,
 			payload: Vec<u8>,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
@@ -314,12 +314,18 @@ pub mod pallet {
 				PayloadLocation::Paginated,
 			)?;
 
-			// TODO: CHeck target hash agains current hash
-			let prev_content_hash: PageHash = 0; // TODO: Read from state
-									 // ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
-			let curr_content_hash = page.get_hash();
-
 			let keys: PaginatedKey = (schema_id, page_id);
+
+			let existing_page: Option<PaginatedPage<T>> =
+				StatefulChildTree::<T::KeyHasher>::try_read(&state_owner_msa_id, &keys)
+					.map_err(|_| Error::<T>::CorruptedState)?;
+
+			let prev_content_hash: PageHash = match existing_page {
+				Some(p) => p.get_hash(),
+				None => 0 as PageHash,
+			};
+			ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
+			let curr_content_hash = page.get_hash();
 
 			StatefulChildTree::<T::KeyHasher>::write(&state_owner_msa_id, &keys, page);
 			Self::deposit_event(Event::PaginatedPageUpdated {

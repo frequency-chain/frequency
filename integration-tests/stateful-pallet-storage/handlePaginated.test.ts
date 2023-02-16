@@ -84,7 +84,7 @@ describe("📗 Stateful Pallet Storage", () => {
             assert.notEqual(pageRemove, undefined, "should have returned a event");
         }).timeout(10000);
 
-        it("🛑 should fail to call upsert page with invalid schemaId", async function () {
+        it("🛑 should fail call to upsert page with invalid schemaId", async function () {
 
             let page_id = 0;
             let target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id)
@@ -99,7 +99,7 @@ describe("📗 Stateful Pallet Storage", () => {
             });
         }).timeout(10000);
 
-        it("🛑 should fail to call upsert page with invalid schema location", async function () {
+        it("🛑 should fail call to upsert page with invalid schema location", async function () {
 
             let page_id = 0;
             let target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id)
@@ -113,7 +113,7 @@ describe("📗 Stateful Pallet Storage", () => {
             });
         }).timeout(10000);
 
-        it("🛑 should fail to call upsert page with for un-delegated attempts", async function () {
+        it("🛑 should fail call to upsert page with for un-delegated attempts", async function () {
 
             let page_id = 0;
             let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
@@ -128,11 +128,25 @@ describe("📗 Stateful Pallet Storage", () => {
                 section: 'statefulStorage',
             });
         }).timeout(10000);
+
+        it("🛑 should fail call to upsert page with stale target hash", async function () {
+
+            let page_id = 0;
+            let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
+
+            let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, msa_id, page_id, payload_1, 0);
+            await assert.rejects(async () => {
+                await paginated_add_result_1.fundAndSend();
+            }, {
+                name: 'StalePageState',
+                section: 'statefulStorage',
+            });
+        }).timeout(10000);
     });
 
     describe("Paginated Storage Removal Negative Tests 😊/😥", () => {
 
-        it("🛑 should fail to call remove page with invalid schemaId", async function () {
+        it("🛑 should fail call to remove page with invalid schemaId", async function () {
             let fake_schema_id = 999;
             let page_id = 0;
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, fake_schema_id, msa_id, page_id, 0);
@@ -145,7 +159,7 @@ describe("📗 Stateful Pallet Storage", () => {
             });
         }).timeout(10000);
 
-        it("🛑 should fail to call remove page with invalid schema location", async function () {
+        it("🛑 should fail call to remove page with invalid schema location", async function () {
             let page_id = 0;
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId_unsupported, msa_id, page_id, 0);
             await paginated_add_result_1.fundOperation();
@@ -157,7 +171,7 @@ describe("📗 Stateful Pallet Storage", () => {
             });
         }).timeout(10000);
 
-        it("🛑 should fail to call remove page with for un-delegated attempts", async function () {
+        it("🛑 should fail call to remove page for un-delegated attempts", async function () {
             let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 999)
 
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, bad_msa_id, 0, 0);
@@ -166,6 +180,17 @@ describe("📗 Stateful Pallet Storage", () => {
                 await paginated_add_result_1.signAndSend();
             }, {
                 name: 'UnAuthorizedDelegate',
+                section: 'statefulStorage',
+            });
+        }).timeout(10000);
+
+        it("🛑 should fail call to remove page with stale target hash", async function () {
+            let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, msa_id, 0, 0);
+            await paginated_add_result_1.fundOperation();
+            await assert.rejects(async () => {
+                await paginated_add_result_1.signAndSend();
+            }, {
+                name: 'StalePageState',
                 section: 'statefulStorage',
             });
         }).timeout(10000);
