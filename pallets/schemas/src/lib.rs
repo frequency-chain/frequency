@@ -346,7 +346,7 @@ pub mod pallet {
 					model: model_vec,
 					model_type: schema.model_type,
 					payload_location: schema.payload_location,
-					settings,
+					settings: settings,
 				};
 				return Some(response)
 			}
