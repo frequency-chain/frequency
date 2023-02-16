@@ -44,9 +44,11 @@ pub enum PayloadLocation {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, RuntimeDebug, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub enum SchemaSetting {
-	/// Schema may enforce append only type behavior.
+	/// Schema setting to enforce append-only behavior on payload.
+	/// Applied to schemas of type `PayloadLocation::Itemized` or `PayloadLocation::Paginated`.
 	AppendOnly,
 	/// Schema may enforce signature requirement on payload.
+	/// Applied to schemas of type `PayloadLocation::Paginated`.
 	SignatureRequired,
 }
 
