@@ -1053,12 +1053,17 @@ fn apply_item_actions_with_valid_input_and_empty_items_should_remove_storage() {
 		));
 
 		// assert
-		let items2 = StatefulChildTree::<<Test as Config>::KeyHasher>::try_read::<_, Vec<u8>>(
-			&msa_id,
-			&(schema_id,),
-		)
-		.unwrap();
+		let items2: Option<ItemizedPage<Test>> =
+			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(&msa_id, &(schema_id,))
+				.unwrap();
 		assert!(items2.is_none());
-		System::assert_last_event(StatefulEvent::ItemizedPageDeleted { msa_id, schema_id }.into());
+		System::assert_last_event(
+			StatefulEvent::ItemizedPageDeleted {
+				msa_id,
+				schema_id,
+				prev_content_hash: content_hash,
+			}
+			.into(),
+		);
 	});
 }
