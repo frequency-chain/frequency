@@ -110,9 +110,6 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxSchemaRegistrations: Get<SchemaId>;
 
-		/// The origin that is allowed to create providers
-		type CreateSchemaOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
-
 		/// The origin that is allowed to create providers via governance
 		type CreateSchemaViaGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
@@ -415,6 +412,14 @@ pub mod pallet {
 			let model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> =
 				model.try_into().unwrap();
 			Self::ensure_valid_model(&model_type, &model)?;
+			ensure!(
+				model.len() >= T::MinSchemaModelSizeBytes::get() as usize,
+				Error::<T>::LessThanMinSchemaModelBytes
+			);
+			ensure!(
+				model.len() <= Self::get_schema_model_max_bytes() as usize,
+				Error::<T>::ExceedsMaxSchemaModelBytes
+			);
 			Self::add_schema(model, model_type, payload_location)
 		}
 	}
