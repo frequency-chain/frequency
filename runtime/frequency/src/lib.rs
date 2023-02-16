@@ -577,6 +577,26 @@ impl EnsureOrigin<RuntimeOrigin> for RootAsVestingPallet {
 }
 
 parameter_types! {
+	// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
+	pub const DepositBase: Balance = currency::deposit(1, 88);
+	// Additional storage item size of 32 bytes.
+	pub const DepositFactor: Balance = currency::deposit(0, 32);
+	pub const MaxSignatories: u32 = 100;
+}
+
+// See https://paritytech.github.io/substrate/master/pallet_multisig/pallet/trait.Config.html for
+// the descriptions of these configs.
+impl pallet_multisig::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type Currency = Balances;
+	type DepositBase = DepositBase;
+	type DepositFactor = DepositFactor;
+	type MaxSignatories = MaxSignatories;
+	type WeightInfo = weights::pallet_multisig::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
 	/// Need this declaration method for use + type safety in benchmarks
 	pub const MaxVestingSchedules: u32 = ORML_MAX_VESTING_SCHEDULES;
 }
@@ -1012,6 +1032,9 @@ construct_runtime!(
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
 
+		// Signatures
+		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 30,
+
 		// ORML
 		Vesting: orml_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 40,
 
@@ -1041,6 +1064,7 @@ mod benches {
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
+		[pallet_multisig, Multisig]
 		[pallet_utility, Utility]
 
 		// Frequency
