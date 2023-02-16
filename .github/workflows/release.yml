@@ -42,10 +42,10 @@ jobs:
           #   arch: arm64
     runs-on: ${{matrix.os}}
     steps:
-      - name: Reset Runner
-        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Reset Runner
+        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Set Env Vars
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
@@ -138,10 +138,10 @@ jobs:
             wasm-core-version: frequency
     runs-on: [self-hosted, Linux, X64]
     steps:
-      - name: Reset Runner
-        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Reset Runner
+        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
         with:
@@ -215,10 +215,10 @@ jobs:
     env:
       HOME: /home/runner
     steps:
-      - name: Reset Runner
-        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Reset Runner
+        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Install Required Packages
