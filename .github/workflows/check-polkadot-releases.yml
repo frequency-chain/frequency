@@ -5,7 +5,7 @@ on:
 env:
   REPO_URL: https://api.github.com/repos/paritytech/polkadot
   TRACKING_GIT_BRANCH: ci/latest-polkadot-full-release
-  RELEASE_TRACK_FILENAME: .github/workflows/.latest-polkadot-full-release.txt
+  RELEASE_TRACK_FILENAME: .github/.latest-polkadot-full-release.txt
 jobs:
   record-polkadot-latest-release-version:
     runs-on: ubuntu-20.04
@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{env.TRACKING_GIT_BRANCH}}
-          token: ${{secrets.FREQUENCY_REPO_TRACK_POLKADOT_RELEASES}}
+          token: ${{secrets.GHA_RECORD_POLKADOT_RELEASE}}
       - name: Print Recorded Latest Polkadot Release
         run: |
           echo "Recorded Polkadot Latest Full Release:"
