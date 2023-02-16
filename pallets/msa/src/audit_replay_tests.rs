@@ -169,8 +169,6 @@ impl pallet_msa::Config for Test {
 	type Proposal = RuntimeCall;
 	// The Council proposal provider interface
 	type ProposalProvider = CouncilProposalProvider;
-	// The origin that is allowed to create providers.
-	type CreateProviderOrigin = EnsureSigned<AccountId>;
 	// The origin that is allowed to create providers via governance
 	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
