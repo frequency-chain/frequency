@@ -38,6 +38,7 @@ use common_primitives::{
 	messages::*,
 	msa::*,
 	node::*,
+	rpc::RpcEvent,
 	schema::{PayloadLocation, SchemaResponse},
 };
 
@@ -409,7 +410,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 13,
+	spec_version: 14,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1171,6 +1172,12 @@ impl_runtime_apis! {
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
 		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			Schemas::get_schema_by_id(schema_id)
+		}
+	}
+
+	impl system_runtime_api::AdditionalRuntimeApi<Block> for Runtime {
+		fn get_events() -> Vec<RpcEvent> {
+			System::read_events_no_consensus().into_iter().map(|e| (*e).into()).collect()
 		}
 	}
 

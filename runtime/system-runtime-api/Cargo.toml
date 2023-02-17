@@ -1,0 +1,36 @@
+[package]
+name = "system-runtime-api"
+version = "0.0.0"
+description = "Additional RPC package for Frequency"
+authors = ["Frequency"]
+license = "Apache-2.0"
+publish = false
+homepage = "https://frequency.xyz"
+repository = "https://github.com/libertyDSNP/frequency/"
+edition = "2021"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.1.5", default-features = false, features = [
+	"derive"
+] }
+serde_json = { version = "1.0.86", default-features = false, features = [
+  "alloc",
+] }
+# Substrate
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
+# Frequency related dependencies
+common-primitives = { default-features = false, path = "../../common/primitives" }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"sp-api/std",
+	"frame-support/std",
+	"common-primitives/std",
+	"sp-std/std",
+]

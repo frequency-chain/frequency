@@ -26,12 +26,18 @@ describe("index", function () {
 
   it("should know about runtime apis", function () {
     const topLevelRuntimeApis = Object.keys((api.registry.knownTypes as any).runtime || {});
-    assert.deepEqual(topLevelRuntimeApis, ["MsaRuntimeApi", "MessagesRuntimeApi", "SchemasRuntimeApi"]);
+    assert.deepEqual(topLevelRuntimeApis, [
+      "MsaRuntimeApi",
+      "MessagesRuntimeApi",
+      "SchemasRuntimeApi",
+      "AdditionalRuntimeApi",
+    ]);
   });
 
   it("should have rpc calls", async function () {
     assert.notEqual(api.rpc.messages, undefined);
     assert.notEqual(api.rpc.msa, undefined);
     assert.notEqual(api.rpc.schemas, undefined);
+    assert.notEqual(api.rpc.frequency, undefined);
   });
 });
