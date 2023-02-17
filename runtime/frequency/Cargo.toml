@@ -42,6 +42,7 @@ pallet-democracy = { git = "https://github.com/paritytech/substrate", default-fe
 pallet-collective = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
+pallet-multisig = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
@@ -64,7 +65,7 @@ orml-benchmarking = { git = "https://github.com/open-web3-stack/open-runtime-mod
 orml-vesting = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.36" }
 # Frequency
 common-primitives = { default-features = false, path = "../../common/primitives" }
-common-runtime = { path = '../common', default-features = false }
+common-runtime = { path = "../common", default-features = false }
 pallet-messages = { path = "../../pallets/messages", default-features = false }
 pallet-messages-runtime-api = { path = "../../pallets/messages/src/runtime-api", default-features = false }
 pallet-msa = { path = "../../pallets/msa", default-features = false }
@@ -113,6 +114,7 @@ std = [
 	"pallet-scheduler/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
+	"pallet-multisig/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
@@ -156,8 +158,8 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
-	"pallet-timestamp/runtime-benchmarks",
-	'pallet-msa/runtime-benchmarks',
+	"pallet-multisig/runtime-benchmarks",
+	"pallet-msa/runtime-benchmarks",
 	"pallet-messages/runtime-benchmarks",
 	"pallet-schemas/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
@@ -180,6 +182,7 @@ try-runtime = [
 	"pallet-collator-selection/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",
+	"pallet-multisig/try-runtime",
 	"pallet-msa/try-runtime",
 	"pallet-messages/try-runtime",
 	"pallet-schemas/try-runtime",
