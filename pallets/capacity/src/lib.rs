@@ -447,15 +447,15 @@ impl<T: Config> Pallet<T> {
 		target: MessageSourceId,
 		amount: BalanceOf<T>,
 	) -> Result<BalanceOf<T>, DispatchError> {
-		staking_account.increase_by(amount).ok_or(ArithmeticError::Overflow)?;
+		staking_account.deposit(amount).ok_or(ArithmeticError::Overflow)?;
 
 		let capacity = Self::calculate_capacity(amount);
 		let mut target_details = Self::get_target_for(&staker, &target).unwrap_or_default();
-		target_details.increase_by(amount, capacity).ok_or(ArithmeticError::Overflow)?;
+		target_details.deposit(amount, capacity).ok_or(ArithmeticError::Overflow)?;
 
 		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
 		capacity_details
-			.increase_by(amount, Self::get_current_epoch())
+			.deposit(amount, Self::get_current_epoch())
 			.ok_or(ArithmeticError::Overflow)?;
 
 		Self::set_staking_account(&staker, staking_account);
@@ -524,7 +524,7 @@ impl<T: Config> Pallet<T> {
 		let thaw_at =
 			current_epoch.saturating_add(T::EpochNumber::from(T::UnstakingThawPeriod::get()));
 
-		let unstake_result = staking_account.decrease_by(amount, thaw_at)?;
+		let unstake_result = staking_account.deduct(amount, thaw_at)?;
 
 		Self::set_staking_account(&unstaker, &staking_account);
 
@@ -546,8 +546,8 @@ impl<T: Config> Pallet<T> {
 			capacity_details.total_tokens_staked,
 			capacity_details.total_available,
 		);
-		staking_target_details.decrease_by(amount, capacity_reduction);
-		capacity_details.decrease_by(capacity_reduction, amount);
+		staking_target_details.deduct(amount, capacity_reduction);
+		capacity_details.deduct(capacity_reduction, amount);
 
 		Self::set_capacity_for(target, capacity_details);
 		Self::set_target_details_for(unstaker, target, staking_target_details);
@@ -561,8 +561,7 @@ impl<T: Config> Pallet<T> {
 		total_amount_staked: BalanceOf<T>,
 		total_capacity: BalanceOf<T>,
 	) -> BalanceOf<T> {
-		let rate = Perbill::from_rational(unstaking_amount, total_amount_staked);
-		rate.mul_ceil(total_capacity)
+		Perbill::from_rational(unstaking_amount, total_amount_staked).mul_ceil(total_capacity)
 	}
 
 	fn start_new_epoch_if_needed(current_block: T::BlockNumber) -> Weight {

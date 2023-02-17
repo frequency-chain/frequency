@@ -17,7 +17,7 @@ fn withdraw_unstaked_happy_path() {
 		let mut staking_account = StakingAccountDetails::<Test>::default();
 
 		// we have 10 total staked, and 6 of those are unstaking.
-		staking_account.increase_by(10);
+		staking_account.deposit(10);
 		assert_eq!(true, staking_account.set_unlock_chunks(&unlocks));
 		assert_eq!(10u64, staking_account.total);
 		Capacity::set_staking_account(&staker, &staking_account.into());
@@ -46,7 +46,7 @@ fn withdraw_unstaked_correctly_sets_new_lock_state() {
 	new_test_ext().execute_with(|| {
 		let staker = 500;
 		let mut staking_account = StakingAccountDetails::<Test>::default();
-		staking_account.increase_by(10);
+		staking_account.deposit(10);
 
 		// set new unlock chunks using tuples of (value, thaw_at)
 		let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
@@ -72,7 +72,7 @@ fn withdraw_unstaked_cleans_up_storage_and_removes_all_locks_if_no_stake_left() 
 	new_test_ext().execute_with(|| {
 		let mut staking_account = StakingAccountDetails::<Test>::default();
 		let staking_amount: BalanceOf<Test> = 10;
-		staking_account.increase_by(staking_amount);
+		staking_account.deposit(staking_amount);
 
 		// set new unlock chunks using tuples of (value, thaw_at)
 		let new_unlocks: Vec<(u32, u32)> = vec![(10u32, 2u32)];
@@ -96,7 +96,7 @@ fn withdraw_unstaked_cannot_withdraw_if_no_unstaking_chunks() {
 	new_test_ext().execute_with(|| {
 		let staker = 500;
 		let mut staking_account = StakingAccountDetails::<Test>::default();
-		staking_account.increase_by(10);
+		staking_account.deposit(10);
 		Capacity::set_staking_account(&staker, &staking_account);
 		assert_noop!(
 			Capacity::withdraw_unstaked(RuntimeOrigin::signed(500)),
@@ -109,7 +109,7 @@ fn withdraw_unstaked_cannot_withdraw_if_unstaking_chunks_not_thawed() {
 	new_test_ext().execute_with(|| {
 		let staker = 500;
 		let mut staking_account = StakingAccountDetails::<Test>::default();
-		staking_account.increase_by(10);
+		staking_account.deposit(10);
 
 		// set new unlock chunks using tuples of (value, thaw_at)
 		let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 3u32), (2u32, 40u32), (3u32, 9u32)];

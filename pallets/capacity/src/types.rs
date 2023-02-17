@@ -34,7 +34,7 @@ pub struct UnlockChunk<Balance, EpochNumber> {
 
 impl<T: Config> StakingAccountDetails<T> {
 	/// Increases total and active balances by an amount.
-	pub fn increase_by(&mut self, amount: BalanceOf<T>) -> Option<()> {
+	pub fn deposit(&mut self, amount: BalanceOf<T>) -> Option<()> {
 		self.total = amount.checked_add(&self.total)?;
 		self.active = amount.checked_add(&self.active)?;
 
@@ -93,7 +93,7 @@ impl<T: Config> StakingAccountDetails<T> {
 	}
 
 	/// Decrease the amount of active stake by an amount and createa an UnlockChunk.
-	pub fn decrease_by(
+	pub fn deduct(
 		&mut self,
 		amount: BalanceOf<T>,
 		thaw_at: T::EpochNumber,
@@ -140,7 +140,7 @@ pub struct StakingTargetDetails<Balance> {
 
 impl<Balance: Saturating + Copy + CheckedAdd> StakingTargetDetails<Balance> {
 	/// Increase an MSA target Staking total and Capacity amount.
-	pub fn increase_by(&mut self, amount: Balance, capacity: Balance) -> Option<()> {
+	pub fn deposit(&mut self, amount: Balance, capacity: Balance) -> Option<()> {
 		self.amount = amount.checked_add(&self.amount)?;
 		self.capacity = capacity.checked_add(&self.capacity)?;
 
@@ -148,7 +148,7 @@ impl<Balance: Saturating + Copy + CheckedAdd> StakingTargetDetails<Balance> {
 	}
 
 	/// Decrease an MSA target Staking total and Capacity amount.
-	pub fn decrease_by(&mut self, amount: Balance, capacity: Balance) {
+	pub fn deduct(&mut self, amount: Balance, capacity: Balance) {
 		self.amount = self.amount.saturating_sub(amount);
 		self.capacity = self.capacity.saturating_sub(capacity);
 	}
@@ -169,7 +169,7 @@ pub struct CapacityDetails<Balance, EpochNumber> {
 
 impl<Balance: Saturating + Copy + CheckedAdd, EpochNumber> CapacityDetails<Balance, EpochNumber> {
 	/// Increase a targets Capacity balance by an amount.
-	pub fn increase_by(&mut self, amount: Balance, replenish_at: EpochNumber) -> Option<()> {
+	pub fn deposit(&mut self, amount: Balance, replenish_at: EpochNumber) -> Option<()> {
 		self.remaining = amount.checked_add(&self.remaining)?;
 		self.total_tokens_staked = amount.checked_add(&self.total_tokens_staked)?;
 		self.total_available = amount.checked_add(&self.total_available)?;
@@ -179,9 +179,9 @@ impl<Balance: Saturating + Copy + CheckedAdd, EpochNumber> CapacityDetails<Balan
 	}
 
 	/// Decrease a target's total available capacity.
-	pub fn decrease_by(&mut self, amount: Balance, token_reduction_amount: Balance) {
-		self.total_tokens_staked = self.total_tokens_staked.saturating_sub(token_reduction_amount);
-		self.total_available = self.total_available.saturating_sub(amount);
+	pub fn deduct(&mut self, capacity_deduction: Balance, tokens_staked_deduction: Balance) {
+		self.total_tokens_staked = self.total_tokens_staked.saturating_sub(tokens_staked_deduction);
+		self.total_available = self.total_available.saturating_sub(capacity_deduction);
 	}
 }
 

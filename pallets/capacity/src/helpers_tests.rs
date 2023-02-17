@@ -185,7 +185,7 @@ fn set_staking_account_is_succesful() {
 	new_test_ext().execute_with(|| {
 		let staker = 100;
 		let mut staking_account = StakingAccountDetails::<Test>::default();
-		staking_account.increase_by(55);
+		staking_account.deposit(55);
 
 		Capacity::set_staking_account(&staker, &staking_account);
 
