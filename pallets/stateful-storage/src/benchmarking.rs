@@ -71,7 +71,6 @@ benchmarks! {
 		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
-
 	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id, payload)
 	verify {
 		let page_result = StatefulStoragePallet::<T>::get_paginated_page(delegator_msa_id, schema_id, page_id);
@@ -86,15 +85,14 @@ benchmarks! {
 		let page_id: PageId = 1;
 		let caller: T::AccountId = whitelisted_caller();
 		let payload = vec![0u8; T::MaxPaginatedPageSizeBytes::get() as usize];
-		let schema_key = schema_id.encode().to_vec();
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
 		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
 
-		let page_key = page_id.encode().to_vec();
-		StatefulChildTree::write(&delegator_msa_id, &[schema_key.clone(), page_key], payload.clone());
+		let key = (schema_id, page_id);
+		StatefulChildTree::<T::Hasher>::write(&delegator_msa_id, &key, payload.clone());
 	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id)
 	verify {
 		let page_result = StatefulStoragePallet::<T>::get_paginated_page(delegator_msa_id, schema_id, page_id);

@@ -1,17 +1,16 @@
-use super::mock::*;
-use crate::{
-	pallet,
-	stateful_child_tree::{StatefulChildTree, StatefulPageKeyPart},
-	types::*,
-	Config, Error,
-};
+use super::{mock::*, Event as StatefulEvent};
+use crate::{pallet, stateful_child_tree::StatefulChildTree, types::*, Config, Error};
 use codec::{Decode, Encode, MaxEncodedLen};
-use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
+use common_primitives::{
+	schema::{ModelType, PayloadLocation, SchemaId},
+	stateful_storage::PageId,
+};
 use frame_support::{assert_err, assert_ok, BoundedVec};
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use scale_info::TypeInfo;
-use sp_core::Get;
+use sp_core::{ConstU32, Get};
+use sp_std::collections::btree_set::BTreeSet;
 
 type ItemizedPageSize = <Test as Config>::MaxItemizedPageSizeBytes;
 type PaginatedPageSize = <Test as Config>::MaxPaginatedPageSizeBytes;
@@ -206,10 +205,10 @@ fn upsert_new_page_succeeds() {
 			payload.into()
 		));
 
-		let keys = [schema_id.encode().to_vec(), page_id.encode().to_vec()];
-		let new_page: PaginatedPage<Test> =
-			StatefulChildTree::try_read(&msa_id, &keys).unwrap().unwrap();
-		assert_eq!(page, new_page);
+		let keys = (schema_id, page_id);
+		let new_page = <StatefulChildTree>::try_read(&msa_id, &keys).unwrap();
+		assert_eq!(new_page.is_some(), true, "new page is empty");
+		assert_eq!(page, new_page.unwrap(), "new page contents incorrect");
 	})
 }
 
@@ -219,16 +218,16 @@ fn upsert_existing_page_modifies_page() {
 		// setup
 		let caller_1 = 1;
 		let msa_id = 2;
-		let schema_id = PAGINATED_SCHEMA;
-		let page_id = 1;
-		let old_content = generate_payload_bytes::<PaginatedPageSize>(Some(200));
+		let schema_id: SchemaId = PAGINATED_SCHEMA;
+		let page_id: PageId = 1;
+		let old_content = generate_payload_bytes(Some(200));
 		let new_content = generate_payload_bytes::<PaginatedPageSize>(Some(201));
 		let old_page: PaginatedPage<Test> = old_content.clone().into();
 
-		let keys = [schema_id.encode().to_vec(), page_id.encode().to_vec()];
-		StatefulChildTree::write(&msa_id, &keys, old_page);
+		let keys = (schema_id, page_id);
+		<StatefulChildTree>::write(&msa_id, &keys, old_page);
 		let old_page: PaginatedPage<Test> =
-			StatefulChildTree::try_read(&msa_id, &keys).unwrap().unwrap();
+			<StatefulChildTree>::try_read(&msa_id, &keys).unwrap().unwrap();
 
 		assert_eq!(old_content, old_page.data);
 		assert_ok!(StatefulStoragePallet::upsert_page(
@@ -240,7 +239,7 @@ fn upsert_existing_page_modifies_page() {
 		));
 
 		let new_page: PaginatedPage<Test> =
-			StatefulChildTree::try_read(&msa_id, &keys).unwrap().unwrap();
+			<StatefulChildTree>::try_read(&msa_id, &keys).unwrap().unwrap();
 		assert_eq!(new_content, new_page.data);
 	})
 }
@@ -393,10 +392,9 @@ fn delete_existing_page_succeeds() {
 			page_id
 		));
 
-		let schema_key = schema_id.encode().to_vec();
-		let page_key = page_id.encode().to_vec();
-		let page =
-			StatefulChildTree::try_read::<Vec<u8>>(&msa_id, &[schema_key, page_key]).unwrap();
+		let keys = (schema_id, page_id);
+		let page: Option<PaginatedPage<Test>> =
+			<StatefulChildTree>::try_read(&msa_id, &keys).unwrap();
 		assert_eq!(page, None);
 	})
 }
@@ -542,9 +540,7 @@ fn child_tree_write_read() {
 		let msa_id = 1;
 		let schema_id: SchemaId = 2;
 		let page_id: u8 = 3;
-		let k1: StatefulPageKeyPart = schema_id.to_be_bytes().to_vec();
-		let k2: StatefulPageKeyPart = page_id.to_be_bytes().to_vec();
-		let keys = &[k1, k2];
+		let keys = &(schema_id, page_id);
 		let val = TestStruct {
 			model_type: ModelType::AvroBinary,
 			payload_location: PayloadLocation::OnChain,
@@ -552,44 +548,290 @@ fn child_tree_write_read() {
 		};
 
 		// act
-		StatefulChildTree::write(&msa_id, keys, &val);
+		<StatefulChildTree>::write(&msa_id, keys, &val);
 
 		// assert
-		let read = StatefulChildTree::try_read::<TestStruct>(&msa_id, keys).unwrap();
+		let read = <StatefulChildTree>::try_read(&msa_id, keys).unwrap();
 		assert_eq!(Some(val), read);
 	});
 }
+
+type TestKeyString = BoundedVec<u8, ConstU32<16>>;
+type TestKey = (TestKeyString, TestKeyString, u64);
 
 #[test]
 fn child_tree_iterator() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let msa_id = 1;
-		let mut arr: Vec<(Vec<u8>, TestStruct)> = Vec::new();
-		for i in 1..=10 {
-			let k = i.encode();
-			arr.push((
-				k,
-				TestStruct {
-					model_type: ModelType::AvroBinary,
-					payload_location: PayloadLocation::OnChain,
-					number: i,
+		let mut arr: Vec<(TestKey, TestKey)> = Vec::new();
+		let prefix_1 = TestKeyString::try_from(b"part_1".to_vec()).unwrap();
+		let prefix_2a = TestKeyString::try_from(b"part_2a".to_vec()).unwrap();
+		let prefix_2b = TestKeyString::try_from(b"part_2b".to_vec()).unwrap();
+
+		for i in 1u64..=10u64 {
+			let k: TestKey = (
+				prefix_1.clone(),
+				match i % 2 {
+					0 => prefix_2a.clone(),
+					_ => prefix_2b.clone(),
 				},
-			));
+				i.clone(),
+			);
+			let s = k.clone();
+			arr.push((k.clone(), s.clone()));
+			<StatefulChildTree>::write(&msa_id, &k, s);
 		}
-		for (k, t) in arr.as_slice() {
-			let keys = vec![k.to_owned()];
-			StatefulChildTree::write(&msa_id, &keys[..], t);
+
+		// Try empty prefix
+		let all_nodes = <StatefulChildTree>::prefix_iterator::<TestKey, TestKey, _>(&msa_id, &());
+		let r: BTreeSet<u64> = all_nodes.map(|(_k, s)| s.2).collect::<BTreeSet<u64>>();
+
+		// Should return all items
+		assert_eq!(
+			r,
+			arr.iter().map(|(_k, s)| s.2).collect(),
+			"iterator with empty prefix should have returned all items with full key"
+		);
+
+		// Try 1-level prefix
+		let prefix_key = (prefix_1.clone(),);
+		let mut nodes = <StatefulChildTree>::prefix_iterator::<TestKey, TestKey, _>(
+			&msa_id,
+			&prefix_key.clone(),
+		);
+		let r0: BTreeSet<u64> = nodes.by_ref().map(|(_k, v)| v.2).collect();
+
+		assert_eq!(
+			r0,
+			arr.iter().map(|(_k, s)| s.2).collect(),
+			"iterator over topmost key should have returned all items"
+		);
+
+		for (k, s) in nodes {
+			assert_eq!(k, (s.0, s.1, s.2), "iterated keys should have been decoded properly");
 		}
+
+		// Try 2-level prefix
+		let prefix_key = (prefix_1.clone(), prefix_2a.clone());
+		let nodes2 =
+			<StatefulChildTree>::prefix_iterator::<TestKey, TestKey, _>(&msa_id, &prefix_key);
+		let r1: BTreeSet<u64> = nodes2.map(|(_, v)| v.2).collect();
+
+		// Should return only even-numbered items
+		assert_eq!(
+			r1,
+			arr.iter().filter(|(k, _s)| k.2 % 2 == 0).map(|(k, _s)| k.2).collect(),
+			"iterator over second-level key should have returned only even-numbered items"
+		);
+	});
+}
+
+#[test]
+fn apply_item_actions_with_add_item_action_bigger_than_expected_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload =
+			vec![1; (<Test as Config>::MaxItemizedBlobSizeBytes::get() + 1).try_into().unwrap()];
+		let actions = vec![ItemAction::Add { data: payload }];
 
 		// act
-		let nodes = StatefulChildTree::prefix_iterator::<TestStruct>(&msa_id, &[]);
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions).unwrap(),
+			),
+			Error::<Test>::ItemExceedsMaxBlobSizeBytes
+		)
+	});
+}
 
-		let mut count = 0;
-		for n in nodes {
-			assert!(arr.contains(&n));
-			count += 1;
-		}
-		assert_eq!(count, arr.len());
+#[test]
+fn apply_item_actions_with_invalid_msa_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1000; // hard-coded in mocks to return None for MSA
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions).unwrap(),
+			),
+			Error::<Test>::InvalidMessageSourceAccount
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_invalid_schema_id_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = INVALID_SCHEMA_ID;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions).unwrap(),
+			),
+			Error::<Test>::InvalidSchemaId
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_invalid_schema_location_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = PAGINATED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions).unwrap(),
+			),
+			Error::<Test>::SchemaPayloadLocationMismatch
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_no_delegation_and_different_caller_from_owner_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = UNDELEGATED_ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions).unwrap(),
+			),
+			Error::<Test>::UnAuthorizedDelegate
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_corrupted_state_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions1 = vec![ItemAction::Add { data: payload.clone() }];
+		StatefulChildTree::<<Test as Config>::Hasher>::write::<_, Vec<u8>>(
+			&msa_id,
+			&(schema_id,),
+			payload,
+		);
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				BoundedVec::try_from(actions1).unwrap(),
+			),
+			Error::<Test>::CorruptedState
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_valid_input_should_update_storage() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+
+		// act
+		assert_ok!(StatefulStoragePallet::apply_item_actions(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			BoundedVec::try_from(actions).unwrap(),
+		));
+
+		// assert
+		let items = StatefulChildTree::<<Test as Config>::Hasher>::try_read::<_, Vec<u8>>(
+			&msa_id,
+			&(schema_id,),
+		)
+		.unwrap();
+		assert!(items.is_some());
+		System::assert_last_event(StatefulEvent::ItemizedPageUpdated { msa_id, schema_id }.into());
+	});
+}
+
+#[test]
+fn apply_item_actions_with_valid_input_and_empty_items_should_remove_storage() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions1 = vec![ItemAction::Add { data: payload }];
+		let actions2 = vec![ItemAction::Delete { index: 0 }];
+		assert_ok!(StatefulStoragePallet::apply_item_actions(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			BoundedVec::try_from(actions1).unwrap(),
+		));
+
+		// act
+		assert_ok!(StatefulStoragePallet::apply_item_actions(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			BoundedVec::try_from(actions2).unwrap(),
+		));
+
+		// assert
+		let items = StatefulChildTree::<<Test as Config>::Hasher>::try_read::<_, Vec<u8>>(
+			&msa_id,
+			&(schema_id,),
+		)
+		.unwrap();
+		assert!(items.is_none());
+		System::assert_last_event(StatefulEvent::ItemizedPageDeleted { msa_id, schema_id }.into());
 	});
 }
