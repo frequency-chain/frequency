@@ -409,8 +409,6 @@ pub mod pallet {
 			model_type: ModelType,
 			payload_location: PayloadLocation,
 		) -> Result<SchemaId, DispatchError> {
-			let model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> =
-				model.try_into().unwrap();
 			Self::ensure_valid_model(&model_type, &model)?;
 			ensure!(
 				model.len() >= T::MinSchemaModelSizeBytes::get() as usize,
