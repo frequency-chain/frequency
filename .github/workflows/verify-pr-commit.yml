@@ -105,6 +105,16 @@ jobs:
       HOME: /home/runner
       NETWORK: mainnet
     steps:
+      # https://github.com/LibertyDSNP/frequency/issues/1102
+      - name: Debug Leftovers
+        run: |
+          set -x
+          date
+          whoami
+          cat /etc/passwd
+          [ -d ./target ] && sudo ls -latR ./target
+          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
+          exit 0
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
@@ -197,6 +207,16 @@ jobs:
       HOME: /home/runner
     runs-on: [self-hosted, Linux, X64]
     steps:
+      # https://github.com/LibertyDSNP/frequency/issues/1102
+      - name: Debug Leftovers
+        run: |
+          set -x
+          date
+          whoami
+          cat /etc/passwd
+          [ -d ./target ] && sudo ls -latR ./target
+          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
+          exit 0
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Reset Runner
@@ -227,6 +247,16 @@ jobs:
       HOME: /home/runner
     runs-on: [self-hosted, Linux, X64]
     steps:
+      # https://github.com/LibertyDSNP/frequency/issues/1102
+      - name: Debug Leftovers
+        run: |
+          set -x
+          date
+          whoami
+          cat /etc/passwd
+          [ -d ./target ] && sudo ls -latR ./target
+          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
+          exit 0
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Reset Runner
@@ -253,6 +283,17 @@ jobs:
       HOME: /home/runner
     runs-on: [self-hosted, Linux, X64]
     steps:
+      # https://github.com/LibertyDSNP/frequency/issues/1102
+      - name: Debug Leftovers
+        run: |
+          set -x
+          set -x
+          date
+          whoami
+          cat /etc/passwd
+          [ -d ./target ] && sudo ls -latR ./target
+          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
+          exit 0
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Reset Runner
@@ -278,6 +319,16 @@ jobs:
       HOME: /home/runner
     runs-on: [self-hosted, Linux, X64]
     steps:
+      # https://github.com/LibertyDSNP/frequency/issues/1102
+      - name: Debug Leftovers
+        run: |
+          set -x
+          date
+          whoami
+          cat /etc/passwd
+          [ -d ./target ] && sudo ls -latR ./target
+          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
+          exit 0
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Reset Runner
@@ -367,6 +418,16 @@ jobs:
             features: frequency
     runs-on: [self-hosted, Linux, X64]
     steps:
+      # https://github.com/LibertyDSNP/frequency/issues/1102
+      - name: Debug Leftovers
+        run: |
+          set -x
+          date
+          whoami
+          cat /etc/passwd
+          [ -d ./target ] && sudo ls -latR ./target
+          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
+          exit 0
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Reset Runner
