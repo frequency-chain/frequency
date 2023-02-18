@@ -80,6 +80,7 @@ use common_primitives::{
 		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
 		EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR,
 	},
+	node::ProposalProvider,
 	schema::{SchemaId, SchemaValidator},
 };
 
@@ -105,17 +106,6 @@ mod replay_tests;
 mod signature_registry_tests;
 
 pub mod weights;
-
-/// The provider of a collective action interface, for example an instance of `pallet-collective`.
-pub trait ProposalProvider<AccountId, Proposal> {
-	/// Add a new proposal.
-	/// Returns a proposal length and active proposals count if successful.
-	fn propose(
-		who: AccountId,
-		threshold: u32,
-		proposal: Box<Proposal>,
-	) -> Result<(u32, u32), DispatchError>;
-}
 #[frame_support::pallet]
 pub mod pallet {
 
@@ -126,19 +116,11 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		/// The runtime call dispatch type.
-		type Proposal: Parameter
-			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin, PostInfo = PostDispatchInfo>
-			+ From<Call<Self>>;
-
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
 		/// AccountId truncated to 32 bytes
 		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
-
-		/// The Council proposal provider interface
-		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Proposal>;
 
 		/// Maximum count of keys allowed per MSA
 		#[pallet::constant]
@@ -179,11 +161,16 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxSignaturesStored: Get<Option<u32>>;
 
-		/// The origin that is allowed to create providers
-		type CreateProviderOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
-
 		/// The origin that is allowed to create providers via governance
 		type CreateProviderViaGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
+		/// The runtime call dispatch type.
+		type Proposal: Parameter
+			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin, PostInfo = PostDispatchInfo>
+			+ From<Call<Self>>;
+
+		/// The Council proposal provider interface
+		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Proposal>;
 	}
 
 	#[pallet::pallet]
@@ -534,7 +521,7 @@ pub mod pallet {
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::create_provider())]
 		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
-			let provider_key = T::CreateProviderOrigin::ensure_origin(origin)?;
+			let provider_key = ensure_signed(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			Self::create_provider_for(provider_msa_id, provider_name)?;
 			Self::deposit_event(Event::ProviderCreated {

@@ -11,7 +11,7 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, Everything, Get},
 };
-use frame_system::{EnsureRoot, EnsureSigned};
+use frame_system::EnsureRoot;
 use pallet_collective;
 
 use sp_core::{sr25519, Encode, Pair, H256};
@@ -95,6 +95,15 @@ impl pallet_schemas::Config for Test {
 	type MinSchemaModelSizeBytes = ConstU32<10>;
 	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<10>;
 	type MaxSchemaRegistrations = ConstU16<10>;
+	// The proposal type
+	type Proposal = RuntimeCall;
+	// The Council proposal provider interface
+	type ProposalProvider = CouncilProposalProvider;
+	// The origin that is allowed to create schemas via governance
+	type CreateSchemaViaGovernanceOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
+	>;
 }
 
 parameter_types! {
@@ -139,6 +148,20 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalPro
 		let length_bound: u32 = proposal.using_encoded(|p| p.len() as u32);
 		Council::do_propose_proposed(who, threshold, proposal, length_bound)
 	}
+
+	fn propose_with_simple_majority(
+		who: AccountId,
+		proposal: Box<RuntimeCall>,
+	) -> Result<(u32, u32), DispatchError> {
+		let threshold: u32 = ((Council::members().len() / 2) + 1) as u32;
+		let length_bound: u32 = proposal.using_encoded(|p| p.len() as u32);
+		Council::do_propose_proposed(who, threshold, proposal, length_bound)
+	}
+
+	#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+	fn proposal_count() -> u32 {
+		Council::proposal_count()
+	}
 }
 
 impl pallet_msa::Config for Test {
@@ -158,11 +181,6 @@ impl pallet_msa::Config for Test {
 	type NumberOfBuckets = ConstU32<2>;
 	// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<20>;
-	// The origin that is allowed to create providers
-	#[cfg(not(feature = "frequency"))]
-	type CreateProviderOrigin = EnsureSigned<AccountId>;
-	#[cfg(feature = "frequency")]
-	type CreateProviderOrigin = EnsureNever<AccountId>;
 	// The origin that is allowed to create providers via governance
 	// It has to be this way so benchmarks will pass in CI.
 	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<

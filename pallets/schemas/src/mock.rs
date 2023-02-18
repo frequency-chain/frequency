@@ -1,24 +1,26 @@
 use frame_support::{
+	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64},
+	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse},
 	weights::{WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial},
 };
+use frame_system::EnsureRoot;
 
+use common_primitives::{node::AccountId, schema::SchemaId};
+pub use common_runtime::constants::*;
+use pallet_collective;
 use smallvec::smallvec;
-use sp_core::H256;
+use sp_core::{Encode, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
-	Perbill,
+	AccountId32, Perbill,
 };
-
-use common_primitives::schema::SchemaId;
 
 use crate as pallet_schemas;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
-pub type AccountId = u64;
 
 frame_support::construct_runtime!(
 	pub enum Test where
@@ -28,8 +30,23 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		SchemasPallet: pallet_schemas::{Pallet, Call, Storage, Event<T>},
+		Council: pallet_collective::<Instance1>::{Pallet, Call, Config<T,I>, Storage, Event<T>, Origin<T>},
 	}
 );
+
+// See https://paritytech.github.io/substrate/master/pallet_collective/index.html for
+// the descriptions of these configs.
+type CouncilCollective = pallet_collective::Instance1;
+impl pallet_collective::Config<CouncilCollective> for Test {
+	type RuntimeOrigin = RuntimeOrigin;
+	type Proposal = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type MotionDuration = CouncilMotionDuration;
+	type MaxProposals = CouncilMaxProposals;
+	type MaxMembers = CouncilMaxMembers;
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type WeightInfo = ();
+}
 
 parameter_types! {
 	pub const MaxSchemaRegistrations: SchemaId = 64_000;
@@ -50,6 +67,34 @@ impl WeightToFeePolynomial for WeightToFee {
 	}
 }
 
+/// Interface to collective pallet to propose a proposal.
+pub struct CouncilProposalProvider;
+
+impl pallet_schemas::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
+	fn propose(
+		who: AccountId,
+		threshold: u32,
+		proposal: Box<RuntimeCall>,
+	) -> Result<(u32, u32), DispatchError> {
+		let length_bound: u32 = proposal.using_encoded(|p| p.len() as u32);
+		Council::do_propose_proposed(who, threshold, proposal, length_bound)
+	}
+
+	fn propose_with_simple_majority(
+		who: AccountId,
+		proposal: Box<RuntimeCall>,
+	) -> Result<(u32, u32), DispatchError> {
+		let threshold: u32 = ((Council::members().len() / 2) + 1) as u32;
+		let length_bound: u32 = proposal.using_encoded(|p| p.len() as u32);
+		Council::do_propose_proposed(who, threshold, proposal, length_bound)
+	}
+
+	#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+	fn proposal_count() -> u32 {
+		Council::proposal_count()
+	}
+}
+
 impl pallet_schemas::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
@@ -58,6 +103,16 @@ impl pallet_schemas::Config for Test {
 	// is actually allowed.
 	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<65_500>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
+	// The proposal type
+	type Proposal = RuntimeCall;
+	// The Council proposal provider interface
+	type ProposalProvider = CouncilProposalProvider;
+	// The origin that is allowed to create schemas via governance
+	// It has to be this way so benchmarks will pass in CI.
+	type CreateSchemaViaGovernanceOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
+	>;
 }
 
 impl frame_system::Config for Test {
@@ -92,4 +147,15 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into();
 	ext.execute_with(|| System::set_block_number(1));
 	ext
+}
+
+/// Create and return a simple test AccountId32 constructed with the desired integer.
+pub fn test_public(n: u8) -> AccountId32 {
+	AccountId32::new([n; 32])
+}
+
+/// Create and return a simple signed origin from a test_public constructed with the desired integer,
+/// for passing to an extrinsic call
+pub fn test_origin_signed(n: u8) -> RuntimeOrigin {
+	RuntimeOrigin::signed(test_public(n))
 }

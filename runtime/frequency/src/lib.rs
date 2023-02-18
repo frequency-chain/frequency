@@ -60,10 +60,7 @@ use frame_system::{
 	EnsureRoot, RawOrigin,
 };
 
-#[cfg(feature = "frequency")]
-use frame_system::EnsureNever;
-#[cfg(not(feature = "frequency"))]
-use frame_system::EnsureSigned;
+use sp_std::boxed::Box;
 
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
@@ -89,7 +86,7 @@ use frame_support::traits::TryStateSelect;
 /// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;
 
-impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
+impl ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
 	fn propose(
 		who: AccountId,
 		threshold: u32,
@@ -97,6 +94,20 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalPro
 	) -> Result<(u32, u32), DispatchError> {
 		let length_bound: u32 = proposal.using_encoded(|p| p.len() as u32);
 		Council::do_propose_proposed(who, threshold, proposal, length_bound)
+	}
+
+	fn propose_with_simple_majority(
+		who: AccountId,
+		proposal: Box<RuntimeCall>,
+	) -> Result<(u32, u32), DispatchError> {
+		let threshold: u32 = ((Council::members().len() / 2) + 1) as u32;
+		let length_bound: u32 = proposal.using_encoded(|p| p.len() as u32);
+		Council::do_propose_proposed(who, threshold, proposal, length_bound)
+	}
+
+	#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+	fn proposal_count() -> u32 {
+		Council::proposal_count()
 	}
 }
 
@@ -119,8 +130,9 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 			match call {
 				// Utility Calls are blocked. Issue #599
 				RuntimeCall::Utility(..) => false,
-				// Create provider is not allowed in mainnet for now. See propose_...
+				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
+				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
 				// Allowed Mainnet
 				RuntimeCall::System(..) |
 				RuntimeCall::Timestamp(..) |
@@ -410,7 +422,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 15,
+	spec_version: 16,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -511,10 +523,6 @@ impl pallet_msa::Config for Runtime {
 	type WeightInfo = pallet_msa::weights::SubstrateWeight<Runtime>;
 	// The conversion to a 32 byte AccountId
 	type ConvertIntoAccountId32 = ConvertInto;
-	// The proposal type
-	type Proposal = RuntimeCall;
-	// The Council proposal provider interface
-	type ProposalProvider = CouncilProposalProvider;
 	// The maximum number of public keys per MSA
 	type MaxPublicKeysPerMsa = MsaMaxPublicKeysPerMsa;
 	// The maximum number of schema grants per delegation
@@ -531,11 +539,10 @@ impl pallet_msa::Config for Runtime {
 	type NumberOfBuckets = MSANumberOfBuckets;
 	// The maximum number of signatures that can be stored in the payload signature registry
 	type MaxSignaturesStored = MSAMaxSignaturesStored;
-	// The origin that is allowed to create providers
-	#[cfg(not(feature = "frequency"))]
-	type CreateProviderOrigin = EnsureSigned<AccountId>;
-	#[cfg(feature = "frequency")]
-	type CreateProviderOrigin = EnsureNever<AccountId>;
+	// The proposal type
+	type Proposal = RuntimeCall;
+	// The Council proposal provider interface
+	type ProposalProvider = CouncilProposalProvider;
 	// The origin that is allowed to create providers via governance
 	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
@@ -554,6 +561,15 @@ impl pallet_schemas::Config for Runtime {
 	type MaxSchemaRegistrations = SchemasMaxRegistrations;
 	// The maximum length of a schema model (in bytes)
 	type SchemaModelMaxBytesBoundedVecLimit = SchemasMaxBytesBoundedVecLimit;
+	// The proposal type
+	type Proposal = RuntimeCall;
+	// The Council proposal provider interface
+	type ProposalProvider = CouncilProposalProvider;
+	// The origin that is allowed to create schemas via governance
+	type CreateSchemaViaGovernanceOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
+	>;
 }
 
 pub struct RootAsVestingPallet;
