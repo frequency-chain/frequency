@@ -39,18 +39,28 @@ benchmarks! {
 	apply_item_actions {
 		let n in 1 .. T::MaxItemizedActionsCount::get() - 1;
 		let s in 1 .. T::MaxItemizedBlobSizeBytes::get()- 1;
+		let p in 1 .. T::MaxItemizedPageSizeBytes::get()- 1;
 		let provider_msa_id = 1u64;
 		let delegator_msa_id = 2u64;
 		let schema_id = ITEMIZED_SCHEMA;
 		let caller: T::AccountId = whitelisted_caller();
+		let payload = vec![0u8; s as usize];
+		let num_of_items = p / (T::MaxItemizedPageSizeBytes::get() + 2);
+		let key = (schema_id,);
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
 		assert_ok!(create_schema::<T>(PayloadLocation::Itemized));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
 
+		for _ in 0..num_of_items {
+			let actions = itemized_actions_add::<T>(1, T::MaxItemizedBlobSizeBytes::get() as usize);
+			let content_hash = StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage::<T>>(&delegator_msa_id, &key).unwrap().unwrap_or_default().get_hash();
+			assert_ok!(StatefulStoragePallet::<T>::apply_item_actions(RawOrigin::Signed(caller.clone()).into(), delegator_msa_id.into(), schema_id, content_hash, actions));
+		}
+
 		let actions = itemized_actions_add::<T>(n, s as usize);
-	}: _ (RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, actions, NONEXISTENT_PAGE_HASH)
+	}: _ (RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, NONEXISTENT_PAGE_HASH, actions)
 	verify {
 		let page_result = StatefulStoragePallet::<T>::get_itemized_page(delegator_msa_id, schema_id);
 		assert!(page_result.is_some());
@@ -71,7 +81,7 @@ benchmarks! {
 		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
-	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id, NONEXISTENT_PAGE_HASH, payload)
+	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id, NONEXISTENT_PAGE_HASH, payload.try_into().unwrap())
 	verify {
 		let page_result = StatefulStoragePallet::<T>::get_paginated_page(delegator_msa_id, schema_id, page_id);
 		assert!(page_result.is_some());

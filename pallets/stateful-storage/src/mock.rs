@@ -1,4 +1,5 @@
 use crate as pallet_stateful_storage;
+use codec::Encode;
 
 use common_primitives::{
 	msa::{
@@ -12,13 +13,13 @@ use frame_support::{
 	dispatch::DispatchResult,
 	parameter_types,
 	traits::{ConstU16, ConstU64},
-	Twox128,
+	StorageHasher, Twox128, Twox256,
 };
 use frame_system as system;
-use sp_core::H256;
+use sp_core::{crypto::AccountId32, H256};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, Convert, IdentityLookup},
 	DispatchError,
 };
 
@@ -72,6 +73,7 @@ parameter_types! {
 	pub const MaxItemizedActionsCount: u32 = 6;
 
 	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
+	pub const StatefulMortalityWindowSize: u32 = 10;
 }
 
 pub const INVALID_SCHEMA_ID: SchemaId = SchemaId::MAX;
@@ -334,6 +336,18 @@ impl pallet_stateful_storage::Config for Test {
 	#[cfg(feature = "runtime-benchmarks")]
 	type SchemaBenchmarkHelper = ();
 	type KeyHasher = Twox128;
+	/// The conversion to a 32 byte AccountId
+	type ConvertIntoAccountId32 = LocalConvertInto;
+	/// The number of blocks per virtual bucket
+	type MortalityWindowSize = StatefulMortalityWindowSize;
+}
+
+pub struct LocalConvertInto;
+impl Convert<u64, AccountId32> for LocalConvertInto {
+	fn convert(a: u64) -> AccountId32 {
+		let h = Twox256::hash(&a.encode()[..]);
+		h.into()
+	}
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
