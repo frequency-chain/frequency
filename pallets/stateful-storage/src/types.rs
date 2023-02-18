@@ -1,23 +1,30 @@
 use crate::Config;
 use codec::{Decode, Encode, MaxEncodedLen};
-use common_primitives::{schema::SchemaId, stateful_storage::PageId};
+use common_primitives::{msa::MessageSourceId, schema::SchemaId, stateful_storage::PageId};
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
 use sp_std::{cmp::*, collections::btree_map::BTreeMap, fmt::Debug, prelude::*};
 
+/// Type of Itemized Storage key
 pub type ItemizedKey = (SchemaId,);
+/// Type of Paginated Storage key
 pub type PaginatedKey = (SchemaId, PageId);
+/// Type of Paginated Storage prefix key
 pub type PaginatedPrefixKey = (SchemaId,);
 /// Itemized page type
 pub type ItemizedPage<T> = Page<<T as Config>::MaxItemizedPageSizeBytes>;
 /// Paginated Page type
 pub type PaginatedPage<T> = Page<<T as Config>::MaxPaginatedPageSizeBytes>;
+/// Type used in calculating hash of pages
+pub type PageHash = u32;
 
 /// Defines the actions that can be applied to an Itemized storage
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, PartialOrd, Ord)]
 pub enum ItemAction {
+	/// Adding new Item into page
 	Add { data: Vec<u8> },
+	/// removing a new item by index number. Index number starts from 0
 	Delete { index: u16 },
 }
 
@@ -29,12 +36,55 @@ pub struct ItemHeader {
 	pub payload_len: u16,
 }
 
+/// Errors dedicated to parsing or modifying pages
 #[derive(Debug, PartialEq)]
 pub enum PageError {
 	ErrorParsing(&'static str),
 	InvalidAction(&'static str),
 	ArithmeticOverflow,
 	PageSizeOverflow,
+}
+
+/// Payload containing all necessary fields to verify Itemized related signatures
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[scale_info(skip_type_params(T))]
+pub struct ItemizedSignaturePayload<T: Config> {
+	#[codec(compact)]
+	pub msa_id: MessageSourceId,
+	#[codec(compact)]
+	pub schema_id: SchemaId,
+	pub target_hash: PageHash,
+	pub expiration: T::BlockNumber,
+	pub actions: BoundedVec<ItemAction, <T as Config>::MaxItemizedActionsCount>,
+}
+
+/// Payload containing all necessary fields to verify signatures to upsert a Paginated storage
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[scale_info(skip_type_params(T))]
+pub struct PaginatedUpsertSignaturePayload<T: Config> {
+	#[codec(compact)]
+	pub msa_id: MessageSourceId,
+	#[codec(compact)]
+	pub schema_id: SchemaId,
+	#[codec(compact)]
+	pub page_id: PageId,
+	pub target_hash: PageHash,
+	pub expiration: T::BlockNumber,
+	pub payload: BoundedVec<u8, <T as Config>::MaxPaginatedPageSizeBytes>,
+}
+
+/// Payload containing all necessary fields to verify signatures to delete a Paginated storage
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[scale_info(skip_type_params(T))]
+pub struct PaginatedDeleteSignaturePayload<T: Config> {
+	#[codec(compact)]
+	pub msa_id: MessageSourceId,
+	#[codec(compact)]
+	pub schema_id: SchemaId,
+	#[codec(compact)]
+	pub page_id: PageId,
+	pub target_hash: PageHash,
+	pub expiration: T::BlockNumber,
 }
 
 /// A generic page of data which supports both Itemized and Paginated

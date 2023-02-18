@@ -44,34 +44,6 @@ struct TestStruct {
 }
 
 #[test]
-fn upsert_page_too_large_errors() {
-	new_test_ext().execute_with(|| {
-		// setup
-		let caller_1 = 5;
-		let msa_id = 1;
-		let schema_id = 1;
-		let page_id = 0;
-		let payload =
-			vec![
-				1;
-				TryInto::<usize>::try_into(<Test as Config>::MaxPaginatedPageSizeBytes::get())
-					.unwrap() + 1
-			];
-
-		assert_err!(
-			StatefulStoragePallet::upsert_page(
-				RuntimeOrigin::signed(caller_1),
-				msa_id,
-				schema_id,
-				page_id,
-				payload
-			),
-			Error::<Test>::PageExceedsMaxPageSizeBytes
-		)
-	})
-}
-
-#[test]
 fn upsert_page_id_out_of_bounds_errors() {
 	new_test_ext().execute_with(|| {
 		// setup
@@ -79,7 +51,7 @@ fn upsert_page_id_out_of_bounds_errors() {
 		let msa_id = 1;
 		let schema_id = 1;
 		let page_id = <Test as Config>::MaxPaginatedPageId::get() + 1;
-		let payload = vec![1; 1];
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
 		assert_err!(
 			StatefulStoragePallet::upsert_page(
@@ -100,9 +72,9 @@ fn upsert_page_with_invalid_msa_errors() {
 		// setup
 		let caller_1 = 1000; // hard-coded in mocks to return None for MSA
 		let msa_id = 1;
-		let schema_id = 1;
+		let schema_id = PAGINATED_SCHEMA;
 		let page_id = 1;
-		let payload = vec![1; 1];
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
 		assert_err!(
 			StatefulStoragePallet::upsert_page(
@@ -125,7 +97,7 @@ fn upsert_page_with_invalid_schema_id_errors() {
 		let msa_id = 1;
 		let schema_id = INVALID_SCHEMA_ID;
 		let page_id = 1;
-		let payload = vec![1; 1];
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
 		assert_err!(
 			StatefulStoragePallet::upsert_page(
@@ -148,7 +120,7 @@ fn upsert_page_with_invalid_schema_payload_location_errors() {
 		let msa_id = 1;
 		let schema_id = ITEMIZED_SCHEMA;
 		let page_id = 1;
-		let payload = vec![1; 1];
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
 		assert_err!(
 			StatefulStoragePallet::upsert_page(
@@ -171,7 +143,7 @@ fn upsert_page_with_no_delegation_errors() {
 		let msa_id = 1;
 		let schema_id = UNDELEGATED_PAGINATED_SCHEMA;
 		let page_id = 1;
-		let payload = vec![1; 1];
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
 		assert_err!(
 			StatefulStoragePallet::upsert_page(
@@ -271,7 +243,7 @@ fn delete_page_with_invalid_msa_errors() {
 		// setup
 		let caller_1 = 1000; // hard-coded in mocks to return None for MSA
 		let msa_id = 1;
-		let schema_id = 1;
+		let schema_id = PAGINATED_SCHEMA;
 		let page_id = 1;
 
 		assert_err!(
