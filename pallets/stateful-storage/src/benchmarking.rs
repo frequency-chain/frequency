@@ -3,7 +3,7 @@ use crate::{types::ItemAction, Pallet as StatefulStoragePallet};
 use codec::Encode;
 use common_primitives::{
 	schema::{ModelType, PayloadLocation, SchemaId},
-	stateful_storage::PageId,
+	stateful_storage::{PageHash, PageId},
 };
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::assert_ok;
@@ -13,6 +13,7 @@ use stateful_child_tree::StatefulChildTree;
 
 pub const ITEMIZED_SCHEMA: SchemaId = 100; // keep in sync with mock.rs. TODO: refactor
 pub const PAGINATED_SCHEMA: SchemaId = 101; // keep in sync with mock.rs. TODO: refactor
+pub const NONEXISTENT_PAGE_HASH: PageHash = 0;
 
 fn itemized_actions_add<T: Config>(
 	n: u32,
@@ -42,7 +43,6 @@ benchmarks! {
 		let delegator_msa_id = 2u64;
 		let schema_id = ITEMIZED_SCHEMA;
 		let caller: T::AccountId = whitelisted_caller();
-		let payload = vec![0u8; s as usize];
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
 		assert_ok!(create_schema::<T>(PayloadLocation::Itemized));
@@ -50,7 +50,7 @@ benchmarks! {
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
 
 		let actions = itemized_actions_add::<T>(n, s as usize);
-	}: _ (RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, actions)
+	}: _ (RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, actions, NONEXISTENT_PAGE_HASH)
 	verify {
 		let page_result = StatefulStoragePallet::<T>::get_itemized_page(delegator_msa_id, schema_id);
 		assert!(page_result.is_some());
@@ -71,7 +71,7 @@ benchmarks! {
 		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
-	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id, payload)
+	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id, NONEXISTENT_PAGE_HASH, payload)
 	verify {
 		let page_result = StatefulStoragePallet::<T>::get_paginated_page(delegator_msa_id, schema_id, page_id);
 		assert!(page_result.is_some());
@@ -92,8 +92,9 @@ benchmarks! {
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
 
 		let key = (schema_id, page_id);
-		StatefulChildTree::<T::Hasher>::write(&delegator_msa_id, &key, payload.clone());
-	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id)
+		StatefulChildTree::<T::KeyHasher>::write(&delegator_msa_id, &key, payload.clone());
+		let content_hash = StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage::<T>>(&delegator_msa_id, &key).unwrap().unwrap().get_hash();
+	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id, content_hash)
 	verify {
 		let page_result = StatefulStoragePallet::<T>::get_paginated_page(delegator_msa_id, schema_id, page_id);
 		assert!(page_result.is_none());

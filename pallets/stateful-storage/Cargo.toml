@@ -20,6 +20,7 @@ log = { version = "0.4.17", default-features = false }
 scale-info = { version = "2.2.0", default-features = false, features = [
   "derive",
 ] }
+twox-hash = { version = "1.6.3", default-features = false, features = ["digest_0_10"] }
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.36" }
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
@@ -46,8 +47,7 @@ runtime-benchmarks = [
 std = [
   'codec/std',
   'scale-info/std',
-  'sp-std/std',
-  'sp-core/std',
+  'sp-std/std', 'sp-core/std',
   'sp-io/std',
   'sp-runtime/std',
   'frame-support/std',

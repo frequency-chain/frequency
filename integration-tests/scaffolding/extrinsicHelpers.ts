@@ -180,7 +180,7 @@ export class ExtrinsicHelper {
     }
 
     /** Schema Extrinsics */
-    public static createSchema(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS"| "Itemized" | "Paginated"): Extrinsic {
+    public static createSchema(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS" | "Itemized" | "Paginated"): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.createSchema(JSON.stringify(model), modelType, payloadLocation), keys, ExtrinsicHelper.api.events.schemas.SchemaCreated);
     }
 
@@ -236,23 +236,23 @@ export class ExtrinsicHelper {
     }
 
     /** Stateful Storage Extrinsics */
-    public static applyItemActions(keys: KeyringPair, schemaId: SchemaId, msa_id: MessageSourceId, actions: any, ): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActions( msa_id, schemaId, actions), keys, ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated);
+    public static applyItemActions(keys: KeyringPair, schemaId: any, msa_id: MessageSourceId, actions: any, target_hash: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActions(msa_id, schemaId, actions, target_hash), keys, ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated);
     }
 
-    public static removePage(keys: KeyringPair, schemaId: SchemaId, msa_id: MessageSourceId, page_id: any, ): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.deletePage( msa_id, schemaId, page_id), keys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted);
+    public static removePage(keys: KeyringPair, schemaId: any, msa_id: MessageSourceId, page_id: any, target_hash: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.deletePage(msa_id, schemaId, page_id, target_hash), keys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted);
     }
 
-    public static upsertPage(keys: KeyringPair, schemaId: SchemaId, msa_id: MessageSourceId, page_id: any, payload: any): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.upsertPage( msa_id, schemaId, page_id, payload), keys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated);
+    public static upsertPage(keys: KeyringPair, schemaId: any, msa_id: MessageSourceId, page_id: any, payload: any, target_hash: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.upsertPage(msa_id, schemaId, page_id, target_hash, payload), keys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated);
     }
 
-    public static getItemizedStorages(msa_id: MessageSourceId, schemaId: SchemaId): Promise<ItemizedStoragePageResponse> {
+    public static getItemizedStorages(msa_id: MessageSourceId, schemaId: any): Promise<ItemizedStoragePageResponse> {
         return firstValueFrom(ExtrinsicHelper.api.rpc.statefulStorage.getItemizedStorages(msa_id, schemaId));
     }
-    
-    public static getPaginatedStorages(msa_id: MessageSourceId, schemaId: SchemaId): Promise<Vec<PaginatedStorageResponse>> {
+
+    public static getPaginatedStorages(msa_id: MessageSourceId, schemaId: any): Promise<Vec<PaginatedStorageResponse>> {
         return firstValueFrom(ExtrinsicHelper.api.rpc.statefulStorage.getPaginatedStorages(msa_id, schemaId));
     }
 }
