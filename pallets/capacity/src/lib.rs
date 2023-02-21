@@ -524,7 +524,7 @@ impl<T: Config> Pallet<T> {
 		let thaw_at =
 			current_epoch.saturating_add(T::EpochNumber::from(T::UnstakingThawPeriod::get()));
 
-		let unstake_result = staking_account.deduct(amount, thaw_at)?;
+		let unstake_result = staking_account.withdraw(amount, thaw_at)?;
 
 		Self::set_staking_account(&unstaker, &staking_account);
 
@@ -546,8 +546,8 @@ impl<T: Config> Pallet<T> {
 			capacity_details.total_tokens_staked,
 			capacity_details.total_available,
 		);
-		staking_target_details.deduct(amount, capacity_reduction);
-		capacity_details.deduct(capacity_reduction, amount);
+		staking_target_details.withdraw(amount, capacity_reduction);
+		capacity_details.withdraw(capacity_reduction, amount);
 
 		Self::set_capacity_for(target, capacity_details);
 		Self::set_target_details_for(unstaker, target, staking_target_details);
@@ -591,7 +591,7 @@ impl<T: Config> Nontransferable for Pallet<T> {
 		}
 	}
 
-	fn deduct(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
+	fn withdraw(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
 		let mut capacity_details =
 			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
 

@@ -92,8 +92,8 @@ impl<T: Config> StakingAccountDetails<T> {
 		total_reaped
 	}
 
-	/// Decrease the amount of active stake by an amount and createa an UnlockChunk.
-	pub fn deduct(
+	/// Decrease the amount of active stake by an amount and create an UnlockChunk.
+	pub fn withdraw(
 		&mut self,
 		amount: BalanceOf<T>,
 		thaw_at: T::EpochNumber,
@@ -148,7 +148,7 @@ impl<Balance: Saturating + Copy + CheckedAdd> StakingTargetDetails<Balance> {
 	}
 
 	/// Decrease an MSA target Staking total and Capacity amount.
-	pub fn deduct(&mut self, amount: Balance, capacity: Balance) {
+	pub fn withdraw(&mut self, amount: Balance, capacity: Balance) {
 		self.amount = self.amount.saturating_sub(amount);
 		self.capacity = self.capacity.saturating_sub(capacity);
 	}
@@ -179,7 +179,7 @@ impl<Balance: Saturating + Copy + CheckedAdd, EpochNumber> CapacityDetails<Balan
 	}
 
 	/// Decrease a target's total available capacity.
-	pub fn deduct(&mut self, capacity_deduction: Balance, tokens_staked_deduction: Balance) {
+	pub fn withdraw(&mut self, capacity_deduction: Balance, tokens_staked_deduction: Balance) {
 		self.total_tokens_staked = self.total_tokens_staked.saturating_sub(tokens_staked_deduction);
 		self.total_available = self.total_available.saturating_sub(capacity_deduction);
 	}

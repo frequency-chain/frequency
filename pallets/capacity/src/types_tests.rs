@@ -115,14 +115,14 @@ fn impl_staking_capacity_details_increase_by() {
 }
 
 #[test]
-fn staking_account_details_deduct_reduces_active_staking_balance_and_creates_unlock_chunk() {
+fn staking_account_details_withdraw_reduces_active_staking_balance_and_creates_unlock_chunk() {
 	new_test_ext().execute_with(|| {
 		let mut staking_account_details = StakingAccountDetails::<Test> {
 			active: BalanceOf::<Test>::from(10u64),
 			total: BalanceOf::<Test>::from(10u64),
 			unlocking: BoundedVec::default(),
 		};
-		assert_eq!(Ok(3u64), staking_account_details.deduct(3, 3));
+		assert_eq!(Ok(3u64), staking_account_details.withdraw(3, 3));
 		let expected_chunks: UnlockBVec<Test> =
 			BoundedVec::try_from(vec![UnlockChunk { value: 3u64, thaw_at: 3u32 }]).unwrap();
 
@@ -138,21 +138,21 @@ fn staking_account_details_deduct_reduces_active_staking_balance_and_creates_unl
 }
 
 #[test]
-fn staking_account_details_deduct_goes_to_zero_when_result_below_minimum() {
+fn staking_account_details_withdraw_goes_to_zero_when_result_below_minimum() {
 	new_test_ext().execute_with(|| {
 		let mut staking_account_details = StakingAccountDetails::<Test> {
 			active: BalanceOf::<Test>::from(10u64),
 			total: BalanceOf::<Test>::from(10u64),
 			unlocking: BoundedVec::default(),
 		};
-		assert_eq!(Ok(10u64), staking_account_details.deduct(6, 3));
+		assert_eq!(Ok(10u64), staking_account_details.withdraw(6, 3));
 		assert_eq!(0u64, staking_account_details.active);
 		assert_eq!(10u64, staking_account_details.total);
 	});
 }
 
 #[test]
-fn staking_account_details_deduct_returns_err_when_too_many_chunks() {
+fn staking_account_details_withdraw_returns_err_when_too_many_chunks() {
 	new_test_ext().execute_with(|| {
 		let maximum_chunks: UnlockBVec<Test> = BoundedVec::try_from(vec![
 			UnlockChunk { value: 1u64, thaw_at: 3u32 },
@@ -169,7 +169,7 @@ fn staking_account_details_deduct_returns_err_when_too_many_chunks() {
 		};
 
 		assert_noop!(
-			staking_account_details.deduct(6, 3),
+			staking_account_details.withdraw(6, 3),
 			Error::<Test>::MaxUnlockingChunksExceeded
 		);
 		assert_eq!(10u64, staking_account_details.active);
@@ -178,13 +178,13 @@ fn staking_account_details_deduct_returns_err_when_too_many_chunks() {
 }
 
 #[test]
-fn staking_target_details_deduct_reduces_staking_and_capacity_amounts() {
+fn staking_target_details_withdraw_reduces_staking_and_capacity_amounts() {
 	new_test_ext().execute_with(|| {
 		let mut staking_target_details = StakingTargetDetails::<BalanceOf<Test>> {
 			amount: BalanceOf::<Test>::from(15u64),
 			capacity: BalanceOf::<Test>::from(20u64),
 		};
-		staking_target_details.deduct(10, 10);
+		staking_target_details.withdraw(10, 10);
 
 		assert_eq!(
 			staking_target_details,
@@ -197,7 +197,7 @@ fn staking_target_details_deduct_reduces_staking_and_capacity_amounts() {
 }
 
 #[test]
-fn staking_capacity_details_deduct_reduces_total_tokens_staked_and_total_tokens_available() {
+fn staking_capacity_details_withdraw_reduces_total_tokens_staked_and_total_tokens_available() {
 	new_test_ext().execute_with(|| {
 		let mut capacity_details =
 			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
@@ -206,7 +206,7 @@ fn staking_capacity_details_deduct_reduces_total_tokens_staked_and_total_tokens_
 				total_available: BalanceOf::<Test>::from(10u64),
 				last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32),
 			};
-		capacity_details.deduct(4, 5);
+		capacity_details.withdraw(4, 5);
 
 		assert_eq!(
 			capacity_details,
