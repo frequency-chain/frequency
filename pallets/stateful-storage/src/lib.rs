@@ -67,7 +67,7 @@ use common_primitives::{
 	msa::{DelegatorId, MessageSourceId, MsaValidator, ProviderId, SchemaGrantValidator},
 	schema::{PayloadLocation, SchemaId, SchemaProvider},
 	stateful_storage::{
-		ItemizedStoragePageResponse, ItemizedStorageResponse, PaginatedStorageResponse,
+		ItemizedStoragePageResponse, ItemizedStorageResponse, PageHash, PaginatedStorageResponse,
 	},
 };
 use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
@@ -238,15 +238,25 @@ pub mod pallet {
 				PayloadLocation::Itemized,
 			)?;
 
+			let prev_content_hash: PageHash;
 			let key: ItemizedKey = (schema_id,);
-			let updated_page = StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
-				&state_owner_msa_id,
-				&key,
-			)
-			.map_err(|_| Error::<T>::CorruptedState)?
-			.unwrap_or_default();
+			let updated_page =
+				match StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
+					&state_owner_msa_id,
+					&key,
+				)
+				.map_err(|_| Error::<T>::CorruptedState)?
+				{
+					Some(p) => {
+						prev_content_hash = p.get_hash();
+						p
+					},
+					None => {
+						prev_content_hash = 0;
+						ItemizedPage::<T>::default()
+					},
+				};
 
-			let prev_content_hash = updated_page.get_hash();
 			ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
 
 			let updated_page =
@@ -427,13 +437,23 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::SchemaPayloadLocationMismatch
 		);
 		let key: ItemizedKey = (schema_id,);
-		// let items: Vec<ItemizedStorageResponse> =
-		let page = StatefulChildTree::<T::KeyHasher>::try_read::<ItemizedKey, ItemizedPage<T>>(
-			&msa_id, &key,
-		)
-		.map_err(|_| Error::<T>::CorruptedState)?
-		.unwrap_or_default();
-		let content_hash = page.get_hash();
+		let content_hash: PageHash;
+		let page =
+			match StatefulChildTree::<T::KeyHasher>::try_read::<ItemizedKey, ItemizedPage<T>>(
+				&msa_id, &key,
+			)
+			.map_err(|_| Error::<T>::CorruptedState)?
+			{
+				Some(p) => {
+					content_hash = p.get_hash();
+					p
+				},
+				None => {
+					content_hash = 0;
+					ItemizedPage::<T>::default()
+				},
+			};
+
 		let items: Vec<ItemizedStorageResponse> = page
 			.parse_as_itemized(false)
 			.map_err(|_| Error::<T>::CorruptedState)?

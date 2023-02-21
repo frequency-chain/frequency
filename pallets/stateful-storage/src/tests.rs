@@ -16,13 +16,7 @@ use twox_hash::XxHash32;
 type ItemizedPageSize = <Test as Config>::MaxItemizedPageSizeBytes;
 type PaginatedPageSize = <Test as Config>::MaxPaginatedPageSizeBytes;
 
-fn itemized_default_hash() -> PageHash {
-	ItemizedPage::<Test>::default().get_hash()
-}
-
-fn paginated_default_hash() -> PageHash {
-	PaginatedPage::<Test>::default().get_hash()
-}
+const NONEXISTENT_PAGE_HASH: u32 = 0;
 
 fn generate_payload_bytes<T: Get<u32>>(id: Option<u8>) -> BoundedVec<u8, T> {
 	let value = id.unwrap_or(1);
@@ -333,7 +327,7 @@ fn delete_page_id_out_of_bounds_errors() {
 				msa_id,
 				schema_id,
 				page_id,
-				paginated_default_hash(),
+				NONEXISTENT_PAGE_HASH,
 			),
 			Error::<Test>::PageIdExceedsMaxAllowed
 		);
@@ -355,7 +349,7 @@ fn delete_page_with_invalid_msa_errors() {
 				msa_id,
 				schema_id,
 				page_id,
-				paginated_default_hash(),
+				NONEXISTENT_PAGE_HASH,
 			),
 			Error::<Test>::InvalidMessageSourceAccount
 		)
@@ -377,7 +371,7 @@ fn delete_page_with_invalid_schema_id_errors() {
 				msa_id,
 				schema_id,
 				page_id,
-				paginated_default_hash(),
+				NONEXISTENT_PAGE_HASH,
 			),
 			Error::<Test>::InvalidSchemaId
 		)
@@ -399,7 +393,7 @@ fn delete_page_with_invalid_schema_payload_location_errors() {
 				msa_id,
 				schema_id,
 				page_id,
-				paginated_default_hash(),
+				NONEXISTENT_PAGE_HASH,
 			),
 			Error::<Test>::SchemaPayloadLocationMismatch
 		)
@@ -421,7 +415,7 @@ fn delete_page_with_no_delegation_errors() {
 				msa_id,
 				schema_id,
 				page_id,
-				paginated_default_hash(),
+				NONEXISTENT_PAGE_HASH,
 			),
 			Error::<Test>::UnAuthorizedDelegate
 		)
@@ -442,7 +436,7 @@ fn delete_nonexistent_page_succeeds_noop() {
 			msa_id,
 			schema_id,
 			page_id,
-			paginated_default_hash(),
+			NONEXISTENT_PAGE_HASH,
 		));
 	})
 }
@@ -749,7 +743,7 @@ fn apply_item_actions_with_add_item_action_bigger_than_expected_should_fail() {
 				msa_id,
 				schema_id,
 				BoundedVec::try_from(actions).unwrap(),
-				itemized_default_hash(),
+				NONEXISTENT_PAGE_HASH,
 			),
 			Error::<Test>::ItemExceedsMaxBlobSizeBytes
 		)
@@ -773,7 +767,7 @@ fn apply_item_actions_with_invalid_msa_should_fail() {
 				msa_id,
 				schema_id,
 				BoundedVec::try_from(actions).unwrap(),
-				itemized_default_hash()
+				NONEXISTENT_PAGE_HASH
 			),
 			Error::<Test>::InvalidMessageSourceAccount
 		)
@@ -797,7 +791,7 @@ fn apply_item_actions_with_invalid_schema_id_should_fail() {
 				msa_id,
 				schema_id,
 				BoundedVec::try_from(actions).unwrap(),
-				itemized_default_hash()
+				NONEXISTENT_PAGE_HASH
 			),
 			Error::<Test>::InvalidSchemaId
 		)
@@ -821,7 +815,7 @@ fn apply_item_actions_with_invalid_schema_location_should_fail() {
 				msa_id,
 				schema_id,
 				BoundedVec::try_from(actions).unwrap(),
-				itemized_default_hash()
+				NONEXISTENT_PAGE_HASH
 			),
 			Error::<Test>::SchemaPayloadLocationMismatch
 		)
@@ -845,7 +839,7 @@ fn apply_item_actions_with_no_delegation_and_different_caller_from_owner_should_
 				msa_id,
 				schema_id,
 				BoundedVec::try_from(actions).unwrap(),
-				itemized_default_hash()
+				NONEXISTENT_PAGE_HASH
 			),
 			Error::<Test>::UnAuthorizedDelegate
 		)
@@ -902,7 +896,7 @@ fn apply_item_actions_initial_state_with_stale_hash_should_fail() {
 				msa_id,
 				schema_id,
 				BoundedVec::try_from(actions1).unwrap(),
-				0u32,
+				1u32, // any non-zero value
 			),
 			Error::<Test>::StalePageState
 		)
@@ -947,7 +941,7 @@ fn apply_item_actions_initial_state_with_valid_input_should_update_storage() {
 		let msa_id = 1;
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let prev_content_hash: PageHash = itemized_default_hash();
+		let prev_content_hash: PageHash = 0;
 		let actions = vec![ItemAction::Add { data: payload }];
 
 		// act
@@ -1035,7 +1029,7 @@ fn apply_item_actions_with_valid_input_and_empty_items_should_remove_storage() {
 			msa_id,
 			schema_id,
 			BoundedVec::try_from(actions1).unwrap(),
-			itemized_default_hash()
+			NONEXISTENT_PAGE_HASH
 		));
 
 		let items1: Option<ItemizedPage<Test>> =
