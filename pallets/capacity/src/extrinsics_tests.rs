@@ -17,7 +17,7 @@ fn withdraw_unstaked_happy_path() {
 		let mut staking_account = StakingAccountDetails::<Test>::default();
 
 		// we have 10 total staked, and 6 of those are unstaking.
-		staking_account.increase_by(10);
+		staking_account.deposit(10);
 		assert_eq!(true, staking_account.set_unlock_chunks(&unlocks));
 		assert_eq!(10u64, staking_account.total);
 		Capacity::set_staking_account(&staker, &staking_account.into());
@@ -46,7 +46,7 @@ fn withdraw_unstaked_correctly_sets_new_lock_state() {
 	new_test_ext().execute_with(|| {
 		let staker = 500;
 		let mut staking_account = StakingAccountDetails::<Test>::default();
-		staking_account.increase_by(10);
+		staking_account.deposit(10);
 
 		// set new unlock chunks using tuples of (value, thaw_at)
 		let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
@@ -72,7 +72,7 @@ fn withdraw_unstaked_cleans_up_storage_and_removes_all_locks_if_no_stake_left() 
 	new_test_ext().execute_with(|| {
 		let mut staking_account = StakingAccountDetails::<Test>::default();
 		let staking_amount: BalanceOf<Test> = 10;
-		staking_account.increase_by(staking_amount);
+		staking_account.deposit(staking_amount);
 
 		// set new unlock chunks using tuples of (value, thaw_at)
 		let new_unlocks: Vec<(u32, u32)> = vec![(10u32, 2u32)];
@@ -96,7 +96,7 @@ fn withdraw_unstaked_cannot_withdraw_if_no_unstaking_chunks() {
 	new_test_ext().execute_with(|| {
 		let staker = 500;
 		let mut staking_account = StakingAccountDetails::<Test>::default();
-		staking_account.increase_by(10);
+		staking_account.deposit(10);
 		Capacity::set_staking_account(&staker, &staking_account);
 		assert_noop!(
 			Capacity::withdraw_unstaked(RuntimeOrigin::signed(500)),
@@ -109,7 +109,7 @@ fn withdraw_unstaked_cannot_withdraw_if_unstaking_chunks_not_thawed() {
 	new_test_ext().execute_with(|| {
 		let staker = 500;
 		let mut staking_account = StakingAccountDetails::<Test>::default();
-		staking_account.increase_by(10);
+		staking_account.deposit(10);
 
 		// set new unlock chunks using tuples of (value, thaw_at)
 		let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 3u32), (2u32, 40u32), (3u32, 9u32)];
@@ -393,7 +393,7 @@ fn unstake_happy_path() {
 		let token_account = 200;
 		let target: MessageSourceId = 1;
 		let staking_amount = 10;
-		let unstaking_amount = 5;
+		let unstaking_amount = 4;
 
 		register_provider(target, String::from("Test Target"));
 
@@ -411,15 +411,16 @@ fn unstake_happy_path() {
 		let expected_unlocking_chunks: BoundedVec<
 			UnlockChunk<BalanceOf<Test>, <Test as Config>::EpochNumber>,
 			<Test as Config>::MaxUnlockingChunks,
-		> = BoundedVec::try_from(vec![UnlockChunk { value: 5u64, thaw_at: 2u32 }]).unwrap();
+		> = BoundedVec::try_from(vec![UnlockChunk { value: unstaking_amount, thaw_at: 2u32 }])
+			.unwrap();
 
 		assert_eq!(
-			staking_account_details,
 			StakingAccountDetails::<Test> {
-				active: BalanceOf::<Test>::from(5u64),
-				total: BalanceOf::<Test>::from(10u64),
+				active: BalanceOf::<Test>::from(6u64),
+				total: BalanceOf::<Test>::from(staking_amount),
 				unlocking: expected_unlocking_chunks,
-			}
+			},
+			staking_account_details,
 		);
 
 		// Assert that staking target detail values are decremented correctly after unstaking
@@ -428,8 +429,8 @@ fn unstake_happy_path() {
 		assert_eq!(
 			staking_target_details,
 			StakingTargetDetails::<BalanceOf<Test>> {
-				amount: BalanceOf::<Test>::from(5u64),
-				capacity: BalanceOf::<Test>::from(5u64),
+				amount: BalanceOf::<Test>::from(6u64),
+				capacity: BalanceOf::<Test>::from(6u64),
 			}
 		);
 
@@ -440,8 +441,8 @@ fn unstake_happy_path() {
 			capacity_details,
 			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
 				remaining: BalanceOf::<Test>::from(10u64),
-				total_tokens_staked: BalanceOf::<Test>::from(5u64),
-				total_available: BalanceOf::<Test>::from(5u64),
+				total_tokens_staked: BalanceOf::<Test>::from(6u64),
+				total_available: BalanceOf::<Test>::from(6u64),
 				last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32),
 			}
 		);
@@ -453,7 +454,7 @@ fn unstake_happy_path() {
 				account: token_account,
 				target,
 				amount: unstaking_amount,
-				capacity: BalanceOf::<Test>::from(5u64)
+				capacity: BalanceOf::<Test>::from(4u64)
 			}
 		);
 	});

@@ -34,7 +34,7 @@ pub struct UnlockChunk<Balance, EpochNumber> {
 
 impl<T: Config> StakingAccountDetails<T> {
 	/// Increases total and active balances by an amount.
-	pub fn increase_by(&mut self, amount: BalanceOf<T>) -> Option<()> {
+	pub fn deposit(&mut self, amount: BalanceOf<T>) -> Option<()> {
 		self.total = amount.checked_add(&self.total)?;
 		self.active = amount.checked_add(&self.active)?;
 
@@ -92,18 +92,33 @@ impl<T: Config> StakingAccountDetails<T> {
 		total_reaped
 	}
 
-	/// Decrease the amount of active stake by an amount and createa an UnlockChunk.
-	pub fn decrease_by(&mut self, amount: BalanceOf<T>, thaw_at: T::EpochNumber) -> DispatchResult {
-		let new_active = self.active.saturating_sub(amount);
+	/// Decrease the amount of active stake by an amount and create an UnlockChunk.
+	pub fn withdraw(
+		&mut self,
+		amount: BalanceOf<T>,
+		thaw_at: T::EpochNumber,
+	) -> Result<BalanceOf<T>, DispatchError> {
+		// let's check for an early exit before doing all these calcs
+		ensure!(
+			self.unlocking.len() < T::MaxUnlockingChunks::get() as usize,
+			Error::<T>::MaxUnlockingChunksExceeded
+		);
+		let mut active = self.active.saturating_sub(amount);
+		let mut actual_unstaked: BalanceOf<T> = amount;
 
-		let unlock_chunk = UnlockChunk { value: amount, thaw_at };
+		if active.le(&T::MinimumStakingAmount::get()) {
+			actual_unstaked = amount.saturating_add(active);
+			active = Zero::zero();
+		}
+		let unlock_chunk = UnlockChunk { value: actual_unstaked, thaw_at };
 
-		self.active = new_active;
+		// we've already done the check but it's fine, we need to handle possible errors.
 		self.unlocking
 			.try_push(unlock_chunk)
 			.map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
 
-		Ok(())
+		self.active = active;
+		Ok(actual_unstaked)
 	}
 }
 
@@ -125,7 +140,7 @@ pub struct StakingTargetDetails<Balance> {
 
 impl<Balance: Saturating + Copy + CheckedAdd> StakingTargetDetails<Balance> {
 	/// Increase an MSA target Staking total and Capacity amount.
-	pub fn increase_by(&mut self, amount: Balance, capacity: Balance) -> Option<()> {
+	pub fn deposit(&mut self, amount: Balance, capacity: Balance) -> Option<()> {
 		self.amount = amount.checked_add(&self.amount)?;
 		self.capacity = capacity.checked_add(&self.capacity)?;
 
@@ -133,7 +148,7 @@ impl<Balance: Saturating + Copy + CheckedAdd> StakingTargetDetails<Balance> {
 	}
 
 	/// Decrease an MSA target Staking total and Capacity amount.
-	pub fn decrease_by(&mut self, amount: Balance, capacity: Balance) {
+	pub fn withdraw(&mut self, amount: Balance, capacity: Balance) {
 		self.amount = self.amount.saturating_sub(amount);
 		self.capacity = self.capacity.saturating_sub(capacity);
 	}
@@ -154,7 +169,7 @@ pub struct CapacityDetails<Balance, EpochNumber> {
 
 impl<Balance: Saturating + Copy + CheckedAdd, EpochNumber> CapacityDetails<Balance, EpochNumber> {
 	/// Increase a targets Capacity balance by an amount.
-	pub fn increase_by(&mut self, amount: Balance, replenish_at: EpochNumber) -> Option<()> {
+	pub fn deposit(&mut self, amount: Balance, replenish_at: EpochNumber) -> Option<()> {
 		self.remaining = amount.checked_add(&self.remaining)?;
 		self.total_tokens_staked = amount.checked_add(&self.total_tokens_staked)?;
 		self.total_available = amount.checked_add(&self.total_available)?;
@@ -164,9 +179,9 @@ impl<Balance: Saturating + Copy + CheckedAdd, EpochNumber> CapacityDetails<Balan
 	}
 
 	/// Decrease a target's total available capacity.
-	pub fn decrease_by(&mut self, amount: Balance, token_reduction_amount: Balance) {
-		self.total_tokens_staked = self.total_tokens_staked.saturating_sub(token_reduction_amount);
-		self.total_available = self.total_available.saturating_sub(amount);
+	pub fn withdraw(&mut self, capacity_deduction: Balance, tokens_staked_deduction: Balance) {
+		self.total_tokens_staked = self.total_tokens_staked.saturating_sub(tokens_staked_deduction);
+		self.total_available = self.total_available.saturating_sub(capacity_deduction);
 	}
 }
 

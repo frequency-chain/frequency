@@ -185,7 +185,7 @@ fn set_staking_account_is_succesful() {
 	new_test_ext().execute_with(|| {
 		let staker = 100;
 		let mut staking_account = StakingAccountDetails::<Test>::default();
-		staking_account.increase_by(55);
+		staking_account.deposit(55);
 
 		Capacity::set_staking_account(&staker, &staking_account);
 
@@ -263,7 +263,7 @@ fn calculate_capacity_reduction_determines_the_correct_capacity_reduction_amount
 		total_capacity,
 	);
 
-	assert_eq!(capacity_reduction, 180);
+	assert_eq!(capacity_reduction, 20);
 }
 
 #[test]
@@ -293,7 +293,7 @@ fn impl_balance_returns_zero_when_target_capacity_is_not_found() {
 }
 
 #[test]
-fn impl_deduct_is_successful() {
+fn impl_withdraw_is_successful() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
 		let remaining_amount = BalanceOf::<Test>::from(10u32);
@@ -305,7 +305,7 @@ fn impl_deduct_is_successful() {
 			1u32,
 		);
 
-		assert_ok!(Capacity::deduct(target_msa_id, 5u32.into()));
+		assert_ok!(Capacity::withdraw(target_msa_id, 5u32.into()));
 
 		let mut capacity_details =
 			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber>::default();
@@ -320,19 +320,19 @@ fn impl_deduct_is_successful() {
 }
 
 #[test]
-fn impl_deduct_errors_target_capacity_not_found() {
+fn impl_withdraw_errors_target_capacity_not_found() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
 		let amount = BalanceOf::<Test>::from(10u32);
 		assert_noop!(
-			Capacity::deduct(target_msa_id, amount),
+			Capacity::withdraw(target_msa_id, amount),
 			Error::<Test>::TargetCapacityNotFound
 		);
 	});
 }
 
 #[test]
-fn impl_deduct_errors_insufficient_balance() {
+fn impl_withdraw_errors_insufficient_balance() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
 		let remaining_amount = BalanceOf::<Test>::from(10u32);
@@ -345,7 +345,7 @@ fn impl_deduct_errors_insufficient_balance() {
 		);
 
 		assert_noop!(
-			Capacity::deduct(target_msa_id, 20u32.into()),
+			Capacity::withdraw(target_msa_id, 20u32.into()),
 			Error::<Test>::InsufficientBalance
 		);
 

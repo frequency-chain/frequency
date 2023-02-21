@@ -58,7 +58,7 @@ benchmarks! {
 		let amount: BalanceOf<T> = T::MinimumStakingAmount::get();
 
 		let mut staking_account = StakingAccountDetails::<T>::default();
-		staking_account.increase_by(500u32.into());
+		staking_account.deposit(500u32.into());
 
 		// set new unlock chunks using tuples of (value, thaw_at)
 		let new_unlocks: Vec<(u32, u32)> = Vec::from([(50u32, 3u32), (50u32, 5u32)]);
@@ -95,9 +95,9 @@ benchmarks! {
 		let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
 		let mut capacity_details = CapacityDetails::<BalanceOf<T>, <T as Config>::EpochNumber>::default();
 
-		staking_account.increase_by(staking_amount);
-		target_details.increase_by(staking_amount, capacity_amount);
-		capacity_details.increase_by(capacity_amount, block_number.into());
+		staking_account.deposit(staking_amount);
+		target_details.deposit(staking_amount, capacity_amount);
+		capacity_details.deposit(capacity_amount, block_number.into());
 
 		Capacity::<T>::set_staking_account(&caller.clone(), &staking_account);
 		Capacity::<T>::set_target_details_for(&caller.clone(), target, target_details);

@@ -369,19 +369,19 @@ pub mod pallet {
 		pub fn unstake(
 			origin: OriginFor<T>,
 			target: MessageSourceId,
-			amount: BalanceOf<T>,
+			requested_amount: BalanceOf<T>,
 		) -> DispatchResult {
 			let unstaker = ensure_signed(origin)?;
 
-			ensure!(amount > Zero::zero(), Error::<T>::UnstakedAmountIsZero);
+			ensure!(requested_amount > Zero::zero(), Error::<T>::UnstakedAmountIsZero);
 
-			Self::decrease_active_staking_balance(&unstaker, amount)?;
-			let capacity_reduction = Self::reduce_capacity(&unstaker, target, amount)?;
+			let actual_amount = Self::decrease_active_staking_balance(&unstaker, requested_amount)?;
+			let capacity_reduction = Self::reduce_capacity(&unstaker, target, actual_amount)?;
 
 			Self::deposit_event(Event::UnStaked {
 				account: unstaker,
 				target,
-				amount,
+				amount: actual_amount,
 				capacity: capacity_reduction,
 			});
 			Ok(())
@@ -447,15 +447,15 @@ impl<T: Config> Pallet<T> {
 		target: MessageSourceId,
 		amount: BalanceOf<T>,
 	) -> Result<BalanceOf<T>, DispatchError> {
-		staking_account.increase_by(amount).ok_or(ArithmeticError::Overflow)?;
+		staking_account.deposit(amount).ok_or(ArithmeticError::Overflow)?;
 
 		let capacity = Self::calculate_capacity(amount);
 		let mut target_details = Self::get_target_for(&staker, &target).unwrap_or_default();
-		target_details.increase_by(amount, capacity).ok_or(ArithmeticError::Overflow)?;
+		target_details.deposit(amount, capacity).ok_or(ArithmeticError::Overflow)?;
 
 		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
 		capacity_details
-			.increase_by(amount, Self::get_current_epoch())
+			.deposit(amount, Self::get_current_epoch())
 			.ok_or(ArithmeticError::Overflow)?;
 
 		Self::set_staking_account(&staker, staking_account);
@@ -515,7 +515,7 @@ impl<T: Config> Pallet<T> {
 	fn decrease_active_staking_balance(
 		unstaker: &T::AccountId,
 		amount: BalanceOf<T>,
-	) -> DispatchResult {
+	) -> Result<BalanceOf<T>, DispatchError> {
 		let mut staking_account =
 			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::StakingAccountNotFound)?;
 		ensure!(amount <= staking_account.active, Error::<T>::AmountToUnstakeExceedsAmountStaked);
@@ -524,10 +524,11 @@ impl<T: Config> Pallet<T> {
 		let thaw_at =
 			current_epoch.saturating_add(T::EpochNumber::from(T::UnstakingThawPeriod::get()));
 
-		staking_account.decrease_by(amount, thaw_at)?;
+		let unstake_result = staking_account.withdraw(amount, thaw_at)?;
+
 		Self::set_staking_account(&unstaker, &staking_account);
 
-		Ok(())
+		Ok(unstake_result)
 	}
 
 	/// Reduce available capacity of target and return the amount of capacity reduction.
@@ -545,8 +546,8 @@ impl<T: Config> Pallet<T> {
 			capacity_details.total_tokens_staked,
 			capacity_details.total_available,
 		);
-		staking_target_details.decrease_by(amount, capacity_reduction);
-		capacity_details.decrease_by(capacity_reduction, amount);
+		staking_target_details.withdraw(amount, capacity_reduction);
+		capacity_details.withdraw(capacity_reduction, amount);
 
 		Self::set_capacity_for(target, capacity_details);
 		Self::set_target_details_for(unstaker, target, staking_target_details);
@@ -560,8 +561,7 @@ impl<T: Config> Pallet<T> {
 		total_amount_staked: BalanceOf<T>,
 		total_capacity: BalanceOf<T>,
 	) -> BalanceOf<T> {
-		let rate = Perbill::from_rational(unstaking_amount, total_amount_staked);
-		total_capacity.saturating_sub(rate.mul_ceil(total_capacity))
+		Perbill::from_rational(unstaking_amount, total_amount_staked).mul_ceil(total_capacity)
 	}
 
 	fn start_new_epoch_if_needed(current_block: T::BlockNumber) -> Weight {
@@ -591,7 +591,7 @@ impl<T: Config> Nontransferable for Pallet<T> {
 		}
 	}
 
-	fn deduct(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
+	fn withdraw(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
 		let mut capacity_details =
 			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
 
