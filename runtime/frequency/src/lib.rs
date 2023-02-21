@@ -196,7 +196,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 11,
+	spec_version: 20,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -324,6 +324,8 @@ impl pallet_schemas::Config for Runtime {
 	type MaxSchemaRegistrations = SchemasMaxRegistrations;
 	// The maximum length of a schema model (in bytes)
 	type SchemaModelMaxBytesBoundedVecLimit = SchemasMaxBytesBoundedVecLimit;
+	// Maximum number of schema grants that are allowed per schema
+	type MaxSchemaSettingsPerSchema = MaxSchemaSettingsPerSchema;
 }
 
 pub struct RootAsVestingPallet;

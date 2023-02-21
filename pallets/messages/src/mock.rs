@@ -218,6 +218,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::Parquet,
 				payload_location: PayloadLocation::IPFS,
+				settings: Vec::new(),
 			})
 		}
 
@@ -226,6 +227,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 			model: r#"schema"#.to_string().as_bytes().to_vec(),
 			model_type: ModelType::AvroBinary,
 			payload_location: PayloadLocation::OnChain,
+			settings: Vec::new(),
 		})
 	}
 }

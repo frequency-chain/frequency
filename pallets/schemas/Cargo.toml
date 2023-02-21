@@ -32,6 +32,7 @@ sp-core = { default-features = false, git = "https://github.com/paritytech/subst
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
 

@@ -22,7 +22,7 @@ describe("📗 Stateful Pallet Storage", () => {
         assert.notEqual(providerKeys, undefined, "setup should populate providerKeys");
 
         // Create a schema for Paginated PayloadLocation
-        const createSchema = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
+        const createSchema = ExtrinsicHelper.createSchemaWithSettings(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated", "SignatureRequired");
         const [event] = await createSchema.fundAndSend();
         if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
             schemaId = event.data.schemaId;

@@ -979,6 +979,7 @@ dependencies = [
 name = "common-primitives"
 version = "0.0.0"
 dependencies = [
+ "enumflags2",
  "frame-support",
  "impl-serde",
  "parity-scale-codec",
