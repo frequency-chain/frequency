@@ -3,12 +3,17 @@ description: Shared action that allows to reset a runner to its original state
 runs:
   using: "composite"
   steps:
+    - name: Remove /home/runner
+      shell: bash
+      run: |
+        echo "Removing no longer used /home/runner dir..."
+        rm -fr /home/runner
     - name: Remove Cargo Generated Artifacts
       shell: bash
       run: |
         echo "Removing generated cargo artifacts..."
-        sudo rm -fr ./target
-        sudo rm -rf ./runtime/frequency/target
+        rm -fr ./target
+        rm -rf ./runtime/frequency/target
     - name: Remove NPM node Modules
       shell: bash
       run: |

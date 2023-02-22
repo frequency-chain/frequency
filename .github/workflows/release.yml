@@ -60,12 +60,10 @@ jobs:
       #     key: binaries-${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.NEW_RELEASE_VERSION}}
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
+          targets: wasm32-unknown-unknown
           toolchain: stable
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
       - name: Compile for ${{matrix.network}}
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
@@ -143,10 +141,8 @@ jobs:
       - name: Reset Runner
         uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
           toolchain: stable
       - name: Extract Runtime Spec Version
         run: |
@@ -226,12 +222,11 @@ jobs:
           sudo apt-get update
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        if: steps.cache-binary.outputs.cache-hit != 'true'
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
+          targets: wasm32-unknown-unknown
           toolchain: stable
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
       - name: Build Docs
         run: |
           RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --features frequency
