@@ -180,13 +180,4 @@ fn pay_with_capacity_returns_weight_of_child_call() {
 	let pay_with_capacity_dispatch_info = pay_with_capacity_call.get_dispatch_info();
 
 	assert_eq!(create_msa_dispatch_info.weight, pay_with_capacity_dispatch_info.weight);
-	// let balance_factor = 10;
-
-	// ExtBuilder::default()
-	// 	.balance_factor(balance_factor)
-	// 	.base_weight(Weight::from_ref_time(5))
-	// 	.build()
-	// 	.execute_with(|| {
-
-	// 	});
 }
