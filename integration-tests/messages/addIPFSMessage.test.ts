@@ -110,7 +110,6 @@ describe("Add Offchain Message", function () {
     it("should successfully retrieve added message and returned CID should have Base32 encoding", async function () {
         const f = await firstValueFrom(ExtrinsicHelper.api.rpc.messages.getBySchemaId(schemaId, { from_block: starting_block, from_index: 0, to_block: starting_block + 999, page_size: 999 }));
         const response: MessageResponse = f.content[f.content.length - 1];
-        console.log(`Got messages: schema ${schemaId}, block: ${response.block_number}`);
         const cid = Buffer.from(response.cid.unwrap()).toString();
         assert.equal(cid, ipfs_cid_32, 'returned CID should match base32-encoded CID');
     })
