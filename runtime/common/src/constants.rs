@@ -324,3 +324,9 @@ impl Default for MaxItemizedPageSizeBytes {
 		Self
 	}
 }
+
+impl Default for MaxPaginatedPageSizeBytes {
+	fn default() -> Self {
+		Self
+	}
+}

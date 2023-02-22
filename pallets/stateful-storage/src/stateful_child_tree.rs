@@ -37,9 +37,16 @@ impl MultipartKeyStorageHasher for Twox256 {
 	type HashSize = ConstU8<32>;
 }
 
-pub trait MultipartKey<H: MultipartKeyStorageHasher>:
-	Clone + Debug + Default + Encode + Decode + Eq + PartialEq + Sized + Hashable
+pub trait MultipartStorageKeyPart:
+	Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable
 {
+}
+impl<T> MultipartStorageKeyPart for T where
+	T: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable
+{
+}
+
+pub trait MultipartKey<H: MultipartKeyStorageHasher>: MultipartStorageKeyPart {
 	type Arity: Get<u8>;
 
 	fn arity(&self) -> u8 {
@@ -80,11 +87,7 @@ impl<H: MultipartKeyStorageHasher> MultipartKey<H> for () {
 	}
 }
 
-impl<
-		H: MultipartKeyStorageHasher,
-		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
-	> MultipartKey<H> for (T1,)
-{
+impl<H: MultipartKeyStorageHasher, T1: MultipartStorageKeyPart> MultipartKey<H> for (T1,) {
 	type Arity = ConstU8<1>;
 
 	fn hash(&self) -> Vec<u8> {
@@ -107,11 +110,8 @@ impl<
 	}
 }
 
-impl<
-		H: MultipartKeyStorageHasher,
-		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
-		T2: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
-	> MultipartKey<H> for (T1, T2)
+impl<H: MultipartKeyStorageHasher, T1: MultipartStorageKeyPart, T2: MultipartStorageKeyPart>
+	MultipartKey<H> for (T1, T2)
 {
 	type Arity = ConstU8<2>;
 
@@ -141,9 +141,9 @@ impl<
 
 impl<
 		H: MultipartKeyStorageHasher,
-		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
-		T2: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
-		T3: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
+		T1: MultipartStorageKeyPart,
+		T2: MultipartStorageKeyPart,
+		T3: MultipartStorageKeyPart,
 	> MultipartKey<H> for (T1, T2, T3)
 {
 	type Arity = ConstU8<3>;
@@ -178,10 +178,10 @@ impl<
 
 impl<
 		H: MultipartKeyStorageHasher,
-		T1: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
-		T2: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
-		T3: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
-		T4: Clone + Debug + Default + Decode + Encode + Eq + PartialEq + Hashable,
+		T1: MultipartStorageKeyPart,
+		T2: MultipartStorageKeyPart,
+		T3: MultipartStorageKeyPart,
+		T4: MultipartStorageKeyPart,
 	> MultipartKey<H> for (T1, T2, T3, T4)
 {
 	type Arity = ConstU8<4>;
@@ -218,6 +218,80 @@ impl<
 	}
 }
 
+pub trait IsTuplePrefix<H: MultipartKeyStorageHasher, T: MultipartStorageKeyPart>:
+	MultipartKey<H>
+{
+}
+impl<H: MultipartKeyStorageHasher, T1: MultipartStorageKeyPart> IsTuplePrefix<H, (T1,)> for () {}
+impl<H: MultipartKeyStorageHasher, T1: MultipartStorageKeyPart, T2: MultipartStorageKeyPart>
+	IsTuplePrefix<H, (T1, T2)> for ()
+{
+}
+impl<H: MultipartKeyStorageHasher, T1: MultipartStorageKeyPart, T2: MultipartStorageKeyPart>
+	IsTuplePrefix<H, (T1, T2)> for (T1,)
+{
+}
+impl<
+		H: MultipartKeyStorageHasher,
+		T1: MultipartStorageKeyPart,
+		T2: MultipartStorageKeyPart,
+		T3: MultipartStorageKeyPart,
+	> IsTuplePrefix<H, (T1, T2, T3)> for ()
+{
+}
+impl<
+		H: MultipartKeyStorageHasher,
+		T1: MultipartStorageKeyPart,
+		T2: MultipartStorageKeyPart,
+		T3: MultipartStorageKeyPart,
+	> IsTuplePrefix<H, (T1, T2, T3)> for (T1,)
+{
+}
+impl<
+		H: MultipartKeyStorageHasher,
+		T1: MultipartStorageKeyPart,
+		T2: MultipartStorageKeyPart,
+		T3: MultipartStorageKeyPart,
+	> IsTuplePrefix<H, (T1, T2, T3)> for (T1, T2)
+{
+}
+impl<
+		H: MultipartKeyStorageHasher,
+		T1: MultipartStorageKeyPart,
+		T2: MultipartStorageKeyPart,
+		T3: MultipartStorageKeyPart,
+		T4: MultipartStorageKeyPart,
+	> IsTuplePrefix<H, (T1, T2, T3, T4)> for ()
+{
+}
+impl<
+		H: MultipartKeyStorageHasher,
+		T1: MultipartStorageKeyPart,
+		T2: MultipartStorageKeyPart,
+		T3: MultipartStorageKeyPart,
+		T4: MultipartStorageKeyPart,
+	> IsTuplePrefix<H, (T1, T2, T3, T4)> for (T1,)
+{
+}
+impl<
+		H: MultipartKeyStorageHasher,
+		T1: MultipartStorageKeyPart,
+		T2: MultipartStorageKeyPart,
+		T3: MultipartStorageKeyPart,
+		T4: MultipartStorageKeyPart,
+	> IsTuplePrefix<H, (T1, T2, T3, T4)> for (T1, T2)
+{
+}
+impl<
+		H: MultipartKeyStorageHasher,
+		T1: MultipartStorageKeyPart,
+		T2: MultipartStorageKeyPart,
+		T3: MultipartStorageKeyPart,
+		T4: MultipartStorageKeyPart,
+	> IsTuplePrefix<H, (T1, T2, T3, T4)> for (T1, T2, T3)
+{
+}
+
 /// Paginated Stateful data access utility
 pub struct StatefulChildTree<H: MultipartKeyStorageHasher = Twox128> {
 	hasher: PhantomData<H>,
@@ -246,7 +320,7 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 	pub fn prefix_iterator<
 		V: Decode + Sized,
 		K: MultipartKey<H> + Sized,
-		PrefixKey: MultipartKey<H>,
+		PrefixKey: IsTuplePrefix<H, K>,
 	>(
 		msa_id: &MessageSourceId,
 		prefix_keys: &PrefixKey,
