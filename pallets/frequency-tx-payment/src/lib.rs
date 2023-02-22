@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-	dispatch::{DispatchInfo, PostDispatchInfo},
+	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
 	traits::IsType,
 };
@@ -41,7 +41,7 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-
+	use frame_system::pallet_prelude::*;
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
 	#[pallet::pallet]
@@ -52,11 +52,38 @@ pub mod pallet {
 	pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+		/// The overarching call type.
+		type RuntimeCall: Parameter
+			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
+			+ GetDispatchInfo
+			+ From<frame_system::Call<Self>>
+			+ IsType<<Self as frame_system::Config>::RuntimeCall>;
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {}
+
+	#[pallet::call]
+	impl<T: Config> Pallet<T> {
+		/// Dispatch the given call as a sub_type of pay_with_capacity. Calls dispatched in this
+		/// fashion, if allowed, will pay with Capacity,
+		#[pallet::call_index(0)]
+		#[pallet::weight({
+			let dispatch_info = call.get_dispatch_info();
+			(dispatch_info.weight, dispatch_info.class)
+		})]
+		pub fn pay_with_capacity(
+			origin: OriginFor<T>,
+			call: Box<<T as Config>::RuntimeCall>,
+		) -> DispatchResult {
+			ensure_signed(origin.clone())?;
+
+			let _result = call.dispatch(origin);
+			Ok(())
+		}
+	}
 }
 
 /// Require the transactor pay for themselves and maybe include a tip to gain additional priority
@@ -101,12 +128,13 @@ impl<T: Config> sp_std::fmt::Debug for ChargeFrqTransactionPayment<T> {
 
 impl<T: Config> SignedExtension for ChargeFrqTransactionPayment<T>
 where
-	T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+	<T as frame_system::Config>::RuntimeCall:
+		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand,
 {
 	const IDENTIFIER: &'static str = "ChargeTransactionPayment";
 	type AccountId = T::AccountId;
-	type Call = T::RuntimeCall;
+	type Call = <T as frame_system::Config>::RuntimeCall;
 	type AdditionalSigned = ();
 	type Pre = (
 		// tip

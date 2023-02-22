@@ -1,8 +1,10 @@
 use super::*;
-use crate::{mock::*, ChargeFrqTransactionPayment};
+use crate::{self as pallet_frequency_tx_payment, mock::*, ChargeFrqTransactionPayment};
 use frame_support::{assert_noop, assert_ok, weights::Weight};
 
 use pallet_balances::Call as BalancesCall;
+use pallet_frequency_tx_payment::Call as FrequencyTxPaymentCall;
+use pallet_msa::Call as MsaCall;
 
 #[test]
 fn transaction_payment_validate_is_succesful() {
@@ -146,4 +148,36 @@ fn transaction_payment_with_token_and_post_dispatch_refund_is_succesful() {
 			//   + difference_of_actual_weight(5 - 2) = 83
 			assert_eq!(Balances::free_balance(1), 100 - 5 - 5 - 10 + 3);
 		});
+}
+
+#[test]
+fn pay_with_capacity_happy_path() {
+	let balance_factor = 10;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			let signer = 1u64;
+			let create_msa_call = Box::new(RuntimeCall::Msa(MsaCall::<Test>::create {}));
+
+			assert_ok!(FrequencyTxPayment::pay_with_capacity(
+				RuntimeOrigin::signed(signer),
+				create_msa_call
+			));
+		});
+}
+
+#[test]
+fn pay_with_capacity_returns_weight_of_child_call() {
+	let create_msa_call = Box::new(RuntimeCall::Msa(MsaCall::<Test>::create {}));
+	let create_msa_dispatch_info = create_msa_call.get_dispatch_info();
+
+	let pay_with_capacity_call = Box::new(RuntimeCall::FrequencyTxPayment(
+		FrequencyTxPaymentCall::<Test>::pay_with_capacity { call: create_msa_call },
+	));
+	let pay_with_capacity_dispatch_info = pay_with_capacity_call.get_dispatch_info();
+
+	assert_eq!(create_msa_dispatch_info.weight, pay_with_capacity_dispatch_info.weight);
 }
