@@ -425,7 +425,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 17,
+	spec_version: 18,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -897,6 +897,7 @@ impl pallet_transaction_payment::Config for Runtime {
 
 impl pallet_frequency_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
@@ -1080,7 +1081,7 @@ construct_runtime!(
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 62,
 		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>} = 63,
-		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Event<T>} = 64,
+		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 64,
 	}
 );
 
