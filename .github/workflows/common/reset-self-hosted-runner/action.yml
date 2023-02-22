@@ -16,5 +16,12 @@ runs:
     - name: Prune docker Resources
       shell: bash
       run: |
-        docker system prune -a --volumes
-        docker image prune -a -f --filter "until=720h"
+        if [ "$(which docker)" ] && [ "$(docker --version)" ]; then
+          echo "Docker is found. Cleaning..."
+          docker system prune -a --volumes
+          docker image prune -a -f --filter "until=720h"
+          echo "Finished cleaning docker resources."
+        else
+          echo "Docker's not found. Exiting..."
+          exit 0
+        fi

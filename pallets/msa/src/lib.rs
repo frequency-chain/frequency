@@ -805,6 +805,8 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::revoke_schema_permissions(
 		schema_ids.len() as u32
 		))]
+		#[allow(deprecated)]
+		#[deprecated(since = "1.3.0", note = "revoke_schema_permissions() has been deprecated.")]
 		pub fn revoke_schema_permissions(
 			origin: OriginFor<T>,
 			provider_msa_id: MessageSourceId,
