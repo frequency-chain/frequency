@@ -316,6 +316,8 @@ parameter_types! {
 	pub const MaxPaginatedPageId: u32 = 16;
 	/// The maximum number of actions in itemized actions
 	pub const MaxItemizedActionsCount: u32 = 5;
+	/// The number of blocks for Stateful mortality is 24 hours
+	pub const StatefulMortalityWindowSize: u32 = 14400;
 }
 // -end- Stateful Storage Pallet
 

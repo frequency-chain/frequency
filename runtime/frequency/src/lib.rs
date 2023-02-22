@@ -744,6 +744,10 @@ impl pallet_stateful_storage::Config for Runtime {
 	type SchemaProvider = Schemas;
 	/// Hasher for Child Tree keys
 	type KeyHasher = Twox128;
+	/// The conversion to a 32 byte AccountId
+	type ConvertIntoAccountId32 = ConvertInto;
+	/// The number of blocks per virtual bucket
+	type MortalityWindowSize = StatefulMortalityWindowSize;
 
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]

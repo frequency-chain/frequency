@@ -4,12 +4,14 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::{
 	schema::{ModelType, PayloadLocation, SchemaId},
 	stateful_storage::{PageHash, PageId},
+	utils::wrap_binary_data,
 };
 use frame_support::{assert_err, assert_ok, BoundedVec};
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use scale_info::TypeInfo;
-use sp_core::{ConstU32, Get};
+use sp_core::{ConstU32, Get, Pair};
+use sp_runtime::MultiSignature;
 use sp_std::{collections::btree_set::BTreeSet, hash::Hasher};
 use twox_hash::XxHash32;
 
@@ -53,35 +55,6 @@ struct TestStruct {
 }
 
 #[test]
-fn upsert_page_too_large_errors() {
-	new_test_ext().execute_with(|| {
-		// setup
-		let caller_1 = 5;
-		let msa_id = 1;
-		let schema_id = 1;
-		let page_id = 0;
-		let payload =
-			vec![
-				1;
-				TryInto::<usize>::try_into(<Test as Config>::MaxPaginatedPageSizeBytes::get())
-					.unwrap() + 1
-			];
-
-		assert_err!(
-			StatefulStoragePallet::upsert_page(
-				RuntimeOrigin::signed(caller_1),
-				msa_id,
-				schema_id,
-				page_id,
-				hash_payload(&payload),
-				payload
-			),
-			Error::<Test>::PageExceedsMaxPageSizeBytes
-		)
-	})
-}
-
-#[test]
 fn upsert_page_id_out_of_bounds_errors() {
 	new_test_ext().execute_with(|| {
 		// setup
@@ -89,7 +62,7 @@ fn upsert_page_id_out_of_bounds_errors() {
 		let msa_id = 1;
 		let schema_id = 1;
 		let page_id = <Test as Config>::MaxPaginatedPageId::get() + 1;
-		let payload = vec![1; 1];
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
 		assert_err!(
 			StatefulStoragePallet::upsert_page(
@@ -111,9 +84,9 @@ fn upsert_page_with_invalid_msa_errors() {
 		// setup
 		let caller_1 = 1000; // hard-coded in mocks to return None for MSA
 		let msa_id = 1;
-		let schema_id = 1;
+		let schema_id = PAGINATED_SCHEMA;
 		let page_id = 1;
-		let payload = vec![1; 1];
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
 		assert_err!(
 			StatefulStoragePallet::upsert_page(
@@ -137,7 +110,7 @@ fn upsert_page_with_invalid_schema_id_errors() {
 		let msa_id = 1;
 		let schema_id = INVALID_SCHEMA_ID;
 		let page_id = 1;
-		let payload = vec![1; 1];
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
 		assert_err!(
 			StatefulStoragePallet::upsert_page(
@@ -161,7 +134,7 @@ fn upsert_page_with_invalid_schema_payload_location_errors() {
 		let msa_id = 1;
 		let schema_id = ITEMIZED_SCHEMA;
 		let page_id = 1;
-		let payload = vec![1; 1];
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
 		assert_err!(
 			StatefulStoragePallet::upsert_page(
@@ -185,7 +158,7 @@ fn upsert_page_with_no_delegation_errors() {
 		let msa_id = 1;
 		let schema_id = UNDELEGATED_PAGINATED_SCHEMA;
 		let page_id = 1;
-		let payload = vec![1; 1];
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
 		assert_err!(
 			StatefulStoragePallet::upsert_page(
@@ -209,7 +182,7 @@ fn upsert_new_page_with_bad_state_hash_errors() {
 		let msa_id = 1;
 		let schema_id = PAGINATED_SCHEMA;
 		let page_id = 1;
-		let payload = vec![1; 1];
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
 		assert_err!(
 			StatefulStoragePallet::upsert_page(
@@ -233,7 +206,7 @@ fn upsert_existing_page_with_bad_state_hash_errors() {
 		let msa_id = 1;
 		let schema_id = PAGINATED_SCHEMA;
 		let page_id = 1;
-		let payload = vec![1; 1];
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
 		let key = (schema_id, page_id);
 		<StatefulChildTree>::write(&msa_id, &key, &payload);
@@ -340,7 +313,7 @@ fn delete_page_with_invalid_msa_errors() {
 		// setup
 		let caller_1 = 1000; // hard-coded in mocks to return None for MSA
 		let msa_id = 1;
-		let schema_id = 1;
+		let schema_id = PAGINATED_SCHEMA;
 		let page_id = 1;
 
 		assert_err!(
@@ -477,11 +450,17 @@ fn delete_existing_page_succeeds() {
 		let schema_id = PAGINATED_SCHEMA;
 		let page_id = 11;
 		let payload = generate_payload_bytes::<PaginatedPageSize>(None);
-		let page: PaginatedPage<Test> = payload.into();
+		let page: PaginatedPage<Test> = payload.clone().into();
 		let page_hash = page.get_hash();
 
-		let keys = (schema_id, page_id);
-		<StatefulChildTree>::write::<_, Vec<u8>>(&msa_id, &keys, page.data.into());
+		assert_ok!(StatefulStoragePallet::upsert_page(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			page_id,
+			NONEXISTENT_PAGE_HASH,
+			payload.into(),
+		));
 
 		assert_ok!(StatefulStoragePallet::delete_page(
 			RuntimeOrigin::signed(caller_1),
@@ -491,6 +470,7 @@ fn delete_existing_page_succeeds() {
 			page_hash
 		));
 
+		let keys = (schema_id, page_id);
 		let page: Option<PaginatedPage<Test>> =
 			<StatefulChildTree>::try_read(&msa_id, &keys).unwrap();
 		assert_eq!(page, None);
@@ -742,8 +722,8 @@ fn apply_item_actions_with_add_item_action_bigger_than_expected_should_fail() {
 				RuntimeOrigin::signed(caller_1),
 				msa_id,
 				schema_id,
-				BoundedVec::try_from(actions).unwrap(),
 				NONEXISTENT_PAGE_HASH,
+				BoundedVec::try_from(actions).unwrap(),
 			),
 			Error::<Test>::ItemExceedsMaxBlobSizeBytes
 		)
@@ -766,8 +746,8 @@ fn apply_item_actions_with_invalid_msa_should_fail() {
 				RuntimeOrigin::signed(caller_1),
 				msa_id,
 				schema_id,
+				NONEXISTENT_PAGE_HASH,
 				BoundedVec::try_from(actions).unwrap(),
-				NONEXISTENT_PAGE_HASH
 			),
 			Error::<Test>::InvalidMessageSourceAccount
 		)
@@ -790,8 +770,8 @@ fn apply_item_actions_with_invalid_schema_id_should_fail() {
 				RuntimeOrigin::signed(caller_1),
 				msa_id,
 				schema_id,
+				NONEXISTENT_PAGE_HASH,
 				BoundedVec::try_from(actions).unwrap(),
-				NONEXISTENT_PAGE_HASH
 			),
 			Error::<Test>::InvalidSchemaId
 		)
@@ -814,8 +794,8 @@ fn apply_item_actions_with_invalid_schema_location_should_fail() {
 				RuntimeOrigin::signed(caller_1),
 				msa_id,
 				schema_id,
+				NONEXISTENT_PAGE_HASH,
 				BoundedVec::try_from(actions).unwrap(),
-				NONEXISTENT_PAGE_HASH
 			),
 			Error::<Test>::SchemaPayloadLocationMismatch
 		)
@@ -838,8 +818,8 @@ fn apply_item_actions_with_no_delegation_and_different_caller_from_owner_should_
 				RuntimeOrigin::signed(caller_1),
 				msa_id,
 				schema_id,
+				NONEXISTENT_PAGE_HASH,
 				BoundedVec::try_from(actions).unwrap(),
-				NONEXISTENT_PAGE_HASH
 			),
 			Error::<Test>::UnAuthorizedDelegate
 		)
@@ -871,8 +851,8 @@ fn apply_item_actions_with_corrupted_state_should_fail() {
 				RuntimeOrigin::signed(caller_1),
 				msa_id,
 				schema_id,
+				previous_hash,
 				BoundedVec::try_from(actions1).unwrap(),
-				previous_hash
 			),
 			Error::<Test>::CorruptedState
 		)
@@ -895,8 +875,8 @@ fn apply_item_actions_initial_state_with_stale_hash_should_fail() {
 				RuntimeOrigin::signed(caller_1),
 				msa_id,
 				schema_id,
-				BoundedVec::try_from(actions1).unwrap(),
 				1u32, // any non-zero value
+				BoundedVec::try_from(actions1).unwrap(),
 			),
 			Error::<Test>::StalePageState
 		)
@@ -925,8 +905,8 @@ fn apply_item_actions_existing_page_with_stale_hash_should_fail() {
 				RuntimeOrigin::signed(caller_1),
 				msa_id,
 				schema_id,
-				BoundedVec::try_from(actions1).unwrap(),
 				page_hash,
+				BoundedVec::try_from(actions1).unwrap(),
 			),
 			Error::<Test>::StalePageState
 		)
@@ -949,8 +929,8 @@ fn apply_item_actions_initial_state_with_valid_input_should_update_storage() {
 			RuntimeOrigin::signed(caller_1),
 			msa_id,
 			schema_id,
+			prev_content_hash,
 			BoundedVec::try_from(actions).unwrap(),
-			prev_content_hash
 		));
 
 		// assert
@@ -991,8 +971,8 @@ fn apply_item_actions_existing_page_with_valid_input_should_update_storage() {
 			RuntimeOrigin::signed(caller_1),
 			msa_id,
 			schema_id,
+			prev_content_hash,
 			BoundedVec::try_from(actions).unwrap(),
-			prev_content_hash
 		));
 
 		// assert
@@ -1028,8 +1008,8 @@ fn apply_item_actions_with_valid_input_and_empty_items_should_remove_storage() {
 			RuntimeOrigin::signed(caller_1),
 			msa_id,
 			schema_id,
+			NONEXISTENT_PAGE_HASH,
 			BoundedVec::try_from(actions1).unwrap(),
-			NONEXISTENT_PAGE_HASH
 		));
 
 		let items1: Option<ItemizedPage<Test>> =
@@ -1042,8 +1022,8 @@ fn apply_item_actions_with_valid_input_and_empty_items_should_remove_storage() {
 			RuntimeOrigin::signed(caller_1),
 			msa_id,
 			schema_id,
+			content_hash,
 			BoundedVec::try_from(actions2).unwrap(),
-			content_hash
 		));
 
 		// assert
@@ -1056,6 +1036,195 @@ fn apply_item_actions_with_valid_input_and_empty_items_should_remove_storage() {
 				msa_id,
 				schema_id,
 				prev_content_hash: content_hash,
+			}
+			.into(),
+		);
+	});
+}
+
+#[test]
+fn apply_item_actions_with_signature_having_add_item_action_bigger_than_expected_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let delegator_key = 2;
+		let msa_id = get_msa_from_account(delegator_key);
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload =
+			vec![1; (<Test as Config>::MaxItemizedBlobSizeBytes::get() + 1).try_into().unwrap()];
+		let actions = vec![ItemAction::Add { data: payload }];
+		let payload = ItemizedSignaturePayload {
+			actions: BoundedVec::try_from(actions).unwrap(),
+			target_hash: PageHash::default(),
+			msa_id,
+			expiration: 10,
+			schema_id,
+		};
+		let pair = LocalConvertInto::get_pair(delegator_key);
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions_with_signature(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key,
+				owner_signature,
+				payload
+			),
+			Error::<Test>::ItemExceedsMaxBlobSizeBytes
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_signature_having_wrong_signature_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let delegator_key = 2;
+		let signature_key = 3;
+		let msa_id = get_msa_from_account(delegator_key);
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+		let payload = ItemizedSignaturePayload {
+			actions: BoundedVec::try_from(actions).unwrap(),
+			target_hash: PageHash::default(),
+			msa_id,
+			expiration: 10,
+			schema_id,
+		};
+		let pair = LocalConvertInto::get_pair(signature_key);
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions_with_signature(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key,
+				owner_signature,
+				payload
+			),
+			Error::<Test>::InvalidSignature
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_signature_having_too_far_expiration_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let delegator_key = 2;
+		let msa_id = get_msa_from_account(delegator_key);
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+		let payload = ItemizedSignaturePayload {
+			actions: BoundedVec::try_from(actions).unwrap(),
+			target_hash: PageHash::default(),
+			msa_id,
+			expiration: (<Test as Config>::MortalityWindowSize::get() + 1).into(),
+			schema_id,
+		};
+		let pair = LocalConvertInto::get_pair(delegator_key);
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions_with_signature(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key,
+				owner_signature,
+				payload
+			),
+			Error::<Test>::ProofNotYetValid
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_signature_having_expired_payload_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let delegator_key = 2;
+		let msa_id = get_msa_from_account(delegator_key);
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+		let block_number = 10;
+		let payload = ItemizedSignaturePayload {
+			actions: BoundedVec::try_from(actions).unwrap(),
+			target_hash: PageHash::default(),
+			msa_id,
+			expiration: block_number,
+			schema_id,
+		};
+		let pair = LocalConvertInto::get_pair(delegator_key);
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		System::set_block_number(block_number);
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions_with_signature(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key,
+				owner_signature,
+				payload
+			),
+			Error::<Test>::ProofHasExpired
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_with_signature_having_correct_input_should_work() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let delegator_key = 2;
+		let msa_id = get_msa_from_account(delegator_key);
+		let schema_id = ITEMIZED_SCHEMA;
+		let prev_content_hash = PageHash::default();
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload }];
+		let payload = ItemizedSignaturePayload {
+			actions: BoundedVec::try_from(actions).unwrap(),
+			target_hash: prev_content_hash,
+			msa_id,
+			expiration: 10,
+			schema_id,
+		};
+
+		let pair = LocalConvertInto::get_pair(delegator_key);
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_ok!(StatefulStoragePallet::apply_item_actions_with_signature(
+			RuntimeOrigin::signed(caller_1),
+			delegator_key,
+			owner_signature,
+			payload
+		));
+
+		// assert
+		let updated_page: Option<ItemizedPage<Test>> =
+			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(&msa_id, &(schema_id,))
+				.unwrap();
+		assert!(updated_page.is_some());
+		let curr_content_hash = updated_page.unwrap().get_hash();
+		System::assert_last_event(
+			StatefulEvent::ItemizedPageUpdated {
+				msa_id,
+				schema_id,
+				prev_content_hash,
+				curr_content_hash,
 			}
 			.into(),
 		);
