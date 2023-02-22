@@ -1,7 +1,10 @@
 use super::*;
 use crate as pallet_frequency_tx_payment;
 
-use common_primitives::{node::AccountId, schema::{SchemaId, SchemaValidator}};
+use common_primitives::{
+	node::AccountId,
+	schema::{SchemaId, SchemaValidator},
+};
 use pallet_transaction_payment::CurrencyAdapter;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
