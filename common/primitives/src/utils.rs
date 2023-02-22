@@ -64,6 +64,39 @@ pub mod as_string {
 	}
 }
 
+/// Handle serializing and deserializing from `Option<Vec<u8>>` to a UTF-8 string
+#[cfg(feature = "std")]
+pub mod as_string_option {
+	use super::*;
+	use serde::{ser::Error, Deserialize, Deserializer, Serialize, Serializer};
+
+	/// Serializes a `Option<Vec<u8>>` into a UTF-8 string if Ok()
+	pub fn serialize<S: Serializer>(
+		bytes: &Option<Vec<u8>>,
+		serializer: S,
+	) -> Result<S::Ok, S::Error> {
+		match bytes {
+			Some(bytes) => std::str::from_utf8(bytes)
+				.map_err(|e| {
+					S::Error::custom(format!("Debug buffer contains invalid UTF8: {}", e))
+				})?
+				.serialize(serializer),
+			None => serializer.serialize_none(),
+		}
+	}
+
+	/// Deserializes a UTF-8 string into a `Option<Vec<u8>>`
+	pub fn deserialize<'de, D: Deserializer<'de>>(
+		deserializer: D,
+	) -> Result<Option<Vec<u8>>, D::Error> {
+		let bytes = String::deserialize(deserializer)?.into_bytes();
+		Ok(match bytes.len() {
+			0 => None,
+			_ => Some(bytes),
+		})
+	}
+}
+
 const PREFIX: &'static str = "<Bytes>";
 const POSTFIX: &'static str = "</Bytes>";
 

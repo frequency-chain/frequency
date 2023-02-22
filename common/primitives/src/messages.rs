@@ -35,7 +35,10 @@ pub struct MessageResponse {
 	)]
 	pub payload: Option<Vec<u8>>,
 	/// The content address for an IPFS payload in Base32. Will always be CIDv1.
-	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
+	#[cfg_attr(
+		feature = "std",
+		serde(with = "as_string_option", skip_serializing_if = "Option::is_none", default)
+	)]
 	pub cid: Option<Vec<u8>>,
 	///  Offchain payload length (IPFS).
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
@@ -160,7 +163,7 @@ mod tests {
 			payload_length: Some(42),
 		};
 		let serialized = serde_json::to_string(&msg).unwrap();
-		assert_eq!(serialized, "{\"provider_msa_id\":1,\"index\":1,\"block_number\":1,\"cid\":[98,97,102,107,114,101,105,100,103,118,112,107,106,97,119,108,120,122,54,115,102,102,120,122,119,103,111,111,111,119,101,53,121,116,55,105,54,119,115,121,103,50,51,54,109,102,111,107,115,55,55,110,121,119,107,112,116,100,113],\"payload_length\":42}");
+		assert_eq!(serialized, "{\"provider_msa_id\":1,\"index\":1,\"block_number\":1,\"cid\":\"bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq\",\"payload_length\":42}");
 
 		let deserialized: MessageResponse = serde_json::from_str(&serialized).unwrap();
 		assert_eq!(deserialized, msg);
