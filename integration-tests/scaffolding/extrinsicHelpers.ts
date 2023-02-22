@@ -233,4 +233,17 @@ export class ExtrinsicHelper {
     public static addIPFSMessage(keys: KeyringPair, schemaId: any, cid: string, payload_length: number): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addIpfsMessage(schemaId, cid, payload_length), keys, ExtrinsicHelper.api.events.messages.MessagesStored);
     }
+
+    /** Capacity Extrinsics **/
+    public static stake(keys: KeyringPair, target: any, amount: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.stake(target, amount), keys, ExtrinsicHelper.api.events.capacity.Staked);
+    }
+
+    public static unstake(keys: KeyringPair, target: any, amount: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.unstake(target, amount), keys, ExtrinsicHelper.api.events.capacity.UnStaked);
+    }
+
+    public static withdraw_unstaked(keys: KeyringPair): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.withdraw_unstaked(), keys, ExtrinsicHelper.api.events.capacity.StakeWithdrawn);
+    }
 }
