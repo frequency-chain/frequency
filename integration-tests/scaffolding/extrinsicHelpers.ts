@@ -7,7 +7,7 @@ import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkado
 import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
 import { devAccounts, log, Sr25519Signature } from "./helpers";
 import { connect } from "./apiConnection";
-import { DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
+import { CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
 
 export type AddKeyData = { msaId?: u64; expiration?: any; newPublicKey?: any; }
@@ -164,6 +164,11 @@ export class ExtrinsicHelper {
         return firstValueFrom(ExtrinsicHelper.api.rpc.chain.getBlock());
     }
 
+    /** engine_createBlock **/
+    public static createBlock(): Promise<CreatedBlock> {
+        return firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
+    }
+
     /** Query Extrinsics */
     public static getAccountInfo(address: string): Promise<FrameSystemAccountInfo> {
         return firstValueFrom(ExtrinsicHelper.api.query.system.account(address));
@@ -232,5 +237,21 @@ export class ExtrinsicHelper {
     /** Messages Extrinsics */
     public static addIPFSMessage(keys: KeyringPair, schemaId: any, cid: string, payload_length: number): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addIpfsMessage(schemaId, cid, payload_length), keys, ExtrinsicHelper.api.events.messages.MessagesStored);
+    }
+
+    /** Capacity Extrinsics **/
+    public static setEpochLength(keys: KeyringPair, epoch_length: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.setEpochLength(epoch_length), keys, ExtrinsicHelper.api.events.capacity.EpochLengthUpdated);
+    }
+    public static stake(keys: KeyringPair, target: any, amount: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.stake(target, amount), keys, ExtrinsicHelper.api.events.capacity.Staked);
+    }
+
+    public static unstake(keys: KeyringPair, target: any, amount: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.unstake(target, amount), keys, ExtrinsicHelper.api.events.capacity.UnStaked);
+    }
+
+    public static withdrawUnstaked(keys: KeyringPair): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.withdrawUnstaked(), keys, ExtrinsicHelper.api.events.capacity.StakeWithdrawn);
     }
 }
