@@ -114,6 +114,7 @@ std = [
 	"pallet-collective/std",
 	"pallet-democracy/std",
 	"pallet-collator-selection/std",
+  "pallet-frequency-tx-payment/std",
 	"pallet-scheduler/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
@@ -161,6 +162,7 @@ runtime-benchmarks = [
 	"pallet-balances/runtime-benchmarks",
   "pallet-capacity/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+  "pallet-frequency-tx-payment/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
@@ -187,6 +189,7 @@ try-runtime = [
 	"pallet-balances/try-runtime",
   "pallet-capacity/try-runtime",
 	"pallet-collator-selection/try-runtime",
+  "pallet-frequency-tx-payment/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-multisig/try-runtime",
@@ -205,6 +208,9 @@ try-runtime = [
 	"pallet-democracy/try-runtime",
 	"pallet-utility/try-runtime",
 ]
+frequency = ["common-runtime/frequency"]
+frequency-rococo-testnet = ["common-runtime/frequency-rococo-testnet"]
+frequency-rococo-local = ["common-runtime/frequency-rococo-local"]
 # Following features are used in generating lean wasms
 no-metadata-docs = ["frame-support/no-metadata-docs"]
 on-chain-release-build = ["sp-api/disable-logging"]

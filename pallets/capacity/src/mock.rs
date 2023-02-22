@@ -112,7 +112,6 @@ impl SchemaValidator<SchemaId> for Schemas {
 
 	fn set_schema_count(_n: SchemaId) {}
 }
-
 pub struct CouncilProposalProvider;
 
 impl ProposalProvider<u64, RuntimeCall> for CouncilProposalProvider {
