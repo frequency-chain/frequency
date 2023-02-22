@@ -2,13 +2,14 @@ use super::*;
 use crate as pallet_capacity;
 
 use common_primitives::{
-	node::AccountId,
+	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
 use frame_support::{
 	parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64},
 };
+use frame_system::EnsureSigned;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	testing::Header,
@@ -111,6 +112,29 @@ impl SchemaValidator<SchemaId> for Schemas {
 
 	fn set_schema_count(_n: SchemaId) {}
 }
+pub struct CouncilProposalProvider;
+
+impl ProposalProvider<u64, RuntimeCall> for CouncilProposalProvider {
+	fn propose(
+		_who: u64,
+		_threshold: u32,
+		_proposal: Box<RuntimeCall>,
+	) -> Result<(u32, u32), DispatchError> {
+		Ok((1u32, 1u32))
+	}
+
+	fn propose_with_simple_majority(
+		_who: u64,
+		_proposal: Box<RuntimeCall>,
+	) -> Result<(u32, u32), DispatchError> {
+		Ok((1u32, 1u32))
+	}
+
+	#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+	fn proposal_count() -> u32 {
+		1u32
+	}
+}
 
 impl pallet_msa::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
@@ -123,6 +147,9 @@ impl pallet_msa::Config for Test {
 	type MortalityWindowSize = ConstU32<100>;
 	type MaxSignaturesPerBucket = ConstU32<4000>;
 	type NumberOfBuckets = ConstU32<2>;
+	type Proposal = RuntimeCall;
+	type ProposalProvider = CouncilProposalProvider;
+	type CreateProviderViaGovernanceOrigin = EnsureSigned<u64>;
 	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<8000>;
 }
