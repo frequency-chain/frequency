@@ -32,14 +32,13 @@
 // --chain=frequency-bench
 // --execution
 // wasm
+// --heap-pages=4096
 // --wasm-execution
 // compiled
-// --steps
-// 50
-// --repeat
-// 10
-// --output=./pallets/stateful-storage/src/weights.rs
-// --template=./.maintain/frame-weight-template.hbs
+// --steps=20
+// --repeat=10
+// --output=./scripts/../pallets/stateful-storage/src/weights.rs
+// --template=./scripts/../.maintain/frame-weight-template.hbs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(
@@ -83,7 +82,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_ref_time(21_377_464 as u64)
 			// Standard Error: 72
 			.saturating_add(Weight::from_ref_time(2 as u64).saturating_mul(s as u64))
-			.saturating_add(T::DbWeight::get().reads(3 as u64))
+			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
@@ -91,8 +90,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:0 w:1)
 	fn delete_page() -> Weight {
-		Weight::from_ref_time(20_000_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(3 as u64))
+		Weight::from_ref_time(40_826_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 }
@@ -120,16 +119,17 @@ impl WeightInfo for () {
 		Weight::from_ref_time(21_377_464 as u64)
 			// Standard Error: 72
 			.saturating_add(Weight::from_ref_time(2 as u64).saturating_mul(s as u64))
-			.saturating_add(RocksDbWeight::get().reads(3 as u64))
+			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Schemas Schemas (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:0 w:1)
+	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:1 w:1)
 	fn delete_page() -> Weight {
 		Weight::from_ref_time(20_000_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(3 as u64))
+			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 }

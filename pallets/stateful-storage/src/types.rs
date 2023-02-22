@@ -1,16 +1,27 @@
 use crate::Config;
 use codec::{Decode, Encode, MaxEncodedLen};
-use common_primitives::{msa::MessageSourceId, schema::SchemaId, stateful_storage::PageId};
+use common_primitives::{
+	msa::MessageSourceId,
+	schema::SchemaId,
+	stateful_storage::{PageHash, PageId},
+};
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
-use sp_std::{cmp::*, collections::btree_map::BTreeMap, fmt::Debug, prelude::*};
+use sp_std::{
+	cmp::*,
+	collections::btree_map::BTreeMap,
+	fmt::Debug,
+	hash::{Hash, Hasher},
+	prelude::*,
+};
+use twox_hash::XxHash32;
 
-/// Type of Itemized Storage key
+/// MultipartKey type for Itemized storage
 pub type ItemizedKey = (SchemaId,);
-/// Type of Paginated Storage key
+/// MultipartKey type for Paginated storage (full key)
 pub type PaginatedKey = (SchemaId, PageId);
-/// Type of Paginated Storage prefix key
+/// MultipartKey type for Paginated storage (prefix lookup)
 pub type PaginatedPrefixKey = (SchemaId,);
 /// Itemized page type
 pub type ItemizedPage<T> = Page<<T as Config>::MaxItemizedPageSizeBytes>;
@@ -107,6 +118,21 @@ pub struct ParsedItemPage<'a> {
 impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	pub fn is_empty(&self) -> bool {
 		self.data.is_empty()
+	}
+
+	pub fn get_hash(&self) -> PageHash {
+		if self.is_empty() {
+			return PageHash::default()
+		}
+		let mut hasher = XxHash32::with_seed(0);
+		self.hash(&mut hasher);
+		hasher.finish() as PageHash
+	}
+}
+
+impl<PageDataSize: Get<u32>> Hash for Page<PageDataSize> {
+	fn hash<H: Hasher>(&self, state: &mut H) {
+		state.write(&self.data[..]);
 	}
 }
 

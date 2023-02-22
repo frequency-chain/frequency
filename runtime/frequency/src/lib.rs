@@ -743,7 +743,7 @@ impl pallet_stateful_storage::Config for Runtime {
 	/// The type that provides schema info
 	type SchemaProvider = Schemas;
 	/// Hasher for Child Tree keys
-	type Hasher = Twox128;
+	type KeyHasher = Twox128;
 	/// The conversion to a 32 byte AccountId
 	type ConvertIntoAccountId32 = ConvertInto;
 	/// The number of blocks per virtual bucket

@@ -1,4 +1,6 @@
 use crate as pallet_stateful_storage;
+use codec::Encode;
+
 use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MessageSourceId, MsaLookup, MsaValidator,
@@ -14,7 +16,7 @@ use frame_support::{
 	StorageHasher, Twox128, Twox256,
 };
 use frame_system as system;
-use sp_core::{crypto::AccountId32, H256};
+use sp_core::{crypto::AccountId32, Pair, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, Convert, IdentityLookup},
@@ -81,6 +83,12 @@ pub const UNDELEGATED_PAGINATED_SCHEMA: SchemaId = 102;
 pub const UNDELEGATED_ITEMIZED_SCHEMA: SchemaId = 103;
 
 impl Default for MaxItemizedPageSizeBytes {
+	fn default() -> Self {
+		Self
+	}
+}
+
+impl Default for MaxPaginatedPageSizeBytes {
 	fn default() -> Self {
 		Self
 	}
@@ -330,7 +338,7 @@ impl pallet_stateful_storage::Config for Test {
 	type MsaBenchmarkHelper = ();
 	#[cfg(feature = "runtime-benchmarks")]
 	type SchemaBenchmarkHelper = ();
-	type Hasher = Twox128;
+	type KeyHasher = Twox128;
 	/// The conversion to a 32 byte AccountId
 	type ConvertIntoAccountId32 = LocalConvertInto;
 	/// The number of blocks per virtual bucket
@@ -340,8 +348,16 @@ impl pallet_stateful_storage::Config for Test {
 pub struct LocalConvertInto;
 impl Convert<u64, AccountId32> for LocalConvertInto {
 	fn convert(a: u64) -> AccountId32 {
-		let h = Twox256::hash(&a.encode()[..]);
-		h.into()
+		let seed = Twox256::hash(&a.encode()[..]);
+		let p = sp_core::sr25519::Pair::from_seed_slice(&seed[..]).unwrap();
+		p.public().into()
+	}
+}
+
+impl LocalConvertInto {
+	pub fn get_pair(a: u64) -> sp_core::sr25519::Pair {
+		let seed = Twox256::hash(&a.encode()[..]);
+		sp_core::sr25519::Pair::from_seed_slice(&seed[..]).unwrap()
 	}
 }
 

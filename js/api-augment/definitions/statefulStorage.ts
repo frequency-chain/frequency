@@ -31,6 +31,7 @@ export default {
   },
   types: {
     PageId: "u16",
+    PageHash: "u32",
     ItemizedStorageResponse: {
       index: "u16",
       payload: "Vec<u8>",
@@ -39,11 +40,13 @@ export default {
       page_id: "PageId",
       msa_id: "MessageSourceId",
       schema_id: "SchemaId",
+      content_hash: "PageHash",
       payload: "Vec<u8>",
     },
     ItemizedStoragePageResponse: {
       msa_id: "MessageSourceId",
       schema_id: "SchemaId",
+      content_hash: "PageHash",
       items: "Vec<ItemizedStorageResponse>",
     },
   },

@@ -68,7 +68,7 @@ use common_primitives::{
 	node::Verify,
 	schema::{PayloadLocation, SchemaId, SchemaProvider},
 	stateful_storage::{
-		ItemizedStoragePageResponse, ItemizedStorageResponse, PaginatedStorageResponse,
+		ItemizedStoragePageResponse, ItemizedStorageResponse, PageHash, PaginatedStorageResponse,
 	},
 	utils::wrap_binary_data,
 };
@@ -84,7 +84,7 @@ pub mod pallet {
 	use common_primitives::{
 		msa::{MessageSourceId, MsaLookup, MsaValidator, SchemaGrantValidator},
 		schema::{SchemaId, SchemaProvider},
-		stateful_storage::PageId,
+		stateful_storage::{PageHash, PageId},
 	};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
@@ -114,7 +114,7 @@ pub mod pallet {
 
 		/// The maximum size of a page (in bytes) for a Paginated storage model
 		#[pallet::constant]
-		type MaxPaginatedPageSizeBytes: Get<u32>;
+		type MaxPaginatedPageSizeBytes: Get<u32> + Default;
 
 		/// The maximum size of a single item in an itemized storage model (in bytes)
 		#[pallet::constant]
@@ -136,8 +136,8 @@ pub mod pallet {
 		/// A set of helper functions for benchmarking.
 		type SchemaBenchmarkHelper: SchemaBenchmarkHelper;
 
-		/// Concrete storage tree type w/hasher
-		type Hasher: stateful_child_tree::MultipartKeyStorageHasher;
+		/// Hasher to use for MultipartKey
+		type KeyHasher: stateful_child_tree::MultipartKeyStorageHasher;
 
 		/// AccountId truncated to 32 bytes
 		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
@@ -183,6 +183,9 @@ pub mod pallet {
 		/// Invalid item action
 		InvalidItemAction,
 
+		/// Target page hash does not match current page hash
+		StalePageState,
+
 		/// Invalid Signature for payload
 		InvalidSignature,
 
@@ -196,10 +199,30 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		ItemizedPageUpdated { msa_id: MessageSourceId, schema_id: SchemaId },
-		ItemizedPageDeleted { msa_id: MessageSourceId, schema_id: SchemaId },
-		PaginatedPageUpdated { msa_id: MessageSourceId, schema_id: SchemaId, page_id: PageId },
-		PaginatedPageDeleted { msa_id: MessageSourceId, schema_id: SchemaId, page_id: PageId },
+		ItemizedPageUpdated {
+			msa_id: MessageSourceId,
+			schema_id: SchemaId,
+			prev_content_hash: PageHash,
+			curr_content_hash: PageHash,
+		},
+		ItemizedPageDeleted {
+			msa_id: MessageSourceId,
+			schema_id: SchemaId,
+			prev_content_hash: PageHash,
+		},
+		PaginatedPageUpdated {
+			msa_id: MessageSourceId,
+			schema_id: SchemaId,
+			page_id: PageId,
+			prev_content_hash: PageHash,
+			curr_content_hash: PageHash,
+		},
+		PaginatedPageDeleted {
+			msa_id: MessageSourceId,
+			schema_id: SchemaId,
+			page_id: PageId,
+			prev_content_hash: PageHash,
+		},
 	}
 
 	#[pallet::call]
@@ -217,13 +240,14 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			#[pallet::compact] state_owner_msa_id: MessageSourceId,
 			#[pallet::compact] schema_id: SchemaId,
+			#[pallet::compact] target_hash: PageHash,
 			actions: BoundedVec<ItemAction, T::MaxItemizedActionsCount>,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			Self::check_actions(&actions)?;
 			Self::check_schema(schema_id, PayloadLocation::Itemized)?;
 			Self::check_grants(provider_key, state_owner_msa_id, schema_id)?;
-			Self::modify_itemized(state_owner_msa_id, schema_id, actions)?;
+			Self::modify_itemized(state_owner_msa_id, schema_id, target_hash, actions)?;
 			Ok(())
 		}
 
@@ -235,6 +259,7 @@ pub mod pallet {
 			#[pallet::compact] state_owner_msa_id: MessageSourceId,
 			#[pallet::compact] schema_id: SchemaId,
 			#[pallet::compact] page_id: PageId,
+			#[pallet::compact] target_hash: PageHash,
 			payload: BoundedVec<u8, <T>::MaxPaginatedPageSizeBytes>,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
@@ -248,6 +273,7 @@ pub mod pallet {
 				state_owner_msa_id,
 				schema_id,
 				page_id,
+				target_hash,
 				PaginatedPage::<T>::from(payload),
 			)?;
 			Ok(())
@@ -261,6 +287,7 @@ pub mod pallet {
 			#[pallet::compact] state_owner_msa_id: MessageSourceId,
 			#[pallet::compact] schema_id: SchemaId,
 			#[pallet::compact] page_id: PageId,
+			#[pallet::compact] target_hash: PageHash,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			ensure!(
@@ -269,7 +296,7 @@ pub mod pallet {
 			);
 			Self::check_schema(schema_id, PayloadLocation::Paginated)?;
 			Self::check_grants(provider_key, state_owner_msa_id, schema_id)?;
-			Self::delete_paginated(state_owner_msa_id, schema_id, page_id)?;
+			Self::delete_paginated(state_owner_msa_id, schema_id, page_id, target_hash)?;
 			Ok(())
 		}
 
@@ -296,7 +323,12 @@ pub mod pallet {
 			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
 			Self::check_msa(delegator_key, payload.msa_id)?;
 			Self::check_schema(payload.schema_id, PayloadLocation::Itemized)?;
-			Self::modify_itemized(payload.msa_id, payload.schema_id, payload.actions)?;
+			Self::modify_itemized(
+				payload.msa_id,
+				payload.schema_id,
+				payload.target_hash,
+				payload.actions,
+			)?;
 			Ok(())
 		}
 
@@ -324,6 +356,7 @@ pub mod pallet {
 				payload.msa_id,
 				payload.schema_id,
 				payload.page_id,
+				payload.target_hash,
 				PaginatedPage::<T>::from(payload.payload),
 			)?;
 			Ok(())
@@ -350,7 +383,12 @@ pub mod pallet {
 			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
 			Self::check_msa(delegator_key, payload.msa_id)?;
 			Self::check_schema(payload.schema_id, PayloadLocation::Paginated)?;
-			Self::delete_paginated(payload.msa_id, payload.schema_id, payload.page_id)?;
+			Self::delete_paginated(
+				payload.msa_id,
+				payload.schema_id,
+				payload.page_id,
+				payload.target_hash,
+			)?;
 			Ok(())
 		}
 	}
@@ -367,12 +405,15 @@ impl<T: Config> Pallet<T> {
 	) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
 		Self::check_schema(schema_id, PayloadLocation::Paginated)?;
 		let prefix: PaginatedPrefixKey = (schema_id,);
-		Ok(StatefulChildTree::<T::Hasher>::prefix_iterator::<
+		Ok(StatefulChildTree::<T::KeyHasher>::prefix_iterator::<
 			PaginatedPage<T>,
 			PaginatedKey,
 			PaginatedPrefixKey,
 		>(&msa_id, &prefix)
-		.map(|(k, v)| PaginatedStorageResponse::new(k.1, msa_id, schema_id, v.data.into_inner()))
+		.map(|(k, v)| {
+			let content_hash = v.get_hash();
+			PaginatedStorageResponse::new(k.1, msa_id, schema_id, v.data.into_inner(), content_hash)
+		})
 		.collect())
 	}
 
@@ -383,17 +424,19 @@ impl<T: Config> Pallet<T> {
 	) -> Result<ItemizedStoragePageResponse, DispatchError> {
 		Self::check_schema(schema_id, PayloadLocation::Itemized)?;
 		let key: ItemizedKey = (schema_id,);
-		let items: Vec<ItemizedStorageResponse> =
-			StatefulChildTree::<T::Hasher>::try_read::<ItemizedKey, ItemizedPage<T>>(&msa_id, &key)
-				.map_err(|_| Error::<T>::CorruptedState)?
-				.unwrap_or_default()
-				.parse_as_itemized(false)
-				.map_err(|_| Error::<T>::CorruptedState)?
-				.items
-				.iter()
-				.map(|(key, v)| ItemizedStorageResponse::new(*key, v.to_vec()))
-				.collect();
-		Ok(ItemizedStoragePageResponse::new(msa_id, schema_id, items))
+		let page = StatefulChildTree::<T::KeyHasher>::try_read::<ItemizedKey, ItemizedPage<T>>(
+			&msa_id, &key,
+		)
+		.map_err(|_| Error::<T>::CorruptedState)?
+		.unwrap_or_default();
+		let items: Vec<ItemizedStorageResponse> = page
+			.parse_as_itemized(false)
+			.map_err(|_| Error::<T>::CorruptedState)?
+			.items
+			.iter()
+			.map(|(key, v)| ItemizedStorageResponse::new(*key, v.to_vec()))
+			.collect();
+		Ok(ItemizedStoragePageResponse::new(msa_id, schema_id, page.get_hash(), items))
 	}
 
 	pub fn check_payload_expiration(
@@ -492,17 +535,21 @@ impl<T: Config> Pallet<T> {
 	fn modify_itemized(
 		state_owner_msa_id: MessageSourceId,
 		schema_id: SchemaId,
+		target_hash: PageHash,
 		actions: BoundedVec<ItemAction, T::MaxItemizedActionsCount>,
 	) -> DispatchResult {
 		let key: ItemizedKey = (schema_id,);
-		let updated_page = StatefulChildTree::<T::Hasher>::try_read::<_, ItemizedPage<T>>(
+		let existing_page = StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
 			&state_owner_msa_id,
 			&key,
 		)
 		.map_err(|_| Error::<T>::CorruptedState)?
-		.unwrap_or_default()
-		.apply_item_actions(&actions[..])
-		.map_err(|e| match e {
+		.unwrap_or_default();
+
+		let prev_content_hash = existing_page.get_hash();
+		ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
+
+		let updated_page = existing_page.apply_item_actions(&actions[..]).map_err(|e| match e {
 			PageError::ErrorParsing(err) => {
 				log::warn!(
 					"failed parsing Itemized msa={:?} schema_id={:?} {:?}",
@@ -517,17 +564,20 @@ impl<T: Config> Pallet<T> {
 
 		match updated_page.is_empty() {
 			true => {
-				StatefulChildTree::<T::Hasher>::kill(&state_owner_msa_id, &key);
+				StatefulChildTree::<T::KeyHasher>::kill(&state_owner_msa_id, &key);
 				Self::deposit_event(Event::ItemizedPageDeleted {
 					msa_id: state_owner_msa_id,
 					schema_id,
+					prev_content_hash,
 				});
 			},
 			false => {
-				StatefulChildTree::<T::Hasher>::write(&state_owner_msa_id, &key, updated_page);
+				StatefulChildTree::<T::KeyHasher>::write(&state_owner_msa_id, &key, &updated_page);
 				Self::deposit_event(Event::ItemizedPageUpdated {
 					msa_id: state_owner_msa_id,
 					schema_id,
+					curr_content_hash: updated_page.get_hash(),
+					prev_content_hash,
 				});
 			},
 		};
@@ -538,14 +588,25 @@ impl<T: Config> Pallet<T> {
 		state_owner_msa_id: MessageSourceId,
 		schema_id: SchemaId,
 		page_id: PageId,
-		page: PaginatedPage<T>,
+		target_hash: PageHash,
+		new_page: PaginatedPage<T>,
 	) -> DispatchResult {
 		let keys: PaginatedKey = (schema_id, page_id);
-		StatefulChildTree::<T::Hasher>::write(&state_owner_msa_id, &keys, page);
+		let existing_page: PaginatedPage<T> =
+			StatefulChildTree::<T::KeyHasher>::try_read(&state_owner_msa_id, &keys)
+				.map_err(|_| Error::<T>::CorruptedState)?
+				.unwrap_or_default();
+
+		let prev_content_hash: PageHash = existing_page.get_hash();
+		ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
+
+		StatefulChildTree::<T::KeyHasher>::write(&state_owner_msa_id, &keys, &new_page);
 		Self::deposit_event(Event::PaginatedPageUpdated {
 			msa_id: state_owner_msa_id,
 			schema_id,
 			page_id,
+			curr_content_hash: new_page.get_hash(),
+			prev_content_hash,
 		});
 		Ok(())
 	}
@@ -554,14 +615,26 @@ impl<T: Config> Pallet<T> {
 		state_owner_msa_id: MessageSourceId,
 		schema_id: SchemaId,
 		page_id: PageId,
+		target_hash: PageHash,
 	) -> DispatchResult {
 		let keys: PaginatedKey = (schema_id, page_id);
-		StatefulChildTree::<T::Hasher>::kill(&state_owner_msa_id, &keys);
-		Self::deposit_event(Event::PaginatedPageDeleted {
-			msa_id: state_owner_msa_id,
-			schema_id,
-			page_id,
-		});
+		if let Some(existing_page) = StatefulChildTree::<T::KeyHasher>::try_read::<
+			_,
+			PaginatedPage<T>,
+		>(&state_owner_msa_id, &keys)
+		.map_err(|_| Error::<T>::CorruptedState)?
+		{
+			let prev_content_hash: PageHash = existing_page.get_hash();
+			ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
+			StatefulChildTree::<T::KeyHasher>::kill(&state_owner_msa_id, &keys);
+			Self::deposit_event(Event::PaginatedPageDeleted {
+				msa_id: state_owner_msa_id,
+				schema_id,
+				page_id,
+				prev_content_hash,
+			});
+		}
+
 		Ok(())
 	}
 
@@ -571,7 +644,7 @@ impl<T: Config> Pallet<T> {
 		schema_id: SchemaId,
 	) -> Option<ItemizedPage<T>> {
 		let key: ItemizedKey = (schema_id,);
-		StatefulChildTree::<T::Hasher>::try_read::<_, ItemizedPage<T>>(&msa_id, &key)
+		StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(&msa_id, &key)
 			.unwrap_or(None)
 	}
 
@@ -582,7 +655,7 @@ impl<T: Config> Pallet<T> {
 		page_id: PageId,
 	) -> Option<PaginatedPage<T>> {
 		let key: PaginatedKey = (schema_id, page_id);
-		StatefulChildTree::<T::Hasher>::try_read::<_, PaginatedPage<T>>(&msa_id, &key)
+		StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(&msa_id, &key)
 			.unwrap_or(None)
 	}
 }
