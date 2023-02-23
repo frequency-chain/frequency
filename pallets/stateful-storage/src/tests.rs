@@ -1325,3 +1325,28 @@ fn apply_actions_on_signature_schema_fails() {
 		);
 	});
 }
+
+#[test]
+fn insert_page_fails_for_signature_schema() {
+	new_test_ext().execute_with(|| {
+		// setup
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = PAGINATED_SIGNED_SCHEMA;
+		let page_id = 11;
+		let payload = generate_payload_bytes::<PaginatedPageSize>(None);
+
+		// assert
+		assert_err!(
+			StatefulStoragePallet::upsert_page(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				page_id,
+				NONEXISTENT_PAGE_HASH,
+				payload.into(),
+			),
+			Error::<Test>::SchemaNotSupported
+		);
+	});
+}
