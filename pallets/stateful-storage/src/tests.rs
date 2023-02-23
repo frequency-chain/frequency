@@ -132,7 +132,7 @@ fn upsert_page_with_invalid_schema_payload_location_errors() {
 		// setup
 		let caller_1 = 1;
 		let msa_id = 1;
-		let schema_id = ITEMIZED_SCHEMA;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let page_id = 1;
 		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
@@ -357,7 +357,7 @@ fn delete_page_with_invalid_schema_payload_location_errors() {
 		// setup
 		let caller_1 = 1;
 		let msa_id = 1;
-		let schema_id = ITEMIZED_SCHEMA;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let page_id = 1;
 
 		assert_err!(
@@ -711,7 +711,7 @@ fn apply_item_actions_with_add_item_action_bigger_than_expected_should_fail() {
 		// arrange
 		let caller_1 = 1;
 		let msa_id = 1;
-		let schema_id = ITEMIZED_SCHEMA;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let payload =
 			vec![1; (<Test as Config>::MaxItemizedBlobSizeBytes::get() + 1).try_into().unwrap()];
 		let actions = vec![ItemAction::Add { data: payload }];
@@ -736,7 +736,7 @@ fn apply_item_actions_with_invalid_msa_should_fail() {
 		// arrange
 		let caller_1 = 1000; // hard-coded in mocks to return None for MSA
 		let msa_id = 1;
-		let schema_id = ITEMIZED_SCHEMA;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload }];
 
@@ -808,7 +808,7 @@ fn apply_item_actions_with_no_delegation_and_different_caller_from_owner_should_
 		// arrange
 		let caller_1 = 1;
 		let msa_id = 1;
-		let schema_id = UNDELEGATED_ITEMIZED_SCHEMA;
+		let schema_id = UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA;
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload }];
 
@@ -832,7 +832,7 @@ fn apply_item_actions_with_corrupted_state_should_fail() {
 		// arrange
 		let caller_1 = 1;
 		let msa_id = 1;
-		let schema_id = ITEMIZED_SCHEMA;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let payload = vec![1; 5];
 		let actions1 = vec![ItemAction::Add { data: payload.clone() }];
 		let key = (schema_id,);
@@ -865,7 +865,7 @@ fn apply_item_actions_initial_state_with_stale_hash_should_fail() {
 		// arrange
 		let caller_1 = 1;
 		let msa_id = 1;
-		let schema_id = ITEMIZED_SCHEMA;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let payload = vec![1; 5];
 		let actions1 = vec![ItemAction::Add { data: payload.clone() }];
 
@@ -889,7 +889,7 @@ fn apply_item_actions_existing_page_with_stale_hash_should_fail() {
 		// arrange
 		let caller_1 = 1;
 		let msa_id = 1;
-		let schema_id = ITEMIZED_SCHEMA;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let payload = vec![1; 5];
 		let actions1 = vec![ItemAction::Add { data: payload.clone() }];
 
@@ -919,7 +919,7 @@ fn apply_item_actions_initial_state_with_valid_input_should_update_storage() {
 		// arrange
 		let caller_1 = 1;
 		let msa_id = 1;
-		let schema_id = ITEMIZED_SCHEMA;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let payload = vec![1; 5];
 		let prev_content_hash: PageHash = 0;
 		let actions = vec![ItemAction::Add { data: payload }];
@@ -957,7 +957,7 @@ fn apply_item_actions_existing_page_with_valid_input_should_update_storage() {
 		// arrange
 		let caller_1 = 1;
 		let msa_id = 1;
-		let schema_id = ITEMIZED_SCHEMA;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload }];
 		let page = ItemizedPage::<Test>::default();
@@ -1049,7 +1049,7 @@ fn apply_item_actions_with_signature_having_add_item_action_bigger_than_expected
 		let caller_1 = 1;
 		let delegator_key = 2;
 		let msa_id = get_msa_from_account(delegator_key);
-		let schema_id = ITEMIZED_SCHEMA;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let payload =
 			vec![1; (<Test as Config>::MaxItemizedBlobSizeBytes::get() + 1).try_into().unwrap()];
 		let actions = vec![ItemAction::Add { data: payload }];
@@ -1085,7 +1085,7 @@ fn apply_item_actions_with_signature_having_wrong_signature_should_fail() {
 		let delegator_key = 2;
 		let signature_key = 3;
 		let msa_id = get_msa_from_account(delegator_key);
-		let schema_id = ITEMIZED_SCHEMA;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload }];
 		let payload = ItemizedSignaturePayload {
@@ -1119,7 +1119,7 @@ fn apply_item_actions_with_signature_having_too_far_expiration_should_fail() {
 		let caller_1 = 1;
 		let delegator_key = 2;
 		let msa_id = get_msa_from_account(delegator_key);
-		let schema_id = ITEMIZED_SCHEMA;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload }];
 		let payload = ItemizedSignaturePayload {
@@ -1153,7 +1153,7 @@ fn apply_item_actions_with_signature_having_expired_payload_should_fail() {
 		let caller_1 = 1;
 		let delegator_key = 2;
 		let msa_id = get_msa_from_account(delegator_key);
-		let schema_id = ITEMIZED_SCHEMA;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload }];
 		let block_number = 10;
@@ -1189,7 +1189,7 @@ fn apply_item_actions_with_signature_having_correct_input_should_work() {
 		let caller_1 = 1;
 		let delegator_key = 2;
 		let msa_id = get_msa_from_account(delegator_key);
-		let schema_id = ITEMIZED_SCHEMA;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let prev_content_hash = PageHash::default();
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload }];

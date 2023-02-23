@@ -66,7 +66,7 @@ use common_primitives::stateful_storage::PageId;
 use common_primitives::{
 	msa::{DelegatorId, MessageSourceId, MsaValidator, ProviderId, SchemaGrantValidator},
 	node::Verify,
-	schema::{PayloadLocation, SchemaId, SchemaProvider},
+	schema::{PayloadLocation, SchemaId, SchemaProvider, SchemaSetting},
 	stateful_storage::{
 		ItemizedStoragePageResponse, ItemizedStorageResponse, PageHash, PaginatedStorageResponse,
 	},
@@ -244,8 +244,9 @@ pub mod pallet {
 			actions: BoundedVec<ItemAction, T::MaxItemizedActionsCount>,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
+			let is_pruning = actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
 			Self::check_actions(&actions)?;
-			Self::check_schema(schema_id, PayloadLocation::Itemized)?;
+			Self::check_schema(schema_id, PayloadLocation::Itemized, false, is_pruning)?;
 			Self::check_grants(provider_key, state_owner_msa_id, schema_id)?;
 			Self::modify_itemized(state_owner_msa_id, schema_id, target_hash, actions)?;
 			Ok(())
@@ -267,7 +268,7 @@ pub mod pallet {
 				page_id as u32 <= T::MaxPaginatedPageId::get(),
 				Error::<T>::PageIdExceedsMaxAllowed
 			);
-			Self::check_schema(schema_id, PayloadLocation::Paginated)?;
+			Self::check_schema(schema_id, PayloadLocation::Paginated, false, false)?;
 			Self::check_grants(provider_key, state_owner_msa_id, schema_id)?;
 			Self::modify_paginated(
 				state_owner_msa_id,
@@ -294,7 +295,7 @@ pub mod pallet {
 				page_id as u32 <= T::MaxPaginatedPageId::get(),
 				Error::<T>::PageIdExceedsMaxAllowed
 			);
-			Self::check_schema(schema_id, PayloadLocation::Paginated)?;
+			Self::check_schema(schema_id, PayloadLocation::Paginated, false, true)?;
 			Self::check_grants(provider_key, state_owner_msa_id, schema_id)?;
 			Self::delete_paginated(state_owner_msa_id, schema_id, page_id, target_hash)?;
 			Ok(())
@@ -315,6 +316,8 @@ pub mod pallet {
 			payload: ItemizedSignaturePayload<T>,
 		) -> DispatchResult {
 			ensure_signed(origin)?;
+
+			let is_pruning = payload.actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
 			Self::check_actions(&payload.actions)?;
 			Self::check_payload_expiration(
 				frame_system::Pallet::<T>::block_number(),
@@ -322,7 +325,7 @@ pub mod pallet {
 			)?;
 			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
 			Self::check_msa(delegator_key, payload.msa_id)?;
-			Self::check_schema(payload.schema_id, PayloadLocation::Itemized)?;
+			Self::check_schema(payload.schema_id, PayloadLocation::Itemized, true, is_pruning)?;
 			Self::modify_itemized(
 				payload.msa_id,
 				payload.schema_id,
@@ -351,7 +354,7 @@ pub mod pallet {
 			)?;
 			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
 			Self::check_msa(delegator_key, payload.msa_id)?;
-			Self::check_schema(payload.schema_id, PayloadLocation::Paginated)?;
+			Self::check_schema(payload.schema_id, PayloadLocation::Paginated, true, false)?;
 			Self::modify_paginated(
 				payload.msa_id,
 				payload.schema_id,
@@ -382,7 +385,7 @@ pub mod pallet {
 			)?;
 			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
 			Self::check_msa(delegator_key, payload.msa_id)?;
-			Self::check_schema(payload.schema_id, PayloadLocation::Paginated)?;
+			Self::check_schema(payload.schema_id, PayloadLocation::Paginated, true, true)?;
 			Self::delete_paginated(
 				payload.msa_id,
 				payload.schema_id,
@@ -403,7 +406,7 @@ impl<T: Config> Pallet<T> {
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
 	) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
-		Self::check_schema(schema_id, PayloadLocation::Paginated)?;
+		Self::check_schema(schema_id, PayloadLocation::Paginated, false, false)?;
 		let prefix: PaginatedPrefixKey = (schema_id,);
 		Ok(StatefulChildTree::<T::KeyHasher>::prefix_iterator::<
 			PaginatedPage<T>,
@@ -422,7 +425,7 @@ impl<T: Config> Pallet<T> {
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
 	) -> Result<ItemizedStoragePageResponse, DispatchError> {
-		Self::check_schema(schema_id, PayloadLocation::Itemized)?;
+		Self::check_schema(schema_id, PayloadLocation::Itemized, false, false)?;
 		let key: ItemizedKey = (schema_id,);
 		let page = StatefulChildTree::<T::KeyHasher>::try_read::<ItemizedKey, ItemizedPage<T>>(
 			&msa_id, &key,
@@ -478,13 +481,28 @@ impl<T: Config> Pallet<T> {
 	fn check_schema(
 		schema_id: SchemaId,
 		expected_payload_location: PayloadLocation,
+		is_payload_signed: bool,
+		is_deleting: bool,
 	) -> DispatchResult {
 		let schema =
 			T::SchemaProvider::get_schema_by_id(schema_id).ok_or(Error::<T>::InvalidSchemaId)?;
+
+		// Ensure that the schema's payload location matches the expected location.
 		ensure!(
 			schema.payload_location == expected_payload_location,
 			Error::<T>::SchemaPayloadLocationMismatch
 		);
+
+		// Ensure that the schema allows signed payloads only if the extrinsic accepts a signed payload.
+		if schema.settings.contains(&SchemaSetting::SignatureRequired) {
+			ensure!(!is_payload_signed, Error::<T>::InvalidSchemaId);
+		}
+
+		// Ensure that the schema does not allow deletion for AppendOnly schema.
+		if schema.settings.contains(&SchemaSetting::AppendOnly) {
+			ensure!(!is_deleting, Error::<T>::InvalidSchemaId);
+		}
+
 		Ok(())
 	}
 

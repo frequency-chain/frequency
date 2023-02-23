@@ -11,7 +11,7 @@ use frame_system::RawOrigin;
 use sp_core::bounded::BoundedVec;
 use stateful_child_tree::StatefulChildTree;
 
-pub const ITEMIZED_SCHEMA: SchemaId = 100; // keep in sync with mock.rs. TODO: refactor
+pub const ITEMIZED_APPEND_ONLY_SCHEMA: SchemaId = 100; // keep in sync with mock.rs. TODO: refactor
 pub const PAGINATED_SCHEMA: SchemaId = 101; // keep in sync with mock.rs. TODO: refactor
 pub const NONEXISTENT_PAGE_HASH: PageHash = 0;
 
@@ -42,7 +42,7 @@ benchmarks! {
 		let p in 1 .. T::MaxItemizedPageSizeBytes::get()- 1;
 		let provider_msa_id = 1u64;
 		let delegator_msa_id = 2u64;
-		let schema_id = ITEMIZED_SCHEMA;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let caller: T::AccountId = whitelisted_caller();
 		let payload = vec![0u8; s as usize];
 		let num_of_items = p / (T::MaxItemizedPageSizeBytes::get() + 2);
