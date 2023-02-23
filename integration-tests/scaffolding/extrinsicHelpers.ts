@@ -244,6 +244,6 @@ export class ExtrinsicHelper {
     }
 
     public static withdraw_unstaked(keys: KeyringPair): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.withdraw_unstaked(), keys, ExtrinsicHelper.api.events.capacity.StakeWithdrawn);
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.withdrawUnstaked(), keys, ExtrinsicHelper.api.events.capacity.StakeWithdrawn);
     }
 }
