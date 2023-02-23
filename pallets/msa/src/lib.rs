@@ -246,6 +246,26 @@ pub mod pallet {
 		T::MaxSignaturesStored, // Maximum total signatures to store
 	>;
 
+	/// PayloadSignatureRegistry is used to prevent replay attacks for extrinsics
+	/// that take an externally-signed payload.
+	/// For this to work, the payload must include a mortality block number, which
+	/// is used in lieu of a monotonically increasing nonce.
+	#[pallet::storage]
+	#[pallet::getter(fn get_payload_signature_registry)]
+	pub(super) type NEWPayloadSignatureRegistry<T: Config> = StorageMap<
+		_,                      // prefix
+		Twox64Concat,           // hasher for key1
+		MultiSignature, // An externally-created Signature for an external payload, provided by an extrinsic
+		(T::BlockNumber, Option<MultiSignature>), // An actual flipping block number and the next signature if any
+		OptionQuery,    // The type for the query
+		GetDefault,     // OnEmpty return type, defaults to None
+		T::MaxSignaturesStored, // Maximum total signatures to store
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn get_sig_pointer)]
+	pub type NEWPayloadSignatureBucketPointer<T> = StorageValue<_, MultiSignature, ValueQuery>;
+
 	/// Records how many signatures are currently stored in each virtual signature registration bucket
 	#[pallet::storage]
 	pub(super) type PayloadSignatureBucketCount<T: Config> = StorageMap<
@@ -1375,6 +1395,47 @@ impl<T: Config> Pallet<T> {
 		} else if current_block >= signature_expires_at {
 			Err(Error::<T>::ProofHasExpired.into())
 		} else {
+
+			// Make sure it is not in the registry
+			ensure!(
+				!<NEWPayloadSignatureRegistry<T>>::exists(signature),
+				Error::<T>::SignatureAlreadySubmitted
+			);
+
+			<NEWPayloadSignatureBucketPointer<T>>::try_mutate(
+				|latest_pointer: &mut u32| -> DispatchResult {
+
+					// Tests for noop fail with "storage has been mutated"
+					// if this try_mutate does not live inside this block
+					<NEWPayloadSignatureRegistry<T>>::try_mutate(
+						latest_pointer,
+						|maybe_block_and_pointer| -> DispatchResult {
+
+							// Update the pointer to new_sig
+							*maybe_block_and_pointer = Some((maybe_block_and_pointer.unwrap_or(current_block).0, Some(signature)));
+
+							if (maybe_block_and_pointer.is_some()) {
+								ensure!(
+									maybe_block_and_pointer.0 < current_block,
+									Error::<T>::SignatureRegistryLimitExceeded
+								);
+								// Update the pointer to the "next" pointer
+								*signature_pointer = maybe_block_and_pointer.1;
+							}
+
+							*maybe_mortality_block = Some(signature_expires_at);
+							Ok(())
+						},
+					)?;
+					Ok(())
+				},
+			)
+
+
+			// If that index is still needed, SignatureRegistryLimitExceeded
+
+			// Override the index with the new signature
+
 			let bucket_num = Self::bucket_for(signature_expires_at.into());
 			<PayloadSignatureBucketCount<T>>::try_mutate(
 				bucket_num,
