@@ -1,6 +1,6 @@
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import { createKeys, signPayloadSr25519, Sr25519Signature, generateAddKeyPayload, fundKeypair, devAccounts, createAndFundKeypairManual } from "../scaffolding/helpers";
+import { createKeys, signPayloadSr25519, getBlockNumber, generateAddKeyPayload, fundKeypair, devAccounts, createAndFundKeypairManual } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { AddKeyData, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { EXISTENTIAL_DEPOSIT } from "../scaffolding/rootHooks";
@@ -35,12 +35,23 @@ describe("MSA Initializer Load Tests", function () {
 
         await createBlock();
 
-        for (let i = 0; i < 25_000; i++) {
+        // Make sure we are at [block number] % 100 so we get all these in the same bucket
+        const blockNumber = await getBlockNumber();
+        if (blockNumber % 100 > 0) {
+            console.log("Getting to a mod(100) block number. Starting Block Number:", blockNumber);
+            for (let i = (blockNumber % 100); i < 100; i++) {
+                await createBlock();
+            }
+            console.log("DONE! Ending Block Number:", await getBlockNumber());
+        }
+
+        for (let i = 0; i < 30_000; i++) {
             const ithMsaKey = i % msaKeys.length;
             let { controlKey, nonce, id } = msaKeys[ithMsaKey];
             console.log(`${i} pair of sigs`);
 
-            if (i > 0 && i % 250 === 0) {
+            if (i > 0 && i % 330 === 0) {
+                await new Promise(r => setTimeout(r, 300));
                 await createBlock();
                 console.log(`${i} block`);
             }
@@ -48,14 +59,19 @@ describe("MSA Initializer Load Tests", function () {
             addSigs(id, controlKey, nonce);
             msaKeys[ithMsaKey].nonce++;
         }
-        // Create another block at the end
+        // Create another few blocks at the end
+        await new Promise(r => setTimeout(r, 300));
+        await createBlock();
+        await new Promise(r => setTimeout(r, 300));
+        await createBlock();
+        await new Promise(r => setTimeout(r, 300));
         await createBlock();
     }).timeout(500_000)
 })
 
 async function generateMsa(): Promise<GeneratedMsa> {
     console.count("generateMsa");
-    const controlKey = await createAndFundKeypairManual(10n * EXISTENTIAL_DEPOSIT);
+    const controlKey = await createAndFundKeypairManual(50n * EXISTENTIAL_DEPOSIT);
     await createBlock();
     const id = await createMsa(controlKey);
     await createBlock();
