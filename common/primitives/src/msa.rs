@@ -7,7 +7,7 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, Zero},
-	DispatchError,
+	DispatchError, MultiSignature,
 };
 use sp_std::prelude::Vec;
 
@@ -130,6 +130,20 @@ where
 {
 	/// The provider's name
 	pub provider_name: BoundedVec<u8, T>,
+}
+
+/// This is the metadata associated with a provider. As of now it is just a
+/// name, but it will likely be expanded in the future
+#[derive(MaxEncodedLen, TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
+pub struct SignatureRegistryPointer {
+	/// Most recent signature
+	pub head: MultiSignature,
+
+	/// "Oldest" signature
+	pub tail: MultiSignature,
+
+	/// Count of signatures in the registry for initialization
+	pub count: u32,
 }
 
 /// A behavior that allows looking up an MSA id

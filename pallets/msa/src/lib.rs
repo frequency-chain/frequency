@@ -251,20 +251,22 @@ pub mod pallet {
 	/// For this to work, the payload must include a mortality block number, which
 	/// is used in lieu of a monotonically increasing nonce.
 	#[pallet::storage]
-	#[pallet::getter(fn get_payload_signature_registry)]
+	#[pallet::getter(fn get_new_payload_signature_registry)]
 	pub(super) type NEWPayloadSignatureRegistry<T: Config> = StorageMap<
-		_,                      // prefix
-		Twox64Concat,           // hasher for key1
+		_,                                        // prefix
+		Twox64Concat,                             // hasher for key1
 		MultiSignature, // An externally-created Signature for an external payload, provided by an extrinsic
-		(T::BlockNumber, Option<MultiSignature>), // An actual flipping block number and the next signature if any
-		OptionQuery,    // The type for the query
-		GetDefault,     // OnEmpty return type, defaults to None
-		T::MaxSignaturesStored, // Maximum total signatures to store
+		(T::BlockNumber, Option<MultiSignature>), // An actual flipping block number and the oldest signature at write time (if any in the case of filling up)
+		OptionQuery,                              // The type for the query
+		GetDefault,                               // OnEmpty return type, defaults to None
+		T::MaxSignaturesStored,                   // Maximum total signatures to store
 	>;
 
+	/// TESTING
 	#[pallet::storage]
-	#[pallet::getter(fn get_sig_pointer)]
-	pub type NEWPayloadSignatureBucketPointer<T> = StorageValue<_, MultiSignature, ValueQuery>;
+	#[pallet::getter(fn get_sig_head_and_tail_counter)]
+	pub(super) type NEWPayloadSignatureBucketPointer<T: Config> =
+		StorageValue<_, SignatureRegistryPointer>;
 
 	/// Records how many signatures are currently stored in each virtual signature registration bucket
 	#[pallet::storage]
@@ -1391,82 +1393,97 @@ impl<T: Config> Pallet<T> {
 
 		let max_lifetime = Self::mortality_block_limit(current_block);
 		if max_lifetime <= signature_expires_at {
-			Err(Error::<T>::ProofNotYetValid.into())
+			return Err(Error::<T>::ProofNotYetValid.into())
 		} else if current_block >= signature_expires_at {
-			Err(Error::<T>::ProofHasExpired.into())
-		} else {
+			return Err(Error::<T>::ProofHasExpired.into())
+		};
 
-			// Make sure it is not in the registry
-			ensure!(
-				!<NEWPayloadSignatureRegistry<T>>::exists(signature),
-				Error::<T>::SignatureAlreadySubmitted
-			);
+		// Make sure it is not in the registry
+		ensure!(
+			!<NEWPayloadSignatureRegistry<T>>::contains_key(signature),
+			Error::<T>::SignatureAlreadySubmitted
+		);
 
-			<NEWPayloadSignatureBucketPointer<T>>::try_mutate(
-				|latest_pointer: &mut u32| -> DispatchResult {
+		let pointer = match NEWPayloadSignatureBucketPointer::<T>::get() {
+			Some(x) => x,
+			None => return Ok(()),
+		};
 
-					// Tests for noop fail with "storage has been mutated"
-					// if this try_mutate does not live inside this block
-					<NEWPayloadSignatureRegistry<T>>::try_mutate(
-						latest_pointer,
-						|maybe_block_and_pointer| -> DispatchResult {
+		let mut new_tail: Option<MultiSignature> = None;
 
-							// Update the pointer to new_sig
-							*maybe_block_and_pointer = Some((maybe_block_and_pointer.unwrap_or(current_block).0, Some(signature)));
+		// If the counter `head_and_tail_counter.count` is < T::SigMax, don't delete, keep a None tail
 
-							if (maybe_block_and_pointer.is_some()) {
-								ensure!(
-									maybe_block_and_pointer.0 < current_block,
-									Error::<T>::SignatureRegistryLimitExceeded
-								);
-								// Update the pointer to the "next" pointer
-								*signature_pointer = maybe_block_and_pointer.1;
-							}
+		// Remove old tail
+		<NEWPayloadSignatureRegistry<T>>::try_mutate(
+			pointer.tail,
+			|maybe_block_and_next_oldest_pointer| -> DispatchResult {
+				// Loop Complete
+				match maybe_block_and_next_oldest_pointer {
+					Some((test_block, Some(next_oldest_sig))) => {
+						// check
+						ensure!(
+							current_block.gt(test_block),
+							Error::<T>::SignatureRegistryLimitExceeded
+						);
+						new_tail = Some(next_oldest_sig.clone());
 
-							*maybe_mortality_block = Some(signature_expires_at);
-							Ok(())
-						},
-					)?;
-					Ok(())
-				},
-			)
+						// Remove this data point
+						*maybe_block_and_next_oldest_pointer = None;
 
+						Ok(())
+					},
+					// Loop Almost Complete?
+					Some((test_block, None)) => {
+						// check
+						ensure!(
+							current_block.gt(test_block),
+							Error::<T>::SignatureRegistryLimitExceeded
+						);
+						Ok(())
+					},
+					// When might this happen?
+					None => {
+						// TODO: Deal with initialization
+						Ok(())
+					},
+				}
+			},
+		)?;
 
-			// If that index is still needed, SignatureRegistryLimitExceeded
+		// Create new head
+		<NEWPayloadSignatureRegistry<T>>::set(
+			signature,
+			Some((signature_expires_at, new_tail.clone())),
+		);
 
-			// Override the index with the new signature
+		// Update old head
+		<NEWPayloadSignatureRegistry<T>>::try_mutate(
+			pointer.head,
+			|maybe_old_head| -> DispatchResult {
+				match maybe_old_head {
+					Some(old_head) => {
+						*maybe_old_head = Some((old_head.0, Some(signature.clone())));
 
-			let bucket_num = Self::bucket_for(signature_expires_at.into());
-			<PayloadSignatureBucketCount<T>>::try_mutate(
-				bucket_num,
-				|bucket_signature_count: &mut u32| -> DispatchResult {
-					let limit = T::MaxSignaturesPerBucket::get();
-					ensure!(
-						*bucket_signature_count < limit,
-						Error::<T>::SignatureRegistryLimitExceeded
-					);
-					let new_count =
-						bucket_signature_count.checked_add(1).ok_or(ArithmeticError::Overflow)?;
-					*bucket_signature_count = new_count;
+						Ok(())
+					},
+					_ => {
+						// TODO: Deal with initialization
+						Ok(())
+					},
+				}
+			},
+		)?;
 
-					// Tests for noop fail with "storage has been mutated"
-					// if this try_mutate does not live inside this block
-					<PayloadSignatureRegistry<T>>::try_mutate(
-						bucket_num,
-						signature,
-						|maybe_mortality_block| -> DispatchResult {
-							ensure!(
-								maybe_mortality_block.is_none(),
-								Error::<T>::SignatureAlreadySubmitted
-							);
-							*maybe_mortality_block = Some(signature_expires_at);
-							Ok(())
-						},
-					)?;
-					Ok(())
-				},
-			)
+		match new_tail {
+			Some(tail) => NEWPayloadSignatureBucketPointer::<T>::put(SignatureRegistryPointer {
+				head: signature.clone(),
+				tail,
+				count: pointer.count,
+			}),
+			None => {},
 		}
+
+		Ok(())
 	}
 
 	/// Check if enough blocks have passed to reset bucket mortality storage.
