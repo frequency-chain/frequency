@@ -1281,6 +1281,7 @@ fn delete_page_fails_for_append_only() {
 		let page: PaginatedPage<Test> = payload.clone().into();
 		let page_hash = page.get_hash();
 
+		// assert
 		assert_ok!(StatefulStoragePallet::upsert_page(
 			RuntimeOrigin::signed(caller_1),
 			msa_id,
@@ -1297,6 +1298,28 @@ fn delete_page_fails_for_append_only() {
 				schema_id,
 				page_id,
 				page_hash
+			),
+			Error::<Test>::SchemaNotSupported
+		);
+	});
+}
+
+#[test]
+fn apply_actions_on_signature_schema_fails() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SIGNATURE_REQUIRED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions1 = vec![ItemAction::Add { data: payload }];
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				NONEXISTENT_PAGE_HASH,
+				BoundedVec::try_from(actions1).unwrap(),
 			),
 			Error::<Test>::SchemaNotSupported
 		);

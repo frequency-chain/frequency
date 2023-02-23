@@ -498,7 +498,7 @@ impl<T: Config> Pallet<T> {
 
 		// Ensure that the schema allows signed payloads only if the extrinsic accepts a signed payload.
 		if schema.settings.contains(&SchemaSetting::SignatureRequired) {
-			ensure!(!is_payload_signed, Error::<T>::SchemaNotSupported);
+			ensure!(is_payload_signed, Error::<T>::SchemaNotSupported);
 		}
 
 		// Ensure that the schema does not allow deletion for AppendOnly schema.

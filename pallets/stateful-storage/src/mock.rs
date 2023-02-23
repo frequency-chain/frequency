@@ -83,7 +83,8 @@ pub const UNDELEGATED_PAGINATED_SCHEMA: SchemaId = 102;
 pub const UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA: SchemaId = 103;
 pub const ITEMIZED_SCHEMA: SchemaId = 104;
 pub const PAGINATED_APPEND_ONLY_SCHEMA: SchemaId = 105;
-
+pub const ITEMIZED_SIGNATURE_REQUIRED_SCHEMA: SchemaId = 106;
+pub const PAGINATED_SIGNED_SCHEMA: SchemaId = 107;
 impl Default for MaxItemizedPageSizeBytes {
 	fn default() -> Self {
 		Self
@@ -202,7 +203,21 @@ impl SchemaProvider<u16> for SchemaHandler {
 					payload_location: PayloadLocation::Itemized,
 					settings: Vec::try_from(vec![SchemaSetting::AppendOnly]).unwrap(),
 				}),
+			ITEMIZED_SIGNATURE_REQUIRED_SCHEMA => Some(SchemaResponse {
+				schema_id,
+				model: r#"schema"#.to_string().as_bytes().to_vec(),
+				model_type: ModelType::AvroBinary,
+				payload_location: PayloadLocation::Itemized,
+				settings: Vec::try_from(vec![SchemaSetting::SignatureRequired]).unwrap(),
+			}),
 			PAGINATED_SCHEMA | UNDELEGATED_PAGINATED_SCHEMA => Some(SchemaResponse {
+				schema_id,
+				model: r#"schema"#.to_string().as_bytes().to_vec(),
+				model_type: ModelType::AvroBinary,
+				payload_location: PayloadLocation::Paginated,
+				settings: Vec::new(),
+			}),
+			PAGINATED_SIGNED_SCHEMA => Some(SchemaResponse {
 				schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
