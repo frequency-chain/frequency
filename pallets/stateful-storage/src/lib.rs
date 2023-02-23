@@ -168,6 +168,9 @@ pub mod pallet {
 		/// Invalid SchemaId or Schema not found
 		InvalidSchemaId,
 
+		/// Unsupported schema
+		SchemaNotSupported,
+
 		/// Schema is not valid for storage model
 		SchemaPayloadLocationMismatch,
 
@@ -495,12 +498,12 @@ impl<T: Config> Pallet<T> {
 
 		// Ensure that the schema allows signed payloads only if the extrinsic accepts a signed payload.
 		if schema.settings.contains(&SchemaSetting::SignatureRequired) {
-			ensure!(!is_payload_signed, Error::<T>::InvalidSchemaId);
+			ensure!(!is_payload_signed, Error::<T>::SchemaNotSupported);
 		}
 
 		// Ensure that the schema does not allow deletion for AppendOnly schema.
 		if schema.settings.contains(&SchemaSetting::AppendOnly) {
-			ensure!(!is_deleting, Error::<T>::InvalidSchemaId);
+			ensure!(!is_deleting, Error::<T>::SchemaNotSupported);
 		}
 
 		Ok(())
