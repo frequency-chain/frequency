@@ -496,12 +496,13 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::SchemaPayloadLocationMismatch
 		);
 
-		// Ensure that the schema allows signed payloads only if the extrinsic accepts a signed payload.
+		// Ensure that the schema allows signed payloads.
+		// If so, calling extrinsic must be of signature type.
 		if schema.settings.contains(&SchemaSetting::SignatureRequired) {
 			ensure!(is_payload_signed, Error::<T>::SchemaNotSupported);
 		}
 
-		// Ensure that the schema does not allow deletion for AppendOnly schema.
+		// Ensure that the schema does not allow deletion for AppendOnly SchemaSetting.
 		if schema.settings.contains(&SchemaSetting::AppendOnly) {
 			ensure!(!is_deleting, Error::<T>::SchemaNotSupported);
 		}
