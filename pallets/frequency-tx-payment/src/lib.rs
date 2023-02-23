@@ -127,6 +127,7 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use frame_support::traits::Contains;
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
@@ -153,6 +154,7 @@ pub mod pallet {
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+		type CapacityEligibleCalls: Contains<<Self as frame_system::Config>::RuntimeCall>;
 	}
 
 	#[pallet::event]
@@ -321,6 +323,12 @@ where
 		let (_fee, initial_payment) = self.withdraw_fee(who, call, info, len)?;
 
 		Ok((self.tip(call), who.clone(), initial_payment))
+		// 		if <T as Config>::CapacityEligibleCalls::contains(call) {
+		// 			log::debug!("this is a capacity eligible call");
+		// 			Ok(result)
+		// 		} else {
+		// 			Err(TransactionValidityError::Invalid(InvalidTransaction::Call))
+		// 		}
 	}
 
 	/// Do any post-flight stuff for an extrinsic.

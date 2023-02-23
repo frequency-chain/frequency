@@ -415,3 +415,25 @@ fn charge_frq_transaction_payment_tip_is_some_amount_for_non_capacity_calls() {
 
 	assert_eq!(result, 200u64);
 }
+#[test]
+fn call_filtering_allows_only_what_is_in_config() {
+	let balance_factor = 10;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			let allowed_call: &<Test as SystemConfig>::RuntimeCall =
+				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+
+			let forbidden_call: &<Test as SystemConfig>::RuntimeCall =
+				&RuntimeCall::Balances(BalancesCall::transfer_all { dest: 2, keep_alive: false });
+
+			assert_pre_dispatch_result(allowed_call, None);
+			assert_pre_dispatch_result(
+				forbidden_call,
+				Some(TransactionValidityError::Invalid(InvalidTransaction::Call)),
+			);
+		});
+}
