@@ -1264,7 +1264,7 @@ fn apply_delete_item_on_append_only_fails() {
 				content_hash,
 				BoundedVec::try_from(actions2).unwrap(),
 			),
-			Error::<Test>::InvalidSchemaId
+			Error::<Test>::SchemaNotSupported
 		);
 	});
 }
@@ -1275,7 +1275,7 @@ fn delete_page_fails_for_append_only() {
 		// setup
 		let caller_1 = 1;
 		let msa_id = 1;
-		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
+		let schema_id = PAGINATED_APPEND_ONLY_SCHEMA;
 		let page_id = 11;
 		let payload = generate_payload_bytes::<PaginatedPageSize>(None);
 		let page: PaginatedPage<Test> = payload.clone().into();
