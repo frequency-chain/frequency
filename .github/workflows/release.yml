@@ -16,7 +16,7 @@ jobs:
   build-binaries:
     name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
     env:
-      HOME: /home/runner
+      HOME: /root
     strategy:
       fail-fast: true
       matrix:
@@ -112,7 +112,7 @@ jobs:
       runtime_filename_rococo: ${{steps.set-env-vars.outputs.runtime_filename_rococo}}
       runtime_filename_mainnet: ${{steps.set-env-vars.outputs.runtime_filename_mainnet}}
     env:
-      HOME: /home/runner
+      HOME: /root
     strategy:
       fail-fast: true
       matrix:
@@ -209,7 +209,7 @@ jobs:
     name: Build Rust Developer Docs
     runs-on: [self-hosted, Linux, X64]
     env:
-      HOME: /home/runner
+      HOME: /root
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3

@@ -6,8 +6,13 @@ runs:
     - name: Remove /home/runner
       shell: bash
       run: |
+        whoami
+        echo "***> BEFORE removal of /home/runner dir:"
+        ls -la /home
         echo "Removing no longer used /home/runner dir..."
         rm -fr /home/runner
+        echo "***> After removal of /home/runner dir:"
+        ls -la /home
     - name: Remove Cargo Generated Artifacts
       shell: bash
       run: |
