@@ -1264,6 +1264,40 @@ fn apply_delete_item_on_append_only_fails() {
 				content_hash,
 				BoundedVec::try_from(actions2).unwrap(),
 			),
+			Error::<Test>::InvalidSchemaId
+		);
+	});
+}
+
+#[test]
+fn delete_page_fails_for_append_only() {
+	new_test_ext().execute_with(|| {
+		// setup
+		let caller_1 = 1;
+		let msa_id = 1;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
+		let page_id = 11;
+		let payload = generate_payload_bytes::<PaginatedPageSize>(None);
+		let page: PaginatedPage<Test> = payload.clone().into();
+		let page_hash = page.get_hash();
+
+		assert_ok!(StatefulStoragePallet::upsert_page(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			page_id,
+			NONEXISTENT_PAGE_HASH,
+			payload.into(),
+		));
+
+		assert_err!(
+			StatefulStoragePallet::delete_page(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				page_id,
+				page_hash
+			),
 			Error::<Test>::SchemaNotSupported
 		);
 	});

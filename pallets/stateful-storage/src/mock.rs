@@ -208,7 +208,6 @@ impl SchemaProvider<u16> for SchemaHandler {
 				payload_location: PayloadLocation::Paginated,
 				settings: Vec::try_from(vec![SchemaSetting::SignatureRequired]).unwrap(),
 			}),
-
 			INVALID_SCHEMA_ID => None,
 
 			_ => Some(SchemaResponse {
