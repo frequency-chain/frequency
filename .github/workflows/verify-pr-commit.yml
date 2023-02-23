@@ -102,7 +102,7 @@ jobs:
             branch_alias: pr
     runs-on: [self-hosted, Linux, X64]
     env:
-      HOME: /home/runner
+      HOME: /root
       NETWORK: mainnet
     steps:
       # https://github.com/LibertyDSNP/frequency/issues/1102
@@ -138,11 +138,9 @@ jobs:
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
+          targets: wasm32-unknown-unknown
           toolchain: stable
       - name: Compile Binary
         if: steps.cache-binary.outputs.cache-hit != 'true'
@@ -190,10 +188,8 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
           components: rustfmt
           toolchain: stable
       - name: Check
@@ -204,7 +200,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
     env:
-      HOME: /home/runner
+      HOME: /root
     runs-on: [self-hosted, Linux, X64]
     steps:
       # https://github.com/LibertyDSNP/frequency/issues/1102
@@ -226,10 +222,8 @@ jobs:
           sudo apt-get update
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
           components: clippy
           toolchain: stable
       - name: Lint
@@ -244,7 +238,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
     env:
-      HOME: /home/runner
+      HOME: /root
     runs-on: [self-hosted, Linux, X64]
     steps:
       # https://github.com/LibertyDSNP/frequency/issues/1102
@@ -266,12 +260,10 @@ jobs:
           sudo apt-get update
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
           toolchain: stable
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
+          targets: wasm32-unknown-unknown
       - name: Build Rust Docs
         run: RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
 
@@ -280,7 +272,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
     env:
-      HOME: /home/runner
+      HOME: /root
     runs-on: [self-hosted, Linux, X64]
     steps:
       # https://github.com/LibertyDSNP/frequency/issues/1102
@@ -303,10 +295,8 @@ jobs:
           sudo apt-get update
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
           toolchain: stable
       - name: Check
         run: SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,all-frequency-features
@@ -316,7 +306,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
     env:
-      HOME: /home/runner
+      HOME: /root
     runs-on: [self-hosted, Linux, X64]
     steps:
       # https://github.com/LibertyDSNP/frequency/issues/1102
@@ -338,11 +328,9 @@ jobs:
           sudo apt-get update
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
+          targets: wasm32-unknown-unknown
           toolchain: stable
       - name: Run Tests
         run: cargo test --features runtime-benchmarks,all-frequency-features --workspace --release
@@ -360,11 +348,9 @@ jobs:
           sudo apt-get update
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
+          targets: wasm32-unknown-unknown
           toolchain: stable
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@044a1e5bdace8dd2f727b1af63c1d9a1d3572068
@@ -400,7 +386,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Build Runtime for ${{matrix.network}}
     env:
-      HOME: /home/runner
+      HOME: /root
     strategy:
       fail-fast: true
       matrix:
@@ -433,26 +419,13 @@ jobs:
       - name: Reset Runner
         uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
           toolchain: stable
       - name: Install Docker
         run: |
           curl -fsSL https://get.docker.com -o get-docker.sh
           sudo sh get-docker.sh
-      - name: Prune Docker Resources
-        run: |
-          containers=$(docker ps -q)
-          if [ ! -z $containers ]; then
-            docker kill $containers;
-          fi
-          docker container prune -f
-          docker image prune -a -f
-          docker system prune -a --volumes -f
-          docker container ls
-          docker image ls
       - name: Extract Runtime Spec Version
         run: |
           echo "RUNTIME_SPEC_VERSION=$(sed -nr 's/spec_version:\s*([0-9]+),/\1/p' \
@@ -551,12 +524,6 @@ jobs:
         run: |
           echo "BUILT_BIN_FILENAME=frequency.mainnet-pr" >> $GITHUB_ENV
           echo "DOCKER_BIN_FILENAME=frequency" >> $GITHUB_ENV
-      - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
-        with:
-          default: true
-          profile: minimal
-          toolchain: stable
       - name: Download Binaries
         uses: actions/download-artifact@v3
         with:
@@ -603,10 +570,8 @@ jobs:
         run: |
           echo "TEST_BIN_FILENAME=frequency.mainnet-pr" >> $GITHUB_ENV
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
           toolchain: stable
       - name: Download Binaries
         uses: actions/download-artifact@v3
