@@ -237,11 +237,11 @@ pub fn stores_signature_and_increments_count() {
 			<PayloadSignatureRegistryRingPointer<Test>>::get()
 		);
 
-		let mut head: MultiSignature = signature_1;
+		let mut head: MultiSignature = signature_1.clone();
 
 		// Fill up the registry
 		let limit: u32 = <Test as Config>::MaxSignaturesStored::get();
-		for _i in 0..(limit - 3) {
+		for _i in 2..limit {
 			let sig = &generate_test_signature();
 			assert_ok!(Msa::register_signature(sig, mortality_block.into()));
 			head = sig.clone();
@@ -252,14 +252,16 @@ pub fn stores_signature_and_increments_count() {
 			<PayloadSignatureRegistryRingPointer<Test>>::get()
 		);
 
+		run_to_block((mortality_block + 1).into());
+
 		// Test that the next one changes the tail.
 		let signature_n = generate_test_signature();
-		assert_ok!(Msa::register_signature(&signature, mortality_block.into()));
+		assert_ok!(Msa::register_signature(&signature_n, (mortality_block + 10).into()));
 
 		assert_eq!(
 			Some(SignatureRegistryPointer {
 				head: signature_n.clone(),
-				tail: signature_n.clone(),
+				tail: signature_1.clone(),
 				count: limit,
 			}),
 			<PayloadSignatureRegistryRingPointer<Test>>::get()
@@ -279,20 +281,20 @@ pub fn clears_stale_signatures_after_mortality_limit() {
 			assert_ok!(Msa::register_signature(sig, mortality_block.into()));
 		}
 
-		run_to_block((mortality_block + 99).into());
+		run_to_block((mortality_block).into());
 
-		// Cannot do it yet as we are at +99 blocks
+		// Cannot do it yet as we are at the mortality_block
 
 		let sig1 = &generate_test_signature();
 		assert_noop!(
-			Msa::register_signature(sig1, (mortality_block + 50).into()),
+			Msa::register_signature(sig1, (mortality_block + 10).into()),
 			Error::<Test>::SignatureRegistryLimitExceeded
 		);
 
-		run_to_block((mortality_block + 100).into());
+		run_to_block((mortality_block + 1).into());
 
-		// Now it is OK as we are + 100 blocks
-		assert_ok!(Msa::register_signature(sig1, (mortality_block + 50).into()));
+		// Now it is OK as we are +1 past the mortality_block
+		assert_ok!(Msa::register_signature(sig1, (mortality_block + 10).into()));
 	})
 }
 
