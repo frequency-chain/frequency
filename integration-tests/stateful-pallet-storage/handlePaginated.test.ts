@@ -1,22 +1,12 @@
 // Integration tests for pallets/stateful-pallet-storage/handlepaginated.ts
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import { createProviderKeysAndId, createDelegatorAndDelegation } from "../scaffolding/helpers";
+import {createProviderKeysAndId, createDelegatorAndDelegation, getCurrentPaginatedHash} from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "./fixtures/itemizedSchemaType";
 import { MessageSourceId, PageId, SchemaId } from "@frequency-chain/api-augment/interfaces";
 import { Bytes, u16, u32, u64 } from "@polkadot/types";
-
-async function getCurrentPaginatedHash(msa_id: MessageSourceId, schemaId: u16, page_id: number): Promise<u32> {
-    const result = await ExtrinsicHelper.getPaginatedStorages(msa_id, schemaId);
-    const page_response = result.filter((page) => page.page_id.toNumber() === page_id);
-    if (page_response.length <= 0) {
-        return new u32(ExtrinsicHelper.api.registry, 0);
-    }
-
-    return page_response[0].content_hash;
-}
 
 describe("📗 Stateful Pallet Storage", () => {
     let schemaId: SchemaId;
