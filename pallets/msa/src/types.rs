@@ -88,7 +88,6 @@ pub trait PermittedDelegationSchemas<T: Config> {
 		schema_id: SchemaId,
 		block_number: T::BlockNumber,
 	) -> Result<(), DispatchError>;
-
 }
 
 /// Implementation of SchemaPermission trait on Delegation type.
@@ -118,5 +117,4 @@ impl<T: Config> PermittedDelegationSchemas<T>
 
 		Ok(())
 	}
-
 }
