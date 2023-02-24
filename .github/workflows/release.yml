@@ -20,8 +20,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        # os: [[self-hosted, Linux, X64], [self-hosted, Linux, ARM64]]
-        os: [[self-hosted, Linux, X64]]
+        # os: [[self-hosted, Linux, X64, build], [self-hosted, Linux, ARM64,  build]]
+        os: [[self-hosted, Linux, X64, build]]
         network: [local, rococo, mainnet]
         include:
           - network: local
@@ -36,7 +36,7 @@ jobs:
             spec: frequency
             build-profile: production
             release-file-name-prefix: frequency
-          - os: [self-hosted, Linux, X64]
+          - os: [self-hosted, Linux, X64, build]
             arch: amd64
           # - os: [self-hosted, Linux, ARM64]
           #   arch: arm64
@@ -134,7 +134,7 @@ jobs:
             release-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, build]
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -207,7 +207,7 @@ jobs:
 
   build-rust-developer-docs:
     name: Build Rust Developer Docs
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, build]
     env:
       HOME: /root
     steps:

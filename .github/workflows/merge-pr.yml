@@ -20,7 +20,7 @@ jobs:
     name: Merge - Publish JS API Augment Release Candidate
     env:
       HOME: /root
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, build]
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
