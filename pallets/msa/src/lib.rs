@@ -1146,17 +1146,14 @@ impl<T: Config> Pallet<T> {
 		Self::try_mutate_delegation(delegator_id, provider_id, |delegation, _is_new_delegation| {
 			Self::ensure_all_schema_ids_are_valid(&schema_ids)?;
 
-			// Create revoke, update, and insert lists
+			// Create revoke and insert lists
 			let mut revoke_ids: Vec<SchemaId> = Vec::new();
-			let mut update_ids: Vec<SchemaId> = Vec::new();
 			let mut insert_ids: Vec<SchemaId> = Vec::new();
 
 			let existing_keys: Vec<SchemaId> =
 				delegation.schema_permissions.keys().cloned().collect();
 			for existing_schema_id in &existing_keys {
-				if schema_ids.contains(&existing_schema_id) {
-					update_ids.push(*existing_schema_id);
-				} else {
+				if !schema_ids.contains(&existing_schema_id) {
 					revoke_ids.push(*existing_schema_id);
 				}
 			}
@@ -1172,12 +1169,6 @@ impl<T: Config> Pallet<T> {
 				delegation,
 				revoke_ids,
 				current_block,
-			)?;
-			// Update any that are in both lists
-			PermittedDelegationSchemas::<T>::try_get_mut_schemas(
-				delegation,
-				update_ids,
-				T::BlockNumber::zero(),
 			)?;
 
 			// Insert any new ones that are not in the existing list
