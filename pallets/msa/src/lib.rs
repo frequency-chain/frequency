@@ -57,7 +57,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
-	ensure, log,
+	ensure, fail, log,
 	pallet_prelude::*,
 	traits::IsSubType,
 };
@@ -69,7 +69,7 @@ use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
 use sp_runtime::{
-	traits::{Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify, Zero},
+	traits::{Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, Zero},
 	ArithmeticError, DispatchError, MultiSignature,
 };
 use sp_std::prelude::*;
@@ -253,13 +253,13 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_new_payload_signature_registry)]
 	pub(super) type NEWPayloadSignatureRegistry<T: Config> = StorageMap<
-		_,                                        // prefix
-		Twox64Concat,                             // hasher for key1
+		_,                                // prefix
+		Twox64Concat,                     // hasher for key1
 		MultiSignature, // An externally-created Signature for an external payload, provided by an extrinsic
-		(T::BlockNumber, Option<MultiSignature>), // An actual flipping block number and the oldest signature at write time (if any in the case of filling up)
-		OptionQuery,                              // The type for the query
-		GetDefault,                               // OnEmpty return type, defaults to None
-		T::MaxSignaturesStored,                   // Maximum total signatures to store
+		(T::BlockNumber, MultiSignature), // An actual flipping block number and the oldest signature at write time (if any in the case of filling up)
+		OptionQuery,                      // The type for the query
+		GetDefault,                       // OnEmpty return type, defaults to None
+		T::MaxSignaturesStored,           // Maximum total signatures to store
 	>;
 
 	/// TESTING
@@ -425,12 +425,12 @@ pub mod pallet {
 		SignatureRegistryLimitExceeded,
 	}
 
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_initialize(current: T::BlockNumber) -> Weight {
-			Self::reset_virtual_bucket_if_needed(current)
-		}
-	}
+	// #[pallet::hooks]
+	// impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+	// 	fn on_initialize(current: T::BlockNumber) -> Weight {
+	// 		Self::reset_virtual_bucket_if_needed(current)
+	// 	}
+	// }
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -1392,11 +1392,8 @@ impl<T: Config> Pallet<T> {
 		let current_block = frame_system::Pallet::<T>::block_number();
 
 		let max_lifetime = Self::mortality_block_limit(current_block);
-		if max_lifetime <= signature_expires_at {
-			return Err(Error::<T>::ProofNotYetValid.into())
-		} else if current_block >= signature_expires_at {
-			return Err(Error::<T>::ProofHasExpired.into())
-		};
+		ensure!(max_lifetime > signature_expires_at, Error::<T>::ProofNotYetValid);
+		ensure!(current_block < signature_expires_at, Error::<T>::ProofHasExpired);
 
 		// Make sure it is not in the registry
 		ensure!(
@@ -1404,51 +1401,72 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::SignatureAlreadySubmitted
 		);
 
-		let pointer = match NEWPayloadSignatureBucketPointer::<T>::get() {
-			Some(x) => x,
-			None => return Ok(()),
-		};
+		// Get the current pointer, or if this is the initialization, generate an empty pointer
+		let pointer =
+			NEWPayloadSignatureBucketPointer::<T>::get().unwrap_or(SignatureRegistryPointer {
+				head: signature.clone(),
+				tail: signature.clone(),
+				count: 0,
+			});
 
-		let mut new_tail: Option<MultiSignature> = None;
+		// Default to the current tail in case we are still filling up
+		let mut new_tail: MultiSignature = pointer.tail.clone();
 
-		// If the counter `head_and_tail_counter.count` is < T::SigMax, don't delete, keep a None tail
+		// We are now wanting to overwrite prior signatures
+		// Do we need this > 0?
+		let looping: bool =
+			pointer.count > 0 && pointer.count == T::MaxSignaturesStored::get().unwrap_or(0);
 
-		// Remove old tail
-		<NEWPayloadSignatureRegistry<T>>::try_mutate(
-			pointer.tail,
-			|maybe_block_and_next_oldest_pointer| -> DispatchResult {
-				// Loop Complete
-				match maybe_block_and_next_oldest_pointer {
-					Some((test_block, Some(next_oldest_sig))) => {
-						// check
-						ensure!(
-							current_block.gt(test_block),
-							Error::<T>::SignatureRegistryLimitExceeded
-						);
-						new_tail = Some(next_oldest_sig.clone());
+		// Overwrite oldest signature, update tail
+		if looping {
+			<NEWPayloadSignatureRegistry<T>>::try_mutate(
+				pointer.tail,
+				|maybe_block_and_next_oldest_pointer| -> DispatchResult {
+					match maybe_block_and_next_oldest_pointer {
+						// Loop Complete, remove and remember the new tail value
+						Some((test_block, tail)) => {
+							// check
+							ensure!(
+								current_block.gt(test_block),
+								Error::<T>::SignatureRegistryLimitExceeded
+							);
 
-						// Remove this data point
-						*maybe_block_and_next_oldest_pointer = None;
+							// Move the tail to the next oldest signature
+							new_tail = tail.clone();
 
-						Ok(())
-					},
-					// Loop Almost Complete?
-					Some((test_block, None)) => {
-						// check
-						ensure!(
-							current_block.gt(test_block),
-							Error::<T>::SignatureRegistryLimitExceeded
-						);
-						Ok(())
-					},
-					// When might this happen?
-					None => {
-						// TODO: Deal with initialization
-						Ok(())
-					},
-				}
-			},
-		)?;
+							// Remove this data point
+							*maybe_block_and_next_oldest_pointer = None;
+
+							Ok(())
+						},
+						// This shouldn't happen unless the MaxSignaturesStored is 0 or 1.
+						_ => fail!(
+							"Missing data from the Signature Registry or MaxSignaturesStored <= 1"
+						),
+					}
+				},
+			)?;
+		}
+
+		// Update old head
+		// We could remove this > 0, but then we'd have to be OK with the None not failing
+		if pointer.count > 0 {
+			<NEWPayloadSignatureRegistry<T>>::try_mutate(
+				pointer.head,
+				|maybe_old_head| -> DispatchResult {
+					match maybe_old_head {
+						Some(old_head) => {
+							// Update the old head with a pointer to the new head
+							*maybe_old_head = Some((old_head.0, signature.clone()));
+
+							Ok(())
+						},
+						// If we don't have an old head, that is very strange
+						None => fail!("Missing data from the Signature Registry!"),
+					}
+				},
+			)?;
+		}
 
 		// Create new head
 		<NEWPayloadSignatureRegistry<T>>::set(
@@ -1456,74 +1474,22 @@ impl<T: Config> Pallet<T> {
 			Some((signature_expires_at, new_tail.clone())),
 		);
 
-		// Update old head
-		<NEWPayloadSignatureRegistry<T>>::try_mutate(
-			pointer.head,
-			|maybe_old_head| -> DispatchResult {
-				match maybe_old_head {
-					Some(old_head) => {
-						*maybe_old_head = Some((old_head.0, Some(signature.clone())));
-
-						Ok(())
-					},
-					_ => {
-						// TODO: Deal with initialization
-						Ok(())
-					},
-				}
-			},
-		)?;
-
-		match new_tail {
-			Some(tail) => NEWPayloadSignatureBucketPointer::<T>::put(SignatureRegistryPointer {
-				head: signature.clone(),
-				tail,
-				count: pointer.count,
-			}),
-			None => {},
-		}
+		NEWPayloadSignatureBucketPointer::<T>::put(SignatureRegistryPointer {
+			// The count doesn't change if we have a new tail because that means we are looping
+			count: if looping { pointer.count } else { pointer.count + 1 },
+			head: signature.clone(),
+			tail: new_tail,
+		});
 
 		Ok(())
-	}
-
-	/// Check if enough blocks have passed to reset bucket mortality storage.
-	/// If so:
-	///     1. delete all the stored bucket/signature values with key1 = bucket num
-	///     2. add the WeightInfo proportional to the storage read/writes to the block weight
-	/// If not, don't do anything.
-	///
-	fn reset_virtual_bucket_if_needed(current_block: T::BlockNumber) -> Weight {
-		let current_bucket_num = Self::bucket_for(current_block);
-		let prior_bucket_num = Self::bucket_for(current_block - T::BlockNumber::one());
-
-		// If we did not cross a bucket boundary block, stop
-		if prior_bucket_num == current_bucket_num {
-			return Weight::zero()
-		}
-		// Clear the previous bucket block set
-		let multi_removal_result = <PayloadSignatureRegistry<T>>::clear_prefix(
-			prior_bucket_num,
-			T::MaxSignaturesPerBucket::get(),
-			None,
-		);
-		<PayloadSignatureBucketCount<T>>::mutate(prior_bucket_num, |bucket_signature_count| {
-			*bucket_signature_count = 0;
-		});
-		T::WeightInfo::on_initialize(multi_removal_result.unique)
 	}
 
 	/// The furthest in the future a mortality_block value is allowed
 	/// to be for current_block
 	/// This is calculated to be past the risk of a replay attack
 	fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
-		let mortality_size = (T::NumberOfBuckets::get() - 1) * T::MortalityWindowSize::get();
+		let mortality_size = T::MortalityWindowSize::get();
 		current_block + T::BlockNumber::from(mortality_size)
-	}
-
-	/// calculate the virtual bucket number for the provided block number
-	pub fn bucket_for(block_number: T::BlockNumber) -> T::BlockNumber {
-		block_number / (T::BlockNumber::from(T::MortalityWindowSize::get())) %
-			T::BlockNumber::from(T::NumberOfBuckets::get())
 	}
 }
 
