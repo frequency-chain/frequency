@@ -132,17 +132,17 @@ where
 	pub provider_name: BoundedVec<u8, T>,
 }
 
-/// This is the metadata associated with a provider. As of now it is just a
-/// name, but it will likely be expanded in the future
+/// The pointer value for the Signature Registry
 #[derive(MaxEncodedLen, TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
 pub struct SignatureRegistryPointer {
-	/// Most recent signature
+	/// Most recent signature pointer
 	pub head: MultiSignature,
 
-	/// "Oldest" signature
+	/// "Oldest" signature pointer
 	pub tail: MultiSignature,
 
-	/// Count of signatures in the registry for initialization
+	/// Count of signatures in the registry
+	/// Will eventually match the `MaxSignaturesStored`, but during initialization is needed to fill the ring
 	pub count: u32,
 }
 

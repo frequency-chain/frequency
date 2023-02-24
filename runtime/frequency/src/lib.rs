@@ -533,10 +533,6 @@ impl pallet_msa::Config for Runtime {
 	type SchemaValidator = Schemas;
 	// The number of blocks per virtual bucket
 	type MortalityWindowSize = MSAMortalityWindowSize;
-	// The maximum number of signatures per virtual bucket
-	type MaxSignaturesPerBucket = MSAMaxSignaturesPerBucket;
-	// The total number of virtual buckets
-	type NumberOfBuckets = MSANumberOfBuckets;
 	// The maximum number of signatures that can be stored in the payload signature registry
 	type MaxSignaturesStored = MSAMaxSignaturesStored;
 	// The proposal type

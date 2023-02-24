@@ -136,27 +136,11 @@ pub mod pallet {
 		/// A type that will supply schema related information.
 		type SchemaValidator: SchemaValidator<SchemaId>;
 
-		/// The number of blocks per virtual "bucket" in the PayloadSignatureRegistry
-		/// Virtual buckets are the first part of the double key in the PayloadSignatureRegistry
-		/// StorageDoubleMap.  This permits a key grouping that enables mass removal
-		/// of stale signatures which are no longer at risk of replay.
+		/// The number of blocks before a signature can be ejected from the PayloadSignatureRegistryRing
 		#[pallet::constant]
 		type MortalityWindowSize: Get<u32>;
 
-		/// The maximum number of signatures that can be assigned to a virtual bucket. In other
-		/// words, no more than this many signatures can be assigned a specific first-key value.
-		#[pallet::constant]
-		type MaxSignaturesPerBucket: Get<u32>;
-
-		/// The total number of virtual buckets
-		/// There are exactly NumberOfBuckets first-key values in PayloadSignatureRegistry.
-		#[pallet::constant]
-		type NumberOfBuckets: Get<u32>;
-
-		/// The maximum number of signatures that can be stored in PayloadSignatureRegistry.
-		/// This MUST be MaxSignaturesPerBucket * NumberOfBuckets.
-		/// It's separate because this config is provided to signature storage and cannot be a
-		/// calculated value.
+		/// The maximum number of signatures that can be stored in PayloadSignatureRegistryRing.
 		#[pallet::constant]
 		type MaxSignaturesStored: Get<Option<u32>>;
 
@@ -228,10 +212,39 @@ pub mod pallet {
 	pub(super) type PublicKeyCountForMsaId<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, u8, ValueQuery>;
 
+	/// PayloadSignatureRegistryRing is used to prevent replay attacks for extrinsics
+	/// that take an externally-signed payload.
+	/// For this to work, the payload must include a mortality block number, which
+	/// is used in lieu of a monotonically increasing nonce.
+	/// - Key: Signature
+	/// - Value: Tuple
+	///     - [`BlockNumber`] when the keyed signature can be ejected from the registry
+	///     - [`MultiSignature`] the linked list pointer. This pointer is written as the oldest value, but updated to be the "next" value when there is one
+	#[pallet::storage]
+	#[pallet::getter(fn get_new_payload_signature_registry)]
+	pub(super) type PayloadSignatureRegistryRing<T: Config> = StorageMap<
+		_,                                // prefix
+		Twox64Concat,                     // hasher for key1
+		MultiSignature, // An externally-created Signature for an external payload, provided by an extrinsic
+		(T::BlockNumber, MultiSignature), // An actual flipping block number and the oldest signature at write time
+		OptionQuery,                      // The type for the query
+		GetDefault,                       // OnEmpty return type, defaults to None
+		T::MaxSignaturesStored,           // Maximum total signatures to store
+	>;
+
+	/// This is the pointer for the Payload Signature Registry
+	/// Contains the pointers to the data stored in the [`PayloadSignatureRegistryRing`]
+	/// - Value: [`SignatureRegistryPointer`]
+	#[pallet::storage]
+	#[pallet::getter(fn get_payload_signature_pointer)]
+	pub(super) type PayloadSignatureRegistryRingPointer<T: Config> =
+		StorageValue<_, SignatureRegistryPointer>;
+
 	/// PayloadSignatureRegistry is used to prevent replay attacks for extrinsics
 	/// that take an externally-signed payload.
 	/// For this to work, the payload must include a mortality block number, which
 	/// is used in lieu of a monotonically increasing nonce.
+	#[deprecated]
 	#[pallet::storage]
 	#[pallet::getter(fn get_payload_signature_registry)]
 	pub(super) type PayloadSignatureRegistry<T: Config> = StorageDoubleMap<
@@ -246,29 +259,8 @@ pub mod pallet {
 		T::MaxSignaturesStored, // Maximum total signatures to store
 	>;
 
-	/// PayloadSignatureRegistry is used to prevent replay attacks for extrinsics
-	/// that take an externally-signed payload.
-	/// For this to work, the payload must include a mortality block number, which
-	/// is used in lieu of a monotonically increasing nonce.
-	#[pallet::storage]
-	#[pallet::getter(fn get_new_payload_signature_registry)]
-	pub(super) type NEWPayloadSignatureRegistry<T: Config> = StorageMap<
-		_,                                // prefix
-		Twox64Concat,                     // hasher for key1
-		MultiSignature, // An externally-created Signature for an external payload, provided by an extrinsic
-		(T::BlockNumber, MultiSignature), // An actual flipping block number and the oldest signature at write time (if any in the case of filling up)
-		OptionQuery,                      // The type for the query
-		GetDefault,                       // OnEmpty return type, defaults to None
-		T::MaxSignaturesStored,           // Maximum total signatures to store
-	>;
-
-	/// TESTING
-	#[pallet::storage]
-	#[pallet::getter(fn get_sig_head_and_tail_counter)]
-	pub(super) type NEWPayloadSignatureBucketPointer<T: Config> =
-		StorageValue<_, SignatureRegistryPointer>;
-
 	/// Records how many signatures are currently stored in each virtual signature registration bucket
+	#[deprecated]
 	#[pallet::storage]
 	pub(super) type PayloadSignatureBucketCount<T: Config> = StorageMap<
 		_,
@@ -1375,7 +1367,7 @@ impl<T: Config> Pallet<T> {
 		Ok(Some(schema_list))
 	}
 
-	/// Adds a signature to the PayloadSignatureRegistry based on a virtual "bucket" grouping.
+	/// Adds a signature to the PayloadSignatureRegistryRing based on a virtual "bucket" grouping.
 	/// Check that mortality_block is within bounds. If so, proceed and add the new entry.
 	/// Raises `SignatureAlreadySubmitted` if the bucket-signature double key exists in the
 	/// registry.
@@ -1397,13 +1389,13 @@ impl<T: Config> Pallet<T> {
 
 		// Make sure it is not in the registry
 		ensure!(
-			!<NEWPayloadSignatureRegistry<T>>::contains_key(signature),
+			!<PayloadSignatureRegistryRing<T>>::contains_key(signature),
 			Error::<T>::SignatureAlreadySubmitted
 		);
 
 		// Get the current pointer, or if this is the initialization, generate an empty pointer
 		let pointer =
-			NEWPayloadSignatureBucketPointer::<T>::get().unwrap_or(SignatureRegistryPointer {
+			PayloadSignatureRegistryRingPointer::<T>::get().unwrap_or(SignatureRegistryPointer {
 				head: signature.clone(),
 				tail: signature.clone(),
 				count: 0,
@@ -1419,7 +1411,7 @@ impl<T: Config> Pallet<T> {
 
 		// Overwrite oldest signature, update tail
 		if looping {
-			<NEWPayloadSignatureRegistry<T>>::try_mutate(
+			<PayloadSignatureRegistryRing<T>>::try_mutate(
 				pointer.tail,
 				|maybe_block_and_next_oldest_pointer| -> DispatchResult {
 					match maybe_block_and_next_oldest_pointer {
@@ -1451,7 +1443,7 @@ impl<T: Config> Pallet<T> {
 		// Update old head
 		// We could remove this > 0, but then we'd have to be OK with the None not failing
 		if pointer.count > 0 {
-			<NEWPayloadSignatureRegistry<T>>::try_mutate(
+			<PayloadSignatureRegistryRing<T>>::try_mutate(
 				pointer.head,
 				|maybe_old_head| -> DispatchResult {
 					match maybe_old_head {
@@ -1469,12 +1461,12 @@ impl<T: Config> Pallet<T> {
 		}
 
 		// Create new head
-		<NEWPayloadSignatureRegistry<T>>::set(
+		<PayloadSignatureRegistryRing<T>>::set(
 			signature,
 			Some((signature_expires_at, new_tail.clone())),
 		);
 
-		NEWPayloadSignatureBucketPointer::<T>::put(SignatureRegistryPointer {
+		PayloadSignatureRegistryRingPointer::<T>::put(SignatureRegistryPointer {
 			// The count doesn't change if we have a new tail because that means we are looping
 			count: if looping { pointer.count } else { pointer.count + 1 },
 			head: signature.clone(),
