@@ -42,6 +42,9 @@
 // 	missing_docs
 // )]
 
+#[cfg(any(feature = "runtime-benchmarks", test))]
+mod test_common;
+
 #[cfg(test)]
 mod mock;
 
@@ -301,12 +304,11 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::apply_item_actions( payload.actions.len() as u32 ,
+		#[pallet::weight(T::WeightInfo::apply_item_actions_with_signature( payload.actions.len() as u32 ,
 			payload.actions.iter().fold(0, |acc, a| acc + match a {
 			ItemAction::Add { data } => data.len() as u32,
 			_ => 0,
-			}),
-			0
+			})
 		))]
 		pub fn apply_item_actions_with_signature(
 			origin: OriginFor<T>,
@@ -333,7 +335,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(4)]
-		#[pallet::weight(T::WeightInfo::upsert_page(payload.payload.len() as u32))]
+		#[pallet::weight(T::WeightInfo::upsert_page_with_signature(payload.payload.len() as u32))]
 		pub fn upsert_page_with_signature(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
@@ -364,7 +366,7 @@ pub mod pallet {
 
 		/// Deletes a Paginated storage
 		#[pallet::call_index(5)]
-		#[pallet::weight(T::WeightInfo::delete_page())]
+		#[pallet::weight(T::WeightInfo::delete_page_with_signature())]
 		pub fn delete_page_with_signature(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
