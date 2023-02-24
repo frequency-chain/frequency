@@ -89,12 +89,6 @@ pub trait PermittedDelegationSchemas<T: Config> {
 		block_number: T::BlockNumber,
 	) -> Result<(), DispatchError>;
 
-	/// Attempt to revoke schemas that are not in the specified list
-	fn try_revoke_schemas_not_in_list(
-		&mut self,
-		schema_ids: Vec<SchemaId>,
-		block_number: T::BlockNumber,
-	) -> Result<(), DispatchError>;
 }
 
 /// Implementation of SchemaPermission trait on Delegation type.
@@ -125,27 +119,4 @@ impl<T: Config> PermittedDelegationSchemas<T>
 		Ok(())
 	}
 
-	/// Attempt to revoke schemas not in specified list
-	fn try_revoke_schemas_not_in_list(
-		&mut self,
-		schema_ids: Vec<SchemaId>,
-		block_number: T::BlockNumber,
-	) -> Result<(), DispatchError> {
-		// Revoke any schemas that are not in the new list
-		let mut revoke_ids: Vec<SchemaId> = vec![self.schema_permissions.keys().len() as SchemaId];
-		for existing_schema_id in self.schema_permissions.keys() {
-			if !schema_ids.contains(&existing_schema_id) {
-				revoke_ids.push(*existing_schema_id);
-			}
-		}
-
-		for revoke_id in revoke_ids {
-			let schema = self
-				.schema_permissions
-				.get_mut(&revoke_id)
-				.ok_or(Error::<T>::SchemaNotGranted)?;
-			*schema = block_number;
-		}
-		Ok(())
-	}
 }

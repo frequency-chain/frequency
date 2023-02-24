@@ -572,6 +572,7 @@ pub mod pallet {
 				add_provider_payload.authorized_msa_id == provider_id.0,
 				Error::<T>::UnauthorizedDelegator
 			);
+
 			Self::upsert_schema_permissions(
 				provider_id,
 				delegator_id,
@@ -1167,7 +1168,7 @@ impl<T: Config> Pallet<T> {
 
 			// Revoke any that are not in the new list
 			let current_block = frame_system::Pallet::<T>::block_number();
-			PermittedDelegationSchemas::<T>::try_revoke_schemas_not_in_list(
+			PermittedDelegationSchemas::<T>::try_get_mut_schemas(
 				delegation,
 				revoke_ids,
 				current_block,
