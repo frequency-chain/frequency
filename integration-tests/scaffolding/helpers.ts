@@ -59,28 +59,15 @@ export function createKeys(name: string = 'first pair'): KeyringPair {
     return keypair;
 }
 
-export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount: bigint): Promise<void> {
-    await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend();
+export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount: bigint, nonce?: number): Promise<void> {
+    await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
 }
 
-export async function fundKeypairManual(source: KeyringPair, dest: KeyringPair, amount: bigint, nonce?: number): Promise<void> {
-    await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSendManual(nonce);
-}
-
-export async function createAndFundKeypair(amount = EXISTENTIAL_DEPOSIT, keyName?: string): Promise<KeyringPair> {
+export async function createAndFundKeypair(amount = EXISTENTIAL_DEPOSIT, keyName?: string, nonce?: number): Promise<KeyringPair> {
     const keypair = createKeys(keyName);
 
     // Transfer funds from source (usually pre-funded dev account) to new account
-    await fundKeypair(devAccounts[0].keys, keypair, amount);
-
-    return keypair;
-}
-
-export async function createAndFundKeypairManual(amount = EXISTENTIAL_DEPOSIT, keyName?: string, nonce?: number): Promise<KeyringPair> {
-    const keypair = createKeys(keyName);
-
-    // Transfer funds from source (usually pre-funded dev account) to new account
-    await fundKeypairManual(devAccounts[0].keys, keypair, amount, nonce);
+    await fundKeypair(devAccounts[0].keys, keypair, amount, nonce);
 
     return keypair;
 }

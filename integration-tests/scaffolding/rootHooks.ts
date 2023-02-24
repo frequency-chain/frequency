@@ -15,7 +15,6 @@ exports.mochaHooks = {
         }
 
         EXISTENTIAL_DEPOSIT = ExtrinsicHelper.api.consts.balances.existentialDeposit.toBigInt();
-        console.log({EXISTENTIAL_DEPOSIT})
     },
     async afterAll() {
         await ExtrinsicHelper.api.disconnect();

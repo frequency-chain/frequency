@@ -75,7 +75,7 @@ function eventKey(event: Event): string {
  */
 
 type ParsedEvent<C extends Codec[] = Codec[], N = unknown> = IEvent<C, N>;
-type ParsedEventResult<C extends Codec[] = Codec[], N = unknown> = [ParsedEvent<C, N> | undefined, EventMap];
+export type ParsedEventResult<C extends Codec[] = Codec[], N = unknown> = [ParsedEvent<C, N> | undefined, EventMap];
 
 
 export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C extends Codec[] = Codec[], N = unknown> {
@@ -92,54 +92,34 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
         this.api = ExtrinsicHelper.api;
     }
 
-    // A number of these methods are marked as "manual". They were included here for convenience when
-    // submitting transactions while in manual seal mode.
-    // The best course of action here might be to have two "types" of Extrinsic classes: Instant and Manual. 
-    public async signAndSend(): Promise<[ParsedEvent<C, N> | undefined, EventMap]> {
-
-        return firstValueFrom(this.extrinsic().signAndSend(this.keys).pipe(
+    public signAndSend(nonce?: number): Promise<ParsedEventResult> {
+        return firstValueFrom(this.extrinsic().signAndSend(this.keys, {nonce: nonce}).pipe(
             filter(({ status }) => status.isInBlock || status.isFinalized),
             this.parseResult(this.event),
         ))
     }
 
-    public async signAndSendManual(nonce?: number): Promise<void> {
-        await firstValueFrom(this.extrinsic().signAndSend(this.keys, {nonce: nonce}));
-    }
-
-    public async sudoSignAndSend(): Promise<[ParsedEvent<C, N> | undefined, EventMap]> {
+    public sudoSignAndSend(): Promise<[ParsedEvent<C, N> | undefined, EventMap]> {
         return firstValueFrom(this.api.tx.sudo.sudo(this.extrinsic()).signAndSend(this.keys).pipe(
             filter(({ status }) => status.isInBlock || status.isFinalized),
             this.parseResult(this.event),
         ))
     }
 
-    public async getEstimatedTxFee(): Promise<bigint> {
+    public getEstimatedTxFee(): Promise<bigint> {
         return firstValueFrom(this.extrinsic().paymentInfo(this.keys).pipe(
             map((info) => info.partialFee.toBigInt())
         ));
     }
 
-    public async fundOperation(source?: KeyringPair): Promise<void> {
+    public async fundOperation(source?: KeyringPair, nonce?: number): Promise<void> {
         const amount = await this.getEstimatedTxFee();
-        await ExtrinsicHelper.transferFunds(source || devAccounts[0].keys, this.keys, amount).signAndSend();
+        await ExtrinsicHelper.transferFunds(source || devAccounts[0].keys, this.keys, amount).signAndSend(nonce);
     }
 
-    public async fundOperationManual(source?: KeyringPair, nonce?: number): Promise<void> {
-        const amount = await this.getEstimatedTxFee();
-        console.log("funding:", amount);
-        console.log(u8aToHex(devAccounts[0].keys.publicKey));
-        ExtrinsicHelper.transferFunds(source || devAccounts[0].keys, this.keys, amount).signAndSendManual(nonce);
-    }
-
-    public async fundAndSend(source?: KeyringPair, nonce?: number): Promise<[IEvent<C, N> | undefined, EventMap]> {
+    public async fundAndSend(source?: KeyringPair, nonce?: number): Promise<ParsedEventResult> {
         await this.fundOperation(source);
-        return this.signAndSend();
-    }
-
-    public async fundAndSendManual(source?: KeyringPair, nonce?: number): Promise<void> {
-        await this.fundOperationManual(source, nonce);
-        return this.signAndSendManual(nonce ? nonce++ : nonce);
+        return this.signAndSend(nonce);
     }
 
     private parseResult<ApiType extends ApiTypes = "rxjs", T extends AnyTuple = AnyTuple, N = unknown>(targetEvent?: AugmentedEvent<ApiType, T, N>) {

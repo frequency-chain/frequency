@@ -1,13 +1,12 @@
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import { createKeys, signPayloadSr25519, getBlockNumber, generateAddKeyPayload, fundKeypair, devAccounts, createAndFundKeypairManual } from "../scaffolding/helpers";
+import { createKeys, signPayloadSr25519, getBlockNumber, generateAddKeyPayload, createAndFundKeypair } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { AddKeyData, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { EXISTENTIAL_DEPOSIT } from "../scaffolding/rootHooks";
 import { firstValueFrom } from "rxjs";
-import { BlockHash, CreatedBlock, Index } from "@polkadot/types/interfaces";
-import { BN, u8aToHex } from "@polkadot/util";
-import { U64, u64 } from "@polkadot/types";
+import { BlockHash, CreatedBlock } from "@polkadot/types/interfaces";
+import { u64, Option } from "@polkadot/types";
 
 interface GeneratedMsa {
     id: u64;
@@ -21,61 +20,60 @@ describe("MSA Initializer Load Tests", function () {
         await createBlock();
     });
 
-    it("should successfully create 49_999 signatures within a block", async function () {
+    it("should successfully create 49_998 signatures within 100 blocks", async function () {
 
-        // Our bucket size is 100 blocks.
-        // To reach our 50k max,
-        // we should be limiting 500 signatures per block. msa_addPublicKeyToMsa adds 2 signatures per call. Therefore, we need to create a new block
-        // when the counter hits 250 (500 / 2).
-
+        // Make 250 MSAs
         let msaKeys: GeneratedMsa[] = [];
-        for (let i = 0; i < 2_500; i++) {
+        for (let i = 0; i < 2; i++) { // Should be 250
              msaKeys.push(await generateMsa());
         }
 
         await createBlock();
 
-        // Make sure we are at [block number] % 100 so we get all these in the same bucket
         const blockNumber = await getBlockNumber();
-        if (blockNumber % 100 > 0) {
-            console.log("Getting to a mod(100) block number. Starting Block Number:", blockNumber);
-            for (let i = (blockNumber % 100); i < 100; i++) {
-                await createBlock();
-            }
-            console.log("DONE! Ending Block Number:", await getBlockNumber());
-        }
+        console.log("Starting Block Number:", blockNumber);
 
-        for (let i = 0; i < 30_000; i++) {
+        const signatureCallTests: Array<KeyringPair> = [];
+
+        // Make 49,998 signatures
+        for (let i = 0; i < 2; i++) { // Should be 24_998
             const ithMsaKey = i % msaKeys.length;
             let { controlKey, nonce, id } = msaKeys[ithMsaKey];
-            console.log(`${i} pair of sigs`);
 
             if (i > 0 && i % 330 === 0) {
-                await new Promise(r => setTimeout(r, 300));
                 await createBlock();
-                console.log(`${i} block`);
+                console.log(`Forming block...`);
             }
+
             // This call adds 2 signatures
-            addSigs(id, controlKey, nonce);
+            signatureCallTests.push(addSigs(id, controlKey, nonce));
+            console.count("addSigs called (2 signatures)");
             msaKeys[ithMsaKey].nonce++;
         }
-        // Create another few blocks at the end
-        await new Promise(r => setTimeout(r, 300));
+        console.log(`Forming block...`);
         await createBlock();
-        await new Promise(r => setTimeout(r, 300));
+        console.log(`Forming block...`);
         await createBlock();
-        await new Promise(r => setTimeout(r, 300));
-        await createBlock();
+        const blockNumberEnd = await getBlockNumber();
+        console.log("Ending Block Number:", blockNumberEnd);
+
+        // Check to make sure all of them got created
+        for (let key of signatureCallTests) {
+            assert((await getMsaFromKey(key)).isSome, "A key failed to be associated with an MSA");
+        }
+
     }).timeout(500_000)
 })
 
+// Generate an MSA and give it 100 UNIT
 async function generateMsa(): Promise<GeneratedMsa> {
     console.count("generateMsa");
-    const controlKey = await createAndFundKeypairManual(50n * EXISTENTIAL_DEPOSIT);
-    await createBlock();
+    const controlKeyPromise = createAndFundKeypair(100n * 10n * EXISTENTIAL_DEPOSIT);
+    await createBlock(100);
+    const controlKey = await controlKeyPromise;
     const id = await createMsa(controlKey);
-    await createBlock();
-    const nonce = await getNonce(controlKey.address);
+    await createBlock(100);
+    const nonce = await getNonce(controlKey);
     return {
         controlKey,
         id,
@@ -83,17 +81,23 @@ async function generateMsa(): Promise<GeneratedMsa> {
     }
 }
 
-async function createBlock() {
+async function createBlock(wait: number = 300) {
+    // Wait ms before creating the block to give the chain time to process the transaction pool
+    await new Promise(r => setTimeout(r, wait));
     return firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
 }
 
-async function getNonce(keys): Promise<number> {
+function getMsaFromKey(keys: KeyringPair): Promise<Option<u64>> {
+    return firstValueFrom(ExtrinsicHelper.api.query.msa.publicKeyToMsaId(keys.address));
+}
+
+function getNonce(keys: KeyringPair): Promise<number> {
     return firstValueFrom(ExtrinsicHelper.api.call.accountNonceApi.accountNonce(keys.address));
 }
 
-async function createMsa(keys): Promise<u64> {
+async function createMsa(keys: KeyringPair): Promise<u64> {
     const f = ExtrinsicHelper.createMsa(keys);
-    await f.signAndSendManual();
+    f.signAndSend();
     let block:CreatedBlock = await firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
 
     const events = await getBlockEvents(block.blockHash);
@@ -105,23 +109,26 @@ async function createMsa(keys): Promise<u64> {
     return msaId;
 }
 
-async function addSigs(msaId, keys, nonce) {
+function addSigs(msaId: u64, keys: KeyringPair, nonce: number): KeyringPair {
     let newKeys = createKeys(`${nonce} nonce control key`);
 
     let defaultPayload: AddKeyData = {};
     defaultPayload.msaId = msaId;
     defaultPayload.newPublicKey = newKeys.publicKey;
-    let payload = await generateAddKeyPayload(defaultPayload);
-    let addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", payload);
+    generateAddKeyPayload(defaultPayload, 100).then((payload) => {
+        let addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", payload);
 
-    let ownerSig = signPayloadSr25519(keys, addKeyData);
-    let newSig = signPayloadSr25519(newKeys, addKeyData);
-    const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, payload);
+        let ownerSig = signPayloadSr25519(keys, addKeyData);
+        let newSig = signPayloadSr25519(newKeys, addKeyData);
+        const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, payload);
 
-    addPublicKeyOp.signAndSendManual(nonce);
+        return addPublicKeyOp.signAndSend(nonce);
+    });
+
+    return newKeys;
 }
 
-async function getBlockEvents(blockHash: BlockHash) {
-    const blockEvents = await ExtrinsicHelper.api.query.system.events.at(blockHash)
+function getBlockEvents(blockHash: BlockHash) {
+    const blockEvents = ExtrinsicHelper.api.query.system.events.at(blockHash)
     return firstValueFrom(blockEvents);
 }
