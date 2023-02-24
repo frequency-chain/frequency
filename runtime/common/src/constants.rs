@@ -115,7 +115,8 @@ pub type MsaMaxProviderNameSize = ConstU32<16>;
 /// The number of blocks per virtual bucket
 pub type MSAMortalityWindowSize = ConstU32<100>;
 /// The upper limit on total stored signatures.
-pub type MSAMaxSignaturesStored = ConstU32<100_000>;
+/// Set to an average of 50 signatures per block
+pub type MSAMaxSignaturesStored = ConstU32<50_000>;
 // -end- MSA Pallet ---
 
 // --- Schemas Pallet ---
