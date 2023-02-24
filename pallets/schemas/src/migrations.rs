@@ -8,6 +8,10 @@ use common_primitives::schema::{ModelType, PayloadLocation, SchemaSettings};
 use frame_support::{pallet_prelude::Weight, traits::Get, BoundedVec};
 use scale_info::TypeInfo;
 
+/// Migrations for the schemas pallet.
+/// Following migrations are required:
+/// - Adding settings to the Schema struct
+/// Note: Post migration, this file should be deleted.
 pub mod v1 {
 	use super::*;
 	#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
@@ -25,7 +29,24 @@ pub mod v1 {
 		pub payload_location: PayloadLocation,
 	}
 
-	pub fn migrate_schemas_with_additional_settings<T: Config>() -> Weight {
+	/// translate schemas and return the weight to test the migration
+	#[cfg(feature = "try-runtime")]
+	pub fn pre_migrate_schemas_to_v1<T: Config>() -> Weight {
+		migrate_to_v1::<T>()
+	}
+
+	/// Runs the actual migration when runtime upgrade is performed
+	pub fn migrate_schemas_to_v1<T: Config>() -> Weight {
+		migrate_to_v1::<T>()
+	}
+
+	/// post migration check
+	#[cfg(feature = "try-runtime")]
+	pub fn post_migrate_schemas_to_v1<T: Config>() -> Weight {
+		migrate_to_v1::<T>()
+	}
+
+	fn migrate_to_v1<T: Config>() -> Weight {
 		let mut weight: Weight = Weight::zero();
 		<Schemas<T>>::translate_values(
 			|old_schema: OldSchema<T::SchemaModelMaxBytesBoundedVecLimit>| {

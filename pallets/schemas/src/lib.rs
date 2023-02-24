@@ -78,9 +78,9 @@ pub mod weights;
 pub use types::*;
 pub use weights::*;
 
-mod serde;
+pub mod migrations;
 
-mod migrations;
+mod serde;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -197,13 +197,6 @@ pub mod pallet {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
 			GovernanceSchemaModelMaxBytes::<T>::put(self.initial_max_schema_model_size);
-		}
-	}
-
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_runtime_upgrade() -> Weight {
-			migrations::v1::migrate_schemas_with_additional_settings::<T>()
 		}
 	}
 
