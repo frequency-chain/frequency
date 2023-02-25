@@ -2,10 +2,11 @@ import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { u16, u64 } from "@polkadot/types";
 import assert from "assert";
-import { AddProviderPayload, Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { createAndFundKeypair, createKeys, generateDelegationPayload, log, signPayloadSr25519 } from "../scaffolding/helpers";
+import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
+import { devAccounts, createAndFundKeypair, log } from "../scaffolding/helpers";
 
 describe.only("Capacity Scenario Tests", function () {
+    const TEST_EPOCH_LENGTH = 25;
     // let underFundedKeys: KeyringPair;
     // let otherMsaKeys: KeyringPair;
     // let noMsaKeys: KeyringPair;
@@ -28,6 +29,20 @@ describe.only("Capacity Scenario Tests", function () {
         log("*********************************")
         log("********** BEGIN SETUP **********")
         log("*********************************")
+        // Set the Maximum Epoch Length to TEST_EPOCH_LENGTH blocks
+        // This will allow us to test the epoch transition logic
+        // without having to wait for 100 blocks
+        let setEpochLengthOp = ExtrinsicHelper.setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
+        let [setEpochLengthEvent] = await setEpochLengthOp.sudoSignAndSend();
+        if (setEpochLengthEvent && 
+            ExtrinsicHelper.api.events.capacity.EpochLengthUpdated.is(setEpochLengthEvent)) {
+            let epochLength = setEpochLengthEvent.data.blocks;
+            assert.equal(epochLength.toNumber(), TEST_EPOCH_LENGTH, "setup should set epoch length to TEST_EPOCH_LENGTH blocks");
+        }
+        else {
+            assert.fail("setup should return an EpochLengthUpdated event");
+        }
+
         // Create and fund a keypair with EXISTENTIAL_DEPOSIT
         // Use this keypair for stake operations
         stakeKeys = await createAndFundKeypair();
@@ -96,55 +111,19 @@ describe.only("Capacity Scenario Tests", function () {
 
     });
 
-    describe("stake testing", function () {
-
-        it("should fail to stake for InvalidTarget", async function () {
-            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, 999999, 1000000);
-            await assert.rejects(failStakeObj.fundAndSend(), { name: "InvalidTarget" });
-        });
-
-        it("should fail to stake for InsufficientBalance", async function () {
-            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, stakeProviderId, 2000000);
-            // TODO: Does this actually test for the InsufficientBalance error?
-            const [failStakeEvent] = await failStakeObj.fundAndSend();
-            assert.notEqual(failStakeEvent, undefined, "setup should return a InsufficientBalance");
-            // TODO: This returns: Missing expected rejection (InsufficientBalance)
-            // await assert.rejects(failStakeObj.fundAndSend(), { name: "InsufficientBalance" });
-        });
-
-        it("should fail to stake for InsufficientStakingAmount", async function () {
-            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, stakeProviderId, 999999);
-            // TODO: Does this actually test for the InsufficientStakingAmount error?
-            const [failStakeEvent] = await failStakeObj.fundAndSend();
-            assert.notEqual(failStakeEvent, undefined, "setup should return a InsufficientStakingAmount");
-            // TODO: This returns: Missing expected rejection (InsufficientStakingAmount)
-            // await assert.rejects(failStakeObj.fundAndSend(), { name: "InsufficientStakingAmount" });
-        });
-
-        it("should fail to stake for ZeroStakingAmount", async function () {
-            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, stakeProviderId, 0);
-            // const [failStakeEvent] = await failStakeObj.fundAndSend();
-            // assert.notEqual(failStakeEvent, undefined, "setup should return a ZeroStakingAmount");
-            await assert.rejects(failStakeObj.fundAndSend(), { name: "ZeroAmountNotAllowed" });
-        });
-
-        // TODO: How to setup this test?
-        // it("should fail for NotAStakingAccount", async function () {
-        //     const failStakeObj = ExtrinsicHelper.stake(otherProviderKeys, providerId, 1000000);
-        //     // const [failStakeEvent] = await failStakeObj.fundAndSend();
-        //     // assert.notEqual(failStakeEvent, undefined, "setup should return a NotAStakingAccount");
-        //     await assert.rejects(failStakeObj.fundAndSend(), { name: "NotAStakingAccount" });
-        // });
+    describe("stake-unstake-withdraw_unstaked testing-->happy path", function () {
 
         it("should successfully stake the minimum amount for Staked event", async function () {
             const stakeObj = ExtrinsicHelper.stake(stakeKeys, stakeProviderId, 1000000);
             const [stakeEvent] = await stakeObj.fundAndSend();
             assert.notEqual(stakeEvent, undefined, "setup should return a Stake event");
-            // Ensure the provider capacity has been issued
-            // Type guard to ensure the event is a Stake event
-            if (stakeEvent && stakeObj.api.events.capacity.Staked.is(stakeEvent)) {   
-                // assert.deepEqual(stakeEvent.data.capacity.Staked, stakeEvent.data.capacity.Staked, "setup should return a Stake event");
-                log("stakeEvent:", stakeEvent.data);
+
+            if (stakeEvent && ExtrinsicHelper.api.events.capacity.Staked.is(stakeEvent)) {   
+                let stakedCapacity = stakeEvent.data.capacity;
+                assert.equal(stakedCapacity, 1000000, "setup should return a Stake event with 1000000 capacity");
+            }
+            else {
+                assert.fail("setup should return a Stake event");
             }
         });
 
@@ -152,8 +131,56 @@ describe.only("Capacity Scenario Tests", function () {
             const stakeObj = ExtrinsicHelper.unstake(stakeKeys, stakeProviderId, 1000000);
             const [unStakeEvent] = await stakeObj.fundAndSend();
             assert.notEqual(unStakeEvent, undefined, "setup should return an UnStaked event");
+
+            if (unStakeEvent && ExtrinsicHelper.api.events.capacity.UnStaked.is(unStakeEvent)) {
+                let unstakedCapacity = unStakeEvent.data.capacity;
+                assert.equal(unstakedCapacity, 1000000, "setup should return an UnStaked event with 1000000 reduced capacity");
+            }
+            else {
+                assert.fail("setup should return an UnStaked event");
+            }
+
+
+            log("*********************************")
+            log("*** Advance to the next Epoch ***")
+            log("*********************************")
+            for (let index = 0; index < 2*TEST_EPOCH_LENGTH; index++) {
+                await ExtrinsicHelper.createBlock();
+            }
+            log("*********************************")
+            log("*** mined %d blocks", TEST_EPOCH_LENGTH);
+            log("*********************************")
+        });
+        it("should successfully withdraw the unstaked amount", async function () {
+            const withdrawObj = ExtrinsicHelper.withdrawUnstaked(stakeKeys);
+            const [withdrawEvent] = await withdrawObj.fundAndSend();
+            assert.notEqual(withdrawEvent, undefined, "setup should return a StakeWithdrawn event");
+
+            if (withdrawEvent && ExtrinsicHelper.api.events.capacity.StakeWithdrawn.is(withdrawEvent)) {
+                let amount = withdrawEvent.data.amount;
+                assert.equal(amount, 1000000, "setup should return a StakeWithdrawn event with 1000000 amount");
+            }
+            else {
+                assert.fail("setup should return a StakeWithdrawn event");
+            }
+        });
+    });
+
+    describe("stake testing-invalid paths", function () {
+        it("should fail to stake for InvalidTarget", async function () {
+            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, 999999, 1000000);
+            await assert.rejects(failStakeObj.fundAndSend(), { name: "InvalidTarget" });
         });
 
+        it("should fail to stake for InsufficientStakingAmount", async function () {
+            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, stakeProviderId, 999999);
+            await assert.rejects(failStakeObj.fundAndSend(), { name: "InsufficientStakingAmount" });
+        });
+
+        it("should fail to stake for ZeroAmountNotAllowed", async function () {
+            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, stakeProviderId, 0);
+            await assert.rejects(failStakeObj.fundAndSend(), { name: "ZeroAmountNotAllowed" });
+        });
     });
 
     describe("unstake testing", function () {   
@@ -210,8 +237,13 @@ describe.only("Capacity Scenario Tests", function () {
             const [stakeEvent] = await stakeObj.fundAndSend();
             assert.notEqual(stakeEvent, undefined, "setup should return a Stake event");
 
-            const withdrawObj = ExtrinsicHelper.withdraw_unstaked(withdrawKeys);
+            const withdrawObj = ExtrinsicHelper.withdrawUnstaked(withdrawKeys);
             assert.rejects(withdrawObj.fundAndSend(), { name: "NoUnstakedTokensAvailable" });
         });
     });
+
+    // TODO: describe("capacity API for other pallets")o
+    // get balance of capacity
+    //  
+
 })
