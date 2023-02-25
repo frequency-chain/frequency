@@ -202,28 +202,51 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		/// An event for when an itemized storage is updated
 		ItemizedPageUpdated {
+			/// message source id of storage owner
 			msa_id: MessageSourceId,
+			/// schema related to the storage
 			schema_id: SchemaId,
+			/// previous content hash before update
 			prev_content_hash: PageHash,
+			/// current content hash after update
 			curr_content_hash: PageHash,
 		},
+
+		/// An event for when an itemized storage is deleted
 		ItemizedPageDeleted {
+			/// message source id of storage owner
 			msa_id: MessageSourceId,
+			/// schema related to the storage
 			schema_id: SchemaId,
+			/// previous content hash before removal
 			prev_content_hash: PageHash,
 		},
+
+		/// An event for when an paginated storage is updated
 		PaginatedPageUpdated {
+			/// message source id of storage owner
 			msa_id: MessageSourceId,
+			/// schema related to the storage
 			schema_id: SchemaId,
+			/// id of updated page
 			page_id: PageId,
+			/// previous content hash before update
 			prev_content_hash: PageHash,
+			/// current content hash after update
 			curr_content_hash: PageHash,
 		},
+
+		/// An event for when an paginated storage is deleted
 		PaginatedPageDeleted {
+			/// message source id of storage owner
 			msa_id: MessageSourceId,
+			/// schema related to the storage
 			schema_id: SchemaId,
+			/// id of updated page
 			page_id: PageId,
+			/// previous content hash before removal
 			prev_content_hash: PageHash,
 		},
 	}
@@ -303,6 +326,8 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Applies the Add or Delete Actions on the requested Itemized page that requires signature
+		/// since the signature of delegator is checked there is no need for delegation validation
 		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::apply_item_actions_with_signature( payload.actions.len() as u32 ,
 			payload.actions.iter().fold(0, |acc, a| acc + match a {
@@ -334,6 +359,8 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Creates or updates an Paginated storage with new payload that requires signature
+		/// since the signature of delegator is checked there is no need for delegation validation
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::upsert_page_with_signature(payload.payload.len() as u32))]
 		pub fn upsert_page_with_signature(
@@ -364,7 +391,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Deletes a Paginated storage
+		/// Deletes a Paginated storage that requires signature
+		/// since the signature of delegator is checked there is no need for delegation validation
 		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::delete_page_with_signature())]
 		pub fn delete_page_with_signature(
@@ -441,6 +469,12 @@ impl<T: Config> Pallet<T> {
 		Ok(ItemizedStoragePageResponse::new(msa_id, schema_id, page.get_hash(), items))
 	}
 
+	/// This function checks to ensure `payload_expire_block` is in a valid range
+	///
+	/// # Errors
+	/// * [`Error::ProofHasExpired`]
+	/// * [`Error::ProofNotYetValid`]
+	///
 	pub fn check_payload_expiration(
 		current_block: T::BlockNumber,
 		payload_expire_block: T::BlockNumber,
@@ -477,6 +511,12 @@ impl<T: Config> Pallet<T> {
 		current_block + T::BlockNumber::from(T::MortalityWindowSize::get())
 	}
 
+	/// Verifies the existence and payload location of the schema
+	///
+	/// # Errors
+	/// * [`Error::InvalidSchemaId`]
+	/// * [`Error::SchemaPayloadLocationMismatch`]
+	///
 	fn check_schema(
 		schema_id: SchemaId,
 		expected_payload_location: PayloadLocation,
@@ -490,6 +530,13 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Verifies if the provider key has an Msa and if provider msa is different from state owner
+	/// msa it checks for active delegation for schema id
+	///
+	/// # Errors
+	/// * [`Error::InvalidMessageSourceAccount`]
+	/// * [`Error::UnAuthorizedDelegate`]
+	///
 	fn check_grants(
 		provider_key: T::AccountId,
 		state_owner_msa_id: MessageSourceId,
@@ -513,6 +560,11 @@ impl<T: Config> Pallet<T> {
 		Ok(provider_msa_id)
 	}
 
+	/// Verifies if the key has an Msa and if it matches with expected one
+	///
+	/// # Errors
+	/// * [`Error::InvalidMessageSourceAccount`]
+	///
 	fn check_msa(key: T::AccountId, expected_msa_id: MessageSourceId) -> DispatchResult {
 		let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&key)
 			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
@@ -520,6 +572,11 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Verifies the actions size
+	///
+	/// # Errors
+	/// * [`Error::ItemExceedsMaxBlobSizeBytes`]
+	///
 	fn check_actions(
 		actions: &BoundedVec<ItemAction, T::MaxItemizedActionsCount>,
 	) -> DispatchResult {
@@ -534,6 +591,7 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Modifies an itemized storage by applying provided actions and deposit events
 	fn modify_itemized(
 		state_owner_msa_id: MessageSourceId,
 		schema_id: SchemaId,
@@ -586,6 +644,7 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Modifies an paginated storage by provided new page and deposit events
 	fn modify_paginated(
 		state_owner_msa_id: MessageSourceId,
 		schema_id: SchemaId,
@@ -613,6 +672,7 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Deletes an paginated storage and deposit events
 	fn delete_paginated(
 		state_owner_msa_id: MessageSourceId,
 		schema_id: SchemaId,

@@ -86,7 +86,7 @@ describe("📗 Stateful Pallet Storage Signature Required", () => {
       }).timeout(10000);
     });
 
-  describe("Paginated With Signature Storage Tests 😊/😥", () => {
+  describe("Paginated With Signature Storage Tests", () => {
 
     it("should be able to call upsert a page and delete it successfully", async function () {
       let page_id = new u16(ExtrinsicHelper.api.registry, 1);
