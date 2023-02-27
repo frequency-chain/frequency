@@ -95,6 +95,8 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+pub mod migration;
+
 pub mod types;
 
 #[cfg(test)]
@@ -216,6 +218,11 @@ pub mod pallet {
 	/// that take an externally-signed payload.
 	/// For this to work, the payload must include a mortality block number, which
 	/// is used in lieu of a monotonically increasing nonce.
+	///
+	/// The ring is forwardly linked. (Example has a ring size of 5)
+	/// - signature,
+	///
+	/// ### Storage
 	/// - Key: Signature
 	/// - Value: Tuple
 	///     - [`BlockNumber`] when the keyed signature can be ejected from the registry
@@ -239,36 +246,6 @@ pub mod pallet {
 	#[pallet::getter(fn get_payload_signature_pointer)]
 	pub(super) type PayloadSignatureRegistryRingPointer<T: Config> =
 		StorageValue<_, SignatureRegistryPointer>;
-
-	/// PayloadSignatureRegistry is used to prevent replay attacks for extrinsics
-	/// that take an externally-signed payload.
-	/// For this to work, the payload must include a mortality block number, which
-	/// is used in lieu of a monotonically increasing nonce.
-	#[deprecated]
-	#[pallet::storage]
-	#[pallet::getter(fn get_payload_signature_registry)]
-	pub(super) type PayloadSignatureRegistry<T: Config> = StorageDoubleMap<
-		_,                      // prefix
-		Twox64Concat,           // hasher for key1
-		T::BlockNumber, // Bucket number. Stored as BlockNumber because I'm done arguing with rust about it.
-		Twox64Concat,   // hasher for key2
-		MultiSignature, // An externally-created Signature for an external payload, provided by an extrinsic
-		T::BlockNumber, // An actual flipping block number.
-		OptionQuery,    // The type for the query
-		GetDefault,     // OnEmpty return type, defaults to None
-		T::MaxSignaturesStored, // Maximum total signatures to store
-	>;
-
-	/// Records how many signatures are currently stored in each virtual signature registration bucket
-	#[deprecated]
-	#[pallet::storage]
-	pub(super) type PayloadSignatureBucketCount<T: Config> = StorageMap<
-		_,
-		Twox64Concat,
-		T::BlockNumber, // bucket number
-		u32,            // number of signatures
-		ValueQuery,
-	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -416,13 +393,6 @@ pub mod pallet {
 		/// Attempted to add a new signature to a full virtual signature registration bucket
 		SignatureRegistryLimitExceeded,
 	}
-
-	// #[pallet::hooks]
-	// impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-	// 	fn on_initialize(current: T::BlockNumber) -> Weight {
-	// 		Self::reset_virtual_bucket_if_needed(current)
-	// 	}
-	// }
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -1406,11 +1376,11 @@ impl<T: Config> Pallet<T> {
 
 		// We are now wanting to overwrite prior signatures
 		// Do we need this > 0?
-		let looping: bool =
+		let is_ring_buffer_full: bool =
 			pointer.count > 0 && pointer.count == T::MaxSignaturesStored::get().unwrap_or(0);
 
 		// Overwrite oldest signature, update tail
-		if looping {
+		if is_ring_buffer_full {
 			<PayloadSignatureRegistryRing<T>>::try_mutate(
 				pointer.tail,
 				|maybe_block_and_next_oldest_pointer| -> DispatchResult {
@@ -1467,8 +1437,8 @@ impl<T: Config> Pallet<T> {
 		);
 
 		PayloadSignatureRegistryRingPointer::<T>::put(SignatureRegistryPointer {
-			// The count doesn't change if we have a new tail because that means we are looping
-			count: if looping { pointer.count } else { pointer.count + 1 },
+			// The count doesn't change if we have a new tail because the buffer is full
+			count: if is_ring_buffer_full { pointer.count } else { pointer.count + 1 },
 			head: signature.clone(),
 			tail: new_tail,
 		});
