@@ -21,7 +21,6 @@ describe("MSA Initializer Load Tests", function () {
 
     it("should successfully create 49_998 signatures within 100 blocks", async function () {
 
-        // Make 250 MSAs
         const msaKeys: GeneratedMsa[] = await generateMsas(2300);
 
         let blockNumber = await getBlockNumber();
@@ -29,8 +28,8 @@ describe("MSA Initializer Load Tests", function () {
 
         let signatureCallTests: Array<KeyringPair> = [];
 
-        // Make 49,998 signatures via 24_998 loops
-        const loopCount = 24_998;
+        // Make 50k signatures via 50k/2 loops
+        const loopCount = 25_000;
         for (let i = 0; i < loopCount; i++) {
             const ithMsaKey = i % msaKeys.length;
             let { controlKey, nonce, id } = msaKeys[ithMsaKey];
