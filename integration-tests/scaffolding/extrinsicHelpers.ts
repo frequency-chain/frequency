@@ -1,12 +1,12 @@
-import { ApiRx } from "@polkadot/api";
+import { ApiPromise, ApiRx } from "@polkadot/api";
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { Compact, u128, u16, u64 } from "@polkadot/types";
 import { FrameSystemAccountInfo } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
-import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
+import { firstValueFrom, filter, map, pipe, tap, Observable, share, Subscription } from "rxjs";
 import { devAccounts, log, Sr25519Signature } from "./helpers";
-import { connect } from "./apiConnection";
+import { connect, connectPromise } from "./apiConnection";
 import { DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
 import { u8aToHex } from "@polkadot/util"
@@ -154,11 +154,19 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
 
 export class ExtrinsicHelper {
     public static api: ApiRx;
+    public static apiPromise: ApiPromise;
+    private static lastBlock: SignedBlock;
 
     constructor() { }
 
     public static async initialize(providerUrl?: string | string[] | undefined) {
         ExtrinsicHelper.api = await connect(providerUrl);
+        // For single state queries (api.query), ApiPromise is better
+        ExtrinsicHelper.apiPromise = await connectPromise(providerUrl);
+
+        // Watch and always have the latest block
+        ExtrinsicHelper.lastBlock = await ExtrinsicHelper.apiPromise.rpc.chain.getBlock();
+        ExtrinsicHelper.api.rpc.chain.getBlock().subscribe(x => ExtrinsicHelper.lastBlock = x);
     }
 
     public static getLastBlock(): Promise<SignedBlock> {
@@ -167,11 +175,11 @@ export class ExtrinsicHelper {
 
     /** Query Extrinsics */
     public static getAccountInfo(address: string): Promise<FrameSystemAccountInfo> {
-        return firstValueFrom(ExtrinsicHelper.api.query.system.account(address));
+        return ExtrinsicHelper.apiPromise.query.system.account(address);
     }
 
     public static getSchemaMaxBytes() {
-        return firstValueFrom(ExtrinsicHelper.api.query.schemas.governanceSchemaModelMaxBytes());
+        return ExtrinsicHelper.apiPromise.query.schemas.governanceSchemaModelMaxBytes();
     }
 
     /** Balance Extrinsics */

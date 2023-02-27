@@ -21,10 +21,10 @@ export function signPayloadSr25519(keys: KeyringPair, data: Codec): Sr25519Signa
     return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) }
 }
 
-export async function generateDelegationPayload(payloadInputs: AddProviderPayload, expirationOffet?: number): Promise<AddProviderPayload> {
+export async function generateDelegationPayload(payloadInputs: AddProviderPayload, expirationOffset?: number): Promise<AddProviderPayload> {
     let { expiration, ...payload } = payloadInputs;
     if (!expiration) {
-        expiration = (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + (expirationOffet || 5);
+        expiration = (await getBlockNumber()) + (expirationOffset || 5);
     }
 
     return {
@@ -37,10 +37,10 @@ export async function getBlockNumber(): Promise<number> {
     return (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber()
 }
 
-export async function generateAddKeyPayload(payloadInputs: AddKeyData, expirationOffset?: number): Promise<AddKeyData> {
+export async function generateAddKeyPayload(payloadInputs: AddKeyData, expirationOffset: number = 5, blockNumber?: number): Promise<AddKeyData> {
     let { expiration, ...payload } = payloadInputs;
     if (!expiration) {
-        expiration = (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + (expirationOffset || 5);
+        expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
     }
 
     return {
@@ -63,11 +63,11 @@ export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount
     await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
 }
 
-export async function createAndFundKeypair(amount = EXISTENTIAL_DEPOSIT, keyName?: string, nonce?: number): Promise<KeyringPair> {
+export async function createAndFundKeypair(amount = EXISTENTIAL_DEPOSIT, keyName?: string, devAccount?: KeyringPair, nonce?: number): Promise<KeyringPair> {
     const keypair = createKeys(keyName);
 
     // Transfer funds from source (usually pre-funded dev account) to new account
-    await fundKeypair(devAccounts[0].keys, keypair, amount, nonce);
+    await fundKeypair((devAccount || devAccounts[0].keys), keypair, amount, nonce);
 
     return keypair;
 }
