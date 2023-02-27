@@ -66,7 +66,8 @@ pub use frequency_executor::*;
 
 type ParachainExecutor = NativeElseWasmExecutor<FrequencyRuntimeExecutor>;
 
-type ParachainClient = TFullClient<Block, RuntimeApi, ParachainExecutor>;
+/// Frequency parachain
+pub type ParachainClient = TFullClient<Block, RuntimeApi, ParachainExecutor>;
 
 type ParachainBackend = TFullBackend<Block>;
 

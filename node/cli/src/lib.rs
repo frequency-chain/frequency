@@ -1,8 +1,12 @@
 //! Frequency CLI library.
 
 #![allow(missing_docs)]
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
 #[cfg(feature = "cli")]
 mod cli;
+
 #[cfg(feature = "cli")]
 mod command;
 
@@ -11,6 +15,9 @@ mod export_metadata_cmd;
 
 #[cfg(feature = "cli")]
 mod runtime_version_cmd;
+
+#[cfg(feature = "runtime-behchmarks")]
+pub use benchmarking::*;
 
 #[cfg(feature = "cli")]
 pub use cli::*;
