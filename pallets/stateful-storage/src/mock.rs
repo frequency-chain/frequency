@@ -1,10 +1,16 @@
 use crate as pallet_stateful_storage;
+use codec::Decode;
 
+use crate::test_common::{
+	constants,
+	constants::{BENCHMARK_SIGNATURE_ACCOUNT_SEED, SIGNATURE_MSA_ID},
+};
 use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MessageSourceId, MsaLookup, MsaValidator,
 		ProviderId, ProviderLookup, SchemaGrantValidator,
 	},
+	node::AccountId,
 	schema::{ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse},
 	stateful_storage::PageId,
 };
@@ -15,15 +21,21 @@ use frame_support::{
 	Twox128,
 };
 use frame_system as system;
-use sp_core::H256;
+use sp_core::{crypto::AccountId32, sr25519, ByteArray, Pair, H256};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
 	DispatchError,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
+
+pub const INVALID_SCHEMA_ID: SchemaId = SchemaId::MAX;
+pub const UNDELEGATED_PAGINATED_SCHEMA: SchemaId = 102;
+pub const UNDELEGATED_ITEMIZED_SCHEMA: SchemaId = 103;
+pub const INVALID_MSA_ID: MessageSourceId = 100;
+pub const TEST_ACCOUNT_SEED: [u8; 32] = [0; 32];
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -48,7 +60,7 @@ impl system::Config for Test {
 	type BlockNumber = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type AccountId = u64;
+	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
@@ -72,13 +84,8 @@ parameter_types! {
 	pub const MaxItemizedActionsCount: u32 = 6;
 
 	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
+	pub const StatefulMortalityWindowSize: u32 = 10;
 }
-
-pub const INVALID_SCHEMA_ID: SchemaId = SchemaId::MAX;
-pub const ITEMIZED_SCHEMA: SchemaId = 100; // keep in sync with benchmarking.rs. TODO: refactor
-pub const PAGINATED_SCHEMA: SchemaId = 101; // keep in sync with benchmarking.rs. TODO: refactor
-pub const UNDELEGATED_PAGINATED_SCHEMA: SchemaId = 102;
-pub const UNDELEGATED_ITEMIZED_SCHEMA: SchemaId = 103;
 
 impl Default for MaxItemizedPageSizeBytes {
 	fn default() -> Self {
@@ -96,33 +103,45 @@ pub struct MsaInfoHandler;
 pub struct DelegationInfoHandler;
 pub struct SchemaGrantValidationHandler;
 impl MsaLookup for MsaInfoHandler {
-	type AccountId = u64;
+	type AccountId = AccountId;
 
-	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
-		if *key == 1000 {
+	fn get_msa_id(key: &AccountId) -> Option<MessageSourceId> {
+		if *key == test_public(INVALID_MSA_ID) ||
+			*key == get_invalid_msa_signature_account().public().into()
+		{
 			return None
 		}
-		if *key == 2000 {
-			return Some(2000 as MessageSourceId)
+
+		if *key == get_signature_benchmarks_public_account().into() ||
+			*key == get_signature_account().1.public().into()
+		{
+			return Some(constants::SIGNATURE_MSA_ID)
 		}
-		Some(get_msa_from_account(*key) as MessageSourceId)
+
+		Some(MessageSourceId::decode(&mut key.as_slice()).unwrap())
 	}
 }
 
 impl MsaValidator for MsaInfoHandler {
-	type AccountId = u64;
+	type AccountId = AccountId;
 
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError> {
-		if *key == 1000 {
+		if *key == test_public(INVALID_MSA_ID) ||
+			*key == get_invalid_msa_signature_account().public().into()
+		{
 			return Err(DispatchError::Other("some error"))
 		}
-		if *key == 2000 {
-			return Ok(2000)
+
+		if *key == get_signature_benchmarks_public_account().into() ||
+			*key == get_signature_account().1.public().into()
+		{
+			return Ok(constants::SIGNATURE_MSA_ID)
 		}
 
-		Ok(get_msa_from_account(*key))
+		Ok(MessageSourceId::decode(&mut key.as_slice()).unwrap())
 	}
 }
+
 impl ProviderLookup for DelegationInfoHandler {
 	type BlockNumber = u64;
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
@@ -181,14 +200,14 @@ impl SchemaProvider<u16> for SchemaHandler {
 	// For testing/benchmarking. Zero value returns None, Odd for Itemized, Even for Paginated
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 		match schema_id {
-			ITEMIZED_SCHEMA | UNDELEGATED_ITEMIZED_SCHEMA => Some(SchemaResponse {
+			constants::ITEMIZED_SCHEMA | UNDELEGATED_ITEMIZED_SCHEMA => Some(SchemaResponse {
 				schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Itemized,
 			}),
 
-			PAGINATED_SCHEMA | UNDELEGATED_PAGINATED_SCHEMA => Some(SchemaResponse {
+			constants::PAGINATED_SCHEMA | UNDELEGATED_PAGINATED_SCHEMA => Some(SchemaResponse {
 				schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
@@ -334,6 +353,10 @@ impl pallet_stateful_storage::Config for Test {
 	#[cfg(feature = "runtime-benchmarks")]
 	type SchemaBenchmarkHelper = ();
 	type KeyHasher = Twox128;
+	/// The conversion to a 32 byte AccountId
+	type ConvertIntoAccountId32 = ConvertInto;
+	/// The number of blocks per virtual bucket
+	type MortalityWindowSize = StatefulMortalityWindowSize;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -343,6 +366,32 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	ext
 }
 
-pub fn get_msa_from_account(account_id: u64) -> u64 {
-	account_id + 100
+pub fn get_signature_account() -> (MessageSourceId, sr25519::Pair) {
+	(SIGNATURE_MSA_ID, sr25519::Pair::from_seed_slice(TEST_ACCOUNT_SEED.as_slice()).unwrap())
+}
+
+pub fn get_invalid_msa_signature_account() -> sr25519::Pair {
+	sr25519::Pair::from_seed_slice([1; 32].as_slice()).unwrap()
+}
+
+fn get_signature_benchmarks_public_account() -> sr25519::Public {
+	sr25519::Pair::from_string(BENCHMARK_SIGNATURE_ACCOUNT_SEED, None)
+		.unwrap()
+		.public()
+}
+
+pub fn test_public(n: MessageSourceId) -> AccountId32 {
+	AccountId32::new([n as u8; 32])
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
+	use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStorePtr};
+	use sp_std::sync::Arc;
+
+	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let mut ext = sp_io::TestExternalities::new(t);
+	ext.register_extension(KeystoreExt(Arc::new(KeyStore::new()) as SyncCryptoStorePtr));
+
+	ext
 }

@@ -1,17 +1,12 @@
 // Integration tests for pallets/stateful-pallet-storage/handleItemized.ts
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import { createDelegatorAndDelegation, createProviderKeysAndId } from "../scaffolding/helpers";
+import {createDelegatorAndDelegation, createProviderKeysAndId, getCurrentItemizedHash} from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "../stateful-pallet-storage/fixtures/itemizedSchemaType";
 import { MessageSourceId, PageHash, SchemaId } from "@frequency-chain/api-augment/interfaces";
 import { Bytes, u16, u64 } from "@polkadot/types";
-
-async function getCurrentItemizedHash(msa_id: MessageSourceId, schemaId: u16): Promise<PageHash> {
-    const result = await ExtrinsicHelper.getItemizedStorages(msa_id, schemaId);
-    return result.content_hash;
-}
 
 describe("📗 Stateful Pallet Storage", () => {
     let schemaId: SchemaId;

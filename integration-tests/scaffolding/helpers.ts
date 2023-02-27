@@ -5,8 +5,15 @@ import { Codec } from "@polkadot/types/types";
 import { u8aToHex, u8aWrapBytes } from "@polkadot/util";
 import { mnemonicGenerate } from '@polkadot/util-crypto';
 import { env } from "./env";
-import { AddKeyData, AddProviderPayload, ExtrinsicHelper } from "./extrinsicHelpers";
+import {
+  AddKeyData,
+  AddProviderPayload,
+  ExtrinsicHelper,
+  ItemizedSignaturePayload, PaginatedDeleteSignaturePayload,
+  PaginatedUpsertSignaturePayload
+} from "./extrinsicHelpers";
 import { EXISTENTIAL_DEPOSIT } from "./rootHooks";
+import {MessageSourceId, PageHash} from "@frequency-chain/api-augment/interfaces";
 
 export interface DevAccount {
     uri: string,
@@ -44,6 +51,42 @@ export async function generateAddKeyPayload(payloadInputs: AddKeyData, expiratio
         expiration,
         ...payload,
     }
+}
+
+export async function generateItemizedSignaturePayload(payloadInputs: ItemizedSignaturePayload, expirationOffset?: number): Promise<ItemizedSignaturePayload> {
+  let { expiration, ...payload } = payloadInputs;
+  if (!expiration) {
+    expiration = (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + (expirationOffset || 5);
+  }
+
+  return {
+    expiration,
+    ...payload,
+  }
+}
+
+export async function generatePaginatedUpsertSignaturePayload(payloadInputs: PaginatedUpsertSignaturePayload, expirationOffset?: number): Promise<PaginatedUpsertSignaturePayload> {
+  let { expiration, ...payload } = payloadInputs;
+  if (!expiration) {
+    expiration = (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + (expirationOffset || 5);
+  }
+
+  return {
+    expiration,
+    ...payload,
+  }
+}
+
+export async function generatePaginatedDeleteSignaturePayload(payloadInputs: PaginatedDeleteSignaturePayload, expirationOffset?: number): Promise<PaginatedDeleteSignaturePayload> {
+  let { expiration, ...payload } = payloadInputs;
+  if (!expiration) {
+    expiration = (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + (expirationOffset || 5);
+  }
+
+  return {
+    expiration,
+    ...payload,
+  }
 }
 
 export function createKeys(name: string = 'first pair'): KeyringPair {
@@ -88,16 +131,23 @@ export async function createProviderKeysAndId(): Promise<[KeyringPair, u64]> {
     return [providerKeys, providerId];
 }
 
+export async function createDelegator(): Promise<[KeyringPair, u64]> {
+  let keys = await createAndFundKeypair();
+  let delegator_msa_id = new u64(ExtrinsicHelper.api.registry, 0);
+  const createMsa = ExtrinsicHelper.createMsa(keys);
+  await createMsa.fundOperation();
+  const [msaCreatedEvent, _] = await createMsa.signAndSend();
+
+  if (msaCreatedEvent && ExtrinsicHelper.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
+    delegator_msa_id = msaCreatedEvent.data.msaId;
+  }
+
+  return [keys, delegator_msa_id];
+}
+
 export async function createDelegatorAndDelegation(schemaId: u16, providerId: u64, providerKeys: KeyringPair): Promise<[KeyringPair, u64]> {
     // Create a  delegator msa
-    let keys = await createAndFundKeypair();
-    let delegator_msa_id = new u64(ExtrinsicHelper.api.registry, 0);
-    const createMsa = ExtrinsicHelper.createMsa(keys);
-    await createMsa.fundOperation();
-    const [msaCreatedEvent, chainEvents] = await createMsa.signAndSend();
-    if (msaCreatedEvent && ExtrinsicHelper.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
-        delegator_msa_id = msaCreatedEvent.data.msaId;
-    }
+    const [keys, delegator_msa_id] = await createDelegator();
 
     // Grant delegation to the provider
     const payload = await generateDelegationPayload({
@@ -111,4 +161,19 @@ export async function createDelegatorAndDelegation(schemaId: u16, providerId: u6
     await grantDelegationOp.signAndSend();
 
     return [keys, delegator_msa_id];
+}
+
+export async function getCurrentItemizedHash(msa_id: MessageSourceId, schemaId: u16): Promise<PageHash> {
+  const result = await ExtrinsicHelper.getItemizedStorages(msa_id, schemaId);
+  return result.content_hash;
+}
+
+export async function getCurrentPaginatedHash(msa_id: MessageSourceId, schemaId: u16, page_id: number): Promise<u32> {
+  const result = await ExtrinsicHelper.getPaginatedStorages(msa_id, schemaId);
+  const page_response = result.filter((page) => page.page_id.toNumber() === page_id);
+  if (page_response.length <= 0) {
+    return new u32(ExtrinsicHelper.api.registry, 0);
+  }
+
+  return page_response[0].content_hash;
 }
