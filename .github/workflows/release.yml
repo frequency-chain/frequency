@@ -9,7 +9,6 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v1.1.0-rc1
       - "vX.X.X" # used for testing only
 env:
-  RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
   NEW_RELEASE_VERSION: ${{github.ref_name}}
   NEW_RELEASE_TAG: ${{github.ref_name}}
 jobs:

@@ -13,7 +13,6 @@ on:
       - "**/Cargo.lock"
 env:
   BUILD_PROFILE: release
-  RUST_TOOLCHAIN: nightly-2022-09-22
 
 jobs:
   publish-js-api-augment-rc:
@@ -30,7 +29,7 @@ jobs:
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
           targets: wasm32-unknown-unknown
-          toolchain: ${{env.RUST_TOOLCHAIN}}
+          toolchain: stable
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Output Metadata
