@@ -279,6 +279,18 @@ pub fn create_provider_delegator_msas() -> (u64, Public, u64, Public) {
 	(provider_msa_id, provider_account, delegator_msa_id, delegator_account)
 }
 
+// Create a provider with given name
+pub fn create_provider_with_name(name: &str) -> (u64, Public) {
+	let (provider_msa_id, provider_pair) = create_account();
+	let provider_account = provider_pair.public();
+	// Register provider
+	assert_ok!(Msa::create_provider(
+		RuntimeOrigin::signed(provider_account.into()),
+		Vec::from(name)
+	));
+	(provider_msa_id, provider_account)
+}
+
 pub fn generate_test_signature() -> MultiSignature {
 	let (key_pair, _) = sr25519::Pair::generate();
 	let fake_data = H256::random();
