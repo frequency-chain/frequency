@@ -24,6 +24,9 @@ common-runtime = { path = "../../runtime/common" }
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.36" }
+frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.36" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.36" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
@@ -77,6 +80,7 @@ cumulus-relay-chain-minimal-node = { git = "https://github.com/paritytech/cumulu
 common-primitives = { default-features = false, path = "../../common/primitives" }
 pallet-messages-rpc = { path = "../../pallets/messages/src/rpc" }
 pallet-messages-runtime-api = { path = "../../pallets/messages/src/runtime-api" }
+pallet-msa = { package = "pallet-msa", path = "../../pallets/msa", default-features = false, optional = true }
 pallet-msa-rpc = { path = "../../pallets/msa/src/rpc" }
 pallet-msa-runtime-api = { path = "../../pallets/msa/src/runtime-api" }
 pallet-schemas-rpc = { path = "../../pallets/schemas/src/rpc" }
@@ -91,7 +95,11 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 default = ["std"]
 std = []
 runtime-benchmarks = [
+  "frame-system",
+  "frame-system-rpc-runtime-api",
   "frequency-runtime/runtime-benchmarks",
+  "pallet-msa",
+  "pallet-transaction-payment",
   "polkadot-service/runtime-benchmarks",
 ]
 frequency = ["frequency-runtime"]

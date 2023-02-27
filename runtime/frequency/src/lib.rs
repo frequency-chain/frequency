@@ -128,6 +128,9 @@ pub type SignedExtra = (
 /// A Block signed with a Justification
 pub type SignedBlock = generic::SignedBlock<Block>;
 
+/// The payload being signed in transactions.
+pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
+
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
 

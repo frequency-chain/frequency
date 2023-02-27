@@ -28,14 +28,28 @@ use cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvide
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 
 // Substrate Imports
+#[cfg(feature = "runtime-benchmarks")]
+use frame_system;
+#[cfg(feature = "runtime-benchmarks")]
+use pallet_transaction_payment;
+#[cfg(feature = "runtime-benchmarks")]
+use sc_client_api::BlockBackend;
 use sc_consensus::{ImportQueue, LongestChain};
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
 use sc_network_common::service::NetworkBlock;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
+#[cfg(feature = "runtime-benchmarks")]
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
+#[cfg(feature = "runtime-benchmarks")]
+use sp_core::{Encode, Pair};
 use sp_keystore::SyncCryptoStorePtr;
+#[cfg(feature = "runtime-benchmarks")]
+use sp_runtime::SaturatedConversion;
+#[cfg(feature = "runtime-benchmarks")]
+use substrate_frame_rpc_system::AccountNonceApi;
 use substrate_prometheus_endpoint::Registry;
 
 type FullBackend = TFullBackend<Block>;
@@ -72,6 +86,83 @@ pub type ParachainClient = TFullClient<Block, RuntimeApi, ParachainExecutor>;
 type ParachainBackend = TFullBackend<Block>;
 
 type ParachainBlockImport = TParachainBlockImport<Block, Arc<ParachainClient>, ParachainBackend>;
+
+/// Fetch the nonce of the given `account` from the chain state.
+///
+/// Note: Should only be used for tests or overhead benchmarks.
+// #[cfg(feature = "runtime-benchmarks")]
+pub fn fetch_nonce(client: &ParachainClient, account: sp_core::sr25519::Pair) -> u32 {
+	let best_hash = client.chain_info().best_hash;
+	client
+		.runtime_api()
+		.account_nonce(&frequency_runtime::BlockId::Hash(best_hash), account.public().into())
+		.expect("Fetching account nonce works; qed")
+}
+
+/// Create a transaction using the given `call`.
+///
+/// The transaction will be signed by `sender`. If `nonce` is `None` it will be fetched from the
+/// state of the best block.
+///
+/// Note: Should only be used for tests or overhead benchmarks.
+// #[cfg(feature = "runtime-benchmarks")]
+pub fn create_extrinsic(
+	client: &ParachainClient,
+	sender: sp_core::sr25519::Pair,
+	function: impl Into<frequency_runtime::RuntimeCall>,
+	nonce: Option<u32>,
+) -> frequency_runtime::UncheckedExtrinsic {
+	let function = function.into();
+	let genesis_hash = client.block_hash(0).ok().flatten().expect("Genesis block exists; qed");
+	let best_hash = client.chain_info().best_hash;
+	let best_block = client.chain_info().best_number;
+	let nonce = nonce.unwrap_or_else(|| fetch_nonce(client, sender.clone()));
+
+	let period = <frequency_runtime::Runtime as frame_system::Config>::BlockHashCount::get()
+		.checked_next_power_of_two()
+		.map(|c| c / 2)
+		.unwrap_or(2) as u64;
+	let tip = 0;
+	let extra: frequency_runtime::SignedExtra = (
+		frame_system::CheckNonZeroSender::<frequency_runtime::Runtime>::new(),
+		frame_system::CheckSpecVersion::<frequency_runtime::Runtime>::new(),
+		frame_system::CheckTxVersion::<frequency_runtime::Runtime>::new(),
+		frame_system::CheckGenesis::<frequency_runtime::Runtime>::new(),
+		frame_system::CheckEra::<frequency_runtime::Runtime>::from(
+			sp_runtime::generic::Era::mortal(period, best_block.saturated_into()),
+		),
+		common_runtime::extensions::check_nonce::CheckNonce::<frequency_runtime::Runtime>::from(
+			nonce,
+		),
+		frame_system::CheckWeight::<frequency_runtime::Runtime>::new(),
+		pallet_transaction_payment::ChargeTransactionPayment::<frequency_runtime::Runtime>::from(0),
+		pallet_msa::CheckFreeExtrinsicUse::<frequency_runtime::Runtime>::new(),
+	);
+
+	let raw_payload = frequency_runtime::SignedPayload::from_raw(
+		function.clone(),
+		extra.clone(),
+		(
+			(),
+			frequency_runtime::VERSION.spec_version,
+			frequency_runtime::VERSION.transaction_version,
+			genesis_hash,
+			best_hash,
+			(),
+			(),
+			(),
+			(),
+		),
+	);
+	let signature = raw_payload.using_encoded(|e| sender.sign(e));
+
+	frequency_runtime::UncheckedExtrinsic::new_signed(
+		function,
+		sp_runtime::AccountId32::from(sender.public()).into(),
+		common_primitives::node::Signature::Sr25519(signature),
+		extra,
+	)
+}
 
 /// Starts a `ServiceBuilder` for a full service.
 ///

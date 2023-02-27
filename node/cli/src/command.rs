@@ -336,11 +336,13 @@ pub fn run() -> Result<()> {
 				BenchmarkCmd::Overhead(cmd) => runner.sync_run(|config| {
 					let partials = new_partial(&config, false)?;
 					let ext_builder = RemarkBuilder::new(partials.client.clone());
+					let inherents = inherent_benchmark_data()?;
 
 					cmd.run(
 						config,
 						partials.client,
-						inherent_benchmark_data()?,
+						// inherent_benchmark_data()?,
+						inherents,
 						Vec::new(),
 						&ext_builder,
 					)
