@@ -1,7 +1,7 @@
 import { ApiRx } from "@polkadot/api";
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { Compact, u128, u16, u64, Vec } from "@polkadot/types";
+import {Compact, u128, u16, u32, u64, Vec} from "@polkadot/types";
 import { FrameSystemAccountInfo } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
@@ -13,6 +13,9 @@ import { ItemizedStoragePageResponse, MessageSourceId, PaginatedStorageResponse,
 
 export type AddKeyData = { msaId?: u64; expiration?: any; newPublicKey?: any; }
 export type AddProviderPayload = { authorizedMsaId?: u64; schemaIds?: u16[], expiration?: any; }
+export type ItemizedSignaturePayload = { msaId?: u64; schemaId?: u16, targetHash?: u32, expiration?: any; actions?: any; }
+export type PaginatedUpsertSignaturePayload = { msaId?: u64; schemaId?: u16, pageId?: u16, targetHash?: u32, expiration?: any; payload?: any; }
+export type PaginatedDeleteSignaturePayload = { msaId?: u64; schemaId?: u16, pageId?: u16, targetHash?: u32, expiration?: any; }
 
 export class EventError extends Error {
     name: string = '';
@@ -242,7 +245,7 @@ export class ExtrinsicHelper {
 
     /** Stateful Storage Extrinsics */
     public static applyItemActions(keys: KeyringPair, schemaId: any, msa_id: MessageSourceId, actions: any, target_hash: any): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActions(msa_id, schemaId, actions, target_hash), keys, ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated);
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActions(msa_id, schemaId, target_hash,actions), keys, ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated);
     }
 
     public static removePage(keys: KeyringPair, schemaId: any, msa_id: MessageSourceId, page_id: any, target_hash: any): Extrinsic {
@@ -251,6 +254,18 @@ export class ExtrinsicHelper {
 
     public static upsertPage(keys: KeyringPair, schemaId: any, msa_id: MessageSourceId, page_id: any, payload: any, target_hash: any): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.upsertPage(msa_id, schemaId, page_id, target_hash, payload), keys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated);
+    }
+
+    public static applyItemActionsWithSignature(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: ItemizedSignaturePayload): Extrinsic {
+      return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActionsWithSignature(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated);
+    }
+
+    public static removePageWithSignature(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: PaginatedDeleteSignaturePayload): Extrinsic {
+      return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.deletePageWithSignature(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted);
+    }
+
+    public static upsertPageWithSignature(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: PaginatedUpsertSignaturePayload): Extrinsic {
+      return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.upsertPageWithSignature(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated);
     }
 
     public static getItemizedStorages(msa_id: MessageSourceId, schemaId: any): Promise<ItemizedStoragePageResponse> {

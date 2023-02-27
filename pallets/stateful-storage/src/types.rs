@@ -58,12 +58,22 @@ pub enum PageError {
 #[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
 #[scale_info(skip_type_params(T))]
 pub struct ItemizedSignaturePayload<T: Config> {
+	/// Message Source Account identifier
 	#[codec(compact)]
 	pub msa_id: MessageSourceId,
+
+	/// Schema id of this storage
 	#[codec(compact)]
 	pub schema_id: SchemaId,
+
+	/// Hash of targeted page to avoid race conditions
+	#[codec(compact)]
 	pub target_hash: PageHash,
+
+	/// The block number at which the signed proof will expire
 	pub expiration: T::BlockNumber,
+
+	/// actions to apply to storage
 	pub actions: BoundedVec<ItemAction, <T as Config>::MaxItemizedActionsCount>,
 }
 
@@ -71,14 +81,26 @@ pub struct ItemizedSignaturePayload<T: Config> {
 #[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
 #[scale_info(skip_type_params(T))]
 pub struct PaginatedUpsertSignaturePayload<T: Config> {
+	/// Message Source Account identifier
 	#[codec(compact)]
 	pub msa_id: MessageSourceId,
+
+	/// Schema id of this storage
 	#[codec(compact)]
 	pub schema_id: SchemaId,
+
+	/// Page id of this storage
 	#[codec(compact)]
 	pub page_id: PageId,
+
+	/// Hash of targeted page to avoid race conditions
+	#[codec(compact)]
 	pub target_hash: PageHash,
+
+	/// The block number at which the signed proof will expire
 	pub expiration: T::BlockNumber,
+
+	/// payload to update the page with
 	pub payload: BoundedVec<u8, <T as Config>::MaxPaginatedPageSizeBytes>,
 }
 
@@ -86,13 +108,23 @@ pub struct PaginatedUpsertSignaturePayload<T: Config> {
 #[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
 #[scale_info(skip_type_params(T))]
 pub struct PaginatedDeleteSignaturePayload<T: Config> {
+	/// Message Source Account identifier
 	#[codec(compact)]
 	pub msa_id: MessageSourceId,
+
+	/// Schema id of this storage
 	#[codec(compact)]
 	pub schema_id: SchemaId,
+
+	/// Page id of this storage
 	#[codec(compact)]
 	pub page_id: PageId,
+
+	/// Hash of targeted page to avoid race conditions
+	#[codec(compact)]
 	pub target_hash: PageHash,
+
+	/// The block number at which the signed proof will expire
 	pub expiration: T::BlockNumber,
 }
 
