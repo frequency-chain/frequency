@@ -899,6 +899,7 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type Capacity = Capacity;
+	type WeightInfo = pallet_frequency_tx_payment::weights::SubstrateWeight<Runtime>;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
@@ -1113,6 +1114,7 @@ mod benches {
 		[pallet_schemas, Schemas]
 		[pallet_messages, Messages]
 		[pallet_capacity, Capacity]
+		[pallet_frequency_tx_payment, FrequencyTxPayment]
 	);
 }
 
