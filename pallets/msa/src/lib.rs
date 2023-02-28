@@ -1644,10 +1644,11 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			InvalidTransaction::Custom(ValidityError::InvalidMoreThanOneKeyExists as u8)
 		);
 
-		let num_delegations =
-			DelegatorAndProviderToDelegation::<T>::iter_key_prefix(DelegatorId(msa_id)).count();
+		let has_delegations: bool =
+			DelegatorAndProviderToDelegation::<T>::iter_key_prefix(DelegatorId(msa_id)).any(|_| true);
+
 		ensure!(
-			num_delegations == 0,
+			!has_delegations,
 			InvalidTransaction::Custom(ValidityError::InvalidNonZeroProviderDelegations as u8)
 		);
 
