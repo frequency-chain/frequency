@@ -7,6 +7,7 @@ use frame_support::{
 	Blake2_128, Blake2_256, Hashable, StorageHasher, Twox128, Twox256,
 };
 use sp_core::{ConstU8, Get};
+use sp_io::hashing::twox_64;
 use sp_std::{fmt::Debug, prelude::*};
 
 pub trait MultipartKeyStorageHasher: StorageHasher {
@@ -303,9 +304,11 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 	/// data doesn't store under the given `key` `None` is returned.
 	pub fn try_read<K: MultipartKey<H>, V: Decode + Sized>(
 		msa_id: &MessageSourceId,
+		pallet_name: &[u8],
+		storage_name: &[u8],
 		keys: &K,
 	) -> Result<Option<V>, ()> {
-		let child = Self::get_child_tree(*msa_id);
+		let child = Self::get_child_tree_for_storage(*msa_id, pallet_name, storage_name);
 		let value = child::get_raw(&child, &keys.hash());
 		match value {
 			None => Ok(None),
@@ -323,9 +326,11 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 		PrefixKey: IsTuplePrefix<H, K>,
 	>(
 		msa_id: &MessageSourceId,
+		pallet_name: &[u8],
+		storage_name: &[u8],
 		prefix_keys: &PrefixKey,
 	) -> Box<impl Iterator<Item = (K, V)>> {
-		let child = Self::get_child_tree(*msa_id);
+		let child = Self::get_child_tree_for_storage(*msa_id, pallet_name, storage_name);
 		let result = ChildTriePrefixIterator::<(Vec<u8>, V)>::with_prefix(
 			&child,
 			&prefix_keys.hash_prefix_only(),
@@ -345,22 +350,41 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 	/// Writes directly into child tree node
 	pub fn write<K: MultipartKey<H>, V: Encode + Sized>(
 		msa_id: &MessageSourceId,
+		pallet_name: &[u8],
+		storage_name: &[u8],
 		keys: &K,
 		new_value: V,
 	) {
-		let child_trie_info = &Self::get_child_tree(*msa_id);
+		let child_trie_info = &Self::get_child_tree_for_storage(*msa_id, pallet_name, storage_name);
 		child::put_raw(child_trie_info, &keys.hash(), new_value.encode().as_ref());
 	}
 
 	/// Kills a child tree node
-	pub fn kill<K: MultipartKey<H>>(msa_id: &MessageSourceId, keys: &K) {
-		let child_trie_info = &Self::get_child_tree(*msa_id);
+	pub fn kill<K: MultipartKey<H>>(
+		msa_id: &MessageSourceId,
+		pallet_name: &[u8],
+		storage_name: &[u8],
+		keys: &K,
+	) {
+		let child_trie_info = &Self::get_child_tree_for_storage(*msa_id, pallet_name, storage_name);
 		child::kill(child_trie_info, &keys.hash());
 	}
 
-	fn get_child_tree(msa_id: MessageSourceId) -> ChildInfo {
+	/// These hashes should be consistent across the chain so we are hardcoding them
+	fn get_child_tree_for_storage(
+		msa_id: MessageSourceId,
+		pallet_name: &[u8],
+		storage_name: &[u8],
+	) -> ChildInfo {
 		let trie_root = Self::get_tree_prefix(msa_id);
-		child::ChildInfo::new_default(H::hash(&trie_root[..]).as_ref())
+		// child tree root should be hashed by Twox128 to avoid probability of conflict
+		let hashed_keys: Vec<u8> = [
+			Twox128::hash(&trie_root[..]).as_ref(),
+			twox_64(pallet_name).as_ref(),
+			twox_64(storage_name).as_ref(),
+		]
+		.concat();
+		child::ChildInfo::new_default(&hashed_keys)
 	}
 
 	fn get_tree_prefix(msa_id: MessageSourceId) -> Vec<u8> {
