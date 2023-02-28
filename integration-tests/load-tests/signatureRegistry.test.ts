@@ -19,7 +19,7 @@ describe("MSA Initializer Load Tests", function () {
         await createBlock();
     });
 
-    it("should successfully create 49_998 signatures within 100 blocks", async function () {
+    it("should successfully create 50k signatures within 100 blocks", async function () {
 
         const msaKeys: GeneratedMsa[] = await generateMsas(2300);
 
@@ -104,11 +104,13 @@ async function generateMsas(count: number = 1): Promise<GeneratedMsa[]> {
             }))
         );
         if (i > 0 && i % createBlockEvery === 0) {
-            await createBlock(150);
+            await createBlock(200);
             console.log("Generated Msas: ", i);
         }
     }
-    await createBlock(500);
+    await createBlock(750);
+    // Create a second block in case there were more than could fit in ^ blocks
+    await createBlock();
     const msaIds = await Promise.all(msaPromises)
     console.log("Generated Msas: ", count);
     return msaIds;
