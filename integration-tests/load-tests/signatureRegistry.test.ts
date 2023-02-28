@@ -136,10 +136,12 @@ async function createMsa(keys: KeyringPair): Promise<u64> {
     const msaRecord = result[1]["msa.MsaCreated"];
     if (msaRecord) return msaRecord.data[0] as u64;
 
-    // This doesn't always work I think due to the load. So doing a backup call
+    // This doesn't always work likely due to the load causing the ws subscription to be dropped.
+    // So doing a backup call to help
     const tryDirect = await getMsaFromKey(keys);
-    if (tryDirect.isNone) throw("Failed to get MSA Id...");
-    return tryDirect.value;
+    if (tryDirect.isSome) return tryDirect.value;
+
+    throw("Failed to get MSA Id...");
 }
 
 async function addSigs(msaId: u64, keys: KeyringPair, blockNumber: number, nonce: number): Promise<KeyringPair> {
