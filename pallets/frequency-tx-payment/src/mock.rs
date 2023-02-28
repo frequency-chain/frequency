@@ -21,6 +21,8 @@ use frame_support::{
 	weights::WeightToFee as WeightToFeeTrait,
 };
 
+use frame_support::weights::Weight;
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -238,12 +240,21 @@ impl Contains<RuntimeCall> for TestCapacityCalls {
 	}
 }
 
+impl GetStableWeight<RuntimeCall, Weight> for TestCapacityCalls {
+	fn get_stable_weight(call: &RuntimeCall) -> Option<Weight> {
+		match call {
+			RuntimeCall::Balances(BalancesCall::transfer { .. }) => Some(Weight::from_ref_time(11)),
+			_ => None,
+		}
+	}
+}
+
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type Capacity = Capacity;
 	type WeightInfo = ();
-	type CapacityEligibleCalls = TestCapacityCalls;
+	type CapacityCalls = TestCapacityCalls;
 }
 
 pub struct ExtBuilder {
