@@ -571,7 +571,12 @@ pub mod pallet {
 				add_provider_payload.authorized_msa_id == provider_id.0,
 				Error::<T>::UnauthorizedDelegator
 			);
-			Self::add_provider(provider_id, delegator_id, add_provider_payload.schema_ids)?;
+
+			Self::upsert_schema_permissions(
+				provider_id,
+				delegator_id,
+				add_provider_payload.schema_ids,
+			)?;
 			Self::deposit_event(Event::DelegationGranted { delegator_id, provider_id });
 
 			Ok(())
@@ -1123,6 +1128,56 @@ impl<T: Config> Pallet<T> {
 
 			PermittedDelegationSchemas::<T>::try_insert_schemas(delegation, schema_ids)?;
 
+			Ok(())
+		})
+	}
+
+	/// Modify delegation's schema permissions
+	///
+	/// # Errors
+	/// * [`Error::ExceedsMaxSchemaGrantsPerDelegation`]
+	pub fn upsert_schema_permissions(
+		provider_id: ProviderId,
+		delegator_id: DelegatorId,
+		schema_ids: Vec<SchemaId>,
+	) -> DispatchResult {
+		Self::try_mutate_delegation(delegator_id, provider_id, |delegation, _is_new_delegation| {
+			Self::ensure_all_schema_ids_are_valid(&schema_ids)?;
+
+			// Create revoke and insert lists
+			let mut revoke_ids: Vec<SchemaId> = Vec::new();
+			let mut insert_ids: Vec<SchemaId> = Vec::new();
+
+			let existing_keys = delegation.schema_permissions.keys().into_iter();
+
+			for existing_schema_id in existing_keys {
+				if !schema_ids.contains(&existing_schema_id) {
+					match delegation.schema_permissions.get(&existing_schema_id) {
+						Some(block) =>
+							if *block == T::BlockNumber::zero() {
+								revoke_ids.push(*existing_schema_id);
+							},
+						None => {},
+					}
+				}
+			}
+			for schema_id in &schema_ids {
+				if !delegation.schema_permissions.contains_key(&schema_id) {
+					insert_ids.push(*schema_id);
+				}
+			}
+
+			let current_block = frame_system::Pallet::<T>::block_number();
+
+			// Revoke any that are not in the new list that are not already revoked
+			PermittedDelegationSchemas::<T>::try_get_mut_schemas(
+				delegation,
+				revoke_ids,
+				current_block,
+			)?;
+
+			// Insert any new ones that are not in the existing list
+			PermittedDelegationSchemas::<T>::try_insert_schemas(delegation, insert_ids)?;
 			Ok(())
 		})
 	}
