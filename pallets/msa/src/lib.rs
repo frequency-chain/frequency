@@ -219,8 +219,11 @@ pub mod pallet {
 	/// For this to work, the payload must include a mortality block number, which
 	/// is used in lieu of a monotonically increasing nonce.
 	///
-	/// The ring is forwardly linked. (Example has a ring size of 5)
-	/// - signature,
+	/// The ring is forwardly linked. (Example has a ring size of 3)
+	/// - signature, pointer -> n = new signature
+	/// - 1,2 -> n,2
+	/// - 2,3 -> 2,3
+	/// - 3,1 -> 3,n
 	///
 	/// ### Storage
 	/// - Key: Signature
