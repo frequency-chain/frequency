@@ -1152,9 +1152,16 @@ impl<T: Config> Pallet<T> {
 
 			let existing_keys: Vec<SchemaId> =
 				delegation.schema_permissions.keys().cloned().collect();
+
 			for existing_schema_id in &existing_keys {
 				if !schema_ids.contains(&existing_schema_id) {
-					revoke_ids.push(*existing_schema_id);
+					match delegation.schema_permissions.get(&existing_schema_id) {
+						Some(block) =>
+							if *block == T::BlockNumber::zero() {
+								revoke_ids.push(*existing_schema_id);
+							},
+						None => {},
+					}
 				}
 			}
 			for schema_id in &schema_ids {
@@ -1163,8 +1170,9 @@ impl<T: Config> Pallet<T> {
 				}
 			}
 
-			// Revoke any that are not in the new list
 			let current_block = frame_system::Pallet::<T>::block_number();
+
+			// Revoke any that are not in the new list that are not already revoked
 			PermittedDelegationSchemas::<T>::try_get_mut_schemas(
 				delegation,
 				revoke_ids,

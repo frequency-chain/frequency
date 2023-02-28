@@ -670,10 +670,12 @@ pub fn grant_delegation_changes_schema_permissions() {
 			Vec::from("Foo")
 		));
 
-		let (delegator_signature, add_provider_payload) =
-			create_and_sign_add_provider_payload(delegator_pair.clone(), provider_msa);
-
+		System::set_block_number(1);
 		set_schema_count::<Test>(10);
+
+		// Create delegation without any schema permissions
+		let (delegator_signature, add_provider_payload) =
+		create_and_sign_add_provider_payload_with_schemas(delegator_pair.clone(), provider_msa, None);
 
 		assert_ok!(Msa::grant_delegation(
 			RuntimeOrigin::signed(provider_account.into()),
@@ -698,7 +700,7 @@ pub fn grant_delegation_changes_schema_permissions() {
 			.into(),
 		);
 
-		// Grant delegation w/schemas 1, 2, 3, and 4.
+		// Grant delegation w/schemas 1, 2, 3, and 4 at current block 1
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload_with_schemas(
 				delegator_pair.clone(),
@@ -723,8 +725,9 @@ pub fn grant_delegation_changes_schema_permissions() {
 
 		assert_eq!(Msa::get_delegation(delegator, provider), Some(expected));
 
+		System::set_block_number(2);
 		// Grant delegation w/schemas 3, 4, 5, and 6.
-		// This should add 5 and 6 and revoke 1 and 2.
+		// This should add 5 and 6 w/block 0 and revoke 1 and 2 at block 2.
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload_with_schemas(
 				delegator_pair.clone(),
@@ -740,8 +743,8 @@ pub fn grant_delegation_changes_schema_permissions() {
 		));
 
 		let mut sp = BoundedBTreeMap::<SchemaId, u64, MaxSchemaGrantsPerDelegation>::new();
-		assert_ok!(sp.try_insert(1u16, 1u64)); // schema id 1 revoked at block 1
-		assert_ok!(sp.try_insert(2u16, 1u64)); // schema id 2 revoked at block 1
+		assert_ok!(sp.try_insert(1u16, 2u64)); // schema id 1 revoked at block 2
+		assert_ok!(sp.try_insert(2u16, 2u64)); // schema id 2 revoked at block 2
 		assert_ok!(sp.try_insert(3u16, 0u64));
 		assert_ok!(sp.try_insert(4u16, 0u64));
 		assert_ok!(sp.try_insert(5u16, 0u64));
@@ -749,6 +752,33 @@ pub fn grant_delegation_changes_schema_permissions() {
 
 		let expected = Delegation { revoked_at: 0, schema_permissions: sp };
 
+		assert_eq!(Msa::get_delegation(delegator, provider), Some(expected));
+
+		System::set_block_number(5);
+		// Grant 1, 3, 6
+		let (delegator_signature, add_provider_payload) =
+			create_and_sign_add_provider_payload_with_schemas(
+				delegator_pair.clone(),
+				provider_msa,
+				Some(vec![1, 3, 6]),
+			);
+
+		assert_ok!(Msa::grant_delegation(
+			RuntimeOrigin::signed(provider_account.into()),
+			delegator_account.into(),
+			delegator_signature,
+			add_provider_payload
+		));
+
+		let mut sp = BoundedBTreeMap::<SchemaId, u64, MaxSchemaGrantsPerDelegation>::new();
+		assert_ok!(sp.try_insert(1u16, 2u64)); // schema id 1 should stay revoked at block 2
+		assert_ok!(sp.try_insert(2u16, 2u64)); // schema id 2 should stay revoked at block 2
+		assert_ok!(sp.try_insert(3u16, 0u64)); // leave alone
+		assert_ok!(sp.try_insert(4u16, 5u64)); // revoke
+		assert_ok!(sp.try_insert(5u16, 5u64)); // revoke
+		assert_ok!(sp.try_insert(6u16, 0u64)); // leave alone
+
+		let expected = Delegation { revoked_at: 0, schema_permissions: sp };
 		assert_eq!(Msa::get_delegation(delegator, provider), Some(expected));
 	});
 }
