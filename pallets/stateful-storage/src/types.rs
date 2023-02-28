@@ -17,6 +17,13 @@ use sp_std::{
 };
 use twox_hash::XxHash32;
 
+/// pallet storage prefix
+pub const PALLET_STORAGE_PREFIX: &[u8] = b"stateful-storage";
+/// itemized storage prefix
+pub const ITEMIZED_STORAGE_PREFIX: &[u8] = b"itemized";
+/// paginated storage prefix
+pub const PAGINATED_STORAGE_PREFIX: &[u8] = b"paginated";
+
 /// MultipartKey type for Itemized storage
 pub type ItemizedKey = (SchemaId,);
 /// MultipartKey type for Paginated storage (full key)

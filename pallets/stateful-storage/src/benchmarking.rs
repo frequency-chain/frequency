@@ -65,7 +65,11 @@ benchmarks! {
 
 		for _ in 0..num_of_items {
 			let actions = itemized_actions_add::<T>(1, T::MaxItemizedBlobSizeBytes::get() as usize);
-			let content_hash = StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage::<T>>(&delegator_msa_id, &key).unwrap().unwrap_or_default().get_hash();
+			let content_hash = StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage::<T>>(
+				&delegator_msa_id,
+				PALLET_STORAGE_PREFIX,
+				ITEMIZED_STORAGE_PREFIX,
+				&key).unwrap().unwrap_or_default().get_hash();
 			assert_ok!(StatefulStoragePallet::<T>::apply_item_actions(RawOrigin::Signed(caller.clone()).into(), delegator_msa_id.into(), schema_id, content_hash, actions));
 		}
 
@@ -112,8 +116,16 @@ benchmarks! {
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
 
 		let key = (schema_id, page_id);
-		StatefulChildTree::<T::KeyHasher>::write(&delegator_msa_id, &key, payload.clone());
-		let content_hash = StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage::<T>>(&delegator_msa_id, &key).unwrap().unwrap().get_hash();
+		StatefulChildTree::<T::KeyHasher>::write(&delegator_msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&key, payload.clone()
+		);
+		let content_hash = StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage::<T>>(
+			&delegator_msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&key).unwrap().unwrap().get_hash();
 	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id, content_hash)
 	verify {
 		let page_result = StatefulStoragePallet::<T>::get_paginated_page(delegator_msa_id, schema_id, page_id);
@@ -211,8 +223,18 @@ benchmarks! {
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), delegator_account.clone()));
 
 		let key = (schema_id, page_id);
-		StatefulChildTree::<T::KeyHasher>::write(&delegator_msa_id, &key, payload.clone());
-		let content_hash = StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage::<T>>(&delegator_msa_id, &key).unwrap().unwrap().get_hash();
+		StatefulChildTree::<T::KeyHasher>::write(
+			&delegator_msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&key,
+			payload.clone(),
+		);
+		let content_hash = StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage::<T>>(
+			&delegator_msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&key).unwrap().unwrap().get_hash();
 
 		let payload = PaginatedDeleteSignaturePayload {
 			target_hash: content_hash,

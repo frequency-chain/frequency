@@ -212,7 +212,13 @@ fn upsert_existing_page_with_bad_state_hash_errors() {
 		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
 		let key = (schema_id, page_id);
-		<StatefulChildTree>::write(&msa_id, &key, &payload);
+		<StatefulChildTree>::write(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&key,
+			&payload,
+		);
 
 		assert_err!(
 			StatefulStoragePallet::upsert_page(
@@ -249,7 +255,13 @@ fn upsert_new_page_succeeds() {
 		));
 
 		let keys = (schema_id, page_id);
-		let new_page = <StatefulChildTree>::try_read(&msa_id, &keys).unwrap();
+		let new_page = <StatefulChildTree>::try_read(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&keys,
+		)
+		.unwrap();
 		assert_eq!(new_page.is_some(), true, "new page is empty");
 		assert_eq!(page, new_page.unwrap(), "new page contents incorrect");
 	})
@@ -268,9 +280,21 @@ fn upsert_existing_page_modifies_page() {
 		let old_page: PaginatedPage<Test> = old_content.clone().into();
 
 		let keys = (schema_id, page_id);
-		<StatefulChildTree>::write(&msa_id, &keys, old_page);
-		let old_page: PaginatedPage<Test> =
-			<StatefulChildTree>::try_read(&msa_id, &keys).unwrap().unwrap();
+		<StatefulChildTree>::write(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&keys,
+			old_page,
+		);
+		let old_page: PaginatedPage<Test> = <StatefulChildTree>::try_read(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&keys,
+		)
+		.unwrap()
+		.unwrap();
 
 		assert_eq!(old_content, old_page.data);
 		assert_ok!(StatefulStoragePallet::upsert_page(
@@ -282,8 +306,14 @@ fn upsert_existing_page_modifies_page() {
 			new_content.clone().into()
 		));
 
-		let new_page: PaginatedPage<Test> =
-			<StatefulChildTree>::try_read(&msa_id, &keys).unwrap().unwrap();
+		let new_page: PaginatedPage<Test> = <StatefulChildTree>::try_read(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&keys,
+		)
+		.unwrap()
+		.unwrap();
 		assert_eq!(new_content, new_page.data);
 	})
 }
@@ -429,7 +459,13 @@ fn delete_existing_page_with_bad_hash_errors() {
 		let page: PaginatedPage<Test> = payload.into();
 
 		let keys = (schema_id, page_id);
-		<StatefulChildTree>::write::<_, Vec<u8>>(&msa_id, &keys, page.data.into());
+		<StatefulChildTree>::write::<_, Vec<u8>>(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&keys,
+			page.data.into(),
+		);
 
 		assert_err!(
 			StatefulStoragePallet::delete_page(
@@ -474,8 +510,13 @@ fn delete_existing_page_succeeds() {
 		));
 
 		let keys = (schema_id, page_id);
-		let page: Option<PaginatedPage<Test>> =
-			<StatefulChildTree>::try_read(&msa_id, &keys).unwrap();
+		let page: Option<PaginatedPage<Test>> = <StatefulChildTree>::try_read(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&keys,
+		)
+		.unwrap();
 		assert_eq!(page, None);
 	})
 }
@@ -618,6 +659,8 @@ fn is_empty_true_for_empty_page() {
 fn child_tree_write_read() {
 	new_test_ext().execute_with(|| {
 		// arrange
+		let pallet_name: &[u8] = b"test-pallet";
+		let storage_name_1: &[u8] = b"storage1";
 		let msa_id = 1;
 		let schema_id: SchemaId = 2;
 		let page_id: u8 = 3;
@@ -629,10 +672,11 @@ fn child_tree_write_read() {
 		};
 
 		// act
-		<StatefulChildTree>::write(&msa_id, keys, &val);
+		<StatefulChildTree>::write(&msa_id, pallet_name, storage_name_1, keys, &val);
 
 		// assert
-		let read = <StatefulChildTree>::try_read(&msa_id, keys).unwrap();
+		let read =
+			<StatefulChildTree>::try_read(&msa_id, pallet_name, storage_name_1, keys).unwrap();
 		assert_eq!(Some(val), read);
 	});
 }
@@ -646,6 +690,9 @@ fn child_tree_iterator() {
 		// arrange
 		let msa_id = 1;
 		let mut arr: Vec<(TestKey, TestKey)> = Vec::new();
+		let pallet_name: &[u8] = b"test-pallet";
+		let storage_name_1: &[u8] = b"storage1";
+		let storage_name_2: &[u8] = b"storage2";
 		let prefix_1 = TestKeyString::try_from(b"part_1".to_vec()).unwrap();
 		let prefix_2a = TestKeyString::try_from(b"part_2a".to_vec()).unwrap();
 		let prefix_2b = TestKeyString::try_from(b"part_2b".to_vec()).unwrap();
@@ -661,11 +708,16 @@ fn child_tree_iterator() {
 			);
 			let s = k.clone();
 			arr.push((k.clone(), s.clone()));
-			<StatefulChildTree>::write(&msa_id, &k, s);
+			<StatefulChildTree>::write(&msa_id, pallet_name, storage_name_1, &k, s);
 		}
 
 		// Try empty prefix
-		let all_nodes = <StatefulChildTree>::prefix_iterator::<TestKey, TestKey, _>(&msa_id, &());
+		let all_nodes = <StatefulChildTree>::prefix_iterator::<TestKey, TestKey, _>(
+			&msa_id,
+			pallet_name,
+			storage_name_1,
+			&(),
+		);
 		let r: BTreeSet<u64> = all_nodes.map(|(_k, s)| s.2).collect::<BTreeSet<u64>>();
 
 		// Should return all items
@@ -679,6 +731,8 @@ fn child_tree_iterator() {
 		let prefix_key = (prefix_1.clone(),);
 		let mut nodes = <StatefulChildTree>::prefix_iterator::<TestKey, TestKey, _>(
 			&msa_id,
+			pallet_name,
+			storage_name_1,
 			&prefix_key.clone(),
 		);
 		let r0: BTreeSet<u64> = nodes.by_ref().map(|(_k, v)| v.2).collect();
@@ -695,8 +749,12 @@ fn child_tree_iterator() {
 
 		// Try 2-level prefix
 		let prefix_key = (prefix_1.clone(), prefix_2a.clone());
-		let nodes2 =
-			<StatefulChildTree>::prefix_iterator::<TestKey, TestKey, _>(&msa_id, &prefix_key);
+		let nodes2 = <StatefulChildTree>::prefix_iterator::<TestKey, TestKey, _>(
+			&msa_id,
+			pallet_name,
+			storage_name_1,
+			&prefix_key,
+		);
 		let r1: BTreeSet<u64> = nodes2.map(|(_, v)| v.2).collect();
 
 		// Should return only even-numbered items
@@ -705,6 +763,18 @@ fn child_tree_iterator() {
 			arr.iter().filter(|(k, _s)| k.2 % 2 == 0).map(|(k, _s)| k.2).collect(),
 			"iterator over second-level key should have returned only even-numbered items"
 		);
+
+		// Try on another storage
+		let nodes3 = <StatefulChildTree>::prefix_iterator::<TestKey, TestKey, _>(
+			&msa_id,
+			pallet_name,
+			storage_name_2,
+			&prefix_key,
+		);
+		let r3: BTreeSet<u64> = nodes3.map(|(_, v)| v.2).collect();
+
+		// Should return empty
+		assert_eq!(r3.len(), 0, "iterator over another storage shoudl return empty items");
 	});
 }
 
@@ -840,12 +910,21 @@ fn apply_item_actions_with_corrupted_state_should_fail() {
 		let actions1 = vec![ItemAction::Add { data: payload.clone() }];
 		let key = (schema_id,);
 		StatefulChildTree::<<Test as Config>::KeyHasher>::write::<_, Vec<u8>>(
-			&msa_id, &key, payload,
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
+			&key,
+			payload,
 		);
 		let previous_page: ItemizedPage<Test> =
-			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(&msa_id, &key)
-				.unwrap()
-				.unwrap();
+			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(
+				&msa_id,
+				PALLET_STORAGE_PREFIX,
+				ITEMIZED_STORAGE_PREFIX,
+				&key,
+			)
+			.unwrap()
+			.unwrap();
 		let previous_hash = previous_page.get_hash();
 
 		// act
@@ -900,7 +979,13 @@ fn apply_item_actions_existing_page_with_stale_hash_should_fail() {
 		let page_hash = page.get_hash();
 		let page = page.apply_item_actions(&actions1).unwrap();
 		let key = (schema_id,);
-		<StatefulChildTree>::write::<_, Vec<u8>>(&msa_id, &key, page.data.into());
+		<StatefulChildTree>::write::<_, Vec<u8>>(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
+			&key,
+			page.data.into(),
+		);
 
 		// act
 		assert_err!(
@@ -938,8 +1023,13 @@ fn apply_item_actions_initial_state_with_valid_input_should_update_storage() {
 
 		// assert
 		let updated_page: Option<ItemizedPage<Test>> =
-			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(&msa_id, &(schema_id,))
-				.unwrap();
+			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(
+				&msa_id,
+				PALLET_STORAGE_PREFIX,
+				ITEMIZED_STORAGE_PREFIX,
+				&(schema_id,),
+			)
+			.unwrap();
 		assert!(updated_page.is_some());
 		let curr_content_hash = updated_page.unwrap().get_hash();
 		System::assert_last_event(
@@ -969,7 +1059,13 @@ fn apply_item_actions_existing_page_with_valid_input_should_update_storage() {
 		let key = (schema_id,);
 
 		// act
-		<StatefulChildTree>::write::<_, Vec<u8>>(&msa_id, &key, page.data.into());
+		<StatefulChildTree>::write::<_, Vec<u8>>(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
+			&key,
+			page.data.into(),
+		);
 		assert_ok!(StatefulStoragePallet::apply_item_actions(
 			RuntimeOrigin::signed(caller_1),
 			msa_id,
@@ -980,8 +1076,13 @@ fn apply_item_actions_existing_page_with_valid_input_should_update_storage() {
 
 		// assert
 		let updated_page: Option<ItemizedPage<Test>> =
-			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(&msa_id, &(schema_id,))
-				.unwrap();
+			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(
+				&msa_id,
+				PALLET_STORAGE_PREFIX,
+				ITEMIZED_STORAGE_PREFIX,
+				&(schema_id,),
+			)
+			.unwrap();
 		assert!(updated_page.is_some());
 		let curr_content_hash = updated_page.unwrap().get_hash();
 		System::assert_last_event(
@@ -1016,7 +1117,13 @@ fn apply_item_actions_with_valid_input_and_empty_items_should_remove_storage() {
 		));
 
 		let items1: Option<ItemizedPage<Test>> =
-			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(&msa_id, &keys).unwrap();
+			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(
+				&msa_id,
+				PALLET_STORAGE_PREFIX,
+				ITEMIZED_STORAGE_PREFIX,
+				&keys,
+			)
+			.unwrap();
 		assert!(items1.is_some());
 		let content_hash = items1.unwrap().get_hash();
 
@@ -1031,8 +1138,13 @@ fn apply_item_actions_with_valid_input_and_empty_items_should_remove_storage() {
 
 		// assert
 		let items2: Option<ItemizedPage<Test>> =
-			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(&msa_id, &(schema_id,))
-				.unwrap();
+			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(
+				&msa_id,
+				PALLET_STORAGE_PREFIX,
+				ITEMIZED_STORAGE_PREFIX,
+				&(schema_id,),
+			)
+			.unwrap();
 		assert!(items2.is_none());
 		System::assert_last_event(
 			StatefulEvent::ItemizedPageDeleted {
@@ -1213,8 +1325,13 @@ fn apply_item_actions_with_signature_having_correct_input_should_work() {
 
 		// assert
 		let updated_page: Option<ItemizedPage<Test>> =
-			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(&msa_id, &(schema_id,))
-				.unwrap();
+			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(
+				&msa_id,
+				PALLET_STORAGE_PREFIX,
+				ITEMIZED_STORAGE_PREFIX,
+				&(schema_id,),
+			)
+			.unwrap();
 		assert!(updated_page.is_some());
 		let curr_content_hash = updated_page.unwrap().get_hash();
 		System::assert_last_event(
@@ -1377,7 +1494,13 @@ fn apply_item_actions_with_signature_having_page_with_stale_hash_should_fail() {
 		let page_hash = page.get_hash();
 		let page = page.apply_item_actions(&actions).unwrap();
 		let key = (schema_id,);
-		<StatefulChildTree>::write::<_, Vec<u8>>(&msa_id, &key, page.data.into());
+		<StatefulChildTree>::write::<_, Vec<u8>>(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
+			&key,
+			page.data.into(),
+		);
 		let payload = ItemizedSignaturePayload {
 			actions: BoundedVec::try_from(actions).unwrap(),
 			target_hash: page_hash,
@@ -1422,7 +1545,13 @@ fn apply_item_actions_with_signature_having_valid_input_and_empty_items_should_r
 		));
 
 		let items1: Option<ItemizedPage<Test>> =
-			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(&msa_id, &keys).unwrap();
+			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(
+				&msa_id,
+				PALLET_STORAGE_PREFIX,
+				ITEMIZED_STORAGE_PREFIX,
+				&keys,
+			)
+			.unwrap();
 		assert!(items1.is_some());
 		let content_hash = items1.unwrap().get_hash();
 
@@ -1446,8 +1575,13 @@ fn apply_item_actions_with_signature_having_valid_input_and_empty_items_should_r
 
 		// assert
 		let items2: Option<ItemizedPage<Test>> =
-			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(&msa_id, &(schema_id,))
-				.unwrap();
+			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(
+				&msa_id,
+				PALLET_STORAGE_PREFIX,
+				ITEMIZED_STORAGE_PREFIX,
+				&(schema_id,),
+			)
+			.unwrap();
 		assert!(items2.is_none());
 		System::assert_last_event(
 			StatefulEvent::ItemizedPageDeleted {
@@ -1472,12 +1606,21 @@ fn apply_item_actions_with_signature_having_corrupted_state_should_fail() {
 		let actions = vec![ItemAction::Add { data: payload.clone() }];
 		let key = (schema_id,);
 		StatefulChildTree::<<Test as Config>::KeyHasher>::write::<_, Vec<u8>>(
-			&msa_id, &key, payload,
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
+			&key,
+			payload,
 		);
 		let previous_page: ItemizedPage<Test> =
-			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(&msa_id, &key)
-				.unwrap()
-				.unwrap();
+			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(
+				&msa_id,
+				PALLET_STORAGE_PREFIX,
+				ITEMIZED_STORAGE_PREFIX,
+				&key,
+			)
+			.unwrap()
+			.unwrap();
 		let previous_hash = previous_page.get_hash();
 
 		let payload = ItemizedSignaturePayload {
@@ -1846,7 +1989,13 @@ fn upsert_page_with_signature_having_valid_inputs_should_work() {
 
 		// assert
 		let keys = (schema_id, page_id);
-		let new_page = <StatefulChildTree>::try_read(&msa_id, &keys).unwrap();
+		let new_page = <StatefulChildTree>::try_read(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&keys,
+		)
+		.unwrap();
 		assert_eq!(new_page.is_some(), true, "new page is empty");
 		assert_eq!(page, new_page.unwrap(), "new page contents incorrect");
 		System::assert_last_event(
@@ -2236,10 +2385,14 @@ fn delete_page_with_signature_having_valid_inputs_should_remove_page() {
 		));
 
 		// assert
-		let removed_page: Option<PaginatedPage<Test>> = StatefulChildTree::<
-			<Test as Config>::KeyHasher,
-		>::try_read(&msa_id, &(schema_id, page_id))
-		.unwrap();
+		let removed_page: Option<PaginatedPage<Test>> =
+			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(
+				&msa_id,
+				PALLET_STORAGE_PREFIX,
+				PAGINATED_STORAGE_PREFIX,
+				&(schema_id, page_id),
+			)
+			.unwrap();
 		assert!(removed_page.is_none());
 		System::assert_last_event(
 			StatefulEvent::PaginatedPageDeleted {

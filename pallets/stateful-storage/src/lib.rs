@@ -445,7 +445,7 @@ impl<T: Config> Pallet<T> {
 			PaginatedPage<T>,
 			PaginatedKey,
 			PaginatedPrefixKey,
-		>(&msa_id, &prefix)
+		>(&msa_id, PALLET_STORAGE_PREFIX, PAGINATED_STORAGE_PREFIX, &prefix)
 		.map(|(k, v)| {
 			let content_hash = v.get_hash();
 			PaginatedStorageResponse::new(k.1, msa_id, schema_id, v.data.into_inner(), content_hash)
@@ -461,7 +461,10 @@ impl<T: Config> Pallet<T> {
 		Self::check_schema(schema_id, PayloadLocation::Itemized, false, false)?;
 		let key: ItemizedKey = (schema_id,);
 		let page = StatefulChildTree::<T::KeyHasher>::try_read::<ItemizedKey, ItemizedPage<T>>(
-			&msa_id, &key,
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
+			&key,
 		)
 		.map_err(|_| Error::<T>::CorruptedState)?
 		.unwrap_or_default();
@@ -610,6 +613,8 @@ impl<T: Config> Pallet<T> {
 		let key: ItemizedKey = (schema_id,);
 		let existing_page = StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
 			&state_owner_msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
 			&key,
 		)
 		.map_err(|_| Error::<T>::CorruptedState)?
@@ -633,7 +638,12 @@ impl<T: Config> Pallet<T> {
 
 		match updated_page.is_empty() {
 			true => {
-				StatefulChildTree::<T::KeyHasher>::kill(&state_owner_msa_id, &key);
+				StatefulChildTree::<T::KeyHasher>::kill(
+					&state_owner_msa_id,
+					PALLET_STORAGE_PREFIX,
+					ITEMIZED_STORAGE_PREFIX,
+					&key,
+				);
 				Self::deposit_event(Event::ItemizedPageDeleted {
 					msa_id: state_owner_msa_id,
 					schema_id,
@@ -641,7 +651,13 @@ impl<T: Config> Pallet<T> {
 				});
 			},
 			false => {
-				StatefulChildTree::<T::KeyHasher>::write(&state_owner_msa_id, &key, &updated_page);
+				StatefulChildTree::<T::KeyHasher>::write(
+					&state_owner_msa_id,
+					PALLET_STORAGE_PREFIX,
+					ITEMIZED_STORAGE_PREFIX,
+					&key,
+					&updated_page,
+				);
 				Self::deposit_event(Event::ItemizedPageUpdated {
 					msa_id: state_owner_msa_id,
 					schema_id,
@@ -662,15 +678,25 @@ impl<T: Config> Pallet<T> {
 		new_page: PaginatedPage<T>,
 	) -> DispatchResult {
 		let keys: PaginatedKey = (schema_id, page_id);
-		let existing_page: PaginatedPage<T> =
-			StatefulChildTree::<T::KeyHasher>::try_read(&state_owner_msa_id, &keys)
-				.map_err(|_| Error::<T>::CorruptedState)?
-				.unwrap_or_default();
+		let existing_page: PaginatedPage<T> = StatefulChildTree::<T::KeyHasher>::try_read(
+			&state_owner_msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&keys,
+		)
+		.map_err(|_| Error::<T>::CorruptedState)?
+		.unwrap_or_default();
 
 		let prev_content_hash: PageHash = existing_page.get_hash();
 		ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
 
-		StatefulChildTree::<T::KeyHasher>::write(&state_owner_msa_id, &keys, &new_page);
+		StatefulChildTree::<T::KeyHasher>::write(
+			&state_owner_msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&keys,
+			&new_page,
+		);
 		Self::deposit_event(Event::PaginatedPageUpdated {
 			msa_id: state_owner_msa_id,
 			schema_id,
@@ -689,15 +715,23 @@ impl<T: Config> Pallet<T> {
 		target_hash: PageHash,
 	) -> DispatchResult {
 		let keys: PaginatedKey = (schema_id, page_id);
-		if let Some(existing_page) = StatefulChildTree::<T::KeyHasher>::try_read::<
-			_,
-			PaginatedPage<T>,
-		>(&state_owner_msa_id, &keys)
-		.map_err(|_| Error::<T>::CorruptedState)?
+		if let Some(existing_page) =
+			StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
+				&state_owner_msa_id,
+				PALLET_STORAGE_PREFIX,
+				PAGINATED_STORAGE_PREFIX,
+				&keys,
+			)
+			.map_err(|_| Error::<T>::CorruptedState)?
 		{
 			let prev_content_hash: PageHash = existing_page.get_hash();
 			ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
-			StatefulChildTree::<T::KeyHasher>::kill(&state_owner_msa_id, &keys);
+			StatefulChildTree::<T::KeyHasher>::kill(
+				&state_owner_msa_id,
+				PALLET_STORAGE_PREFIX,
+				PAGINATED_STORAGE_PREFIX,
+				&keys,
+			);
 			Self::deposit_event(Event::PaginatedPageDeleted {
 				msa_id: state_owner_msa_id,
 				schema_id,
@@ -715,8 +749,13 @@ impl<T: Config> Pallet<T> {
 		schema_id: SchemaId,
 	) -> Option<ItemizedPage<T>> {
 		let key: ItemizedKey = (schema_id,);
-		StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(&msa_id, &key)
-			.unwrap_or(None)
+		StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
+			&key,
+		)
+		.unwrap_or(None)
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
@@ -726,7 +765,12 @@ impl<T: Config> Pallet<T> {
 		page_id: PageId,
 	) -> Option<PaginatedPage<T>> {
 		let key: PaginatedKey = (schema_id, page_id);
-		StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(&msa_id, &key)
-			.unwrap_or(None)
+		StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&key,
+		)
+		.unwrap_or(None)
 	}
 }
