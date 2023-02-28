@@ -1,5 +1,6 @@
 use super::*;
 use crate as pallet_frequency_tx_payment;
+use common_primitives::msa::MessageSourceId;
 
 use common_primitives::{
 	node::{AccountId, ProposalProvider},
@@ -10,7 +11,8 @@ use pallet_transaction_payment::CurrencyAdapter;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup, SaturatedConversion},
+	traits::{BlakeTwo256, Convert, IdentityLookup, SaturatedConversion},
+	AccountId32,
 };
 
 use frame_support::{
@@ -18,7 +20,6 @@ use frame_support::{
 	traits::{ConstU16, ConstU64},
 	weights::WeightToFee as WeightToFeeTrait,
 };
-use sp_runtime::{traits::Convert, AccountId32};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -32,9 +33,10 @@ frame_support::construct_runtime!(
 		{
 			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 			Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+			Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
+			Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>},
 			TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
 			FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>},
-			Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
 		}
 );
 
@@ -203,9 +205,26 @@ impl pallet_transaction_payment::Config for Test {
 	type OperationalFeeMultiplier = ConstU8<5>;
 }
 
+impl pallet_capacity::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
+	type Currency = pallet_balances::Pallet<Self>;
+	type TargetValidator = ();
+	type MinimumStakingAmount = ConstU64<5>;
+	type MaxUnlockingChunks = ConstU32<4>;
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
+
+	type UnstakingThawPeriod = ConstU16<2>;
+	type MaxEpochLength = ConstU64<100>;
+	type EpochNumber = u32;
+}
+
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
+	type Capacity = Capacity;
 }
 
 pub struct ExtBuilder {
@@ -264,6 +283,40 @@ impl ExtBuilder {
 		.assimilate_storage(&mut t)
 		.unwrap();
 
+		let mut t: sp_io::TestExternalities = t.into();
+
+		// Create MSA account 1 - 6 and add Balance to them with Capacity balance
+		t.execute_with(|| {
+			let msa_accounts: Vec<(
+				<Test as frame_system::Config>::AccountId,
+				<Test as pallet_balances::Config>::Balance,
+			)> = vec![
+				(1, 10 * self.balance_factor),
+				(2, 20 * self.balance_factor),
+				(3, 30 * self.balance_factor),
+				(4, 40 * self.balance_factor),
+				(5, 50 * self.balance_factor),
+				(6, 60 * self.balance_factor),
+			];
+			msa_accounts.iter().for_each(|(account, balance)| {
+				let msa_id = create_msa_account(account.clone());
+				create_capacity_for(msa_id, balance.clone());
+			});
+		});
+
 		t.into()
 	}
+}
+
+fn create_msa_account(account_id: <Test as frame_system::Config>::AccountId) -> MessageSourceId {
+	pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
+	let (msa_id, _) = Msa::create_account(account_id, EMPTY_FUNCTION).unwrap();
+
+	msa_id
+}
+
+fn create_capacity_for(target: MessageSourceId, amount: u64) {
+	let mut capacity_details = Capacity::get_capacity_for(target).unwrap_or_default();
+	capacity_details.deposit(amount, Capacity::get_current_epoch()).unwrap();
+	Capacity::set_capacity_for(target, capacity_details);
 }
