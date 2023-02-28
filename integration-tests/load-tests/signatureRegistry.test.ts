@@ -81,7 +81,7 @@ async function checkKeys(startingNumber: number, keysToTest: KeyringPair[]) {
 // Generate MSAs and give it 100 UNIT
 async function generateMsas(count: number = 1): Promise<GeneratedMsa[]> {
     // Make sure we are not on an edge
-    const createBlockEvery = count === 250 ? 225 : 250;
+    const createBlockEvery = count === 300 ? 290 : 300;
 
     // Create and fund the control keys
     let controlKeyPromises: Array<Promise<KeyringPair>> = [];
@@ -98,12 +98,13 @@ async function generateMsas(count: number = 1): Promise<GeneratedMsa[]> {
     let msaPromises: Array<Promise<GeneratedMsa>> = [];
     for (let i = 0; i < count; i++) {
         msaPromises.push(createMsa(controlKeys[i]).then((id) => ({
-            controlKey: controlKeys[i],
-            id,
-            nonce: 1,
-    })));
+                controlKey: controlKeys[i],
+                id,
+                nonce: 1,
+            }))
+        );
         if (i > 0 && i % createBlockEvery === 0) {
-            await createBlock(100);
+            await createBlock(150);
             console.log("Generated Msas: ", i);
         }
     }
@@ -129,11 +130,12 @@ async function getNonce(keys: KeyringPair): Promise<number> {
 }
 
 async function createMsa(keys: KeyringPair): Promise<u64> {
-    const createMsaCall = ExtrinsicHelper.createMsa(keys).signAndSend();
-    await createBlock(100);
-    const result = await createMsaCall;
+    const result = await ExtrinsicHelper.createMsa(keys).signAndSend();
     const msaRecord = result[1]["msa.MsaCreated"];
-    return msaRecord.data[0] as u64;
+    if (msaRecord) return msaRecord.data[0] as u64;
+
+    console.error({ result });
+    throw("Failed to get MSA Id...");
 }
 
 async function addSigs(msaId: u64, keys: KeyringPair, blockNumber: number, nonce: number): Promise<KeyringPair> {
