@@ -841,7 +841,7 @@ pub mod pallet {
 		///
 		#[pallet::call_index(10)]
 		#[pallet::weight((T::WeightInfo::retire_msa(), DispatchClass::Normal, Pays::No))]
-		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResult {
 			// Check and get the account id from the origin
 			let who = ensure_signed(origin)?;
 
@@ -860,7 +860,7 @@ pub mod pallet {
 					);
 				},
 			}
-			Ok(Some(T::WeightInfo::retire_msa()).into())
+			Ok(())
 		}
 
 		/// Propose to be a provider.  Creates a proposal for council approval to create a provider from a MSA
