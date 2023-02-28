@@ -1350,15 +1350,16 @@ impl<T: Config> Pallet<T> {
 		Ok(Some(schema_list))
 	}
 
-	/// Adds a signature to the `PayloadSignatureRegistryRing` based on a virtual "bucket" grouping.
+	/// Adds a signature to the `PayloadSignatureRegistryRing`
 	/// Check that mortality_block is within bounds. If so, proceed and add the new entry.
-	/// Raises `SignatureAlreadySubmitted` if the bucket-signature double key exists in the
-	/// registry.
+	/// Raises `SignatureAlreadySubmitted` if the signature exists in the registry.
+	/// Raises `SignatureRegistryLimitExceeded` if the tail of the ring has not yet expired.
 	///
 	/// # Errors
 	/// * [`Error::ProofNotYetValid`]
 	/// * [`Error::ProofHasExpired`]
 	/// * [`Error::SignatureAlreadySubmitted`]
+	/// * [`Error::SignatureRegistryLimitExceeded`]
 	///
 	pub fn register_signature(
 		signature: &MultiSignature,
