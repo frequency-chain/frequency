@@ -675,7 +675,11 @@ pub fn grant_delegation_changes_schema_permissions() {
 
 		// Create delegation without any schema permissions
 		let (delegator_signature, add_provider_payload) =
-		create_and_sign_add_provider_payload_with_schemas(delegator_pair.clone(), provider_msa, None);
+			create_and_sign_add_provider_payload_with_schemas(
+				delegator_pair.clone(),
+				provider_msa,
+				None,
+			);
 
 		assert_ok!(Msa::grant_delegation(
 			RuntimeOrigin::signed(provider_account.into()),
