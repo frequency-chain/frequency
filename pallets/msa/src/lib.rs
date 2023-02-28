@@ -78,7 +78,6 @@ use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
 		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
-		EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR,
 	},
 	node::ProposalProvider,
 	schema::{SchemaId, SchemaValidator},
@@ -828,12 +827,13 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Retires an MSA
+		/// Retires a MSA
 		///
 		/// When a user wants to disassociate themselves from Frequency, they can retire their MSA for free provided that:
 		///  (1) They own the MSA
 		///  (2) There is only one account key
 		///  (3) The MSA is not a registered provider.
+		///  (4) The user has already deleted all delegations to providers
 		///
 		/// This does not currently remove any messages related to the MSA.
 		///
@@ -845,17 +845,15 @@ pub mod pallet {
 		/// * [`Error::NoKeyExists`] - `delegator` does not have an MSA key.
 		///
 		#[pallet::call_index(10)]
-		#[pallet::weight((T::WeightInfo::retire_msa(EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR), DispatchClass::Normal, Pays::No))]
-		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+		#[pallet::weight((T::WeightInfo::retire_msa(), DispatchClass::Normal, Pays::No))]
+		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResult {
 			// Check and get the account id from the origin
 			let who = ensure_signed(origin)?;
 
 			// Delete the last and only account key and deposit the "PublicKeyDeleted" event
 			// check for valid MSA is in SignedExtension.
-			let mut num_deletions: u32 = 0_u32;
 			match Self::get_msa_by_public_key(&who) {
 				Some(msa_id) => {
-					num_deletions = Self::delete_delegation_relationship(DelegatorId(msa_id));
 					Self::delete_key_for_msa(msa_id, &who)?;
 					Self::deposit_event(Event::PublicKeyDeleted { key: who });
 					Self::deposit_event(Event::MsaRetired { msa_id });
@@ -867,7 +865,7 @@ pub mod pallet {
 					);
 				},
 			}
-			Ok(Some(T::WeightInfo::retire_msa(num_deletions)).into())
+			Ok(())
 		}
 
 		/// Propose to be a provider.  Creates a proposal for council approval to create a provider from a MSA
@@ -1294,18 +1292,6 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Removes delegations from the specified delegator MSA id to providers
-	/// up to the expected number of providers.
-	pub fn delete_delegation_relationship(delegator: DelegatorId) -> u32 {
-		// TODO: Handle case when the number of providers exceeds the expected number.  Issue #678
-		let result = DelegatorAndProviderToDelegation::<T>::clear_prefix(
-			delegator,
-			EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR,
-			None,
-		);
-		result.unique
-	}
-
 	/// Retrieves the MSA Id for a given `AccountId`
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
 		Self::get_msa_by_public_key(&key)
@@ -1681,8 +1667,9 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			.build()
 	}
 
-	/// Validates that a MSA being retired exists, does not belong to a registered provider, and
-	/// that `account_id` is the only access key associated with the MSA.
+	/// Validates that a MSA being retired exists, does not belong to a registered provider,
+	/// that `account_id` is the only access key associated with the MSA,
+	/// and that there are no delegations to providers.
 	/// Returns a `ValidTransaction` or wrapped [`ValidityError]
 	/// # Arguments:
 	/// * account_id: the account id associated with the MSA to retire
@@ -1691,6 +1678,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// * [`ValidityError::InvalidMsaKey`]
 	/// * [`ValidityError::InvalidRegisteredProviderCannotBeRetired`]
 	/// * [`ValidityError::InvalidMoreThanOneKeyExists`]
+	/// * [`ValidityError::InvalidNonZeroProviderDelegations`]
 	///
 	pub fn ensure_msa_can_retire(account_id: &T::AccountId) -> TransactionValidity {
 		const TAG_PREFIX: &str = "MSARetirement";
@@ -1710,6 +1698,16 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			key_count == 1,
 			InvalidTransaction::Custom(ValidityError::InvalidMoreThanOneKeyExists as u8)
 		);
+
+		let has_delegations: bool =
+			DelegatorAndProviderToDelegation::<T>::iter_key_prefix(DelegatorId(msa_id))
+				.any(|_| true);
+
+		ensure!(
+			!has_delegations,
+			InvalidTransaction::Custom(ValidityError::InvalidNonZeroProviderDelegations as u8)
+		);
+
 		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}
 }
@@ -1728,6 +1726,8 @@ pub enum ValidityError {
 	InvalidSelfRemoval,
 	/// NotKeyOwner
 	NotKeyOwner,
+	/// InvalidNonZeroProviderDelegations
+	InvalidNonZeroProviderDelegations,
 }
 
 impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
