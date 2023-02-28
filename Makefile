@@ -147,11 +147,11 @@ try-runtime:
 
 try-runtime-upgrade-rococo:
 	cargo build --release --features frequency-rococo-testnet,try-runtime
-	cargo run --release --features all-frequency-features,try-runtime try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://rpc.rococo.frequency.xyz:443
+	cargo run --release --features all-frequency-features,try-runtime try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks live --uri wss://rpc.rococo.frequency.xyz:443
 
 try-runtime-upgrade-mainnet:
 	cargo build --release --features frequency,try-runtime
-	cargo run --release --features all-frequency-features,try-runtime try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://1.rpc.frequency.xyz:443
+	cargo run --release --features all-frequency-features,try-runtime try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks live --uri wss://1.rpc.frequency.xyz:443
 
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes
