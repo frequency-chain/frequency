@@ -9,7 +9,6 @@ import { MessageSourceId, PageHash, SchemaId } from "@frequency-chain/api-augmen
 import { Bytes, u16, u64 } from "@polkadot/types";
 
 describe("📗 Stateful Pallet Storage", () => {
-    let schemaId: SchemaId;
     let schemaId_deletable: SchemaId;
     let schemaId_unsupported: SchemaId;
     let msa_id: MessageSourceId;
@@ -23,20 +22,14 @@ describe("📗 Stateful Pallet Storage", () => {
         assert.notEqual(providerId, undefined, "setup should populate providerId");
         assert.notEqual(providerKeys, undefined, "setup should populate providerKeys");
 
-        // Create a schema for Itemized PayloadLocation
-        const createSchema = ExtrinsicHelper.createSchemaWithSettings(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized", "AppendOnly");
-        const [event] = await createSchema.fundAndSend();
-        if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
-            schemaId = event.data.schemaId;
-        }
         // Create a schema to allow delete actions
         const createSchemaDeletable = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
         const [eventDeletable] = await createSchemaDeletable.fundAndSend();
         if (eventDeletable && createSchemaDeletable.api.events.schemas.SchemaCreated.is(eventDeletable)) {
             schemaId_deletable = eventDeletable.data.schemaId;
         }
+        assert.notEqual(schemaId_deletable, undefined, "setup should populate schemaId");
         
-        assert.notEqual(schemaId, undefined, "setup should populate schemaId");
         // Create non supported schema
         const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "OnChain");
         const [event2] = await createSchema2.fundAndSend();
@@ -47,7 +40,7 @@ describe("📗 Stateful Pallet Storage", () => {
         }
 
         // Create a MSA for the delegator and delegate to the provider
-        [, msa_id] = await createDelegatorAndDelegation(schemaId_unsupported, providerId, providerKeys);
+        [, msa_id] = await createDelegatorAndDelegation(schemaId_deletable, providerId, providerKeys);
         assert.notEqual(msa_id, undefined, "setup should populate msa_id");
     });
 
@@ -68,10 +61,10 @@ describe("📗 Stateful Pallet Storage", () => {
                 "Add": payload_2
             }
 
-            const target_hash = await getCurrentItemizedHash(msa_id, schemaId);
+            const target_hash = await getCurrentItemizedHash(msa_id, schemaId_deletable);
 
             let add_actions = [add_action, update_action];
-            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, msa_id, add_actions, target_hash);
+            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, msa_id, add_actions, target_hash);
             const [pageUpdateEvent1, chainEvents] = await itemized_add_result_1.fundAndSend();
             assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
@@ -120,7 +113,7 @@ describe("📗 Stateful Pallet Storage", () => {
             let add_actions = [add_action];
             let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 999)
 
-            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, bad_msa_id, add_actions, 0);
+            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, bad_msa_id, add_actions, 0);
             await assert.rejects(async () => {
                 await itemized_add_result_1.fundAndSend();
             }, {
@@ -145,7 +138,7 @@ describe("📗 Stateful Pallet Storage", () => {
             }
 
             let add_actions = [add_action, update_action];
-            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, msa_id, add_actions, 0);
+            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, msa_id, add_actions, 0);
             await assert.rejects(itemized_add_result_1.fundAndSend(), { name: 'StalePageState' });
         }).timeout(10000);
     });
