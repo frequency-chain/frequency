@@ -20,7 +20,7 @@
 //!
 //! Should only be used for benchmarking as it may break in other contexts.
 
-use crate::service::{create_extrinsic, FullClient};
+use frequency_service::service::{create_extrinsic, ParachainClient as FullClient};
 
 use common_primitives::node::{AccountId, Balance};
 use frame_system::Call as SystemCall;

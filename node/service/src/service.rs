@@ -95,7 +95,10 @@ pub fn fetch_nonce(client: &ParachainClient, account: sp_core::sr25519::Pair) ->
 	let best_hash = client.chain_info().best_hash;
 	client
 		.runtime_api()
-		.account_nonce(&frequency_runtime::BlockId::Hash(best_hash), account.public().into())
+		.account_nonce(
+			&frequency_runtime::opaque::BlockId::Hash(best_hash),
+			account.public().into(),
+		)
 		.expect("Fetching account nonce works; qed")
 }
 
@@ -122,7 +125,7 @@ pub fn create_extrinsic(
 		.checked_next_power_of_two()
 		.map(|c| c / 2)
 		.unwrap_or(2) as u64;
-	let tip = 0;
+	// let tip = 0;
 	let extra: frequency_runtime::SignedExtra = (
 		frame_system::CheckNonZeroSender::<frequency_runtime::Runtime>::new(),
 		frame_system::CheckSpecVersion::<frequency_runtime::Runtime>::new(),

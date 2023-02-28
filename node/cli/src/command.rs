@@ -332,7 +332,6 @@ pub fn run() -> Result<()> {
 
 					cmd.run(config, partials.client.clone(), db, storage)
 				}),
-				#[cfg(feature = "runtime-benchmarks")]
 				BenchmarkCmd::Overhead(cmd) => runner.sync_run(|config| {
 					let partials = new_partial(&config, false)?;
 					let ext_builder = RemarkBuilder::new(partials.client.clone());
