@@ -1912,8 +1912,8 @@ fn add_public_key_to_msa_registers_two_signatures() {
 			add_new_key_data
 		));
 
-		assert_eq!(Msa::get_new_payload_signature_registry(owner_signature).unwrap().0, 10);
-		assert_eq!(Msa::get_new_payload_signature_registry(new_key_signature).unwrap().0, 10);
+		assert_eq!(Msa::get_payload_signature_registry(owner_signature).unwrap().0, 10);
+		assert_eq!(Msa::get_payload_signature_registry(new_key_signature).unwrap().0, 10);
 	});
 }
 

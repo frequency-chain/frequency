@@ -231,7 +231,7 @@ pub mod pallet {
 	///     - [`BlockNumber`] when the keyed signature can be ejected from the registry
 	///     - [`MultiSignature`] the linked list pointer. This pointer is written as the oldest value, but updated to be the "next" value when there is one
 	#[pallet::storage]
-	#[pallet::getter(fn get_new_payload_signature_registry)]
+	#[pallet::getter(fn get_payload_signature_registry)]
 	pub(super) type PayloadSignatureRegistryRing<T: Config> = StorageMap<
 		_,                                // prefix
 		Twox64Concat,                     // hasher for key1
