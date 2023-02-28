@@ -141,6 +141,9 @@ test:
 integration-test:
 	./scripts/run_integration_tests.sh
 
+integration-load-test:
+	./scripts/run_integration_tests.sh load
+
 .PHONY: try-runtime
 try-runtime:
 	cargo run --release --features all-frequency-features,try-runtime try-runtime --help
