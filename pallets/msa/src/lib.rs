@@ -1150,10 +1150,9 @@ impl<T: Config> Pallet<T> {
 			let mut revoke_ids: Vec<SchemaId> = Vec::new();
 			let mut insert_ids: Vec<SchemaId> = Vec::new();
 
-			let existing_keys: Vec<SchemaId> =
-				delegation.schema_permissions.keys().cloned().collect();
+			let existing_keys = delegation.schema_permissions.keys().into_iter();
 
-			for existing_schema_id in &existing_keys {
+			for existing_schema_id in existing_keys {
 				if !schema_ids.contains(&existing_schema_id) {
 					match delegation.schema_permissions.get(&existing_schema_id) {
 						Some(block) =>
@@ -1165,7 +1164,7 @@ impl<T: Config> Pallet<T> {
 				}
 			}
 			for schema_id in &schema_ids {
-				if !existing_keys.contains(&schema_id) {
+				if !delegation.schema_permissions.contains_key(&schema_id) {
 					insert_ids.push(*schema_id);
 				}
 			}
