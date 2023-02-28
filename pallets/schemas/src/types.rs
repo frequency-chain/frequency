@@ -1,8 +1,14 @@
 //! Types for the Schema Pallet
 use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::schema::{ModelType, PayloadLocation, SchemaSettings};
-use frame_support::{traits::Get, BoundedVec};
+use frame_support::{
+	traits::{Get, StorageVersion},
+	BoundedVec,
+};
 use scale_info::TypeInfo;
+
+/// Current storage version of the schemas pallet.
+pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxModelSize))]

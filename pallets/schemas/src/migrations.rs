@@ -5,7 +5,11 @@
 use crate::{types::Schema, *};
 use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::schema::{ModelType, PayloadLocation, SchemaSettings};
-use frame_support::{pallet_prelude::Weight, traits::Get, BoundedVec};
+use frame_support::{
+	pallet_prelude::Weight,
+	traits::{Get, StorageVersion},
+	BoundedVec,
+};
 use scale_info::TypeInfo;
 
 /// Migrations for the schemas pallet.
@@ -48,17 +52,22 @@ pub mod v1 {
 
 	fn migrate_to_v1<T: Config>() -> Weight {
 		let mut weight: Weight = Weight::zero();
-		<Schemas<T>>::translate_values(
-			|old_schema: OldSchema<T::SchemaModelMaxBytesBoundedVecLimit>| {
-				weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
-				Some(Schema {
-					model_type: old_schema.model_type,
-					model: old_schema.model,
-					payload_location: old_schema.payload_location,
-					settings: SchemaSettings::all_disabled(),
-				})
-			},
-		);
+
+		if StorageVersion::get::<Pallet<T>>() < 1 {
+			<Schemas<T>>::translate_values(
+				|old_schema: OldSchema<T::SchemaModelMaxBytesBoundedVecLimit>| {
+					weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
+					Some(Schema {
+						model_type: old_schema.model_type,
+						model: old_schema.model,
+						payload_location: old_schema.payload_location,
+						settings: SchemaSettings::all_disabled(),
+					})
+				},
+			);
+			StorageVersion::new(1).put::<Pallet<T>>();
+		}
+
 		weight
 	}
 }
