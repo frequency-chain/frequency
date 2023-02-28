@@ -8,6 +8,13 @@ pub trait TargetValidator {
 	fn validate(target: MessageSourceId) -> bool;
 }
 
+/// A blanket implementation
+impl TargetValidator for () {
+	fn validate(_target: MessageSourceId) -> bool {
+		false
+	}
+}
+
 /// A trait for Non-transferable asset.
 pub trait Nontransferable {
 	/// Scalar type for representing balance of an account.

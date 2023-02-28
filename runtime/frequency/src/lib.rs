@@ -869,6 +869,7 @@ impl pallet_transaction_payment::Config for Runtime {
 impl pallet_frequency_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
+	type Capacity = Capacity;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
@@ -1086,7 +1087,7 @@ construct_runtime!(
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 62,
 		StatefulStorage: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>} = 63,
 		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>} = 64,
-		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Event<T>} = 65,
+		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 65,
 	}
 );
 
