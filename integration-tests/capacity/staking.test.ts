@@ -1,11 +1,11 @@
 import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { u16, u64 } from "@polkadot/types";
+import { u64 } from "@polkadot/types";
 import assert from "assert";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { devAccounts, createAndFundKeypair, log } from "../scaffolding/helpers";
 
-describe.only("Capacity Scenario Tests", function () {
+describe("Capacity Scenario Tests", function () {
     const TEST_EPOCH_LENGTH = 25;
     let otherProviderKeys: KeyringPair;
     let otherProviderId: u64;
