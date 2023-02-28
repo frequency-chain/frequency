@@ -499,7 +499,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Sets targets Capacity.
-	fn set_capacity_for(
+	pub fn set_capacity_for(
 		target: MessageSourceId,
 		capacity_details: CapacityDetails<BalanceOf<T>, T::EpochNumber>,
 	) {
