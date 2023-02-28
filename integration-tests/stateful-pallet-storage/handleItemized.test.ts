@@ -10,6 +10,7 @@ import { Bytes, u16, u64 } from "@polkadot/types";
 
 describe("📗 Stateful Pallet Storage", () => {
     let schemaId: SchemaId;
+    let schemaId_deletable: SchemaId;
     let schemaId_unsupported: SchemaId;
     let msa_id: MessageSourceId;
     let providerId: MessageSourceId;
@@ -28,6 +29,13 @@ describe("📗 Stateful Pallet Storage", () => {
         if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
             schemaId = event.data.schemaId;
         }
+        // Create a schema to allow delete actions
+        const createSchemaDeletable = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
+        const [eventDeletable] = await createSchemaDeletable.fundAndSend();
+        if (eventDeletable && createSchemaDeletable.api.events.schemas.SchemaCreated.is(eventDeletable)) {
+            schemaId_deletable = eventDeletable.data.schemaId;
+        }
+        
         assert.notEqual(schemaId, undefined, "setup should populate schemaId");
         // Create non supported schema
         const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "OnChain");
@@ -39,7 +47,7 @@ describe("📗 Stateful Pallet Storage", () => {
         }
 
         // Create a MSA for the delegator and delegate to the provider
-        [, msa_id] = await createDelegatorAndDelegation(schemaId, providerId, providerKeys);
+        [, msa_id] = await createDelegatorAndDelegation(schemaId_unsupported, providerId, providerKeys);
         assert.notEqual(msa_id, undefined, "setup should populate msa_id");
     });
 
@@ -145,7 +153,7 @@ describe("📗 Stateful Pallet Storage", () => {
     describe("Itemized Storage Remove Action Tests", () => {
 
         it("✅ should be able to call applyItemizedAction and apply remove actions", async function () {
-            let target_hash = await getCurrentItemizedHash(msa_id, schemaId);
+            let target_hash = await getCurrentItemizedHash(msa_id, schemaId_deletable);
 
             // Delete action
             const idx_1: u16 = new u16(ExtrinsicHelper.api.registry, 1)
@@ -153,10 +161,10 @@ describe("📗 Stateful Pallet Storage", () => {
                 "Delete": idx_1,
             }
 
-            target_hash = await getCurrentItemizedHash(msa_id, schemaId);
+            target_hash = await getCurrentItemizedHash(msa_id, schemaId_deletable);
 
             let remove_actions = [remove_action_1];
-            let itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, msa_id, remove_actions, target_hash);
+            let itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, msa_id, remove_actions, target_hash);
             const [pageUpdateEvent2, chainEvents2] = await itemized_remove_result_1.fundAndSend();
             assert.notEqual(chainEvents2["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents2["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
@@ -201,7 +209,7 @@ describe("📗 Stateful Pallet Storage", () => {
             }
             let remove_actions = [remove_action_1];
             let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 999)
-            let itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, bad_msa_id, remove_actions, 0);
+            let itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, bad_msa_id, remove_actions, 0);
             await assert.rejects(async () => {
                 await itemized_remove_result_1.fundAndSend();
             }, {
@@ -216,14 +224,14 @@ describe("📗 Stateful Pallet Storage", () => {
                 "Delete": idx_1,
             }
             let remove_actions = [remove_action];
-            let op = ExtrinsicHelper.applyItemActions(providerKeys, schemaId, msa_id, remove_actions, 0);
+            let op = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, msa_id, remove_actions, 0);
             await assert.rejects(op.fundAndSend(), { name: 'StalePageState' })
         }).timeout(10000);
     });
 
     describe("Itemized Storage RPC Tests", () => {
         it("✅ should be able to call getItemizedStorages and get data for itemized schema", async function () {
-            const result = await ExtrinsicHelper.getItemizedStorages(msa_id, schemaId);
+            const result = await ExtrinsicHelper.getItemizedStorages(msa_id, schemaId_deletable);
             assert.notEqual(result.hash, undefined, "should have returned a hash");
             assert.notEqual(result.size, undefined, "should have returned a itemized responses");
         }).timeout(10000);
