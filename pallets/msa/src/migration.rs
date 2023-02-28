@@ -7,7 +7,7 @@ use frame_support::storage_alias;
 pub mod v0 {
 	use super::*;
 
-	/// Replaced by [`PayloadSignatureRegistryRingPointer`]
+	/// Replaced by `PayloadSignatureRegistryRingPointer`
 	#[storage_alias]
 	pub(super) type PayloadSignatureBucketCount<T: Config> = StorageMap<
 		Pallet<T>,
@@ -17,7 +17,7 @@ pub mod v0 {
 		ValueQuery,
 	>;
 
-	/// Replaced with [`PayloadSignatureRegistryRing`]
+	/// Replaced with `PayloadSignatureRegistryRing`
 	#[storage_alias]
 	pub(super) type PayloadSignatureRegistry<T: Config> = StorageDoubleMap<
 		Pallet<T>,      // prefix

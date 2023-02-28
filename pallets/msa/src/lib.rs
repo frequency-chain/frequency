@@ -238,7 +238,7 @@ pub mod pallet {
 	/// ### Storage
 	/// - Key: Signature
 	/// - Value: Tuple
-	///     - [`BlockNumber`] when the keyed signature can be ejected from the registry
+	///     - `BlockNumber` when the keyed signature can be ejected from the registry
 	///     - [`MultiSignature`] the linked list pointer. This pointer is written as the oldest value, but updated to be the "next" value when there is one
 	#[pallet::storage]
 	#[pallet::getter(fn get_payload_signature_registry)]
@@ -253,7 +253,7 @@ pub mod pallet {
 	>;
 
 	/// This is the pointer for the Payload Signature Registry
-	/// Contains the pointers to the data stored in the [`PayloadSignatureRegistryRing`]
+	/// Contains the pointers to the data stored in the `PayloadSignatureRegistryRing`
 	/// - Value: [`SignatureRegistryPointer`]
 	#[pallet::storage]
 	#[pallet::getter(fn get_payload_signature_pointer)]
@@ -1350,7 +1350,7 @@ impl<T: Config> Pallet<T> {
 		Ok(Some(schema_list))
 	}
 
-	/// Adds a signature to the PayloadSignatureRegistryRing based on a virtual "bucket" grouping.
+	/// Adds a signature to the `PayloadSignatureRegistryRing` based on a virtual "bucket" grouping.
 	/// Check that mortality_block is within bounds. If so, proceed and add the new entry.
 	/// Raises `SignatureAlreadySubmitted` if the bucket-signature double key exists in the
 	/// registry.
