@@ -17,9 +17,6 @@ describe.only("Capacity Scenario Tests", function () {
     let withdrawProviderId: u64;
 
     before(async function () {
-        log("*********************************")
-        log("********** BEGIN SETUP **********")
-        log("*********************************")
         // Set the Maximum Epoch Length to TEST_EPOCH_LENGTH blocks
         // This will allow us to test the epoch transition logic
         // without having to wait for 100 blocks
@@ -83,11 +80,6 @@ describe.only("Capacity Scenario Tests", function () {
             otherProviderId = providerEvent.data.providerId;
         }
         assert.notEqual(otherProviderId, undefined, "setup should populate providerId");
-
-        log("*********************************")
-        log("*********** END SETUP ***********")
-        log("*********************************\n\n")
-
     });
 
     describe("stake-unstake-withdraw_unstaked testing-->happy path", function () {
@@ -119,16 +111,10 @@ describe.only("Capacity Scenario Tests", function () {
                 assert.fail("setup should return an UnStaked event");
             }
 
-
-            log("*********************************")
-            log("*** Advance to the next Epoch ***")
-            log("*********************************")
+            // Mine enough blocks to pass the unstake period
             for (let index = 0; index < 2*TEST_EPOCH_LENGTH; index++) {
                 await ExtrinsicHelper.createBlock();
             }
-            log("*********************************")
-            log("*** mined %d blocks", TEST_EPOCH_LENGTH);
-            log("*********************************")
         });
         it("should successfully withdraw the unstaked amount", async function () {
             const withdrawObj = ExtrinsicHelper.withdrawUnstaked(stakeKeys);
@@ -147,7 +133,7 @@ describe.only("Capacity Scenario Tests", function () {
 
     describe("stake testing-invalid paths", function () {
         it("should fail to stake for InvalidTarget", async function () {
-            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, 999999, 1000000);
+            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, 99, 1000000);
             await assert.rejects(failStakeObj.fundAndSend(), { name: "InvalidTarget" });
         });
 
