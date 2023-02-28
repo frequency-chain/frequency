@@ -979,6 +979,7 @@ dependencies = [
 name = "common-primitives"
 version = "0.0.0"
 dependencies = [
+ "enumflags2",
  "frame-support",
  "impl-serde",
  "parity-scale-codec",
@@ -2741,6 +2742,7 @@ dependencies = [
  "polkadot-primitives",
  "polkadot-service",
  "sc-cli",
+ "sc-executor",
  "sc-service",
  "sc-sysinfo",
  "sc-telemetry",
@@ -2749,6 +2751,7 @@ dependencies = [
  "serde_json",
  "sp-api",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "substrate-build-script-utils",
  "try-runtime-cli",
@@ -2892,6 +2895,7 @@ dependencies = [
  "sp-session",
  "sp-timestamp",
  "sp-transaction-pool",
+ "sp-wasm-interface",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",

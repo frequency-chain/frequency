@@ -76,6 +76,9 @@ pub use common_runtime::{
 };
 use frame_support::traits::Contains;
 
+#[cfg(feature = "try-runtime")]
+use frame_support::traits::TryStateSelect;
+
 /// Basefilter to only allow specified transactions call to be executed
 /// For non mainnet [--features frequency] all transactions are allowed
 pub struct BaseCallFilter;
@@ -148,6 +151,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	SchemaMigrationToV1,
 >;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
@@ -196,7 +200,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 11,
+	spec_version: 21,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -324,6 +328,8 @@ impl pallet_schemas::Config for Runtime {
 	type MaxSchemaRegistrations = SchemasMaxRegistrations;
 	// The maximum length of a schema model (in bytes)
 	type SchemaModelMaxBytesBoundedVecLimit = SchemasMaxBytesBoundedVecLimit;
+	// Maximum number of schema grants that are allowed per schema
+	type MaxSchemaSettingsPerSchema = MaxSchemaSettingsPerSchema;
 }
 
 pub struct RootAsVestingPallet;
@@ -1011,20 +1017,25 @@ impl_runtime_apis! {
 
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
-		fn on_runtime_upgrade() -> (Weight, Weight) {
+		fn on_runtime_upgrade(_checks: bool) -> (Weight, Weight) {
 			log::info!("try-runtime::on_runtime_upgrade frequency.");
-			let weight = Executive::try_runtime_upgrade().unwrap();
+			let weight = Executive::try_runtime_upgrade(true).unwrap();
 			(weight, RuntimeBlockWeights::get().max_block)
 		}
-		fn execute_block(block: Block, state_root_check: bool, select: frame_try_runtime::TryStateSelect) -> Weight {
+
+		fn execute_block(block: Block,
+						state_root_check: bool,
+						signature_check: bool,
+						try_state: TryStateSelect,
+		) -> Weight {
 			log::info!(
 				target: "runtime::frequency", "try-runtime: executing block #{} ({:?}) / root checks: {:?} / sanity-checks: {:?}",
 				block.header.number,
 				block.header.hash(),
 				state_root_check,
-				select,
+				try_state,
 			);
-			Executive::try_execute_block(block, state_root_check, select).expect("try_execute_block failed")
+			Executive::try_execute_block(block, state_root_check, signature_check, try_state).expect("try_execute_block failed")
 		}
 	}
 
@@ -1103,6 +1114,38 @@ cumulus_pallet_parachain_system::register_validate_block! {
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
 	CheckInherents = CheckInherents,
 }
+
+// ==============================================
+//        RUNTIME STORAGE MIGRATION: Schemas
+// ==============================================
+/// Schema migration to v1 for pallet-stateful-storage
+use frame_support::traits::OnRuntimeUpgrade;
+
+pub struct SchemaMigrationToV1;
+impl OnRuntimeUpgrade for SchemaMigrationToV1 {
+	#[cfg(feature = "try-runtime")]
+	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+		let weight = pallet_schemas::migrations::v1::pre_migrate_schemas_to_v1::<Runtime>();
+		log::info!("pre_upgrade weight: {:?}", weight);
+		Ok(Vec::new())
+	}
+
+	// try-runtime migration code
+	#[cfg(not(feature = "try-runtime"))]
+	fn on_runtime_upgrade() -> Weight {
+		pallet_schemas::migrations::v1::migrate_schemas_to_v1::<Runtime>()
+	}
+
+	#[cfg(feature = "try-runtime")]
+	fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
+		let weight = pallet_schemas::migrations::v1::post_migrate_schemas_to_v1::<Runtime>();
+		log::info!("post_upgrade weight: {:?}", weight);
+		Ok(())
+	}
+}
+// ==============================================
+//       END RUNTIME STORAGE MIGRATION: Schemas
+// ==============================================
 
 #[cfg(test)]
 mod tests {

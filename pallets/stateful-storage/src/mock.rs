@@ -11,7 +11,7 @@ use common_primitives::{
 		ProviderId, ProviderLookup, SchemaGrantValidator,
 	},
 	node::AccountId,
-	schema::{ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse},
+	schema::{ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaSetting},
 	stateful_storage::PageId,
 };
 use frame_support::{
@@ -32,8 +32,6 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 pub const INVALID_SCHEMA_ID: SchemaId = SchemaId::MAX;
-pub const UNDELEGATED_PAGINATED_SCHEMA: SchemaId = 102;
-pub const UNDELEGATED_ITEMIZED_SCHEMA: SchemaId = 103;
 pub const INVALID_MSA_ID: MessageSourceId = 100;
 pub const TEST_ACCOUNT_SEED: [u8; 32] = [0; 32];
 
@@ -184,7 +182,10 @@ impl<BlockNumber> SchemaGrantValidator<BlockNumber> for SchemaGrantValidationHan
 		schema_id: SchemaId,
 		_block_number: BlockNumber,
 	) -> DispatchResult {
-		if schema_id == UNDELEGATED_PAGINATED_SCHEMA || schema_id == UNDELEGATED_ITEMIZED_SCHEMA {
+		if schema_id == constants::UNDELEGATED_PAGINATED_SCHEMA ||
+			schema_id == constants::UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA ||
+			schema_id == constants::UNDELEGATED_ITEMIZED_SCHEMA
+		{
 			return Err(DispatchError::Other("no schema grant or delegation"))
 		}
 
@@ -200,20 +201,51 @@ impl SchemaProvider<u16> for SchemaHandler {
 	// For testing/benchmarking. Zero value returns None, Odd for Itemized, Even for Paginated
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 		match schema_id {
-			constants::ITEMIZED_SCHEMA | UNDELEGATED_ITEMIZED_SCHEMA => Some(SchemaResponse {
+			constants::ITEMIZED_SCHEMA | constants::UNDELEGATED_ITEMIZED_SCHEMA =>
+				Some(SchemaResponse {
+					schema_id,
+					model: r#"schema"#.to_string().as_bytes().to_vec(),
+					model_type: ModelType::AvroBinary,
+					payload_location: PayloadLocation::Itemized,
+					settings: Vec::new(),
+				}),
+			constants::ITEMIZED_APPEND_ONLY_SCHEMA |
+			constants::UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA => Some(SchemaResponse {
 				schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Itemized,
+				settings: Vec::try_from(vec![SchemaSetting::AppendOnly]).unwrap(),
 			}),
-
-			constants::PAGINATED_SCHEMA | UNDELEGATED_PAGINATED_SCHEMA => Some(SchemaResponse {
+			constants::ITEMIZED_SIGNATURE_REQUIRED_SCHEMA => Some(SchemaResponse {
+				schema_id,
+				model: r#"schema"#.to_string().as_bytes().to_vec(),
+				model_type: ModelType::AvroBinary,
+				payload_location: PayloadLocation::Itemized,
+				settings: Vec::try_from(vec![SchemaSetting::SignatureRequired]).unwrap(),
+			}),
+			constants::PAGINATED_SCHEMA | constants::UNDELEGATED_PAGINATED_SCHEMA =>
+				Some(SchemaResponse {
+					schema_id,
+					model: r#"schema"#.to_string().as_bytes().to_vec(),
+					model_type: ModelType::AvroBinary,
+					payload_location: PayloadLocation::Paginated,
+					settings: Vec::new(),
+				}),
+			constants::PAGINATED_SIGNED_SCHEMA => Some(SchemaResponse {
 				schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Paginated,
+				settings: Vec::try_from(vec![SchemaSetting::SignatureRequired]).unwrap(),
 			}),
-
+			constants::PAGINATED_APPEND_ONLY_SCHEMA => Some(SchemaResponse {
+				schema_id,
+				model: r#"schema"#.to_string().as_bytes().to_vec(),
+				model_type: ModelType::AvroBinary,
+				payload_location: PayloadLocation::Paginated,
+				settings: Vec::try_from(vec![SchemaSetting::AppendOnly]).unwrap(),
+			}),
 			INVALID_SCHEMA_ID => None,
 
 			_ => Some(SchemaResponse {
@@ -221,6 +253,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::OnChain,
+				settings: Vec::from(vec![SchemaSetting::AppendOnly]),
 			}),
 		}
 	}

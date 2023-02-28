@@ -10,7 +10,7 @@ use common_primitives::{
 		types::ParquetType,
 		ParquetModel,
 	},
-	schema::{ModelType, PayloadLocation, SchemaId},
+	schema::{ModelType, PayloadLocation, SchemaId, SchemaSetting},
 };
 
 use crate::{Config, Error, Event as AnnouncementEvent};
@@ -67,7 +67,7 @@ fn register_schema_happy_path() {
 			RuntimeOrigin::signed(sender),
 			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
 			ModelType::AvroBinary,
-			PayloadLocation::OnChain
+			PayloadLocation::OnChain,
 		));
 	})
 }
@@ -83,7 +83,7 @@ fn register_schema_unhappy_path() {
 				// name key does not have a colon
 				create_bounded_schema_vec(r#"{"name", 54, "type": "none"}"#),
 				ModelType::AvroBinary,
-				PayloadLocation::OnChain
+				PayloadLocation::OnChain,
 			),
 			Error::<Test>::InvalidSchema
 		);
@@ -142,7 +142,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 				RuntimeOrigin::signed(sender),
 				create_bounded_schema_vec(fields),
 				ModelType::AvroBinary,
-				PayloadLocation::OnChain
+				PayloadLocation::OnChain,
 			));
 			System::assert_last_event(
 				AnnouncementEvent::SchemaCreated { key: sender, schema_id: expected_schema_id }
@@ -154,7 +154,7 @@ fn register_schema_id_deposits_events_and_increments_schema_id() {
 			RuntimeOrigin::signed(sender),
 			create_bounded_schema_vec(r#"{"account":3050}"#),
 			ModelType::AvroBinary,
-			PayloadLocation::OnChain
+			PayloadLocation::OnChain,
 		));
 	})
 }
@@ -171,7 +171,7 @@ fn get_existing_schema_by_id_should_return_schema() {
 			RuntimeOrigin::signed(sender),
 			create_bounded_schema_vec(test_str),
 			ModelType::AvroBinary,
-			PayloadLocation::OnChain
+			PayloadLocation::OnChain,
 		));
 
 		// act
@@ -349,4 +349,28 @@ fn dsnp_broadcast() {
 		&create_bounded_schema_vec(test_str_raw),
 	);
 	assert_ok!(result);
+}
+
+#[test]
+fn create_schema_with_settings_should_work() {
+	new_test_ext().execute_with(|| {
+		sudo_set_max_schema_size();
+
+		// arrange
+		let settings = vec![SchemaSetting::AppendOnly];
+		let sender: AccountId = 1;
+
+		//  assert
+		assert_ok!(SchemasPallet::create_schema_with_settings(
+			RuntimeOrigin::signed(sender),
+			create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
+			ModelType::AvroBinary,
+			PayloadLocation::Itemized,
+			BoundedVec::try_from(settings.clone()).unwrap(),
+		));
+
+		// assert
+		let res = SchemasPallet::get_schema_by_id(1);
+		assert_eq!(res.unwrap().settings, settings);
+	})
 }

@@ -132,6 +132,8 @@ parameter_types! {
 pub type SchemasMinModelSizeBytes = ConstU32<8>;
 /// The maximum length of a schema model (in bytes)
 pub type SchemasMaxBytesBoundedVecLimit = ConstU32<65_500>;
+/// The maximum number of grants allowed per schema
+pub type MaxSchemaSettingsPerSchema = ConstU32<2>;
 // -end- Schemas Pallet ---
 
 // --- Orml Vesting Pallet ---

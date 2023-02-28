@@ -187,6 +187,11 @@ export class ExtrinsicHelper {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.createSchema(JSON.stringify(model), modelType, payloadLocation), keys, ExtrinsicHelper.api.events.schemas.SchemaCreated);
     }
 
+    /** Generic Schema Extrinsics */
+    public static createSchemaWithSettings(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS"| "Itemized" | "Paginated", grant: "AppendOnly"| "SignatureRequired"): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.createSchemaWithSettings(JSON.stringify(model), modelType, payloadLocation, [grant]), keys, ExtrinsicHelper.api.events.schemas.SchemaCreated);
+    }
+
     /** MSA Extrinsics */
     public static createMsa(keys: KeyringPair): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.create(), keys, ExtrinsicHelper.api.events.msa.MsaCreated);

@@ -81,7 +81,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas Schemas (r:1 w:0)
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
-	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:1 w:1)
+	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:0 w:1)
 	fn upsert_page(s: u32, ) -> Weight {
 		Weight::from_ref_time(22_055_060 as u64)
 			// Standard Error: 45
@@ -148,7 +148,7 @@ impl WeightInfo for () {
 	// Storage: Schemas Schemas (r:1 w:0)
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
-	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:1 w:1)
+	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:0 w:1)
 	fn upsert_page(s: u32, ) -> Weight {
 		Weight::from_ref_time(22_055_060 as u64)
 			// Standard Error: 45
