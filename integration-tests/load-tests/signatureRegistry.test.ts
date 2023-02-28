@@ -134,8 +134,10 @@ async function createMsa(keys: KeyringPair): Promise<u64> {
     const msaRecord = result[1]["msa.MsaCreated"];
     if (msaRecord) return msaRecord.data[0] as u64;
 
-    console.error({ result });
-    throw("Failed to get MSA Id...");
+    // This doesn't always work I think due to the load. So doing a backup call
+    const tryDirect = await getMsaFromKey(keys);
+    if (tryDirect.isNone) throw("Failed to get MSA Id...");
+    return tryDirect.value;
 }
 
 async function addSigs(msaId: u64, keys: KeyringPair, blockNumber: number, nonce: number): Promise<KeyringPair> {
