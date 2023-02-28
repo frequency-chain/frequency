@@ -1645,7 +1645,8 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 		);
 
 		let has_delegations: bool =
-			DelegatorAndProviderToDelegation::<T>::iter_key_prefix(DelegatorId(msa_id)).any(|_| true);
+			DelegatorAndProviderToDelegation::<T>::iter_key_prefix(DelegatorId(msa_id))
+				.any(|_| true);
 
 		ensure!(
 			!has_delegations,
