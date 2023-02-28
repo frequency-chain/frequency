@@ -141,6 +141,18 @@ test:
 integration-test:
 	./scripts/run_integration_tests.sh
 
+.PHONY: try-runtime
+try-runtime:
+	cargo run --release --features all-frequency-features,try-runtime try-runtime --help
+
+try-runtime-upgrade-rococo:
+	cargo build --release --features frequency-rococo-testnet,try-runtime
+	cargo run --release --features all-frequency-features,try-runtime try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://rpc.rococo.frequency.xyz:443
+
+try-runtime-upgrade-mainnet:
+	cargo build --release --features frequency,try-runtime
+	cargo run --release --features all-frequency-features,try-runtime try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://1.rpc.frequency.xyz:443
+
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes
 POLKADOT_VERSION=$(shell awk -F "=" '/name = "polkadot-cli"/,/version = ".*"/{ print $2 }' Cargo.lock | tail -n 1 | cut -d " " -f 3 | tr -d \")
