@@ -56,8 +56,8 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-	dispatch::{DispatchInfo, DispatchResult},
-	ensure,
+	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
+	ensure, log,
 	pallet_prelude::*,
 	traits::IsSubType,
 };
@@ -80,6 +80,7 @@ use common_primitives::{
 		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
 		EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR,
 	},
+	node::ProposalProvider,
 	schema::{SchemaId, SchemaValidator},
 };
 
@@ -105,10 +106,8 @@ mod replay_tests;
 mod signature_registry_tests;
 
 pub mod weights;
-
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::log::error as log_err;
 
 	use super::*;
 
@@ -161,6 +160,17 @@ pub mod pallet {
 		/// calculated value.
 		#[pallet::constant]
 		type MaxSignaturesStored: Get<Option<u32>>;
+
+		/// The origin that is allowed to create providers via governance
+		type CreateProviderViaGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
+		/// The runtime call dispatch type.
+		type Proposal: Parameter
+			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin, PostInfo = PostDispatchInfo>
+			+ From<Call<Self>>;
+
+		/// The Council proposal provider interface
+		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Proposal>;
 	}
 
 	#[pallet::pallet]
@@ -509,24 +519,11 @@ pub mod pallet {
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		///
 		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::create_provider(provider_name.len() as u32))]
+		#[pallet::weight(T::WeightInfo::create_provider())]
 		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
-			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
-				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
-
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			ProviderToRegistryEntry::<T>::try_mutate(
-				ProviderId(provider_msa_id),
-				|maybe_metadata| -> DispatchResult {
-					ensure!(
-						maybe_metadata.take().is_none(),
-						Error::<T>::DuplicateProviderRegistryEntry
-					);
-					*maybe_metadata = Some(ProviderRegistryEntry { provider_name: bounded_name });
-					Ok(())
-				},
-			)?;
+			Self::create_provider_for(provider_msa_id, provider_name)?;
 			Self::deposit_event(Event::ProviderCreated {
 				provider_id: ProviderId(provider_msa_id),
 			});
@@ -575,7 +572,12 @@ pub mod pallet {
 				add_provider_payload.authorized_msa_id == provider_id.0,
 				Error::<T>::UnauthorizedDelegator
 			);
-			Self::add_provider(provider_id, delegator_id, add_provider_payload.schema_ids)?;
+
+			Self::upsert_schema_permissions(
+				provider_id,
+				delegator_id,
+				add_provider_payload.schema_ids,
+			)?;
 			Self::deposit_event(Event::DelegationGranted { delegator_id, provider_id });
 
 			Ok(())
@@ -608,7 +610,10 @@ pub mod pallet {
 					Self::deposit_event(Event::DelegationRevoked { delegator_id, provider_id });
 				},
 				None => {
-					log_err!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
+					log::error!(
+						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						who
+					);
 				},
 			}
 
@@ -712,7 +717,10 @@ pub mod pallet {
 					Self::deposit_event(Event::PublicKeyDeleted { key: public_key_to_delete });
 				},
 				None => {
-					log_err!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
+					log::error!(
+						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						who
+					);
 				},
 			}
 			Ok(())
@@ -748,7 +756,10 @@ pub mod pallet {
 					Self::deposit_event(Event::DelegationRevoked { provider_id, delegator_id })
 				},
 				None => {
-					log_err!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
+					log::error!(
+						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						who
+					);
 				},
 			}
 
@@ -799,6 +810,8 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::revoke_schema_permissions(
 		schema_ids.len() as u32
 		))]
+		#[allow(deprecated)]
+		#[deprecated(since = "1.3.0", note = "revoke_schema_permissions() has been deprecated.")]
 		pub fn revoke_schema_permissions(
 			origin: OriginFor<T>,
 			provider_msa_id: MessageSourceId,
@@ -848,10 +861,63 @@ pub mod pallet {
 					Self::deposit_event(Event::MsaRetired { msa_id });
 				},
 				None => {
-					log_err!("SignedExtension did not catch invalid MSA for account {:?}, ", who);
+					log::error!(
+						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						who
+					);
 				},
 			}
 			Ok(Some(T::WeightInfo::retire_msa(num_deletions)).into())
+		}
+
+		/// Propose to be a provider.  Creates a proposal for council approval to create a provider from a MSA
+		///
+		/// # Errors
+		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
+		#[pallet::call_index(11)]
+		#[pallet::weight(T::WeightInfo::propose_to_be_provider())]
+		pub fn propose_to_be_provider(
+			origin: OriginFor<T>,
+			provider_name: Vec<u8>,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+			Self::ensure_valid_msa_key(&proposer)?;
+
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::create_provider_via_governance {
+					provider_key: proposer.clone(),
+					provider_name,
+				})
+				.into(),
+			);
+			let threshold = 1;
+			T::ProposalProvider::propose(proposer, threshold, proposal)?;
+			Ok(())
+		}
+
+		/// Create a provider by means of governance approval
+		///
+		/// # Events
+		/// * [`Event::ProviderCreated`]
+		///
+		/// # Errors
+		/// * [`Error::NoKeyExists`] - account does not have an MSA
+		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
+		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
+		#[pallet::call_index(12)]
+		#[pallet::weight(T::WeightInfo::create_provider_via_governance())]
+		pub fn create_provider_via_governance(
+			origin: OriginFor<T>,
+			provider_key: T::AccountId,
+			provider_name: Vec<u8>,
+		) -> DispatchResult {
+			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			Self::create_provider_for(provider_msa_id, provider_name)?;
+			Self::deposit_event(Event::ProviderCreated {
+				provider_id: ProviderId(provider_msa_id),
+			});
+			Ok(())
 		}
 	}
 }
@@ -1066,6 +1132,88 @@ impl<T: Config> Pallet<T> {
 
 			Ok(())
 		})
+	}
+
+	/// Modify delegation's schema permissions
+	///
+	/// # Errors
+	/// * [`Error::ExceedsMaxSchemaGrantsPerDelegation`]
+	pub fn upsert_schema_permissions(
+		provider_id: ProviderId,
+		delegator_id: DelegatorId,
+		schema_ids: Vec<SchemaId>,
+	) -> DispatchResult {
+		Self::try_mutate_delegation(delegator_id, provider_id, |delegation, _is_new_delegation| {
+			Self::ensure_all_schema_ids_are_valid(&schema_ids)?;
+
+			// Create revoke and insert lists
+			let mut revoke_ids: Vec<SchemaId> = Vec::new();
+			let mut insert_ids: Vec<SchemaId> = Vec::new();
+
+			let existing_keys = delegation.schema_permissions.keys().into_iter();
+
+			for existing_schema_id in existing_keys {
+				if !schema_ids.contains(&existing_schema_id) {
+					match delegation.schema_permissions.get(&existing_schema_id) {
+						Some(block) =>
+							if *block == T::BlockNumber::zero() {
+								revoke_ids.push(*existing_schema_id);
+							},
+						None => {},
+					}
+				}
+			}
+			for schema_id in &schema_ids {
+				if !delegation.schema_permissions.contains_key(&schema_id) {
+					insert_ids.push(*schema_id);
+				}
+			}
+
+			let current_block = frame_system::Pallet::<T>::block_number();
+
+			// Revoke any that are not in the new list that are not already revoked
+			PermittedDelegationSchemas::<T>::try_get_mut_schemas(
+				delegation,
+				revoke_ids,
+				current_block,
+			)?;
+
+			// Insert any new ones that are not in the existing list
+			PermittedDelegationSchemas::<T>::try_insert_schemas(delegation, insert_ids)?;
+			Ok(())
+		})
+	}
+
+	/// Adds an association between MSA id and ProviderRegistryEntry. As of now, the
+	/// only piece of metadata we are recording is provider name.
+	///
+	/// # Events
+	/// * [`Event::ProviderCreated`]
+	///
+	/// # Errors
+	/// * [`Error::NoKeyExists`] - account does not have an MSA
+	/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
+	/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
+	///
+	pub fn create_provider_for(
+		provider_msa_id: MessageSourceId,
+		provider_name: Vec<u8>,
+	) -> DispatchResult {
+		let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
+			provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
+
+		ProviderToRegistryEntry::<T>::try_mutate(
+			ProviderId(provider_msa_id),
+			|maybe_metadata| -> DispatchResult {
+				ensure!(
+					maybe_metadata.take().is_none(),
+					Error::<T>::DuplicateProviderRegistryEntry
+				);
+				*maybe_metadata = Some(ProviderRegistryEntry { provider_name: bounded_name });
+				Ok(())
+			},
+		)?;
+		Ok(())
 	}
 
 	/// Mutates the delegation relationship storage item only when the supplied function returns an 'Ok()' result.

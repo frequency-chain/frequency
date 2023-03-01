@@ -50,15 +50,20 @@
 )]
 
 use common_primitives::{
+	node::ProposalProvider,
 	parquet::ParquetModel,
 	schema::{
 		ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaSetting,
 		SchemaSettings, SchemaValidator,
 	},
 };
-use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
-use sp_runtime::BoundedVec;
-use sp_std::vec::Vec;
+use frame_support::{
+	dispatch::{DispatchResult, PostDispatchInfo},
+	ensure,
+	traits::Get,
+};
+use sp_runtime::{traits::Dispatchable, BoundedVec};
+use sp_std::{boxed::Box, vec::Vec};
 
 #[cfg(test)]
 mod tests;
@@ -107,6 +112,17 @@ pub mod pallet {
 		/// Maximum number of schemas that can be registered
 		#[pallet::constant]
 		type MaxSchemaRegistrations: Get<SchemaId>;
+
+		/// The origin that is allowed to create providers via governance
+		type CreateSchemaViaGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
+		/// The runtime call dispatch type.
+		type Proposal: Parameter
+			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin, PostInfo = PostDispatchInfo>
+			+ From<Call<Self>>;
+
+		/// The Council proposal provider interface
+		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Proposal>;
 
 		/// Maximum number of schema settings that can be registered per schema (if any)
 		#[pallet::constant]
@@ -228,10 +244,12 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			Self::validate_schema_model(&model, &model_type)?;
-
-			let schema_id =
-				Self::add_schema(model, model_type, payload_location, BoundedVec::default())?;
+			let schema_id = Self::create_schema_for(
+				model,
+				model_type,
+				payload_location,
+				BoundedVec::default(),
+			)?;
 
 			Self::deposit_event(Event::SchemaCreated { key: sender, schema_id });
 			Ok(())
@@ -265,6 +283,60 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Propose to create a schema.  Creates a proposal for council approval to create a schema
+		///
+		#[pallet::call_index(2)]
+		#[pallet::weight(T::WeightInfo::propose_to_create_schema(model.len() as u32))]
+		pub fn propose_to_create_schema(
+			origin: OriginFor<T>,
+			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+			model_type: ModelType,
+			payload_location: PayloadLocation,
+			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::create_schema_via_governance {
+					creator_key: proposer.clone(),
+					model,
+					model_type,
+					payload_location,
+					settings,
+				})
+				.into(),
+			);
+			T::ProposalProvider::propose_with_simple_majority(proposer, proposal)?;
+			Ok(())
+		}
+
+		/// Create a schema by means of council approval
+		///
+		/// # Events
+		/// * [`Event::SchemaCreated`]
+		///
+		/// # Errors
+		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
+		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
+		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
+		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
+		#[pallet::call_index(3)]
+		#[pallet::weight(T::WeightInfo::create_schema_via_governance(model.len() as u32))]
+		pub fn create_schema_via_governance(
+			origin: OriginFor<T>,
+			creator_key: T::AccountId,
+			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+			model_type: ModelType,
+			payload_location: PayloadLocation,
+			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+		) -> DispatchResult {
+			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
+			let schema_id = Self::create_schema_for(model, model_type, payload_location, settings)?;
+
+			Self::deposit_event(Event::SchemaCreated { key: creator_key, schema_id });
+			Ok(())
+		}
+
 		/// Adds a given schema to storage with additional settings available from `SchemaSetting`
 		/// # Arguments
 		/// * `origin` - The origin of the call
@@ -281,7 +353,7 @@ pub mod pallet {
 		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
 		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
-		#[pallet::call_index(2)]
+		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::create_schema(model.len() as u32 + settings.len() as u32))]
 		pub fn create_schema_with_settings(
 			origin: OriginFor<T>,
@@ -292,9 +364,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			Self::validate_schema_model(&model, &model_type)?;
-
-			let schema_id = Self::add_schema(model, model_type, payload_location, settings)?;
+			let schema_id = Self::create_schema_for(model, model_type, payload_location, settings)?;
 
 			Self::deposit_event(Event::SchemaCreated { key: sender, schema_id });
 			Ok(())
@@ -381,10 +451,24 @@ pub mod pallet {
 			Ok(next)
 		}
 
-		fn validate_schema_model(
-			model: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
-			model_type: &ModelType,
-		) -> Result<(), DispatchError> {
+		/// Adds a given schema to storage. The schema in question must be of length
+		/// between the min and max model size allowed for schemas (see pallet
+		/// constants above). If the pallet's maximum schema limit has been
+		/// fulfilled by the time this extrinsic is called, a SchemaCountOverflow error
+		/// will be thrown.
+		///
+		/// # Errors
+		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
+		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
+		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
+		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
+		pub fn create_schema_for(
+			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+			model_type: ModelType,
+			payload_location: PayloadLocation,
+			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+		) -> Result<SchemaId, DispatchError> {
+			Self::ensure_valid_model(&model_type, &model)?;
 			ensure!(
 				model.len() >= T::MinSchemaModelSizeBytes::get() as usize,
 				Error::<T>::LessThanMinSchemaModelBytes
@@ -393,9 +477,7 @@ pub mod pallet {
 				model.len() <= Self::get_schema_model_max_bytes() as usize,
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
-
-			Self::ensure_valid_model(&model_type, &model)?;
-			Ok(())
+			Self::add_schema(model, model_type, payload_location, settings)
 		}
 	}
 }

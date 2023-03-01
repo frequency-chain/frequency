@@ -9,13 +9,19 @@ use std::sync::Arc;
 
 use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
 
-use sc_client_api::AuxStore;
+use sc_client_api::{AuxStore, StorageProvider};
+use sc_client_db::Backend as DbBackend;
 use sc_consensus_manual_seal::rpc::{EngineCommand, ManualSeal, ManualSealApiServer};
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
+
+mod frequency_rpc;
+
+#[cfg(test)]
+mod tests;
 
 /// A type representing all RPC extensions.
 pub type RpcExtension = jsonrpsee::RpcModule<()>;
@@ -41,6 +47,7 @@ where
 		+ HeaderBackend<Block>
 		+ AuxStore
 		+ HeaderMetadata<Block, Error = BlockChainError>
+		+ StorageProvider<Block, DbBackend<Block>>
 		+ Send
 		+ Sync
 		+ 'static,
@@ -49,6 +56,7 @@ where
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_messages_runtime_api::MessagesRuntimeApi<Block>,
 	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block>,
+	C::Api: system_runtime_api::AdditionalRuntimeApi<Block>,
 	C::Api: pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block>,
 	C::Api: pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId>,
 	P: TransactionPool + Sync + Send + 'static,
@@ -57,6 +65,7 @@ where
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 
 	// Frequency RPCs
+	use frequency_rpc::{FrequencyRpcApiServer, FrequencyRpcHandler};
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
 	use pallet_schemas_rpc::{SchemasApiServer, SchemasHandler};
@@ -70,6 +79,7 @@ where
 	module.merge(MessagesHandler::new(client.clone()).into_rpc())?;
 	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;
 	module.merge(MsaHandler::new(client.clone()).into_rpc())?;
+	module.merge(FrequencyRpcHandler::new(client.clone()).into_rpc())?;
 	module.merge(StatefulStorageHandler::new(client).into_rpc())?;
 	if let Some(command_sink) = command_sink {
 		module.merge(

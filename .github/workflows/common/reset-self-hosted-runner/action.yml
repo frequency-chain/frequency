@@ -3,11 +3,22 @@ description: Shared action that allows to reset a runner to its original state
 runs:
   using: "composite"
   steps:
+    - name: Remove /home/runner
+      shell: bash
+      run: |
+        whoami
+        echo "***> BEFORE removal of /home/runner dir:"
+        ls -la /home
+        echo "Removing no longer used /home/runner dir..."
+        rm -fr /home/runner
+        echo "***> After removal of /home/runner dir:"
+        ls -la /home
     - name: Remove Cargo Generated Artifacts
       shell: bash
       run: |
         echo "Removing generated cargo artifacts..."
         rm -fr ./target
+        rm -rf ./runtime/frequency/target
     - name: Remove NPM node Modules
       shell: bash
       run: |
@@ -15,5 +26,12 @@ runs:
     - name: Prune docker Resources
       shell: bash
       run: |
-        docker system prune -a --volumes
-        docker image prune -a -f --filter "until=720h"
+        if [ "$(which docker)" ] && [ "$(docker --version)" ]; then
+          echo "Docker is found. Cleaning..."
+          docker system prune -a --volumes
+          docker image prune -a -f --filter "until=720h"
+          echo "Finished cleaning docker resources."
+        else
+          echo "Docker's not found. Exiting..."
+          exit 0
+        fi

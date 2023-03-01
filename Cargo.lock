@@ -981,6 +981,7 @@ version = "0.0.0"
 dependencies = [
  "enumflags2",
  "frame-support",
+ "frame-system",
  "impl-serde",
  "parity-scale-codec",
  "scale-info",
@@ -1006,6 +1007,7 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
+ "pallet-multisig",
  "pallet-preimage",
  "pallet-scheduler",
  "pallet-session",
@@ -2790,6 +2792,7 @@ dependencies = [
  "pallet-messages-runtime-api",
  "pallet-msa",
  "pallet-msa-runtime-api",
+ "pallet-multisig",
  "pallet-preimage",
  "pallet-scheduler",
  "pallet-schemas",
@@ -2823,6 +2826,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+ "system-runtime-api",
 ]
 
 [[package]]
@@ -2830,6 +2834,7 @@ name = "frequency-service"
 version = "0.0.0"
 dependencies = [
  "clap",
+ "common-helpers",
  "common-primitives",
  "common-runtime",
  "cumulus-client-cli",
@@ -2846,6 +2851,7 @@ dependencies = [
  "derive_more",
  "frame-benchmarking",
  "frame-benchmarking-cli",
+ "frame-system",
  "frequency-runtime",
  "futures",
  "hex",
@@ -2869,6 +2875,7 @@ dependencies = [
  "sc-chain-spec",
  "sc-cli",
  "sc-client-api",
+ "sc-client-db",
  "sc-consensus",
  "sc-consensus-manual-seal",
  "sc-executor",
@@ -2883,6 +2890,7 @@ dependencies = [
  "sc-tracing",
  "sc-transaction-pool",
  "sc-transaction-pool-api",
+ "scale-info",
  "serde",
  "sp-api",
  "sp-block-builder",
@@ -2899,6 +2907,9 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
+ "substrate-test-runtime-client",
+ "system-runtime-api",
+ "tokio",
  "try-runtime-cli",
 ]
 
@@ -5674,6 +5685,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "pallet-collective",
  "pallet-schemas",
  "parity-scale-codec",
  "scale-info",
@@ -5939,10 +5951,12 @@ name = "pallet-schemas"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
+ "common-runtime",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "numtoa",
+ "pallet-collective",
  "parity-scale-codec",
  "scale-info",
  "serde_json",
@@ -11251,6 +11265,20 @@ checksum = "a75fb188eb626b924683e3b95e3a48e63551fcfb51949de2f06a9d91dbee93c9"
 dependencies = [
  "core-foundation-sys",
  "libc",
+]
+
+[[package]]
+name = "system-runtime-api"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde_json",
+ "sp-api",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]

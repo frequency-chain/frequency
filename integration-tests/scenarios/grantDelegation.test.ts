@@ -159,16 +159,6 @@ describe("Delegation Scenario Tests", function () {
             }
         });
 
-        it("should fail to grant a duplicate delegation to a provider (DuplicateProvider)", async function () {
-            const payload = await generateDelegationPayload({
-                authorizedMsaId: providerId,
-                schemaIds: [schemaId],
-            });
-            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-
-            const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
-            await assert.rejects(grantDelegationOp.fundAndSend(), { name: 'DuplicateProvider' });
-        });
     });
 
     describe("schema permission grants", function () {

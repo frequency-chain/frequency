@@ -40,8 +40,33 @@ benchmarks! {
 		let schema_input = generate_schema::<T>(m as usize);
 	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location)
 	verify {
-		ensure!(SchemasPallet::<T>::get_current_schema_identifier_maximum() > 0, "Registered schema count should be > 0");
-		ensure!(SchemasPallet::<T>::get_schema(1).is_some(), "Registered schema should exist");
+		ensure!(SchemasPallet::<T>::get_current_schema_identifier_maximum() > 0, "Created schema count should be > 0");
+		ensure!(SchemasPallet::<T>::get_schema(1).is_some(), "Created schema should exist");
+	}
+
+	create_schema_via_governance {
+		let m in (T::MinSchemaModelSizeBytes::get() + 8) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
+		let sender: T::AccountId = whitelisted_caller();
+		let model_type = ModelType::AvroBinary;
+		let payload_location = PayloadLocation::OnChain;
+		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
+		let schema_input = generate_schema::<T>(m as usize);
+	}: _(RawOrigin::Root, sender.clone(), schema_input, model_type, payload_location, BoundedVec::default())
+	verify {
+		ensure!(SchemasPallet::<T>::get_current_schema_identifier_maximum() > 0, "Created schema count should be > 0");
+		ensure!(SchemasPallet::<T>::get_schema(1).is_some(), "Created schema should exist");
+	}
+
+	propose_to_create_schema {
+		let m in (T::MinSchemaModelSizeBytes::get() + 8) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
+		let sender: T::AccountId = whitelisted_caller();
+		let model_type = ModelType::AvroBinary;
+		let payload_location = PayloadLocation::OnChain;
+		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
+		let schema_input = generate_schema::<T>(m as usize);
+	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location, BoundedVec::default())
+	verify {
+		assert_eq!(T::ProposalProvider::proposal_count(), 1);
 	}
 
 	set_max_schema_model_bytes {
@@ -51,6 +76,8 @@ benchmarks! {
 	verify {
 		ensure!(SchemasPallet::<T>::get_schema_model_max_bytes() == T::SchemaModelMaxBytesBoundedVecLimit::get(), "Schema model max should be updated!");
 	}
+
+
 
 	impl_benchmark_test_suite!(
 		SchemasPallet,
