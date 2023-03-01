@@ -25,6 +25,7 @@ ALL_CUSTOM_PALLETS=( \
   schemas \
   stateful-storage \
   capacity \
+  frequency-tx-payment \
 )
 
 declare -a CUSTOM_PALLETS
