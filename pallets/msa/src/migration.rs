@@ -94,7 +94,7 @@ mod tests {
 	fn no_migrations_means_zero_weight() {
 		new_test_ext().execute_with(|| {
 			StorageVersion::new(100).put::<Pallet<T>>();
-			let weight = migrate::<T>();
+			let weight = Migration::<T>::on_runtime_upgrade();
 			assert_eq!(weight, Weight::zero());
 		});
 	}
