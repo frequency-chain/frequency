@@ -21,6 +21,8 @@ pub mod msa;
 pub mod node;
 /// Structs and traits for parquet
 pub mod parquet;
+/// Structs and traits for better RPCs
+pub mod rpc;
 /// Structs and traits for the Schema pallet
 pub mod schema;
 /// Types for the Stateful Storage pallet

@@ -2426,7 +2426,13 @@ fn apply_delete_item_on_append_only_fails() {
 		));
 
 		let items1: Option<ItemizedPage<Test>> =
-			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(&msa_id, &keys).unwrap();
+			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(
+				&msa_id,
+				PALLET_STORAGE_PREFIX,
+				ITEMIZED_STORAGE_PREFIX,
+				&keys,
+			)
+			.unwrap();
 		assert!(items1.is_some());
 		let content_hash = items1.unwrap().get_hash();
 

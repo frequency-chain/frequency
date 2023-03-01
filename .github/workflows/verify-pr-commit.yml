@@ -8,7 +8,6 @@ on:
       - main
 env:
   BIN_DIR: target/release
-  RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
 jobs:
   changes:
     name: Determine Changed Files
@@ -82,6 +81,7 @@ jobs:
     if: needs.changes.outputs.build-binary == 'true'
     name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
     strategy:
+      fail-fast: true
       matrix:
         network: [rococo, mainnet]
         include:
@@ -99,11 +99,21 @@ jobs:
           - network: mainnet
             spec: frequency
             branch_alias: pr
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, build]
     env:
       HOME: /root
       NETWORK: mainnet
     steps:
+      # https://github.com/LibertyDSNP/frequency/issues/1102
+      - name: Debug Leftovers
+        run: |
+          set -x
+          date
+          whoami
+          cat /etc/passwd
+          [ -d ./target ] && sudo ls -latR ./target
+          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
+          exit 0
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
@@ -127,11 +137,9 @@ jobs:
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
+          targets: wasm32-unknown-unknown
           toolchain: stable
       - name: Compile Binary
         if: steps.cache-binary.outputs.cache-hit != 'true'
@@ -179,10 +187,8 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
           components: rustfmt
           toolchain: stable
       - name: Check
@@ -194,8 +200,18 @@ jobs:
     name: Lint Rust Code
     env:
       HOME: /root
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, build]
     steps:
+      # https://github.com/LibertyDSNP/frequency/issues/1102
+      - name: Debug Leftovers
+        run: |
+          set -x
+          date
+          whoami
+          cat /etc/passwd
+          [ -d ./target ] && sudo ls -latR ./target
+          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
+          exit 0
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Reset Runner
@@ -205,10 +221,8 @@ jobs:
           sudo apt-get update
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
           components: clippy
           toolchain: stable
       - name: Lint
@@ -224,8 +238,18 @@ jobs:
     name: Verify Rust Developer Docs
     env:
       HOME: /root
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, build]
     steps:
+      # https://github.com/LibertyDSNP/frequency/issues/1102
+      - name: Debug Leftovers
+        run: |
+          set -x
+          date
+          whoami
+          cat /etc/passwd
+          [ -d ./target ] && sudo ls -latR ./target
+          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
+          exit 0
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Reset Runner
@@ -235,12 +259,10 @@ jobs:
           sudo apt-get update
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
           toolchain: stable
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
+          targets: wasm32-unknown-unknown
       - name: Build Rust Docs
         run: RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
 
@@ -250,8 +272,19 @@ jobs:
     name: Verify Rust Packages and Dependencies
     env:
       HOME: /root
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, build]
     steps:
+      # https://github.com/LibertyDSNP/frequency/issues/1102
+      - name: Debug Leftovers
+        run: |
+          set -x
+          set -x
+          date
+          whoami
+          cat /etc/passwd
+          [ -d ./target ] && sudo ls -latR ./target
+          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
+          exit 0
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Reset Runner
@@ -261,10 +294,8 @@ jobs:
           sudo apt-get update
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
           toolchain: stable
       - name: Check
         run: SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,all-frequency-features
@@ -275,8 +306,18 @@ jobs:
     name: Run Rust Tests
     env:
       HOME: /root
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, build]
     steps:
+      # https://github.com/LibertyDSNP/frequency/issues/1102
+      - name: Debug Leftovers
+        run: |
+          set -x
+          date
+          whoami
+          cat /etc/passwd
+          [ -d ./target ] && sudo ls -latR ./target
+          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
+          exit 0
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Reset Runner
@@ -286,11 +327,9 @@ jobs:
           sudo apt-get update
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
+          targets: wasm32-unknown-unknown
           toolchain: stable
       - name: Run Tests
         run: cargo test --features runtime-benchmarks,all-frequency-features --workspace --release
@@ -308,11 +347,9 @@ jobs:
           sudo apt-get update
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
+          targets: wasm32-unknown-unknown
           toolchain: stable
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@044a1e5bdace8dd2f727b1af63c1d9a1d3572068
@@ -350,6 +387,7 @@ jobs:
     env:
       HOME: /root
     strategy:
+      fail-fast: true
       matrix:
         network: [rococo, mainnet]
         include:
@@ -363,34 +401,30 @@ jobs:
             package: frequency-runtime
             runtime-dir: runtime/frequency
             features: frequency
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, build]
     steps:
+      # https://github.com/LibertyDSNP/frequency/issues/1102
+      - name: Debug Leftovers
+        run: |
+          set -x
+          date
+          whoami
+          cat /etc/passwd
+          [ -d ./target ] && sudo ls -latR ./target
+          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
+          exit 0
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Reset Runner
         uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
           toolchain: stable
       - name: Install Docker
         run: |
           curl -fsSL https://get.docker.com -o get-docker.sh
           sudo sh get-docker.sh
-      - name: Prune Docker Resources
-        run: |
-          set -x
-          containers=$(docker ps -q)
-          if [ ! -z $containers ]; then
-            docker kill $containers;
-          fi
-          docker container prune -f
-          docker image prune -a -f
-          docker system prune -a --volumes -f
-          docker container ls
-          docker image ls
       - name: Extract Runtime Spec Version
         run: |
           echo "RUNTIME_SPEC_VERSION=$(sed -nr 's/spec_version:\s*([0-9]+),/\1/p' \
@@ -456,7 +490,6 @@ jobs:
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           chmod 755 ${{env.BIN_FILENAME}}
       - name: Output Metadata
         run: ${{env.BIN_DIR}}/${{env.BIN_FILENAME}} export-metadata  --chain=frequency-local --tmp ./js/api-augment/metadata.json
@@ -490,12 +523,6 @@ jobs:
         run: |
           echo "BUILT_BIN_FILENAME=frequency.mainnet-pr" >> $GITHUB_ENV
           echo "DOCKER_BIN_FILENAME=frequency" >> $GITHUB_ENV
-      - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
-        with:
-          default: true
-          profile: minimal
-          toolchain: stable
       - name: Download Binaries
         uses: actions/download-artifact@v3
         with:
@@ -507,7 +534,6 @@ jobs:
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           chmod 755 ${{env.DOCKER_BIN_FILENAME}}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -543,10 +569,8 @@ jobs:
         run: |
           echo "TEST_BIN_FILENAME=frequency.mainnet-pr" >> $GITHUB_ENV
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
           toolchain: stable
       - name: Download Binaries
         uses: actions/download-artifact@v3
@@ -556,7 +580,6 @@ jobs:
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           chmod 755 ${{env.TEST_BIN_FILENAME}}
       - name: Output Binary Version
         working-directory: ${{env.BIN_DIR}}
@@ -586,7 +609,6 @@ jobs:
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           chmod 755 $TEST_BIN_FILENAME
           chmod 755 $REF_BIN_FILENAME
       - name: Compare Metadata
@@ -609,7 +631,6 @@ jobs:
         if: steps.compare-metadata.outputs.metadata_match != 'true'
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           spec_version_ref=$(./$REF_BIN_FILENAME export-runtime-version | jq -r .specVersion)
           spec_version=$(./$TEST_BIN_FILENAME export-runtime-version | jq -r .specVersion)
           [[ $spec_version -gt $spec_version_ref  ]] || \
@@ -650,7 +671,6 @@ jobs:
       - name: Set Binaries Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           chmod 755 $BIN_FILENAME
       - name: Start Local Node
         working-directory: ${{env.BIN_DIR}}
@@ -711,7 +731,6 @@ jobs:
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           chmod 755 $BIN_FILENAME_ROCOCO
           chmod 755 $BIN_FILENAME_MAINNET
       - name: Test Rococo Genesis State
