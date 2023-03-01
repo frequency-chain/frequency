@@ -1,7 +1,25 @@
 //! Migrations for the MSA Pallet
 
 use super::*;
-use frame_support::storage_alias;
+use frame_support::{storage_alias, traits::OnRuntimeUpgrade};
+
+/// Migrations for the MSA Pallet
+pub struct Migration<T: Config>(PhantomData<T>);
+
+/// Implementation of `frame_support::traits::OnRuntimeUpgrade` for MSA Pallet
+impl<T: Config> OnRuntimeUpgrade for Migration<T> {
+	fn on_runtime_upgrade() -> Weight {
+		let version = StorageVersion::get::<Pallet<T>>();
+		let mut weight: Weight = Weight::zero();
+
+		if version < 1 {
+			weight = weight.saturating_add(v1::migrate::<T>());
+			// Updated version inside so we can drain the prefix if needed
+		}
+
+		weight
+	}
+}
 
 /// Data Structures that were removed
 pub mod v0 {
@@ -27,19 +45,6 @@ pub mod v0 {
 		MultiSignature, // An externally-created Signature for an external payload, provided by an extrinsic
 		u64,            // An actual flipping block number.
 	>;
-}
-
-/// MSA Pallet Migration Triggers
-pub fn migrate<T: Config>() -> Weight {
-	let version = StorageVersion::get::<Pallet<T>>();
-	let mut weight: Weight = Weight::zero();
-
-	if version < 1 {
-		weight = weight.saturating_add(v1::migrate::<T>());
-		// Updated version inside so we can drain the prefix if needed
-	}
-
-	weight
 }
 
 /// Migrating to remove old storage

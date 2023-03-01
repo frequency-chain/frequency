@@ -165,13 +165,6 @@ pub mod pallet {
 	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_runtime_upgrade() -> frame_support::weights::Weight {
-			migration::migrate::<T>()
-		}
-	}
-
 	/// Storage type for the current MSA identifier maximum.
 	/// We need to track this value because the identifier maximum
 	/// is incremented each time a new identifier is created.
