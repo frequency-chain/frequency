@@ -256,7 +256,7 @@ pub mod pallet {
 			msa_id: MessageSourceId,
 			/// The amount of Capacity withdrawn from MSA.
 			amount: BalanceOf<T>,
-		}
+		},
 	}
 
 	#[pallet::error]
@@ -609,7 +609,7 @@ impl<T: Config> Nontransferable for Pallet<T> {
 
 		Self::set_capacity_for(msa_id, capacity_details);
 
-		Self::deposit_event(Event::CapacityWithdrawn { msa_id: msa_id, amount: amount });
+		Self::deposit_event(Event::CapacityWithdrawn { msa_id, amount });
 		Ok(())
 	}
 

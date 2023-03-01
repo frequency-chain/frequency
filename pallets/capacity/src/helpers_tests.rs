@@ -310,10 +310,7 @@ fn impl_withdraw_is_successful() {
 
 		assert_eq!(
 			events.last().unwrap(),
-			&Event::CapacityWithdrawn {
-				msa_id: target_msa_id,
-				amount: 5u32.into(),
-			}
+			&Event::CapacityWithdrawn { msa_id: target_msa_id, amount: 5u32.into() }
 		);
 
 		let mut capacity_details =
