@@ -77,7 +77,7 @@ use sp_std::prelude::*;
 use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
-		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
+		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator, SignatureRegistryPointer,
 	},
 	node::ProposalProvider,
 	schema::{SchemaId, SchemaValidator},
