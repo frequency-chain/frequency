@@ -229,7 +229,6 @@ impl pallet_capacity::Config for Test {
 use pallet_balances::Call as BalancesCall;
 
 pub struct TestCapacityCalls;
-
 impl Contains<RuntimeCall> for TestCapacityCalls {
 	fn contains(call: &RuntimeCall) -> bool {
 		{

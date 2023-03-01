@@ -154,7 +154,13 @@ pub mod pallet {
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
-		type CapacityEligibleCalls: Contains<<Self as frame_system::Config>::RuntimeCall>;
+		type CapacityEligibleCalls: Contains<<Self as Config>::RuntimeCall>;
+	}
+
+	#[pallet::error]
+	pub enum Error<T> {
+		/// Attempted to pay for the extrinsic with Capacity, when it is not a Capacity Eligible Call.
+		CallIsNotCapacityEligible,
 	}
 
 	#[pallet::event]
@@ -227,16 +233,21 @@ where
 			pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, self.tip(call));
 
 		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { .. }) => {
-				let msa_id = pallet_msa::Pallet::<T>::ensure_valid_msa_key(who).map_err(
-					|_| -> TransactionValidityError { InvalidTransaction::Payment.into() },
-				)?;
+			Some(Call::pay_with_capacity { call }) => {
+				use frame_support::traits::Contains;
+				if <T as Config>::CapacityEligibleCalls::contains(call.as_ref()) {
+					let msa_id = pallet_msa::Pallet::<T>::ensure_valid_msa_key(who).map_err(
+						|_| -> TransactionValidityError { InvalidTransaction::Payment.into() },
+					)?;
 
-				T::Capacity::withdraw(msa_id, fee.into()).map_err(
-					|_| -> TransactionValidityError { InvalidTransaction::Payment.into() },
-				)?;
+					T::Capacity::withdraw(msa_id, fee.into()).map_err(
+						|_| -> TransactionValidityError { InvalidTransaction::Payment.into() },
+					)?;
 
-				Ok((fee, InitialPayment::Capacity))
+					Ok((fee, InitialPayment::Capacity))
+				} else {
+					Err(TransactionValidityError::Invalid(InvalidTransaction::Call))
+				}
 			},
 			_ => {
 				if fee.is_zero() {
@@ -272,7 +283,6 @@ impl<T: Config> SignedExtension for ChargeFrqTransactionPayment<T>
 where
 	<T as frame_system::Config>::RuntimeCall:
 		IsSubType<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
-
 	BalanceOf<T>: Send + Sync + FixedPointOperand + From<u64> + IsType<CapacityBalanceOf<T>>,
 {
 	const IDENTIFIER: &'static str = "ChargeTransactionPayment";
@@ -323,12 +333,6 @@ where
 		let (_fee, initial_payment) = self.withdraw_fee(who, call, info, len)?;
 
 		Ok((self.tip(call), who.clone(), initial_payment))
-		// 		if <T as Config>::CapacityEligibleCalls::contains(call) {
-		// 			log::debug!("this is a capacity eligible call");
-		// 			Ok(result)
-		// 		} else {
-		// 			Err(TransactionValidityError::Invalid(InvalidTransaction::Call))
-		// 		}
 	}
 
 	/// Do any post-flight stuff for an extrinsic.

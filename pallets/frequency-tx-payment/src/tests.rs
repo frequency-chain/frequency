@@ -415,8 +415,35 @@ fn charge_frq_transaction_payment_tip_is_some_amount_for_non_capacity_calls() {
 
 	assert_eq!(result, 200u64);
 }
+
+pub fn assert_withdraw_fee_result(
+	call: &<Test as Config>::RuntimeCall,
+	expected_err: Option<TransactionValidityError>,
+) {
+	let account_id = 1u64;
+	let dispatch_info = DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
+
+	let call: &<Test as Config>::RuntimeCall =
+		&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity { call: Box::new(call.clone()) });
+
+	let withdraw_fee = ChargeFrqTransactionPayment::<Test>::from(0u64).withdraw_fee(
+		&account_id,
+		call,
+		&dispatch_info,
+		10,
+	);
+
+	match expected_err {
+		None => assert!(withdraw_fee.is_ok()),
+		Some(err) => {
+			assert!(withdraw_fee.is_err());
+			assert_eq!(err, withdraw_fee.err().unwrap())
+		},
+	}
+}
+
 #[test]
-fn call_filtering_allows_only_what_is_in_config() {
+fn withdraw_fee_allows_only_configured_capacity_calls() {
 	let balance_factor = 10;
 
 	ExtBuilder::default()
@@ -424,14 +451,14 @@ fn call_filtering_allows_only_what_is_in_config() {
 		.base_weight(Weight::from_ref_time(5))
 		.build()
 		.execute_with(|| {
-			let allowed_call: &<Test as SystemConfig>::RuntimeCall =
+			let allowed_call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
 
-			let forbidden_call: &<Test as SystemConfig>::RuntimeCall =
+			let forbidden_call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer_all { dest: 2, keep_alive: false });
 
-			assert_pre_dispatch_result(allowed_call, None);
-			assert_pre_dispatch_result(
+			assert_withdraw_fee_result(allowed_call, None);
+			assert_withdraw_fee_result(
 				forbidden_call,
 				Some(TransactionValidityError::Invalid(InvalidTransaction::Call)),
 			);
