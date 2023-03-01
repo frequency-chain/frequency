@@ -17,7 +17,7 @@ use sp_runtime::{
 
 use frame_support::{
 	parameter_types,
-	traits::{ConstU16, ConstU64},
+	traits::{ConstU16, ConstU64, Contains},
 	weights::WeightToFee as WeightToFeeTrait,
 };
 
@@ -221,11 +221,26 @@ impl pallet_capacity::Config for Test {
 	type EpochNumber = u32;
 }
 
+use pallet_balances::Call as BalancesCall;
+
+pub struct TestCapacityCalls;
+impl Contains<RuntimeCall> for TestCapacityCalls {
+	fn contains(call: &RuntimeCall) -> bool {
+		{
+			match call {
+				RuntimeCall::Balances(BalancesCall::transfer { .. }) => true, // for testing only
+				_ => false,
+			}
+		}
+	}
+}
+
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type Capacity = Capacity;
 	type WeightInfo = ();
+	type CapacityEligibleCalls = TestCapacityCalls;
 }
 
 pub struct ExtBuilder {
