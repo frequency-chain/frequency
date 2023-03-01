@@ -1,4 +1,4 @@
-# Frequency Message Schemas
+# Graph SDK
 
 ## Context and Scope
 
