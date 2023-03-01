@@ -40,6 +40,7 @@ use sp_runtime::{
 use common_primitives::capacity::Nontransferable;
 
 use pallet_transaction_payment::OnChargeTransaction;
+pub use weights::*;
 
 /// Type aliases used for interaction with `OnChargeTransaction`.
 pub(crate) type OnChargeTransactionOf<T> =
@@ -113,8 +114,12 @@ impl<T: Config> sp_std::fmt::Debug for InitialPayment<T> {
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 #[cfg(test)]
 mod mock;
+
+pub mod weights;
 
 pub use pallet::*;
 
@@ -122,6 +127,7 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
 	#[pallet::pallet]
@@ -139,10 +145,14 @@ pub mod pallet {
 		type RuntimeCall: Parameter
 			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin, PostInfo = PostDispatchInfo>
 			+ GetDispatchInfo
+			+ From<frame_system::Call<Self>>
 			+ IsSubType<Call<Self>>
 			+ IsType<<Self as frame_system::Config>::RuntimeCall>;
 
 		type Capacity: Nontransferable;
+
+		/// Weight information for extrinsics in this pallet.
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::event]
@@ -156,7 +166,7 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		#[pallet::weight({
 			let dispatch_info = call.get_dispatch_info();
-			(dispatch_info.weight, dispatch_info.class)
+			(<T as Config>::WeightInfo::pay_with_capacity().saturating_add(dispatch_info.weight), dispatch_info.class)
 		})]
 		pub fn pay_with_capacity(
 			origin: OriginFor<T>,

@@ -225,6 +225,7 @@ impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type Capacity = Capacity;
+	type WeightInfo = ();
 }
 
 pub struct ExtBuilder {

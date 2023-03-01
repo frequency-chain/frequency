@@ -85,7 +85,7 @@ benchmarks! {
 	}
 	unstake {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
-		let staking_amount: BalanceOf<T> = T::MinimumStakingAmount::get();
+		let staking_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(6u32.into());
 		let unstaking_amount = 5u32;
 		let capacity_amount: BalanceOf<T> = Capacity::<T>::calculate_capacity(staking_amount);
 		let target = 1;

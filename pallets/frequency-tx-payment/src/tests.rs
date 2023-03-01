@@ -234,7 +234,10 @@ fn pay_with_capacity_returns_weight_of_child_call() {
 	));
 	let pay_with_capacity_dispatch_info = pay_with_capacity_call.get_dispatch_info();
 
-	assert_eq!(create_msa_dispatch_info.weight, pay_with_capacity_dispatch_info.weight);
+	assert!(pay_with_capacity_dispatch_info
+		.weight
+		.ref_time()
+		.gt(&create_msa_dispatch_info.weight.ref_time()));
 }
 
 #[test]
