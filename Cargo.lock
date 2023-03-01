@@ -1016,6 +1016,7 @@ dependencies = [
  "smallvec",
  "sp-core",
  "sp-std",
+ "sp-weights",
  "substrate-wasm-builder",
 ]
 
@@ -2731,6 +2732,7 @@ dependencies = [
  "cumulus-client-cli",
  "cumulus-client-service",
  "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
  "derive_more",
  "frame-benchmarking-cli",
  "frame-support",

@@ -5,7 +5,6 @@ use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::BenchmarkCmd;
 use log::info;
 
-#[cfg(feature = "runtime-benchmarks")]
 use crate::benchmarking::{inherent_benchmark_data, RemarkBuilder};
 use common_primitives::node::Block;
 use frequency_service::{
@@ -332,7 +331,6 @@ pub fn run() -> Result<()> {
 
 					cmd.run(config, partials.client.clone(), db, storage)
 				}),
-				#[cfg(feature = "runtime-benchmarks")]
 				BenchmarkCmd::Overhead(cmd) => runner.sync_run(|config| {
 					let partials = new_partial(&config, false)?;
 					let ext_builder = RemarkBuilder::new(partials.client.clone());
@@ -345,14 +343,6 @@ pub fn run() -> Result<()> {
 						&ext_builder,
 					)
 				}),
-				#[cfg(not(feature = "runtime-benchmarks"))]
-				BenchmarkCmd::Overhead(_) =>
-					return Err(sc_cli::Error::Input(
-						"Compile with --features=runtime-benchmarks \
-						to enable overhead benchmarks."
-							.into(),
-					)
-					.into()),
 				BenchmarkCmd::Machine(cmd) => runner.sync_run(|config| {
 					cmd.run(&config, frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE.clone())
 				}),

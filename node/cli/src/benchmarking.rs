@@ -3,10 +3,9 @@
 //! Should only be used for benchmarking as it may break in other contexts.
 
 use common_primitives::node::{AccountId, Balance, Signature};
+use frame_support::pallet_prelude::InherentData;
 use frame_system::{Call as SystemCall, Config};
 use frequency_service::service::{frequency_runtime as runtime, ParachainClient as FullClient};
-// use runtime::{AccountId, Balance, BalancesCall, SystemCall};
-use frame_support::pallet_prelude::InherentData;
 use sc_cli::Result;
 use sc_client_api::BlockBackend;
 use sp_core::{Encode, Pair};
@@ -16,7 +15,7 @@ use sp_runtime::{OpaqueExtrinsic, SaturatedConversion};
 use pallet_balances::Call as BalancesCall;
 use pallet_msa;
 use pallet_transaction_payment;
-use sp_inherents;
+use sp_inherents::InherentDataProvider;
 use sp_timestamp;
 use std::{sync::Arc, time::Duration};
 
@@ -164,13 +163,24 @@ pub fn inherent_benchmark_data() -> Result<InherentData> {
 	let mut inherent_data = InherentData::new();
 	let d = Duration::from_millis(0);
 	let timestamp = sp_timestamp::InherentDataProvider::new(d.into());
+	let mock_para_inherent_provider =
+		cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider {
+			current_para_block: 0,
+			relay_offset: 1,
+			relay_blocks_per_para_block: 2,
+			xcm_config: Default::default(),
+			raw_downward_messages: Default::default(),
+			raw_horizontal_messages: Default::default(),
+			para_blocks_per_relay_epoch: 2,
+			relay_randomness_config: (),
+		};
 
+	futures::executor::block_on(timestamp.provide_inherent_data(&mut inherent_data))
+		.map_err(|e| format!("creating inherent data: {:?}", e))?;
 	futures::executor::block_on(
-		<sp_timestamp::InherentDataProvider as sp_inherents::InherentDataProvider>::provide_inherent_data(
-			&timestamp,
-			&mut inherent_data,
-		),
+		mock_para_inherent_provider.provide_inherent_data(&mut inherent_data),
 	)
-	.map_err(|e| format!("creating inherent data: {:?}", e))?;
+	.map_err(|e| format!("creating cumulus inherent data: {:?}", e))?;
+
 	Ok(inherent_data)
 }
