@@ -89,6 +89,9 @@ benchmarks-schemas:
 benchmarks-capacity:
 	./scripts/run_benchmark.sh -p capacity
 
+benchmarks-frequency-tx-payment:
+	./scripts/run_benchmark.sh -p frequency-tx-payment
+
 .PHONY: docs
 docs:
 	RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --features frequency
