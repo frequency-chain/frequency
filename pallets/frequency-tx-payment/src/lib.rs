@@ -157,12 +157,6 @@ pub mod pallet {
 		type CapacityEligibleCalls: Contains<<Self as Config>::RuntimeCall>;
 	}
 
-	#[pallet::error]
-	pub enum Error<T> {
-		/// Attempted to pay for the extrinsic with Capacity, when it is not a Capacity Eligible Call.
-		CallIsNotCapacityEligible,
-	}
-
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {}
@@ -186,6 +180,12 @@ pub mod pallet {
 			Ok(())
 		}
 	}
+}
+
+/// Custom Transaction Validity Errors for ChargeFrqTransactionPayment
+pub enum ChargeFrqTransactionPaymentError {
+	/// The call is not eligible to be paid for with Capacity
+	CallIsNotCapacityEligible,
 }
 
 /// Require the transactor pay for themselves and maybe include a tip to gain additional priority
@@ -246,7 +246,9 @@ where
 
 					Ok((fee, InitialPayment::Capacity))
 				} else {
-					Err(TransactionValidityError::Invalid(InvalidTransaction::Call))
+					Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(
+						ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible as u8,
+					)))
 				}
 			},
 			_ => {

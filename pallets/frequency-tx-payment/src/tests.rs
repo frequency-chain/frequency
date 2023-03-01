@@ -458,9 +458,10 @@ fn withdraw_fee_allows_only_configured_capacity_calls() {
 				&RuntimeCall::Balances(BalancesCall::transfer_all { dest: 2, keep_alive: false });
 
 			assert_withdraw_fee_result(allowed_call, None);
-			assert_withdraw_fee_result(
-				forbidden_call,
-				Some(TransactionValidityError::Invalid(InvalidTransaction::Call)),
-			);
+
+			let expected_err = TransactionValidityError::Invalid(InvalidTransaction::Custom(
+				ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible as u8,
+			));
+			assert_withdraw_fee_result(forbidden_call, Some(expected_err));
 		});
 }
