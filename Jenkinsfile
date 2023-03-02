@@ -15,7 +15,7 @@ pipeline {
       steps {
         deleteDir()
         checkout scm
-        sh 'mkdir -p /data/tmp && export TMPDIR=/data/tmp &&  export PATH="/data/.cargo/bin:$PATH" && ln -snf /data/.cargo /home/ubuntu/.cargo && make benchmarks'
+        sh 'mkdir -p /data/tmp && export TMPDIR=/data/tmp &&  export PATH="/data/.cargo/bin:$PATH" && ln -snf /data/.cargo /home/ubuntu/.cargo && make benchmarks-overhead'
         sh "git config user.email \"jenkins@frequency.xyz\""
         sh "git config user.name \"Jenkins\""
          sshagent(credentials: ['jenkins-2022-03-01']) {
