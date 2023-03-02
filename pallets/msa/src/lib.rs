@@ -79,7 +79,7 @@ use common_primitives::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
 		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
 	},
-	node::{BlockNumber, ProposalProvider},
+	node::ProposalProvider,
 	schema::{SchemaId, SchemaValidator},
 };
 
