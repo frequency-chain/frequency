@@ -7,3 +7,4 @@ cache
 logs
 log
 CODEOWNERS
+.github/issues/*

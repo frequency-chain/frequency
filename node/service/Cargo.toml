@@ -24,11 +24,13 @@ common-runtime = { path = "../../runtime/common" }
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sc-client-db = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sc-consensus-manual-seal = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
@@ -54,6 +56,8 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkad
 sp-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sp-wasm-interface = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
@@ -74,6 +78,7 @@ cumulus-relay-chain-interface = { git = "https://github.com/paritytech/cumulus",
 cumulus-relay-chain-rpc-interface = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.36" }
 cumulus-relay-chain-minimal-node = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.36" }
 # Frequency
+common-helpers = { default-features = false, path = "../../common/helpers" }
 common-primitives = { default-features = false, path = "../../common/primitives" }
 pallet-messages-rpc = { path = "../../pallets/messages/src/rpc" }
 pallet-messages-runtime-api = { path = "../../pallets/messages/src/runtime-api" }
@@ -83,9 +88,18 @@ pallet-schemas-rpc = { path = "../../pallets/schemas/src/rpc" }
 pallet-schemas-runtime-api = { path = "../../pallets/schemas/src/runtime-api" }
 pallet-stateful-storage-rpc = { path = "../../pallets/stateful-storage/src/rpc" }
 pallet-stateful-storage-runtime-api = { path = "../../pallets/stateful-storage/src/runtime-api" }
+system-runtime-api = { path = "../../runtime/system-runtime-api" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+
+[dev-dependencies]
+tokio = { version = "1.24.1", features = ["macros", "time", "parking_lot"] }
+substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+scale-info = { version = "2.2.0", default-features = false, features = [
+"derive",
+] }
 
 [features]
 default = ["std"]

@@ -36,9 +36,6 @@ ENTRYPOINT ["/frequency/frequency", \
 	# Required params for starting the chain
 	"--dev", \
 	"-lruntime=debug", \
-	"--instant-sealing", \
-	"--wasm-execution=compiled", \
-	"--execution=wasm", \
 	"--no-telemetry", \
 	"--no-prometheus", \
 	"--port=30333", \
@@ -48,8 +45,8 @@ ENTRYPOINT ["/frequency/frequency", \
 	"--rpc-cors=all", \
 	"--ws-external", \
 	"--rpc-methods=Unsafe", \
-	"--tmp" \
+	"--base-path=/data" \
 	]
 
 # Params which can be overriden from CLI
-# CMD ["", "", ...]
+CMD ["--instant-sealing"]

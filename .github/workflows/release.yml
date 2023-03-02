@@ -9,7 +9,6 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v1.1.0-rc1
       - "vX.X.X" # used for testing only
 env:
-  RUST_TOOLCHAIN: nightly-2022-09-22 # Update this when updating the Rust toolchain
   NEW_RELEASE_VERSION: ${{github.ref_name}}
   NEW_RELEASE_TAG: ${{github.ref_name}}
 jobs:
@@ -18,9 +17,10 @@ jobs:
     env:
       HOME: /root
     strategy:
+      fail-fast: true
       matrix:
-        # os: [[self-hosted, Linux, X64], [self-hosted, Linux, ARM64]]
-        os: [[self-hosted, Linux, X64]]
+        # os: [[self-hosted, Linux, X64, build], [self-hosted, Linux, ARM64,  build]]
+        os: [[self-hosted, Linux, X64, build]]
         network: [local, rococo, mainnet]
         include:
           - network: local
@@ -35,7 +35,7 @@ jobs:
             spec: frequency
             build-profile: production
             release-file-name-prefix: frequency
-          - os: [self-hosted, Linux, X64]
+          - os: [self-hosted, Linux, X64, build]
             arch: amd64
           # - os: [self-hosted, Linux, ARM64]
           #   arch: arm64
@@ -59,12 +59,10 @@ jobs:
       #     key: binaries-${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.NEW_RELEASE_VERSION}}
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
+          targets: wasm32-unknown-unknown
           toolchain: stable
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
       - name: Compile for ${{matrix.network}}
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
@@ -115,6 +113,7 @@ jobs:
     env:
       HOME: /root
     strategy:
+      fail-fast: true
       matrix:
         network: [rococo, mainnet]
         include:
@@ -134,17 +133,15 @@ jobs:
             release-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, build]
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Reset Runner
         uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
-          default: true
-          profile: minimal
           toolchain: stable
       - name: Extract Runtime Spec Version
         run: |
@@ -159,7 +156,6 @@ jobs:
       - name: Set Env Vars
         id: set-env-vars
         run: |
-          set -x
           echo "WASM_DIR=${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}" >> $GITHUB_ENV
           echo "BUILT_WASM_FILENAME=${{matrix.built-wasm-file-name-prefix}}.compact.compressed.wasm" >> $GITHUB_ENV
           release_wasm_filename=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.NEW_RELEASE_VERSION}}.compact.compressed.wasm
@@ -210,7 +206,7 @@ jobs:
 
   build-rust-developer-docs:
     name: Build Rust Developer Docs
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, build]
     env:
       HOME: /root
     steps:
@@ -218,26 +214,25 @@ jobs:
         uses: actions/checkout@v3
       - name: Reset Runner
         uses: ./.github/workflows/common/reset-self-hosted-runner
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
       - name: Install Required Packages
         run: |
           sudo apt-get update
           sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af
+        if: steps.cache-binary.outputs.cache-hit != 'true'
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
+          targets: wasm32-unknown-unknown
           toolchain: stable
-          default: true
-          profile: minimal
-          target: wasm32-unknown-unknown
       - name: Build Docs
         run: |
           RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --features frequency
       - name: Upload Docs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-pages-artifact@v1
         with:
-          name: rust-developer-docs-${{github.run_id}}
           path: ./target/doc
-          if-no-files-found: error
 
   build-js-api-augment:
     needs: build-binaries
@@ -296,6 +291,7 @@ jobs:
     needs: build-binaries
     name: Test Version Matches Release
     strategy:
+      fail-fast: true
       matrix:
         os: [ubuntu-20.04]
         network: [mainnet]
@@ -386,7 +382,6 @@ jobs:
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          set -x
           chmod 755 $TEST_BIN_FILENAME
           chmod 755 $REF_BIN_FILENAME
       - name: Start Test Node
@@ -489,7 +484,6 @@ jobs:
           fetch-depth: 0
       - name: Full Release?
         run: |
-          set -x
           is_full_release=$([[ "$NEW_RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] && \
             echo 'true' || echo 'false')
           echo "is_full_release: $is_full_release"
@@ -565,7 +559,6 @@ jobs:
         id: get-runtimes-info
         working-directory: /tmp
         run: |
-          set -x
           runtime_filename_rococo=${{needs.wait-for-all-builds.outputs.runtime_filename_rococo}}
           runtime_info_rococo=$(subwasm info $runtime_filename_rococo | sed -Ez '$ s/\n+$//' | tr '\n' '|')
           echo "runtime_info_rococo=$runtime_info_rococo" >> $GITHUB_OUTPUT
@@ -575,7 +568,6 @@ jobs:
       - name: Generate Release Notes
         working-directory: tools/ci/release-notes
         run: |
-          set -x
           ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' \
             '${{steps.sanitize-changelog.outputs.sanitized}}' \
             '${{steps.get-runtimes-info.outputs.runtime_info_rococo}}' \
@@ -595,8 +587,6 @@ jobs:
         if: env.IS_FULL_RELEASE == 'true'
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
-          name: "[Release Candidate] ${{env.NEW_RELEASE_TAG}}"
-          prerelease: true
           body_path: tools/ci/release-notes/release-notes.md
           files: |
             /tmp/frequency*.*
@@ -624,6 +614,7 @@ jobs:
     needs: wait-for-all-builds
     name: Release ${{matrix.arch}} Node Docker Image for ${{matrix.network}}
     strategy:
+      fail-fast: true
       matrix:
         arch: [amd64]
         network: [rococo, mainnet]
@@ -692,6 +683,7 @@ jobs:
     needs: wait-for-all-builds
     name: Release Dev Docker Image for ${{matrix.node}}
     strategy:
+      fail-fast: true
       matrix:
         network: [local]
         arch: [amd64]
@@ -752,24 +744,22 @@ jobs:
           repository: ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}
           readme-filepath: docker/${{matrix.node}}.overview.md
 
+  # Published to https://libertydsnp.github.io/frequency/
   release-rust-developer-docs:
     needs: wait-for-all-builds
     name: Release Rust Developer Docs
     runs-on: ubuntu-20.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-      - name: Download Docs
-        id: download
-        uses: actions/download-artifact@v3
-        with:
-          name: rust-developer-docs-${{github.run_id}}
-          path: ./target/doc
-      - name: Deploy Frequency docs to gh-pages
-        uses: JamesIves/github-pages-deploy-action@ba1486788b0490a235422264426c45848eac35c6
-        with:
-          branch: gh-pages
-          folder: ./target/doc
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
 
   release-js-api-augment:
     needs: wait-for-all-builds

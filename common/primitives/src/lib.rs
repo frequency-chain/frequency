@@ -11,6 +11,8 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
+/// macros
+pub mod macros;
 /// Structs and traits for the Messages pallet.
 pub mod messages;
 /// Structs and traits for the MSA pallet.
@@ -19,6 +21,8 @@ pub mod msa;
 pub mod node;
 /// Structs and traits for parquet
 pub mod parquet;
+/// Structs and traits for better RPCs
+pub mod rpc;
 /// Structs and traits for the Schema pallet
 pub mod schema;
 /// Types for the Stateful Storage pallet

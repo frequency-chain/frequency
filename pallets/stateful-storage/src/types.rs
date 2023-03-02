@@ -1,6 +1,7 @@
 use crate::Config;
 use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::{
+	msa::MessageSourceId,
 	schema::SchemaId,
 	stateful_storage::{PageHash, PageId},
 };
@@ -16,6 +17,13 @@ use sp_std::{
 };
 use twox_hash::XxHash32;
 
+/// pallet storage prefix
+pub const PALLET_STORAGE_PREFIX: &[u8] = b"stateful-storage";
+/// itemized storage prefix
+pub const ITEMIZED_STORAGE_PREFIX: &[u8] = b"itemized";
+/// paginated storage prefix
+pub const PAGINATED_STORAGE_PREFIX: &[u8] = b"paginated";
+
 /// MultipartKey type for Itemized storage
 pub type ItemizedKey = (SchemaId,);
 /// MultipartKey type for Paginated storage (full key)
@@ -30,7 +38,9 @@ pub type PaginatedPage<T> = Page<<T as Config>::MaxPaginatedPageSizeBytes>;
 /// Defines the actions that can be applied to an Itemized storage
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, PartialOrd, Ord)]
 pub enum ItemAction {
+	/// Adding new Item into page
 	Add { data: Vec<u8> },
+	/// removing a new item by index number. Index number starts from 0
 	Delete { index: u16 },
 }
 
@@ -42,12 +52,87 @@ pub struct ItemHeader {
 	pub payload_len: u16,
 }
 
+/// Errors dedicated to parsing or modifying pages
 #[derive(Debug, PartialEq)]
 pub enum PageError {
 	ErrorParsing(&'static str),
 	InvalidAction(&'static str),
 	ArithmeticOverflow,
 	PageSizeOverflow,
+}
+
+/// Payload containing all necessary fields to verify Itemized related signatures
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[scale_info(skip_type_params(T))]
+pub struct ItemizedSignaturePayload<T: Config> {
+	/// Message Source Account identifier
+	#[codec(compact)]
+	pub msa_id: MessageSourceId,
+
+	/// Schema id of this storage
+	#[codec(compact)]
+	pub schema_id: SchemaId,
+
+	/// Hash of targeted page to avoid race conditions
+	#[codec(compact)]
+	pub target_hash: PageHash,
+
+	/// The block number at which the signed proof will expire
+	pub expiration: T::BlockNumber,
+
+	/// actions to apply to storage
+	pub actions: BoundedVec<ItemAction, <T as Config>::MaxItemizedActionsCount>,
+}
+
+/// Payload containing all necessary fields to verify signatures to upsert a Paginated storage
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[scale_info(skip_type_params(T))]
+pub struct PaginatedUpsertSignaturePayload<T: Config> {
+	/// Message Source Account identifier
+	#[codec(compact)]
+	pub msa_id: MessageSourceId,
+
+	/// Schema id of this storage
+	#[codec(compact)]
+	pub schema_id: SchemaId,
+
+	/// Page id of this storage
+	#[codec(compact)]
+	pub page_id: PageId,
+
+	/// Hash of targeted page to avoid race conditions
+	#[codec(compact)]
+	pub target_hash: PageHash,
+
+	/// The block number at which the signed proof will expire
+	pub expiration: T::BlockNumber,
+
+	/// payload to update the page with
+	pub payload: BoundedVec<u8, <T as Config>::MaxPaginatedPageSizeBytes>,
+}
+
+/// Payload containing all necessary fields to verify signatures to delete a Paginated storage
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[scale_info(skip_type_params(T))]
+pub struct PaginatedDeleteSignaturePayload<T: Config> {
+	/// Message Source Account identifier
+	#[codec(compact)]
+	pub msa_id: MessageSourceId,
+
+	/// Schema id of this storage
+	#[codec(compact)]
+	pub schema_id: SchemaId,
+
+	/// Page id of this storage
+	#[codec(compact)]
+	pub page_id: PageId,
+
+	/// Hash of targeted page to avoid race conditions
+	#[codec(compact)]
+	pub target_hash: PageHash,
+
+	/// The block number at which the signed proof will expire
+	pub expiration: T::BlockNumber,
 }
 
 /// A generic page of data which supports both Itemized and Paginated
@@ -73,6 +158,9 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	}
 
 	pub fn get_hash(&self) -> PageHash {
+		if self.is_empty() {
+			return PageHash::default()
+		}
 		let mut hasher = XxHash32::with_seed(0);
 		self.hash(&mut hasher);
 		hasher.finish() as PageHash

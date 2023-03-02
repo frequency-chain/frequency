@@ -34,6 +34,7 @@ sp-weights = { git = "https://github.com/paritytech/substrate", default-features
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 pallet-collective = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 pallet-democracy = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
+pallet-multisig = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 pallet-preimage = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 pallet-scheduler = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
@@ -57,6 +58,7 @@ std = [
 	"pallet-democracy/std",
 	"pallet-collator-selection/std",
 	"pallet-collective/std",
+	"pallet-multisig/std",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
@@ -64,6 +66,7 @@ try-runtime = [
 	"pallet-collator-selection/try-runtime",
 	"pallet-collective/try-runtime",
 	"pallet-democracy/try-runtime",
+	"pallet-multisig/try-runtime",
 	"pallet-preimage/try-runtime",
 	"pallet-scheduler/try-runtime",
 	"pallet-treasury/try-runtime",

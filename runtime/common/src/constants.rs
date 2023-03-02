@@ -132,6 +132,8 @@ parameter_types! {
 pub type SchemasMinModelSizeBytes = ConstU32<8>;
 /// The maximum length of a schema model (in bytes)
 pub type SchemasMaxBytesBoundedVecLimit = ConstU32<65_500>;
+/// The maximum number of grants allowed per schema
+pub type MaxSchemaSettingsPerSchema = ConstU32<2>;
 // -end- Schemas Pallet ---
 
 // --- Orml Vesting Pallet ---
@@ -314,6 +316,8 @@ parameter_types! {
 	pub const MaxPaginatedPageId: u32 = 16;
 	/// The maximum number of actions in itemized actions
 	pub const MaxItemizedActionsCount: u32 = 5;
+	/// The number of blocks for Stateful mortality is 24 hours
+	pub const StatefulMortalityWindowSize: u32 = 14400;
 }
 // -end- Stateful Storage Pallet
 

@@ -10,6 +10,7 @@ ALL_EXTERNAL_PALLETS=( \
   pallet_collator_selection \
   pallet_collective \
   pallet_democracy \
+  pallet_multisig \
   pallet_preimage \
   pallet_scheduler \
   pallet_session \

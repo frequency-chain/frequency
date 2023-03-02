@@ -18,6 +18,7 @@ sp_api::mock_impl_runtime_apis! {
 					model: b"schema".to_vec(),
 					model_type: ModelType::AvroBinary,
 					payload_location: PayloadLocation::OnChain,
+					settings: Vec::new(),
 				}),
 				_ => None,
 			}

@@ -24,6 +24,7 @@ pub mod pallet_balances;
 pub mod pallet_collator_selection;
 pub mod pallet_collective;
 pub mod pallet_democracy;
+pub mod pallet_multisig;
 pub mod pallet_preimage;
 pub mod pallet_scheduler;
 pub mod pallet_session;
