@@ -215,53 +215,57 @@ pub fn stores_signature_and_increments_count() {
 
 		assert_eq!(
 			Some(SignatureRegistryPointer {
-				head: signature.clone(),
-				tail: signature.clone(),
+				newest: signature.clone(),
+				oldest: signature.clone(),
 				count: 1,
 			}),
 			<PayloadSignatureRegistryRingPointer<Test>>::get()
 		);
 
-		let tail: MultiSignature = signature.clone();
+		let oldest: MultiSignature = signature.clone();
 
-		// Expect that the head changes
+		// Expect that the newest changes
 		let signature_1 = generate_test_signature();
 		assert_ok!(Msa::register_signature(&signature_1, mortality_block.into()));
 
 		assert_eq!(
 			Some(SignatureRegistryPointer {
-				head: signature_1.clone(),
-				tail: signature.clone(),
+				newest: signature_1.clone(),
+				oldest: signature.clone(),
 				count: 2,
 			}),
 			<PayloadSignatureRegistryRingPointer<Test>>::get()
 		);
 
-		let mut head: MultiSignature = signature_1.clone();
+		let mut newest: MultiSignature = signature_1.clone();
 
 		// Fill up the registry
 		let limit: u32 = <Test as Config>::MaxSignaturesStored::get();
 		for _i in 2..limit {
 			let sig = &generate_test_signature();
 			assert_ok!(Msa::register_signature(sig, mortality_block.into()));
-			head = sig.clone();
+			newest = sig.clone();
 		}
 
 		assert_eq!(
-			Some(SignatureRegistryPointer { head: head.clone(), tail: tail.clone(), count: limit }),
+			Some(SignatureRegistryPointer {
+				newest: newest.clone(),
+				oldest: oldest.clone(),
+				count: limit
+			}),
 			<PayloadSignatureRegistryRingPointer<Test>>::get()
 		);
 
 		run_to_block((mortality_block + 1).into());
 
-		// Test that the next one changes the tail.
+		// Test that the next one changes the oldest signature.
 		let signature_n = generate_test_signature();
 		assert_ok!(Msa::register_signature(&signature_n, (mortality_block + 10).into()));
 
 		assert_eq!(
 			Some(SignatureRegistryPointer {
-				head: signature_n.clone(),
-				tail: signature_1.clone(),
+				newest: signature_n.clone(),
+				oldest: signature_1.clone(),
 				count: limit,
 			}),
 			<PayloadSignatureRegistryRingPointer<Test>>::get()

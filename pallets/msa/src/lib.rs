@@ -224,9 +224,9 @@ pub mod pallet {
 	///
 	/// The ring is forwardly linked. (Example has a ring size of 3)
 	/// - signature, pointer -> n = new signature
-	/// - 1,2 -> n,2 (tail)
+	/// - 1,2 -> n,2 (oldest)
 	/// - 2,3 -> 2,3
-	/// - 3,1 -> 3,n (head)
+	/// - 3,1 -> 3,n (newest)
 	///
 	/// ### Storage
 	/// - Key: Signature
@@ -1346,10 +1346,10 @@ impl<T: Config> Pallet<T> {
 	/// Adds a signature to the `PayloadSignatureRegistryRing`
 	/// Check that mortality_block is within bounds. If so, proceed and add the new entry.
 	/// Raises `SignatureAlreadySubmitted` if the signature exists in the registry.
-	/// Raises `SignatureRegistryLimitExceeded` if the tail of the ring has not yet expired.
+	/// Raises `SignatureRegistryLimitExceeded` if the oldest signature of the ring has not yet expired.
 	///
 	/// Example ring:
-	/// `1,2 (tail) -> 2,3 -> 3,4 -> 4,1 (head)`
+	/// `1,2 (oldest) -> 2,3 -> 3,4 -> 4,1 (newest)`
 	///
 	/// # Errors
 	/// * [`Error::ProofNotYetValid`]
@@ -1376,33 +1376,33 @@ impl<T: Config> Pallet<T> {
 		// Get the current pointer, or if this is the initialization, generate an empty pointer
 		let pointer =
 			PayloadSignatureRegistryRingPointer::<T>::get().unwrap_or(SignatureRegistryPointer {
-				head: signature.clone(),
-				tail: signature.clone(),
+				newest: signature.clone(),
+				oldest: signature.clone(),
 				count: 0,
 			});
 
-		// Default to the current tail in case we are still filling up
-		let mut new_tail: MultiSignature = pointer.tail.clone();
+		// Default to the current oldest signature in case we are still filling up
+		let mut oldest: MultiSignature = pointer.oldest.clone();
 
 		// We are now wanting to overwrite prior signatures
 		let is_ring_buffer_full: bool = pointer.count == T::MaxSignaturesStored::get().unwrap_or(0);
 
-		// Overwrite oldest signature, update tail
+		// Maybe remove the oldest signature and update the oldest
 		if is_ring_buffer_full {
 			<PayloadSignatureRegistryRing<T>>::try_mutate(
-				pointer.tail,
+				pointer.oldest,
 				|maybe_block_and_next_oldest_pointer| -> DispatchResult {
 					match maybe_block_and_next_oldest_pointer {
-						// Loop Complete, remove and remember the new tail value
-						Some((expire_block_number, tail)) => {
+						// Loop Complete, remove and remember the next_oldest value
+						Some((expire_block_number, next_oldest)) => {
 							// check
 							ensure!(
 								current_block.gt(expire_block_number),
 								Error::<T>::SignatureRegistryLimitExceeded
 							);
 
-							// Move the tail to the next oldest signature
-							new_tail = tail.clone();
+							// Move the oldest in the ring to the next oldest signature
+							oldest = next_oldest.clone();
 
 							// Remove this data point
 							*maybe_block_and_next_oldest_pointer = None;
@@ -1418,37 +1418,37 @@ impl<T: Config> Pallet<T> {
 			)?;
 		}
 
-		// Update old head
+		// Update the prior newest
 		// We could remove this > 0, but then we'd have to be OK with the None not failing
 		if pointer.count > 0 {
 			<PayloadSignatureRegistryRing<T>>::try_mutate(
-				pointer.head,
-				|maybe_old_head| -> DispatchResult {
-					match maybe_old_head {
-						Some(old_head) => {
-							// Update the old head with a pointer to the new head
-							*maybe_old_head = Some((old_head.0, signature.clone()));
+				pointer.newest,
+				|maybe_prior_newest| -> DispatchResult {
+					match maybe_prior_newest {
+						Some(prior_newest) => {
+							// Update the prior newest with a pointer to the newest instead of the prior oldest
+							*maybe_prior_newest = Some((prior_newest.0, signature.clone()));
 
 							Ok(())
 						},
-						// If we don't have an old head, that is very strange
+						// If we don't have an prior, that is very strange
 						None => fail!("Missing data from the Signature Registry!"),
 					}
 				},
 			)?;
 		}
 
-		// Create new head
+		// Add the newest signature to complete the ring
 		<PayloadSignatureRegistryRing<T>>::set(
 			signature,
-			Some((signature_expires_at, new_tail.clone())),
+			Some((signature_expires_at, oldest.clone())),
 		);
 
 		PayloadSignatureRegistryRingPointer::<T>::put(SignatureRegistryPointer {
-			// The count doesn't change if we have a new tail because the buffer is full
+			// The count doesn't change if buffer is full
 			count: if is_ring_buffer_full { pointer.count } else { pointer.count + 1 },
-			head: signature.clone(),
-			tail: new_tail,
+			newest: signature.clone(),
+			oldest,
 		});
 
 		Ok(())
