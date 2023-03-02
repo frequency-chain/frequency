@@ -57,7 +57,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
-	ensure, fail, log,
+	ensure, log,
 	pallet_prelude::*,
 	traits::IsSubType,
 };
@@ -396,8 +396,11 @@ pub mod pallet {
 		/// Attempted to request validity of schema permission or delegation in the future.
 		CannotPredictValidityPastCurrentBlock,
 
-		/// Attempted to add a new signature to a full virtual signature registration bucket
+		/// Attempted to add a new signature to a full signature registry
 		SignatureRegistryLimitExceeded,
+
+		/// Attempted to add a new signature to a corrupt signature registry
+		SignatureRegistryCorrupted,
 	}
 
 	#[pallet::call]
@@ -1389,59 +1392,36 @@ impl<T: Config> Pallet<T> {
 
 		// Maybe remove the oldest signature and update the oldest
 		if is_ring_buffer_full {
-			<PayloadSignatureRegistryRing<T>>::try_mutate(
-				pointer.oldest,
-				|maybe_block_and_next_oldest_pointer| -> DispatchResult {
-					match maybe_block_and_next_oldest_pointer {
-						// Loop Complete, remove and remember the next_oldest value
-						Some((expire_block_number, next_oldest)) => {
-							// check
-							ensure!(
-								current_block.gt(expire_block_number),
-								Error::<T>::SignatureRegistryLimitExceeded
-							);
+			let (expire_block_number, next_oldest) =
+				Self::get_payload_signature_registry(pointer.oldest.clone())
+					.ok_or(Error::<T>::SignatureRegistryCorrupted)?;
 
-							// Move the oldest in the ring to the next oldest signature
-							oldest = next_oldest.clone();
+			ensure!(
+				current_block.gt(&expire_block_number),
+				Error::<T>::SignatureRegistryLimitExceeded
+			);
 
-							// Remove this data point
-							*maybe_block_and_next_oldest_pointer = None;
+			// Move the oldest in the ring to the next oldest signature
+			oldest = next_oldest.clone();
 
-							Ok(())
-						},
-						// This shouldn't happen unless the MaxSignaturesStored is 0 or 1.
-						_ => fail!(
-							"Missing data from the Signature Registry or MaxSignaturesStored <= 1"
-						),
-					}
-				},
-			)?;
+			<PayloadSignatureRegistryRing<T>>::remove(pointer.oldest);
 		}
 
 		// Update the prior newest
 		// We could remove this > 0, but then we'd have to be OK with the None not failing
 		if pointer.count > 0 {
-			<PayloadSignatureRegistryRing<T>>::try_mutate(
-				pointer.newest,
-				|maybe_prior_newest| -> DispatchResult {
-					match maybe_prior_newest {
-						Some(prior_newest) => {
-							// Update the prior newest with a pointer to the newest instead of the prior oldest
-							*maybe_prior_newest = Some((prior_newest.0, signature.clone()));
+			let mut prior_newest = Self::get_payload_signature_registry(pointer.newest.clone())
+				.ok_or(Error::<T>::SignatureRegistryCorrupted)?;
 
-							Ok(())
-						},
-						// If we don't have an prior, that is very strange
-						None => fail!("Missing data from the Signature Registry!"),
-					}
-				},
-			)?;
+			prior_newest.1 = signature.clone();
+
+			<PayloadSignatureRegistryRing<T>>::insert(pointer.newest, prior_newest);
 		}
 
 		// Add the newest signature to complete the ring
-		<PayloadSignatureRegistryRing<T>>::set(
+		<PayloadSignatureRegistryRing<T>>::insert(
 			signature,
-			Some((signature_expires_at, oldest.clone())),
+			(signature_expires_at, oldest.clone()),
 		);
 
 		PayloadSignatureRegistryRingPointer::<T>::put(SignatureRegistryPointer {
