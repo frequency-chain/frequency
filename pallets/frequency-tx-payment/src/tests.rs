@@ -484,6 +484,10 @@ fn withdraw_fee_returns_custom_error_when_the_account_key_is_not_associated_with
 			let expected_err = TransactionValidityError::Invalid(InvalidTransaction::Custom(
 				ChargeFrqTransactionPaymentError::InvalidMsaKey as u8,
 			));
-			assert_withdraw_fee_result(account_id_not_associated_with_msa, call, Some(expected_err));
+			assert_withdraw_fee_result(
+				account_id_not_associated_with_msa,
+				call,
+				Some(expected_err),
+			);
 		});
 }
