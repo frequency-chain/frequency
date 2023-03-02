@@ -4,6 +4,7 @@ export RUST_LOG=info
 THIS_DIR=$( dirname -- "$0"; )
 PROJECT="${THIS_DIR}/.."
 PROFILE=production
+PROFILE_DIR=${PROFILE}
 ALL_EXTERNAL_PALLETS=( \
   orml_vesting \
   pallet_balances \
@@ -33,6 +34,33 @@ PALLET=
 
 function exit_err() { echo "❌ 💔" ; exit 1; }
 
+function usage() {
+  cat << EOI
+  Usage: $( basename ${1} ) [-d <dir>] [-p <pallet] [-s] [-t <profile>] [-v]
+         $( basename ${1} ) [-d <dir>] [-s] [-t] [-v] [<pallet1> [... <palletN>]]
+
+         -d <dir>     Sets top-level repository directory to <dir>.
+                      Default: parent directory of script
+
+        -h            Display this message and exit.
+
+        -p <pallet>   Run benchmarks for a single pallet (or overhead).
+                      Default: Run all benchmarks
+                      (For backwards compatibility; prefer the <pallet1> .. <palletN> variant)
+
+        -s            Skip the build step; use existing binary for the current profile
+
+        -t <profile>  Use '--profile=<profile>' in the build step & for locating the
+                      resulting binary. Valid targets are: dev,production,release
+
+        -v            Verbose mode. All shell commands are echoed.
+
+        <palletX>     To run for multiple specific pallets. If no pallets or '-p' option
+                      specified, will run all benchmarks.
+
+EOI
+}
+
 function is_external_pallet() {
   for p in "${ALL_EXTERNAL_PALLETS[@]}"
   do
@@ -57,11 +85,15 @@ function is_custom_pallet() {
   return 1
 }
 
-while getopts 'd:p:st:v' flag; do
+while getopts 'dh:p:st:v' flag; do
   case "${flag}" in
     d)
       # Set project directory
       PROJECT="${OPTARG}"
+      ;;
+    h)
+      usage ${0}
+      exit 0
       ;;
     p)
       # Single pallet run
@@ -74,10 +106,13 @@ while getopts 'd:p:st:v' flag; do
     t)
       # Set target profile
       case ${OPTARG} in
-        production|release|debug)
+        production|release|dev)
           PROFILE="${OPTARG}"
+          # For historical reasons, cargo puts dev builds in the "debug" directory
+          PROFILE_DIR=${PROFILE/dev/debug}
           ;;
         *) echo "Unrecognized target profile: ${OPTARG}"
+           usage ${0}
            exit_err
            ;;
       esac
@@ -88,12 +123,14 @@ while getopts 'd:p:st:v' flag; do
       ;;
     ?)
       # Unrecognized option. getopts will log the error
-      exit 1
+      usage ${0}
+      exit_err
       ;;
     *)
       # Exit early.
       echo "Bad options. Check Script."
-      exit 1
+      usage ${0}
+      exit_err
       ;;
   esac
 done
@@ -144,7 +181,7 @@ then
   OVERHEAD=overhead
 fi
 
-RUNTIME=${PROJECT}/target/${PROFILE}/frequency
+RUNTIME=${PROJECT}/target/${PROFILE_DIR}/frequency
 BENCHMARK="${RUNTIME} benchmark "
 
 echo "Running benchmarks for the following pallets:\
@@ -171,7 +208,9 @@ function run_benchmark() {
 
 if [[ ${skip_build} == false ]]
 then
-  cargo build --profile=${PROFILE} --features runtime-benchmarks --features all-frequency-features --workspace || exit_err
+  CMD="cargo build --profile=${PROFILE} --features=runtime-benchmarks,all-frequency-features --workspace"
+  echo ${CMD}
+  ${CMD} || exit_err
 fi
 
 for external_pallet in "${EXTERNAL_PALLETS[@]}"; do
