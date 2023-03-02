@@ -224,9 +224,9 @@ pub mod pallet {
 	///
 	/// The ring is forwardly linked. (Example has a ring size of 3)
 	/// - signature, pointer -> n = new signature
-	/// - 1,2 -> n,2
+	/// - 1,2 -> n,2 (tail)
 	/// - 2,3 -> 2,3
-	/// - 3,1 -> 3,n
+	/// - 3,1 -> 3,n (head)
 	///
 	/// ### Storage
 	/// - Key: Signature
@@ -1348,6 +1348,9 @@ impl<T: Config> Pallet<T> {
 	/// Raises `SignatureAlreadySubmitted` if the signature exists in the registry.
 	/// Raises `SignatureRegistryLimitExceeded` if the tail of the ring has not yet expired.
 	///
+	/// Example ring:
+	/// `1,2 (tail) -> 2,3 -> 3,4 -> 4,1 (head)`
+	///
 	/// # Errors
 	/// * [`Error::ProofNotYetValid`]
 	/// * [`Error::ProofHasExpired`]
@@ -1382,9 +1385,7 @@ impl<T: Config> Pallet<T> {
 		let mut new_tail: MultiSignature = pointer.tail.clone();
 
 		// We are now wanting to overwrite prior signatures
-		// Do we need this > 0?
-		let is_ring_buffer_full: bool =
-			pointer.count > 0 && pointer.count == T::MaxSignaturesStored::get().unwrap_or(0);
+		let is_ring_buffer_full: bool = pointer.count == T::MaxSignaturesStored::get().unwrap_or(0);
 
 		// Overwrite oldest signature, update tail
 		if is_ring_buffer_full {
@@ -1393,10 +1394,10 @@ impl<T: Config> Pallet<T> {
 				|maybe_block_and_next_oldest_pointer| -> DispatchResult {
 					match maybe_block_and_next_oldest_pointer {
 						// Loop Complete, remove and remember the new tail value
-						Some((test_block, tail)) => {
+						Some((expire_block_number, tail)) => {
 							// check
 							ensure!(
-								current_block.gt(test_block),
+								current_block.gt(expire_block_number),
 								Error::<T>::SignatureRegistryLimitExceeded
 							);
 
