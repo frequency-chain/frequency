@@ -167,9 +167,6 @@ impl pallet_msa::Config for Test {
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
 	type MortalityWindowSize = ConstU32<100>;
-	type MaxSignaturesPerBucket = ConstU32<4000>;
-	type NumberOfBuckets = ConstU32<2>;
-	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<8000>;
 	// The proposal type
 	type Proposal = RuntimeCall;

@@ -179,6 +179,9 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
+/// Migrations for Frequency
+pub type Migrations = (remove_sudo::RemoveSudo, pallet_msa::migration::Migration<Runtime>);
+
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
 	Runtime,
@@ -186,7 +189,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	remove_sudo::RemoveSudo,
+	Migrations,
 >;
 
 // ==============================================
@@ -422,7 +425,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 18,
+	spec_version: 19,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -533,10 +536,6 @@ impl pallet_msa::Config for Runtime {
 	type SchemaValidator = Schemas;
 	// The number of blocks per virtual bucket
 	type MortalityWindowSize = MSAMortalityWindowSize;
-	// The maximum number of signatures per virtual bucket
-	type MaxSignaturesPerBucket = MSAMaxSignaturesPerBucket;
-	// The total number of virtual buckets
-	type NumberOfBuckets = MSANumberOfBuckets;
 	// The maximum number of signatures that can be stored in the payload signature registry
 	type MaxSignaturesStored = MSAMaxSignaturesStored;
 	// The proposal type

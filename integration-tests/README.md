@@ -52,3 +52,26 @@ accessed like so:
         const msaId = targetEvent.data.msaId;
     }
     ```
+
+Load Testing
+==================
+Load tests are located in the `load-tests/` directory.
+The tests in that folder are NOT run with a normal test run.
+It is configured to run in manual-sealing mode only. To run the tests, do the following:
+
+```
+make integration-load-test
+```
+
+That make command does approximately the following:
+
+1. Start the chain in manual sealing mode
+```
+make start-manual
+```
+
+2. Run tests
+```
+cd integration-tests
+npm run test:load
+```

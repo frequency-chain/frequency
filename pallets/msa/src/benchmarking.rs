@@ -213,27 +213,6 @@ benchmarks! {
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
 	}
 
-	on_initialize {
-		// we should not need to max out storage for this benchmark, see:
-		// https://substrate.stackexchange.com/a/4430/2060
-		let m in 1 .. T::MaxSignaturesPerBucket::get();
-		for j in 0 .. m {
-			let mortality_block = 49 as u32;
-			let mut data = [0u8; 64];
-			data[0..8].copy_from_slice(&(m, j).encode());
-			let multi_sig = MultiSignature::Sr25519(sp_core::sr25519::Signature::from_raw(data));
-			assert_ok!(Msa::<T>::register_signature(&multi_sig, T::BlockNumber::from(mortality_block)));
-		}
-
-		let bucket_zero_iter = PayloadSignatureRegistry::<T>::iter_prefix(T::BlockNumber::from(0u32));
-		assert_eq!(bucket_zero_iter.count(), m as usize);
-	}: {
-		Msa::<T>::on_initialize(100u32.into());
-	} verify {
-		let bucket_zero_iter = PayloadSignatureRegistry::<T>::iter_prefix(T::BlockNumber::from(0u32));
-		assert_eq!(bucket_zero_iter.count(), 0 as usize);
-	}
-
 	grant_schema_permissions {
 		let s in 0 .. T::MaxSchemaGrantsPerDelegation::get();
 
