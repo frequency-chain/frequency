@@ -230,7 +230,7 @@ pub fn create_and_sign_add_provider_payload(
 	delegator_pair: sr25519::Pair,
 	provider_msa: MessageSourceId,
 ) -> (MultiSignature, AddProvider) {
-	create_and_sign_add_provider_payload_with_schemas(delegator_pair, provider_msa, None)
+	create_and_sign_add_provider_payload_with_schemas(delegator_pair, provider_msa, None, 10)
 }
 
 /// Creates and signs an `AddProvider` struct using the provided delegator keypair, provider MSA and schema ids
@@ -240,8 +240,8 @@ pub fn create_and_sign_add_provider_payload_with_schemas(
 	delegator_pair: sr25519::Pair,
 	provider_msa: MessageSourceId,
 	schema_ids: Option<Vec<SchemaId>>,
+	expiration: BlockNumber,
 ) -> (MultiSignature, AddProvider) {
-	let expiration: BlockNumber = 10;
 	let add_provider_payload = AddProvider::new(provider_msa, schema_ids, expiration);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 	let signature: MultiSignature = delegator_pair.sign(&encode_add_provider_data).into();
