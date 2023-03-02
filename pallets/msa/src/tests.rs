@@ -693,7 +693,9 @@ pub fn grant_delegation_changes_schema_permissions() {
 			Vec::from("Foo")
 		));
 
-		System::set_block_number(1);
+		let block_expiration: BlockNumber = 110;
+
+		System::set_block_number(90);
 		set_schema_count::<Test>(10);
 
 		// Create delegation without any schema permissions
@@ -702,6 +704,7 @@ pub fn grant_delegation_changes_schema_permissions() {
 				delegator_pair.clone(),
 				provider_msa,
 				None,
+				block_expiration,
 			);
 
 		assert_ok!(Msa::grant_delegation(
@@ -727,12 +730,13 @@ pub fn grant_delegation_changes_schema_permissions() {
 			.into(),
 		);
 
-		// Grant delegation w/schemas 1, 2, 3, and 4 at current block 1
+		// Grant delegation w/schemas 1, 2, and 3 (implies block 0)
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload_with_schemas(
 				delegator_pair.clone(),
 				provider_msa,
-				Some(vec![1, 2, 3, 4]),
+				Some(vec![1, 2, 3]),
+				block_expiration,
 			);
 
 		assert_ok!(Msa::grant_delegation(
@@ -746,20 +750,20 @@ pub fn grant_delegation_changes_schema_permissions() {
 		assert_ok!(sp.try_insert(1u16, 0u64));
 		assert_ok!(sp.try_insert(2u16, 0u64));
 		assert_ok!(sp.try_insert(3u16, 0u64));
-		assert_ok!(sp.try_insert(4u16, 0u64));
 
 		let expected = Delegation { revoked_at: 0, schema_permissions: sp };
 
 		assert_eq!(Msa::get_delegation(delegator, provider), Some(expected));
 
-		System::set_block_number(2);
-		// Grant delegation w/schemas 3, 4, 5, and 6.
-		// This should add 5 and 6 w/block 0 and revoke 1 and 2 at block 2.
+		let revoked_block_number: u64 = 100;
+		System::set_block_number(revoked_block_number);
+		// Revoke all schema ids.
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload_with_schemas(
 				delegator_pair.clone(),
 				provider_msa,
-				Some(vec![3, 4, 5, 6]),
+				None,
+				block_expiration,
 			);
 
 		assert_ok!(Msa::grant_delegation(
@@ -770,24 +774,22 @@ pub fn grant_delegation_changes_schema_permissions() {
 		));
 
 		let mut sp = BoundedBTreeMap::<SchemaId, u64, MaxSchemaGrantsPerDelegation>::new();
-		assert_ok!(sp.try_insert(1u16, 2u64)); // schema id 1 revoked at block 2
-		assert_ok!(sp.try_insert(2u16, 2u64)); // schema id 2 revoked at block 2
-		assert_ok!(sp.try_insert(3u16, 0u64));
-		assert_ok!(sp.try_insert(4u16, 0u64));
-		assert_ok!(sp.try_insert(5u16, 0u64));
-		assert_ok!(sp.try_insert(6u16, 0u64));
+		assert_ok!(sp.try_insert(1u16, revoked_block_number)); // schema id 1 revoked at revoked_block_number
+		assert_ok!(sp.try_insert(2u16, revoked_block_number)); // schema id 2 revoked at revoked_block_number
+		assert_ok!(sp.try_insert(3u16, revoked_block_number)); // schema id 3 revoked at revoked_block_number
 
 		let expected = Delegation { revoked_at: 0, schema_permissions: sp };
 
 		assert_eq!(Msa::get_delegation(delegator, provider), Some(expected));
 
-		System::set_block_number(5);
-		// Grant 1, 3, 6
+		System::set_block_number(revoked_block_number + 1);
+		// Grant 2, 3, 4
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload_with_schemas(
 				delegator_pair.clone(),
 				provider_msa,
-				Some(vec![1, 3, 6]),
+				Some(vec![2, 3, 4]),
+				block_expiration,
 			);
 
 		assert_ok!(Msa::grant_delegation(
@@ -798,12 +800,10 @@ pub fn grant_delegation_changes_schema_permissions() {
 		));
 
 		let mut sp = BoundedBTreeMap::<SchemaId, u64, MaxSchemaGrantsPerDelegation>::new();
-		assert_ok!(sp.try_insert(1u16, 2u64)); // schema id 1 should stay revoked at block 2
-		assert_ok!(sp.try_insert(2u16, 2u64)); // schema id 2 should stay revoked at block 2
-		assert_ok!(sp.try_insert(3u16, 0u64)); // leave alone
-		assert_ok!(sp.try_insert(4u16, 5u64)); // revoke
-		assert_ok!(sp.try_insert(5u16, 5u64)); // revoke
-		assert_ok!(sp.try_insert(6u16, 0u64)); // leave alone
+		assert_ok!(sp.try_insert(1u16, 100u64)); // schema id 1 revoked at block 100
+		assert_ok!(sp.try_insert(2u16, 0u64)); // schema id 2 granted (block 0)
+		assert_ok!(sp.try_insert(3u16, 0u64)); // schema id 3 granted (block 0)
+		assert_ok!(sp.try_insert(4u16, 0u64)); // schema id 4 granted (block 0)
 
 		let expected = Delegation { revoked_at: 0, schema_permissions: sp };
 		assert_eq!(Msa::get_delegation(delegator, provider), Some(expected));

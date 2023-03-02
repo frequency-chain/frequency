@@ -79,7 +79,7 @@ use common_primitives::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
 		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator,
 	},
-	node::ProposalProvider,
+	node::{BlockNumber, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
 
@@ -1146,6 +1146,7 @@ impl<T: Config> Pallet<T> {
 
 			// Create revoke and insert lists
 			let mut revoke_ids: Vec<SchemaId> = Vec::new();
+			let mut update_ids: Vec<SchemaId> = Vec::new();
 			let mut insert_ids: Vec<SchemaId> = Vec::new();
 
 			let existing_keys = delegation.schema_permissions.keys().into_iter();
@@ -1164,6 +1165,8 @@ impl<T: Config> Pallet<T> {
 			for schema_id in &schema_ids {
 				if !delegation.schema_permissions.contains_key(&schema_id) {
 					insert_ids.push(*schema_id);
+				} else {
+					update_ids.push(*schema_id);
 				}
 			}
 
@@ -1174,6 +1177,13 @@ impl<T: Config> Pallet<T> {
 				delegation,
 				revoke_ids,
 				current_block,
+			)?;
+
+			// Update any that are in the list but are not new
+			PermittedDelegationSchemas::<T>::try_get_mut_schemas(
+				delegation,
+				update_ids,
+				T::BlockNumber::zero(),
 			)?;
 
 			// Insert any new ones that are not in the existing list
