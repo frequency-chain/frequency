@@ -2,7 +2,7 @@ use super::*;
 use crate as pallet_capacity;
 use crate::mock::*;
 use frame_support::{assert_noop, assert_ok};
-use testing_utils::{create_capacity_account_and_fund, register_provider};
+use testing_utils::{create_capacity_account_and_fund, register_provider, staking_events};
 
 struct TestCase<T: Config> {
 	name: &'static str,
@@ -306,6 +306,12 @@ fn impl_withdraw_is_successful() {
 		);
 
 		assert_ok!(Capacity::withdraw(target_msa_id, 5u32.into()));
+		let events = staking_events();
+
+		assert_eq!(
+			events.last().unwrap(),
+			&Event::CapacityWithdrawn { msa_id: target_msa_id, amount: 5u32.into() }
+		);
 
 		let mut capacity_details =
 			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber>::default();
