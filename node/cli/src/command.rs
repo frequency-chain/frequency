@@ -5,6 +5,7 @@ use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::BenchmarkCmd;
 use log::info;
 
+use crate::benchmarking::{inherent_benchmark_data, RemarkBuilder};
 use common_primitives::node::Block;
 use frequency_service::{
 	chain_spec,
@@ -332,7 +333,18 @@ pub fn run() -> Result<()> {
 
 					cmd.run(config, partials.client.clone(), db, storage)
 				}),
-				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
+				BenchmarkCmd::Overhead(cmd) => runner.sync_run(|config| {
+					let partials = new_partial(&config, false)?;
+					let ext_builder = RemarkBuilder::new(partials.client.clone());
+
+					cmd.run(
+						config,
+						partials.client,
+						inherent_benchmark_data()?,
+						Vec::new(),
+						&ext_builder,
+					)
+				}),
 				BenchmarkCmd::Machine(cmd) => runner.sync_run(|config| {
 					cmd.run(&config, frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE.clone())
 				}),
