@@ -110,21 +110,27 @@ mod tests {
 
 	#[test]
 	fn v1_can_migrate_with_data() {
-		new_test_ext().execute_with(|| {
-			assert_eq!(StorageVersion::get::<Pallet<T>>(), 0);
-
+		let mut ext = new_test_ext();
+		ext.execute_with(|| {
 			// Setup
 			v0::PayloadSignatureBucketCount::<T>::set(0, 100);
 			v0::PayloadSignatureBucketCount::<T>::set(1, 2);
-
-			let iter = v0::PayloadSignatureBucketCount::<T>::iter();
-			assert_eq!(iter.count(), 2);
 
 			v0::PayloadSignatureRegistry::<T>::set(
 				0,
 				MultiSignature::Sr25519(Alice.sign(b"foo")),
 				Some(12345),
 			);
+		});
+
+		// Commit the changes so we aren't just working with the overlay storage
+		ext.commit_all().unwrap();
+
+		ext.execute_with(|| {
+			assert_eq!(StorageVersion::get::<Pallet<T>>(), 0);
+
+			let iter = v0::PayloadSignatureBucketCount::<T>::iter();
+			assert_eq!(iter.count(), 2);
 
 			let iter = v0::PayloadSignatureRegistry::<T>::iter();
 			assert_eq!(iter.count(), 1);
@@ -140,20 +146,36 @@ mod tests {
 
 	#[test]
 	fn v1_can_migrate_with_lots_of_data() {
-		new_test_ext().execute_with(|| {
-			assert_eq!(StorageVersion::get::<Pallet<T>>(), 0);
-
-			// Setup
+		let mut ext = new_test_ext();
+		ext.execute_with(|| {
+			// Setup > 100 so it takes two loops
 			for i in 0..102 {
 				let msg = Alice.sign(format!("foo{}", i).as_bytes());
 				v0::PayloadSignatureRegistry::<T>::set(0, MultiSignature::Sr25519(msg), Some(i));
 			}
+		});
 
+		// Commit the changes so we aren't just working with the overlay storage
+		ext.commit_all().unwrap();
+
+		ext.execute_with(|| {
+			assert_eq!(StorageVersion::get::<Pallet<T>>(), 0);
 			let iter = v0::PayloadSignatureRegistry::<T>::iter();
 			assert_eq!(iter.count(), 102);
 
-			// Migrate and Check
+			// Migrate Once and Check
 
+			v1::migrate::<T>();
+			assert_eq!(StorageVersion::get::<Pallet<T>>(), 0);
+			let iter = v0::PayloadSignatureRegistry::<T>::iter();
+			assert_eq!(iter.count(), 2);
+		});
+
+		// Commit the changes so we aren't just working with the overlay storage
+		ext.commit_all().unwrap();
+
+		ext.execute_with(|| {
+			// Complete Migration
 			v1::migrate::<T>();
 			assert_eq!(StorageVersion::get::<Pallet<T>>(), 1);
 			let iter = v0::PayloadSignatureRegistry::<T>::iter();
