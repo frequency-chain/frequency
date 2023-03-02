@@ -1376,6 +1376,15 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::SignatureAlreadySubmitted
 		);
 
+		Self::enqueue_signature(signature, signature_expires_at, current_block)
+	}
+
+	/// Do the actual enqueuing into the ring storage and update the pointers
+	fn enqueue_signature(
+		signature: &MultiSignature,
+		signature_expires_at: T::BlockNumber,
+		current_block: T::BlockNumber,
+	) -> DispatchResult {
 		// Get the current pointer, or if this is the initialization, generate an empty pointer
 		let pointer =
 			PayloadSignatureRegistryRingPointer::<T>::get().unwrap_or(SignatureRegistryPointer {
