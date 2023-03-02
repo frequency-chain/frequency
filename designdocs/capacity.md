@@ -239,6 +239,20 @@ pub enum Event<T: Config> {
     /// An amount that was withdrawn.
     amount: BalanceOf<T>
   }
+
+  /// The Capacity epoch length was changed.
+  EpochLengthUpdated {
+    /// The new length of an epoch in blocks.
+    blocks: T::BlockNumber,
+  },
+
+  /// Capacity has been withdrawn from a MessageSourceId.
+  CapacityWithdrawn {
+    /// The MSA from which Capacity has been withdrawn.
+    msa_id: MessageSourceId,
+    /// The amount of Capacity withdrawn from MSA.
+    amount: BalanceOf<T>,
+  }
 }
 
 ```

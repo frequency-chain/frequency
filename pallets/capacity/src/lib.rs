@@ -250,6 +250,13 @@ pub mod pallet {
 			/// The new length of an epoch in blocks.
 			blocks: T::BlockNumber,
 		},
+		/// Capacity has been withdrawn from a MessageSourceId.
+		CapacityWithdrawn {
+			/// The MSA from which Capacity has been withdrawn.
+			msa_id: MessageSourceId,
+			/// The amount of Capacity withdrawn from MSA.
+			amount: BalanceOf<T>,
+		},
 	}
 
 	#[pallet::error]
@@ -601,6 +608,8 @@ impl<T: Config> Nontransferable for Pallet<T> {
 			.ok_or(Error::<T>::InsufficientBalance)?;
 
 		Self::set_capacity_for(msa_id, capacity_details);
+
+		Self::deposit_event(Event::CapacityWithdrawn { msa_id, amount });
 		Ok(())
 	}
 
