@@ -229,8 +229,7 @@ where
 		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
-		let fee =
-			pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, self.tip(call));
+		let fee = self.compute_fee(len as u32, info, call);
 
 		match call.is_sub_type() {
 			Some(Call::pay_with_capacity { call }) => {
@@ -266,6 +265,25 @@ where
 				.map(|i| (fee, InitialPayment::Token(i)))
 				.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
 			},
+		}
+	}
+
+	fn compute_fee(
+		&self,
+		len: u32,
+		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
+		call: &<T as frame_system::Config>::RuntimeCall,
+	) -> BalanceOf<T> {
+		let tip = self.tip(call);
+		match call.is_sub_type() {
+			Some(Call::pay_with_capacity { call, .. }) => {
+				println!("-----------call function {:?}", call);
+				// println!("----------------call dispatch info {:?}", call.get_dispatch_info());
+				pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip)
+			},
+			_ => {
+				pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip)	
+			}
 		}
 	}
 }
