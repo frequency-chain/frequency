@@ -398,13 +398,13 @@ traits Nontransferable {
   type Balance;
 
   /// The available Capacity for an MSA account.
-  fn available(msa_id: MessageSourceId) -> Result<Balance, DispatchError>;
+  fn balance(msa_id: MessageSourceId) -> Result<Balance, DispatchError>;
 
   /// Reduce the available Capacity of an MSA account.
-  fn reduce_available(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError>;
+  fn deduct(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError>;
 
   /// Increase the available Capacity for an MSA account.
-  fn increase_available(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError>;
+  fn deposit(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError>;
 }
 
 ```
