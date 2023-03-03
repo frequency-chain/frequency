@@ -417,10 +417,10 @@ fn charge_frq_transaction_payment_tip_is_some_amount_for_non_capacity_calls() {
 }
 
 pub fn assert_withdraw_fee_result(
+	account_id: <Test as frame_system::Config>::AccountId,
 	call: &<Test as Config>::RuntimeCall,
 	expected_err: Option<TransactionValidityError>,
 ) {
-	let account_id = 1u64;
 	let dispatch_info = DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
 
 	let call: &<Test as Config>::RuntimeCall =
@@ -451,17 +451,43 @@ fn withdraw_fee_allows_only_configured_capacity_calls() {
 		.base_weight(Weight::from_ref_time(5))
 		.build()
 		.execute_with(|| {
+			let account_id = 1u64;
 			let allowed_call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
 
 			let forbidden_call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer_all { dest: 2, keep_alive: false });
 
-			assert_withdraw_fee_result(allowed_call, None);
+			assert_withdraw_fee_result(account_id, allowed_call, None);
 
 			let expected_err = TransactionValidityError::Invalid(InvalidTransaction::Custom(
 				ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible as u8,
 			));
-			assert_withdraw_fee_result(forbidden_call, Some(expected_err));
+			assert_withdraw_fee_result(account_id, forbidden_call, Some(expected_err));
+		});
+}
+
+#[test]
+fn withdraw_fee_returns_custom_error_when_the_account_key_is_not_associated_with_an_msa() {
+	let balance_factor = 10;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			let account_id_not_associated_with_msa = 10u64;
+
+			let call: &<Test as Config>::RuntimeCall =
+				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+
+			let expected_err = TransactionValidityError::Invalid(InvalidTransaction::Custom(
+				ChargeFrqTransactionPaymentError::InvalidMsaKey as u8,
+			));
+			assert_withdraw_fee_result(
+				account_id_not_associated_with_msa,
+				call,
+				Some(expected_err),
+			);
 		});
 }
