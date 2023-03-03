@@ -64,7 +64,6 @@ pub trait WeightInfo {
 	fn create_provider() -> Weight;
 	fn create_provider_via_governance() -> Weight;
 	fn propose_to_be_provider() -> Weight;
-	fn grant_schema_permissions(s: u32, ) -> Weight;
 	fn revoke_schema_permissions(s: u32, ) -> Weight;
 }
 
@@ -167,16 +166,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_ref_time(29_287_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
-	}
-	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
-	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
-	fn grant_schema_permissions(s: u32, ) -> Weight {
-		Weight::from_ref_time(26_217_690 as u64)
-			// Standard Error: 7_621
-			.saturating_add(Weight::from_ref_time(90_448 as u64).saturating_mul(s as u64))
-			.saturating_add(T::DbWeight::get().reads(3 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
@@ -288,16 +277,6 @@ impl WeightInfo for () {
 		Weight::from_ref_time(29_287_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(4 as u64))
-	}
-	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
-	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
-	fn grant_schema_permissions(s: u32, ) -> Weight {
-		Weight::from_ref_time(26_217_690 as u64)
-			// Standard Error: 7_621
-			.saturating_add(Weight::from_ref_time(90_448 as u64).saturating_mul(s as u64))
-			.saturating_add(RocksDbWeight::get().reads(3 as u64))
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
