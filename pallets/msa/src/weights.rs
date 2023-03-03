@@ -64,7 +64,7 @@ pub trait WeightInfo {
 	fn create_provider() -> Weight;
 	fn create_provider_via_governance() -> Weight;
 	fn propose_to_be_provider() -> Weight;
-	fn  on_initialize(m: u32, ) -> Weight;
+	fn on_initialize(m: u32, ) -> Weight;
 	fn grant_schema_permissions(s: u32, ) -> Weight;
 	fn revoke_schema_permissions(s: u32, ) -> Weight;
 }

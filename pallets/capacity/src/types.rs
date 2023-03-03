@@ -179,7 +179,7 @@ where
 		self.total_capacity_issued = amount.checked_add(&self.total_capacity_issued)?;
 
 		// We do not touch last_replenished epoch here, because it would create a DoS vulnerability.
-		// Somce capacity is lazily replenished, an attacker could stake
+		// Since capacity is lazily replenished, an attacker could stake
 		// a minimum amount, then at the very beginning of each epoch, stake a tiny additional amount,
 		// thus preventing replenishment when "last_replenished_at" is checked on the next provider's
 		// message.
