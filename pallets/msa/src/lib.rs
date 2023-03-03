@@ -169,6 +169,7 @@ pub mod pallet {
 	/// We need to track this value because the identifier maximum
 	/// is incremented each time a new identifier is created.
 	/// - Value: The current maximum MSA Id
+	/// CHANGE: This would need to be set to 2^32 to allow for no (never?) handle users
 	#[pallet::storage]
 	#[pallet::getter(fn get_current_msa_identifier_maximum)]
 	pub type CurrentMsaIdentifierMaximum<T> = StorageValue<_, MessageSourceId, ValueQuery>;
@@ -212,6 +213,8 @@ pub mod pallet {
 	/// Storage type for a reference counter of the number of keys associated to an MSA
 	/// - Key: MSA Id
 	/// - Value: [`u8`] Counter of Keys associated with the MSA
+	/// CHANGE (Maybe): Should we store the handle in here? That gives us the id => handle+suffix lookup
+	/// (Handle+suffix to id is done via the hashing algorithm)
 	#[pallet::storage]
 	#[pallet::getter(fn get_public_key_count_by_msa_id)]
 	pub(super) type PublicKeyCountForMsaId<T: Config> =
@@ -427,6 +430,8 @@ pub mod pallet {
 			Ok(())
 		}
 
+		// CHANGE: New `create` function that supports "handle" selection
+
 		/// `Origin` MSA creates an MSA on behalf of `delegator_key`, creates a Delegation with the `delegator_key`'s MSA as the Delegator and `origin` as `Provider`. Deposits events [`MsaCreated`](Event::MsaCreated) and [`DelegationGranted`](Event::DelegationGranted).
 		///
 		/// # Remarks
@@ -499,6 +504,12 @@ pub mod pallet {
 			Ok(())
 		}
 
+		// CHANGE: New `create_sponsored_account_with_delegation` function that supports "handle" selection
+		//  - CHANGE Option 1: Needs a second signature to select the handle
+		//                     That way we can maintain the `AddProvider` everywhere for permission granting
+		//  - CHANGE Option 2: Don't use `AddProvider`, but create a new one
+		//  - CHANGE Option 3: Optional values in `AddProvider`
+
 		/// Adds an association between MSA id and ProviderRegistryEntry. As of now, the
 		/// only piece of metadata we are recording is provider name.
 		///
@@ -513,6 +524,7 @@ pub mod pallet {
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::create_provider())]
 		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
+			// CHANGE (MAYBE): Do we require the provider_name matches the provider handle?
 			let provider_key = ensure_signed(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			Self::create_provider_for(provider_msa_id, provider_name)?;
@@ -928,12 +940,18 @@ impl<T: Config> Pallet<T> {
 	where
 		F: FnOnce(MessageSourceId) -> DispatchResult,
 	{
+		// CHANGE: Turn into a parameter
 		let next_msa_id = Self::get_next_msa_id()?;
+
+		// CHANGE: New function to test the selected msa is available
+
 		Self::add_key(next_msa_id, &key, on_success)?;
 		let _ = Self::set_msa_identifier(next_msa_id);
 
 		Ok((next_msa_id, key))
 	}
+
+	// CHANGE: New function that validates the handle matches the proper pattern
 
 	/// Generate the next MSA Id
 	///
@@ -1257,6 +1275,8 @@ impl<T: Config> Pallet<T> {
 
 			<PublicKeyCountForMsaId<T>>::try_mutate_exists(msa_id, |key_count| {
 				match key_count {
+					// CHANGE: key_count needs to be set to 0 instead of None.
+					// Key Count = 0 indicates a retired msa and should remain
 					Some(1) => *key_count = None,
 					Some(count) => *count = *count - 1u8,
 					None => (),
