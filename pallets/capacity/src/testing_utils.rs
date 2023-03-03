@@ -42,10 +42,10 @@ pub fn create_capacity_account_and_fund(
 	let mut capacity_details =
 		CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber>::default();
 
-	capacity_details.remaining = remaining;
+	capacity_details.remaining_capacity = remaining;
 	capacity_details.total_tokens_staked = available;
-	capacity_details.total_available = available;
-	capacity_details.last_replenished_epoch = last_replenished.into();
+	capacity_details.total_capacity_issued = available;
+	capacity_details.last_replenished_epoch = last_replenished;
 
 	Capacity::set_capacity_for(target_msa_id, capacity_details.clone());
 

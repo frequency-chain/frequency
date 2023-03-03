@@ -398,13 +398,13 @@ traits Nontransferable {
   type Balance;
 
   /// The available Capacity for an MSA account.
-  fn available(msa_id: MessageSourceId) -> Result<Balance, DispatchError>;
+  fn balance(msa_id: MessageSourceId) -> Result<Balance, DispatchError>;
 
   /// Reduce the available Capacity of an MSA account.
-  fn reduce_available(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError>;
+  fn deduct(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError>;
 
   /// Increase the available Capacity for an MSA account.
-  fn increase_available(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError>;
+  fn deposit(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError>;
 }
 
 ```
@@ -453,10 +453,10 @@ trait Replenishable {
   type Balance;
 
   /// Replenish an MSA's Capacity by an amount.
-  fn replenish_by_account(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError> {};
+  fn replenish_by_amount(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError> {};
 
   /// Replenish all Capacity balance for an MSA.
-  fn replenish_all_for_account(msa_id: MessageSourceId) -> Result<Balance, DispatchError>;
+  fn replenish_all_for(msa_id: MessageSourceId) -> Result<Balance, DispatchError>;
 
   /// Checks if an account can be replenished.
   fn can_replenish(msa_id: MessageSourceId) -> bool;

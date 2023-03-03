@@ -158,40 +158,73 @@ impl<Balance: Saturating + Copy + CheckedAdd> StakingTargetDetails<Balance> {
 #[derive(PartialEq, Eq, Clone, Default, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct CapacityDetails<Balance, EpochNumber> {
 	/// The Capacity remaining for the `last_replenished_epoch`.
-	pub remaining: Balance,
+	pub remaining_capacity: Balance,
 	/// The amount of tokens staked to an MSA.
 	pub total_tokens_staked: Balance,
 	/// The total Capacity issued to an MSA.
-	pub total_available: Balance,
+	pub total_capacity_issued: Balance,
 	/// The last Epoch that an MSA was replenished with Capacity.
 	pub last_replenished_epoch: EpochNumber,
 }
 
-impl<Balance: Saturating + Copy + CheckedAdd, EpochNumber> CapacityDetails<Balance, EpochNumber> {
-	/// Increase a targets Capacity balance by an amount.
-	pub fn deposit(&mut self, amount: Balance, replenish_at: EpochNumber) -> Option<()> {
-		self.remaining = amount.checked_add(&self.remaining)?;
+impl<Balance, EpochNumber> CapacityDetails<Balance, EpochNumber>
+where
+	Balance: Saturating + Copy + CheckedAdd + CheckedSub,
+	EpochNumber: Clone + PartialOrd + PartialEq,
+{
+	/// Increase a targets total Tokens staked and Capacity total issuance by an amount.
+	pub fn deposit(&mut self, amount: &Balance) -> Option<()> {
+		self.remaining_capacity = amount.checked_add(&self.remaining_capacity)?;
 		self.total_tokens_staked = amount.checked_add(&self.total_tokens_staked)?;
-		self.total_available = amount.checked_add(&self.total_available)?;
-		self.last_replenished_epoch = replenish_at;
+		self.total_capacity_issued = amount.checked_add(&self.total_capacity_issued)?;
 
+		// We do not touch last_replenished epoch here, because it would create a DoS vulnerability.
+		// Since capacity is lazily replenished, an attacker could stake
+		// a minimum amount, then at the very beginning of each epoch, stake a tiny additional amount,
+		// thus preventing replenishment when "last_replenished_at" is checked on the next provider's
+		// message.
 		Some(())
+	}
+
+	/// Return whether capacity can be replenished, given the current epoch.
+	pub fn can_replenish(&self, current_epoch: EpochNumber) -> bool {
+		self.last_replenished_epoch.lt(&current_epoch)
+	}
+
+	/// Completely refill all available capacity.
+	/// To be called lazily when a Capacity message is sent in a new epoch.
+	pub fn replenish_all(&mut self, current_epoch: &EpochNumber) {
+		let replenish_by = self.total_capacity_issued.saturating_sub(self.remaining_capacity);
+		self.replenish_by_amount(replenish_by, current_epoch);
+	}
+
+	/// Replenish remaining capacity by the provided amount and
+	/// touch last_replenished_epoch with the current epoch.
+	pub fn replenish_by_amount(&mut self, amount: Balance, current_epoch: &EpochNumber) {
+		self.remaining_capacity = amount.saturating_add(self.remaining_capacity);
+		self.last_replenished_epoch = current_epoch.clone();
+	}
+
+	/// Deduct the given amount from the remaining capacity that can be used to pay for messages.
+	pub fn deduct_capacity_by_amount(&mut self, amount: Balance) -> Result<(), ArithmeticError> {
+		let new_remaining =
+			self.remaining_capacity.checked_sub(&amount).ok_or(ArithmeticError::Underflow)?;
+		self.remaining_capacity = new_remaining;
+		Ok(())
 	}
 
 	/// Decrease a target's total available capacity.
 	pub fn withdraw(&mut self, capacity_deduction: Balance, tokens_staked_deduction: Balance) {
 		self.total_tokens_staked = self.total_tokens_staked.saturating_sub(tokens_staked_deduction);
-		self.total_available = self.total_available.saturating_sub(capacity_deduction);
+		self.total_capacity_issued = self.total_capacity_issued.saturating_sub(capacity_deduction);
 	}
 }
 
 /// The type for storing details about an epoch.
+/// May evolve to store other needed data such as epoch_end.
 #[derive(
 	PartialEq, Eq, Clone, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
-
-/// Information about the current epoch.
-/// May evolve to store other needed data such as epoch_end.
 pub struct EpochInfo<BlockNumber> {
 	/// The block number when this epoch started.
 	pub epoch_start: BlockNumber,

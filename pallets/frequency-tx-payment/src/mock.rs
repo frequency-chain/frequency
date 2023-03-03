@@ -333,6 +333,6 @@ fn create_msa_account(account_id: <Test as frame_system::Config>::AccountId) -> 
 
 fn create_capacity_for(target: MessageSourceId, amount: u64) {
 	let mut capacity_details = Capacity::get_capacity_for(target).unwrap_or_default();
-	capacity_details.deposit(amount, Capacity::get_current_epoch()).unwrap();
+	capacity_details.deposit(&amount).unwrap();
 	Capacity::set_capacity_for(target, capacity_details);
 }
