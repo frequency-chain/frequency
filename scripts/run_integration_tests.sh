@@ -22,6 +22,13 @@ do
         ;;
     esac
 done
+TEST="test"
+START="start"
+
+if [[ "$1" == "load" ]]; then
+    TEST="test:load"
+    START="start-manual"
+fi
 
 echo "The integration test output will be logged on this console"
 echo "and the Frequency node output will be logged to the file frequency.log."
@@ -60,32 +67,33 @@ then
     echo "Unable to find or start a Frequency node; aborting."
     exit 1
 fi
-
 echo "---------------------------------------------"
 echo "Frequency running here:"
 echo "PID: ${PID}"
 echo "---------------------------------------------"
 
-if [ -z "${SKIP_JS_BUILD}" ]
+echo "Building js/api-augment..."
+cd js/api-augment
+npm i
+npm run fetch:local
+npm run --silent build
+cd dist
+echo "Packaging up into js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz"
+npm pack --silent
+cd ../../..
+
+
+cd integration-tests
+echo "Installing js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz"
+npm i ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
+npm install
+echo "---------------------------------------------"
+echo "Starting Tests..."
+echo "---------------------------------------------"
+WS_PROVIDER_URL="ws://127.0.0.1:9944" npm run $TEST
+
+if $SHOULD_KILL
 then
-    echo "Building js/api-augment..."
-    ( cd js/api-augment ;\
-    npm i ;\
-    npm run fetch:local ;\
-    npm run --silent build ;\
-    cd dist ;\
-    echo "Packaging up into js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz" ;\
-    npm pack --silent )
-
-
-    ( cd integration-tests ;\
-    echo "Installing js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz" ;\
-    npm i ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz ; )
+   pwd
+   ../scripts/kill_freq.sh
 fi
-
-( cd integration-tests ;\
-    npm install ;\
-    echo "---------------------------------------------" ;\
-    echo "Starting Tests..." ;\
-    echo "---------------------------------------------" ;\
-    WS_PROVIDER_URL="ws://127.0.0.1:9944" npm test )
