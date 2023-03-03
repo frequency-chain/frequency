@@ -453,10 +453,10 @@ trait Replenishable {
   type Balance;
 
   /// Replenish an MSA's Capacity by an amount.
-  fn replenish_by_account(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError> {};
+  fn replenish_by_amount(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError> {};
 
   /// Replenish all Capacity balance for an MSA.
-  fn replenish_all_for_account(msa_id: MessageSourceId) -> Result<Balance, DispatchError>;
+  fn replenish_all_for(msa_id: MessageSourceId) -> Result<Balance, DispatchError>;
 
   /// Checks if an account can be replenished.
   fn can_replenish(msa_id: MessageSourceId) -> bool;

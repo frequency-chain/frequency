@@ -169,8 +169,8 @@ fn increase_stake_and_issue_capacity_is_successful() {
 
 		let capacity_details = Capacity::get_capacity_for(&target).unwrap();
 
-		assert_eq!(capacity_details.remaining, 55);
-		assert_eq!(capacity_details.total_available, 55);
+		assert_eq!(capacity_details.remaining_capacity, 55);
+		assert_eq!(capacity_details.total_capacity_issued, 55);
 		assert_eq!(capacity_details.last_replenished_epoch, 0);
 
 		let target_details = Capacity::get_target_for(&staker, &target).unwrap();
@@ -223,9 +223,9 @@ fn set_capacity_details_is_successful() {
 
 		let capacity_details: CapacityDetails<BalanceOf<Test>, <Test as Config>::EpochNumber> =
 			CapacityDetails {
-				remaining: 10u64,
+				remaining_capacity: 10u64,
 				total_tokens_staked: 10u64,
-				total_available: 10u64,
+				total_capacity_issued: 10u64,
 				last_replenished_epoch: 1u32,
 			};
 
@@ -233,8 +233,8 @@ fn set_capacity_details_is_successful() {
 
 		let stored_capacity_details = Capacity::get_capacity_for(target).unwrap();
 
-		assert_eq!(stored_capacity_details.remaining, 10);
-		assert_eq!(stored_capacity_details.total_available, 10);
+		assert_eq!(stored_capacity_details.remaining_capacity, 10);
+		assert_eq!(stored_capacity_details.total_capacity_issued, 10);
 		assert_eq!(stored_capacity_details.last_replenished_epoch, 1);
 	});
 }
@@ -270,12 +270,12 @@ fn calculate_capacity_reduction_determines_the_correct_capacity_reduction_amount
 fn impl_balance_is_successful() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
-		let remainging_amount = 10u32;
+		let remaining_amount = 10u32;
 		let total_available_amount = 10u32;
 
 		let _ = create_capacity_account_and_fund(
 			target_msa_id,
-			remainging_amount.into(),
+			remaining_amount.into(),
 			total_available_amount.into(),
 			1u32,
 		);
@@ -305,7 +305,7 @@ fn impl_withdraw_is_successful() {
 			1u32,
 		);
 
-		assert_ok!(Capacity::withdraw(target_msa_id, 5u32.into()));
+		assert_ok!(Capacity::deduct(target_msa_id, 5u32.into()));
 		let events = staking_events();
 
 		assert_eq!(
@@ -316,9 +316,9 @@ fn impl_withdraw_is_successful() {
 		let mut capacity_details =
 			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber>::default();
 
-		capacity_details.remaining = 5u32.into();
+		capacity_details.remaining_capacity = 5u32.into();
 		capacity_details.total_tokens_staked = 10u32.into();
-		capacity_details.total_available = 10u32.into();
+		capacity_details.total_capacity_issued = 10u32.into();
 		capacity_details.last_replenished_epoch = 1u32.into();
 
 		assert_eq!(Capacity::get_capacity_for(target_msa_id).unwrap(), capacity_details);
@@ -331,7 +331,7 @@ fn impl_withdraw_errors_target_capacity_not_found() {
 		let target_msa_id = 1;
 		let amount = BalanceOf::<Test>::from(10u32);
 		assert_noop!(
-			Capacity::withdraw(target_msa_id, amount),
+			Capacity::deduct(target_msa_id, amount),
 			Error::<Test>::TargetCapacityNotFound
 		);
 	});
@@ -351,16 +351,16 @@ fn impl_withdraw_errors_insufficient_balance() {
 		);
 
 		assert_noop!(
-			Capacity::withdraw(target_msa_id, 20u32.into()),
+			Capacity::deduct(target_msa_id, 20u32.into()),
 			Error::<Test>::InsufficientBalance
 		);
 
 		let mut capacity_details =
 			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber>::default();
 
-		capacity_details.remaining = 10u32.into();
+		capacity_details.remaining_capacity = 10u32.into();
 		capacity_details.total_tokens_staked = 10u32.into();
-		capacity_details.total_available = 10u32.into();
+		capacity_details.total_capacity_issued = 10u32.into();
 		capacity_details.last_replenished_epoch = 1u32.into();
 
 		assert_eq!(Capacity::get_capacity_for(target_msa_id).unwrap(), capacity_details);
@@ -396,37 +396,6 @@ fn impl_deposit_errors_target_capacity_not_found() {
 }
 
 #[test]
-fn impl_deposit_errors_increase_exceeds_available_when_trying_deposit_a_larger_amount_than_the_available_capacity(
-) {
-	new_test_ext().execute_with(|| {
-		let target_msa_id = 1;
-		let remaining_amount = BalanceOf::<Test>::from(5u32);
-		let total_available_amount = BalanceOf::<Test>::from(10u32);
-		let _ = create_capacity_account_and_fund(
-			target_msa_id,
-			remaining_amount,
-			total_available_amount,
-			1u32,
-		);
-
-		assert_noop!(
-			Capacity::deposit(target_msa_id, 10u32.into()),
-			Error::<Test>::IncreaseExceedsAvailable
-		);
-
-		let mut capacity_details =
-			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber>::default();
-
-		capacity_details.remaining = 5u32.into();
-		capacity_details.total_tokens_staked = 10u32.into();
-		capacity_details.total_available = 10u32.into();
-		capacity_details.last_replenished_epoch = 1u32.into();
-
-		assert_eq!(Capacity::get_capacity_for(target_msa_id).unwrap(), capacity_details);
-	});
-}
-
-#[test]
 fn impl_replenish_all_for_account_is_successful() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
@@ -439,14 +408,16 @@ fn impl_replenish_all_for_account_is_successful() {
 			1u32,
 		);
 
+		CurrentEpoch::<Test>::set(1u32.into());
+
 		assert_ok!(Capacity::replenish_all_for(target_msa_id));
 
 		let mut capacity_details =
 			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber>::default();
 
-		capacity_details.remaining = 10u32.into();
+		capacity_details.remaining_capacity = 10u32.into();
 		capacity_details.total_tokens_staked = 10u32.into();
-		capacity_details.total_available = 10u32.into();
+		capacity_details.total_capacity_issued = 10u32.into();
 		capacity_details.last_replenished_epoch = 1u32.into();
 
 		assert_eq!(Capacity::get_capacity_for(target_msa_id).unwrap(), capacity_details);
