@@ -186,6 +186,8 @@ pub mod pallet {
 pub enum ChargeFrqTransactionPaymentError {
 	/// The call is not eligible to be paid for with Capacity
 	CallIsNotCapacityEligible,
+	/// The account key is not associated with an MSA
+	InvalidMsaKey,
 }
 
 /// Require the transactor pay for themselves and maybe include a tip to gain additional priority
@@ -237,7 +239,12 @@ where
 				use frame_support::traits::Contains;
 				if <T as Config>::CapacityEligibleCalls::contains(call.as_ref()) {
 					let msa_id = pallet_msa::Pallet::<T>::ensure_valid_msa_key(who).map_err(
-						|_| -> TransactionValidityError { InvalidTransaction::Payment.into() },
+						|_| -> TransactionValidityError {
+							InvalidTransaction::Custom(
+								ChargeFrqTransactionPaymentError::InvalidMsaKey as u8,
+							)
+							.into()
+						},
 					)?;
 
 					T::Capacity::withdraw(msa_id, fee.into()).map_err(
