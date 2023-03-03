@@ -111,8 +111,7 @@ impl ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
 	}
 }
 
-/// Basefilter to only allow specified transactions call to be executed
-/// For non mainnet [--features frequency] all transactions are allowed
+/// Basefilter to only allow calls to specified transactions to be executed
 pub struct BaseCallFilter;
 
 impl Contains<RuntimeCall> for BaseCallFilter {
@@ -128,24 +127,15 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		#[cfg(feature = "frequency")]
 		{
 			match call {
+				// Vesting calls are blocked. Issue #1168
+				RuntimeCall::Vesting(..) => false,
 				// Utility Calls are blocked. Issue #599
 				RuntimeCall::Utility(..) => false,
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
-				// Allowed Mainnet
-				RuntimeCall::System(..) |
-				RuntimeCall::Timestamp(..) |
-				RuntimeCall::ParachainSystem(..) |
-				RuntimeCall::TechnicalCommittee(..) |
-				RuntimeCall::Council(..) |
-				RuntimeCall::Democracy(..) |
-				RuntimeCall::Session(..) |
-				RuntimeCall::Preimage(..) |
-				RuntimeCall::Scheduler(..) |
-				RuntimeCall::Treasury(..) => true,
-				// General Mainnet Calls will be enabled with Issue #877
-				_ => false,
+				// Everything else is allowed on Mainnet
+				_ => true,
 			}
 		}
 	}
