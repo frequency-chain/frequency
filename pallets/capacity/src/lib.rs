@@ -52,7 +52,7 @@ use frame_support::{
 };
 
 use sp_runtime::{
-	traits::{CheckedAdd, CheckedSub, Saturating, Zero},
+	traits::{CheckedAdd, Saturating, Zero},
 	ArithmeticError, DispatchError, Perbill,
 };
 
@@ -461,9 +461,7 @@ impl<T: Config> Pallet<T> {
 		target_details.deposit(amount, capacity).ok_or(ArithmeticError::Overflow)?;
 
 		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
-		capacity_details
-			.deposit(amount, Self::get_current_epoch())
-			.ok_or(ArithmeticError::Overflow)?;
+		capacity_details.deposit(&amount).ok_or(ArithmeticError::Overflow)?;
 
 		Self::set_staking_account(&staker, staking_account);
 		Self::set_target_details_for(&staker, target, target_details);
@@ -551,7 +549,7 @@ impl<T: Config> Pallet<T> {
 		let capacity_reduction = Self::calculate_capacity_reduction(
 			amount,
 			capacity_details.total_tokens_staked,
-			capacity_details.total_available,
+			capacity_details.total_capacity_issued,
 		);
 		staking_target_details.withdraw(amount, capacity_reduction);
 		capacity_details.withdraw(capacity_reduction, amount);
@@ -591,21 +589,22 @@ impl<T: Config> Pallet<T> {
 impl<T: Config> Nontransferable for Pallet<T> {
 	type Balance = BalanceOf<T>;
 
+	/// Return the remaining capacity for the Provider MSA Id
 	fn balance(msa_id: MessageSourceId) -> Self::Balance {
 		match Self::get_capacity_for(msa_id) {
-			Some(capacity_details) => capacity_details.remaining,
+			Some(capacity_details) => capacity_details.remaining_capacity,
 			None => BalanceOf::<T>::zero(),
 		}
 	}
 
-	fn withdraw(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
+	/// Spend capacity: reduce remaining capacity by the given amount
+	fn deduct(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
 		let mut capacity_details =
 			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
 
-		capacity_details.remaining = capacity_details
-			.remaining
-			.checked_sub(&amount)
-			.ok_or(Error::<T>::InsufficientBalance)?;
+		capacity_details
+			.deduct_capacity_by_amount(amount)
+			.map_err(|_| Error::<T>::InsufficientBalance)?;
 
 		Self::set_capacity_for(msa_id, capacity_details);
 
@@ -613,24 +612,12 @@ impl<T: Config> Nontransferable for Pallet<T> {
 		Ok(())
 	}
 
+	/// Increase all totals for the MSA's CapacityDetails.
 	fn deposit(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
 		let mut capacity_details =
 			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
-
-		let new_balance = capacity_details
-			.remaining
-			.checked_add(&amount)
-			.ok_or(ArithmeticError::Overflow)?;
-
-		ensure!(
-			new_balance <= capacity_details.total_available,
-			Error::<T>::IncreaseExceedsAvailable
-		);
-
-		capacity_details.remaining = new_balance;
-
+		capacity_details.deposit(&amount);
 		Self::set_capacity_for(msa_id, capacity_details);
-
 		Ok(())
 	}
 }
@@ -642,26 +629,29 @@ impl<T: Config> Replenishable for Pallet<T> {
 		let mut capacity_details =
 			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
 
-		capacity_details.remaining = capacity_details.total_available;
+		capacity_details.replenish_all(&Self::get_current_epoch());
 
 		Self::set_capacity_for(msa_id, capacity_details);
 
 		Ok(())
 	}
 
+	/// Change: now calls new fn replenish_by_amount on the capacity_details,
+	/// which does what this (actually Self::deposit) used to do
 	fn replenish_by_amount(
 		msa_id: MessageSourceId,
 		amount: Self::Balance,
 	) -> Result<(), DispatchError> {
-		Self::deposit(msa_id, amount)?;
+		let mut capacity_details =
+			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
+		capacity_details.replenish_by_amount(amount, &Self::get_current_epoch());
 		Ok(())
 	}
 
 	fn can_replenish(msa_id: MessageSourceId) -> bool {
 		if let Some(capacity_details) = Self::get_capacity_for(msa_id) {
-			return capacity_details.last_replenished_epoch.lt(&Self::get_current_epoch())
+			return capacity_details.can_replenish(Self::get_current_epoch())
 		}
-
 		false
 	}
 }

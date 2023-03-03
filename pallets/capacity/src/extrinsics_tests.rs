@@ -155,8 +155,8 @@ fn stake_works() {
 		assert_eq!(Capacity::get_target_for(account, target).unwrap().capacity, amount);
 
 		// Check that CapacityLedger is updated.
-		assert_eq!(Capacity::get_capacity_for(target).unwrap().remaining, amount);
-		assert_eq!(Capacity::get_capacity_for(target).unwrap().total_available, amount);
+		assert_eq!(Capacity::get_capacity_for(target).unwrap().remaining_capacity, amount);
+		assert_eq!(Capacity::get_capacity_for(target).unwrap().total_capacity_issued, amount);
 		assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 0);
 
 		let events = staking_events();
@@ -247,9 +247,9 @@ fn stake_increase_stake_amount_works() {
 		assert_eq!(Capacity::get_target_for(account, target).unwrap().capacity, 15);
 
 		// Check that CapacityLedger is updated.
-		assert_eq!(Capacity::get_capacity_for(target).unwrap().remaining, 15);
-		assert_eq!(Capacity::get_capacity_for(target).unwrap().total_available, 15);
-		assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 2);
+		assert_eq!(Capacity::get_capacity_for(target).unwrap().remaining_capacity, 15);
+		assert_eq!(Capacity::get_capacity_for(target).unwrap().total_capacity_issued, 15);
+		assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 0);
 
 		let events = staking_events();
 		assert_eq!(
@@ -283,8 +283,8 @@ fn stake_multiple_accounts_can_stake_to_the_same_target() {
 			assert_eq!(Capacity::get_target_for(account_1, target).unwrap().capacity, 5);
 
 			// Check that CapacityLedger is updated.
-			assert_eq!(Capacity::get_capacity_for(target).unwrap().remaining, 5);
-			assert_eq!(Capacity::get_capacity_for(target).unwrap().total_available, 5);
+			assert_eq!(Capacity::get_capacity_for(target).unwrap().remaining_capacity, 5);
+			assert_eq!(Capacity::get_capacity_for(target).unwrap().total_capacity_issued, 5);
 			assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 0);
 
 			assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
@@ -307,9 +307,9 @@ fn stake_multiple_accounts_can_stake_to_the_same_target() {
 			assert_eq!(Capacity::get_target_for(account_2, target).unwrap().capacity, 10);
 
 			// Check that CapacityLedger is updated.
-			assert_eq!(Capacity::get_capacity_for(target).unwrap().remaining, 15);
-			assert_eq!(Capacity::get_capacity_for(target).unwrap().total_available, 15);
-			assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 2);
+			assert_eq!(Capacity::get_capacity_for(target).unwrap().remaining_capacity, 15);
+			assert_eq!(Capacity::get_capacity_for(target).unwrap().total_capacity_issued, 15);
+			assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 0);
 		});
 	});
 }
@@ -349,14 +349,14 @@ fn stake_an_account_can_stake_to_multiple_targets() {
 		assert_eq!(Capacity::get_target_for(account, target_2).unwrap().capacity, 7);
 
 		// Check that CapacityLedger is updated for target 1.
-		assert_eq!(Capacity::get_capacity_for(target_1).unwrap().remaining, 10);
-		assert_eq!(Capacity::get_capacity_for(target_1).unwrap().total_available, 10);
+		assert_eq!(Capacity::get_capacity_for(target_1).unwrap().remaining_capacity, 10);
+		assert_eq!(Capacity::get_capacity_for(target_1).unwrap().total_capacity_issued, 10);
 		assert_eq!(Capacity::get_capacity_for(target_1).unwrap().last_replenished_epoch, 0);
 
 		// Check that CapacityLedger is updated for target 2.
-		assert_eq!(Capacity::get_capacity_for(target_2).unwrap().remaining, 7);
-		assert_eq!(Capacity::get_capacity_for(target_2).unwrap().total_available, 7);
-		assert_eq!(Capacity::get_capacity_for(target_2).unwrap().last_replenished_epoch, 2);
+		assert_eq!(Capacity::get_capacity_for(target_2).unwrap().remaining_capacity, 7);
+		assert_eq!(Capacity::get_capacity_for(target_2).unwrap().total_capacity_issued, 7);
+		assert_eq!(Capacity::get_capacity_for(target_2).unwrap().last_replenished_epoch, 0);
 	});
 }
 
@@ -381,8 +381,8 @@ fn stake_when_staking_amount_is_greater_than_free_balance_it_stakes_maximum() {
 		assert_eq!(Capacity::get_target_for(account, target).unwrap().capacity, 10);
 
 		// Check that CapacityLedger is updated.
-		assert_eq!(Capacity::get_capacity_for(target).unwrap().remaining, 10);
-		assert_eq!(Capacity::get_capacity_for(target).unwrap().total_available, 10);
+		assert_eq!(Capacity::get_capacity_for(target).unwrap().remaining_capacity, 10);
+		assert_eq!(Capacity::get_capacity_for(target).unwrap().total_capacity_issued, 10);
 		assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 0);
 	});
 }
@@ -440,9 +440,9 @@ fn unstake_happy_path() {
 		assert_eq!(
 			capacity_details,
 			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
-				remaining: BalanceOf::<Test>::from(10u64),
+				remaining_capacity: BalanceOf::<Test>::from(10u64),
 				total_tokens_staked: BalanceOf::<Test>::from(6u64),
-				total_available: BalanceOf::<Test>::from(6u64),
+				total_capacity_issued: BalanceOf::<Test>::from(6u64),
 				last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32),
 			}
 		);
