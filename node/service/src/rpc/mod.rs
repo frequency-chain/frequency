@@ -57,8 +57,8 @@ where
 	C::Api: pallet_messages_runtime_api::MessagesRuntimeApi<Block>,
 	C::Api: pallet_schemas_runtime_api::SchemasRuntimeApi<Block>,
 	C::Api: system_runtime_api::AdditionalRuntimeApi<Block>,
-	C::Api: pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block>,
 	C::Api: pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId>,
+	C::Api: pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
@@ -79,8 +79,8 @@ where
 	module.merge(MessagesHandler::new(client.clone()).into_rpc())?;
 	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;
 	module.merge(MsaHandler::new(client.clone()).into_rpc())?;
-	module.merge(FrequencyRpcHandler::new(client.clone()).into_rpc())?;
-	module.merge(StatefulStorageHandler::new(client).into_rpc())?;
+	module.merge(StatefulStorageHandler::new(client.clone()).into_rpc())?;
+	module.merge(FrequencyRpcHandler::new(client).into_rpc())?;
 	if let Some(command_sink) = command_sink {
 		module.merge(
 			// We provide the rpc handler with the sending end of the channel to allow the rpc

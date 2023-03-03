@@ -2,15 +2,16 @@
 //! Following migrations are required:
 //! - Adding settings to the Schema struct
 //! Note: Post migration, this file should be deleted.
-use crate::{types::Schema, *};
+use super::*;
 use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::schema::{ModelType, PayloadLocation, SchemaSettings};
 use frame_support::{
 	pallet_prelude::Weight,
-	traits::{Get, StorageVersion},
+	traits::{Get, OnRuntimeUpgrade, StorageVersion},
 	BoundedVec,
 };
 use scale_info::TypeInfo;
+use sp_std::marker::PhantomData;
 
 /// Migrations for the schemas pallet.
 /// Following migrations are required:
@@ -71,3 +72,35 @@ pub mod v1 {
 		weight
 	}
 }
+
+// ==============================================
+//        RUNTIME STORAGE MIGRATION: Schemas
+// ==============================================
+/// Schema migration to v1 for pallet-stateful-storage
+/// This struct derives OnRuntimeUpgrade trait which is used to run the migration (check runtime)
+pub struct SchemaMigrationToV1<T: Config>(PhantomData<T>);
+
+impl<T: Config> OnRuntimeUpgrade for SchemaMigrationToV1<T> {
+	#[cfg(feature = "try-runtime")]
+	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+		let weight = v1::pre_migrate_schemas_to_v1::<T>();
+		log::info!("pre_upgrade weight: {:?}", weight);
+		Ok(Vec::new())
+	}
+
+	// try-runtime migration code
+	#[cfg(not(feature = "try-runtime"))]
+	fn on_runtime_upgrade() -> Weight {
+		v1::migrate_schemas_to_v1::<T>()
+	}
+
+	#[cfg(feature = "try-runtime")]
+	fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
+		let weight = v1::post_migrate_schemas_to_v1::<T>();
+		log::info!("post_upgrade weight: {:?}", weight);
+		Ok(())
+	}
+}
+// ==============================================
+//       END RUNTIME STORAGE MIGRATION: Schemas
+// ==============================================

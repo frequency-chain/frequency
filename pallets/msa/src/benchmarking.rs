@@ -136,15 +136,9 @@ benchmarks! {
 	}
 
 	retire_msa {
-		let s in 5 .. EXPECTED_MAX_NUMBER_OF_PROVIDERS_PER_DELEGATOR;
-		let caller: T::AccountId = whitelisted_caller();
-		assert_ok!(Msa::<T>::add_key(ProviderId(1).into(), &caller.clone(), EMPTY_FUNCTION));
-		T::SchemaValidator::set_schema_count(2);
-		for j in 2 .. s  {
-			assert_ok!(Msa::<T>::add_provider(ProviderId(j.into()), DelegatorId(1), vec![1, 2]));
-		}
+		let (delegator_account, delegator_key_pair, delegator_msa_id) = create_msa_account_and_keys::<T>();
 	}: {
-		assert_ok!(Msa::<T>::retire_msa(RawOrigin::Signed(caller.clone()).into()));
+		assert_ok!(Msa::<T>::retire_msa(RawOrigin::Signed(delegator_account.clone()).into()));
 	}
 	verify {
 		// Assert that the MSA has no accounts

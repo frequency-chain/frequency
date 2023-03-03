@@ -547,6 +547,29 @@ fn test_ensure_msa_can_retire_fails_if_more_than_one_account_exists() {
 }
 
 #[test]
+fn test_ensure_msa_can_retire_fails_if_any_delegations_exist() {
+	new_test_ext().execute_with(|| {
+		// Create delegator
+		let msa_id = 2;
+		let (test_account_key_pair, _) = sr25519::Pair::generate();
+		let test_account = AccountId32::new(test_account_key_pair.public().into());
+		assert_ok!(Msa::add_key(msa_id, &test_account, EMPTY_FUNCTION));
+
+		// Create provider
+		let (provider_id, _provider_key) = create_provider_with_name("test");
+		let schema_ids = vec![1];
+		set_schema_count::<Test>(1);
+		assert_ok!(Msa::add_provider(ProviderId(provider_id), DelegatorId(msa_id), schema_ids));
+
+		// Retire the MSA
+		assert_err!(
+			CheckFreeExtrinsicUse::<Test>::ensure_msa_can_retire(&test_account),
+			InvalidTransaction::Custom(ValidityError::InvalidNonZeroProviderDelegations as u8)
+		);
+	})
+}
+
+#[test]
 pub fn test_get_owner_of() {
 	new_test_ext().execute_with(|| {
 		assert_eq!(Msa::get_owner_of(&test_public(1)), None);

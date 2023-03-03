@@ -181,6 +181,13 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
+/// Migrations for Frequency
+pub type Migrations = (
+	remove_sudo::RemoveSudo,
+	pallet_msa::migration::Migration<Runtime>,
+	pallet_schemas::migrations::SchemaMigrationToV1<Runtime>,
+);
+
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
 	Runtime,
@@ -188,7 +195,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	SchemaMigrationToV1,
+	Migrations,
 >;
 
 // ==============================================
@@ -1388,37 +1395,6 @@ cumulus_pallet_parachain_system::register_validate_block! {
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
 	CheckInherents = CheckInherents,
 }
-
-// ==============================================
-//        RUNTIME STORAGE MIGRATION: Schemas
-// ==============================================
-/// Schema migration to v1 for pallet-stateful-storage
-
-pub struct SchemaMigrationToV1;
-impl OnRuntimeUpgrade for SchemaMigrationToV1 {
-	#[cfg(feature = "try-runtime")]
-	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-		let weight = pallet_schemas::migrations::v1::pre_migrate_schemas_to_v1::<Runtime>();
-		log::info!("pre_upgrade weight: {:?}", weight);
-		Ok(Vec::new())
-	}
-
-	// try-runtime migration code
-	#[cfg(not(feature = "try-runtime"))]
-	fn on_runtime_upgrade() -> Weight {
-		pallet_schemas::migrations::v1::migrate_schemas_to_v1::<Runtime>()
-	}
-
-	#[cfg(feature = "try-runtime")]
-	fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
-		let weight = pallet_schemas::migrations::v1::post_migrate_schemas_to_v1::<Runtime>();
-		log::info!("post_upgrade weight: {:?}", weight);
-		Ok(())
-	}
-}
-// ==============================================
-//       END RUNTIME STORAGE MIGRATION: Schemas
-// ==============================================
 
 #[cfg(test)]
 mod tests {
