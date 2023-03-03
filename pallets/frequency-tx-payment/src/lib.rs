@@ -247,7 +247,7 @@ where
 						},
 					)?;
 
-					T::Capacity::withdraw(msa_id, fee.into()).map_err(
+					T::Capacity::deduct(msa_id, fee.into()).map_err(
 						|_| -> TransactionValidityError { InvalidTransaction::Payment.into() },
 					)?;
 
