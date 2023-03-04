@@ -78,8 +78,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
-	// Storage: Msa PayloadSignatureRegistryRing (r:1 w:1)
-	// Storage: Msa PayloadSignatureRegistryRingPointer (r:1 w:1)
+	// Storage: Msa PayloadSignatureRegistryList (r:1 w:1)
+	// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:0)
 	// Storage: Msa CurrentMsaIdentifierMaximum (r:1 w:1)
@@ -100,8 +100,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
-	// Storage: Msa PayloadSignatureRegistryRing (r:2 w:2)
-	// Storage: Msa PayloadSignatureRegistryRingPointer (r:1 w:1)
+	// Storage: Msa PayloadSignatureRegistryList (r:2 w:2)
+	// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	fn add_public_key_to_msa() -> Weight {
@@ -123,8 +123,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
-	// Storage: Msa PayloadSignatureRegistryRing (r:1 w:1)
-	// Storage: Msa PayloadSignatureRegistryRingPointer (r:1 w:1)
+	// Storage: Msa PayloadSignatureRegistryList (r:1 w:1)
+	// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
 	// Storage: Msa PublicKeyToMsaId (r:2 w:0)
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
@@ -189,8 +189,8 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
-	// Storage: Msa PayloadSignatureRegistryRing (r:1 w:1)
-	// Storage: Msa PayloadSignatureRegistryRingPointer (r:1 w:1)
+	// Storage: Msa PayloadSignatureRegistryList (r:1 w:1)
+	// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:0)
 	// Storage: Msa CurrentMsaIdentifierMaximum (r:1 w:1)
@@ -211,8 +211,8 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
-	// Storage: Msa PayloadSignatureRegistryRing (r:2 w:2)
-	// Storage: Msa PayloadSignatureRegistryRingPointer (r:1 w:1)
+	// Storage: Msa PayloadSignatureRegistryList (r:2 w:2)
+	// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	fn add_public_key_to_msa() -> Weight {
@@ -234,8 +234,8 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
-	// Storage: Msa PayloadSignatureRegistryRing (r:1 w:1)
-	// Storage: Msa PayloadSignatureRegistryRingPointer (r:1 w:1)
+	// Storage: Msa PayloadSignatureRegistryList (r:1 w:1)
+	// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
 	// Storage: Msa PublicKeyToMsaId (r:2 w:0)
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
