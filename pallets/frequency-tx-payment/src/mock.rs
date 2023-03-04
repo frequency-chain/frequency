@@ -1,5 +1,7 @@
 use super::*;
 use crate as pallet_frequency_tx_payment;
+use crate::capacity_stable_weights::WeightInfo;
+use capacity_stable_weights;
 use common_primitives::msa::MessageSourceId;
 
 use common_primitives::{
@@ -20,6 +22,8 @@ use frame_support::{
 	traits::{ConstU16, ConstU64, Contains},
 	weights::WeightToFee as WeightToFeeTrait,
 };
+
+use frame_support::weights::Weight;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -236,6 +240,21 @@ impl Contains<RuntimeCall> for TestCapacityCalls {
 				RuntimeCall::Balances(BalancesCall::transfer { .. }) => true, // for testing only
 				_ => false,
 			}
+		}
+	}
+}
+
+impl GetStableWeight<RuntimeCall> for TestCapacityCalls {
+	type Weight = Weight;
+
+	fn get_stable_weight(call: &RuntimeCall) -> Option<Self::Weight> {
+		match call {
+			RuntimeCall::Msa(pallet_msa::Call::<Test>::grant_schema_permissions {
+				schema_ids, ..
+			}) => Some(capacity_stable_weights::SubstrateWeight::<Test>::grant_schema_permissions(
+				schema_ids.len() as u32),
+			),
+			_ => None
 		}
 	}
 }

@@ -42,6 +42,9 @@ use common_primitives::capacity::Nontransferable;
 use pallet_transaction_payment::OnChargeTransaction;
 pub use weights::*;
 
+pub use types::GetStableWeight;
+pub mod types;
+
 /// Type aliases used for interaction with `OnChargeTransaction`.
 pub(crate) type OnChargeTransactionOf<T> =
 	<T as pallet_transaction_payment::Config>::OnChargeTransaction;
@@ -111,6 +114,7 @@ impl<T: Config> sp_std::fmt::Debug for InitialPayment<T> {
 	}
 }
 
+mod capacity_stable_weights;
 #[cfg(test)]
 mod tests;
 
@@ -154,7 +158,8 @@ pub mod pallet {
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
-		type CapacityEligibleCalls: Contains<<Self as Config>::RuntimeCall>;
+		type CapacityEligibleCalls: Contains<<Self as Config>::RuntimeCall>
+			+ GetStableWeight<<Self as Config>::RuntimeCall>;
 	}
 
 	#[pallet::event]
@@ -186,6 +191,7 @@ pub mod pallet {
 pub enum ChargeFrqTransactionPaymentError {
 	/// The call is not eligible to be paid for with Capacity
 	CallIsNotCapacityEligible,
+	CallHasNoStableWeights,
 }
 
 /// Require the transactor pay for themselves and maybe include a tip to gain additional priority
@@ -229,7 +235,11 @@ where
 		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
-		let fee = self.compute_fee(len as u32, info, call);
+		let fee = self.compute_fee(len as u32, info, call).ok_or_else(|| {
+			TransactionValidityError::Invalid(InvalidTransaction::Custom(
+				ChargeFrqTransactionPaymentError::CallHasNoStableWeights as u8,
+			))
+		})?;
 
 		match call.is_sub_type() {
 			Some(Call::pay_with_capacity { call }) => {
@@ -273,17 +283,15 @@ where
 		len: u32,
 		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
 		call: &<T as frame_system::Config>::RuntimeCall,
-	) -> BalanceOf<T> {
+	) -> Option<BalanceOf<T>> {
 		let tip = self.tip(call);
 		match call.is_sub_type() {
 			Some(Call::pay_with_capacity { call, .. }) => {
-				println!("-----------call function {:?}", call);
-				// println!("----------------call dispatch info {:?}", call.get_dispatch_info());
-				pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip)
+				let weight =
+					<T as Config>::CapacityEligibleCalls::get_stable_weight(call)?;
+				Some(pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip))
 			},
-			_ => {
-				pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip)	
-			}
+			_ => Some(pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip)),
 		}
 	}
 }
