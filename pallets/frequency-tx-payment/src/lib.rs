@@ -19,6 +19,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::{DispatchInfo, Dispatchable, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
@@ -26,20 +27,17 @@ use frame_support::{
 	DefaultNoBound,
 };
 use frame_system::pallet_prelude::*;
-
-use codec::{Decode, Encode};
+use pallet_transaction_payment::OnChargeTransaction;
 use scale_info::TypeInfo;
-use sp_std::prelude::*;
-
 use sp_runtime::{
 	traits::{DispatchInfoOf, PostDispatchInfoOf, SignedExtension, Zero},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	FixedPointOperand,
 };
+use sp_std::prelude::*;
 
-use common_primitives::capacity::Nontransferable;
-
-use pallet_transaction_payment::OnChargeTransaction;
+use common_primitives::capacity::{Nontransferable, Replenishable};
+pub use pallet::*;
 pub use weights::*;
 
 /// Type aliases used for interaction with `OnChargeTransaction`.
@@ -121,18 +119,18 @@ mod mock;
 
 pub mod weights;
 
-pub use pallet::*;
-
 #[allow(dead_code)]
 #[frame_support::pallet]
 pub mod pallet {
-	use super::*;
+	use common_primitives::capacity::Replenishable;
 	use frame_support::traits::Contains;
+
+	use super::*;
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
@@ -150,7 +148,7 @@ pub mod pallet {
 			+ IsSubType<Call<Self>>
 			+ IsType<<Self as frame_system::Config>::RuntimeCall>;
 
-		type Capacity: Nontransferable;
+		type Capacity: Nontransferable + Replenishable;
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
@@ -158,7 +156,7 @@ pub mod pallet {
 	}
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {}
 
 	#[pallet::call]
@@ -167,8 +165,8 @@ pub mod pallet {
 		/// fashion, if allowed, will pay with Capacity,
 		#[pallet::call_index(0)]
 		#[pallet::weight({
-			let dispatch_info = call.get_dispatch_info();
-			(<T as Config>::WeightInfo::pay_with_capacity().saturating_add(dispatch_info.weight), dispatch_info.class)
+		let dispatch_info = call.get_dispatch_info();
+		(< T as Config >::WeightInfo::pay_with_capacity().saturating_add(dispatch_info.weight), dispatch_info.class)
 		})]
 		pub fn pay_with_capacity(
 			origin: OriginFor<T>,
@@ -188,6 +186,8 @@ pub enum ChargeFrqTransactionPaymentError {
 	CallIsNotCapacityEligible,
 	/// The account key is not associated with an MSA
 	InvalidMsaKey,
+	/// The Capacity Target does not exist
+	TargetCapacityNotFound,
 }
 
 /// Require the transactor pay for themselves and maybe include a tip to gain additional priority
@@ -203,6 +203,12 @@ pub enum ChargeFrqTransactionPaymentError {
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct ChargeFrqTransactionPayment<T: Config>(#[codec(compact)] BalanceOf<T>);
+
+impl ChargeFrqTransactionPaymentError {
+	pub fn into(self) -> TransactionValidityError {
+		TransactionValidityError::from(InvalidTransaction::Custom(self as u8))
+	}
+}
 
 impl<T: Config> ChargeFrqTransactionPayment<T>
 where
@@ -237,26 +243,25 @@ where
 		match call.is_sub_type() {
 			Some(Call::pay_with_capacity { call }) => {
 				use frame_support::traits::Contains;
-				if <T as Config>::CapacityEligibleCalls::contains(call.as_ref()) {
-					let msa_id = pallet_msa::Pallet::<T>::ensure_valid_msa_key(who).map_err(
-						|_| -> TransactionValidityError {
-							InvalidTransaction::Custom(
-								ChargeFrqTransactionPaymentError::InvalidMsaKey as u8,
-							)
-							.into()
-						},
-					)?;
+				ensure!(
+					<T as Config>::CapacityEligibleCalls::contains(call.as_ref()),
+					ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into()
+				);
 
-					T::Capacity::deduct(msa_id, fee.into()).map_err(
-						|_| -> TransactionValidityError { InvalidTransaction::Payment.into() },
-					)?;
+				let msa_id = pallet_msa::Pallet::<T>::ensure_valid_msa_key(who)
+					.map_err(|_| ChargeFrqTransactionPaymentError::InvalidMsaKey.into())?;
 
-					Ok((fee, InitialPayment::Capacity))
-				} else {
-					Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(
-						ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible as u8,
-					)))
+				if T::Capacity::can_replenish(msa_id) {
+					ensure!(
+						T::Capacity::replenish_all_for(msa_id).is_ok(),
+						ChargeFrqTransactionPaymentError::TargetCapacityNotFound.into()
+					);
 				}
+
+				T::Capacity::deduct(msa_id, fee.into()).map_err(
+					|_| -> TransactionValidityError { InvalidTransaction::Payment.into() },
+				)?;
+				Ok((fee, InitialPayment::Capacity))
 			},
 			_ => {
 				if fee.is_zero() {
