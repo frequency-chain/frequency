@@ -287,6 +287,7 @@ where
 		let tip = self.tip(call);
 		match call.is_sub_type() {
 			Some(Call::pay_with_capacity { call, .. }) => {
+				println!("------------call {:?}", call);
 				let weight =
 					<T as Config>::CapacityEligibleCalls::get_stable_weight(call)?;
 				Some(pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip))

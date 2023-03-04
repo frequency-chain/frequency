@@ -231,7 +231,7 @@ impl pallet_capacity::Config for Test {
 }
 
 use pallet_balances::Call as BalancesCall;
-
+//TOdo Create enum for all calls. Enum can implement both traits.
 pub struct TestCapacityCalls;
 impl Contains<RuntimeCall> for TestCapacityCalls {
 	fn contains(call: &RuntimeCall) -> bool {
