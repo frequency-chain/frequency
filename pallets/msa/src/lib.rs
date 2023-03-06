@@ -1419,6 +1419,33 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Used to fill up the registry for benchmarks
+	#[cfg(feature = "runtime-benchmarks")]
+	pub fn prep_registry_benchmarks(
+		signatures: Vec<MultiSignature>,
+		signature_expires_at: T::BlockNumber,
+		set_count: u32,
+	) -> DispatchResult {
+		let len = signatures.len();
+		for (i, sig) in signatures.iter().enumerate() {
+			if i < (len - 1) {
+				<PayloadSignatureRegistryList<T>>::insert(
+					sig,
+					(signature_expires_at, signatures[i + 1].clone()),
+				);
+			}
+		}
+		PayloadSignatureRegistryPointer::<T>::put(SignatureRegistryPointer {
+			// The count doesn't change if list is full, so fake the count
+			count: set_count,
+			newest: signatures.last().unwrap().clone(),
+			newest_expires_at: signature_expires_at,
+			oldest: signatures.first().unwrap().clone(),
+		});
+
+		Ok(())
+	}
+
 	/// The furthest in the future a mortality_block value is allowed
 	/// to be for current_block
 	/// This is calculated to be past the risk of a replay attack

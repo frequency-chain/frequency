@@ -67,6 +67,20 @@ fn create_msa_account_and_keys<T: Config>() -> (T::AccountId, SignerId, MessageS
 	(account_id, key_pair, msa_id)
 }
 
+fn generate_fake_signature(i: u8) -> MultiSignature {
+	let sig = [i; 64];
+	MultiSignature::Sr25519(sp_core::sr25519::Signature::from_raw(sig))
+}
+
+fn prep_signature_registry<T: Config>() {
+	// Add it with an 0 block expiration
+	assert_ok!(Msa::<T>::prep_registry_benchmarks(
+		(1..=50u8).map(|x| generate_fake_signature(x)).collect(),
+		0u32.into(),
+		T::MaxSignaturesStored::get().unwrap_or(3),
+	));
+}
+
 benchmarks! {
 	create {
 		let caller: T::AccountId = whitelisted_caller();
@@ -79,6 +93,8 @@ benchmarks! {
 
 	create_sponsored_account_with_delegation {
 		let s in 0 .. T::MaxSchemaGrantsPerDelegation::get();
+
+		prep_signature_registry::<T>();
 
 		let caller: T::AccountId = whitelisted_caller();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
@@ -107,6 +123,8 @@ benchmarks! {
 	}
 
 	add_public_key_to_msa {
+		prep_signature_registry::<T>();
+
 		let (provider_public_key, provider_key_pair, _) = create_msa_account_and_keys::<T>();
 		let (delegator_public_key, delegator_key_pair, delegator_msa_id) = create_msa_account_and_keys::<T>();
 
@@ -120,6 +138,9 @@ benchmarks! {
 	}
 
 	delete_msa_public_key {
+		frame_system::Pallet::<T>::set_block_number(1u32.into());
+		prep_signature_registry::<T>();
+
 		let (provider_public_key, provider_key_pair, _) = create_msa_account_and_keys::<T>();
 		let (caller_and_delegator_public_key, delegator_key_pair, delegator_msa_id) = create_msa_account_and_keys::<T>();
 
@@ -148,6 +169,8 @@ benchmarks! {
 
 	grant_delegation {
 		let s in 0 .. T::MaxSchemaGrantsPerDelegation::get();
+		prep_signature_registry::<T>();
+
 		let provider_caller: T::AccountId = whitelisted_caller();
 
 		let schemas: Vec<SchemaId> = (0 .. s as u16).collect();
