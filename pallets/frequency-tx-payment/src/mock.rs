@@ -231,6 +231,7 @@ impl pallet_capacity::Config for Test {
 }
 
 use pallet_balances::Call as BalancesCall;
+
 //TOdo Create enum for all calls. Enum can implement both traits.
 pub struct TestCapacityCalls;
 impl Contains<RuntimeCall> for TestCapacityCalls {
@@ -244,17 +245,12 @@ impl Contains<RuntimeCall> for TestCapacityCalls {
 	}
 }
 
-impl GetStableWeight<RuntimeCall> for TestCapacityCalls {
-	type Weight = Weight;
-
-	fn get_stable_weight(call: &RuntimeCall) -> Option<Self::Weight> {
+impl GetStableWeight<RuntimeCall, Weight> for TestCapacityCalls {
+	fn get_stable_weight(call: &RuntimeCall) -> Option<Weight> {
 		match call {
-			RuntimeCall::Msa(pallet_msa::Call::<Test>::grant_schema_permissions {
-				schema_ids, ..
-			}) => Some(capacity_stable_weights::SubstrateWeight::<Test>::grant_schema_permissions(
-				schema_ids.len() as u32),
-			),
-			_ => None
+			RuntimeCall::Balances(BalancesCall::transfer { .. }) =>
+				Some(call.get_dispatch_info().weight),
+			_ => None,
 		}
 	}
 }
@@ -264,7 +260,7 @@ impl Config for Test {
 	type RuntimeCall = RuntimeCall;
 	type Capacity = Capacity;
 	type WeightInfo = ();
-	type CapacityEligibleCalls = TestCapacityCalls;
+	type CapacityCalls = TestCapacityCalls;
 }
 
 pub struct ExtBuilder {

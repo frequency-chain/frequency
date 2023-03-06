@@ -23,6 +23,7 @@ use frame_support::{
 	dispatch::{DispatchInfo, Dispatchable, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
 	traits::{IsSubType, IsType},
+	weights::{Weight, WeightToFee},
 	DefaultNoBound,
 };
 use frame_system::pallet_prelude::*;
@@ -34,7 +35,7 @@ use sp_std::prelude::*;
 use sp_runtime::{
 	traits::{DispatchInfoOf, PostDispatchInfoOf, SignedExtension, Zero},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
-	FixedPointOperand,
+	FixedPointOperand, Saturating,
 };
 
 use common_primitives::capacity::Nontransferable;
@@ -158,8 +159,8 @@ pub mod pallet {
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
-		type CapacityEligibleCalls: Contains<<Self as Config>::RuntimeCall>
-			+ GetStableWeight<<Self as Config>::RuntimeCall>;
+		type CapacityCalls: Contains<<Self as Config>::RuntimeCall>
+			+ GetStableWeight<<Self as Config>::RuntimeCall, Weight>;
 	}
 
 	#[pallet::event]
@@ -235,16 +236,16 @@ where
 		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
-		let fee = self.compute_fee(len as u32, info, call).ok_or_else(|| {
-			TransactionValidityError::Invalid(InvalidTransaction::Custom(
-				ChargeFrqTransactionPaymentError::CallHasNoStableWeights as u8,
-			))
-		})?;
-
 		match call.is_sub_type() {
 			Some(Call::pay_with_capacity { call }) => {
 				use frame_support::traits::Contains;
-				if <T as Config>::CapacityEligibleCalls::contains(call.as_ref()) {
+				if <T as Config>::CapacityCalls::contains(call.as_ref()) {
+					let fee = self.compute_fee(len as u32, info, call).ok_or_else(|| {
+						TransactionValidityError::Invalid(InvalidTransaction::Custom(
+							ChargeFrqTransactionPaymentError::CallHasNoStableWeights as u8,
+						))
+					})?;
+
 					let msa_id = pallet_msa::Pallet::<T>::ensure_valid_msa_key(who).map_err(
 						|_| -> TransactionValidityError { InvalidTransaction::Payment.into() },
 					)?;
@@ -261,6 +262,11 @@ where
 				}
 			},
 			_ => {
+				let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(
+					len as u32,
+					info,
+					self.tip(call),
+				);
 				if fee.is_zero() {
 					return Ok((fee, InitialPayment::Free))
 				}
@@ -281,19 +287,17 @@ where
 	fn compute_fee(
 		&self,
 		len: u32,
-		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
-		call: &<T as frame_system::Config>::RuntimeCall,
+		_info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
+		call: &<T as Config>::RuntimeCall,
 	) -> Option<BalanceOf<T>> {
-		let tip = self.tip(call);
-		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { call, .. }) => {
-				println!("------------call {:?}", call);
-				let weight =
-					<T as Config>::CapacityEligibleCalls::get_stable_weight(call)?;
-				Some(pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip))
-			},
-			_ => Some(pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip)),
-		}
+		let weight = <T as Config>::CapacityCalls::get_stable_weight(call)?;
+		let len_fee = T::LengthToFee::weight_to_fee(&Weight::from_ref_time(len as u64));
+
+		let capped_weight = weight.min(T::BlockWeights::get().max_block);
+		let base_fee = T::WeightToFee::weight_to_fee(&capped_weight);
+
+		let fee = base_fee.saturating_add(len_fee);
+		Some(fee)
 	}
 }
 
@@ -359,7 +363,7 @@ where
 		info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
-		let (_fee, initial_payment) = self.withdraw_fee(who, call, info, len)?;
+		let (_fee, initial_payment) = self.withdraw_fee(who, &call, info, len)?;
 
 		Ok((self.tip(call), who.clone(), initial_payment))
 	}
