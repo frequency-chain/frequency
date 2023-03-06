@@ -78,7 +78,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
-	// Storage: Msa PayloadSignatureRegistryList (r:1 w:1)
+	// Storage: Msa PayloadSignatureRegistryList (r:2 w:2)
 	// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:0)
@@ -90,8 +90,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_ref_time(105_127_804 as u64)
 			// Standard Error: 25_051
 			.saturating_add(Weight::from_ref_time(24_708 as u64).saturating_mul(s as u64))
-			.saturating_add(T::DbWeight::get().reads(9 as u64))
-			.saturating_add(T::DbWeight::get().writes(6 as u64))
+			.saturating_add(T::DbWeight::get().reads(10 as u64))
+			.saturating_add(T::DbWeight::get().writes(7 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
@@ -100,14 +100,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
-	// Storage: Msa PayloadSignatureRegistryList (r:2 w:2)
+	// Storage: Msa PayloadSignatureRegistryList (r:4 w:4)
 	// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	fn add_public_key_to_msa() -> Weight {
 		Weight::from_ref_time(152_802_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(6 as u64))
-			.saturating_add(T::DbWeight::get().writes(5 as u64))
+			.saturating_add(T::DbWeight::get().reads(8 as u64))
+			.saturating_add(T::DbWeight::get().writes(7 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
@@ -123,7 +123,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
-	// Storage: Msa PayloadSignatureRegistryList (r:1 w:1)
+	// Storage: Msa PayloadSignatureRegistryList (r:2 w:2)
 	// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
 	// Storage: Msa PublicKeyToMsaId (r:2 w:0)
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:0)
@@ -133,8 +133,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_ref_time(98_196_210 as u64)
 			// Standard Error: 17_847
 			.saturating_add(Weight::from_ref_time(113_164 as u64).saturating_mul(s as u64))
-			.saturating_add(T::DbWeight::get().reads(7 as u64))
-			.saturating_add(T::DbWeight::get().writes(3 as u64))
+			.saturating_add(T::DbWeight::get().reads(8 as u64))
+			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
@@ -189,7 +189,7 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
-	// Storage: Msa PayloadSignatureRegistryList (r:1 w:1)
+	// Storage: Msa PayloadSignatureRegistryList (r:2 w:2)
 	// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:0)
@@ -201,8 +201,8 @@ impl WeightInfo for () {
 		Weight::from_ref_time(105_127_804 as u64)
 			// Standard Error: 25_051
 			.saturating_add(Weight::from_ref_time(24_708 as u64).saturating_mul(s as u64))
-			.saturating_add(RocksDbWeight::get().reads(9 as u64))
-			.saturating_add(RocksDbWeight::get().writes(6 as u64))
+			.saturating_add(RocksDbWeight::get().reads(10 as u64))
+			.saturating_add(RocksDbWeight::get().writes(7 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
@@ -211,14 +211,14 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
-	// Storage: Msa PayloadSignatureRegistryList (r:2 w:2)
+	// Storage: Msa PayloadSignatureRegistryList (r:4 w:4)
 	// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	fn add_public_key_to_msa() -> Weight {
 		Weight::from_ref_time(152_802_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(6 as u64))
-			.saturating_add(RocksDbWeight::get().writes(5 as u64))
+			.saturating_add(RocksDbWeight::get().reads(8 as u64))
+			.saturating_add(RocksDbWeight::get().writes(7 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
@@ -234,7 +234,7 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
-	// Storage: Msa PayloadSignatureRegistryList (r:1 w:1)
+	// Storage: Msa PayloadSignatureRegistryList (r:2 w:2)
 	// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
 	// Storage: Msa PublicKeyToMsaId (r:2 w:0)
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:0)
@@ -244,8 +244,8 @@ impl WeightInfo for () {
 		Weight::from_ref_time(98_196_210 as u64)
 			// Standard Error: 17_847
 			.saturating_add(Weight::from_ref_time(113_164 as u64).saturating_mul(s as u64))
-			.saturating_add(RocksDbWeight::get().reads(7 as u64))
-			.saturating_add(RocksDbWeight::get().writes(3 as u64))
+			.saturating_add(RocksDbWeight::get().reads(8 as u64))
+			.saturating_add(RocksDbWeight::get().writes(4 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
