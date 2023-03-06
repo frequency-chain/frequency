@@ -10,7 +10,7 @@ do
 done
 
 if [ -z "$pallet" ]
-  then 
+  then
     echo "Error: No Pallet Provided" >&2;
     exit 1;
 fi
@@ -22,14 +22,17 @@ if [ ! -f "$weights_file" ]
     exit 1;
 fi
 
-cargo build --profile production --features runtime-benchmarks --features all-frequency-features --workspace || exit_err
+# Change to release for faster testing
+PROFILE=production
 
-RUNTIME=./target/production/frequency
+cargo build --profile "$PROFILE" --features runtime-benchmarks --features all-frequency-features --workspace || exit_err
+
+RUNTIME=./target/$PROFILE/frequency
 BENCHMARK="$RUNTIME benchmark pallet "
 
 echo "Creating benchmarks for $pallet"
 
-$BENCHMARK \
+RUST_LOG=runtime=debug $BENCHMARK \
   --pallet pallet_$pallet \
   --extrinsic "*" \
   --chain="frequency-bench" \
