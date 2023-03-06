@@ -672,7 +672,7 @@ jobs:
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.NEW_RELEASE_VERSION}}
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:latest
       - name: Update DockerHub Description
-        uses: peter-evans/dockerhub-description@93b93397c27ed52b4055b8c6b2f8d92456ab3c56
+        uses: peter-evans/dockerhub-description@202973a37c8a723405c0c5f0a71b6d99db470dae
         with:
           username: ${{secrets.DOCKERHUB_USERNAME_FC}}
           password: ${{secrets.DOCKERHUB_TOKEN_FC}}
@@ -737,7 +737,7 @@ jobs:
             ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.NEW_RELEASE_VERSION}}
             ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:latest
       - name: Update DockerHub Description
-        uses: peter-evans/dockerhub-description@93b93397c27ed52b4055b8c6b2f8d92456ab3c56
+        uses: peter-evans/dockerhub-description@202973a37c8a723405c0c5f0a71b6d99db470dae
         with:
           username: ${{secrets.DOCKERHUB_USERNAME_FC}}
           password: ${{secrets.DOCKERHUB_TOKEN_FC}}
