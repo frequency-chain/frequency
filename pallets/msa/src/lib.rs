@@ -100,8 +100,6 @@ pub mod migration;
 pub mod types;
 
 #[cfg(test)]
-mod audit_replay_tests;
-#[cfg(test)]
 mod replay_tests;
 #[cfg(test)]
 mod signature_registry_tests;
@@ -138,11 +136,11 @@ pub mod pallet {
 		/// A type that will supply schema related information.
 		type SchemaValidator: SchemaValidator<SchemaId>;
 
-		/// The number of blocks before a signature can be ejected from the PayloadSignatureRegistryRing
+		/// The number of blocks before a signature can be ejected from the PayloadSignatureRegistryList
 		#[pallet::constant]
 		type MortalityWindowSize: Get<u32>;
 
-		/// The maximum number of signatures that can be stored in PayloadSignatureRegistryRing.
+		/// The maximum number of signatures that can be stored in PayloadSignatureRegistryList.
 		#[pallet::constant]
 		type MaxSignaturesStored: Get<Option<u32>>;
 
@@ -217,25 +215,25 @@ pub mod pallet {
 	pub(super) type PublicKeyCountForMsaId<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, u8, ValueQuery>;
 
-	/// PayloadSignatureRegistryRing is used to prevent replay attacks for extrinsics
+	/// PayloadSignatureRegistryList is used to prevent replay attacks for extrinsics
 	/// that take an externally-signed payload.
 	/// For this to work, the payload must include a mortality block number, which
 	/// is used in lieu of a monotonically increasing nonce.
 	///
-	/// The ring is forwardly linked. (Example has a ring size of 3)
-	/// - signature, pointer -> n = new signature
-	/// - 1,2 -> n,2 (oldest)
-	/// - 2,3 -> 2,3
-	/// - 3,1 -> 3,n (newest)
-	///
+	/// The list is forwardly linked. (Example has a list size of 3)
+	/// - signature, forward pointer -> n = new signature
+	/// - 1,2 -> 2,3 (oldest)
+	/// - 2,3 -> 3,4
+	/// - 3,4 -> 4,5
+	/// -   5 -> n (newest in pointer data)
 	/// ### Storage
 	/// - Key: Signature
 	/// - Value: Tuple
 	///     - `BlockNumber` when the keyed signature can be ejected from the registry
-	///     - [`MultiSignature`] the linked list pointer. This pointer is written as the oldest value, but updated to be the "next" value when there is one
+	///     - [`MultiSignature`] the forward linked list pointer. This pointer is the next "newest" value.
 	#[pallet::storage]
 	#[pallet::getter(fn get_payload_signature_registry)]
-	pub(super) type PayloadSignatureRegistryRing<T: Config> = StorageMap<
+	pub(super) type PayloadSignatureRegistryList<T: Config> = StorageMap<
 		_,                                // prefix
 		Twox64Concat,                     // hasher for key1
 		MultiSignature, // An externally-created Signature for an external payload, provided by an extrinsic
@@ -246,12 +244,12 @@ pub mod pallet {
 	>;
 
 	/// This is the pointer for the Payload Signature Registry
-	/// Contains the pointers to the data stored in the `PayloadSignatureRegistryRing`
+	/// Contains the pointers to the data stored in the `PayloadSignatureRegistryList`
 	/// - Value: [`SignatureRegistryPointer`]
 	#[pallet::storage]
 	#[pallet::getter(fn get_payload_signature_pointer)]
-	pub(super) type PayloadSignatureRegistryRingPointer<T: Config> =
-		StorageValue<_, SignatureRegistryPointer>;
+	pub(super) type PayloadSignatureRegistryPointer<T: Config> =
+		StorageValue<_, SignatureRegistryPointer<T::BlockNumber>>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -758,34 +756,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Grants a list of schema permissions to a provider. Schemas that have already
-		/// been granted are ignored. Schemas that are revoked are re-granted.
-		///
-		/// # Events
-		/// * [`Event::DelegationUpdated`]
-		///
-		/// # Errors
-		/// * [`Error::NoKeyExists`] no MSA for `origin`.
-		/// * [`Error::DelegationNotFound`] no delegation relationship between Origin and Delegator or Origin and Delegator are the same.
-		/// * [`Error::ExceedsMaxSchemaGrantsPerDelegation`] the limit of maximum allowed grants per delegation relationship has been exceeded.
-		///
-		#[pallet::call_index(8)]
-		#[pallet::weight(T::WeightInfo::grant_schema_permissions(schema_ids.len() as u32))]
-		pub fn grant_schema_permissions(
-			origin: OriginFor<T>,
-			provider_msa_id: MessageSourceId,
-			schema_ids: Vec<SchemaId>,
-		) -> DispatchResult {
-			let delegator_key = ensure_signed(origin)?;
-			let delegator_msa_id = Self::ensure_valid_msa_key(&delegator_key)?;
-			let provider_id = ProviderId(provider_msa_id);
-			let delegator_id = DelegatorId(delegator_msa_id);
-
-			Self::grant_permissions_for_schemas(delegator_id, provider_id, schema_ids)?;
-			Self::deposit_event(Event::DelegationUpdated { provider_id, delegator_id });
-
-			Ok(())
-		}
+		// REMOVED grant_schema_permissions() at call index 8
 
 		/// Revokes a list of schema permissions to a provider. Attempting to revoke a Schemas that have already
 		/// been revoked are ignored.
@@ -1346,13 +1317,16 @@ impl<T: Config> Pallet<T> {
 		Ok(Some(schema_list))
 	}
 
-	/// Adds a signature to the `PayloadSignatureRegistryRing`
+	/// Adds a signature to the `PayloadSignatureRegistryList`
 	/// Check that mortality_block is within bounds. If so, proceed and add the new entry.
 	/// Raises `SignatureAlreadySubmitted` if the signature exists in the registry.
-	/// Raises `SignatureRegistryLimitExceeded` if the oldest signature of the ring has not yet expired.
+	/// Raises `SignatureRegistryLimitExceeded` if the oldest signature of the list has not yet expired.
 	///
-	/// Example ring:
-	/// `1,2 (oldest) -> 2,3 -> 3,4 -> 4,1 (newest)`
+	/// Example list:
+	/// - `1,2 (oldest)`
+	/// - `2,3`
+	/// - `3,4`
+	/// - 4 (newest in pointer storage)`
 	///
 	/// # Errors
 	/// * [`Error::ProofNotYetValid`]
@@ -1372,14 +1346,14 @@ impl<T: Config> Pallet<T> {
 
 		// Make sure it is not in the registry
 		ensure!(
-			!<PayloadSignatureRegistryRing<T>>::contains_key(signature),
+			!<PayloadSignatureRegistryList<T>>::contains_key(signature),
 			Error::<T>::SignatureAlreadySubmitted
 		);
 
 		Self::enqueue_signature(signature, signature_expires_at, current_block)
 	}
 
-	/// Do the actual enqueuing into the ring storage and update the pointers
+	/// Do the actual enqueuing into the list storage and update the pointer
 	fn enqueue_signature(
 		signature: &MultiSignature,
 		signature_expires_at: T::BlockNumber,
@@ -1387,20 +1361,27 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		// Get the current pointer, or if this is the initialization, generate an empty pointer
 		let pointer =
-			PayloadSignatureRegistryRingPointer::<T>::get().unwrap_or(SignatureRegistryPointer {
+			PayloadSignatureRegistryPointer::<T>::get().unwrap_or(SignatureRegistryPointer {
 				newest: signature.clone(),
+				newest_expires_at: signature_expires_at,
 				oldest: signature.clone(),
 				count: 0,
 			});
+
+		// Make sure it is not sitting as the `newest` in the pointer
+		ensure!(
+			!(pointer.count != 0 && pointer.newest.eq(signature)),
+			Error::<T>::SignatureAlreadySubmitted
+		);
 
 		// Default to the current oldest signature in case we are still filling up
 		let mut oldest: MultiSignature = pointer.oldest.clone();
 
 		// We are now wanting to overwrite prior signatures
-		let is_ring_buffer_full: bool = pointer.count == T::MaxSignaturesStored::get().unwrap_or(0);
+		let is_registry_full: bool = pointer.count == T::MaxSignaturesStored::get().unwrap_or(0);
 
 		// Maybe remove the oldest signature and update the oldest
-		if is_ring_buffer_full {
+		if is_registry_full {
 			let (expire_block_number, next_oldest) =
 				Self::get_payload_signature_registry(pointer.oldest.clone())
 					.ok_or(Error::<T>::SignatureRegistryCorrupted)?;
@@ -1410,33 +1391,26 @@ impl<T: Config> Pallet<T> {
 				Error::<T>::SignatureRegistryLimitExceeded
 			);
 
-			// Move the oldest in the ring to the next oldest signature
+			// Move the oldest in the list to the next oldest signature
 			oldest = next_oldest.clone();
 
-			<PayloadSignatureRegistryRing<T>>::remove(pointer.oldest);
+			<PayloadSignatureRegistryList<T>>::remove(pointer.oldest);
 		}
 
-		// Update the prior newest
-		// We could remove this > 0, but then we'd have to be OK with the None not failing
-		if pointer.count > 0 {
-			let mut prior_newest = Self::get_payload_signature_registry(pointer.newest.clone())
-				.ok_or(Error::<T>::SignatureRegistryCorrupted)?;
-
-			prior_newest.1 = signature.clone();
-
-			<PayloadSignatureRegistryRing<T>>::insert(pointer.newest, prior_newest);
+		// Add the newest signature if we are not the first
+		if pointer.count != 0 {
+			<PayloadSignatureRegistryList<T>>::insert(
+				pointer.newest,
+				(pointer.newest_expires_at, signature.clone()),
+			);
 		}
 
-		// Add the newest signature to complete the ring
-		<PayloadSignatureRegistryRing<T>>::insert(
-			signature,
-			(signature_expires_at, oldest.clone()),
-		);
-
-		PayloadSignatureRegistryRingPointer::<T>::put(SignatureRegistryPointer {
-			// The count doesn't change if buffer is full
-			count: if is_ring_buffer_full { pointer.count } else { pointer.count + 1 },
+		// Update the pointer.newest to have the signature that just came in
+		PayloadSignatureRegistryPointer::<T>::put(SignatureRegistryPointer {
+			// The count doesn't change if list is full
+			count: if is_registry_full { pointer.count } else { pointer.count + 1 },
 			newest: signature.clone(),
+			newest_expires_at: signature_expires_at,
 			oldest,
 		});
 

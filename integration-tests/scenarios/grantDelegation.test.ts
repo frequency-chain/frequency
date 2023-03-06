@@ -161,51 +161,6 @@ describe("Delegation Scenario Tests", function () {
 
     });
 
-    describe("schema permission grants", function () {
-        it("should fail to grant schema permissions to non-MSA (NoKeyExists)", async function () {
-            const nonMsaKeys = await createAndFundKeypair();
-            const op = ExtrinsicHelper.grantSchemaPermissions(nonMsaKeys, providerId, [schemaId]);
-            await assert.rejects(op.fundAndSend(), { name: 'NoKeyExists' });
-        });
-
-        it("should fail to grant schema permissions to a provider for which no delegation exists (DelegationNotFound)", async function () {
-            const op = ExtrinsicHelper.grantSchemaPermissions(keys, otherProviderId, [schemaId]);
-            await assert.rejects(op.fundAndSend(), { name: 'DelegationNotFound' });
-        })
-
-        it("should grant permissions to a provider for a specific set of schemas", async function () {
-            const grantSchemaPermissionsOp = ExtrinsicHelper.grantSchemaPermissions(keys, providerId, [schemaId]);
-            const [grantSchemaPermissionsEvent] = await grantSchemaPermissionsOp.fundAndSend();
-            assert.notEqual(grantSchemaPermissionsEvent, undefined, "should have returned DelegationUpdated event");
-            if (grantSchemaPermissionsEvent && grantSchemaPermissionsOp.api.events.msa.DelegationUpdated.is(grantSchemaPermissionsEvent)) {
-                assert.deepEqual(grantSchemaPermissionsEvent.data.providerId, providerId, 'provider ids should be equal');
-                assert.deepEqual(grantSchemaPermissionsEvent.data.delegatorId, msaId, 'delegator ids should be equal');
-            }
-        });
-
-        it("should fail to grant more then maxSchemaGrantsPerDelegation (ExceedsMaxSchemaGrantsPerDelegation)", async function () {
-            const max_schema_grants = ExtrinsicHelper.api.consts.msa.maxSchemaGrantsPerDelegation.toNumber();
-            let schemaIds: u16[] = [];
-
-            const schema = {
-                name: "dummySchema",
-                type: "record",
-                fields: [],
-            }
-
-            for (const [index, _] of new Array<number>(max_schema_grants).entries()) {
-                const f = ExtrinsicHelper.createSchema(keys, { ...schema, name: `${schema.name}${index}` }, "AvroBinary", "OnChain");
-                const [event] = await f.fundAndSend();
-                if (event && f.api.events.schemas.SchemaCreated.is(event)) {
-                    schemaIds.push(event.data[1]);
-                }
-            }
-
-            const op = ExtrinsicHelper.grantSchemaPermissions(keys, providerId, schemaIds);
-            await assert.rejects(op.fundAndSend(), { name: 'ExceedsMaxSchemaGrantsPerDelegation' });
-        }).timeout(10000);
-    });
-
     describe("revoke schema permissions", function () {
         it("should fail to revoke schema permissions from non-MSA (NoKeyExists)", async function () {
             const nonMsaKeys = await createAndFundKeypair();

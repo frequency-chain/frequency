@@ -134,15 +134,18 @@ where
 
 /// The pointer value for the Signature Registry
 #[derive(MaxEncodedLen, TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
-pub struct SignatureRegistryPointer {
-	/// Pointer to the most recent signature in the ring
+pub struct SignatureRegistryPointer<BlockNumber> {
+	/// The newest signature that will be added to the registry when we get the next newest
 	pub newest: MultiSignature,
 
-	/// Pointer to the oldest signature in the ring
+	/// Block number that `newest` expires at
+	pub newest_expires_at: BlockNumber,
+
+	/// Pointer to the oldest signature in the list
 	pub oldest: MultiSignature,
 
 	/// Count of signatures in the registry
-	/// Will eventually match the `MaxSignaturesStored`, but during initialization is needed to fill the ring
+	/// Will eventually match the `MaxSignaturesStored`, but during initialization is needed to fill the list
 	pub count: u32,
 }
 
