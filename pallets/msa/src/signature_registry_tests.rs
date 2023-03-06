@@ -2,7 +2,7 @@ use crate::{
 	self as pallet_msa,
 	mock::{create_account, generate_test_signature, new_test_ext, run_to_block},
 	types::AddKeyData,
-	Config, Error, PayloadSignatureRegistryRingPointer,
+	Config, Error, PayloadSignatureRegistryPointer,
 };
 
 use frame_support::{
@@ -216,10 +216,11 @@ pub fn stores_signature_and_increments_count() {
 		assert_eq!(
 			Some(SignatureRegistryPointer {
 				newest: signature.clone(),
+				newest_expires_at: mortality_block.into(),
 				oldest: signature.clone(),
 				count: 1,
 			}),
-			<PayloadSignatureRegistryRingPointer<Test>>::get()
+			<PayloadSignatureRegistryPointer<Test>>::get()
 		);
 
 		let oldest: MultiSignature = signature.clone();
@@ -231,10 +232,11 @@ pub fn stores_signature_and_increments_count() {
 		assert_eq!(
 			Some(SignatureRegistryPointer {
 				newest: signature_1.clone(),
+				newest_expires_at: mortality_block.into(),
 				oldest: signature.clone(),
 				count: 2,
 			}),
-			<PayloadSignatureRegistryRingPointer<Test>>::get()
+			<PayloadSignatureRegistryPointer<Test>>::get()
 		);
 
 		let mut newest: MultiSignature = signature_1.clone();
@@ -250,10 +252,11 @@ pub fn stores_signature_and_increments_count() {
 		assert_eq!(
 			Some(SignatureRegistryPointer {
 				newest: newest.clone(),
+				newest_expires_at: mortality_block.into(),
 				oldest: oldest.clone(),
 				count: limit
 			}),
-			<PayloadSignatureRegistryRingPointer<Test>>::get()
+			<PayloadSignatureRegistryPointer<Test>>::get()
 		);
 
 		run_to_block((mortality_block + 1).into());
@@ -265,10 +268,11 @@ pub fn stores_signature_and_increments_count() {
 		assert_eq!(
 			Some(SignatureRegistryPointer {
 				newest: signature_n.clone(),
+				newest_expires_at: (mortality_block + 10).into(),
 				oldest: signature_1.clone(),
 				count: limit,
 			}),
-			<PayloadSignatureRegistryRingPointer<Test>>::get()
+			<PayloadSignatureRegistryPointer<Test>>::get()
 		);
 	})
 }
