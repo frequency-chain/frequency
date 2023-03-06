@@ -87,9 +87,9 @@ benchmarks! {
 		let schemas: Vec<SchemaId> = (0 .. s as u16).collect();
 		T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
 		let (payload, signature, key) = create_payload_and_signature::<T>(schemas, 1u64.into());
-	}: _ (RawOrigin::Signed(caller), key, signature, payload)
+	}: _ (RawOrigin::Signed(caller), key.clone(), signature, payload)
 	verify {
-		assert_eq!(frame_system::Pallet::<T>::events().len(), 2);
+		assert!(Msa::<T>::get_msa_by_public_key(key).is_some());
 	}
 
 	revoke_delegation_by_provider {
@@ -110,13 +110,13 @@ benchmarks! {
 		let (provider_public_key, provider_key_pair, _) = create_msa_account_and_keys::<T>();
 		let (delegator_public_key, delegator_key_pair, delegator_msa_id) = create_msa_account_and_keys::<T>();
 
-		let (add_key_payload, new_public_key_signature, _) = add_key_payload_and_signature::<T>(delegator_msa_id);
+		let (add_key_payload, new_public_key_signature, new_public_key) = add_key_payload_and_signature::<T>(delegator_msa_id);
 
 		let encoded_add_key_payload = wrap_binary_data(add_key_payload.encode());
 		let owner_signature = MultiSignature::Sr25519(delegator_key_pair.sign(&encoded_add_key_payload).unwrap().into());
 	}: _ (RawOrigin::Signed(provider_public_key.clone()), delegator_public_key.clone(), owner_signature, new_public_key_signature, add_key_payload)
 	verify {
-		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+		assert!(Msa::<T>::get_msa_by_public_key(new_public_key).is_some());
 	}
 
 	delete_msa_public_key {
@@ -130,9 +130,9 @@ benchmarks! {
 
 		assert_ok!(Msa::<T>::add_public_key_to_msa(RawOrigin::Signed(provider_public_key).into(), caller_and_delegator_public_key.clone(), owner_signature,  new_public_key_signature, add_key_payload));
 
-	}: _(RawOrigin::Signed(caller_and_delegator_public_key), new_public_key)
+	}: _(RawOrigin::Signed(caller_and_delegator_public_key), new_public_key.clone())
 	verify {
-		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+		assert!(Msa::<T>::get_msa_by_public_key(new_public_key).is_none());
 	}
 
 	retire_msa {
