@@ -74,11 +74,24 @@ fn generate_fake_signature(i: u8) -> MultiSignature {
 
 fn prep_signature_registry<T: Config>() {
 	// Add it with an 0 block expiration
-	assert_ok!(Msa::<T>::prep_registry_benchmarks(
-		(1..=50u8).map(|x| generate_fake_signature(x)).collect(),
-		0u32.into(),
-		T::MaxSignaturesStored::get().unwrap_or(3),
-	));
+	let signatures: Vec<MultiSignature> = (1..=50u8).map(|x| generate_fake_signature(x)).collect();
+	let signature_expires_at: T::BlockNumber = 0u32.into();
+	let len = signatures.len();
+	for (i, sig) in signatures.iter().enumerate() {
+		if i < (len - 1) {
+			<PayloadSignatureRegistryList<T>>::insert(
+				sig,
+				(signature_expires_at, signatures[i + 1].clone()),
+			);
+		}
+	}
+	PayloadSignatureRegistryPointer::<T>::put(SignatureRegistryPointer {
+		// The count doesn't change if list is full, so fake the count
+		count: T::MaxSignaturesStored::get().unwrap_or(3),
+		newest: signatures.last().unwrap().clone(),
+		newest_expires_at: signature_expires_at,
+		oldest: signatures.first().unwrap().clone(),
+	});
 }
 
 benchmarks! {
