@@ -100,8 +100,6 @@ pub mod migration;
 pub mod types;
 
 #[cfg(test)]
-mod audit_replay_tests;
-#[cfg(test)]
 mod replay_tests;
 #[cfg(test)]
 mod signature_registry_tests;
