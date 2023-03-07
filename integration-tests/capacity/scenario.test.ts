@@ -3,19 +3,19 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { u64 } from "@polkadot/types";
 import assert from "assert";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { devAccounts, createAndFundKeypair, log } from "../scaffolding/helpers";
+import { devAccounts, log, createKeys, createMsaAndProvider } from "../scaffolding/helpers";
 import { firstValueFrom} from "rxjs";
 
 describe("Capacity Scenario Tests", function () {
     const TEST_EPOCH_LENGTH = 25;
     let otherProviderKeys: KeyringPair;
-    let otherProviderId: u64;
+    let otherProviderId: u64 | null;
     let stakeKeys: KeyringPair;
-    let stakeProviderId: u64;
+    let stakeProviderId: u64 | null;
     let unstakeKeys: KeyringPair;
-    let unstakeProviderId: u64;
+    let unstakeProviderId: u64 | null;
     let withdrawKeys: KeyringPair;
-    let withdrawProviderId: u64;
+    let withdrawProviderId: u64 | null;
 
     let stakeAmount: bigint = 6000000n;
 
@@ -36,53 +36,27 @@ describe("Capacity Scenario Tests", function () {
 
         // Create and fund a keypair with stakeAmount
         // Use this keypair for stake operations
-        stakeKeys = await createAndFundKeypair(stakeAmount);
-        let createStakeProviderMsaOp = ExtrinsicHelper.createMsa(stakeKeys);
-        await createStakeProviderMsaOp.fundAndSend();
-        let createStakeProviderOp = ExtrinsicHelper.createProvider(stakeKeys, "TestProvider");
-        let [stakeProviderEvent] = await createStakeProviderOp.fundAndSend();
-        assert.notEqual(stakeProviderEvent, undefined, "should return a ProviderCreated event");
-        if (stakeProviderEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(stakeProviderEvent)) {
-            stakeProviderId = stakeProviderEvent.data.providerId;
-        }
-        assert.notEqual(stakeProviderId, undefined, "should populate stakeProviderId");
+        stakeKeys = createKeys("StakeKeys");
+        stakeProviderId = await createMsaAndProvider(stakeKeys, "StakeProvider", stakeAmount);
+        assert.equal(stakeProviderId, 1, "should return stakeProviderId == 1");
 
         // Create and fund a keypair with EXISTENTIAL_DEPOSIT
         // Use this keypair for unstake operations
-        unstakeKeys = await createAndFundKeypair();
-        let createUnstakeProviderMsaOp = ExtrinsicHelper.createMsa(unstakeKeys);
-        await createUnstakeProviderMsaOp.fundAndSend();
-        let createUnstakeProviderOp = ExtrinsicHelper.createProvider(unstakeKeys, "TestProvider");
-        let [unstakeProviderEvent] = await createUnstakeProviderOp.fundAndSend();
-        assert.notEqual(unstakeProviderEvent, undefined, "should return a ProviderCreated event");
-        if (unstakeProviderEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(unstakeProviderEvent)) {
-            unstakeProviderId = unstakeProviderEvent.data.providerId;
-        }
-        assert.notEqual(unstakeProviderId, undefined, "should populate unstakeProviderId");
+        unstakeKeys = createKeys("UnstakeKeys");
+        unstakeProviderId = await createMsaAndProvider(unstakeKeys, "UnstakeProvider");
+        assert.equal(unstakeProviderId, 2, "should populate unstakeProviderId");
 
         // Create and fund a keypair with EXISTENTIAL_DEPOSIT
         // Use this keypair for withdraw operations
-        withdrawKeys = await createAndFundKeypair();
-        let createWithdrawProviderMsaOp = ExtrinsicHelper.createMsa(withdrawKeys);
-        await createWithdrawProviderMsaOp.fundAndSend();
-        let createWithdrawProviderOp = ExtrinsicHelper.createProvider(withdrawKeys, "TestProvider");
-        let [withdrawProviderEvent] = await createWithdrawProviderOp.fundAndSend();
-        assert.notEqual(withdrawProviderEvent, undefined, "should return a ProviderCreated event");
-        if (withdrawProviderEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(withdrawProviderEvent)) {
-            withdrawProviderId = withdrawProviderEvent.data.providerId;
-        }
-        assert.notEqual(withdrawProviderId, undefined, "should populate withdrawProviderId");
+        withdrawKeys = createKeys("WithdrawKeys");
+        withdrawProviderId = await createMsaAndProvider(withdrawKeys, "WithdrawProvider");
+        assert.equal(withdrawProviderId, 3, "should populate withdrawProviderId");
 
-        otherProviderKeys = await createAndFundKeypair();
-        let createProviderMsaOp = ExtrinsicHelper.createMsa(otherProviderKeys);
-        await createProviderMsaOp.fundAndSend();
-        let createProviderOp = ExtrinsicHelper.createProvider(otherProviderKeys, "TestProvider");
-        let [providerEvent] = await createProviderOp.fundAndSend();
-        assert.notEqual(providerEvent, undefined, "should return a ProviderCreated event");
-        if (providerEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerEvent)) {
-            otherProviderId = providerEvent.data.providerId;
-        }
-        assert.notEqual(otherProviderId, undefined, "should populate providerId");
+        // Create and fund a keypair with EXISTENTIAL_DEPOSIT
+        // Use this keypair for other operations
+        otherProviderKeys = createKeys("OtherProviderKeys");
+        otherProviderId = await createMsaAndProvider(otherProviderKeys, "OtherProvider");
+        assert.equal(otherProviderId, 4, "should populate otherProviderId");
     });
 
     describe("stake-unstake-withdraw_unstaked testing", function () {
@@ -106,10 +80,12 @@ describe("Capacity Scenario Tests", function () {
             assert.equal(stakedAcctInfo.data.feeFrozen,  1000000, "should return an account with 1000000 feeFrozen balance");
 
             // Confirm that the capacity was added to the stakeProviderId using the query API
-            const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            assert.equal(capacityStaked.remainingCapacity,   1000000, "should return a capacityLedger with 1000000 remainingCapacity");
-            assert.equal(capacityStaked.totalTokensStaked,   1000000, "should return a capacityLedger with 1000000 total tokens staked");
-            assert.equal(capacityStaked.totalCapacityIssued, 1000000, "should return a capacityLedger with 1000000 issued capacity");
+            if (stakeProviderId != null) {
+                const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
+                assert.equal(capacityStaked.remainingCapacity,   1000000, "should return a capacityLedger with 1000000 remainingCapacity");
+                assert.equal(capacityStaked.totalTokensStaked,   1000000, "should return a capacityLedger with 1000000 total tokens staked");
+                assert.equal(capacityStaked.totalCapacityIssued, 1000000, "should return a capacityLedger with 1000000 issued capacity");
+            }
         });
 
         it("should successfully unstake the minimum amount", async function () {
@@ -125,10 +101,12 @@ describe("Capacity Scenario Tests", function () {
                 assert.fail("should return an capacity.UnStaked.is(unStakeEvent) event");
             }
             // Confirm that the tokens were unstaked in the stakeProviderId account using the query API
-            const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            assert.equal(capacityStaked.remainingCapacity,   1000000, "should return a capacityLedger with 1000000 remainingCapacity");
-            assert.equal(capacityStaked.totalTokensStaked,   0,       "should return a capacityLedger with 0 total tokens staked");
-            assert.equal(capacityStaked.totalCapacityIssued, 0,       "should return a capacityLedger with 0 capacity issued");
+            if (stakeProviderId != null) {
+                const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
+                assert.equal(capacityStaked.remainingCapacity,   1000000, "should return a capacityLedger with 1000000 remainingCapacity");
+                assert.equal(capacityStaked.totalTokensStaked,   0,       "should return a capacityLedger with 0 total tokens staked");
+                assert.equal(capacityStaked.totalCapacityIssued, 0,       "should return a capacityLedger with 0 capacity issued");
+            }
         });
 
         it("should successfully withdraw the unstaked amount", async function () {
@@ -151,10 +129,12 @@ describe("Capacity Scenario Tests", function () {
             assert.equal(unStakedAcctInfo.data.feeFrozen,  0, "should return an account with 0 feeFrozen balance");
 
             // Confirm that the staked capacity was removed from the stakeProviderId account using the query API
-            const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            assert.equal(capacityStaked.remainingCapacity,   1000000, "should return a capacityLedger with 1000000 remainingCapacity");
-            assert.equal(capacityStaked.totalTokensStaked,   0,       "should return a capacityLedger with 0 total tokens staked");
-            assert.equal(capacityStaked.totalCapacityIssued, 0,       "should return a capacityLedger with 0 capacity issued");
+            if (stakeProviderId != null) {
+                const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
+                assert.equal(capacityStaked.remainingCapacity,   1000000, "should return a capacityLedger with 1000000 remainingCapacity");
+                assert.equal(capacityStaked.totalTokensStaked,   0,       "should return a capacityLedger with 0 total tokens staked");
+                assert.equal(capacityStaked.totalCapacityIssued, 0,       "should return a capacityLedger with 0 capacity issued");
+            }
         });
     });
 
@@ -188,13 +168,15 @@ describe("Capacity Scenario Tests", function () {
             assert.equal(stakedAcctInfo.data.feeFrozen,  3000000, "should return an account with 3000000 feeFrozen balance");
 
             // Confirm that the staked capacity was added to the stakeProviderId account using the query API
-            const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
             // Capacity calculation:
             // 1000000 (initial test case) + 1000000 + 2000000 (this test case) = 4000000 capacity
             // - 1000000 (unstaked) = 3000000 staked tokens
-            assert.equal(capacityStaked.remainingCapacity,   4000000, "should return a capacityLedger with 4000000 remainingCapacity");
-            assert.equal(capacityStaked.totalTokensStaked,   3000000, "should return a capacityLedger with 3000000 total staked");
-            assert.equal(capacityStaked.totalCapacityIssued, 3000000, "should return a capacityLedger with 3000000 capacity issued");
+            if (stakeProviderId != null) {
+                const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
+                assert.equal(capacityStaked.remainingCapacity,   4000000, "should return a capacityLedger with 4000000 remainingCapacity");
+                assert.equal(capacityStaked.totalTokensStaked,   3000000, "should return a capacityLedger with 3000000 total staked");
+                assert.equal(capacityStaked.totalCapacityIssued, 3000000, "should return a capacityLedger with 3000000 capacity issued");
+            }
         });
 
         it("should successfully increase stake to a different provider", async function () {
@@ -213,15 +195,19 @@ describe("Capacity Scenario Tests", function () {
             // Capacity calculation:
             // 1000000 (initial test case) + 1000000 + 2000000 (2nd test case) = 4000000 capacity
             // - 1000000 (unstaked) = 3000000 staked tokens
-            const origStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            assert.equal(origStaked.remainingCapacity,   4000000, "should return a capacityLedger with 4000000 remainingCapacity");
-            assert.equal(origStaked.totalTokensStaked,   3000000, "should return a capacityLedger with 3000000 total tokens staked");
-            assert.equal(origStaked.totalCapacityIssued, 3000000, "should return a capacityLedger with 3000000 capacity issued");
+            if (stakeProviderId != null) {
+                const origStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
+                assert.equal(origStaked.remainingCapacity,   4000000, "should return a capacityLedger with 4000000 remainingCapacity");
+                assert.equal(origStaked.totalTokensStaked,   3000000, "should return a capacityLedger with 3000000 total tokens staked");
+                assert.equal(origStaked.totalCapacityIssued, 3000000, "should return a capacityLedger with 3000000 capacity issued");
+            } 
             // Confirm that the staked capacity was added to the otherProviderId account using the query API
-            const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(otherProviderId))).unwrap();
-            assert.equal(capacityStaked.remainingCapacity,   1000000, "should return a capacityLedger with 1000000 remainingCapacity");
-            assert.equal(capacityStaked.totalTokensStaked,   1000000, "should return a capacityLedger with 1000000 total tokens staked");
-            assert.equal(capacityStaked.totalCapacityIssued, 1000000, "should return a capacityLedger with 1000000 capacity issued");
+            if (otherProviderId != null) {
+                const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(otherProviderId))).unwrap();
+                assert.equal(capacityStaked.remainingCapacity,   1000000, "should return a capacityLedger with 1000000 remainingCapacity");
+                assert.equal(capacityStaked.totalTokensStaked,   1000000, "should return a capacityLedger with 1000000 total tokens staked");
+                assert.equal(capacityStaked.totalCapacityIssued, 1000000, "should return a capacityLedger with 1000000 capacity issued");
+            }
         });
     });
 

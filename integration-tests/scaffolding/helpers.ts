@@ -1,6 +1,7 @@
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { Codec } from "@polkadot/types/types";
+import { u64 } from "@polkadot/types";
 import { u8aToHex, u8aWrapBytes } from "@polkadot/util";
 import { mnemonicGenerate } from '@polkadot/util-crypto';
 import { env } from "./env";
@@ -71,5 +72,26 @@ export async function createAndFundKeypair(amount = EXISTENTIAL_DEPOSIT, keyName
 export function log(...args: any[]) {
     if (env.verbose) {
         console.log(...args);
+    }
+}
+
+// createMsaAndProvider creates an MSA and Provider for the given keys
+// and returns the ProviderId
+export async function createMsaAndProvider(keys: KeyringPair, providerName: string, amount = EXISTENTIAL_DEPOSIT): 
+    Promise<u64 | null> 
+{
+    // Create and fund a keypair with stakeAmount
+    // Use this keypair for stake operations
+    await fundKeypair(devAccounts[0].keys, keys, amount);
+    let createProviderMsaOp = ExtrinsicHelper.createMsa(keys);
+    await createProviderMsaOp.fundAndSend();
+    let createProviderOp = ExtrinsicHelper.createProvider(keys, providerName);
+    let [providerEvent] = await createProviderOp.fundAndSend();
+    if (providerEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerEvent)) {
+        const providerId = providerEvent.data.providerId;
+        return providerId;
+    }
+    else {
+        return null;
     }
 }
