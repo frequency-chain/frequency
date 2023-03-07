@@ -198,6 +198,7 @@ impl<PageDataSize: Get<u32>> TryFrom<Vec<u8>> for Page<PageDataSize> {
 
 impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	/// applies all actions to specified page and returns the updated page
+	/// This has O(n) complexity when n is the number of all the bytes in that itemized storage
 	pub fn apply_item_actions(&self, actions: &[ItemAction]) -> Result<Self, PageError> {
 		let mut parsed = self.parse_as_itemized(true)?;
 
@@ -236,6 +237,7 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	}
 
 	/// Parses all the items inside an ItemPage
+	/// This has O(n) complexity when n is the number of all the bytes in that itemized storage
 	pub fn parse_as_itemized(&self, include_header: bool) -> Result<ParsedItemPage, PageError> {
 		let mut count = 0u16;
 		let mut items = BTreeMap::new();

@@ -377,9 +377,9 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 		storage_name: &[u8],
 	) -> ChildInfo {
 		let trie_root = Self::get_tree_prefix(msa_id);
-		// child tree root should be hashed by Twox128 to avoid probability of conflict
+		// child tree root should be hashed by Blake128 to avoid probability of conflict
 		let hashed_keys: Vec<u8> = [
-			Twox128::hash(&trie_root[..]).as_ref(),
+			Blake2_128::hash(&trie_root[..]).as_ref(),
 			twox_64(pallet_name).as_ref(),
 			twox_64(storage_name).as_ref(),
 		]
@@ -392,3 +392,4 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 		arr.to_vec()
 	}
 }
+
