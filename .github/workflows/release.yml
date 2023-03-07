@@ -593,7 +593,7 @@ jobs:
             /tmp/metadata-compare-*
       - name: Update Git latest tag
         if: env.IS_FULL_RELEASE == 'true'
-        uses: rickstaa/action-create-tag@87a112438ed8b80a2ae25dcf8f11d4949dc4f740
+        uses: rickstaa/action-create-tag@84c90e6ba79b47b5147dcb11ff25d6a0e06238ba
         with:
           tag: "latest"
           force_push_tag: true
