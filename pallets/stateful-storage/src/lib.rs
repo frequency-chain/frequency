@@ -62,6 +62,9 @@ pub mod types;
 
 pub mod weights;
 
+pub mod stateful_signed_extension;
+pub use stateful_signed_extension::*;
+
 use crate::{stateful_child_tree::StatefulChildTree, types::*};
 // Weird compiler issue--warns about unused PageId import when building, but if missing here, `cargo test` fails due to missing import.
 #[allow(unused_imports)]
@@ -273,9 +276,7 @@ pub mod pallet {
 			actions: BoundedVec<ItemAction, T::MaxItemizedActionsCount>,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
-			let is_pruning = actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
 			Self::check_actions(&actions)?;
-			Self::check_schema(schema_id, PayloadLocation::Itemized, false, is_pruning)?;
 			Self::check_grants(provider_key, state_owner_msa_id, schema_id)?;
 			Self::modify_itemized(state_owner_msa_id, schema_id, target_hash, actions)?;
 			Ok(())
@@ -297,7 +298,6 @@ pub mod pallet {
 				page_id as u32 <= T::MaxPaginatedPageId::get(),
 				Error::<T>::PageIdExceedsMaxAllowed
 			);
-			Self::check_schema(schema_id, PayloadLocation::Paginated, false, false)?;
 			Self::check_grants(provider_key, state_owner_msa_id, schema_id)?;
 			Self::modify_paginated(
 				state_owner_msa_id,
@@ -324,7 +324,6 @@ pub mod pallet {
 				page_id as u32 <= T::MaxPaginatedPageId::get(),
 				Error::<T>::PageIdExceedsMaxAllowed
 			);
-			Self::check_schema(schema_id, PayloadLocation::Paginated, false, true)?;
 			Self::check_grants(provider_key, state_owner_msa_id, schema_id)?;
 			Self::delete_paginated(state_owner_msa_id, schema_id, page_id, target_hash)?;
 			Ok(())
@@ -333,7 +332,7 @@ pub mod pallet {
 		/// Applies the Add or Delete Actions on the requested Itemized page that requires signature
 		/// since the signature of delegator is checked there is no need for delegation validation
 		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::apply_item_actions_with_signature( payload.actions.len() as u32 ,
+		#[pallet::weight(T::WeightInfo::apply_item_actions_with_signature( payload.actions.len() as u32,
 			payload.actions.iter().fold(0, |acc, a| acc + match a {
 			ItemAction::Add { data } => data.len() as u32,
 			_ => 0,
@@ -347,7 +346,6 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 
-			let is_pruning = payload.actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
 			Self::check_actions(&payload.actions)?;
 			Self::check_payload_expiration(
 				frame_system::Pallet::<T>::block_number(),
@@ -355,7 +353,6 @@ pub mod pallet {
 			)?;
 			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
 			Self::check_msa(delegator_key, payload.msa_id)?;
-			Self::check_schema(payload.schema_id, PayloadLocation::Itemized, true, is_pruning)?;
 			Self::modify_itemized(
 				payload.msa_id,
 				payload.schema_id,
@@ -386,7 +383,6 @@ pub mod pallet {
 			)?;
 			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
 			Self::check_msa(delegator_key, payload.msa_id)?;
-			Self::check_schema(payload.schema_id, PayloadLocation::Paginated, true, false)?;
 			Self::modify_paginated(
 				payload.msa_id,
 				payload.schema_id,
@@ -418,7 +414,6 @@ pub mod pallet {
 			)?;
 			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
 			Self::check_msa(delegator_key, payload.msa_id)?;
-			Self::check_schema(payload.schema_id, PayloadLocation::Paginated, true, true)?;
 			Self::delete_paginated(
 				payload.msa_id,
 				payload.schema_id,
@@ -603,6 +598,57 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Verify that the target page state is not stale and return the current page.
+	///
+	/// # Errors
+	/// * [`Error::CorruptedState`]
+	/// * [`Error::StalePageState`]
+	///
+	fn get_checked_itemized_page(
+		msa_id: &MessageSourceId,
+		schema_id: &SchemaId,
+		target_hash: &PageHash,
+	) -> Result<(ItemizedPage<T>, PageHash), DispatchError> {
+		let page = StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
+			msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
+			&(*schema_id,),
+		)
+		.map_err(|_| Error::<T>::CorruptedState)?
+		.unwrap_or_default();
+
+		let prev_content_hash = page.get_hash();
+		ensure!(*target_hash == prev_content_hash, Error::<T>::StalePageState);
+		Ok((page, prev_content_hash))
+	}
+
+	/// Verify that the target page state is not stale
+	///
+	/// # Errors
+	/// * [`Error::CorruptedState`]
+	/// * [`Error::StalePageState`]
+	///
+	fn check_paginated_state(
+		msa_id: &MessageSourceId,
+		schema_id: &SchemaId,
+		page_id: &PageId,
+		target_hash: &PageHash,
+	) -> DispatchResult {
+		let page = StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
+			msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&(*schema_id, *page_id),
+		)
+		.map_err(|_| Error::<T>::CorruptedState)?
+		.unwrap_or_default();
+
+		let prev_content_hash = page.get_hash();
+		ensure!(*target_hash == prev_content_hash, Error::<T>::StalePageState);
+		Ok(())
+	}
+
 	/// Modifies an itemized storage by applying provided actions and deposit events
 	fn modify_itemized(
 		state_owner_msa_id: MessageSourceId,
@@ -611,17 +657,8 @@ impl<T: Config> Pallet<T> {
 		actions: BoundedVec<ItemAction, T::MaxItemizedActionsCount>,
 	) -> DispatchResult {
 		let key: ItemizedKey = (schema_id,);
-		let existing_page = StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
-			&state_owner_msa_id,
-			PALLET_STORAGE_PREFIX,
-			ITEMIZED_STORAGE_PREFIX,
-			&key,
-		)
-		.map_err(|_| Error::<T>::CorruptedState)?
-		.unwrap_or_default();
-
-		let prev_content_hash = existing_page.get_hash();
-		ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
+		let (existing_page, prev_content_hash) =
+			Self::get_checked_itemized_page(&state_owner_msa_id, &schema_id, &target_hash)?;
 
 		let updated_page = existing_page.apply_item_actions(&actions[..]).map_err(|e| match e {
 			PageError::ErrorParsing(err) => {

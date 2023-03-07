@@ -2747,6 +2747,7 @@ dependencies = [
  "log",
  "pallet-balances",
  "pallet-msa",
+ "pallet-stateful-storage",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "polkadot-cli",
