@@ -9,13 +9,13 @@ import { firstValueFrom} from "rxjs";
 describe("Capacity Scenario Tests", function () {
     const TEST_EPOCH_LENGTH = 25;
     let otherProviderKeys: KeyringPair;
-    let otherProviderId: u64 | null;
+    let otherProviderId: u64;
     let stakeKeys: KeyringPair;
-    let stakeProviderId: u64 | null;
+    let stakeProviderId: u64;
     let unstakeKeys: KeyringPair;
-    let unstakeProviderId: u64 | null;
+    let unstakeProviderId: u64;
     let withdrawKeys: KeyringPair;
-    let withdrawProviderId: u64 | null;
+    let withdrawProviderId: u64;
 
     let stakeAmount: bigint = 6000000n;
 
@@ -23,11 +23,11 @@ describe("Capacity Scenario Tests", function () {
         // Set the Maximum Epoch Length to TEST_EPOCH_LENGTH blocks
         // This will allow us to test the epoch transition logic
         // without having to wait for 100 blocks
-        let setEpochLengthOp = ExtrinsicHelper.setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
-        let [setEpochLengthEvent] = await setEpochLengthOp.sudoSignAndSend();
-        if (setEpochLengthEvent && 
+        const setEpochLengthOp = ExtrinsicHelper.setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
+        const [setEpochLengthEvent] = await setEpochLengthOp.sudoSignAndSend();
+        if (setEpochLengthEvent &&
             ExtrinsicHelper.api.events.capacity.EpochLengthUpdated.is(setEpochLengthEvent)) {
-            let epochLength = setEpochLengthEvent.data.blocks;
+            const epochLength = setEpochLengthEvent.data.blocks;
             assert.equal(epochLength.toNumber(), TEST_EPOCH_LENGTH, "should set epoch length to TEST_EPOCH_LENGTH blocks");
         }
         else {
@@ -38,7 +38,7 @@ describe("Capacity Scenario Tests", function () {
         // Use this keypair for stake operations
         stakeKeys = createKeys("StakeKeys");
         stakeProviderId = await createMsaAndProvider(stakeKeys, "StakeProvider", stakeAmount);
-        assert.equal(stakeProviderId, 1, "should return stakeProviderId == 1");
+        assert.equal(stakeProviderId, 1, "should populate stakeProviderId");
 
         // Create and fund a keypair with EXISTENTIAL_DEPOSIT
         // Use this keypair for unstake operations
@@ -66,7 +66,7 @@ describe("Capacity Scenario Tests", function () {
             const [stakeEvent] = await stakeObj.fundAndSend();
             assert.notEqual(stakeEvent, undefined, "should return a Stake event");
 
-            if (stakeEvent && ExtrinsicHelper.api.events.capacity.Staked.is(stakeEvent)) {   
+            if (stakeEvent && ExtrinsicHelper.api.events.capacity.Staked.is(stakeEvent)) {
                 let stakedCapacity = stakeEvent.data.capacity;
                 assert.equal(stakedCapacity, 1000000, "should return a Stake event with 1000000 capacity");
             }
@@ -200,7 +200,7 @@ describe("Capacity Scenario Tests", function () {
                 assert.equal(origStaked.remainingCapacity,   4000000, "should return a capacityLedger with 4000000 remainingCapacity");
                 assert.equal(origStaked.totalTokensStaked,   3000000, "should return a capacityLedger with 3000000 total tokens staked");
                 assert.equal(origStaked.totalCapacityIssued, 3000000, "should return a capacityLedger with 3000000 capacity issued");
-            } 
+            }
             // Confirm that the staked capacity was added to the otherProviderId account using the query API
             if (otherProviderId != null) {
                 const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(otherProviderId))).unwrap();
@@ -229,7 +229,7 @@ describe("Capacity Scenario Tests", function () {
         });
     });
 
-    describe("unstake testing", function () {   
+    describe("unstake testing", function () {
         it("should fail to unstake for UnstakedAmountIsZero", async function () {
             const failUnstakeObj = ExtrinsicHelper.unstake(unstakeKeys, unstakeProviderId, 0);
             await assert.rejects(failUnstakeObj.fundAndSend(), { name: "UnstakedAmountIsZero" });
