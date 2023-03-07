@@ -30,6 +30,7 @@ describe("index", function () {
       "MsaRuntimeApi",
       "MessagesRuntimeApi",
       "SchemasRuntimeApi",
+      "StatefulStorageRuntimeApi",
       "AdditionalRuntimeApi",
     ]);
   });

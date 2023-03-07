@@ -8,7 +8,7 @@
 //!
 //! This pallet supports two models for storing stateful data:
 //! 1. **Itemized:** Data is stored in a single **page** (max size: `MaxItemizedPageSizeBytes`) containing multiple items (max item size `MaxItemizedBlobSizeBytes`) of the associated schema.
-//! Useful for schemas with a relative small item size and higher potential item count.
+//! Useful for schemas with a relative small item size and higher potential item count. The read and write complexity is O(n) when n is the number of bytes for all items.
 //! 2. **Paginated:** Data is stored in multiple **pages** of size `MaxPaginatedPageSizeBytes`, each containing a single item of the associated schema.
 //! Page IDs range from 0 .. `MaxPaginatedPageId` (implying there may be at most `MaxPaginatedPageId` + 1 pages per MSA+Schema at any given time, though
 //! there may be holes in that range). Useful for schemas with a larger item size and smaller potential item count.
@@ -433,7 +433,7 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	/// This function returns all the paginated storages associated with `msa_id` and `schema_id`
 	///
-	/// [Warning] since this function iterates over all the potential keys it should never called
+	/// Warning: since this function iterates over all the potential keys it should never called
 	/// from runtime.
 	pub fn get_paginated_storages(
 		msa_id: MessageSourceId,
