@@ -392,4 +392,3 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 		arr.to_vec()
 	}
 }
-
