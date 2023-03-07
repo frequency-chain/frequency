@@ -67,6 +67,33 @@ fn create_msa_account_and_keys<T: Config>() -> (T::AccountId, SignerId, MessageS
 	(account_id, key_pair, msa_id)
 }
 
+fn generate_fake_signature(i: u8) -> MultiSignature {
+	let sig = [i; 64];
+	MultiSignature::Sr25519(sp_core::sr25519::Signature::from_raw(sig))
+}
+
+fn prep_signature_registry<T: Config>() {
+	// Add it with an 0 block expiration
+	let signatures: Vec<MultiSignature> = (1..=50u8).map(|x| generate_fake_signature(x)).collect();
+	let signature_expires_at: T::BlockNumber = 0u32.into();
+	let len = signatures.len();
+	for (i, sig) in signatures.iter().enumerate() {
+		if i < (len - 1) {
+			<PayloadSignatureRegistryList<T>>::insert(
+				sig,
+				(signature_expires_at, signatures[i + 1].clone()),
+			);
+		}
+	}
+	PayloadSignatureRegistryPointer::<T>::put(SignatureRegistryPointer {
+		// The count doesn't change if list is full, so fake the count
+		count: T::MaxSignaturesStored::get().unwrap_or(3),
+		newest: signatures.last().unwrap().clone(),
+		newest_expires_at: signature_expires_at,
+		oldest: signatures.first().unwrap().clone(),
+	});
+}
+
 benchmarks! {
 	create {
 		let caller: T::AccountId = whitelisted_caller();
@@ -80,6 +107,8 @@ benchmarks! {
 	create_sponsored_account_with_delegation {
 		let s in 0 .. T::MaxSchemaGrantsPerDelegation::get();
 
+		prep_signature_registry::<T>();
+
 		let caller: T::AccountId = whitelisted_caller();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
 		assert_ok!(Msa::<T>::create_provider(RawOrigin::Signed(caller.clone()).into(),Vec::from("Foo")));
@@ -87,9 +116,9 @@ benchmarks! {
 		let schemas: Vec<SchemaId> = (0 .. s as u16).collect();
 		T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
 		let (payload, signature, key) = create_payload_and_signature::<T>(schemas, 1u64.into());
-	}: _ (RawOrigin::Signed(caller), key, signature, payload)
+	}: _ (RawOrigin::Signed(caller), key.clone(), signature, payload)
 	verify {
-		assert_eq!(frame_system::Pallet::<T>::events().len(), 2);
+		assert!(Msa::<T>::get_msa_by_public_key(key).is_some());
 	}
 
 	revoke_delegation_by_provider {
@@ -107,19 +136,24 @@ benchmarks! {
 	}
 
 	add_public_key_to_msa {
+		prep_signature_registry::<T>();
+
 		let (provider_public_key, provider_key_pair, _) = create_msa_account_and_keys::<T>();
 		let (delegator_public_key, delegator_key_pair, delegator_msa_id) = create_msa_account_and_keys::<T>();
 
-		let (add_key_payload, new_public_key_signature, _) = add_key_payload_and_signature::<T>(delegator_msa_id);
+		let (add_key_payload, new_public_key_signature, new_public_key) = add_key_payload_and_signature::<T>(delegator_msa_id);
 
 		let encoded_add_key_payload = wrap_binary_data(add_key_payload.encode());
 		let owner_signature = MultiSignature::Sr25519(delegator_key_pair.sign(&encoded_add_key_payload).unwrap().into());
 	}: _ (RawOrigin::Signed(provider_public_key.clone()), delegator_public_key.clone(), owner_signature, new_public_key_signature, add_key_payload)
 	verify {
-		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+		assert!(Msa::<T>::get_msa_by_public_key(new_public_key).is_some());
 	}
 
 	delete_msa_public_key {
+		frame_system::Pallet::<T>::set_block_number(1u32.into());
+		prep_signature_registry::<T>();
+
 		let (provider_public_key, provider_key_pair, _) = create_msa_account_and_keys::<T>();
 		let (caller_and_delegator_public_key, delegator_key_pair, delegator_msa_id) = create_msa_account_and_keys::<T>();
 
@@ -130,9 +164,9 @@ benchmarks! {
 
 		assert_ok!(Msa::<T>::add_public_key_to_msa(RawOrigin::Signed(provider_public_key).into(), caller_and_delegator_public_key.clone(), owner_signature,  new_public_key_signature, add_key_payload));
 
-	}: _(RawOrigin::Signed(caller_and_delegator_public_key), new_public_key)
+	}: _(RawOrigin::Signed(caller_and_delegator_public_key), new_public_key.clone())
 	verify {
-		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+		assert!(Msa::<T>::get_msa_by_public_key(new_public_key).is_none());
 	}
 
 	retire_msa {
@@ -148,6 +182,8 @@ benchmarks! {
 
 	grant_delegation {
 		let s in 0 .. T::MaxSchemaGrantsPerDelegation::get();
+		prep_signature_registry::<T>();
+
 		let provider_caller: T::AccountId = whitelisted_caller();
 
 		let schemas: Vec<SchemaId> = (0 .. s as u16).collect();
@@ -211,25 +247,6 @@ benchmarks! {
 	}:	_ (RawOrigin::Signed(provider_public_key), provider_name)
 	verify {
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
-	}
-
-	grant_schema_permissions {
-		let s in 0 .. T::MaxSchemaGrantsPerDelegation::get();
-
-		let provider_account = create_account::<T>("account", 0);
-		let (provider_msa_id, provider) = Msa::<T>::create_account(provider_account.into(), EMPTY_FUNCTION).unwrap();
-
-		let delegator_account = create_account::<T>("account", 1);
-		let (delegator_msa_id, delegator_public_key) = Msa::<T>::create_account(delegator_account.into(), EMPTY_FUNCTION).unwrap();
-
-		let schema_ids: Vec<SchemaId> = (1..s as u16).collect::<Vec<_>>();
-		T::SchemaValidator::set_schema_count(schema_ids.len().try_into().unwrap());
-
-		assert_ok!(Msa::<T>::add_provider(ProviderId(provider_msa_id), DelegatorId(delegator_msa_id), vec![]));
-	}: _ (RawOrigin::Signed(delegator_public_key), provider_msa_id, schema_ids.clone())
-	verify {
-		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
-		assert_eq!(Msa::<T>::get_delegation(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).unwrap().schema_permissions.len(), schema_ids.len() as usize);
 	}
 
 	revoke_schema_permissions {
