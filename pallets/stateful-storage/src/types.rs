@@ -136,7 +136,7 @@ pub struct PaginatedDeleteSignaturePayload<T: Config> {
 }
 
 /// A generic page of data which supports both Itemized and Paginated
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, Debug, Default)]
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, Debug, Default)]
 #[scale_info(skip_type_params(PageDataSize))]
 #[codec(mel_bound(PageDataSize: MaxEncodedLen))]
 pub struct Page<PageDataSize: Get<u32>> {
@@ -167,9 +167,17 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	}
 }
 
+/// PartialEq and Hash should be both derived or implemented manually based on clippy rules
 impl<PageDataSize: Get<u32>> Hash for Page<PageDataSize> {
 	fn hash<H: Hasher>(&self, state: &mut H) {
 		state.write(&self.data[..]);
+	}
+}
+
+/// PartialEq and Hash should be both derived or implemented manually based on clippy rules
+impl<PageDataSize: Get<u32>> PartialEq for Page<PageDataSize> {
+	fn eq(&self, other: &Self) -> bool {
+		self.data.eq(&other.data)
 	}
 }
 
