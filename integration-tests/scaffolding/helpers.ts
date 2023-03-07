@@ -1,11 +1,13 @@
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { Codec } from "@polkadot/types/types";
+import { u64 } from "@polkadot/types";
 import { u8aToHex, u8aWrapBytes } from "@polkadot/util";
 import { mnemonicGenerate } from '@polkadot/util-crypto';
 import { env } from "./env";
 import { AddKeyData, AddProviderPayload, ExtrinsicHelper } from "./extrinsicHelpers";
 import { EXISTENTIAL_DEPOSIT } from "./rootHooks";
+import assert from "assert";
 
 export interface DevAccount {
     uri: string,
@@ -76,4 +78,26 @@ export function log(...args: any[]) {
     if (env.verbose) {
         console.log(...args);
     }
+}
+
+// Creates an MSA and a provider for the given keys
+// Returns the MSA Id of the provider
+export async function createMsaAndProvider(keys: KeyringPair, providerName: string, amount = EXISTENTIAL_DEPOSIT):
+    Promise<u64>
+{
+    // Create and fund a keypair with stakeAmount
+    // Use this keypair for stake operations
+    await fundKeypair(devAccounts[0].keys, keys, amount);
+    const createMsaOp = ExtrinsicHelper.createMsa(keys);
+    const [MsaCreatedEvent] = await createMsaOp.fundAndSend();
+    assert.notEqual(MsaCreatedEvent, undefined, 'should have returned MsaCreated event');
+
+    const createProviderOp = ExtrinsicHelper.createProvider(keys, providerName);
+    const [ProviderCreatedEvent] = await createProviderOp.fundAndSend();
+    assert.notEqual(ProviderCreatedEvent, undefined, 'should have returned ProviderCreated event');
+
+    if (ProviderCreatedEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(ProviderCreatedEvent)) {
+        return ProviderCreatedEvent.data.providerId;
+    }
+    return Promise.reject('ProviderCreatedEvent should be ExtrinsicHelper.api.events.msa.ProviderCreated');
 }
