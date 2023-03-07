@@ -28,7 +28,9 @@ fi
 
 while [ -z "$PID" ]
 do
-    PID=$(ps aux | grep target/release/frequency | grep -v grep | xargs | awk '{print $2}')
+    sleep 3
+    PID=$(lsof -i tcp:9933 | grep frequency | grep -v grep | xargs | awk '{print $2}')
+    echo "Waiting for 9933 to be open..."
 done
 
 echo "---------------------------------------------"
