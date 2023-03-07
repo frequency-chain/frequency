@@ -579,9 +579,12 @@ impl<T: Config> Pallet<T> {
 			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
 			CurrentEpochInfo::<T>::set(EpochInfo { epoch_start: current_block });
 			CurrentEpochUsedCapacity::<T>::set(0u32.into());
+			// add 1 each read/write for CurrentEpoch, which is whitelisted in benchmarks
 			T::WeightInfo::on_initialize()
+				.saturating_add(RocksDbWeight::get().reads(1))
+				.saturating_add(RocksDbWeight::get().writes(1))
 		} else {
-			RocksDbWeight::get().reads(1u64)
+			RocksDbWeight::get().reads(1u64) // for reading CurrentEpoch, which is whitelisted in benchmarks
 		}
 	}
 }
