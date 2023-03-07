@@ -1,7 +1,7 @@
 use super::*;
 use crate::{self as pallet_frequency_tx_payment, mock::*, ChargeFrqTransactionPayment};
 use frame_support::{assert_noop, assert_ok, weights::Weight};
-use pallet_capacity::Nontransferable;
+use pallet_capacity::{CapacityDetails, CurrentEpoch, Nontransferable};
 
 use sp_runtime::transaction_validity::TransactionValidityError;
 
@@ -488,6 +488,98 @@ fn withdraw_fee_returns_custom_error_when_the_account_key_is_not_associated_with
 				account_id_not_associated_with_msa,
 				call,
 				Some(expected_err),
+			);
+		});
+}
+
+#[test]
+fn withdraw_fee_replenishes_capacity_account_on_new_epoch_before_deducting_fee() {
+	let balance_factor = 10;
+
+	// uses funded account with MSA Id
+	let provider_msa_id = 2u64;
+	let provider_account_id = 2u64;
+	let current_epoch = 11u32;
+	let total_capacity_issued = 30u64;
+	let total_tokens_staked = 30u64;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			CurrentEpoch::<Test>::set(current_epoch);
+
+			let capacity_details = CapacityDetails {
+				remaining_capacity: 1,
+				total_tokens_staked,
+				total_capacity_issued,
+				last_replenished_epoch: 10,
+			};
+			Capacity::set_capacity_for(provider_msa_id, capacity_details);
+
+			let call: &<Test as Config>::RuntimeCall =
+				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+
+			assert_withdraw_fee_result(provider_msa_id, call, None);
+
+			let actual_capacity = Capacity::get_capacity_for(provider_account_id).unwrap();
+
+			assert_eq!(
+				actual_capacity,
+				CapacityDetails {
+					remaining_capacity: total_capacity_issued.saturating_sub(20),
+					total_tokens_staked,
+					total_capacity_issued,
+					last_replenished_epoch: current_epoch,
+				}
+			);
+		});
+}
+
+#[test]
+fn withdraw_fee_does_not_replenish_if_not_new_epoch() {
+	let balance_factor = 10;
+
+	// uses funded account with MSA Id
+	let provider_msa_id = 2u64;
+	let provider_account_id = 2u64;
+	let total_capacity_issued = 30u64;
+	let total_tokens_staked = 30u64;
+	let last_replenished_epoch = 10u32;
+	let current_epoch = last_replenished_epoch;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			CurrentEpoch::<Test>::set(current_epoch);
+
+			let capacity_details = CapacityDetails {
+				remaining_capacity: 21,
+				total_tokens_staked,
+				total_capacity_issued,
+				last_replenished_epoch,
+			};
+			Capacity::set_capacity_for(provider_msa_id, capacity_details);
+
+			let call: &<Test as Config>::RuntimeCall =
+				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+
+			assert_withdraw_fee_result(provider_msa_id, call, None);
+
+			let actual_capacity = Capacity::get_capacity_for(provider_account_id).unwrap();
+
+			// Capacity details should have only the fee taken out
+			assert_eq!(
+				actual_capacity,
+				CapacityDetails {
+					remaining_capacity: 1u64, // fee is 20
+					total_tokens_staked,
+					total_capacity_issued,
+					last_replenished_epoch,
+				}
 			);
 		});
 }
