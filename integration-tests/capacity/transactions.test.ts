@@ -6,7 +6,7 @@ import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { devAccounts, log, createKeys, createMsaAndProvider } from "../scaffolding/helpers";
 import { firstValueFrom} from "rxjs";
 
-describe("Capacity Scenario Tests", function () {
+describe("Capacity Transaction Tests", function () {
     const TEST_EPOCH_LENGTH = 25;
     let otherProviderKeys: KeyringPair;
     let otherProviderId: u64;
