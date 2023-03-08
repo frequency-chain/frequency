@@ -45,6 +45,35 @@ fn create_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
 	)
 }
 
+fn get_itemized_page<T: Config>(
+	msa_id: MessageSourceId,
+	schema_id: SchemaId,
+) -> Option<ItemizedPage<T>> {
+	let key: ItemizedKey = (schema_id,);
+	StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
+		&msa_id,
+		PALLET_STORAGE_PREFIX,
+		ITEMIZED_STORAGE_PREFIX,
+		&key,
+	)
+	.unwrap_or(None)
+}
+
+fn get_paginated_page<T: Config>(
+	msa_id: MessageSourceId,
+	schema_id: SchemaId,
+	page_id: PageId,
+) -> Option<PaginatedPage<T>> {
+	let key: PaginatedKey = (schema_id, page_id);
+	StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
+		&msa_id,
+		PALLET_STORAGE_PREFIX,
+		PAGINATED_STORAGE_PREFIX,
+		&key,
+	)
+	.unwrap_or(None)
+}
+
 benchmarks! {
 	apply_item_actions {
 		let n in 1 .. T::MaxItemizedActionsCount::get() - 1;
@@ -76,7 +105,7 @@ benchmarks! {
 		let actions = itemized_actions_add::<T>(n, s as usize);
 	}: _ (RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, NONEXISTENT_PAGE_HASH, actions)
 	verify {
-		let page_result = StatefulStoragePallet::<T>::get_itemized_page(delegator_msa_id, schema_id);
+		let page_result = get_itemized_page::<T>(delegator_msa_id, schema_id);
 		assert!(page_result.is_some());
 		assert!(page_result.unwrap().data.len() > 0);
 	}
@@ -97,7 +126,7 @@ benchmarks! {
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
 	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id, NONEXISTENT_PAGE_HASH, payload.try_into().unwrap())
 	verify {
-		let page_result = StatefulStoragePallet::<T>::get_paginated_page(delegator_msa_id, schema_id, page_id);
+		let page_result = get_paginated_page::<T>(delegator_msa_id, schema_id, page_id);
 		assert!(page_result.is_some());
 		assert!(page_result.unwrap().data.len() > 0);
 	}
@@ -128,7 +157,7 @@ benchmarks! {
 			&key).unwrap().unwrap().get_hash();
 	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id, content_hash)
 	verify {
-		let page_result = StatefulStoragePallet::<T>::get_paginated_page(delegator_msa_id, schema_id, page_id);
+		let page_result = get_paginated_page::<T>(delegator_msa_id, schema_id, page_id);
 		assert!(page_result.is_none());
 	}
 
@@ -163,7 +192,7 @@ benchmarks! {
 		let signature = delegator_account_public.sign(&encode_data_new_key_data).unwrap();
 	}: _ (RawOrigin::Signed(caller), delegator_account.into(), MultiSignature::Sr25519(signature.into()), payload)
 	verify {
-		let page_result = StatefulStoragePallet::<T>::get_itemized_page(delegator_msa_id, schema_id);
+		let page_result = get_itemized_page::<T>(delegator_msa_id, schema_id);
 		assert!(page_result.is_some());
 		assert!(page_result.unwrap().data.len() > 0);
 	}
@@ -200,7 +229,7 @@ benchmarks! {
 		let signature = delegator_account_public.sign(&encode_data_new_key_data).unwrap();
 	}: _(RawOrigin::Signed(caller), delegator_account.into(), MultiSignature::Sr25519(signature.into()), payload)
 	verify {
-		let page_result = StatefulStoragePallet::<T>::get_paginated_page(delegator_msa_id, schema_id, page_id);
+		let page_result = get_paginated_page::<T>(delegator_msa_id, schema_id, page_id);
 		assert!(page_result.is_some());
 		assert!(page_result.unwrap().data.len() > 0);
 	}
@@ -247,7 +276,7 @@ benchmarks! {
 		let signature = delegator_account_public.sign(&encode_data_new_key_data).unwrap();
 	}: _(RawOrigin::Signed(caller), delegator_account.into(), MultiSignature::Sr25519(signature.into()), payload)
 	verify {
-		let page_result = StatefulStoragePallet::<T>::get_paginated_page(delegator_msa_id, schema_id, page_id);
+		let page_result = get_paginated_page::<T>(delegator_msa_id, schema_id, page_id);
 		assert!(page_result.is_none());
 	}
 

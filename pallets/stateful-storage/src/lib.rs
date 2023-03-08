@@ -742,35 +742,4 @@ impl<T: Config> Pallet<T> {
 
 		Ok(())
 	}
-
-	#[cfg(feature = "runtime-benchmarks")]
-	pub fn get_itemized_page(
-		msa_id: MessageSourceId,
-		schema_id: SchemaId,
-	) -> Option<ItemizedPage<T>> {
-		let key: ItemizedKey = (schema_id,);
-		StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
-			&msa_id,
-			PALLET_STORAGE_PREFIX,
-			ITEMIZED_STORAGE_PREFIX,
-			&key,
-		)
-		.unwrap_or(None)
-	}
-
-	#[cfg(feature = "runtime-benchmarks")]
-	pub fn get_paginated_page(
-		msa_id: MessageSourceId,
-		schema_id: SchemaId,
-		page_id: PageId,
-	) -> Option<PaginatedPage<T>> {
-		let key: PaginatedKey = (schema_id, page_id);
-		StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
-			&msa_id,
-			PALLET_STORAGE_PREFIX,
-			PAGINATED_STORAGE_PREFIX,
-			&key,
-		)
-		.unwrap_or(None)
-	}
 }
