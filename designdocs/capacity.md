@@ -141,12 +141,12 @@ Acceptance Criteria are listed below but can evolve:
    - `CapacityReduction =
          TotalCapacity * (1 - (UnstakingAmount / TotalStakedAmount))`
 
-
-5. The amount unstaked cannot exceed the amount staked.
-6. If the result of the unstaking would be to leave a balance below `config::MinimumStakingAmount`, the entire amount will be unstaked to avoid leaving dust.
-7. when an account has never been a staking account and an attempt to call unstake an error message of NotAStakingAccount should be returned.
-8. If you have a staking account and your active balance is zero, then an error message of AmountToUnstakeExceedsAmountStaked should be returned (the test should include unlocking).
-9. Emits Unstake event.
+5. Remaining Capacity is reduced by the same amount as above.
+6. The amount unstaked cannot exceed the amount staked.
+7. If the result of the unstaking would be to leave a balance below `config::MinimumStakingAmount`, the entire amount will be unstaked to avoid leaving dust.
+8. when an account has never been a staking account and an attempt to call unstake an error message of NotAStakingAccount should be returned.
+9. If you have a staking account and your active balance is zero, then an error message of AmountToUnstakeExceedsAmountStaked should be returned (the test should include unlocking).
+10. Emits Unstake event.
 
 **withdraw_unstaked**
 
@@ -379,11 +379,13 @@ The type for storing Registered Provider Capacity balance:
 
 pub struct CapacityDetails<Balance> {
   /// The Capacity remaining for the `last_replenished_epoch`.
-  pub remaining: Balance,
+  pub remaining_capacity: Balance,
+  /// The amount of tokens staked to an MSA.
+  pub total_tokens_staked: Balance,
   /// The total Capacity issued to an MSA.
-  pub total_available: Balance,
-  /// The last Epoch that an MSA's Capacity was replenished.
-  pub last_replenished_epoch: u32,
+  pub total_capacity_issued: Balance,
+  /// The last Epoch that an MSA was replenished with Capacity.
+  pub last_replenished_epoch: EpochNumber,
 }
 
 ```

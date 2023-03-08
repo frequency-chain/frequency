@@ -212,7 +212,7 @@ fn staking_target_details_withdraw_reduces_total_tokens_staked_and_total_tokens_
 		assert_eq!(
 			capacity_details,
 			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
-				remaining_capacity: BalanceOf::<Test>::from(10u64),
+				remaining_capacity: BalanceOf::<Test>::from(6u64),
 				total_tokens_staked: BalanceOf::<Test>::from(5u64),
 				total_capacity_issued: BalanceOf::<Test>::from(6u64),
 				last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32)
