@@ -1,5 +1,5 @@
 import { options } from "@frequency-chain/api-augment";
-import { ApiRx, WsProvider, Keyring } from "@polkadot/api";
+import { ApiRx, WsProvider, Keyring, ApiPromise } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { firstValueFrom } from "rxjs";
 import { env } from "./env";
@@ -10,6 +10,13 @@ export async function connect(providerUrl?: string | string[] | undefined): Prom
     const provider = new WsProvider(providerUrl || env.providerUrl);
     const apiObservable = ApiRx.create({ provider, ...options });
     return firstValueFrom(apiObservable);
+}
+
+export async function connectPromise(providerUrl?: string | string[] | undefined): Promise<ApiPromise> {
+    const provider = new WsProvider(providerUrl || env.providerUrl);
+    const api = await ApiPromise.create({ provider, ...options });
+    await api.isReady;
+    return api;
 }
 
 export function createKeys(uri: string): KeyringPair {

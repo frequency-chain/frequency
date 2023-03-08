@@ -136,7 +136,7 @@ pub struct PaginatedDeleteSignaturePayload<T: Config> {
 }
 
 /// A generic page of data which supports both Itemized and Paginated
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, Debug, Default)]
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, Debug, Default)]
 #[scale_info(skip_type_params(PageDataSize))]
 #[codec(mel_bound(PageDataSize: MaxEncodedLen))]
 pub struct Page<PageDataSize: Get<u32>> {
@@ -167,9 +167,17 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	}
 }
 
+/// PartialEq and Hash should be both derived or implemented manually based on clippy rules
 impl<PageDataSize: Get<u32>> Hash for Page<PageDataSize> {
 	fn hash<H: Hasher>(&self, state: &mut H) {
 		state.write(&self.data[..]);
+	}
+}
+
+/// PartialEq and Hash should be both derived or implemented manually based on clippy rules
+impl<PageDataSize: Get<u32>> PartialEq for Page<PageDataSize> {
+	fn eq(&self, other: &Self) -> bool {
+		self.data.eq(&other.data)
 	}
 }
 
@@ -190,6 +198,7 @@ impl<PageDataSize: Get<u32>> TryFrom<Vec<u8>> for Page<PageDataSize> {
 
 impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	/// applies all actions to specified page and returns the updated page
+	/// This has O(n) complexity when n is the number of all the bytes in that itemized storage
 	pub fn apply_item_actions(&self, actions: &[ItemAction]) -> Result<Self, PageError> {
 		let mut parsed = self.parse_as_itemized(true)?;
 
@@ -228,6 +237,7 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	}
 
 	/// Parses all the items inside an ItemPage
+	/// This has O(n) complexity when n is the number of all the bytes in that itemized storage
 	pub fn parse_as_itemized(&self, include_header: bool) -> Result<ParsedItemPage, PageError> {
 		let mut count = 0u16;
 		let mut items = BTreeMap::new();

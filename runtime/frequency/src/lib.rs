@@ -114,8 +114,7 @@ impl ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
 	}
 }
 
-/// Basefilter to only allow specified transactions call to be executed
-/// For non mainnet [--features frequency] all transactions are allowed
+/// Basefilter to only allow calls to specified transactions to be executed
 pub struct BaseCallFilter;
 
 impl Contains<RuntimeCall> for BaseCallFilter {
@@ -131,24 +130,15 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		#[cfg(feature = "frequency")]
 		{
 			match call {
+				// Vesting calls are blocked. Issue #1168
+				RuntimeCall::Vesting(..) => false,
 				// Utility Calls are blocked. Issue #599
 				RuntimeCall::Utility(..) => false,
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
-				// Allowed Mainnet
-				RuntimeCall::System(..) |
-				RuntimeCall::Timestamp(..) |
-				RuntimeCall::ParachainSystem(..) |
-				RuntimeCall::TechnicalCommittee(..) |
-				RuntimeCall::Council(..) |
-				RuntimeCall::Democracy(..) |
-				RuntimeCall::Session(..) |
-				RuntimeCall::Preimage(..) |
-				RuntimeCall::Scheduler(..) |
-				RuntimeCall::Treasury(..) => true,
-				// General Mainnet Calls will be enabled with Issue #877
-				_ => false,
+				// Everything else is allowed on Mainnet
+				_ => true,
 			}
 		}
 	}
@@ -183,6 +173,13 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
+/// Migrations for Frequency
+pub type Migrations = (
+	remove_sudo::RemoveSudo,
+	pallet_msa::migration::Migration<Runtime>,
+	pallet_schemas::migrations::SchemaMigrationToV1<Runtime>,
+);
+
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
 	Runtime,
@@ -190,7 +187,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	SchemaMigrationToV1,
+	Migrations,
 >;
 
 // ==============================================
@@ -426,7 +423,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 21,
+	spec_version: 22,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -537,10 +534,6 @@ impl pallet_msa::Config for Runtime {
 	type SchemaValidator = Schemas;
 	// The number of blocks per virtual bucket
 	type MortalityWindowSize = MSAMortalityWindowSize;
-	// The maximum number of signatures per virtual bucket
-	type MaxSignaturesPerBucket = MSAMaxSignaturesPerBucket;
-	// The total number of virtual buckets
-	type NumberOfBuckets = MSANumberOfBuckets;
 	// The maximum number of signatures that can be stored in the payload signature registry
 	type MaxSignaturesStored = MSAMaxSignaturesStored;
 	// The proposal type
@@ -1390,37 +1383,6 @@ cumulus_pallet_parachain_system::register_validate_block! {
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
 	CheckInherents = CheckInherents,
 }
-
-// ==============================================
-//        RUNTIME STORAGE MIGRATION: Schemas
-// ==============================================
-/// Schema migration to v1 for pallet-stateful-storage
-
-pub struct SchemaMigrationToV1;
-impl OnRuntimeUpgrade for SchemaMigrationToV1 {
-	#[cfg(feature = "try-runtime")]
-	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-		let weight = pallet_schemas::migrations::v1::pre_migrate_schemas_to_v1::<Runtime>();
-		log::info!("pre_upgrade weight: {:?}", weight);
-		Ok(Vec::new())
-	}
-
-	// try-runtime migration code
-	#[cfg(not(feature = "try-runtime"))]
-	fn on_runtime_upgrade() -> Weight {
-		pallet_schemas::migrations::v1::migrate_schemas_to_v1::<Runtime>()
-	}
-
-	#[cfg(feature = "try-runtime")]
-	fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
-		let weight = pallet_schemas::migrations::v1::post_migrate_schemas_to_v1::<Runtime>();
-		log::info!("post_upgrade weight: {:?}", weight);
-		Ok(())
-	}
-}
-// ==============================================
-//       END RUNTIME STORAGE MIGRATION: Schemas
-// ==============================================
 
 #[cfg(test)]
 mod tests {

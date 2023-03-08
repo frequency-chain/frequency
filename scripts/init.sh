@@ -71,7 +71,7 @@ start-frequency)
 
 start-frequency-instant)
   printf "\nBuilding frequency with runtime instant sealing ...\n"
-  cargo build --release --features frequency-rococo-local
+  cargo build --features frequency-rococo-local
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
@@ -81,7 +81,7 @@ start-frequency-instant)
     rm -rf $parachain_dir
   fi
 
-  ./target/release/frequency \
+  ./target/debug/frequency \
     --dev \
     -lruntime=debug \
     --instant-sealing \
@@ -101,7 +101,7 @@ start-frequency-instant)
 
 start-frequency-manual)
   printf "\nBuilding frequency with runtime manual sealing ...\n"
-  cargo build --release --features frequency-rococo-local
+  cargo build --locked --features frequency-rococo-local
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
@@ -116,7 +116,7 @@ start-frequency-manual)
   echo "Run 'make local-block' to seal a block."
   echo "---------------------------------------"
 
-  ./target/release/frequency \
+  ./target/debug/frequency \
     --dev \
     -lruntime=debug \
     --manual-sealing \

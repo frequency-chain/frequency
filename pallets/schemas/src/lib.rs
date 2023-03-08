@@ -321,7 +321,7 @@ pub mod pallet {
 		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::create_schema_via_governance(model.len() as u32))]
+		#[pallet::weight(T::WeightInfo::create_schema_via_governance(model.len() as u32+ settings.len() as u32))]
 		pub fn create_schema_via_governance(
 			origin: OriginFor<T>,
 			creator_key: T::AccountId,

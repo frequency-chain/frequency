@@ -1,4 +1,4 @@
-# On Chain State Storage
+# On Chain Stateful Storage
 
 ## Context and Scope
 The proposed feature consists of changes that is going to be one (or more) pallet(s) in runtime of a

@@ -1,4 +1,4 @@
-name: Run Post PR Merge Actions
+name: Merge PR
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
@@ -20,18 +20,19 @@ jobs:
     env:
       HOME: /root
     runs-on: [self-hosted, Linux, X64, build]
+    container: ubuntu:20.04
     steps:
+      - name: Install Required Packages
+        run: |
+          apt-get update
+          apt-get install -y curl protobuf-compiler build-essential libclang-dev
       - name: Check Out Repo
         uses: actions/checkout@v3
-      - name: Reset Runner
-        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
           targets: wasm32-unknown-unknown
           toolchain: stable
-      - name: Check Out Repo
-        uses: actions/checkout@v3
       - name: Output Metadata
         # Run the cargo command and ignore any extra lines outside of the json result
         run: CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo run --features frequency-rococo-local -- export-metadata  --chain=frequency-local --tmp ./js/api-augment/metadata.json
@@ -51,43 +52,45 @@ jobs:
         env:
           FULL_SHA: ${{github.sha}}
       - name: Version Package
-        run: npm version --new-version "v0.0.0-${FULL_SHA:0:6}" --no-git-tag-version
-        working-directory: js/api-augment/dist
         env:
           FULL_SHA: ${{github.sha}}
+        working-directory: js/api-augment/dist
+        shell: bash
+        run: npm version --new-version "v0.0.0-${FULL_SHA:0:6}" --no-git-tag-version
       - name: Publish on NPM @next
         run: npm publish --tag next --access public
         working-directory: js/api-augment/dist
         env:
           NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
 
-  calc-code-coverage-main:
+  calc-code-coverage:
     name: Merge - Calculate Code Coverage
-    runs-on: ubuntu-20.04
+    runs-on: [self-hosted, Linux, X64, build]
+    container: ubuntu:20.04
     steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
       - name: Install Required Packages
         run: |
-          sudo apt-get update
-          sudo apt install -y protobuf-compiler
+          apt-get update
+          apt-get install -y curl protobuf-compiler build-essential libclang-dev git
+          git --version
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
           targets: wasm32-unknown-unknown
           toolchain: stable
-      - name: Run cargo-tarpaulin
-        uses: actions-rs/tarpaulin@044a1e5bdace8dd2f727b1af63c1d9a1d3572068
-        with:
-          version: "0.22.0"
-          # Tarpaulin Docs https://github.com/xd009642/tarpaulin
-          # -e for exclude
-          args: |
-            -v --no-fail-fast --workspace
-            -e frequency frequency-cli frequency-runtime frequency-service
-            --exclude-files **/mock.rs **/weights.rs **/weights/* **/benchmarking.rs
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Generate code coverage
+        run: |
+          cargo llvm-cov -v --no-fail-fast --workspace --lcov --output-path lcov.info \
+          --ignore-filename-regex "^.*\/(mock\.rs|weights(\.rs)?|benchmarking\.rs).*$" \
+          --exclude "frequency,frequency-cli,frequency-runtime,frequency-service" \
+          --features all-frequency-features
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
         with:
+          files: lcov.info
           fail_ci_if_error: false # optional (default = false)
           verbose: true # optional (default = false)

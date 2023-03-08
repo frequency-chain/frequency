@@ -87,9 +87,8 @@ ignore = [
     #    See: https://github.com/LibertyDSNP/frequency/issues/860
     #    See: https://github.com/LibertyDSNP/frequency/issues/864
     "RUSTSEC-2022-0076",
-    # Substrate dependency being removed slowly
-    #    Will be removed in future substrate release
-    "RUSTSEC-2022-0080",
+    # Polkadot build dependency only
+    "RUSTSEC-2023-0018",
     # Substrate depednency
     #    Windows issue, does not effect Frequency
     "RUSTSEC-2021-0145",

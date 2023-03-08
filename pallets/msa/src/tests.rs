@@ -23,7 +23,7 @@ use crate::{
 use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MessageSourceId, ProviderId,
-		ProviderRegistryEntry, SchemaGrantValidator,
+		ProviderRegistryEntry, SchemaGrantValidator, SignatureRegistryPointer,
 	},
 	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
@@ -547,6 +547,29 @@ fn test_ensure_msa_can_retire_fails_if_more_than_one_account_exists() {
 }
 
 #[test]
+fn test_ensure_msa_can_retire_fails_if_any_delegations_exist() {
+	new_test_ext().execute_with(|| {
+		// Create delegator
+		let msa_id = 2;
+		let (test_account_key_pair, _) = sr25519::Pair::generate();
+		let test_account = AccountId32::new(test_account_key_pair.public().into());
+		assert_ok!(Msa::add_key(msa_id, &test_account, EMPTY_FUNCTION));
+
+		// Create provider
+		let (provider_id, _provider_key) = create_provider_with_name("test");
+		let schema_ids = vec![1];
+		set_schema_count::<Test>(1);
+		assert_ok!(Msa::add_provider(ProviderId(provider_id), DelegatorId(msa_id), schema_ids));
+
+		// Retire the MSA
+		assert_err!(
+			CheckFreeExtrinsicUse::<Test>::ensure_msa_can_retire(&test_account),
+			InvalidTransaction::Custom(ValidityError::InvalidNonZeroProviderDelegations as u8)
+		);
+	})
+}
+
+#[test]
 pub fn test_get_owner_of() {
 	new_test_ext().execute_with(|| {
 		assert_eq!(Msa::get_owner_of(&test_public(1)), None);
@@ -670,7 +693,9 @@ pub fn grant_delegation_changes_schema_permissions() {
 			Vec::from("Foo")
 		));
 
-		System::set_block_number(1);
+		let block_expiration: BlockNumber = 110;
+
+		System::set_block_number(90);
 		set_schema_count::<Test>(10);
 
 		// Create delegation without any schema permissions
@@ -679,6 +704,7 @@ pub fn grant_delegation_changes_schema_permissions() {
 				delegator_pair.clone(),
 				provider_msa,
 				None,
+				block_expiration,
 			);
 
 		assert_ok!(Msa::grant_delegation(
@@ -704,12 +730,13 @@ pub fn grant_delegation_changes_schema_permissions() {
 			.into(),
 		);
 
-		// Grant delegation w/schemas 1, 2, 3, and 4 at current block 1
+		// Grant delegation w/schemas 1, 2, and 3 (implies block 0)
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload_with_schemas(
 				delegator_pair.clone(),
 				provider_msa,
-				Some(vec![1, 2, 3, 4]),
+				Some(vec![1, 2, 3]),
+				block_expiration,
 			);
 
 		assert_ok!(Msa::grant_delegation(
@@ -723,20 +750,20 @@ pub fn grant_delegation_changes_schema_permissions() {
 		assert_ok!(sp.try_insert(1u16, 0u64));
 		assert_ok!(sp.try_insert(2u16, 0u64));
 		assert_ok!(sp.try_insert(3u16, 0u64));
-		assert_ok!(sp.try_insert(4u16, 0u64));
 
 		let expected = Delegation { revoked_at: 0, schema_permissions: sp };
 
 		assert_eq!(Msa::get_delegation(delegator, provider), Some(expected));
 
-		System::set_block_number(2);
-		// Grant delegation w/schemas 3, 4, 5, and 6.
-		// This should add 5 and 6 w/block 0 and revoke 1 and 2 at block 2.
+		let revoked_block_number: u64 = 100;
+		System::set_block_number(revoked_block_number);
+		// Revoke all schema ids.
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload_with_schemas(
 				delegator_pair.clone(),
 				provider_msa,
-				Some(vec![3, 4, 5, 6]),
+				None,
+				block_expiration,
 			);
 
 		assert_ok!(Msa::grant_delegation(
@@ -747,24 +774,22 @@ pub fn grant_delegation_changes_schema_permissions() {
 		));
 
 		let mut sp = BoundedBTreeMap::<SchemaId, u64, MaxSchemaGrantsPerDelegation>::new();
-		assert_ok!(sp.try_insert(1u16, 2u64)); // schema id 1 revoked at block 2
-		assert_ok!(sp.try_insert(2u16, 2u64)); // schema id 2 revoked at block 2
-		assert_ok!(sp.try_insert(3u16, 0u64));
-		assert_ok!(sp.try_insert(4u16, 0u64));
-		assert_ok!(sp.try_insert(5u16, 0u64));
-		assert_ok!(sp.try_insert(6u16, 0u64));
+		assert_ok!(sp.try_insert(1u16, revoked_block_number)); // schema id 1 revoked at revoked_block_number
+		assert_ok!(sp.try_insert(2u16, revoked_block_number)); // schema id 2 revoked at revoked_block_number
+		assert_ok!(sp.try_insert(3u16, revoked_block_number)); // schema id 3 revoked at revoked_block_number
 
 		let expected = Delegation { revoked_at: 0, schema_permissions: sp };
 
 		assert_eq!(Msa::get_delegation(delegator, provider), Some(expected));
 
-		System::set_block_number(5);
-		// Grant 1, 3, 6
+		System::set_block_number(revoked_block_number + 1);
+		// Grant 2, 3, 4
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload_with_schemas(
 				delegator_pair.clone(),
 				provider_msa,
-				Some(vec![1, 3, 6]),
+				Some(vec![2, 3, 4]),
+				block_expiration,
 			);
 
 		assert_ok!(Msa::grant_delegation(
@@ -775,12 +800,10 @@ pub fn grant_delegation_changes_schema_permissions() {
 		));
 
 		let mut sp = BoundedBTreeMap::<SchemaId, u64, MaxSchemaGrantsPerDelegation>::new();
-		assert_ok!(sp.try_insert(1u16, 2u64)); // schema id 1 should stay revoked at block 2
-		assert_ok!(sp.try_insert(2u16, 2u64)); // schema id 2 should stay revoked at block 2
-		assert_ok!(sp.try_insert(3u16, 0u64)); // leave alone
-		assert_ok!(sp.try_insert(4u16, 5u64)); // revoke
-		assert_ok!(sp.try_insert(5u16, 5u64)); // revoke
-		assert_ok!(sp.try_insert(6u16, 0u64)); // leave alone
+		assert_ok!(sp.try_insert(1u16, 100u64)); // schema id 1 revoked at block 100
+		assert_ok!(sp.try_insert(2u16, 0u64)); // schema id 2 granted (block 0)
+		assert_ok!(sp.try_insert(3u16, 0u64)); // schema id 3 granted (block 0)
+		assert_ok!(sp.try_insert(4u16, 0u64)); // schema id 4 granted (block 0)
 
 		let expected = Delegation { revoked_at: 0, schema_permissions: sp };
 		assert_eq!(Msa::get_delegation(delegator, provider), Some(expected));
@@ -1889,8 +1912,16 @@ fn add_public_key_to_msa_registers_two_signatures() {
 			add_new_key_data
 		));
 
-		assert_eq!(Msa::get_payload_signature_registry(0, owner_signature).unwrap(), 10);
-		assert_eq!(Msa::get_payload_signature_registry(0, new_key_signature).unwrap(), 10);
+		assert_eq!(Msa::get_payload_signature_registry(owner_signature.clone()).unwrap().0, 10);
+		assert_eq!(
+			Msa::get_payload_signature_pointer().unwrap(),
+			SignatureRegistryPointer {
+				newest: new_key_signature,
+				newest_expires_at: 10u32.into(),
+				oldest: owner_signature,
+				count: 2,
+			}
+		);
 	});
 }
 
@@ -2485,79 +2516,6 @@ fn grant_permissions_for_schema_success() {
 		expected.try_insert(2, Default::default()).expect("testing expected");
 
 		assert_eq!(delegation_relationship.schema_permissions, expected);
-	});
-}
-
-#[test]
-fn grant_schema_permissions_errors_when_no_key_exists() {
-	new_test_ext().execute_with(|| {
-		let (delegator_pair, _) = sr25519::Pair::generate();
-		let delegator_account = delegator_pair.public();
-
-		let provider = ProviderId(2);
-		let schema_ids: Vec<SchemaId> = vec![1];
-
-		assert_noop!(
-			Msa::grant_schema_permissions(
-				RuntimeOrigin::signed(delegator_account.into()),
-				provider.into(),
-				schema_ids,
-			),
-			Error::<Test>::NoKeyExists
-		);
-	});
-}
-
-#[test]
-fn grant_schema_permissions_errors_when_delegation_not_found_error() {
-	new_test_ext().execute_with(|| {
-		let (delegator_pair, _) = sr25519::Pair::generate();
-		let delegator_account = delegator_pair.public();
-
-		let provider = ProviderId(2);
-		let schema_ids: Vec<SchemaId> = vec![1];
-
-		assert_ok!(Msa::create(RuntimeOrigin::signed(delegator_account.into())));
-
-		assert_noop!(
-			Msa::grant_schema_permissions(
-				RuntimeOrigin::signed(delegator_account.into()),
-				provider.into(),
-				schema_ids,
-			),
-			Error::<Test>::DelegationNotFound
-		);
-	});
-}
-
-#[test]
-fn grant_schema_permissions_success() {
-	new_test_ext().execute_with(|| {
-		set_schema_count::<Test>(3);
-
-		let (key_pair, _) = sr25519::Pair::generate();
-		let provider_account = key_pair.public();
-
-		let (delegator_pair, _) = sr25519::Pair::generate();
-		let delegator_account = delegator_pair.public();
-
-		assert_ok!(Msa::create(RuntimeOrigin::signed(delegator_account.into())));
-		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
-
-		let delegator_id = DelegatorId(1);
-		let provider_id = ProviderId(2);
-
-		assert_ok!(Msa::add_provider(provider_id, delegator_id, Default::default()));
-
-		let schema_ids: Vec<SchemaId> = vec![2];
-
-		assert_ok!(Msa::grant_schema_permissions(
-			RuntimeOrigin::signed(delegator_account.into()),
-			provider_id.into(),
-			schema_ids,
-		));
-
-		System::assert_last_event(Event::DelegationUpdated { provider_id, delegator_id }.into());
 	});
 }
 
