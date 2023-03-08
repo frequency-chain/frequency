@@ -23,11 +23,17 @@ runs:
       shell: bash
       run: |
         find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +
-    - name: Prune docker Resources
+    - name: Prune Docker Resources
       shell: bash
       run: |
+        set -x
         if [ "$(which docker)" ] && [ "$(docker --version)" ]; then
           echo "Docker is found. Cleaning..."
+          containers=$(docker ps --all --quiet)
+          if [ ! -z "$containers" ]; then
+            docker container rm -f $containers;
+          fi
+          docker container ls -a
           docker system prune -a --volumes
           docker image prune -a -f --filter "until=720h"
           echo "Finished cleaning docker resources."
