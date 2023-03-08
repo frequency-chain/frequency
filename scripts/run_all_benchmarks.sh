@@ -106,10 +106,14 @@ while getopts 'dh:p:st:v' flag; do
     t)
       # Set target profile
       case ${OPTARG} in
-        production|release|dev)
+        production|release|dev|bench-dev)
           PROFILE="${OPTARG}"
+          PROFILE_DIR=${PROFILE}
           # For historical reasons, cargo puts dev builds in the "debug" directory
-          PROFILE_DIR=${PROFILE/dev/debug}
+          if [ ${PROFILE} = "dev" ]
+          then
+            PROFILE_DIR=debug
+          fi
           ;;
         *) echo "Unrecognized target profile: ${OPTARG}"
            usage ${0}
@@ -147,7 +151,7 @@ do
       EXTERNAL_PALLETS=( "${EXTERNAL_PALLETS[@]}" "${pallet}" )
    elif is_custom_pallet ${pallet}
    then
-      CUSTOM_PALLETS=( "${CUSTOM_PALLETS[@]}" "pallet_${pallet}" )
+      CUSTOM_PALLETS=( "${CUSTOM_PALLETS[@]}" "${pallet}" )
    elif [[ "${pallet}" == "overhead" ]]
    then
       OVERHEAD=overhead
@@ -159,12 +163,12 @@ done
 
 if [[ -n "${PALLET}" ]]
 then
-   if is_external_pallet ${pallet}
+   if is_external_pallet ${PALLET}
    then
-      EXTERNAL_PALLETS=( "${pallet}" )
-   elif is_custom_pallet ${pallet}
+      EXTERNAL_PALLETS=( "${PALLET}" )
+   elif is_custom_pallet ${PALLET}
    then
-      CUSTOM_PALLETS=( "pallet_${pallet}" )
+      CUSTOM_PALLETS=( "${PALLET}" )
    elif [[ "${PALLET}" == "overhead" ]]
    then
       OVERHEAD=overhead
@@ -192,18 +196,19 @@ ${OVERHEAD}"
 
 function run_benchmark() {
   echo "Running benchmarks for ${1}"
-  echo " "
+  set -x
   ${BENCHMARK} pallet \
-  --pallet ${1} \
+  --pallet=${1} \
   --extrinsic "*" \
   --chain="frequency-bench" \
-  --execution wasm \
+  --execution=wasm \
   --heap-pages=4096 \
-  --wasm-execution compiled \
+  --wasm-execution=compiled \
   --steps=${2} \
   --repeat=${3} \
   --output=${4} \
   --template=${5}
+  set +x
 }
 
 if [[ ${skip_build} == false ]]
@@ -225,8 +230,8 @@ for pallet_name in "${CUSTOM_PALLETS[@]}"; do
   steps=20
   repeat=10
   template=${PROJECT}/.maintain/frame-weight-template.hbs
-  output=${PROJECT}/pallets/${pallet_name}/src/weights.rs
-  run_benchmark ${pallet_name} ${steps} ${repeat} ${output} ${template} || exit_err
+  output=${PROJECT}/pallets/${pallet_name/_/-}/src/weights.rs
+  run_benchmark pallet_${pallet_name} ${steps} ${repeat} ${output} ${template} || exit_err
 done
 
 if [[ -n "${OVERHEAD}" ]]

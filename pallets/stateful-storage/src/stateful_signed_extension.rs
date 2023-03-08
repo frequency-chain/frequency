@@ -93,7 +93,10 @@ impl<T: Config> StatefulStorageValidate<T> for Pallet<T> {
 		Self::get_checked_itemized_page(msa_id, schema_id, target_hash)
 			.map_err(|e| map_dispatch_error(e))?;
 
-		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
+		return ValidTransaction::with_tag_prefix(TAG_PREFIX)
+			.and_provides(msa_id)
+			.and_provides(schema_id)
+			.build()
 	}
 
 	/// Validates the following criteria for a Paginated Stateful Storage extrinsic:
@@ -140,7 +143,11 @@ impl<T: Config> StatefulStorageValidate<T> for Pallet<T> {
 		Self::check_paginated_state(msa_id, schema_id, page_id, target_hash)
 			.map_err(|e| map_dispatch_error(e))?;
 
-		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
+		return ValidTransaction::with_tag_prefix(TAG_PREFIX)
+			.and_provides(msa_id)
+			.and_provides(schema_id)
+			.and_provides(page_id)
+			.build()
 	}
 }
 
