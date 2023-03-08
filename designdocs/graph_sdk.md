@@ -55,9 +55,100 @@ persisted updates.
 
 ## Interface
 
-TODO: add interface
+* ###### import
+  * params
+    * _**graph_data**_: A list of `Import` type
+
+* ###### getConnections
+  * params
+    * _**msa_id**_: Owner of the graph we are trying to read/write
+    * _**privacy_level**_: Public or Private
+    * _**relationship_type**_: Follow or Friendship
+  * returns
+    *  A list of `Connection` type
+
+* ###### SetPublicKeys
+  * params
+    * _**msa_keys**_: A list of msa ids and their public keys to be able to calculate PRI ids of
+`MsaKey` type
+
+* ###### ApplyActions
+  * _**actions**_: a list of connect or disconnect actions of `Action` type
+
+* ###### CalculateUpdates
+    * returns
+        * A list of `Update` type
+
+* ###### RotateKeys
+  * params:
+    * a list of `Rotation` type
 
 ## Concepts and entities
+
+```rust
+type Page = Vec<u8>;
+
+pub enum PrivacyType {
+    Public,
+    Private,
+}
+
+pub enum ConnectionType {
+    Follow,
+    Friendship,
+}
+
+pub struct Import {
+    pub msa_id: MessageSourceId,
+    pub keys: Vec<KeyPair>,    // need to define KeyPair based on NaCl library
+    pub pages: Vec<Page>,
+}
+
+pub struct Connection {
+    pub msa_id: MessageSourceId,
+    pub privacy_type: PrivacyType,
+    pub connection_type: ConnectionType,
+}
+
+pub struct MsaKey {
+    pub msa_id: MessageSourceId,
+    pub keys: Vec<PublicKey>,  // need to define PublicKey based on NaCl library
+}
+
+pub enum Action {
+    Connect {
+        owner_msa_id: MessageSourceId,
+        connection: Connection,
+        connection_key: Option<PublicKey>,
+    },
+    Disconnect {
+        owner_msa_id: MessageSourceId,
+        connection: Connection,
+    },
+}
+
+pub enum Update {
+    Persist {
+        owner_msa_id: MessageSourceId,
+        schema_id: SchemaId,
+        page_id: PageId,
+        prev_hash: Vec<u8>,
+        payload: Vec<u8>,
+    },
+    Delete {
+        owner_msa_id: MessageSourceId,
+        schema_id: SchemaId,
+        page_id: PageId,
+        prev_hash: Vec<u8>,
+    },
+}
+
+pub struct Rotation {
+    owner_msa_id: MessageSourceId,
+    prev_keys: Vec<KeyPair>,
+    new_key: KeyPair,
+}
+```
 
 ![Entities](https://user-images.githubusercontent.com/9152501/222261121-185d4d9d-1ecb-4ffa-8fe0-8612e58d7b27.png)
 
