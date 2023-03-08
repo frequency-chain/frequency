@@ -105,7 +105,7 @@ describe("Capacity Transaction Tests", function () {
             assert.equal(capacityStaked.totalCapacityIssued, 0,       "should return a capacityLedger with 0 capacity issued");
         });
 
-        it("should successfully withdraw the unstaked amount", async function () {
+        it("withdraws the unstaked amount", async function () {
             // Mine enough blocks to pass the unstake period
             for (let index = 0; index < 2*TEST_EPOCH_LENGTH; index++) {
                 await ExtrinsicHelper.createBlock();
@@ -133,7 +133,7 @@ describe("Capacity Transaction Tests", function () {
     });
 
     describe("increase stake testing", function () {
-        it("increases stake for stakeProviderId", async function () {
+        it("should successfully increase stake for stakeProviderId", async function () {
             // Now starting from zero again with stakeProviderId, Stake 1M capacity
             const stakeObj = ExtrinsicHelper.stake(stakeKeys, stakeProviderId, 1000000);
             const [stakeEvent] = await stakeObj.fundAndSend();
@@ -185,7 +185,7 @@ describe("Capacity Transaction Tests", function () {
             // stakeProviderId should still have 3M from first test case in this describe.
             // otherProvider should now have 1M
             const origStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            assert.equal(origStaked.remainingCapacity,   3000000, "should return a capacityLedger with 4000000 remainingCapacity");
+            assert.equal(origStaked.remainingCapacity,   3000000, "should return a capacityLedger with 3000000 remainingCapacity");
             assert.equal(origStaked.totalTokensStaked,   3000000, "should return a capacityLedger with 3000000 total tokens staked");
             assert.equal(origStaked.totalCapacityIssued, 3000000, "should return a capacityLedger with 3000000 capacity issued");
 
