@@ -11,6 +11,7 @@ on:
 env:
   NEW_RELEASE_VERSION: ${{github.ref_name}}
   NEW_RELEASE_TAG: ${{github.ref_name}}
+  RUST_TOOLCHAIN: "nightly-2022-10-09" # TODO: Set this dynamically
 jobs:
   build-binaries:
     name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
@@ -428,9 +429,9 @@ jobs:
           echo "Ref. version: $REF_VERSION" >> ${{env.OUTPUT_FILENAME}}
           echo "Test version: $BIN_VERSION" >> ${{env.OUTPUT_FILENAME}}
           echo "----------------------------------------------------------------------" >> ${{env.OUTPUT_FILENAME}}
-      - name: Compare Metadata # Change back to jacogr/polkadot-js-tools once it is fixed: https://github.com/polkadot-js/tools/issues/455
+      - name: Compare Metadata
         run: |
-          CMD="docker run --pull always --network host wilwade/polkadot-js-tools metadata ws://localhost:9946 ws://localhost:9944"
+          CMD="docker run --pull always --network host frequencychain/polkadot-js-tools metadata ws://localhost:9946 ws://localhost:9944"
           echo -e "Running:\n$CMD"
           $CMD >> ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
           sed -z -i 's/\n\n/\n/g' ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
