@@ -48,8 +48,14 @@ then
         echo "Error building Frequency executable; aborting."
         exit 1
     fi
-    echo "Starting a Frequency Node..."
-    ${RUNDIR}/init.sh start-frequency-instant >& frequency.log &
+
+    echo "Starting a Frequency Node with ${START}..."
+    case ${START} in
+        "start") ${RUNDIR}/init.sh start-frequency-instant >& frequency.log &
+        ;;
+        "start-manual") ${RUNDIR}/init.sh start-frequency-manual >& frequency.log &
+        ;;
+    esac
     SHOULD_KILL=true
 fi
 
