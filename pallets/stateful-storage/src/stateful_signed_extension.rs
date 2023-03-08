@@ -30,7 +30,6 @@ pub struct StatefulSignedExtension<T: Config + Send + Sync>(PhantomData<T>);
 
 pub trait StatefulStorageValidate<C: Config> {
 	fn validate_itemized(
-		account_id: &C::AccountId,
 		msa_id: &MessageSourceId,
 		schema_id: &SchemaId,
 		actions: &BoundedVec<ItemAction, C::MaxItemizedActionsCount>,
@@ -39,7 +38,6 @@ pub trait StatefulStorageValidate<C: Config> {
 	) -> TransactionValidity;
 
 	fn validate_paginated(
-		account_id: &C::AccountId,
 		msa_id: &MessageSourceId,
 		schema_id: &SchemaId,
 		page_id: &PageId,
@@ -77,7 +75,6 @@ impl<T: Config> StatefulStorageValidate<T> for Pallet<T> {
 	/// * [`Error::StalePageState`]
 	///
 	fn validate_itemized(
-		account_id: &T::AccountId,
 		msa_id: &MessageSourceId,
 		schema_id: &SchemaId,
 		actions: &BoundedVec<ItemAction, T::MaxItemizedActionsCount>,
@@ -127,7 +124,6 @@ impl<T: Config> StatefulStorageValidate<T> for Pallet<T> {
 	/// * [`Error::StalePageState`]
 	///
 	fn validate_paginated(
-		account_id: &T::AccountId,
 		msa_id: &MessageSourceId,
 		schema_id: &SchemaId,
 		page_id: &PageId,
@@ -151,7 +147,7 @@ impl<T: Config> StatefulStorageValidate<T> for Pallet<T> {
 	}
 }
 
-fn map_dispatch_error(err: DispatchError) -> InvalidTransaction {
+pub fn map_dispatch_error(err: DispatchError) -> InvalidTransaction {
 	InvalidTransaction::Custom(match err {
 		DispatchError::Module(module_err) => module_err.index,
 		_ => 255u8,
@@ -215,7 +211,7 @@ where
 	///
 	fn validate(
 		&self,
-		who: &Self::AccountId,
+		_who: &Self::AccountId,
 		call: &Self::Call,
 		_info: &DispatchInfoOf<Self::Call>,
 		_len: usize,
@@ -228,7 +224,6 @@ where
 				target_hash,
 				..
 			}) => Pallet::<T>::validate_itemized(
-				who,
 				state_owner_msa_id,
 				schema_id,
 				actions,
@@ -237,7 +232,6 @@ where
 			),
 			Some(Call::apply_item_actions_with_signature { payload, .. }) =>
 				Pallet::<T>::validate_itemized(
-					who,
 					&payload.msa_id,
 					&payload.schema_id,
 					&payload.actions,
@@ -247,7 +241,6 @@ where
 			Some(Call::upsert_page {
 				state_owner_msa_id, schema_id, page_id, target_hash, ..
 			}) => Pallet::<T>::validate_paginated(
-				who,
 				state_owner_msa_id,
 				schema_id,
 				page_id,
@@ -257,7 +250,6 @@ where
 			),
 			Some(Call::upsert_page_with_signature { payload, .. }) =>
 				Pallet::<T>::validate_paginated(
-					who,
 					&payload.msa_id,
 					&payload.schema_id,
 					&payload.page_id,
@@ -267,7 +259,6 @@ where
 				),
 			Some(Call::delete_page { state_owner_msa_id, schema_id, page_id, target_hash }) =>
 				Pallet::<T>::validate_paginated(
-					who,
 					state_owner_msa_id,
 					schema_id,
 					page_id,
@@ -277,7 +268,6 @@ where
 				),
 			Some(Call::delete_page_with_signature { payload, .. }) =>
 				Pallet::<T>::validate_paginated(
-					who,
 					&payload.msa_id,
 					&payload.schema_id,
 					&payload.page_id,

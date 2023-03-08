@@ -1,7 +1,7 @@
 use super::{mock::*, Event as StatefulEvent};
 use crate::{
-	pallet, stateful_child_tree::StatefulChildTree, test_common::constants::*, types::*, Config,
-	Error,
+	map_dispatch_error, pallet, stateful_child_tree::StatefulChildTree, test_common::constants::*,
+	types::*, Config, Error, StatefulStorageValidate,
 };
 use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::{
@@ -106,49 +106,47 @@ fn upsert_page_with_invalid_msa_errors() {
 }
 
 #[test]
-fn upsert_page_with_invalid_schema_id_errors() {
+fn validate_paginated_with_invalid_schema_id_errors() {
 	new_test_ext().execute_with(|| {
 		// setup
-		let msa_id = 1;
-		let caller_1 = test_public(msa_id);
+		let msa_id = 1u64;
 		let schema_id = INVALID_SCHEMA_ID;
 		let page_id = 1;
 		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
 		assert_err!(
-			StatefulStoragePallet::upsert_page(
-				RuntimeOrigin::signed(caller_1),
-				msa_id.into(),
-				schema_id,
-				page_id,
-				hash_payload(&payload),
-				payload
+			StatefulStoragePallet::validate_paginated(
+				&msa_id,
+				&schema_id,
+				&page_id,
+				false,
+				false,
+				&hash_payload(&payload),
 			),
-			Error::<Test>::InvalidSchemaId
+			map_dispatch_error(Error::<Test>::InvalidSchemaId.into())
 		)
 	})
 }
 
 #[test]
-fn upsert_page_with_invalid_schema_payload_location_errors() {
+fn validate_paginated_with_invalid_schema_payload_location_errors() {
 	new_test_ext().execute_with(|| {
 		// setup
-		let msa_id = 1;
-		let caller_1 = test_public(msa_id);
+		let msa_id = 1u64;
 		let schema_id = ITEMIZED_SCHEMA;
 		let page_id = 1;
 		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 
 		assert_err!(
-			StatefulStoragePallet::upsert_page(
-				RuntimeOrigin::signed(caller_1),
-				msa_id.into(),
-				schema_id,
-				page_id,
-				hash_payload(&payload),
-				payload
+			StatefulStoragePallet::validate_paginated(
+				&msa_id,
+				&schema_id,
+				&page_id,
+				false,
+				false,
+				&hash_payload(&payload),
 			),
-			Error::<Test>::SchemaPayloadLocationMismatch
+			map_dispatch_error(Error::<Test>::SchemaPayloadLocationMismatch.into())
 		)
 	})
 }
@@ -363,45 +361,45 @@ fn delete_page_with_invalid_msa_errors() {
 }
 
 #[test]
-fn delete_page_with_invalid_schema_id_errors() {
+fn validate_delete_page_with_invalid_schema_id_errors() {
 	new_test_ext().execute_with(|| {
 		// setup
 		let msa_id = 1;
-		let caller_1 = test_public(1);
 		let schema_id = INVALID_SCHEMA_ID;
 		let page_id = 1;
 
 		assert_err!(
-			StatefulStoragePallet::delete_page(
-				RuntimeOrigin::signed(caller_1),
-				msa_id,
-				schema_id,
-				page_id,
-				NONEXISTENT_PAGE_HASH,
+			StatefulStoragePallet::validate_paginated(
+				&msa_id,
+				&schema_id,
+				&page_id,
+				false,
+				true,
+				&NONEXISTENT_PAGE_HASH,
 			),
-			Error::<Test>::InvalidSchemaId
+			map_dispatch_error(Error::<Test>::InvalidSchemaId.into())
 		)
 	})
 }
 
 #[test]
-fn delete_page_with_invalid_schema_payload_location_errors() {
+fn validate_delete_page_with_invalid_schema_payload_location_errors() {
 	new_test_ext().execute_with(|| {
 		// setup
 		let msa_id = 1;
-		let caller_1 = test_public(msa_id);
 		let schema_id = ITEMIZED_SCHEMA;
 		let page_id = 1;
 
 		assert_err!(
-			StatefulStoragePallet::delete_page(
-				RuntimeOrigin::signed(caller_1),
-				msa_id,
-				schema_id,
-				page_id,
-				NONEXISTENT_PAGE_HASH,
+			StatefulStoragePallet::validate_paginated(
+				&msa_id,
+				&schema_id,
+				&page_id,
+				false,
+				true,
+				&NONEXISTENT_PAGE_HASH,
 			),
-			Error::<Test>::SchemaPayloadLocationMismatch
+			map_dispatch_error(Error::<Test>::SchemaPayloadLocationMismatch.into())
 		)
 	})
 }
@@ -828,49 +826,47 @@ fn apply_item_actions_with_invalid_msa_should_fail() {
 }
 
 #[test]
-fn apply_item_actions_with_invalid_schema_id_should_fail() {
+fn validate_item_actions_with_invalid_schema_id_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let msa_id = 1;
-		let caller_1 = test_public(msa_id);
 		let schema_id = INVALID_SCHEMA_ID;
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload }];
 
 		// act
 		assert_err!(
-			StatefulStoragePallet::apply_item_actions(
-				RuntimeOrigin::signed(caller_1),
-				msa_id,
-				schema_id,
-				NONEXISTENT_PAGE_HASH,
-				BoundedVec::try_from(actions).unwrap(),
+			StatefulStoragePallet::validate_itemized(
+				&msa_id,
+				&schema_id,
+				&BoundedVec::try_from(actions).unwrap(),
+				false,
+				&NONEXISTENT_PAGE_HASH,
 			),
-			Error::<Test>::InvalidSchemaId
+			map_dispatch_error(Error::<Test>::InvalidSchemaId.into())
 		)
 	});
 }
 
 #[test]
-fn apply_item_actions_with_invalid_schema_location_should_fail() {
+fn validate_item_actions_with_invalid_schema_location_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let msa_id = 1;
-		let caller_1 = test_public(msa_id);
 		let schema_id = PAGINATED_SCHEMA;
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload }];
 
 		// act
 		assert_err!(
-			StatefulStoragePallet::apply_item_actions(
-				RuntimeOrigin::signed(caller_1),
-				msa_id,
-				schema_id,
-				NONEXISTENT_PAGE_HASH,
-				BoundedVec::try_from(actions).unwrap(),
+			StatefulStoragePallet::validate_itemized(
+				&msa_id,
+				&schema_id,
+				&BoundedVec::try_from(actions).unwrap(),
+				false,
+				&NONEXISTENT_PAGE_HASH,
 			),
-			Error::<Test>::SchemaPayloadLocationMismatch
+			map_dispatch_error(Error::<Test>::SchemaPayloadLocationMismatch.into())
 		)
 	});
 }
@@ -1415,67 +1411,62 @@ fn apply_item_actions_with_signature_having_wrong_msa_in_payload_should_fail() {
 }
 
 #[test]
-fn apply_item_actions_with_signature_having_invalid_schema_id_should_fail() {
+fn validate_item_actions_with_signature_having_invalid_schema_id_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
-		let caller_1 = test_public(1);
-		let (msa_id, pair) = get_signature_account();
-		let delegator_key = pair.public();
+		let (msa_id, _) = get_signature_account();
 		let schema_id = INVALID_SCHEMA_ID;
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload }];
-		let payload = ItemizedSignaturePayload {
+		let payload = ItemizedSignaturePayload::<Test> {
 			actions: BoundedVec::try_from(actions).unwrap(),
 			target_hash: PageHash::default(),
 			msa_id,
 			expiration: 10,
 			schema_id,
 		};
-		let encode_data_new_key_data = wrap_binary_data(payload.encode());
-		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+		// let encode_data_new_key_data = wrap_binary_data(payload.encode());
 
 		// act
 		assert_err!(
-			StatefulStoragePallet::apply_item_actions_with_signature(
-				RuntimeOrigin::signed(caller_1),
-				delegator_key.into(),
-				owner_signature,
-				payload
+			StatefulStoragePallet::validate_itemized(
+				&payload.msa_id,
+				&payload.schema_id,
+				&payload.actions,
+				true,
+				&payload.target_hash
 			),
-			Error::<Test>::InvalidSchemaId
+			map_dispatch_error(Error::<Test>::InvalidSchemaId.into())
 		)
 	});
 }
 
 #[test]
-fn apply_item_actions_with_signature_having_invalid_schema_location_should_fail() {
+fn validate_itemized_with_signature_having_invalid_schema_location_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
-		let caller_1 = test_public(1);
-		let (msa_id, pair) = get_signature_account();
-		let delegator_key = pair.public();
+		let (msa_id, _) = get_signature_account();
 		let schema_id = PAGINATED_SCHEMA;
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload }];
-		let payload = ItemizedSignaturePayload {
+		let payload = ItemizedSignaturePayload::<Test> {
 			actions: BoundedVec::try_from(actions).unwrap(),
 			target_hash: PageHash::default(),
 			msa_id,
 			expiration: 10,
 			schema_id,
 		};
-		let encode_data_new_key_data = wrap_binary_data(payload.encode());
-		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
 
 		// act
 		assert_err!(
-			StatefulStoragePallet::apply_item_actions_with_signature(
-				RuntimeOrigin::signed(caller_1),
-				delegator_key.into(),
-				owner_signature,
-				payload
+			StatefulStoragePallet::validate_itemized(
+				&payload.msa_id,
+				&payload.schema_id,
+				&payload.actions,
+				true,
+				&payload.target_hash
 			),
-			Error::<Test>::SchemaPayloadLocationMismatch
+			map_dispatch_error(Error::<Test>::SchemaPayloadLocationMismatch.into())
 		)
 	});
 }
@@ -1856,16 +1847,14 @@ fn upsert_page_with_signature_having_wrong_msa_in_payload_should_fail() {
 }
 
 #[test]
-fn upsert_page_with_signature_having_invalid_schema_id_should_fail() {
+fn validate_paginated_with_signature_having_invalid_schema_id_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
-		let caller_1 = test_public(1);
-		let (msa_id, pair) = get_signature_account();
-		let delegator_key = pair.public();
+		let (msa_id, _) = get_signature_account();
 		let schema_id = INVALID_SCHEMA_ID;
 		let page_id = 1;
 		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
-		let payload = PaginatedUpsertSignaturePayload {
+		let payload = PaginatedUpsertSignaturePayload::<Test> {
 			payload,
 			target_hash: PageHash::default(),
 			msa_id,
@@ -1873,33 +1862,31 @@ fn upsert_page_with_signature_having_invalid_schema_id_should_fail() {
 			schema_id,
 			page_id,
 		};
-		let encode_data_new_key_data = wrap_binary_data(payload.encode());
-		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
 
 		// act
 		assert_err!(
-			StatefulStoragePallet::upsert_page_with_signature(
-				RuntimeOrigin::signed(caller_1),
-				delegator_key.into(),
-				owner_signature,
-				payload
+			StatefulStoragePallet::validate_paginated(
+				&payload.msa_id,
+				&payload.schema_id,
+				&payload.page_id,
+				true,
+				false,
+				&payload.target_hash
 			),
-			Error::<Test>::InvalidSchemaId
+			map_dispatch_error(Error::<Test>::InvalidSchemaId.into())
 		)
 	})
 }
 
 #[test]
-fn upsert_page_with_signature_having_invalid_schema_location_should_fail() {
+fn validate_upsert_with_signature_having_invalid_schema_location_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
-		let caller_1 = test_public(1);
-		let (msa_id, pair) = get_signature_account();
-		let delegator_key = pair.public();
+		let (msa_id, _) = get_signature_account();
 		let schema_id = ITEMIZED_SCHEMA;
 		let page_id = 1;
 		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
-		let payload = PaginatedUpsertSignaturePayload {
+		let payload = PaginatedUpsertSignaturePayload::<Test> {
 			payload,
 			target_hash: PageHash::default(),
 			msa_id,
@@ -1907,18 +1894,18 @@ fn upsert_page_with_signature_having_invalid_schema_location_should_fail() {
 			schema_id,
 			page_id,
 		};
-		let encode_data_new_key_data = wrap_binary_data(payload.encode());
-		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
 
 		// act
 		assert_err!(
-			StatefulStoragePallet::upsert_page_with_signature(
-				RuntimeOrigin::signed(caller_1),
-				delegator_key.into(),
-				owner_signature,
-				payload
+			StatefulStoragePallet::validate_paginated(
+				&payload.msa_id,
+				&payload.schema_id,
+				&payload.page_id,
+				true,
+				false,
+				&payload.target_hash
 			),
-			Error::<Test>::SchemaPayloadLocationMismatch
+			map_dispatch_error(Error::<Test>::SchemaPayloadLocationMismatch.into())
 		)
 	})
 }
@@ -2209,65 +2196,61 @@ fn delete_page_with_signature_having_wrong_msa_in_payload_should_fail() {
 }
 
 #[test]
-fn delete_page_with_signature_having_invalid_schema_id_should_fail() {
+fn validate_delete_page_with_signature_having_invalid_schema_id_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
-		let caller_1 = test_public(1);
-		let (msa_id, pair) = get_signature_account();
-		let delegator_key = pair.public();
+		let (msa_id, _) = get_signature_account();
 		let schema_id = INVALID_SCHEMA_ID;
 		let page_id = 1;
-		let payload = PaginatedDeleteSignaturePayload {
+		let payload = PaginatedDeleteSignaturePayload::<Test> {
 			target_hash: PageHash::default(),
 			msa_id,
 			expiration: 10,
 			schema_id,
 			page_id,
 		};
-		let encode_data_new_key_data = wrap_binary_data(payload.encode());
-		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
 
 		// act
 		assert_err!(
-			StatefulStoragePallet::delete_page_with_signature(
-				RuntimeOrigin::signed(caller_1),
-				delegator_key.into(),
-				owner_signature,
-				payload
+			StatefulStoragePallet::validate_paginated(
+				&payload.msa_id,
+				&payload.schema_id,
+				&payload.page_id,
+				true,
+				true,
+				&payload.target_hash
 			),
-			Error::<Test>::InvalidSchemaId
+			map_dispatch_error(Error::<Test>::InvalidSchemaId.into())
 		)
 	})
 }
 
 #[test]
-fn delete_page_with_signature_having_invalid_schema_location_should_fail() {
+fn validate_delete_page_with_signature_having_invalid_schema_location_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
-		let caller_1 = test_public(1);
-		let (msa_id, pair) = get_signature_account();
-		let delegator_key = pair.public();
+		let (msa_id, _) = get_signature_account();
 		let schema_id = ITEMIZED_SCHEMA;
 		let page_id = 1;
-		let payload = PaginatedDeleteSignaturePayload {
+		let payload = PaginatedDeleteSignaturePayload::<Test> {
 			target_hash: PageHash::default(),
 			msa_id,
 			expiration: 10,
 			schema_id,
 			page_id,
 		};
-		let encode_data_new_key_data = wrap_binary_data(payload.encode());
-		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
 
 		// act
 		assert_err!(
-			StatefulStoragePallet::delete_page_with_signature(
-				RuntimeOrigin::signed(caller_1),
-				delegator_key.into(),
-				owner_signature,
-				payload
+			StatefulStoragePallet::validate_paginated(
+				&payload.msa_id,
+				&payload.schema_id,
+				&payload.page_id,
+				true,
+				true,
+				&payload.target_hash
 			),
-			Error::<Test>::SchemaPayloadLocationMismatch
+			map_dispatch_error(Error::<Test>::SchemaPayloadLocationMismatch.into())
 		)
 	})
 }
@@ -2407,7 +2390,7 @@ fn delete_page_with_signature_having_valid_inputs_should_remove_page() {
 }
 
 #[test]
-fn apply_delete_item_on_append_only_fails() {
+fn validate_delete_item_on_append_only_fails() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let caller_1 = test_public(1);
@@ -2438,20 +2421,20 @@ fn apply_delete_item_on_append_only_fails() {
 
 		// assert
 		assert_err!(
-			StatefulStoragePallet::apply_item_actions(
-				RuntimeOrigin::signed(caller_1),
-				msa_id,
-				schema_id,
-				content_hash,
-				BoundedVec::try_from(actions2).unwrap(),
+			StatefulStoragePallet::validate_itemized(
+				&msa_id,
+				&schema_id,
+				&BoundedVec::try_from(actions2).unwrap(),
+				false,
+				&content_hash,
 			),
-			Error::<Test>::SchemaNotSupported
+			map_dispatch_error(Error::<Test>::SchemaNotSupported.into())
 		);
 	});
 }
 
 #[test]
-fn delete_page_fails_for_append_only() {
+fn validate_paginated_delete_fails_for_append_only() {
 	new_test_ext().execute_with(|| {
 		// setup
 		let caller_1 = test_public(1);
@@ -2473,61 +2456,54 @@ fn delete_page_fails_for_append_only() {
 		));
 
 		assert_err!(
-			StatefulStoragePallet::delete_page(
-				RuntimeOrigin::signed(caller_1),
-				msa_id,
-				schema_id,
-				page_id,
-				page_hash
+			StatefulStoragePallet::validate_paginated(
+				&msa_id, &schema_id, &page_id, false, true, &page_hash
 			),
-			Error::<Test>::SchemaNotSupported
+			map_dispatch_error(Error::<Test>::SchemaNotSupported.into())
 		);
 	});
 }
 
 #[test]
-fn apply_actions_on_signature_schema_fails() {
+fn validate_itemized_on_signature_schema_fails() {
 	new_test_ext().execute_with(|| {
 		// arrange
-		let caller_1 = test_public(1);
 		let msa_id = 1;
 		let schema_id = ITEMIZED_SIGNATURE_REQUIRED_SCHEMA;
 		let payload = vec![1; 5];
 		let actions1 = vec![ItemAction::Add { data: payload }];
 		assert_err!(
-			StatefulStoragePallet::apply_item_actions(
-				RuntimeOrigin::signed(caller_1),
-				msa_id,
-				schema_id,
-				NONEXISTENT_PAGE_HASH,
-				BoundedVec::try_from(actions1).unwrap(),
+			StatefulStoragePallet::validate_itemized(
+				&msa_id,
+				&schema_id,
+				&BoundedVec::try_from(actions1).unwrap(),
+				false,
+				&NONEXISTENT_PAGE_HASH,
 			),
-			Error::<Test>::SchemaNotSupported
+			map_dispatch_error(Error::<Test>::SchemaNotSupported.into())
 		);
 	});
 }
 
 #[test]
-fn insert_page_fails_for_signature_schema() {
+fn validate_paginated_fails_for_signature_schema() {
 	new_test_ext().execute_with(|| {
 		// setup
-		let caller_1 = test_public(1);
 		let msa_id = 1;
 		let schema_id = PAGINATED_SIGNED_SCHEMA;
 		let page_id = 11;
-		let payload = generate_payload_bytes::<PaginatedPageSize>(None);
 
 		// assert
 		assert_err!(
-			StatefulStoragePallet::upsert_page(
-				RuntimeOrigin::signed(caller_1),
-				msa_id,
-				schema_id,
-				page_id,
-				NONEXISTENT_PAGE_HASH,
-				payload.into(),
+			StatefulStoragePallet::validate_paginated(
+				&msa_id,
+				&schema_id,
+				&page_id,
+				false,
+				false,
+				&NONEXISTENT_PAGE_HASH,
 			),
-			Error::<Test>::SchemaNotSupported
+			map_dispatch_error(Error::<Test>::SchemaNotSupported.into())
 		);
 	});
 }
