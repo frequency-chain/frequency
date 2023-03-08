@@ -173,6 +173,7 @@ where
 	EpochNumber: Clone + PartialOrd + PartialEq,
 {
 	/// Increase a targets total Tokens staked and Capacity total issuance by an amount.
+	/// To be called on a stake
 	pub fn deposit(&mut self, amount: &Balance) -> Option<()> {
 		self.remaining_capacity = amount.checked_add(&self.remaining_capacity)?;
 		self.total_tokens_staked = amount.checked_add(&self.total_tokens_staked)?;
@@ -206,6 +207,7 @@ where
 	}
 
 	/// Deduct the given amount from the remaining capacity that can be used to pay for messages.
+	/// To be called when a message is paid for with capacity.
 	pub fn deduct_capacity_by_amount(&mut self, amount: Balance) -> Result<(), ArithmeticError> {
 		let new_remaining =
 			self.remaining_capacity.checked_sub(&amount).ok_or(ArithmeticError::Underflow)?;
@@ -214,9 +216,11 @@ where
 	}
 
 	/// Decrease a target's total available capacity.
+	/// To be called on an unstake.
 	pub fn withdraw(&mut self, capacity_deduction: Balance, tokens_staked_deduction: Balance) {
 		self.total_tokens_staked = self.total_tokens_staked.saturating_sub(tokens_staked_deduction);
 		self.total_capacity_issued = self.total_capacity_issued.saturating_sub(capacity_deduction);
+		self.remaining_capacity = self.remaining_capacity.saturating_sub(capacity_deduction);
 	}
 }
 
