@@ -7,7 +7,7 @@ import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkado
 import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
 import { devAccounts, log, Sr25519Signature } from "./helpers";
 import { connect, connectPromise } from "./apiConnection";
-import { CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
+import { Call, CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
 
 export type AddKeyData = { msaId?: u64; expiration?: any; newPublicKey?: any; }
@@ -100,6 +100,13 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
 
     public sudoSignAndSend(): Promise<[ParsedEvent<C, N> | undefined, EventMap]> {
         return firstValueFrom(this.api.tx.sudo.sudo(this.extrinsic()).signAndSend(this.keys).pipe(
+            filter(({ status }) => status.isInBlock || status.isFinalized),
+            this.parseResult(this.event),
+        ))
+    }
+
+    public payWithCapacity(nonce?: number): Promise<ParsedEventResult> {
+        return firstValueFrom(this.api.tx.frequencyTxPayment.payWithCapacity(this.extrinsic()).signAndSend(this.keys, {nonce: nonce}).pipe(
             filter(({ status }) => status.isInBlock || status.isFinalized),
             this.parseResult(this.event),
         ))
@@ -242,6 +249,10 @@ export class ExtrinsicHelper {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addIpfsMessage(schemaId, cid, payload_length), keys, ExtrinsicHelper.api.events.messages.MessagesStored);
     }
 
+    public static addOnChainMessage(keys: KeyringPair, schemaId: any, payload: string): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addOnChainMessage(schemaId, payload), keys, ExtrinsicHelper.api.events.messages.MessagesStored);
+    }
+
     /** Capacity Extrinsics **/
     public static setEpochLength(keys: KeyringPair, epoch_length: any): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.setEpochLength(epoch_length), keys, ExtrinsicHelper.api.events.capacity.EpochLengthUpdated);
@@ -257,4 +268,9 @@ export class ExtrinsicHelper {
     public static withdrawUnstaked(keys: KeyringPair): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.withdrawUnstaked(), keys, ExtrinsicHelper.api.events.capacity.StakeWithdrawn);
     }
+
+    /** Pay With Capacity Extrinsics **/
+    // public static payWithCapacity(keys: KeyringPair, call: string | Uint8Array | Call): Extrinsic {
+    //     return new Extrinsic(() => ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacity(call), keys, ExtrinsicHelper.api.events.capacity.CapacityPaid);
+    // }
 }
