@@ -380,12 +380,12 @@ The type for storing Registered Provider Capacity balance:
 pub struct CapacityDetails<Balance> {
   /// The Capacity remaining for the `last_replenished_epoch`.
   pub remaining_capacity: Balance,
-    /// The amount of tokens staked to an MSA.
-    pub total_tokens_staked: Balance,
-    /// The total Capacity issued to an MSA.
-    pub total_capacity_issued: Balance,
-    /// The last Epoch that an MSA was replenished with Capacity.
-    pub last_replenished_epoch: EpochNumber,
+  /// The amount of tokens staked to an MSA.
+  pub total_tokens_staked: Balance,
+  /// The total Capacity issued to an MSA.
+  pub total_capacity_issued: Balance,
+  /// The last Epoch that an MSA was replenished with Capacity.
+  pub last_replenished_epoch: EpochNumber,
 }
 
 ```
