@@ -91,8 +91,7 @@ impl<T: Config> StatefulStorageValidate<T> for Pallet<T> {
 			.map_err(|e| map_dispatch_error(e))?;
 
 		return ValidTransaction::with_tag_prefix(TAG_PREFIX)
-			.and_provides(msa_id)
-			.and_provides(schema_id)
+			.and_provides((msa_id, schema_id))
 			.build()
 	}
 
@@ -140,9 +139,7 @@ impl<T: Config> StatefulStorageValidate<T> for Pallet<T> {
 			.map_err(|e| map_dispatch_error(e))?;
 
 		return ValidTransaction::with_tag_prefix(TAG_PREFIX)
-			.and_provides(msa_id)
-			.and_provides(schema_id)
-			.and_provides(page_id)
+			.and_provides((msa_id, schema_id, page_id))
 			.build()
 	}
 }
