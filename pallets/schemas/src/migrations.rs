@@ -17,7 +17,7 @@ use sp_std::marker::PhantomData;
 /// Following migrations are required:
 /// - Adding settings to the Schema struct
 /// Note: Post migration, this file should be deleted.
-pub mod v1 {
+pub mod v0 {
 	use super::*;
 	#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 	#[scale_info(skip_type_params(MaxModelSize))]
@@ -83,7 +83,7 @@ pub struct SchemaMigrationToV1<T: Config>(PhantomData<T>);
 impl<T: Config> OnRuntimeUpgrade for SchemaMigrationToV1<T> {
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-		let weight = v1::pre_migrate_schemas_to_v1::<T>();
+		let weight = v0::pre_migrate_schemas_to_v1::<T>();
 		log::info!("pre_upgrade weight: {:?}", weight);
 		Ok(Vec::new())
 	}
@@ -91,12 +91,12 @@ impl<T: Config> OnRuntimeUpgrade for SchemaMigrationToV1<T> {
 	// try-runtime migration code
 	#[cfg(not(feature = "try-runtime"))]
 	fn on_runtime_upgrade() -> Weight {
-		v1::migrate_schemas_to_v1::<T>()
+		v0::migrate_schemas_to_v1::<T>()
 	}
 
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
-		let weight = v1::post_migrate_schemas_to_v1::<T>();
+		let weight = v0::post_migrate_schemas_to_v1::<T>();
 		log::info!("post_upgrade weight: {:?}", weight);
 		Ok(())
 	}
