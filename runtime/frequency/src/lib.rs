@@ -78,7 +78,7 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 pub use common_runtime::{
 	constants::MaxDataSize,
 	weights,
-	weights::{BlockExecutionWeight, ExtrinsicBaseWeight},
+	weights::{block_weights::BlockExecutionWeight, extrinsic_weights::ExtrinsicBaseWeight},
 };
 use frame_support::traits::{Contains, OnRuntimeUpgrade};
 

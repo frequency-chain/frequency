@@ -31,5 +31,3 @@ pub mod pallet_session;
 pub mod pallet_timestamp;
 pub mod pallet_treasury;
 pub mod pallet_utility;
-
-pub use frame_support::weights::constants::{BlockExecutionWeight, ExtrinsicBaseWeight};
