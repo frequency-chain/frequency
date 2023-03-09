@@ -23,35 +23,31 @@ for storage and interaction with Frequency.
 - Define the algorithms to optimize the output regarding Frequency.
 
 ## Operations
-* **Initialise** : Creates in memory graph structure for a desired MSA.
-* **Import** : Import the blob from frequency into Graph SDK for desired MSA. Successful import is
-consists of following actions.
-  * Deserialize the blob to specified schema.
-  * Decrypt encrypted fields using DSNP version specified algorithm. (if any)
-  * Decompress compressed fields using DSNP version specified algorithm. (if any)
-  * Verify plain data and PRI ids. (if any)
-  * Add verified plain data into in-memory graph data structure.
-* **Update** : Updates the current in-memory graph structure with incoming updates. Each update has
-the following details.
-  * Update types:
-    * Add
-    * Remove
-  * Privacy levels:
-    * Public
-    * Private
-  * Relationship types:
-    * Follow
-    * Friendship
-* **Get Graph** : Exposes current state of in-memory graph to the consumer of sdk.
-* **Has Updates** : Determines if the applied changes created some updates in graph that needs to be
-persisted on Frequency.
-* **Calculate Updates** : Applies the graph changes and generates optimized blobs to be applied to
-frequency. These updates will have the following details
-  * MSA
-  * Location: the details of schema and page number. (if any)
-  * Graph data blob
-* **Persist** : This should be called after successful update of Frequency to remove tracking of
-persisted updates.
+| Operation  | Description |
+| ------------- | ------------- |
+| **Initialise**  | Creates in memory graph structure for a desired MSA.  |
+| **Import**  | Import the blob from frequency into Graph SDK for desired MSA.  |
+| **Update**  | Updates the current in-memory graph structure with incoming updates.  |
+| **Get Graph**  | Exposes current state of in-memory graph to the consumer of sdk.  |
+| **Has Updates**  | Determines if the applied changes created some updates in graph that needs to be persisted on Frequency.  |
+| **Calculate Updates**  | Applies the graph changes and generates optimized blobs to be applied to Frequency  |
+| **Persist**  | This should be called after successful update of Frequency to remove tracking of persisted updates.  |
+
+#### Import actions
+|  |  sub action |
+| ------------- | ------------- |
+| 1 | Deserialize the blob to specified schema. |
+| 2 | Decrypt encrypted fields using DSNP version specified algorithm. (if any). |
+| 3 | Decompress compressed fields using DSNP version specified algorithm. (if any). |
+| 4 | Verify plain data and PRI ids. (if any) |
+| 5 | Add verified plain data into in-memory graph data structure. |
+
+#### Update related types
+|  |  Types |
+| ------------- | ------------- |
+| Update types |     - Add <br /> - Remove |
+| Privacy levels |     - Public <br /> - Private |
+| Relationship types |     - Follow <br /> - Friendship |
 
 ## Interface
 
