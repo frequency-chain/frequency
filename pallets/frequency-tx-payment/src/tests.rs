@@ -599,27 +599,12 @@ fn compute_capacity_fee_successful() {
 				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
 
 			// fee = base_weight + extrinsic weight + len = 5 + 11 + 10 = 26
-			let fee = FrequencyTxPayment::compute_capacity_fee(10u32, DispatchClass::Normal, call)
-				.unwrap();
-
-			assert_eq!(fee, 26);
-		});
-}
-
-#[test]
-fn compute_capacity_fee_returns_none_when_call_does_not_stable_weights_associated_to_it() {
-	let balance_factor = 1;
-	ExtBuilder::default()
-		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
-		.build()
-		.execute_with(|| {
-			let create_msa_call = RuntimeCall::Msa(MsaCall::<Test>::create {});
 			let fee = FrequencyTxPayment::compute_capacity_fee(
 				10u32,
 				DispatchClass::Normal,
-				&create_msa_call,
+				<Test as Config>::CapacityCalls::get_stable_weight(call).unwrap(),
 			);
-			assert_eq!(fee, None);
+
+			assert_eq!(fee, 26);
 		});
 }

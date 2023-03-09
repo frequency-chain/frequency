@@ -23,7 +23,7 @@ use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::{DispatchInfo, Dispatchable, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
-	traits::{Contains, IsSubType, IsType},
+	traits::{IsSubType, IsType},
 	weights::{Weight, WeightToFee},
 	DefaultNoBound,
 };
@@ -128,8 +128,6 @@ pub mod weights;
 #[allow(dead_code)]
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::traits::Contains;
-
 	use super::*;
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -160,8 +158,7 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 
 		/// The type that checks what transactions are capacity with their stable weights.
-		type CapacityCalls: Contains<<Self as Config>::RuntimeCall>
-			+ GetStableWeight<<Self as Config>::RuntimeCall, Weight>;
+		type CapacityCalls: GetStableWeight<<Self as Config>::RuntimeCall, Weight>;
 	}
 
 	#[pallet::event]
@@ -193,16 +190,15 @@ impl<T: Config> Pallet<T> {
 	pub fn compute_capacity_fee(
 		len: u32,
 		class: DispatchClass,
-		call: &<T as Config>::RuntimeCall,
-	) -> Option<BalanceOf<T>> {
-		let weight_fee =
-			Self::weight_to_fee(<T as Config>::CapacityCalls::get_stable_weight(call)?);
+		extrinsic_weight: Weight,
+	) -> BalanceOf<T> {
+		let weight_fee = Self::weight_to_fee(extrinsic_weight);
 
 		let len_fee = Self::length_to_fee(len);
 		let base_fee = Self::weight_to_fee(T::BlockWeights::get().get(class).base_extrinsic);
 
 		let fee = base_fee.saturating_add(weight_fee).saturating_add(len_fee);
-		Some(fee)
+		fee
 	}
 
 	/// Compute the length portion of a fee by invoking the configured `LengthToFee` impl.
@@ -228,8 +224,6 @@ pub enum ChargeFrqTransactionPaymentError {
 	InvalidMsaKey,
 	/// The Capacity Target does not exist
 	TargetCapacityNotFound,
-	/// The call has no stable weights associated with it.
-	CallHasNoStableWeights,
 }
 
 /// Require the transactor pay for themselves and maybe include a tip to gain additional priority
@@ -281,10 +275,8 @@ where
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		match call.is_sub_type() {
 			Some(Call::pay_with_capacity { call }) => {
-				ensure!(
-					T::CapacityCalls::contains(call.as_ref()),
-					ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into()
-				);
+				let extrinsic_weight = T::CapacityCalls::get_stable_weight(call)
+					.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
 
 				let msa_id = pallet_msa::Pallet::<T>::ensure_valid_msa_key(who)
 					.map_err(|_| ChargeFrqTransactionPaymentError::InvalidMsaKey.into())?;
@@ -299,9 +291,8 @@ where
 				let fee = Pallet::<T>::compute_capacity_fee(
 					len as u32,
 					call.get_dispatch_info().class,
-					call,
-				)
-				.ok_or(ChargeFrqTransactionPaymentError::CallHasNoStableWeights.into())?;
+					extrinsic_weight,
+				);
 
 				ensure!(
 					T::Capacity::deduct(msa_id, fee.into()).is_ok(),
