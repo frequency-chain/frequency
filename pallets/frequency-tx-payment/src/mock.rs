@@ -17,9 +17,11 @@ use sp_runtime::{
 
 use frame_support::{
 	parameter_types,
-	traits::{ConstU16, ConstU64, Contains},
+	traits::{ConstU16, ConstU64},
 	weights::WeightToFee as WeightToFeeTrait,
 };
+
+use frame_support::weights::Weight;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -224,13 +226,12 @@ impl pallet_capacity::Config for Test {
 use pallet_balances::Call as BalancesCall;
 
 pub struct TestCapacityCalls;
-impl Contains<RuntimeCall> for TestCapacityCalls {
-	fn contains(call: &RuntimeCall) -> bool {
-		{
-			match call {
-				RuntimeCall::Balances(BalancesCall::transfer { .. }) => true, // for testing only
-				_ => false,
-			}
+
+impl GetStableWeight<RuntimeCall, Weight> for TestCapacityCalls {
+	fn get_stable_weight(call: &RuntimeCall) -> Option<Weight> {
+		match call {
+			RuntimeCall::Balances(BalancesCall::transfer { .. }) => Some(Weight::from_ref_time(11)),
+			_ => None,
 		}
 	}
 }
@@ -240,7 +241,7 @@ impl Config for Test {
 	type RuntimeCall = RuntimeCall;
 	type Capacity = Capacity;
 	type WeightInfo = ();
-	type CapacityEligibleCalls = TestCapacityCalls;
+	type CapacityCalls = TestCapacityCalls;
 }
 
 pub struct ExtBuilder {
