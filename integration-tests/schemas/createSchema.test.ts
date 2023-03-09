@@ -64,4 +64,12 @@ describe("#createSchema", function () {
         assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
         assert.notEqual(createSchemaEvent, undefined);
     });
+
+    it("should fail to create non itemized schema with AppendOnly settings", async function () {
+      const f = ExtrinsicHelper.createSchemaWithSettings(keys, AVRO_GRAPH_CHANGE, "AvroBinary", "Paginated", "AppendOnly");
+
+      await assert.rejects(f.fundAndSend(), {
+        name: 'InvalidSetting',
+      });
+    });
 })

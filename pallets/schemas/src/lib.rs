@@ -162,6 +162,9 @@ pub mod pallet {
 
 		/// CurrentSchemaIdentifierMaximum was attempted to overflow max, means MaxSchemaRegistrations is too big
 		SchemaCountOverflow,
+
+		/// Invalid setting for schema
+		InvalidSetting,
 	}
 
 	#[pallet::pallet]
@@ -476,6 +479,12 @@ pub mod pallet {
 			ensure!(
 				model.len() <= Self::get_schema_model_max_bytes() as usize,
 				Error::<T>::ExceedsMaxSchemaModelBytes
+			);
+			// Append only is only valid for Itemized storages
+			ensure!(
+				!settings.contains(&SchemaSetting::AppendOnly) ||
+					payload_location == PayloadLocation::Itemized,
+				Error::<T>::InvalidSetting
 			);
 			Self::add_schema(model, model_type, payload_location, settings)
 		}

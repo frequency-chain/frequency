@@ -15,7 +15,7 @@ use sp_std::{
 	hash::{Hash, Hasher},
 	prelude::*,
 };
-use twox_hash::xxh3::Hash64;
+use twox_hash::XxHash64;
 
 /// pallet storage prefix
 pub const PALLET_STORAGE_PREFIX: &[u8] = b"stateful-storage";
@@ -161,7 +161,7 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 		if self.is_empty() {
 			return PageHash::default()
 		}
-		let mut hasher = Hash64::with_seed(0);
+		let mut hasher = XxHash64::with_seed(0);
 		self.hash(&mut hasher);
 		let value_bytes: [u8; 4] =
 			hasher.finish().to_be_bytes()[..4].try_into().expect("incorrect hash size");

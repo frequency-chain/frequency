@@ -16,7 +16,7 @@ use scale_info::TypeInfo;
 use sp_core::{sr25519, ConstU32, Get, Pair};
 use sp_runtime::MultiSignature;
 use sp_std::{collections::btree_set::BTreeSet, hash::Hasher};
-use twox_hash::xxh3::Hash64;
+use twox_hash::XxHash64;
 
 type ItemizedPageSize = <Test as Config>::MaxItemizedPageSizeBytes;
 type PaginatedPageSize = <Test as Config>::MaxPaginatedPageSizeBytes;
@@ -44,7 +44,7 @@ fn create_itemized_page_from<T: pallet::Config>(
 }
 
 fn hash_payload(data: &[u8]) -> PageHash {
-	let mut hasher = Hash64::with_seed(0);
+	let mut hasher = XxHash64::with_seed(0);
 	sp_std::hash::Hash::hash(&data, &mut hasher);
 	let value_bytes: [u8; 4] =
 		hasher.finish().to_be_bytes()[..4].try_into().expect("incorrect hash size");

@@ -542,3 +542,46 @@ fn create_schema_with_settings_should_work() {
 		assert_eq!(res.unwrap().settings, settings);
 	})
 }
+
+#[test]
+fn create_schema_with_append_only_setting_and_non_itemized_should_fail() {
+	new_test_ext().execute_with(|| {
+		sudo_set_max_schema_size();
+
+		// arrange
+		let settings = vec![SchemaSetting::AppendOnly];
+		let sender: AccountId = test_public(1);
+
+		//  assert
+		assert_noop!(
+			SchemasPallet::create_schema_with_settings(
+				RuntimeOrigin::signed(sender.clone()),
+				create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
+				ModelType::AvroBinary,
+				PayloadLocation::Paginated,
+				BoundedVec::try_from(settings.clone()).unwrap(),
+			),
+			Error::<Test>::InvalidSetting
+		);
+		assert_noop!(
+			SchemasPallet::create_schema_with_settings(
+				RuntimeOrigin::signed(sender.clone()),
+				create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
+				ModelType::AvroBinary,
+				PayloadLocation::OnChain,
+				BoundedVec::try_from(settings.clone()).unwrap(),
+			),
+			Error::<Test>::InvalidSetting
+		);
+		assert_noop!(
+			SchemasPallet::create_schema_with_settings(
+				RuntimeOrigin::signed(sender),
+				create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
+				ModelType::AvroBinary,
+				PayloadLocation::IPFS,
+				BoundedVec::try_from(settings.clone()).unwrap(),
+			),
+			Error::<Test>::InvalidSetting
+		);
+	})
+}
