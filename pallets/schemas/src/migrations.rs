@@ -13,10 +13,9 @@ use frame_support::{
 use scale_info::TypeInfo;
 use sp_std::marker::PhantomData;
 
-/// Migrations for the schemas pallet.
-/// Following migrations are required:
-/// - Adding settings to the Schema struct
-/// Note: Post migration, this file should be deleted.
+/// v0: Initial version
+/// Notes:
+/// - `OldSchema` is a copy of the original `Schema` struct with the `settings` field removed
 pub mod v0 {
 	use super::*;
 	#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
@@ -33,6 +32,15 @@ pub mod v0 {
 		/// The payload location
 		pub payload_location: PayloadLocation,
 	}
+}
+
+/// v1: Adding settings to the Schema struct
+/// Notes:
+/// - `Schema` is a copy of the original `Schema` struct with the `settings` field added
+pub mod v1 {
+	use super::*;
+	#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+	#[scale_info(skip_type_params(MaxModelSize))]
 
 	/// translate schemas and return the weight to test the migration
 	#[cfg(feature = "try-runtime")]
@@ -56,7 +64,7 @@ pub mod v0 {
 
 		if StorageVersion::get::<Pallet<T>>() < 1 {
 			<Schemas<T>>::translate_values(
-				|old_schema: OldSchema<T::SchemaModelMaxBytesBoundedVecLimit>| {
+				|old_schema: v0::OldSchema<T::SchemaModelMaxBytesBoundedVecLimit>| {
 					weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
 					Some(Schema {
 						model_type: old_schema.model_type,
@@ -72,18 +80,17 @@ pub mod v0 {
 		weight
 	}
 }
-
 // ==============================================
 //        RUNTIME STORAGE MIGRATION: Schemas
 // ==============================================
 /// Schema migration to v1 for pallet-stateful-storage
 /// This struct derives OnRuntimeUpgrade trait which is used to run the migration (check runtime)
-pub struct SchemaMigrationToV1<T: Config>(PhantomData<T>);
+pub struct SchemaMigration<T: Config>(PhantomData<T>);
 
-impl<T: Config> OnRuntimeUpgrade for SchemaMigrationToV1<T> {
+impl<T: Config> OnRuntimeUpgrade for SchemaMigration<T> {
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-		let weight = v0::pre_migrate_schemas_to_v1::<T>();
+		let weight = v1::pre_migrate_schemas_to_v1::<T>();
 		log::info!("pre_upgrade weight: {:?}", weight);
 		Ok(Vec::new())
 	}
@@ -91,12 +98,12 @@ impl<T: Config> OnRuntimeUpgrade for SchemaMigrationToV1<T> {
 	// try-runtime migration code
 	#[cfg(not(feature = "try-runtime"))]
 	fn on_runtime_upgrade() -> Weight {
-		v0::migrate_schemas_to_v1::<T>()
+		v1::migrate_schemas_to_v1::<T>()
 	}
 
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
-		let weight = v0::post_migrate_schemas_to_v1::<T>();
+		let weight = v1::post_migrate_schemas_to_v1::<T>();
 		log::info!("post_upgrade weight: {:?}", weight);
 		Ok(())
 	}

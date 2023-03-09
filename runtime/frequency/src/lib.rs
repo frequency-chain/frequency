@@ -175,7 +175,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, Si
 pub type Migrations = (
 	remove_sudo::RemoveSudo,
 	pallet_msa::migration::Migration<Runtime>,
-	pallet_schemas::migrations::SchemaMigrationToV1<Runtime>,
+	pallet_schemas::migrations::SchemaMigration<Runtime>,
 );
 
 /// Executive: handles dispatch to the various modules.
