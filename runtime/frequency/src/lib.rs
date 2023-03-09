@@ -66,7 +66,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 pub use sp_runtime::BuildStorage;
 
 pub use pallet_capacity;
-pub use pallet_frequency_tx_payment;
+pub use pallet_frequency_tx_payment::{capacity_stable_weights, types::GetStableWeight};
 pub use pallet_msa;
 pub use pallet_schemas;
 pub use pallet_time_release;
@@ -149,7 +149,6 @@ pub type SignedExtra = (
 	frame_system::CheckEra<Runtime>,
 	common_runtime::extensions::check_nonce::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
-	// pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 	pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
 	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
 );
@@ -868,18 +867,20 @@ impl pallet_transaction_payment::Config for Runtime {
 
 use pallet_messages::Call as MessagesCall;
 use pallet_msa::Call as MsaCall;
+
 pub struct CapacityEligibleCalls;
-impl Contains<RuntimeCall> for CapacityEligibleCalls {
-	fn contains(call: &RuntimeCall) -> bool {
-		{
-			match call {
-				RuntimeCall::Msa(MsaCall::add_public_key_to_msa { .. }) => true,
-				RuntimeCall::Msa(MsaCall::create_sponsored_account_with_delegation { .. }) => true,
-				RuntimeCall::Msa(MsaCall::grant_delegation { .. }) => true,
-				RuntimeCall::Messages(MessagesCall::add_ipfs_message { .. }) => true,
-				RuntimeCall::Messages(MessagesCall::add_onchain_message { .. }) => true,
-				_ => false,
-			}
+impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
+	fn get_stable_weight(call: &RuntimeCall) -> Option<Weight> {
+		use pallet_frequency_tx_payment::capacity_stable_weights::WeightInfo;
+		match call {
+			RuntimeCall::Msa(MsaCall::add_public_key_to_msa { .. }) => Some(
+				capacity_stable_weights::SubstrateWeight::<Runtime>::add_public_key_to_msa()
+			),
+			RuntimeCall::Msa(MsaCall::create_sponsored_account_with_delegation {  add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::create_sponsored_account_with_delegation(add_provider_payload.schema_ids.len() as u32)),
+			RuntimeCall::Msa(MsaCall::grant_delegation { add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::grant_delegation(add_provider_payload.schema_ids.len() as u32)),
+			RuntimeCall::Messages(MessagesCall::add_ipfs_message { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_ipfs_message()),
+			RuntimeCall::Messages(MessagesCall::add_onchain_message { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_onchain_message(payload.len() as u32)),
+			_ => None,
 		}
 	}
 }
@@ -889,7 +890,7 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	type Capacity = Capacity;
 	type WeightInfo = pallet_frequency_tx_payment::weights::SubstrateWeight<Runtime>;
-	type CapacityEligibleCalls = CapacityEligibleCalls;
+	type CapacityCalls = CapacityEligibleCalls;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
