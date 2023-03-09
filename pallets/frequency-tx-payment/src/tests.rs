@@ -185,9 +185,9 @@ fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_s
 			assert_eq!(Balances::free_balance(1), 100);
 
 			// capacity_balance = free_balance - base_weight(5)
-			//   - extrinsic_weight(5) * WeightToFee(1)
+			//   - extrinsic_weight(11) * WeightToFee(1)
 			//   - TransactionByteFee(1)* len(10) = 80
-			assert_eq!(Capacity::balance(1), 100 - 5 - 5 - 10);
+			assert_eq!(Capacity::balance(1), 100 - 5 - 11 - 10);
 
 			let post_info: PostDispatchInfo =
 				PostDispatchInfo { actual_weight: None, pays_fee: Default::default() };
@@ -201,7 +201,7 @@ fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_s
 			));
 
 			// Checking balance was not modified after post-dispatch.
-			assert_eq!(Capacity::balance(1), 100 - 5 - 5 - 10);
+			assert_eq!(Capacity::balance(1), 100 - 5 - 11 - 10);
 		});
 }
 
@@ -263,9 +263,9 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_tx_returns_tupple_wi
 			let len = 10;
 
 			// fee = base_weight(5)
-			//   + extrinsic_weight(5) * WeightToFee(1)
+			//   + extrinsic_weight(11) * WeightToFee(1)
 			//   + TransactionByteFee(1)* len(10) = 20
-			assert_eq!(charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().0, 20u64);
+			assert_eq!(charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().0, 26u64);
 			assert_eq!(
 				charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().1.is_capacity(),
 				true
@@ -276,7 +276,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_tx_returns_tupple_wi
 #[test]
 fn charge_frq_transaction_payment_withdraw_fee_errors_for_capacity_tx_when_user_does_not_have_enough_funds(
 ) {
-	let balance_factor = 10;
+	let balance_factor = 1;
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
@@ -295,8 +295,11 @@ fn charge_frq_transaction_payment_withdraw_fee_errors_for_capacity_tx_when_user_
 
 			let info = DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
 			let len = 10;
-			let error = charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap_err();
-			assert_eq!(error, TransactionValidityError::Invalid(InvalidTransaction::Payment));
+			let result = charge_tx_payment.withdraw_fee(&who, call, &info, len);
+			assert_eq!(
+				result.unwrap_err(),
+				TransactionValidityError::Invalid(InvalidTransaction::Payment)
+			);
 		});
 }
 
@@ -528,7 +531,7 @@ fn withdraw_fee_replenishes_capacity_account_on_new_epoch_before_deducting_fee()
 			assert_eq!(
 				actual_capacity,
 				CapacityDetails {
-					remaining_capacity: total_capacity_issued.saturating_sub(20),
+					remaining_capacity: total_capacity_issued.saturating_sub(26),
 					total_tokens_staked,
 					total_capacity_issued,
 					last_replenished_epoch: current_epoch,
@@ -557,7 +560,7 @@ fn withdraw_fee_does_not_replenish_if_not_new_epoch() {
 			CurrentEpoch::<Test>::set(current_epoch);
 
 			let capacity_details = CapacityDetails {
-				remaining_capacity: 21,
+				remaining_capacity: 27,
 				total_tokens_staked,
 				total_capacity_issued,
 				last_replenished_epoch,
@@ -575,11 +578,33 @@ fn withdraw_fee_does_not_replenish_if_not_new_epoch() {
 			assert_eq!(
 				actual_capacity,
 				CapacityDetails {
-					remaining_capacity: 1u64, // fee is 20
+					remaining_capacity: 1u64, // fee is 26
 					total_tokens_staked,
 					total_capacity_issued,
 					last_replenished_epoch,
 				}
 			);
+		});
+}
+
+#[test]
+fn compute_capacity_fee_successful() {
+	let balance_factor = 10;
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			let call: &<Test as Config>::RuntimeCall =
+				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+
+			// fee = base_weight + extrinsic weight + len = 5 + 11 + 10 = 26
+			let fee = FrequencyTxPayment::compute_capacity_fee(
+				10u32,
+				DispatchClass::Normal,
+				<Test as Config>::CapacityCalls::get_stable_weight(call).unwrap(),
+			);
+
+			assert_eq!(fee, 26);
 		});
 }
