@@ -83,7 +83,7 @@ pub mod weights;
 pub use types::*;
 pub use weights::*;
 
-pub mod migrations;
+pub mod migration;
 
 mod serde;
 
