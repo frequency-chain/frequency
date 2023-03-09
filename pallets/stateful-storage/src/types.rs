@@ -15,7 +15,7 @@ use sp_std::{
 	hash::{Hash, Hasher},
 	prelude::*,
 };
-use twox_hash::XxHash32;
+use twox_hash::xxh3::Hash64;
 
 /// pallet storage prefix
 pub const PALLET_STORAGE_PREFIX: &[u8] = b"stateful-storage";
@@ -161,9 +161,11 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 		if self.is_empty() {
 			return PageHash::default()
 		}
-		let mut hasher = XxHash32::with_seed(0);
+		let mut hasher = Hash64::with_seed(0);
 		self.hash(&mut hasher);
-		hasher.finish() as PageHash
+		let value_bytes: [u8; 4] =
+			hasher.finish().to_be_bytes()[..4].try_into().expect("incorrect hash size");
+		PageHash::from_be_bytes(value_bytes)
 	}
 }
 
@@ -227,7 +229,7 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 			}
 		}
 
-		// since BTreeMap is sorted by key, all items will be kept in their old order
+		// since BTreeMap is sorted by key, all items will be kept in their existing order
 		for (_, slice) in parsed.items.iter() {
 			updated_page_buffer.extend_from_slice(slice);
 		}

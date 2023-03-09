@@ -28,8 +28,9 @@
 //! - Removing pages in a **paginated**  model
 //!
 //! ## Terminology
-//! * **Item:** Data payload mapping to a defined schema
-//! * **Page:** Block of on-chain data of a fixed size, containing one (Paginated model) or more (Itemized model) **items**.
+//! - [`Page`](../pallet_stateful_storage/types/struct.Page.html): Block of on-chain data of a fixed size, which is the underlying type for Itemized and Paginated storages.
+//! - [`ItemizedPage`](../pallet_stateful_storage/types/type.ItemizedPage.html): A page containing itemized data
+//! - [`PaginatedPage`](../pallet_stateful_storage/types/type.PaginatedPage.html): A page containing paginated data
 //!
 
 // Ensure we're `no_std` when compiling for Wasm.
