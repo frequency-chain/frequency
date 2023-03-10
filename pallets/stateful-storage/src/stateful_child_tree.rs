@@ -387,6 +387,7 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 		child::ChildInfo::new_default(&hashed_keys)
 	}
 
+	/// Storage Prefix for a given MSA Id
 	fn get_tree_prefix(msa_id: MessageSourceId) -> Vec<u8> {
 		let arr = [&msa_id.encode()[..], b"::"].concat();
 		arr.to_vec()
