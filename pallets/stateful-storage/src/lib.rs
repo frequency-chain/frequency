@@ -172,8 +172,8 @@ pub mod pallet {
 		/// Invalid SchemaId or Schema not found
 		InvalidSchemaId,
 
-		/// Unsupported schema
-		SchemaNotSupported,
+		/// Unsupported operation for schema
+		UnsupportedOperationForSchema,
 
 		/// Schema is not valid for storage model
 		SchemaPayloadLocationMismatch,
@@ -181,8 +181,8 @@ pub mod pallet {
 		/// Invalid Message Source Account
 		InvalidMessageSourceAccount,
 
-		/// UnAuthorizedDelegate
-		UnAuthorizedDelegate,
+		/// UnauthorizedDelegate
+		UnauthorizedDelegate,
 
 		/// Corrupted State
 		CorruptedState,
@@ -539,12 +539,12 @@ impl<T: Config> Pallet<T> {
 		// Ensure that the schema allows signed payloads.
 		// If so, calling extrinsic must be of signature type.
 		if schema.settings.contains(&SchemaSetting::SignatureRequired) {
-			ensure!(is_payload_signed, Error::<T>::SchemaNotSupported);
+			ensure!(is_payload_signed, Error::<T>::UnsupportedOperationForSchema);
 		}
 
 		// Ensure that the schema does not allow deletion for AppendOnly SchemaSetting.
 		if schema.settings.contains(&SchemaSetting::AppendOnly) {
-			ensure!(!is_deleting, Error::<T>::SchemaNotSupported);
+			ensure!(!is_deleting, Error::<T>::UnsupportedOperationForSchema);
 		}
 
 		Ok(())
@@ -567,7 +567,7 @@ impl<T: Config> Pallet<T> {
 				schema_id,
 				current_block,
 			)
-			.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
+			.map_err(|_| Error::<T>::UnauthorizedDelegate)?;
 		}
 
 		Ok(provider_msa_id)

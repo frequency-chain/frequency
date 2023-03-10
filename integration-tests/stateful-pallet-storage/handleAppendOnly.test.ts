@@ -68,7 +68,7 @@ describe("📗 Stateful Pallet Storage AppendOnly Schemas", () => {
         await assert.rejects(async () => {
           await itemized_add_result_1.fundAndSend();
         }, {
-          name: 'SchemaNotSupported',
+          name: 'UnsupportedOperationForSchema',
           section: 'statefulStorage',
       });
     });

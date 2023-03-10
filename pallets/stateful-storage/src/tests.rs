@@ -174,7 +174,7 @@ fn upsert_page_with_no_delegation_errors() {
 				PageHash::default(),
 				payload
 			),
-			Error::<Test>::UnAuthorizedDelegate
+			Error::<Test>::UnauthorizedDelegate
 		)
 	})
 }
@@ -425,7 +425,7 @@ fn delete_page_with_no_delegation_errors() {
 				page_id,
 				NONEXISTENT_PAGE_HASH,
 			),
-			Error::<Test>::UnAuthorizedDelegate
+			Error::<Test>::UnauthorizedDelegate
 		)
 	})
 }
@@ -896,7 +896,7 @@ fn apply_item_actions_with_no_delegation_and_different_caller_from_owner_should_
 				NONEXISTENT_PAGE_HASH,
 				BoundedVec::try_from(actions).unwrap(),
 			),
-			Error::<Test>::UnAuthorizedDelegate
+			Error::<Test>::UnauthorizedDelegate
 		)
 	});
 }
@@ -2447,7 +2447,7 @@ fn apply_delete_item_on_append_only_fails() {
 				content_hash,
 				BoundedVec::try_from(actions2).unwrap(),
 			),
-			Error::<Test>::SchemaNotSupported
+			Error::<Test>::UnsupportedOperationForSchema
 		);
 	});
 }
@@ -2482,7 +2482,7 @@ fn delete_page_fails_for_append_only() {
 				page_id,
 				page_hash
 			),
-			Error::<Test>::SchemaNotSupported
+			Error::<Test>::UnsupportedOperationForSchema
 		);
 	});
 }
@@ -2504,7 +2504,7 @@ fn apply_actions_on_signature_schema_fails() {
 				NONEXISTENT_PAGE_HASH,
 				BoundedVec::try_from(actions1).unwrap(),
 			),
-			Error::<Test>::SchemaNotSupported
+			Error::<Test>::UnsupportedOperationForSchema
 		);
 	});
 }
@@ -2529,7 +2529,7 @@ fn insert_page_fails_for_signature_schema() {
 				NONEXISTENT_PAGE_HASH,
 				payload.into(),
 			),
-			Error::<Test>::SchemaNotSupported
+			Error::<Test>::UnsupportedOperationForSchema
 		);
 	});
 }

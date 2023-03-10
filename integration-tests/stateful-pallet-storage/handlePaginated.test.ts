@@ -114,7 +114,7 @@ describe("📗 Stateful Pallet Storage", () => {
             await assert.rejects(async () => {
                 await paginated_add_result_1.fundAndSend();
             }, {
-                name: 'UnAuthorizedDelegate',
+                name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
             });
         }).timeout(10000);
@@ -169,7 +169,7 @@ describe("📗 Stateful Pallet Storage", () => {
             await assert.rejects(async () => {
                 await paginated_add_result_1.signAndSend();
             }, {
-                name: 'UnAuthorizedDelegate',
+                name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
             });
         }).timeout(10000);

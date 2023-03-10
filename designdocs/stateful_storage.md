@@ -39,7 +39,7 @@ storage costs for any data stored for another `MSA`.
 ### Modes of Storage
 - **Itemized**: In this mode we are storing each entity of that schemaId as an item in a blob with a
 maximum size of `MAX_ITEMIZED_BLOB_SIZE`.
-This is recommended for entities witch have relatively small size compared to
+This is recommended for entities which have relatively small size compared to
 `MAX_ITEMIZED_BLOB_SIZE` and there are more than a few of them.
 - **Paginated**: In this mode we are storing each entity individually and inside a separate page.
 This mode is recommended for entities that are relatively large and there are a few of them.
