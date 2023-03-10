@@ -13,37 +13,41 @@ implemented directly in Frequency.
 
 To keep Frequency implementation as DSNP agnostic as possible we decided to store social graph
 related data as blobs in Frequency and keep the details of how these blobs are created and modified
-inside DSNP spec. Graph SDK is an implementation of mentioned DSNP spec for social graph optimized
+inside DSNP spec. Graph SDK is an implementation of mentioned DSNP spec for social graph, optimized
 for storage and interaction with Frequency.
 ## Goals
 
 - Define operations
-- Define the interface for Graph SDK.
+- Define interface of Graph SDK.
 - Define the main concepts and entities in Graph SDK.
 - Define the algorithms to optimize the output regarding Frequency.
 
 ## Operations
-| Operation  | Description |
+Following is a list of desired operations in this SDK:
+
+| Name  | Description |
 | ------------- | ------------- |
 | **Initialise**  | Creates in memory graph structure for a desired MSA.  |
 | **Import**  | Import the blob from frequency into Graph SDK for desired MSA.  |
-| **Update**  | Updates the current in-memory graph structure with incoming updates.  |
-| **Get Graph**  | Exposes current state of in-memory graph to the consumer of sdk.  |
+| **Update**  | Changes the current in-memory graph structure with incoming updates.  |
+| **Get Graph**  | Exposes current state of in-memory graph to the consumer of the SDK.  |
 | **Has Updates**  | Determines if the applied changes created some updates in graph that needs to be persisted on Frequency.  |
 | **Calculate Updates**  | Applies the graph changes and generates optimized blobs to be applied to Frequency  |
 | **Persist**  | This should be called after successful update of Frequency to remove tracking of persisted updates.  |
 
 #### Import actions
-|  |  sub action |
-| ------------- | ------------- |
-| 1 | Deserialize the blob to specified schema. |
-| 2 | Decrypt encrypted fields using DSNP version specified algorithm. (if any). |
-| 3 | Decompress compressed fields using DSNP version specified algorithm. (if any). |
-| 4 | Verify plain data and PRI ids. (if any) |
-| 5 | Add verified plain data into in-memory graph data structure. |
+Steps necessary to import a social graph blob:
+
+|  |  sub action | Condition |
+| ------------- | ------------- | ------------- |
+| 1 | Deserialize the blob to specified schema. | Always |
+| 2 | Decrypt encrypted fields using DSNP version specified algorithm. | If encrypted |
+| 3 | Decompress compressed fields using DSNP version specified algorithm. | If Compressed |
+| 4 | Verify plain data and PRI ids | If private friendship |
+| 5 | Add verified plain data into in-memory graph data structure. | Always |
 
 #### Update related types
-|  |  Types |
+| Name |  Types |
 | ------------- | ------------- |
 | Update types |     - Add <br /> - Remove |
 | Privacy levels |     - Public <br /> - Private |
@@ -64,6 +68,8 @@ for storage and interaction with Frequency.
     *  A list of `Connection` type
 
 * ###### SetPublicKeys
+  * usage
+    * This is be able to calculate PRIds for Private Friendship connections
   * params
     * _**msa_keys**_: A list of msa ids and their public keys to be able to calculate PRI ids of
 `MsaKey` type
@@ -115,7 +121,7 @@ pub enum Action {
     Connect {
         owner_msa_id: MessageSourceId,
         connection: Connection,
-        connection_key: Option<PublicKey>,
+        connection_key: Option<PublicKey>, // included only if PRId calculation is required
     },
     Disconnect {
         owner_msa_id: MessageSourceId,
@@ -141,7 +147,7 @@ pub enum Update {
 
 pub struct Rotation {
     owner_msa_id: MessageSourceId,
-    prev_keys: Vec<KeyPair>,
+    prev_key: KeyPair,
     new_key: KeyPair,
 }
 ```
@@ -162,3 +168,11 @@ An example of such an algorithm would be as follows
 4. if there are no changing pages start with existing pages with the least data (or last page)
 and do check in step 3.
 5. if there are no pages like that create a new page
+
+#### Fullness check
+To relax the optimization computation on pages we can define a threshold of fullness along with hard
+cutoffs. If the newly added data causes this page to pass defined threshold we will consider that
+the page became full after addition.
+Thresholds are there to reduce the possibility of adding a new data passing the hard cutoff point in
+which required the data to be calculated twice. First to ensure not passing the cutoff point and
+then to actually add the data to the page.
