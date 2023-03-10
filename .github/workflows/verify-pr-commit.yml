@@ -830,6 +830,6 @@ jobs:
           addHoldComment: "true"
           successComment: >-
             :white_check_mark: [Finished running benchmarks](${{steps.jobs.outputs.html_url}}).
-            Updated weights have been committed to your PR branch in
+            Updated weights have been committed to this PR branch in
             commit ${{steps.commit-updated-weights.outputs.commit_hash}}.
           failComment: "ERROR: Failed to set PR commit to success status!"
