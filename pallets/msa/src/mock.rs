@@ -101,13 +101,11 @@ impl pallet_schemas::Config for Test {
 }
 
 parameter_types! {
-	pub const MaxPublicKeysPerMsa: u8 = 255;
+	pub static MaxPublicKeysPerMsa: u8 = 255;
 	pub const MaxProviderNameSize: u32 = 16;
 	pub const MaxSchemas: u32 = 5;
-}
-
-parameter_types! {
 	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
+	pub static MaxSignaturesStored: Option<u32> = Some(8000);
 }
 
 impl Clone for MaxSchemaGrantsPerDelegation {
@@ -168,7 +166,7 @@ impl pallet_msa::Config for Test {
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
 	type MortalityWindowSize = ConstU32<100>;
-	type MaxSignaturesStored = ConstU32<8000>;
+	type MaxSignaturesStored = MaxSignaturesStored;
 	// The proposal type
 	type Proposal = RuntimeCall;
 	// The Council proposal provider interface
@@ -181,7 +179,17 @@ impl pallet_msa::Config for Test {
 	>;
 }
 
+pub fn set_max_signature_stored(max: u32) {
+	MAX_SIGNATURES_STORED.with(|v| *v.borrow_mut() = Some(max));
+}
+
+pub fn set_max_public_keys_per_msa(max: u8) {
+	MAX_PUBLIC_KEYS_PER_MSA.with(|v| *v.borrow_mut() = max);
+}
+
 pub fn new_test_ext() -> sp_io::TestExternalities {
+	set_max_signature_stored(8000);
+	set_max_public_keys_per_msa(255);
 	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
