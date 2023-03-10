@@ -808,6 +808,7 @@ pub mod pallet {
 		/// # Errors
 		/// * [`Error::NoKeyExists`] - `delegator` does not have an MSA key.
 		///
+		TODO: handles get removed and lock it for some time
 		#[pallet::call_index(10)]
 		#[pallet::weight((T::WeightInfo::retire_msa(), DispatchClass::Normal, Pays::No))]
 		pub fn retire_msa(origin: OriginFor<T>) -> DispatchResult {
@@ -881,6 +882,13 @@ pub mod pallet {
 			});
 			Ok(())
 		}
+translation, verififcation , prng, in the crate 
+		Create user handle- signrature requirements
+		retire user handle
+		change handle 
+		goverance to alter min max suffix range
+	##handle merging
+
 	}
 }
 
