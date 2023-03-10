@@ -480,7 +480,7 @@ pub mod pallet {
 				model.len() <= Self::get_schema_model_max_bytes() as usize,
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
-			// Append only is only valid for Itemized storages
+			// AppendOnly is only valid for Itemized storage
 			ensure!(
 				!settings.contains(&SchemaSetting::AppendOnly) ||
 					payload_location == PayloadLocation::Itemized,

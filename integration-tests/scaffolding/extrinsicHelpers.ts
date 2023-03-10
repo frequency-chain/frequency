@@ -271,11 +271,11 @@ export class ExtrinsicHelper {
       return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.upsertPageWithSignature(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated);
     }
 
-    public static getItemizedStorages(msa_id: MessageSourceId, schemaId: any): Promise<ItemizedStoragePageResponse> {
-        return firstValueFrom(ExtrinsicHelper.api.rpc.statefulStorage.getItemizedStorages(msa_id, schemaId));
+    public static getItemizedStorage(msa_id: MessageSourceId, schemaId: any): Promise<ItemizedStoragePageResponse> {
+        return firstValueFrom(ExtrinsicHelper.api.rpc.statefulStorage.getItemizedStorage(msa_id, schemaId));
     }
 
-    public static getPaginatedStorages(msa_id: MessageSourceId, schemaId: any): Promise<Vec<PaginatedStorageResponse>> {
-        return firstValueFrom(ExtrinsicHelper.api.rpc.statefulStorage.getPaginatedStorages(msa_id, schemaId));
+    public static getPaginatedStorage(msa_id: MessageSourceId, schemaId: any): Promise<Vec<PaginatedStorageResponse>> {
+        return firstValueFrom(ExtrinsicHelper.api.rpc.statefulStorage.getPaginatedStorage(msa_id, schemaId));
     }
 }

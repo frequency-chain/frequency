@@ -28,7 +28,7 @@
 //! - Removing pages in a **paginated**  model
 //!
 //! ## Terminology
-//! - [`Page`](../pallet_stateful_storage/types/struct.Page.html): Block of on-chain data of a fixed size, which is the underlying type for Itemized and Paginated storages.
+//! - [`Page`](../pallet_stateful_storage/types/struct.Page.html): Block of on-chain data of a fixed size, which is the underlying type for Itemized and Paginated storage.
 //! - [`ItemizedPage`](../pallet_stateful_storage/types/type.ItemizedPage.html): A page containing itemized data
 //! - [`PaginatedPage`](../pallet_stateful_storage/types/type.PaginatedPage.html): A page containing paginated data
 //!
@@ -432,11 +432,11 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	/// This function returns all the paginated storages associated with `msa_id` and `schema_id`
+	/// This function returns all the paginated storage associated with `msa_id` and `schema_id`
 	///
 	/// Warning: since this function iterates over all the potential keys it should never called
 	/// from runtime.
-	pub fn get_paginated_storages(
+	pub fn get_paginated_storage(
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
 	) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
@@ -454,8 +454,8 @@ impl<T: Config> Pallet<T> {
 		.collect())
 	}
 
-	/// This function returns all the itemized storages associated with `msa_id` and `schema_id`
-	pub fn get_itemized_storages(
+	/// This function returns all the itemized storage associated with `msa_id` and `schema_id`
+	pub fn get_itemized_storage(
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
 	) -> Result<ItemizedStoragePageResponse, DispatchError> {

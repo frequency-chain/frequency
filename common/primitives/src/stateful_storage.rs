@@ -14,7 +14,7 @@ pub type PageId = u16;
 /// PageHash is the type/size of hash of the page content.
 pub type PageHash = u32;
 
-/// A type to expose paginated type of stateful storages
+/// A type to expose paginated type of stateful storage
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct PaginatedStorageResponse {
@@ -22,7 +22,7 @@ pub struct PaginatedStorageResponse {
 	pub page_id: PageId,
 	///  Message source account id (the original source).
 	pub msa_id: MessageSourceId,
-	///  Schema id of the
+	///  Schema id of requested storage
 	pub schema_id: SchemaId,
 	/// Hash of the page content
 	pub content_hash: PageHash,
@@ -31,13 +31,13 @@ pub struct PaginatedStorageResponse {
 	pub payload: Vec<u8>,
 }
 
-/// A type to expose itemized page of stateful storages
+/// A type to expose itemized page of stateful storage
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct ItemizedStoragePageResponse {
 	///  Message source account id (the original source).
 	pub msa_id: MessageSourceId,
-	///  Schema id of the
+	///  Schema id of requested storage
 	pub schema_id: SchemaId,
 	/// Hash of the page content
 	pub content_hash: PageHash,
@@ -45,7 +45,7 @@ pub struct ItemizedStoragePageResponse {
 	pub items: Vec<ItemizedStorageResponse>,
 }
 
-/// A type to expose itemized type of stateful storages
+/// A type to expose itemized type of stateful storage
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct ItemizedStorageResponse {

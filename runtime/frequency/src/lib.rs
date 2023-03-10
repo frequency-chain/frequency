@@ -1273,12 +1273,12 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block> for Runtime {
-		fn get_paginated_storages(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
-			StatefulStorage::get_paginated_storages(msa_id, schema_id)
+		fn get_paginated_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
+			StatefulStorage::get_paginated_storage(msa_id, schema_id)
 		}
 
-		fn get_itemized_storages(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError> {
-			StatefulStorage::get_itemized_storages(msa_id, schema_id)
+		fn get_itemized_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError> {
+			StatefulStorage::get_itemized_storage(msa_id, schema_id)
 		}
 	}
 

@@ -123,7 +123,7 @@ describe("📗 Stateful Pallet Storage Signature Required", () => {
       assert.notEqual(pageRemove, undefined, "should have returned a event");
 
       // no pages should exist
-      const result = await ExtrinsicHelper.getPaginatedStorages(msa_id, paginatedSchemaId);
+      const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedSchemaId);
       assert.notEqual(result, undefined, "should have returned a valid response");
       assert.equal(result.length, 0, "should returned no paginated pages");
     }).timeout(10000);

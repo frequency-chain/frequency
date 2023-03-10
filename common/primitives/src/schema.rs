@@ -90,7 +90,7 @@ pub trait SchemaValidator<SchemaId> {
 }
 
 impl SchemaSettings {
-	/// Set all settings to disabled
+	/// Returns new SchemaSettings with all settings disabled
 	pub fn all_disabled() -> Self {
 		Self(BitFlags::EMPTY)
 	}

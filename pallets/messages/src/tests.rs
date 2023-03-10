@@ -549,7 +549,7 @@ fn add_ipfs_message_bad_cid_errors() {
 }
 
 #[test]
-fn on_initialize_should_clean_up_temporary_storages() {
+fn on_initialize_should_clean_up_temporary_storage() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let caller_1 = 5;

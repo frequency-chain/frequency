@@ -36,9 +36,9 @@ sp_api::decl_runtime_apis! {
 	/// Runtime APIs for [Stateful Storage](../pallet_stateful_storage/index.html)
 	pub trait StatefulStorageRuntimeApi
 	{
-		/// Retrieve the paginated storages for a particular msa and schema
-		fn get_paginated_storages(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<Vec<PaginatedStorageResponse>, DispatchError>;
-		/// Retrieve the itemized storages for a particular msa and schema
-		fn get_itemized_storages(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError>;
+		/// Retrieve the paginated storage for a particular msa and schema
+		fn get_paginated_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<Vec<PaginatedStorageResponse>, DispatchError>;
+		/// Retrieve the itemized storage for a particular msa and schema
+		fn get_itemized_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError>;
 	}
 }

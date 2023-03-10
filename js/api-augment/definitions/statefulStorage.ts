@@ -1,6 +1,6 @@
 export default {
   rpc: {
-    getPaginatedStorages: {
+    getPaginatedStorage: {
       description: "Gets pages of stateful storage",
       params: [
         {
@@ -14,8 +14,8 @@ export default {
       ],
       type: "Vec<PaginatedStorageResponse>",
     },
-    getItemizedStorages: {
-      description: "Gets itemized of stateful storages",
+    getItemizedStorage: {
+      description: "Gets itemized of stateful storage",
       params: [
         {
           name: "msa_id",
@@ -54,8 +54,8 @@ export default {
     StatefulStorageRuntimeApi: [
       {
         methods: {
-          get_paginated_storages: {
-            description: "Fetch the stateful paginated storages by msa_id and schema_id",
+          get_paginated_storage: {
+            description: "Fetch the stateful paginated storage by msa_id and schema_id",
             params: [
               {
                 name: "msa_id",
@@ -68,8 +68,8 @@ export default {
             ],
             type: "Result<Vec<PaginatedStorageResponse>, SpRuntimeDispatchError>",
           },
-          get_itemized_storages: {
-            description: "Fetch the stateful itemized storages by msa_id and schema_id",
+          get_itemized_storage: {
+            description: "Fetch the stateful itemized storage by msa_id and schema_id",
             params: [
               {
                 name: "msa_id",

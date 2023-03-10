@@ -40,7 +40,7 @@ pub type PaginatedPage<T> = Page<<T as Config>::MaxPaginatedPageSizeBytes>;
 pub enum ItemAction {
 	/// Adding new Item into page
 	Add { data: Vec<u8> },
-	/// removing a new item by index number. Index number starts from 0
+	/// removing an existing item by index number. Index number starts from 0
 	Delete { index: u16 },
 }
 

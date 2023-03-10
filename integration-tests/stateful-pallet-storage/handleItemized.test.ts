@@ -29,7 +29,7 @@ describe("📗 Stateful Pallet Storage", () => {
             schemaId_deletable = eventDeletable.data.schemaId;
         }
         assert.notEqual(schemaId_deletable, undefined, "setup should populate schemaId");
-        
+
         // Create non supported schema
         const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "OnChain");
         const [event2] = await createSchema2.fundAndSend();
@@ -223,8 +223,8 @@ describe("📗 Stateful Pallet Storage", () => {
     });
 
     describe("Itemized Storage RPC Tests", () => {
-        it("✅ should be able to call getItemizedStorages and get data for itemized schema", async function () {
-            const result = await ExtrinsicHelper.getItemizedStorages(msa_id, schemaId_deletable);
+        it("✅ should be able to call getItemizedStorage and get data for itemized schema", async function () {
+            const result = await ExtrinsicHelper.getItemizedStorage(msa_id, schemaId_deletable);
             assert.notEqual(result.hash, undefined, "should have returned a hash");
             assert.notEqual(result.size, undefined, "should have returned a itemized responses");
         }).timeout(10000);

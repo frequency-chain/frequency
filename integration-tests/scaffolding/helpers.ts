@@ -168,12 +168,12 @@ export async function createDelegatorAndDelegation(schemaId: u16, providerId: u6
 }
 
 export async function getCurrentItemizedHash(msa_id: MessageSourceId, schemaId: u16): Promise<PageHash> {
-  const result = await ExtrinsicHelper.getItemizedStorages(msa_id, schemaId);
+  const result = await ExtrinsicHelper.getItemizedStorage(msa_id, schemaId);
   return result.content_hash;
 }
 
 export async function getCurrentPaginatedHash(msa_id: MessageSourceId, schemaId: u16, page_id: number): Promise<u32> {
-  const result = await ExtrinsicHelper.getPaginatedStorages(msa_id, schemaId);
+  const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, schemaId);
   const page_response = result.filter((page) => page.page_id.toNumber() === page_id);
   if (page_response.length <= 0) {
     return new u32(ExtrinsicHelper.api.registry, 0);

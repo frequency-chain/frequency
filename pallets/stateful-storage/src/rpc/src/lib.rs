@@ -32,16 +32,16 @@ mod tests;
 #[rpc(client, server)]
 pub trait StatefulStorageApi<BlockHash> {
 	/// retrieving pages of stateful storage
-	#[method(name = "statefulStorage_getPaginatedStorages")]
-	fn get_paginated_storages(
+	#[method(name = "statefulStorage_getPaginatedStorage")]
+	fn get_paginated_storage(
 		&self,
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
 	) -> RpcResult<Vec<PaginatedStorageResponse>>;
 
-	/// retrieving itemized storages of stateful storage
-	#[method(name = "statefulStorage_getItemizedStorages")]
-	fn get_itemized_storages(
+	/// retrieving itemized storage of stateful storage
+	#[method(name = "statefulStorage_getItemizedStorage")]
+	fn get_itemized_storage(
 		&self,
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
@@ -69,25 +69,25 @@ where
 	C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
 	C::Api: StatefulStorageRuntimeApi<Block>,
 {
-	fn get_paginated_storages(
+	fn get_paginated_storage(
 		&self,
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
 	) -> RpcResult<Vec<PaginatedStorageResponse>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		let api_result = api.get_paginated_storages(&at, msa_id, schema_id);
+		let api_result = api.get_paginated_storage(&at, msa_id, schema_id);
 		map_result(api_result)
 	}
 
-	fn get_itemized_storages(
+	fn get_itemized_storage(
 		&self,
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
 	) -> RpcResult<ItemizedStoragePageResponse> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		let api_result = api.get_itemized_storages(&at, msa_id, schema_id);
+		let api_result = api.get_itemized_storage(&at, msa_id, schema_id);
 		map_result(api_result)
 	}
 }

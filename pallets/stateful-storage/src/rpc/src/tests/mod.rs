@@ -16,8 +16,8 @@ const DUMMY_STATE_HASH: u32 = 32767;
 
 sp_api::mock_impl_runtime_apis! {
 	impl StatefulStorageRuntimeApi<Block> for TestRuntimeApi {
-		/// Retrieve the itemized storages for a particular msa and schema
-		fn get_paginated_storages(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
+		/// Retrieve the itemized storage for a particular msa and schema
+		fn get_paginated_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
 			match (msa_id, schema_id) {
 				(SUCCESSFUL_MSA_ID, SUCCESSFUL_SCHEMA_ID) => Ok(vec![PaginatedStorageResponse::new(
 					0,
@@ -29,7 +29,7 @@ sp_api::mock_impl_runtime_apis! {
 			}
 		}
 
-		fn get_itemized_storages(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError> {
+		fn get_itemized_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError> {
 			match (msa_id, schema_id) {
 				(SUCCESSFUL_MSA_ID, SUCCESSFUL_SCHEMA_ID) => Ok(ItemizedStoragePageResponse::new(
 					msa_id,
@@ -46,11 +46,11 @@ type PaginatedStateResult = Result<Vec<PaginatedStorageResponse>, jsonrpsee::cor
 type ItemizedStateResult = Result<ItemizedStoragePageResponse, jsonrpsee::core::Error>;
 
 #[tokio::test]
-async fn get_paginated_storages_with_non_existent_schema_id_should_return_error() {
+async fn get_paginated_storage_with_non_existent_schema_id_should_return_error() {
 	let client = Arc::new(TestApi {});
 	let api = StatefulStorageHandler::new(client);
 
-	let result: PaginatedStateResult = api.get_paginated_storages(
+	let result: PaginatedStateResult = api.get_paginated_storage(
 		1, 1233, // Non-existing Schema Id
 	);
 
@@ -58,11 +58,11 @@ async fn get_paginated_storages_with_non_existent_schema_id_should_return_error(
 }
 
 #[tokio::test]
-async fn get_paginated_storages_with_non_existent_msa_id_should_return_error() {
+async fn get_paginated_storage_with_non_existent_msa_id_should_return_error() {
 	let client = Arc::new(TestApi {});
 	let api = StatefulStorageHandler::new(client);
 
-	let result: PaginatedStateResult = api.get_paginated_storages(
+	let result: PaginatedStateResult = api.get_paginated_storage(
 		1029, // Non-existing Msa Id
 		1,
 	);
@@ -71,11 +71,11 @@ async fn get_paginated_storages_with_non_existent_msa_id_should_return_error() {
 }
 
 #[tokio::test]
-async fn get_paginated_storages_with_success() {
+async fn get_paginated_storage_with_success() {
 	let client = Arc::new(TestApi {});
 	let api = StatefulStorageHandler::new(client);
 
-	let result: PaginatedStateResult = api.get_paginated_storages(
+	let result: PaginatedStateResult = api.get_paginated_storage(
 		SUCCESSFUL_MSA_ID,    // Msa Id
 		SUCCESSFUL_SCHEMA_ID, // Schema Id
 	);
@@ -91,11 +91,11 @@ async fn get_paginated_storages_with_success() {
 }
 
 #[tokio::test]
-async fn get_itemized_storages_with_non_existent_schema_id_should_return_error() {
+async fn get_itemized_storage_with_non_existent_schema_id_should_return_error() {
 	let client = Arc::new(TestApi {});
 	let api = StatefulStorageHandler::new(client);
 
-	let result: ItemizedStateResult = api.get_itemized_storages(
+	let result: ItemizedStateResult = api.get_itemized_storage(
 		1, 1233, // Non-existing Schema Id
 	);
 
@@ -103,11 +103,11 @@ async fn get_itemized_storages_with_non_existent_schema_id_should_return_error()
 }
 
 #[tokio::test]
-async fn get_itemized_storages_with_non_existent_msa_id_should_return_error() {
+async fn get_itemized_storage_with_non_existent_msa_id_should_return_error() {
 	let client = Arc::new(TestApi {});
 	let api = StatefulStorageHandler::new(client);
 
-	let result: ItemizedStateResult = api.get_itemized_storages(
+	let result: ItemizedStateResult = api.get_itemized_storage(
 		1029, // Non-existing Msa Id
 		1,
 	);
@@ -116,11 +116,11 @@ async fn get_itemized_storages_with_non_existent_msa_id_should_return_error() {
 }
 
 #[tokio::test]
-async fn get_itemized_storages_with_success() {
+async fn get_itemized_storage_with_success() {
 	let client = Arc::new(TestApi {});
 	let api = StatefulStorageHandler::new(client);
 
-	let result: ItemizedStateResult = api.get_itemized_storages(
+	let result: ItemizedStateResult = api.get_itemized_storage(
 		SUCCESSFUL_MSA_ID,    // Msa Id
 		SUCCESSFUL_SCHEMA_ID, // Schema Id
 	);
