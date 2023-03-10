@@ -20,7 +20,10 @@ describe.only("Capacity Transaction Tests", function () {
     let withdrawKeys: KeyringPair;
     let withdrawProviderId: u64;
     let emptyKeys: KeyringPair;
+    let emptyProviderId: u64;
     let noProviderKeys: KeyringPair;
+    let delegatorKeys: KeyringPair;
+    let delegatorProviderId: u64;
     let schemaId: u16;
 
     let stakeAmount: bigint = 20000000n;
@@ -66,10 +69,20 @@ describe.only("Capacity Transaction Tests", function () {
 
         // Create a keypair with no msaId
         emptyKeys = await createAndFundKeypair();
+        // REVIEW: We cannot create a provider without an MSA
+        // const createProviderOp = ExtrinsicHelper.createProvider(emptyKeys, "EmptyProvider");
+        // const [ProviderCreatedEvent] = await createProviderOp.fundAndSend();
+        // assert.notEqual(ProviderCreatedEvent, undefined, 'emptyProvider should have returned ProviderCreated event');
 
-        // Create a keypair with no provider
-        noProviderKeys = await createKeys("NoProviderKeys");
-        await fundKeypair(devAccounts[0].keys, noProviderKeys, 1000000n);
+        // Create and fund a keypair with EXISTENTIAL_DEPOSIT
+        // Use this keypair for delegator operations
+        delegatorKeys = createKeys("OtherProviderKeys");
+        delegatorProviderId = await createMsaAndProvider(delegatorKeys, "Delegator", stakeAmount);
+        assert.equal(delegatorProviderId, 5, "should populate delegatorProviderId");
+
+        // Create a keypair with msaId, but no provider
+        noProviderKeys = createKeys("NoProviderKeys");
+        await fundKeypair(devAccounts[0].keys, noProviderKeys, stakeAmount);
         const createMsaOp = ExtrinsicHelper.createMsa(noProviderKeys);
         const [MsaCreatedEvent] = await createMsaOp.fundAndSend();
         assert.notEqual(MsaCreatedEvent, undefined, "should have returned MsaCreated event");
@@ -301,28 +314,32 @@ describe.only("Capacity Transaction Tests", function () {
         });
         it("should fail to pay for a transaction with no msaId", async function () {
             const payload = await generateDelegationPayload({
-                authorizedMsaId: withdrawProviderId,
+                authorizedMsaId: delegatorProviderId,
                 schemaIds: [schemaId],
             });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-            const grantDelegationOp = ExtrinsicHelper.grantDelegation(emptyKeys, withdrawKeys, 
-                signPayloadSr25519(emptyKeys, addProviderData), payload);
+            const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, emptyKeys, 
+                signPayloadSr25519(delegatorKeys, addProviderData), payload);
             await assert.rejects(grantDelegationOp.payWithCapacity(), { name: "RpcError", message: 
                 "1010: Invalid Transaction: Custom error: 1" });
         });
+        it("should fail to pay for a transaction with no provider", async function () {
         // When a user is not a registered provider and attempts to pay with Capacity,
         // it should error with InvalidTransaction::Payment.
-        it("should fail to pay for a transaction with no provider", async function () {
+        // REVIEW: noProviderKeys is not a registered provider and has no capacity.
+        // noProviderKeys has enough tokens to pay for the transaction, but the RPC
+        // drops the transaction before it gets to the pallet.
             const payload = await generateDelegationPayload({
-                authorizedMsaId: withdrawProviderId,
+                authorizedMsaId: delegatorProviderId,
                 schemaIds: [schemaId],
             });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-            const grantDelegationOp = ExtrinsicHelper.grantDelegation(emptyKeys, noProviderKeys, 
-                signPayloadSr25519(emptyKeys, addProviderData), payload);
+            const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, noProviderKeys, 
+                signPayloadSr25519(delegatorKeys, addProviderData), payload);
             await assert.rejects(grantDelegationOp.payWithCapacity(), { name: "RpcError", message: 
                 "1010: Invalid Transaction: Custom error: 1" });
         });
+        // REVIEW: This test may be invalid.
         // A registered provider with Capacity but no tokens associated with the
         // key should still be able to use polkadot UI to submit a capacity transaction.
         // *All accounts will have at least an EXISTENTIAL_DEPOSIT = 1M.
