@@ -2,12 +2,11 @@ import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { u64, u16 } from "@polkadot/types";
 import assert from "assert";
-import { AddProviderPayload, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
+import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { devAccounts, log, createKeys, createAndFundKeypair, createMsaAndProvider,
-         generateDelegationPayload, signPayloadSr25519, stakeToProvider }
+         generateDelegationPayload, signPayloadSr25519, stakeToProvider, fundKeypair }
     from "../scaffolding/helpers";
 import { firstValueFrom } from "rxjs";
-// import { Call } from "@polkadot/types/interfaces";
 
 // REMOVE: .only for testing
 describe.only("Capacity Transaction Tests", function () {
@@ -21,10 +20,8 @@ describe.only("Capacity Transaction Tests", function () {
     let withdrawKeys: KeyringPair;
     let withdrawProviderId: u64;
     let emptyKeys: KeyringPair;
-    let emptyProviderId: u64;
-
+    let noProviderKeys: KeyringPair;
     let schemaId: u16;
-    let defaultPayload: AddProviderPayload;
 
     let stakeAmount: bigint = 20000000n;
 
@@ -67,8 +64,15 @@ describe.only("Capacity Transaction Tests", function () {
         otherProviderId = await createMsaAndProvider(otherProviderKeys, "OtherProvider", stakeAmount);
         assert.equal(otherProviderId, 4, "should populate otherProviderId");
 
-        // Create a keypair with no tokens
+        // Create a keypair with no msaId
         emptyKeys = await createAndFundKeypair();
+
+        // Create a keypair with no provider
+        noProviderKeys = await createKeys("NoProviderKeys");
+        await fundKeypair(devAccounts[0].keys, noProviderKeys, 1000000n);
+        const createMsaOp = ExtrinsicHelper.createMsa(noProviderKeys);
+        const [MsaCreatedEvent] = await createMsaOp.fundAndSend();
+        assert.notEqual(MsaCreatedEvent, undefined, "should have returned MsaCreated event");
 
         // Create schemas for testing with Grant Delegation to test pay_with_capacity
         // Borrowed from integration-tests/grantDelegation.test.ts, might be a candidate for refactoring
@@ -111,7 +115,6 @@ describe.only("Capacity Transaction Tests", function () {
         }
         assert.notEqual(schemaId, undefined, "setup should populate schemaId");
     });
-    
 
     describe("stake-unstake-withdraw_unstaked testing", function () {
 
@@ -261,25 +264,14 @@ describe.only("Capacity Transaction Tests", function () {
 
     describe("pay_with_capacity testing", function () {
         it("should successfully stake 9M", async function () {
+            // REVIEW: Hypothesis: when tx above fail, it leaves the nonce in a bad state, which causes the next tx to fail
             // Advance to the next block to eliminate nonce collision
             await ExtrinsicHelper.createBlock();
             await stakeToProvider(stakeKeys, stakeProviderId, 9000000n);
         });
         it("should pay for a transaction with available capacity", async function () {
-            // REMOVE:  
-            // Confirm that the tokens were staked in the stakeKeys account using the query API
-            const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
-            log("DBG:stakedAcctInfo.data.miscFrozen: ", stakedAcctInfo.data.miscFrozen.toBigInt());
-            log("DBG:stakedAcctInfo.data.feeFrozen: ", stakedAcctInfo.data.feeFrozen.toBigInt());
-            // assert.equal(stakedAcctInfo.data.miscFrozen, 4000000, "should return an account with 4000000 miscFrozen balance");
-            // assert.equal(stakedAcctInfo.data.feeFrozen,  4000000, "should return an account with 4000000 feeFrozen balance");
-            // Confirm that the capacity ledger is not empty
-            const origStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            log("DBG:origStaked.remainingCapacity: ", origStaked.remainingCapacity.toBigInt());
-            // assert.equal(origStaked.remainingCapacity,   3000000, "should return a capacityLedger with 3M remainingCapacity");
-            // assert.equal(origStaked.totalTokensStaked,   3000000, "should return a capacityLedger with 3M total tokens staked");
-            // assert.equal(origStaked.totalCapacityIssued, 3000000, "should return a capacityLedger with 3M capacity issued");
-
+            // grantDelegation costs about 2.8M and is the capacity eligible
+            // transaction used for these tests.
             const payload = await generateDelegationPayload({
                 authorizedMsaId: stakeProviderId,
                 schemaIds: [schemaId],
@@ -287,31 +279,21 @@ describe.only("Capacity Transaction Tests", function () {
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
             const grantDelegationOp = ExtrinsicHelper.grantDelegation(otherProviderKeys, stakeKeys, 
                 signPayloadSr25519(otherProviderKeys, addProviderData), payload);
-            const [grantDelegationEvent] = await grantDelegationOp.payWithCapacity();
-            log("DBG:grantDelegationEvent: ", grantDelegationEvent);
+            const [grantDelegationEvent, chainEvents] = await grantDelegationOp.payWithCapacity();
             if (grantDelegationEvent && 
-                ExtrinsicHelper.api.events.msa.DelegationGranted.is(grantDelegationEvent)) {
-                log("DBG:grantDelegationEvent: ", grantDelegationEvent);
-            }
-            else {
+                !(ExtrinsicHelper.api.events.msa.DelegationGranted.is(grantDelegationEvent))) {
                 assert.fail("should return a DelegationGranted event");
             }
-            
-            // const addMessageOp = ExtrinsicHelper.addOnChainMessage(stakeKeys, 1, "test message");
-            // const [addMessageEvent] = await addMessageOp.payWithCapacity();
-            // assert.notEqual(addMessageEvent, undefined, "should return an event");
-            // await assert.rejects(grantDelegationOp.payWithCapacity(), { name: "Error", message: 
-            //     "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low" });
+            // When Capacity has withdrawn an event CapacityWithdrawn is emitted.
+            // chainEvents seems to contain all the events from the chain up to now,
+            // if further successful events are emitted, then this check will be invalid.
+            if (chainEvents && chainEvents["capacity.CapacityWithdrawn"].isEmpty) {
+                assert.fail("chainEvents should contain a CapacityWithdrawn event");
+            }
         });
+        // When a user attempts to pay for a non-capacity transaction with Capacity,
+        // it should error and drop the transaction from the transaction-pool.
         it("should fail to pay for a non-capacity transaction with available capacity", async function () {
-            // REMOVE:
-            // Confirm that the capacity ledger is not empty
-            const origStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            log("DBG:origStaked.remainingCapacity: ", origStaked.remainingCapacity.toBigInt());
-            // assert.equal(origStaked.remainingCapacity,   134836, "should return a capacityLedger with 134836 remainingCapacity:2");
-            // assert.equal(origStaked.totalTokensStaked,   3000000, "should return a capacityLedger with 3M total tokens staked");
-            // assert.equal(origStaked.totalCapacityIssued, 3000000, "should return a capacityLedger with 3M capacity issued");
-
             // stake is not capacity eligible
             const increaseStakeObj = ExtrinsicHelper.stake(stakeKeys, otherProviderId, 1000000);
             await assert.rejects(increaseStakeObj.payWithCapacity(), { name: "RpcError", message: 
@@ -327,6 +309,45 @@ describe.only("Capacity Transaction Tests", function () {
                 signPayloadSr25519(emptyKeys, addProviderData), payload);
             await assert.rejects(grantDelegationOp.payWithCapacity(), { name: "RpcError", message: 
                 "1010: Invalid Transaction: Custom error: 1" });
+        });
+        // When a user is not a registered provider and attempts to pay with Capacity,
+        // it should error with InvalidTransaction::Payment.
+        it("should fail to pay for a transaction with no provider", async function () {
+            const payload = await generateDelegationPayload({
+                authorizedMsaId: withdrawProviderId,
+                schemaIds: [schemaId],
+            });
+            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+            const grantDelegationOp = ExtrinsicHelper.grantDelegation(emptyKeys, noProviderKeys, 
+                signPayloadSr25519(emptyKeys, addProviderData), payload);
+            await assert.rejects(grantDelegationOp.payWithCapacity(), { name: "RpcError", message: 
+                "1010: Invalid Transaction: Custom error: 1" });
+        });
+        // A registered provider with Capacity but no tokens associated with the
+        // key should still be able to use polkadot UI to submit a capacity transaction.
+        // *All accounts will have at least an EXISTENTIAL_DEPOSIT = 1M.
+        // This test may still be valid if the txn cost is greater than 1M.
+        it("should pay for a transaction with available capacity", async function () {
+            // grantDelegation costs about 2.8M and is the the capacity eligible
+            // transaction used for these tests.
+            const payload = await generateDelegationPayload({
+                authorizedMsaId: stakeProviderId,
+                schemaIds: [schemaId],
+            });
+            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+            const grantDelegationOp = ExtrinsicHelper.grantDelegation(otherProviderKeys, stakeKeys, 
+                signPayloadSr25519(otherProviderKeys, addProviderData), payload);
+            const [grantDelegationEvent, chainEvents] = await grantDelegationOp.payWithCapacity();
+            if (grantDelegationEvent && 
+                !(ExtrinsicHelper.api.events.msa.DelegationGranted.is(grantDelegationEvent))) {
+                assert.fail("should return a DelegationGranted event");
+            }
+            // When Capacity has withdrawn an event CapacityWithdrawn is emitted.
+            // chainEvents seems to contain all the events from the chain up to now,
+            // if further successful events are emitted, then this check will be invalid.
+            if (chainEvents && chainEvents["capacity.CapacityWithdrawn"].isEmpty) {
+                assert.fail("chainEvents should return a CapacityWithdrawn event");
+            }
         });
     });
     describe("empty capacity testing", function () {
