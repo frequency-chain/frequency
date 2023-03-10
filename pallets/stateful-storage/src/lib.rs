@@ -2,14 +2,21 @@
 //! The Stateful Storage pallet provides functionality for reading and writing stateful data
 //! representing stateful data for which we are only ever interested in the latest state.
 //!
+//! - [Configuration: `Config`](Config)
+//! - [Extrinsics: `Call`](Call)
+//! - [Runtime API: `StatefulStorageRuntimeApi`](../pallet_stateful_storage_runtime_api/trait.StatefulStorageRuntimeApi.html)
+//! - [Custom RPC API: `StatefulStorageApiServer`](../pallet_stateful_storage_rpc/trait.StatefulStorageApiServer.html)
+//! - [Event Enum: `Event`](Event)
+//! - [Error Enum: `Error`](Error)
+//!
 //! ## Overview
 //! For state transitions for which we only care about the latest state, Stateful Storage provides a way to store and retrieve such data
 //! outside of the existing Announcement mechanism, which would require the latest state to be tracked using some kind of 3rd-party indexer.
 //!
 //! This pallet supports two models for storing stateful data:
-//! 1. **Itemized:** Data is stored in a single **page** (max size: `MaxItemizedPageSizeBytes`) containing multiple items (max item size `MaxItemizedBlobSizeBytes`) of the associated schema.
+//! 1. **Itemized:** Data is stored in a single **page** (max size: [`Config::MaxItemizedPageSizeBytes`]) containing multiple items (max item size `MaxItemizedBlobSizeBytes`) of the associated schema.
 //! Useful for schemas with a relative small item size and higher potential item count. The read and write complexity is O(n) when n is the number of bytes for all items.
-//! 2. **Paginated:** Data is stored in multiple **pages** of size `MaxPaginatedPageSizeBytes`, each containing a single item of the associated schema.
+//! 2. **Paginated:** Data is stored in multiple **pages** of size [`Config::MaxPaginatedPageSizeBytes`], each containing a single item of the associated schema.
 //! Page IDs range from 0 .. `MaxPaginatedPageId` (implying there may be at most `MaxPaginatedPageId` + 1 pages per MSA+Schema at any given time, though
 //! there may be holes in that range). Useful for schemas with a larger item size and smaller potential item count.
 //!
@@ -36,12 +43,12 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 // Strong Documentation Lints
-// #![deny(
-// 	rustdoc::broken_intra_doc_links,
-// 	rustdoc::missing_crate_level_docs,
-// 	rustdoc::invalid_codeblock_attributes,
-// 	missing_docs
-// )]
+#![deny(
+	rustdoc::broken_intra_doc_links,
+	rustdoc::missing_crate_level_docs,
+	rustdoc::invalid_codeblock_attributes,
+	missing_docs
+)]
 
 #[cfg(any(feature = "runtime-benchmarks", test))]
 mod test_common;
@@ -258,6 +265,11 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Applies the Add or Delete Actions on the requested Itemized page
+		///
+		/// # Events
+		/// * [`Event::ItemizedPageUpdated`]
+		/// * [`Event::ItemizedPageDeleted`]
+		///
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::apply_item_actions( actions.len() as u32 ,
 			actions.iter().fold(0, |acc, a| acc + match a {
@@ -283,6 +295,10 @@ pub mod pallet {
 		}
 
 		/// Creates or updates an Paginated storage with new payload
+		///
+		/// # Events
+		/// * [`Event::PaginatedPageUpdated`]
+		///
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::upsert_page(payload.len() as u32))]
 		pub fn upsert_page(
@@ -311,6 +327,10 @@ pub mod pallet {
 		}
 
 		/// Deletes a Paginated storage
+		///
+		/// # Events
+		/// * [`Event::PaginatedPageDeleted`]
+		///
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::delete_page())]
 		pub fn delete_page(
@@ -333,6 +353,11 @@ pub mod pallet {
 
 		/// Applies the Add or Delete Actions on the requested Itemized page that requires signature
 		/// since the signature of delegator is checked there is no need for delegation validation
+		///
+		/// # Events
+		/// * [`Event::ItemizedPageUpdated`]
+		/// * [`Event::ItemizedPageDeleted`]
+		///
 		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::apply_item_actions_with_signature( payload.actions.len() as u32 ,
 			payload.actions.iter().fold(0, |acc, a| acc + match a {
@@ -368,6 +393,10 @@ pub mod pallet {
 
 		/// Creates or updates an Paginated storage with new payload that requires signature
 		/// since the signature of delegator is checked there is no need for delegation validation
+		///
+		/// # Events
+		/// * [`Event::PaginatedPageUpdated`]
+		///
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::upsert_page_with_signature(payload.payload.len() as u32))]
 		pub fn upsert_page_with_signature(
@@ -400,6 +429,10 @@ pub mod pallet {
 
 		/// Deletes a Paginated storage that requires signature
 		/// since the signature of delegator is checked there is no need for delegation validation
+		///
+		/// # Events
+		/// * [`Event::PaginatedPageDeleted`]
+		///
 		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::delete_page_with_signature())]
 		pub fn delete_page_with_signature(
@@ -521,6 +554,13 @@ impl<T: Config> Pallet<T> {
 		current_block + T::BlockNumber::from(T::MortalityWindowSize::get())
 	}
 
+	/// Checks that the schema is valid for is action
+	///
+	/// # Errors
+	/// * [`Error::InvalidSchemaId`]
+	/// * [`Error::SchemaPayloadLocationMismatch`]
+	/// * [`Error::UnsupportedOperationForSchema`]
+	///
 	fn check_schema(
 		schema_id: SchemaId,
 		expected_payload_location: PayloadLocation,
@@ -550,6 +590,12 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Checks that the grant is valid for is action
+	///
+	/// # Errors
+	/// * [`Error::InvalidMessageSourceAccount`]
+	/// * [`Error::UnauthorizedDelegate`]
+	///
 	fn check_grants(
 		provider_key: T::AccountId,
 		state_owner_msa_id: MessageSourceId,
@@ -605,6 +651,11 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Modifies an itemized storage by applying provided actions and deposit events
+	///
+	/// # Events
+	/// * [`Event::ItemizedPageUpdated`]
+	/// * [`Event::ItemizedPageDeleted`]
+	///
 	fn modify_itemized(
 		state_owner_msa_id: MessageSourceId,
 		schema_id: SchemaId,
@@ -670,7 +721,11 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Modifies an paginated storage by provided new page and deposit events
+	/// Modifies a page from paginated storage by provided new page
+	///
+	/// # Events
+	/// * [`Event::PaginatedPageUpdated`]
+	///
 	fn modify_paginated(
 		state_owner_msa_id: MessageSourceId,
 		schema_id: SchemaId,
@@ -708,7 +763,11 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Deletes an paginated storage and deposit events
+	/// Deletes a page from paginated storage
+	///
+	/// # Events
+	/// * [`Event::PaginatedPageDeleted`]
+	///
 	fn delete_paginated(
 		state_owner_msa_id: MessageSourceId,
 		schema_id: SchemaId,

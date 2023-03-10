@@ -1,3 +1,4 @@
+//! Types for the Stateful Storage Pallet
 use crate::Config;
 use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::{
@@ -39,9 +40,15 @@ pub type PaginatedPage<T> = Page<<T as Config>::MaxPaginatedPageSizeBytes>;
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, PartialOrd, Ord)]
 pub enum ItemAction {
 	/// Adding new Item into page
-	Add { data: Vec<u8> },
-	/// removing an existing item by index number. Index number starts from 0
-	Delete { index: u16 },
+	Add {
+		/// The data to add
+		data: Vec<u8>,
+	},
+	/// Removing an existing item by index number. Index number starts from 0
+	Delete {
+		/// Index (0+) to delete
+		index: u16,
+	},
 }
 
 /// This header is used to specify the byte size of an item stored inside the buffer
@@ -55,9 +62,13 @@ pub struct ItemHeader {
 /// Errors dedicated to parsing or modifying pages
 #[derive(Debug, PartialEq)]
 pub enum PageError {
+	/// Unable to decode the data in the item
 	ErrorParsing(&'static str),
+	/// Add or Delete Operation was not possible
 	InvalidAction(&'static str),
+	/// ItemPage count overflow catch
 	ArithmeticOverflow,
+	/// Page byte length over the max size
 	PageSizeOverflow,
 }
 
@@ -80,7 +91,7 @@ pub struct ItemizedSignaturePayload<T: Config> {
 	/// The block number at which the signed proof will expire
 	pub expiration: T::BlockNumber,
 
-	/// actions to apply to storage
+	/// Actions to apply to storage from possible: [`ItemAction`]
 	pub actions: BoundedVec<ItemAction, <T as Config>::MaxItemizedActionsCount>,
 }
 
@@ -140,23 +151,28 @@ pub struct PaginatedDeleteSignaturePayload<T: Config> {
 #[scale_info(skip_type_params(PageDataSize))]
 #[codec(mel_bound(PageDataSize: MaxEncodedLen))]
 pub struct Page<PageDataSize: Get<u32>> {
+	/// Data for the page
+	/// - Itemized is limited by [`Config::MaxItemizedPageSizeBytes`]
+	/// - Paginated is limited by [`Config::MaxPaginatedPageSizeBytes`]
 	pub data: BoundedVec<u8, PageDataSize>,
 }
 
 /// An internal struct which contains the parsed items in a page
 #[derive(Debug, PartialEq)]
 pub struct ParsedItemPage<'a> {
-	/// page current size
+	/// Page current size
 	pub page_size: usize,
-	/// a map of item index to a slice of blob (including header is optional)
+	/// A map of item index to a slice of blob (including header is optional)
 	pub items: BTreeMap<u16, &'a [u8]>,
 }
 
 impl<PageDataSize: Get<u32>> Page<PageDataSize> {
+	/// Check if the page is empty
 	pub fn is_empty(&self) -> bool {
 		self.data.is_empty()
 	}
 
+	/// Retrieve the hash of the page
 	pub fn get_hash(&self) -> PageHash {
 		if self.is_empty() {
 			return PageHash::default()
@@ -199,7 +215,7 @@ impl<PageDataSize: Get<u32>> TryFrom<Vec<u8>> for Page<PageDataSize> {
 }
 
 impl<PageDataSize: Get<u32>> Page<PageDataSize> {
-	/// applies all actions to specified page and returns the updated page
+	/// Applies all actions to specified page and returns the updated page
 	/// This has O(n) complexity when n is the number of all the bytes in that itemized storage
 	pub fn apply_item_actions(&self, actions: &[ItemAction]) -> Result<Self, PageError> {
 		let mut parsed = self.parse_as_itemized(true)?;
