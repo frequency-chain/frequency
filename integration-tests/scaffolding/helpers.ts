@@ -219,3 +219,6 @@ export async function stakeToProvider(keys: KeyringPair, providerId: u64, amount
         return Promise.reject('stakeToProvider: stakeEvent should be ExtrinsicHelper.api.events.capacity.Staked');
     }
 }
+export async function assertDefined(thing: any) {
+  assert.notEqual(undefined, thing);
+}
