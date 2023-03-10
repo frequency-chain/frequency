@@ -2694,57 +2694,6 @@ fn revoke_permissions_for_schemas_errors_when_schema_does_not_exist_in_list_of_s
 }
 
 #[test]
-fn revoke_schema_permissions_success() {
-	new_test_ext().execute_with(|| {
-		set_schema_count::<Test>(3);
-
-		let (key_pair, _) = sr25519::Pair::generate();
-		let provider_account = key_pair.public();
-
-		let (delegator_pair, _) = sr25519::Pair::generate();
-		let delegator_account = delegator_pair.public();
-
-		assert_ok!(Msa::create(RuntimeOrigin::signed(delegator_account.into())));
-		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
-
-		let delegator_id = DelegatorId(1);
-		let provider_id = ProviderId(2);
-
-		assert_ok!(Msa::add_provider(provider_id, delegator_id, vec![1, 2]));
-
-		let schema_ids_to_revoke: Vec<SchemaId> = vec![2];
-
-		assert_ok!(Msa::revoke_schema_permissions(
-			RuntimeOrigin::signed(delegator_account.into()),
-			provider_id.into(),
-			schema_ids_to_revoke,
-		));
-
-		System::assert_last_event(Event::DelegationUpdated { provider_id, delegator_id }.into());
-	});
-}
-
-#[test]
-fn revoke_schema_permissions_errors_when_no_key_exists() {
-	new_test_ext().execute_with(|| {
-		let (delegator_pair, _) = sr25519::Pair::generate();
-		let delegator_account = delegator_pair.public();
-
-		let provider = ProviderId(2);
-		let schema_ids: Vec<SchemaId> = vec![1];
-
-		assert_noop!(
-			Msa::revoke_schema_permissions(
-				RuntimeOrigin::signed(delegator_account.into()),
-				provider.into(),
-				schema_ids,
-			),
-			Error::<Test>::NoKeyExists
-		);
-	});
-}
-
-#[test]
 fn schema_permissions_trait_impl_try_get_mut_schema_success() {
 	new_test_ext().execute_with(|| {
 		let mut delegation: Delegation<
