@@ -7,7 +7,7 @@ import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkado
 import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
 import { devAccounts, log, Sr25519Signature } from "./helpers";
 import { connect, connectPromise } from "./apiConnection";
-import { Call, CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
+import { CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
 
 export type AddKeyData = { msaId?: u64; expiration?: any; newPublicKey?: any; }
@@ -268,9 +268,4 @@ export class ExtrinsicHelper {
     public static withdrawUnstaked(keys: KeyringPair): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.withdrawUnstaked(), keys, ExtrinsicHelper.api.events.capacity.StakeWithdrawn);
     }
-
-    /** Pay With Capacity Extrinsics **/
-    // public static payWithCapacity(keys: KeyringPair, call: string | Uint8Array | Call): Extrinsic {
-    //     return new Extrinsic(() => ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacity(call), keys, ExtrinsicHelper.api.events.capacity.CapacityPaid);
-    // }
 }
