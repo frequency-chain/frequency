@@ -26,7 +26,7 @@ describe("📗 Stateful Pallet Storage AppendOnly Schemas", () => {
         assert.notEqual(providerKeys, undefined, "setup should populate providerKeys");
 
         // Create a schema for Itemized PayloadLocation
-        const createSchema = ExtrinsicHelper.createSchemaWithSettings(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized", "AppendOnly");
+        const createSchema = ExtrinsicHelper.createSchemaWithSettingsGov(providerKeys, providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized", "AppendOnly");
         const [event] = await createSchema.fundAndSend();
         if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
             itemizedSchemaId = event.data.schemaId;

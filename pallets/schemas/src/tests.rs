@@ -528,9 +528,10 @@ fn create_schema_with_settings_should_work() {
 		let settings = vec![SchemaSetting::AppendOnly];
 		let sender: AccountId = test_public(1);
 
-		//  assert
-		assert_ok!(SchemasPallet::create_schema_with_settings(
-			RuntimeOrigin::signed(sender),
+		// act and assert
+		assert_ok!(SchemasPallet::create_schema_via_governance(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
+			sender,
 			create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
 			ModelType::AvroBinary,
 			PayloadLocation::Itemized,
@@ -551,11 +552,11 @@ fn create_schema_with_append_only_setting_and_non_itemized_should_fail() {
 		// arrange
 		let settings = vec![SchemaSetting::AppendOnly];
 		let sender: AccountId = test_public(1);
-
-		//  assert
+		// act and assert
 		assert_noop!(
-			SchemasPallet::create_schema_with_settings(
-				RuntimeOrigin::signed(sender.clone()),
+			SchemasPallet::create_schema_via_governance(
+				RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
+				sender.clone(),
 				create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
 				ModelType::AvroBinary,
 				PayloadLocation::Paginated,
@@ -563,9 +564,12 @@ fn create_schema_with_append_only_setting_and_non_itemized_should_fail() {
 			),
 			Error::<Test>::InvalidSetting
 		);
+
+		// act and assert
 		assert_noop!(
-			SchemasPallet::create_schema_with_settings(
-				RuntimeOrigin::signed(sender.clone()),
+			SchemasPallet::create_schema_via_governance(
+				RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
+				sender.clone(),
 				create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
 				ModelType::AvroBinary,
 				PayloadLocation::OnChain,
@@ -573,9 +577,11 @@ fn create_schema_with_append_only_setting_and_non_itemized_should_fail() {
 			),
 			Error::<Test>::InvalidSetting
 		);
+
 		assert_noop!(
-			SchemasPallet::create_schema_with_settings(
-				RuntimeOrigin::signed(sender),
+			SchemasPallet::create_schema_via_governance(
+				RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
+				sender,
 				create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
 				ModelType::AvroBinary,
 				PayloadLocation::IPFS,

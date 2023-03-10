@@ -339,39 +339,6 @@ pub mod pallet {
 			Self::deposit_event(Event::SchemaCreated { key: creator_key, schema_id });
 			Ok(())
 		}
-
-		/// Adds a given schema to storage with additional settings available from `SchemaSetting`
-		/// # Arguments
-		/// * `origin` - The origin of the call
-		/// * `model` - The schema model
-		/// * `model_type` - The schema model type
-		/// * `payload_location` - The schema payload location
-		/// * `settings` - The bounded list of additional schema settings.
-		///
-		/// # Events
-		/// * [`Event::SchemaCreated`]
-		///
-		/// # Errors
-		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
-		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
-		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
-		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
-		#[pallet::call_index(4)]
-		#[pallet::weight(T::WeightInfo::create_schema(model.len() as u32 + settings.len() as u32))]
-		pub fn create_schema_with_settings(
-			origin: OriginFor<T>,
-			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
-			model_type: ModelType,
-			payload_location: PayloadLocation,
-			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
-		) -> DispatchResult {
-			let sender = ensure_signed(origin)?;
-
-			let schema_id = Self::create_schema_for(model, model_type, payload_location, settings)?;
-
-			Self::deposit_event(Event::SchemaCreated { key: sender, schema_id });
-			Ok(())
-		}
 	}
 
 	impl<T: Config> Pallet<T> {

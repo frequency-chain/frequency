@@ -66,7 +66,7 @@ describe("#createSchema", function () {
     });
 
     it("should fail to create non itemized schema with AppendOnly settings", async function () {
-      const f = ExtrinsicHelper.createSchemaWithSettings(keys, AVRO_GRAPH_CHANGE, "AvroBinary", "Paginated", "AppendOnly");
+      const f = ExtrinsicHelper.createSchemaWithSettingsGov(keys, keys, AVRO_GRAPH_CHANGE, "AvroBinary", "Paginated", "AppendOnly");
 
       await assert.rejects(f.fundAndSend(), {
         name: 'InvalidSetting',
