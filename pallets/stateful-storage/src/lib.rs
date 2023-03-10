@@ -71,36 +71,28 @@ pub mod types;
 pub mod weights;
 
 use crate::{stateful_child_tree::StatefulChildTree, types::*};
-// Weird compiler issue--warns about unused PageId import when building, but if missing here, `cargo test` fails due to missing import.
-#[allow(unused_imports)]
-use common_primitives::stateful_storage::PageId;
 use common_primitives::{
-	msa::{DelegatorId, MessageSourceId, MsaValidator, ProviderId, SchemaGrantValidator},
+	msa::{
+		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
+	},
 	node::Verify,
 	schema::{PayloadLocation, SchemaId, SchemaProvider, SchemaSetting},
 	stateful_storage::{
-		ItemizedStoragePageResponse, ItemizedStorageResponse, PageHash, PaginatedStorageResponse,
+		ItemizedStoragePageResponse, ItemizedStorageResponse, PageHash, PageId,
+		PaginatedStorageResponse,
 	},
 	utils::wrap_binary_data,
 };
-use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
+use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
+use frame_system::pallet_prelude::*;
 pub use pallet::*;
-use sp_core::bounded::BoundedVec;
+use sp_core::{bounded::BoundedVec, crypto::AccountId32};
 use sp_runtime::{traits::Convert, DispatchError, MultiSignature};
 pub use weights::*;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::{
-		msa::{MessageSourceId, MsaLookup, MsaValidator, SchemaGrantValidator},
-		schema::{SchemaId, SchemaProvider},
-		stateful_storage::{PageHash, PageId},
-	};
-	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::*;
-	use sp_core::crypto::AccountId32;
-	use sp_runtime::{traits::Convert, MultiSignature};
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
