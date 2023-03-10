@@ -92,8 +92,13 @@ pub use weights::*;
 mod benchmarking;
 #[cfg(test)]
 mod mock;
+
 #[cfg(test)]
-mod tests;
+mod extrinsic_tests;
+#[cfg(test)]
+mod helper_tests;
+#[cfg(test)]
+pub mod testing_utils;
 
 pub mod migration;
 
