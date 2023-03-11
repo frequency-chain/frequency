@@ -13,6 +13,8 @@ use utils::*;
 pub type PageId = u16;
 /// PageHash is the type/size of hash of the page content.
 pub type PageHash = u32;
+/// PageNonce is the type/size of a nonce value embedded into a Page
+pub type PageNonce = u16;
 
 /// A type to expose paginated type of stateful storage
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -26,6 +28,8 @@ pub struct PaginatedStorageResponse {
 	pub schema_id: SchemaId,
 	/// Hash of the page content
 	pub content_hash: PageHash,
+	/// Nonce of the page
+	pub nonce: PageNonce,
 	/// Serialized data in a the schemas.
 	#[cfg_attr(feature = "std", serde(with = "as_hex", default))]
 	pub payload: Vec<u8>,
@@ -41,6 +45,8 @@ pub struct ItemizedStoragePageResponse {
 	pub schema_id: SchemaId,
 	/// Hash of the page content
 	pub content_hash: PageHash,
+	/// Nonce of the page
+	pub nonce: PageNonce,
 	/// Items in a page
 	pub items: Vec<ItemizedStorageResponse>,
 }
@@ -62,10 +68,18 @@ impl PaginatedStorageResponse {
 		index_number: u16,
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
-		payload: Vec<u8>,
 		content_hash: PageHash,
+		nonce: PageNonce,
+		payload: Vec<u8>,
 	) -> Self {
-		PaginatedStorageResponse { page_id: index_number, msa_id, schema_id, payload, content_hash }
+		PaginatedStorageResponse {
+			page_id: index_number,
+			msa_id,
+			schema_id,
+			payload,
+			content_hash,
+			nonce,
+		}
 	}
 }
 
@@ -82,8 +96,9 @@ impl ItemizedStoragePageResponse {
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
 		content_hash: PageHash,
+		nonce: PageNonce,
 		items: Vec<ItemizedStorageResponse>,
 	) -> Self {
-		ItemizedStoragePageResponse { msa_id, schema_id, content_hash, items }
+		ItemizedStoragePageResponse { msa_id, schema_id, content_hash, items, nonce }
 	}
 }

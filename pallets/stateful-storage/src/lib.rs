@@ -472,7 +472,15 @@ impl<T: Config> Pallet<T> {
 		>(&msa_id, PALLET_STORAGE_PREFIX, PAGINATED_STORAGE_PREFIX, &prefix)
 		.map(|(k, v)| {
 			let content_hash = v.get_hash();
-			PaginatedStorageResponse::new(k.1, msa_id, schema_id, v.data.into_inner(), content_hash)
+			let nonce = v.nonce;
+			PaginatedStorageResponse::new(
+				k.1,
+				msa_id,
+				schema_id,
+				content_hash,
+				nonce,
+				v.data.into_inner(),
+			)
 		})
 		.collect())
 	}
@@ -498,7 +506,7 @@ impl<T: Config> Pallet<T> {
 			.iter()
 			.map(|(key, v)| ItemizedStorageResponse::new(*key, v.to_vec()))
 			.collect();
-		Ok(ItemizedStoragePageResponse::new(msa_id, schema_id, page.get_hash(), items))
+		Ok(ItemizedStoragePageResponse::new(msa_id, schema_id, page.get_hash(), page.nonce, items))
 	}
 
 	/// This function checks to ensure `payload_expire_block` is in a valid range
@@ -633,7 +641,7 @@ impl<T: Config> Pallet<T> {
 		actions: BoundedVec<ItemAction<T::MaxItemizedBlobSizeBytes>, T::MaxItemizedActionsCount>,
 	) -> DispatchResult {
 		let key: ItemizedKey = (schema_id,);
-		let existing_page = StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
+		let existing_page: ItemizedPage<T> = StatefulChildTree::<T::KeyHasher>::try_read(
 			&state_owner_msa_id,
 			PALLET_STORAGE_PREFIX,
 			ITEMIZED_STORAGE_PREFIX,
@@ -645,7 +653,7 @@ impl<T: Config> Pallet<T> {
 		let prev_content_hash = existing_page.get_hash();
 		ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
 
-		let updated_page =
+		let mut updated_page =
 			ItemizedOperations::<T>::apply_item_actions(&existing_page, &actions[..]).map_err(
 				|e| match e {
 					PageError::ErrorParsing(err) => {
@@ -660,6 +668,7 @@ impl<T: Config> Pallet<T> {
 					_ => Error::<T>::InvalidItemAction,
 				},
 			)?;
+		updated_page.nonce = existing_page.nonce.wrapping_add(1);
 
 		match updated_page.is_empty() {
 			true => {
@@ -704,7 +713,7 @@ impl<T: Config> Pallet<T> {
 		schema_id: SchemaId,
 		page_id: PageId,
 		target_hash: PageHash,
-		new_page: PaginatedPage<T>,
+		mut new_page: PaginatedPage<T>,
 	) -> DispatchResult {
 		let keys: PaginatedKey = (schema_id, page_id);
 		let existing_page: PaginatedPage<T> = StatefulChildTree::<T::KeyHasher>::try_read(
@@ -718,6 +727,8 @@ impl<T: Config> Pallet<T> {
 
 		let prev_content_hash: PageHash = existing_page.get_hash();
 		ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
+
+		new_page.nonce = existing_page.nonce.wrapping_add(1);
 
 		StatefulChildTree::<T::KeyHasher>::write(
 			&state_owner_msa_id,

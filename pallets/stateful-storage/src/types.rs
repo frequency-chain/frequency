@@ -4,7 +4,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::{
 	msa::MessageSourceId,
 	schema::SchemaId,
-	stateful_storage::{PageHash, PageId},
+	stateful_storage::{PageHash, PageId, PageNonce},
 };
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
@@ -167,6 +167,8 @@ pub struct PaginatedDeleteSignaturePayload<T: Config> {
 #[scale_info(skip_type_params(PageDataSize))]
 #[codec(mel_bound(PageDataSize: MaxEncodedLen))]
 pub struct Page<PageDataSize: Get<u32>> {
+	/// Incremental nonce to eliminate of signature replay attacks
+	pub nonce: PageNonce,
 	/// Data for the page
 	/// - Itemized is limited by [`Config::MaxItemizedPageSizeBytes`]
 	/// - Paginated is limited by [`Config::MaxPaginatedPageSizeBytes`]
@@ -204,6 +206,7 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 /// PartialEq and Hash should be both derived or implemented manually based on clippy rules
 impl<PageDataSize: Get<u32>> Hash for Page<PageDataSize> {
 	fn hash<H: Hasher>(&self, state: &mut H) {
+		state.write(&self.nonce.encode());
 		state.write(&self.data[..]);
 	}
 }
@@ -211,22 +214,29 @@ impl<PageDataSize: Get<u32>> Hash for Page<PageDataSize> {
 /// PartialEq and Hash should be both derived or implemented manually based on clippy rules
 impl<PageDataSize: Get<u32>> PartialEq for Page<PageDataSize> {
 	fn eq(&self, other: &Self) -> bool {
-		self.data.eq(&other.data)
+		self.nonce.eq(&other.nonce) && self.data.eq(&other.data)
 	}
 }
 
+/// Deserializing a Page from a BoundedVec is used for the input payload--
+/// so there is no nonce to be read, just the raw data.
 impl<PageDataSize: Get<u32>> From<BoundedVec<u8, PageDataSize>> for Page<PageDataSize> {
 	fn from(bounded: BoundedVec<u8, PageDataSize>) -> Self {
-		Self { data: bounded }
+		Self { nonce: PageNonce::default(), data: bounded }
 	}
 }
 
+/// Deserializing a Page from a Vec<u8> is used for reading from storage--
+/// so we must first read the nonce, then the data payload.
 impl<PageDataSize: Get<u32>> TryFrom<Vec<u8>> for Page<PageDataSize> {
 	type Error = ();
 
 	fn try_from(data: Vec<u8>) -> Result<Self, Self::Error> {
-		let bounded: BoundedVec<u8, PageDataSize> = BoundedVec::try_from(data).map_err(|_| ())?;
-		Ok(Page::from(bounded))
+		let nonce: PageNonce =
+			PageNonce::decode(&mut &data[..PageNonce::max_encoded_len()]).map_err(|_| ())?;
+		let bounded: BoundedVec<u8, PageDataSize> =
+			BoundedVec::try_from(data[PageNonce::max_encoded_len()..].to_vec()).map_err(|_| ())?;
+		Ok(Self { nonce, data: bounded })
 	}
 }
 
@@ -270,7 +280,9 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 		}
 		updated_page_buffer.append(&mut add_buffer);
 
-		ItemizedPage::<T>::try_from(updated_page_buffer).map_err(|_| PageError::PageSizeOverflow)
+		Ok(ItemizedPage::<T>::from(
+			BoundedVec::try_from(updated_page_buffer).map_err(|_| PageError::PageSizeOverflow)?,
+		))
 	}
 
 	/// Parses all the items inside an ItemPage
