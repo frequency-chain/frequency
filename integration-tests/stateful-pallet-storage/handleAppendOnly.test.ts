@@ -3,7 +3,7 @@ import "@frequency-chain/api-augment";
 import assert from "assert";
 import {
   createDelegatorAndDelegation,
-  createProviderKeysAndId,
+  createProviderKeysAndId, devAccounts,
   getCurrentItemizedHash,
 } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
@@ -17,8 +17,11 @@ describe("📗 Stateful Pallet Storage AppendOnly Schemas", () => {
     let msa_id: MessageSourceId;
     let providerId: MessageSourceId;
     let providerKeys: KeyringPair;
+    let sudoKey: KeyringPair;
 
     before(async function () {
+        // Using Alice as sudoKey
+        sudoKey = devAccounts[0].keys;
 
         // Create a provider for the MSA, the provider will be used to grant delegation
         [providerKeys, providerId] = await createProviderKeysAndId();
@@ -26,8 +29,8 @@ describe("📗 Stateful Pallet Storage AppendOnly Schemas", () => {
         assert.notEqual(providerKeys, undefined, "setup should populate providerKeys");
 
         // Create a schema for Itemized PayloadLocation
-        const createSchema = ExtrinsicHelper.createSchemaWithSettingsGov(providerKeys, providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized", "AppendOnly");
-        const [event] = await createSchema.fundAndSend();
+        const createSchema = ExtrinsicHelper.createSchemaWithSettingsGov(providerKeys, sudoKey, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized", "AppendOnly");
+        const [event] = await createSchema.sudoSignAndSend();
         if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
             itemizedSchemaId = event.data.schemaId;
         }

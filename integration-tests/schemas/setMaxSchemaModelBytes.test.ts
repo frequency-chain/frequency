@@ -21,7 +21,7 @@ describe("#setMaxSchemaModelBytes", function () {
     it("should fail to set max schema size > hard-coded limit (SchemaModelMaxBytesBoundedVecLimit)", async function () {
         const limit = ExtrinsicHelper.api.consts.schemas.schemaModelMaxBytesBoundedVecLimit.toBigInt();
         const op = new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.setMaxSchemaModelBytes(limit + 1n), keys);
-        await op.sudoSignAndSend();
+        await assert.rejects(op.sudoSignAndSend(), { name: 'ExceedsMaxSchemaModelBytes'});
     })
 
     it("should successfully set the max schema size", async function () {

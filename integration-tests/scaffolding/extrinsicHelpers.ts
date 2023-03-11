@@ -1,8 +1,8 @@
 import { ApiPromise, ApiRx } from "@polkadot/api";
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
-import {Compact, u128, u16, u32, u64, Vec} from "@polkadot/types";
-import { FrameSystemAccountInfo } from "@polkadot/types/lookup";
+import { Compact, u128, u16, u32, u64, Vec } from "@polkadot/types";
+import { FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
 import { devAccounts, log, Sr25519Signature } from "./helpers";
@@ -22,9 +22,9 @@ export class EventError extends Error {
     message: string = '';
     stack?: string = '';
     section?: string = '';
-    rawError: DispatchError;
+    rawError: DispatchError | SpRuntimeDispatchError;
 
-    constructor(source: DispatchError) {
+    constructor(source: DispatchError | SpRuntimeDispatchError) {
         super();
 
         if (source.isModule) {
@@ -138,6 +138,14 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
                 acc[eventKey(event)] = event;
                 if (targetEvent && targetEvent.is(event)) {
                     acc["defaultEvent"] = event;
+                }
+                if(this.api.events.sudo.Sudid.is(event)) {
+                  let { data: [result] } = event;
+                  if (result.isErr) {
+                    let err = new EventError(result.asErr);
+                    log(err.toString());
+                    throw err;
+                  }
                 }
                 return acc;
             }, {} as EventMap)),
