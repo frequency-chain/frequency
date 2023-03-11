@@ -328,3 +328,31 @@ impl Default for MaxPaginatedPageSizeBytes {
 		Self
 	}
 }
+
+impl Clone for MaxItemizedBlobSizeBytes {
+	fn clone(&self) -> Self {
+		MaxItemizedBlobSizeBytes {}
+	}
+}
+
+impl Eq for MaxItemizedBlobSizeBytes {
+	fn assert_receiver_is_total_eq(&self) {}
+}
+
+impl PartialEq for MaxItemizedBlobSizeBytes {
+	fn eq(&self, other: &Self) -> bool {
+		self == other
+	}
+}
+
+impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
+	#[cfg(feature = "std")]
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
+
+	#[cfg(not(feature = "std"))]
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
+}

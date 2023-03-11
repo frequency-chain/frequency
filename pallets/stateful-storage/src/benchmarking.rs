@@ -28,11 +28,11 @@ pub const NONEXISTENT_PAGE_HASH: PageHash = 0;
 fn itemized_actions_add<T: Config>(
 	n: u32,
 	s: usize,
-) -> BoundedVec<ItemAction, T::MaxItemizedActionsCount> {
+) -> BoundedVec<ItemAction<T::MaxItemizedBlobSizeBytes>, T::MaxItemizedActionsCount> {
 	let mut actions = vec![];
 	for _ in 0..n {
 		let payload = vec![0u8; s];
-		actions.push(ItemAction::Add { data: payload.into() });
+		actions.push(ItemAction::Add { data: payload.try_into().unwrap() });
 	}
 	actions.try_into().expect("Invalid actions")
 }

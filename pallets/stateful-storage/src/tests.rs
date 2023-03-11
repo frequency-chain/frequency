@@ -9,7 +9,7 @@ use common_primitives::{
 	stateful_storage::{PageHash, PageId},
 	utils::wrap_binary_data,
 };
-use frame_support::{assert_err, assert_ok, assert_storage_noop, BoundedVec};
+use frame_support::{assert_err, assert_ok, assert_storage_noop, traits::Len, BoundedVec};
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use scale_info::TypeInfo;
@@ -20,6 +20,7 @@ use twox_hash::XxHash64;
 
 type ItemizedPageSize = <Test as Config>::MaxItemizedPageSizeBytes;
 type PaginatedPageSize = <Test as Config>::MaxPaginatedPageSizeBytes;
+type ItemizedBlobSize = <Test as Config>::MaxItemizedBlobSizeBytes;
 
 const NONEXISTENT_PAGE_HASH: u32 = 0;
 
@@ -33,7 +34,7 @@ fn generate_payload_bytes<T: Get<u32>>(id: Option<u8>) -> BoundedVec<u8, T> {
 }
 
 fn create_itemized_page_from<T: pallet::Config>(
-	payloads: &[BoundedVec<u8, ItemizedPageSize>],
+	payloads: &[BoundedVec<u8, ItemizedBlobSize>],
 ) -> ItemizedPage<T> {
 	let mut buffer: Vec<u8> = vec![];
 	for p in payloads {
@@ -527,8 +528,8 @@ fn delete_existing_page_succeeds() {
 fn parsing_a_well_formed_item_page_should_work() {
 	// arrange
 	let payloads = vec![
-		generate_payload_bytes::<ItemizedPageSize>(Some(1)),
-		generate_payload_bytes::<ItemizedPageSize>(Some(2)),
+		generate_payload_bytes::<ItemizedBlobSize>(Some(1)),
+		generate_payload_bytes::<ItemizedBlobSize>(Some(2)),
 	];
 	let page = create_itemized_page_from::<Test>(&payloads);
 
@@ -572,15 +573,15 @@ fn parsing_item_with_wrong_payload_size_should_return_parsing_error() {
 fn applying_delete_action_with_existing_index_should_delete_item() {
 	// arrange
 	let payloads = vec![
-		generate_payload_bytes::<ItemizedPageSize>(Some(2)),
-		generate_payload_bytes::<ItemizedPageSize>(Some(4)),
+		generate_payload_bytes::<ItemizedBlobSize>(Some(2)),
+		generate_payload_bytes::<ItemizedBlobSize>(Some(4)),
 	];
 	let page = create_itemized_page_from::<Test>(payloads.as_slice());
 	let expecting_page = create_itemized_page_from::<Test>(&payloads[1..]);
 	let actions = vec![ItemAction::Delete { index: 0 }];
 
 	// act
-	let result = page.apply_item_actions(&actions);
+	let result = page.apply_item_actions::<Test>(&actions);
 
 	// assert
 	assert_ok!(&result);
@@ -591,15 +592,15 @@ fn applying_delete_action_with_existing_index_should_delete_item() {
 #[test]
 fn applying_add_action_should_add_item_to_the_end_of_the_page() {
 	// arrange
-	let payload1 = vec![generate_payload_bytes::<ItemizedPageSize>(Some(2))];
+	let payload1 = vec![generate_payload_bytes::<ItemizedBlobSize>(Some(2))];
 	let page = create_itemized_page_from::<Test>(payload1.as_slice());
-	let payload2 = vec![generate_payload_bytes::<ItemizedPageSize>(Some(4))];
+	let payload2 = vec![generate_payload_bytes::<ItemizedBlobSize>(Some(4))];
 	let expecting_page =
 		create_itemized_page_from::<Test>(&vec![payload1[0].clone(), payload2[0].clone()][..]);
 	let actions = vec![ItemAction::Add { data: payload2[0].clone().into() }];
 
 	// act
-	let result = page.apply_item_actions(&actions[..]);
+	let result = page.apply_item_actions::<Test>(&actions[..]);
 
 	// assert
 	assert_ok!(&result);
@@ -611,14 +612,14 @@ fn applying_add_action_should_add_item_to_the_end_of_the_page() {
 fn applying_delete_action_with_non_existing_index_should_fail() {
 	// arrange
 	let payloads = vec![
-		generate_payload_bytes::<ItemizedPageSize>(Some(2)),
-		generate_payload_bytes::<ItemizedPageSize>(Some(4)),
+		generate_payload_bytes::<ItemizedBlobSize>(Some(2)),
+		generate_payload_bytes::<ItemizedBlobSize>(Some(4)),
 	];
 	let page = create_itemized_page_from::<Test>(payloads.as_slice());
 	let actions = vec![ItemAction::Delete { index: 2 }];
 
 	// act
-	let result = page.apply_item_actions(&actions[..]);
+	let result = page.apply_item_actions::<Test>(&actions[..]);
 
 	// assert
 	assert_eq!(result.is_err(), true);
@@ -627,17 +628,22 @@ fn applying_delete_action_with_non_existing_index_should_fail() {
 #[test]
 fn applying_add_action_with_full_page_should_fail() {
 	// arrange
-	let new_payload = generate_payload_bytes::<ItemizedPageSize>(Some(2));
+	let new_payload = generate_payload_bytes::<ItemizedBlobSize>(Some(2));
 	let page_len =
 		ItemizedPageSize::get() as usize - ItemHeader::max_encoded_len() - new_payload.len();
-	let existing_data = vec![1u8; page_len];
-	let existing_payload: BoundedVec<u8, ItemizedPageSize> =
-		BoundedVec::try_from(existing_data).unwrap();
-	let page = create_itemized_page_from::<Test>(&[existing_payload]);
+	let mut current_data = 0;
+	let mut items = vec![];
+	while current_data < page_len {
+		let item: BoundedVec<u8, ItemizedBlobSize> =
+			BoundedVec::try_from(vec![1u8; ItemizedBlobSize::get() as usize]).unwrap();
+		items.push(item);
+		current_data = create_itemized_page_from::<Test>(&items[..]).data.len();
+	}
+	let page = create_itemized_page_from::<Test>(&items[..]);
 	let actions = vec![ItemAction::Add { data: new_payload.clone().into() }];
 
 	// act
-	let result = page.apply_item_actions(&actions[..]);
+	let result = page.apply_item_actions::<Test>(&actions[..]);
 
 	// assert
 	assert_eq!(result, Err(PageError::PageSizeOverflow));
@@ -781,31 +787,6 @@ fn child_tree_iterator() {
 }
 
 #[test]
-fn apply_item_actions_with_add_item_action_bigger_than_expected_should_fail() {
-	new_test_ext().execute_with(|| {
-		// arrange
-		let msa_id = 1;
-		let caller_1 = test_public(msa_id);
-		let schema_id = ITEMIZED_SCHEMA;
-		let payload =
-			vec![1; (<Test as Config>::MaxItemizedBlobSizeBytes::get() + 1).try_into().unwrap()];
-		let actions = vec![ItemAction::Add { data: payload }];
-
-		// act
-		assert_err!(
-			StatefulStoragePallet::apply_item_actions(
-				RuntimeOrigin::signed(caller_1),
-				msa_id,
-				schema_id,
-				NONEXISTENT_PAGE_HASH,
-				BoundedVec::try_from(actions).unwrap(),
-			),
-			Error::<Test>::ItemExceedsMaxBlobSizeBytes
-		)
-	});
-}
-
-#[test]
 fn apply_item_actions_with_invalid_msa_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -813,7 +794,7 @@ fn apply_item_actions_with_invalid_msa_should_fail() {
 		let caller_1 = test_public(INVALID_MSA_ID); // hard-coded in mocks to return None for MSA
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload }];
+		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 
 		// act
 		assert_err!(
@@ -837,7 +818,7 @@ fn apply_item_actions_with_invalid_schema_id_should_fail() {
 		let caller_1 = test_public(msa_id);
 		let schema_id = INVALID_SCHEMA_ID;
 		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload }];
+		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 
 		// act
 		assert_err!(
@@ -861,7 +842,7 @@ fn apply_item_actions_with_invalid_schema_location_should_fail() {
 		let caller_1 = test_public(msa_id);
 		let schema_id = PAGINATED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload }];
+		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 
 		// act
 		assert_err!(
@@ -885,7 +866,7 @@ fn apply_item_actions_with_no_delegation_and_different_caller_from_owner_should_
 		let caller_1 = test_public(2);
 		let schema_id = UNDELEGATED_ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload }];
+		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 
 		// act
 		assert_err!(
@@ -909,7 +890,7 @@ fn apply_item_actions_with_corrupted_state_should_fail() {
 		let caller_1 = test_public(msa_id);
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions1 = vec![ItemAction::Add { data: payload.clone() }];
+		let actions1 = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
 		let key = (schema_id,);
 		StatefulChildTree::<<Test as Config>::KeyHasher>::write::<_, Vec<u8>>(
 			&msa_id,
@@ -951,7 +932,7 @@ fn apply_item_actions_initial_state_with_stale_hash_should_fail() {
 		let caller_1 = test_public(msa_id);
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions1 = vec![ItemAction::Add { data: payload.clone() }];
+		let actions1 = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 
 		// act
 		assert_err!(
@@ -975,11 +956,11 @@ fn apply_item_actions_existing_page_with_stale_hash_should_fail() {
 		let caller_1 = test_public(msa_id);
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions1 = vec![ItemAction::Add { data: payload.clone() }];
+		let actions1 = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
 
 		let page = ItemizedPage::<Test>::default();
 		let page_hash = page.get_hash();
-		let page = page.apply_item_actions(&actions1).unwrap();
+		let page = page.apply_item_actions::<Test>(&actions1).unwrap();
 		let key = (schema_id,);
 		<StatefulChildTree>::write::<_, Vec<u8>>(
 			&msa_id,
@@ -1012,7 +993,7 @@ fn apply_item_actions_initial_state_with_valid_input_should_update_storage() {
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
 		let prev_content_hash: PageHash = 0;
-		let actions = vec![ItemAction::Add { data: payload }];
+		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 
 		// act
 		assert_ok!(StatefulStoragePallet::apply_item_actions(
@@ -1054,9 +1035,9 @@ fn apply_item_actions_existing_page_with_valid_input_should_update_storage() {
 		let caller_1 = test_public(msa_id);
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload }];
+		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let page = ItemizedPage::<Test>::default();
-		let page = page.apply_item_actions(&actions).unwrap();
+		let page = page.apply_item_actions::<Test>(&actions).unwrap();
 		let prev_content_hash = page.get_hash();
 		let key = (schema_id,);
 
@@ -1107,7 +1088,7 @@ fn apply_item_actions_with_valid_input_and_empty_items_should_remove_storage() {
 		let caller_1 = test_public(msa_id);
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions1 = vec![ItemAction::Add { data: payload }];
+		let actions1 = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let actions2 = vec![ItemAction::Delete { index: 0 }];
 		let keys = (schema_id,);
 		assert_ok!(StatefulStoragePallet::apply_item_actions(
@@ -1160,40 +1141,6 @@ fn apply_item_actions_with_valid_input_and_empty_items_should_remove_storage() {
 }
 
 #[test]
-fn apply_item_actions_with_signature_having_add_item_action_bigger_than_expected_should_fail() {
-	new_test_ext().execute_with(|| {
-		// arrange
-		let caller_1 = test_public(1);
-		let (msa_id, pair) = get_signature_account();
-		let delegator_key = pair.public();
-		let schema_id = ITEMIZED_SCHEMA;
-		let payload =
-			vec![1; (<Test as Config>::MaxItemizedBlobSizeBytes::get() + 1).try_into().unwrap()];
-		let actions = vec![ItemAction::Add { data: payload }];
-		let payload = ItemizedSignaturePayload {
-			actions: BoundedVec::try_from(actions).unwrap(),
-			target_hash: PageHash::default(),
-			msa_id,
-			expiration: 10,
-			schema_id,
-		};
-		let encode_data_new_key_data = wrap_binary_data(payload.encode());
-		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
-
-		// act
-		assert_err!(
-			StatefulStoragePallet::apply_item_actions_with_signature(
-				RuntimeOrigin::signed(caller_1),
-				delegator_key.into(),
-				owner_signature,
-				payload
-			),
-			Error::<Test>::ItemExceedsMaxBlobSizeBytes
-		)
-	});
-}
-
-#[test]
 fn apply_item_actions_with_signature_having_wrong_signature_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -1203,7 +1150,7 @@ fn apply_item_actions_with_signature_having_wrong_signature_should_fail() {
 		let (signature_key, _) = sr25519::Pair::generate();
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload }];
+		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let payload = ItemizedSignaturePayload {
 			actions: BoundedVec::try_from(actions).unwrap(),
 			target_hash: PageHash::default(),
@@ -1236,7 +1183,7 @@ fn apply_item_actions_with_signature_having_too_far_expiration_should_fail() {
 		let delegator_key = pair.public();
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload }];
+		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let payload = ItemizedSignaturePayload {
 			actions: BoundedVec::try_from(actions).unwrap(),
 			target_hash: PageHash::default(),
@@ -1269,7 +1216,7 @@ fn apply_item_actions_with_signature_having_expired_payload_should_fail() {
 		let delegator_key = pair.public();
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload }];
+		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let block_number = 10;
 		let payload = ItemizedSignaturePayload {
 			actions: BoundedVec::try_from(actions).unwrap(),
@@ -1305,7 +1252,7 @@ fn apply_item_actions_with_signature_having_correct_input_should_work() {
 		let schema_id = ITEMIZED_SCHEMA;
 		let prev_content_hash = PageHash::default();
 		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload }];
+		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let payload = ItemizedSignaturePayload {
 			actions: BoundedVec::try_from(actions).unwrap(),
 			target_hash: prev_content_hash,
@@ -1358,7 +1305,7 @@ fn apply_item_actions_with_signature_having_non_existing_msa_should_fail() {
 		let msa_id = 1;
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload }];
+		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let payload = ItemizedSignaturePayload {
 			actions: BoundedVec::try_from(actions).unwrap(),
 			target_hash: PageHash::default(),
@@ -1392,7 +1339,7 @@ fn apply_item_actions_with_signature_having_wrong_msa_in_payload_should_fail() {
 		let wrong_msa_id = 3;
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload }];
+		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let payload = ItemizedSignaturePayload {
 			actions: BoundedVec::try_from(actions).unwrap(),
 			target_hash: PageHash::default(),
@@ -1425,7 +1372,7 @@ fn apply_item_actions_with_signature_having_invalid_schema_id_should_fail() {
 		let delegator_key = pair.public();
 		let schema_id = INVALID_SCHEMA_ID;
 		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload }];
+		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let payload = ItemizedSignaturePayload {
 			actions: BoundedVec::try_from(actions).unwrap(),
 			target_hash: PageHash::default(),
@@ -1458,7 +1405,7 @@ fn apply_item_actions_with_signature_having_invalid_schema_location_should_fail(
 		let delegator_key = pair.public();
 		let schema_id = PAGINATED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload }];
+		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let payload = ItemizedSignaturePayload {
 			actions: BoundedVec::try_from(actions).unwrap(),
 			target_hash: PageHash::default(),
@@ -1491,10 +1438,10 @@ fn apply_item_actions_with_signature_having_page_with_stale_hash_should_fail() {
 		let delegator_key = pair.public();
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload.clone() }];
+		let actions = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
 		let page = ItemizedPage::<Test>::default();
 		let page_hash = page.get_hash();
-		let page = page.apply_item_actions(&actions).unwrap();
+		let page = page.apply_item_actions::<Test>(&actions).unwrap();
 		let key = (schema_id,);
 		<StatefulChildTree>::write::<_, Vec<u8>>(
 			&msa_id,
@@ -1535,7 +1482,7 @@ fn apply_item_actions_with_signature_having_valid_input_and_empty_items_should_r
 		let delegator_key = pair.public();
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions1 = vec![ItemAction::Add { data: payload }];
+		let actions1 = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let actions2 = vec![ItemAction::Delete { index: 0 }];
 		let keys = (schema_id,);
 		assert_ok!(StatefulStoragePallet::apply_item_actions(
@@ -1605,7 +1552,7 @@ fn apply_item_actions_with_signature_having_corrupted_state_should_fail() {
 		let delegator_key = pair.public();
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload.clone() }];
+		let actions = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
 		let key = (schema_id,);
 		StatefulChildTree::<<Test as Config>::KeyHasher>::write::<_, Vec<u8>>(
 			&msa_id,
@@ -2416,7 +2363,7 @@ fn apply_delete_item_on_append_only_fails() {
 		let msa_id = 1;
 		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
 		let payload = vec![1; 5];
-		let actions1 = vec![ItemAction::Add { data: payload }];
+		let actions1 = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let actions2 = vec![ItemAction::Delete { index: 0 }];
 		let keys = (schema_id,);
 		assert_ok!(StatefulStoragePallet::apply_item_actions(
@@ -2495,7 +2442,7 @@ fn apply_actions_on_signature_schema_fails() {
 		let msa_id = 1;
 		let schema_id = ITEMIZED_SIGNATURE_REQUIRED_SCHEMA;
 		let payload = vec![1; 5];
-		let actions1 = vec![ItemAction::Add { data: payload }];
+		let actions1 = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		assert_err!(
 			StatefulStoragePallet::apply_item_actions(
 				RuntimeOrigin::signed(caller_1),

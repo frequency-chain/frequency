@@ -121,7 +121,7 @@ pub mod pallet {
 
 		/// The maximum size of a single item in an itemized storage model (in bytes)
 		#[pallet::constant]
-		type MaxItemizedBlobSizeBytes: Get<u32>;
+		type MaxItemizedBlobSizeBytes: Get<u32> + Clone + sp_std::fmt::Debug + PartialEq;
 
 		/// The maximum number of pages in a Paginated storage model
 		#[pallet::constant]
@@ -159,9 +159,6 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Item payload exceeds max item blob size
-		ItemExceedsMaxBlobSizeBytes,
-
 		/// Page would exceed the highest allowable PageId
 		PageIdExceedsMaxAllowed,
 
@@ -264,10 +261,10 @@ pub mod pallet {
 		///
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::apply_item_actions( actions.len() as u32 ,
-			actions.iter().fold(0, |acc, a| acc + match a {
+			actions.iter().fold(0, |acc, a| acc.saturating_add(match a {
 				ItemAction::Add { data } => data.len() as u32,
 				_ => 0,
-			}),
+			})),
 		    0
 		))]
 		pub fn apply_item_actions(
@@ -275,11 +272,13 @@ pub mod pallet {
 			#[pallet::compact] state_owner_msa_id: MessageSourceId,
 			#[pallet::compact] schema_id: SchemaId,
 			#[pallet::compact] target_hash: PageHash,
-			actions: BoundedVec<ItemAction, T::MaxItemizedActionsCount>,
+			actions: BoundedVec<
+				ItemAction<T::MaxItemizedBlobSizeBytes>,
+				T::MaxItemizedActionsCount,
+			>,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			let is_pruning = actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
-			Self::check_actions(&actions)?;
 			Self::check_schema(schema_id, PayloadLocation::Itemized, false, is_pruning)?;
 			Self::check_grants(provider_key, state_owner_msa_id, schema_id)?;
 			Self::modify_itemized(state_owner_msa_id, schema_id, target_hash, actions)?;
@@ -352,10 +351,10 @@ pub mod pallet {
 		///
 		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::apply_item_actions_with_signature( payload.actions.len() as u32 ,
-			payload.actions.iter().fold(0, |acc, a| acc + match a {
+			payload.actions.iter().fold(0, |acc, a| acc.saturating_add(match a {
 			ItemAction::Add { data } => data.len() as u32,
 			_ => 0,
-			})
+			}))
 		))]
 		pub fn apply_item_actions_with_signature(
 			origin: OriginFor<T>,
@@ -366,7 +365,6 @@ pub mod pallet {
 			ensure_signed(origin)?;
 
 			let is_pruning = payload.actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
-			Self::check_actions(&payload.actions)?;
 			Self::check_payload_expiration(
 				frame_system::Pallet::<T>::block_number(),
 				payload.expiration,
@@ -623,25 +621,6 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Verifies the actions size
-	///
-	/// # Errors
-	/// * [`Error::ItemExceedsMaxBlobSizeBytes`]
-	///
-	fn check_actions(
-		actions: &BoundedVec<ItemAction, T::MaxItemizedActionsCount>,
-	) -> DispatchResult {
-		ensure!(
-			actions.iter().all(|a| match a {
-				ItemAction::Add { data } =>
-					data.len() <= T::MaxItemizedBlobSizeBytes::get() as usize,
-				_ => true,
-			}),
-			Error::<T>::ItemExceedsMaxBlobSizeBytes
-		);
-		Ok(())
-	}
-
 	/// Modifies an itemized storage by applying provided actions and deposit events
 	///
 	/// # Events
@@ -652,7 +631,7 @@ impl<T: Config> Pallet<T> {
 		state_owner_msa_id: MessageSourceId,
 		schema_id: SchemaId,
 		target_hash: PageHash,
-		actions: BoundedVec<ItemAction, T::MaxItemizedActionsCount>,
+		actions: BoundedVec<ItemAction<T::MaxItemizedBlobSizeBytes>, T::MaxItemizedActionsCount>,
 	) -> DispatchResult {
 		let key: ItemizedKey = (schema_id,);
 		let existing_page = StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
@@ -667,18 +646,19 @@ impl<T: Config> Pallet<T> {
 		let prev_content_hash = existing_page.get_hash();
 		ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
 
-		let updated_page = existing_page.apply_item_actions(&actions[..]).map_err(|e| match e {
-			PageError::ErrorParsing(err) => {
-				log::warn!(
-					"failed parsing Itemized msa={:?} schema_id={:?} {:?}",
-					state_owner_msa_id,
-					schema_id,
-					err
-				);
-				Error::<T>::CorruptedState
-			},
-			_ => Error::<T>::InvalidItemAction,
-		})?;
+		let updated_page =
+			existing_page.apply_item_actions::<T>(&actions[..]).map_err(|e| match e {
+				PageError::ErrorParsing(err) => {
+					log::warn!(
+						"failed parsing Itemized msa={:?} schema_id={:?} {:?}",
+						state_owner_msa_id,
+						schema_id,
+						err
+					);
+					Error::<T>::CorruptedState
+				},
+				_ => Error::<T>::InvalidItemAction,
+			})?;
 
 		match updated_page.is_empty() {
 			true => {

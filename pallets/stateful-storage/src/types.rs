@@ -37,12 +37,14 @@ pub type ItemizedPage<T> = Page<<T as Config>::MaxItemizedPageSizeBytes>;
 pub type PaginatedPage<T> = Page<<T as Config>::MaxPaginatedPageSizeBytes>;
 
 /// Defines the actions that can be applied to an Itemized storage
-#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, PartialOrd, Ord)]
-pub enum ItemAction {
+#[derive(Clone, Encode, Decode, Debug, TypeInfo, MaxEncodedLen, PartialEq)]
+#[scale_info(skip_type_params(DataSize))]
+#[codec(mel_bound(DataSize: MaxEncodedLen))]
+pub enum ItemAction<DataSize: Get<u32> + Clone + sp_std::fmt::Debug + PartialEq> {
 	/// Adding new Item into page
 	Add {
 		/// The data to add
-		data: Vec<u8>,
+		data: BoundedVec<u8, DataSize>,
 	},
 	/// Removing an existing item by index number. Index number starts from 0
 	Delete {
@@ -92,7 +94,10 @@ pub struct ItemizedSignaturePayload<T: Config> {
 	pub expiration: T::BlockNumber,
 
 	/// Actions to apply to storage from possible: [`ItemAction`]
-	pub actions: BoundedVec<ItemAction, <T as Config>::MaxItemizedActionsCount>,
+	pub actions: BoundedVec<
+		ItemAction<<T as Config>::MaxItemizedBlobSizeBytes>,
+		<T as Config>::MaxItemizedActionsCount,
+	>,
 }
 
 /// Payload containing all necessary fields to verify signatures to upsert a Paginated storage
@@ -217,7 +222,10 @@ impl<PageDataSize: Get<u32>> TryFrom<Vec<u8>> for Page<PageDataSize> {
 impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	/// Applies all actions to specified page and returns the updated page
 	/// This has O(n) complexity when n is the number of all the bytes in that itemized storage
-	pub fn apply_item_actions(&self, actions: &[ItemAction]) -> Result<Self, PageError> {
+	pub fn apply_item_actions<T: Config>(
+		&self,
+		actions: &[ItemAction<T::MaxItemizedBlobSizeBytes>],
+	) -> Result<Self, PageError> {
 		let mut parsed = self.parse_as_itemized(true)?;
 
 		let mut updated_page_buffer = Vec::with_capacity(parsed.page_size);
