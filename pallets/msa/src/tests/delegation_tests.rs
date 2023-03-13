@@ -7,7 +7,7 @@ use frame_support::{
 use sp_runtime::MultiSignature;
 
 use crate::{
-	tests::{common_tests::set_schema_count, mock::*},
+	tests::{mock::*, other_tests::set_schema_count},
 	types::AddProvider,
 	Error, Event,
 };

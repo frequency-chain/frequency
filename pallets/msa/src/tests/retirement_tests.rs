@@ -9,7 +9,7 @@ use crate::{
 	CheckFreeExtrinsicUse, Error, Event, ValidityError,
 };
 
-use crate::tests::common_tests::{
+use crate::tests::other_tests::{
 	assert_revoke_delegation_by_delegator_no_effect, set_schema_count,
 };
 use common_primitives::{
