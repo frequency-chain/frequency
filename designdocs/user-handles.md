@@ -269,7 +269,7 @@ The crate will use a PRNG (pseudo-random number generator) to generate suffix va
 
 ## frequency-handles crate sequence diagram
 
-Frequency-handles is a standalone rust crate that provide basic functionality for generating and validating handles. It is intended to be used by the frequency crate to provide handle generation and validation functionality.
+Frequency-handles is a standalone rust crate that provide basic functionality for generating and validating handles. It is intended to be used by the frequency chain to provide handle generation and validation functionality.
 
 ```mermaid
 sequenceDiagram
