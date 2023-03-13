@@ -27,7 +27,7 @@ User handle ```registry``` on frequency chain.
 * Generate the next 10/20 ```u32``` values from the PRNG these are the possible suffixes within the range of suffixes allowed by the chain.
 * Query the chain to check which values are available, check if the handle with the suffix is available.
 * Choose an available value and attempt to claim it by submitting the full handle with the suffix to the chain.
-* Chain check runs some validation and map the handle to the msa.
+* Chain validates the handle and suffix and maps the handle to the ```msa_id```.
 * Chain maintains a reverse mapping from handle to msa for offchain use.
 
 ### Chain Steps
