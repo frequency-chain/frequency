@@ -7,6 +7,7 @@ import { devAccounts, log, createKeys, createAndFundKeypair, createMsaAndProvide
          generateDelegationPayload, signPayloadSr25519, stakeToProvider, fundKeypair }
     from "../scaffolding/helpers";
 import { firstValueFrom } from "rxjs";
+import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 
 describe("Capacity Transaction Tests", function () {
     const TEST_EPOCH_LENGTH = 25;
@@ -82,39 +83,7 @@ describe("Capacity Transaction Tests", function () {
         assert.notEqual(MsaCreatedEvent, undefined, "should have returned MsaCreated event");
 
         // Create schemas for testing with Grant Delegation to test pay_with_capacity
-        // Borrowed from integration-tests/grantDelegation.test.ts, might be a candidate for refactoring
-        const createSchemaOp = ExtrinsicHelper.createSchema(stakeKeys, {
-            type: "record",
-            name: "Post",
-            fields: [
-                {
-                    name: "title",
-                    type: {
-                        name: "Title",
-                        type: "string"
-                    }
-                },
-                {
-                    name: "content",
-                    type: {
-                        name: "Content",
-                        type: "string"
-                    }
-                },
-                {
-                    name: "fromId",
-                    type: {
-                        name: "DSNPId",
-                        type: "fixed",
-                        size: 8,
-                    },
-                },
-                {
-                    name: "objectId",
-                    type: "DSNPId",
-                },
-            ]
-        }, "AvroBinary", "OnChain");
+        const createSchemaOp = ExtrinsicHelper.createSchema(stakeKeys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain");
         const [createSchemaEvent] = await createSchemaOp.fundAndSend();
         assert.notEqual(createSchemaEvent, undefined, "setup should return SchemaCreated event");
         if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
