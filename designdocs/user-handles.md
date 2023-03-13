@@ -17,7 +17,7 @@ Make the system easy to use and integrate with existing UI and wallet systems.
 
 ## Proposal
 
-### Application Steps
+### General Steps
 
 * Query the chain for the current seed value.
 * Hash the seed with the user desired handle base.
