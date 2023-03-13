@@ -76,11 +76,10 @@ sequenceDiagram
     App->>Wallet: Send signup data
     Wallet->>Wallet: Perform 2FA if first attempt
     Wallet-->>App: Return signed payload
-    App->>RPC: create_sponsored_account_with_handle(..., handle, suffix)*
+    App->>RPC: create_msa_handle(..., handle, suffix)*
     RPC->>Chain: Submit transaction
     Chain->>Chain: Check validity and availability
     Chain-->>App: MsaHandleCreated event with handle
-    Chain-->>App: DelegationGranted event
     App-->>RPC: Publish Profile Announcement/batch with (canonical) DSNP handle
     App->>User: Proceed with setup
     User->>App: Request to get MSA ID for handle
