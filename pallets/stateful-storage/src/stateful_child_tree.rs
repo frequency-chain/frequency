@@ -10,8 +10,12 @@ use sp_core::{ConstU8, Get};
 use sp_io::hashing::twox_64;
 use sp_std::{fmt::Debug, prelude::*};
 
+/// Hasher to use to hash keys to insert to storage.
 pub trait MultipartKeyStorageHasher: StorageHasher {
 	type HashSize: Get<u8>;
+	/// Split the hash part out of the input.
+	///
+	/// I.e. for input `&[hash ++ hash ++ key]` returns `&[key]`
 	fn reverse(x: &[u8], num_key_parts: u8) -> &[u8] {
 		let hash_len: usize = (Self::HashSize::get() * num_key_parts).into();
 		if x.len() < hash_len {
@@ -47,12 +51,10 @@ impl<T> MultipartStorageKeyPart for T where
 {
 }
 
+/// A trait that defines operations for a multi-part key in child storage that allows to retrieve
+/// all different prefix combinations
 pub trait MultipartKey<H: MultipartKeyStorageHasher>: MultipartStorageKeyPart {
 	type Arity: Get<u8>;
-
-	fn arity(&self) -> u8 {
-		Self::Arity::get()
-	}
 
 	fn hash(&self) -> Vec<u8>;
 	fn hash_prefix_only(&self) -> Vec<u8>;
@@ -219,6 +221,7 @@ impl<
 	}
 }
 
+/// A trait that allows to iterate on the prefix of a multi-part key
 pub trait IsTuplePrefix<H: MultipartKeyStorageHasher, T: MultipartStorageKeyPart>:
 	MultipartKey<H>
 {

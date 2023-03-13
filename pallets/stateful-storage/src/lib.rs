@@ -277,11 +277,11 @@ pub mod pallet {
 				T::MaxItemizedActionsCount,
 			>,
 		) -> DispatchResult {
-			let provider_key = ensure_signed(origin)?;
+			let key = ensure_signed(origin)?;
 			let is_pruning = actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
 			Self::check_schema(schema_id, PayloadLocation::Itemized, false, is_pruning)?;
-			Self::check_grants(provider_key, state_owner_msa_id, schema_id)?;
-			Self::modify_itemized(state_owner_msa_id, schema_id, target_hash, actions)?;
+			Self::check_grants(key, state_owner_msa_id, schema_id)?;
+			Self::update_itemized(state_owner_msa_id, schema_id, target_hash, actions)?;
 			Ok(())
 		}
 
@@ -307,7 +307,7 @@ pub mod pallet {
 			);
 			Self::check_schema(schema_id, PayloadLocation::Paginated, false, false)?;
 			Self::check_grants(provider_key, state_owner_msa_id, schema_id)?;
-			Self::modify_paginated(
+			Self::update_paginated(
 				state_owner_msa_id,
 				schema_id,
 				page_id,
@@ -372,7 +372,7 @@ pub mod pallet {
 			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
 			Self::check_msa(delegator_key, payload.msa_id)?;
 			Self::check_schema(payload.schema_id, PayloadLocation::Itemized, true, is_pruning)?;
-			Self::modify_itemized(
+			Self::update_itemized(
 				payload.msa_id,
 				payload.schema_id,
 				payload.target_hash,
@@ -407,7 +407,7 @@ pub mod pallet {
 			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
 			Self::check_msa(delegator_key, payload.msa_id)?;
 			Self::check_schema(payload.schema_id, PayloadLocation::Paginated, true, false)?;
-			Self::modify_paginated(
+			Self::update_paginated(
 				payload.msa_id,
 				payload.schema_id,
 				payload.page_id,
@@ -628,13 +628,13 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Modifies an itemized storage by applying provided actions and deposit events
+	/// Updates an itemized storage by applying provided actions and deposit events
 	///
 	/// # Events
 	/// * [`Event::ItemizedPageUpdated`]
 	/// * [`Event::ItemizedPageDeleted`]
 	///
-	fn modify_itemized(
+	fn update_itemized(
 		state_owner_msa_id: MessageSourceId,
 		schema_id: SchemaId,
 		target_hash: PageHash,
@@ -703,12 +703,12 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Modifies a page from paginated storage by provided new page
+	/// Updates a page from paginated storage by provided new page
 	///
 	/// # Events
 	/// * [`Event::PaginatedPageUpdated`]
 	///
-	fn modify_paginated(
+	fn update_paginated(
 		state_owner_msa_id: MessageSourceId,
 		schema_id: SchemaId,
 		page_id: PageId,
@@ -716,14 +716,9 @@ impl<T: Config> Pallet<T> {
 		mut new_page: PaginatedPage<T>,
 	) -> DispatchResult {
 		let keys: PaginatedKey = (schema_id, page_id);
-		let existing_page: PaginatedPage<T> = StatefulChildTree::<T::KeyHasher>::try_read(
-			&state_owner_msa_id,
-			PALLET_STORAGE_PREFIX,
-			PAGINATED_STORAGE_PREFIX,
-			&keys,
-		)
-		.map_err(|_| Error::<T>::CorruptedState)?
-		.unwrap_or_default();
+		let existing_page: PaginatedPage<T> =
+			Self::get_paginated_page_for(state_owner_msa_id, schema_id, page_id)?
+				.unwrap_or_default();
 
 		let prev_content_hash: PageHash = existing_page.get_hash();
 		ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
@@ -760,13 +755,7 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		let keys: PaginatedKey = (schema_id, page_id);
 		if let Some(existing_page) =
-			StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
-				&state_owner_msa_id,
-				PALLET_STORAGE_PREFIX,
-				PAGINATED_STORAGE_PREFIX,
-				&keys,
-			)
-			.map_err(|_| Error::<T>::CorruptedState)?
+			Self::get_paginated_page_for(state_owner_msa_id, schema_id, page_id)?
 		{
 			let prev_content_hash: PageHash = existing_page.get_hash();
 			ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
@@ -785,5 +774,21 @@ impl<T: Config> Pallet<T> {
 		}
 
 		Ok(())
+	}
+
+	/// Gets a paginated storage for desired parameters
+	fn get_paginated_page_for(
+		msa_id: MessageSourceId,
+		schema_id: SchemaId,
+		page_id: PageId,
+	) -> Result<Option<PaginatedPage<T>>, DispatchError> {
+		let keys: PaginatedKey = (schema_id, page_id);
+		Ok(StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&keys,
+		)
+		.map_err(|_| Error::<T>::CorruptedState)?)
 	}
 }
