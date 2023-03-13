@@ -257,15 +257,21 @@ We propose creating a new crate, frequency-handles, that will provide the follow
 
 ### Translation
 
-The crate will provide a translation function that takes a user handle and a suffix and returns the corresponding MSA ID. This function will be used to map user handles to MSAs, as well as to perform reverse lookups from MSA IDs to user handles.
+Given a user handle and a seed, the crate will provide a function that will generate a suffix for the handle. This function will be used to generate a suffix for a user handle when creating a new handle. Typical operations will be:
+
+* Generate a suffix for a user handle using the current seed and suffix range.
+* Create a PRNG helper function that takes a seed and generates a sequence of suffixes.
 
 ### Verification
 
-The crate will provide a verification function that takes a user handle and a suffix and checks whether the resulting MSA ID is valid according to the current seed and the chain's MSA creation rules. This function will be used to validate user handle choices before attempting to create a new MSA.
+The crate will provide a verification function that takes a user handle and a suffix and verifies that the handle is valid and the suffix is available. This function will be used to verify a handle and suffix when a user attempts to create a new handle or change their handle. Typical operations will be:
+
+* Verify that the handle is valid, i.e. it follows the handle guidelines.
+* Check for homoglpyhs.
 
 ## PRNG
 
-The crate will use a PRNG (pseudo-random number generator) to generate suffix values for user handles. The PRNG will take a seed value derived from the current block's Merkle root and the user's desired handle base, and generate a sequence of 20 values that will be used as suffixes. These suffixes will then be checked for availability on the chain before attempting to create a new MSA.
+The crate will use a PRNG (pseudo-random number generator) to generate suffix values for user handles. The PRNG will take a seed value derived from the current block's Merkle root and the user's desired handle base, and generate a sequence of 10/20 values that will be used as suffixes. These suffixes will then be checked for availability on the chain before attempting to create a new handle.
 
 ## frequency-handles crate sequence diagram
 
