@@ -27,14 +27,16 @@ User handle ```registry``` on frequency chain.
 * Generate the next 10/20 ```u32``` values from the PRNG these are the possible suffixes within the range of suffixes allowed by the chain.
 * Query the chain to check which values are available, check if the handle with the suffix is available.
 * Choose an available value and attempt to claim it by submitting the full handle with the suffix to the chain.
-* Chain creates a available msa and map to valid handle and suffix chosen by user.
+* Chain check runs some validation and map the handle to the msa.
 * Chain maintains a reverse mapping from handle to msa for offchain use.
 
 ### Chain Steps
 
 * Every 100 blocks (e.g., when block_number % 100 == 1), update the current seed by taking the Merkle root of the previous block. Keep the current and one previous seed so that two seeds, s0 and s1, are part of the chain state at any given time.
 * Provide an RPC to get the current seed.
+* Provide an RPC to get the suffix options for a given handle.
 * When a user submits a handle, check the numeric suffix for availability and that it honors range defined for suffix window.
+* Store ```msa_id``` to ```handle``` mapping and ```handle``` to ```msa_id``` mapping.
 
 ### Handle Guidelines
 
