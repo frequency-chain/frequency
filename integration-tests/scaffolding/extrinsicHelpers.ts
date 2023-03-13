@@ -109,6 +109,13 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
         ))
     }
 
+    public payWithCapacity(nonce?: number): Promise<ParsedEventResult> {
+        return firstValueFrom(this.api.tx.frequencyTxPayment.payWithCapacity(this.extrinsic()).signAndSend(this.keys, {nonce: nonce}).pipe(
+            filter(({ status }) => status.isInBlock || status.isFinalized),
+            this.parseResult(this.event),
+        ))
+    }
+
     public getEstimatedTxFee(): Promise<bigint> {
         return firstValueFrom(this.extrinsic().paymentInfo(this.keys).pipe(
             map((info) => info.partialFee.toBigInt())
@@ -290,6 +297,10 @@ export class ExtrinsicHelper {
 
     public static getPaginatedStorage(msa_id: MessageSourceId, schemaId: any): Promise<Vec<PaginatedStorageResponse>> {
         return firstValueFrom(ExtrinsicHelper.api.rpc.statefulStorage.getPaginatedStorage(msa_id, schemaId));
+    }
+
+    public static addOnChainMessage(keys: KeyringPair, schemaId: any, payload: string): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addOnChainMessage(schemaId, payload), keys, ExtrinsicHelper.api.events.messages.MessagesStored);
     }
 
     /** Capacity Extrinsics **/
