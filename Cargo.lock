@@ -5609,6 +5609,7 @@ version = "0.0.0"
 dependencies = [
  "cid 0.10.1",
  "common-primitives",
+ "common-runtime",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
