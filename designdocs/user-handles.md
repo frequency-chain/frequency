@@ -96,7 +96,7 @@ sequenceDiagram
     Chain-->>RPC: Return handle mapping state (State Query MSA<->Handle)
     RPC-->>App: Return MSA ID for handle
     User->>App: Request to get handle for MSA ID
-    App->>RPC: get_handle_for_msaid(msaid)
+    App->>RPC: get_handle_for_msa_id(msa_id)
     RPC->>Chain: Query MSA ID mapping state (Reverse Index Handle<->MSA)
     Chain-->>RPC: Return MSA ID mapping state (Reverse Index Handle<->MSA)
     RPC-->>App: Return handle for MSA ID
