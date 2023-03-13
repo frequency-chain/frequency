@@ -20,6 +20,17 @@ The high level requirements for user handles are:
 
 User handle ```registry``` on frequency chain.
 
+### Handle Guidelines
+
+* User handles must be unique and each msa can only be be mapped to one handle.
+* User handles must be between 2 and 32 characters (32b limit) long.
+* User handles cannot contain the following substrings (or homoglyphs): @, #, :, ., ```
+* User handles cannot be (@admin, @everyone, @all) *blocklist of handles we reserve
+* Suffixes are u32 limited to a range defined by governance
+* Suffix will be randomly constrained.
+* Homoglyph versions of handles should still resolve to the same MSA.
+* After a handle is released, it cannot be reused by a time block set by governance.
+
 ### General Steps
 
 * Query the chain for the current seed value.
@@ -38,17 +49,6 @@ User handle ```registry``` on frequency chain.
 * Provide an RPC to get the suffix options for a given handle.
 * When a user submits a handle, check the numeric suffix for availability and that it honors range defined for suffix window.
 * Store ```msa_id``` to ```handle``` mapping and ```handle``` to ```msa_id``` mapping.
-
-### Handle Guidelines
-
-* User handles must be unique and each msa can only be be mapped to one handle.
-* User handles must be between 2 and 32 characters (32b limit) long.
-* User handles cannot contain the following substrings (or homoglyphs): @, #, :, ., ```
-* User handles cannot be (@admin, @everyone, @all) *blocklist of handles we reserve
-* Suffixes are u32 limited to a range defined by governance
-* Suffix will be randomly constrained.
-* Homoglyph versions of handles should still resolve to the same MSA.
-* After a handle is released, it cannot be reused by a time block set by governance.
 
 ### Handling Race Conditions
 
