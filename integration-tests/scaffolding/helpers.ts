@@ -193,14 +193,29 @@ export async function createMsaAndProvider(keys: KeyringPair, providerName: stri
     await fundKeypair(devAccounts[0].keys, keys, amount);
     const createMsaOp = ExtrinsicHelper.createMsa(keys);
     const [MsaCreatedEvent] = await createMsaOp.fundAndSend();
-    assert.notEqual(MsaCreatedEvent, undefined, 'should have returned MsaCreated event');
+    assert.notEqual(MsaCreatedEvent, undefined, 'createMsaAndProvider: should have returned MsaCreated event');
 
     const createProviderOp = ExtrinsicHelper.createProvider(keys, providerName);
     const [ProviderCreatedEvent] = await createProviderOp.fundAndSend();
-    assert.notEqual(ProviderCreatedEvent, undefined, 'should have returned ProviderCreated event');
+    assert.notEqual(ProviderCreatedEvent, undefined, 'createMsaAndProvider: should have returned ProviderCreated event');
 
     if (ProviderCreatedEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(ProviderCreatedEvent)) {
         return ProviderCreatedEvent.data.providerId;
     }
-    return Promise.reject('ProviderCreatedEvent should be ExtrinsicHelper.api.events.msa.ProviderCreated');
+    return Promise.reject('createMsaAndProvider: ProviderCreatedEvent should be ExtrinsicHelper.api.events.msa.ProviderCreated');
+}
+
+// Stakes the given amount of tokens from the given keys to the given provider
+export async function stakeToProvider(keys: KeyringPair, providerId: u64, amount: bigint): Promise<void> {
+    const stakeOp = ExtrinsicHelper.stake(keys, providerId, amount);
+    const [stakeEvent] = await stakeOp.fundAndSend();
+    assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
+
+    if (stakeEvent && ExtrinsicHelper.api.events.capacity.Staked.is(stakeEvent)) {
+        let stakedCapacity = stakeEvent.data.capacity;
+        assert.equal(stakedCapacity, amount, 'stakeToProvider: staked capacity should be equal to amount: ' + amount);
+    }
+    else {
+        return Promise.reject('stakeToProvider: stakeEvent should be ExtrinsicHelper.api.events.capacity.Staked');
+    }
 }
