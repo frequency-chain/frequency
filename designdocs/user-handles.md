@@ -24,9 +24,9 @@ Make the system easy to use and integrate with existing UI and wallet systems.
 * Apply the resulting value as the seed to the specified PRNG.
 * Generate the next 10 uint16 values from the PRNG.
 * For each value, calculate modulo 9000, then add 1000, to get a number between 1000 and 9999.
-* Generate MSAs by concatenating the suffix to the requested handle base and hashing mod 232.
-* Query the chain to check which values are available.
-* Choose an available value and attempt to claim it by submitting the full handle with the MSA creation RPC.
+* Query the chain to check which values are available. Via lookup, check if the handle with the suffix is available.
+* Create a available msa and map it to the handle with the suffix.
+* Choose an available value and attempt to claim it by submitting the full handle with the suffix to the chain.
 
 ### Chain Steps
 
