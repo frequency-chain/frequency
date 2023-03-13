@@ -12,7 +12,7 @@ The requirements for user handles are:
 
 Support user ability to choose any valid handle and select a suffix from a set of options allowed by the chain.
 Ensure handles and suffixes are unique and non-conflicting.
-Make the system resistant to namespace exhaustion and race conditions.
+Make the system resistant to namespace exhaustion, homoglyphs and race conditions.
 Make the system easy to use and integrate with existing UI and wallet systems.
 
 ## Proposal
@@ -96,64 +96,102 @@ sequenceDiagram
 
 ## Storage
 
-* **HandleSuffixMin**: This storage will keep track of the minimum suffix value allowed for a given handle.
-* **HandleSuffixMax**: This storage will keep track of the maximum suffix value allowed for a given handle.
+* **HandleSuffixMin**: This storage value (```u32``) will keep track of the minimum suffix value allowed for a given handle.
+* **HandleSuffixMax**: This storage value (```u32``) will keep track of the maximum suffix value allowed for a given handle.
+* **HandleRetirementPeriod**: This storage value (```u32``) will keep track of the number of blocks a handle must be retired before it can be reused.
 * **MSAIdToUserHandle**: This storage will map MSAIds to their corresponding user handles.
 * **UserHandlesToMSAId**: This storage will map user handles to their corresponding MSAIds.
 * **UsedSuffixes**: This storage will keep track of all used suffixes to ensure that no two handles have the same suffix. (May not be necessary)
-* **Seed (current and previous)**: This storage will keep track of the current and previous seed values.
+* **Seed (current and previous)**: This storage values (```tuple (s0, s1)```) will keep track of the current and previous seed values.
 
 ## Required Extrinsics
 
+### Primitives
+
+``` rust
+
+MsaHandlePayload {
+    handle: &[u8],
+    suffix: u32,
+    msa_id: u64,
+}
+```
+
 ## Create user handle with chosen suffix
+
+ As a network frequency should allow users to choose their own handle and suffix. This extrinsic will allow users to create a handle with a chosen suffix.
 
 ``` rust
 Input
-* Origin - must be a signed origin
-* Owner Msa ID - the MSA ID of the user. MSA ID must be created before calling this extrinsic.
-* Handle - the desired handle chosen by the user
-* Suffix - the suffix chosen by the user (must be in the range of the handle)
+
+* origin - must be a signed origin
+* owner msa id - the MSA ID of the user. MSA ID must be created before calling this extrinsic.
+* proof - the proof of ownership of the handle, ```MsaHandlePayload``` signed by the user/provider private key
 
 Output
 * Event - `MsaHandleCreated` with the MSA ID and the handle
 
+* Errors - 
+    * `HandleAlreadyExists` if the handle already exists
+    * `InvalidMsaHandle` if the handle is invalid
+    * `Unauthorized` if the signature is invalid
+    * `InvalidSuffix` if the suffix is invalid
+    * `SuffixAlreadyExists` if the suffix already exists
+
+Validation requirements
+* handle must follow handle guidelines.
+* suffix must be in the range of the handle.
+* handle must be unique.
+* handle must be available.
+* suffix must be available.
+* MSA ID must exist.
+
 Signature requirements
 
-The extrinsic must be signed by the user private key. The signature must be verified on-chain to ensure that the user is the owner of the private key.
+The extrinsic must be signed by the user/provider private key. The signature must be verified on-chain to ensure that the user is the owner of the private key.
 ```
 
 ## Retire user handle
 
+As a network frequency should allow users to retire their handles. This extrinsic will allow users to retire their handles. Retired handles will be available for reuse after a time period set by governance.
+
 ``` rust
 Input
 
-* Origin - must be a signed origin
-* Owner Msa ID - the MSA ID of the user
-* Handle - the handle to be retired
-* Suffix - the suffix to be retired
+* origin - must be a signed origin
+* owner msa id - the MSA ID of the user. MSA ID must be created before calling this extrinsic.
+* proof_of_ownership - the proof of ownership of the handle to be retired, ```MsaHandlePayload``` signed by the user/provider private key
 
 Output
 
-* Event - `HandleRetired` with the handle
+* Event - `MsaHandleRetired` with the handle
+
+* Errors - 
+    * `HandleDoesNotExist` if the handle does not exist
+    * `Unauthorized` if the signature is invalid
 
 Signature requirements
 
-The extrinsic must be signed by the user private key. The signature must be verified on-chain to ensure that the user is the owner of the private key.
+The extrinsic must be signed by the user/provider private key. The signature must be verified on-chain to ensure that the user is the owner of the private key.
 ```
 
 ## Change handle
 
+As a network frequency should allow users to change their handles. This extrinsic will allow users to change their handles. Retired handles will be available for reuse after a time period set by governance.
+
 ``` rust
 Input
-* Origin - must be a signed origin
-* Owner msa ID - the MSA ID of the user
-* Old handle - the user current handle
-* Old suffix - the user current suffix
-* New handle - the user desired new handle
-* New suffix - the user desired new suffix
+* origin - must be a signed origin
+* owner msa ID - the MSA ID of the user
+* proof_of_ownership - the proof of ownership of the handle to be changed, ```MsaHandlePayload``` signed by the user/provider private key
+* proof_of_new_ownership - the proof of ownership of the new handle, ```MsaHandlePayload``` signed by the user/provider private key
 
 Output
 * Event - `MsaHandleChanged` with the old handle and the new handle
+* Errors - 
+    * `HandleDoesNotExist` if the handle does not exist
+    * `Unauthorized` if the signature(s) is invalid
+    * `InvalidMsaHandle` if the handle is invalid
 
 Signature requirements
 
@@ -161,25 +199,43 @@ The extrinsic must be signed by the user private key. The signature must be veri
 
 ```
 
-## Governance to alter min max range and handle merging
+**Note** :
+
+* Change handle should also retire the old handle and suffix.
+* These are possible extrinsics and inputs required for the handle feature. The exact extrinsics and inputs may change based on the implementation.
+
+## Governance
+
+### Governance to alter min max range and handle merging(?)
+
+As a network frequency should allow governance to alter the min and max range for suffixes and the handle merging setting. This extrinsic will allow governance to alter the min and max range for suffixes.
 
 ``` rust
 Input
+
 * Min and Max range for suffix (u32) - the minimum and maximum values for the suffix range that users can choose from
 
 Output
 
 * Event - `HandleSettingsChanged` with the min and max range and the handle merging setting
 
-Signature requirements
-
-This extrinsic must be signed by a governance authority. The signature must be verified on-chain to ensure that the governance authority has the appropriate permissions.
 ```
 
-**Note** :
+### Governance to alter handle retirement period
 
-* Change handle should also retire the old handle and suffix.
-* These are possible extrinsics and inputs required for the handle feature. The exact extrinsics and inputs may change based on the implementation.
+As a network frequency should allow governance to alter the handle retirement period. This extrinsic will allow governance to alter the handle retirement period.
+
+``` rust
+Input
+
+* Handle retirement period (u32) - the number of blocks after which a retired handle will be available for reuse
+
+Output
+
+* Event - `HandleExpiryPeriodSet` with the handle retirement period
+
+```
+
 
 ## RPCs
 
