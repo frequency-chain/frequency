@@ -269,7 +269,7 @@ The crate will provide a verification function that takes a user handle and a su
 * Verify that the handle is valid, i.e. it follows the handle guidelines.
 * Check for homoglpyhs.
 
-## PRNG
+### PRNG
 
 The crate will use a PRNG (pseudo-random number generator) to generate suffix values for user handles. The PRNG will take a seed value derived from the current block's Merkle root and the user's desired handle base, and generate a sequence of 10/20 values that will be used as suffixes. These suffixes will then be checked for availability on the chain before attempting to create a new handle.
 
