@@ -214,3 +214,16 @@ sequenceDiagram
     Frequency->>Frequency: Check suffix against governance defined range
     Frequency-->>App: Return validity check result
 ```
+
+## Risks
+
+* **Risk**: The handle feature may not be used by users.
+  * **Mitigation**: The handle feature is not a core feature of the protocol. It is an optional feature that users can choose to use or not. If the feature is not used by users, it will not affect the protocol.
+* **Risk**: Homoglpyhs.
+  * **Mitigation**: Frequency handles will use a PRNG to generate suffixes. This will prevent homoglyph attacks. However, a utility to check for homoglyphs will be provided to help users avoid homoglyphs.
+* **Risk**: Unavailability of desired suffixes.
+  * **Mitigation**: The handle feature will provide a utility to check for available suffixes. This will allow users to check for available suffixes before attempting to create a new MSA.
+* **Risk**:  Claims on retired handles.
+  * **Mitigation**: Frequency would use a retirement period to prevent claims on retired handles. The retirement period would be set to some block number in future. This would allow users to claim their handles after the retirement period has ended.
+* **Risk**:  Handle merging.
+  * **Mitigation**: To be determined. This will be decided based on implementation requirements.
