@@ -22,11 +22,10 @@ Make the system easy to use and integrate with existing UI and wallet systems.
 * Query the chain for the current seed value.
 * Hash the seed with the user desired handle base.
 * Apply the resulting value as the seed to the specified PRNG.
-* Generate the next 10 uint16 values from the PRNG.
-* For each value, calculate modulo 9000, then add 1000, to get a number between 1000 and 9999.
+* Generate the next 10 ```u32``` values from the PRNG these are the possible suffixes within the range of suffixes allowed by the chain.
 * Query the chain to check which values are available. Via lookup, check if the handle with the suffix is available.
-* Create a available msa and map it to the handle with the suffix.
 * Choose an available value and attempt to claim it by submitting the full handle with the suffix to the chain.
+* Create a available msa and map to valid handle and suffix chosen by user.
 
 ### Chain Steps
 
