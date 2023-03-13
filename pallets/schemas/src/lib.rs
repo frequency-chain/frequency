@@ -67,9 +67,6 @@ use sp_std::{boxed::Box, vec::Vec};
 #[cfg(test)]
 mod tests;
 
-#[cfg(test)]
-mod mock;
-
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 #[cfg(feature = "runtime-benchmarks")]
