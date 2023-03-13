@@ -92,6 +92,8 @@ sequenceDiagram
 
 ## Possible Storage Maps
 
+* **HandleSuffixMin**: This storage will keep track of the minimum suffix value allowed for a given handle.
+* **HandleSuffixMax**: This storage will keep track of the maximum suffix value allowed for a given handle.
 * **MSAIdToUserHandle**: This storage will map MSAIds to their corresponding user handles.
 * **UserHandlesToMSAId**: This storage will map user handles to their corresponding MSAIds.
 * **UsedSuffixes**: This storage will keep track of all used suffixes to ensure that no two handles have the same suffix. (May not be necessary)
@@ -105,6 +107,7 @@ sequenceDiagram
 Input
 * Owner Msa ID - the MSA ID of the user
 * Handle - the desired handle chosen by the user
+* Suffix - the suffix chosen by the user
 * Signature - the user signature on the handle
 
 Output
@@ -121,6 +124,7 @@ The extrinsic must be signed by the user private key. The signature must be veri
 Input
 
 * Handle - the handle to be retired
+* Suffix - the suffix to be retired
 * Signature - the user signature on the handle
 
 Output
@@ -138,7 +142,9 @@ The extrinsic must be signed by the user private key. The signature must be veri
 Input
 * Owner Msa ID - the MSA ID of the user
 * Old handle - the user current handle
+* Old Suffix - the user current suffix
 * New handle - the user desired new handle
+* New Suffix - the user desired new suffix
 * Signature - the user signature on the old handle and new handle
 
 Output
@@ -148,6 +154,8 @@ Signature requirements
 
 The extrinsic must be signed by the user private key. The signature must be verified on-chain to ensure that the user is the owner of the private key. The signature must also include the old handle and the new handle to prevent unauthorized handle changes.
 ```
+
+**Note** : These are possible extrinsics and inputs required for the handle feature. The exact extrinsics and inputs may change based on the implementation.
 
 ## Governance to alter min max range and handle merging
 
