@@ -1,6 +1,9 @@
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{
+	assert_noop, assert_ok,
+	dispatch::{GetDispatchInfo, Pays},
+};
 
-use sp_core::{sr25519, Encode, Pair};
+use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::{ArithmeticError, MultiSignature};
 
 use crate::{
@@ -9,7 +12,10 @@ use crate::{
 	Config, Error, Event,
 };
 
-use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
+use common_primitives::{
+	msa::{MessageSourceId, SignatureRegistryPointer},
+	utils::wrap_binary_data,
+};
 
 #[test]
 fn it_throws_error_when_new_key_verification_fails() {
@@ -310,6 +316,106 @@ fn add_key_with_proof_too_far_into_future_fails() {
 	})
 }
 
+/// Assert that when a key has been added to an MSA, that it my NOT be added to any other MSA.
+/// Expected error: KeyAlreadyRegistered
+#[test]
+fn double_add_key_two_msa_fails() {
+	new_test_ext().execute_with(|| {
+		let (msa_id1, owner_key_pair) = create_account();
+		let (_msa_id2, msa_2_owner_key_pair) = create_account();
+
+		let add_new_key_data = AddKeyData {
+			msa_id: msa_id1,
+			expiration: 10,
+			new_public_key: msa_2_owner_key_pair.public().into(),
+		};
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
+		let owner_signature: MultiSignature = owner_key_pair.sign(&encode_data_new_key_data).into();
+		let new_key_signature: MultiSignature =
+			msa_2_owner_key_pair.sign(&encode_data_new_key_data).into();
+
+		assert_noop!(
+			Msa::add_public_key_to_msa(
+				test_origin_signed(1),
+				owner_key_pair.public().into(),
+				owner_signature,
+				new_key_signature,
+				add_new_key_data
+			),
+			Error::<Test>::KeyAlreadyRegistered
+		);
+	})
+}
+
+#[test]
+fn add_public_key_to_msa_registers_two_signatures() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(1);
+		let (msa_id1, owner_key_pair) = create_account();
+		let (_msa_id2, _msa_2_owner_key_pair) = create_account();
+		let (new_key_pair, _) = sr25519::Pair::generate();
+
+		let add_new_key_data = AddKeyData {
+			msa_id: msa_id1,
+			expiration: 10,
+			new_public_key: new_key_pair.public().into(),
+		};
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+
+		let owner_signature: MultiSignature = owner_key_pair.sign(&encode_data_new_key_data).into();
+		let new_key_signature: MultiSignature = new_key_pair.sign(&encode_data_new_key_data).into();
+
+		assert_ok!(Msa::add_public_key_to_msa(
+			test_origin_signed(1),
+			owner_key_pair.public().into(),
+			owner_signature.clone(),
+			new_key_signature.clone(),
+			add_new_key_data
+		));
+
+		assert_eq!(Msa::get_payload_signature_registry(owner_signature.clone()).unwrap().0, 10);
+		assert_eq!(
+			Msa::get_payload_signature_pointer().unwrap(),
+			SignatureRegistryPointer {
+				newest: new_key_signature,
+				newest_expires_at: 10u32.into(),
+				oldest: owner_signature,
+				count: 2,
+			}
+		);
+	});
+}
+
+/// Assert that when a key has been deleted from one MSA, that it may be added to a different MSA.
+#[test]
+fn add_removed_key_to_msa_pass() {
+	new_test_ext().execute_with(|| {
+		let (msa_getting_a_second_key, owner_key_pair) = create_account();
+		let (msa_used_to_have_a_key, prior_msa_key) = create_account();
+
+		assert_ok!(Msa::delete_key_for_msa(msa_used_to_have_a_key, &prior_msa_key.public().into()));
+
+		let add_new_key_data = AddKeyData {
+			msa_id: msa_getting_a_second_key,
+			expiration: 10,
+			new_public_key: prior_msa_key.public().into(),
+		};
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+		let owner_signature: MultiSignature = owner_key_pair.sign(&encode_data_new_key_data).into();
+		let new_key_signature: MultiSignature =
+			prior_msa_key.sign(&encode_data_new_key_data).into();
+
+		assert_ok!(Msa::add_public_key_to_msa(
+			test_origin_signed(1),
+			owner_key_pair.public().into(),
+			owner_signature,
+			new_key_signature,
+			add_new_key_data
+		));
+	});
+}
+
 #[test]
 fn it_deletes_msa_key_successfully() {
 	new_test_ext().execute_with(|| {
@@ -323,6 +429,20 @@ fn it_deletes_msa_key_successfully() {
 		assert_eq!(info, None);
 
 		System::assert_last_event(Event::PublicKeyDeleted { key: test_public(2) }.into());
+	})
+}
+
+#[test]
+pub fn delete_msa_public_key_call_has_correct_costs() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let new_key = key_pair.public();
+
+		let call = MsaCall::<Test>::delete_msa_public_key {
+			public_key_to_delete: AccountId32::from(new_key),
+		};
+		let dispatch_info = call.get_dispatch_info();
+		assert_eq!(dispatch_info.pays_fee, Pays::No);
 	})
 }
 
