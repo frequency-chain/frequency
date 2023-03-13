@@ -11,6 +11,7 @@ use substrate_test_runtime_client::runtime::Block;
 
 const SUCCESSFUL_SCHEMA_ID: u16 = 1;
 const SUCCESSFUL_MSA_ID: MessageSourceId = 1;
+const NONCE: PageNonce = 1;
 const SUCCESSFUL_PAYLOAD: &[u8; 33] = b"{'body':827, 'val':'another val'}";
 const DUMMY_STATE_HASH: u32 = 32767;
 
@@ -23,8 +24,10 @@ sp_api::mock_impl_runtime_apis! {
 					0,
 					msa_id,
 					schema_id,
+					DUMMY_STATE_HASH,
+					NONCE,
 					SUCCESSFUL_PAYLOAD.to_vec(),
-					DUMMY_STATE_HASH)]),
+					)]),
 				_ => Err(DispatchError::Other("some error")),
 			}
 		}
@@ -35,6 +38,7 @@ sp_api::mock_impl_runtime_apis! {
 					msa_id,
 					schema_id,
 					DUMMY_STATE_HASH,
+					NONCE,
 					vec![ItemizedStorageResponse::new(0,SUCCESSFUL_PAYLOAD.to_vec())])),
 				_ => Err(DispatchError::Other("some error")),
 			}
@@ -87,6 +91,7 @@ async fn get_paginated_storage_with_success() {
 	assert_eq!(0, page.page_id);
 	assert_eq!(SUCCESSFUL_MSA_ID, page.msa_id);
 	assert_eq!(SUCCESSFUL_SCHEMA_ID, page.schema_id);
+	assert_eq!(NONCE, page.nonce);
 	assert_eq!(SUCCESSFUL_PAYLOAD.to_vec(), page.payload);
 }
 
@@ -131,6 +136,7 @@ async fn get_itemized_storage_with_success() {
 	assert_eq!(1, items.len());
 	assert_eq!(SUCCESSFUL_MSA_ID, page.msa_id);
 	assert_eq!(SUCCESSFUL_SCHEMA_ID, page.schema_id);
+	assert_eq!(NONCE, page.nonce);
 	assert_eq!(DUMMY_STATE_HASH, page.content_hash);
 	assert_eq!(ItemizedStorageResponse::new(0, SUCCESSFUL_PAYLOAD.to_vec()), items[0]);
 }
