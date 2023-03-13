@@ -101,13 +101,13 @@ sequenceDiagram
 
 ## Required Extrinsics
 
-## Create user handle with signature
+## Create user handle with chosen suffix
 
 ``` rust
 Input
 * Owner Msa ID - the MSA ID of the user
 * Handle - the desired handle chosen by the user
-* Suffix - the suffix chosen by the user
+* Suffix - the suffix chosen by the user (must be in the range of the handle)
 * Signature - the user signature on the handle
 
 Output
