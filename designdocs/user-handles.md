@@ -178,9 +178,9 @@ This extrinsic must be signed by a governance authority. The signature must be v
 * RPC to get a set of available suffixes given a handle.
 * RPC to get MSA from a given handle and suffix.
 
-## Crate design overview for freqency-handles
+## Crate design overview for frequency-handles
 
-We propose creating a new crate, frequency-user-handle, that will provide the following functionality:
+We propose creating a new crate, frequency-handles, that will provide the following functionality:
 
 ### Translation
 
