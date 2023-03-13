@@ -1,4 +1,4 @@
-# Frequency User Handles
+# Frequency User Handles Registry
 
 ## Context and Scope
 
@@ -51,7 +51,7 @@ User handle ```registry``` on frequency chain.
 
 ### Handling Race Conditions
 
-There is an exceedingly small chance that two users may attempt to claim the same handle and suffix combination within the same block. In such cases, the transaction will fail to create the MSA, and the app will receive a failure for the transaction rather than the expected MsaCreatedWithHandle event.
+There is an exceedingly small chance that two users may attempt to claim the same handle and suffix combination within the same block. In such cases, the transaction will fail to create the MSA, and the app will receive a failure for the transaction rather than the expected MsaHandleCreated event.
 
 ## Sequence Diagram
 
@@ -78,7 +78,7 @@ sequenceDiagram
     App->>RPC: create_sponsored_account_with_handle(..., handle, suffix)*
     RPC->>Chain: Submit transaction
     Chain->>Chain: Check validity and availability
-    Chain-->>App: MsaCreatedWithHandle event with handle
+    Chain-->>App: MsaHandleCreated event with handle
     Chain-->>App: DelegationGranted event
     App-->>RPC: Publish Profile Announcement/batch with (canonical) DSNP handle
     App->>User: Proceed with setup
