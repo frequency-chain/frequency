@@ -22,16 +22,17 @@ Make the system easy to use and integrate with existing UI and wallet systems.
 * Query the chain for the current seed value.
 * Hash the seed with the user desired handle base.
 * Apply the resulting value as the seed to the specified PRNG.
-* Generate the next 10 ```u32``` values from the PRNG these are the possible suffixes within the range of suffixes allowed by the chain.
-* Query the chain to check which values are available. Via lookup, check if the handle with the suffix is available.
+* Generate the next 10/20 ```u32``` values from the PRNG these are the possible suffixes within the range of suffixes allowed by the chain.
+* Query the chain to check which values are available, check if the handle with the suffix is available.
 * Choose an available value and attempt to claim it by submitting the full handle with the suffix to the chain.
-* Create a available msa and map to valid handle and suffix chosen by user.
+* Chain creates a available msa and map to valid handle and suffix chosen by user.
+* Chain maintains a reverse mapping from handle to msa for offchain use.
 
 ### Chain Steps
 
 * Every 100 blocks (e.g., when block_number % 100 == 1), update the current seed by taking the Merkle root of the previous block. Keep the current and one previous seed so that two seeds, s0 and s1, are part of the chain state at any given time.
 * Provide an RPC to get the current seed.
-* When a user submits a handle, check that the last four characters are numeric and that they represent one of the 20 possible values for the base handle, derived by constructing the same PRNG state using s0 and s1. Also, check that the full handle hashes to the MSA as required.
+* When a user submits a handle, check the numeric suffix for availability and that it honors range defined for suffix window.
 
 ### Handle Guidelines
 
@@ -46,7 +47,7 @@ Make the system easy to use and integrate with existing UI and wallet systems.
 
 ### Handling Race Conditions
 
-There is an exceedingly small chance that two users may attempt to claim the same handle and suffix combination within the same block. In such cases, the transaction will fail to create the MSA, and the app will receive a failure for the transaction rather than the expected MsaCreated event.
+There is an exceedingly small chance that two users may attempt to claim the same handle and suffix combination within the same block. In such cases, the transaction will fail to create the MSA, and the app will receive a failure for the transaction rather than the expected MsaCreatedWithHandle event.
 
 ## Sequence Diagram
 
@@ -73,7 +74,7 @@ sequenceDiagram
     App->>RPC: create_sponsored_account_with_handle(..., handle, suffix)*
     RPC->>Chain: Submit transaction
     Chain->>Chain: Check validity and availability
-    Chain-->>App: MsaCreated event with handle
+    Chain-->>App: MsaCreatedWithHandle event with handle
     Chain-->>App: DelegationGranted event
     App-->>RPC: Publish Profile Announcement/batch with (canonical) DSNP handle
     App->>User: Proceed with setup
