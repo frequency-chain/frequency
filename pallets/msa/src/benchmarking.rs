@@ -268,6 +268,6 @@ benchmarks! {
 	}
 
 	impl_benchmark_test_suite!(Msa,
-		crate::mock::new_test_ext_keystore(),
-		crate::mock::Test);
+		crate::tests::mock::new_test_ext_keystore(),
+		crate::tests::mock::Test);
 }
