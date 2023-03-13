@@ -291,9 +291,11 @@ fn upsert_existing_page_modifies_page() {
 		let caller_1 = test_public(msa_id);
 		let schema_id: SchemaId = PAGINATED_SCHEMA;
 		let page_id: PageId = 1;
+		let old_nonce = 3;
 		let old_content = generate_payload_bytes(Some(200));
 		let new_content = generate_payload_bytes::<PaginatedPageSize>(Some(201));
-		let old_page: PaginatedPage<Test> = old_content.clone().into();
+		let mut old_page: PaginatedPage<Test> = old_content.clone().into();
+		old_page.nonce = old_nonce;
 
 		let keys = (schema_id, page_id);
 		<StatefulChildTree>::write(
@@ -313,6 +315,7 @@ fn upsert_existing_page_modifies_page() {
 		.unwrap();
 
 		assert_eq!(old_content, old_page.data);
+		assert_eq!(old_nonce, old_page.nonce);
 		assert_ok!(StatefulStoragePallet::upsert_page(
 			RuntimeOrigin::signed(caller_1),
 			msa_id,
@@ -331,6 +334,7 @@ fn upsert_existing_page_modifies_page() {
 		.unwrap()
 		.unwrap();
 		assert_eq!(new_content, new_page.data);
+		assert_eq!(old_nonce + 1, new_page.nonce);
 	})
 }
 
@@ -1031,7 +1035,9 @@ fn apply_item_actions_initial_state_with_valid_input_should_update_storage() {
 			)
 			.unwrap();
 		assert!(updated_page.is_some());
-		let curr_content_hash = updated_page.unwrap().get_hash();
+		let updated_page = updated_page.unwrap();
+		let curr_content_hash = updated_page.get_hash();
+		assert_eq!(updated_page.nonce, PageNonce::default() + 1);
 		System::assert_last_event(
 			StatefulEvent::ItemizedPageUpdated {
 				msa_id,
@@ -1052,8 +1058,9 @@ fn apply_item_actions_existing_page_with_valid_input_should_update_storage() {
 		let caller_1 = test_public(msa_id);
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
+		let nonce = 10;
 		let actions = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
-		let page = create_itemized_page_from::<Test>(None, &[payload.try_into().unwrap()]);
+		let page = create_itemized_page_from::<Test>(Some(nonce), &[payload.try_into().unwrap()]);
 		let prev_content_hash = page.get_hash();
 		let key = (schema_id,);
 
@@ -1083,7 +1090,9 @@ fn apply_item_actions_existing_page_with_valid_input_should_update_storage() {
 			)
 			.unwrap();
 		assert!(updated_page.is_some());
-		let curr_content_hash = updated_page.unwrap().get_hash();
+		let updated_page = updated_page.unwrap();
+		let curr_content_hash = updated_page.get_hash();
+		assert_eq!(nonce + 1, updated_page.nonce);
 		System::assert_last_event(
 			StatefulEvent::ItemizedPageUpdated {
 				msa_id,
