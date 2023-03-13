@@ -125,7 +125,7 @@ MsaHandlePayload {
 }
 ```
 
-## Create user handle with chosen suffix
+### Create user handle with chosen suffix
 
  As a network frequency should allow users to choose their own handle and suffix. This extrinsic will allow users to create a handle with a chosen suffix.
 
@@ -159,7 +159,7 @@ Signature requirements
 The extrinsic must be signed by the user/provider private key. The signature must be verified on-chain to ensure that the user is the owner of the private key.
 ```
 
-## Retire user handle
+### Retire user handle
 
 As a network frequency should allow users to retire their handles. This extrinsic will allow users to retire their handles. Retired handles will be available for reuse after a time period set by governance.
 
@@ -183,7 +183,7 @@ Signature requirements
 The extrinsic must be signed by the user/provider private key. The signature must be verified on-chain to ensure that the user is the owner of the private key.
 ```
 
-## Change handle
+### Change handle
 
 As a network frequency should allow users to change their handles. This extrinsic will allow users to change their handles. Retired handles will be available for reuse after a time period set by governance.
 
