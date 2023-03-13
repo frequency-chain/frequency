@@ -492,8 +492,7 @@ impl<T: Config> Pallet<T> {
 		)
 		.map_err(|_| Error::<T>::CorruptedState)?
 		.unwrap_or_default();
-		let items: Vec<ItemizedStorageResponse> = page
-			.parse_as_itemized(false)
+		let items: Vec<ItemizedStorageResponse> = ItemizedOperations::<T>::try_parse(&page, false)
 			.map_err(|_| Error::<T>::CorruptedState)?
 			.items
 			.iter()
@@ -647,18 +646,20 @@ impl<T: Config> Pallet<T> {
 		ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
 
 		let updated_page =
-			existing_page.apply_item_actions::<T>(&actions[..]).map_err(|e| match e {
-				PageError::ErrorParsing(err) => {
-					log::warn!(
-						"failed parsing Itemized msa={:?} schema_id={:?} {:?}",
-						state_owner_msa_id,
-						schema_id,
-						err
-					);
-					Error::<T>::CorruptedState
+			ItemizedOperations::<T>::apply_item_actions(&existing_page, &actions[..]).map_err(
+				|e| match e {
+					PageError::ErrorParsing(err) => {
+						log::warn!(
+							"failed parsing Itemized msa={:?} schema_id={:?} {:?}",
+							state_owner_msa_id,
+							schema_id,
+							err
+						);
+						Error::<T>::CorruptedState
+					},
+					_ => Error::<T>::InvalidItemAction,
 				},
-				_ => Error::<T>::InvalidItemAction,
-			})?;
+			)?;
 
 		match updated_page.is_empty() {
 			true => {

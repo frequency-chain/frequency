@@ -534,7 +534,7 @@ fn parsing_a_well_formed_item_page_should_work() {
 	let page = create_itemized_page_from::<Test>(&payloads);
 
 	// act
-	let parsed = page.parse_as_itemized(true);
+	let parsed = ItemizedOperations::<Test>::try_parse(&page, true);
 
 	// assert
 	assert_ok!(&parsed);
@@ -563,7 +563,7 @@ fn parsing_item_with_wrong_payload_size_should_return_parsing_error() {
 	let page: ItemizedPage<Test> = ItemizedPage::<Test>::try_from(buffer).unwrap();
 
 	// act
-	let parsed = page.parse_as_itemized(true);
+	let parsed = ItemizedOperations::<Test>::try_parse(&page, true);
 
 	// assert
 	assert_eq!(parsed, Err(PageError::ErrorParsing("wrong payload size")));
@@ -581,7 +581,7 @@ fn applying_delete_action_with_existing_index_should_delete_item() {
 	let actions = vec![ItemAction::Delete { index: 0 }];
 
 	// act
-	let result = page.apply_item_actions::<Test>(&actions);
+	let result = ItemizedOperations::<Test>::apply_item_actions(&page, &actions);
 
 	// assert
 	assert_ok!(&result);
@@ -600,7 +600,7 @@ fn applying_add_action_should_add_item_to_the_end_of_the_page() {
 	let actions = vec![ItemAction::Add { data: payload2[0].clone().into() }];
 
 	// act
-	let result = page.apply_item_actions::<Test>(&actions[..]);
+	let result = ItemizedOperations::<Test>::apply_item_actions(&page, &actions[..]);
 
 	// assert
 	assert_ok!(&result);
@@ -619,7 +619,7 @@ fn applying_delete_action_with_non_existing_index_should_fail() {
 	let actions = vec![ItemAction::Delete { index: 2 }];
 
 	// act
-	let result = page.apply_item_actions::<Test>(&actions[..]);
+	let result = ItemizedOperations::<Test>::apply_item_actions(&page, &actions[..]);
 
 	// assert
 	assert_eq!(result.is_err(), true);
@@ -643,7 +643,7 @@ fn applying_add_action_with_full_page_should_fail() {
 	let actions = vec![ItemAction::Add { data: new_payload.clone().into() }];
 
 	// act
-	let result = page.apply_item_actions::<Test>(&actions[..]);
+	let result = ItemizedOperations::<Test>::apply_item_actions(&page, &actions[..]);
 
 	// assert
 	assert_eq!(result, Err(PageError::PageSizeOverflow));
@@ -960,7 +960,7 @@ fn apply_item_actions_existing_page_with_stale_hash_should_fail() {
 
 		let page = ItemizedPage::<Test>::default();
 		let page_hash = page.get_hash();
-		let page = page.apply_item_actions::<Test>(&actions1).unwrap();
+		let page = ItemizedOperations::<Test>::apply_item_actions(&page, &actions1).unwrap();
 		let key = (schema_id,);
 		<StatefulChildTree>::write::<_, Vec<u8>>(
 			&msa_id,
@@ -1037,7 +1037,7 @@ fn apply_item_actions_existing_page_with_valid_input_should_update_storage() {
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let page = ItemizedPage::<Test>::default();
-		let page = page.apply_item_actions::<Test>(&actions).unwrap();
+		let page = ItemizedOperations::<Test>::apply_item_actions(&page, &actions).unwrap();
 		let prev_content_hash = page.get_hash();
 		let key = (schema_id,);
 
@@ -1441,7 +1441,7 @@ fn apply_item_actions_with_signature_having_page_with_stale_hash_should_fail() {
 		let actions = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
 		let page = ItemizedPage::<Test>::default();
 		let page_hash = page.get_hash();
-		let page = page.apply_item_actions::<Test>(&actions).unwrap();
+		let page = ItemizedOperations::<Test>::apply_item_actions(&page, &actions).unwrap();
 		let key = (schema_id,);
 		<StatefulChildTree>::write::<_, Vec<u8>>(
 			&msa_id,

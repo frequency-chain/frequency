@@ -36,6 +36,17 @@ pub type ItemizedPage<T> = Page<<T as Config>::MaxItemizedPageSizeBytes>;
 /// Paginated Page type
 pub type PaginatedPage<T> = Page<<T as Config>::MaxPaginatedPageSizeBytes>;
 
+/// Operations on Itemized storage
+pub trait ItemizedOperations<T: Config> {
+	/// Applies all actions to specified page and returns the updated page
+	fn apply_item_actions(
+		&self,
+		actions: &[ItemAction<T::MaxItemizedBlobSizeBytes>],
+	) -> Result<ItemizedPage<T>, PageError>;
+
+	/// Parses all the items inside an ItemPage
+	fn try_parse(&self, include_header: bool) -> Result<ParsedItemPage, PageError>;
+}
 /// Defines the actions that can be applied to an Itemized storage
 #[derive(Clone, Encode, Decode, Debug, TypeInfo, MaxEncodedLen, PartialEq)]
 #[scale_info(skip_type_params(DataSize))]
@@ -219,14 +230,14 @@ impl<PageDataSize: Get<u32>> TryFrom<Vec<u8>> for Page<PageDataSize> {
 	}
 }
 
-impl<PageDataSize: Get<u32>> Page<PageDataSize> {
+impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 	/// Applies all actions to specified page and returns the updated page
 	/// This has O(n) complexity when n is the number of all the bytes in that itemized storage
-	pub fn apply_item_actions<T: Config>(
+	fn apply_item_actions(
 		&self,
 		actions: &[ItemAction<T::MaxItemizedBlobSizeBytes>],
 	) -> Result<Self, PageError> {
-		let mut parsed = self.parse_as_itemized(true)?;
+		let mut parsed = ItemizedOperations::<T>::try_parse(self, true)?;
 
 		let mut updated_page_buffer = Vec::with_capacity(parsed.page_size);
 		let mut add_buffer = Vec::new();
@@ -259,12 +270,12 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 		}
 		updated_page_buffer.append(&mut add_buffer);
 
-		Page::<PageDataSize>::try_from(updated_page_buffer).map_err(|_| PageError::PageSizeOverflow)
+		ItemizedPage::<T>::try_from(updated_page_buffer).map_err(|_| PageError::PageSizeOverflow)
 	}
 
 	/// Parses all the items inside an ItemPage
 	/// This has O(n) complexity when n is the number of all the bytes in that itemized storage
-	pub fn parse_as_itemized(&self, include_header: bool) -> Result<ParsedItemPage, PageError> {
+	fn try_parse(&self, include_header: bool) -> Result<ParsedItemPage, PageError> {
 		let mut count = 0u16;
 		let mut items = BTreeMap::new();
 		let mut offset = 0;
