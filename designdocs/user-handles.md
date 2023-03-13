@@ -91,14 +91,14 @@ sequenceDiagram
     App-->>RPC: Publish Profile Announcement/batch with (canonical) DSNP handle
     App->>User: Proceed with setup
     User->>App: Request to get MSA ID for handle
-    App->>RPC: get_msaid_for_handle(handle)
-    RPC->>Chain: Query handle mapping state
-    Chain-->>RPC: Return handle mapping state
+    App->>RPC: get_msa_id_for_handle(handle)
+    RPC->>Chain: Query handle mapping state (State Query MSA<->Handle)
+    Chain-->>RPC: Return handle mapping state (State Query MSA<->Handle)
     RPC-->>App: Return MSA ID for handle
     User->>App: Request to get handle for MSA ID
     App->>RPC: get_handle_for_msaid(msaid)
-    RPC->>Chain: Query MSA ID mapping state
-    Chain-->>RPC: Return MSA ID mapping state
+    RPC->>Chain: Query MSA ID mapping state (Reverse Index Handle<->MSA)
+    Chain-->>RPC: Return MSA ID mapping state (Reverse Index Handle<->MSA)
     RPC-->>App: Return handle for MSA ID
 ```
 
