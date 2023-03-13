@@ -882,13 +882,6 @@ pub mod pallet {
 			});
 			Ok(())
 		}
-translation, verififcation , prng, in the crate 
-		Create user handle- signrature requirements
-		retire user handle
-		change handle 
-		goverance to alter min max suffix range
-	##handle merging
-
 	}
 }
 

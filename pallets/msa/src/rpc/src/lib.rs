@@ -53,11 +53,6 @@ pub trait MsaApi<BlockHash, AccountId> {
 		delegator_msa_id: DelegatorId,
 		provider_msa_id: ProviderId,
 	) -> RpcResult<Option<Vec<SchemaId>>>;
-	// rpc to get a suffix(avaiable ones) given a handle
-	// rpc to get an msa from handle and suffix
-	
-
-
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
