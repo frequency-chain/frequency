@@ -276,14 +276,14 @@ sequenceDiagram
     participant App
     participant frequency-handles
     App->>Frequency: Request to check handle availability
-    Frequency-->frequency-handles: Check handle against guidelines
+    Frequency-->>frequency-handles: Check handle against guidelines
     Frequency -->> App: Return handle availability
     App->>Frequency: Request to generate a suffix
-    Frequency-->frequency-handles: Generate few random suffix values, guided by seed
+    Frequency-->>frequency-handles: Generate few random suffix values, guided by seed
     Frequency-->>App: Return generated suffices
     App->>Frequency: Request to register a handle
-    Frequency-->frequency-handles: Run validation on the handle and suffix
-    frequency-handles-->Frequency: Return validation result and register the handle
+    Frequency-->>frequency-handles: Run validation on the handle and suffix
+    frequency-handles-->>Frequency: Return validation result and register the handle
     Frequency-->>App: Emit event for handle registration
 ```
 
