@@ -267,7 +267,7 @@ The crate will provide a verification function that takes a user handle and a su
 
 The crate will use a PRNG (pseudo-random number generator) to generate suffix values for user handles. The PRNG will take a seed value derived from the current block's Merkle root and the user's desired handle base, and generate a sequence of 20 values that will be used as suffixes. These suffixes will then be checked for availability on the chain before attempting to create a new MSA.
 
-## Crate sequence diagram
+## frequency-handles crate sequence diagram
 
 Frequency-handles is a standalone rust crate that provide basic functionality for generating and validating handles. It is intended to be used by the frequency crate to provide handle generation and validation functionality.
 
