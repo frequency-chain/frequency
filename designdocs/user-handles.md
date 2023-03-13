@@ -2,9 +2,10 @@
 
 ## Context and Scope
 
-The Frequency blockchain aims to provide a platform for broadcasting messages without the need for users to acquire tokens. To achieve this, we propose the creation of a user handle ```registry``` system on frequency chain that allows users to choose a unique handle and select a suffix from a set of options allowed by the chain. The user handle system will also enforce guidelines to ensure that handles are user-friendly and easy to remember, as well as prevent misuse and abuse.
+The Frequency blockchain aims to provide a mechanism to register and retrieve user handles on chain.
+To achieve this, we propose the creation of a user handle ```registry``` system on frequency chain, coupled with ```MessageSourceAccount```, that allows users to choose a unique handle and select a suffix from a set of options allowed by the chain. The user handle system will also enforce guidelines to ensure that handles are user-friendly and easy to remember, as well as prevent misuse and abuse.
 
-The goal of this proposal is to enable users to create unique handles on the Frequency blockchain via mapping, making it more accessible for users to engage with the network.
+The goal of this proposal is to enable users to create unique handles on the Frequency blockchain using a registry, making it more accessible for users to engage with the network.
 
 ## Requirements
 
