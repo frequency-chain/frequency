@@ -7,6 +7,14 @@ To achieve this, we propose the creation of a user handle ```registry``` system 
 
 The goal of this proposal is to enable users to create unique handles on the Frequency blockchain using a registry, making it more accessible for users to engage with the network.
 
+## Assumptions
+
+* ```MessageSourceAccount``` exists for a user to create a handle.
+* It is optional for a user to create a handle.
+* Handles are unique and has a 1:1 mapping with ```MessageSourceAccount```.
+* Governance will define the range of suffixes allowed for a given handle.
+* Governance will define the time period a handle must be retired before it can be reused.
+
 ## Requirements
 
 The high level requirements for user handles are:
