@@ -2,7 +2,7 @@
 
 ## Context and Scope
 
-The Frequency blockchain aims to provide a platform for broadcasting messages without the need for users to acquire tokens. To achieve this, we propose the creation of a user handle system that allows users to choose a unique handle and select a suffix from a set of options allowed by the chain. The user handle system will also enforce guidelines to ensure that handles are user-friendly and easy to remember, as well as prevent misuse and abuse.
+The Frequency blockchain aims to provide a platform for broadcasting messages without the need for users to acquire tokens. To achieve this, we propose the creation of a user handle ```registry``` system on frequency chain that allows users to choose a unique handle and select a suffix from a set of options allowed by the chain. The user handle system will also enforce guidelines to ensure that handles are user-friendly and easy to remember, as well as prevent misuse and abuse.
 
 The goal of this proposal is to enable users to create unique handles on the Frequency blockchain via mapping, making it more accessible for users to engage with the network.
 
@@ -16,6 +16,8 @@ Make the system resistant to namespace exhaustion and race conditions.
 Make the system easy to use and integrate with existing UI and wallet systems.
 
 ## Proposal
+
+User handle ```registry``` on frequency chain.
 
 ### General Steps
 
@@ -90,7 +92,7 @@ sequenceDiagram
     RPC-->>App: Return handle for MSA ID
 ```
 
-## Possible Storage Maps
+## Storage
 
 * **HandleSuffixMin**: This storage will keep track of the minimum suffix value allowed for a given handle.
 * **HandleSuffixMax**: This storage will keep track of the maximum suffix value allowed for a given handle.
@@ -105,13 +107,13 @@ sequenceDiagram
 
 ``` rust
 Input
-* Owner Msa ID - the MSA ID of the user
+* Origin - must be a signed origin
+* Owner Msa ID - the MSA ID of the user. MSA ID must be created before calling this extrinsic.
 * Handle - the desired handle chosen by the user
 * Suffix - the suffix chosen by the user (must be in the range of the handle)
-* Signature - the user signature on the handle
 
 Output
-* Event - `MsaCreatedWithHandle` with the MSA ID and the handle
+* Event - `MsaHandleCreated` with the MSA ID and the handle
 
 Signature requirements
 
@@ -123,9 +125,10 @@ The extrinsic must be signed by the user private key. The signature must be veri
 ``` rust
 Input
 
+* Origin - must be a signed origin
+* Owner Msa ID - the MSA ID of the user
 * Handle - the handle to be retired
 * Suffix - the suffix to be retired
-* Signature - the user signature on the handle
 
 Output
 
@@ -140,22 +143,21 @@ The extrinsic must be signed by the user private key. The signature must be veri
 
 ``` rust
 Input
-* Owner Msa ID - the MSA ID of the user
+* Origin - must be a signed origin
+* Owner msa ID - the MSA ID of the user
 * Old handle - the user current handle
-* Old Suffix - the user current suffix
+* Old suffix - the user current suffix
 * New handle - the user desired new handle
-* New Suffix - the user desired new suffix
-* Signature - the user signature on the old handle and new handle
+* New suffix - the user desired new suffix
 
 Output
-* Event - `HandleChanged` with the old handle and the new handle
+* Event - `MsaHandleChanged` with the old handle and the new handle
 
 Signature requirements
 
 The extrinsic must be signed by the user private key. The signature must be verified on-chain to ensure that the user is the owner of the private key. The signature must also include the old handle and the new handle to prevent unauthorized handle changes.
-```
 
-**Note** : These are possible extrinsics and inputs required for the handle feature. The exact extrinsics and inputs may change based on the implementation.
+```
 
 ## Governance to alter min max range and handle merging
 
@@ -171,6 +173,11 @@ Signature requirements
 
 This extrinsic must be signed by a governance authority. The signature must be verified on-chain to ensure that the governance authority has the appropriate permissions.
 ```
+
+**Note** :
+
+* Change handle should also retire the old handle and suffix.
+* These are possible extrinsics and inputs required for the handle feature. The exact extrinsics and inputs may change based on the implementation.
 
 ## RPCs
 
