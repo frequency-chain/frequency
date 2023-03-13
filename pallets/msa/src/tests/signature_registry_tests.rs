@@ -1,5 +1,5 @@
 use crate::{
-	mock::*, types::AddKeyData, Config, Error, PayloadSignatureRegistryPointer,
+	tests::mock::*, types::AddKeyData, Config, Error, PayloadSignatureRegistryPointer,
 	SignatureRegistryPointer,
 };
 
