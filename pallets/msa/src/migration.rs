@@ -87,7 +87,7 @@ mod v1 {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::mock::{Test as T, *};
+	use crate::tests::mock::{Test as T, *};
 	use sp_keyring::Sr25519Keyring::Alice;
 
 	#[test]
