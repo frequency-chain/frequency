@@ -16,13 +16,25 @@ use crate::{
 
 use common_primitives::{
 	msa::{
-		Delegation, DelegationValidator, DelegatorId, MessageSourceId, ProviderId,
-		ProviderRegistryEntry, SchemaGrantValidator, SignatureRegistryPointer,
+		Delegation, DelegatorId, MessageSourceId, ProviderId, ProviderRegistryEntry,
+		SchemaGrantValidator, SignatureRegistryPointer,
 	},
 	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
 	utils::wrap_binary_data,
 };
+
+pub fn assert_revoke_delegation_by_delegator_no_effect(
+	test_account: AccountId32,
+	provider_msa_id: u64,
+) {
+	let event_count = System::event_count();
+	assert_ok!(Msa::revoke_delegation_by_delegator(
+		RuntimeOrigin::signed(test_account.clone()),
+		provider_msa_id
+	));
+	assert_eq!(event_count, System::event_count())
+}
 
 #[test]
 #[allow(unused_must_use)]
@@ -789,18 +801,6 @@ pub fn revoke_provider_is_successful() {
 	});
 }
 
-pub fn assert_revoke_delegation_by_delegator_no_effect(
-	test_account: AccountId32,
-	provider_msa_id: u64,
-) {
-	let event_count = System::event_count();
-	assert_ok!(Msa::revoke_delegation_by_delegator(
-		RuntimeOrigin::signed(test_account.clone()),
-		provider_msa_id
-	));
-	assert_eq!(event_count, System::event_count())
-}
-
 #[test]
 fn revoke_delegation_by_delegator_does_nothing_when_no_msa() {
 	new_test_ext()
@@ -904,174 +904,6 @@ pub fn revoke_provider_call_has_no_cost() {
 		let dispatch_info = call.get_dispatch_info();
 
 		assert_eq!(dispatch_info.pays_fee, Pays::No);
-	})
-}
-
-fn create_two_keypairs() -> (sr25519::Pair, sr25519::Pair) {
-	// fn create_two_keypairs() -> (Public, Public) {
-	let (pair1, _) = sr25519::Pair::generate();
-	let (pair2, _) = sr25519::Pair::generate();
-	(pair1, pair2)
-	// (pair1.public(), pair2.public())
-}
-
-#[test]
-pub fn revoke_delegation_by_provider_happy_path() {
-	new_test_ext().execute_with(|| {
-		let (delegator_pair, _) = sr25519::Pair::generate();
-		let delegator_account = delegator_pair.public();
-
-		let (provider_msa_id, provider_pair) = create_account();
-		let provider_account = provider_pair.public();
-
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("provider")
-		));
-
-		// 3. create delegator MSA and provider to provider
-		let (signature, add_provider_payload) =
-			create_and_sign_add_provider_payload(delegator_pair, provider_msa_id);
-
-		// 3.5 create the user's MSA + add provider as provider
-		assert_ok!(Msa::create_sponsored_account_with_delegation(
-			RuntimeOrigin::signed(AccountId32::from(provider_account)),
-			delegator_account.into(),
-			signature,
-			add_provider_payload
-		));
-		let retrieved_delegator = Msa::get_owner_of(&AccountId32::from(delegator_account)).unwrap();
-
-		//  4. set some block number to ensure it's not a default value
-		System::set_block_number(System::block_number() + 25);
-
-		// 5. assert_ok! fn as 2 to remove provider 1
-		assert_ok!(Msa::revoke_delegation_by_provider(
-			RuntimeOrigin::signed(AccountId32::from(provider_account)),
-			retrieved_delegator
-		));
-
-		// 6. verify that the provider is revoked
-		let provider_info = Msa::get_delegation(DelegatorId(2), ProviderId(1));
-		assert_eq!(
-			provider_info,
-			Some(Delegation { revoked_at: 26, schema_permissions: Default::default() })
-		);
-
-		// 7. verify the event
-		System::assert_last_event(
-			Event::DelegationRevoked { provider_id: ProviderId(1), delegator_id: DelegatorId(2) }
-				.into(),
-		);
-	})
-}
-
-#[test]
-pub fn revoke_delegation_by_provider_has_correct_costs() {
-	new_test_ext().execute_with(|| {
-		let call = MsaCall::<Test>::revoke_delegation_by_provider { delegator: 2 };
-		let dispatch_info = call.get_dispatch_info();
-
-		assert_eq!(dispatch_info.pays_fee, Pays::No);
-	})
-}
-
-#[test]
-pub fn revoke_delegation_by_provider_does_nothing_when_no_msa() {
-	new_test_ext().execute_with(|| {
-		let (delegator_pair, provider_pair) = create_two_keypairs();
-		let delegator_account = delegator_pair.public();
-		let provider_account = provider_pair.public();
-
-		let none_retrieved_delegator = Msa::get_owner_of(&AccountId32::from(delegator_account));
-		assert_eq!(none_retrieved_delegator, None);
-
-		let not_an_msa_id = 777u64;
-
-		assert_ok!(Msa::create(RuntimeOrigin::signed(AccountId32::from(provider_account))));
-
-		System::set_block_number(System::block_number() + 19);
-
-		// 1. when delegator msa_id not found
-		assert_noop!(
-			Msa::revoke_delegation_by_provider(
-				RuntimeOrigin::signed(AccountId32::from(provider_account)),
-				not_an_msa_id
-			),
-			Error::<Test>::DelegationNotFound
-		);
-
-		assert_ok!(Msa::create(RuntimeOrigin::signed(AccountId32::from(delegator_account))));
-		let delegator_msa_id = Msa::get_owner_of(&AccountId32::from(delegator_account)).unwrap();
-		// 2. when no delegation relationship
-		assert_noop!(
-			Msa::revoke_delegation_by_provider(
-				RuntimeOrigin::signed(AccountId32::from(provider_account)),
-				delegator_msa_id
-			),
-			Error::<Test>::DelegationNotFound
-		);
-
-		assert_ok!(Msa::add_provider(ProviderId(1), DelegatorId(2), Vec::default()));
-		assert_ok!(Msa::revoke_provider(ProviderId(1), DelegatorId(2)));
-
-		// 3. when_delegation_expired
-		assert_noop!(
-			Msa::revoke_delegation_by_provider(
-				RuntimeOrigin::signed(AccountId32::from(provider_account)),
-				delegator_msa_id
-			),
-			Error::<Test>::DelegationRevoked
-		);
-	})
-}
-
-#[test]
-pub fn valid_delegation() {
-	new_test_ext().execute_with(|| {
-		let provider = ProviderId(1);
-		let delegator = DelegatorId(2);
-
-		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
-
-		System::set_block_number(System::block_number() + 1);
-
-		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, None));
-	})
-}
-
-#[test]
-pub fn delegation_not_found() {
-	new_test_ext().execute_with(|| {
-		let provider = ProviderId(1);
-		let delegator = DelegatorId(2);
-
-		assert_noop!(
-			Msa::ensure_valid_delegation(provider, delegator, None),
-			Error::<Test>::DelegationNotFound
-		);
-	})
-}
-
-#[test]
-pub fn delegation_expired() {
-	new_test_ext().execute_with(|| {
-		let provider = ProviderId(1);
-		let delegator = DelegatorId(2);
-
-		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
-
-		System::set_block_number(System::block_number() + 1);
-		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, None));
-
-		assert_ok!(Msa::revoke_provider(provider, delegator));
-
-		System::set_block_number(System::block_number() + 1);
-
-		assert_noop!(
-			Msa::ensure_valid_delegation(provider, delegator, None),
-			Error::<Test>::DelegationRevoked
-		);
 	})
 }
 
@@ -1365,33 +1197,6 @@ pub fn add_provider_expired() {
 				add_provider_payload
 			),
 			Error::<Test>::ProofHasExpired
-		);
-	})
-}
-
-#[test]
-pub fn delegation_expired_long_back() {
-	new_test_ext().execute_with(|| {
-		let provider = ProviderId(1);
-		let delegator = DelegatorId(2);
-
-		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
-
-		System::set_block_number(System::block_number() + 100);
-		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, None));
-
-		assert_ok!(Msa::revoke_provider(provider, delegator));
-
-		System::set_block_number(System::block_number() + 150);
-
-		assert_noop!(
-			Msa::ensure_valid_delegation(provider, delegator, Some(151)),
-			Error::<Test>::DelegationRevoked
-		);
-		assert_ok!(Msa::ensure_valid_delegation(provider, delegator, Some(6)));
-		assert_noop!(
-			Msa::ensure_valid_delegation(provider, delegator, Some(1000)),
-			Error::<Test>::CannotPredictValidityPastCurrentBlock
 		);
 	})
 }

@@ -8,6 +8,49 @@ use frame_support::{
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Pair};
 use sp_runtime::{traits::SignedExtension, transaction_validity::TransactionValidity};
 
+// Assert that CheckFreeExtrinsicUse::validate fails with `expected_err_enum`,
+// for the "delete_msa_public_key" call, given extrinsic caller = caller_key,
+// when attempting to delete `public_key_to_delete`
+fn assert_validate_key_delete_fails(
+	caller_key: &AccountId32,
+	public_key_to_delete: AccountId32,
+	expected_err_enum: ValidityError,
+) {
+	let call_delete_msa_public_key: &<Test as frame_system::Config>::RuntimeCall =
+		&RuntimeCall::Msa(MsaCall::delete_msa_public_key { public_key_to_delete });
+
+	let expected_err: TransactionValidity =
+		InvalidTransaction::Custom(expected_err_enum as u8).into();
+
+	assert_eq!(
+		CheckFreeExtrinsicUse::<Test>::new().validate(
+			&caller_key,
+			call_delete_msa_public_key,
+			&DispatchInfo::default(),
+			0_usize,
+		),
+		expected_err
+	);
+}
+
+fn assert_revoke_delegation_by_provider_err(
+	expected_err: InvalidTransaction,
+	provider_account: Public,
+	delegator_msa_id: u64,
+) {
+	let call_revoke_delegation: &<Test as frame_system::Config>::RuntimeCall =
+		&RuntimeCall::Msa(MsaCall::revoke_delegation_by_provider { delegator: delegator_msa_id });
+	let info = DispatchInfo::default();
+	let len = 0_usize;
+	let result = CheckFreeExtrinsicUse::<Test>::new().validate(
+		&provider_account.into(),
+		call_revoke_delegation,
+		&info,
+		len,
+	);
+	assert_err!(result, expected_err);
+}
+
 /// Assert that revoking an MSA delegation passes the signed extension CheckFreeExtrinsicUse
 /// validation when a valid delegation exists.
 #[test]
@@ -83,24 +126,6 @@ fn signed_extension_revoke_delegation_by_provider_success() {
 		);
 		assert_ok!(result);
 	})
-}
-
-fn assert_revoke_delegation_by_provider_err(
-	expected_err: InvalidTransaction,
-	provider_account: Public,
-	delegator_msa_id: u64,
-) {
-	let call_revoke_delegation: &<Test as frame_system::Config>::RuntimeCall =
-		&RuntimeCall::Msa(MsaCall::revoke_delegation_by_provider { delegator: delegator_msa_id });
-	let info = DispatchInfo::default();
-	let len = 0_usize;
-	let result = CheckFreeExtrinsicUse::<Test>::new().validate(
-		&provider_account.into(),
-		call_revoke_delegation,
-		&info,
-		len,
-	);
-	assert_err!(result, expected_err);
 }
 
 #[test]
@@ -377,29 +402,4 @@ fn signed_extension_validate_fails_when_delete_msa_public_key_called_by_non_owne
 			ValidityError::NotKeyOwner,
 		)
 	})
-}
-
-// Assert that CheckFreeExtrinsicUse::validate fails with `expected_err_enum`,
-// for the "delete_msa_public_key" call, given extrinsic caller = caller_key,
-// when attempting to delete `public_key_to_delete`
-fn assert_validate_key_delete_fails(
-	caller_key: &AccountId32,
-	public_key_to_delete: AccountId32,
-	expected_err_enum: ValidityError,
-) {
-	let call_delete_msa_public_key: &<Test as frame_system::Config>::RuntimeCall =
-		&RuntimeCall::Msa(MsaCall::delete_msa_public_key { public_key_to_delete });
-
-	let expected_err: TransactionValidity =
-		InvalidTransaction::Custom(expected_err_enum as u8).into();
-
-	assert_eq!(
-		CheckFreeExtrinsicUse::<Test>::new().validate(
-			&caller_key,
-			call_delete_msa_public_key,
-			&DispatchInfo::default(),
-			0_usize,
-		),
-		expected_err
-	);
 }
