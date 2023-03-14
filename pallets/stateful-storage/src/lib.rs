@@ -253,7 +253,8 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Applies the Add or Delete Actions on the requested Itemized page
+		/// Applies the Add or Delete Actions on the requested Itemized page.
+		/// This is treated as a transaction so either all actions succeed or none will be executed.
 		///
 		/// # Events
 		/// * [`Event::ItemizedPageUpdated`]
@@ -344,6 +345,7 @@ pub mod pallet {
 
 		/// Applies the Add or Delete Actions on the requested Itemized page that requires signature
 		/// since the signature of delegator is checked there is no need for delegation validation
+		/// This is treated as a transaction so either all actions succeed or none will be executed.
 		///
 		/// # Events
 		/// * [`Event::ItemizedPageUpdated`]
