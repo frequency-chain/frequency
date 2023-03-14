@@ -200,7 +200,6 @@ As a network frequency should allow users to change their handles. This extrinsi
 Input
 * origin - must be a signed origin
 * owner_key - the public key of the user/provider. This is used to verify the signature and resolve the MSA ID.
-* proof_of_ownership - the proof of ownership of the handle to be changed, ```MsaHandlePayload``` signed by the user/provider private key
 * proof_of_new_ownership - the proof of ownership of the new handle, ```MsaHandlePayload``` signed by the user/provider private key
 
 Output
