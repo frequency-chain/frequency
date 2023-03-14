@@ -95,8 +95,6 @@ impl<T: Config> OnRuntimeUpgrade for SchemaMigration<T> {
 		Ok(Vec::new())
 	}
 
-	// try-runtime migration code
-	#[cfg(not(feature = "try-runtime"))]
 	fn on_runtime_upgrade() -> Weight {
 		v1::migrate_schemas_to_v1::<T>()
 	}
