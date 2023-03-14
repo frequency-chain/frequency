@@ -1,7 +1,7 @@
 use crate as pallet_stateful_storage;
 use codec::Decode;
 
-use crate::test_common::{
+use crate::tests::test_common::{
 	constants,
 	constants::{BENCHMARK_SIGNATURE_ACCOUNT_SEED, SIGNATURE_MSA_ID},
 };

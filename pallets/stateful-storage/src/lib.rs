@@ -49,18 +49,10 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
-
-#[cfg(any(feature = "runtime-benchmarks", test))]
-mod test_common;
-
-#[cfg(test)]
-mod mock;
-
-#[cfg(test)]
-mod tests;
-
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+#[cfg(test)]
+mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
 use sp_std::prelude::*;

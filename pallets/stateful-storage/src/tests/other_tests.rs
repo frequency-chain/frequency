@@ -1,7 +1,9 @@
-use super::{mock::*, Event as StatefulEvent};
 use crate::{
-	pallet, stateful_child_tree::StatefulChildTree, test_common::constants::*, types::*, Config,
-	Error,
+	pallet,
+	stateful_child_tree::StatefulChildTree,
+	tests::{mock::*, test_common::constants::*},
+	types::*,
+	Config, Error, Event as StatefulEvent,
 };
 use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::{
