@@ -1,4 +1,3 @@
-use super::*;
 use crate as pallet_capacity;
 
 use common_primitives::{
@@ -11,11 +10,7 @@ use frame_support::{
 };
 use frame_system::EnsureSigned;
 use sp_core::{ConstU8, H256};
-use sp_runtime::{
-	testing::Header,
-	traits::{BlakeTwo256, Convert, IdentityLookup},
-	AccountId32,
-};
+use sp_runtime::{testing::Header, traits::{BlakeTwo256, Convert, IdentityLookup}, AccountId32, DispatchError};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -152,7 +147,7 @@ impl pallet_msa::Config for Test {
 	type MaxSignaturesStored = ConstU32<8000>;
 }
 
-impl Config for Test {
+impl pallet_capacity::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type Currency = pallet_balances::Pallet<Self>;
