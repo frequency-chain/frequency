@@ -24,6 +24,7 @@ The high level requirements for user handles are:
 * Ensure handles and suffixes are unique and non-conflicting.
 * Make the system resistant to namespace exhaustion, homoglyphs and race conditions.
 * Make the system easy to use and integrate with existing UI and wallet systems.
+* Reduce the likelihood of abuse and misuse of the system for example secondary market trading of handles.
 
 ## Proposal
 
@@ -113,6 +114,8 @@ sequenceDiagram
 * **UsedSuffixes**: This storage will keep track of all used suffixes to ensure that no two handles have the same suffix. (May not be necessary)
 * **Seed (current and previous)**: This storage values (```tuple (s0, s1)```) will keep track of the current and previous seed values.
 
+**Note:** The handle being mapped to MSA ID is the handle with the suffix i.e. full handle.
+
 ## Required Extrinsics
 
 ### Primitives
@@ -122,7 +125,6 @@ sequenceDiagram
 MsaHandlePayload {
     handle: &[u8],
     suffix: u32,
-    msa_id: u64,
 }
 ```
 
@@ -134,7 +136,7 @@ MsaHandlePayload {
 Input
 
 * origin - must be a signed origin
-* owner msa id - the MSA ID of the user. MSA ID must be created before calling this extrinsic.
+* owner_key - the public key of the user/provider. This is used to verify the signature and resolve the MSA ID.
 * proof - the proof of ownership of the handle, ```MsaHandlePayload``` signed by the user/provider private key
 
 Output
@@ -153,7 +155,7 @@ Validation requirements
 * handle must be unique.
 * handle must be available.
 * suffix must be available.
-* MSA ID must exist.
+* MSA ID must exist. Signing keys must resolve to MSA ID.
 
 Signature requirements
 
@@ -168,7 +170,7 @@ As a network frequency should allow users to retire their handles. This extrinsi
 Input
 
 * origin - must be a signed origin
-* owner msa id - the MSA ID of the user. MSA ID must be created before calling this extrinsic.
+* owner_key - the public key of the user/provider. This is used to verify the signature and resolve the MSA ID.
 * proof_of_ownership - the proof of ownership of the handle to be retired, ```MsaHandlePayload``` signed by the user/provider private key
 
 Output
@@ -179,10 +181,16 @@ Output
     * `HandleDoesNotExist` if the handle does not exist
     * `Unauthorized` if the signature is invalid
 
+Validation requirements
+* MSA ID must exist. Signing keys must resolve to MSA ID.
+* handle must exist and be owned by the MSA ID.
+
 Signature requirements
 
 The extrinsic must be signed by the user/provider private key. The signature must be verified on-chain to ensure that the user is the owner of the private key.
 ```
+
+**Note:** If retiring a ```Pays::No transaction``` the we could skip both owner_key and proof_of_ownership.
 
 ### Change handle
 
@@ -191,7 +199,7 @@ As a network frequency should allow users to change their handles. This extrinsi
 ``` rust
 Input
 * origin - must be a signed origin
-* owner msa ID - the MSA ID of the user
+* owner_key - the public key of the user/provider. This is used to verify the signature and resolve the MSA ID.
 * proof_of_ownership - the proof of ownership of the handle to be changed, ```MsaHandlePayload``` signed by the user/provider private key
 * proof_of_new_ownership - the proof of ownership of the new handle, ```MsaHandlePayload``` signed by the user/provider private key
 
@@ -202,10 +210,18 @@ Output
     * `Unauthorized` if the signature(s) is invalid
     * `InvalidMsaHandle` if the handle is invalid
 
+Validation requirements
+* MSA ID must exist. Signing keys must resolve to MSA ID.
+* old handle must exist and be owned by the MSA ID.
+* new handle must follow handle guidelines.
+* new handle must be unique.
+* new handle must be available.
+* new suffix must be available.
+* new suffix must be in the range of the handle.
+
 Signature requirements
 
 The extrinsic must be signed by the user private key. The signature must be verified on-chain to ensure that the user is the owner of the private key. The signature must also include the old handle and the new handle to prevent unauthorized handle changes.
-
 ```
 
 **Note** :
