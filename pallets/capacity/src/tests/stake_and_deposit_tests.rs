@@ -1,12 +1,8 @@
-use frame_support::{assert_noop, assert_ok};
-use frame_support::traits::WithdrawReasons;
-use sp_runtime::ArithmeticError;
-use common_primitives::{
-	capacity::Nontransferable,
-	msa::MessageSourceId
-};
 use super::{mock::*, testing_utils::*};
 use crate::{BalanceOf, Error, Event, StakingAccountDetails};
+use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
+use frame_support::{assert_noop, assert_ok, traits::WithdrawReasons};
+use sp_runtime::ArithmeticError;
 
 #[test]
 fn stake_works() {
@@ -401,6 +397,3 @@ fn impl_deposit_errors_target_capacity_not_found() {
 		);
 	});
 }
-
-
-

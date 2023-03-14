@@ -2,18 +2,16 @@ use super::mock::*;
 use frame_support::{assert_ok, traits::Hooks};
 
 #[allow(unused)]
-use sp_runtime::traits::{SignedExtension};
+use sp_runtime::traits::SignedExtension;
 
-use common_primitives::msa::MessageSourceId;
 use crate::{BalanceOf, CapacityDetails, Config, Event};
+use common_primitives::msa::MessageSourceId;
 
 pub fn staking_events() -> Vec<Event<Test>> {
 	let result = System::events()
 		.into_iter()
 		.map(|r| r.event)
-		.filter_map(
-			|e| if let RuntimeEvent::Capacity(inner) = e { Some(inner) } else { None },
-		)
+		.filter_map(|e| if let RuntimeEvent::Capacity(inner) = e { Some(inner) } else { None })
 		.collect::<Vec<_>>();
 
 	System::reset_events();

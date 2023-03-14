@@ -117,6 +117,6 @@ benchmarks! {
 	}
 
 	impl_benchmark_test_suite!(Capacity,
-		crate::mock::new_test_ext(),
-		crate::mock::Test);
+		crate::tests::mock::new_test_ext(),
+		crate::tests::mock::Test);
 }

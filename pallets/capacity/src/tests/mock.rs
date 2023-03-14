@@ -10,7 +10,11 @@ use frame_support::{
 };
 use frame_system::EnsureSigned;
 use sp_core::{ConstU8, H256};
-use sp_runtime::{testing::Header, traits::{BlakeTwo256, Convert, IdentityLookup}, AccountId32, DispatchError};
+use sp_runtime::{
+	testing::Header,
+	traits::{BlakeTwo256, Convert, IdentityLookup},
+	AccountId32, DispatchError,
+};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
