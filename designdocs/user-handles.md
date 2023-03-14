@@ -190,7 +190,7 @@ Signature requirements
 The extrinsic must be signed by the user/provider private key. The signature must be verified on-chain to ensure that the user is the owner of the private key.
 ```
 
-**Note:** If retiring a ```Pays::No transaction``` the we could skip both owner_key and proof_of_ownership.
+**Note:** If retiring a ```Pays::No transaction```? then, we could skip both owner_key and proof_of_ownership.
 
 ### Change handle
 
