@@ -90,19 +90,13 @@ pub use weights::*;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-#[cfg(test)]
-mod mock;
+
 #[cfg(test)]
 mod tests;
 
 pub mod migration;
 
 pub mod types;
-
-#[cfg(test)]
-mod replay_tests;
-#[cfg(test)]
-mod signature_registry_tests;
 
 pub mod weights;
 #[frame_support::pallet]

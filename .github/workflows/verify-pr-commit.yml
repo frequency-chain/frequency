@@ -104,7 +104,6 @@ jobs:
     runs-on: [self-hosted, Linux, X64, build]
     container: ubuntu:20.04
     env:
-      # HOME: /root
       NETWORK: mainnet
     steps:
       - name: Install Required Packages
@@ -207,8 +206,6 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
-    # env:
-    # HOME: /root
     runs-on: [self-hosted, Linux, X64, build]
     container: ubuntu:20.04
     steps:
@@ -234,8 +231,6 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
-    # env:
-    # HOME: /root
     runs-on: [self-hosted, Linux, X64, build]
     container: ubuntu:20.04
     steps:
@@ -257,8 +252,6 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
-    # env:
-    # HOME: /root
     runs-on: [self-hosted, Linux, X64, build]
     container: ubuntu:20.04
     steps:
@@ -279,8 +272,6 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
-    # env:
-    # HOME: /root
     runs-on: [self-hosted, Linux, X64, build]
     container: ubuntu:20.04
     steps:
@@ -388,7 +379,7 @@ jobs:
       - name: Validate Extracted Version
         shell: bash
         run: |
-          echo "Runtime Spec Version:${{env.RUNTIME_SPEC_VERSION}}"
+          echo "Runtime Spec Version: ${{env.RUNTIME_SPEC_VERSION}}"
           [[ $RUNTIME_SPEC_VERSION == ?(-)+([0-9]) ]] || \
             (echo "ERROR: \"${{env.RUNTIME_SPEC_VERSION}}\" is not a valid integer" && exit 1)
       - name: Set Env Vars
@@ -409,7 +400,6 @@ jobs:
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          set -ex
           srtool build \
             --default-features="on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
             --profile=${{matrix.build-profile}} \

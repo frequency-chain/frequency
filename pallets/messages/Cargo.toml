@@ -34,6 +34,7 @@ cid = { version = "0.10", default-features = false }
 multibase = { version ="0.9", default-features = false }
 
 [dev-dependencies]
+common-runtime = { path = '../../runtime/common', default-features = false }
 # Testing dependencies
 rand = "0.8.5"
 pretty_assertions = "1"
@@ -59,5 +60,6 @@ std = [
   'frame-system/std',
   'frame-benchmarking/std',
   'common-primitives/std',
+  'common-runtime/std',
 ]
 try-runtime = ['frame-support/try-runtime']

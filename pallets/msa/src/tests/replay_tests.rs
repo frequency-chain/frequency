@@ -1,4 +1,4 @@
-use crate::{mock::*, AddKeyData, AddProvider, Error};
+use crate::{tests::mock::*, AddKeyData, AddProvider, Error};
 
 use common_primitives::{node::BlockNumber, utils::wrap_binary_data};
 use frame_support::{assert_err, assert_noop, assert_ok};

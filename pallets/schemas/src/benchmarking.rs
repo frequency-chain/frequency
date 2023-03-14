@@ -81,7 +81,7 @@ benchmarks! {
 
 	impl_benchmark_test_suite!(
 		SchemasPallet,
-		crate::mock::new_test_ext(),
-		crate::mock::Test
+		crate::tests::mock::new_test_ext(),
+		crate::tests::mock::Test
 	);
 }
