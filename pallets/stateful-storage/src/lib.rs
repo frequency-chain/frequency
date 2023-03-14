@@ -491,15 +491,7 @@ impl<T: Config> Pallet<T> {
 		schema_id: SchemaId,
 	) -> Result<ItemizedStoragePageResponse, DispatchError> {
 		Self::check_schema(schema_id, PayloadLocation::Itemized, false, false)?;
-		let key: ItemizedKey = (schema_id,);
-		let page = StatefulChildTree::<T::KeyHasher>::try_read::<ItemizedKey, ItemizedPage<T>>(
-			&msa_id,
-			PALLET_STORAGE_PREFIX,
-			ITEMIZED_STORAGE_PREFIX,
-			&key,
-		)
-		.map_err(|_| Error::<T>::CorruptedState)?
-		.unwrap_or_default();
+		let page = Self::get_itemized_page_for(msa_id, schema_id)?.unwrap_or_default();
 		let items: Vec<ItemizedStorageResponse> = ItemizedOperations::<T>::try_parse(&page, false)
 			.map_err(|_| Error::<T>::CorruptedState)?
 			.items
@@ -641,14 +633,8 @@ impl<T: Config> Pallet<T> {
 		actions: BoundedVec<ItemAction<T::MaxItemizedBlobSizeBytes>, T::MaxItemizedActionsCount>,
 	) -> DispatchResult {
 		let key: ItemizedKey = (schema_id,);
-		let existing_page: ItemizedPage<T> = StatefulChildTree::<T::KeyHasher>::try_read(
-			&state_owner_msa_id,
-			PALLET_STORAGE_PREFIX,
-			ITEMIZED_STORAGE_PREFIX,
-			&key,
-		)
-		.map_err(|_| Error::<T>::CorruptedState)?
-		.unwrap_or_default();
+		let existing_page =
+			Self::get_itemized_page_for(state_owner_msa_id, schema_id)?.unwrap_or_default();
 
 		let prev_content_hash = existing_page.get_hash();
 		ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
@@ -787,6 +773,21 @@ impl<T: Config> Pallet<T> {
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
 			PAGINATED_STORAGE_PREFIX,
+			&keys,
+		)
+		.map_err(|_| Error::<T>::CorruptedState)?)
+	}
+
+	/// Gets an itemized storage for desired parameters
+	fn get_itemized_page_for(
+		msa_id: MessageSourceId,
+		schema_id: SchemaId,
+	) -> Result<Option<ItemizedPage<T>>, DispatchError> {
+		let keys: ItemizedKey = (schema_id,);
+		Ok(StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
 			&keys,
 		)
 		.map_err(|_| Error::<T>::CorruptedState)?)
