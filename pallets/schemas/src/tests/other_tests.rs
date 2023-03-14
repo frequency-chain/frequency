@@ -16,7 +16,7 @@ use common_primitives::{
 		types::ParquetType,
 		ParquetModel,
 	},
-	schema::{ModelType, PayloadLocation, SchemaId},
+	schema::{ModelType, PayloadLocation, SchemaId, SchemaSetting},
 };
 use sp_runtime::DispatchError::BadOrigin;
 
@@ -79,7 +79,8 @@ fn create_schema_via_governance_happy_path() {
 			sender,
 			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
 			ModelType::AvroBinary,
-			PayloadLocation::OnChain
+			PayloadLocation::OnChain,
+			BoundedVec::default(),
 		));
 	})
 }
@@ -98,6 +99,7 @@ fn propose_to_create_schema_happy_path() {
 			create_bounded_schema_vec(test_model),
 			ModelType::AvroBinary,
 			PayloadLocation::OnChain,
+			BoundedVec::default(),
 		);
 
 		// Find the Proposed event and get it's hash and index so it can be voted on
@@ -230,7 +232,7 @@ fn create_schema_happy_path() {
 			RuntimeOrigin::signed(sender),
 			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
 			ModelType::AvroBinary,
-			PayloadLocation::OnChain
+			PayloadLocation::OnChain,
 		));
 	})
 }
@@ -246,7 +248,7 @@ fn create_schema_unhappy_path() {
 				// name key does not have a colon
 				create_bounded_schema_vec(r#"{"name", 54, "type": "none"}"#),
 				ModelType::AvroBinary,
-				PayloadLocation::OnChain
+				PayloadLocation::OnChain,
 			),
 			Error::<Test>::InvalidSchema
 		);
@@ -305,7 +307,7 @@ fn create_schema_id_deposits_events_and_increments_schema_id() {
 				RuntimeOrigin::signed(sender.clone()),
 				create_bounded_schema_vec(fields),
 				ModelType::AvroBinary,
-				PayloadLocation::OnChain
+				PayloadLocation::OnChain,
 			));
 			System::assert_last_event(
 				AnnouncementEvent::SchemaCreated {
@@ -320,7 +322,7 @@ fn create_schema_id_deposits_events_and_increments_schema_id() {
 			RuntimeOrigin::signed(sender.clone()),
 			create_bounded_schema_vec(r#"{"account":3050}"#),
 			ModelType::AvroBinary,
-			PayloadLocation::OnChain
+			PayloadLocation::OnChain,
 		));
 	})
 }
@@ -337,7 +339,7 @@ fn get_existing_schema_by_id_should_return_schema() {
 			RuntimeOrigin::signed(sender),
 			create_bounded_schema_vec(test_str),
 			ModelType::AvroBinary,
-			PayloadLocation::OnChain
+			PayloadLocation::OnChain,
 		));
 
 		// act
@@ -515,4 +517,77 @@ fn dsnp_broadcast() {
 		&create_bounded_schema_vec(test_str_raw),
 	);
 	assert_ok!(result);
+}
+
+#[test]
+fn create_schema_with_settings_should_work() {
+	new_test_ext().execute_with(|| {
+		sudo_set_max_schema_size();
+
+		// arrange
+		let settings = vec![SchemaSetting::AppendOnly];
+		let sender: AccountId = test_public(1);
+
+		// act and assert
+		assert_ok!(SchemasPallet::create_schema_via_governance(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
+			sender,
+			create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
+			ModelType::AvroBinary,
+			PayloadLocation::Itemized,
+			BoundedVec::try_from(settings.clone()).unwrap(),
+		));
+
+		// assert
+		let res = SchemasPallet::get_schema_by_id(1);
+		assert_eq!(res.unwrap().settings, settings);
+	})
+}
+
+#[test]
+fn create_schema_with_append_only_setting_and_non_itemized_should_fail() {
+	new_test_ext().execute_with(|| {
+		sudo_set_max_schema_size();
+
+		// arrange
+		let settings = vec![SchemaSetting::AppendOnly];
+		let sender: AccountId = test_public(1);
+		// act and assert
+		assert_noop!(
+			SchemasPallet::create_schema_via_governance(
+				RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
+				sender.clone(),
+				create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
+				ModelType::AvroBinary,
+				PayloadLocation::Paginated,
+				BoundedVec::try_from(settings.clone()).unwrap(),
+			),
+			Error::<Test>::InvalidSetting
+		);
+
+		// act and assert
+		assert_noop!(
+			SchemasPallet::create_schema_via_governance(
+				RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
+				sender.clone(),
+				create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
+				ModelType::AvroBinary,
+				PayloadLocation::OnChain,
+				BoundedVec::try_from(settings.clone()).unwrap(),
+			),
+			Error::<Test>::InvalidSetting
+		);
+
+		assert_noop!(
+			SchemasPallet::create_schema_via_governance(
+				RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
+				sender,
+				create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
+				ModelType::AvroBinary,
+				PayloadLocation::IPFS,
+				BoundedVec::try_from(settings.clone()).unwrap(),
+			),
+			Error::<Test>::InvalidSetting
+		);
+	})
 }
