@@ -49,6 +49,9 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
+
+#[cfg(any(feature = "runtime-benchmarks", test))]
+mod test_common;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 #[cfg(test)]
