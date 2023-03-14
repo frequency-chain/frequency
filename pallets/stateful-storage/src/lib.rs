@@ -261,12 +261,11 @@ pub mod pallet {
 		/// * [`Event::ItemizedPageDeleted`]
 		///
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::apply_item_actions( actions.len() as u32 ,
+		#[pallet::weight(T::WeightInfo::apply_item_actions(
 			actions.iter().fold(0, |acc, a| acc.saturating_add(match a {
 				ItemAction::Add { data } => data.len() as u32,
 				_ => 0,
-			})),
-		    0
+			}))
 		))]
 		pub fn apply_item_actions(
 			origin: OriginFor<T>,
@@ -352,10 +351,10 @@ pub mod pallet {
 		/// * [`Event::ItemizedPageDeleted`]
 		///
 		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::apply_item_actions_with_signature( payload.actions.len() as u32 ,
+		#[pallet::weight(T::WeightInfo::apply_item_actions_with_signature(
 			payload.actions.iter().fold(0, |acc, a| acc.saturating_add(match a {
-			ItemAction::Add { data } => data.len() as u32,
-			_ => 0,
+				ItemAction::Add { data } => data.len() as u32,
+				_ => 0,
 			}))
 		))]
 		pub fn apply_item_actions_with_signature(
