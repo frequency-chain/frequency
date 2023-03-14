@@ -1,6 +1,4 @@
 pub mod mock;
-#[cfg(any(feature = "runtime-benchmarks", test))]
-mod test_common;
 
 mod apply_item_actions_tests;
 mod child_tree_tests;

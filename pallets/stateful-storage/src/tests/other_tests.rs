@@ -1,9 +1,7 @@
 use crate::{
 	stateful_child_tree::StatefulChildTree,
-	tests::{
-		mock::*,
-		test_common::{constants::*, test_constants::*},
-	},
+	test_common::{constants::*, test_constants::*},
+	tests::mock::*,
 	types::*,
 	Config, Error,
 };

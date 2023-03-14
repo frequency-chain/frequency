@@ -1,6 +1,5 @@
 use crate::{
-	stateful_child_tree::StatefulChildTree,
-	tests::{mock::*, test_common::test_constants::*},
+	stateful_child_tree::StatefulChildTree, test_common::test_constants::*, tests::mock::*,
 };
 use common_primitives::schema::{ModelType, PayloadLocation, SchemaId};
 use frame_support::BoundedVec;
