@@ -89,7 +89,6 @@ sequenceDiagram
     RPC->>Chain: Submit transaction
     Chain->>Chain: Check validity and availability
     Chain-->>App: MsaHandleCreated event with handle
-    App-->>RPC: Publish Profile Announcement/batch with (canonical) DSNP handle
     App->>User: Proceed with setup
     User->>App: Request to get MSA ID for handle
     App->>RPC: get_msa_id_for_handle(handle)
