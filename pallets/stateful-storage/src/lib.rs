@@ -281,7 +281,7 @@ pub mod pallet {
 			let key = ensure_signed(origin)?;
 			let is_pruning = actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
 			Self::check_schema(schema_id, PayloadLocation::Itemized, false, is_pruning)?;
-			Self::check_grants(key, state_owner_msa_id, schema_id)?;
+			Self::check_msa_and_grants(key, state_owner_msa_id, schema_id)?;
 			Self::update_itemized(state_owner_msa_id, schema_id, target_hash, actions)?;
 			Ok(())
 		}
@@ -307,7 +307,7 @@ pub mod pallet {
 				Error::<T>::PageIdExceedsMaxAllowed
 			);
 			Self::check_schema(schema_id, PayloadLocation::Paginated, false, false)?;
-			Self::check_grants(provider_key, state_owner_msa_id, schema_id)?;
+			Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
 			Self::update_paginated(
 				state_owner_msa_id,
 				schema_id,
@@ -338,7 +338,7 @@ pub mod pallet {
 				Error::<T>::PageIdExceedsMaxAllowed
 			);
 			Self::check_schema(schema_id, PayloadLocation::Paginated, false, true)?;
-			Self::check_grants(provider_key, state_owner_msa_id, schema_id)?;
+			Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
 			Self::delete_paginated(state_owner_msa_id, schema_id, page_id, target_hash)?;
 			Ok(())
 		}
@@ -581,25 +581,26 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Checks that the grant is valid for is action
+	/// Checks that existence of Msa for certain key and if the grant is valid when the caller Msa
+	/// is different from the state owner Msa
 	///
 	/// # Errors
 	/// * [`Error::InvalidMessageSourceAccount`]
 	/// * [`Error::UnauthorizedDelegate`]
 	///
-	fn check_grants(
-		provider_key: T::AccountId,
+	fn check_msa_and_grants(
+		key: T::AccountId,
 		state_owner_msa_id: MessageSourceId,
 		schema_id: SchemaId,
 	) -> Result<MessageSourceId, DispatchError> {
-		let provider_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
+		let caller_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&key)
 			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-		// if provider and owner are the same no delegation is needed
-		if provider_msa_id != state_owner_msa_id {
+		// if caller and owner are the same no delegation is needed
+		if caller_msa_id != state_owner_msa_id {
 			let current_block = frame_system::Pallet::<T>::block_number();
 			T::SchemaGrantValidator::ensure_valid_schema_grant(
-				ProviderId(provider_msa_id),
+				ProviderId(caller_msa_id),
 				DelegatorId(state_owner_msa_id),
 				schema_id,
 				current_block,
@@ -607,7 +608,7 @@ impl<T: Config> Pallet<T> {
 			.map_err(|_| Error::<T>::UnauthorizedDelegate)?;
 		}
 
-		Ok(provider_msa_id)
+		Ok(caller_msa_id)
 	}
 
 	/// Verifies if the key has an Msa and if it matches with expected one
