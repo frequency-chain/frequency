@@ -193,7 +193,7 @@ The extrinsic must be signed by the user/provider private key. The signature mus
 **Note:**
 
 * If retiring a ```Pays::No transaction```? then, we could skip both owner_key and proof_of_ownership.
-* If retiring an MSA (```retire_msa``` call), frequency should also retire all the handle associated with the MSA.
+* If retiring an MSA (```retire_msa``` call), frequency should also retire the handle associated with the MSA.
 
 ### Change handle
 
