@@ -70,21 +70,11 @@ pub use types::*;
 pub use weights::*;
 pub mod types;
 
-#[cfg(test)]
-pub mod testing_utils;
-
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
 #[cfg(test)]
-mod extrinsics_tests;
-#[cfg(test)]
-mod helpers_tests;
-#[cfg(test)]
-mod mock;
-
-#[cfg(test)]
-mod types_tests;
+mod tests;
 
 pub mod weights;
 
