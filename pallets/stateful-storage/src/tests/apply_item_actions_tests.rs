@@ -898,4 +898,3 @@ fn apply_delete_item_on_append_only_fails() {
 		);
 	});
 }
-

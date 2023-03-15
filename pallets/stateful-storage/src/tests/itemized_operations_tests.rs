@@ -138,4 +138,3 @@ fn applying_add_action_with_full_page_should_fail() {
 	// assert
 	assert_eq!(result, Err(PageError::PageSizeOverflow));
 }
-
