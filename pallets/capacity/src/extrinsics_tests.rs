@@ -363,11 +363,39 @@ fn stake_an_account_can_stake_to_multiple_targets() {
 #[test]
 fn stake_when_staking_amount_is_greater_than_free_balance_it_stakes_maximum() {
 	new_test_ext().execute_with(|| {
+        // REMOVE: Update this test to use the MinimumTokenBalance
 		let target: MessageSourceId = 1;
 		register_provider(target, String::from("Foo"));
 		let account = 100;
 		// An amount greater than the free balance
 		let amount = 13;
+
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, amount));
+
+		// Check that StakingAccountLedger is updated.
+		assert_eq!(Capacity::get_staking_account_for(account).unwrap().total, 9);
+		assert_eq!(Capacity::get_staking_account_for(account).unwrap().active, 9);
+		assert_eq!(Capacity::get_staking_account_for(account).unwrap().unlocking.len(), 0);
+
+		// Check that StakingTargetLedger is updated.
+		assert_eq!(Capacity::get_target_for(account, target).unwrap().amount, 9);
+		assert_eq!(Capacity::get_target_for(account, target).unwrap().capacity, 9);
+
+		// Check that CapacityLedger is updated.
+		assert_eq!(Capacity::get_capacity_for(target).unwrap().remaining_capacity, 9);
+		assert_eq!(Capacity::get_capacity_for(target).unwrap().total_capacity_issued, 9);
+		assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 0);
+	});
+}
+
+#[test]
+fn stake_when_staking_amount_is_less_than_min_token_balance_it_errors() {
+	new_test_ext().execute_with(|| {
+		let target: MessageSourceId = 1;
+		register_provider(target, String::from("Foo"));
+		let account = 100;
+		// An amount less than the minimum token balance
+		let amount = 1;
 
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, amount));
 

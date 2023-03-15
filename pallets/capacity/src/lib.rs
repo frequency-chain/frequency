@@ -118,7 +118,12 @@ pub mod pallet {
 		#[pallet::constant]
 		type MinimumStakingAmount: Get<BalanceOf<Self>>;
 
-		/// The maximum number of unlocking chunks a StakingAccountLedger can have. It determines how many concurrent unstaked chunks may exist.
+		/// The minimum required token amount to remain in the account after staking.
+		#[pallet::constant]
+        type MinimumTokenBalance: Get<BalanceOf<Self>>;
+
+		/// The maximum number of unlocking chunks a StakingAccountLedger can have.
+        /// It determines how many concurrent unstaked chunks may exist.
 		#[pallet::constant]
 		type MaxUnlockingChunks: Get<u32>;
 

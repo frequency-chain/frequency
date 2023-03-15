@@ -158,6 +158,7 @@ impl Config for Test {
 	type Currency = pallet_balances::Pallet<Self>;
 	type TargetValidator = Msa;
 	type MinimumStakingAmount = ConstU64<5>;
+    type MinimumTokenBalance = ConstU64<1>;
 	type MaxUnlockingChunks = ConstU32<4>;
 
 	#[cfg(feature = "runtime-benchmarks")]
