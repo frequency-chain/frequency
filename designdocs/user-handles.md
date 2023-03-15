@@ -143,7 +143,6 @@ Output
     * `InvalidMsaHandle` if the handle is invalid
     * `Unauthorized` if the signature is invalid
     * `InvalidSuffix` if the suffix is invalid
-    * `SuffixAlreadyExists` if the suffix already exists
 
 Validation requirements
 * handle must follow handle guidelines.
