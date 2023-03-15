@@ -31,7 +31,7 @@ As a Registered Provider, you can receive Capacity by staking your tokens to the
 
 When staking tokens to the network, the network generates Capacity based on a Capacity-generating function that considers usage and other criteria. When you stake tokens, you will also provide a target Registered Provider to receive the Capacity generated. In exchange for staking Token to the network, you receive rewards.  Rewards are deferred to a supplemental [staking design doc](https://github.com/LibertyDSNP/frequency/issues/40). You may increase your stake to network many times and target different Service Providers each time you stake. Note every time you stake to network your tokens are locked until you decide to unstake.
 
-Unstaking tokens allow you to schedule a number of tokens to be unlocked from your balance. There is no limit on the amount that you can schedule to be unlocked but there is a limit on how many scheduled requests you can make. After scheduling tokens to be unlocked you can receive those tokens after a thaw period has withdraw_unstaked`** extrinsic. If the call is successful the tokens become unlocked and increase the ability to make more scheduled requests.
+Unstaking tokens allow you to schedule a number of tokens to be unlocked from your balance. There is no limit on the amount that you can schedule to be unlocked but there is a limit on how many scheduled requests you can make. After scheduling tokens to be unlocked using **`unstake`**, you can withdraw those tokens after a thaw period has elapsed by using the **`withdraw_unstaked`** extrinsic. If the call is successful the tokens become unlocked and increase the ability to make more scheduled requests.
 
 Note that the thaw period is measured in Epoch Periods. An Epoch Period is composed of a set number of blocks. The number of blocks for an Epoch will be approximately 100 blocks and can be adjusted through governance.
 
@@ -43,27 +43,53 @@ Note that the thaw period is measured in Epoch Periods. An Epoch Period is compo
 
 #[pallet::config]
 pub trait Config: frame_system::Config {
-    /// The lockable staking currency.
+    /// The overarching event type.
+    type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+    /// Weight information for extrinsics in this pallet.
+    type WeightInfo: WeightInfo;
+
+    /// Function that allows a balance to be locked.
     type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
+
+    /// Function that checks if an MSA is a valid target.
+    type TargetValidator: TargetValidator;
 
     /// The minimum required token amount to stake. It facilitates cleaning dust when unstaking.
     #[pallet::constant]
-    type MinimumStakingAmount: Get<Self::Balance>;
+    type MinimumStakingAmount: Get<BalanceOf<Self>>;
 
-    /// The maximum number of `unlocking` chunks a `StakingAccountLedger` can have. It determines how many unique Epochs a Staker may be unstaked in.
+    /// The maximum number of unlocking chunks a StakingAccountLedger can have.
+    /// It determines how many concurrent unstaked chunks may exist.
     #[pallet::constant]
     type MaxUnlockingChunks: Get<u32>;
 
-    /// Validates that a target can be staked to.
-    type TargetValidator: TargetValidator<MessageSourceId>;
-
-    /// The epoch number provider.
-    type EpochProvider: BlockNumberProvider<EpochNumber = u32>
+    #[cfg(feature = "runtime-benchmarks")]
+    /// A set of helper functions for benchmarking.
+    type BenchmarkHelper: RegisterProviderBenchmarkHelper;
 
     /// The number of Epochs before you can unlock tokens after unstaking.
-    type UnstakingThawPeriod: Get<u32>;
-}
+    #[pallet::constant]
+    type UnstakingThawPeriod: Get<u16>;
 
+    /// Maximum number of blocks an epoch can be
+    /// currently used as the actual value of epoch length.
+    #[pallet::constant]
+    type MaxEpochLength: Get<Self::BlockNumber>;
+
+    /// A type that provides an Epoch number
+    /// traits pulled from frame_system::Config::BlockNumber
+    type EpochNumber: Parameter
+        + Member
+        + MaybeSerializeDeserialize
+        + MaybeDisplay
+        + AtLeast32BitUnsigned
+        + Default
+        + Copy
+        + sp_std::hash::Hash
+        + MaxEncodedLen
+        + TypeInfo;
+}trait Config
 ```
 
 ### **Constants**
@@ -92,6 +118,8 @@ Stakes some amount of tokens to the network and generates Capacity.
 /// - Returns Error::InsufficientBalance if the sender does not have free balance amount needed to stake.
 /// - Returns Error::InvalidTarget if attempting to stake to an invalid target.
 /// - Returns Error::InsufficientStakingAmount if attempting to stake an amount below the minimum amount.
+/// - Returns Error::BalanceTooLowtoStake if the sender does not have
+///           free balance amount > MinimumTokenBalance after staking.
 pub fn stake(origin: OriginFor<T>, target: MessageSourceId, amount: BalanceOf<T>) -> DispatchResult {}
 
 ```
@@ -106,10 +134,11 @@ Acceptance Criteria are listed below but can evolve:
 6. The token amount staked is to remain [locked](https://paritytech.github.io/substrate/master/frame_support/traits/trait.LockableCurrency.html) with reason [WithdrawReasons::all()](https://paritytech.github.io/substrate/master/frame_support/traits/tokens/struct.WithdrawReasons.html#method.all).
 7. Capacity generated by staking to a target is calculated by a configurable capacity-generation function.
 8. Target Registered Provider is issued generated Capacity.
-9. Target Registered Provider issued Capacity becomes available at the start of the next Epoch.
+9. Target Registered Provider issued Capacity becomes available immediately.
 10. Stakers can increase their staked amount for a given target.
 11. Emits Stake event.
 12. Note: MinimumStakingAmount should be greater or equal to the existential deposit.
+13. Note: MinimumTokenBalance should be greater or equal to the existential deposit.
 
 Note that we are considering allowing locked tokens to be used to pay transaction fees.
 
