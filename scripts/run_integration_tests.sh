@@ -13,7 +13,7 @@ function cleanup () {
 
 RUNDIR=$(dirname ${0})
 SKIP_JS_BUILD=
-trap cleanup EXIT KILL INT
+trap cleanup KILL INT
 
 while getopts "s" OPTNAME
 do
