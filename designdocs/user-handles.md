@@ -15,7 +15,7 @@ The goal of this proposal is to enable users to create unique handles on the Fre
 * Handles are unique and have a 1:1 mapping with ```MessageSourceAccount```.
 * Governance will define the range of suffixes allowed for a given handle.
 * Governance will define the time period a handle must be retired before it can be reused.
-* The handle create/change/(and retire, if not ```Pays::No```) supports capacity based transactions.
+* The handle create/change/(and retire, if its not feeless) supports capacity based transactions.
 
 ## Requirements
 
