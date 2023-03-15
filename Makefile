@@ -73,9 +73,15 @@ upgrade-local:
 	./scripts/init.sh upgrade-frequency
 
 
+# Run benchmarks for all pallets
+.PHONY: benchmarks-all
+benchmarks-all:
+	./scripts/run_all_benchmarks.sh
+
+# Run benchmark for a given pallet
 .PHONY: benchmarks
 benchmarks:
-	./scripts/run_all_benchmarks.sh
+	./scripts/run_benchmark.sh -p $(pallet)
 
 benchmarks-msa:
 	./scripts/run_benchmark.sh -p msa
