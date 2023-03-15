@@ -180,44 +180,6 @@ fn apply_item_actions_initial_state_with_stale_hash_should_fail() {
 }
 
 #[test]
-fn apply_item_actions_existing_page_with_stale_hash_should_fail() {
-	new_test_ext().execute_with(|| {
-		// arrange
-		let msa_id = 1;
-		let caller_1 = test_public(msa_id);
-		let schema_id = ITEMIZED_SCHEMA;
-		let payload = vec![1; 5];
-		let actions1 = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
-
-		let page = ItemizedPage::<Test>::default();
-		let page_hash = page.get_hash();
-		let mut new_page =
-			ItemizedOperations::<Test>::apply_item_actions(&page, &actions1).unwrap();
-		new_page.nonce = 1;
-		let key = (schema_id,);
-		<StatefulChildTree>::write(
-			&msa_id,
-			PALLET_STORAGE_PREFIX,
-			ITEMIZED_STORAGE_PREFIX,
-			&key,
-			&new_page,
-		);
-
-		// act
-		assert_err!(
-			StatefulStoragePallet::apply_item_actions(
-				RuntimeOrigin::signed(caller_1),
-				msa_id,
-				schema_id,
-				page_hash,
-				BoundedVec::try_from(actions1).unwrap(),
-			),
-			Error::<Test>::StalePageState
-		)
-	});
-}
-
-#[test]
 fn apply_item_actions_initial_state_with_valid_input_should_update_storage() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -667,50 +629,6 @@ fn apply_item_actions_with_signature_having_invalid_schema_location_should_fail(
 }
 
 #[test]
-fn apply_item_actions_with_signature_having_page_with_stale_hash_should_fail() {
-	new_test_ext().execute_with(|| {
-		// arrange
-		let caller_1 = test_public(1);
-		let (msa_id, pair) = get_signature_account();
-		let delegator_key = pair.public();
-		let schema_id = ITEMIZED_SCHEMA;
-		let payload = vec![1; 5];
-		let actions = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
-		let page = ItemizedPage::<Test>::default();
-		let page_hash = page.get_hash();
-		let page = ItemizedOperations::<Test>::apply_item_actions(&page, &actions).unwrap();
-		let key = (schema_id,);
-		<StatefulChildTree>::write(
-			&msa_id,
-			PALLET_STORAGE_PREFIX,
-			ITEMIZED_STORAGE_PREFIX,
-			&key,
-			page,
-		);
-		let payload = ItemizedSignaturePayload {
-			actions: BoundedVec::try_from(actions).unwrap(),
-			target_hash: page_hash,
-			msa_id,
-			expiration: 10,
-			schema_id,
-		};
-		let encode_data_new_key_data = wrap_binary_data(payload.encode());
-		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
-
-		// act
-		assert_err!(
-			StatefulStoragePallet::apply_item_actions_with_signature(
-				RuntimeOrigin::signed(caller_1),
-				delegator_key.into(),
-				owner_signature,
-				payload
-			),
-			Error::<Test>::StalePageState
-		)
-	});
-}
-
-#[test]
 fn apply_item_actions_with_signature_having_valid_input_and_empty_items_should_remove_storage() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -854,3 +772,130 @@ fn apply_item_actions_on_signature_schema_fails() {
 		);
 	});
 }
+
+#[test]
+fn apply_item_actions_with_signature_having_page_with_stale_hash_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (msa_id, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
+		let page = ItemizedPage::<Test>::default();
+		let page_hash = page.get_hash();
+		let page = ItemizedOperations::<Test>::apply_item_actions(&page, &actions).unwrap();
+		let key = (schema_id,);
+		<StatefulChildTree>::write(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
+			&key,
+			page,
+		);
+		let payload = ItemizedSignaturePayload {
+			actions: BoundedVec::try_from(actions).unwrap(),
+			target_hash: page_hash,
+			msa_id,
+			expiration: 10,
+			schema_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions_with_signature(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::StalePageState
+		)
+	});
+}
+
+#[test]
+fn apply_item_actions_existing_page_with_stale_hash_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let msa_id = 1;
+		let caller_1 = test_public(msa_id);
+		let schema_id = ITEMIZED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions1 = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
+
+		let page = ItemizedPage::<Test>::default();
+		let page_hash = page.get_hash();
+		let mut new_page =
+			ItemizedOperations::<Test>::apply_item_actions(&page, &actions1).unwrap();
+		new_page.nonce = 1;
+		let key = (schema_id,);
+		<StatefulChildTree>::write(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
+			&key,
+			&new_page,
+		);
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				page_hash,
+				BoundedVec::try_from(actions1).unwrap(),
+			),
+			Error::<Test>::StalePageState
+		)
+	});
+}
+
+#[test]
+fn apply_delete_item_on_append_only_fails() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let msa_id = 1;
+		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
+		let payload = vec![1; 5];
+		let actions1 = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
+		let actions2 = vec![ItemAction::Delete { index: 0 }];
+		let keys = (schema_id,);
+		assert_ok!(StatefulStoragePallet::apply_item_actions(
+			RuntimeOrigin::signed(caller_1.clone()),
+			msa_id,
+			schema_id,
+			NONEXISTENT_PAGE_HASH,
+			BoundedVec::try_from(actions1).unwrap(),
+		));
+
+		let items1: Option<ItemizedPage<Test>> =
+			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(
+				&msa_id,
+				PALLET_STORAGE_PREFIX,
+				ITEMIZED_STORAGE_PREFIX,
+				&keys,
+			)
+			.unwrap();
+		assert!(items1.is_some());
+		let content_hash = items1.unwrap().get_hash();
+
+		// assert
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				content_hash,
+				BoundedVec::try_from(actions2).unwrap(),
+			),
+			Error::<Test>::UnsupportedOperationForSchema
+		);
+	});
+}
+
