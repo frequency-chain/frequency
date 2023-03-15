@@ -232,14 +232,12 @@ describe("Capacity Transaction Tests", function () {
             assert.notEqual(stakeEvent, undefined, "should return a Stake event");
 
             const withdrawObj = ExtrinsicHelper.withdrawUnstaked(withdrawKeys);
-            assert.rejects(withdrawObj.fundAndSend(), { name: "NoUnstakedTokensAvailable" });
+            await assert.rejects(withdrawObj.fundAndSend(), { name: "NoUnstakedTokensAvailable" });
         });
     });
 
     describe("pay_with_capacity testing", function () {
         it("should pay for a transaction with available capacity", async function () {
-            // Advance to the next block to eliminate a nonce conflict from previous tests
-            await ExtrinsicHelper.createBlock();
             await stakeToProvider(stakeKeys, stakeProviderId, 9000000n);
             // grantDelegation costs about 2.8M and is the capacity eligible
             // transaction used for these tests.
