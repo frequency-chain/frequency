@@ -289,17 +289,22 @@ Frequency-handles is a standalone rust crate that provide basic functionality fo
 ```mermaid
 sequenceDiagram
     participant App
+    participant Frequency-RPC
     participant Frequency-handles
-    App->>Frequency: Request to check handle availability
+    participant Frequency
+    App->>Frequency: Request to register a handle with optional suffix
     Frequency-->>Frequency-handles: Check handle against guidelines
-    Frequency -->> App: Return handle availability
-    App->>Frequency: Request to generate a suffix
-    Frequency-->>Frequency-handles: Generate few random suffix values, guided by seed
-    Frequency-->>App: Return generated suffices
-    App->>Frequency: Request to register a handle
+    Frequency-handles-->>Frequency: Return handle validation result
+    Frequency-->>Frequency-handles: Generate few random suffix values, guided by seed and suffix range
+    Frequency-handles-->>Frequency: Return suffixes
+    Frequency-->>Frequency-handles: Check suffix availability
     Frequency-->>Frequency-handles: Run validation on the handle and suffix
     Frequency-handles-->>Frequency: Return validation result and register the handle
     Frequency-->>App: Emit event for handle registration
+    App->>Frequency: Request to get ```msa_id``` for a handle
+    Frequency -->> App: Return ```msa_id``` for the handle
+    App->>Frequency: Request to get handle for a ```msa_id```
+    Frequency-RPC -->> App: Return handle for the ```msa_id```
 ```
 
 ## Risks
