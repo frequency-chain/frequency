@@ -11,7 +11,7 @@ use frame_system::RawOrigin;
 use sp_core::{bounded::BoundedVec, crypto::KeyTypeId};
 use sp_runtime::RuntimeAppPublic;
 use stateful_child_tree::StatefulChildTree;
-use test_common::*;
+use test_common::constants;
 
 pub const TEST_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"test");
 
@@ -307,6 +307,6 @@ benchmarks! {
 	}
 
 	impl_benchmark_test_suite!(StatefulStoragePallet,
-		crate::mock::new_test_ext_keystore(),
-		crate::mock::Test);
+		crate::tests::mock::new_test_ext_keystore(),
+		crate::tests::mock::Test);
 }
