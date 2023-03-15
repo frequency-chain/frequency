@@ -71,36 +71,27 @@ sequenceDiagram
     participant Wallet
     actor User
     participant App
-    participant RPC as RPC Node
-    participant Chain as Frequency
-    User->>App: Enter desired handle
-    App->>RPC: get_suffix_options(handle)
-    RPC->>Chain: Query current seed
-    Chain-->>RPC: Return seed
-    RPC->>RPC: Compute suffix options
-    RPC->>Chain: check_handle_availability(options)
-    Chain-->>RPC: Return subset of options
-    RPC-->>App: Return subset of options
-    App->>User: Present suffix options
-    User->>App: Choose desired suffix
-    App->>Wallet: Send signup data
-    Wallet->>Wallet: Perform 2FA if first attempt
-    Wallet-->>App: Return signed payload
-    App->>RPC: create_msa_handle(..., handle, suffix)*
-    RPC->>Chain: Submit transaction
-    Chain->>Chain: Check validity and availability
-    Chain-->>App: MsaHandleCreated event with handle
-    App->>User: Proceed with setup
-    User->>App: Request to get MSA ID for handle
-    App->>RPC: get_msa_id_for_handle(handle)
-    RPC->>Chain: Query handle mapping state (State Query MSA<->Handle)
-    Chain-->>RPC: Return handle mapping state (State Query MSA<->Handle)
-    RPC-->>App: Return MSA ID for handle
-    User->>App: Request to get handle for MSA ID
+    participant RPC
+    participant Frequency
+    User->>App: enter desired handle
+    App->>Wallet: send signup data
+    Wallet->>Wallet: perform 2FA if first attempt
+    Wallet-->>App: return signed payload
+    App->>Frequency: create_msa_handle(.., signed_payload)
+    Frequency-->>Frequency: query current seed
+    Frequency-->>Frequency: compute suffix options
+    Frequency-->>Frequency: check_handle_availability(...handle, suffix)
+    Frequency-->>Frequency: submit transaction
+    Frequency-->>App: MsaHandleCreated event with (msa_id, handle+suffix) 
+    App->>User: proceed with setup
+    User->>App: request to get msa_id
+    App->>Frequency: query state for msa_id (handle<->msa_id)
+    Frequency-->>App: return msa_id (State Query handle<->msa_id)
+    User->>App: request to get handle for msa_id
     App->>RPC: get_handle_for_msa_id(msa_id)
-    RPC->>Chain: Query MSA ID mapping state (Reverse Index Handle<->MSA)
-    Chain-->>RPC: Return MSA ID mapping state (Reverse Index Handle<->MSA)
-    RPC-->>App: Return handle for MSA ID
+    RPC->>Frequency: query for handle given msa_id (index handle<->msa_id)
+    Frequency-->>RPC: return handle for msa_id
+    RPC-->>App: return handle for msa_id
 ```
 
 ## Storage
@@ -124,13 +115,13 @@ sequenceDiagram
 
 MsaHandlePayload {
     handle: &[u8],
-    suffix: u32,
+    suffix: Option<u32>,
 }
 ```
 
-### Create user handle with chosen suffix
+### Create user handle with chosen handle and optional suffix
 
- As a network frequency should allow users to choose their own handle and suffix. This extrinsic will allow users to create a handle with a chosen suffix.
+ As a network frequency should allow users to choose their own handle and suffix. This extrinsic will allow users to create a handle with a chosen suffix. If the suffix is not provided, the chain will generate a random suffix within the range of suffixes allowed by the chain.
 
 ``` rust
 Input
@@ -193,11 +184,11 @@ The extrinsic must be signed by the user/provider private key. The signature mus
 **Note:**
 
 * If retiring a ```Pays::No transaction```? then, we could skip both owner_key and proof_of_ownership.
-* If retiring an MSA (```retire_msa``` call), frequency should also retire the handle associated with the MSA.
+* If> retiring an MSA (```retire_msa``` call), frequency should also retire the handle associated with the MSA.
 
 ### Change handle
 
-As a network frequency should allow users to change their handles. This extrinsic will allow users to change their handles. Retired handles will be available for reuse after a time period set by governance.
+As a network frequency should allow users to change their handles. This extrinsic will allow users to change their handles. Retired handles will be available for reuse after a time pe>riod set by governance.
 
 ``` rust
 Input
