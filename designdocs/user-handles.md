@@ -3,7 +3,7 @@
 ## Context and Scope
 
 The Frequency blockchain aims to provide a mechanism to register and retrieve user handles on chain to make it easier to use MSA Ids.
-To achieve this, we propose the creation of a user handle ```registry``` system on frequency chain, coupled with ```MessageSourceAccount```, that allows users to choose a handle and select a suffix from a set of options allowed by the chain that together are unique.
+To achieve this, we propose the creation of a user handle ```registry``` system on Frequency chain, coupled with ```MessageSourceAccount```, that allows users to choose a handle and select a suffix from a set of options allowed by the chain that together are unique.
 The user handle system will also enforce guidelines to ensure that handles are user-friendly and easy to remember, as well as prevent misuse and abuse.
 
 The goal of this proposal is to enable users to create unique handles on the Frequency blockchain using a registry, making it more accessible for users to engage with the network.
@@ -12,7 +12,7 @@ The goal of this proposal is to enable users to create unique handles on the Fre
 
 * ```MessageSourceAccount``` exists for a user to create a handle.
 * It is optional for a user to create a handle.
-* Handles are unique and has a 1:1 mapping with ```MessageSourceAccount```.
+* Handles are unique and have a 1:1 mapping with ```MessageSourceAccount```.
 * Governance will define the range of suffixes allowed for a given handle.
 * Governance will define the time period a handle must be retired before it can be reused.
 
@@ -28,7 +28,7 @@ The high level requirements for user handles are:
 
 ## Proposal
 
-User handle ```registry``` on frequency chain.
+User handle ```registry``` on Frequency chain.
 
 ### Handle Guidelines
 
@@ -121,7 +121,7 @@ MsaHandlePayload {
 
 ### Create user handle with chosen handle and optional suffix
 
- As a network frequency should allow users to choose their own handle and suffix. This extrinsic will allow users to create a handle with a chosen suffix. If the suffix is not provided, the chain will generate a random suffix within the range of suffixes allowed by the chain.
+ As a network, Frequency should allow users to choose their own handle and suffix. This extrinsic will allow users to create a handle with a chosen suffix. If the suffix is not provided, the chain will generate a random suffix within the range of suffixes allowed by the chain.
 
 ``` rust
 Input
@@ -155,7 +155,7 @@ The extrinsic must be signed by the user/provider private key. The signature mus
 
 ### Retire user handle
 
-As a network frequency should allow users to retire their handles. This extrinsic will allow users to retire their handles. Retired handles will be available for reuse after a time period set by governance.
+As a network, Frequency should allow users to retire their handles. This extrinsic will allow users to retire their handles. Retired handles will be available for reuse after a time period set by governance.
 
 ``` rust
 Input
@@ -184,11 +184,11 @@ The extrinsic must be signed by the user/provider private key. The signature mus
 **Note:**
 
 * If retiring a ```Pays::No transaction```? then, we could skip both owner_key and proof_of_ownership.
-* If> retiring an MSA (```retire_msa``` call), frequency should also retire the handle associated with the MSA.
+* If> retiring an MSA (```retire_msa``` call), Frequency should also retire the handle associated with the MSA.
 
 ### Change handle
 
-As a network frequency should allow users to change their handles. This extrinsic will allow users to change their handles. Retired handles will be available for reuse after a time pe>riod set by governance.
+As a network, Frequency should allow users to change their handles. This extrinsic will allow users to change their handles. Retired handles will be available for reuse after a time pe>riod set by governance.
 
 ``` rust
 Input
@@ -224,9 +224,9 @@ The extrinsic must be signed by the user private key. The signature must be veri
 
 ## Governance
 
-### Governance to alter min max range and handle merging(?)
+### Governance to alter min max range
 
-As a network frequency should allow governance to alter the min and max range for suffixes and the handle merging setting. This extrinsic will allow governance to alter the min and max range for suffixes.
+As a network, Frequency should allow governance to alter the min and max range for suffixes. This extrinsic will allow governance to alter the min and max range for suffixes.
 
 ``` rust
 Input
@@ -241,7 +241,7 @@ Output
 
 ### Governance to alter handle retirement period
 
-As a network frequency should allow governance to alter the handle retirement period. This extrinsic will allow governance to alter the handle retirement period.
+As a network, Frequency should allow governance to alter the handle retirement period. This extrinsic will allow governance to alter the handle retirement period.
 
 ``` rust
 Input
@@ -254,16 +254,15 @@ Output
 
 ```
 
-
 ## RPCs
 
+* RPC to get the full handle (handle + suffix) given a ```msa_id```.
 * RPC to get the current seed (more of a chain utility for general use).
-* RPC to get a set of available suffixes given a handle.
-* RPC to get MSA from a given handle and suffix.
+* RPC to get a set of available suffixes given a handle (Not important for v1, however nice to have)
 
-## Crate design overview for frequency-handles
+## Crate design overview for Frequency-handles
 
-We propose creating a new crate, frequency-handles, that will provide the following functionality:
+We propose creating a new crate, Frequency-handles, that will provide the following functionality:
 
 ### Translation
 
@@ -283,23 +282,23 @@ The crate will provide a verification function that takes a user handle and a su
 
 The crate will use a PRNG (pseudo-random number generator) to generate suffix values for user handles. The PRNG will take a seed value derived from the current block's Merkle root and the user's desired handle base, and generate a sequence of 10/20 values that will be used as suffixes. These suffixes will then be checked for availability on the chain before attempting to create a new handle.
 
-## frequency-handles crate sequence diagram
+## Frequency-handles crate sequence diagram
 
-Frequency-handles is a standalone rust crate that provide basic functionality for generating and validating handles. It is intended to be used by the frequency chain to provide handle generation and validation functionality.
+Frequency-handles is a standalone rust crate that provide basic functionality for generating and validating handles. It is intended to be used by the Frequency chain to provide handle generation and validation functionality.
 
 ```mermaid
 sequenceDiagram
     participant App
-    participant frequency-handles
+    participant Frequency-handles
     App->>Frequency: Request to check handle availability
-    Frequency-->>frequency-handles: Check handle against guidelines
+    Frequency-->>Frequency-handles: Check handle against guidelines
     Frequency -->> App: Return handle availability
     App->>Frequency: Request to generate a suffix
-    Frequency-->>frequency-handles: Generate few random suffix values, guided by seed
+    Frequency-->>Frequency-handles: Generate few random suffix values, guided by seed
     Frequency-->>App: Return generated suffices
     App->>Frequency: Request to register a handle
-    Frequency-->>frequency-handles: Run validation on the handle and suffix
-    frequency-handles-->>Frequency: Return validation result and register the handle
+    Frequency-->>Frequency-handles: Run validation on the handle and suffix
+    Frequency-handles-->>Frequency: Return validation result and register the handle
     Frequency-->>App: Emit event for handle registration
 ```
 
