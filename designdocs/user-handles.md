@@ -34,7 +34,7 @@ User handle ```registry``` on Frequency chain.
 ### Handle Guidelines
 
 * User handles must be unique and each msa can only be mapped to one handle.
-* User handles must be between 2 and 32 characters (32b limit) long.
+* User handles must be between 3 and 20 characters (32b limit) long.
 * User handles cannot contain the following substrings (or homoglyphs): @, #, :, ., ```
 * User handles cannot be (@admin, @everyone, @all) *blocklist of handles we reserve
 * Suffixes are u32 limited to a range defined by governance
