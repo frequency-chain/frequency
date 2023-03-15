@@ -1,6 +1,6 @@
 use crate::{
 	stateful_child_tree::StatefulChildTree,
-	test_common::{constants::*, test_constants::*},
+	test_common::{constants::*, test_utility::*},
 	tests::mock::*,
 	types::*,
 	Config, Error, Event as StatefulEvent,
@@ -830,5 +830,27 @@ fn apply_item_actions_with_signature_having_corrupted_state_should_fail() {
 			),
 			Error::<Test>::CorruptedState
 		)
+	});
+}
+
+#[test]
+fn apply_item_actions_on_signature_schema_fails() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let msa_id = 1;
+		let schema_id = ITEMIZED_SIGNATURE_REQUIRED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions1 = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
+		assert_err!(
+			StatefulStoragePallet::apply_item_actions(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				NONEXISTENT_PAGE_HASH,
+				BoundedVec::try_from(actions1).unwrap(),
+			),
+			Error::<Test>::UnsupportedOperationForSchema
+		);
 	});
 }

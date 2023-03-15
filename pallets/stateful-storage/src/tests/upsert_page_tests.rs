@@ -1,6 +1,6 @@
 use crate::{
 	stateful_child_tree::StatefulChildTree,
-	test_common::{constants::*, test_constants::*},
+	test_common::{constants::*, test_utility::*},
 	tests::mock::*,
 	types::*,
 	Config, Error, Event as StatefulEvent,
@@ -657,4 +657,29 @@ fn upsert_page_with_signature_having_valid_inputs_should_work() {
 			.into(),
 		);
 	})
+}
+
+#[test]
+fn insert_page_fails_for_signature_schema() {
+	new_test_ext().execute_with(|| {
+		// setup
+		let caller_1 = test_public(1);
+		let msa_id = 1;
+		let schema_id = PAGINATED_SIGNED_SCHEMA;
+		let page_id = 11;
+		let payload = generate_payload_bytes::<PaginatedPageSize>(None);
+
+		// assert
+		assert_err!(
+			StatefulStoragePallet::upsert_page(
+				RuntimeOrigin::signed(caller_1),
+				msa_id,
+				schema_id,
+				page_id,
+				NONEXISTENT_PAGE_HASH,
+				payload.into(),
+			),
+			Error::<Test>::UnsupportedOperationForSchema
+		);
+	});
 }

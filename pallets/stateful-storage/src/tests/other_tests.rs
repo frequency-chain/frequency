@@ -1,13 +1,13 @@
 use crate::{
 	stateful_child_tree::StatefulChildTree,
-	test_common::{constants::*, test_constants::*},
+	test_common::{constants::*, test_utility::*},
 	tests::mock::*,
 	types::*,
 	Config, Error,
 };
 use codec::Encode;
 use common_primitives::utils::wrap_binary_data;
-use frame_support::{assert_err, assert_ok, BoundedVec};
+use frame_support::{assert_err, assert_ok};
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use sp_core::Pair;
@@ -26,53 +26,6 @@ fn is_empty_true_for_empty_page() {
 	let page: ItemizedPage<Test> = create_itemized_page_from::<Test>(None, &[]);
 
 	assert_eq!(page.is_empty(), true);
-}
-
-#[test]
-fn apply_actions_on_signature_schema_fails() {
-	new_test_ext().execute_with(|| {
-		// arrange
-		let caller_1 = test_public(1);
-		let msa_id = 1;
-		let schema_id = ITEMIZED_SIGNATURE_REQUIRED_SCHEMA;
-		let payload = vec![1; 5];
-		let actions1 = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
-		assert_err!(
-			StatefulStoragePallet::apply_item_actions(
-				RuntimeOrigin::signed(caller_1),
-				msa_id,
-				schema_id,
-				NONEXISTENT_PAGE_HASH,
-				BoundedVec::try_from(actions1).unwrap(),
-			),
-			Error::<Test>::UnsupportedOperationForSchema
-		);
-	});
-}
-
-#[test]
-fn insert_page_fails_for_signature_schema() {
-	new_test_ext().execute_with(|| {
-		// setup
-		let caller_1 = test_public(1);
-		let msa_id = 1;
-		let schema_id = PAGINATED_SIGNED_SCHEMA;
-		let page_id = 11;
-		let payload = generate_payload_bytes::<PaginatedPageSize>(None);
-
-		// assert
-		assert_err!(
-			StatefulStoragePallet::upsert_page(
-				RuntimeOrigin::signed(caller_1),
-				msa_id,
-				schema_id,
-				page_id,
-				NONEXISTENT_PAGE_HASH,
-				payload.into(),
-			),
-			Error::<Test>::UnsupportedOperationForSchema
-		);
-	});
 }
 
 #[test]

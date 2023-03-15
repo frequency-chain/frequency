@@ -30,7 +30,7 @@ pub mod constants {
 }
 
 #[cfg(test)]
-pub mod test_constants {
+pub mod test_utility {
 	use crate::{pallet, tests::mock::Test, Config, ItemHeader, ItemizedPage, Page};
 	use codec::{Decode, Encode, MaxEncodedLen};
 	use common_primitives::{
