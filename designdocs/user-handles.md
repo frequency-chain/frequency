@@ -102,10 +102,14 @@ sequenceDiagram
 * **MSAIdToUserHandle**: This storage will map MSAIds to their corresponding user handles.
 * **UserHandlesToMSAId**: This storage will map user handles to their corresponding MSAIds.
 * **RetiredHandles**: This storage will keep track of all retired handles and the block number at which they were retired. This probably is a spike to run few ideas on how to implement this.
-* **UsedSuffixes**: This storage will keep track of all used suffixes to ensure that no two handles have the same suffix. (May not be necessary)
 * **Seed (current and previous)**: This storage values (```tuple (s0, s1)```) will keep track of the current and previous seed values.
 
-**Note:** The handle being mapped to MSA ID is the handle with the suffix i.e. full handle.
+### **Notes:**
+
+* The handle being mapped to MSA ID is the handle with the suffix i.e. full handle.
+* Side note. While this is correct, we would want to store the key of **UserHandlesToMSAId** as either the reduced handle (aka post homoglyph replacement) or the hash of the reduced handle.
+
+* Idea around **RetiredHandles**: We could store this in the UserHandlesToMSAId data as "retired" with the block number it retired on. (That way it is merely waiting for current_block > (retire_block + HandleRetirementPeriod))
 
 ## Required Extrinsics
 
@@ -127,8 +131,8 @@ MsaHandlePayload {
 Input
 
 * origin - must be a signed origin
-* owner_key - the public key of the user/provider. This is used to verify the signature and resolve the MSA ID.
-* proof - the proof of ownership of the handle, ```MsaHandlePayload``` signed by the user/provider private key
+* owner_key - the public key of the owner. This is used to verify the signature and resolve the MSA ID.
+* proof - the proof of ownership of the handle, ```MsaHandlePayload``` signed by the owner's private key
 
 Output
 * Event - `MsaHandleCreated` with the MSA ID and the handle
@@ -150,7 +154,7 @@ Validation requirements
 
 Signature requirements
 
-The extrinsic must be signed by the user/provider private key. The signature must be verified on-chain to ensure that the user is the owner of the private key.
+The extrinsic must be signed by the owner's private key. The signature must be verified on-chain to ensure that the user is the owner of the private key.
 ```
 
 ### Retire user handle
@@ -161,8 +165,8 @@ As a network, Frequency should allow users to retire their handles. This extrins
 Input
 
 * origin - must be a signed origin
-* owner_key - the public key of the user/provider. This is used to verify the signature and resolve the MSA ID.
-* proof_of_ownership - the proof of ownership of the handle to be retired, ```MsaHandlePayload``` signed by the user/provider private key
+* owner_key - the public key of the owner. This is used to verify the signature and resolve the MSA ID.
+* proof_of_ownership - the proof of ownership of the handle to be retired, ```MsaHandlePayload``` signed by the owner's private key
 
 Output
 
@@ -178,11 +182,12 @@ Validation requirements
 
 Signature requirements
 
-The extrinsic must be signed by the user/provider private key. The signature must be verified on-chain to ensure that the user is the owner of the private key.
+The extrinsic must be signed by the owner's private key. The signature must be verified on-chain to ensure that the user is the owner of the private key.
 ```
 
 **Note:**
 
+* Create, and change (and retire depending on if it is Pays::No) should be Capacity possible transactions.
 * If retiring a ```Pays::No transaction```? then, we could skip both owner_key and proof_of_ownership.
 * If retiring an MSA (```retire_msa``` call), Frequency should also retire the handle associated with the MSA.
 
@@ -193,8 +198,8 @@ As a network, Frequency should allow users to change their handles. This extrins
 ``` rust
 Input
 * origin - must be a signed origin
-* owner_key - the public key of the user/provider. This is used to verify the signature and resolve the MSA ID.
-* proof_of_new_ownership - the proof of ownership of the new handle, ```MsaHandlePayload``` signed by the user/provider private key
+* owner_key - the public key of the owner. This is used to verify the signature and resolve the MSA ID.
+* proof_of_new_ownership - the proof of ownership of the new handle, ```MsaHandlePayload``` signed by the owner's private key
 
 Output
 * Event - `MsaHandleChanged` with the old handle and the new handle
