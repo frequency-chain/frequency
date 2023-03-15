@@ -302,7 +302,7 @@ sequenceDiagram
     Frequency-handles-->>Frequency: Return handle validation result
     Frequency-->>Frequency-handles: Generate few random suffix values, guided by seed and suffix range
     Frequency-handles-->>Frequency: Return suffixes
-    Frequency-->>Frequency-handles: Check suffix availability
+    Frequency-->>Frequency: Check suffix availability
     Frequency-->>Frequency-handles: Run validation on the handle and suffix
     Frequency-handles-->>Frequency: Return validation result and register the handle
     Frequency-->>App: Emit event for handle registration
