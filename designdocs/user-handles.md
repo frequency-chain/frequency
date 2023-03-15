@@ -308,7 +308,7 @@ sequenceDiagram
     Frequency-->>App: Emit event for handle registration
     App->>Frequency: Request to get ```msa_id``` for a handle
     Frequency -->> App: Return ```msa_id``` for the handle
-    App->>Frequency: Request to get handle for a ```msa_id```
+    App->>Frequency-RPC: Request to get handle for a ```msa_id```
     Frequency-RPC -->> App: Return handle for the ```msa_id```
 ```
 
