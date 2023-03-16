@@ -154,7 +154,7 @@ Validation requirements
 
 Signature requirements
 
-The extrinsic must be signed by the owner's private key. The signature must be verified on-chain to ensure that the user is the owner of the private key.
+The extrinsic must be signed by the owner's private key. The signature must be verified on-chain to ensure that the user is the owner of the private key. Without the possibility of a replay attack, the chain can verify that the user is the owner of the handle and no special mechanism to handle signature reuse is required.
 ```
 
 ### Retire user handle
