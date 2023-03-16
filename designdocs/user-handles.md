@@ -1,4 +1,4 @@
-# Frequency User Handles Registry
+# Frequency  Handles
 
 ## Context and Scope
 
