@@ -21,7 +21,7 @@ The goal of this proposal is to enable users to create unique handles on the Fre
 
 The high level requirements for user handles are:
 
-* Support user ability to choose any valid handle and select a suffix from a set of options allowed by the chain.
+* Suffixes are randomly constrained and selected from a range defined by governance.
 * Ensure handles and suffixes are unique and non-conflicting.
 * Make the system resistant to namespace exhaustion, homoglyphs and race conditions.
 * Make the system easy to use and integrate with existing UI and wallet systems.
