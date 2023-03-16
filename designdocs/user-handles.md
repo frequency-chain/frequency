@@ -39,7 +39,7 @@ User handle ```registry``` on Frequency chain.
 * User handles cannot be (@admin, @everyone, @all) *blocklist of handles we reserve
 * Suffixes are u32 limited to a range defined by governance
 * Suffix will be randomly constrained.
-* Homoglyph versions of handles should still resolve to the same handle (e.g. ```user.1234``` and ```u$er.1234``` should resolve to the same handle i.e. ```user.1234```). This is to prevent users from registering handles that are visually similar to existing handles.
+* Homoglyph versions of handles should still resolve to the same ```msa_id``` (e.g. ```user.1234``` and ```u$er.1234``` should resolve to the same ```msa_id```).
 * After a handle is released, it cannot be reused by a time block set by governance.
 
 ### General Steps
