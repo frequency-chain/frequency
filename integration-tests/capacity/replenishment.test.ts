@@ -2,19 +2,17 @@ import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
 import {Null, u16, u64, u128} from "@polkadot/types"
 import assert from "assert";
-import {Extrinsic, ExtrinsicHelper} from "../scaffolding/extrinsicHelpers";
+import {EventMap, ExtrinsicHelper} from "../scaffolding/extrinsicHelpers";
 import {
   devAccounts,
-  log,
   createKeys,
   createMsaAndProvider,
-  getBlockNumber,
-  stakeToProvider, fundKeypair, assertDefined
+  stakeToProvider, fundKeypair
 } from "../scaffolding/helpers";
 import { firstValueFrom} from "rxjs";
 import {AVRO_GRAPH_CHANGE} from "../schemas/fixtures/avroGraphChangeSchemaType";
 import type { } from '@polkadot/types-codec';
-import {AugmentedSubmittable, SubmittableExtrinsic} from "@polkadot/api/types";
+import {AugmentedSubmittable} from "@polkadot/api/types";
 
 
 describe("Capacity Replenishment Testing: ", function () {
@@ -24,10 +22,11 @@ describe("Capacity Replenishment Testing: ", function () {
   let schemaId: u16;
 
   async function createGraphChangeSchema() {
-    let keys = createKeys('SchemaCreatorKeys');
+    const keys = createKeys('SchemaCreatorKeys');
     await fundKeypair(devAccounts[0].keys, keys, STARTING_BALANCE);
-    const f = ExtrinsicHelper.createSchema(keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain");
-    const [createSchemaEvent, eventMap] = await f.fundAndSend();
+    const [createSchemaEvent, eventMap]  = await ExtrinsicHelper
+      .createSchema(keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain")
+      .fundAndSend();
     assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
     if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
       schemaId = createSchemaEvent.data.schemaId;
@@ -42,27 +41,37 @@ describe("Capacity Replenishment Testing: ", function () {
   }
 
   async function createAndStakeProvider(name: string, stakingAmount: bigint): Promise<[KeyringPair, u64]> {
-    let stakeKeys = createKeys(name);
-    let stakeProviderId = await createMsaAndProvider(stakeKeys, "ReplProv", STARTING_BALANCE);
+    const stakeKeys = createKeys(name);
+    const stakeProviderId = await createMsaAndProvider(stakeKeys, "ReplProv", STARTING_BALANCE);
     assert.notEqual(stakeProviderId, 0, "stakeProviderId should not be zero");
     await stakeToProvider(stakeKeys, stakeProviderId, stakingAmount);
     return [stakeKeys, stakeProviderId];
   }
 
+  async function getNextEpochBlock() {
+    const epochInfo = await firstValueFrom(ExtrinsicHelper.api.query.capacity.currentEpochInfo())
+    return epochInfo.epochStart.toNumber() + TEST_EPOCH_LENGTH + 1;
+  }
+
+  function assertEvent(events: EventMap, eventName: string) {
+    assert(events.hasOwnProperty(eventName));
+  }
+
   before(async function() {
     const setEpochLengthOp = ExtrinsicHelper.setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
     const [setEpochLengthEvent] = await setEpochLengthOp.sudoSignAndSend();
-    let epoch_was_set = setEpochLengthEvent && ExtrinsicHelper.api.events.capacity.EpochLengthUpdated.is(setEpochLengthEvent);
-    assert.equal(true, epoch_was_set, "failed to set epoch");
+    const epoch_was_set = setEpochLengthEvent && ExtrinsicHelper.api.events.capacity.EpochLengthUpdated.is(setEpochLengthEvent);
+    assert(epoch_was_set, "failed to set epoch");
     await createGraphChangeSchema();
   });
 
   describe("Capacity is replenished", function(){
-    it("when provider sends first message after new epoch", async function() {
-      let totalCapacity = 3n*1500n*1000n;
-      let [stakeKeys, stakeProviderId] = await createAndStakeProvider("ReplFirst", totalCapacity);
-      let payload = JSON.stringify({ changeType: 1,  fromId: 1, objectId: 2 })
-      let call = ExtrinsicHelper.api.tx.messages.addOnchainMessage(null, schemaId, payload);
+    it("Provider with too little capacity to send a message, can send message after new epoch", async function() {
+      const totalCapacity = 3n*1500n*1000n;
+      const [stakeKeys, stakeProviderId] = await createAndStakeProvider("ReplFirst", totalCapacity);
+      const payload = JSON.stringify({ changeType: 1,  fromId: 1, objectId: 2 })
+      const call = ExtrinsicHelper.api.tx.messages.addOnchainMessage(null, schemaId, payload);
+
       let remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
       assert.equal(totalCapacity, remainingCapacity);
 
@@ -72,9 +81,7 @@ describe("Capacity Replenishment Testing: ", function () {
 
       // one more txn to deplete capacity more, guaranteeing no funny business
       await assert.doesNotReject(ExtrinsicHelper.payWithCapacity(stakeKeys, call).fundAndSend());
-
-      let epochInfo = await firstValueFrom(ExtrinsicHelper.api.query.capacity.currentEpochInfo())
-      let newEpochBlock = epochInfo.epochStart.toNumber() + TEST_EPOCH_LENGTH + 1;
+      const newEpochBlock = await getNextEpochBlock();
       await ExtrinsicHelper.run_to_block(newEpochBlock);
 
       // this should cause capacity to be refilled and then deducted by the cost of one message.
@@ -85,7 +92,6 @@ describe("Capacity Replenishment Testing: ", function () {
       // the epoch.
       assert.equal(remainingCapacity, newRemainingCapacity);
     });
-    // it("and provider previously with no capacity can now pay for message with capacity", async function() {});
   });
 
   describe("Capacity is not replenished", function() {
@@ -95,13 +101,14 @@ describe("Capacity Replenishment Testing: ", function () {
       let currentRemaining = await getRemainingCapacity(stakeProviderId);
       let payload = JSON.stringify({ changeType: 1,  fromId: 1,  objectId: 2 });
       let call: AugmentedSubmittable<any> = ExtrinsicHelper.api.tx.messages.addOnchainMessage(null, schemaId, payload);
-      await assert.doesNotReject(ExtrinsicHelper.payWithCapacity(stakeKeys, call).fundAndSend());
+
+      await ExtrinsicHelper.payWithCapacity(stakeKeys, call).fundAndSend();
 
       let remainingCapacity = await getRemainingCapacity(stakeProviderId);
       assert(currentRemaining.gt(remainingCapacity));
       currentRemaining = remainingCapacity;
 
-      await assert.doesNotReject(ExtrinsicHelper.payWithCapacity(stakeKeys, call).fundAndSend());
+      await ExtrinsicHelper.payWithCapacity(stakeKeys, call).fundAndSend();
 
       remainingCapacity = await getRemainingCapacity(stakeProviderId);
       assert(currentRemaining.gt(remainingCapacity));
@@ -117,32 +124,75 @@ describe("Capacity Replenishment Testing: ", function () {
 
       // run until we can't afford to send another message
       for (let i=0; i< 5; i++) {
-        await ExtrinsicHelper
+        await assert.doesNotReject(ExtrinsicHelper
           .payWithCapacity(stakeKeys, call)
-          .fundAndSend();
+          .fundAndSend());
         let remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
         console.log("remaining capacity: ", remainingCapacity.toString())
         if (remainingCapacity < expectedApproxCost) {
           break;
         }
       }
-      let epochInfo = await firstValueFrom(ExtrinsicHelper.api.query.capacity.currentEpochInfo())
-      let blockBeforeNextEpoch = epochInfo.epochStart.toNumber() + TEST_EPOCH_LENGTH - 1
+
+      let nextEpochBlock = await getNextEpochBlock();
 
       // mine until just before epoch rolls over
-      await ExtrinsicHelper.run_to_block(blockBeforeNextEpoch);
+      await ExtrinsicHelper.run_to_block(nextEpochBlock - 1);
 
       // TODO: it's weird that we can run one more capacity txn before running out.
-      await assert.doesNotReject(ExtrinsicHelper.payWithCapacity(stakeKeys, call).fundAndSend());
+      await ExtrinsicHelper.payWithCapacity(stakeKeys, call).fundAndSend();
 
       await assert.rejects(
         ExtrinsicHelper.payWithCapacity(stakeKeys, call).fundAndSend(), {name: "RpcError", message: "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low"});
     });
   })
 
-  // describe("DoS attack: when user attempts to stake tiny amounts before provider's first message of an epoch,", function() {
-  //   it("provider is still replenished and can send a message", async function(){
-  //
-  //   })
-  // })
+  describe("Regression test: when user attempts to stake tiny amounts before provider's first message of an epoch,", function() {
+    it("provider is still replenished and can send a message", async function(){
+      const providerStakeAmt = 2n*1000n*1000n;
+      const userStakeAmt = 1n*1000n*1000n;
+      const userIncrementAmt = 1000n;
+      const expectedApproxCost = 1891000n;
+
+      const [stakeKeys, stakeProviderId] = await createAndStakeProvider("ReplFirst", 1n*1000n*1000n);
+      // new user/msa stakes to provider
+      const userKeys = await createKeys("userKeys");
+      await fundKeypair(devAccounts[0].keys, userKeys, 2n*1000n*1000n);
+      await ExtrinsicHelper.createMsa(userKeys).fundAndSend();
+      let [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userStakeAmt).fundAndSend();
+      assertEvent(events, 'system.ExtrinsicSuccess');
+
+      const payload = JSON.stringify({ changeType: 1,  fromId: 1, objectId: 2 })
+      const call = ExtrinsicHelper.api.tx.messages.addOnchainMessage(null, schemaId, payload);
+      let remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
+      assert.equal(providerStakeAmt, remainingCapacity);
+
+      await ExtrinsicHelper.payWithCapacity(stakeKeys, call).fundAndSend();
+
+      // ensure provider can't send a message; they are out of capacity
+      await assert.rejects(ExtrinsicHelper.payWithCapacity(stakeKeys, call).fundAndSend());
+
+      // go to next epoch
+      let nextEpochBlock = await getNextEpochBlock();
+      await ExtrinsicHelper.run_to_block(nextEpochBlock);
+
+      remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
+      // ensure we still do not have enough to send another message
+      console.log("remainingCapacity: ", remainingCapacity.toString())
+      assert(remainingCapacity < expectedApproxCost);
+
+      // user stakes tiny additional amount
+      [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userIncrementAmt).fundAndSend();
+      assertEvent(events, 'capacity.Staked');
+
+      // provider can now send a message
+      [_, events] = await ExtrinsicHelper.payWithCapacity(stakeKeys, call).fundAndSend();
+      assertEvent(events, 'capacity.CapacityWithdrawn');
+
+      remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
+      // show that capacity was replenished and then fee deducted.
+      let approxExpected = providerStakeAmt + userStakeAmt + userIncrementAmt - expectedApproxCost;
+      assert(remainingCapacity <= approxExpected, `remainingCapacity = ${remainingCapacity.toString()}`);
+    })
+  })
 });
