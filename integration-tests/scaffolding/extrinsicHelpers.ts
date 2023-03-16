@@ -319,12 +319,6 @@ export class ExtrinsicHelper {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.withdrawUnstaked(), keys, ExtrinsicHelper.api.events.capacity.StakeWithdrawn);
     }
 
-    /** Frequency Tx Payment Extrinsics **/
-    public static payWithCapacity(keys: KeyringPair, call: any): Extrinsic {
-      return new Extrinsic(() =>
-        ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacity(call), keys);
-    }
-
     public static async mine() {
       let res: CreatedBlock = await firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
       ExtrinsicHelper.api.rpc.engine.finalizeBlock(res.blockHash);
