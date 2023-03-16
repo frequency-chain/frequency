@@ -144,7 +144,7 @@ describe("Capacity Replenishment Testing: ", function () {
       await call.payWithCapacity(-1)
 
       // ensure provider can't send a message; they are out of capacity
-      assert.rejects(call.payWithCapacity(-1),
+      await assert.rejects(call.payWithCapacity(-1),
         {  name: "RpcError",
            message: "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low"
         });
