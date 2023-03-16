@@ -21,6 +21,7 @@ use twox_hash::XxHash64;
 type ItemizedPageSize = <Test as Config>::MaxItemizedPageSizeBytes;
 type PaginatedPageSize = <Test as Config>::MaxPaginatedPageSizeBytes;
 type ItemizedBlobSize = <Test as Config>::MaxItemizedBlobSizeBytes;
+type MaxItemizedActionsCount = <Test as Config>::MaxItemizedActionsCount;
 
 const NONEXISTENT_PAGE_HASH: u32 = 0;
 
@@ -2639,4 +2640,23 @@ fn signature_replay_on_deleted_page_check() {
 			payload_null_to_a
 		));
 	})
+}
+
+#[test]
+fn test_sum_add_actions_bytes() {
+	let max_actions = 5;
+	let max_bytes_per_action = 5;
+	let mut actions =
+		BoundedVec::<ItemAction<ItemizedBlobSize>, MaxItemizedActionsCount>::try_from(vec![])
+			.unwrap();
+
+	// Add some actions to the vector [[], [0], [0,0], [0,0,0], [0,0,0,0]]
+	for i in 0..max_actions {
+		let data = BoundedVec::try_from(vec![0u8; i % max_bytes_per_action]).unwrap();
+		let action: ItemAction<ItemizedBlobSize> = ItemAction::Add { data };
+		actions.try_push(action).unwrap();
+	}
+
+	let result = StatefulStoragePallet::sum_add_actions_bytes(&actions);
+	assert_eq!(result, 10u32);
 }
