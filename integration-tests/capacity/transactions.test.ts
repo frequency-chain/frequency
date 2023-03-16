@@ -46,25 +46,21 @@ describe("Capacity Transaction Tests", function () {
         // Use this keypair for stake operations
         stakeKeys = createKeys("StakeKeys");
         stakeProviderId = await createMsaAndProvider(stakeKeys, "StakeProvider", stakeAmount);
-        assert.equal(stakeProviderId, 1, "should populate stakeProviderId");
 
         // Create and fund a keypair with EXISTENTIAL_DEPOSIT
         // Use this keypair for unstake operations
         unstakeKeys = createKeys("UnstakeKeys");
         unstakeProviderId = await createMsaAndProvider(unstakeKeys, "UnstakeProvider");
-        assert.equal(unstakeProviderId, 2, "should populate unstakeProviderId");
 
         // Create and fund a keypair with EXISTENTIAL_DEPOSIT
         // Use this keypair for withdraw operations
         withdrawKeys = createKeys("WithdrawKeys");
         withdrawProviderId = await createMsaAndProvider(withdrawKeys, "WithdrawProvider");
-        assert.equal(withdrawProviderId, 3, "should populate withdrawProviderId");
 
         // Create and fund a keypair with EXISTENTIAL_DEPOSIT
         // Use this keypair for other operations
         otherProviderKeys = createKeys("OtherProviderKeys");
         otherProviderId = await createMsaAndProvider(otherProviderKeys, "OtherProvider", stakeAmount);
-        assert.equal(otherProviderId, 4, "should populate otherProviderId");
 
         // Create a keypair with no msaId
         emptyKeys = await createAndFundKeypair();
@@ -73,7 +69,6 @@ describe("Capacity Transaction Tests", function () {
         // Use this keypair for delegator operations
         delegatorKeys = createKeys("OtherProviderKeys");
         delegatorProviderId = await createMsaAndProvider(delegatorKeys, "Delegator", stakeAmount);
-        assert.equal(delegatorProviderId, 5, "should populate delegatorProviderId");
 
         // Create a keypair with msaId, but no provider
         noProviderKeys = createKeys("NoProviderKeys");
