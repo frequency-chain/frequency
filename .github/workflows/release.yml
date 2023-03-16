@@ -150,8 +150,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        # os: [[self-hosted, Linux, X64, build], [self-hosted, Linux, ARM64,  build]]
-        os: [[self-hosted, Linux, X64, build]]
+        # os: [[self-hosted, Linux, X64, testing], [self-hosted, Linux, ARM64,  build]]
+        os: [[self-hosted, Linux, X64, testing]]
         network: [local, rococo, mainnet]
         include:
           - network: local
@@ -166,7 +166,7 @@ jobs:
             spec: frequency
             build-profile: production
             release-file-name-prefix: frequency
-          - os: [self-hosted, Linux, X64, build]
+          - os: [self-hosted, Linux, X64, testing]
             arch: amd64
           # - os: [self-hosted, Linux, ARM64]
           #   arch: arm64
@@ -272,7 +272,7 @@ jobs:
             release-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64, testing]
     steps:
       - name: Install Required Packages
         run: |
@@ -354,7 +354,7 @@ jobs:
   build-rust-developer-docs:
     needs: version-code
     name: Build Rust Developer Docs
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64, testing]
     container: ubuntu:20.04
     steps:
       - name: Install Required Packages
