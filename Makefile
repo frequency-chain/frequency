@@ -151,7 +151,7 @@ test:
 	cargo test --workspace --locked --features runtime-benchmarks,all-frequency-features
 
 integration-test:
-	./scripts/run_integration_tests.sh
+	./scripts/run_integration_tests.sh $(ARGS)
 
 integration-load-test:
 	./scripts/run_integration_tests.sh load
