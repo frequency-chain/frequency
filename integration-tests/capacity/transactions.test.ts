@@ -1,15 +1,19 @@
 import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { u64, u16 } from "@polkadot/types";
+import { u64, u16, Bytes } from "@polkadot/types";
 import assert from "assert";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { devAccounts, log, createKeys, createAndFundKeypair, createMsaAndProvider,
-         generateDelegationPayload, signPayloadSr25519, stakeToProvider, fundKeypair }
+import {
+    devAccounts, log, createKeys, createAndFundKeypair, createMsaAndProvider,
+    generateDelegationPayload, signPayloadSr25519, stakeToProvider, fundKeypair, getCurrentItemizedHash
+}
     from "../scaffolding/helpers";
 import { firstValueFrom } from "rxjs";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
+import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfaces";
+import { AVRO_CHAT_MESSAGE } from "../stateful-pallet-storage/fixtures/itemizedSchemaType";
 
-describe("Capacity Transaction Tests", function () {
+describe.only("Capacity Transaction Tests", function () {
     const TEST_EPOCH_LENGTH = 25;
     let otherProviderKeys: KeyringPair;
     let otherProviderId: u64;
@@ -26,6 +30,9 @@ describe("Capacity Transaction Tests", function () {
     let schemaId: u16;
 
     let stakeAmount: bigint = 20000000n;
+
+    let schemaId_deletable: SchemaId;
+
 
     before(async function () {
         // Set the Maximum Epoch Length to TEST_EPOCH_LENGTH blocks
@@ -87,8 +94,15 @@ describe("Capacity Transaction Tests", function () {
         assert.notEqual(schemaId, undefined, "setup should populate schemaId");
     });
 
-    describe("pay_with_capacity testing", function () {
-        it("should pay for a transaction with available capacity", async function () {
+    // RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions { actions, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes(actions))),
+    // RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page(payload.len() as u32)),
+    // RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page()),
+    // RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes(&payload.actions))),
+    // RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32 )),
+    // RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
+
+    describe.only("pay_with_capacity testing", function () {
+        it("should successfully pay for a `grantDelegation` transaction with available capacity", async function () {
             await stakeToProvider(stakeKeys, stakeProviderId, 9000000n);
             // grantDelegation costs about 2.8M and is the capacity eligible
             // transaction used for these tests.
@@ -97,12 +111,12 @@ describe("Capacity Transaction Tests", function () {
                 schemaIds: [schemaId],
             });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-            const grantDelegationOp = ExtrinsicHelper.grantDelegation(otherProviderKeys, stakeKeys, 
+            const grantDelegationOp = ExtrinsicHelper.grantDelegation(otherProviderKeys, stakeKeys,
                 signPayloadSr25519(otherProviderKeys, addProviderData), payload);
 
             const [grantDelegationEvent, chainEvents] = await grantDelegationOp.payWithCapacity();
 
-            if (grantDelegationEvent && 
+            if (grantDelegationEvent &&
                 !(ExtrinsicHelper.api.events.msa.DelegationGranted.is(grantDelegationEvent))) {
                 assert.fail("should return a DelegationGranted event");
             }
@@ -112,13 +126,46 @@ describe("Capacity Transaction Tests", function () {
             }
         });
 
+        it("should successfully pay for a `apply_item_actions` transaction with available capacity", async function () {
+    
+            await stakeToProvider(stakeKeys, stakeProviderId, 9000000n);
+
+            // Create a schema to allow delete actions
+            const createSchemaDeletable = ExtrinsicHelper.createSchema(otherProviderKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
+            const [eventDeletable] = await createSchemaDeletable.fundAndSend();
+
+            if (eventDeletable && createSchemaDeletable.api.events.schemas.SchemaCreated.is(eventDeletable)) {
+                schemaId_deletable = eventDeletable.data.schemaId;
+            }
+            assert.notEqual(schemaId_deletable, undefined, "setup should populate schemaId");
+            // Add and update actions
+            let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
+
+            const add_action = {
+                "Add": payload_1
+            }
+
+            const target_hash = await getCurrentItemizedHash(otherProviderId, schemaId_deletable);
+
+            let add_actions = [add_action];
+            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(otherProviderKeys, schemaId_deletable, otherProviderId, add_actions, target_hash);
+            const [pageUpdateEvent1, chainEvents] = await itemized_add_result_1.payWithCapacity();
+            assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
+            assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
+            assert.notEqual(chainEvents["capacity.CapacityWithdrawn"], undefined, "should have returned a CapacityWithdrawn event");
+            assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
+        }).timeout(10000);
+
+
         // When a user attempts to pay for a non-capacity transaction with Capacity,
         // it should error and drop the transaction from the transaction-pool.
         it("should fail to pay for a non-capacity transaction with available capacity", async function () {
             // stake is not capacity eligible
             const increaseStakeObj = ExtrinsicHelper.stake(stakeKeys, otherProviderId, 1000000);
-            await assert.rejects(increaseStakeObj.payWithCapacity(), { name: "RpcError", message: 
-                "1010: Invalid Transaction: Custom error: 0" });
+            await assert.rejects(increaseStakeObj.payWithCapacity(), {
+                name: "RpcError", message:
+                    "1010: Invalid Transaction: Custom error: 0"
+            });
         });
 
         it("should fail to pay for a transaction with no msaId", async function () {
@@ -127,10 +174,12 @@ describe("Capacity Transaction Tests", function () {
                 schemaIds: [schemaId],
             });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-            const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, emptyKeys, 
+            const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, emptyKeys,
                 signPayloadSr25519(delegatorKeys, addProviderData), payload);
-            await assert.rejects(grantDelegationOp.payWithCapacity(), { name: "RpcError", message: 
-                "1010: Invalid Transaction: Custom error: 1" });
+            await assert.rejects(grantDelegationOp.payWithCapacity(), {
+                name: "RpcError", message:
+                    "1010: Invalid Transaction: Custom error: 1"
+            });
         });
 
         it("should fail to pay for a transaction with no provider", async function () {
@@ -141,10 +190,12 @@ describe("Capacity Transaction Tests", function () {
                 schemaIds: [schemaId],
             });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-            const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, noProviderKeys, 
+            const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, noProviderKeys,
                 signPayloadSr25519(delegatorKeys, addProviderData), payload);
-            await assert.rejects(grantDelegationOp.payWithCapacity(), { name: "RpcError", message: 
-                "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low" });
+            await assert.rejects(grantDelegationOp.payWithCapacity(), {
+                name: "RpcError", message:
+                    "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low"
+            });
         });
 
         // A registered provider with Capacity but no tokens associated with the
@@ -161,10 +212,10 @@ describe("Capacity Transaction Tests", function () {
                 schemaIds: [schemaId],
             });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-            const grantDelegationOp = ExtrinsicHelper.grantDelegation(otherProviderKeys, unstakeKeys, 
+            const grantDelegationOp = ExtrinsicHelper.grantDelegation(otherProviderKeys, unstakeKeys,
                 signPayloadSr25519(otherProviderKeys, addProviderData), payload);
             const [grantDelegationEvent, chainEvents] = await grantDelegationOp.payWithCapacity();
-            if (grantDelegationEvent && 
+            if (grantDelegationEvent &&
                 !(ExtrinsicHelper.api.events.msa.DelegationGranted.is(grantDelegationEvent))) {
                 assert.fail("should return a DelegationGranted event");
             }
@@ -183,10 +234,12 @@ describe("Capacity Transaction Tests", function () {
                 schemaIds: [schemaId],
             });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-            const grantDelegationOp = ExtrinsicHelper.grantDelegation(otherProviderKeys, withdrawKeys, 
+            const grantDelegationOp = ExtrinsicHelper.grantDelegation(otherProviderKeys, withdrawKeys,
                 signPayloadSr25519(withdrawKeys, addProviderData), payload);
-            await assert.rejects(grantDelegationOp.payWithCapacity(), { name: "RpcError", message: 
-                "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low" });
+            await assert.rejects(grantDelegationOp.payWithCapacity(), {
+                name: "RpcError", message:
+                    "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low"
+            });
         });
     });
 })
