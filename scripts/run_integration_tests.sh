@@ -5,23 +5,48 @@ function get_frequency_pid () {
 }
 
 function cleanup () {
-    if ${SHOULD_KILL}
-    then
-        ${RUNDIR}/kill_freq.sh
-    fi
+    local signal="$1"
+
+    case "$signal" in
+        TERM|INT) 
+            # Catch TERM and INT signals and exit gracefully
+            exit
+            ;;
+        EXIT)
+            if [ "${SHOULD_KILL}" = true ]
+            then
+                # kill_freq.sh is not used here because we do not know what directory
+                # the script is in when a signal is received. Therefore, we do not
+                # know how to navigate to the kill_freq.sh script with relative paths.
+                PID=$( get_frequency_pid )
+                if [ -n "${PID}" ]
+                then
+                    echo "Killing Frequency... PID: ${PID}"
+                    kill -9 ${PID}
+                    echo "Frequency has been killed. 💀"
+                else
+                    echo "Frequency is already gone. 💀"
+                fi 
+            fi
+            ;;
+    esac
 }
 
 RUNDIR=$(dirname ${0})
 SKIP_JS_BUILD=
-trap cleanup EXIT KILL INT
+trap 'cleanup EXIT' EXIT
+trap 'cleanup TERM' TERM
+trap 'cleanup INT' INT
 
-while getopts "s" OPTNAME
+while getopts "s:" OPTNAME
 do
-    case ${OPTNAME} in
-        "s") SKIP_JS_BUILD=1
+    case "${OPTNAME}" in
+        "s") SKIP_JS_BUILD=$OPTARG
         ;;
     esac
 done
+shift $((OPTIND-1))
+
 TEST="test"
 START="start"
 
@@ -61,7 +86,7 @@ fi
 
 declare -i timeout_secs=30
 declare -i i=0
-while (( !PID && i < timeout_secs ))
+while [[ -z "${PID}" && i -lt timeout_secs ]] 
 do
    PID=$( get_frequency_pid )
    sleep 1
@@ -78,15 +103,20 @@ echo "Frequency running here:"
 echo "PID: ${PID}"
 echo "---------------------------------------------"
 
-echo "Building js/api-augment..."
-cd js/api-augment
-npm i
-npm run fetch:local
-npm run --silent build
-cd dist
-echo "Packaging up into js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz"
-npm pack --silent
-cd ../../..
+if [ "${SKIP_JS_BUILD}" = "1" ]
+then
+    echo "Skipping js/api-augment build"
+else
+    echo "Building js/api-augment..."
+    cd js/api-augment
+    npm i
+    npm run fetch:local
+    npm run --silent build
+    cd dist
+    echo "Packaging up into js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz"
+    npm pack --silent
+    cd ../../..
+fi
 
 
 cd integration-tests
@@ -97,9 +127,3 @@ echo "---------------------------------------------"
 echo "Starting Tests..."
 echo "---------------------------------------------"
 WS_PROVIDER_URL="ws://127.0.0.1:9944" npm run $TEST
-
-if $SHOULD_KILL
-then
-   pwd
-   ../scripts/kill_freq.sh
-fi
