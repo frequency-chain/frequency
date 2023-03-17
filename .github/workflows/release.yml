@@ -240,17 +240,12 @@ jobs:
             ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.asc
           if-no-files-found: error
 
-  # Could not port this job to container because this creates docker-in-docker
-  # situation and fails when srtool-ci container is trying to process files in
-  # the mapped volume which don't exist on the host
   build-runtimes:
     needs: version-code
     name: Build Runtime for ${{matrix.network}}
     outputs:
       runtime_filename_rococo: ${{steps.set-env-vars.outputs.runtime_filename_rococo}}
       runtime_filename_mainnet: ${{steps.set-env-vars.outputs.runtime_filename_mainnet}}
-    # env:
-    #   HOME: /root
     strategy:
       fail-fast: true
       matrix:
@@ -273,6 +268,9 @@ jobs:
             features: frequency
             wasm-core-version: frequency
     runs-on: [self-hosted, Linux, X64, testing]
+    # Could not port this job to container because this creates docker-in-docker
+    # situation and fails when srtool-ci container is trying to process files in
+    # the mapped volume which don't exist on the host
     # container: ubuntu:20.04
     steps:
       - name: Install Required Packages
@@ -282,13 +280,6 @@ jobs:
           curl -fsSL https://get.docker.com -o get-docker.sh
           sh get-docker.sh
           docker run hello-world
-      # - name: Install Required Packages
-      #   run: |
-      #     apt-get update
-      #     apt-get install -y curl protobuf-compiler build-essential libclang-dev file
-      #     curl -fsSL https://get.docker.com -o get-docker.sh
-      #     sh get-docker.sh
-      #     docker run hello-world
       - name: XXX Debug
         run: |
           whoami
@@ -345,16 +336,8 @@ jobs:
       - name: Rename WASM file
         working-directory: ${{env.WASM_DIR}}
         run: |
-          set -x
-          pwd
-          echo "BEFORE:"
-          echo "--------------------"
-          ls -la
           sudo chown runner: . ./*
           cp -p ${{env.BUILT_WASM_FILENAME}} ${{env.RELEASE_WASM_FILENAME}}
-          echo "AFTER:"
-          echo "--------------------"
-          ls -la
       - name: Install subwasm
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
@@ -623,24 +606,24 @@ jobs:
           echo "Attempting to kill all frequency processes..."
           pkill -9 ${{env.FREQUENCY_PROCESS_NAME}}
 
-  # wait-for-all-builds:
-  #   needs:
-  #     [
-  #       build-binaries,
-  #       build-runtimes,
-  #       compare-metadata,
-  #       test-version-matches-release,
-  #       build-rust-developer-docs,
-  #       build-js-api-augment,
-  #     ]
-  #   name: Wait for All Builds to Finish
-  #   runs-on: ubuntu-20.04
-  #   outputs:
-  #     runtime_filename_rococo: ${{needs.build-runtimes.outputs.runtime_filename_rococo}}
-  #     runtime_filename_mainnet: ${{needs.build-runtimes.outputs.runtime_filename_mainnet}}
-  #   steps:
-  #     - name: Proceed Forward
-  #       run: echo "All build jobs have finished, proceeding with the release"
+  wait-for-all-builds:
+    needs:
+      [
+        build-binaries,
+        build-runtimes,
+        compare-metadata,
+        test-version-matches-release,
+        build-rust-developer-docs,
+        build-js-api-augment,
+      ]
+    name: Wait for All Builds to Finish
+    runs-on: ubuntu-20.04
+    outputs:
+      runtime_filename_rococo: ${{needs.build-runtimes.outputs.runtime_filename_rococo}}
+      runtime_filename_mainnet: ${{needs.build-runtimes.outputs.runtime_filename_mainnet}}
+    steps:
+      - name: Proceed Forward
+        run: echo "All build jobs have finished, proceeding with the release"
 
   release-artifacts:
     needs: wait-for-all-builds
