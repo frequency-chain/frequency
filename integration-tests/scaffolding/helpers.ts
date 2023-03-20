@@ -13,8 +13,9 @@ import {
   PaginatedUpsertSignaturePayload
 } from "./extrinsicHelpers";
 import { EXISTENTIAL_DEPOSIT } from "./rootHooks";
-import {MessageSourceId, PageHash} from "@frequency-chain/api-augment/interfaces";
+import { MessageSourceId, PageHash } from "@frequency-chain/api-augment/interfaces";
 import assert from "assert";
+import { firstValueFrom } from "rxjs";
 
 export interface DevAccount {
     uri: string,
@@ -23,8 +24,9 @@ export interface DevAccount {
 
 export let devAccounts: DevAccount[] = [];
 
-
 export type Sr25519Signature = { Sr25519: `0x${string}` }
+
+export const TEST_EPOCH_LENGTH=10;
 
 export function signPayloadSr25519(keys: KeyringPair, data: Codec): Sr25519Signature {
     return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) }
@@ -218,4 +220,9 @@ export async function stakeToProvider(keys: KeyringPair, providerId: u64, amount
     else {
         return Promise.reject('stakeToProvider: stakeEvent should be ExtrinsicHelper.api.events.capacity.Staked');
     }
+}
+
+export async function getNextEpochBlock() {
+  const epochInfo = await firstValueFrom(ExtrinsicHelper.api.query.capacity.currentEpochInfo())
+  return epochInfo.epochStart.toNumber() + TEST_EPOCH_LENGTH + 1;
 }

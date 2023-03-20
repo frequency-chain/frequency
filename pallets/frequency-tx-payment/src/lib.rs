@@ -265,7 +265,7 @@ where
 		}
 	}
 
-	/// Withdraws fee from eigher Capacity ledger or Token account.
+	/// Withdraws fee from either Capacity ledger or Token account.
 	fn withdraw_fee(
 		&self,
 		who: &T::AccountId,

@@ -7,15 +7,17 @@ import {
   devAccounts,
   createKeys,
   createMsaAndProvider,
-  stakeToProvider, fundKeypair
+  stakeToProvider,
+  fundKeypair,
+  getNextEpochBlock,
+  TEST_EPOCH_LENGTH
 } from "../scaffolding/helpers";
 import { firstValueFrom} from "rxjs";
 import {AVRO_GRAPH_CHANGE} from "../schemas/fixtures/avroGraphChangeSchemaType";
 
 
 describe("Capacity Replenishment Testing: ", function () {
-  const TEST_EPOCH_LENGTH=10;
-  const STARTING_BALANCE=6n* 1000n * 1000n;
+  const STARTING_BALANCE=6n* 1000n * 1000n + 100n*1000n*1000n;
 
   let schemaId: u16;
 
@@ -44,11 +46,6 @@ describe("Capacity Replenishment Testing: ", function () {
     assert.notEqual(stakeProviderId, 0, "stakeProviderId should not be zero");
     await stakeToProvider(stakeKeys, stakeProviderId, stakingAmount);
     return [stakeKeys, stakeProviderId];
-  }
-
-  async function getNextEpochBlock() {
-    const epochInfo = await firstValueFrom(ExtrinsicHelper.api.query.capacity.currentEpochInfo())
-    return epochInfo.epochStart.toNumber() + TEST_EPOCH_LENGTH + 1;
   }
 
   function assertEvent(events: EventMap, eventName: string) {
@@ -126,7 +123,7 @@ describe("Capacity Replenishment Testing: ", function () {
       const [stakeKeys, stakeProviderId] = await createAndStakeProvider("TinyStake", 1n*1000n*1000n);
       // new user/msa stakes to provider
       const userKeys = createKeys("userKeys");
-      await fundKeypair(devAccounts[0].keys, userKeys, 2n*1000n*1000n);
+      await fundKeypair(devAccounts[0].keys, userKeys, 2n*1000n*1000n + 100n*1000n*1000n);
       await ExtrinsicHelper.createMsa(userKeys).fundAndSend();
       let [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userStakeAmt).fundAndSend();
       assertEvent(events, 'system.ExtrinsicSuccess');
