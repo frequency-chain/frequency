@@ -4,13 +4,13 @@ import { u64, u16 } from "@polkadot/types";
 import assert from "assert";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { devAccounts, log, createKeys, createAndFundKeypair, createMsaAndProvider,
-         generateDelegationPayload, signPayloadSr25519, stakeToProvider, fundKeypair }
+         generateDelegationPayload, signPayloadSr25519, stakeToProvider, fundKeypair,
+         getNextEpochBlock, TEST_EPOCH_LENGTH }
     from "../scaffolding/helpers";
 import { firstValueFrom } from "rxjs";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 
 describe("Capacity Transaction Tests", function () {
-    const TEST_EPOCH_LENGTH = 25;
     let otherProviderKeys: KeyringPair;
     let otherProviderId: u64;
     let stakeKeys: KeyringPair;
@@ -25,7 +25,7 @@ describe("Capacity Transaction Tests", function () {
     let delegatorProviderId: u64;
     let schemaId: u16;
 
-    let stakeAmount: bigint = 20000000n;
+    let stakeAmount: bigint = 20n* 1000n* 1000n* 1000n;
 
     before(async function () {
         // Set the Maximum Epoch Length to TEST_EPOCH_LENGTH blocks
@@ -55,7 +55,7 @@ describe("Capacity Transaction Tests", function () {
         // Create and fund a keypair with EXISTENTIAL_DEPOSIT
         // Use this keypair for withdraw operations
         withdrawKeys = createKeys("WithdrawKeys");
-        withdrawProviderId = await createMsaAndProvider(withdrawKeys, "WithdrawProvider");
+        withdrawProviderId = await createMsaAndProvider(withdrawKeys, "WithdrawProvider", stakeAmount);
 
         // Create and fund a keypair with EXISTENTIAL_DEPOSIT
         // Use this keypair for other operations
@@ -90,28 +90,28 @@ describe("Capacity Transaction Tests", function () {
     describe("stake-unstake-withdraw_unstaked testing", function () {
 
         it("should successfully stake the minimum amount for Staked event", async function () {
-            await stakeToProvider(stakeKeys, stakeProviderId, 1000000n);
+            await stakeToProvider(stakeKeys, stakeProviderId, (1000n* 1000n));
 
             // Confirm that the tokens were locked in the stakeKeys account using the query API
             const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
-            assert.equal(stakedAcctInfo.data.miscFrozen, 1000000, "should return an account with 1M miscFrozen balance");
-            assert.equal(stakedAcctInfo.data.feeFrozen,  1000000, "should return an account with 1M feeFrozen balance");
+            assert.equal(stakedAcctInfo.data.miscFrozen, (1000n * 1000n), "should return an account with 1M miscFrozen balance");
+            assert.equal(stakedAcctInfo.data.feeFrozen,  (1000n * 1000n), "should return an account with 1M feeFrozen balance");
 
             // Confirm that the capacity was added to the stakeProviderId using the query API
             const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            assert.equal(capacityStaked.remainingCapacity,   1000000, "should return a capacityLedger with 1M remainingCapacity");
-            assert.equal(capacityStaked.totalTokensStaked,   1000000, "should return a capacityLedger with 1M total tokens staked");
-            assert.equal(capacityStaked.totalCapacityIssued, 1000000, "should return a capacityLedger with 1M issued capacity");
+            assert.equal(capacityStaked.remainingCapacity,   1000n * 1000n, "should return a capacityLedger with 1M remainingCapacity");
+            assert.equal(capacityStaked.totalTokensStaked,   1000n * 1000n, "should return a capacityLedger with 1M total tokens staked");
+            assert.equal(capacityStaked.totalCapacityIssued, 1000n * 1000n, "should return a capacityLedger with 1M issued capacity");
         });
 
         it("should successfully unstake the minimum amount", async function () {
-            const stakeObj = ExtrinsicHelper.unstake(stakeKeys, stakeProviderId, 1000000);
+            const stakeObj = ExtrinsicHelper.unstake(stakeKeys, stakeProviderId, 1000n* 1000n);
             const [unStakeEvent] = await stakeObj.fundAndSend();
             assert.notEqual(unStakeEvent, undefined, "should return an UnStaked event");
 
             if (unStakeEvent && ExtrinsicHelper.api.events.capacity.UnStaked.is(unStakeEvent)) {
                 let unstakedCapacity = unStakeEvent.data.capacity;
-                assert.equal(unstakedCapacity, 1000000, "should return an UnStaked event with 1000000 reduced capacity");
+                assert.equal(unstakedCapacity, 1000n* 1000n, "should return an UnStaked event with 1M reduced capacity");
             }
             else {
                 assert.fail("should return an capacity.UnStaked.is(unStakeEvent) event");
@@ -124,10 +124,9 @@ describe("Capacity Transaction Tests", function () {
         });
 
         it("withdraws the unstaked amount", async function () {
-            // Mine enough blocks to pass the unstake period
-            for (let index = 0; index < 2*TEST_EPOCH_LENGTH; index++) {
-                await ExtrinsicHelper.createBlock();
-            }
+            // Mine enough blocks to pass the unstake period = CapacityUnstakingThawPeriod = 2 epochs
+            let newEpochBlock = await getNextEpochBlock();
+            await ExtrinsicHelper.run_to_block(newEpochBlock + TEST_EPOCH_LENGTH);
 
             const withdrawObj = ExtrinsicHelper.withdrawUnstaked(stakeKeys);
             const [withdrawEvent] = await withdrawObj.fundAndSend();
@@ -155,20 +154,17 @@ describe("Capacity Transaction Tests", function () {
             // Now starting from zero again with stakeProviderId, Stake 1M capacity
             await stakeToProvider(stakeKeys, stakeProviderId, 1000000n);
 
-            // Increase stake by 2M capacity
-            await stakeToProvider(stakeKeys, stakeProviderId, 2000000n);
-
             // Confirm that the tokens were staked in the stakeKeys account using the query API
             const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
-            assert.equal(stakedAcctInfo.data.miscFrozen, 3000000, "should return an account with 3M miscFrozen balance");
-            assert.equal(stakedAcctInfo.data.feeFrozen,  3000000, "should return an account with 3M feeFrozen balance");
+            assert.equal(stakedAcctInfo.data.miscFrozen, 1000n* 1000n, "should return an account with 1M miscFrozen balance");
+            assert.equal(stakedAcctInfo.data.feeFrozen,  1000n* 1000n, "should return an account with 1M feeFrozen balance");
 
             // Confirm that the staked capacity was added to the stakeProviderId account using the query API,
             // 1M original stake, + 2M additional stake = 3M total
             const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            assert.equal(capacityStaked.remainingCapacity,   3000000, "should return a capacityLedger with 3M remainingCapacity");
-            assert.equal(capacityStaked.totalTokensStaked,   3000000, "should return a capacityLedger with 3M total staked");
-            assert.equal(capacityStaked.totalCapacityIssued, 3000000, "should return a capacityLedger with 3M capacity issued");
+            assert.equal(capacityStaked.remainingCapacity,   1000n* 1000n, "should return a capacityLedger with 1M remainingCapacity");
+            assert.equal(capacityStaked.totalTokensStaked,   1000n* 1000n, "should return a capacityLedger with 1M total staked");
+            assert.equal(capacityStaked.totalCapacityIssued, 1000n* 1000n, "should return a capacityLedger with 1M capacity issued");
         });
 
         it("staking to otherProviderId does not change stakeProviderId amounts", async function () {
@@ -179,9 +175,9 @@ describe("Capacity Transaction Tests", function () {
             // stakeProviderId should still have 3M from first test case in this describe.
             // otherProvider should now have 1M
             const origStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            assert.equal(origStaked.remainingCapacity,   3000000, "should return a capacityLedger with 3M remainingCapacity");
-            assert.equal(origStaked.totalTokensStaked,   3000000, "should return a capacityLedger with 3M total tokens staked");
-            assert.equal(origStaked.totalCapacityIssued, 3000000, "should return a capacityLedger with 3M capacity issued");
+            assert.equal(origStaked.remainingCapacity,   1000n* 1000n, "should return a capacityLedger with 1M remainingCapacity");
+            assert.equal(origStaked.totalTokensStaked,   1000n* 1000n, "should return a capacityLedger with 1M total tokens staked");
+            assert.equal(origStaked.totalCapacityIssued, 1000n* 1000n, "should return a capacityLedger with 1M capacity issued");
 
             // Confirm that the staked capacity was added to the otherProviderId account using the query API
             const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(otherProviderId))).unwrap();
@@ -206,6 +202,11 @@ describe("Capacity Transaction Tests", function () {
         it("should fail to stake for ZeroAmountNotAllowed", async function () {
             const failStakeObj = ExtrinsicHelper.stake(stakeKeys, stakeProviderId, 0);
             await assert.rejects(failStakeObj.fundAndSend(), { name: "ZeroAmountNotAllowed" });
+        });
+
+        it("should fail to stake for BalanceTooLowtoStake", async function () {
+            const failStakeObj = ExtrinsicHelper.stake(unstakeKeys, unstakeProviderId, 100000n);
+            await assert.rejects(failStakeObj.fundAndSend(), { name: "BalanceTooLowtoStake" });
         });
     });
 
@@ -320,8 +321,8 @@ describe("Capacity Transaction Tests", function () {
                 schemaIds: [schemaId],
             });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-            const grantDelegationOp = ExtrinsicHelper.grantDelegation(otherProviderKeys, withdrawKeys, 
-                signPayloadSr25519(withdrawKeys, addProviderData), payload);
+            const grantDelegationOp = ExtrinsicHelper.grantDelegation(otherProviderKeys, unstakeKeys, 
+                signPayloadSr25519(unstakeKeys, addProviderData), payload);
             await assert.rejects(grantDelegationOp.payWithCapacity(), { name: "RpcError", message: 
                 "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low" });
         });

@@ -116,7 +116,7 @@ fn impl_staking_account_details_default() {
 #[test]
 fn impl_staking_account_details_get_stakable_amount_for() {
 	new_test_ext().execute_with(|| {
-		let account = 100;
+		let account = 200;
 		let staking_account = StakingAccountDetails::<Test>::default();
 
 		// When staking all of free balance.

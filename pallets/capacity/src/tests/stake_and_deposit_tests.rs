@@ -52,7 +52,7 @@ fn stake_errors_invalid_target_when_target_is_not_registered_provider() {
 #[test]
 fn stake_errors_insufficient_staking_amount_when_staking_below_minimum_staking_amount() {
 	new_test_ext().execute_with(|| {
-		let account = 100;
+		let account = 200;
 		let target: MessageSourceId = 1;
 		let amount = 1;
 		register_provider(target, String::from("Foo"));
@@ -79,7 +79,7 @@ fn stake_errors_zero_amount_not_allowed() {
 #[test]
 fn stake_increase_stake_amount_works() {
 	new_test_ext().execute_with(|| {
-		let account = 200;
+		let account = 300;
 		let target: MessageSourceId = 1;
 		let initial_amount = 5;
 		let capacity = 5;
@@ -191,7 +191,7 @@ fn stake_an_account_can_stake_to_multiple_targets() {
 		register_provider(target_1, String::from("Foo"));
 		register_provider(target_2, String::from("Boo"));
 
-		let account = 200;
+		let account = 300;
 		let amount_1 = 10;
 		let amount_2 = 7;
 
@@ -234,9 +234,9 @@ fn stake_when_staking_amount_is_greater_than_free_balance_it_stakes_maximum() {
 	new_test_ext().execute_with(|| {
 		let target: MessageSourceId = 1;
 		register_provider(target, String::from("Foo"));
-		let account = 100;
+		let account = 200;
 		// An amount greater than the free balance
-		let amount = 13;
+		let amount = 23;
 
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, amount));
 
@@ -255,6 +255,23 @@ fn stake_when_staking_amount_is_greater_than_free_balance_it_stakes_maximum() {
 		assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 0);
 	});
 }
+
+#[test]
+fn stake_when_staking_amount_is_less_than_min_token_balance_it_errors() {
+	new_test_ext().execute_with(|| {
+		let target: MessageSourceId = 1;
+		register_provider(target, String::from("Foo"));
+		let account = 100;
+		// An amount that leaves less than the minimum token balance
+		let amount = 6;
+
+		assert_noop!(
+			Capacity::stake(RuntimeOrigin::signed(account), target, amount),
+			Error::<Test>::BalanceTooLowtoStake
+		);
+	});
+}
+
 #[test]
 fn ensure_can_stake_errors_with_zero_amount_not_allowed() {
 	new_test_ext().execute_with(|| {
@@ -272,7 +289,7 @@ fn ensure_can_stake_errors_with_zero_amount_not_allowed() {
 fn increase_stake_and_issue_capacity_errors_with_overflow() {
 	new_test_ext().execute_with(|| {
 		let target: MessageSourceId = 1;
-		let staker = 100;
+		let staker = 200;
 		let amount = 10;
 		register_provider(target, String::from("Foo"));
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target, amount));
@@ -309,7 +326,7 @@ fn ensure_can_stake_errors_invalid_target() {
 #[test]
 fn ensure_can_stake_errors_insufficient_staking_amount() {
 	new_test_ext().execute_with(|| {
-		let account = 100;
+		let account = 200;
 		let target: MessageSourceId = 1;
 		let amount = 4;
 		register_provider(target, String::from("Foo"));
@@ -324,7 +341,7 @@ fn ensure_can_stake_errors_insufficient_staking_amount() {
 #[test]
 fn ensure_can_stake_is_successful() {
 	new_test_ext().execute_with(|| {
-		let account = 100;
+		let account = 200;
 		let target: MessageSourceId = 1;
 		let amount = 10;
 		register_provider(target, String::from("Foo"));
