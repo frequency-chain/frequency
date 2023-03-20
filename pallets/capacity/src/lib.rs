@@ -108,7 +108,12 @@ pub mod pallet {
 		#[pallet::constant]
 		type MinimumStakingAmount: Get<BalanceOf<Self>>;
 
-		/// The maximum number of unlocking chunks a StakingAccountLedger can have. It determines how many concurrent unstaked chunks may exist.
+		/// The minimum required token amount to remain in the account after staking.
+		#[pallet::constant]
+		type MinimumTokenBalance: Get<BalanceOf<Self>>;
+
+		/// The maximum number of unlocking chunks a StakingAccountLedger can have.
+		/// It determines how many concurrent unstaked chunks may exist.
 		#[pallet::constant]
 		type MaxUnlockingChunks: Get<u32>;
 
@@ -253,7 +258,7 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Staker attempted to stake to an invalid staking target.
 		InvalidTarget,
-		/// Staker has insufficient balance to cover the amount wanting to stake.
+		/// Capacity is not available for the given MSA.
 		InsufficientBalance,
 		/// Staker is attempting to stake an amount below the minimum amount.
 		InsufficientStakingAmount,
@@ -280,6 +285,8 @@ pub mod pallet {
 		IncreaseExceedsAvailable,
 		/// Attempting to set the epoch length to a value greater than the max epoch length.
 		MaxEpochLengthExceeded,
+		/// Staker is attempting to stake an amount that leaves a token balance below the minimum amount.
+		BalanceTooLowtoStake,
 	}
 
 	#[pallet::hooks]
@@ -406,11 +413,13 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	/// Checks to see if staker has sufficient free-balance to stake the minimum required staking amount.
+	/// Checks to see if staker has sufficient free-balance to stake the minimum required staking amount,
+	/// and leave the minimum required free balance after staking.
 	///
 	/// # Errors
 	/// * [`Error::ZeroAmountNotAllowed`]
 	/// * [`Error::InvalidTarget`]
+	/// * [`Error::BalanceTooLowtoStake`]
 	///
 	fn ensure_can_stake(
 		staker: &T::AccountId,
@@ -422,6 +431,8 @@ impl<T: Config> Pallet<T> {
 
 		let staking_account = Self::get_staking_account_for(&staker).unwrap_or_default();
 		let stakable_amount = staking_account.get_stakable_amount_for(&staker, amount);
+
+		ensure!(stakable_amount > Zero::zero(), Error::<T>::BalanceTooLowtoStake);
 
 		let new_active_staking_amount = staking_account
 			.active

@@ -358,6 +358,7 @@ impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
 
 // --- Capacity Pallet ---
 pub type CapacityMinimumStakingAmount = ConstU128<{ currency::EXISTENTIAL_DEPOSIT }>;
+pub type CapacityMinimumTokenBalance = ConstU128<{ currency::DOLLARS }>;
 pub type CapacityMaxUnlockingChunks = ConstU32<4>;
 pub type CapacityMaxEpochLength = ConstU32<100>;
 pub type CapacityUnstakingThawPeriod = ConstU16<2>;

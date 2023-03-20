@@ -547,6 +547,7 @@ impl pallet_capacity::Config for Runtime {
 	type WeightInfo = pallet_capacity::weights::SubstrateWeight<Runtime>;
 	type Currency = Balances;
 	type MinimumStakingAmount = CapacityMinimumStakingAmount;
+	type MinimumTokenBalance = CapacityMinimumTokenBalance;
 	type TargetValidator = Msa;
 	type MaxUnlockingChunks = CapacityMaxUnlockingChunks;
 	#[cfg(feature = "runtime-benchmarks")]

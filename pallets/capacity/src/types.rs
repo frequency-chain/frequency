@@ -41,7 +41,7 @@ impl<T: Config> StakingAccountDetails<T> {
 		Some(())
 	}
 
-	/// Calculates a stakable amount from a propose amount.
+	/// Calculates a stakable amount from a proposed amount.
 	pub fn get_stakable_amount_for(
 		&self,
 		staker: &T::AccountId,
@@ -49,7 +49,9 @@ impl<T: Config> StakingAccountDetails<T> {
 	) -> BalanceOf<T> {
 		let account_balance = T::Currency::free_balance(&staker);
 		let available_staking_balance = account_balance.saturating_sub(self.total);
-		available_staking_balance.min(proposed_amount)
+		available_staking_balance
+			.saturating_sub(T::MinimumTokenBalance::get())
+			.min(proposed_amount)
 	}
 
 	#[cfg(any(feature = "runtime-benchmarks", test))]

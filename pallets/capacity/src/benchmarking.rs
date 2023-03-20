@@ -38,7 +38,7 @@ pub fn set_up_epoch<T: Config>(current_block: T::BlockNumber, current_epoch: T::
 
 benchmarks! {
 	stake {
-		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
+		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 105u32);
 		let amount: BalanceOf<T> = T::MinimumStakingAmount::get();
 		let capacity: BalanceOf<T> = Capacity::<T>::calculate_capacity(amount);
 		let target = 1;
