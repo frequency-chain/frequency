@@ -115,10 +115,13 @@ sequenceDiagram
 ``` rust
 
 MsaHandlePayload {
-    base_handle: &[u8],
+    display_handle: &[u8],
 }
 ```
 
+display_handle is the handle that the user wants to use. This is the handle that will be displayed to other users.
+
+``` rust
 ### Create user handle with chosen handle
 
  As a network, Frequency should allow users to choose their own handle, while chain will generate a random numeric suffix within the range of suffixes allowed. The full handle will be the handle with the suffix.
