@@ -34,13 +34,13 @@ mod benchmarking;
 #[cfg(test)]
 mod tests;
 
-pub mod weights;
+// pub mod weights;
 
 use sp_std::prelude::*;
 
-use common_primitives::msa::MessageSourceId;
+use common_primitives::{handles::*, msa::MessageSourceId};
 use frame_support::{dispatch::DispatchResult, pallet_prelude::*, traits::Get};
-use frame_system::{pallet_prelude::*, WeightInfo};
+use frame_system::pallet_prelude::*;
 pub use pallet::*;
 
 #[frame_support::pallet]
@@ -52,23 +52,15 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Weight information for extrinsics in this pallet.
-		type WeightInfo: WeightInfo;
-
-		/// The minimum base handle (not including suffix or delimiter) length in characters
-		#[pallet::constant]
-		type HandleBaseMin: Get<u32> + Default;
-
-		/// The maximum base handle (not including suffix or delimiter) length in characters
-		#[pallet::constant]
-		type HandleBaseMax: Get<u32> + Default;
+		// type WeightInfo: WeightInfo;
 
 		/// The minimum suffix value
 		#[pallet::constant]
-		type HandleSuffixMin: Get<u32> + Default;
+		type HandleSuffixMin: Get<u32>;
 
 		/// The maximum suffix value
 		#[pallet::constant]
-		type HandleSuffixMax: Get<u32> + Default;
+		type HandleSuffixMax: Get<u32>;
 	}
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -102,6 +94,12 @@ pub mod pallet {
 		#[pallet::weight(1000)]
 		pub fn claim_handle(origin: OriginFor<T>, base_name: Vec<u8>) -> DispatchResult {
 			ensure_signed(origin)?;
+			if (base_name.len() as u32) < HANDLE_BASE_MIN ||
+				(base_name.len() as u32) > HANDLE_BASE_MAX
+			{
+				()
+			}
+			Self::deposit_event(Event::HandleCreated { msa_id: 1 });
 			Ok(())
 		}
 	}

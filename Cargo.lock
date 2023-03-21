@@ -2802,6 +2802,8 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
+ "pallet-handles",
+ "pallet-handles-runtime-api",
  "pallet-messages",
  "pallet-messages-runtime-api",
  "pallet-msa",
@@ -3239,25 +3241,6 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
-]
-
-[[package]]
-name = "handles"
-version = "0.0.0"
-dependencies = [
- "common-primitives",
- "env_logger 0.10.0",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "pretty_assertions",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -5569,6 +5552,35 @@ dependencies = [
  "sp-session",
  "sp-staking",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-handles"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "env_logger 0.10.0",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "pretty_assertions",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-handles-runtime-api"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "frame-support",
+ "parity-scale-codec",
+ "sp-api",
 ]
 
 [[package]]

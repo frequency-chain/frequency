@@ -1021,11 +1021,7 @@ impl pallet_handles::Config for Runtime {
 	/// The overarching event type.
 	type RuntimeEvent = RuntimeEvent;
 	/// Weight information for extrinsics in this pallet.
-	type WeightInfo = pallet_handles::weights::SubstrateWeight<Runtime>;
-	/// The minimum base handle (not including suffix or delimiter) length in characters
-	type HandleBaseMin = HandleBaseMin;
-	/// The maximum base handle (not including suffix or delimiter) length in characters
-	type HandleBaseMax = HandleBaseMax;
+	// type WeightInfo = pallet_handles::weights::SubstrateWeight<Runtime>;
 	/// The minimum suffix value
 	type HandleSuffixMin = HandleSuffixMin;
 	/// The maximum suffix value
