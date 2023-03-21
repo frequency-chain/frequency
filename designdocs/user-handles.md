@@ -3,7 +3,7 @@
 ## Context and Scope
 
 The Frequency blockchain aims to provide a mechanism to register and retrieve user handles on chain to make it easier to use MSA Ids.
-To achieve this, we propose the creation of a user handle ```registry``` system on Frequency chain, coupled with ```MessageSourceAccount```, that allows users to choose a handle and select a suffix from a set of options allowed by the chain that together are unique.
+To achieve this, we propose the creation of a user handle ```registry``` system on Frequency chain, coupled with ```MessageSourceAccount```, that allows users to choose a handle for their MSA Ids.Handle system would then append an available numeric suffix to the chosen user handle, separated by a delimiter[.], to make it unique and store the mapping of the handle to the MSA Id in the registry.
 The user handle system will also enforce guidelines to ensure that handles are user-friendly and easy to remember, as well as prevent misuse and abuse.
 
 The goal of this proposal is to enable users to create unique handles on the Frequency blockchain using a registry, making it more accessible for users to engage with the network.
@@ -117,13 +117,12 @@ sequenceDiagram
 
 MsaHandlePayload {
     handle: &[u8],
-    suffix: Option<u32>,
 }
 ```
 
-### Create user handle with chosen handle and optional suffix
+### Create user handle with chosen handle
 
- As a network, Frequency should allow users to choose their own handle and suffix. This extrinsic will allow users to create a handle with a chosen suffix. If the suffix is not provided, the chain will generate a random suffix within the range of suffixes allowed by the chain.
+ As a network, Frequency should allow users to choose their own handle, while chain will generate a random numeric suffix within the range of suffixes allowed. The full handle will be the handle with the suffix.
 
 ``` rust
 Input
@@ -143,10 +142,10 @@ Output
 
 Validation requirements
 * handle must follow handle guidelines.
-* suffix must be in the range of the handle.
 * handle must be unique.
 * handle must be available.
 * suffix must be available.
+* suffix must be in the range of the handle.
 * MSA ID must exist. Signing keys must resolve to MSA ID.
 
 Signature requirements
