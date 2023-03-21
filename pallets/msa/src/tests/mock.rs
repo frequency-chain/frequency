@@ -87,6 +87,7 @@ impl pallet_schemas::Config for Test {
 	type MinSchemaModelSizeBytes = ConstU32<10>;
 	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<10>;
 	type MaxSchemaRegistrations = ConstU16<10>;
+	type MaxSchemaSettingsPerSchema = ConstU32<1>;
 	// The proposal type
 	type Proposal = RuntimeCall;
 	// The Council proposal provider interface
@@ -100,13 +101,11 @@ impl pallet_schemas::Config for Test {
 }
 
 parameter_types! {
-	pub const MaxPublicKeysPerMsa: u8 = 255;
+	pub static MaxPublicKeysPerMsa: u8 = 255;
 	pub const MaxProviderNameSize: u32 = 16;
 	pub const MaxSchemas: u32 = 5;
-}
-
-parameter_types! {
 	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
+	pub static MaxSignaturesStored: Option<u32> = Some(8000);
 }
 
 impl Clone for MaxSchemaGrantsPerDelegation {
@@ -167,10 +166,7 @@ impl pallet_msa::Config for Test {
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
 	type MortalityWindowSize = ConstU32<100>;
-	type MaxSignaturesPerBucket = ConstU32<4000>;
-	type NumberOfBuckets = ConstU32<2>;
-	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
-	type MaxSignaturesStored = ConstU32<8000>;
+	type MaxSignaturesStored = MaxSignaturesStored;
 	// The proposal type
 	type Proposal = RuntimeCall;
 	// The Council proposal provider interface
@@ -183,7 +179,17 @@ impl pallet_msa::Config for Test {
 	>;
 }
 
+pub fn set_max_signature_stored(max: u32) {
+	MAX_SIGNATURES_STORED.with(|v| *v.borrow_mut() = Some(max));
+}
+
+pub fn set_max_public_keys_per_msa(max: u8) {
+	MAX_PUBLIC_KEYS_PER_MSA.with(|v| *v.borrow_mut() = max);
+}
+
 pub fn new_test_ext() -> sp_io::TestExternalities {
+	set_max_signature_stored(8000);
+	set_max_public_keys_per_msa(255);
 	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
@@ -230,7 +236,7 @@ pub fn create_and_sign_add_provider_payload(
 	delegator_pair: sr25519::Pair,
 	provider_msa: MessageSourceId,
 ) -> (MultiSignature, AddProvider) {
-	create_and_sign_add_provider_payload_with_schemas(delegator_pair, provider_msa, None)
+	create_and_sign_add_provider_payload_with_schemas(delegator_pair, provider_msa, None, 10)
 }
 
 /// Creates and signs an `AddProvider` struct using the provided delegator keypair, provider MSA and schema ids
@@ -240,8 +246,8 @@ pub fn create_and_sign_add_provider_payload_with_schemas(
 	delegator_pair: sr25519::Pair,
 	provider_msa: MessageSourceId,
 	schema_ids: Option<Vec<SchemaId>>,
+	expiration: BlockNumber,
 ) -> (MultiSignature, AddProvider) {
-	let expiration: BlockNumber = 10;
 	let add_provider_payload = AddProvider::new(provider_msa, schema_ids, expiration);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 	let signature: MultiSignature = delegator_pair.sign(&encode_add_provider_data).into();

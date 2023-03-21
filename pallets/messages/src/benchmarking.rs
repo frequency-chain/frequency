@@ -111,5 +111,5 @@ benchmarks! {
 		);
 	}
 
-	impl_benchmark_test_suite!(MessagesPallet, crate::mock::new_test_ext(), crate::mock::Test);
+	impl_benchmark_test_suite!(MessagesPallet, crate::tests::mock::new_test_ext(), crate::tests::mock::Test);
 }

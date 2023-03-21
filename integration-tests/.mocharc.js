@@ -3,7 +3,7 @@ module.exports = {
     extension: ["ts"],
     parallel: false,
     require:  ['ts-node/register','scaffolding/rootHooks.ts', 'scaffolding/extrinsicHelpers.ts'],
-    spec: ["./{,!(node_modules)/**}/*.test.ts"],
+    spec: ["./{,!(node_modules|load-tests)/**}/*.test.ts"],
     timeout: 2000,
 }
 

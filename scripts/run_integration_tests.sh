@@ -1,28 +1,78 @@
 #!/usr/bin/env bash
 
+function get_frequency_pid () {
+    lsof -i tcp:9933 | grep frequency | xargs | awk '{print $2}'
+}
+
+function cleanup () {
+    if ${SHOULD_KILL}
+    then
+        ${RUNDIR}/kill_freq.sh
+    fi
+}
+
+RUNDIR=$(dirname ${0})
+SKIP_JS_BUILD=
+trap cleanup EXIT KILL INT
+
+while getopts "s" OPTNAME
+do
+    case ${OPTNAME} in
+        "s") SKIP_JS_BUILD=1
+        ;;
+    esac
+done
+TEST="test"
+START="start"
+
+if [[ "$1" == "load" ]]; then
+    TEST="test:load"
+    START="start-manual"
+fi
+
 echo "The integration test output will be logged on this console"
 echo "and the Frequency node output will be logged to the file frequency.log."
 echo "You can 'tail -f frequency.log' in another terminal to see both side-by-side."
 echo ""
 echo -e "Checking to see if Frequency is running..."
 
-PID=$(lsof -i tcp:9933 | grep frequency | grep -v grep | xargs | awk '{print $2}')
+PID=$( get_frequency_pid )
 
 SHOULD_KILL=false
 
-if [ -z "$PID" ]
+if [ -z "${PID}" ]
 then
-    make build-local
-    echo -e "Starting a Frequency Node..."
-    make start >& frequency.log &
+    echo "Building local Frequency executable..."
+    if ! make build-local
+    then
+        echo "Error building Frequency executable; aborting."
+        exit 1
+    fi
+
+    echo "Starting a Frequency Node with ${START}..."
+    case ${START} in
+        "start") ${RUNDIR}/init.sh start-frequency-instant >& frequency.log &
+        ;;
+        "start-manual") ${RUNDIR}/init.sh start-frequency-manual >& frequency.log &
+        ;;
+    esac
     SHOULD_KILL=true
 fi
 
-while [ -z "$PID" ]
+declare -i timeout_secs=30
+declare -i i=0
+while (( !PID && i < timeout_secs ))
 do
-    PID=$(ps aux | grep target/release/frequency | grep -v grep | xargs | awk '{print $2}')
+   PID=$( get_frequency_pid )
+   sleep 1
+   (( i += 1 ))
 done
 
+if [ -z "${PID}" ]
+then
+    echo "Unable to find or start a Frequency node; aborting."
+    exit 1
+fi
 echo "---------------------------------------------"
 echo "Frequency running here:"
 echo "PID: ${PID}"
@@ -46,7 +96,7 @@ npm install
 echo "---------------------------------------------"
 echo "Starting Tests..."
 echo "---------------------------------------------"
-WS_PROVIDER_URL="ws://127.0.0.1:9944" npm test
+WS_PROVIDER_URL="ws://127.0.0.1:9944" npm run $TEST
 
 if $SHOULD_KILL
 then

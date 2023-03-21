@@ -80,7 +80,7 @@ parameter_types! {
 	// should have this set large enough to accomodate the largest possible CID.
 	// Take care when adding new tests for on-chain (not IPFS) messages that the payload
 	// is not too big.
-	pub static MaxMessagePayloadSizeBytes: u32 = 73;
+	pub const MaxMessagePayloadSizeBytes: u32 = 73;
 	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
 }
 
@@ -218,6 +218,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::Parquet,
 				payload_location: PayloadLocation::IPFS,
+				settings: Vec::new(),
 			})
 		}
 
@@ -226,6 +227,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 			model: r#"schema"#.to_string().as_bytes().to_vec(),
 			model_type: ModelType::AvroBinary,
 			payload_location: PayloadLocation::OnChain,
+			settings: Vec::new(),
 		})
 	}
 }

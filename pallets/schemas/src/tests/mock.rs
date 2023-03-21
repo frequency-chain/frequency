@@ -103,6 +103,7 @@ impl pallet_schemas::Config for Test {
 	// is actually allowed.
 	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<65_500>;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
+	type MaxSchemaSettingsPerSchema = ConstU32<1>;
 	// The proposal type
 	type Proposal = RuntimeCall;
 	// The Council proposal provider interface

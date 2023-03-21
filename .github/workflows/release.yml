@@ -11,11 +11,10 @@ on:
 env:
   NEW_RELEASE_VERSION: ${{github.ref_name}}
   NEW_RELEASE_TAG: ${{github.ref_name}}
+  RUST_TOOLCHAIN: "nightly-2022-10-09" # TODO: Set this dynamically
 jobs:
   build-binaries:
     name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
-    env:
-      HOME: /root
     strategy:
       fail-fast: true
       matrix:
@@ -40,11 +39,14 @@ jobs:
           # - os: [self-hosted, Linux, ARM64]
           #   arch: arm64
     runs-on: ${{matrix.os}}
+    container: ubuntu:20.04
     steps:
+      - name: Install Required Packages
+        run: |
+          apt-get update
+          apt-get install -y curl protobuf-compiler build-essential libclang-dev file
       - name: Check Out Repo
         uses: actions/checkout@v3
-      - name: Reset Runner
-        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Set Env Vars
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
@@ -105,6 +107,9 @@ jobs:
             ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.asc
           if-no-files-found: error
 
+  # Could not port this job to container because this creates docker-in-docker
+  # situation and fails when srtool-ci container is trying to process files in
+  # the mapped volume which don't exist on the host
   build-runtimes:
     name: Build Runtime for ${{matrix.network}}
     outputs:
@@ -135,6 +140,13 @@ jobs:
             wasm-core-version: frequency
     runs-on: [self-hosted, Linux, X64, build]
     steps:
+      - name: Install Required Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl protobuf-compiler build-essential libclang-dev file
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sh get-docker.sh
+          docker run hello-world
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Reset Runner
@@ -148,9 +160,9 @@ jobs:
           echo "RUNTIME_SPEC_VERSION=$(sed -nr 's/spec_version:\s*([0-9]+),/\1/p' \
             ${{matrix.runtime-dir}}/src/lib.rs | tr -d '[:space:]')" >> $GITHUB_ENV
       - name: Validate Extracted Version
+        shell: bash
         run: |
-          echo "Runtime Spec Version:|${{env.RUNTIME_SPEC_VERSION}}|"
-          echo "Runtime Spec Version:||$RUNTIME_SPEC_VERSION||"
+          echo "Runtime Spec Version: ${{env.RUNTIME_SPEC_VERSION}}"
           [[ $RUNTIME_SPEC_VERSION == ?(-)+([0-9]) ]] || \
             (echo "ERROR: \"${{env.RUNTIME_SPEC_VERSION}}\" is not a valid integer" && exit 1)
       - name: Set Env Vars
@@ -176,7 +188,6 @@ jobs:
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          set -ex
           RUST_LOG=debug srtool build \
             --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
@@ -207,19 +218,16 @@ jobs:
   build-rust-developer-docs:
     name: Build Rust Developer Docs
     runs-on: [self-hosted, Linux, X64, build]
-    env:
-      HOME: /root
+    container: ubuntu:20.04
     steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-      - name: Reset Runner
-        uses: ./.github/workflows/common/reset-self-hosted-runner
-      - name: Setup Pages
-        uses: actions/configure-pages@v3
       - name: Install Required Packages
         run: |
-          sudo apt-get update
-          sudo apt install -y protobuf-compiler
+          apt-get update
+          apt-get install -y curl protobuf-compiler build-essential libclang-dev
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
@@ -326,6 +334,7 @@ jobs:
           chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
       - name: Testing Version Match
         if: env.NEW_RELEASE_TAG != 'vX.X.X'
+        shell: bash
         run: |
           EXPECTED_VERSION="${{env.NEW_RELEASE_VERSION}}+polkadot$(make version-polkadot)"
           ACTUAL_VERSION="v$(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version | cut -d " " -f 2)"
@@ -430,7 +439,7 @@ jobs:
           echo "----------------------------------------------------------------------" >> ${{env.OUTPUT_FILENAME}}
       - name: Compare Metadata
         run: |
-          CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata ws://localhost:9946 ws://localhost:9944"
+          CMD="docker run --pull always --network host frequencychain/polkadot-js-tools:v0.52.29 metadata ws://localhost:9946 ws://localhost:9944"
           echo -e "Running:\n$CMD"
           $CMD >> ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
           sed -z -i 's/\n\n/\n/g' ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
@@ -483,6 +492,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Full Release?
+        shell: bash
         run: |
           is_full_release=$([[ "$NEW_RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] && \
             echo 'true' || echo 'false')
@@ -593,15 +603,15 @@ jobs:
             /tmp/metadata-compare-*
       - name: Update Git latest tag
         if: env.IS_FULL_RELEASE == 'true'
-        uses: rickstaa/action-create-tag@87a112438ed8b80a2ae25dcf8f11d4949dc4f740
+        uses: rickstaa/action-create-tag@84c90e6ba79b47b5147dcb11ff25d6a0e06238ba
         with:
           tag: "latest"
           force_push_tag: true
           message: "Latest full release"
-      - name: Trigger Auto-signer Workflow
+      - name: Dispatch Auto-signer Workflow
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.GHA_WORKFLOW_TRIGGER }}
+          github-token: ${{secrets.GHA_WORKFLOW_TRIGGER}}
           script: |
             await github.rest.actions.createWorkflowDispatch({
               owner: 'LibertyDSNP',

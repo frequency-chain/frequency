@@ -1,5 +1,6 @@
-use super::{mock::*, Event as MessageEvent};
-use crate::{BlockMessageIndex, Config, Error, Message, Messages};
+use crate::{
+	tests::mock::*, BlockMessageIndex, Config, Error, Event as MessageEvent, Message, Messages,
+};
 use codec::Encode;
 use common_primitives::{messages::MessageResponse, schema::*};
 use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize, BoundedVec};
@@ -40,7 +41,9 @@ fn populate_messages(
 	};
 
 	let payload = match payload_location {
-		PayloadLocation::OnChain => generate_payload(1, None),
+		// Just stick Itemized & Paginated here for coverage; we don't use them for Messages
+		PayloadLocation::OnChain | PayloadLocation::Itemized | PayloadLocation::Paginated =>
+			generate_payload(1, None),
 		PayloadLocation::IPFS => (
 			multibase::decode(sp_std::str::from_utf8(cid).unwrap()).unwrap().1,
 			IPFS_PAYLOAD_LENGTH,
@@ -212,12 +215,6 @@ fn add_message_with_invalid_msa_account_errors() {
 		let caller_1 = 1000;
 		let schema_id_1: SchemaId = 1;
 		let message_payload_1 = generate_payload(2, None);
-		println!(
-			"payload size is: {}
-		{}",
-			message_payload_1.len(),
-			sp_std::str::from_utf8(&message_payload_1).unwrap()
-		);
 
 		// act
 		assert_noop!(
@@ -553,7 +550,7 @@ fn add_ipfs_message_bad_cid_errors() {
 }
 
 #[test]
-fn on_initialize_should_clean_up_temporary_storages() {
+fn on_initialize_should_clean_up_temporary_storage() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let caller_1 = 5;

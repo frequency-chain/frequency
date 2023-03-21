@@ -7,4 +7,4 @@ polkadot
 rustfmt
 srtool
 thiserror
-
+clippy

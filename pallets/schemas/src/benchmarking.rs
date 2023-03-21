@@ -51,7 +51,7 @@ benchmarks! {
 		let payload_location = PayloadLocation::OnChain;
 		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
 		let schema_input = generate_schema::<T>(m as usize);
-	}: _(RawOrigin::Root, sender.clone(), schema_input, model_type, payload_location)
+	}: _(RawOrigin::Root, sender.clone(), schema_input, model_type, payload_location, BoundedVec::default())
 	verify {
 		ensure!(SchemasPallet::<T>::get_current_schema_identifier_maximum() > 0, "Created schema count should be > 0");
 		ensure!(SchemasPallet::<T>::get_schema(1).is_some(), "Created schema should exist");
@@ -64,7 +64,7 @@ benchmarks! {
 		let payload_location = PayloadLocation::OnChain;
 		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
 		let schema_input = generate_schema::<T>(m as usize);
-	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location)
+	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location, BoundedVec::default())
 	verify {
 		assert_eq!(T::ProposalProvider::proposal_count(), 1);
 	}
@@ -81,7 +81,7 @@ benchmarks! {
 
 	impl_benchmark_test_suite!(
 		SchemasPallet,
-		crate::mock::new_test_ext(),
-		crate::mock::Test
+		crate::tests::mock::new_test_ext(),
+		crate::tests::mock::Test
 	);
 }

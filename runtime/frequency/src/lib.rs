@@ -39,7 +39,8 @@ use common_primitives::{
 	msa::*,
 	node::*,
 	rpc::RpcEvent,
-	schema::{PayloadLocation, SchemaResponse},
+	schema::{PayloadLocation, SchemaId, SchemaResponse},
+	stateful_storage::*,
 };
 
 pub use common_runtime::{
@@ -53,6 +54,7 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstU128, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
+	Twox128,
 };
 
 use frame_system::{
@@ -76,7 +78,7 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 pub use common_runtime::{
 	constants::MaxDataSize,
 	weights,
-	weights::{BlockExecutionWeight, ExtrinsicBaseWeight},
+	weights::{block_weights::BlockExecutionWeight, extrinsic_weights::ExtrinsicBaseWeight},
 };
 use frame_support::traits::{Contains, OnRuntimeUpgrade};
 
@@ -111,8 +113,7 @@ impl ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
 	}
 }
 
-/// Basefilter to only allow specified transactions call to be executed
-/// For non mainnet [--features frequency] all transactions are allowed
+/// Basefilter to only allow calls to specified transactions to be executed
 pub struct BaseCallFilter;
 
 impl Contains<RuntimeCall> for BaseCallFilter {
@@ -128,24 +129,15 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		#[cfg(feature = "frequency")]
 		{
 			match call {
+				// Vesting calls are blocked. Issue #1168
+				RuntimeCall::Vesting(..) => false,
 				// Utility Calls are blocked. Issue #599
 				RuntimeCall::Utility(..) => false,
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
-				// Allowed Mainnet
-				RuntimeCall::System(..) |
-				RuntimeCall::Timestamp(..) |
-				RuntimeCall::ParachainSystem(..) |
-				RuntimeCall::TechnicalCommittee(..) |
-				RuntimeCall::Council(..) |
-				RuntimeCall::Democracy(..) |
-				RuntimeCall::Session(..) |
-				RuntimeCall::Preimage(..) |
-				RuntimeCall::Scheduler(..) |
-				RuntimeCall::Treasury(..) => true,
-				// General Mainnet Calls will be enabled with Issue #877
-				_ => false,
+				// Everything else is allowed on Mainnet
+				_ => true,
 			}
 		}
 	}
@@ -179,6 +171,13 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
+/// Migrations for Frequency
+pub type Migrations = (
+	remove_sudo::RemoveSudo,
+	pallet_msa::migration::Migration<Runtime>,
+	pallet_schemas::migration::SchemaMigration<Runtime>,
+);
+
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
 	Runtime,
@@ -186,7 +185,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	remove_sudo::RemoveSudo,
+	Migrations,
 >;
 
 // ==============================================
@@ -422,7 +421,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 18,
+	spec_version: 22,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -533,10 +532,6 @@ impl pallet_msa::Config for Runtime {
 	type SchemaValidator = Schemas;
 	// The number of blocks per virtual bucket
 	type MortalityWindowSize = MSAMortalityWindowSize;
-	// The maximum number of signatures per virtual bucket
-	type MaxSignaturesPerBucket = MSAMaxSignaturesPerBucket;
-	// The total number of virtual buckets
-	type NumberOfBuckets = MSANumberOfBuckets;
 	// The maximum number of signatures that can be stored in the payload signature registry
 	type MaxSignaturesStored = MSAMaxSignaturesStored;
 	// The proposal type
@@ -549,8 +544,6 @@ impl pallet_msa::Config for Runtime {
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
 	>;
 }
-
-pub use common_primitives::schema::SchemaId;
 
 impl pallet_schemas::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -570,6 +563,8 @@ impl pallet_schemas::Config for Runtime {
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
 	>;
+	// Maximum number of schema grants that are allowed per schema
+	type MaxSchemaSettingsPerSchema = MaxSchemaSettingsPerSchema;
 }
 
 pub struct RootAsVestingPallet;
@@ -989,6 +984,39 @@ impl pallet_messages::Config for Runtime {
 	type SchemaBenchmarkHelper = Schemas;
 }
 
+impl pallet_stateful_storage::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_stateful_storage::weights::SubstrateWeight<Runtime>;
+	/// The maximum size of a page (in bytes) for an Itemized storage model
+	type MaxItemizedPageSizeBytes = MaxItemizedPageSizeBytes;
+	/// The maximum size of a page (in bytes) for a Paginated storage model
+	type MaxPaginatedPageSizeBytes = MaxPaginatedPageSizeBytes;
+	/// The maximum size of a single item in an itemized storage model (in bytes)
+	type MaxItemizedBlobSizeBytes = MaxItemizedBlobSizeBytes;
+	/// The maximum number of pages in a Paginated storage model
+	type MaxPaginatedPageId = MaxPaginatedPageId;
+	/// The maximum number of actions in itemized actions
+	type MaxItemizedActionsCount = MaxItemizedActionsCount;
+	/// The type that supplies MSA info
+	type MsaInfoProvider = Msa;
+	/// The type that validates schema grants
+	type SchemaGrantValidator = Msa;
+	/// The type that provides schema info
+	type SchemaProvider = Schemas;
+	/// Hasher for Child Tree keys
+	type KeyHasher = Twox128;
+	/// The conversion to a 32 byte AccountId
+	type ConvertIntoAccountId32 = ConvertInto;
+	/// The number of blocks per virtual bucket
+	type MortalityWindowSize = StatefulMortalityWindowSize;
+
+	/// A set of helper functions for benchmarking.
+	#[cfg(feature = "runtime-benchmarks")]
+	type MsaBenchmarkHelper = Msa;
+	#[cfg(feature = "runtime-benchmarks")]
+	type SchemaBenchmarkHelper = Schemas;
+}
+
 // See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for
 // the descriptions of these configs.
 #[cfg(any(not(feature = "frequency"), feature = "all-frequency-features"))]
@@ -1058,6 +1086,7 @@ construct_runtime!(
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 62,
+		StatefulStorage: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>} = 63,
 	}
 );
 
@@ -1087,6 +1116,7 @@ mod benches {
 		[pallet_msa, Msa]
 		[pallet_schemas, Schemas]
 		[pallet_messages, Messages]
+		[pallet_stateful_storage, StatefulStorage]
 	);
 }
 
@@ -1239,6 +1269,16 @@ impl_runtime_apis! {
 				Ok(x) => x,
 				Err(_) => None,
 			}
+		}
+	}
+
+	impl pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block> for Runtime {
+		fn get_paginated_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
+			StatefulStorage::get_paginated_storage(msa_id, schema_id)
+		}
+
+		fn get_itemized_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError> {
+			StatefulStorage::get_itemized_storage(msa_id, schema_id)
 		}
 	}
 

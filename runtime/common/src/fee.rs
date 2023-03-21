@@ -7,7 +7,7 @@ use frame_support::{
 
 use common_primitives::node::Balance;
 
-use super::weights::ExtrinsicBaseWeight;
+use super::weights::extrinsic_weights::ExtrinsicBaseWeight;
 
 use smallvec::smallvec;
 
@@ -46,7 +46,7 @@ mod test {
 			MAXIMUM_BLOCK_WEIGHT,
 		},
 		fee::Balance,
-		weights::ExtrinsicBaseWeight,
+		weights::extrinsic_weights::ExtrinsicBaseWeight,
 	};
 
 	use frame_support::weights::WeightToFee as WeightToFeeT;

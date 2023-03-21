@@ -12,6 +12,7 @@ jobs:
   changes:
     name: Determine Changed Files
     runs-on: ubuntu-20.04
+    container: ubuntu:20.04
     outputs:
       rust: ${{steps.filter.outputs.rust}}
       build-binary: ${{steps.filter.outputs.build-binary}}
@@ -53,6 +54,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.build-binary != 'true'
     runs-on: ubuntu-20.04
+    container: ubuntu:20.04
     name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
     strategy:
       matrix:
@@ -100,26 +102,18 @@ jobs:
             spec: frequency
             branch_alias: pr
     runs-on: [self-hosted, Linux, X64, build]
+    container: ubuntu:20.04
     env:
-      HOME: /root
       NETWORK: mainnet
     steps:
-      # https://github.com/LibertyDSNP/frequency/issues/1102
-      - name: Debug Leftovers
+      - name: Install Required Packages
         run: |
-          set -x
-          date
-          whoami
-          cat /etc/passwd
-          [ -d ./target ] && sudo ls -latR ./target
-          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
-          exit 0
+          apt-get update
+          apt-get install -y curl protobuf-compiler build-essential libclang-dev file
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
           ref: ${{matrix.git_branch}}
-      - name: Reset Runner
-        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Set Env Vars
         run: |
           export BUILT_BIN_FILENAME=frequency; echo "BUILT_BIN_FILENAME=$BUILT_BIN_FILENAME" >> $GITHUB_ENV
@@ -131,10 +125,6 @@ jobs:
       #   with:
       #     path: ${{env.BIN_DIR}}/${{env.FINAL_BIN_FILENAME}}
       #     key: binaries-${{runner.os}}-${{env.NETWORK}}-${{github.head_ref}}
-      - name: Install Required Packages
-        run: |
-          sudo apt-get update
-          sudo apt install -y protobuf-compiler
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
@@ -168,9 +158,19 @@ jobs:
     if: needs.changes.outputs.cargo-lock == 'true'
     name: Check for Vulnerable Crates
     runs-on: ubuntu-20.04
+    container: ubuntu:20.04
     steps:
+      - name: Install Required Packages
+        run: |
+          apt-get update
+          apt-get install -y curl build-essential
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        with:
+          components: rustfmt
+          toolchain: stable
       - name: Set Up Cargo Deny
         run: |
           cargo install --force cargo-deny
@@ -183,7 +183,15 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Code Format
     runs-on: ubuntu-20.04
+    container:
+      image: ubuntu:20.04
+      # options: --user runner
     steps:
+      - name: Install Required Packages
+        run: |
+          set -x
+          apt-get update
+          apt-get install -y curl
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
@@ -198,28 +206,15 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
-    env:
-      HOME: /root
     runs-on: [self-hosted, Linux, X64, build]
+    container: ubuntu:20.04
     steps:
-      # https://github.com/LibertyDSNP/frequency/issues/1102
-      - name: Debug Leftovers
-        run: |
-          set -x
-          date
-          whoami
-          cat /etc/passwd
-          [ -d ./target ] && sudo ls -latR ./target
-          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
-          exit 0
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-      - name: Reset Runner
-        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Required Packages
         run: |
-          sudo apt-get update
-          sudo apt install -y protobuf-compiler
+          apt-get update
+          apt-get install -y curl protobuf-compiler build-essential libclang-dev
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
@@ -236,28 +231,15 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
-    env:
-      HOME: /root
     runs-on: [self-hosted, Linux, X64, build]
+    container: ubuntu:20.04
     steps:
-      # https://github.com/LibertyDSNP/frequency/issues/1102
-      - name: Debug Leftovers
-        run: |
-          set -x
-          date
-          whoami
-          cat /etc/passwd
-          [ -d ./target ] && sudo ls -latR ./target
-          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
-          exit 0
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-      - name: Reset Runner
-        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Required Packages
         run: |
-          sudo apt-get update
-          sudo apt install -y protobuf-compiler
+          apt-get update
+          apt-get install -y curl protobuf-compiler build-essential libclang-dev
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
@@ -270,29 +252,15 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
-    env:
-      HOME: /root
     runs-on: [self-hosted, Linux, X64, build]
+    container: ubuntu:20.04
     steps:
-      # https://github.com/LibertyDSNP/frequency/issues/1102
-      - name: Debug Leftovers
-        run: |
-          set -x
-          set -x
-          date
-          whoami
-          cat /etc/passwd
-          [ -d ./target ] && sudo ls -latR ./target
-          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
-          exit 0
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-      - name: Reset Runner
-        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Required Packages
         run: |
-          sudo apt-get update
-          sudo apt install -y protobuf-compiler
+          apt-get update
+          apt-get install -y curl protobuf-compiler build-essential libclang-dev
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
@@ -304,28 +272,15 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
-    env:
-      HOME: /root
     runs-on: [self-hosted, Linux, X64, build]
+    container: ubuntu:20.04
     steps:
-      # https://github.com/LibertyDSNP/frequency/issues/1102
-      - name: Debug Leftovers
-        run: |
-          set -x
-          date
-          whoami
-          cat /etc/passwd
-          [ -d ./target ] && sudo ls -latR ./target
-          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
-          exit 0
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-      - name: Reset Runner
-        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Required Packages
         run: |
-          sudo apt-get update
-          sudo apt install -y protobuf-compiler
+          apt-get update
+          apt-get install -y curl protobuf-compiler build-essential libclang-dev
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
@@ -338,32 +293,33 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
-    runs-on: ubuntu-20.04
+    runs-on: [self-hosted, Linux, X64, build]
+    container: ubuntu:20.04
     steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
       - name: Install Required Packages
         run: |
-          sudo apt-get update
-          sudo apt install -y protobuf-compiler
+          apt-get update
+          apt-get install -y curl protobuf-compiler build-essential libclang-dev git
+          git --version
+      - name: Check Out Repo
+        uses: actions/checkout@v3
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
           targets: wasm32-unknown-unknown
           toolchain: stable
-      - name: Run cargo-tarpaulin
-        uses: actions-rs/tarpaulin@044a1e5bdace8dd2f727b1af63c1d9a1d3572068
-        with:
-          version: "0.22.0"
-          # Tarpaulin Docs https://github.com/xd009642/tarpaulin
-          # -e for exclude
-          args: |
-            -v --no-fail-fast --workspace
-            -e frequency frequency-cli frequency-runtime frequency-service
-            --exclude-files **/mock.rs **/weights.rs **/weights/* **/benchmarking.rs
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Generate code coverage
+        run: |
+          cargo llvm-cov -v --no-fail-fast --workspace --lcov --output-path lcov.info \
+          --ignore-filename-regex "^.*\/(mock\.rs|weights(\.rs)?|benchmarking\.rs).*$" \
+          --exclude "frequency,frequency-cli,frequency-runtime,frequency-service" \
+          --features all-frequency-features
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
         with:
+          files: lcov.info
           fail_ci_if_error: false # optional (default = false)
           verbose: true # optional (default = false)
 
@@ -377,6 +333,7 @@ jobs:
       matrix:
         network: [rococo, mainnet]
     runs-on: ubuntu-20.04
+    container: ubuntu:20.04
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
@@ -384,8 +341,6 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Build Runtime for ${{matrix.network}}
-    env:
-      HOME: /root
     strategy:
       fail-fast: true
       matrix:
@@ -402,37 +357,29 @@ jobs:
             runtime-dir: runtime/frequency
             features: frequency
     runs-on: [self-hosted, Linux, X64, build]
+    container: ubuntu:20.04
     steps:
-      # https://github.com/LibertyDSNP/frequency/issues/1102
-      - name: Debug Leftovers
+      - name: Install Required Packages
         run: |
-          set -x
-          date
-          whoami
-          cat /etc/passwd
-          [ -d ./target ] && sudo ls -latR ./target
-          [ -d ./runtime/frequency/target ] && sudo ls -latR ./runtime/frequency/target
-          exit 0
+          apt-get update
+          apt-get install -y curl protobuf-compiler build-essential libclang-dev file
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sh get-docker.sh
+          docker run hello-world
       - name: Check Out Repo
         uses: actions/checkout@v3
-      - name: Reset Runner
-        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
           toolchain: stable
-      - name: Install Docker
-        run: |
-          curl -fsSL https://get.docker.com -o get-docker.sh
-          sudo sh get-docker.sh
       - name: Extract Runtime Spec Version
         run: |
           echo "RUNTIME_SPEC_VERSION=$(sed -nr 's/spec_version:\s*([0-9]+),/\1/p' \
             ${{matrix.runtime-dir}}/src/lib.rs | tr -d '[:space:]')" >> $GITHUB_ENV
       - name: Validate Extracted Version
+        shell: bash
         run: |
-          echo "Runtime Spec Version:|${{env.RUNTIME_SPEC_VERSION}}|"
-          echo "Runtime Spec Version:||$RUNTIME_SPEC_VERSION||"
+          echo "Runtime Spec Version: ${{env.RUNTIME_SPEC_VERSION}}"
           [[ $RUNTIME_SPEC_VERSION == ?(-)+([0-9]) ]] || \
             (echo "ERROR: \"${{env.RUNTIME_SPEC_VERSION}}\" is not a valid integer" && exit 1)
       - name: Set Env Vars
@@ -453,7 +400,6 @@ jobs:
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          set -ex
           srtool build \
             --default-features="on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
             --profile=${{matrix.build-profile}} \
@@ -464,6 +410,7 @@ jobs:
     needs: build-binaries
     name: Verify JS API Augment
     runs-on: ubuntu-20.04
+    container: ubuntu:20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -516,7 +463,15 @@ jobs:
     needs: build-binaries
     name: Verify Docker Images
     runs-on: ubuntu-20.04
+    container: ubuntu:20.04
     steps:
+      - name: Install Required Packages
+        run: |
+          apt-get update
+          apt-get install -y curl
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sh get-docker.sh
+          docker run hello-world
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Set Env Vars
@@ -562,16 +517,22 @@ jobs:
     needs: build-binaries
     name: Execute Binary Checks
     runs-on: ubuntu-20.04
+    container: ubuntu:20.04
     steps:
+      - name: Install Required Packages
+        run: |
+          apt-get update
+          apt-get install -y curl file
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Set Env Vars
         run: |
           echo "TEST_BIN_FILENAME=frequency.mainnet-pr" >> $GITHUB_ENV
-      - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          toolchain: stable
+      # # XXX Do I need to install toolchain?
+      # - name: Install Rust Toolchain
+      #   uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+      #   with:
+      #     toolchain: stable
       - name: Download Binaries
         uses: actions/download-artifact@v3
         with:
@@ -590,9 +551,14 @@ jobs:
     needs: build-binaries
     name: Check Metadata and Spec Version
     runs-on: ubuntu-20.04
+    container: ubuntu:20.04
     env:
       GITHUB_PR_LABEL: metadata-mismatch
     steps:
+      - name: Install Required Packages
+        run: |
+          apt-get update
+          apt-get install -y jq
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
@@ -615,11 +581,12 @@ jobs:
         id: compare-metadata
         working-directory: ${{env.BIN_DIR}}
         run: |
+          set -x
           ./$REF_BIN_FILENAME export-metadata --chain=frequency-local --tmp metadata-ref.json
           metadata_ref=$(cat metadata-ref.json | jq -r .result)
           ./$TEST_BIN_FILENAME export-metadata --chain=frequency-local --tmp metadata.json
           metadata=$(cat metadata.json | jq -r .result)
-          match=$([[ $metadata == $metadata_ref ]] && echo 'true' || echo 'false')
+          match=$([ "$metadata" = "$metadata_ref" ] && echo 'true' || echo 'false')
           echo "Metadata matches?: $match"
           echo "metadata_match=$match" >> $GITHUB_OUTPUT
       - name: Assign Metadata Mismatch Label
@@ -633,7 +600,7 @@ jobs:
         run: |
           spec_version_ref=$(./$REF_BIN_FILENAME export-runtime-version | jq -r .specVersion)
           spec_version=$(./$TEST_BIN_FILENAME export-runtime-version | jq -r .specVersion)
-          [[ $spec_version -gt $spec_version_ref  ]] || \
+          [ $spec_version -gt $spec_version_ref ] || \
             (echo "ERROR: When metadata is updated, the new spec version \($spec_version\) \
             must be greater than the latest version on main \($spec_version_ref\)" && exit 1)
       - name: Remove Metadata Mismatch Label
@@ -649,6 +616,7 @@ jobs:
     needs: [build-binaries, verify-js-api-augment]
     name: Run Integration Tests
     runs-on: ubuntu-20.04
+    container: ubuntu:20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -716,6 +684,7 @@ jobs:
     needs: build-binaries
     name: Verify Genesis State
     runs-on: ubuntu-20.04
+    container: ubuntu:20.04
     steps:
       - name: Set Env Vars
         run: |
@@ -740,7 +709,7 @@ jobs:
           echo "Expected genesis state: $expected_genesis_state"
           actual_genesis_state=$(./${{env.BIN_FILENAME_ROCOCO}} export-genesis-state)
           echo "Actual genesis state: $actual_genesis_state"
-          [[ $actual_genesis_state == $expected_genesis_state ]] || \
+          [ $actual_genesis_state = $expected_genesis_state ] || \
             (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
       - name: Test Mainnet Genesis State
         working-directory: ${{env.BIN_DIR}}
@@ -749,5 +718,108 @@ jobs:
           echo "Expected genesis state: $expected_genesis_state"
           actual_genesis_state=$(./${{env.BIN_FILENAME_MAINNET}} export-genesis-state)
           echo "Actual genesis state: $actual_genesis_state"
-          [[ $actual_genesis_state == $expected_genesis_state ]] || \
+          [ $actual_genesis_state = $expected_genesis_state ] || \
             (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
+
+  run-benchmarks:
+    name: Run Benchmarks
+    runs-on: [self-hosted, Linux, X64, benchmark]
+    if: github.repository == 'LibertyDSNP/frequency'
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        with:
+          token: ${{secrets.GHA_GIT_COMMIT}}
+          ref: ${{github.event.pull_request.head.sha}}
+      - name: Run Benchmarks?
+        id: run-benchmarks
+        shell: bash
+        run: |
+          commit_message=$(git show -s --format=%s)
+          echo "commit_message: $commit_message"
+          regex='\[run-benchmarks (.*)\]$'
+          if [[ $commit_message =~ $regex ]]; then
+            echo "Need to run benchmarks."
+            pallets="${BASH_REMATCH[1]}"
+            echo "Pallets: $pallets"
+            echo "RUN_BENCHMARKS=true" >> $GITHUB_ENV
+            echo "pallets=$pallets" >> $GITHUB_OUTPUT
+          else
+            echo "Do not need to run benchmarks."
+            echo "RUN_BENCHMARKS=false" >> $GITHUB_ENV
+            exit 0
+          fi
+      - name: Get Current Job Log URL
+        id: jobs
+        if: env.RUN_BENCHMARKS == 'true'
+        uses: Tiryoh/gha-jobid-action@603885a199c331cc2f828bcebeb1c4a275f4d6e1
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          job_name: "Run Benchmarks"
+      - name: Set PR Commit Status to Pending
+        if: env.RUN_BENCHMARKS == 'true'
+        uses: ouzi-dev/commit-status-updater@219d3f932547cad092e384c7a36bf4d963739c35
+        with:
+          name: "GithubActions - Run Benchmarks"
+          status: "pending"
+          addHoldComment: "true"
+          pendingComment: >-
+            :hourglass_flowing_sand: [Running benchmarks](${{steps.jobs.outputs.html_url}})
+            and calculating weights. DO NOT MERGE! A new commit will be added upon completion...
+          failComment: "ERROR: Failed to set PR commit to pending status!"
+      - name: Install Required Packages
+        if: env.RUN_BENCHMARKS == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt install -y protobuf-compiler libclang-dev
+      - name: Install Rust Toolchain
+        if: env.RUN_BENCHMARKS == 'true'
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        with:
+          toolchain: stable
+      - name: Update Weights
+        if: env.RUN_BENCHMARKS == 'true'
+        env:
+          BENCHMARK_SCRIPT: ./tools/ci/scripts/run-benchmark.sh
+        run: |
+          set -x
+          pallets_str="${{steps.run-benchmarks.outputs.pallets}}"
+          echo "Pallets: $pallets_str"
+          if [ $pallets_str = 'all' ]; then
+            echo "Running benchmarks for all pallets..."
+            make benchmarks
+          else
+            IFS=',' read -r -a pallets <<< "$pallets_str"
+            for pallet in "${pallets[@]}"
+            do
+              echo "Running benchmarks for $pallet pallet..."
+              $BENCHMARK_SCRIPT -p $pallet
+              echo "Finished benchmarks for $pallet pallet."
+            done
+          fi
+      - name: Print Updated Weights
+        if: env.RUN_BENCHMARKS == 'true'
+        run: |
+          git status
+          git diff
+      - name: Commit Updated Weights
+        if: env.RUN_BENCHMARKS == 'true'
+        id: commit-updated-weights
+        uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
+        with:
+          commit_message: "Update weights for PR #${{github.event.pull_request.number}}"
+          commit_user_name: Frequency CI [bot]
+          commit_user_email: do-not-reply@users.noreply.github.com
+          commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
+      - name: Set PR Commit Status to Success
+        if: env.RUN_BENCHMARKS == 'true'
+        uses: ouzi-dev/commit-status-updater@219d3f932547cad092e384c7a36bf4d963739c35
+        with:
+          name: "GithubActions - Run Benchmarks"
+          status: "success"
+          addHoldComment: "true"
+          successComment: >-
+            :white_check_mark: [Finished running benchmarks](${{steps.jobs.outputs.html_url}}).
+            Updated weights have been committed to this PR branch in
+            commit ${{steps.commit-updated-weights.outputs.commit_hash}}.
+          failComment: "ERROR: Failed to set PR commit to success status!"
