@@ -59,7 +59,6 @@ impl<T: Config> StakingAccountDetails<T> {
 	/// set unlock chunks with (balance, thaw_at).  does not check that the unlock chunks
 	/// don't exceed total.
 	/// returns true on success, false on failure (?)
-	// TODO: remove this when finished and use production fn
 	pub fn set_unlock_chunks(&mut self, chunks: &Vec<(u32, u32)>) -> bool {
 		let result: Vec<UnlockChunk<BalanceOf<T>, <T>::EpochNumber>> = chunks
 			.into_iter()
@@ -76,7 +75,7 @@ impl<T: Config> StakingAccountDetails<T> {
 		let mut total_reaped: BalanceOf<T> = 0u32.into();
 		self.unlocking.retain(|chunk| {
 			if current_epoch.ge(&chunk.thaw_at) {
-				total_reaped = total_reaped + chunk.value;
+				total_reaped = total_reaped.saturating_add(chunk.value);
 				match self.total.checked_sub(&chunk.value) {
 					Some(new_total) => self.total = new_total,
 					None => {
