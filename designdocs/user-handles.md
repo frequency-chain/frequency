@@ -56,7 +56,7 @@ User handle ```registry``` on Frequency chain.
 
 ### Chain Steps
 
-* When a user submits a handle, check the numeric suffix for availability and that it honors range defined for suffix window.
+* When a user submits a base handle, check the numeric suffix for availability and that it honors range defined for suffix window.
 * Store ```msa_id``` to ```handle``` mapping and ```handle``` to ```msa_id``` mapping.
 
 ### Handling Race Conditions
@@ -99,8 +99,7 @@ sequenceDiagram
 * **HandleRetirementPeriod**: This storage value (```u32``) will keep track of the number of blocks a handle must be retired before it can be reused.
 * **MSAIdToUserHandle**: This storage will map MSAIds to their corresponding user handles.
 * **UserHandlesToMSAId**: This storage will map user handles to their corresponding MSAIds.
-* **RetiredHandles**: This storage will keep track of all retired handles and the block number at which they were retired. This probably is a spike to run few ideas on how to implement this.
-* **Seed (current and previous)**: This storage values (```tuple (s0, s1)```) will keep track of the current and previous seed values.
+* **RetiredHandles**: This storage will keep track of all retired handles and the block number at which they were retired. This probably is a spike to run few ideas on how to implement this. Alternatively we could just store the block number in the UserHandlesToMSAId data as "retired" with the block number it retired on. (That way it is merely waiting for current_block > (retire_block + HandleRetirementPeriod))
 
 ### **Notes:**
 
@@ -116,7 +115,7 @@ sequenceDiagram
 ``` rust
 
 MsaHandlePayload {
-    handle: &[u8],
+    base_handle: &[u8],
 }
 ```
 
