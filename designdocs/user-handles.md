@@ -134,7 +134,7 @@ Input
 * proof - the proof of ownership of the handle, ```MsaHandlePayload``` signed by the owner's private key
 
 Output
-* Event - `MsaHandleCreated` with the MSA ID and the handle
+* Event - `HandleCreated` with the MSA ID and the handle
 
 * Errors - 
     * `HandleAlreadyExists` if the handle already exists
@@ -168,7 +168,7 @@ Input
 
 Output
 
-* Event - `MsaHandleRetired` with the handle
+* Event - `HandleRetired` with the handle
 
 * Errors - 
     * `HandleDoesNotExist` if the handle does not exist
@@ -200,7 +200,7 @@ Input
 * proof_of_new_ownership - the proof of ownership of the new handle, ```MsaHandlePayload``` signed by the owner's private key
 
 Output
-* Event - `MsaHandleChanged` with the old handle and the new handle
+* Event - `HandleChanged` with the old handle and the new handle
 * Errors - 
     * `HandleDoesNotExist` if the handle does not exist
     * `Unauthorized` if the signature(s) is invalid
