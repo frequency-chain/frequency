@@ -356,3 +356,16 @@ impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
 		Ok(())
 	}
 }
+
+// --- Handles Pallet ---
+parameter_types! {
+		/// The minimum base handle (not including suffix or delimiter) length in characters
+		pub const HandleBaseMin: u32 = 2;
+		/// The maximum base handle (not including suffix or delimiter) length in characters
+		pub const HandleBaseMax: u32 = 30;
+		/// The minimum suffix value
+		pub const HandleSuffixMin: u32 = 1000;
+		/// The maximum suffix value
+		pub const HandleSuffixMax: u32 = 9999;
+}
+// -end- Handles Pallet

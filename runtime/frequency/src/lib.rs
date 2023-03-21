@@ -1017,6 +1017,21 @@ impl pallet_stateful_storage::Config for Runtime {
 	type SchemaBenchmarkHelper = Schemas;
 }
 
+impl pallet_handles::Config for Runtime {
+	/// The overarching event type.
+	type RuntimeEvent = RuntimeEvent;
+	/// Weight information for extrinsics in this pallet.
+	type WeightInfo = pallet_handles::weights::SubstrateWeight<Runtime>;
+	/// The minimum base handle (not including suffix or delimiter) length in characters
+	type HandleBaseMin = HandleBaseMin;
+	/// The maximum base handle (not including suffix or delimiter) length in characters
+	type HandleBaseMax = HandleBaseMax;
+	/// The minimum suffix value
+	type HandleSuffixMin = HandleSuffixMin;
+	/// The maximum suffix value
+	type HandleSuffixMax = HandleSuffixMax;
+}
+
 // See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for
 // the descriptions of these configs.
 #[cfg(any(not(feature = "frequency"), feature = "all-frequency-features"))]
@@ -1087,6 +1102,7 @@ construct_runtime!(
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 62,
 		StatefulStorage: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>} = 63,
+		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 64,
 	}
 );
 
@@ -1117,6 +1133,7 @@ mod benches {
 		[pallet_schemas, Schemas]
 		[pallet_messages, Messages]
 		[pallet_stateful_storage, StatefulStorage]
+		[pallet_handles, Handles]
 	);
 }
 
