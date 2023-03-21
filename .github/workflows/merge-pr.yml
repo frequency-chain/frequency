@@ -29,7 +29,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        uses: dtolnay/rust-toolchain@fc3253060d0c959bea12a59f10f8391454a0b02d
         with:
           targets: wasm32-unknown-unknown
           toolchain: stable
@@ -76,7 +76,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        uses: dtolnay/rust-toolchain@fc3253060d0c959bea12a59f10f8391454a0b02d
         with:
           targets: wasm32-unknown-unknown
           toolchain: stable

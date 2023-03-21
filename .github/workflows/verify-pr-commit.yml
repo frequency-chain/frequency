@@ -127,7 +127,7 @@ jobs:
       #     key: binaries-${{runner.os}}-${{env.NETWORK}}-${{github.head_ref}}
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        uses: dtolnay/rust-toolchain@fc3253060d0c959bea12a59f10f8391454a0b02d
         with:
           targets: wasm32-unknown-unknown
           toolchain: stable
@@ -167,7 +167,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        uses: dtolnay/rust-toolchain@fc3253060d0c959bea12a59f10f8391454a0b02d
         with:
           components: rustfmt
           toolchain: stable
@@ -195,7 +195,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        uses: dtolnay/rust-toolchain@fc3253060d0c959bea12a59f10f8391454a0b02d
         with:
           components: rustfmt
           toolchain: stable
@@ -216,7 +216,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        uses: dtolnay/rust-toolchain@fc3253060d0c959bea12a59f10f8391454a0b02d
         with:
           components: clippy
           toolchain: stable
@@ -241,7 +241,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        uses: dtolnay/rust-toolchain@fc3253060d0c959bea12a59f10f8391454a0b02d
         with:
           toolchain: stable
           targets: wasm32-unknown-unknown
@@ -262,7 +262,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        uses: dtolnay/rust-toolchain@fc3253060d0c959bea12a59f10f8391454a0b02d
         with:
           toolchain: stable
       - name: Check
@@ -282,7 +282,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        uses: dtolnay/rust-toolchain@fc3253060d0c959bea12a59f10f8391454a0b02d
         with:
           targets: wasm32-unknown-unknown
           toolchain: stable
@@ -304,7 +304,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        uses: dtolnay/rust-toolchain@fc3253060d0c959bea12a59f10f8391454a0b02d
         with:
           targets: wasm32-unknown-unknown
           toolchain: stable
@@ -369,7 +369,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        uses: dtolnay/rust-toolchain@fc3253060d0c959bea12a59f10f8391454a0b02d
         with:
           toolchain: stable
       - name: Extract Runtime Spec Version
@@ -530,7 +530,7 @@ jobs:
           echo "TEST_BIN_FILENAME=frequency.mainnet-pr" >> $GITHUB_ENV
       # # XXX Do I need to install toolchain?
       # - name: Install Rust Toolchain
-      #   uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+      #   uses: dtolnay/rust-toolchain@fc3253060d0c959bea12a59f10f8391454a0b02d
       #   with:
       #     toolchain: stable
       - name: Download Binaries
@@ -774,7 +774,7 @@ jobs:
           sudo apt install -y protobuf-compiler libclang-dev
       - name: Install Rust Toolchain
         if: env.RUN_BENCHMARKS == 'true'
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        uses: dtolnay/rust-toolchain@fc3253060d0c959bea12a59f10f8391454a0b02d
         with:
           toolchain: stable
       - name: Update Weights
