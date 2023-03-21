@@ -1,0 +1,49 @@
+[package]
+name = "pallet-time-release"
+description = "Provides scheduled balance locking mechanism, in a *graded release* way."
+authors = ["Frequency"]
+edition = "2021"
+homepage = "https://frequency.xyz"
+license = "Apache-2.0"
+repository = "https://github.com/LibertyDSNP/frequency/"
+publish = false
+version = "0.0.0"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["max-encoded-len"] }
+scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.36" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.36" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.36" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.36" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.36" }
+frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.36" }
+
+[dev-dependencies]
+chrono = { version = "0.4.24" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"frame-support/std",
+	"frame-system/std",
+	"scale-info/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"frame-benchmarking/std",
+]
+runtime-benchmarks = [
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+]

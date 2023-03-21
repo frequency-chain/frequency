@@ -445,7 +445,7 @@ fn frequency_genesis(
 		#[cfg(any(not(feature = "frequency"), feature = "all-frequency-features"))]
 		sudo: Default::default(),
 		schemas: Default::default(),
-		vesting: Default::default(),
+		time_release: Default::default(),
 		democracy: Default::default(),
 		treasury: Default::default(),
 		council: CouncilConfig { phantom: Default::default(), members: council_members },

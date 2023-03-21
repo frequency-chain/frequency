@@ -87,7 +87,7 @@ benchmarks-msa \
 benchmarks-overhead \
 benchmarks-schemas \
 benchmarks-stateful-storage \
-benchmarks-orml_vesting \
+benchmarks-time-release\
 benchmarks-pallet_balances \
 benchmarks-pallet_collator_selection \
 benchmarks-pallet_democracy \
@@ -105,7 +105,7 @@ benchmarks-msa-local \
 benchmarks-overhead-local \
 benchmarks-schemas-local \
 benchmarks-stateful-storage-local \
-benchmarks-orml_vesting-local \
+benchmarks-time-release-local \
 benchmarks-pallet_balances-local \
 benchmarks-pallet_collator_selection-local \
 benchmarks-pallet_collective-local \

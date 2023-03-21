@@ -5,8 +5,8 @@ THIS_DIR=$( dirname -- "$0"; )
 PROJECT="${THIS_DIR}/.."
 PROFILE=production
 PROFILE_DIR=${PROFILE}
+
 ALL_EXTERNAL_PALLETS=( \
-  orml_vesting \
   pallet_balances \
   pallet_collator_selection \
   pallet_collective \
@@ -24,6 +24,7 @@ ALL_CUSTOM_PALLETS=( \
   msa \
   schemas \
   stateful-storage \
+  time-release \
 )
 
 declare -a CUSTOM_PALLETS
