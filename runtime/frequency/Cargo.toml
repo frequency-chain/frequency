@@ -72,6 +72,8 @@ pallet-msa = { path = "../../pallets/msa", default-features = false }
 pallet-msa-runtime-api = { path = "../../pallets/msa/src/runtime-api", default-features = false }
 pallet-schemas = { path = "../../pallets/schemas", default-features = false }
 pallet-schemas-runtime-api = { path = "../../pallets/schemas/src/runtime-api", default-features = false }
+pallet-stateful-storage = { path = "../../pallets/stateful-storage", default-features = false }
+pallet-stateful-storage-runtime-api = { path = "../../pallets/stateful-storage/src/runtime-api", default-features = false }
 system-runtime-api = { path = '../system-runtime-api', default-features = false }
 # Polkadot
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.36" }
@@ -127,6 +129,8 @@ std = [
 	"pallet-preimage/std",
 	"pallet-schemas/std",
 	"pallet-schemas-runtime-api/std",
+	"pallet-stateful-storage/std",
+	"pallet-stateful-storage-runtime-api/std",
 	"pallet-utility/std",
 	"parachain-info/std",
 	"polkadot-parachain/std",
@@ -162,6 +166,7 @@ runtime-benchmarks = [
 	"pallet-msa/runtime-benchmarks",
 	"pallet-messages/runtime-benchmarks",
 	"pallet-schemas/runtime-benchmarks",
+	"pallet-stateful-storage/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"cumulus-pallet-session-benchmarking/runtime-benchmarks",
@@ -186,6 +191,7 @@ try-runtime = [
 	"pallet-msa/try-runtime",
 	"pallet-messages/try-runtime",
 	"pallet-schemas/try-runtime",
+	"pallet-stateful-storage/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-treasury/try-runtime",

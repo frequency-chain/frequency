@@ -1,7 +1,10 @@
+use crate::impl_codec_bitflags;
 #[cfg(feature = "std")]
 use crate::utils;
-use codec::{Decode, Encode, MaxEncodedLen};
-use scale_info::TypeInfo;
+use codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
+use enumflags2::{bitflags, BitFlags};
+use frame_support::RuntimeDebug;
+use scale_info::{build::Fields, meta_type, Path, Type, TypeInfo, TypeParameter};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_std::prelude::*;
@@ -29,7 +32,29 @@ pub enum PayloadLocation {
 	OnChain,
 	/// Message payload is located on IPFS
 	IPFS,
+	/// Itemized payload location for onchain storage in itemized form
+	Itemized,
+	/// Paginated payload location for onchain storage in paginated form
+	Paginated,
 }
+
+/// Support for up to 16 user-enabled features on a collection.
+#[bitflags]
+#[repr(u16)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Copy, Clone, RuntimeDebug, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
+pub enum SchemaSetting {
+	/// Schema setting to enforce append-only behavior on payload.
+	/// Applied to schemas of type `PayloadLocation::Itemized` or `PayloadLocation::Paginated`.
+	AppendOnly,
+	/// Schema may enforce signature requirement on payload.
+	/// Applied to schemas of type `PayloadLocation::Paginated`.
+	SignatureRequired,
+}
+
+/// Wrapper type for `BitFlags<SchemaSetting>` that implements `Codec`.
+#[derive(Clone, Copy, PartialEq, Eq, Default, RuntimeDebug)]
+pub struct SchemaSettings(pub BitFlags<SchemaSetting>);
 
 /// RPC Response form for a Schema
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -44,6 +69,8 @@ pub struct SchemaResponse {
 	pub model_type: ModelType,
 	/// The payload location
 	pub payload_location: PayloadLocation,
+	/// grants for the schema
+	pub settings: Vec<SchemaSetting>,
 }
 
 /// This allows other pallets to resolve Schema information. With generic SchemaId
@@ -61,3 +88,27 @@ pub trait SchemaValidator<SchemaId> {
 	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
 	fn set_schema_count(n: SchemaId);
 }
+
+impl SchemaSettings {
+	/// Returns new SchemaSettings with all settings disabled
+	pub fn all_disabled() -> Self {
+		Self(BitFlags::EMPTY)
+	}
+	/// Get all setting enabled
+	pub fn get_enabled(&self) -> BitFlags<SchemaSetting> {
+		self.0
+	}
+	/// Check if a setting is enabled
+	pub fn is_enabled(&self, grant: SchemaSetting) -> bool {
+		self.0.contains(grant)
+	}
+	/// Enable a setting
+	pub fn set(&mut self, grant: SchemaSetting) {
+		self.0.insert(grant)
+	}
+	/// Copy the settings from a BitFlags
+	pub fn from(settings: BitFlags<SchemaSetting>) -> Self {
+		Self(settings)
+	}
+}
+impl_codec_bitflags!(SchemaSettings, u16, SchemaSetting);

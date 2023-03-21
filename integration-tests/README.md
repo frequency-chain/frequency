@@ -1,3 +1,22 @@
+Running Integration Tests
+=========================
+
+To run all tests (and automatically start up a Frequency node):
+
+`make integration-test`
+
+To run all tests (after starting up a Frequency node): 
+
+`npm run test`
+
+To run an individual test (after starting up a Frequency node):
+
+Note: this is for the "createMsa" tests
+
+`npm run test -- --grep createMsa`
+
+See below for running load tests.
+
 Notes on Integration Testing
 ============================
 

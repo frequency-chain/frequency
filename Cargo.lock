@@ -894,9 +894,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.1.3"
+version = "4.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8d93d855ce6a0aa87b8473ef9169482f40abaa2e9e0993024c35c902cbd5920"
+checksum = "f13b9c79b5d1dd500d20ef541215a6423c75829ef43117e1b4d17fd8af0b5d76"
 dependencies = [
  "bitflags",
  "clap_derive",
@@ -979,6 +979,7 @@ dependencies = [
 name = "common-primitives"
 version = "0.0.0"
 dependencies = [
+ "enumflags2",
  "frame-support",
  "frame-system",
  "impl-serde",
@@ -1018,6 +1019,7 @@ dependencies = [
  "smallvec",
  "sp-core",
  "sp-std",
+ "sp-weights",
  "substrate-wasm-builder",
 ]
 
@@ -2729,20 +2731,30 @@ version = "0.0.0"
 dependencies = [
  "clap",
  "common-primitives",
+ "common-runtime",
  "cumulus-client-cli",
  "cumulus-client-service",
  "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
  "derive_more",
  "frame-benchmarking-cli",
+ "frame-support",
+ "frame-system",
+ "frequency-runtime",
  "frequency-service",
+ "futures",
  "hex-literal",
  "log",
+ "pallet-balances",
+ "pallet-msa",
+ "pallet-transaction-payment",
  "parity-scale-codec",
  "polkadot-cli",
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-service",
  "sc-cli",
+ "sc-client-api",
  "sc-executor",
  "sc-service",
  "sc-sysinfo",
@@ -2752,8 +2764,11 @@ dependencies = [
  "serde_json",
  "sp-api",
  "sp-core",
+ "sp-inherents",
  "sp-io",
+ "sp-keyring",
  "sp-runtime",
+ "sp-timestamp",
  "substrate-build-script-utils",
  "try-runtime-cli",
 ]
@@ -2797,6 +2812,8 @@ dependencies = [
  "pallet-schemas",
  "pallet-schemas-runtime-api",
  "pallet-session",
+ "pallet-stateful-storage",
+ "pallet-stateful-storage-runtime-api",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -2861,6 +2878,8 @@ dependencies = [
  "pallet-msa-runtime-api",
  "pallet-schemas-rpc",
  "pallet-schemas-runtime-api",
+ "pallet-stateful-storage-rpc",
+ "pallet-stateful-storage-runtime-api",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
  "polkadot-cli",
@@ -6130,6 +6149,58 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-stateful-storage"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "env_logger 0.10.0",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "pretty_assertions",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-std",
+ "twox-hash",
+]
+
+[[package]]
+name = "pallet-stateful-storage-rpc"
+version = "0.0.0"
+dependencies = [
+ "common-helpers",
+ "common-primitives",
+ "frame-support",
+ "jsonrpsee",
+ "pallet-stateful-storage-runtime-api",
+ "parity-scale-codec",
+ "sc-client-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+ "sp-std",
+ "substrate-test-runtime-client",
+ "tokio",
+]
+
+[[package]]
+name = "pallet-stateful-storage-runtime-api"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "frame-support",
+ "parity-scale-codec",
+ "sp-api",
+]
+
+[[package]]
 name = "pallet-sudo"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36#cb4f2491b00af7d7817f3a54209c26b20faa1f51"
@@ -6355,9 +6426,9 @@ dependencies = [
 
 [[package]]
 name = "parity-scale-codec"
-version = "3.2.2"
+version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7ab01d0f889e957861bc65888d5ccbe82c158d0270136ba46820d43837cdf72"
+checksum = "637935964ff85a605d114591d4d2c13c5d1ba2806dae97cea6bf180238a749ac"
 dependencies = [
  "arrayvec 0.7.2",
  "bitvec",

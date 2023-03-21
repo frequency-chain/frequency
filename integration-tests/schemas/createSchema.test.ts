@@ -5,13 +5,16 @@ import assert from "assert";
 import { AVRO_GRAPH_CHANGE } from "./fixtures/avroGraphChangeSchemaType";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { createKeys, createAndFundKeypair } from "../scaffolding/helpers";
+import { createKeys, createAndFundKeypair, devAccounts } from "../scaffolding/helpers";
 
 describe("#createSchema", function () {
     let keys: KeyringPair;
+    let sudoKey: KeyringPair;
     let accountWithNoFunds: KeyringPair;
 
     before(async function () {
+        // Using Alice as sudo key
+        sudoKey = devAccounts[0].keys;
         keys = await createAndFundKeypair();
         accountWithNoFunds = createKeys();
     });
@@ -63,5 +66,12 @@ describe("#createSchema", function () {
 
         assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
         assert.notEqual(createSchemaEvent, undefined);
+    });
+
+    it("should fail to create non itemized schema with AppendOnly settings", async function () {
+      const ex = ExtrinsicHelper.createSchemaWithSettingsGov(keys, sudoKey, AVRO_GRAPH_CHANGE, "AvroBinary", "Paginated", "AppendOnly");
+      await assert.rejects(ex.sudoSignAndSend(), {
+        name: 'InvalidSetting'
+      });
     });
 })

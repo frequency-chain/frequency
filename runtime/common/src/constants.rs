@@ -128,6 +128,8 @@ parameter_types! {
 pub type SchemasMinModelSizeBytes = ConstU32<8>;
 /// The maximum length of a schema model (in bytes)
 pub type SchemasMaxBytesBoundedVecLimit = ConstU32<65_500>;
+/// The maximum number of grants allowed per schema
+pub type MaxSchemaSettingsPerSchema = ConstU32<2>;
 // -end- Schemas Pallet ---
 
 // --- Orml Vesting Pallet ---
@@ -296,4 +298,61 @@ parameter_types! {
 	/// 90 is the prefix for the Frequency Network on Polkadot
 	/// 42 is the prefix for the Frequency Network on Rococo
 	pub const Ss58Prefix: u16 = prod_or_testnet_or_local!(90, 42, 42);
+}
+
+// --- Stateful Storage Pallet ---
+parameter_types! {
+	/// The maximum size of a page (in bytes) for an Itemized storage model (64KB)
+	pub const MaxItemizedPageSizeBytes: u32 = 64 * 1024;
+	/// The maximum size of a page (in bytes) for a Paginated storage model (2KB)
+	pub const MaxPaginatedPageSizeBytes: u32 = 2 * 1024;
+	/// The maximum size of a single item in an itemized storage model (in bytes)
+	pub const MaxItemizedBlobSizeBytes: u32 = 1024;
+	/// The maximum number of pages in a Paginated storage model
+	pub const MaxPaginatedPageId: u32 = 16;
+	/// The maximum number of actions in itemized actions
+	pub const MaxItemizedActionsCount: u32 = 5;
+	/// The number of blocks for Stateful mortality is 24 hours
+	pub const StatefulMortalityWindowSize: u32 = 14400;
+}
+// -end- Stateful Storage Pallet
+
+impl Default for MaxItemizedPageSizeBytes {
+	fn default() -> Self {
+		Self
+	}
+}
+
+impl Default for MaxPaginatedPageSizeBytes {
+	fn default() -> Self {
+		Self
+	}
+}
+
+impl Clone for MaxItemizedBlobSizeBytes {
+	fn clone(&self) -> Self {
+		MaxItemizedBlobSizeBytes {}
+	}
+}
+
+impl Eq for MaxItemizedBlobSizeBytes {
+	fn assert_receiver_is_total_eq(&self) {}
+}
+
+impl PartialEq for MaxItemizedBlobSizeBytes {
+	fn eq(&self, other: &Self) -> bool {
+		self == other
+	}
+}
+
+impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
+	#[cfg(feature = "std")]
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
+
+	#[cfg(not(feature = "std"))]
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
 }
