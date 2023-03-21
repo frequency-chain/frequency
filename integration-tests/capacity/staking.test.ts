@@ -1,18 +1,20 @@
 import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { u64, u16 } from "@polkadot/types";
+import { u64, } from "@polkadot/types";
 import assert from "assert";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import {
     devAccounts, createKeys, createAndFundKeypair, createMsaAndProvider,
-    generateDelegationPayload, signPayloadSr25519, stakeToProvider, fundKeypair,
+    stakeToProvider, fundKeypair,
     getNextEpochBlock, TEST_EPOCH_LENGTH
 }
     from "../scaffolding/helpers";
 import { firstValueFrom } from "rxjs";
-import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 
 describe("Capacity Transaction Tests", function () {
+    let cents = 1000000n
+    let dollars = 1000000n * 100n;
+    let existentialDeposit = cents;
     let otherProviderKeys: KeyringPair;
     let otherProviderId: u64;
     let stakeKeys: KeyringPair;
@@ -21,13 +23,10 @@ describe("Capacity Transaction Tests", function () {
     let unstakeProviderId: u64;
     let withdrawKeys: KeyringPair;
     let withdrawProviderId: u64;
-    let emptyKeys: KeyringPair;
     let noProviderKeys: KeyringPair;
     let delegatorKeys: KeyringPair;
-    let delegatorProviderId: u64;
-    let schemaId: u16;
 
-    let stakeAmount: bigint = 20n * 1000n * 1000n * 1000n;
+    let accountBalance: bigint = 200n * dollars;
 
     before(async function () {
         // Set the Maximum Epoch Length to TEST_EPOCH_LENGTH blocks
@@ -44,10 +43,10 @@ describe("Capacity Transaction Tests", function () {
             assert.fail("should return an EpochLengthUpdated event");
         }
 
-        // Create and fund a keypair with stakeAmount
+        // Create and fund a keypair with accountBalance
         // Use this keypair for stake operations
         stakeKeys = createKeys("StakeKeys");
-        stakeProviderId = await createMsaAndProvider(stakeKeys, "StakeProvider", stakeAmount);
+        stakeProviderId = await createMsaAndProvider(stakeKeys, "StakeProvider", accountBalance);
 
         // Create and fund a keypair with EXISTENTIAL_DEPOSIT
         // Use this keypair for unstake operations
@@ -57,24 +56,20 @@ describe("Capacity Transaction Tests", function () {
         // Create and fund a keypair with EXISTENTIAL_DEPOSIT
         // Use this keypair for withdraw operations
         withdrawKeys = createKeys("WithdrawKeys");
-        withdrawProviderId = await createMsaAndProvider(withdrawKeys, "WithdrawProvider", stakeAmount);
+        withdrawProviderId = await createMsaAndProvider(withdrawKeys, "WithdrawProvider", accountBalance);
 
         // Create and fund a keypair with EXISTENTIAL_DEPOSIT
         // Use this keypair for other operations
         otherProviderKeys = createKeys("OtherProviderKeys");
-        otherProviderId = await createMsaAndProvider(otherProviderKeys, "OtherProvider", stakeAmount);
-
-        // Create a keypair with no msaId
-        emptyKeys = await createAndFundKeypair();
+        otherProviderId = await createMsaAndProvider(otherProviderKeys, "OtherProvider", accountBalance);
 
         // Create and fund a keypair with EXISTENTIAL_DEPOSIT
         // Use this keypair for delegator operations
         delegatorKeys = createKeys("OtherProviderKeys");
-        delegatorProviderId = await createMsaAndProvider(delegatorKeys, "Delegator", stakeAmount);
 
         // Create a keypair with msaId, but no provider
         noProviderKeys = createKeys("NoProviderKeys");
-        await fundKeypair(devAccounts[0].keys, noProviderKeys, stakeAmount);
+        await fundKeypair(devAccounts[0].keys, noProviderKeys, accountBalance);
         const createMsaOp = ExtrinsicHelper.createMsa(noProviderKeys);
         const [MsaCreatedEvent] = await createMsaOp.fundAndSend();
         assert.notEqual(MsaCreatedEvent, undefined, "should have returned MsaCreated event");
@@ -84,10 +79,10 @@ describe("Capacity Transaction Tests", function () {
         let stakeKeys: KeyringPair;
         let stakeProviderId: u64;
         before(async function () {
-            // Create and fund a keypair with stakeAmount
+            // Create and fund a keypair with accountBalance
             // Use this keypair for stake operations
             stakeKeys = createKeys("StakeKeys");
-            stakeProviderId = await createMsaAndProvider(stakeKeys, "StakeProvider", stakeAmount);
+            stakeProviderId = await createMsaAndProvider(stakeKeys, "StakeProvider", accountBalance);
         });
 
         it("successfully stakes the minimum amount", async function () {
@@ -190,49 +185,85 @@ describe("Capacity Transaction Tests", function () {
                 });
             });
         });
+    });
 
-        describe("stake testing-invalid paths", function () {
-            it("should fail to stake for InvalidTarget", async function () {
-                const failStakeObj = ExtrinsicHelper.stake(stakeKeys, 99, 1000000);
-                await assert.rejects(failStakeObj.fundAndSend(), { name: "InvalidTarget" });
-            });
-
-            // Need to use a different account that is not already staked
-            it("should fail to stake for InsufficientStakingAmount", async function () {
-                const failStakeObj = ExtrinsicHelper.stake(otherProviderKeys, otherProviderId, 1000);
-                await assert.rejects(failStakeObj.fundAndSend(), { name: "InsufficientStakingAmount" });
-            });
-
-            it("should fail to stake for ZeroAmountNotAllowed", async function () {
-                const failStakeObj = ExtrinsicHelper.stake(stakeKeys, stakeProviderId, 0);
-                await assert.rejects(failStakeObj.fundAndSend(), { name: "ZeroAmountNotAllowed" });
-            });
-
-            it("should fail to stake for BalanceTooLowtoStake", async function () {
-                const failStakeObj = ExtrinsicHelper.stake(unstakeKeys, unstakeProviderId, 100000n);
-                await assert.rejects(failStakeObj.fundAndSend(), { name: "BalanceTooLowtoStake" });
-            });
+    describe("when staking and targeting an InvalidTarget", async function () {
+        let stakeKeys: KeyringPair;
+        let stakeProviderId: u64;
+        before(async function () {
+            stakeKeys = createKeys("StakeKeys");
+            stakeProviderId = await createMsaAndProvider(stakeKeys, "StakeProvider", accountBalance);
         });
 
-        describe("unstake testing", function () {
-            it("should fail to unstake for UnstakedAmountIsZero", async function () {
-                const failUnstakeObj = ExtrinsicHelper.unstake(unstakeKeys, unstakeProviderId, 0);
-                await assert.rejects(failUnstakeObj.fundAndSend(), { name: "UnstakedAmountIsZero" });
-            });
-            it("should fail to unstake for StakingAccountNotFound", async function () {
-                const failUnstakeObj = ExtrinsicHelper.unstake(otherProviderKeys, unstakeProviderId, 1000000);
-                await assert.rejects(failUnstakeObj.fundAndSend(), { name: "StakingAccountNotFound" });
-            });
+        it("fails to stake", async function () {
+            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, 99, 1000000);
+            await assert.rejects(failStakeObj.fundAndSend(), { name: "InvalidTarget" });
+        });
+    });
+
+    describe("when attempting to stake below the minimum staking requirements", async function () {
+        let stakingKeys: KeyringPair;
+        let providerId: u64;
+        before(async function () {
+            stakingKeys = createKeys("stakingKeys");
+            providerId = await createMsaAndProvider(stakingKeys, "stakingKeys", accountBalance);
         });
 
-        describe("withdraw_unstaked testing", function () {
-            it("should fail to withdraw the unstaked amount", async function () {
-                const stakeObj = ExtrinsicHelper.stake(withdrawKeys, withdrawProviderId, 1000000);
-                const [stakeEvent] = await stakeObj.fundAndSend();
-                assert.notEqual(stakeEvent, undefined, "should return a Stake event");
-
-                const withdrawObj = ExtrinsicHelper.withdrawUnstaked(withdrawKeys);
-                await assert.rejects(withdrawObj.fundAndSend(), { name: "NoUnstakedTokensAvailable" });
-            });
+        it("should fail to stake for InsufficientStakingAmount", async function () {
+            const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, 1000);
+            await assert.rejects(failStakeObj.fundAndSend(), { name: "InsufficientStakingAmount" });
         });
-    })
+    });
+
+    describe("when attempting to stake a zero amount", async function () {
+        let stakingKeys: KeyringPair;
+        let providerId: u64;
+        before(async function () {
+            stakingKeys = createKeys("stakingKeys");
+            providerId = await createMsaAndProvider(stakingKeys, "stakingKeys", accountBalance);
+        });
+
+        it("fails to stake and errors ZeroAmountNotAllowed", async function () {
+            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, stakeProviderId, 0);
+            await assert.rejects(failStakeObj.fundAndSend(), { name: "ZeroAmountNotAllowed" });
+        });
+    });
+
+    describe("when staking an amount and account balanace is too low", async function () {
+        let stakingKeys: KeyringPair;
+        let providerId: u64;
+        before(async function () {
+            let accountBalance: bigint = 2n * cents;
+            stakingKeys = createKeys("stakingKeys");
+            providerId = await createMsaAndProvider(stakingKeys, "stakingKeys", accountBalance);
+        });
+
+        it("fails to stake and errors BalanceTooLowtoStake", async function () {
+            const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, 1000000n);
+            await assert.rejects(failStakeObj.fundAndSend(), { name: "BalanceTooLowtoStake" });
+        });
+    });
+
+
+    describe("unstake testing", function () {
+        it("should fail to unstake for UnstakedAmountIsZero", async function () {
+            const failUnstakeObj = ExtrinsicHelper.unstake(unstakeKeys, unstakeProviderId, 0);
+            await assert.rejects(failUnstakeObj.fundAndSend(), { name: "UnstakedAmountIsZero" });
+        });
+        it("should fail to unstake for StakingAccountNotFound", async function () {
+            const failUnstakeObj = ExtrinsicHelper.unstake(otherProviderKeys, unstakeProviderId, 1000000);
+            await assert.rejects(failUnstakeObj.fundAndSend(), { name: "StakingAccountNotFound" });
+        });
+    });
+
+    describe("withdraw_unstaked testing", function () {
+        it("should fail to withdraw the unstaked amount", async function () {
+            const stakeObj = ExtrinsicHelper.stake(withdrawKeys, withdrawProviderId, 1000000);
+            const [stakeEvent] = await stakeObj.fundAndSend();
+            assert.notEqual(stakeEvent, undefined, "should return a Stake event");
+
+            const withdrawObj = ExtrinsicHelper.withdrawUnstaked(withdrawKeys);
+            await assert.rejects(withdrawObj.fundAndSend(), { name: "NoUnstakedTokensAvailable" });
+        });
+    });
+})
