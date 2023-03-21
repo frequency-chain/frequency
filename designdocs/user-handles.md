@@ -35,8 +35,10 @@ User handle ```registry``` on Frequency chain.
 
 * User handles must be unique and each msa can only be mapped to one handle.
 * User handles must be between 3 and 20 characters (32b limit) long.
+* User handles must only contain characters that are URL safe
 * User handles cannot contain the following substrings (or homoglyphs): @, #, :, ., ```
-* User handles cannot be (@admin, @everyone, @all) *blocklist of handles we reserve
+* User handles cannot match any in a blocklist. e.g. (@admin, @everyone, @all) and others
+* Suffixes are numeric and contain digits without any leading zeros.
 * Suffixes are u32 limited to a range defined by governance
 * Suffix will be randomly constrained.
 * Homoglyph versions of handles should still resolve to the same ```msa_id``` (e.g. ```user.1234``` and ```u$er.1234``` should resolve to the same ```msa_id```).
@@ -44,10 +46,9 @@ User handle ```registry``` on Frequency chain.
 
 ### General Steps
 
-* Query the chain for the current seed value.
-* Hash the seed with the user desired handle base.
-* Apply the resulting value as the seed to the specified PRNG.
-* Generate the next 10/20 ```u32``` values from the PRNG these are the possible suffixes within the range of suffixes allowed by the chain.
+* Create a randomly shuffled array of numeric suffixes.
+* For each base handle requested, a storage map will be created with a randomly generated start index (in to the shuffled array) and a current index.  The current index will be incremented each time a new suffix is requested.
+* When the current index reaches the start index, all suffixes are exhausted and an error is returned.
 * Query the chain to check which values are available, check if the handle with the suffix is available.
 * Choose an available value and attempt to claim it by submitting the full handle with the suffix to the chain.
 * Chain validates the handle and suffix and maps the handle to the ```msa_id```.
@@ -55,9 +56,6 @@ User handle ```registry``` on Frequency chain.
 
 ### Chain Steps
 
-* Every 100 blocks (e.g., when block_number % 100 == 1), update the current seed by taking the Merkle root of the previous block. Keep the current and one previous seed so that two seeds, s0 and s1, are part of the chain state at any given time.
-* Provide an RPC to get the current seed.
-* Provide an RPC to get the suffix options for a given handle.
 * When a user submits a handle, check the numeric suffix for availability and that it honors range defined for suffix window.
 * Store ```msa_id``` to ```handle``` mapping and ```handle``` to ```msa_id``` mapping.
 
@@ -79,7 +77,6 @@ sequenceDiagram
     Wallet->>Wallet: perform 2FA if first attempt
     Wallet-->>App: return signed payload
     App->>Frequency: create_msa_handle(.., signed_payload)
-    Frequency-->>Frequency: query current seed
     Frequency-->>Frequency: compute suffix options
     Frequency-->>Frequency: check_handle_availability(...handle, suffix)
     Frequency-->>Frequency: submit transaction
