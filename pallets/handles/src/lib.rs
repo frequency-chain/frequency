@@ -69,6 +69,44 @@ pub mod pallet {
 	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(_);
 
+	/// - Keys: k1: Canonical base handle, k2: Suffix
+	/// - Value: MSA id
+	#[pallet::storage]
+	#[pallet::getter(fn get_msa_id_for_canonical_and_suffix)]
+	pub type CanonicalBaseHandleAndSuffixToMSAId<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CanonicalBaseHandle,
+		Twox64Concat,
+		HandleSuffix,
+		MessageSourceId,
+		OptionQuery,
+	>;
+
+	/// - Key: MSA id
+	/// - Value: Display name
+	#[pallet::storage]
+	#[pallet::getter(fn get_display_name_for_msa_id)]
+	pub type MSAIdToDisplayName<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		MessageSourceId,
+		HandleDisplayName,
+		ValueQuery,
+	>;
+
+	/// - Keys: Canonical base handle (no delimeter, no suffix)
+	/// - Value: Cursor u32
+	#[pallet::storage]
+	#[pallet::getter(fn get_cursor_for_canonical)]
+	pub type CanonicalBaseHandleToCursor<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		CanonicalBaseHandle,
+		SequenceCursor,
+		OptionQuery,
+	>;
+
 	#[derive(PartialEq, Eq)] // for testing
 	#[pallet::error]
 	pub enum Error<T> {
@@ -96,7 +134,7 @@ pub mod pallet {
 			ensure_signed(origin)?;
 
 			let len = base_name.len() as u32;
-			if len < HANDLE_BASE_MIN || len > HANDLE_BASE_MAX {
+			if len < HANDLE_BASE_CHARS_MIN || len > HANDLE_BASE_CHARS_MAX {
 				return Err(DispatchError::Other("Invalid base name length"))
 			}
 

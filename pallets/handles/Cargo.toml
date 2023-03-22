@@ -27,6 +27,7 @@ common-primitives = { default-features = false, path = "../../common/primitives"
 [dev-dependencies]
 env_logger = "0.10.0"
 pretty_assertions = "1"
+serde = { version = "1.0", features = ["derive"] }
 
 [features]
 default = ['std']
