@@ -1,0 +1,51 @@
+[package]
+authors = ["Frequency"]
+description = "Handles Pallet"
+edition = "2021"
+homepage = "https://frequency.xyz"
+license = "Apache-2.0"
+name = "pallet-handles"
+version = "0.0.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.1.5", default-features = false, features = ["derive",] }
+log = { version = "0.4.17", default-features = false }
+scale-info = { version = "2.2.0", default-features = false, features = ["derive",] }
+# Substrate
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.36" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
+# Frequency related dependencies
+common-primitives = { default-features = false, path = "../../common/primitives" }
+
+[dev-dependencies]
+env_logger = "0.10.0"
+pretty_assertions = "1"
+
+[features]
+default = ['std']
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "common-primitives/runtime-benchmarks"
+]
+std = [
+  'codec/std',
+  'scale-info/std',
+  'sp-std/std',
+  'sp-core/std',
+  'sp-io/std',
+  'sp-runtime/std',
+  'frame-support/std',
+  'frame-system/std',
+  'frame-benchmarking/std',
+  'common-primitives/std'
+]
+try-runtime = ['frame-support/try-runtime']

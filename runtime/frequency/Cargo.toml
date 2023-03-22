@@ -66,6 +66,8 @@ orml-vesting = { git = "https://github.com/open-web3-stack/open-runtime-module-l
 # Frequency
 common-primitives = { default-features = false, path = "../../common/primitives" }
 common-runtime = { path = "../common", default-features = false }
+pallet-handles = { path = "../../pallets/handles", default-features = false }
+pallet-handles-runtime-api = { path = "../../pallets/handles/src/runtime-api", default-features = false }
 pallet-messages = { path = "../../pallets/messages", default-features = false }
 pallet-messages-runtime-api = { path = "../../pallets/messages/src/runtime-api", default-features = false }
 pallet-msa = { path = "../../pallets/msa", default-features = false }
@@ -122,6 +124,8 @@ std = [
 	"pallet-transaction-payment/std",
 	"pallet-treasury/std",
 	"pallet-utility/std",
+	"pallet-handles/std",
+	"pallet-handles-runtime-api/std",
 	"pallet-msa/std",
 	"pallet-msa-runtime-api/std",
 	"pallet-messages/std",
@@ -163,6 +167,7 @@ runtime-benchmarks = [
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
+	"pallet-handles/runtime-benchmarks",
 	"pallet-msa/runtime-benchmarks",
 	"pallet-messages/runtime-benchmarks",
 	"pallet-schemas/runtime-benchmarks",
@@ -188,6 +193,7 @@ try-runtime = [
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-multisig/try-runtime",
+	"pallet-handles/try-runtime",
 	"pallet-msa/try-runtime",
 	"pallet-messages/try-runtime",
 	"pallet-schemas/try-runtime",

@@ -356,3 +356,10 @@ impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
 		Ok(())
 	}
 }
+
+// --- Handles Pallet ---
+/// The minimum suffix value
+pub type HandleSuffixMin = ConstU32<1000>;
+/// The maximum suffix value
+pub type HandleSuffixMax = ConstU32<9999>;
+// -end- Handles Pallet
