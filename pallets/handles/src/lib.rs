@@ -38,8 +38,11 @@ mod tests;
 
 use sp_std::prelude::*;
 
-use common_primitives::{handles::*, msa::MessageSourceId};
-use frame_support::{dispatch::DispatchResult, pallet_prelude::*, traits::Get};
+use common_primitives::{
+	handles::*,
+	msa::{MessageSourceId, MsaLookup, MsaValidator},
+};
+use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
 
@@ -53,6 +56,9 @@ pub mod pallet {
 
 		/// Weight information for extrinsics in this pallet.
 		// type WeightInfo: WeightInfo;
+
+		/// A type that will supply MSA related information
+		type MsaInfoProvider: MsaLookup + MsaValidator<AccountId = Self::AccountId>;
 
 		/// The minimum suffix value
 		#[pallet::constant]
@@ -87,29 +93,21 @@ pub mod pallet {
 	/// - Value: Display name
 	#[pallet::storage]
 	#[pallet::getter(fn get_display_name_for_msa_id)]
-	pub type MSAIdToDisplayName<T: Config> = StorageMap<
-		_,
-		Twox64Concat,
-		MessageSourceId,
-		HandleDisplayName,
-		ValueQuery,
-	>;
+	pub type MSAIdToDisplayName<T: Config> =
+		StorageMap<_, Twox64Concat, MessageSourceId, HandleDisplayName, ValueQuery>;
 
 	/// - Keys: Canonical base handle (no delimeter, no suffix)
 	/// - Value: Cursor u32
 	#[pallet::storage]
 	#[pallet::getter(fn get_cursor_for_canonical)]
-	pub type CanonicalBaseHandleToCursor<T: Config> = StorageMap<
-		_,
-		Blake2_128Concat,
-		CanonicalBaseHandle,
-		SequenceCursor,
-		OptionQuery,
-	>;
+	pub type CanonicalBaseHandleToCursor<T: Config> =
+		StorageMap<_, Blake2_128Concat, CanonicalBaseHandle, SequenceCursor, OptionQuery>;
 
 	#[derive(PartialEq, Eq)] // for testing
 	#[pallet::error]
 	pub enum Error<T> {
+		/// Invalid handle length
+		InvalidHandleLength,
 		/// Suffixes exhausted
 		SuffixesExhausted,
 	}
@@ -134,9 +132,10 @@ pub mod pallet {
 			ensure_signed(origin)?;
 
 			let len = base_name.len() as u32;
-			if len < HANDLE_BASE_CHARS_MIN || len > HANDLE_BASE_CHARS_MAX {
-				return Err(DispatchError::Other("Invalid base name length"))
-			}
+			ensure!(
+				len < HANDLE_BASE_BYTES_MIN || len > HANDLE_BASE_BYTES_MAX,
+				Error::<T>::InvalidHandleLength
+			);
 
 			Self::deposit_event(Event::HandleCreated { msa_id: 1 });
 			Ok(())
