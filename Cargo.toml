@@ -16,3 +16,6 @@ inherits = "release"
 lto = true
 codegen-units = 1
 strip = true
+
+[profile.bench-dev]
+inherits = "release"

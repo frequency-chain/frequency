@@ -75,22 +75,41 @@ upgrade-local:
 
 .PHONY: benchmarks
 benchmarks:
-	./scripts/run_all_benchmarks.sh
+	./scripts/run_benchmarks.sh
 
-benchmarks-msa:
-	./scripts/run_benchmark.sh -p msa
+#
+# Target to run benchmarks for local development. Uses the "bench-dev" profile,
+# since "production" is unnecessary in local development, and by using "bench-dev"
+# (which is just a clone of "release"), we don't overwrite our "release" target used
+# for development testing.
+benchmarks-local:
+	./scripts/run_benchmarks.sh -t bench-dev
 
-benchmarks-messages:
-	./scripts/run_benchmark.sh -p messages
+#
+# We use hard-coded variables (rather than a pattern) so that smart shells with
+# CLI auto-complete for Makefiles will pick up the targets and present as options for auto-complete.
+BENCH_TARGETS=benchmarks-messages benchmarks-msa benchmarks-overhead benchmarks-schemas benchmarks-stateful-storage
+BENCH_LOCAL_TARGETS=benchmarks-messages-local benchmarks-msa-local benchmarks-overhead-local benchmarks-schemas-local benchmarks-stateful-storage-local
 
-benchmarks-schemas:
-	./scripts/run_benchmark.sh -p schemas
+#
+# "custom" benchmark targets to run Frequency benchmarks, but not other
+# Substrate/Polkadot pallet benchmarks
+#
+.PHONY: benchmarks-custom $(BENCH_TARGETS:benchmarks-%=%)
+benchmarks-custom: $(BENCH_TARGETS:benchmarks-%=%)
+	./scripts/run_benchmarks.sh $^
 
-benchmarks-stateful-storage:
-	./scripts/run_benchmark.sh -p stateful-storage
+.PHONY: benchmarks-custom-local
+benchmarks-custom-local: $(BENCH_TARGETS:benchmarks-%=%)
+	./scripts/run_benchmarks.sh -t bench-dev $^
 
-benchmarks-overhead:
-	./scripts/run_benchmark.sh -p overhead
+.PHONY: $(BENCH_TARGETS)
+$(BENCH_TARGETS):
+	./scripts/run_benchmarks.sh $(@:benchmarks-%=%)
+
+.PHONY: $(BENCH_LOCAL_TARGETS)
+$(BENCH_LOCAL_TARGETS):
+	./scripts/run_benchmarks.sh -t bench-dev $(@:benchmarks-%=%)
 
 .PHONY: docs
 docs:
