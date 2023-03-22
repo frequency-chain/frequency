@@ -72,6 +72,49 @@ ci-local: check lint lint-audit test integration-test
 upgrade-local:
 	./scripts/init.sh upgrade-frequency
 
+#
+# We use hard-coded variables (rather than a pattern) so that smart shells with
+# CLI auto-complete for Makefiles will pick up the targets and present as options for auto-complete.
+#
+# Note: to run benchmarks for > 1 but < all pallets, it is more efficient to call the `run_benchmarks.sh`
+#       script directly, as it is able to run the build stage just once for all benchmarks
+#
+BENCH_TARGETS=\
+benchmarks-messages \
+benchmarks-msa \
+benchmarks-overhead \
+benchmarks-schemas \
+benchmarks-stateful-storage \
+benchmarks-orml_vesting \
+benchmarks-pallet_balances \
+benchmarks-pallet_collator_selection \
+benchmarks-pallet_democracy \
+benchmarks-pallet_multisig \
+benchmarks-pallet_preimage \
+benchmarks-pallet_scheduler \
+benchmarks-pallet_session \
+benchmarks-pallet_timestamp \
+benchmarks-pallet_treasury \
+benchmarks-pallet_utility
+
+BENCH_LOCAL_TARGETS=\
+benchmarks-messages-local \
+benchmarks-msa-local \
+benchmarks-overhead-local \
+benchmarks-schemas-local \
+benchmarks-stateful-storage-local \
+benchmarks-orml_vesting-local \
+benchmarks-pallet_balances-local \
+benchmarks-pallet_collator_selection-local \
+benchmarks-pallet_collective-local \
+benchmarks-pallet_democracy-local \
+benchmarks-pallet_multisig-local \
+benchmarks-pallet_preimage-local \
+benchmarks-pallet_scheduler-local \
+benchmarks-pallet_session-local \
+benchmarks-pallet_timestamp-local \
+benchmarks-pallet_treasury-local \
+benchmarks-pallet_utility-local
 
 .PHONY: benchmarks
 benchmarks:
@@ -82,26 +125,9 @@ benchmarks:
 # since "production" is unnecessary in local development, and by using "bench-dev"
 # (which is just a clone of "release"), we don't overwrite our "release" target used
 # for development testing.
+.PHONY: benchmarks-local
 benchmarks-local:
 	./scripts/run_benchmarks.sh -t bench-dev
-
-#
-# We use hard-coded variables (rather than a pattern) so that smart shells with
-# CLI auto-complete for Makefiles will pick up the targets and present as options for auto-complete.
-BENCH_TARGETS=benchmarks-messages benchmarks-msa benchmarks-overhead benchmarks-schemas benchmarks-stateful-storage
-BENCH_LOCAL_TARGETS=benchmarks-messages-local benchmarks-msa-local benchmarks-overhead-local benchmarks-schemas-local benchmarks-stateful-storage-local
-
-#
-# "custom" benchmark targets to run Frequency benchmarks, but not other
-# Substrate/Polkadot pallet benchmarks
-#
-.PHONY: benchmarks-custom $(BENCH_TARGETS:benchmarks-%=%)
-benchmarks-custom: $(BENCH_TARGETS:benchmarks-%=%)
-	./scripts/run_benchmarks.sh $^
-
-.PHONY: benchmarks-custom-local
-benchmarks-custom-local: $(BENCH_TARGETS:benchmarks-%=%)
-	./scripts/run_benchmarks.sh -t bench-dev $^
 
 .PHONY: $(BENCH_TARGETS)
 $(BENCH_TARGETS):
@@ -109,7 +135,7 @@ $(BENCH_TARGETS):
 
 .PHONY: $(BENCH_LOCAL_TARGETS)
 $(BENCH_LOCAL_TARGETS):
-	./scripts/run_benchmarks.sh -t bench-dev $(@:benchmarks-%=%)
+	./scripts/run_benchmarks.sh -t bench-dev $(@:benchmarks-%-local=%)
 
 .PHONY: docs
 docs:
