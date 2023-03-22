@@ -94,11 +94,12 @@ pub mod pallet {
 		#[pallet::weight(1000)]
 		pub fn claim_handle(origin: OriginFor<T>, base_name: Vec<u8>) -> DispatchResult {
 			ensure_signed(origin)?;
-			if (base_name.len() as u32) < HANDLE_BASE_MIN ||
-				(base_name.len() as u32) > HANDLE_BASE_MAX
-			{
-				()
+
+			let len = base_name.len() as u32;
+			if len < HANDLE_BASE_MIN || len > HANDLE_BASE_MAX {
+				return Err(DispatchError::Other("Invalid base name length"))
 			}
+
 			Self::deposit_event(Event::HandleCreated { msa_id: 1 });
 			Ok(())
 		}
