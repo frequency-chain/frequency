@@ -137,6 +137,18 @@ $(BENCH_TARGETS):
 $(BENCH_LOCAL_TARGETS):
 	./scripts/run_benchmarks.sh -t bench-dev $(@:benchmarks-%-local=%)
 
+#
+# benchmarks-multi-* targets are for ease of use in running benchmarks for multiple
+# (but not necessarily all) pallets with a single invocation.
+#
+.PHONY: benchmarks-multi
+benchmarks-multi:
+	./scripts/run_benchmarks.sh $(PALLETS)
+
+.PHONY: benchmarks-multi-local
+benchmarks-multi-local:
+	./scripts/run_benchmarks.sh -t bench-dev $(PALLETS)
+
 .PHONY: docs
 docs:
 	RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --features frequency
