@@ -141,15 +141,15 @@ pub mod pallet {
 			let caller_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
+			// Validation:  The MSA must not already have a handle associated with it
+
+			// Validation:  The base handle MUST be UTF-8 encoded.
 			let display_name =
 				core::str::from_utf8(&base_name).map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 
 			// Validation:  The handle length must be valid.
-			// This ideally would test the # of characters but it's testing # of bytes instead.
-			// The input is a vec of bytes so we would need to know the encoding (likely UTF-8)
-			// to convert it to a String and test for characters.  Also, since this is user generated
-			// input, there are security risks that need to be addressed when using it.
-			let len = base_name.len() as u32;
+			// WARNING: This can panic.  Need to handle it!
+			let len = display_name.chars().count() as u32;
 			ensure!(
 				len < HANDLE_BASE_BYTES_MIN || len > HANDLE_BASE_BYTES_MAX,
 				Error::<T>::InvalidHandleLength
