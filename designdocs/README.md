@@ -19,6 +19,8 @@ To create a new design document, Please see the [Design Doc README](https://gith
   * [Merged Pull Request](https://github.com/LibertyDSNP/frequency/pull/426)
 * [Stateful Storage](./stateful_storage.md)
     * [PR](https://github.com/LibertyDSNP/frequency/pull/900)
+* [Graph Sdk](./graph_sdk.md)
+    * [PR](https://github.com/LibertyDSNP/frequency/pull/1159)
 
 ## Basic Data Model
 
