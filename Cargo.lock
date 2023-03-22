@@ -5572,6 +5572,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "unicode-normalization",
 ]
 
 [[package]]
