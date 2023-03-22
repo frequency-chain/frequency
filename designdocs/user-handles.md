@@ -322,3 +322,9 @@ sequenceDiagram
   * **Mitigation**: Frequency would use a retirement period to prevent claims on retired handles. The retirement period would be set to some block number in future. This would allow users to claim their handles after the retirement period has ended.
 * **Risk**:  Handle merging.
   * **Mitigation**: To be determined. This will be decided based on implementation requirements.
+
+## Additional Notes
+
+* **Suffix generation**: The suffix generation algorithm will be based on a lazy sequence of suffixes. The algorithm will take a seed and generate a sequence of suffixes. The sequence will be generated lazily, i.e. the algorithm will generate a new suffix only when the previous suffix has been used. This will prevent the generation of a large number of suffixes that may not be used. [An Example of Fisher Yates, and Lazy Sequence Shuffling](https://github.com/Liberty30/magic-rs)
+
+* **Suffix Range (gov_min, gov_max)**: Ideally we should enforce governance window to be of a minimum size, say 10k. This will prevent the generation of a large number of suffixes that may not be used, while keeping the performance in acceptable limits.
