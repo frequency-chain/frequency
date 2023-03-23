@@ -45,6 +45,7 @@ use common_primitives::{
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
+use numtoa::*;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -119,10 +120,12 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Emitted when a schema is registered. [who, schemas id]
+		/// Emitted when a handle is created. [MSA id, full handle in UTF-8 bytes]
 		HandleCreated {
-			/// message source id of handle owner
+			/// MSA id of handle owner
 			msa_id: MessageSourceId,
+			/// UTF-8 string in bytes
+			handle: Handle,
 		},
 	}
 
@@ -130,6 +133,10 @@ pub mod pallet {
 		let mut normalized = unicode_security::skeleton(handle_str).collect::<codec::alloc::string::String>();
 		normalized.make_ascii_lowercase();
 		normalized
+	}
+
+	fn generate_suffix() -> u32 {
+		return 1234;
 	}
 
 	#[pallet::call]
@@ -154,15 +161,38 @@ pub mod pallet {
 			// Validation:  The handle length must be valid.
 			// WARNING: This can panic.  Need to handle it!
 			let len = base_handle_str.chars().count() as u32;
+			log::info!("handle length={}", len);
+			log::info!("handle={}", base_handle_str);
 			ensure!(
-				len < HANDLE_BASE_BYTES_MIN || len > HANDLE_BASE_BYTES_MAX,
+				len >= HANDLE_BASE_BYTES_MIN && len <= HANDLE_BASE_BYTES_MAX,
 				Error::<T>::InvalidHandleLength
 			);
 
+			// Save canonical to shuffled suffix sequence cursor
 			let canonical_handle_vec = convert_to_canonical(base_handle_str).as_bytes().to_vec();
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
-			CanonicalBaseHandleToCursor::<T>::insert(canonical_handle, 0);
-			Self::deposit_event(Event::HandleCreated { msa_id: caller_msa_id });
+			CanonicalBaseHandleToCursor::<T>::insert(&canonical_handle, 0);
+			let canonical_handle_str = core::str::from_utf8(&canonical_handle).map_err(|_| Error::<T>::InvalidHandleEncoding)?;
+			log::info!("canonical={}", canonical_handle_str);
+			
+			// Generate suffix
+
+			let suffix = generate_suffix();
+			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(&canonical_handle, suffix as u16, caller_msa_id);
+
+			let mut full_handle_vec: Vec<u8> = vec![];
+			full_handle_vec.extend(base_handle_str.as_bytes());
+			full_handle_vec.extend(b".");
+			let mut buff = [0u8; 30];
+			full_handle_vec.extend(suffix.numtoa(10, &mut buff));
+
+			let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
+
+			// Save display handle to MSA id 
+			//let full_handle_str = base_handle_str; 
+			MSAIdToDisplayName::<T>::insert(caller_msa_id, full_handle.clone());
+
+			Self::deposit_event(Event::HandleCreated { msa_id: caller_msa_id, handle: full_handle.clone() });
 			Ok(())
 		}
 	}
