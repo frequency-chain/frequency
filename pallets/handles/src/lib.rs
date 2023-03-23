@@ -132,6 +132,7 @@ pub mod pallet {
 	fn convert_to_canonical(handle_str: &str) -> codec::alloc::string::String {
 		let mut normalized = unicode_security::skeleton(handle_str).collect::<codec::alloc::string::String>();
 		normalized.make_ascii_lowercase();
+		log::info!("normalized={}", normalized.clone());
 		normalized
 	}
 
@@ -171,14 +172,14 @@ pub mod pallet {
 			// Save canonical to shuffled suffix sequence cursor
 			let canonical_handle_vec = convert_to_canonical(base_handle_str).as_bytes().to_vec();
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
-			CanonicalBaseHandleToCursor::<T>::insert(&canonical_handle, 0);
+			CanonicalBaseHandleToCursor::<T>::insert(canonical_handle.clone(), 0);
 			let canonical_handle_str = core::str::from_utf8(&canonical_handle).map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 			log::info!("canonical={}", canonical_handle_str);
-			
+
 			// Generate suffix
 
 			let suffix = generate_suffix();
-			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(&canonical_handle, suffix as u16, caller_msa_id);
+			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(canonical_handle.clone(), suffix as u16, caller_msa_id);
 
 			let mut full_handle_vec: Vec<u8> = vec![];
 			full_handle_vec.extend(base_handle_str.as_bytes());
