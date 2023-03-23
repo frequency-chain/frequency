@@ -82,7 +82,7 @@ pub mod pallet {
 	pub type CanonicalBaseHandleAndSuffixToMSAId<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		CanonicalBaseHandle,
+		Handle,
 		Twox64Concat,
 		HandleSuffix,
 		MessageSourceId,
@@ -94,14 +94,14 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_display_name_for_msa_id)]
 	pub type MSAIdToDisplayName<T: Config> =
-		StorageMap<_, Twox64Concat, MessageSourceId, HandleDisplayName, ValueQuery>;
+		StorageMap<_, Twox64Concat, MessageSourceId, Handle, ValueQuery>;
 
 	/// - Keys: Canonical base handle (no delimeter, no suffix)
 	/// - Value: Cursor u32
 	#[pallet::storage]
 	#[pallet::getter(fn get_cursor_for_canonical)]
 	pub type CanonicalBaseHandleToCursor<T: Config> =
-		StorageMap<_, Blake2_128Concat, CanonicalBaseHandle, SequenceCursor, OptionQuery>;
+		StorageMap<_, Blake2_128Concat, Handle, SequenceCursor, OptionQuery>;
 
 	#[derive(PartialEq, Eq)] // for testing
 	#[pallet::error]
@@ -126,7 +126,11 @@ pub mod pallet {
 		},
 	}
 
-	// fn convert_to_canonical(handle: Vec<u8>) -> Vec<u8> {}
+	fn convert_to_canonical(handle_str: &str) -> codec::alloc::string::String {
+		let mut normalized = unicode_security::skeleton(handle_str).collect::<codec::alloc::string::String>();
+		normalized.make_ascii_lowercase();
+		normalized
+	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -134,7 +138,7 @@ pub mod pallet {
 		///
 		#[pallet::call_index(0)]
 		#[pallet::weight(1000)]
-		pub fn claim_handle(origin: OriginFor<T>, base_name: HandleDisplayName) -> DispatchResult {
+		pub fn claim_handle(origin: OriginFor<T>, base_handle: Handle) -> DispatchResult {
 			let delegator_key = ensure_signed(origin)?;
 
 			// Validation:  The caller must already have a MSA id
@@ -144,19 +148,20 @@ pub mod pallet {
 			// Validation:  The MSA must not already have a handle associated with it
 
 			// Validation:  The base handle MUST be UTF-8 encoded.
-			let display_name =
-				core::str::from_utf8(&base_name).map_err(|_| Error::<T>::InvalidHandleEncoding)?;
+			let base_handle_str =
+				core::str::from_utf8(&base_handle).map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 
 			// Validation:  The handle length must be valid.
 			// WARNING: This can panic.  Need to handle it!
-			let len = display_name.chars().count() as u32;
+			let len = base_handle_str.chars().count() as u32;
 			ensure!(
 				len < HANDLE_BASE_BYTES_MIN || len > HANDLE_BASE_BYTES_MAX,
 				Error::<T>::InvalidHandleLength
 			);
 
-			//let canonical_handle = convert_to_canonical(base_handle);
-
+			let canonical_handle_vec = convert_to_canonical(base_handle_str).as_bytes().to_vec();
+			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
+			CanonicalBaseHandleToCursor::<T>::insert(canonical_handle, 0);
 			Self::deposit_event(Event::HandleCreated { msa_id: caller_msa_id });
 			Ok(())
 		}
