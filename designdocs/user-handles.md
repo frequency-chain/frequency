@@ -73,14 +73,28 @@ sequenceDiagram
     participant RPC
     participant Frequency
     User->>App: enter desired handle
-    App->>Wallet: send signup data
-    Wallet->>Wallet: perform 2FA if first attempt
-    Wallet-->>App: return signed payload
-    App->>Frequency: create_msa_handle(.., signed_payload)
-    Frequency-->>Frequency: compute suffix options
-    Frequency-->>Frequency: check_handle_availability(...handle, suffix)
-    Frequency-->>Frequency: submit transaction
-    Frequency-->>App: MsaHandleCreated event with (msa_id, handle+suffix) 
+    loop until msa_id and handle successfully created
+        App->>RPC: get_presumptive_suffix(handle)
+        RPC->>Frequency: query state for current index for handle
+        Frequency-->>RPC: return current index
+        RPC->>RPC: compute suffix options
+        loop until available suffix is found
+            RPC->>Frequency: check_handle_availability(...handle, suffixN)
+            Frequency-->>RPC: return boolean
+        end
+        RPC-->>App: return presumptive suffix
+        App->>User: ask user to confirm handle.suffix
+        User->>App: confirm and submit
+        App->>Wallet: send signup data with handle and suffix
+        Wallet->>Wallet: perform 2FA if first attempt
+        Wallet-->>App: return signed payload
+        App->>Frequency: create_msa_handle(.., signed_payload)
+        Frequency-->>Frequency: compute suffix options
+        Frequency-->>Frequency: check_handle_availability(...handle, suffix)
+        Frequency-->>Frequency: fail if available suffix does not match signed_payload suffix
+        Frequency-->>Frequency: submit transaction
+        Frequency-->>App: MsaHandleCreated event with (msa_id, handle+suffix)
+    end
     App->>User: proceed with setup
     User->>App: request to get msa_id
     App->>Frequency: query state for msa_id (handle<->msa_id)
