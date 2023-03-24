@@ -105,14 +105,14 @@ pub mod pallet {
 	/// - Keys: Canonical base handle (no delimeter, no suffix)
 	/// - Value: Cursor u16
 	#[pallet::storage]
-	#[pallet::getter(fn get_current_suffix_index_for_base_handle)]
+	#[pallet::getter(fn get_current_suffix_index_for_canonical_handle)]
 	pub type CanonicalBaseHandleToSuffixIndex<T: Config> =
 		StorageMap<_, Blake2_128Concat, Handle, SequenceIndex, OptionQuery>;
 
 	#[derive(PartialEq, Eq)] // for testing
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Invalid handle encoding
+		/// Invalid handle encoding (should be UTF-8)
 		InvalidHandleEncoding,
 		/// Invalid handle byte length
 		InvalidHandleByteLength,
@@ -190,12 +190,18 @@ pub mod pallet {
 		/// # Errors
 		/// * [`Error::SuffixesExhausted`]
 		///
-		pub fn get_next_suffix_index_for_base_handle(
+		pub fn get_next_suffix_index_for_canonical_handle(
 			canonical_handle: Handle,
 		) -> Result<SequenceIndex, DispatchError> {
-			let current = Self::get_current_suffix_index_for_base_handle(canonical_handle)
-				.unwrap_or_default();
-			let next = current.checked_add(1).ok_or(Error::<T>::SuffixesExhausted)?;
+			let next;
+			match Self::get_current_suffix_index_for_canonical_handle(canonical_handle) {
+				None => {
+					next = 0;
+				},
+				Some(current) => {
+					next = current.checked_add(1).ok_or(Error::<T>::SuffixesExhausted)?;
+				}
+			}
 
 			Ok(next)
 		}
@@ -210,6 +216,7 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		#[pallet::weight(1000)]
 		pub fn claim_handle(origin: OriginFor<T>, base_handle: Handle) -> DispatchResult {
+			log::info!("claim_handle()");
 			let delegator_key = ensure_signed(origin)?;
 
 			// Validation:  The caller must already have a MSA id
@@ -243,14 +250,14 @@ pub mod pallet {
 			// Save canonical to shuffled suffix sequence cursor
 			let canonical_handle_vec = convert_to_canonical(base_handle_str).as_bytes().to_vec();
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
-			CanonicalBaseHandleToSuffixIndex::<T>::insert(canonical_handle.clone(), 0);
 			let canonical_handle_str = core::str::from_utf8(&canonical_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 			log::info!("canonical={}", canonical_handle_str);
 
 			// Generate suffix
-			let suffix_index = Self::get_next_suffix_index_for_base_handle(base_handle.clone())
+			let suffix_index = Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
 				.unwrap_or_default();
+			log::info!("suffix_index={}", suffix_index);
 			let suffix =
 				generate_suffix_for_canonical_handle(&canonical_handle_str, suffix_index as usize);
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(
