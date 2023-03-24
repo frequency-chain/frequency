@@ -191,17 +191,16 @@ pub mod pallet {
 		pub fn get_next_suffix_index_for_base_handle(
 			canonical_handle: Handle,
 		) -> Result<SequenceIndex, DispatchError> {
-			let current = Self::get_current_suffix_index_for_base_handle(canonical_handle).unwrap_or_default();
-			let next = current
-				.checked_add(1)
-				.ok_or(Error::<T>::SuffixesExhausted)?;
+			let current = Self::get_current_suffix_index_for_base_handle(canonical_handle)
+				.unwrap_or_default();
+			let next = current.checked_add(1).ok_or(Error::<T>::SuffixesExhausted)?;
 
 			Ok(next)
 		}
 	}
 
 	// EXTRINSICS
-	
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Claim handle
@@ -249,7 +248,10 @@ pub mod pallet {
 				suffix,
 				caller_msa_id,
 			);
-			CanonicalBaseHandleToSuffixIndex::<T>::set(canonical_handle.clone(), Some(suffix_index));
+			CanonicalBaseHandleToSuffixIndex::<T>::set(
+				canonical_handle.clone(),
+				Some(suffix_index),
+			);
 
 			let mut full_handle_vec: Vec<u8> = vec![];
 			full_handle_vec.extend(base_handle_str.as_bytes());
@@ -267,6 +269,22 @@ pub mod pallet {
 				msa_id: caller_msa_id,
 				handle: full_handle.clone(),
 			});
+			Ok(())
+		}
+
+		/// Change handle
+		#[pallet::call_index(1)]
+		#[pallet::weight(1000)]
+		pub fn change_handle(origin: OriginFor<T>) -> DispatchResult {
+			let delegator_key = ensure_signed(origin)?;
+			Ok(())
+		}
+
+		/// Retire handle
+		#[pallet::call_index(2)]
+		#[pallet::weight(1000)]
+		pub fn retire_handle(origin: OriginFor<T>) -> DispatchResult {
+			let delegator_key = ensure_signed(origin)?;
 			Ok(())
 		}
 	}
