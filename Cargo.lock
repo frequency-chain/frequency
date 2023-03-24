@@ -5567,12 +5567,14 @@ dependencies = [
  "numtoa",
  "parity-scale-codec",
  "pretty_assertions",
+ "rand 0.8.5",
  "scale-info",
  "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "twox-hash",
  "unicode-security",
 ]
 

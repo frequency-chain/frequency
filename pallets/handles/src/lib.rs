@@ -44,8 +44,13 @@ use common_primitives::{
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
 use frame_system::pallet_prelude::*;
-pub use pallet::*;
 use numtoa::*;
+pub use pallet::*;
+
+// pub mod suffix;
+// use suffix::SuffixGenerator;
+
+// pub mod confusables;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -98,11 +103,11 @@ pub mod pallet {
 		StorageMap<_, Twox64Concat, MessageSourceId, Handle, ValueQuery>;
 
 	/// - Keys: Canonical base handle (no delimeter, no suffix)
-	/// - Value: Cursor u32
+	/// - Value: Cursor u16
 	#[pallet::storage]
-	#[pallet::getter(fn get_cursor_for_canonical)]
-	pub type CanonicalBaseHandleToCursor<T: Config> =
-		StorageMap<_, Blake2_128Concat, Handle, SequenceCursor, OptionQuery>;
+	#[pallet::getter(fn get_current_suffix_index_for_base_handle)]
+	pub type CanonicalBaseHandleToSuffixIndex<T: Config> =
+		StorageMap<_, Blake2_128Concat, Handle, SequenceIndex, OptionQuery>;
 
 	#[derive(PartialEq, Eq)] // for testing
 	#[pallet::error]
@@ -130,16 +135,73 @@ pub mod pallet {
 	}
 
 	fn convert_to_canonical(handle_str: &str) -> codec::alloc::string::String {
-		let mut normalized = unicode_security::skeleton(handle_str).collect::<codec::alloc::string::String>();
+		let mut normalized =
+			unicode_security::skeleton(handle_str).collect::<codec::alloc::string::String>();
 		normalized.make_ascii_lowercase();
 		log::info!("normalized={}", normalized.clone());
 		normalized
 	}
 
-	fn generate_suffix() -> u32 {
-		return 1234;
+	use core::hash::Hasher;
+	use rand::{rngs::SmallRng, Rng, SeedableRng};
+	use twox_hash::XxHash64;
+
+	fn unique_sequence(
+		min: usize,
+		max: usize,
+		rng: &mut SmallRng,
+	) -> impl Iterator<Item = usize> + '_ {
+		let mut indices: Vec<usize> = (min..=max).into_iter().collect();
+		(0..max).rev().map(move |i| {
+			// Make sure j is never higher than i
+			// To keep the prior values stable (because it is reversed)
+			let j = rng.gen_range(min..i + 1);
+			indices.swap(i, j);
+			indices[i]
+		})
 	}
 
+	fn generate_suffix_for_canonical_handle(canonical_handle: &str, cursor: usize) -> u16 {
+		log::info!("generate_suffix_for_canonical_handle() cursor={}", &cursor);
+
+		let mut hasher = XxHash64::with_seed(0);
+		sp_std::hash::Hash::hash(&canonical_handle, &mut hasher);
+		let value_bytes: [u8; 4] = [0; 4];
+		hasher.write(&value_bytes);
+		let seed = hasher.finish();
+
+		log::info!("seed={}", seed);
+
+		let mut rng: SmallRng = SmallRng::seed_from_u64(seed);
+
+		let mut sequence = unique_sequence(0, 10000, &mut rng);
+		if let Some(suffix) = sequence.nth(cursor) {
+			suffix.try_into().unwrap()
+		} else {
+			0
+		}
+	}
+
+	impl<T: Config> Pallet<T> {
+		/// Get the next index into the shuffled suffix sequence for the specified canonical base handle
+		///
+		/// # Errors
+		/// * [`Error::SuffixesExhausted`]
+		///
+		pub fn get_next_suffix_index_for_base_handle(
+			canonical_handle: Handle,
+		) -> Result<SequenceIndex, DispatchError> {
+			let current = Self::get_current_suffix_index_for_base_handle(canonical_handle).unwrap_or_default();
+			let next = current
+				.checked_add(1)
+				.ok_or(Error::<T>::SuffixesExhausted)?;
+
+			Ok(next)
+		}
+	}
+
+	// EXTRINSICS
+	
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Claim handle
@@ -156,8 +218,8 @@ pub mod pallet {
 			// Validation:  The MSA must not already have a handle associated with it
 
 			// Validation:  The base handle MUST be UTF-8 encoded.
-			let base_handle_str =
-				core::str::from_utf8(&base_handle).map_err(|_| Error::<T>::InvalidHandleEncoding)?;
+			let base_handle_str = core::str::from_utf8(&base_handle)
+				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 
 			// Validation:  The handle length must be valid.
 			// WARNING: This can panic.  Need to handle it!
@@ -172,14 +234,22 @@ pub mod pallet {
 			// Save canonical to shuffled suffix sequence cursor
 			let canonical_handle_vec = convert_to_canonical(base_handle_str).as_bytes().to_vec();
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
-			CanonicalBaseHandleToCursor::<T>::insert(canonical_handle.clone(), 0);
-			let canonical_handle_str = core::str::from_utf8(&canonical_handle).map_err(|_| Error::<T>::InvalidHandleEncoding)?;
+			CanonicalBaseHandleToSuffixIndex::<T>::insert(canonical_handle.clone(), 0);
+			let canonical_handle_str = core::str::from_utf8(&canonical_handle)
+				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 			log::info!("canonical={}", canonical_handle_str);
 
 			// Generate suffix
-
-			let suffix = generate_suffix();
-			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(canonical_handle.clone(), suffix as u16, caller_msa_id);
+			let suffix_index = Self::get_next_suffix_index_for_base_handle(base_handle.clone())
+				.unwrap_or_default();
+			let suffix =
+				generate_suffix_for_canonical_handle(&canonical_handle_str, suffix_index as usize);
+			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(
+				canonical_handle.clone(),
+				suffix,
+				caller_msa_id,
+			);
+			CanonicalBaseHandleToSuffixIndex::<T>::set(canonical_handle.clone(), Some(suffix_index));
 
 			let mut full_handle_vec: Vec<u8> = vec![];
 			full_handle_vec.extend(base_handle_str.as_bytes());
@@ -189,11 +259,14 @@ pub mod pallet {
 
 			let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
 
-			// Save display handle to MSA id 
-			//let full_handle_str = base_handle_str; 
+			// Save display handle to MSA id
+			//let full_handle_str = base_handle_str;
 			MSAIdToDisplayName::<T>::insert(caller_msa_id, full_handle.clone());
 
-			Self::deposit_event(Event::HandleCreated { msa_id: caller_msa_id, handle: full_handle.clone() });
+			Self::deposit_event(Event::HandleCreated {
+				msa_id: caller_msa_id,
+				handle: full_handle.clone(),
+			});
 			Ok(())
 		}
 	}
