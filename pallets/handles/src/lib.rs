@@ -114,8 +114,10 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Invalid handle encoding
 		InvalidHandleEncoding,
-		/// Invalid handle length
-		InvalidHandleLength,
+		/// Invalid handle byte length
+		InvalidHandleByteLength,
+		/// Invalid handle character length
+		InvalidHandleCharacterLength,
 		/// Suffixes exhausted
 		SuffixesExhausted,
 		/// Invalid MSA
@@ -225,9 +227,17 @@ pub mod pallet {
 			let len = base_handle_str.chars().count() as u32;
 			log::info!("handle length={}", len);
 			log::info!("handle={}", base_handle_str);
+
+			// Validate byte length
 			ensure!(
 				len >= HANDLE_BASE_BYTES_MIN && len <= HANDLE_BASE_BYTES_MAX,
-				Error::<T>::InvalidHandleLength
+				Error::<T>::InvalidHandleByteLength
+			);
+
+			// Validate character length
+			ensure!(
+				len >= HANDLE_BASE_CHARS_MIN && len <= HANDLE_BASE_CHARS_MAX,
+				Error::<T>::InvalidHandleCharacterLength
 			);
 
 			// Save canonical to shuffled suffix sequence cursor
