@@ -1,6 +1,6 @@
 use sp_std::collections::btree_map::BTreeMap;
 
-let mut items = BTreeMap::from([
+const CHAR_MAP: BTreeMap<char, char> = BTreeMap::from([
     ('\u{1c3}', '\u{21}'),
     ('\u{2d51}', '\u{21}'),
     ('\u{ff01}', '\u{21}'),
