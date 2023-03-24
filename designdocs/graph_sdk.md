@@ -28,8 +28,8 @@ Following is a list of desired operations in this SDK:
 
 | Name  | Description |
 | ------------- | ------------- |
-| **Initialise**  | Creates in memory graph structure for a desired MSA.  |
-| **Import**  | Import the blob(s) and keys from frequency into Graph SDK for desired MSA.  |
+| **Initialise**  | Creates in memory graph structure for a desired DSNP user.  |
+| **Import**  | Import the blob(s) and keys from frequency into Graph SDK for desired DSNP user.  |
 | **Update**  | Changes the current in-memory graph structure with incoming updates.  |
 | **Get Graph**  | Exposes current state of in-memory graph to the consumer of the SDK.  |
 | **Has Updates**  | Determines if the applied changes created some updates in graph that needs to be persisted on Frequency.  |
@@ -61,7 +61,7 @@ Steps necessary to import a social graph blob:
 
 * ###### getConnections
   * params
-    * _**msa_id**_: Owner of the graph we are trying to read/write
+    * _**dsnp_user_id**_: Owner of the graph we are trying to read/write
     * _**privacy_level**_: Public or Private
     * _**relationship_type**_: Follow or Friendship
     * _**include_local_changes**_: Include local changes in graph or just return the stable instance
@@ -72,8 +72,8 @@ Steps necessary to import a social graph blob:
   * usage
     * This function allows calculating PRIds for Private Friendship connections
   * params
-    * _**msa_keys**_: A list of msa ids and their public keys to be able to calculate PRI ids of
-`MsaKey` type
+    * _**dsnp_keys**_: A list of DSNP user ids and their public keys to be able to calculate PRI ids of
+`DsnpKey` type
 
 * ###### ApplyActions
   * _**actions**_: a list of connect or disconnect actions of `Action` type
@@ -102,44 +102,44 @@ pub enum ConnectionType {
 }
 
 pub struct Import {
-    pub msa_id: MessageSourceId,
+    pub dsnp_user_id: MessageSourceId,
     pub keys: Vec<KeyPair>,    // need to define KeyPair based on NaCl library
     pub pages: Vec<Page>,
 }
 
 pub struct Connection {
-    pub msa_id: MessageSourceId,
+    pub dsnp_user_id: MessageSourceId,
     pub privacy_type: PrivacyType,
     pub connection_type: ConnectionType,
 }
 
-pub struct MsaKey {
-    pub msa_id: MessageSourceId,
+pub struct DsnpKey {
+    pub dsnp_user_id: MessageSourceId,
     pub keys: Vec<PublicKey>,  // need to define PublicKey based on NaCl library
 }
 
 pub enum Action {
     Connect {
-        owner_msa_id: MessageSourceId,
+        owner_dsnp_user_id: MessageSourceId,
         connection: Connection,
         connection_key: Option<PublicKey>, // included only if PRId calculation is required
     },
     Disconnect {
-        owner_msa_id: MessageSourceId,
+        owner_dsnp_user_id: MessageSourceId,
         connection: Connection,
     },
 }
 
 pub enum Update {
     Persist {
-        owner_msa_id: MessageSourceId,
+        owner_dsnp_user_id: MessageSourceId,
         schema_id: SchemaId,
         page_id: PageId,
         prev_hash: Vec<u8>,
         payload: Vec<u8>,
     },
     Delete {
-        owner_msa_id: MessageSourceId,
+        owner_dsnp_user_id: MessageSourceId,
         schema_id: SchemaId,
         page_id: PageId,
         prev_hash: Vec<u8>,
@@ -147,7 +147,7 @@ pub enum Update {
 }
 
 pub struct Rotation {
-    owner_msa_id: MessageSourceId,
+    owner_dsnp_user_id: MessageSourceId,
     prev_key: KeyPair,
     new_key: KeyPair,
 }
@@ -158,9 +158,9 @@ pub struct Rotation {
 * **Tracker**: This is used only to allow generating optimized pages for Frequency.
 
 ## Memory model and usage
-It is recommended to batch the graph changes for MSAs as much as possible and initialize the library
-with all the keys and page blobs related to desired MSAs. Apply all changes to in-memory graph and
-calculate and apply all page updates to Frequency chain.
+It is recommended to batch the graph changes for DSNP users as much as possible and initialize the
+library with all the keys and page blobs related to desired users. Apply all changes to in-memory
+graph and calculate and apply all page updates to Frequency chain.
 
 To ensure local graph state is in sync with the chain graph state, it is recommended to
 only initialize and use the library in case there are any changes to the graph, instead of having a
@@ -184,6 +184,6 @@ and do check in step 3.
 To relax the optimization computation on pages we can define a threshold of fullness along with hard
 cutoffs. If the newly added data causes this page to pass the defined threshold we will consider
 that the page became full after addition.
-Thresholds are there to reduce the possibility of adding a new data passing the hard cutoff point in
-which requires the data to be calculated twice. First to ensure not passing the cutoff point and
+Thresholds are helpful to reduce the possibility of adding a new data passing the hard cutoff point
+in which requires the data to be calculated twice. First to ensure not passing the cutoff point and
 then to actually add the data to the page.
