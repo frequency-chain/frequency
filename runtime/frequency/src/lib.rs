@@ -1028,6 +1028,8 @@ impl pallet_handles::Config for Runtime {
 	type HandleSuffixMin = HandleSuffixMin;
 	/// The maximum suffix value
 	type HandleSuffixMax = HandleSuffixMax;
+	/// The conversion to a 32 byte AccountId
+	type ConvertIntoAccountId32 = ConvertInto;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for

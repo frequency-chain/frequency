@@ -41,11 +41,17 @@ use sp_std::prelude::*;
 use common_primitives::{
 	handles::*,
 	msa::{MessageSourceId, MsaLookup, MsaValidator},
+	utils::wrap_binary_data,
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
 use frame_system::pallet_prelude::*;
 use numtoa::*;
 pub use pallet::*;
+use sp_core::crypto::AccountId32;
+use sp_runtime::{
+	traits::{Convert, Verify},
+	MultiSignature,
+};
 
 // pub mod suffix;
 // use suffix::SuffixGenerator;
@@ -62,6 +68,9 @@ pub mod pallet {
 
 		/// Weight information for extrinsics in this pallet.
 		// type WeightInfo: WeightInfo;
+
+		/// AccountId truncated to 32 bytes
+		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
 
 		/// A type that will supply MSA related information
 		type MsaInfoProvider: MsaLookup + MsaValidator<AccountId = Self::AccountId>;
@@ -122,6 +131,10 @@ pub mod pallet {
 		SuffixesExhausted,
 		/// Invalid MSA
 		InvalidMessageSourceAccount,
+		/// Cryptographic signature failed verification
+		InvalidSignature,
+		/// Ony the MSA Owner may perform the operation
+		NotMsaOwner,
 	}
 
 	#[pallet::event]
@@ -200,10 +213,29 @@ pub mod pallet {
 				},
 				Some(current) => {
 					next = current.checked_add(1).ok_or(Error::<T>::SuffixesExhausted)?;
-				}
+				},
 			}
 
 			Ok(next)
+		}
+
+		/// Verify the `signature` was signed by `signer` on `payload` by a wallet
+		/// Note the `wrap_binary_data` follows the Polkadot wallet pattern of wrapping with `<Byte>` tags.
+		///
+		/// # Errors
+		/// * [`Error::InvalidSignature`]
+		///
+		pub fn verify_signature(
+			signature: &MultiSignature,
+			signer: &T::AccountId,
+			payload: Vec<u8>,
+		) -> DispatchResult {
+			let key = T::ConvertIntoAccountId32::convert((*signer).clone());
+			let wrapped_payload = wrap_binary_data(payload);
+
+			ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
+
+			Ok(())
 		}
 	}
 
@@ -215,18 +247,28 @@ pub mod pallet {
 		///
 		#[pallet::call_index(0)]
 		#[pallet::weight(1000)]
-		pub fn claim_handle(origin: OriginFor<T>, base_handle: Handle) -> DispatchResult {
+		pub fn claim_handle(
+			origin: OriginFor<T>,
+			delegator_key: T::AccountId,
+			proof: MultiSignature,
+			payload: ClaimHandlePayload,
+		) -> DispatchResult {
 			log::info!("claim_handle()");
-			let delegator_key = ensure_signed(origin)?;
-
-			// Validation:  The caller must already have a MSA id
-			let caller_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
+			let provider_key = ensure_signed(origin)?;
+			T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+
+			Self::verify_signature(&proof, &delegator_key, payload.encode())?;
+
+			// Validation:  The delegator must already have a MSA id
+			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+			ensure!(payload.owner_msa_id == delegator_msa_id, Error::<T>::NotMsaOwner);
 
 			// Validation:  The MSA must not already have a handle associated with it
 
 			// Validation:  The base handle MUST be UTF-8 encoded.
-			let base_handle_str = core::str::from_utf8(&base_handle)
+			let base_handle_str = core::str::from_utf8(&payload.base_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 
 			// Validation:  The handle length must be valid.
@@ -255,15 +297,16 @@ pub mod pallet {
 			log::info!("canonical={}", canonical_handle_str);
 
 			// Generate suffix
-			let suffix_index = Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
-				.unwrap_or_default();
+			let suffix_index =
+				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
+					.unwrap_or_default();
 			log::info!("suffix_index={}", suffix_index);
 			let suffix =
 				generate_suffix_for_canonical_handle(&canonical_handle_str, suffix_index as usize);
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(
 				canonical_handle.clone(),
 				suffix,
-				caller_msa_id,
+				delegator_msa_id,
 			);
 			CanonicalBaseHandleToSuffixIndex::<T>::set(
 				canonical_handle.clone(),
@@ -280,10 +323,10 @@ pub mod pallet {
 
 			// Save display handle to MSA id
 			//let full_handle_str = base_handle_str;
-			MSAIdToDisplayName::<T>::insert(caller_msa_id, full_handle.clone());
+			MSAIdToDisplayName::<T>::insert(delegator_msa_id, full_handle.clone());
 
 			Self::deposit_event(Event::HandleCreated {
-				msa_id: caller_msa_id,
+				msa_id: delegator_msa_id,
 				handle: full_handle.clone(),
 			});
 			Ok(())
@@ -293,7 +336,7 @@ pub mod pallet {
 		#[pallet::call_index(1)]
 		#[pallet::weight(1000)]
 		pub fn change_handle(origin: OriginFor<T>) -> DispatchResult {
-			let delegator_key = ensure_signed(origin)?;
+			let _delegator_key = ensure_signed(origin)?;
 			Ok(())
 		}
 
@@ -301,7 +344,7 @@ pub mod pallet {
 		#[pallet::call_index(2)]
 		#[pallet::weight(1000)]
 		pub fn retire_handle(origin: OriginFor<T>) -> DispatchResult {
-			let delegator_key = ensure_signed(origin)?;
+			let _delegator_key = ensure_signed(origin)?;
 			Ok(())
 		}
 	}
