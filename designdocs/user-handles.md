@@ -74,17 +74,17 @@ sequenceDiagram
     participant Frequency
     User->>App: enter desired handle
     loop until msa_id and handle successfully created
+        alt Optionally retrive presumtive suffix
         App->>RPC: get_presumptive_suffix(handle)
         RPC->>Frequency: query state for current index for handle
         Frequency-->>RPC: return current index
-        RPC->>RPC: compute suffix options
-        loop until available suffix is found
+        Frequency->>RPC: compute suffix options
             RPC->>Frequency: check_handle_availability(...handle, suffixN)
             Frequency-->>RPC: return boolean
-        end
         RPC-->>App: return presumptive suffix
         App->>User: ask user to confirm handle.suffix
         User->>App: confirm and submit
+        end
         App->>Wallet: send signup data with handle and suffix
         Wallet->>Wallet: perform 2FA if first attempt
         Wallet-->>App: return signed payload
