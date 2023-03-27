@@ -13,7 +13,7 @@ env:
   NEW_RELEASE_VERSION: ${{github.ref_name}}
   NEW_RELEASE_TAG: ${{github.ref_name}}
   RELEASE_BRANCH_NAME: release-${{github.ref_name}}
-  TEST_RUN: false # used for testing only
+  TEST_RUN: ${{startsWith(github.ref_name, 'v0.0.1')}}
   RUST_TOOLCHAIN: "nightly-2022-10-09" # TODO: Set this dynamically
 
 jobs:
