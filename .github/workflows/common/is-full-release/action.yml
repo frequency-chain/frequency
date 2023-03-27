@@ -1,0 +1,22 @@
+name: Is Full Release?
+description: Determines whether the version tag represents a full release
+inputs:
+  version-tag:
+    description: "Version tag in v#.#.#[-*] format"
+    required: true
+outputs:
+  is-full-release:
+    description: "'true' if full release, 'false' otherwise"
+    value: ${{steps.is-full-release.outputs.is_full_release}}
+runs:
+  using: "composite"
+  steps:
+    - name: Full Release?
+      id: is-full-release
+      shell: bash
+      run: |
+        version_tag=${{inputs.version-tag}}
+        is_full_release=$([[ "$version_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] && \
+          echo 'true' || echo 'false')
+        echo "is_full_release: $is_full_release"
+        echo "is_full_release=$is_full_release" >> $GITHUB_OUTPUT
