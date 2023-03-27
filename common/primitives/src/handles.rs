@@ -1,4 +1,3 @@
-use crate::msa::MessageSourceId;
 use codec::{Decode, Encode};
 use frame_support::BoundedVec;
 use scale_info::TypeInfo;
@@ -25,15 +24,13 @@ pub type SequenceIndex = u16;
 /// Claim handle payload
 #[derive(TypeInfo, Clone, Debug, Decode, Encode, PartialEq, Eq)]
 pub struct ClaimHandlePayload {
-	/// MSA id of the delegator claiming the handle
-	pub owner_msa_id: MessageSourceId,
 	/// The desired base handle
 	pub base_handle: Handle,
 }
 
 impl ClaimHandlePayload {
 	/// Create a new payload for claiming a handle
-	pub fn new(owner_msa_id: MessageSourceId, base_handle: Handle) -> Self {
-		Self { owner_msa_id, base_handle }
+	pub fn new(base_handle: Handle) -> Self {
+		Self { base_handle }
 	}
 }

@@ -263,7 +263,6 @@ pub mod pallet {
 			// Validation:  The delegator must already have a MSA id
 			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
-			ensure!(payload.owner_msa_id == delegator_msa_id, Error::<T>::NotMsaOwner);
 
 			// Validation:  The MSA must not already have a handle associated with it
 
