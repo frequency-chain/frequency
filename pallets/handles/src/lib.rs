@@ -272,8 +272,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 
 			// Validation:  The handle length must be valid.
-			// WARNING: This can panic.  Need to handle it!
-			let len = base_handle_str.chars().count() as u32;
+			ensure!(let len = base_handle_str.chars().count() as u32, Error::<T>::InvalidHandleEncoding);
 			log::info!("handle length={}", len);
 			log::info!("handle={}", base_handle_str);
 
