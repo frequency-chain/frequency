@@ -8,25 +8,21 @@ function cleanup () {
     local signal="$1"
 
     case "$signal" in
-        TERM|INT) 
+        TERM|INT)
             # Catch TERM and INT signals and exit gracefully
+            echo "Caught signal ${signal}; exiting..."
             exit
             ;;
         EXIT)
-            if [ "${SHOULD_KILL}" = true ]
+            # kill_freq.sh is not used here because we do not know what directory
+            # the script is in when a signal is received. Therefore, we do not
+            # know how to navigate to the kill_freq.sh script with relative paths.
+            if [ -n "${PID}" ]
             then
-                # kill_freq.sh is not used here because we do not know what directory
-                # the script is in when a signal is received. Therefore, we do not
-                # know how to navigate to the kill_freq.sh script with relative paths.
-                PID=$( get_frequency_pid )
-                if [ -n "${PID}" ]
-                then
-                    echo "Killing Frequency... PID: ${PID}"
-                    kill -9 ${PID}
-                    echo "Frequency has been killed. 💀"
-                else
-                    echo "Frequency is already gone. 💀"
-                fi 
+                kill -9 ${PID}
+                echo "Frequency has been killed. 💀"
+            else
+                echo "Frequency was not started by integration-test."
             fi
             ;;
     esac
@@ -38,10 +34,10 @@ trap 'cleanup EXIT' EXIT
 trap 'cleanup TERM' TERM
 trap 'cleanup INT' INT
 
-while getopts "s:" OPTNAME
+while getopts "s" OPTNAME
 do
     case "${OPTNAME}" in
-        "s") SKIP_JS_BUILD=$OPTARG
+        "s") SKIP_JS_BUILD=1
         ;;
     esac
 done
@@ -61,12 +57,10 @@ echo "You can 'tail -f frequency.log' in another terminal to see both side-by-si
 echo ""
 echo -e "Checking to see if Frequency is running..."
 
-PID=$( get_frequency_pid )
-
-SHOULD_KILL=false
-
-if [ -z "${PID}" ]
+if [ -n "$( get_frequency_pid )" ]
 then
+    echo "Frequency is already running."
+else
     echo "Building local Frequency executable..."
     if ! make build-local
     then
@@ -81,27 +75,26 @@ then
         "start-manual") ${RUNDIR}/init.sh start-frequency-manual >& frequency.log &
         ;;
     esac
-    SHOULD_KILL=true
-fi
 
-declare -i timeout_secs=30
-declare -i i=0
-while [[ -z "${PID}" && i -lt timeout_secs ]] 
-do
-   PID=$( get_frequency_pid )
-   sleep 1
-   (( i += 1 ))
-done
+    declare -i timeout_secs=30
+    declare -i i=0
+    while (( !PID && i < timeout_secs ))
+    do
+        PID=$( get_frequency_pid )
+        sleep 1
+        (( i += 1 ))
+    done
 
-if [ -z "${PID}" ]
-then
-    echo "Unable to find or start a Frequency node; aborting."
-    exit 1
+    if [ -z "${PID}" ]
+    then
+        echo "Unable to find or start a Frequency node; aborting."
+        exit 1
+    fi
+    echo "---------------------------------------------"
+    echo "Frequency running here:"
+    echo "PID: ${PID}"
+    echo "---------------------------------------------"
 fi
-echo "---------------------------------------------"
-echo "Frequency running here:"
-echo "PID: ${PID}"
-echo "---------------------------------------------"
 
 if [ "${SKIP_JS_BUILD}" = "1" ]
 then

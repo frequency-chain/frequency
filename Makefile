@@ -204,10 +204,16 @@ test:
 	cargo test --workspace --locked --features runtime-benchmarks,all-frequency-features
 
 integration-test:
-	./scripts/run_integration_tests.sh $(ARGS)
+	./scripts/run_integration_tests.sh
 
-integration-load-test:
+integration-test-only:
+	./scripts/run_integration_tests.sh -s
+
+integration-test-load:
 	./scripts/run_integration_tests.sh load
+
+integration-test-load-only:
+	./scripts/run_integration_tests.sh -s load
 
 .PHONY: try-runtime
 try-runtime:

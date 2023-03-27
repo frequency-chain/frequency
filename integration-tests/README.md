@@ -94,6 +94,3 @@ make start-manual
 cd integration-tests
 npm run test:load
 ```
-3. Run tests and skip the js/api-augment build
-```
-make integration-test ARGS="-s 1"
