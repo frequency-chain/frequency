@@ -247,7 +247,7 @@ ifeq ($(UNAME), Darwin)
 	$(eval $@_SED := -i '')
 endif
 	find . -type f -name "Cargo.toml" -print0 | xargs -0 sed $($@_SED) 's/^version = \"0\.0\.0\"/version = \"$(v)+polkadot$(POLKADOT_VERSION)\"/g';
-	@echo "Doing cargo check with fake examples project seems to be the easiest way to update version in Cargo.lock"
+	@echo "Doing cargo check for just examples seems to be the easiest way to update version in Cargo.lock"
 	cargo check --examples --quiet
 	@echo "All done. Don't forget to double check that the automated replacement worked."
 
