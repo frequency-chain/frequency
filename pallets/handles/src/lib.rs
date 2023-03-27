@@ -133,8 +133,8 @@ pub mod pallet {
 		InvalidMessageSourceAccount,
 		/// Cryptographic signature failed verification
 		InvalidSignature,
-		/// Ony the MSA Owner may perform the operation
-		NotMsaOwner,
+		/// The MSA already has a handle
+		MSAHandleExists,
 	}
 
 	#[pallet::event]
@@ -265,6 +265,10 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
 			// Validation:  The MSA must not already have a handle associated with it
+			ensure!(
+				MSAIdToDisplayName::<T>::try_get(delegator_msa_id).is_err(),
+				Error::<T>::MSAHandleExists
+			);
 
 			// Validation:  The base handle MUST be UTF-8 encoded.
 			let base_handle_str = core::str::from_utf8(&payload.base_handle)

@@ -1,44 +1,65 @@
 use crate as pallet_handles;
-use common_primitives::msa::{MessageSourceId, MsaLookup, MsaValidator};
-use frame_support::traits::{ConstU16, ConstU32, ConstU64};
-use sp_core::H256;
+use codec::Decode;
+
+use common_primitives::{
+	msa::{MessageSourceId, MsaLookup, MsaValidator},
+	node::AccountId,
+};
+use frame_support::{
+	dispatch::DispatchError,
+	traits::{ConstU16, ConstU32, ConstU64},
+};
+use sp_core::{ByteArray, H256};
+
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
-	DispatchError,
+	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
+	AccountId32,
 };
-
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
+
+pub const SIGNATURE_MSA_ID: MessageSourceId = 105;
 
 pub struct MsaInfoHandler;
 
 impl MsaLookup for MsaInfoHandler {
-	type AccountId = u64;
+	type AccountId = AccountId;
 
-	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
-		if *key == 1000 {
-			return None
-		}
-		if *key == 2000 {
-			return Some(2000 as MessageSourceId)
-		}
-		Some(get_msa_from_account(*key) as MessageSourceId)
+	fn get_msa_id(key: &AccountId) -> Option<MessageSourceId> {
+		// if *key == test_public(INVALID_MSA_ID) ||
+		// 	*key == get_invalid_msa_signature_account().public().into()
+		// {
+		// 	return None
+		// }
+
+		// if *key == get_signature_benchmarks_public_account().into() ||
+		// 	*key == get_signature_account().1.public().into()
+		// {
+		// 	return Some(constants::SIGNATURE_MSA_ID)
+		// }
+
+		Some(MessageSourceId::decode(&mut key.as_slice()).unwrap())
 	}
 }
 
 impl MsaValidator for MsaInfoHandler {
-	type AccountId = u64;
+	type AccountId = AccountId;
 
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError> {
-		if *key == 1000 {
-			return Err(DispatchError::Other("some error"))
-		}
-		if *key == 2000 {
-			return Ok(2000)
-		}
+		// if *key == test_public(INVALID_MSA_ID) ||
+		// 	*key == get_invalid_msa_signature_account().public().into()
+		// {
+		// 	return Err(DispatchError::Other("some error"))
+		// }
 
-		Ok(get_msa_from_account(*key))
+		// if *key == get_signature_benchmarks_public_account().into() ||
+		// 	*key == get_signature_account().1.public().into()
+		// {
+		// 	return Ok(constants::SIGNATURE_MSA_ID)
+		// }
+
+		Ok(MessageSourceId::decode(&mut key.as_slice()).unwrap())
 	}
 }
 
@@ -49,7 +70,7 @@ frame_support::construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system,
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -65,7 +86,7 @@ impl frame_system::Config for Test {
 	type BlockNumber = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type AccountId = u64;
+	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
@@ -87,6 +108,9 @@ impl pallet_handles::Config for Test {
 	/// Weight information for extrinsics in this pallet.
 	// type WeightInfo: WeightInfo;
 
+	/// The conversion to a 32 byte AccountId
+	type ConvertIntoAccountId32 = ConvertInto;
+
 	/// A type that will supply MSA related information
 	type MsaInfoProvider = MsaInfoHandler;
 
@@ -104,4 +128,15 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 pub fn get_msa_from_account(account_id: u64) -> u64 {
 	account_id + 100
+}
+
+/// Create and return a simple test AccountId32 constructed with the desired integer.
+pub fn test_public(n: u8) -> AccountId32 {
+	AccountId32::new([n; 32])
+}
+
+/// Create and return a simple signed origin from a test_public constructed with the desired integer,
+/// for passing to an extrinsic call
+pub fn test_origin_signed(n: u8) -> RuntimeOrigin {
+	RuntimeOrigin::signed(test_public(n))
 }
