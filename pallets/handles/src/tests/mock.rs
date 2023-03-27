@@ -14,12 +14,9 @@ use sp_core::{ByteArray, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
-	AccountId32,
 };
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
-
-pub const SIGNATURE_MSA_ID: MessageSourceId = 105;
 
 pub struct MsaInfoHandler;
 
@@ -126,17 +123,17 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
 }
 
-pub fn get_msa_from_account(account_id: u64) -> u64 {
-	account_id + 100
-}
+// pub fn get_msa_from_account(account_id: u64) -> u64 {
+// 	account_id + 100
+// }
 
-/// Create and return a simple test AccountId32 constructed with the desired integer.
-pub fn test_public(n: u8) -> AccountId32 {
-	AccountId32::new([n; 32])
-}
+// Create and return a simple test AccountId32 constructed with the desired integer.
+// pub fn test_public(n: u8) -> AccountId32 {
+// 	AccountId32::new([n; 32])
+// }
 
-/// Create and return a simple signed origin from a test_public constructed with the desired integer,
-/// for passing to an extrinsic call
-pub fn test_origin_signed(n: u8) -> RuntimeOrigin {
-	RuntimeOrigin::signed(test_public(n))
-}
+// Create and return a simple signed origin from a test_public constructed with the desired integer,
+// for passing to an extrinsic call
+// pub fn test_origin_signed(n: u8) -> RuntimeOrigin {
+// 	RuntimeOrigin::signed(test_public(n))
+// }
