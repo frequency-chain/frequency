@@ -1,3 +1,5 @@
+UNAME := $(shell uname)
+
 .PHONY: start
 start:
 	./scripts/init.sh start-frequency-instant
@@ -222,11 +224,11 @@ POLKADOT_VERSION=$(shell awk -F "=" '/name = "polkadot-cli"/,/version = ".*"/{ p
 .PHONY: version
 version:
 ifndef v
-	@echo "Please set the version with v=X.X.X-X"
+	@echo "Please set the version with v=#.#.#[-#]"
 	@exit 1
 endif
 ifneq (,$(findstring v,  $(v)))
-	@echo "Please don't prefix with a 'v'. Use: v=X.X.X-X"
+	@echo "Please don't prefix with a 'v'. Use: v=#.#.#[-#]"
 	@exit 1
 endif
 ifeq (,$(POLKADOT_VERSION))
@@ -234,8 +236,15 @@ ifeq (,$(POLKADOT_VERSION))
 	@exit 1
 endif
 	@echo "Setting the crate versions to "$(v)+polkadot$(POLKADOT_VERSION)
-	find ./ -type f -name 'Cargo.toml' -exec sed -i '' 's/^version = \"0\.0\.0\"/version = \"$(v)+polkadot$(POLKADOT_VERSION)\"/g' {} \;
-	$(MAKE) check
+ifeq ($(UNAME), Linux)
+	$(eval $@_SED := -i -e)
+endif
+ifeq ($(UNAME), Darwin)
+	$(eval $@_SED := -i '')
+endif
+	find . -type f -name "Cargo.toml" -print0 | xargs -0 sed $($@_SED) 's/^version = \"0\.0\.0\"/version = \"$(v)+polkadot$(POLKADOT_VERSION)\"/g';
+	@echo "Doing cargo check for just examples seems to be the easiest way to update version in Cargo.lock"
+	cargo check --examples --quiet
 	@echo "All done. Don't forget to double check that the automated replacement worked."
 
 .PHONY: version-polkadot
