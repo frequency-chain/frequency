@@ -5576,6 +5576,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "twox-hash",
+ "unicode-normalization",
  "unicode-security",
 ]
 

@@ -33,6 +33,7 @@
 mod benchmarking;
 #[cfg(test)]
 mod tests;
+mod homoglyphs;
 
 // pub mod weights;
 
