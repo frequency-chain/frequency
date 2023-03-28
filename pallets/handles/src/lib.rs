@@ -272,7 +272,7 @@ pub mod pallet {
 				Error::<T>::InvalidHandleCharacterLength
 			);
 
-			// Save canonical to shuffled suffix sequence cursor
+			// Convert base display handle into a canonical display handle
 			let canonical_handle_vec = convert_to_canonical(base_handle_str).as_bytes().to_vec();
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
 			let canonical_handle_str = core::str::from_utf8(&canonical_handle)
