@@ -12,17 +12,17 @@ use unicode_normalization::UnicodeNormalization;
 pub struct CanonicalConverter {
 	confusables_map: BTreeMap<char, char>,
 }
-	/// Creates a new `CanonicalConverter` instance with the specified input string.
-	///
-	/// # Example
-	///
-	/// ```
-	/// use crate::canonical::CanonicalConverter;
-	///
-	/// let string = "ℂн𝔸RℒℰᏕ";
-	///
-	/// let canonical_converter = CanonicalConverter::new(string);
-	/// ```
+/// Creates a new `CanonicalConverter` instance with the specified input string.
+///
+/// # Example
+///
+/// ```
+/// use crate::canonical::CanonicalConverter;
+///
+/// let string = "ℂн𝔸RℒℰᏕ";
+///
+/// let canonical_converter = CanonicalConverter::new(string);
+/// ```
 impl CanonicalConverter {
 	pub fn new() -> Self {
 		let confusables_map = build_confusables_map();
@@ -39,7 +39,9 @@ impl CanonicalConverter {
 		string
 			.chars()
 			.map(|character| {
-				self.confusables_map.get(&character).map_or(character.to_string(), |&value| value.to_string())
+				self.confusables_map
+					.get(&character)
+					.map_or(character.to_string(), |&value| value.to_string())
 			})
 			.collect::<codec::alloc::string::String>()
 	}

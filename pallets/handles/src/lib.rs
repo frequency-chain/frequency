@@ -31,9 +31,9 @@
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+mod homoglyphs;
 #[cfg(test)]
 mod tests;
-mod homoglyphs;
 
 // pub mod weights;
 

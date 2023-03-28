@@ -1,6 +1,8 @@
 use crate::{homoglyphs::canonical::CanonicalConverter, tests::mock::*};
-use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::{
+	fs::File,
+	io::{BufRead, BufReader},
+};
 
 #[test]
 fn canonical_test() {
@@ -15,7 +17,6 @@ fn test_remove_confusables() {
 	let file = File::open("src/homoglyphs/confusable_characters.txt");
 	assert!(file.is_ok());
 
-
 	let reader = BufReader::new(file.ok().unwrap());
 	let canonical_converter = CanonicalConverter::new();
 	for line_result in reader.lines() {
@@ -23,6 +24,5 @@ fn test_remove_confusables() {
 		let normalized_line = canonical_converter.remove_confusables(original_line);
 
 		println!("{}", normalized_line);
-
 	}
 }
