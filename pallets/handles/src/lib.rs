@@ -153,7 +153,7 @@ pub mod pallet {
 		let mut normalized =
 			unicode_security::skeleton(handle_str).collect::<codec::alloc::string::String>();
 		normalized.make_ascii_lowercase();
-		log::info!("normalized={}", normalized.clone());
+		log::debug!("normalized={}", normalized.clone());
 		normalized
 	}
 
@@ -161,7 +161,7 @@ pub mod pallet {
 		log::debug!("generate_suffix_for_canonical_handle({}, {})", canonical_handle, &cursor);
 
 		let seed = SuffixGenerator::generate_seed(canonical_handle);
-		log::info!("seed={}", seed);
+		log::debug!("seed={}", seed);
 
 		let mut suffix_generator = SuffixGenerator::new(0, 10000, seed);
 		let sequence: Vec<usize> = suffix_generator.suffix_iter().collect();
@@ -224,7 +224,7 @@ pub mod pallet {
 			proof: MultiSignature,
 			payload: ClaimHandlePayload,
 		) -> DispatchResult {
-			log::info!("claim_handle()");
+			log::debug!("claim_handle()");
 			let provider_key = ensure_signed(origin)?;
 
 			// Validation: Check for base_handle size to address potential panic condition
@@ -254,11 +254,11 @@ pub mod pallet {
 			let base_handle_str = core::str::from_utf8(&payload.base_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 
-			// Validation:  The handle length must be valid.
-			// Note the count() can panic but won't because the base_handle byte length is already checked
+			// Validation: The handle length must be valid.
+			// Note: the count() can panic but won't because the base_handle byte length is already checked
 			let len = base_handle_str.chars().count() as u32;
-			log::info!("handle length={}", len);
-			log::info!("handle={}", base_handle_str);
+			log::debug!("handle length={}", len);
+			log::debug!("handle={}", base_handle_str);
 
 			// Validation: Handle byte length must be within range
 			ensure!(
@@ -277,13 +277,13 @@ pub mod pallet {
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
 			let canonical_handle_str = core::str::from_utf8(&canonical_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
-			log::info!("canonical={}", canonical_handle_str);
+			log::debug!("canonical={}", canonical_handle_str);
 
 			// Generate suffix from the next available suffix index
 			let suffix_index =
 				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
 					.unwrap_or_default();
-			log::info!("suffix_index={}", suffix_index);
+			log::debug!("suffix_index={}", suffix_index);
 			let suffix =
 				generate_suffix_for_canonical_handle(&canonical_handle_str, suffix_index as usize);
 
