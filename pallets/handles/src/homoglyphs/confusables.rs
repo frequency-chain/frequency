@@ -1,6 +1,6 @@
 use sp_std::collections::btree_map::BTreeMap;
 
-const CHAR_MAP: BTreeMap<char, char> = BTreeMap::from([
+const CONFUSABLES_MAP: BTreeMap<char, char> = BTreeMap::from([
     ('\u{1c3}', '\u{21}'),
     ('\u{2d51}', '\u{21}'),
     ('\u{ff01}', '\u{21}'),
