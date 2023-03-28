@@ -134,7 +134,7 @@ pub mod pallet {
 		/// Cryptographic signature failed verification
 		InvalidSignature,
 		/// The MSA already has a handle
-		MSAHandleExists,
+		MSAHasHandleAlready,
 	}
 
 	#[pallet::event]
@@ -247,7 +247,7 @@ pub mod pallet {
 			// Validation:  The MSA must not already have a handle associated with it
 			ensure!(
 				MSAIdToDisplayName::<T>::try_get(delegator_msa_id).is_err(),
-				Error::<T>::MSAHandleExists
+				Error::<T>::MSAHasHandleAlready
 			);
 
 			// Validation: The base handle MUST be UTF-8 encoded.
