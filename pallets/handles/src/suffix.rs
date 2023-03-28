@@ -7,6 +7,7 @@ use core::hash::Hasher;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 use sp_std::vec::Vec;
 use twox_hash::XxHash64;
+
 /// A generator for unique suffix sequences.
 ///
 /// Given a min, max range, and a seed, generates unique suffix sequences by excluding
@@ -27,11 +28,17 @@ impl SuffixGenerator {
 	///
 	/// let min = 100;
 	/// let max = 150;
-	/// let seed = 12345;
+	/// let canonical_handle = "myhandle";
 	///
-	/// let suffix_generator = SuffixGenerator::new(min, max, seed);
+	/// let suffix_generator = SuffixGenerator::new(min, max, "myhandle");
 	/// ```
-	pub fn new(min: usize, max: usize, seed: u64) -> Self {
+	// pub fn new(min: usize, max: usize, seed: u64) -> Self {
+	// 	let rng = SmallRng::seed_from_u64(seed);
+	// 	Self { min, max, rng }
+	// }
+
+	pub fn new(min: usize, max: usize, canonical_handle: &str) -> Self {
+		let seed = Self::generate_seed(&canonical_handle);
 		let rng = SmallRng::seed_from_u64(seed);
 		Self { min, max, rng }
 	}
@@ -53,9 +60,9 @@ impl SuffixGenerator {
 	///
 	/// let min = 100;
 	/// let max = 150;
-	/// let seed = 12345;
+	/// let canonical_handle = "myhandle";
 	///
-	/// let mut suffix_generator = SuffixGenerator::new(min, max, seed);
+	/// let mut suffix_generator = SuffixGenerator::new(min, max, canonical_handle);
 	///
 	/// let start_index = 10;
 	/// let sequence: Vec<u32> = suffix_generator.suffix_iter(start_index).collect();
@@ -64,8 +71,7 @@ impl SuffixGenerator {
 	///
 	/// This will output a unique, shuffled sequence of suffix
 	pub fn suffix_iter(&mut self) -> impl Iterator<Item = usize> + '_ {
-		let mut indices: Vec<usize> =
-			(self.min..=self.max).map(|i| usize::try_from(i).unwrap()).collect();
+		let mut indices: Vec<usize> = (self.min..=self.max).collect();
 		(self.min..=self.max).rev().map(move |i| {
 			let j = self.rng.gen_range(0..=i);
 			indices.swap(i as usize, j as usize);
@@ -89,12 +95,13 @@ impl SuffixGenerator {
 	///
 	/// let min = 100;
 	/// let max = 150;
-	/// let seed = SuffixGenerator::generate_seed("myuser");
+	/// let canonical_handle = "myuser";
 	///
-	/// let mut suffix_generator = SuffixGenerator::new(min, max, seed);
+	/// let seed = SuffixGenerator::generate_seed(canonical_handle);
 	/// ```
 	///
 	pub fn generate_seed(canonical_handle: &str) -> u64 {
+		log::debug!("generate_seed()");
 		let mut hasher = XxHash64::with_seed(0);
 		sp_std::hash::Hash::hash(&canonical_handle, &mut hasher);
 		let value_bytes: [u8; 4] = [0; 4];
