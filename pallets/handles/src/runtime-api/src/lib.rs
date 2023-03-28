@@ -16,7 +16,10 @@
 //! - An interface between the runtime and Custom RPCs.
 //! - Runtime interfaces for end users beyond just State Queries
 
-use common_primitives::{handles::HandleResponse, msa::MessageSourceId};
+use common_primitives::{
+	handles::{Handle, HandleResponse},
+	msa::MessageSourceId,
+};
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime files (the `runtime` folder)
@@ -33,5 +36,8 @@ sp_api::decl_runtime_apis! {
 	{
 		/// Retrieve the display handle for a particular msa
 		fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse>;
+
+		/// Retrieve the next `n` suffixes for a given handle
+		fn get_next_suffixes(handle: Handle, count: u16) -> Vec<u16>;
 	}
 }

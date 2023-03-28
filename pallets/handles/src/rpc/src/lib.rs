@@ -9,7 +9,10 @@
 //! Custom APIs for [Stateful-Storage](../pallet_stateful_storage/index.html)
 
 use common_helpers::rpc::map_rpc_result;
-use common_primitives::{handles::HandleResponse, msa::MessageSourceId};
+use common_primitives::{
+	handles::{Handle, HandleResponse},
+	msa::MessageSourceId,
+};
 use jsonrpsee::{
 	core::{async_trait, Error as RpcError, RpcResult},
 	proc_macros::rpc,
@@ -30,6 +33,10 @@ pub trait HandlesApi<BlockHash> {
 	/// retrieving schema by schema id
 	#[method(name = "handles_getHandleForMsa")]
 	fn get_handle_for_msa(&self, msa_id: MessageSourceId) -> RpcResult<Option<HandleResponse>>;
+
+	/// retrieve next `n` suffixes from given handle and count
+	#[method(name = "handles_getNextSuffixes")]
+	fn get_next_suffixes(&self, handle: Handle, count: u16) -> RpcResult<Vec<u16>>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -62,13 +69,17 @@ where
 	C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
 	C::Api: HandlesRuntimeApi<Block>,
 {
-	async fn get_handle_for_msa(
-		&self,
-		msa_id: MessageSourceId,
-	) -> RpcResult<Option<HandleResponse>> {
+	fn get_handle_for_msa(&self, msa_id: MessageSourceId) -> RpcResult<Option<HandleResponse>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		let result = api.get_display_handle(&at, msa_id);
+		let result = api.get_handle_for_msa(&at, msa_id);
+		map_rpc_result(result)
+	}
+
+	fn get_next_suffixes(&self, handle: Handle, count: u16) -> RpcResult<Vec<u16>> {
+		let api = self.client.runtime_api();
+		let at = BlockId::hash(self.client.info().best_hash);
+		let result = api.get_next_suffixes(&at, handle, count);
 		map_rpc_result(result)
 	}
 }
