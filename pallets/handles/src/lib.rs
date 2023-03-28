@@ -302,9 +302,9 @@ pub mod pallet {
 			// Compose the full display handle from the base handle, "." delimeter and suffix
 			let mut full_handle_vec: Vec<u8> = vec![];
 			full_handle_vec.extend(base_handle_str.as_bytes());
-			full_handle_vec.extend(b".");
-			let mut buff = [0u8; 30];
-			full_handle_vec.extend(suffix.numtoa(10, &mut buff));
+			full_handle_vec.extend(b"."); // The delimeter
+			let mut buff = [0u8; SUFFIX_MAX_DIGITS];
+			full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
 
 			let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
 
