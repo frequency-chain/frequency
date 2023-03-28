@@ -7,7 +7,7 @@ use pallet_handles_runtime_api::HandlesRuntimeApi;
 use std::sync::Arc;
 use substrate_test_runtime_client::runtime::Block;
 
-const VALID_MSA_ID: u16 = 1;
+const VALID_MSA_ID: u64 = 1;
 
 sp_api::mock_impl_runtime_apis! {
 	impl HandlesRuntimeApi<Block> for TestRuntimeApi {
@@ -50,7 +50,7 @@ async fn get_handle_with_success() {
 
 	assert_eq!(true, result.is_ok());
 	let response = result.unwrap().unwrap();
-	assert_eq!(b"base_handle", response.base_handle);
-	assert_eq!(b"canonical_handle", response.canonical_handle);
+	assert_eq!(b"base_handle".to_vec(), response.base_handle);
+	assert_eq!(b"canonical_handle".to_vec(), response.canonical_handle);
 	assert_eq!(1, response.suffix);
 }
