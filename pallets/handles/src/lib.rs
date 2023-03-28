@@ -239,8 +239,6 @@ pub mod pallet {
 		}
 	}
 
-	// EXTRINSICS
-
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Claim handle
@@ -253,85 +251,32 @@ pub mod pallet {
 			proof: MultiSignature,
 			payload: ClaimHandlePayload,
 		) -> DispatchResult {
-			log::info!("claim_handle()");
 			let provider_key = ensure_signed(origin)?;
-			T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
-				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+			Self::validate_provider_key(&provider_key)?;
+			Self::verify_claim_handle(&delegator_key, &proof, &payload)?;
 
-			Self::verify_signature(&proof, &delegator_key, payload.encode())?;
+			let delegator_msa_id = Self::get_delegator_msa_id(&delegator_key)?;
+			Self::validate_handle_not_exists(&delegator_msa_id)?;
 
-			// Validation:  The delegator must already have a MSA id
-			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
-				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
-
-			// Validation:  The MSA must not already have a handle associated with it
-			ensure!(
-				MSAIdToDisplayName::<T>::try_get(delegator_msa_id).is_err(),
-				Error::<T>::MSAHandleExists
+			let base_handle_str = Self::validate_base_handle(&payload.base_handle)?;
+			let canonical_handle_str = Self::save_canonical_handle(&base_handle_str)?;
+			let suffix_index = Self::get_next_suffix_index(&canonical_handle_str)?;
+			let suffix = Self::generate_suffix(&canonical_handle_str, suffix_index)?;
+			Self::save_canonical_base_handle_and_suffix_to_msa_id(
+				&canonical_handle_str,
+				&suffix,
+				&delegator_msa_id,
 			);
+			Self::save_canonical_base_handle_to_suffix_index(&canonical_handle_str, suffix_index)?;
 
-			// Validation:  The base handle MUST be UTF-8 encoded.
-			let base_handle_str = core::str::from_utf8(&payload.base_handle)
-				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
-
-			// Validation:  The handle length must be valid.
-			// Note the count() can panic but won't because the base_handle is already bounded with a BoundedVec
-			let len = base_handle_str.chars().count() as u32;
-			log::info!("handle length={}", len);
-			log::info!("handle={}", base_handle_str);
-
-			// Validate byte length
-			ensure!(
-				len >= HANDLE_BASE_BYTES_MIN && len <= HANDLE_BASE_BYTES_MAX,
-				Error::<T>::InvalidHandleByteLength
-			);
-
-			// Validate character length
-			ensure!(
-				len >= HANDLE_BASE_CHARS_MIN && len <= HANDLE_BASE_CHARS_MAX,
-				Error::<T>::InvalidHandleCharacterLength
-			);
-
-			// Save canonical to shuffled suffix sequence cursor
-			let canonical_handle_vec = convert_to_canonical(base_handle_str).as_bytes().to_vec();
-			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
-			let canonical_handle_str = core::str::from_utf8(&canonical_handle)
-				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
-			log::info!("canonical={}", canonical_handle_str);
-
-			// Generate suffix
-			let suffix_index =
-				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
-					.unwrap_or_default();
-			log::info!("suffix_index={}", suffix_index);
-			let suffix =
-				generate_suffix_for_canonical_handle(&canonical_handle_str, suffix_index as usize);
-			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(
-				canonical_handle.clone(),
-				suffix,
-				delegator_msa_id,
-			);
-			CanonicalBaseHandleToSuffixIndex::<T>::set(
-				canonical_handle.clone(),
-				Some(suffix_index),
-			);
-
-			let mut full_handle_vec: Vec<u8> = vec![];
-			full_handle_vec.extend(base_handle_str.as_bytes());
-			full_handle_vec.extend(b".");
-			let mut buff = [0u8; 30];
-			full_handle_vec.extend(suffix.numtoa(10, &mut buff));
-
-			let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
-
-			// Save display handle to MSA id
-			//let full_handle_str = base_handle_str;
-			MSAIdToDisplayName::<T>::insert(delegator_msa_id, full_handle.clone());
+			let full_handle = Self::save_full_handle(&base_handle_str, &suffix)?;
+			Self::save_msa_id_to_display_name(&delegator_msa_id, &full_handle)?;
 
 			Self::deposit_event(Event::HandleCreated {
 				msa_id: delegator_msa_id,
-				handle: full_handle.clone(),
+				handle: full_handle,
 			});
+
 			Ok(())
 		}
 
@@ -349,6 +294,115 @@ pub mod pallet {
 		pub fn retire_handle(origin: OriginFor<T>) -> DispatchResult {
 			let _delegator_key = ensure_signed(origin)?;
 			Ok(())
+		}
+	}
+
+	impl<T: Config> Pallet<T> {
+		fn validate_provider_key(provider_key: &T::AccountId) -> DispatchResult {
+			T::MsaInfoProvider::ensure_valid_msa_key(provider_key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)
+		}
+
+		fn verify_claim_handle(
+			delegator_key: &T::AccountId,
+			proof: &MultiSignature,
+			payload: &ClaimHandlePayload,
+		) -> DispatchResult {
+			Self::verify_signature(proof, delegator_key, payload.encode())
+		}
+
+		fn get_delegator_msa_id(
+			delegator_key: &T::AccountId,
+		) -> Result<MessageSourceId, DispatchError> {
+			T::MsaInfoProvider::ensure_valid_msa_key(delegator_key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)
+		}
+
+		fn validate_handle_not_exists(msa_id: &MessageSourceId) -> DispatchResult {
+			ensure!(MSAIdToDisplayName::<T>::try_get(msa_id).is_err(), Error::<T>::MSAHandleExists);
+			Ok(())
+		}
+
+		fn validate_base_handle(base_handle: &[u8]) -> Result<&str, DispatchError> {
+			let base_handle_str =
+				core::str::from_utf8(base_handle).map_err(|_| Error::<T>::InvalidHandleEncoding)?;
+			let len = base_handle_str.chars().count() as u32;
+			ensure!(
+				len >= HANDLE_BASE_BYTES_MIN && len <= HANDLE_BASE_BYTES_MAX,
+				Error::<T>::InvalidHandleByteLength
+			);
+			ensure!(
+				len >= HANDLE_BASE_CHARS_MIN && len <= HANDLE_BASE_CHARS_MAX,
+				Error::<T>::InvalidHandleCharacterLength
+			);
+			Ok(base_handle_str)
+		}
+
+		fn save_canonical_handle(base_handle_str: &str) -> Result<&str, DispatchError> {
+			let canonical_handle_vec = convert_to_canonical(base_handle_str).as_bytes().to_vec();
+			let canonical_handle: Handle =
+				canonical_handle_vec.try_into().map_err(|_| Error::<T>::InvalidHandleEncoding)?;
+			let canonical_handle_str = core::str::from_utf8(&canonical_handle)
+				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
+			Ok(canonical_handle_str)
+		}
+
+		fn get_next_suffix_index(
+			canonical_handle_str: &str,
+		) -> Result<SequenceIndex, DispatchError> {
+			match Self::get_current_suffix_index_for_canonical_handle(canonical_handle_str) {
+				None => Ok(0),
+				Some(current) => current.checked_add(1).ok_or(Error::<T>::SuffixesExhausted),
+			}
+		}
+
+		fn generate_suffix(
+			canonical_handle_str: &str,
+			suffix_index: SequenceIndex,
+		) -> Result<Suffix, DispatchError> {
+			let suffix =
+				generate_suffix_for_canonical_handle(canonical_handle_str, suffix_index as usize);
+			Ok(suffix)
+		}
+
+		fn save_full_handle(
+			base_handle_str: &str,
+			suffix: &Suffix,
+		) -> Result<Handle, DispatchError> {
+			let mut full_handle_vec: Vec<u8> = vec![];
+			full_handle_vec.extend(base_handle_str.as_bytes());
+			full_handle_vec.extend(b".");
+			let mut buff = [0u8; 30];
+			full_handle_vec.extend(suffix.numtoa(10, &mut buff));
+			let full_handle: Handle = full_handle_vec.try_into().unwrap();
+			Ok(full_handle)
+		}
+
+		fn save_canonical_base_handle_and_suffix_to_msa_id(
+			canonical_handle_str: &str,
+			suffix: &Suffix,
+			msa_id: &MessageSourceId,
+		) {
+			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(
+				canonical_handle_str.into(),
+				suffix,
+				msa_id,
+			);
+		}
+
+		fn save_canonical_base_handle_to_suffix_index(
+			canonical_handle_str: &str,
+			suffix_index: SequenceIndex,
+		) -> DispatchResult {
+			CanonicalBaseHandleToSuffixIndex::<T>::insert(
+				canonical_handle_str.into(),
+				suffix_index,
+			);
+			Ok(())
+		}
+
+		fn save_msa_id_to_display_name(msa_id: &MessageSourceId, full_handle: &Handle) {
+			MSAIdToDisplayName::<T>::insert(*msa_id, full_handle.clone());
 		}
 	}
 }
