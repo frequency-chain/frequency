@@ -196,7 +196,7 @@ pub mod pallet {
 		/// # Errors
 		/// * [`Error::InvalidSignature`]
 		///
-		pub fn verify_signature(
+		pub fn verify_signed_payload(
 			signature: &MultiSignature,
 			signer: &T::AccountId,
 			payload: Vec<u8>,
@@ -233,14 +233,16 @@ pub mod pallet {
 				Error::<T>::InvalidHandleByteLength
 			);
 
+			// Validation: The provider  must already have a MSA id
 			T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
-
-			Self::verify_signature(&proof, &delegator_key, payload.encode())?;
 
 			// Validation:  The delegator must already have a MSA id
 			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+
+			// Verify the payload was signed
+			Self::verify_signed_payload(&proof, &delegator_key, payload.encode())?;
 
 			// Validation:  The MSA must not already have a handle associated with it
 			ensure!(
