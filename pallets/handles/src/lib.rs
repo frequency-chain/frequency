@@ -310,7 +310,7 @@ pub mod pallet {
 		/// * `count` - The number of suffixes to retrieve
 		/// # Returns
 		/// * `Vec<u16>` - The suffixes for the specified `base_handle`
-		pub fn get_next_suffixes(handle: Handle, count: u16) -> Vec<u16> {
+		pub fn get_next_suffixes(handle: Handle, count: u16) -> Vec<HandleSuffix> {
 			let mut suffixes: Vec<u16> = vec![];
 			let handle_str = core::str::from_utf8(&handle).unwrap_or("");
 			let canonical_handle_vec = Self::convert_to_canonical(handle_str).as_bytes().to_vec();
