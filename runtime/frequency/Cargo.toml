@@ -66,8 +66,6 @@ orml-vesting = { git = "https://github.com/open-web3-stack/open-runtime-module-l
 # Frequency
 common-primitives = { default-features = false, path = "../../common/primitives" }
 common-runtime = { path = "../common", default-features = false }
-pallet-handles = { path = "../../pallets/handles", default-features = false }
-pallet-handles-runtime-api = { path = "../../pallets/handles/src/runtime-api", default-features = false }
 pallet-messages = { path = "../../pallets/messages", default-features = false }
 pallet-messages-runtime-api = { path = "../../pallets/messages/src/runtime-api", default-features = false }
 pallet-msa = { path = "../../pallets/msa", default-features = false }
@@ -76,6 +74,8 @@ pallet-schemas = { path = "../../pallets/schemas", default-features = false }
 pallet-schemas-runtime-api = { path = "../../pallets/schemas/src/runtime-api", default-features = false }
 pallet-stateful-storage = { path = "../../pallets/stateful-storage", default-features = false }
 pallet-stateful-storage-runtime-api = { path = "../../pallets/stateful-storage/src/runtime-api", default-features = false }
+pallet-handles = { path = "../../pallets/handles", default-features = false }
+pallet-handles-runtime-api = { path = "../../pallets/handles/src/runtime-api", default-features = false }
 system-runtime-api = { path = '../system-runtime-api', default-features = false }
 # Polkadot
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.36" }
