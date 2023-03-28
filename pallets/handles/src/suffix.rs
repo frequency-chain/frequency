@@ -95,7 +95,6 @@ impl SuffixGenerator {
 	/// ```
 	///
 	pub fn generate_seed(canonical_handle: &str) -> u64 {
-		log::debug!("generate_seed()");
 		let mut hasher = XxHash64::with_seed(0);
 		sp_std::hash::Hash::hash(&canonical_handle, &mut hasher);
 		let value_bytes: [u8; 4] = [0; 4];
