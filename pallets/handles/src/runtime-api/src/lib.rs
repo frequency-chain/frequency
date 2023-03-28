@@ -34,7 +34,7 @@ sp_api::decl_runtime_apis! {
 	/// Runtime APIs for [Stateful Storage](../pallet_stateful_storage/index.html)
 	pub trait HandlesRuntimeApi
 	{
-		/// Retrieve the display handle for a particular msa
+		/// Retrieve handle for a particular msa
 		fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse>;
 
 		/// Retrieve the next `n` suffixes for a given handle

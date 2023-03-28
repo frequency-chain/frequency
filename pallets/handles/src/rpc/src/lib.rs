@@ -30,11 +30,11 @@ mod tests;
 /// Frequency Handles Custom RPC API
 #[rpc(client, server)]
 pub trait HandlesApi<BlockHash> {
-	/// retrieving schema by schema id
+	/// retrieve handle for a given msa
 	#[method(name = "handles_getHandleForMsa")]
 	fn get_handle_for_msa(&self, msa_id: MessageSourceId) -> RpcResult<Option<HandleResponse>>;
 
-	/// retrieve next `n` suffixes from given handle and count
+	/// retrieve next `n` suffixes for a given handle
 	#[method(name = "handles_getNextSuffixes")]
 	fn get_next_suffixes(&self, handle: Handle, count: u16) -> RpcResult<Vec<u16>>;
 }
