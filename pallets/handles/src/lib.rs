@@ -226,6 +226,13 @@ pub mod pallet {
 		) -> DispatchResult {
 			log::info!("claim_handle()");
 			let provider_key = ensure_signed(origin)?;
+
+			// Check for base_handle size to address potential panic condition
+			ensure!(
+				payload.base_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
+				Error::<T>::InvalidHandleByteLength
+			);
+
 			T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
@@ -246,7 +253,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 
 			// Validation:  The handle length must be valid.
-			// Note the count() can panic but won't because the base_handle is already bounded with a BoundedVec
+			// Note the count() can panic but won't because the base_handle byte length is already checked
 			let len = base_handle_str.chars().count() as u32;
 			log::info!("handle length={}", len);
 			log::info!("handle={}", base_handle_str);

@@ -2,6 +2,7 @@ use codec::{Decode, Encode};
 use frame_support::BoundedVec;
 use scale_info::TypeInfo;
 use sp_core::ConstU32;
+use sp_std::vec::Vec;
 
 /// The minimum base handle (not including suffix or delimiter) length in characters
 pub const HANDLE_BASE_CHARS_MIN: u32 = 3;
@@ -25,12 +26,12 @@ pub type SequenceIndex = u16;
 #[derive(TypeInfo, Clone, Debug, Decode, Encode, PartialEq, Eq)]
 pub struct ClaimHandlePayload {
 	/// The desired base handle
-	pub base_handle: Handle,
+	pub base_handle: Vec<u8>,
 }
 
 impl ClaimHandlePayload {
 	/// Create a new payload for claiming a handle
-	pub fn new(base_handle: Handle) -> Self {
+	pub fn new(base_handle: Vec<u8>) -> Self {
 		Self { base_handle }
 	}
 }
