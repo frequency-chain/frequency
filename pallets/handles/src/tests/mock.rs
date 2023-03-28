@@ -44,6 +44,7 @@ impl MsaValidator for MsaInfoHandler {
 	type AccountId = AccountId;
 
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError> {
+		println!("ensure_valid_msa_key()");
 		// if *key == test_public(INVALID_MSA_ID) ||
 		// 	*key == get_invalid_msa_signature_account().public().into()
 		// {

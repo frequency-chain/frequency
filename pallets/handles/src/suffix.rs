@@ -12,8 +12,8 @@ use twox_hash::XxHash64;
 /// Given a min, max range, and a seed, generates unique suffix sequences by excluding
 /// already used suffixes.
 pub struct SuffixGenerator {
-	min: u32,
-	max: u32,
+	min: usize,
+	max: usize,
 	rng: SmallRng,
 }
 
@@ -31,7 +31,7 @@ impl SuffixGenerator {
 	///
 	/// let suffix_generator = SuffixGenerator::new(min, max, seed);
 	/// ```
-	pub fn new(min: u32, max: u32, seed: u64) -> Self {
+	pub fn new(min: usize, max: usize, seed: u64) -> Self {
 		let rng = SmallRng::seed_from_u64(seed);
 		Self { min, max, rng }
 	}

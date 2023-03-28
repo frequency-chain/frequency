@@ -134,7 +134,7 @@ pub mod pallet {
 		/// Cryptographic signature failed verification
 		InvalidSignature,
 		/// The MSA already has a handle
-		MSAHandleExists,
+		HandleAlreadyClaimed,
 	}
 
 	#[pallet::event]
@@ -165,7 +165,7 @@ pub mod pallet {
 			T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-			Self::verify_signature(&proof, &delegator_key, payload.encode())?;
+			Self::verify_signed_payload(&proof, &delegator_key, payload.encode())?;
 
 			// Validation:  The delegator must already have a MSA id
 			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
@@ -174,7 +174,7 @@ pub mod pallet {
 			// Validation:  The MSA must not already have a handle associated with it
 			ensure!(
 				MSAIdToDisplayName::<T>::try_get(delegator_msa_id).is_err(),
-				Error::<T>::MSAHandleExists
+				Error::<T>::HandleAlreadyClaimed
 			);
 
 			// Validation:  The base handle MUST be UTF-8 encoded.
@@ -277,7 +277,7 @@ pub mod pallet {
 		/// # Errors
 		/// * [`Error::InvalidSignature`]
 		///
-		pub fn verify_signature(
+		pub fn verify_signed_payload(
 			signature: &MultiSignature,
 			signer: &T::AccountId,
 			payload: Vec<u8>,
@@ -327,8 +327,11 @@ pub mod pallet {
 
 		fn generate_suffix_for_canonical_handle(canonical_handle: &str, cursor: usize) -> u16 {
 			let seed = SuffixGenerator::generate_seed(canonical_handle);
-			let mut suffix_generator =
-				SuffixGenerator::new(T::HandleSuffixMin::get(), T::HandleSuffixMax::get(), seed);
+			let mut suffix_generator = SuffixGenerator::new(
+				T::HandleSuffixMin::get() as usize,
+				T::HandleSuffixMax::get() as usize,
+				seed,
+			);
 			let sequence: Vec<usize> = suffix_generator.suffix_iter().collect();
 			sequence[cursor] as u16
 		}
