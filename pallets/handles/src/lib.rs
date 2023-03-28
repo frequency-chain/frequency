@@ -227,7 +227,7 @@ pub mod pallet {
 			log::info!("claim_handle()");
 			let provider_key = ensure_signed(origin)?;
 
-			// Check for base_handle size to address potential panic condition
+			// Validation: Check for base_handle size to address potential panic condition
 			ensure!(
 				payload.base_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
 				Error::<T>::InvalidHandleByteLength
@@ -237,11 +237,11 @@ pub mod pallet {
 			T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-			// Validation:  The delegator must already have a MSA id
+			// Validation: The delegator must already have a MSA id
 			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-			// Verify the payload was signed
+			// Validation: Verify the payload was signed
 			Self::verify_signed_payload(&proof, &delegator_key, payload.encode())?;
 
 			// Validation:  The MSA must not already have a handle associated with it
@@ -250,7 +250,7 @@ pub mod pallet {
 				Error::<T>::MSAHandleExists
 			);
 
-			// Validation:  The base handle MUST be UTF-8 encoded.
+			// Validation: The base handle MUST be UTF-8 encoded.
 			let base_handle_str = core::str::from_utf8(&payload.base_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 
@@ -260,13 +260,13 @@ pub mod pallet {
 			log::info!("handle length={}", len);
 			log::info!("handle={}", base_handle_str);
 
-			// Validate byte length
+			// Validation: Handle byte length must be within range
 			ensure!(
 				len >= HANDLE_BASE_BYTES_MIN && len <= HANDLE_BASE_BYTES_MAX,
 				Error::<T>::InvalidHandleByteLength
 			);
 
-			// Validate character length
+			// Validation: Handle character length must be within range
 			ensure!(
 				len >= HANDLE_BASE_CHARS_MIN && len <= HANDLE_BASE_CHARS_MAX,
 				Error::<T>::InvalidHandleCharacterLength
