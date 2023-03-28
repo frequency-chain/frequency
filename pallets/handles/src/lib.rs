@@ -290,6 +290,34 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Retrieve `HandleResponse` for the specified `MessageSourceAccount`
+		/// # Arguments
+		/// * `msa_id` - The `MessageSourceAccount` to retrieve the `HandleResponse` for
+		/// # Errors
+		/// * [`Error::HandleDoesNotExist`]
+		/// # Returns
+		/// * `HandleResponse` - The `HandleResponse` for the specified `MessageSourceAccount`
+		pub fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
+			let full_handle = MSAIdToDisplayName::<T>::get(msa_id);
+			if full_handle.is_empty() {
+				return None
+			}
+
+			// convert to string
+			let full_handle_str = core::str::from_utf8(&full_handle)
+				.map_err(|_| Error::<T>::InvalidHandleEncoding)
+				.ok()?;
+			let handle_parts: Vec<&str> = full_handle_str.split(".").collect();
+			let base_handle = handle_parts[0];
+			let suffix = handle_parts[1].parse::<u16>().ok()?;
+			let canonical_handle = Self::convert_to_canonical(base_handle);
+			Some(HandleResponse {
+				base_handle: base_handle.into(),
+				suffix,
+				canonical_handle: canonical_handle.into(),
+			})
+		}
+
 		fn convert_to_canonical(handle_str: &str) -> codec::alloc::string::String {
 			let mut normalized =
 				unicode_security::skeleton(handle_str).collect::<codec::alloc::string::String>();
@@ -299,7 +327,8 @@ pub mod pallet {
 
 		fn generate_suffix_for_canonical_handle(canonical_handle: &str, cursor: usize) -> u16 {
 			let seed = SuffixGenerator::generate_seed(canonical_handle);
-			let mut suffix_generator = SuffixGenerator::new(0, 10000, seed);
+			let mut suffix_generator =
+				SuffixGenerator::new(T::HandleSuffixMin::get(), T::HandleSuffixMax::get(), seed);
 			let sequence: Vec<usize> = suffix_generator.suffix_iter().collect();
 			sequence[cursor] as u16
 		}

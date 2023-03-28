@@ -1,3 +1,5 @@
+#[cfg(feature = "std")]
+use crate::utils::*;
 use codec::{Decode, Encode};
 use frame_support::BoundedVec;
 use scale_info::TypeInfo;
@@ -41,9 +43,11 @@ impl ClaimHandlePayload {
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct HandleResponse {
 	/// Base handle (without delimiter or suffix
-	pub base_handle: Handle,
+	#[cfg_attr(feature = "std", serde(with = "as_string"))]
+	pub base_handle: Vec<u8>,
 	/// Canonical handle (reduced/translated version of base)
-	pub canonical_handle: Handle,
+	#[cfg_attr(feature = "std", serde(with = "as_string"))]
+	pub canonical_handle: Vec<u8>,
 	/// Suffix
 	pub suffix: HandleSuffix,
 }
