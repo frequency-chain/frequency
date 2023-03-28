@@ -280,14 +280,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Change handle
-		#[pallet::call_index(1)]
-		#[pallet::weight(1000)]
-		pub fn change_handle(origin: OriginFor<T>) -> DispatchResult {
-			let _delegator_key = ensure_signed(origin)?;
-			Ok(())
-		}
-
 		/// Retire handle
 		#[pallet::call_index(2)]
 		#[pallet::weight(1000)]
