@@ -325,10 +325,12 @@ pub mod pallet {
 				T::HandleSuffixMax::get() as usize,
 				&canonical_handle_str,
 			);
-			let sequence = suffix_generator.suffix_iter();
+			let sequence = suffix_generator.suffix_iter().enumerate();
 
-			for suffix in sequence {
-				suffixes.push(suffix as u16);
+			for (i, suffix) in sequence {
+				if i >= suffix_index as usize && i < (suffix_index as usize + count as usize) {
+					suffixes.push(suffix as u16);
+				}
 				if suffixes.len() == count as usize {
 					break
 				}
