@@ -279,7 +279,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 			log::debug!("canonical={}", canonical_handle_str);
 
-			// Generate suffix from the next available suffix index
+			// Generate suffix from the next available index into the suffix sequence
 			let suffix_index =
 				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
 					.unwrap_or_default();
