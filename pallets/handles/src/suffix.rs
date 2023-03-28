@@ -3,16 +3,18 @@
 //! `suffix_generator` provides a `SuffixGenerator` struct to generate unique suffix sequences for a given range
 //! and seed, excluding already used suffixes.
 
+use core::hash::Hasher;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 use sp_std::vec::Vec;
+use twox_hash::XxHash64;
 
 /// A generator for unique suffix sequences.
 ///
 /// Given a min, max range, and a seed, generates unique suffix sequences by excluding
 /// already used suffixes.
 pub struct SuffixGenerator {
-	min: u32,
-	max: u32,
+	min: usize,
+	max: usize,
 	rng: SmallRng,
 }
 
@@ -30,7 +32,7 @@ impl SuffixGenerator {
 	///
 	/// let suffix_generator = SuffixGenerator::new(min, max, seed);
 	/// ```
-	pub fn new(min: u32, max: u32, seed: u64) -> Self {
+	pub fn new(min: usize, max: usize, seed: u64) -> Self {
 		let rng = SmallRng::seed_from_u64(seed);
 		Self { min, max, rng }
 	}
@@ -69,5 +71,35 @@ impl SuffixGenerator {
 			indices.swap(i as usize, j as usize);
 			indices[i as usize]
 		})
+	}
+
+	/// Generate a seed from a unique canonical base handle
+	///
+	/// # Arguments
+	///
+	/// * `canonical_handle` - The canonical handle as a string slice.
+	///
+	/// # Returns
+	///
+	/// A 64-bit seed.
+	///
+	/// # Examples
+	/// ```
+	/// use frequency_handles::SuffixGenerator;
+	///
+	/// let min = 100;
+	/// let max = 150;
+	/// let seed = SuffixGenerator::generate_seed("myuser");
+	///
+	/// let mut suffix_generator = SuffixGenerator::new(min, max, seed);
+	/// ```
+	///
+	pub fn generate_seed(canonical_handle: &str) -> u64 {
+		log::debug!("generate_seed()");
+		let mut hasher = XxHash64::with_seed(0);
+		sp_std::hash::Hash::hash(&canonical_handle, &mut hasher);
+		let value_bytes: [u8; 4] = [0; 4];
+		hasher.write(&value_bytes);
+		hasher.finish()
 	}
 }

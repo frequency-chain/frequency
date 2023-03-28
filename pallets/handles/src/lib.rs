@@ -53,8 +53,8 @@ use sp_runtime::{
 	MultiSignature,
 };
 
-// pub mod suffix;
-// use suffix::SuffixGenerator;
+pub mod suffix;
+use suffix::SuffixGenerator;
 
 // pub mod confusables;
 
@@ -157,44 +157,15 @@ pub mod pallet {
 		normalized
 	}
 
-	use core::hash::Hasher;
-	use rand::{rngs::SmallRng, Rng, SeedableRng};
-	use twox_hash::XxHash64;
-
-	fn unique_sequence(
-		min: usize,
-		max: usize,
-		rng: &mut SmallRng,
-	) -> impl Iterator<Item = usize> + '_ {
-		let mut indices: Vec<usize> = (min..=max).into_iter().collect();
-		(0..max).rev().map(move |i| {
-			// Make sure j is never higher than i
-			// To keep the prior values stable (because it is reversed)
-			let j = rng.gen_range(min..i + 1);
-			indices.swap(i, j);
-			indices[i]
-		})
-	}
-
 	fn generate_suffix_for_canonical_handle(canonical_handle: &str, cursor: usize) -> u16 {
-		log::info!("generate_suffix_for_canonical_handle() cursor={}", &cursor);
+		log::debug!("generate_suffix_for_canonical_handle({}, {})", canonical_handle, &cursor);
 
-		let mut hasher = XxHash64::with_seed(0);
-		sp_std::hash::Hash::hash(&canonical_handle, &mut hasher);
-		let value_bytes: [u8; 4] = [0; 4];
-		hasher.write(&value_bytes);
-		let seed = hasher.finish();
-
+		let seed = SuffixGenerator::generate_seed(canonical_handle);
 		log::info!("seed={}", seed);
 
-		let mut rng: SmallRng = SmallRng::seed_from_u64(seed);
-
-		let mut sequence = unique_sequence(0, 10000, &mut rng);
-		if let Some(suffix) = sequence.nth(cursor) {
-			suffix.try_into().unwrap()
-		} else {
-			0
-		}
+		let mut suffix_generator = SuffixGenerator::new(0, 10000, seed);
+		let sequence: Vec<usize> = suffix_generator.suffix_iter().collect();
+		sequence[cursor] as u16
 	}
 
 	impl<T: Config> Pallet<T> {
