@@ -28,11 +28,17 @@ impl SuffixGenerator {
 	///
 	/// let min = 100;
 	/// let max = 150;
-	/// let seed = 12345;
+	/// let canonical_handle = "myhandle";
 	///
-	/// let suffix_generator = SuffixGenerator::new(min, max, seed);
+	/// let suffix_generator = SuffixGenerator::new(min, max, "myhandle");
 	/// ```
-	pub fn new(min: usize, max: usize, seed: u64) -> Self {
+	// pub fn new(min: usize, max: usize, seed: u64) -> Self {
+	// 	let rng = SmallRng::seed_from_u64(seed);
+	// 	Self { min, max, rng }
+	// }
+
+	pub fn new(min: usize, max: usize, canonical_handle: &str) -> Self {
+		let seed = Self::generate_seed(&canonical_handle);
 		let rng = SmallRng::seed_from_u64(seed);
 		Self { min, max, rng }
 	}
@@ -54,9 +60,9 @@ impl SuffixGenerator {
 	///
 	/// let min = 100;
 	/// let max = 150;
-	/// let seed = 12345;
+	/// let canonical_handle = "myhandle";
 	///
-	/// let mut suffix_generator = SuffixGenerator::new(min, max, seed);
+	/// let mut suffix_generator = SuffixGenerator::new(min, max, canonical_handle);
 	///
 	/// let start_index = 10;
 	/// let sequence: Vec<u32> = suffix_generator.suffix_iter(start_index).collect();
@@ -89,9 +95,9 @@ impl SuffixGenerator {
 	///
 	/// let min = 100;
 	/// let max = 150;
-	/// let seed = SuffixGenerator::generate_seed("myuser");
+	/// let canonical_handle = "myuser";
 	///
-	/// let mut suffix_generator = SuffixGenerator::new(min, max, seed);
+	/// let seed = SuffixGenerator::generate_seed(canonical_handle);
 	/// ```
 	///
 	pub fn generate_seed(canonical_handle: &str) -> u64 {

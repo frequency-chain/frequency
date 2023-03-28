@@ -163,7 +163,7 @@ pub mod pallet {
 		let seed = SuffixGenerator::generate_seed(canonical_handle);
 		log::debug!("seed={}", seed);
 
-		let mut suffix_generator = SuffixGenerator::new(0, 10000, seed);
+		let mut suffix_generator = SuffixGenerator::new(0, 10000, &canonical_handle);
 		let sequence: Vec<usize> = suffix_generator.suffix_iter().collect();
 		sequence[cursor] as u16
 	}
