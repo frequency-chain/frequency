@@ -9,16 +9,48 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v1.1.0-rc1
       - "v0.0.1" # used for testing only
       - "v0.0.1-rc[0-9]+" # used for testing only
+  workflow_dispatch:
+    inputs:
+      release-version:
+        description: "Release version (v#.#.#[-rc#])"
+        required: true
+
 env:
-  NEW_RELEASE_VERSION: ${{github.ref_name}}
-  NEW_RELEASE_TAG: ${{github.ref_name}}
-  RELEASE_BRANCH_NAME: release-${{github.ref_name}}
+  NEW_RELEASE_TAG_FROM_UI: ${{github.event.inputs.release-version}}
+  NEW_RELEASE_TAG: ${{github.event.inputs.release-version || github.ref_name}}
+  RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
   TEST_RUN: ${{startsWith(github.ref_name, 'v0.0.1')}}
   RUST_TOOLCHAIN: "nightly-2022-10-09" # TODO: Set this dynamically
 
 jobs:
+  validate-release-version:
+    runs-on: ubuntu-20.04
+    name: Validate Release Version Tag
+    steps:
+      - name: XXX Debug
+        run: |
+          echo "NEW_RELEASE_TAG_FROM_UI: $NEW_RELEASE_TAG_FROM_UI"
+          echo "NEW_RELEASE_TAG: $NEW_RELEASE_TAG"
+          echo "RELEASE_BRANCH_NAME: $RELEASE_BRANCH_NAME"
+          echo "TEST_RUN: $TEST_RUN"
+      - name: Validate
+        if: env.NEW_RELEASE_TAG_FROM_UI != ''
+        shell: bash
+        run: |
+          version=${{env.NEW_RELEASE_TAG_FROM_UI}}
+          echo "Release version: $version"
+          regex='^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-rc[1-9]\d*)?$'
+          if [[ $version =~ $regex ]]; then
+            echo "The $version version is valid"
+            exit 0
+          else
+            echo "ERROR. The $version is not a valid version."
+            exit 1
+          fi
+
   create-release-branch:
-    name: Prep for Release
+    needs: validate-release-version
+    name: Create Release Branch
     runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
@@ -54,7 +86,7 @@ jobs:
         id: is-full-release
         uses: ./.github/workflows/common/is-full-release
         with:
-          version-tag: ${{env.NEW_RELEASE_VERSION}}
+          version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Install Required Packages
         if: steps.is-full-release.outputs.is-full-release == 'true'
         run: |
@@ -75,7 +107,7 @@ jobs:
         if: steps.is-full-release.outputs.is-full-release == 'true'
         uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
         with:
-          commit_message: "Update weights for release ${{env.NEW_RELEASE_VERSION}}"
+          commit_message: "Update weights for release ${{env.NEW_RELEASE_TAG}}"
           commit_user_name: Frequency CI [bot]
           commit_user_email: do-not-reply@users.noreply.github.com
           commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
@@ -96,7 +128,7 @@ jobs:
       - name: Version Code
         shell: bash
         run: |
-          release_version=${{env.NEW_RELEASE_VERSION}}
+          release_version=${{env.NEW_RELEASE_TAG}}
           make version v=${release_version:1}
       - name: Print Updated Version
         run: |
@@ -106,7 +138,7 @@ jobs:
         id: commit-updated-version
         uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
         with:
-          commit_message: "Update version for release ${{env.NEW_RELEASE_VERSION}}"
+          commit_message: "Update version for release ${{env.NEW_RELEASE_TAG}}"
           commit_user_name: Frequency CI [bot]
           commit_user_email: do-not-reply@users.noreply.github.com
           commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
@@ -167,7 +199,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-          key: binaries-${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.NEW_RELEASE_VERSION}}
+          key: binaries-${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.NEW_RELEASE_TAG}}
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
@@ -281,7 +313,7 @@ jobs:
         run: |
           echo "WASM_DIR=${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}" >> $GITHUB_ENV
           echo "BUILT_WASM_FILENAME=${{matrix.built-wasm-file-name-prefix}}.compact.compressed.wasm" >> $GITHUB_ENV
-          release_wasm_filename=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.NEW_RELEASE_VERSION}}.compact.compressed.wasm
+          release_wasm_filename=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.NEW_RELEASE_TAG}}.compact.compressed.wasm
           echo "RELEASE_WASM_FILENAME=$release_wasm_filename" >> $GITHUB_ENV
           echo "runtime_filename_${{matrix.network}}=$release_wasm_filename" >> $GITHUB_OUTPUT
       - name: Cache WASM for Testing
@@ -290,7 +322,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
-          key: runtimes-${{runner.os}}-${{matrix.network}}-${{env.NEW_RELEASE_VERSION}}
+          key: runtimes-${{runner.os}}-${{matrix.network}}-${{env.NEW_RELEASE_TAG}}
       - name: Install srtool-cli
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
@@ -451,7 +483,7 @@ jobs:
         if: env.TEST_RUN != 'true'
         shell: bash
         run: |
-          EXPECTED_VERSION="${{env.NEW_RELEASE_VERSION}}+polkadot$(make version-polkadot)"
+          EXPECTED_VERSION="${{env.NEW_RELEASE_TAG}}+polkadot$(make version-polkadot)"
           ACTUAL_VERSION="v$(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version | cut -d " " -f 2)"
           echo "Expected: ${EXPECTED_VERSION}"
           echo "  Actual: ${ACTUAL_VERSION%-*}"
@@ -612,7 +644,7 @@ jobs:
         id: is-full-release
         uses: ./.github/workflows/common/is-full-release
         with:
-          version-tag: ${{env.NEW_RELEASE_VERSION}}
+          version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Get Previous Full Release Tag
         run: |
           git show-ref --tags -d
@@ -771,7 +803,7 @@ jobs:
         id: is-full-release
         uses: ./.github/workflows/common/is-full-release
         with:
-          version-tag: ${{env.NEW_RELEASE_VERSION}}
+          version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Download Binaries
         id: download
         uses: actions/download-artifact@v3
@@ -803,7 +835,7 @@ jobs:
           push: true
           file: ./docker/${{env.IMAGE_NAME}}.dockerfile
           tags: |
-            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.NEW_RELEASE_VERSION}}
+            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.NEW_RELEASE_TAG}}
       - name: Update DockerHub Latest Tag
         if: env.TEST_RUN != 'true' && steps.is-full-release.outputs.is-full-release == 'true'
         uses: docker/build-push-action@v4
@@ -854,7 +886,7 @@ jobs:
         id: is-full-release
         uses: ./.github/workflows/common/is-full-release
         with:
-          version-tag: ${{env.NEW_RELEASE_VERSION}}
+          version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Download Binaries
         id: download
         uses: actions/download-artifact@v3
@@ -886,7 +918,7 @@ jobs:
           push: true
           file: ./docker/${{matrix.node}}.dockerfile
           tags: |
-            ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.NEW_RELEASE_VERSION}}
+            ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.NEW_RELEASE_TAG}}
       - name: Update DockerHub Latest Tag
         if: env.TEST_RUN != 'true' && steps.is-full-release.outputs.is-full-release == 'true'
         uses: docker/build-push-action@v4
@@ -948,7 +980,7 @@ jobs:
           path: js/api-augment/dist
       - name: Version Package
         if: env.TEST_RUN != 'true'
-        run: npm version --new-version "${{env.NEW_RELEASE_VERSION}}" --no-git-tag-version
+        run: npm version --new-version "${{env.NEW_RELEASE_TAG}}" --no-git-tag-version
         working-directory: js/api-augment/dist
       - name: Release on NPM @latest
         if: env.TEST_RUN != 'true'
