@@ -293,7 +293,7 @@ pub mod pallet {
 				suffix,
 				delegator_msa_id,
 			);
-			// Update suffix index
+			// Store canonical handle to suffix sequence index
 			CanonicalBaseHandleToSuffixIndex::<T>::set(
 				canonical_handle.clone(),
 				Some(suffix_index),
