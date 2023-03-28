@@ -1,6 +1,7 @@
 use codec::{Decode, Encode};
 use frame_support::BoundedVec;
 use scale_info::TypeInfo;
+use serde::{Deserialize, Serialize};
 use sp_core::ConstU32;
 
 /// The minimum base handle (not including suffix or delimiter) length in characters
@@ -33,4 +34,16 @@ impl ClaimHandlePayload {
 	pub fn new(base_handle: Handle) -> Self {
 		Self { base_handle }
 	}
+}
+
+/// RPC Response form for a Handle
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+pub struct HandleResponse {
+	/// Base handle (without delimiter or suffix
+	pub base_handle: Handle,
+	/// Canonical handle (reduced/translated version of base)
+	pub canonical_handle: Handle,
+	/// Suffix
+	pub suffix: HandleSuffix,
 }

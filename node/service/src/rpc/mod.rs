@@ -59,6 +59,7 @@ where
 	C::Api: system_runtime_api::AdditionalRuntimeApi<Block>,
 	C::Api: pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId>,
 	C::Api: pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block>,
+	C::Api: pallet_handles_runtime_api::HandlesRuntimeApi<Block>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
@@ -66,6 +67,7 @@ where
 
 	// Frequency RPCs
 	use frequency_rpc::{FrequencyRpcApiServer, FrequencyRpcHandler};
+	use pallet_handles_rpc::{HandlesApiServer, HandlesHandler};
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
 	use pallet_schemas_rpc::{SchemasApiServer, SchemasHandler};
@@ -80,6 +82,7 @@ where
 	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;
 	module.merge(MsaHandler::new(client.clone()).into_rpc())?;
 	module.merge(StatefulStorageHandler::new(client.clone()).into_rpc())?;
+	module.merge(HandlesHandler::new(client.clone()).into_rpc())?;
 	module.merge(FrequencyRpcHandler::new(client).into_rpc())?;
 	if let Some(command_sink) = command_sink {
 		module.merge(
