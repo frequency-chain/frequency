@@ -398,8 +398,7 @@ impl<T: Config> Pallet<T> {
 
 		// empty release schedules cleanup the storage and unlock the fund
 		if bounded_schedules.is_empty() {
-			<ReleaseSchedules<T>>::remove(who);
-			T::Currency::remove_lock(RELEASE_LOCK_ID, who);
+			Self::clear_release_schedules(who);
 			return Ok(())
 		}
 
