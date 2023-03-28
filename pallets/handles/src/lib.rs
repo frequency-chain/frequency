@@ -276,7 +276,8 @@ pub mod pallet {
 			);
 
 			// Convert base display handle into a canonical display handle
-			let canonical_handle_vec = Self::convert_to_canonical(base_handle_str).as_bytes().to_vec();
+			let canonical_handle_vec =
+				Self::convert_to_canonical(base_handle_str).as_bytes().to_vec();
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
 			let canonical_handle_str = core::str::from_utf8(&canonical_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
@@ -287,8 +288,10 @@ pub mod pallet {
 				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
 					.unwrap_or_default();
 			log::debug!("suffix_index={}", suffix_index);
-			let suffix =
-				Self::generate_suffix_for_canonical_handle(&canonical_handle_str, suffix_index as usize);
+			let suffix = Self::generate_suffix_for_canonical_handle(
+				&canonical_handle_str,
+				suffix_index as usize,
+			);
 			log::debug!("suffix={}", suffix);
 
 			// Store canonical handle and suffix to MSA id
