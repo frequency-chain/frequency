@@ -10,20 +10,21 @@ export default {
             ],
             type: "Option<HandleResponse>",
 
-    },
-    getNextSuffixes:{
-        description: "Get next suffixes for a given handle and count",
-        params: [
-            {
-                name: "handle",
-                type: "Vec<u8>",
-            },
-            {
-                name: "count",
-                type: "u16",
-            },
-        ],
-        type: "Vec<u16>",
+        },
+        getNextSuffixes:{
+            description: "Get next suffixes for a given handle and count",
+            params: [
+                {
+                    name: "handle",
+                    type: "Vec<u8>",
+                },
+                {
+                    name: "count",
+                    type: "u16",
+                },
+            ],
+            type: "Vec<u16>",
+        },
     },
     types: {
         HandleResponse: {
@@ -65,6 +66,4 @@ export default {
             },
         ],
     }, 
-},
-
 };
