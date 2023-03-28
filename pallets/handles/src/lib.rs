@@ -32,6 +32,8 @@
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 mod homoglyphs;
+
+use homoglyphs::canonical::CanonicalConverter;
 #[cfg(test)]
 mod tests;
 
@@ -276,8 +278,17 @@ pub mod pallet {
 			);
 
 			// Convert base display handle into a canonical display handle
-			let canonical_handle_vec =
-				Self::convert_to_canonical(base_handle_str).as_bytes().to_vec();
+
+			let canonical_converter = CanonicalConverter::new();
+
+			// let canonical_handle_vec =
+			// 	Self::convert_to_canonical(base_handle_str).as_bytes().to_vec();
+
+			let canonical_handle_str = canonical_converter.to_canonical(&base_handle_str);
+			let no_confusables_str = canonical_converter.remove_confusables(&canonical_handle_str);
+			let no_diacriticals_str = canonical_converter.strip_diacriticals(&no_confusables_str);
+			let canonical_handle_vec = no_diacriticals_str.as_bytes().to_vec();
+
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
 			let canonical_handle_str = core::str::from_utf8(&canonical_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
