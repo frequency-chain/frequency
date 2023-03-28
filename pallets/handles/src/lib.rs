@@ -279,23 +279,27 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 			log::info!("canonical={}", canonical_handle_str);
 
-			// Generate suffix
+			// Generate suffix from the next available suffix index
 			let suffix_index =
 				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
 					.unwrap_or_default();
 			log::info!("suffix_index={}", suffix_index);
 			let suffix =
 				generate_suffix_for_canonical_handle(&canonical_handle_str, suffix_index as usize);
+
+			// Store canonical handle and suffix to MSA id
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(
 				canonical_handle.clone(),
 				suffix,
 				delegator_msa_id,
 			);
+			// Update suffix index
 			CanonicalBaseHandleToSuffixIndex::<T>::set(
 				canonical_handle.clone(),
 				Some(suffix_index),
 			);
 
+			// Compose the full display handle from the base handle, "." delimeter and suffix
 			let mut full_handle_vec: Vec<u8> = vec![];
 			full_handle_vec.extend(base_handle_str.as_bytes());
 			full_handle_vec.extend(b".");
@@ -304,8 +308,7 @@ pub mod pallet {
 
 			let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
 
-			// Save display handle to MSA id
-			//let full_handle_str = base_handle_str;
+			// Store the full display handle to MSA id
 			MSAIdToDisplayName::<T>::insert(delegator_msa_id, full_handle.clone());
 
 			Self::deposit_event(Event::HandleCreated {
