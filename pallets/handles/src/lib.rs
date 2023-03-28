@@ -150,25 +150,6 @@ pub mod pallet {
 		},
 	}
 
-	fn convert_to_canonical(handle_str: &str) -> codec::alloc::string::String {
-		let mut normalized =
-			unicode_security::skeleton(handle_str).collect::<codec::alloc::string::String>();
-		normalized.make_ascii_lowercase();
-		log::debug!("normalized={}", normalized.clone());
-		normalized
-	}
-
-	fn generate_suffix_for_canonical_handle(canonical_handle: &str, cursor: usize) -> u16 {
-		log::debug!("generate_suffix_for_canonical_handle({}, {})", canonical_handle, &cursor);
-
-		let seed = SuffixGenerator::generate_seed(canonical_handle);
-		log::debug!("seed={}", seed);
-
-		let mut suffix_generator = SuffixGenerator::new(0, 10000, &canonical_handle);
-		let sequence: Vec<usize> = suffix_generator.suffix_iter().collect();
-		sequence[cursor] as u16
-	}
-
 	impl<T: Config> Pallet<T> {
 		/// Get the next index into the shuffled suffix sequence for the specified canonical base handle
 		///
@@ -209,6 +190,27 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Convert a handle string to it's canonical form.
+		pub fn convert_to_canonical(handle_str: &str) -> codec::alloc::string::String {
+			let mut normalized =
+				unicode_security::skeleton(handle_str).collect::<codec::alloc::string::String>();
+			normalized.make_ascii_lowercase();
+			log::debug!("normalized={}", normalized.clone());
+			normalized
+		}
+
+		/// Generate a numeric suffix for a canonical handle and the cursor/sequence index
+		fn generate_suffix_for_canonical_handle(canonical_handle: &str, cursor: usize) -> u16 {
+			log::debug!("generate_suffix_for_canonical_handle({}, {})", canonical_handle, &cursor);
+
+			let seed = SuffixGenerator::generate_seed(canonical_handle);
+			log::debug!("seed={}", seed);
+
+			let mut suffix_generator = SuffixGenerator::new(0, 10000, &canonical_handle);
+			let sequence: Vec<usize> = suffix_generator.suffix_iter().collect();
+			sequence[cursor] as u16
+		}
 	}
 
 	// EXTRINSICS
@@ -234,7 +236,7 @@ pub mod pallet {
 				Error::<T>::InvalidHandleByteLength
 			);
 
-			// Validation: The provider  must already have a MSA id
+			// Validation: The provider must already have a MSA id
 			T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
@@ -274,7 +276,7 @@ pub mod pallet {
 			);
 
 			// Convert base display handle into a canonical display handle
-			let canonical_handle_vec = convert_to_canonical(base_handle_str).as_bytes().to_vec();
+			let canonical_handle_vec = Self::convert_to_canonical(base_handle_str).as_bytes().to_vec();
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
 			let canonical_handle_str = core::str::from_utf8(&canonical_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
@@ -286,7 +288,8 @@ pub mod pallet {
 					.unwrap_or_default();
 			log::debug!("suffix_index={}", suffix_index);
 			let suffix =
-				generate_suffix_for_canonical_handle(&canonical_handle_str, suffix_index as usize);
+				Self::generate_suffix_for_canonical_handle(&canonical_handle_str, suffix_index as usize);
+			log::debug!("suffix={}", suffix);
 
 			// Store canonical handle and suffix to MSA id
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(

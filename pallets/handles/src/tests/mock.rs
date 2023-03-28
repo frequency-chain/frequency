@@ -9,12 +9,15 @@ use frame_support::{
 	dispatch::DispatchError,
 	traits::{ConstU16, ConstU32, ConstU64},
 };
-use sp_core::{ByteArray, H256};
+use sp_core::{crypto::AccountId32, ByteArray, H256};
 
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
 };
+
+pub const INVALID_MSA_ID: MessageSourceId = 100;
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -24,17 +27,11 @@ impl MsaLookup for MsaInfoHandler {
 	type AccountId = AccountId;
 
 	fn get_msa_id(key: &AccountId) -> Option<MessageSourceId> {
-		// if *key == test_public(INVALID_MSA_ID) ||
-		// 	*key == get_invalid_msa_signature_account().public().into()
-		// {
-		// 	return None
-		// }
+		log::debug!("get_msa_id()");
 
-		// if *key == get_signature_benchmarks_public_account().into() ||
-		// 	*key == get_signature_account().1.public().into()
-		// {
-		// 	return Some(constants::SIGNATURE_MSA_ID)
-		// }
+		if *key == test_public(INVALID_MSA_ID as u8) {
+			return None
+		}
 
 		Some(MessageSourceId::decode(&mut key.as_slice()).unwrap())
 	}
@@ -44,18 +41,11 @@ impl MsaValidator for MsaInfoHandler {
 	type AccountId = AccountId;
 
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError> {
-		println!("ensure_valid_msa_key()");
-		// if *key == test_public(INVALID_MSA_ID) ||
-		// 	*key == get_invalid_msa_signature_account().public().into()
-		// {
-		// 	return Err(DispatchError::Other("some error"))
-		// }
+		log::debug!("ensure_valid_msa_key()");
 
-		// if *key == get_signature_benchmarks_public_account().into() ||
-		// 	*key == get_signature_account().1.public().into()
-		// {
-		// 	return Ok(constants::SIGNATURE_MSA_ID)
-		// }
+		if *key == test_public(INVALID_MSA_ID as u8) {
+			return Err(DispatchError::Other("some error"))
+		}
 
 		Ok(MessageSourceId::decode(&mut key.as_slice()).unwrap())
 	}
@@ -129,12 +119,12 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 // }
 
 // Create and return a simple test AccountId32 constructed with the desired integer.
-// pub fn test_public(n: u8) -> AccountId32 {
-// 	AccountId32::new([n; 32])
-// }
+pub fn test_public(n: u8) -> AccountId32 {
+	AccountId32::new([n; 32])
+}
 
-// Create and return a simple signed origin from a test_public constructed with the desired integer,
-// for passing to an extrinsic call
+// // Create and return a simple signed origin from a test_public constructed with the desired integer,
+// // for passing to an extrinsic call
 // pub fn test_origin_signed(n: u8) -> RuntimeOrigin {
 // 	RuntimeOrigin::signed(test_public(n))
 // }

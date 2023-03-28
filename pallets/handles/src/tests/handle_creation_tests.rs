@@ -8,8 +8,7 @@ use sp_runtime::MultiSignature;
 fn claim_handle_happy_path() {
 	new_test_ext().execute_with(|| {
 		// Provider
-		let provider_key_pair = sr25519::Pair::generate().0;
-		let provider_account = provider_key_pair.public();
+		let provider_account = test_public(1);
 		println!("provider_account={}", provider_account);
 
 		// Delegator
@@ -19,7 +18,6 @@ fn claim_handle_happy_path() {
 
 		// Payload
 		let base_handle = "test1".as_bytes().to_vec();
-
 		println!("base_handle={:?}", base_handle);
 
 		let payload = ClaimHandlePayload::new(base_handle.clone());
@@ -34,6 +32,14 @@ fn claim_handle_happy_path() {
 			payload
 		));
 		let events_occured = System::events();
+
+		let base_handle_str = core::str::from_utf8(&base_handle).ok().unwrap();
+		println!("base_handle_str={}", base_handle_str);
+		let canonical_handle_vec =
+			Handles::convert_to_canonical(base_handle_str).as_bytes().to_vec();
+		let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
+
+		Handles::get_current_suffix_index_for_canonical_handle(canonical_handle);
 		println!("#events = {}", events_occured.len());
 		// System::assert_last_event(Event::HandleCreated { msa_id: 1, handle: base_handle }.into());
 	});
