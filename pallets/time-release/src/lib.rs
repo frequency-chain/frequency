@@ -277,7 +277,7 @@ pub mod module {
 				);
 			}
 
-			Self::do_transfer(&from, &to, schedule.clone())?;
+			Self::do_transfer(&from, &to, schedule)?;
 
 			Self::deposit_event(Event::ReleaseScheduleAdded {
 				from,
@@ -381,7 +381,8 @@ impl<T: Config> Pallet<T> {
 			.ok_or(ArithmeticError::Overflow)?;
 
 		T::Currency::transfer(from, to, schedule_amount, ExistenceRequirement::AllowDeath)?;
-		T::Currency::set_lock(RELEASE_LOCK_ID, to, total_amount, WithdrawReasons::all());
+
+		Self::update_lock(&to, total_amount);
 
 		<ReleaseSchedules<T>>::try_append(to, schedule)
 			.map_err(|_| Error::<T>::MaxReleaseSchedulesExceeded)?;
@@ -416,7 +417,7 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::InsufficientBalanceToLock,
 		);
 
-		T::Currency::set_lock(RELEASE_LOCK_ID, who, total_amount, WithdrawReasons::all());
+		Self::update_lock(&who, total_amount);
 		<ReleaseSchedules<T>>::insert(who, bounded_schedules);
 
 		Ok(())
