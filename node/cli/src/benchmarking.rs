@@ -14,6 +14,7 @@ use sp_runtime::{OpaqueExtrinsic, SaturatedConversion};
 
 use pallet_balances::Call as BalancesCall;
 use pallet_msa;
+use pallet_stateful_storage;
 use pallet_transaction_payment;
 use sp_inherents::InherentDataProvider;
 use sp_timestamp;
@@ -129,6 +130,7 @@ pub fn create_benchmark_extrinsic(
 		frame_system::CheckWeight::<runtime::Runtime>::new(),
 		pallet_transaction_payment::ChargeTransactionPayment::<runtime::Runtime>::from(0),
 		pallet_msa::CheckFreeExtrinsicUse::<runtime::Runtime>::new(),
+		pallet_stateful_storage::StatefulSignedExtension::<runtime::Runtime>::new(),
 	);
 
 	let raw_payload = sp_runtime::generic::SignedPayload::from_raw(
@@ -140,6 +142,7 @@ pub fn create_benchmark_extrinsic(
 			runtime::VERSION.transaction_version,
 			genesis_hash,
 			best_hash,
+			(),
 			(),
 			(),
 			(),

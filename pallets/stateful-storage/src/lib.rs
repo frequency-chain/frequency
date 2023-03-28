@@ -65,29 +65,40 @@ pub mod types;
 
 pub mod weights;
 
+pub mod stateful_signed_extension;
+pub use stateful_signed_extension::*;
+
 use crate::{stateful_child_tree::StatefulChildTree, types::*};
+// Weird compiler issue--warns about unused PageId import when building, but if missing here, `cargo test` fails due to missing import.
+#[allow(unused_imports)]
+use common_primitives::stateful_storage::PageId;
 use common_primitives::{
-	msa::{
-		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
-	},
+	msa::{DelegatorId, MessageSourceId, MsaValidator, ProviderId, SchemaGrantValidator},
 	node::Verify,
 	schema::{PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaSetting},
 	stateful_storage::{
-		ItemizedStoragePageResponse, ItemizedStorageResponse, PageHash, PageId,
-		PaginatedStorageResponse,
+		ItemizedStoragePageResponse, ItemizedStorageResponse, PageHash, PaginatedStorageResponse,
 	},
 	utils::wrap_binary_data,
 };
-use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
-use frame_system::pallet_prelude::*;
+use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
 pub use pallet::*;
-use sp_core::{bounded::BoundedVec, crypto::AccountId32};
+use sp_core::bounded::BoundedVec;
 use sp_runtime::{traits::Convert, DispatchError, MultiSignature};
 pub use weights::*;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use common_primitives::{
+		msa::{MessageSourceId, MsaLookup, MsaValidator, SchemaGrantValidator},
+		schema::{SchemaId, SchemaProvider},
+		stateful_storage::{PageHash, PageId},
+	};
+	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::*;
+	use sp_core::crypto::AccountId32;
+	use sp_runtime::{traits::Convert, MultiSignature};
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -644,6 +655,57 @@ impl<T: Config> Pallet<T> {
 		let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&key)
 			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 		ensure!(state_owner_msa_id == expected_msa_id, Error::<T>::InvalidMessageSourceAccount);
+		Ok(())
+	}
+
+	/// Verify that the target page state is not stale and return the current page.
+	///
+	/// # Errors
+	/// * [`Error::CorruptedState`]
+	/// * [`Error::StalePageState`]
+	///
+	fn get_checked_itemized_page(
+		msa_id: &MessageSourceId,
+		schema_id: &SchemaId,
+		target_hash: &PageHash,
+	) -> Result<(ItemizedPage<T>, PageHash), DispatchError> {
+		let page = StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
+			msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
+			&(*schema_id,),
+		)
+		.map_err(|_| Error::<T>::CorruptedState)?
+		.unwrap_or_default();
+
+		let prev_content_hash = page.get_hash();
+		ensure!(*target_hash == prev_content_hash, Error::<T>::StalePageState);
+		Ok((page, prev_content_hash))
+	}
+
+	/// Verify that the target page state is not stale
+	///
+	/// # Errors
+	/// * [`Error::CorruptedState`]
+	/// * [`Error::StalePageState`]
+	///
+	fn check_paginated_state(
+		msa_id: &MessageSourceId,
+		schema_id: &SchemaId,
+		page_id: &PageId,
+		target_hash: &PageHash,
+	) -> DispatchResult {
+		let page = StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
+			msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&(*schema_id, *page_id),
+		)
+		.map_err(|_| Error::<T>::CorruptedState)?
+		.unwrap_or_default();
+
+		let prev_content_hash = page.get_hash();
+		ensure!(*target_hash == prev_content_hash, Error::<T>::StalePageState);
 		Ok(())
 	}
 

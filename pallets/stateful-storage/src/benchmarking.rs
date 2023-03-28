@@ -111,7 +111,11 @@ benchmarks! {
 				ITEMIZED_STORAGE_PREFIX,
 				&key).unwrap().unwrap_or_default().get_hash();
 		let actions = itemized_actions_populate::<T>(num_of_items, T::MaxItemizedBlobSizeBytes::get() as usize, delete_actions);
-	}: _ (RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, content_hash, actions)
+	}: {
+		// Explicity call SignedExtension checks because overhead benchmark will not trigger them. Map the returned error to any valid DispatchError.
+		let _ = StatefulStoragePallet::<T>::validate_itemized(&delegator_msa_id, &schema_id, &actions, false, &content_hash).map_err(|_| -> DispatchError {Error::<T>::CorruptedState.into()})?;
+		StatefulStoragePallet::<T>::apply_item_actions(RawOrigin::Signed(caller).into(), delegator_msa_id.into(), schema_id, content_hash, actions)
+	}
 	verify {
 		let page_result = get_itemized_page::<T>(delegator_msa_id, schema_id);
 		assert!(page_result.is_some());
@@ -132,7 +136,11 @@ benchmarks! {
 		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(provider_msa_id.into(), delegator_msa_id.into(), [schema_id].to_vec()));
-	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id, NONEXISTENT_PAGE_HASH, payload.try_into().unwrap())
+	}: {
+		// Explicity call SignedExtension checks because overhead benchmark will not trigger them. Map the returned error to any valid DispatchError.
+		let _ = StatefulStoragePallet::<T>::validate_paginated(&delegator_msa_id, &schema_id, &page_id, false, false, &NONEXISTENT_PAGE_HASH).map_err(|_| -> DispatchError {Error::<T>::CorruptedState.into()})?;
+		StatefulStoragePallet::<T>::upsert_page(RawOrigin::Signed(caller).into(), delegator_msa_id.into(), schema_id, page_id, NONEXISTENT_PAGE_HASH, payload.try_into().unwrap())
+	}
 	verify {
 		let page_result = get_paginated_page::<T>(delegator_msa_id, schema_id, page_id);
 		assert!(page_result.is_some());
@@ -163,7 +171,11 @@ benchmarks! {
 			PALLET_STORAGE_PREFIX,
 			PAGINATED_STORAGE_PREFIX,
 			&key).unwrap().unwrap().get_hash();
-	}: _(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id, content_hash)
+	}: {
+		// Explicity call SignedExtension checks because overhead benchmark will not trigger them. Map the returned error to any valid DispatchError.
+		let _ = StatefulStoragePallet::<T>::validate_paginated(&delegator_msa_id, &schema_id, &page_id, false, true, &content_hash).map_err(|_| -> DispatchError {Error::<T>::CorruptedState.into()})?;
+		StatefulStoragePallet::<T>::delete_page(RawOrigin::Signed(caller).into(), delegator_msa_id.into(), schema_id, page_id, content_hash)
+	}
 	verify {
 		let page_result = get_paginated_page::<T>(delegator_msa_id, schema_id, page_id);
 		assert!(page_result.is_none());
@@ -216,7 +228,11 @@ benchmarks! {
 		};
 		let encode_data_new_key_data = wrap_binary_data(payload.encode());
 		let signature = delegator_account_public.sign(&encode_data_new_key_data).unwrap();
-	}: _ (RawOrigin::Signed(caller), delegator_account.into(), MultiSignature::Sr25519(signature.into()), payload)
+	}: {
+		// Explicity call SignedExtension checks because overhead benchmark will not trigger them. Map the returned error to any valid DispatchError.
+		let _ = StatefulStoragePallet::<T>::validate_itemized(&payload.msa_id, &payload.schema_id, &payload.actions, true, &payload.target_hash).map_err(|_| -> DispatchError {Error::<T>::CorruptedState.into()})?;
+		StatefulStoragePallet::<T>::apply_item_actions_with_signature(RawOrigin::Signed(caller).into(), delegator_account.into(), MultiSignature::Sr25519(signature.into()), payload)
+	}
 	verify {
 		let page_result = get_itemized_page::<T>(delegator_msa_id, schema_id);
 		assert!(page_result.is_some());
@@ -253,7 +269,11 @@ benchmarks! {
 		};
 		let encode_data_new_key_data = wrap_binary_data(payload.encode());
 		let signature = delegator_account_public.sign(&encode_data_new_key_data).unwrap();
-	}: _(RawOrigin::Signed(caller), delegator_account.into(), MultiSignature::Sr25519(signature.into()), payload)
+	}: {
+		// Explicity call SignedExtension checks because overhead benchmark will not trigger them. Map the returned error to any valid DispatchError.
+		let _ = StatefulStoragePallet::<T>::validate_paginated(&payload.msa_id, &payload.schema_id, &payload.page_id, true, false, &payload.target_hash).map_err(|_| -> DispatchError {Error::<T>::CorruptedState.into()})?;
+		StatefulStoragePallet::<T>::upsert_page_with_signature(RawOrigin::Signed(caller).into(), delegator_account.into(), MultiSignature::Sr25519(signature.into()), payload)
+	}
 	verify {
 		let page_result = get_paginated_page::<T>(delegator_msa_id, schema_id, page_id);
 		assert!(page_result.is_some());
@@ -300,7 +320,11 @@ benchmarks! {
 		};
 		let encode_data_new_key_data = wrap_binary_data(payload.encode());
 		let signature = delegator_account_public.sign(&encode_data_new_key_data).unwrap();
-	}: _(RawOrigin::Signed(caller), delegator_account.into(), MultiSignature::Sr25519(signature.into()), payload)
+	}: {
+		// Explicity call SignedExtension checks because overhead benchmark will not trigger them. Map the returned error to any valid DispatchError.
+		let _ = StatefulStoragePallet::<T>::validate_paginated(&payload.msa_id, &payload.schema_id, &payload.page_id, true, true, &payload.target_hash).map_err(|_| -> DispatchError {Error::<T>::CorruptedState.into()})?;
+		StatefulStoragePallet::<T>::delete_page_with_signature(RawOrigin::Signed(caller).into(), delegator_account.into(), MultiSignature::Sr25519(signature.into()), payload)
+	}
 	verify {
 		let page_result = get_paginated_page::<T>(delegator_msa_id, schema_id, page_id);
 		assert!(page_result.is_none());

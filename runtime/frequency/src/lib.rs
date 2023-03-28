@@ -72,6 +72,7 @@ pub use sp_runtime::BuildStorage;
 
 pub use pallet_msa;
 pub use pallet_schemas;
+pub use pallet_stateful_storage;
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
@@ -154,6 +155,7 @@ pub type SignedExtra = (
 	frame_system::CheckWeight<Runtime>,
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
+	pallet_stateful_storage::StatefulSignedExtension<Runtime>,
 );
 /// A Block signed with a Justification
 pub type SignedBlock = generic::SignedBlock<Block>;
