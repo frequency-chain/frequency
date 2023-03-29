@@ -31,9 +31,9 @@
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-
 mod homoglyphs;
 use homoglyphs::canonical::CanonicalConverter;
+
 #[cfg(test)]
 mod tests;
 
@@ -216,17 +216,7 @@ pub mod pallet {
 
 			// Convert base display handle into a canonical display handle
 
-			let canonical_converter = CanonicalConverter::new();
-
-			// let canonical_handle_vec =
-			// 	Self::convert_to_canonical(base_handle_str).as_bytes().to_vec();
-
-			let canonical_handle_str = canonical_converter.to_canonical(&base_handle_str);
-			let no_confusables_str = canonical_converter.remove_confusables(&canonical_handle_str);
-			let no_diacriticals_str = canonical_converter.strip_diacriticals(&no_confusables_str);
-			let canonical_handle_vec = no_diacriticals_str.as_bytes().to_vec();
-
-			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
+			let canonical_handle: Handle = Self::convert_to_canonical(base_handle_str);
 			let canonical_handle_str = core::str::from_utf8(&canonical_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 			log::debug!("canonical={}", canonical_handle_str);
@@ -321,12 +311,11 @@ pub mod pallet {
 			let mut suffixes: Vec<u16> = vec![];
 			let base_handle: Handle = handle.try_into().unwrap_or_default();
 			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or("");
-			let canonical_handle_vec =
-				Self::convert_to_canonical(base_handle_str).as_bytes().to_vec();
-			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap_or_default();
+			let canonical_handle: Handle = Self::convert_to_canonical(base_handle_str);
 			let suffix_index =
 				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
 					.unwrap_or_default();
+
 			let canonical_handle_str = core::str::from_utf8(&canonical_handle).unwrap_or("");
 			// Generate suffixes from the next available suffix index
 			let mut suffix_generator = SuffixGenerator::new(
@@ -388,12 +377,15 @@ pub mod pallet {
 			Ok(())
 		}
 
-		fn convert_to_canonical(handle_str: &str) -> codec::alloc::string::String {
-			let mut normalized =
-				unicode_security::skeleton(handle_str).collect::<codec::alloc::string::String>();
-			normalized.make_ascii_lowercase();
-			log::debug!("normalized={}", normalized.clone());
-			normalized
+		fn convert_to_canonical(base_handle_str: &str) -> Handle {
+			let canonical_converter = CanonicalConverter::new();
+			let canonical_handle_str = canonical_converter.to_canonical(&base_handle_str);
+			let no_confusables_str = canonical_converter.remove_confusables(&canonical_handle_str);
+			let no_diacriticals_str = canonical_converter.strip_diacriticals(&no_confusables_str);
+			let canonical_handle_vec = no_diacriticals_str.as_bytes().to_vec();
+
+			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
+			canonical_handle
 		}
 
 		fn generate_suffix_for_canonical_handle(canonical_handle: &str, cursor: usize) -> u16 {
