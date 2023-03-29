@@ -31,9 +31,9 @@
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+
 mod homoglyphs;
 use homoglyphs::canonical::CanonicalConverter;
-
 #[cfg(test)]
 mod tests;
 
