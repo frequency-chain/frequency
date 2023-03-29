@@ -85,7 +85,7 @@ BENCH_TARGETS=\
 benchmarks-messages \
 benchmarks-msa \
 benchmarks-schemas \
-benchmarks-orml_vesting \
+benchmarks-time-release\
 benchmarks-pallet_balances \
 benchmarks-pallet_collator_selection \
 benchmarks-pallet_democracy \
@@ -101,7 +101,7 @@ BENCH_LOCAL_TARGETS=\
 benchmarks-messages-local \
 benchmarks-msa-local \
 benchmarks-schemas-local \
-benchmarks-orml_vesting-local \
+benchmarks-time-release-local \
 benchmarks-pallet_balances-local \
 benchmarks-pallet_collator_selection-local \
 benchmarks-pallet_collective-local \

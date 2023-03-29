@@ -10,6 +10,13 @@ import { connect, connectPromise } from "./apiConnection";
 import { DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
 
+export type ReleaseSchedule = {
+    start: number;
+    period: number;
+    periodCount: number;
+    perPeriod: bigint;
+};
+
 export type AddKeyData = { msaId?: u64; expiration?: any; newPublicKey?: any; }
 export type AddProviderPayload = { authorizedMsaId?: u64; schemaIds?: u16[], expiration?: any; }
 
@@ -235,5 +242,9 @@ export class ExtrinsicHelper {
     /** Messages Extrinsics */
     public static addIPFSMessage(keys: KeyringPair, schemaId: any, cid: string, payload_length: number): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addIpfsMessage(schemaId, cid, payload_length), keys, ExtrinsicHelper.api.events.messages.MessagesStored);
+    }
+
+    public static timeReleaseTransfer(keys: KeyringPair, who: KeyringPair, schedule: ReleaseSchedule): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.timeRelease.transfer(who.address, schedule), keys, ExtrinsicHelper.api.events.timeRelease.ReleaseScheduleAdded);
     }
 }
