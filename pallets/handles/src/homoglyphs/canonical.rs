@@ -3,6 +3,7 @@
 //! `handle_converter` provides a `HandleConverter` struct to detect confusable Unicode characters in a
 //! given input string and return its canonical form.
 use crate::homoglyphs::confusables::build_confusables_map;
+use common_primitives::handles::*;
 use sp_std::collections::btree_map::BTreeMap;
 use unicode_normalization::UnicodeNormalization;
 
@@ -54,9 +55,14 @@ impl HandleConverter {
 		string.nfd().collect::<codec::alloc::string::String>()
 	}
 
-	// /// Split display name into name and suffix
-	// pub fn split_display_name(&self) -> () {
-	// }
+	/// Split display name into name and suffix
+	pub fn split_display_name(&self, display_name_str: &str) -> (String, HandleSuffix) {
+		let parts: Vec<&str> = display_name_str.split(".").collect();
+		let base_handle_str = parts[0].to_string();
+		let suffix = parts[1];
+		let suffix_num = suffix.parse::<u16>().unwrap();
+		(base_handle_str, suffix_num)
+	}
 
 	// /// Combine name, delimiter and suffix into display name
 	// pub fn combine_display_name(&self, base_handle:Handle, delimeter:&str, suffix:u16) -> String {

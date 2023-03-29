@@ -328,12 +328,11 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::MSAHandleDoesNotExist)?;
 			let display_name_str = core::str::from_utf8(&display_name_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
-			let parts: Vec<&str> = display_name_str.split(".").collect();
-			let base_handle_str = parts[0];
-			let suffix = parts[1];
-			let suffix_num = suffix.parse::<u16>().unwrap();
 
 			let handle_converter = HandleConverter::new();
+			let (base_handle_str, suffix_num) =
+				handle_converter.split_display_name(display_name_str);
+
 			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
 			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
 
@@ -364,11 +363,9 @@ pub mod pallet {
 			let full_handle_str = core::str::from_utf8(&full_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)
 				.ok()?;
-			let handle_parts: Vec<&str> = full_handle_str.split(".").collect();
-			let base_handle_str = handle_parts[0];
-			let suffix = handle_parts[1].parse::<u16>().ok()?;
 
 			let handle_converter = HandleConverter::new();
+			let (base_handle_str, suffix) = handle_converter.split_display_name(full_handle_str);
 			let base_handle = base_handle_str.as_bytes().to_vec();
 			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
 			let canonical_handle = canonical_handle_str.as_bytes().to_vec();
@@ -390,8 +387,9 @@ pub mod pallet {
 			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
 			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
-			let suffix_index = Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
-				.unwrap_or_default();
+			let suffix_index =
+				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
+					.unwrap_or_default();
 
 			// Generate suffixes from the next available suffix index
 			let mut suffix_generator = SuffixGenerator::new(
