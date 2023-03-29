@@ -1,6 +1,6 @@
-//! # Canonical Converter
+//! # Handle Converter
 //!
-//! `handle_converter` provides a `HandleConverter` struct to detect confusable unicode characters in a
+//! `handle_converter` provides a `HandleConverter` struct to detect confusable Unicode characters in a
 //! given input string and return its canonical form.
 use crate::homoglyphs::confusables::build_confusables_map;
 use sp_std::collections::btree_map::BTreeMap;
@@ -19,9 +19,14 @@ pub struct HandleConverter {
 /// ```
 /// use crate::canonical::HandleConverter;
 ///
-/// let string = "ℂн𝔸RℒℰᏕ";
+/// let word = "ℂн𝔸RℒℰᏕ";
 ///
-/// let handle_converter = HandleConverter::new(string);
+/// let handle_converter = HandleConverter::new();
+/// let canonical_word = handle_converter.remove_confusables(word);
+/// println!("{}", canonical_word);
+///
+/// OUTPUT:
+/// charles
 /// ```
 impl HandleConverter {
 	pub fn new() -> Self {
