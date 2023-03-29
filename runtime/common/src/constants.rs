@@ -130,17 +130,15 @@ pub type SchemasMinModelSizeBytes = ConstU32<8>;
 pub type SchemasMaxBytesBoundedVecLimit = ConstU32<65_500>;
 // -end- Schemas Pallet ---
 
-// --- Orml Vesting Pallet ---
+// --- TimeRelease Pallet ---
+// Update
 parameter_types! {
-	pub const VestingPalletId: PalletId = PalletId(*b"py/vstng");
+	pub const MinReleaseTransfer: Balance = 0;
 }
 
-parameter_types! {
-	pub const MinVestedTransfer: Balance = 0;
-}
-
-pub const ORML_MAX_VESTING_SCHEDULES: u32 = 50;
-// -end- Orml Vesting Pallet ---
+/// Update
+pub const MAX_RELEASE_SCHEDULES: u32 = 50;
+// -end- TimeRelease Pallet ---
 
 // --- Timestamp Pallet ---
 parameter_types! {
