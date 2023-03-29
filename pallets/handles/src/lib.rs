@@ -335,12 +335,11 @@ pub mod pallet {
 
 			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
 			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
+			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
 
 			MSAIdToDisplayName::<T>::remove(delegator_msa_id);
-			// CanonicalBaseHandleAndSuffixToMSAId::<T>::remove(
-			// 	canonical_handle_vec.into(),
-			// 	suffix_num,
-			// );
+			CanonicalBaseHandleAndSuffixToMSAId::<T>::remove(canonical_handle, suffix_num);
+
 			Ok(())
 		}
 	}
