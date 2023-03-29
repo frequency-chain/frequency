@@ -74,7 +74,7 @@ benchmarks! {
 		}
 
 		frame_system::Pallet::<T>::set_block_number(schedule.end().unwrap() + 1u32.into());
-	}: _(RawOrigin::Signed(to))
+	}: _(RawOrigin::Signed(to.clone()))
 	verify {
 		assert_eq!(
 			T::Currency::free_balance(&to),

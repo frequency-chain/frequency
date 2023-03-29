@@ -339,7 +339,7 @@ impl<T: Config> Pallet<T> {
 	fn do_claim(who: &T::AccountId) -> BalanceOf<T> {
 		let locked = Self::locked_balance(who);
 		if locked.is_zero() {
-			Self::clear_release_schedules(who);
+			Self::delete_lock(who);
 		} else {
 			Self::update_lock(who, locked);
 		}
@@ -347,24 +347,32 @@ impl<T: Config> Pallet<T> {
 		locked
 	}
 
+	/// Deletes schedules that have released all funds up to a block-number.
+	fn prune_schedules_for(
+		who: &T::AccountId,
+		block_number: T::BlockNumber,
+	) -> BoundedVec<ReleaseScheduleOf<T>, T::MaxReleaseSchedules> {
+		let mut schedules = Self::release_schedules(who);
+		schedules.retain(|schedule| !schedule.locked_amount(block_number).is_zero());
+
+		if schedules.is_empty() {
+			ReleaseSchedules::<T>::remove(who);
+		} else {
+			Self::set_schedules_for(who, schedules.clone());
+		}
+
+		schedules
+	}
+
 	/// Returns locked balance based on current block number.
 	fn locked_balance(who: &T::AccountId) -> BalanceOf<T> {
 		let now = T::BlockNumberProvider::current_block_number();
 
-		let mut total = BalanceOf::<T>::zero();
+		let schedules = Self::prune_schedules_for(&who, now);
 
-		let mut schedules = Self::release_schedules(who);
-		schedules.retain(|schedule| {
-			let amount = schedule.locked_amount(now);
-			total += amount;
-			!amount.is_zero()
-		});
-
-		if schedules.is_empty() {
-			<ReleaseSchedules<T>>::remove(who);
-		} else {
-			<ReleaseSchedules<T>>::insert(who, schedules);
-		}
+		let total = schedules
+			.iter()
+			.fold(BalanceOf::<T>::zero(), |acc, schedule| acc + schedule.locked_amount(now));
 
 		total
 	}
@@ -386,6 +394,7 @@ impl<T: Config> Pallet<T> {
 
 		<ReleaseSchedules<T>>::try_append(to, schedule)
 			.map_err(|_| Error::<T>::MaxReleaseSchedulesExceeded)?;
+
 		Ok(())
 	}
 
@@ -418,7 +427,7 @@ impl<T: Config> Pallet<T> {
 		);
 
 		Self::update_lock(&who, total_amount);
-		<ReleaseSchedules<T>>::insert(who, bounded_schedules);
+		Self::set_schedules_for(who, bounded_schedules);
 
 		Ok(())
 	}
@@ -427,9 +436,20 @@ impl<T: Config> Pallet<T> {
 		T::Currency::set_lock(RELEASE_LOCK_ID, who, locked, WithdrawReasons::all());
 	}
 
+	fn delete_lock(who: &T::AccountId) {
+		T::Currency::remove_lock(RELEASE_LOCK_ID, who);
+	}
+
+	fn set_schedules_for(
+		who: &T::AccountId,
+		schedules: BoundedVec<ReleaseScheduleOf<T>, T::MaxReleaseSchedules>,
+	) {
+		ReleaseSchedules::<T>::insert(who, schedules);
+	}
+
 	fn clear_release_schedules(who: &T::AccountId) {
 		<ReleaseSchedules<T>>::remove(who);
-		T::Currency::remove_lock(RELEASE_LOCK_ID, who);
+		Self::delete_lock(who);
 	}
 }
 
