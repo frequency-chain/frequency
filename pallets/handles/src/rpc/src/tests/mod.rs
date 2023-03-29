@@ -21,6 +21,10 @@ sp_api::mock_impl_runtime_apis! {
 				_ => None,
 			}
 		}
+
+		fn get_next_suffixes(_handle: Vec<u8>, count: u16) -> Vec<HandleSuffix> {
+			(0..count).map(|i| i as HandleSuffix).collect()
+		}
 	}
 }
 
@@ -53,4 +57,22 @@ async fn get_handle_with_success() {
 	assert_eq!(b"base_handle".to_vec(), response.base_handle);
 	assert_eq!(b"canonical_handle".to_vec(), response.canonical_handle);
 	assert_eq!(1, response.suffix);
+}
+
+#[tokio::test]
+async fn get_next_suffixes_with_success() {
+	let client = Arc::new(TestApi {});
+	let api = HandlesHandler::new(client);
+
+	let result = api.get_next_suffixes(
+		b"base_handle".to_vec(), // Handle
+		3,                       // Count
+	);
+
+	assert_eq!(true, result.is_ok());
+	let response = result.unwrap();
+	assert_eq!(3, response.len());
+	assert_eq!(0, response[0]);
+	assert_eq!(1, response[1]);
+	assert_eq!(2, response[2]);
 }
