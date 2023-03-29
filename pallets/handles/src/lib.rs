@@ -31,6 +31,9 @@
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+mod homoglyphs;
+use homoglyphs::canonical::CanonicalConverter;
+
 #[cfg(test)]
 mod tests;
 
@@ -151,7 +154,9 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Claim handle
+		/// Extrinsic to claim a handle
+		/// # Arguments
+		/// * `handle` - The handle to claim
 		///
 		#[pallet::call_index(0)]
 		#[pallet::weight(1000)]
@@ -170,7 +175,7 @@ pub mod pallet {
 				Error::<T>::InvalidHandleByteLength
 			);
 
-			// Validation: The provider  must already have a MSA id
+			// Validation: The provider must already have a MSA id
 			T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
@@ -209,15 +214,24 @@ pub mod pallet {
 				Error::<T>::InvalidHandleCharacterLength
 			);
 
-			// Save canonical to shuffled suffix sequence cursor
-			let canonical_handle_vec =
-				Self::convert_to_canonical(base_handle_str).as_bytes().to_vec();
+			// Convert base display handle into a canonical display handle
+
+			let canonical_converter = CanonicalConverter::new();
+
+			// let canonical_handle_vec =
+			// 	Self::convert_to_canonical(base_handle_str).as_bytes().to_vec();
+
+			let canonical_handle_str = canonical_converter.to_canonical(&base_handle_str);
+			let no_confusables_str = canonical_converter.remove_confusables(&canonical_handle_str);
+			let no_diacriticals_str = canonical_converter.strip_diacriticals(&no_confusables_str);
+			let canonical_handle_vec = no_diacriticals_str.as_bytes().to_vec();
+
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
 			let canonical_handle_str = core::str::from_utf8(&canonical_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 			log::debug!("canonical={}", canonical_handle_str);
 
-			// Generate suffix from the next available suffix index
+			// Generate suffix from the next available index into the suffix sequence
 			let suffix_index =
 				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
 					.unwrap_or_default();
@@ -226,6 +240,7 @@ pub mod pallet {
 				&canonical_handle_str,
 				suffix_index as usize,
 			);
+			log::debug!("suffix={}", suffix);
 
 			// Store canonical handle and suffix to MSA id
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(
@@ -233,7 +248,7 @@ pub mod pallet {
 				suffix,
 				delegator_msa_id,
 			);
-			// Update suffix index
+			// Store canonical handle to suffix sequence index
 			CanonicalBaseHandleToSuffixIndex::<T>::set(
 				canonical_handle.clone(),
 				Some(suffix_index),
@@ -242,9 +257,9 @@ pub mod pallet {
 			// Compose the full display handle from the base handle, "." delimeter and suffix
 			let mut full_handle_vec: Vec<u8> = vec![];
 			full_handle_vec.extend(base_handle_str.as_bytes());
-			full_handle_vec.extend(b".");
-			let mut buff = [0u8; 30];
-			full_handle_vec.extend(suffix.numtoa(10, &mut buff));
+			full_handle_vec.extend(b"."); // The delimeter
+			let mut buff = [0u8; SUFFIX_MAX_DIGITS];
+			full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
 
 			let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
 
@@ -255,14 +270,6 @@ pub mod pallet {
 				msa_id: delegator_msa_id,
 				handle: full_handle.clone(),
 			});
-			Ok(())
-		}
-
-		/// Change handle
-		#[pallet::call_index(1)]
-		#[pallet::weight(1000)]
-		pub fn change_handle(origin: OriginFor<T>) -> DispatchResult {
-			let _delegator_key = ensure_signed(origin)?;
 			Ok(())
 		}
 
