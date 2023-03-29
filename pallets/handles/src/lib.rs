@@ -395,8 +395,8 @@ pub mod pallet {
 				T::HandleSuffixMax::get() as usize,
 				&canonical_handle,
 			);
-			let sequence: Vec<usize> = suffix_generator.suffix_iter().collect();
-			sequence[cursor] as u16
+			let suffix = suffix_generator.suffix_iter().nth(cursor).unwrap_or_default() as u16;
+			suffix
 		}
 	}
 }
