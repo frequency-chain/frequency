@@ -44,8 +44,7 @@ pallet-utility = { git = "https://github.com/paritytech/substrate", default-feat
 # cumulus
 cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.36" }
 pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.36" }
-# ORML
-orml-vesting = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.36" }
+pallet-time-release = { path = "../../pallets/time-release", default-features = false }
 
 [features]
 default = ["std"]
@@ -59,6 +58,7 @@ std = [
 	"pallet-collator-selection/std",
 	"pallet-collective/std",
 	"pallet-multisig/std",
+	"pallet-time-release/std",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
@@ -71,5 +71,5 @@ try-runtime = [
 	"pallet-scheduler/try-runtime",
 	"pallet-treasury/try-runtime",
 	"pallet-utility/try-runtime",
-	"orml-vesting/try-runtime",
+	"pallet-time-release/try-runtime",
 ]
