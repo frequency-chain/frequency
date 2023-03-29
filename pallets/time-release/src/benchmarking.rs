@@ -72,8 +72,7 @@ benchmarks! {
 			schedule.start = i.into();
 			TimeReleasePallet::<T>::transfer(RawOrigin::Signed(from.clone()).into(), to_lookup.clone(), schedule.clone())?;
 		}
-
-		frame_system::Pallet::<T>::set_block_number(schedule.end().unwrap() + 1u32.into());
+		T::BlockNumberProvider::set_block_number(schedule.end().unwrap() + 1u32.into());
 	}: _(RawOrigin::Signed(to.clone()))
 	verify {
 		assert_eq!(
