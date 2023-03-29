@@ -6,7 +6,9 @@ use crate::homoglyphs::confusables::build_confusables_map;
 use common_primitives::handles::*;
 use sp_std::collections::btree_map::BTreeMap;
 use unicode_normalization::UnicodeNormalization;
-
+extern crate alloc;
+use alloc::string::{String, ToString};
+use sp_std::vec::Vec;
 /// A converter for confusable characters.
 ///
 /// Given a string, detects easily confusable characters and returns the string in canonical form.
