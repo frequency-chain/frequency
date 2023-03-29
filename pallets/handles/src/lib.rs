@@ -137,7 +137,9 @@ pub mod pallet {
 		/// Cryptographic signature failed verification
 		InvalidSignature,
 		/// The MSA already has a handle
-		MSAHasHandleAlready,
+		MSAHandleAlreadyExists,
+		/// The MSA does not have a handle needed to retire it.
+		MSAHandleDoesNotExist,
 	}
 
 	#[pallet::event]
@@ -186,10 +188,10 @@ pub mod pallet {
 			// Validation: Verify the payload was signed
 			Self::verify_signed_payload(&proof, &delegator_key, payload.encode())?;
 
-			// Validation:  The MSA must not already have a handle associated with it
+			// Validation: The MSA must not already have a handle associated with it
 			ensure!(
 				MSAIdToDisplayName::<T>::try_get(delegator_msa_id).is_err(),
-				Error::<T>::MSAHasHandleAlready
+				Error::<T>::MSAHandleAlreadyExists
 			);
 
 			// Validation: The base handle MUST be UTF-8 encoded.
@@ -264,10 +266,35 @@ pub mod pallet {
 		}
 
 		/// Retire handle
-		#[pallet::call_index(2)]
+		#[pallet::call_index(1)]
 		#[pallet::weight(1000)]
 		pub fn retire_handle(origin: OriginFor<T>) -> DispatchResult {
-			let _delegator_key = ensure_signed(origin)?;
+			let delegator_key = ensure_signed(origin)?;
+
+			// Validation: The delegator must already have a MSA id
+			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+			// Validation: The MSA must already have a handle associated with it
+			let display_name_handle = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
+				.map_err(|_| Error::<T>::MSAHandleDoesNotExist)?;
+			let display_name_str = core::str::from_utf8(&display_name_handle)
+				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
+			let parts: Vec<&str> = display_name_str.split(".").collect();
+			let base_handle_str = parts[0];
+			let suffix = parts[1];
+			let suffix_num = suffix.parse::<u16>().unwrap();
+
+			let canonical_converter = CanonicalConverter::new();
+			let canonical_handle_str = canonical_converter.to_canonical(&base_handle_str);
+			let no_confusables_str = canonical_converter.remove_confusables(&canonical_handle_str);
+			let no_diacriticals_str = canonical_converter.strip_diacriticals(&no_confusables_str);
+			let canonical_handle_vec = no_diacriticals_str.as_bytes().to_vec();
+
+			MSAIdToDisplayName::<T>::remove(delegator_msa_id);
+			// CanonicalBaseHandleAndSuffixToMSAId::<T>::remove(
+			// 	canonical_handle_vec.into(),
+			// 	suffix_num,
+			// );
 			Ok(())
 		}
 	}
