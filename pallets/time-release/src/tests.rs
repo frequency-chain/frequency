@@ -340,10 +340,11 @@ fn exceeding_maximum_schedules_should_fail() {
 		let schedule =
 			ReleaseSchedule { start: 0u64, period: 10u64, period_count: 2u32, per_period: 10u64 };
 
-		for _ in 0..50 {
+		for _ in 0..49 {
 			assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule.clone()));
 		}
-		// assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule.clone()));
+
+		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule.clone()));
 
 		let create = RuntimeCall::TimeRelease(crate::Call::<Runtime>::transfer {
 			dest: BOB,
