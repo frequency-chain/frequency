@@ -22,7 +22,7 @@ pub struct HandleConverter {
 /// let word = "ℂн𝔸RℒℰᏕ";
 ///
 /// let handle_converter = HandleConverter::new();
-/// let canonical_word = handle_converter.remove_confusables(word);
+/// let canonical_word = handle_converter.replace_confusables(word);
 /// println!("{}", canonical_word);
 ///
 /// OUTPUT:
@@ -33,21 +33,43 @@ impl HandleConverter {
 		let confusables_map = build_confusables_map();
 		Self { confusables_map }
 	}
-	/// Convert `string`
-	pub fn to_canonical(&self, string: &str) -> codec::alloc::string::String {
-		let confusables_removed = self.remove_confusables(string);
+	/// Convert `string` to canonical form
+	pub fn convert_to_canonical(&self, string: &str) -> codec::alloc::string::String {
+		let confusables_removed = self.replace_confusables(string);
 		let diacriticals_stripped = self.strip_diacriticals(&confusables_removed);
 		diacriticals_stripped.to_ascii_lowercase()
+		// 	normalized.make_ascii_lowercase();
 	}
 
-	pub fn remove_confusables(&self, string: &str) -> codec::alloc::string::String {
+	/// Replace confusable Unicode characters from string
+	pub fn replace_confusables(&self, string: &str) -> codec::alloc::string::String {
 		string
 			.chars()
 			.map(|character| self.confusables_map.get(&character).map_or(character, |&value| value))
 			.collect::<codec::alloc::string::String>()
 	}
 
+	/// Strip diacriticals (accent marks) from string
 	pub fn strip_diacriticals(&self, string: &str) -> codec::alloc::string::String {
 		string.nfd().collect::<codec::alloc::string::String>()
 	}
+
+	// /// Split display name into name and suffix
+	// pub fn split_display_name(&self) -> () {
+	// }
+
+	// /// Combine name, delimiter and suffix into display name
+	// pub fn combine_display_name(&self, base_handle:Handle, delimeter:&str, suffix:u16) -> String {
+	// }
+
+	// /// Convert Handle (BoundedVec) to UTF-8 &str
+	// pub fn convert_handle_to_string() -> String {
+	// }
+
+	// /// Convert string to Handle
+	// pub fn convert_string_to_handle() -> String {
+	// }
+	// /// Convert Vec<u8> into Handle (BoundedVec)
+	// pub fn convert_vec_to_handle() -> Handle {
+	// }
 }

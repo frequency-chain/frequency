@@ -5578,7 +5578,6 @@ dependencies = [
  "sp-std",
  "twox-hash",
  "unicode-normalization",
- "unicode-security",
 ]
 
 [[package]]
@@ -11942,22 +11941,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c5713f0fc4b5db668a2ac63cdb7bb4469d8c9fed047b1d0292cc7b0ce2ba921"
 dependencies = [
  "tinyvec",
-]
-
-[[package]]
-name = "unicode-script"
-version = "0.5.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d817255e1bed6dfd4ca47258685d14d2bdcfbc64fdc9e3819bd5848057b8ecc"
-
-[[package]]
-name = "unicode-security"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ef5756b3097992b934b06608c69f48448a0fbe804bb1e72b982f6d7983e9e63"
-dependencies = [
- "unicode-normalization",
- "unicode-script",
 ]
 
 [[package]]

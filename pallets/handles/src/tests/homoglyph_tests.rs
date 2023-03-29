@@ -13,7 +13,7 @@ fn canonical_test() {
 }
 
 #[test]
-fn test_remove_confusables() {
+fn test_replace_confusables() {
 	let file = File::open("src/homoglyphs/confusable_characters.txt");
 	assert!(file.is_ok());
 
@@ -21,7 +21,7 @@ fn test_remove_confusables() {
 	let handle_converter = HandleConverter::new();
 	for line_result in reader.lines() {
 		let original_line: &str = &line_result.ok().unwrap();
-		let normalized_line = handle_converter.remove_confusables(original_line);
+		let normalized_line = handle_converter.replace_confusables(original_line);
 
 		println!("{}", normalized_line);
 	}
