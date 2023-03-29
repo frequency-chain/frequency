@@ -125,6 +125,7 @@ pub struct ExtBuilder;
 impl ExtBuilder {
 	pub fn build() -> sp_io::TestExternalities {
 		let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
+		MockBlockNumberProvider::set(0);
 
 		pallet_balances::GenesisConfig::<Runtime> {
 			balances: vec![(ALICE, ALICE_BALANCE), (CHARLIE, CHARLIE_BALANCE)],
