@@ -162,7 +162,11 @@ impl<T: Config> StatefulStorageValidate<T> for Pallet<T> {
 /// Map a module DispatchError to an InvalidTransaction::Custom error
 pub fn map_dispatch_error(err: DispatchError) -> InvalidTransaction {
 	InvalidTransaction::Custom(match err {
-		DispatchError::Module(module_err) => module_err.index,
+		DispatchError::Module(module_err) =>
+			<u32 as Decode>::decode(&mut module_err.error.as_slice())
+				.unwrap_or_default()
+				.try_into()
+				.unwrap_or_default(),
 		_ => 255u8,
 	})
 }

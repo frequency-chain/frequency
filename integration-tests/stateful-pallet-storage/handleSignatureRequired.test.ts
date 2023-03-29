@@ -2,7 +2,7 @@
 import "@frequency-chain/api-augment";
 import assert from "assert";
 import {
-  createDelegator,
+  createMsa,
   createProviderKeysAndId,
   generateItemizedSignaturePayload, generatePaginatedDeleteSignaturePayload, generatePaginatedUpsertSignaturePayload,
   getCurrentItemizedHash, getCurrentPaginatedHash,
@@ -12,79 +12,79 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "../stateful-pallet-storage/fixtures/itemizedSchemaType";
 import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfaces";
-import {Bytes, u16} from "@polkadot/types";
+import { Bytes, u16 } from "@polkadot/types";
 
 describe("📗 Stateful Pallet Storage Signature Required", () => {
-    let itemizedSchemaId: SchemaId;
-    let paginatedSchemaId: SchemaId;
-    let msa_id: MessageSourceId;
-    let providerId: MessageSourceId;
-    let providerKeys: KeyringPair;
-    let delegatorKeys: KeyringPair;
+  let itemizedSchemaId: SchemaId;
+  let paginatedSchemaId: SchemaId;
+  let msa_id: MessageSourceId;
+  let providerId: MessageSourceId;
+  let providerKeys: KeyringPair;
+  let delegatorKeys: KeyringPair;
 
-    before(async function () {
+  before(async function () {
 
-        // Create a provider for the MSA, the provider will be used to grant delegation
-        [providerKeys, providerId] = await createProviderKeysAndId();
-        assert.notEqual(providerId, undefined, "setup should populate providerId");
-        assert.notEqual(providerKeys, undefined, "setup should populate providerKeys");
+    // Create a provider for the MSA, the provider will be used to grant delegation
+    [providerKeys, providerId] = await createProviderKeysAndId();
+    assert.notEqual(providerId, undefined, "setup should populate providerId");
+    assert.notEqual(providerKeys, undefined, "setup should populate providerKeys");
 
-        // Create a schema for Itemized PayloadLocation
-        const createSchema = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
-        const [event] = await createSchema.fundAndSend();
-        if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
-            itemizedSchemaId = event.data.schemaId;
-        }
-        assert.notEqual(itemizedSchemaId, undefined, "setup should populate schemaId");
-      // Create a schema for Paginated PayloadLocation
-        const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
-        const [event2] = await createSchema2.fundAndSend();
-        assert.notEqual(event2, undefined, "setup should return a SchemaCreated event");
-        if (event2 && createSchema2.api.events.schemas.SchemaCreated.is(event2)) {
-            paginatedSchemaId = event2.data.schemaId;
-            assert.notEqual(paginatedSchemaId, undefined, "setup should populate schemaId");
-        }
+    // Create a schema for Itemized PayloadLocation
+    const createSchema = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
+    const [event] = await createSchema.fundAndSend();
+    if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+      itemizedSchemaId = event.data.schemaId;
+    }
+    assert.notEqual(itemizedSchemaId, undefined, "setup should populate schemaId");
+    // Create a schema for Paginated PayloadLocation
+    const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
+    const [event2] = await createSchema2.fundAndSend();
+    assert.notEqual(event2, undefined, "setup should return a SchemaCreated event");
+    if (event2 && createSchema2.api.events.schemas.SchemaCreated.is(event2)) {
+      paginatedSchemaId = event2.data.schemaId;
+      assert.notEqual(paginatedSchemaId, undefined, "setup should populate schemaId");
+    }
 
-        // Create a MSA for the delegator
-        [delegatorKeys, msa_id] = await createDelegator();
-        assert.notEqual(delegatorKeys, undefined, "setup should populate delegator_key");
-        assert.notEqual(msa_id, undefined, "setup should populate msa_id");
-    });
+    // Create a MSA for the delegator
+    [delegatorKeys, msa_id] = await createMsa();
+    assert.notEqual(delegatorKeys, undefined, "setup should populate delegator_key");
+    assert.notEqual(msa_id, undefined, "setup should populate msa_id");
+  });
 
-    describe("Itemized With Signature Storage Tests", () => {
+  describe("Itemized With Signature Storage Tests", () => {
 
-      it("should be able to call applyItemizedActionWithSignature and apply actions", async function () {
+    it("should be able to call applyItemizedActionWithSignature and apply actions", async function () {
 
-        // Add and update actions
-        let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
+      // Add and update actions
+      let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
 
-        const add_action = {
-          "Add": payload_1
-        }
+      const add_action = {
+        "Add": payload_1
+      }
 
-        let payload_2 = new Bytes(ExtrinsicHelper.api.registry, "Hello World Again From Frequency");
+      let payload_2 = new Bytes(ExtrinsicHelper.api.registry, "Hello World Again From Frequency");
 
-        const update_action = {
-          "Add": payload_2
-        }
+      const update_action = {
+        "Add": payload_2
+      }
 
-        const target_hash = await getCurrentItemizedHash(msa_id, itemizedSchemaId);
+      const target_hash = await getCurrentItemizedHash(msa_id, itemizedSchemaId);
 
-        let add_actions = [add_action, update_action];
-        const payload = await generateItemizedSignaturePayload({
-          msaId: msa_id,
-          targetHash: target_hash,
-          schemaId: itemizedSchemaId,
-          actions: add_actions,
-        });
-        const itemizedPayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStorageItemizedSignaturePayload", payload);
-        let itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignature(delegatorKeys, providerKeys, signPayloadSr25519(delegatorKeys, itemizedPayloadData), payload);
-        const [pageUpdateEvent1, chainEvents] = await itemized_add_result_1.fundAndSend();
-        assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
-        assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
-        assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
-      }).timeout(10000);
-    });
+      let add_actions = [add_action, update_action];
+      const payload = await generateItemizedSignaturePayload({
+        msaId: msa_id,
+        targetHash: target_hash,
+        schemaId: itemizedSchemaId,
+        actions: add_actions,
+      });
+      const itemizedPayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStorageItemizedSignaturePayload", payload);
+      let itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignature(delegatorKeys, providerKeys, signPayloadSr25519(delegatorKeys, itemizedPayloadData), payload);
+      const [pageUpdateEvent1, chainEvents] = await itemized_add_result_1.fundAndSend();
+      assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
+      assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
+      assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
+    }).timeout(10000);
+  });
 
   describe("Paginated With Signature Storage Tests", () => {
 

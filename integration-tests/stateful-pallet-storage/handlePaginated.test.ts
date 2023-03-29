@@ -1,7 +1,7 @@
 // Integration tests for pallets/stateful-pallet-storage/handlepaginated.ts
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import {createProviderKeysAndId, createDelegatorAndDelegation, getCurrentPaginatedHash} from "../scaffolding/helpers";
+import { createProviderKeysAndId, createDelegatorAndDelegation, getCurrentPaginatedHash, createMsa } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "./fixtures/itemizedSchemaType";
@@ -12,6 +12,7 @@ describe("📗 Stateful Pallet Storage", () => {
     let schemaId: SchemaId;
     let schemaId_unsupported: SchemaId;
     let msa_id: MessageSourceId;
+    let undelegated_msa_id: MessageSourceId;
     let providerId: MessageSourceId;
     let providerKeys: KeyringPair;
 
@@ -40,6 +41,9 @@ describe("📗 Stateful Pallet Storage", () => {
         // Create a MSA for the delegator and delegate to the provider
         [, msa_id] = await createDelegatorAndDelegation(schemaId, providerId, providerKeys);
         assert.notEqual(msa_id, undefined, "setup should populate msa_id");
+
+        // Create another MSA which will not have a delegation
+        [, undelegated_msa_id] = await createMsa();
     });
 
     describe("Paginated Storage Upsert/Remove Tests 😊/😥", () => {
@@ -84,8 +88,8 @@ describe("📗 Stateful Pallet Storage", () => {
             await assert.rejects(async () => {
                 await paginated_add_result_1.fundAndSend();
             }, {
-                name: 'InvalidSchemaId',
-                section: 'statefulStorage',
+                name: 'RpcError',
+                message: /Custom error: 2/, //'InvalidSchemaId',
             });
         }).timeout(10000);
 
@@ -98,8 +102,8 @@ describe("📗 Stateful Pallet Storage", () => {
             await assert.rejects(async () => {
                 await paginated_add_result_1.fundAndSend();
             }, {
-                name: 'SchemaPayloadLocationMismatch',
-                section: 'statefulStorage',
+                name: 'RpcError',
+                message: /Custom error: 4/, //'SchemaPayloadLocationMismatch',
             });
         }).timeout(10000);
 
@@ -107,15 +111,15 @@ describe("📗 Stateful Pallet Storage", () => {
 
             let page_id = 0;
             let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
-            let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 999)
 
-            let target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id)
-            let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, bad_msa_id, page_id, payload_1, target_hash);
+            let target_hash = await getCurrentPaginatedHash(undelegated_msa_id, schemaId, page_id)
+            let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, undelegated_msa_id, page_id, payload_1, target_hash);
             await assert.rejects(async () => {
                 await paginated_add_result_1.fundAndSend();
             }, {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
+                // message: /Custom error: 9/, //'StalePageState',
             });
         }).timeout(10000);
 
@@ -128,8 +132,8 @@ describe("📗 Stateful Pallet Storage", () => {
             await assert.rejects(async () => {
                 await paginated_add_result_1.fundAndSend();
             }, {
-                name: 'StalePageState',
-                section: 'statefulStorage',
+                name: 'RpcError',
+                message: /Custom error: 9/, //'StalePageState',
             });
         }).timeout(10000);
     });
@@ -144,8 +148,8 @@ describe("📗 Stateful Pallet Storage", () => {
             await assert.rejects(async () => {
                 await paginated_add_result_1.signAndSend();
             }, {
-                name: 'InvalidSchemaId',
-                section: 'statefulStorage',
+                name: 'RpcError',
+                message: /Custom error: 2/, //'InvalidSchemaId',
             });
         }).timeout(10000);
 
@@ -156,8 +160,8 @@ describe("📗 Stateful Pallet Storage", () => {
             await assert.rejects(async () => {
                 await paginated_add_result_1.signAndSend();
             }, {
-                name: 'SchemaPayloadLocationMismatch',
-                section: 'statefulStorage',
+                name: 'RpcError',
+                message: /Custom error: 4/, //'SchemaPayloadLocationMismatch',
             });
         }).timeout(10000);
 
@@ -180,8 +184,8 @@ describe("📗 Stateful Pallet Storage", () => {
             await assert.rejects(async () => {
                 await paginated_add_result_1.signAndSend();
             }, {
-                name: 'StalePageState',
-                section: 'statefulStorage',
+                name: 'RpcError',
+                message: /Custom error: 9/, //'StalePageState',
             });
         }).timeout(10000);
     });

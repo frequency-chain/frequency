@@ -13,11 +13,11 @@ import {
   PaginatedUpsertSignaturePayload
 } from "./extrinsicHelpers";
 import { EXISTENTIAL_DEPOSIT } from "./rootHooks";
-import {MessageSourceId, PageHash} from "@frequency-chain/api-augment/interfaces";
+import { MessageSourceId, PageHash } from "@frequency-chain/api-augment/interfaces";
 
 export interface DevAccount {
-    uri: string,
-    keys: KeyringPair,
+  uri: string,
+  keys: KeyringPair,
 }
 
 export let devAccounts: DevAccount[] = [];
@@ -26,35 +26,35 @@ export let devAccounts: DevAccount[] = [];
 export type Sr25519Signature = { Sr25519: `0x${string}` }
 
 export function signPayloadSr25519(keys: KeyringPair, data: Codec): Sr25519Signature {
-    return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) }
+  return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) }
 }
 
 export async function generateDelegationPayload(payloadInputs: AddProviderPayload, expirationOffset?: number): Promise<AddProviderPayload> {
-    let { expiration, ...payload } = payloadInputs;
-    if (!expiration) {
-        expiration = (await getBlockNumber()) + (expirationOffset || 5);
-    }
+  let { expiration, ...payload } = payloadInputs;
+  if (!expiration) {
+    expiration = (await getBlockNumber()) + (expirationOffset || 5);
+  }
 
-    return {
-        expiration,
-        ...payload,
-    }
+  return {
+    expiration,
+    ...payload,
+  }
 }
 
 export async function getBlockNumber(): Promise<number> {
-    return (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber()
+  return (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber()
 }
 
 export async function generateAddKeyPayload(payloadInputs: AddKeyData, expirationOffset: number = 5, blockNumber?: number): Promise<AddKeyData> {
-    let { expiration, ...payload } = payloadInputs;
-    if (!expiration) {
-        expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
-    }
+  let { expiration, ...payload } = payloadInputs;
+  if (!expiration) {
+    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
+  }
 
-    return {
-        expiration,
-        ...payload,
-    }
+  return {
+    expiration,
+    ...payload,
+  }
 }
 
 export async function generateItemizedSignaturePayload(payloadInputs: ItemizedSignaturePayload, expirationOffset?: number): Promise<ItemizedSignaturePayload> {
@@ -94,77 +94,75 @@ export async function generatePaginatedDeleteSignaturePayload(payloadInputs: Pag
 }
 
 export function createKeys(name: string = 'first pair'): KeyringPair {
-    const mnemonic = mnemonicGenerate();
-    // create & add the pair to the keyring with the type and some additional
-    // metadata specified
-    const keyring = new Keyring({ type: 'sr25519' });
-    const keypair = keyring.addFromUri(mnemonic, { name }, 'sr25519');
+  const mnemonic = mnemonicGenerate();
+  // create & add the pair to the keyring with the type and some additional
+  // metadata specified
+  const keyring = new Keyring({ type: 'sr25519' });
+  const keypair = keyring.addFromUri(mnemonic, { name }, 'sr25519');
 
-    return keypair;
+  return keypair;
 }
 
 export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount: bigint, nonce?: number): Promise<void> {
-    await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
+  await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
 }
 
 export async function createAndFundKeypair(amount = EXISTENTIAL_DEPOSIT, keyName?: string, devAccount?: KeyringPair, nonce?: number): Promise<KeyringPair> {
-    const keypair = createKeys(keyName);
+  const keypair = createKeys(keyName);
 
-    // Transfer funds from source (usually pre-funded dev account) to new account
-    await fundKeypair((devAccount || devAccounts[0].keys), keypair, amount, nonce);
+  // Transfer funds from source (usually pre-funded dev account) to new account
+  await fundKeypair((devAccount || devAccounts[0].keys), keypair, amount, nonce);
 
-    return keypair;
+  return keypair;
 }
 
 export function log(...args: any[]) {
-    if (env.verbose) {
-        console.log(...args);
-    }
+  if (env.verbose) {
+    console.log(...args);
+  }
 }
 
 export async function createProviderKeysAndId(): Promise<[KeyringPair, u64]> {
-    let providerKeys = await createAndFundKeypair();
-    let createProviderMsaOp = ExtrinsicHelper.createMsa(providerKeys);
-    let providerId = new u64(ExtrinsicHelper.api.registry, 0)
-    await createProviderMsaOp.fundAndSend();
-    let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, "PrivateProvider");
-    let [providerEvent] = await createProviderOp.fundAndSend();
-    if (providerEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerEvent)) {
-        providerId = providerEvent.data.providerId;
-    }
-    return [providerKeys, providerId];
+  let providerId = new u64(ExtrinsicHelper.api.registry, 0);
+  let [providerKeys, _] = await createMsa();
+  let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, "PrivateProvider");
+  let [providerEvent] = await createProviderOp.fundAndSend();
+  if (providerEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerEvent)) {
+    providerId = providerEvent.data.providerId;
+  }
+  return [providerKeys, providerId];
 }
 
-export async function createDelegator(): Promise<[KeyringPair, u64]> {
+export async function createMsa(): Promise<[KeyringPair, u64]> {
   let keys = await createAndFundKeypair();
-  let delegator_msa_id = new u64(ExtrinsicHelper.api.registry, 0);
+  let msa_id = new u64(ExtrinsicHelper.api.registry, 0);
   const createMsa = ExtrinsicHelper.createMsa(keys);
   await createMsa.fundOperation();
   const [msaCreatedEvent, _] = await createMsa.signAndSend();
 
   if (msaCreatedEvent && ExtrinsicHelper.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
-    delegator_msa_id = msaCreatedEvent.data.msaId;
+    msa_id = msaCreatedEvent.data.msaId;
   }
 
-  return [keys, delegator_msa_id];
+  return [keys, msa_id];
 }
 
 export async function createDelegatorAndDelegation(schemaId: u16, providerId: u64, providerKeys: KeyringPair): Promise<[KeyringPair, u64]> {
-    // Create a  delegator msa
-    const [keys, delegator_msa_id] = await createDelegator();
+  // Create a  delegator msa
+  const [keys, delegator_msa_id] = await createMsa();
 
-    // Grant delegation to the provider
-    const payload = await generateDelegationPayload({
-        authorizedMsaId: providerId,
-        schemaIds: [schemaId],
-    });
-    const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+  // Grant delegation to the provider
+  const payload = await generateDelegationPayload({
+    authorizedMsaId: providerId,
+    schemaIds: [schemaId],
+  });
+  const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
-    const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
-    await grantDelegationOp.fundOperation();
-    await grantDelegationOp.signAndSend();
+  const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
+  await grantDelegationOp.fundOperation();
+  await grantDelegationOp.signAndSend();
 
-    return [keys, delegator_msa_id];
+  return [keys, delegator_msa_id];
 }
 
 export async function getCurrentItemizedHash(msa_id: MessageSourceId, schemaId: u16): Promise<PageHash> {
