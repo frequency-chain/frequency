@@ -277,7 +277,7 @@ pub mod module {
 				);
 			}
 
-			Self::do_transfer(&from, &to, schedule)?;
+			Self::do_transfer(&from, &to, schedule.clone())?;
 
 			Self::deposit_event(Event::ReleaseScheduleAdded {
 				from,
@@ -337,7 +337,7 @@ pub mod module {
 
 impl<T: Config> Pallet<T> {
 	fn do_claim(who: &T::AccountId) -> BalanceOf<T> {
-		let locked = Self::locked_balance(who);
+		let locked = Self::prune_and_get_locked_balance(who);
 		if locked.is_zero() {
 			Self::delete_lock(who);
 		} else {
@@ -365,7 +365,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Returns locked balance based on current block number.
-	fn locked_balance(who: &T::AccountId) -> BalanceOf<T> {
+	fn prune_and_get_locked_balance(who: &T::AccountId) -> BalanceOf<T> {
 		let now = T::BlockNumberProvider::current_block_number();
 
 		let schedules = Self::prune_schedules_for(&who, now);
@@ -384,7 +384,7 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		let schedule_amount = ensure_valid_release_schedule::<T>(&schedule)?;
 
-		let total_amount = Self::locked_balance(to)
+		let total_amount = Self::prune_and_get_locked_balance(to)
 			.checked_add(&schedule_amount)
 			.ok_or(ArithmeticError::Overflow)?;
 

@@ -5,27 +5,20 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper, ReleaseSchedule } from "../scaffolding/extrinsicHelpers";
 import { devAccounts } from "../scaffolding/helpers";
 
-
 const DOLLARS: number = 100000000; // 100_000_000
 
-export function numberOfblockBetweenVest(): number {
-    // 12 second block production
-    const MILLISECS_PER_BLOCK = 12000;
-    const MILLISECS_PER_SECOND = 60000;
-
-    const MINUTES = MILLISECS_PER_SECOND / MILLISECS_PER_BLOCK;
-    const HOURS = MINUTES * 60;
-    const DAYS = HOURS * 24;
-    const WEEK = DAYS * 7;
-
-    /// update
-    const period = WEEK * 24;
-    return period;
-}
+export function getBlocksInMonthPeriod(blockTime, periodInMonths) {
+    const secondsPerMonth = 2592000; // Assuming 30 days in a month
+  
+    // Calculate the number of blocks in the given period
+    const blocksInPeriod = Math.floor((periodInMonths * secondsPerMonth) / blockTime);
+  
+    return blocksInPeriod;
+  }
 
 export function calculateReleaseSchedule(amount: number | bigint): ReleaseSchedule {
     const start = 0;
-    const period = numberOfblockBetweenVest();
+    const period = getBlocksInMonthPeriod(6, 4);
     const periodCount = 4;
 
     const perPeriod = BigInt(amount) / (BigInt(periodCount));

@@ -44,7 +44,7 @@ benchmarks! {
 
 		let to: T::AccountId = account("to", 1, SEED);
 		let to_lookup = lookup_of_account::<T>(to.clone());
-	}: _(RawOrigin::Signed(from), to_lookup, schedule)
+	}: _(RawOrigin::Signed(from), to_lookup, schedule.clone())
 	verify {
 		assert_eq!(
 			T::Currency::total_balance(&to),
@@ -99,7 +99,7 @@ benchmarks! {
 		let mut schedules = vec![];
 		for _ in 0..i {
 			schedule.start = i.into();
-			schedules.push(schedule);
+			schedules.push(schedule.clone());
 		}
 	}: _(RawOrigin::Root, to_lookup, schedules)
 	verify {
