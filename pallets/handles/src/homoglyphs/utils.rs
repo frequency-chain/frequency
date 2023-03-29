@@ -9,7 +9,7 @@ use std::{
 // The first character of each line represent the canonical character (value) in the map that each
 // subsequent character of the line (key) maps to.
 fn convert_confuseables_to_unicode_escaped() {
-	let file = File::open("src/tests/homoglyps/confuseable_characters.txt");
+	let file = File::open("confusable_characters.txt");
 	assert!(file.is_ok());
 
 	let reader = BufReader::new(file.ok().unwrap());
@@ -32,4 +32,8 @@ fn convert_confuseables_to_unicode_escaped() {
 	}
 
 	println!("]);");
+}
+
+fn main() {
+	convert_confuseables_to_unicode_escaped();
 }
