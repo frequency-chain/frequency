@@ -466,12 +466,12 @@ fn alice_time_releaes_schedule() {
 		// time travel and create transfer for each date. These transfers increases the total amount locked in Bobs account.
 		let mut total_locked = amount_released_per_period * 6;
 		for transfer in july_1_2023_to_july_1_2024_data.iter() {
-			let transfer_1 = transfer.1.get(0).unwrap();
-			let transfer_2 = transfer.1.get(1).unwrap();
+			let transfer_1 = transfer.1.get(0).unwrap().clone();
+			let transfer_2 = transfer.1.get(1).unwrap().clone();
 			total_locked += transfer_1.per_period + transfer_2.per_period;
 
-			assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, *transfer_1,));
-			assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, *transfer_2));
+			assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, transfer_1,));
+			assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, transfer_2));
 		}
 
 		// Bob thinks he can claim tokens because time-release transfer has started.
@@ -509,10 +509,10 @@ fn alice_time_releaes_schedule() {
 		);
 
 		let transfer_1 = oct_2024_quarterly_data.1.get(0).unwrap();
-		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, *transfer_1,));
+		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, transfer_1.clone(),));
 
 		let transfer_2 = oct_2024_quarterly_data.1.get(1).unwrap();
-		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, *transfer_2,));
+		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, transfer_2.clone(),));
 		let total_transfered =
 			transfer_1.total_amount().unwrap() + transfer_2.total_amount().unwrap();
 
@@ -527,10 +527,18 @@ fn alice_time_releaes_schedule() {
 			MockBlockNumberProvider::set(date_to_approximate_block_number(quarter.0).into());
 
 			let transfer_1 = quarter.1.get(0).unwrap();
-			assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, *transfer_1,));
+			assert_ok!(TimeRelease::transfer(
+				RuntimeOrigin::signed(ALICE),
+				BOB,
+				transfer_1.clone(),
+			));
 
 			let transfer_2 = quarter.1.get(1).unwrap();
-			assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, *transfer_2,));
+			assert_ok!(TimeRelease::transfer(
+				RuntimeOrigin::signed(ALICE),
+				BOB,
+				transfer_2.clone(),
+			));
 		}
 
 		MockBlockNumberProvider::set(
