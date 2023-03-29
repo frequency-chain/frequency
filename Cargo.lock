@@ -5561,7 +5561,6 @@ name = "pallet-handles"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
- "common-runtime",
  "env_logger 0.10.0",
  "frame-benchmarking",
  "frame-support",
