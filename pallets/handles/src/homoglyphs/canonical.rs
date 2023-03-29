@@ -72,9 +72,12 @@ impl HandleConverter {
 	// pub fn convert_handle_to_string() -> String {
 	// }
 
-	// /// Convert string to Handle
-	// pub fn convert_string_to_handle() -> String {
-	// }
+	/// Convert string to Handle
+	pub fn convert_str_to_handle(input_str: &str) -> Handle {
+		let input_vec = input_str.as_bytes().to_vec();
+		let handle: Handle = input_vec.try_into().unwrap();
+		handle
+	}
 	// /// Convert Vec<u8> into Handle (BoundedVec)
 	// pub fn convert_vec_to_handle() -> Handle {
 	// }
