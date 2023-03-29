@@ -1,6 +1,6 @@
 use std::{
 	fs::File,
-	io::{BufRead, BufReader},
+	io::{BufRead, BufReader, Write},
 };
 
 // Helper function to generate a BTreeMap which maps each confusable character to its
@@ -9,14 +9,16 @@ use std::{
 // The first character of each line represent the canonical character (value) in the map that each
 // subsequent character of the line (key) maps to.
 fn convert_confuseables_to_unicode_escaped() {
-	let file = File::open("confusable_characters.txt");
-	assert!(file.is_ok());
+	let input_file = File::open("confusable_characters.txt");
+	assert!(input_file.is_ok());
 
-	let reader = BufReader::new(file.ok().unwrap());
+	let mut output_file = std::fs::File::create("confusables.rs").expect("create failed");
 
-	println!("use sp_std::collections::btree_map::BTreeMap;");
-	println!("");
-	println!("const CHAR_MAP: BTreeMap<char, char> = BTreeMap::from([");
+	let reader = BufReader::new(input_file.ok().unwrap());
+
+	output_file.write_all("use sp_std::collections::btree_map::BTreeMap;\n\n".as_bytes());
+	output_file.write_all("pub fn build_confusables_map() -> BTreeMap<char, char> {".as_bytes());
+	output_file.write_all("\tBTreeMap::from([".as_bytes());
 
 	for line_result in reader.lines() {
 		let original_line = line_result.ok().unwrap();
@@ -26,12 +28,18 @@ fn convert_confuseables_to_unicode_escaped() {
 		let normalized_character = original_line_characters.next().unwrap();
 
 		while let Some(homoglyph) = original_line_characters.next() {
-			print!("(\'\\u{{{:x}}}\',", homoglyph as u32);
-			println!(" \'\\u{{{:x}}}\'),", normalized_character as u32);
+			let key = format!("\t\t(\'\\u{{{:x}}}\',", homoglyph as u32);
+			output_file.write_all(key.as_bytes());
+
+			let value = format!(" \'\\u{{{:x}}}\'),\n", normalized_character as u32);
+			output_file.write_all(value.as_bytes());
 		}
 	}
 
-	println!("]);");
+	output_file.write_all("\t])".as_bytes());
+	output_file.write_all("}".as_bytes());
+
+	println!("data written to btreemap.txt");
 }
 
 fn main() {
