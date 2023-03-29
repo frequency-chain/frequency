@@ -132,6 +132,13 @@ pub type SchemasMaxBytesBoundedVecLimit = ConstU32<65_500>;
 pub type MaxSchemaSettingsPerSchema = ConstU32<2>;
 // -end- Schemas Pallet ---
 
+// --- Handles Pallet ---
+/// The minimum suffix value
+pub type HandleSuffixMin = ConstU32<10>;
+/// The maximum suffix value
+pub type HandleSuffixMax = ConstU32<99>;
+// -end- Handles Pallet
+
 // --- Orml Vesting Pallet ---
 parameter_types! {
 	pub const VestingPalletId: PalletId = PalletId(*b"py/vstng");
@@ -356,10 +363,3 @@ impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
 		Ok(())
 	}
 }
-
-// --- Handles Pallet ---
-/// The minimum suffix value
-pub type HandleSuffixMin = ConstU32<1000>;
-/// The maximum suffix value
-pub type HandleSuffixMax = ConstU32<9999>;
-// -end- Handles Pallet

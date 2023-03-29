@@ -43,11 +43,7 @@ impl HandleConverter {
 	pub fn remove_confusables(&self, string: &str) -> codec::alloc::string::String {
 		string
 			.chars()
-			.map(|character| {
-				self.confusables_map
-					.get(&character)
-					.map_or(character.to_string(), |&value| value.to_string())
-			})
+			.map(|character| self.confusables_map.get(&character).map_or(character, |&value| value))
 			.collect::<codec::alloc::string::String>()
 	}
 

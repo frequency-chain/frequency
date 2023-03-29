@@ -35,6 +35,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use common_primitives::{
+	handles::*,
 	messages::*,
 	msa::*,
 	node::*,
@@ -1296,6 +1297,16 @@ impl_runtime_apis! {
 
 		fn get_itemized_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError> {
 			StatefulStorage::get_itemized_storage(msa_id, schema_id)
+		}
+	}
+
+	impl pallet_handles_runtime_api::HandlesRuntimeApi<Block> for Runtime {
+		fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
+			Handles::get_handle_for_msa(msa_id)
+		}
+
+		fn get_next_suffixes(handle: Vec<u8>, count: u16) -> Vec<HandleSuffix> {
+			Handles::get_next_suffixes(handle, count)
 		}
 	}
 

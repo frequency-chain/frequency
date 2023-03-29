@@ -2874,6 +2874,8 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "log",
+ "pallet-handles-rpc",
+ "pallet-handles-runtime-api",
  "pallet-messages-rpc",
  "pallet-messages-runtime-api",
  "pallet-msa-rpc",
@@ -5559,7 +5561,6 @@ name = "pallet-handles"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
- "common-runtime",
  "env_logger 0.10.0",
  "frame-benchmarking",
  "frame-support",
@@ -5578,6 +5579,25 @@ dependencies = [
  "twox-hash",
  "unicode-normalization",
  "unicode-security",
+]
+
+[[package]]
+name = "pallet-handles-rpc"
+version = "0.0.0"
+dependencies = [
+ "common-helpers",
+ "common-primitives",
+ "jsonrpsee",
+ "pallet-handles-runtime-api",
+ "parity-scale-codec",
+ "rayon",
+ "sc-client-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
+ "sp-std",
+ "substrate-test-runtime-client",
+ "tokio",
 ]
 
 [[package]]

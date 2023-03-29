@@ -32,8 +32,8 @@
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 mod homoglyphs;
-
 use homoglyphs::canonical::HandleConverter;
+
 #[cfg(test)]
 mod tests;
 
@@ -154,74 +154,11 @@ pub mod pallet {
 		},
 	}
 
-	impl<T: Config> Pallet<T> {
-		/// Get the next index into the shuffled suffix sequence for the specified canonical base handle
-		///
-		/// # Errors
-		/// * [`Error::SuffixesExhausted`]
-		///
-		pub fn get_next_suffix_index_for_canonical_handle(
-			canonical_handle: Handle,
-		) -> Result<SequenceIndex, DispatchError> {
-			let next;
-			match Self::get_current_suffix_index_for_canonical_handle(canonical_handle) {
-				None => {
-					next = 0;
-				},
-				Some(current) => {
-					next = current.checked_add(1).ok_or(Error::<T>::SuffixesExhausted)?;
-				},
-			}
-
-			Ok(next)
-		}
-
-		/// Verify the `signature` was signed by `signer` on `payload` by a wallet
-		/// Note the `wrap_binary_data` follows the Polkadot wallet pattern of wrapping with `<Byte>` tags.
-		///
-		/// # Errors
-		/// * [`Error::InvalidSignature`]
-		///
-		pub fn verify_signed_payload(
-			signature: &MultiSignature,
-			signer: &T::AccountId,
-			payload: Vec<u8>,
-		) -> DispatchResult {
-			let key = T::ConvertIntoAccountId32::convert((*signer).clone());
-			let wrapped_payload = wrap_binary_data(payload);
-
-			ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
-
-			Ok(())
-		}
-
-		/// Convert a handle string to it's canonical form.
-		pub fn convert_to_canonical(handle_str: &str) -> codec::alloc::string::String {
-			let mut normalized =
-				unicode_security::skeleton(handle_str).collect::<codec::alloc::string::String>();
-			normalized.make_ascii_lowercase();
-			log::debug!("normalized={}", normalized.clone());
-			normalized
-		}
-
-		/// Generate a numeric suffix for a canonical handle and the cursor/sequence index
-		fn generate_suffix_for_canonical_handle(canonical_handle: &str, cursor: usize) -> u16 {
-			log::debug!("generate_suffix_for_canonical_handle({}, {})", canonical_handle, &cursor);
-
-			let seed = SuffixGenerator::generate_seed(canonical_handle);
-			log::debug!("seed={}", seed);
-
-			let mut suffix_generator = SuffixGenerator::new(0, 10000, &canonical_handle);
-			let sequence: Vec<usize> = suffix_generator.suffix_iter().collect();
-			sequence[cursor] as u16
-		}
-	}
-
-	// EXTRINSICS
-
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Claim handle
+		/// Extrinsic to claim a handle
+		/// # Arguments
+		/// * `handle` - The handle to claim
 		///
 		#[pallet::call_index(0)]
 		#[pallet::weight(1000)]
@@ -281,17 +218,7 @@ pub mod pallet {
 
 			// Convert base display handle into a canonical display handle
 
-			let handle_converter = HandleConverter::new();
-
-			// let canonical_handle_vec =
-			// 	Self::convert_to_canonical(base_handle_str).as_bytes().to_vec();
-
-			let canonical_handle_str = handle_converter.to_canonical(&base_handle_str);
-			let no_confusables_str = handle_converter.remove_confusables(&canonical_handle_str);
-			let no_diacriticals_str = handle_converter.strip_diacriticals(&no_confusables_str);
-			let canonical_handle_vec = no_diacriticals_str.as_bytes().to_vec();
-
-			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
+			let canonical_handle: Handle = Self::convert_to_canonical(base_handle_str);
 			let canonical_handle_str = core::str::from_utf8(&canonical_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 			log::debug!("canonical={}", canonical_handle_str);
@@ -369,6 +296,134 @@ pub mod pallet {
 			// 	suffix_num,
 			// );
 			Ok(())
+		}
+	}
+
+	impl<T: Config> Pallet<T> {
+		/// Retrieve `HandleResponse` for the specified `MessageSourceAccount`
+		/// # Arguments
+		/// * `msa_id` - The `MessageSourceAccount` to retrieve the `HandleResponse` for
+		/// # Errors
+		/// * [`Error::HandleDoesNotExist`]
+		/// # Returns
+		/// * `HandleResponse` - The `HandleResponse` for the specified `MessageSourceAccount`
+		pub fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
+			let full_handle = MSAIdToDisplayName::<T>::get(msa_id);
+			if full_handle.is_empty() {
+				return None
+			}
+
+			// convert to string
+			let full_handle_str = core::str::from_utf8(&full_handle)
+				.map_err(|_| Error::<T>::InvalidHandleEncoding)
+				.ok()?;
+			let handle_parts: Vec<&str> = full_handle_str.split(".").collect();
+			let base_handle = handle_parts[0];
+			let suffix = handle_parts[1].parse::<u16>().ok()?;
+			let canonical_handle = Self::convert_to_canonical(base_handle);
+			Some(HandleResponse {
+				base_handle: base_handle.into(),
+				suffix,
+				canonical_handle: canonical_handle.into(),
+			})
+		}
+
+		/// Retrieve `count` of suffixes for specified  `base_handle`
+		/// # Arguments
+		/// * `base_handle` - The base handle to retrieve the suffixes for
+		/// * `count` - The number of suffixes to retrieve
+		/// # Returns
+		/// * `Vec<u16>` - The suffixes for the specified `base_handle`
+		pub fn get_next_suffixes(handle: Vec<u8>, count: u16) -> Vec<HandleSuffix> {
+			let mut suffixes: Vec<u16> = vec![];
+			let base_handle: Handle = handle.try_into().unwrap_or_default();
+			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or("");
+			let canonical_handle: Handle = Self::convert_to_canonical(base_handle_str);
+			let suffix_index =
+				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
+					.unwrap_or_default();
+
+			let canonical_handle_str = core::str::from_utf8(&canonical_handle).unwrap_or("");
+			// Generate suffixes from the next available suffix index
+			let mut suffix_generator = SuffixGenerator::new(
+				T::HandleSuffixMin::get() as usize,
+				T::HandleSuffixMax::get() as usize,
+				&canonical_handle_str,
+			);
+			let sequence = suffix_generator.suffix_iter().enumerate();
+
+			for (i, suffix) in sequence {
+				if i >= suffix_index as usize && i < (suffix_index as usize + count as usize) {
+					suffixes.push(suffix as u16);
+				}
+				if suffixes.len() == count as usize {
+					break
+				}
+			}
+
+			suffixes
+		}
+
+		/// Get the next index into the shuffled suffix sequence for the specified canonical base handle
+		///
+		/// # Errors
+		/// * [`Error::SuffixesExhausted`]
+		///
+		pub fn get_next_suffix_index_for_canonical_handle(
+			canonical_handle: Handle,
+		) -> Result<SequenceIndex, DispatchError> {
+			let next;
+			match Self::get_current_suffix_index_for_canonical_handle(canonical_handle) {
+				None => {
+					next = 0;
+				},
+				Some(current) => {
+					next = current.checked_add(1).ok_or(Error::<T>::SuffixesExhausted)?;
+				},
+			}
+
+			Ok(next)
+		}
+
+		/// Verify the `signature` was signed by `signer` on `payload` by a wallet
+		/// Note the `wrap_binary_data` follows the Polkadot wallet pattern of wrapping with `<Byte>` tags.
+		///
+		/// # Errors
+		/// * [`Error::InvalidSignature`]
+		///
+		pub fn verify_signed_payload(
+			signature: &MultiSignature,
+			signer: &T::AccountId,
+			payload: Vec<u8>,
+		) -> DispatchResult {
+			let key = T::ConvertIntoAccountId32::convert((*signer).clone());
+			let wrapped_payload = wrap_binary_data(payload);
+
+			ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
+
+			Ok(())
+		}
+
+		fn convert_to_canonical(base_handle_str: &str) -> Handle {
+			let handle_converter = HandleConverter::new();
+			let canonical_handle_str = handle_converter.to_canonical(&base_handle_str);
+			let no_confusables_str = handle_converter.remove_confusables(&canonical_handle_str);
+			let no_diacriticals_str = handle_converter.strip_diacriticals(&no_confusables_str);
+			let canonical_handle_vec = no_diacriticals_str.as_bytes().to_vec();
+
+			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
+			canonical_handle
+		}
+
+		fn generate_suffix_for_canonical_handle(canonical_handle: &str, cursor: usize) -> u16 {
+			log::debug!("generate_suffix_for_canonical_handle({}, {})", canonical_handle, &cursor);
+			let mut suffix_generator = SuffixGenerator::new(
+				T::HandleSuffixMin::get() as usize,
+				T::HandleSuffixMax::get() as usize,
+				&canonical_handle,
+			);
+			let suffix = suffix_generator.suffix_iter().nth(cursor).unwrap_or_default() as u16;
+			suffix
 		}
 	}
 }

@@ -1,6 +1,9 @@
+#[cfg(feature = "std")]
+use crate::utils::*;
 use codec::{Decode, Encode};
 use frame_support::BoundedVec;
 use scale_info::TypeInfo;
+use serde::{Deserialize, Serialize};
 use sp_core::ConstU32;
 use sp_std::vec::Vec;
 
@@ -36,4 +39,18 @@ impl ClaimHandlePayload {
 	pub fn new(base_handle: Vec<u8>) -> Self {
 		Self { base_handle }
 	}
+}
+
+/// RPC Response form for a Handle
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+pub struct HandleResponse {
+	/// Base handle (without delimiter or suffix
+	#[cfg_attr(feature = "std", serde(with = "as_string"))]
+	pub base_handle: Vec<u8>,
+	/// Canonical handle (reduced/translated version of base)
+	#[cfg_attr(feature = "std", serde(with = "as_string"))]
+	pub canonical_handle: Vec<u8>,
+	/// Suffix
+	pub suffix: HandleSuffix,
 }
