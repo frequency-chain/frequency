@@ -33,7 +33,7 @@
 mod benchmarking;
 mod homoglyphs;
 
-use homoglyphs::canonical::CanonicalConverter;
+use homoglyphs::canonical::HandleConverter;
 #[cfg(test)]
 mod tests;
 
@@ -281,14 +281,14 @@ pub mod pallet {
 
 			// Convert base display handle into a canonical display handle
 
-			let canonical_converter = CanonicalConverter::new();
+			let handle_converter = HandleConverter::new();
 
 			// let canonical_handle_vec =
 			// 	Self::convert_to_canonical(base_handle_str).as_bytes().to_vec();
 
-			let canonical_handle_str = canonical_converter.to_canonical(&base_handle_str);
-			let no_confusables_str = canonical_converter.remove_confusables(&canonical_handle_str);
-			let no_diacriticals_str = canonical_converter.strip_diacriticals(&no_confusables_str);
+			let canonical_handle_str = handle_converter.to_canonical(&base_handle_str);
+			let no_confusables_str = handle_converter.remove_confusables(&canonical_handle_str);
+			let no_diacriticals_str = handle_converter.strip_diacriticals(&no_confusables_str);
 			let canonical_handle_vec = no_diacriticals_str.as_bytes().to_vec();
 
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
@@ -357,10 +357,10 @@ pub mod pallet {
 			let suffix = parts[1];
 			let suffix_num = suffix.parse::<u16>().unwrap();
 
-			let canonical_converter = CanonicalConverter::new();
-			let canonical_handle_str = canonical_converter.to_canonical(&base_handle_str);
-			let no_confusables_str = canonical_converter.remove_confusables(&canonical_handle_str);
-			let no_diacriticals_str = canonical_converter.strip_diacriticals(&no_confusables_str);
+			let handle_converter = HandleConverter::new();
+			let canonical_handle_str = handle_converter.to_canonical(&base_handle_str);
+			let no_confusables_str = handle_converter.remove_confusables(&canonical_handle_str);
+			let no_diacriticals_str = handle_converter.strip_diacriticals(&no_confusables_str);
 			let canonical_handle_vec = no_diacriticals_str.as_bytes().to_vec();
 
 			MSAIdToDisplayName::<T>::remove(delegator_msa_id);
