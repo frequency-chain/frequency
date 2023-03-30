@@ -6,7 +6,9 @@ use crate::homoglyphs::confusables::build_confusables_map;
 use common_primitives::handles::*;
 use sp_std::collections::btree_map::BTreeMap;
 use unicode_normalization::UnicodeNormalization;
-
+extern crate alloc;
+use alloc::string::{String, ToString};
+use sp_std::vec::Vec;
 /// A converter for confusable characters.
 ///
 /// Given a string, detects easily confusable characters and returns the string in canonical form.
@@ -72,9 +74,12 @@ impl HandleConverter {
 	// pub fn convert_handle_to_string() -> String {
 	// }
 
-	// /// Convert string to Handle
-	// pub fn convert_string_to_handle() -> String {
-	// }
+	/// Convert string to Handle
+	pub fn convert_str_to_handle(input_str: &str) -> Handle {
+		let input_vec = input_str.as_bytes().to_vec();
+		let handle: Handle = input_vec.try_into().unwrap();
+		handle
+	}
 	// /// Convert Vec<u8> into Handle (BoundedVec)
 	// pub fn convert_vec_to_handle() -> Handle {
 	// }

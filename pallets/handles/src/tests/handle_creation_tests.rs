@@ -1,4 +1,4 @@
-use crate::tests::mock::*;
+use crate::{homoglyphs::canonical::HandleConverter, tests::mock::*};
 use common_primitives::{handles::*, utils::wrap_binary_data};
 use frame_support::assert_ok;
 use sp_core::{sr25519, Encode, Pair};
@@ -35,8 +35,10 @@ fn claim_handle_happy_path() {
 
 		let base_handle_str = core::str::from_utf8(&base_handle).ok().unwrap();
 		println!("base_handle_str={}", base_handle_str);
+
+		let handle_converter = HandleConverter::new();
 		let canonical_handle_vec =
-			Handles::convert_to_canonical(base_handle_str).as_bytes().to_vec();
+			handle_converter.convert_to_canonical(base_handle_str).as_bytes().to_vec();
 		let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
 
 		Handles::get_current_suffix_index_for_canonical_handle(canonical_handle);

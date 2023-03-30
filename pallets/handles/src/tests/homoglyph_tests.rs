@@ -5,14 +5,6 @@ use std::{
 };
 
 #[test]
-fn canonical_test() {
-	let input = "A Α А Ꭺ ᗅ ᴀ ꓮ Ａ 𐊠 𝐀 𝐴 𝑨 𝒜 𝓐 𝔄 𝔸 𝕬 𝖠 𝗔 𝘈 𝘼 𝙰 𝚨 𝛢 𝜜 𝝖 𝞐";
-	let normalized = unicode_security::skeleton(input).collect::<String>();
-	let result = normalized.to_lowercase(); // convert to lower case
-	println!("{}", result);
-}
-
-#[test]
 fn test_replace_confusables() {
 	let file = File::open("src/homoglyphs/confusable_characters.txt");
 	assert!(file.is_ok());
@@ -20,9 +12,20 @@ fn test_replace_confusables() {
 	let reader = BufReader::new(file.ok().unwrap());
 	let handle_converter = HandleConverter::new();
 	for line_result in reader.lines() {
-		let original_line: &str = &line_result.ok().unwrap();
-		let normalized_line = handle_converter.replace_confusables(original_line);
+		let original_line = line_result.ok().unwrap();
 
-		println!("{}", normalized_line);
+		// The first character in `confusable_characters.txt` is the normalized character
+		// that each subsequent character may be confused with
+		let first_character = original_line.chars().next().unwrap();
+
+		let normalized_line = handle_converter.replace_confusables(&original_line);
+		for normalized_character in normalized_line.chars() {
+			let normalized_character_codepoint = format!("\'\\u{{{:x}}}\'", normalized_character as u32);
+			let first_character_codepoint = format!("\'\\u{{{:x}}}\'", first_character as u32);
+			// println!("normalized_character_codepoint: {}  first_character_codepoint: {}", normalized_character_codepoint, first_character_codepoint);
+
+			assert_eq!(first_character_codepoint, normalized_character_codepoint);
+		}
+
 	}
 }
