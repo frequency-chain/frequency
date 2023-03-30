@@ -1,6 +1,8 @@
 use sp_std::collections::btree_map::BTreeMap;
 
-pub fn build_confusables_map() -> BTreeMap<char, char> {	BTreeMap::from([		('\u{1c3}', '\u{21}'),
+pub fn build_confusables_map() -> BTreeMap<char, char> {
+	BTreeMap::from([
+		('\u{1c3}', '\u{21}'),
 		('\u{2d51}', '\u{21}'),
 		('\u{ff01}', '\u{21}'),
 		('\u{ff04}', '\u{24}'),
@@ -4315,4 +4317,5 @@ pub fn build_confusables_map() -> BTreeMap<char, char> {	BTreeMap::from([		('\u{
 		('\u{2fa14}', '\u{2a291}'),
 		('\u{2f88f}', '\u{2a392}'),
 		('\u{2fa1d}', '\u{2a600}'),
-	])}
+	])
+}

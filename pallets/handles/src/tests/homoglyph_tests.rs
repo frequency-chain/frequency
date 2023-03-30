@@ -20,12 +20,12 @@ fn test_replace_confusables() {
 
 		let normalized_line = handle_converter.replace_confusables(&original_line);
 		for normalized_character in normalized_line.chars() {
-			let normalized_character_codepoint = format!("\'\\u{{{:x}}}\'", normalized_character as u32);
+			let normalized_character_codepoint =
+				format!("\'\\u{{{:x}}}\'", normalized_character as u32);
 			let first_character_codepoint = format!("\'\\u{{{:x}}}\'", first_character as u32);
 			// println!("normalized_character_codepoint: {}  first_character_codepoint: {}", normalized_character_codepoint, first_character_codepoint);
 
 			assert_eq!(first_character_codepoint, normalized_character_codepoint);
 		}
-
 	}
 }
