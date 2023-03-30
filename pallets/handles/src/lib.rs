@@ -223,7 +223,8 @@ pub mod pallet {
 		/// * `handle` - The handle to claim
 		///
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::claim_handle())]
+		// #[pallet::weight(T::WeightInfo::claim_handle())]
+		#[pallet::weight(1000)]
 		pub fn claim_handle(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
@@ -322,7 +323,8 @@ pub mod pallet {
 
 		/// Retire handle
 		#[pallet::call_index(1)]
-		#[pallet::weight((T::WeightInfo::retire_handle(), DispatchClass::Normal, Pays::No))]
+		//#[pallet::weight((T::WeightInfo::retire_handle(), DispatchClass::Normal, Pays::No))]
+		#[pallet::weight((1000, DispatchClass::Normal, Pays::No))]
 		pub fn retire_handle(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
