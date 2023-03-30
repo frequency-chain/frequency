@@ -107,6 +107,10 @@ impl pallet_handles::Config for Test {
 
 	/// The maximum suffix value
 	type HandleSuffixMax = ConstU32<30>;
+
+	/// A set of helper functions for benchmarking.
+	#[cfg(feature = "runtime-benchmarks")]
+	type MsaBenchmarkHelper = ();
 }
 
 // Build genesis storage according to the mock runtime.

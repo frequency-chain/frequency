@@ -1031,6 +1031,9 @@ impl pallet_handles::Config for Runtime {
 	type HandleSuffixMax = HandleSuffixMax;
 	/// The conversion to a 32 byte AccountId
 	type ConvertIntoAccountId32 = ConvertInto;
+	/// A set of helper functions for benchmarking.
+	#[cfg(feature = "runtime-benchmarks")]
+	type MsaBenchmarkHelper = Msa;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for

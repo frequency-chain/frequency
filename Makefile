@@ -89,6 +89,9 @@ benchmarks-schemas:
 benchmarks-stateful-storage:
 	./scripts/run_benchmark.sh -p stateful-storage
 
+benchmarks-handles:
+	./scripts/run_benchmark.sh -p handles
+
 benchmarks-overhead:
 	./scripts/run_benchmark.sh -p overhead
 

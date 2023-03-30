@@ -39,6 +39,8 @@ mod tests;
 
 // pub mod weights;
 
+#[cfg(feature = "runtime-benchmarks")]
+use common_primitives::benchmarks::MsaBenchmarkHelper;
 use sp_std::prelude::*;
 
 use common_primitives::{
@@ -85,6 +87,10 @@ pub mod pallet {
 		/// The maximum suffix value
 		#[pallet::constant]
 		type HandleSuffixMax: Get<u32>;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		/// A set of helper functions for benchmarking.
+		type MsaBenchmarkHelper: MsaBenchmarkHelper<Self::AccountId>;
 	}
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
