@@ -12,7 +12,8 @@
 [![Issues][issues-shield]][issues-url]
 [![Codecov][codecov-shield]][codecov-url]
 
-Frequency is a Polkadot parachain designed to run Decentralized Social Network Protocol (DSNP), but it could run other things.
+Frequency is a Polkadot parachain designed to run Decentralized Social Network Protocol (DSNP).
+It uses a Delegation Model, Capacity Staking Model, and Data Transaction Model to achieve the needed foundation for broadcast centric decentralized systems.
 
 # Table of Contents
 
