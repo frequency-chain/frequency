@@ -8,6 +8,12 @@ use std::{
 //
 // The first character of each line represent the canonical character (value) in the map that each
 // subsequent character of the line (key) maps to.
+//
+// Usage:
+// `rustc utils.rs`
+// `./utils`
+//
+// outputs to confusables.rs
 fn convert_confuseables_to_unicode_escaped() {
 	let input_file = File::open("confusable_characters.txt");
 	assert!(input_file.is_ok());
@@ -17,8 +23,8 @@ fn convert_confuseables_to_unicode_escaped() {
 	let reader = BufReader::new(input_file.ok().unwrap());
 
 	output_file.write_all("use sp_std::collections::btree_map::BTreeMap;\n\n".as_bytes());
-	output_file.write_all("pub fn build_confusables_map() -> BTreeMap<char, char> {".as_bytes());
-	output_file.write_all("\tBTreeMap::from([".as_bytes());
+	output_file.write_all("pub fn build_confusables_map() -> BTreeMap<char, char> {\n".as_bytes());
+	output_file.write_all("\tBTreeMap::from([\n".as_bytes());
 
 	for line_result in reader.lines() {
 		let original_line = line_result.ok().unwrap();
@@ -36,10 +42,10 @@ fn convert_confuseables_to_unicode_escaped() {
 		}
 	}
 
-	output_file.write_all("\t])".as_bytes());
-	output_file.write_all("}".as_bytes());
+	output_file.write_all("\t])\n".as_bytes());
+	output_file.write_all("}\n".as_bytes());
 
-	println!("data written to btreemap.txt");
+	println!("data written to confusables.rs");
 }
 
 fn main() {
