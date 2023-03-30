@@ -316,7 +316,7 @@ pub mod pallet {
 
 		/// Retire handle
 		#[pallet::call_index(1)]
-		#[pallet::weight(1000)]
+		#[pallet::weight((T::WeightInfo::retire_handle(), DispatchClass::Normal, Pays::No))]
 		pub fn retire_handle(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
