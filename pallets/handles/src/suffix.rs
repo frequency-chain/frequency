@@ -24,7 +24,7 @@ impl SuffixGenerator {
 	/// # Example
 	///
 	/// ```
-	/// use crate::suffix::SuffixGenerator;
+	/// use pallet_handles::suffix::SuffixGenerator;
 	///
 	/// let min = 100;
 	/// let max = 150;
@@ -47,7 +47,7 @@ impl SuffixGenerator {
 	/// # Examples
 	///
 	/// ```
-	/// use frequency_handles::SuffixGenerator;
+	/// use pallet_handles::suffix::SuffixGenerator;
 	///
 	/// let min = 100;
 	/// let max = 150;
@@ -55,7 +55,7 @@ impl SuffixGenerator {
 	///
 	/// let mut suffix_generator = SuffixGenerator::new(min, max, canonical_handle);
 	///
-	/// let sequence: Vec<usize> = suffix_generator.suffix_iter().take(5).collect();
+	/// let sequence: Vec<usize> = suffix_generator.suffix_iter().collect();
 	/// println!("{:?}", sequence);
 	/// ```
 	///
@@ -63,9 +63,9 @@ impl SuffixGenerator {
 	pub fn suffix_iter(&mut self) -> impl Iterator<Item = usize> + '_ {
 		let mut indices: Vec<usize> = (self.min..=self.max).collect();
 		(self.min..=self.max).rev().map(move |i| {
-			let j = self.rng.gen_range(0..=i);
-			indices.swap(i as usize, j as usize);
-			indices[i as usize]
+			let j = self.rng.gen_range(self.min..=i);
+			indices.swap(i - self.min, j - self.min);
+			indices[i - self.min]
 		})
 	}
 
@@ -81,7 +81,7 @@ impl SuffixGenerator {
 	///
 	/// # Examples
 	/// ```
-	/// use frequency_handles::SuffixGenerator;
+	/// use pallet_handles::suffix::SuffixGenerator;
 	///
 	/// let canonical_handle = "myuser";
 	///

@@ -20,7 +20,7 @@ pub struct HandleConverter {
 /// # Example
 ///
 /// ```
-/// use crate::canonical::HandleConverter;
+/// use pallet_handles::homoglyphs::canonical::HandleConverter;
 ///
 /// let word = "ℂн𝔸RℒℰᏕ";
 ///
@@ -28,10 +28,9 @@ pub struct HandleConverter {
 /// let canonical_word = handle_converter.replace_confusables(word);
 /// println!("{}", canonical_word);
 ///
-/// OUTPUT:
-/// charles
 /// ```
 impl HandleConverter {
+	/// Creates a new `HandleConverter` instance with the specified input string.
 	pub fn new() -> Self {
 		let confusables_map = build_confusables_map();
 		Self { confusables_map }
