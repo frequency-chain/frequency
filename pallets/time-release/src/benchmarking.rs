@@ -111,6 +111,6 @@ benchmarks! {
 	impl_benchmark_test_suite!(
 		TimeReleasePallet,
 		crate::mock::ExtBuilder::build(),
-		crate::mock::Runtime
+		crate::mock::Test
 	);
 }

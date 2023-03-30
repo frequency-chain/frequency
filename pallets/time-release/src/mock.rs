@@ -12,7 +12,7 @@ use sp_runtime::{testing::Header, traits::IdentityLookup};
 use crate as pallet_time_release;
 
 pub type AccountId = u128;
-impl frame_system::Config for Runtime {
+impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
 	type Index = u64;
@@ -41,12 +41,12 @@ impl frame_system::Config for Runtime {
 
 type Balance = u64;
 
-impl pallet_balances::Config for Runtime {
+impl pallet_balances::Config for Test {
 	type Balance = Balance;
 	type DustRemoval = ();
 	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposit = ConstU64<1>;
-	type AccountStore = frame_system::Pallet<Runtime>;
+	type AccountStore = frame_system::Pallet<Test>;
 	type MaxLocks = ();
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
@@ -87,7 +87,7 @@ impl BlockNumberProvider for MockBlockNumberProvider {
 	}
 }
 
-impl Config for Runtime {
+impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = PalletBalances;
 	type MinReleaseTransfer = ConstU64<5>;
@@ -97,11 +97,11 @@ impl Config for Runtime {
 	type BlockNumberProvider = MockBlockNumberProvider;
 }
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
-type Block = frame_system::mocking::MockBlock<Runtime>;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockBlock<Test>;
 
 construct_runtime!(
-	pub enum Runtime where
+	pub enum Test where
 		Block = Block,
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
@@ -124,16 +124,17 @@ pub struct ExtBuilder;
 
 impl ExtBuilder {
 	pub fn build() -> sp_io::TestExternalities {
-		let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
+		let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+
 		MockBlockNumberProvider::set(0);
 
-		pallet_balances::GenesisConfig::<Runtime> {
+		pallet_balances::GenesisConfig::<Test> {
 			balances: vec![(ALICE, ALICE_BALANCE), (CHARLIE, CHARLIE_BALANCE)],
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();
 
-		pallet_time_release::GenesisConfig::<Runtime> {
+		pallet_time_release::GenesisConfig::<Test> {
 			schedules: vec![
 				// who, start, period, period_count, per_period
 				(CHARLIE, 2, 3, 1, 5),

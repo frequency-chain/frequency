@@ -408,7 +408,7 @@ impl<T: Config> Pallet<T> {
 
 		// empty release schedules cleanup the storage and unlock the fund
 		if bounded_schedules.is_empty() {
-			Self::clear_release_schedules(who);
+			Self::delete_release_schedules(who);
 			return Ok(())
 		}
 
@@ -447,7 +447,7 @@ impl<T: Config> Pallet<T> {
 		ReleaseSchedules::<T>::insert(who, schedules);
 	}
 
-	fn clear_release_schedules(who: &T::AccountId) {
+	fn delete_release_schedules(who: &T::AccountId) {
 		<ReleaseSchedules<T>>::remove(who);
 		Self::delete_lock(who);
 	}

@@ -85,7 +85,7 @@ fn self_releasing() {
 
 		assert_noop!(
 			TimeRelease::transfer(RuntimeOrigin::signed(ALICE), ALICE, bad_schedule),
-			crate::Error::<Runtime>::InsufficientBalanceToLock
+			crate::Error::<Test>::InsufficientBalanceToLock
 		);
 
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), ALICE, schedule.clone()));
@@ -138,14 +138,14 @@ fn transfer_fails_if_zero_period_or_count() {
 			ReleaseSchedule { start: 1u64, period: 0u64, period_count: 1u32, per_period: 100u64 };
 		assert_noop!(
 			TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule),
-			Error::<Runtime>::ZeroReleasePeriod
+			Error::<Test>::ZeroReleasePeriod
 		);
 
 		let schedule =
 			ReleaseSchedule { start: 1u64, period: 1u64, period_count: 0u32, per_period: 100u64 };
 		assert_noop!(
 			TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule),
-			Error::<Runtime>::ZeroReleasePeriodCount
+			Error::<Test>::ZeroReleasePeriodCount
 		);
 	});
 }
@@ -157,7 +157,7 @@ fn transfer_fails_if_transfer_err() {
 			ReleaseSchedule { start: 1u64, period: 1u64, period_count: 1u32, per_period: 100u64 };
 		assert_noop!(
 			TimeRelease::transfer(RuntimeOrigin::signed(BOB), ALICE, schedule),
-			pallet_balances::Error::<Runtime, _>::InsufficientBalance,
+			pallet_balances::Error::<Test, _>::InsufficientBalance,
 		);
 	});
 }
@@ -205,7 +205,7 @@ fn claim_works() {
 		assert!(PalletBalances::transfer(RuntimeOrigin::signed(BOB), ALICE, 10).is_err());
 		// unlocked after claiming
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
-		assert!(ReleaseSchedules::<Runtime>::contains_key(BOB));
+		assert!(ReleaseSchedules::<Test>::contains_key(BOB));
 		assert_ok!(PalletBalances::transfer(RuntimeOrigin::signed(BOB), ALICE, 10));
 		// more are still locked
 		assert!(PalletBalances::transfer(RuntimeOrigin::signed(BOB), ALICE, 1).is_err());
@@ -213,7 +213,7 @@ fn claim_works() {
 		MockBlockNumberProvider::set(21);
 		// claim more
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
-		assert!(!ReleaseSchedules::<Runtime>::contains_key(BOB));
+		assert!(!ReleaseSchedules::<Test>::contains_key(BOB));
 		assert_ok!(PalletBalances::transfer(RuntimeOrigin::signed(BOB), ALICE, 10));
 		// all used up
 		assert_eq!(PalletBalances::free_balance(BOB), 0);
@@ -236,7 +236,7 @@ fn claim_for_works() {
 			PalletBalances::locks(&BOB).get(0),
 			Some(&BalanceLock { id: RELEASE_LOCK_ID, amount: 20u64, reasons: Reasons::All })
 		);
-		assert!(ReleaseSchedules::<Runtime>::contains_key(&BOB));
+		assert!(ReleaseSchedules::<Test>::contains_key(&BOB));
 
 		MockBlockNumberProvider::set(21);
 
@@ -244,7 +244,7 @@ fn claim_for_works() {
 
 		// no locks anymore
 		assert_eq!(PalletBalances::locks(&BOB), vec![]);
-		assert!(!ReleaseSchedules::<Runtime>::contains_key(&BOB));
+		assert!(!ReleaseSchedules::<Test>::contains_key(&BOB));
 	});
 }
 
@@ -272,13 +272,13 @@ fn update_release_schedules_works() {
 		assert_ok!(PalletBalances::transfer(RuntimeOrigin::signed(BOB), ALICE, 10));
 
 		// empty release schedules cleanup the storage and unlock the fund
-		assert!(ReleaseSchedules::<Runtime>::contains_key(BOB));
+		assert!(ReleaseSchedules::<Test>::contains_key(BOB));
 		assert_eq!(
 			PalletBalances::locks(&BOB).get(0),
 			Some(&BalanceLock { id: RELEASE_LOCK_ID, amount: 10u64, reasons: Reasons::All })
 		);
 		assert_ok!(TimeRelease::update_release_schedules(RuntimeOrigin::root(), BOB, vec![]));
-		assert!(!ReleaseSchedules::<Runtime>::contains_key(BOB));
+		assert!(!ReleaseSchedules::<Test>::contains_key(BOB));
 		assert_eq!(PalletBalances::locks(&BOB), vec![]);
 	});
 }
@@ -298,7 +298,7 @@ fn transfer_check_for_min() {
 			ReleaseSchedule { start: 1u64, period: 1u64, period_count: 1u32, per_period: 3u64 };
 		assert_noop!(
 			TimeRelease::transfer(RuntimeOrigin::signed(BOB), ALICE, schedule),
-			Error::<Runtime>::AmountLow
+			Error::<Test>::AmountLow
 		);
 	});
 }
@@ -326,7 +326,7 @@ fn multiple_release_schedule_claim_works() {
 
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
 
-		assert!(!ReleaseSchedules::<Runtime>::contains_key(&BOB));
+		assert!(!ReleaseSchedules::<Test>::contains_key(&BOB));
 
 		assert_eq!(PalletBalances::locks(&BOB), vec![]);
 	});
@@ -335,7 +335,7 @@ fn multiple_release_schedule_claim_works() {
 #[test]
 fn exceeding_maximum_schedules_should_fail() {
 	ExtBuilder::build().execute_with(|| {
-		set_balance::<Runtime>(&ALICE, 1000);
+		set_balance::<Test>(&ALICE, 1000);
 
 		let schedule =
 			ReleaseSchedule { start: 0u64, period: 10u64, period_count: 2u32, per_period: 10u64 };
@@ -346,21 +346,21 @@ fn exceeding_maximum_schedules_should_fail() {
 
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule.clone()));
 
-		let create = RuntimeCall::TimeRelease(crate::Call::<Runtime>::transfer {
+		let create = RuntimeCall::TimeRelease(crate::Call::<Test>::transfer {
 			dest: BOB,
 			schedule: schedule.clone(),
 		});
 
 		assert_noop!(
 			create.dispatch(RuntimeOrigin::signed(ALICE)),
-			Error::<Runtime>::MaxReleaseSchedulesExceeded
+			Error::<Test>::MaxReleaseSchedulesExceeded
 		);
 
 		let schedules = vec![schedule.clone(); 51];
 
 		assert_noop!(
 			TimeRelease::update_release_schedules(RuntimeOrigin::root(), BOB, schedules),
-			Error::<Runtime>::MaxReleaseSchedulesExceeded
+			Error::<Test>::MaxReleaseSchedulesExceeded
 		);
 	});
 }
@@ -393,7 +393,7 @@ fn cliff_release_works() {
 			assert_eq!(PalletBalances::locks(&BOB), vec![balance_lock.clone()]);
 			assert_noop!(
 				PalletBalances::transfer(RuntimeOrigin::signed(BOB), CHARLIE, VESTING_AMOUNT),
-				pallet_balances::Error::<Runtime>::LiquidityRestrictions,
+				pallet_balances::Error::<Test>::LiquidityRestrictions,
 			);
 		}
 
@@ -433,24 +433,24 @@ fn alice_time_releaes_schedule() {
 		let july_2024_first_release_date = Utc.with_ymd_and_hms(2024, 7, 1, 0, 0, 0).unwrap();
 		let june_2024_release_start = july_2024_first_release_date - Days::new(30); // block_number: 21_041_037
 
-		let schedule = build_time_release_schedule::<Runtime>(
+		let schedule = build_time_release_schedule::<Test>(
 			june_2024_release_start,
 			period_duration,
 			number_of_periods,
 			amount_released_per_period.into(),
 		);
 
-		set_balance::<Runtime>(&ALICE, total_award);
+		set_balance::<Test>(&ALICE, total_award);
 
 		// Bob starts with zero balance and zero locks.
-		assert_eq!(get_balance::<Runtime>(&BOB), 0);
+		assert_eq!(get_balance::<Test>(&BOB), 0);
 		assert!(PalletBalances::locks(&BOB).is_empty());
 
 		// Time release transfer is initiated by Alice to Bob. As a result, Bobs free-balance
 		// increases by the total amount scheduled to be time-released.
 		// However, it cannot spent because a lock is put on the balance.
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule));
-		assert_eq!(get_balance::<Runtime>(&BOB), 24_996);
+		assert_eq!(get_balance::<Test>(&BOB), 24_996);
 		assert_eq!(PalletBalances::locks(&BOB).len(), 1usize);
 
 		// Bob naively attempts to claim the transfer before the scheduled release date
@@ -459,7 +459,7 @@ fn alice_time_releaes_schedule() {
 		assert_eq!(PalletBalances::locks(&BOB).first().unwrap().amount, 24_996);
 
 		let time_release_transfer_data: Vec<(DateTime<Utc>, _)> =
-			time_release_transfers_data::<Runtime>();
+			time_release_transfers_data::<Test>();
 
 		// quarters 1 - 5
 		let july_1_2023_to_july_1_2024_data = &time_release_transfer_data[0..4];
@@ -619,14 +619,14 @@ fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSc
 			Utc.with_ymd_and_hms(2023, 7, 1, 0, 0, 0).unwrap(),
 			vec![
 				// 7/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2025, 1, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1u32,
 					(total_award * 1 / 24).into(), // Max amount available for release: 100k / 24 ~ 4_166
 				),
 				// 8/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2025, 2, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
@@ -639,7 +639,7 @@ fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSc
 			Utc.with_ymd_and_hms(2023, 10, 1, 0, 0, 0).unwrap(),
 			vec![
 				// 8/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					// 6_250 is issue and can be partially released on 2025-2-1 to complete the amount eligible for release.
 					Utc.with_ymd_and_hms(2025, 2, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
@@ -647,7 +647,7 @@ fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSc
 					total_award * 1 / 24 * 1 / 2, // total_reward is 6_250 - 4_166 ~ 2_084
 				),
 				// 9/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2025, 3, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
@@ -660,14 +660,14 @@ fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSc
 			Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap(), // Max amount available for release: 100k / 24 ~ 4_166
 			vec![
 				// 10/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2025, 4, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
 					total_award * 1 / 24,
 				),
 				// 11/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2025, 5, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,                            // Remaining vested: 6_250 - 4_166 ~ 2_084/
@@ -680,7 +680,7 @@ fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSc
 			Utc.with_ymd_and_hms(2024, 4, 1, 0, 0, 0).unwrap(),
 			vec![
 				// 11/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					// previous bucket
 					Utc.with_ymd_and_hms(2025, 5, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
@@ -688,7 +688,7 @@ fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSc
 					total_award * 1 / 24 * 1 / 2,
 				),
 				// 12/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2025, 6, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
@@ -701,14 +701,14 @@ fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSc
 			Utc.with_ymd_and_hms(2024, 7, 1, 0, 0, 0).unwrap(),
 			vec![
 				// 13/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2025, 7, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
 					total_award * 1 / 24,
 				),
 				// 14/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2025, 8, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
@@ -721,14 +721,14 @@ fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSc
 			Utc.with_ymd_and_hms(2024, 10, 1, 0, 0, 0).unwrap(),
 			vec![
 				// 14/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2025, 8, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
 					total_award * 1 / 24 * 1 / 2,
 				),
 				// 15/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2025, 9, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
@@ -741,14 +741,14 @@ fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSc
 			Utc.with_ymd_and_hms(2025, 1, 1, 0, 0, 0).unwrap(),
 			vec![
 				// 16/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2025, 10, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
 					total_award * 1 / 24,
 				),
 				// 17/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2025, 11, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
@@ -761,14 +761,14 @@ fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSc
 			Utc.with_ymd_and_hms(2025, 4, 1, 0, 0, 0).unwrap(), // issued     6_250
 			vec![
 				// 17/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2025, 11, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
 					total_award * 1 / 24 * 1 / 2, // 6_250 - 4_166 ~ 2_084
 				),
 				// 18/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2025, 12, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
@@ -781,14 +781,14 @@ fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSc
 			Utc.with_ymd_and_hms(2025, 7, 1, 0, 0, 0).unwrap(), // issued     6_250
 			vec![
 				// 19/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2026, 1, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
 					total_award * 1 / 24, // ~ 100K / 24 ~ 4_166
 				),
 				// 20/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2026, 2, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
@@ -801,14 +801,14 @@ fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSc
 			Utc.with_ymd_and_hms(2025, 10, 1, 0, 0, 0).unwrap(), // issued     6_250
 			vec![
 				// 20/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2026, 2, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
 					total_award * 1 / 24 * 1 / 2, // 6_250 - 4_166 ~ 2_084
 				),
 				// 21/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2026, 3, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
@@ -821,14 +821,14 @@ fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSc
 			Utc.with_ymd_and_hms(2026, 1, 1, 0, 0, 0).unwrap(), // issued     6_250
 			vec![
 				// 22/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2026, 4, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
 					total_award * 1 / 24, // ~ 100K / 24 ~ 4_166
 				),
 				// 23/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2026, 5, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
@@ -841,14 +841,14 @@ fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSc
 			Utc.with_ymd_and_hms(2026, 4, 1, 0, 0, 0).unwrap(),
 			vec![
 				// 23/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2026, 5, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
 					total_award * 1 / 24 * 1 / 2, // 6_250 - 4_166 ~ 2_084
 				),
 				// 24/24
-				build_time_release_schedule::<Runtime>(
+				build_time_release_schedule::<Test>(
 					Utc.with_ymd_and_hms(2026, 6, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1,
