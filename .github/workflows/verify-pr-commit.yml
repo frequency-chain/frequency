@@ -10,50 +10,9 @@ on:
 env:
   BIN_DIR: target/release
 jobs:
-  changes:
-    name: Determine Changed Files
-    runs-on: ubuntu-20.04
-    container: ubuntu:20.04
-    outputs:
-      rust: ${{steps.filter.outputs.rust}}
-      build-binary: ${{steps.filter.outputs.build-binary}}
-      cargo-lock: ${{steps.filter.outputs.cargo-lock}}
-      run-integration-tests: ${{steps.filter.outputs.run-integration-tests}}
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-      - name: Check for Changed Files
-        uses: dorny/paths-filter@4512585405083f25c027a35db413c2b3b9006d50
-        id: filter
-        with:
-          filters: |
-            rust:
-              - '**/*.rs'
-              - '**/*.hbs'
-              - '.rustfmt.toml'
-              - '**/Cargo.toml'
-              - '**/Cargo.lock'
-            build-binary:
-              - '**/*.rs'
-              - '**/*.hbs'
-              - '.rustfmt.toml'
-              - '**/Cargo.toml'
-              - '**/Cargo.lock'
-              - 'js/api-augment/**'
-              - 'integration-tests/**/*.{ts,json}'
-            cargo-lock:
-              - '**/Cargo.toml'
-              - '**/Cargo.lock'
-            run-integration-tests:
-              - '**/*.rs'
-              - '**/Cargo.toml'
-              - 'integration-tests/**/*.{ts,json}'
-
   # Workaround to handle skipped required check inside matrix
   # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks
   build-binaries-dummy:
-    needs: changes
-    if: needs.changes.outputs.build-binary != 'true'
     runs-on: ubuntu-20.04
     container: ubuntu:20.04
     name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
@@ -80,8 +39,6 @@ jobs:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
   build-binaries:
-    needs: changes
-    if: needs.changes.outputs.build-binary == 'true'
     name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
     strategy:
       fail-fast: true
@@ -155,8 +112,6 @@ jobs:
           if-no-files-found: error
 
   check-for-vulnerable-crates:
-    needs: changes
-    if: needs.changes.outputs.cargo-lock == 'true'
     name: Check for Vulnerable Crates
     runs-on: ubuntu-20.04
     container: ubuntu:20.04
@@ -180,8 +135,6 @@ jobs:
         run: cargo deny check --hide-inclusion-graph -c .cargo-deny.toml
 
   verify-rust-code-format:
-    needs: changes
-    if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Code Format
     runs-on: ubuntu-20.04
     container:
@@ -204,8 +157,6 @@ jobs:
         run: cargo fmt --check
 
   lint-rust-code:
-    needs: changes
-    if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
     runs-on: [self-hosted, Linux, X64, build]
     container: ubuntu:20.04
@@ -229,8 +180,6 @@ jobs:
             -D warnings
 
   verify-rust-developer-docs:
-    needs: changes
-    if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
     runs-on: [self-hosted, Linux, X64, build]
     container: ubuntu:20.04
@@ -250,8 +199,6 @@ jobs:
         run: RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
 
   verify-rust-packages-and-deps:
-    needs: changes
-    if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
     runs-on: [self-hosted, Linux, X64, build]
     container: ubuntu:20.04
@@ -270,8 +217,6 @@ jobs:
         run: SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,all-frequency-features
 
   run-rust-tests:
-    needs: changes
-    if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
     runs-on: [self-hosted, Linux, X64, build]
     container: ubuntu:20.04
@@ -291,8 +236,6 @@ jobs:
         run: cargo test --features runtime-benchmarks,all-frequency-features --workspace --release
 
   calc-code-coverage:
-    needs: changes
-    if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
     runs-on: [self-hosted, Linux, X64, build]
     container: ubuntu:20.04
@@ -327,8 +270,6 @@ jobs:
   # Workaround to handle skipped required check inside matrix
   # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks
   verify-build-runtimes-dummy:
-    needs: changes
-    if: needs.changes.outputs.rust != 'true'
     name: Verify Build Runtime for ${{matrix.network}}
     strategy:
       matrix:
@@ -339,8 +280,6 @@ jobs:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
   verify-build-runtimes:
-    needs: changes
-    if: needs.changes.outputs.rust == 'true'
     name: Verify Build Runtime for ${{matrix.network}}
     strategy:
       fail-fast: true
@@ -613,7 +552,6 @@ jobs:
           labels: ${{env.GITHUB_PR_LABEL}}
 
   run-integration-tests:
-    if: needs.changes.outputs.run-integration-tests == 'true'
     needs: [build-binaries, verify-js-api-augment]
     name: Run Integration Tests
     runs-on: ubuntu-20.04
