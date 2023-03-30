@@ -356,9 +356,9 @@ pub mod pallet {
 			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
 
+			// Remove handle from storage but not from CanonicalBaseHandleToSuffixIndex because retired handles can't be reused
 			MSAIdToDisplayName::<T>::remove(delegator_msa_id);
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::remove(canonical_handle, suffix_num);
-
 			Ok(())
 		}
 	}
