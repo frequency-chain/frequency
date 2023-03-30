@@ -1,4 +1,4 @@
-use crate::{homoglyphs::canonical::HandleConverter};
+use crate::homoglyphs::canonical::HandleConverter;
 use std::{
 	fs::File,
 	io::{BufRead, BufReader},

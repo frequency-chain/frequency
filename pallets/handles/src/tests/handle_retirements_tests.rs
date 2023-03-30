@@ -1,6 +1,6 @@
 use crate::{tests::mock::*, Error};
 use common_primitives::{handles::*, utils::wrap_binary_data};
-use frame_support::{assert_noop};
+use frame_support::assert_noop;
 use sp_core::{sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
@@ -25,12 +25,15 @@ fn retire_handle_no_handle() {
 		println!("encoded_payload={:?}", encoded_payload);
 
 		let proof: MultiSignature = delegator_key_pair.sign(&encoded_payload).into();
-		assert_noop!(Handles::retire_handle(
-			RuntimeOrigin::signed(provider_account.into()),
-			delegator_account.into(),
-            proof,
-            payload
-		), Error::<Test>::MSAHandleDoesNotExist);
+		assert_noop!(
+			Handles::retire_handle(
+				RuntimeOrigin::signed(provider_account.into()),
+				delegator_account.into(),
+				proof,
+				payload
+			),
+			Error::<Test>::MSAHandleDoesNotExist
+		);
 		let events_occured = System::events();
 
 		// let base_handle_str = core::str::from_utf8(&base_handle).ok().unwrap();

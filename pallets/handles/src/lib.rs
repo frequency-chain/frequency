@@ -223,7 +223,7 @@ pub mod pallet {
 		/// * `handle` - The handle to claim
 		///
 		#[pallet::call_index(0)]
-		#[pallet::weight(1000)]
+		#[pallet::weight(T::WeightInfo::claim_handle())]
 		pub fn claim_handle(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
