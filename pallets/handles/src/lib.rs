@@ -317,12 +317,31 @@ pub mod pallet {
 		/// Retire handle
 		#[pallet::call_index(1)]
 		#[pallet::weight(1000)]
-		pub fn retire_handle(origin: OriginFor<T>) -> DispatchResult {
-			let delegator_key = ensure_signed(origin)?;
+		pub fn retire_handle(
+			origin: OriginFor<T>,
+			delegator_key: T::AccountId,
+			proof: MultiSignature,
+			payload: RetireHandlePayload,
+		) -> DispatchResult {
+			let provider_key = ensure_signed(origin)?;
+
+			// Validation: Check for base_handle size to address potential panic condition
+			ensure!(
+				payload.full_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
+				Error::<T>::InvalidHandleByteLength
+			);
+
+			// Validation: The provider must already have a MSA id
+			T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
 			// Validation: The delegator must already have a MSA id
 			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+
+			// Validation: Verify the payload was signed
+			Self::verify_signed_payload(&proof, &delegator_key, payload.encode())?;
+
 			// Validation: The MSA must already have a handle associated with it
 			let display_name_handle = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
 				.map_err(|_| Error::<T>::MSAHandleDoesNotExist)?;
