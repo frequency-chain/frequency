@@ -1022,7 +1022,7 @@ impl pallet_handles::Config for Runtime {
 	/// The overarching event type.
 	type RuntimeEvent = RuntimeEvent;
 	/// Weight information for extrinsics in this pallet.
-	// type WeightInfo = pallet_handles::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_handles::weights::SubstrateWeight<Runtime>;
 	/// The type that supplies MSA info
 	type MsaInfoProvider = Msa;
 	/// The minimum suffix value
