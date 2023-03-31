@@ -33,7 +33,6 @@ pub fn set_up_epoch<T: Config>(current_block: T::BlockNumber, current_epoch: T::
 	CurrentEpoch::<T>::set(current_epoch);
 	let epoch_start = current_block.saturating_sub(Capacity::<T>::get_epoch_length());
 	CurrentEpochInfo::<T>::set(EpochInfo { epoch_start });
-	CurrentEpochUsedCapacity::<T>::set(450_000u32.into());
 }
 
 benchmarks! {
@@ -81,7 +80,6 @@ benchmarks! {
 	} verify {
 		assert_eq!(current_epoch.saturating_add(1u32.into()), Capacity::<T>::get_current_epoch());
 		assert_eq!(current_block, CurrentEpochInfo::<T>::get().epoch_start);
-		assert!(Capacity::<T>::get_current_epoch_used_capacity().eq(&0u32.into()));
 	}
 	unstake {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
