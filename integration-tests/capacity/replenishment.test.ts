@@ -10,7 +10,8 @@ import {
   stakeToProvider,
   fundKeypair,
   getNextEpochBlock,
-  TEST_EPOCH_LENGTH
+  TEST_EPOCH_LENGTH,
+  setEpochLength
 } from "../scaffolding/helpers";
 import { firstValueFrom} from "rxjs";
 import {AVRO_GRAPH_CHANGE} from "../schemas/fixtures/avroGraphChangeSchemaType";
@@ -53,10 +54,7 @@ describe("Capacity Replenishment Testing: ", function () {
   }
 
   before(async function() {
-    const setEpochLengthOp = ExtrinsicHelper.setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
-    const [setEpochLengthEvent] = await setEpochLengthOp.sudoSignAndSend();
-    const epoch_was_set = setEpochLengthEvent && ExtrinsicHelper.api.events.capacity.EpochLengthUpdated.is(setEpochLengthEvent);
-    assert(epoch_was_set, "failed to set epoch");
+    await setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
     await createGraphChangeSchema();
   });
 
