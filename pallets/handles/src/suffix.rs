@@ -55,7 +55,7 @@ impl SuffixGenerator {
 	///
 	/// let mut suffix_generator = SuffixGenerator::new(min, max, canonical_handle);
 	///
-	/// let sequence: Vec<usize> = suffix_generator.suffix_iter().collect();
+	/// let sequence: Vec<usize> = suffix_generator.suffix_iter().take(10).collect();
 	/// println!("{:?}", sequence);
 	/// ```
 	///
