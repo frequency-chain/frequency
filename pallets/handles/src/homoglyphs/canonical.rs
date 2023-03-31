@@ -70,25 +70,14 @@ impl HandleConverter {
 		(base_handle_str, suffix_num)
 	}
 
-	// /// Combine name, delimiter and suffix into display name
-	// pub fn combine_display_name(&self, base_handle:Handle, delimeter:&str, suffix:u16) -> String {
-	// }
-
-	// /// Convert Handle (BoundedVec) to UTF-8 &str
-	// pub fn convert_handle_to_string() -> String {
-	// }
-
 	/// Convert string to Handle
 	pub fn convert_str_to_handle(input_str: &str) -> Handle {
 		let input_vec = input_str.as_bytes().to_vec();
 		let handle: Handle = input_vec.try_into().unwrap();
 		handle
 	}
-	// /// Convert Vec<u8> into Handle (BoundedVec)
-	// pub fn convert_vec_to_handle() -> Handle {
-	// }
 
-	// Strip all unicode whitespace
+	/// Strip all unicode whitespace
 	pub fn strip_unicode_whitespace(&self, string: &str) -> String {
 		let pattern = Regex::new(r"\p{White_Space}+").unwrap();
 		pattern.replace_all(string, "").to_string()
