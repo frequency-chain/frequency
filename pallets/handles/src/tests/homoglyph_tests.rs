@@ -1,4 +1,5 @@
 use crate::homoglyphs::canonical::HandleConverter;
+
 use std::{
 	fs::File,
 	io::{BufRead, BufReader},
@@ -28,4 +29,12 @@ fn test_replace_confusables() {
 			assert_eq!(first_character_codepoint, normalized_character_codepoint);
 		}
 	}
+}
+
+#[test]
+fn test_strip_diacriticals() {
+	let handle_converter = HandleConverter::new();
+	let diacritical_string = "ÄÅÖäåöĂăĔĚĕĞğģĬĭŎŏŬǓŭàáâñ";
+	let stripped_string = handle_converter.strip_diacriticals(diacritical_string);
+	assert_eq!(stripped_string, "AAOaaoAaEEeGggIiOoUUuaaan");
 }

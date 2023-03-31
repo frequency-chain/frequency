@@ -5,7 +5,7 @@
 use crate::homoglyphs::confusables::build_confusables_map;
 use common_primitives::handles::*;
 use sp_std::collections::btree_map::BTreeMap;
-use unicode_normalization::UnicodeNormalization;
+use unicode_normalization::{char::is_combining_mark, UnicodeNormalization};
 extern crate alloc;
 use alloc::string::{String, ToString};
 use sp_std::vec::Vec;
@@ -53,7 +53,10 @@ impl HandleConverter {
 
 	/// Strip diacriticals (accent marks) from string
 	pub fn strip_diacriticals(&self, string: &str) -> codec::alloc::string::String {
-		string.nfd().collect::<codec::alloc::string::String>()
+		string
+			.nfkd()
+			.filter(|character| !is_combining_mark(*character))
+			.collect::<codec::alloc::string::String>()
 	}
 
 	/// Split display name into name and suffix
