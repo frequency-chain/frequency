@@ -8,6 +8,7 @@ use sp_std::collections::btree_map::BTreeMap;
 use unicode_normalization::{char::is_combining_mark, UnicodeNormalization};
 extern crate alloc;
 use alloc::string::{String, ToString};
+use regex::Regex;
 use sp_std::vec::Vec;
 /// A converter for confusable characters.
 ///
@@ -37,7 +38,8 @@ impl HandleConverter {
 	}
 	/// Convert `string` to canonical form
 	pub fn convert_to_canonical(&self, string: &str) -> codec::alloc::string::String {
-		let confusables_removed = self.replace_confusables(string);
+		let white_space_stripped = self.strip_unicode_whitespace(string);
+		let confusables_removed = self.replace_confusables(&white_space_stripped);
 		let diacriticals_stripped = self.strip_diacriticals(&confusables_removed);
 		diacriticals_stripped.to_ascii_lowercase()
 		// 	normalized.make_ascii_lowercase();
@@ -85,4 +87,10 @@ impl HandleConverter {
 	// /// Convert Vec<u8> into Handle (BoundedVec)
 	// pub fn convert_vec_to_handle() -> Handle {
 	// }
+
+	// Strip all unicode whitespace
+	pub fn strip_unicode_whitespace(&self, string: &str) -> String {
+		let pattern = Regex::new(r"\p{White_Space}+").unwrap();
+		pattern.replace_all(string, "").to_string()
+	}
 }
