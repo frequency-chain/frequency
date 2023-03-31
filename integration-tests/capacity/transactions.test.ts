@@ -2,329 +2,209 @@ import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { u64, u16 } from "@polkadot/types";
 import assert from "assert";
-import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { devAccounts, log, createKeys, createAndFundKeypair, createMsaAndProvider,
-         generateDelegationPayload, signPayloadSr25519, stakeToProvider, fundKeypair,
-         getNextEpochBlock, TEST_EPOCH_LENGTH }
-    from "../scaffolding/helpers";
-import { firstValueFrom } from "rxjs";
+import { EventMap, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
+import {
+    devAccounts, createKeys, createAndFundKeypair, createMsaAndProvider,
+    generateDelegationPayload, signPayloadSr25519, stakeToProvider, fundKeypair,
+    TEST_EPOCH_LENGTH,
+    setEpochLength
+} from "../scaffolding/helpers";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 
-describe("Capacity Transaction Tests", function () {
-    let otherProviderKeys: KeyringPair;
-    let otherProviderId: u64;
-    let stakeKeys: KeyringPair;
-    let stakeProviderId: u64;
-    let unstakeKeys: KeyringPair;
-    let unstakeProviderId: u64;
-    let withdrawKeys: KeyringPair;
-    let withdrawProviderId: u64;
-    let emptyKeys: KeyringPair;
-    let noProviderKeys: KeyringPair;
-    let delegatorKeys: KeyringPair;
-    let delegatorProviderId: u64;
-    let schemaId: u16;
+function assertEvent(events: EventMap, eventName: string) {
+    assert(events.hasOwnProperty(eventName));
+}
 
-    let stakeAmount: bigint = 20n* 1000n* 1000n* 1000n;
+describe("Capacity Transactions", function () {
+    let cents = 1000000n;
+    let dollars = 100n * cents;
+    let stakeAmount: bigint = 200n * dollars;
 
     before(async function () {
-        // Set the Maximum Epoch Length to TEST_EPOCH_LENGTH blocks
-        // This will allow us to test the epoch transition logic
-        // without having to wait for 100 blocks
-        const setEpochLengthOp = ExtrinsicHelper.setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
-        const [setEpochLengthEvent] = await setEpochLengthOp.sudoSignAndSend();
-        if (setEpochLengthEvent &&
-            ExtrinsicHelper.api.events.capacity.EpochLengthUpdated.is(setEpochLengthEvent)) {
-            const epochLength = setEpochLengthEvent.data.blocks;
-            assert.equal(epochLength.toNumber(), TEST_EPOCH_LENGTH, "should set epoch length to TEST_EPOCH_LENGTH blocks");
-        }
-        else {
-            assert.fail("should return an EpochLengthUpdated event");
-        }
-
-        // Create and fund a keypair with stakeAmount
-        // Use this keypair for stake operations
-        stakeKeys = createKeys("StakeKeys");
-        stakeProviderId = await createMsaAndProvider(stakeKeys, "StakeProvider", stakeAmount);
-
-        // Create and fund a keypair with EXISTENTIAL_DEPOSIT
-        // Use this keypair for unstake operations
-        unstakeKeys = createKeys("UnstakeKeys");
-        unstakeProviderId = await createMsaAndProvider(unstakeKeys, "UnstakeProvider");
-
-        // Create and fund a keypair with EXISTENTIAL_DEPOSIT
-        // Use this keypair for withdraw operations
-        withdrawKeys = createKeys("WithdrawKeys");
-        withdrawProviderId = await createMsaAndProvider(withdrawKeys, "WithdrawProvider", stakeAmount);
-
-        // Create and fund a keypair with EXISTENTIAL_DEPOSIT
-        // Use this keypair for other operations
-        otherProviderKeys = createKeys("OtherProviderKeys");
-        otherProviderId = await createMsaAndProvider(otherProviderKeys, "OtherProvider", stakeAmount);
-
-        // Create a keypair with no msaId
-        emptyKeys = await createAndFundKeypair();
-
-        // Create and fund a keypair with EXISTENTIAL_DEPOSIT
-        // Use this keypair for delegator operations
-        delegatorKeys = createKeys("OtherProviderKeys");
-        delegatorProviderId = await createMsaAndProvider(delegatorKeys, "Delegator", stakeAmount);
-
-        // Create a keypair with msaId, but no provider
-        noProviderKeys = createKeys("NoProviderKeys");
-        await fundKeypair(devAccounts[0].keys, noProviderKeys, stakeAmount);
-        const createMsaOp = ExtrinsicHelper.createMsa(noProviderKeys);
-        const [MsaCreatedEvent] = await createMsaOp.fundAndSend();
-        assert.notEqual(MsaCreatedEvent, undefined, "should have returned MsaCreated event");
-
-        // Create schemas for testing with Grant Delegation to test pay_with_capacity
-        const createSchemaOp = ExtrinsicHelper.createSchema(stakeKeys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain");
-        const [createSchemaEvent] = await createSchemaOp.fundAndSend();
-        assert.notEqual(createSchemaEvent, undefined, "setup should return SchemaCreated event");
-        if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
-            schemaId = createSchemaEvent.data[1];
-        }
-        assert.notEqual(schemaId, undefined, "setup should populate schemaId");
+        await setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
     });
 
-    describe("stake-unstake-withdraw_unstaked testing", function () {
+    describe("pay_with_capacity", function () {
+        describe("when caller has a Capacity account", async function () {
+            let stakeKeys: KeyringPair;
+            let stakeProviderId: u64;
+            let schemaId: u16;
 
-        it("should successfully stake the minimum amount for Staked event", async function () {
-            await stakeToProvider(stakeKeys, stakeProviderId, (1000n* 1000n));
+            beforeEach(async function () {
+                stakeKeys = createKeys("StakeKeys");
+                stakeProviderId = await createMsaAndProvider(stakeKeys, "StakeProvider", stakeAmount);
 
-            // Confirm that the tokens were locked in the stakeKeys account using the query API
-            const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
-            assert.equal(stakedAcctInfo.data.miscFrozen, (1000n * 1000n), "should return an account with 1M miscFrozen balance");
-            assert.equal(stakedAcctInfo.data.feeFrozen,  (1000n * 1000n), "should return an account with 1M feeFrozen balance");
+                // Create schemas for testing with Grant Delegation to test pay_with_capacity
+                const createSchemaOp = ExtrinsicHelper.createSchema(stakeKeys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain");
+                const [createSchemaEvent] = await createSchemaOp.fundAndSend();
 
-            // Confirm that the capacity was added to the stakeProviderId using the query API
-            const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            assert.equal(capacityStaked.remainingCapacity,   1000n * 1000n, "should return a capacityLedger with 1M remainingCapacity");
-            assert.equal(capacityStaked.totalTokensStaked,   1000n * 1000n, "should return a capacityLedger with 1M total tokens staked");
-            assert.equal(capacityStaked.totalCapacityIssued, 1000n * 1000n, "should return a capacityLedger with 1M issued capacity");
-        });
+                assert.notEqual(createSchemaEvent, undefined, "setup should return SchemaCreated event");
 
-        it("should successfully unstake the minimum amount", async function () {
-            const stakeObj = ExtrinsicHelper.unstake(stakeKeys, stakeProviderId, 1000n* 1000n);
-            const [unStakeEvent] = await stakeObj.fundAndSend();
-            assert.notEqual(unStakeEvent, undefined, "should return an UnStaked event");
+                if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
+                    schemaId = createSchemaEvent.data[1];
+                }
 
-            if (unStakeEvent && ExtrinsicHelper.api.events.capacity.UnStaked.is(unStakeEvent)) {
-                let unstakedCapacity = unStakeEvent.data.capacity;
-                assert.equal(unstakedCapacity, 1000n* 1000n, "should return an UnStaked event with 1M reduced capacity");
-            }
-            else {
-                assert.fail("should return an capacity.UnStaked.is(unStakeEvent) event");
-            }
-            // Confirm that the tokens were unstaked in the stakeProviderId account using the query API
-            const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            assert.equal(capacityStaked.remainingCapacity,   0, "should return a capacityLedger with 0 remainingCapacity");
-            assert.equal(capacityStaked.totalTokensStaked,   0, "should return a capacityLedger with 0 total tokens staked");
-            assert.equal(capacityStaked.totalCapacityIssued, 0, "should return a capacityLedger with 0 capacity issued");
-        });
-
-        it("withdraws the unstaked amount", async function () {
-            // Mine enough blocks to pass the unstake period = CapacityUnstakingThawPeriod = 2 epochs
-            let newEpochBlock = await getNextEpochBlock();
-            await ExtrinsicHelper.run_to_block(newEpochBlock + TEST_EPOCH_LENGTH);
-
-            const withdrawObj = ExtrinsicHelper.withdrawUnstaked(stakeKeys);
-            const [withdrawEvent] = await withdrawObj.fundAndSend();
-            assert.notEqual(withdrawEvent, undefined, "should return a StakeWithdrawn event");
-
-            if (withdrawEvent && ExtrinsicHelper.api.events.capacity.StakeWithdrawn.is(withdrawEvent)) {
-                let amount = withdrawEvent.data.amount;
-                assert.equal(amount, 1000000, "should return a StakeWithdrawn event with 1M amount");
-            }
-            // Confirm that the tokens were unstaked in the stakeKeys account using the query API
-            const unStakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
-            assert.equal(unStakedAcctInfo.data.miscFrozen, 0, "should return an account with 0 miscFrozen balance");
-            assert.equal(unStakedAcctInfo.data.feeFrozen,  0, "should return an account with 0 feeFrozen balance");
-
-            // Confirm that the staked capacity was removed from the stakeProviderId account using the query API
-            const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            assert.equal(capacityStaked.remainingCapacity,   0, "should return a capacityLedger with 0 remainingCapacity");
-            assert.equal(capacityStaked.totalTokensStaked,   0, "should return a capacityLedger with 0 total tokens staked");
-            assert.equal(capacityStaked.totalCapacityIssued, 0, "should return a capacityLedger with 0 capacity issued");
-        });
-    });
-
-    describe("increase stake testing", function () {
-        it("should successfully increase stake for stakeProviderId", async function () {
-            // Now starting from zero again with stakeProviderId, Stake 1M capacity
-            await stakeToProvider(stakeKeys, stakeProviderId, 1000000n);
-
-            // Confirm that the tokens were staked in the stakeKeys account using the query API
-            const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
-            assert.equal(stakedAcctInfo.data.miscFrozen, 1000n* 1000n, "should return an account with 1M miscFrozen balance");
-            assert.equal(stakedAcctInfo.data.feeFrozen,  1000n* 1000n, "should return an account with 1M feeFrozen balance");
-
-            // Confirm that the staked capacity was added to the stakeProviderId account using the query API,
-            // 1M original stake, + 2M additional stake = 3M total
-            const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            assert.equal(capacityStaked.remainingCapacity,   1000n* 1000n, "should return a capacityLedger with 1M remainingCapacity");
-            assert.equal(capacityStaked.totalTokensStaked,   1000n* 1000n, "should return a capacityLedger with 1M total staked");
-            assert.equal(capacityStaked.totalCapacityIssued, 1000n* 1000n, "should return a capacityLedger with 1M capacity issued");
-        });
-
-        it("staking to otherProviderId does not change stakeProviderId amounts", async function () {
-            // Increase stake by 1000000 capacity to a different provider
-            await stakeToProvider(stakeKeys, otherProviderId, 1000000n);
-
-            // Confirm that the staked capacity of the original stakeProviderId account is unchanged
-            // stakeProviderId should still have 3M from first test case in this describe.
-            // otherProvider should now have 1M
-            const origStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            assert.equal(origStaked.remainingCapacity,   1000n* 1000n, "should return a capacityLedger with 1M remainingCapacity");
-            assert.equal(origStaked.totalTokensStaked,   1000n* 1000n, "should return a capacityLedger with 1M total tokens staked");
-            assert.equal(origStaked.totalCapacityIssued, 1000n* 1000n, "should return a capacityLedger with 1M capacity issued");
-
-            // Confirm that the staked capacity was added to the otherProviderId account using the query API
-            const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(otherProviderId))).unwrap();
-            assert.equal(capacityStaked.remainingCapacity,   1000000, "should return a capacityLedger with 1M remainingCapacity");
-            assert.equal(capacityStaked.totalTokensStaked,   1000000, "should return a capacityLedger with 1M total tokens staked");
-            assert.equal(capacityStaked.totalCapacityIssued, 1000000, "should return a capacityLedger with 1M capacity issued");
-        });
-    });
-
-    describe("stake testing-invalid paths", function () {
-        it("should fail to stake for InvalidTarget", async function () {
-            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, 99, 1000000);
-            await assert.rejects(failStakeObj.fundAndSend(), { name: "InvalidTarget" });
-        });
-
-        // Need to use a different account that is not already staked
-        it("should fail to stake for InsufficientStakingAmount", async function () {
-            const failStakeObj = ExtrinsicHelper.stake(otherProviderKeys, otherProviderId, 1000);
-            await assert.rejects(failStakeObj.fundAndSend(), { name: "InsufficientStakingAmount" });
-        });
-
-        it("should fail to stake for ZeroAmountNotAllowed", async function () {
-            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, stakeProviderId, 0);
-            await assert.rejects(failStakeObj.fundAndSend(), { name: "ZeroAmountNotAllowed" });
-        });
-
-        it("should fail to stake for BalanceTooLowtoStake", async function () {
-            const failStakeObj = ExtrinsicHelper.stake(unstakeKeys, unstakeProviderId, 100000n);
-            await assert.rejects(failStakeObj.fundAndSend(), { name: "BalanceTooLowtoStake" });
-        });
-    });
-
-    describe("unstake testing", function () {
-        it("should fail to unstake for UnstakedAmountIsZero", async function () {
-            const failUnstakeObj = ExtrinsicHelper.unstake(unstakeKeys, unstakeProviderId, 0);
-            await assert.rejects(failUnstakeObj.fundAndSend(), { name: "UnstakedAmountIsZero" });
-        });
-        it("should fail to unstake for StakingAccountNotFound", async function () {
-            const failUnstakeObj = ExtrinsicHelper.unstake(otherProviderKeys, unstakeProviderId, 1000000);
-            await assert.rejects(failUnstakeObj.fundAndSend(), { name: "StakingAccountNotFound" });
-        });
-    });
-
-    describe("withdraw_unstaked testing", function () {
-        it("should fail to withdraw the unstaked amount", async function () {
-            const stakeObj = ExtrinsicHelper.stake(withdrawKeys, withdrawProviderId, 1000000);
-            const [stakeEvent] = await stakeObj.fundAndSend();
-            assert.notEqual(stakeEvent, undefined, "should return a Stake event");
-
-            const withdrawObj = ExtrinsicHelper.withdrawUnstaked(withdrawKeys);
-            await assert.rejects(withdrawObj.fundAndSend(), { name: "NoUnstakedTokensAvailable" });
-        });
-    });
-
-    describe("pay_with_capacity testing", function () {
-        it("should pay for a transaction with available capacity", async function () {
-            await stakeToProvider(stakeKeys, stakeProviderId, 9000000n);
-            // grantDelegation costs about 2.8M and is the capacity eligible
-            // transaction used for these tests.
-            const payload = await generateDelegationPayload({
-                authorizedMsaId: stakeProviderId,
-                schemaIds: [schemaId],
+                assert.notEqual(schemaId, undefined, "setup should populate schemaId");
             });
-            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-            const grantDelegationOp = ExtrinsicHelper.grantDelegation(otherProviderKeys, stakeKeys, 
-                signPayloadSr25519(otherProviderKeys, addProviderData), payload);
-            const [grantDelegationEvent, chainEvents] = await grantDelegationOp.payWithCapacity();
-            if (grantDelegationEvent && 
-                !(ExtrinsicHelper.api.events.msa.DelegationGranted.is(grantDelegationEvent))) {
-                assert.fail("should return a DelegationGranted event");
-            }
-            // When Capacity has withdrawn an event CapacityWithdrawn is emitted.
-            if (chainEvents && chainEvents["capacity.CapacityWithdrawn"].isEmpty) {
-                assert.fail("chainEvents should contain a CapacityWithdrawn event");
-            }
-        });
-        // When a user attempts to pay for a non-capacity transaction with Capacity,
-        // it should error and drop the transaction from the transaction-pool.
-        it("should fail to pay for a non-capacity transaction with available capacity", async function () {
-            // stake is not capacity eligible
-            const increaseStakeObj = ExtrinsicHelper.stake(stakeKeys, otherProviderId, 1000000);
-            await assert.rejects(increaseStakeObj.payWithCapacity(), { name: "RpcError", message: 
-                "1010: Invalid Transaction: Custom error: 0" });
-        });
-        it("should fail to pay for a transaction with no msaId", async function () {
-            const payload = await generateDelegationPayload({
-                authorizedMsaId: delegatorProviderId,
-                schemaIds: [schemaId],
+
+            it("successfully pays for with Capacity for eligible transaction - grantDelegation", async function () {
+                await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, 9n * cents));
+
+                let delegatorKeys = createKeys("userKeys");
+                let _userMsaId = await ExtrinsicHelper.createMsa(delegatorKeys);
+
+                // grantDelegation costs about 2.8M and is the capacity eligible
+                // transaction used for these tests.
+                const payload = await generateDelegationPayload({
+                    authorizedMsaId: stakeProviderId,
+                    schemaIds: [schemaId],
+                });
+                const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+                const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, stakeKeys,
+                    signPayloadSr25519(delegatorKeys, addProviderData), payload);
+
+                const [grantDelegationEvent, chainEvents] = await grantDelegationOp.payWithCapacity();
+
+                if (grantDelegationEvent &&
+                    !(ExtrinsicHelper.api.events.msa.DelegationGranted.is(grantDelegationEvent))) {
+                    assert.fail("should return a DelegationGranted event");
+                }
+
+                assertEvent(chainEvents, "capacity.CapacityWithdrawn");
             });
-            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-            const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, emptyKeys, 
-                signPayloadSr25519(delegatorKeys, addProviderData), payload);
-            await assert.rejects(grantDelegationOp.payWithCapacity(), { name: "RpcError", message: 
-                "1010: Invalid Transaction: Custom error: 1" });
-        });
-        it("should fail to pay for a transaction with no provider", async function () {
-            // When a user is not a registered provider and attempts to pay with Capacity,
-            // it should error with InvalidTransaction::Payment, which is a 1010 error, Inability to pay some fees.
-            const payload = await generateDelegationPayload({
-                authorizedMsaId: delegatorProviderId,
-                schemaIds: [schemaId],
+
+            // When a user attempts to pay for a non-capacity transaction with Capacity,
+            // it should error and drop the transaction from the transaction-pool.
+            it("fails to pay with Capacity for a non-capacity transaction", async function () {
+                let providerId: u64 = new u64(ExtrinsicHelper.api.registry, 0);
+
+                const increaseStakeObj = ExtrinsicHelper.stake(stakeKeys, providerId, 1n * cents);
+
+                await assert.rejects(increaseStakeObj.payWithCapacity(), {
+                    name: "RpcError", message:
+                        "1010: Invalid Transaction: Custom error: 0"
+                });
             });
-            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-            const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, noProviderKeys, 
-                signPayloadSr25519(delegatorKeys, addProviderData), payload);
-            await assert.rejects(grantDelegationOp.payWithCapacity(), { name: "RpcError", message: 
-                "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low" });
-        });
-        // A registered provider with Capacity but no tokens associated with the
-        // key should still be able to use polkadot UI to submit a capacity transaction.
-        // *All accounts will have at least an EXISTENTIAL_DEPOSIT = 1M.
-        // This test may still be valid if the txn cost is greater than 1M.
-        it("should pay for a transaction with available capacity", async function () {
-            // Stake enough to cover the 2.8M grantDelegation cost
-            await stakeToProvider(stakeKeys, unstakeProviderId, 3000000n);
-            // grantDelegation costs about 2.8M and is the the capacity eligible
-            // transaction used for these tests.
-            const payload = await generateDelegationPayload({
-                authorizedMsaId: stakeProviderId,
-                schemaIds: [schemaId],
+
+            // When a user does not have enough capacity to pay for the transaction fee
+            // and is NOT eligible to replenish Capacity, it should error and be dropped
+            // from the transaction pool.
+            it("fails to pay for a transaction with empty capacity", async function () {
+                let providerKeys = createKeys("providerKeys");
+                let _providerId = await createMsaAndProvider(providerKeys, "UnstakeProvider");
+
+                let delegatorKeys = createKeys("userKeys");
+                let _userMsaId = await ExtrinsicHelper.createMsa(delegatorKeys);
+
+                let providerId: u64 = new u64(ExtrinsicHelper.api.registry, 0);
+                const payload = await generateDelegationPayload({
+                    authorizedMsaId: providerId,
+                    schemaIds: [schemaId],
+                });
+                const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+                const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, providerKeys,
+                    signPayloadSr25519(providerKeys, addProviderData), payload);
+
+                await assert.rejects(grantDelegationOp.payWithCapacity(), {
+                    name: "RpcError", message:
+                        "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low"
+                });
             });
-            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-            const grantDelegationOp = ExtrinsicHelper.grantDelegation(otherProviderKeys, unstakeKeys, 
-                signPayloadSr25519(otherProviderKeys, addProviderData), payload);
-            const [grantDelegationEvent, chainEvents] = await grantDelegationOp.payWithCapacity();
-            if (grantDelegationEvent && 
-                !(ExtrinsicHelper.api.events.msa.DelegationGranted.is(grantDelegationEvent))) {
-                assert.fail("should return a DelegationGranted event");
-            }
-            // When Capacity has withdrawn an event CapacityWithdrawn is emitted.
-            if (chainEvents && chainEvents["capacity.CapacityWithdrawn"].isEmpty) {
-                assert.fail("chainEvents should return a CapacityWithdrawn event");
-            }
-        });
-        // When a user does not have enough capacity to pay for the transaction fee
-        // and is NOT eligible to replenish Capacity, it should error and be dropped
-        // from the transaction pool.
-        it("should fail to pay for a transaction with empty capacity", async function () {
-            const payload = await generateDelegationPayload({
-                authorizedMsaId: withdrawProviderId,
-                schemaIds: [schemaId],
+
+            // A registered provider with Capacity but no tokens associated with the
+            // key should still be able to use polkadot UI to submit a capacity transaction.
+            // *All accounts will have at least an EXISTENTIAL_DEPOSIT = 1M.
+            // This test may still be valid if the txn cost is greater than 1M.
+            it("pays for a transaction with available capacity and no free tokens", async function () {
+                let delegatorKeys = createKeys("delegatorKeys");
+                let _delegatorMsaId = await ExtrinsicHelper.createMsa(delegatorKeys);
+
+                let providerKeys = createKeys("providerKeys");
+                let providerId = await createMsaAndProvider(providerKeys, "UnstakeProvider");
+
+                // Stake enough to cover the 2.8M grantDelegation cost
+                await assert.doesNotReject(stakeToProvider(stakeKeys, providerId, 3n * cents));
+
+                // grantDelegation costs about 2.8M and is the capacity eligible
+                // transaction used for these tests.
+                const payload = await generateDelegationPayload({
+                    authorizedMsaId: stakeProviderId,
+                    schemaIds: [schemaId],
+                });
+                const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+                const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, providerKeys,
+                    signPayloadSr25519(delegatorKeys, addProviderData), payload);
+
+                const [grantDelegationEvent, chainEvents] = await grantDelegationOp.payWithCapacity();
+
+                if (grantDelegationEvent &&
+                    !(ExtrinsicHelper.api.events.msa.DelegationGranted.is(grantDelegationEvent))) {
+                    assert.fail("should return a DelegationGranted event");
+                }
+
+                assertEvent(chainEvents, "capacity.CapacityWithdrawn");
             });
-            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-            const grantDelegationOp = ExtrinsicHelper.grantDelegation(otherProviderKeys, unstakeKeys, 
-                signPayloadSr25519(unstakeKeys, addProviderData), payload);
-            await assert.rejects(grantDelegationOp.payWithCapacity(), { name: "RpcError", message: 
-                "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low" });
+        });
+
+        describe("when caller does not have a Capacity account", async function () {
+            let delegatorKeys: KeyringPair;
+            let delegatorProviderId: u64;
+            let schemaId: u16;
+
+            beforeEach(async function () {
+                // Create and fund a keypair with EXISTENTIAL_DEPOSIT
+                // Use this keypair for delegator operations
+                delegatorKeys = createKeys("OtherProviderKeys");
+                delegatorProviderId = await createMsaAndProvider(delegatorKeys, "Delegator", stakeAmount);
+                schemaId = new u16(ExtrinsicHelper.api.registry, 0);
+            });
+
+            describe("but has an MSA account that has not been registered as a Provider", async function () {
+                it("fails to pay for a transaction", async function () {
+                    // Create a keypair with msaId, but no provider
+                    let noProviderKeys = createKeys("NoProviderKeys");
+                    await fundKeypair(devAccounts[0].keys, noProviderKeys, stakeAmount);
+                    const createMsaOp = ExtrinsicHelper.createMsa(noProviderKeys);
+
+                    const [MsaCreatedEvent] = await createMsaOp.fundAndSend();
+                    assert.notEqual(MsaCreatedEvent, undefined, "should have returned MsaCreated event");
+
+                    // When a user is not a registered provider and attempts to pay with Capacity,
+                    // it should error with InvalidTransaction::Payment, which is a 1010 error, Inability to pay some fees.
+                    const payload = await generateDelegationPayload({
+                        authorizedMsaId: delegatorProviderId,
+                        schemaIds: [schemaId],
+                    });
+                    const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+                    const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, noProviderKeys,
+                        signPayloadSr25519(delegatorKeys, addProviderData), payload);
+
+                    await assert.rejects(grantDelegationOp.payWithCapacity(), {
+                        name: "RpcError", message:
+                            "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low"
+                    });
+                });
+            });
+
+            describe("and does not have an MSA account associated to signing keys", async function () {
+                it("fails to pay for a transaction", async function () {
+                    let emptyKeys = await createAndFundKeypair();
+
+                    const payload = await generateDelegationPayload({
+                        authorizedMsaId: delegatorProviderId,
+                        schemaIds: [schemaId],
+                    });
+                    const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+                    const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, emptyKeys,
+                        signPayloadSr25519(delegatorKeys, addProviderData), payload);
+
+                    await assert.rejects(grantDelegationOp.payWithCapacity(), {
+                        name: "RpcError", message:
+                            "1010: Invalid Transaction: Custom error: 1"
+                    });
+                });
+            });
         });
     });
-})
+});
+
