@@ -94,7 +94,7 @@ impl pallet_handles::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 
 	/// Weight information for extrinsics in this pallet.
-	// type WeightInfo: WeightInfo;
+	type WeightInfo = ();
 
 	/// The conversion to a 32 byte AccountId
 	type ConvertIntoAccountId32 = ConvertInto;

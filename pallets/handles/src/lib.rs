@@ -38,8 +38,6 @@ use homoglyphs::canonical::HandleConverter;
 #[cfg(test)]
 mod tests;
 
-// pub mod weights;
-
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::MsaBenchmarkHelper;
 use sp_std::prelude::*;
@@ -61,8 +59,8 @@ use sp_runtime::{
 
 pub mod suffix;
 use suffix::SuffixGenerator;
-
-// pub mod confusables;
+pub mod weights;
+pub use weights::*;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -73,7 +71,7 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Weight information for extrinsics in this pallet.
-		// type WeightInfo: WeightInfo;
+		type WeightInfo: WeightInfo;
 
 		/// AccountId truncated to 32 bytes
 		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
@@ -224,8 +222,10 @@ pub mod pallet {
 		/// * `handle` - The handle to claim
 		///
 		#[pallet::call_index(0)]
-		// #[pallet::weight(T::WeightInfo::claim_handle())]
-		#[pallet::weight(1000)]
+		#[pallet::weight(T::WeightInfo::claim_handle(
+			payload.base_handle.len() as u32,
+			core::str::from_utf8(&payload.base_handle).unwrap_or_default().chars().count() as u32,
+		))]
 		pub fn claim_handle(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
@@ -324,8 +324,10 @@ pub mod pallet {
 
 		/// Retire handle
 		#[pallet::call_index(1)]
-		//#[pallet::weight((T::WeightInfo::retire_handle(), DispatchClass::Normal, Pays::No))]
-		#[pallet::weight((1000, DispatchClass::Normal, Pays::No))]
+		#[pallet::weight((T::WeightInfo::retire_handle(
+			payload.full_handle.len() as u32,
+			core::str::from_utf8(&payload.full_handle).unwrap_or_default().chars().count() as u32,
+		), DispatchClass::Normal, Pays::No))]
 		pub fn retire_handle(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
