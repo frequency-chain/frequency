@@ -54,8 +54,8 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_handles.
 pub trait WeightInfo {
-	fn claim_handle(c: u32, b: u32, ) -> Weight;
-	fn retire_handle(c: u32, b: u32, ) -> Weight;
+	fn claim_handle(b: u32, ) -> Weight;
+	fn retire_handle(b: u32, ) -> Weight;
 }
 
 /// Weights for pallet_handles using the Substrate node and recommended hardware.
@@ -65,18 +65,18 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Handles MSAIdToDisplayName (r:1 w:1)
 	// Storage: Handles CanonicalBaseHandleToSuffixIndex (r:1 w:1)
 	// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:1)
-	fn claim_handle(_c: u32, _b: u32, ) -> Weight {
-		Weight::from_ref_time(1_592_870_909 as u64)
+	fn claim_handle(_b: u32, ) -> Weight {
+		Weight::from_ref_time(1_157_380_902 as u64)
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:2 w:0)
 	// Storage: Handles MSAIdToDisplayName (r:1 w:1)
 	// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:1)
-	fn retire_handle(_c: u32, b: u32, ) -> Weight {
-		Weight::from_ref_time(619_295_854 as u64)
-			// Standard Error: 345_710
-			.saturating_add(Weight::from_ref_time(83_284 as u64).saturating_mul(b as u64))
+	fn retire_handle(b: u32, ) -> Weight {
+		Weight::from_ref_time(506_318_598 as u64)
+			// Standard Error: 68_246
+			.saturating_add(Weight::from_ref_time(92_310 as u64).saturating_mul(b as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -88,18 +88,18 @@ impl WeightInfo for () {
 	// Storage: Handles MSAIdToDisplayName (r:1 w:1)
 	// Storage: Handles CanonicalBaseHandleToSuffixIndex (r:1 w:1)
 	// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:1)
-	fn claim_handle(_c: u32, _b: u32, ) -> Weight {
-		Weight::from_ref_time(1_592_870_909 as u64)
+	fn claim_handle(_b: u32, ) -> Weight {
+		Weight::from_ref_time(1_157_380_902 as u64)
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:2 w:0)
 	// Storage: Handles MSAIdToDisplayName (r:1 w:1)
 	// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:1)
-	fn retire_handle(_c: u32, b: u32, ) -> Weight {
-		Weight::from_ref_time(619_295_854 as u64)
-			// Standard Error: 345_710
-			.saturating_add(Weight::from_ref_time(83_284 as u64).saturating_mul(b as u64))
+	fn retire_handle(b: u32, ) -> Weight {
+		Weight::from_ref_time(506_318_598 as u64)
+			// Standard Error: 68_246
+			.saturating_add(Weight::from_ref_time(92_310 as u64).saturating_mul(b as u64))
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}

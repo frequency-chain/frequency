@@ -21,20 +21,31 @@ mod app_sr25519 {
 type SignerId = app_sr25519::Public;
 
 fn create_signed_claims_payload<T: Config>(
-	char_size: u32,
 	byte_size: u32,
 ) -> (ClaimHandlePayload, MultiSignature, T::AccountId, SignerId) {
 	let delegator_account_public = SignerId::generate_pair(None);
+
 	// create a generic handle example with expanding size
 	let base_handle = b"b".to_vec();
+	let max_chars = 20;
+
+	// calculate maximum byte size based on maximum number of allowed characters
+	// 32
+	let max_32_bytes = max_chars * 3 / 2;
+
+	// limit byte size to a maximum of 80 bytes
+	let byte_size = byte_size.min(max_32_bytes);
+
+	// create handle with limited number of characters
 	let mut handle = base_handle.clone();
-	for _ in 0..char_size {
-		if handle.len() >= byte_size as usize {
-			break
-		}
-		handle.append(&mut base_handle.clone());
-	}
-	let handle_claims_payload = ClaimHandlePayload::new(handle);
+	handle.resize(byte_size as usize, b'b');
+	let handle_str = core::str::from_utf8(&handle).unwrap_or_default();
+	let truncated_handle: Vec<u8> = handle_str
+		.chars()
+		.take(max_chars as usize)
+		.flat_map(|c| c.encode_utf8(&mut [0; 4]).as_bytes().to_vec())
+		.collect();
+	let handle_claims_payload = ClaimHandlePayload::new(truncated_handle);
 	let encode_handle_claims_data = wrap_binary_data(handle_claims_payload.encode());
 	let acc = T::AccountId::decode(&mut &delegator_account_public.encode()[..]).unwrap();
 
@@ -50,11 +61,10 @@ fn create_signed_claims_payload<T: Config>(
 benchmarks! {
 	claim_handle {
 		// claim a handle
-		let c in HANDLE_BASE_CHARS_MIN .. HANDLE_BASE_CHARS_MAX-1;
-		let b in HANDLE_BASE_BYTES_MIN .. HANDLE_BASE_BYTES_MAX-1;
+		let b in HANDLE_BASE_BYTES_MIN .. HANDLE_BASE_BYTES_MAX-2;
 		let caller: T::AccountId = whitelisted_caller();
 		let delegator_msa_id = 1u64;
-		let (payload, proof, key, _) = create_signed_claims_payload::<T>(c, b);
+		let (payload, proof, key, _) = create_signed_claims_payload::<T>(b);
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), key.clone()));
 
@@ -66,11 +76,10 @@ benchmarks! {
 
 	retire_handle {
 		// claim a handle
-		let c in HANDLE_BASE_CHARS_MIN .. HANDLE_BASE_CHARS_MAX-1;
 		let b in HANDLE_BASE_BYTES_MIN .. HANDLE_BASE_BYTES_MAX-1;
 		let caller: T::AccountId = whitelisted_caller();
 		let delegator_msa_id = 1u64;
-		let (payload, proof, key, delegator_acc) = create_signed_claims_payload::<T>(c, b);
+		let (payload, proof, key, delegator_acc) = create_signed_claims_payload::<T>(b);
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), key.clone()));
 		assert_ok!(Handles::<T>::claim_handle(RawOrigin::Signed(caller.clone()).into(), key.clone(), proof, payload));
