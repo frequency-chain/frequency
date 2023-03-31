@@ -78,17 +78,15 @@ impl<T: Config> StakingAccountDetails<T> {
 				total_reaped = total_reaped.saturating_add(chunk.value);
 				match self.total.checked_sub(&chunk.value) {
 					Some(new_total) => self.total = new_total,
-					None => {
-						warn!(
-							"Underflow when subtracting {:?} from staking total {:?}",
-							chunk.value, self.total
-						);
-						return false
-					},
+					None => warn!(
+						"Underflow when subtracting {:?} from staking total {:?}",
+						chunk.value, self.total
+					),
 				}
-				return false
+				false
+			} else {
+				true
 			}
-			true
 		});
 		total_reaped
 	}

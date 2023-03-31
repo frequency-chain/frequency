@@ -4,18 +4,16 @@ use frame_support::{assert_err, assert_ok};
 
 #[test]
 fn impl_staking_target_details_increase_by() {
-	new_test_ext().execute_with(|| {
-		let mut staking_target = StakingTargetDetails::<BalanceOf<Test>>::default();
-		assert_eq!(staking_target.deposit(10, 10), Some(()));
+	let mut staking_target = StakingTargetDetails::<BalanceOf<Test>>::default();
+	assert_eq!(staking_target.deposit(10, 10), Some(()));
 
-		assert_eq!(
-			staking_target,
-			StakingTargetDetails::<BalanceOf<Test>> {
-				amount: BalanceOf::<Test>::from(10u64),
-				capacity: 10
-			}
-		)
-	});
+	assert_eq!(
+		staking_target,
+		StakingTargetDetails::<BalanceOf<Test>> {
+			amount: BalanceOf::<Test>::from(10u64),
+			capacity: 10
+		}
+	)
 }
 
 #[test]
@@ -37,26 +35,23 @@ fn staking_target_details_withdraw_reduces_staking_and_capacity_amounts() {
 
 #[test]
 fn staking_target_details_withdraw_reduces_total_tokens_staked_and_total_tokens_available() {
-	new_test_ext().execute_with(|| {
-		let mut capacity_details =
-			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
-				remaining_capacity: BalanceOf::<Test>::from(10u64),
-				total_tokens_staked: BalanceOf::<Test>::from(10u64),
-				total_capacity_issued: BalanceOf::<Test>::from(10u64),
-				last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32),
-			};
-		capacity_details.withdraw(4, 5);
+	let mut capacity_details = CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
+		remaining_capacity: BalanceOf::<Test>::from(10u64),
+		total_tokens_staked: BalanceOf::<Test>::from(10u64),
+		total_capacity_issued: BalanceOf::<Test>::from(10u64),
+		last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32),
+	};
+	capacity_details.withdraw(4, 5);
 
-		assert_eq!(
-			capacity_details,
-			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
-				remaining_capacity: BalanceOf::<Test>::from(6u64),
-				total_tokens_staked: BalanceOf::<Test>::from(5u64),
-				total_capacity_issued: BalanceOf::<Test>::from(6u64),
-				last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32)
-			}
-		)
-	});
+	assert_eq!(
+		capacity_details,
+		CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
+			remaining_capacity: BalanceOf::<Test>::from(6u64),
+			total_tokens_staked: BalanceOf::<Test>::from(5u64),
+			total_capacity_issued: BalanceOf::<Test>::from(6u64),
+			last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32)
+		}
+	)
 }
 
 #[test]
