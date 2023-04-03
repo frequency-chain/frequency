@@ -8,7 +8,6 @@ use sp_std::collections::btree_map::BTreeMap;
 use unicode_normalization::{char::is_combining_mark, UnicodeNormalization};
 extern crate alloc;
 use alloc::string::{String, ToString};
-use regex::Regex;
 use sp_std::vec::Vec;
 /// A converter for confusable characters.
 ///
@@ -79,7 +78,9 @@ impl HandleConverter {
 
 	/// Strip all unicode whitespace
 	pub fn strip_unicode_whitespace(&self, string: &str) -> String {
-		let pattern = Regex::new(r"\p{White_Space}+").unwrap();
-		pattern.replace_all(string, "").to_string()
+		string
+			.chars()
+			.filter(|character| !character.is_whitespace())
+			.collect::<codec::alloc::string::String>()
 	}
 }
