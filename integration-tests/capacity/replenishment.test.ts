@@ -2,7 +2,7 @@ import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
 import {Null, u16, u64, u128} from "@polkadot/types"
 import assert from "assert";
-import {EventMap, ExtrinsicHelper} from "../scaffolding/extrinsicHelpers";
+import {EventMap, Extrinsic, ExtrinsicHelper} from "../scaffolding/extrinsicHelpers";
 import {
   devAccounts,
   createKeys,
@@ -63,7 +63,6 @@ describe("Capacity Replenishment Testing: ", function () {
       const totalCapacity = 3n*1500n*1000n;
       const [stakeKeys, stakeProviderId] = await createAndStakeProvider("ReplFirst", totalCapacity);
       const payload = JSON.stringify({ changeType: 1,  fromId: 1, objectId: 2 })
-      // const call = ExtrinsicHelper.api.tx.messages.addOnchainMessage(null, schemaId, payload);
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
       // confirm that we start with a full tank
@@ -90,6 +89,11 @@ describe("Capacity Replenishment Testing: ", function () {
     });
   });
 
+  function assert_capacity_call_fails_with_balance_too_low(call: Extrinsic) {
+    return assert.rejects(
+      call.payWithCapacity(-1), { name: "RpcError",  message: /1010.+account balance too low/ });
+  }
+
   describe("Capacity is not replenished", function() {
     it("if out of capacity and last_replenished_at is <= current epoch", async function() {
       let [stakeKeys, stakeProviderId] = await createAndStakeProvider("NoSend", 3n*1000n*1000n);
@@ -107,8 +111,7 @@ describe("Capacity Replenishment Testing: ", function () {
       // TODO: it's weird that we can run one more capacity txn before running out.
       await call.payWithCapacity(-1)
 
-      await assert.rejects(
-        call.payWithCapacity(-1), {name: "RpcError", message: "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low"});
+      await assert_capacity_call_fails_with_balance_too_low(call);
     });
   });
 
@@ -135,10 +138,7 @@ describe("Capacity Replenishment Testing: ", function () {
       await call.payWithCapacity(-1)
 
       // ensure provider can't send a message; they are out of capacity
-      await assert.rejects(call.payWithCapacity(-1),
-        {  name: "RpcError",
-           message: "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low"
-        });
+      await assert_capacity_call_fails_with_balance_too_low(call);
 
       // go to next epoch
       let nextEpochBlock = await getNextEpochBlock();
