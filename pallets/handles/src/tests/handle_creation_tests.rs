@@ -17,7 +17,18 @@ fn get_signed_claims_payload(
 }
 
 #[test]
-fn claim_handle() {
+fn test_full_handle_creation() {
+	new_test_ext().execute_with(|| {
+		for sequence_index in 0..100 {
+			let full_handle = Handles::create_full_handle("test", sequence_index);
+			let full_handle_str = core::str::from_utf8(&full_handle).ok().unwrap();
+			println!("full_handle_str={}", full_handle_str);
+		}
+	})
+}
+
+#[test]
+fn claim_handle_happy_path() {
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
 		let (payload, proof) = get_signed_claims_payload(&alice, "test1".as_bytes().to_vec());

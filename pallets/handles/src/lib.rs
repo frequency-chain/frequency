@@ -433,5 +433,33 @@ pub mod pallet {
 
 			suffixes
 		}
+
+		pub fn create_full_handle(
+			base_handle_str: &str,
+			suffix_sequence_index: HandleSuffix,
+		) -> Handle {
+			// Convert base display handle into a canonical display handle
+			let handle_converter = HandleConverter::new();
+			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
+			log::debug!("canonical={}", canonical_handle_str);
+
+			// Generate suffix from index into the suffix sequence
+			log::debug!("suffix_sequence_index={}", suffix_sequence_index);
+			let suffix = Self::generate_suffix_for_canonical_handle(
+				&canonical_handle_str,
+				suffix_sequence_index as usize,
+			);
+			log::debug!("suffix={}", suffix);
+
+			// Compose the full display handle from the base handle, "." delimeter and suffix
+			let mut full_handle_vec: Vec<u8> = vec![];
+			full_handle_vec.extend(base_handle_str.as_bytes());
+			full_handle_vec.extend(b"."); // The delimeter
+			let mut buff = [0u8; SUFFIX_MAX_DIGITS];
+			full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
+
+			let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
+			full_handle
+		}
 	}
 }
