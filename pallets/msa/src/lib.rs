@@ -83,7 +83,9 @@ use common_primitives::{
 	schema::{SchemaId, SchemaValidator},
 };
 
-pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
+pub use common_primitives::{
+	handles::HandleValidator, msa::MessageSourceId, utils::wrap_binary_data,
+};
 pub use pallet::*;
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
 pub use weights::*;
@@ -129,6 +131,9 @@ pub mod pallet {
 
 		/// A type that will supply schema related information.
 		type SchemaValidator: SchemaValidator<SchemaId>;
+
+		/// A type that will supply `Handle` related information.
+		type HandleValidator: HandleValidator;
 
 		/// The number of blocks before a signature can be ejected from the PayloadSignatureRegistryList
 		#[pallet::constant]
