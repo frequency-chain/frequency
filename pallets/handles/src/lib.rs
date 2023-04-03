@@ -170,6 +170,10 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Get the next index into the shuffled suffix sequence for the specified canonical base handle
 		///
+		/// # Arguments
+		///
+		/// * `canonical_handle` - The canonical `Handle` to get suffixes for.
+		///
 		/// # Errors
 		/// * [`Error::SuffixesExhausted`]
 		///
