@@ -30,7 +30,7 @@ pub struct HandleConverter {
 ///
 /// ```
 impl HandleConverter {
-	/// Creates a new `HandleConverter` instance with the specified input string.
+	/// Creates a new `HandleConverter` instance with a built confusables map.
 	pub fn new() -> Self {
 		let confusables_map = build_confusables_map();
 		Self { confusables_map }
@@ -41,7 +41,6 @@ impl HandleConverter {
 		let confusables_removed = self.replace_confusables(&white_space_stripped);
 		let diacriticals_stripped = self.strip_diacriticals(&confusables_removed);
 		diacriticals_stripped.to_ascii_lowercase()
-		// 	normalized.make_ascii_lowercase();
 	}
 
 	/// Replace confusable Unicode characters from string
