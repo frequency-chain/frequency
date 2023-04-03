@@ -1,5 +1,6 @@
 use crate::{homoglyphs::canonical::HandleConverter, tests::mock::*, Error};
-use common_primitives::{handles::*, utils::wrap_binary_data};
+use codec::Decode;
+use common_primitives::{handles::*, msa::MessageSourceId, utils::wrap_binary_data};
 use frame_support::{assert_noop, assert_ok};
 use sp_core::{sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
@@ -105,5 +106,25 @@ fn claim_handle_already_claimed_with_homoglyph() {
 			),
 			Error::<Test>::MSAHandleAlreadyExists
 		);
+	});
+}
+
+#[test]
+fn claim_handle_get_msa_handle() {
+	new_test_ext().execute_with(|| {
+		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let (payload, proof) = get_signed_claims_payload(&alice, "test1".as_bytes().to_vec());
+		assert_ok!(Handles::claim_handle(
+			RuntimeOrigin::signed(alice.public().into()),
+			alice.public().into(),
+			proof,
+			payload
+		));
+		let msa_id = MessageSourceId::decode(&mut &alice.public().encode()[..]).unwrap();
+		let handle = Handles::get_handle_for_msa(msa_id);
+		assert!(handle.is_some());
+		let handle_result = handle.unwrap();
+		let base_handle = handle_result.base_handle;
+		assert_eq!(base_handle, "test1".as_bytes().to_vec());
 	});
 }
