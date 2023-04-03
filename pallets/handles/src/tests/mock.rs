@@ -10,7 +10,6 @@ use frame_support::{
 	traits::{ConstU16, ConstU32, ConstU64},
 };
 use sp_core::{crypto::AccountId32, ByteArray, H256};
-
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
