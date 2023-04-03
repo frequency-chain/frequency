@@ -54,7 +54,6 @@ fn claim_handle_already_claimed() {
 			payload.clone()
 		));
 
-		// Try to claim the same handle again with a different account
 		let (payload, proof) = get_signed_claims_payload(&alice, "test1".as_bytes().to_vec());
 		assert_noop!(
 			Handles::claim_handle(
@@ -80,7 +79,6 @@ fn claim_handle_already_claimed_with_different_case() {
 			payload.clone()
 		));
 
-		// Try to claim the same handle again with a different account
 		let (payload, proof) = get_signed_claims_payload(&alice, "TEST1".as_bytes().to_vec());
 		assert_noop!(
 			Handles::claim_handle(
@@ -106,7 +104,6 @@ fn claim_handle_already_claimed_with_homoglyph() {
 			payload.clone()
 		));
 
-		// Try to claim the same handle again with a different account
 		let (payload, proof) = get_signed_claims_payload(&alice, "tést1".as_bytes().to_vec());
 		assert_noop!(
 			Handles::claim_handle(
