@@ -178,3 +178,25 @@ fn claim_handle_invalid_length_too_short() {
 		);
 	});
 }
+
+#[test]
+fn claim_handle_invalid_byte_length() {
+	// Try to claim a character handle which is over the byte limit but under the character limit
+	// ℂн𝔸RℒℰᏕ𝔇𝔸𐒴𑣯1𝒩𝓐𑣯𝔸R𝔻Ꮥ is 19 characters but 61 bytes
+	new_test_ext().execute_with(|| {
+		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let (payload, proof) = get_signed_claims_payload(
+			&alice,
+			"ℂн𝔸RℒℰᏕ𝔇𝔸𐒴𑣯1𝒩𝓐𑣯𝔸R𝔻Ꮥ".as_bytes().to_vec(),
+		);
+		assert_noop!(
+			Handles::claim_handle(
+				RuntimeOrigin::signed(alice.public().into()),
+				alice.public().into(),
+				proof,
+				payload
+			),
+			Error::<Test>::InvalidHandleByteLength
+		);
+	});
+}
