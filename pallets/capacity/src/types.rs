@@ -207,8 +207,8 @@ where
 		self.last_replenished_epoch = current_epoch.clone();
 	}
 
-	/// Deduct the given amount from the remaining capacity that can be used to pay for messages.
-	/// To be called when a message is paid for with capacity.
+	/// Deduct the given amount from the remaining capacity that can be used to pay for a transaction.
+	/// To be called when a transaction is paid for with capacity.
 	pub fn deduct_capacity_by_amount(&mut self, amount: Balance) -> Result<(), ArithmeticError> {
 		let new_remaining =
 			self.remaining_capacity.checked_sub(&amount).ok_or(ArithmeticError::Underflow)?;
