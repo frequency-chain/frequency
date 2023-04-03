@@ -144,6 +144,53 @@ describe("Capacity Transactions", function () {
 
                 assertEvent(chainEvents, "capacity.CapacityWithdrawn");
             });
+
+            // A registered provider with Capacity but no tokens associated with the
+            // key should still be able to use polkadot UI to submit a capacity transaction.
+            // *All accounts will have at least an EXISTENTIAL_DEPOSIT = 1M.
+            // This test may still be valid if the txn cost is greater than 1M.
+            it("check that nonce is incremented for coinless accounts using pay_with_capacity", async function () {
+                let coinlessUser = createKeys("coinlessUser");
+                let _coinlessUserMsaId = await ExtrinsicHelper.createMsa(coinlessUser);
+
+                let dapp = createKeys("dappProviderKeys");
+                let dappProviderId = await createMsaAndProvider(dapp, "Funder");
+
+                // Stake enough to cover the 2.8M grantDelegation cost
+                await assert.doesNotReject(stakeToProvider(stakeKeys, dappProviderId, 3n * cents));
+
+                // Check the coinlessUser has no tokens
+                let coinlessAcctInfo = await ExtrinsicHelper.getAccountInfo(coinlessUser.address);
+                assert.equal(coinlessAcctInfo.data.free, 0, "should return an account with 0 free balance");
+                // Check the current nonce for the coinlessUser
+                console.log("DBG:coinlessAcct nonce: " + coinlessAcctInfo.nonce.toString())
+
+                // coinlessAcctInfo = await ExtrinsicHelper.getAccountInfo(coinlessUser.address);
+
+                // grantDelegation costs about 2.8M and is the capacity eligible
+                // transaction used for these tests.
+                const payload = await generateDelegationPayload({
+                    authorizedMsaId: stakeProviderId,
+                    schemaIds: [schemaId],
+                });
+                const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+                const grantDelegationOp = ExtrinsicHelper.grantDelegation(coinlessUser, dapp,
+                    signPayloadSr25519(coinlessUser, addProviderData), payload);
+
+                const [grantDelegationEvent, chainEvents] = await grantDelegationOp.payWithCapacity();
+
+                if (grantDelegationEvent &&
+                    !(ExtrinsicHelper.api.events.msa.DelegationGranted.is(grantDelegationEvent))) {
+                    assert.fail("should return a DelegationGranted event");
+                }
+
+                assertEvent(chainEvents, "capacity.CapacityWithdrawn");
+
+                // Check that the nonce has been incremented
+                const coinlessAcctInfoAfter = await ExtrinsicHelper.getAccountInfo(coinlessUser.address);
+                console.log("DBG:coinlessAcctInfoAfter nonce: " + coinlessAcctInfoAfter.nonce.toString())
+                assert.notEqual(coinlessAcctInfoAfter.nonce.toString(), coinlessAcctInfo.nonce.toString(), "nonce should be incremented");
+            });
         });
 
         describe("when caller does not have a Capacity account", async function () {
