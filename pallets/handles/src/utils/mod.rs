@@ -1,2 +1,2 @@
-pub mod converter;
 mod confusables;
+pub mod converter;

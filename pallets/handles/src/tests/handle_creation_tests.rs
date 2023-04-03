@@ -1,4 +1,4 @@
-use crate::{utils::converter::HandleConverter, tests::mock::*, Error};
+use crate::{tests::mock::*, Error};
 use codec::Decode;
 use common_primitives::{handles::*, msa::MessageSourceId, utils::wrap_binary_data};
 use frame_support::{assert_noop, assert_ok};
@@ -134,5 +134,47 @@ fn claim_handle_get_msa_handle() {
 		let handle_result = handle.unwrap();
 		let base_handle = handle_result.base_handle;
 		assert_eq!(base_handle, "test1".as_bytes().to_vec());
+	});
+}
+
+#[test]
+fn claim_handle_invalid_length_too_long() {
+	// Try to claim a 36 byte handle which is over the byte and character limit
+	new_test_ext().execute_with(|| {
+		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let (payload, proof) = get_signed_claims_payload(
+			&alice,
+			"abcdefghijklmnopqrstuvwxyz0123456789".as_bytes().to_vec(),
+		);
+		assert_noop!(
+			Handles::claim_handle(
+				RuntimeOrigin::signed(alice.public().into()),
+				alice.public().into(),
+				proof,
+				payload
+			),
+			Error::<Test>::InvalidHandleByteLength
+		);
+	});
+}
+
+#[test]
+fn claim_handle_invalid_length_too_short() {
+	// Try to claim a 1 byte handle which is under the character limit
+	new_test_ext().execute_with(|| {
+		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let (payload, proof) = get_signed_claims_payload(
+			&alice,
+			"a".as_bytes().to_vec(),
+		);
+		assert_noop!(
+			Handles::claim_handle(
+				RuntimeOrigin::signed(alice.public().into()),
+				alice.public().into(),
+				proof,
+				payload
+			),
+			Error::<Test>::InvalidHandleCharacterLength
+		);
 	});
 }
