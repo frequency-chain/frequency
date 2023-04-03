@@ -434,6 +434,12 @@ pub mod pallet {
 			suffixes
 		}
 
+		/// Create a full handle from a base handle and a suffix
+		/// # Arguments
+		/// * `base_handle` - The base handle to create the full handle from
+		/// * `suffix` - The suffix to create the full handle from
+		/// # Returns
+		/// * `Handle` - The full handle
 		pub fn create_full_handle(
 			base_handle_str: &str,
 			suffix_sequence_index: HandleSuffix,
