@@ -1,4 +1,4 @@
-use crate::{homoglyphs::canonical::HandleConverter, tests::mock::*, Error};
+use crate::{utils::converter::HandleConverter, tests::mock::*, Error};
 use codec::Decode;
 use common_primitives::{handles::*, msa::MessageSourceId, utils::wrap_binary_data};
 use frame_support::{assert_noop, assert_ok};

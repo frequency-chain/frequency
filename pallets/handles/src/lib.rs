@@ -32,8 +32,8 @@
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 /// Handle converter for canonical handles
-pub mod homoglyphs;
-use homoglyphs::canonical::HandleConverter;
+pub mod utils;
+use utils::converter::HandleConverter;
 
 #[cfg(test)]
 mod tests;

@@ -1,4 +1,4 @@
-use crate::homoglyphs::canonical::HandleConverter;
+use crate::utils::converter::HandleConverter;
 
 use std::{
 	fs::File,
@@ -7,7 +7,7 @@ use std::{
 
 #[test]
 fn test_replace_confusables() {
-	let file = File::open("src/homoglyphs/confusable_characters.txt");
+	let file = File::open("src/utils/confusable_characters.txt");
 	assert!(file.is_ok());
 
 	let reader = BufReader::new(file.ok().unwrap());
