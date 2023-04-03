@@ -5,8 +5,8 @@ THIS_DIR=$( dirname -- "$0"; )
 PROJECT="${THIS_DIR}/.."
 PROFILE=production
 PROFILE_DIR=${PROFILE}
+
 ALL_EXTERNAL_PALLETS=( \
-  orml_vesting \
   pallet_balances \
   pallet_collator_selection \
   pallet_collective \
@@ -25,13 +25,14 @@ ALL_CUSTOM_PALLETS=( \
   schemas \
   stateful-storage \
   handles \
+  time-release \
 )
 
 declare -a CUSTOM_PALLETS
 declare -a EXTERNAL_PALLETS
 skip_build=false
 OVERHEAD=
-PALLET=
+VERBOSE=
 
 function exit_err() { echo "❌ 💔" ; exit 1; }
 
@@ -45,18 +46,18 @@ function usage() {
 
         -h            Display this message and exit.
 
-        -p <pallet>   Run benchmarks for a single pallet (or overhead).
-                      Default: Run all benchmarks
-                      (For backwards compatibility; prefer the <pallet1> .. <palletN> variant)
-
         -s            Skip the build step; use existing binary for the current profile
 
         -t <profile>  Use '--profile=<profile>' in the build step & for locating the
-                      resulting binary. Valid targets are: dev,production,release
+                      resulting binary. Valid targets are: dev,production,release,bench-dev
+
+                      (NOTE: using the 'bench-dev' profile will generate a warning in the WASM build.
+                       this can safely be ignored. 'bench-dev' is a clone of 'release' and is useful
+                       for running benchmarks locally while not overwriting any existing 'release' target.)
 
         -v            Verbose mode. All shell commands are echoed.
 
-        <palletX>     To run for multiple specific pallets. If no pallets or '-p' option
+        <palletX>     To run for multiple specific pallets. If no pallets
                       specified, will run all benchmarks.
 
 EOI
@@ -96,10 +97,6 @@ while getopts 'dh:p:st:v' flag; do
       usage ${0}
       exit 0
       ;;
-    p)
-      # Single pallet run
-      PALLET="${OPTARG}"
-      ;;
     s)
       # Skip build.
       skip_build=true
@@ -107,10 +104,14 @@ while getopts 'dh:p:st:v' flag; do
     t)
       # Set target profile
       case ${OPTARG} in
-        production|release|dev)
+        production|release|dev|bench-dev)
           PROFILE="${OPTARG}"
+          PROFILE_DIR=${PROFILE}
           # For historical reasons, cargo puts dev builds in the "debug" directory
-          PROFILE_DIR=${PROFILE/dev/debug}
+          if [ ${PROFILE} = "dev" ]
+          then
+            PROFILE_DIR=debug
+          fi
           ;;
         *) echo "Unrecognized target profile: ${OPTARG}"
            usage ${0}
@@ -120,6 +121,7 @@ while getopts 'dh:p:st:v' flag; do
       ;;
     v)
       # Echo all executed commands.
+      VERBOSE=1
       set -x
       ;;
     ?)
@@ -139,16 +141,12 @@ shift $(( ${OPTIND} - 1 ))
 
 for pallet in "${@}"
 do
-   if [[ -n "${PALLET}" ]]
-   then
-      echo "-p <pallet> and pallet args are mutually exclusive."
-      exit_err
-   elif is_external_pallet ${pallet}
+   if is_external_pallet ${pallet}
    then
       EXTERNAL_PALLETS=( "${EXTERNAL_PALLETS[@]}" "${pallet}" )
    elif is_custom_pallet ${pallet}
    then
-      CUSTOM_PALLETS=( "${CUSTOM_PALLETS[@]}" "pallet_${pallet}" )
+      CUSTOM_PALLETS=( "${CUSTOM_PALLETS[@]}" "${pallet}" )
    elif [[ "${pallet}" == "overhead" ]]
    then
       OVERHEAD=overhead
@@ -158,27 +156,10 @@ do
    fi
 done
 
-if [[ -n "${PALLET}" ]]
-then
-   if is_external_pallet ${pallet}
-   then
-      EXTERNAL_PALLETS=( "${pallet}" )
-   elif is_custom_pallet ${pallet}
-   then
-      CUSTOM_PALLETS=( "pallet_${pallet}" )
-   elif [[ "${PALLET}" == "overhead" ]]
-   then
-      OVERHEAD=overhead
-   else
-      echo "Unrecognized pallet: ${PALLET}"
-      exit_err
-   fi
-fi
-
 if [[ ${#EXTERNAL_PALLETS[@]} == 0 && ${#CUSTOM_PALLETS[@]} == 0 && -z "${OVERHEAD}" ]]
 then
   EXTERNAL_PALLETS=( "${ALL_EXTERNAL_PALLETS[@]}" )
-  CUSTOM_PALLETS=( ${ALL_CUSTOM_PALLETS[@]/#/pallet_} )
+  CUSTOM_PALLETS=( ${ALL_CUSTOM_PALLETS[@]} )
   OVERHEAD=overhead
 fi
 
@@ -193,18 +174,22 @@ ${OVERHEAD}"
 
 function run_benchmark() {
   echo "Running benchmarks for ${1}"
-  echo " "
+  set -x
   ${BENCHMARK} pallet \
-  --pallet ${1} \
+  --pallet=${1} \
   --extrinsic "*" \
   --chain="frequency-bench" \
-  --execution wasm \
+  --execution=wasm \
   --heap-pages=4096 \
-  --wasm-execution compiled \
+  --wasm-execution=compiled \
   --steps=${2} \
   --repeat=${3} \
   --output=${4} \
   --template=${5}
+  if [ -z "${VERBOSE}" ]
+  then
+    set +x
+  fi
 }
 
 if [[ ${skip_build} == false ]]
@@ -215,7 +200,7 @@ then
 fi
 
 for external_pallet in "${EXTERNAL_PALLETS[@]}"; do
-  output=${PROJECT}/runtime/common/src/weights/${external_pallet}.rs
+  output=${PROJECT}/runtime/common/src/weights
   steps=50
   repeat=20
   template=${PROJECT}/.maintain/runtime-weight-template.hbs
@@ -226,8 +211,8 @@ for pallet_name in "${CUSTOM_PALLETS[@]}"; do
   steps=20
   repeat=10
   template=${PROJECT}/.maintain/frame-weight-template.hbs
-  output=${PROJECT}/pallets/${pallet_name}/src/weights.rs
-  run_benchmark ${pallet_name} ${steps} ${repeat} ${output} ${template} || exit_err
+  output=${PROJECT}/pallets/${pallet_name/_/-}/src/weights.rs
+  run_benchmark pallet_${pallet_name} ${steps} ${repeat} ${output} ${template} || exit_err
 done
 
 if [[ -n "${OVERHEAD}" ]]

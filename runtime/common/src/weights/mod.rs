@@ -19,10 +19,10 @@
 
 pub mod block_weights;
 pub mod extrinsic_weights;
-pub mod orml_vesting;
 pub mod pallet_balances;
 pub mod pallet_collator_selection;
-pub mod pallet_collective;
+pub mod pallet_collective_council;
+pub mod pallet_collective_technical_committee;
 pub mod pallet_democracy;
 pub mod pallet_multisig;
 pub mod pallet_preimage;

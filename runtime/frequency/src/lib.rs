@@ -10,8 +10,6 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 #[cfg(all(feature = "frequency", feature = "all-frequency-features"))]
 compile_error!("feature \"frequency\" and feature \"all-frequency-features\" cannot be enabled at the same time");
 
-mod benchmarking;
-
 use cumulus_pallet_parachain_system::{
 	RelayNumberStrictlyIncreases, RelaychainBlockNumberProvider,
 };
@@ -19,15 +17,12 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
 
 use codec::Encode;
-
-#[cfg(feature = "runtime-benchmarks")]
-use codec::Decode;
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -53,14 +48,14 @@ use frame_support::{
 	construct_runtime,
 	dispatch::{DispatchClass, DispatchError},
 	parameter_types,
-	traits::{ConstU128, ConstU32, EitherOfDiverse, EnsureOrigin, EqualPrivilegeOnly},
+	traits::{ConstU128, ConstU32, EitherOfDiverse, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
 	Twox128,
 };
 
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureRoot, RawOrigin,
+	EnsureRoot, EnsureSigned,
 };
 
 use sp_std::boxed::Box;
@@ -73,6 +68,8 @@ pub use sp_runtime::BuildStorage;
 
 pub use pallet_msa;
 pub use pallet_schemas;
+pub use pallet_time_release;
+
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
@@ -130,8 +127,6 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		#[cfg(feature = "frequency")]
 		{
 			match call {
-				// Vesting calls are blocked. Issue #1168
-				RuntimeCall::Vesting(..) => false,
 				// Utility Calls are blocked. Issue #599
 				RuntimeCall::Utility(..) => false,
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
@@ -422,7 +417,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 22,
+	spec_version: 24,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -568,26 +563,6 @@ impl pallet_schemas::Config for Runtime {
 	type MaxSchemaSettingsPerSchema = MaxSchemaSettingsPerSchema;
 }
 
-pub struct RootAsVestingPallet;
-impl EnsureOrigin<RuntimeOrigin> for RootAsVestingPallet {
-	type Success = AccountId;
-
-	fn try_origin(o: RuntimeOrigin) -> Result<Self::Success, RuntimeOrigin> {
-		Into::<Result<RawOrigin<AccountId>, RuntimeOrigin>>::into(o).and_then(|o| match o {
-			RawOrigin::Root => Ok(VestingPalletId::get().into_account_truncating()),
-			r => Err(RuntimeOrigin::from(r)),
-		})
-	}
-
-	#[cfg(feature = "runtime-benchmarks")]
-	fn successful_origin() -> RuntimeOrigin {
-		let zero_account_id =
-			AccountId::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes())
-				.expect("infinite length input; no invalid inputs for type; qed");
-		RuntimeOrigin::from(RawOrigin::Signed(zero_account_id))
-	}
-}
-
 parameter_types! {
 	// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
 	pub const DepositBase: Balance = currency::deposit(1, 88);
@@ -609,19 +584,20 @@ impl pallet_multisig::Config for Runtime {
 }
 
 parameter_types! {
+	//update
 	/// Need this declaration method for use + type safety in benchmarks
-	pub const MaxVestingSchedules: u32 = ORML_MAX_VESTING_SCHEDULES;
+	pub const MaxReleaseSchedules: u32 = MAX_RELEASE_SCHEDULES;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_vesting/index.html for
 // the descriptions of these configs.
-impl orml_vesting::Config for Runtime {
+impl pallet_time_release::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
-	type MinVestedTransfer = MinVestedTransfer;
-	type VestedTransferOrigin = RootAsVestingPallet;
-	type WeightInfo = weights::orml_vesting::SubstrateWeight<Runtime>;
-	type MaxVestingSchedules = MaxVestingSchedules;
+	type MinReleaseTransfer = MinReleaseTransfer;
+	type TransferOrigin = EnsureSigned<AccountId>;
+	type WeightInfo = pallet_time_release::weights::SubstrateWeight<Runtime>;
+	type MaxReleaseSchedules = MaxReleaseSchedules;
 	type BlockNumberProvider = RelaychainBlockNumberProvider<Runtime>;
 }
 
@@ -707,7 +683,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MaxProposals = CouncilMaxProposals;
 	type MaxMembers = CouncilMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
-	type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_collective_council::SubstrateWeight<Runtime>;
 }
 
 type TechnicalCommitteeCollective = pallet_collective::Instance2;
@@ -719,7 +695,7 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 	type MaxProposals = TCMaxProposals;
 	type MaxMembers = TCMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
-	type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_collective_technical_committee::SubstrateWeight<Runtime>;
 }
 
 // see https://paritytech.github.io/substrate/master/pallet_democracy/pallet/trait.Config.html
@@ -1098,8 +1074,8 @@ construct_runtime!(
 		// Signatures
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 30,
 
-		// ORML
-		Vesting: orml_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 40,
+		// FRQC Update
+		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>} = 40,
 
 		// Frequency related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
@@ -1138,6 +1114,7 @@ mod benches {
 		[pallet_messages, Messages]
 		[pallet_stateful_storage, StatefulStorage]
 		[pallet_handles, Handles]
+		[pallet_time_release, TimeRelease]
 	);
 }
 
@@ -1347,12 +1324,9 @@ impl_runtime_apis! {
 			use frame_support::traits::StorageInfoTrait;
 			use frame_system_benchmarking::Pallet as SystemBench;
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
-			use orml_benchmarking::list_benchmark as list_orml_benchmark;
-
 
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
-			list_orml_benchmark!(list, extra, orml_vesting, benchmarking::vesting);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 			return (list, storage_info)
@@ -1368,7 +1342,6 @@ impl_runtime_apis! {
 
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
-			use orml_benchmarking::{add_benchmark as orml_add_benchmark};
 
 			use frame_support::traits::WhitelistedStorageKeys;
 			let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
@@ -1376,7 +1349,6 @@ impl_runtime_apis! {
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 			add_benchmarks!(params, batches);
-			orml_add_benchmark!(params, batches, orml_vesting, benchmarking::vesting);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

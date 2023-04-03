@@ -71,7 +71,7 @@ use common_primitives::{
 		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
 	},
 	node::Verify,
-	schema::{PayloadLocation, SchemaId, SchemaProvider, SchemaSetting},
+	schema::{PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaSetting},
 	stateful_storage::{
 		ItemizedStoragePageResponse, ItemizedStorageResponse, PageHash, PageId,
 		PaginatedStorageResponse,
@@ -274,7 +274,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let key = ensure_signed(origin)?;
 			let is_pruning = actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
-			Self::check_schema(schema_id, PayloadLocation::Itemized, false, is_pruning)?;
+			Self::check_schema_for_write(schema_id, PayloadLocation::Itemized, false, is_pruning)?;
 			Self::check_msa_and_grants(key, state_owner_msa_id, schema_id)?;
 			Self::update_itemized(state_owner_msa_id, schema_id, target_hash, actions)?;
 			Ok(())
@@ -300,7 +300,7 @@ pub mod pallet {
 				page_id as u32 <= T::MaxPaginatedPageId::get(),
 				Error::<T>::PageIdExceedsMaxAllowed
 			);
-			Self::check_schema(schema_id, PayloadLocation::Paginated, false, false)?;
+			Self::check_schema_for_write(schema_id, PayloadLocation::Paginated, false, false)?;
 			Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
 			Self::update_paginated(
 				state_owner_msa_id,
@@ -331,7 +331,7 @@ pub mod pallet {
 				page_id as u32 <= T::MaxPaginatedPageId::get(),
 				Error::<T>::PageIdExceedsMaxAllowed
 			);
-			Self::check_schema(schema_id, PayloadLocation::Paginated, false, true)?;
+			Self::check_schema_for_write(schema_id, PayloadLocation::Paginated, false, true)?;
 			Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
 			Self::delete_paginated(state_owner_msa_id, schema_id, page_id, target_hash)?;
 			Ok(())
@@ -367,7 +367,12 @@ pub mod pallet {
 			)?;
 			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
 			Self::check_msa(delegator_key, payload.msa_id)?;
-			Self::check_schema(payload.schema_id, PayloadLocation::Itemized, true, is_pruning)?;
+			Self::check_schema_for_write(
+				payload.schema_id,
+				PayloadLocation::Itemized,
+				true,
+				is_pruning,
+			)?;
 			Self::update_itemized(
 				payload.msa_id,
 				payload.schema_id,
@@ -402,7 +407,12 @@ pub mod pallet {
 			)?;
 			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
 			Self::check_msa(delegator_key, payload.msa_id)?;
-			Self::check_schema(payload.schema_id, PayloadLocation::Paginated, true, false)?;
+			Self::check_schema_for_write(
+				payload.schema_id,
+				PayloadLocation::Paginated,
+				true,
+				false,
+			)?;
 			Self::update_paginated(
 				payload.msa_id,
 				payload.schema_id,
@@ -438,7 +448,12 @@ pub mod pallet {
 			)?;
 			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
 			Self::check_msa(delegator_key, payload.msa_id)?;
-			Self::check_schema(payload.schema_id, PayloadLocation::Paginated, true, true)?;
+			Self::check_schema_for_write(
+				payload.schema_id,
+				PayloadLocation::Paginated,
+				true,
+				true,
+			)?;
 			Self::delete_paginated(
 				payload.msa_id,
 				payload.schema_id,
@@ -459,7 +474,7 @@ impl<T: Config> Pallet<T> {
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
 	) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
-		Self::check_schema(schema_id, PayloadLocation::Paginated, false, false)?;
+		Self::check_schema_for_read(schema_id, PayloadLocation::Paginated)?;
 		let prefix: PaginatedPrefixKey = (schema_id,);
 		Ok(StatefulChildTree::<T::KeyHasher>::prefix_iterator::<
 			PaginatedPage<T>,
@@ -486,7 +501,7 @@ impl<T: Config> Pallet<T> {
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
 	) -> Result<ItemizedStoragePageResponse, DispatchError> {
-		Self::check_schema(schema_id, PayloadLocation::Itemized, false, false)?;
+		Self::check_schema_for_read(schema_id, PayloadLocation::Itemized)?;
 		let page = Self::get_itemized_page_for(msa_id, schema_id)?.unwrap_or_default();
 		let items: Vec<ItemizedStorageResponse> = ItemizedOperations::<T>::try_parse(&page, false)
 			.map_err(|_| Error::<T>::CorruptedState)?
@@ -544,14 +559,11 @@ impl<T: Config> Pallet<T> {
 	/// # Errors
 	/// * [`Error::InvalidSchemaId`]
 	/// * [`Error::SchemaPayloadLocationMismatch`]
-	/// * [`Error::UnsupportedOperationForSchema`]
 	///
-	fn check_schema(
+	fn check_schema_for_read(
 		schema_id: SchemaId,
 		expected_payload_location: PayloadLocation,
-		is_payload_signed: bool,
-		is_deleting: bool,
-	) -> DispatchResult {
+	) -> Result<SchemaResponse, DispatchError> {
 		let schema =
 			T::SchemaProvider::get_schema_by_id(schema_id).ok_or(Error::<T>::InvalidSchemaId)?;
 
@@ -560,6 +572,24 @@ impl<T: Config> Pallet<T> {
 			schema.payload_location == expected_payload_location,
 			Error::<T>::SchemaPayloadLocationMismatch
 		);
+
+		Ok(schema)
+	}
+
+	/// Checks that the schema is valid for is action
+	///
+	/// # Errors
+	/// * [`Error::InvalidSchemaId`]
+	/// * [`Error::SchemaPayloadLocationMismatch`]
+	/// * [`Error::UnsupportedOperationForSchema`]
+	///
+	fn check_schema_for_write(
+		schema_id: SchemaId,
+		expected_payload_location: PayloadLocation,
+		is_payload_signed: bool,
+		is_deleting: bool,
+	) -> DispatchResult {
+		let schema = Self::check_schema_for_read(schema_id, expected_payload_location)?;
 
 		// Ensure that the schema allows signed payloads.
 		// If so, calling extrinsic must be of signature type.

@@ -7,13 +7,144 @@ on:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+" # ex. v1.0.0
       - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v1.1.0-rc1
-      - "vX.X.X" # used for testing only
+      - "v0.0.1" # used for testing only
+      - "v0.0.1-rc[0-9]+" # used for testing only
+  workflow_dispatch:
+    inputs:
+      release-version:
+        description: "Release version (v#.#.#[-rc#])"
+        required: true
+
 env:
-  NEW_RELEASE_VERSION: ${{github.ref_name}}
-  NEW_RELEASE_TAG: ${{github.ref_name}}
+  NEW_RELEASE_TAG_FROM_UI: ${{github.event.inputs.release-version}}
+  NEW_RELEASE_TAG: ${{github.event.inputs.release-version || github.ref_name}}
+  RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
+  TEST_RUN: ${{startsWith(github.ref_name, 'v0.0.1')}}
   RUST_TOOLCHAIN: "nightly-2022-10-09" # TODO: Set this dynamically
+
 jobs:
+  validate-release-version:
+    runs-on: ubuntu-20.04
+    name: Validate Release Version
+    steps:
+      - name: Validate
+        if: env.NEW_RELEASE_TAG_FROM_UI != ''
+        shell: bash
+        run: |
+          version=${{env.NEW_RELEASE_TAG_FROM_UI}}
+          echo "Release version entered in UI: $version"
+          regex='^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-rc[1-9]\d*)?$'
+          if [[ ! $version =~ $regex ]]; then
+            echo "ERROR: Entered version $version is not valid."
+            echo "Please use v#.#.#[-rc#] format."
+            exit 1
+          fi
+
+  create-release-branch:
+    needs: validate-release-version
+    name: Create Release Branch
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Create Release Branch?
+        id: create-release-branch
+        run: |
+          set -x
+          full_branch=remotes/origin/${{env.RELEASE_BRANCH_NAME}}
+          branch_hash=$(git rev-parse --verify --quiet $full_branch || echo "")
+          create_branch=$([ -z $branch_hash ] && echo 'true' || echo 'false')
+          echo "create_branch: $create_branch"
+          echo "create=$create_branch" >> $GITHUB_OUTPUT
+      - name: Create Release Branch
+        if: steps.create-release-branch.outputs.create == 'true'
+        run: |
+          git status -s
+          git checkout -b ${{env.RELEASE_BRANCH_NAME}}
+          git push origin ${{env.RELEASE_BRANCH_NAME}} -u
+
+  run-all-benchmarks:
+    needs: create-release-branch
+    name: Run All Benchmarks
+    runs-on: [self-hosted, Linux, X64, benchmark]
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
+      - name: Full Release?
+        id: is-full-release
+        uses: ./.github/workflows/common/is-full-release
+        with:
+          version-tag: ${{env.NEW_RELEASE_TAG}}
+      - name: Install Required Packages
+        if: steps.is-full-release.outputs.is-full-release == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt install -y protobuf-compiler libclang-dev
+      - name: Install Rust Toolchain
+        if: steps.is-full-release.outputs.is-full-release == 'true'
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        with:
+          toolchain: stable
+      - name: Update Weights for All Pallets
+        if: steps.is-full-release.outputs.is-full-release == 'true'
+        run: |
+          make benchmarks
+          git status -s
+          git diff
+      - name: Commit Updated Weights
+        if: steps.is-full-release.outputs.is-full-release == 'true'
+        uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
+        with:
+          commit_message: "Update weights for release ${{env.NEW_RELEASE_TAG}}"
+          commit_user_name: Frequency CI [bot]
+          commit_user_email: do-not-reply@users.noreply.github.com
+          commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
+
+  version-code:
+    needs: run-all-benchmarks
+    name: Version Code
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Install Required Packages
+        run: |
+          sudo apt-get update
+          sudo apt install -y protobuf-compiler
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
+      - name: Version Code
+        shell: bash
+        run: |
+          release_version=${{env.NEW_RELEASE_TAG}}
+          make version v=${release_version:1}
+      - name: Print Updated Version
+        run: |
+          git status
+          git diff
+      - name: Commit Updated Version
+        id: commit-updated-version
+        uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
+        with:
+          commit_message: "Update version for release ${{env.NEW_RELEASE_TAG}}"
+          commit_user_name: Frequency CI [bot]
+          commit_user_email: do-not-reply@users.noreply.github.com
+          commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
+      - name: Update Release Version Tag
+        if: steps.commit-updated-version.outputs.changes_detected == 'true'
+        uses: rickstaa/action-create-tag@84c90e6ba79b47b5147dcb11ff25d6a0e06238ba
+        with:
+          tag: ${{env.NEW_RELEASE_TAG}}
+          force_push_tag: true
+          message: "Release version tag"
+          commit_sha: ${{steps.commit-updated-version.outputs.commit_hash}}
+
   build-binaries:
+    needs: version-code
     name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
     strategy:
       fail-fast: true
@@ -47,18 +178,20 @@ jobs:
           apt-get install -y curl protobuf-compiler build-essential libclang-dev file
       - name: Check Out Repo
         uses: actions/checkout@v3
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set Env Vars
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
-      # # XXX Keep this step as it lets us skip full binary builds during development/testing
-      # - name: Cache Binary for Testing
-      #   id: cache-binary
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-      #     key: binaries-${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.NEW_RELEASE_VERSION}}
+      - name: Cache Binary for Testing
+        if: env.TEST_RUN == 'true'
+        id: cache-binary
+        uses: actions/cache@v3
+        with:
+          path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+          key: binaries-${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.NEW_RELEASE_TAG}}
       - name: Install Rust Toolchain
         if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
@@ -85,7 +218,6 @@ jobs:
         run: sha256sum ${{env.RELEASE_BIN_FILENAME}} > ${{env.RELEASE_BIN_FILENAME}}.sha256
       - name: Import GPG key
         id: import-gpg
-        # Pinning it to the exact version since this touches our private key
         uses: crazy-max/ghaction-import-gpg@111c56156bcc6918c056dbef52164cfa583dc549
         with:
           gpg_private_key: ${{secrets.FREQUENCY_PGP_SECRET_SUBKEYS}}
@@ -111,6 +243,7 @@ jobs:
   # situation and fails when srtool-ci container is trying to process files in
   # the mapped volume which don't exist on the host
   build-runtimes:
+    needs: version-code
     name: Build Runtime for ${{matrix.network}}
     outputs:
       runtime_filename_rococo: ${{steps.set-env-vars.outputs.runtime_filename_rococo}}
@@ -149,6 +282,8 @@ jobs:
           docker run hello-world
       - name: Check Out Repo
         uses: actions/checkout@v3
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Reset Runner
         uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Rust Toolchain
@@ -170,16 +305,16 @@ jobs:
         run: |
           echo "WASM_DIR=${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}" >> $GITHUB_ENV
           echo "BUILT_WASM_FILENAME=${{matrix.built-wasm-file-name-prefix}}.compact.compressed.wasm" >> $GITHUB_ENV
-          release_wasm_filename=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.NEW_RELEASE_VERSION}}.compact.compressed.wasm
+          release_wasm_filename=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.NEW_RELEASE_TAG}}.compact.compressed.wasm
           echo "RELEASE_WASM_FILENAME=$release_wasm_filename" >> $GITHUB_ENV
           echo "runtime_filename_${{matrix.network}}=$release_wasm_filename" >> $GITHUB_OUTPUT
-      # # XXX Keep this step as it lets us skip WASM builds during development/testing
-      # - name: Cache WASM for Testing
-      #   id: cache-wasm
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
-      #     key: runtimes-${{runner.os}}-${{matrix.network}}-${{env.NEW_RELEASE_VERSION}}
+      - name: Cache WASM for Testing
+        if: env.TEST_RUN == 'true'
+        id: cache-wasm
+        uses: actions/cache@v3
+        with:
+          path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
+          key: runtimes-${{runner.os}}-${{matrix.network}}-${{env.NEW_RELEASE_TAG}}
       - name: Install srtool-cli
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
@@ -216,6 +351,7 @@ jobs:
           if-no-files-found: error
 
   build-rust-developer-docs:
+    needs: version-code
     name: Build Rust Developer Docs
     runs-on: [self-hosted, Linux, X64, build]
     container: ubuntu:20.04
@@ -226,6 +362,8 @@ jobs:
           apt-get install -y curl protobuf-compiler build-essential libclang-dev
       - name: Check Out Repo
         uses: actions/checkout@v3
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Install Rust Toolchain
@@ -260,6 +398,8 @@ jobs:
           echo "RELEASE_BIN_FILENAME=${{env.RELEASE_FILENAME_PREFIX}}.${{env.ARCH}}" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
         uses: actions/setup-node@v3
         with:
@@ -282,9 +422,7 @@ jobs:
           mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}
           chmod 755 ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
       - name: Output Metadata
-        # TODO: Enable this in 1.2.0+ release instead
-        # run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-local --tmp ./js/api-augment/metadata.json
-        run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-local ./js/api-augment/metadata.json
+        run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-local --tmp ./js/api-augment/metadata.json
       - name: Build
         run: npm run build
         working-directory: js/api-augment
@@ -320,6 +458,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
       - name: Download Binaries
         id: download
@@ -333,10 +472,10 @@ jobs:
           mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
           chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
       - name: Testing Version Match
-        if: env.NEW_RELEASE_TAG != 'vX.X.X'
+        if: env.TEST_RUN != 'true'
         shell: bash
         run: |
-          EXPECTED_VERSION="${{env.NEW_RELEASE_VERSION}}+polkadot$(make version-polkadot)"
+          EXPECTED_VERSION="${{env.NEW_RELEASE_TAG}}+polkadot$(make version-polkadot)"
           ACTUAL_VERSION="v$(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version | cut -d " " -f 2)"
           echo "Expected: ${EXPECTED_VERSION}"
           echo "  Actual: ${ACTUAL_VERSION%-*}"
@@ -363,6 +502,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
       - name: Get Previous Full Release Tag
         run: |
@@ -490,15 +630,13 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
       - name: Full Release?
-        shell: bash
-        run: |
-          is_full_release=$([[ "$NEW_RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] && \
-            echo 'true' || echo 'false')
-          echo "is_full_release: $is_full_release"
-          echo "IS_FULL_RELEASE=$is_full_release" >> $GITHUB_ENV
-      # TODO: Move repetitive steps like this to a local action
+        id: is-full-release
+        uses: ./.github/workflows/common/is-full-release
+        with:
+          version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Get Previous Full Release Tag
         run: |
           git show-ref --tags -d
@@ -584,7 +722,7 @@ jobs:
             '${{steps.get-runtimes-info.outputs.runtime_info_mainnet}}' \
             > release-notes.md
       - name: Publish Release Candidate on GitHub
-        if: env.IS_FULL_RELEASE != 'true'
+        if: steps.is-full-release.outputs.is-full-release != 'true'
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
           name: "[Release Candidate] ${{env.NEW_RELEASE_TAG}}"
@@ -594,7 +732,7 @@ jobs:
             /tmp/frequency*.*
             /tmp/metadata-compare-*
       - name: Publish Full Release on GitHub
-        if: env.IS_FULL_RELEASE == 'true'
+        if: steps.is-full-release.outputs.is-full-release == 'true'
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
           body_path: tools/ci/release-notes/release-notes.md
@@ -602,7 +740,9 @@ jobs:
             /tmp/frequency*.*
             /tmp/metadata-compare-*
       - name: Update Git latest tag
-        if: env.IS_FULL_RELEASE == 'true'
+        if: |
+          steps.is-full-release.outputs.is-full-release == 'true' &&
+          env.TEST_RUN != 'true'
         uses: rickstaa/action-create-tag@84c90e6ba79b47b5147dcb11ff25d6a0e06238ba
         with:
           tag: "latest"
@@ -649,6 +789,13 @@ jobs:
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
+      - name: Full Release?
+        id: is-full-release
+        uses: ./.github/workflows/common/is-full-release
+        with:
+          version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Download Binaries
         id: download
         uses: actions/download-artifact@v3
@@ -672,6 +819,7 @@ jobs:
           username: ${{secrets.DOCKERHUB_USERNAME_FC}}
           password: ${{secrets.DOCKERHUB_TOKEN_FC}}
       - name: Build and Push Parachain Image
+        if: env.TEST_RUN != 'true'
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -679,9 +827,19 @@ jobs:
           push: true
           file: ./docker/${{env.IMAGE_NAME}}.dockerfile
           tags: |
-            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.NEW_RELEASE_VERSION}}
+            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.NEW_RELEASE_TAG}}
+      - name: Update DockerHub Latest Tag
+        if: env.TEST_RUN != 'true' && steps.is-full-release.outputs.is-full-release == 'true'
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          platforms: ${{matrix.docker-platform}}
+          push: true
+          file: ./docker/${{env.IMAGE_NAME}}.dockerfile
+          tags: |
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:latest
       - name: Update DockerHub Description
+        if: env.TEST_RUN != 'true'
         uses: peter-evans/dockerhub-description@93b93397c27ed52b4055b8c6b2f8d92456ab3c56
         with:
           username: ${{secrets.DOCKERHUB_USERNAME_FC}}
@@ -714,6 +872,13 @@ jobs:
           echo "RELEASE_BIN_FILENAME=frequency-${{matrix.network}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
+      - name: Full Release?
+        id: is-full-release
+        uses: ./.github/workflows/common/is-full-release
+        with:
+          version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Download Binaries
         id: download
         uses: actions/download-artifact@v3
@@ -737,6 +902,7 @@ jobs:
           username: ${{secrets.DOCKERHUB_USERNAME_FC}}
           password: ${{secrets.DOCKERHUB_TOKEN_FC}}
       - name: Build and Push Dev Image
+        if: env.TEST_RUN != 'true'
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -744,9 +910,19 @@ jobs:
           push: true
           file: ./docker/${{matrix.node}}.dockerfile
           tags: |
-            ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.NEW_RELEASE_VERSION}}
+            ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.NEW_RELEASE_TAG}}
+      - name: Update DockerHub Latest Tag
+        if: env.TEST_RUN != 'true' && steps.is-full-release.outputs.is-full-release == 'true'
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          platforms: ${{matrix.docker-platform}}
+          push: true
+          file: ./docker/${{matrix.node}}.dockerfile
+          tags: |
             ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:latest
       - name: Update DockerHub Description
+        if: env.TEST_RUN != 'true'
         uses: peter-evans/dockerhub-description@93b93397c27ed52b4055b8c6b2f8d92456ab3c56
         with:
           username: ${{secrets.DOCKERHUB_USERNAME_FC}}
@@ -768,6 +944,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
+        if: env.TEST_RUN != 'true'
         id: deployment
         uses: actions/deploy-pages@v1
 
@@ -778,6 +955,8 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
         uses: actions/setup-node@v3
         with:
@@ -792,11 +971,11 @@ jobs:
           name: js-api-augment-${{github.run_id}}
           path: js/api-augment/dist
       - name: Version Package
-        if: env.NEW_RELEASE_TAG != 'vX.X.X'
-        run: npm version --new-version "${{env.NEW_RELEASE_VERSION}}" --no-git-tag-version
+        if: env.TEST_RUN != 'true'
+        run: npm version --new-version "${{env.NEW_RELEASE_TAG}}" --no-git-tag-version
         working-directory: js/api-augment/dist
       - name: Release on NPM @latest
-        if: env.NEW_RELEASE_TAG != 'vX.X.X'
+        if: env.TEST_RUN != 'true'
         run: npm publish --tag latest --access public
         working-directory: ./js/api-augment/dist
         env:

@@ -139,17 +139,15 @@ pub type HandleSuffixMin = ConstU32<10>;
 pub type HandleSuffixMax = ConstU32<99>;
 // -end- Handles Pallet
 
-// --- Orml Vesting Pallet ---
+// --- TimeRelease Pallet ---
+// Update
 parameter_types! {
-	pub const VestingPalletId: PalletId = PalletId(*b"py/vstng");
+	pub const MinReleaseTransfer: Balance = 0;
 }
 
-parameter_types! {
-	pub const MinVestedTransfer: Balance = 0;
-}
-
-pub const ORML_MAX_VESTING_SCHEDULES: u32 = 50;
-// -end- Orml Vesting Pallet ---
+/// Update
+pub const MAX_RELEASE_SCHEDULES: u32 = 50;
+// -end- TimeRelease Pallet ---
 
 // --- Timestamp Pallet ---
 parameter_types! {
@@ -311,8 +309,8 @@ parameter_types! {
 parameter_types! {
 	/// The maximum size of a page (in bytes) for an Itemized storage model (64KB)
 	pub const MaxItemizedPageSizeBytes: u32 = 64 * 1024;
-	/// The maximum size of a page (in bytes) for a Paginated storage model (2KB)
-	pub const MaxPaginatedPageSizeBytes: u32 = 2 * 1024;
+	/// The maximum size of a page (in bytes) for a Paginated storage model (1KB)
+	pub const MaxPaginatedPageSizeBytes: u32 = 1 * 1024;
 	/// The maximum size of a single item in an itemized storage model (in bytes)
 	pub const MaxItemizedBlobSizeBytes: u32 = 1024;
 	/// The maximum number of pages in a Paginated storage model

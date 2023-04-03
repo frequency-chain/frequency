@@ -60,9 +60,8 @@ sp-session = { git = "https://github.com/paritytech/substrate", default-features
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
-#ORML
-orml-benchmarking = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, optional = true, branch = "polkadot-v0.9.36" }
-orml-vesting = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.36" }
+# Ported Pallet from ORML
+pallet-time-release = { path = "../../pallets/time-release", default-features = false }
 # Frequency
 common-primitives = { default-features = false, path = "../../common/primitives" }
 common-runtime = { path = "../common", default-features = false }
@@ -107,8 +106,7 @@ std = [
 	"frame-support/std",
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
-	"orml-benchmarking/std",
-	"orml-vesting/std",
+	"pallet-time-release/std",
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
@@ -160,8 +158,7 @@ runtime-benchmarks = [
 	"frame-system-benchmarking",
 	"frame-system/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
-	"orml-benchmarking",
-	"orml-vesting/runtime-benchmarks",
+	"pallet-time-release/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
@@ -202,7 +199,7 @@ try-runtime = [
 	"pallet-transaction-payment/try-runtime",
 	"pallet-treasury/try-runtime",
 	"parachain-info/try-runtime",
-	"orml-vesting/try-runtime",
+	"pallet-time-release/try-runtime",
 	"pallet-scheduler/try-runtime",
 	"pallet-collective/try-runtime",
 	"pallet-preimage/try-runtime",

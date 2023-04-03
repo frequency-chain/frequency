@@ -11,6 +11,13 @@ import { DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
 import { ItemizedStoragePageResponse, MessageSourceId, PaginatedStorageResponse, SchemaId } from "@frequency-chain/api-augment/interfaces";
 
+export type ReleaseSchedule = {
+    start: number;
+    period: number;
+    periodCount: number;
+    perPeriod: bigint;
+};
+
 export type AddKeyData = { msaId?: u64; expiration?: any; newPublicKey?: any; }
 export type AddProviderPayload = { authorizedMsaId?: u64; schemaIds?: u16[], expiration?: any; }
 export type ItemizedSignaturePayload = { msaId?: u64; schemaId?: u16, targetHash?: u32, expiration?: any; actions?: any; }
@@ -285,5 +292,9 @@ export class ExtrinsicHelper {
 
     public static getPaginatedStorage(msa_id: MessageSourceId, schemaId: any): Promise<Vec<PaginatedStorageResponse>> {
         return firstValueFrom(ExtrinsicHelper.api.rpc.statefulStorage.getPaginatedStorage(msa_id, schemaId));
+    }
+
+    public static timeReleaseTransfer(keys: KeyringPair, who: KeyringPair, schedule: ReleaseSchedule): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.timeRelease.transfer(who.address, schedule), keys, ExtrinsicHelper.api.events.timeRelease.ReleaseScheduleAdded);
     }
 }

@@ -779,23 +779,18 @@ jobs:
           toolchain: stable
       - name: Update Weights
         if: env.RUN_BENCHMARKS == 'true'
-        env:
-          BENCHMARK_SCRIPT: ./tools/ci/scripts/run-benchmark.sh
         run: |
           set -x
           pallets_str="${{steps.run-benchmarks.outputs.pallets}}"
           echo "Pallets: $pallets_str"
-          if [ $pallets_str = 'all' ]; then
+          if [ -z "${pallets_str}" -o $pallets_str = 'all' ]; then
             echo "Running benchmarks for all pallets..."
             make benchmarks
           else
             IFS=',' read -r -a pallets <<< "$pallets_str"
-            for pallet in "${pallets[@]}"
-            do
-              echo "Running benchmarks for $pallet pallet..."
-              $BENCHMARK_SCRIPT -p $pallet
-              echo "Finished benchmarks for $pallet pallet."
-            done
+              echo "Running benchmarks for pallets: ${pallets[*]}..."
+              make benchmarks-multi PALLETS="${pallets[*]}"
+              echo "Finished benchmarks for pallets: ${pallets[*]}."
           fi
       - name: Print Updated Weights
         if: env.RUN_BENCHMARKS == 'true'

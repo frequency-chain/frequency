@@ -1,3 +1,5 @@
+UNAME := $(shell uname)
+
 .PHONY: start
 start:
 	./scripts/init.sh start-frequency-instant
@@ -72,28 +74,84 @@ ci-local: check lint lint-audit test integration-test
 upgrade-local:
 	./scripts/init.sh upgrade-frequency
 
+#
+# We use hard-coded variables (rather than a pattern) so that smart shells with
+# CLI auto-complete for Makefiles will pick up the targets and present as options for auto-complete.
+#
+# Note: to run benchmarks for > 1 but < all pallets, it is more efficient to call the `run_benchmarks.sh`
+#       script directly, as it is able to run the build stage just once for all benchmarks
+#
+BENCH_TARGETS=\
+benchmarks-messages \
+benchmarks-msa \
+benchmarks-overhead \
+benchmarks-schemas \
+benchmarks-stateful-storage \
+benchmakrs-handles\
+benchmarks-time-release\
+benchmarks-pallet_balances \
+benchmarks-pallet_collator_selection \
+benchmarks-pallet_democracy \
+benchmarks-pallet_multisig \
+benchmarks-pallet_preimage \
+benchmarks-pallet_scheduler \
+benchmarks-pallet_session \
+benchmarks-pallet_timestamp \
+benchmarks-pallet_treasury \
+benchmarks-pallet_utility
+
+BENCH_LOCAL_TARGETS=\
+benchmarks-messages-local \
+benchmarks-msa-local \
+benchmarks-overhead-local \
+benchmarks-schemas-local \
+benchmarks-stateful-storage-local \
+benchmakrs-handles-local \
+benchmarks-time-release-local \
+benchmarks-pallet_balances-local \
+benchmarks-pallet_collator_selection-local \
+benchmarks-pallet_collective-local \
+benchmarks-pallet_democracy-local \
+benchmarks-pallet_multisig-local \
+benchmarks-pallet_preimage-local \
+benchmarks-pallet_scheduler-local \
+benchmarks-pallet_session-local \
+benchmarks-pallet_timestamp-local \
+benchmarks-pallet_treasury-local \
+benchmarks-pallet_utility-local
 
 .PHONY: benchmarks
 benchmarks:
-	./scripts/run_all_benchmarks.sh
+	./scripts/run_benchmarks.sh
 
-benchmarks-msa:
-	./scripts/run_benchmark.sh -p msa
+#
+# Target to run benchmarks for local development. Uses the "bench-dev" profile,
+# since "production" is unnecessary in local development, and by using "bench-dev"
+# (which is just a clone of "release"), we don't overwrite our "release" target used
+# for development testing.
+.PHONY: benchmarks-local
+benchmarks-local:
+	./scripts/run_benchmarks.sh -t bench-dev
 
-benchmarks-messages:
-	./scripts/run_benchmark.sh -p messages
+.PHONY: $(BENCH_TARGETS)
+$(BENCH_TARGETS):
+	./scripts/run_benchmarks.sh $(@:benchmarks-%=%)
 
-benchmarks-schemas:
-	./scripts/run_benchmark.sh -p schemas
+.PHONY: $(BENCH_LOCAL_TARGETS)
+$(BENCH_LOCAL_TARGETS):
+	./scripts/run_benchmarks.sh -t bench-dev $(@:benchmarks-%-local=%)
 
-benchmarks-stateful-storage:
-	./scripts/run_benchmark.sh -p stateful-storage
+#
+# benchmarks-multi-* targets are for ease of use in running benchmarks for multiple
+# (but not necessarily all) pallets with a single invocation.
+#
+.PHONY: benchmarks-multi
+benchmarks-multi:
+	./scripts/run_benchmarks.sh $(PALLETS)
 
-benchmarks-handles:
-	./scripts/run_benchmark.sh -p handles
-
-benchmarks-overhead:
-	./scripts/run_benchmark.sh -p overhead
+.PHONY: benchmarks-multi-local
+benchmarks-multi-local:
+	./scripts/run_benchmarks.sh -t bench-dev $(PALLETS)
 
 .PHONY: docs
 docs:
@@ -150,8 +208,14 @@ test:
 integration-test:
 	./scripts/run_integration_tests.sh
 
-integration-load-test:
+integration-test-only:
+	./scripts/run_integration_tests.sh -s
+
+integration-test-load:
 	./scripts/run_integration_tests.sh load
+
+integration-test-load-only:
+	./scripts/run_integration_tests.sh -s load
 
 .PHONY: try-runtime
 try-runtime:
@@ -172,11 +236,11 @@ POLKADOT_VERSION=$(shell awk -F "=" '/name = "polkadot-cli"/,/version = ".*"/{ p
 .PHONY: version
 version:
 ifndef v
-	@echo "Please set the version with v=X.X.X-X"
+	@echo "Please set the version with v=#.#.#[-#]"
 	@exit 1
 endif
 ifneq (,$(findstring v,  $(v)))
-	@echo "Please don't prefix with a 'v'. Use: v=X.X.X-X"
+	@echo "Please don't prefix with a 'v'. Use: v=#.#.#[-#]"
 	@exit 1
 endif
 ifeq (,$(POLKADOT_VERSION))
@@ -184,8 +248,15 @@ ifeq (,$(POLKADOT_VERSION))
 	@exit 1
 endif
 	@echo "Setting the crate versions to "$(v)+polkadot$(POLKADOT_VERSION)
-	find ./ -type f -name 'Cargo.toml' -exec sed -i '' 's/^version = \"0\.0\.0\"/version = \"$(v)+polkadot$(POLKADOT_VERSION)\"/g' {} \;
-	$(MAKE) check
+ifeq ($(UNAME), Linux)
+	$(eval $@_SED := -i -e)
+endif
+ifeq ($(UNAME), Darwin)
+	$(eval $@_SED := -i '')
+endif
+	find . -type f -name "Cargo.toml" -print0 | xargs -0 sed $($@_SED) 's/^version = \"0\.0\.0\"/version = \"$(v)+polkadot$(POLKADOT_VERSION)\"/g';
+	@echo "Doing cargo check for just examples seems to be the easiest way to update version in Cargo.lock"
+	cargo check --examples --quiet
 	@echo "All done. Don't forget to double check that the automated replacement worked."
 
 .PHONY: version-polkadot
