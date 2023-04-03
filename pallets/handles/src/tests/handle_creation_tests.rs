@@ -163,10 +163,7 @@ fn claim_handle_invalid_length_too_short() {
 	// Try to claim a 1 character handle which is under the character limit
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
-		let (payload, proof) = get_signed_claims_payload(
-			&alice,
-			"a".as_bytes().to_vec(),
-		);
+		let (payload, proof) = get_signed_claims_payload(&alice, "a".as_bytes().to_vec());
 		assert_noop!(
 			Handles::claim_handle(
 				RuntimeOrigin::signed(alice.public().into()),

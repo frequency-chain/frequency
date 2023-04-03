@@ -21,7 +21,7 @@ pub struct HandleConverter {
 /// # Example
 ///
 /// ```
-/// use pallet_handles::homoglyphs::canonical::HandleConverter;
+/// use pallet_handles::utils::converter::HandleConverter;
 ///
 /// let word = "ℂн𝔸RℒℰᏕ";
 ///
