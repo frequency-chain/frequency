@@ -92,8 +92,7 @@ pub mod pallet {
 		type MsaBenchmarkHelper: MsaBenchmarkHelper<Self::AccountId>;
 	}
 
-	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
-	// method.
+	// Storage
 	#[pallet::pallet]
 	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(_);
@@ -202,12 +201,11 @@ pub mod pallet {
 
 		/// Generate a numeric suffix for a canonical handle and the cursor/sequence index
 		fn generate_suffix_for_canonical_handle(canonical_handle: &str, cursor: usize) -> u16 {
-			log::debug!("generate_suffix_for_canonical_handle({}, {})", canonical_handle, &cursor);
-
-			let seed = SuffixGenerator::generate_seed(canonical_handle);
-			log::debug!("seed={}", seed);
-
-			let mut suffix_generator = SuffixGenerator::new(0, 10000, &canonical_handle);
+			let mut suffix_generator = SuffixGenerator::new(
+				T::HandleSuffixMin::get() as usize,
+				T::HandleSuffixMax::get() as usize,
+				&canonical_handle,
+			);
 			let sequence: Vec<usize> = suffix_generator.suffix_iter().collect();
 			sequence[cursor] as u16
 		}
@@ -217,10 +215,17 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Extrinsic to claim a handle
-		/// # Arguments
-		/// * `handle` - The handle to claim
+		/// Claims a new handle
 		///
+		/// # Events
+		/// * [`Event::HandleCreated`]
+		///
+		/// # Errors
+		/// * [`Error::InvalidHandleByteLength`]
+		/// * [`Error::InvalidMessageSourceAccount`]
+		/// * [`Error::MSAHandleAlreadyExists`]
+		/// * [`Error::InvalidHandleEncoding`]
+		/// * [`Error::InvalidHandleCharacterLength`]
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::claim_handle(payload.base_handle.len() as u32))]
 		pub fn claim_handle(
@@ -229,7 +234,6 @@ pub mod pallet {
 			proof: MultiSignature,
 			payload: ClaimHandlePayload,
 		) -> DispatchResult {
-			log::debug!("claim_handle()");
 			let provider_key = ensure_signed(origin)?;
 
 			// Validation: Check for base_handle size to address potential panic condition
@@ -262,7 +266,6 @@ pub mod pallet {
 			// Validation: The handle length must be valid.
 			// Note: the count() can panic but won't because the base_handle byte length is already checked
 			let len = base_handle_str.chars().count() as u32;
-			log::debug!("handle={} length={}", base_handle_str, len);
 
 			// Validation: Handle character length must be within range
 			ensure!(
@@ -275,18 +278,15 @@ pub mod pallet {
 			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
 			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
-			log::debug!("canonical={}", canonical_handle_str);
 
 			// Generate suffix from the next available index into the suffix sequence
 			let suffix_sequence_index =
 				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
 					.unwrap_or_default();
-			log::debug!("suffix_sequence_index={}", suffix_sequence_index);
 			let suffix = Self::generate_suffix_for_canonical_handle(
 				&canonical_handle_str,
 				suffix_sequence_index as usize,
 			);
-			log::debug!("suffix={}", suffix);
 
 			// Store canonical handle and suffix to MSA id
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(
@@ -319,7 +319,9 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Retire handle
+		/// Extrinsic to retire a handle
+		/// # Arguments
+		/// * `handle` - The handle to retire
 		#[pallet::call_index(1)]
 		#[pallet::weight((T::WeightInfo::retire_handle(payload.full_handle.len() as u32), DispatchClass::Normal, Pays::No))]
 		pub fn retire_handle(
@@ -395,12 +397,12 @@ pub mod pallet {
 			Some(HandleResponse { base_handle, suffix, canonical_handle })
 		}
 
-		/// Retrieve `count` of suffixes for specified  `base_handle`
+		/// Retrieve `count` of suffixes for specified base `handle`
 		/// # Arguments
-		/// * `base_handle` - The base handle to retrieve the suffixes for
+		/// * `handle` - The base handle to retrieve the suffixes for
 		/// * `count` - The number of suffixes to retrieve
 		/// # Returns
-		/// * `Vec<u16>` - The suffixes for the specified `base_handle`
+		/// * `Vec<u16>` - The suffixes for the specified `handle`
 		pub fn get_next_suffixes(handle: Vec<u8>, count: u16) -> Vec<HandleSuffix> {
 			let mut suffixes: Vec<u16> = vec![];
 			let base_handle: Handle = handle.try_into().unwrap_or_default();
@@ -436,8 +438,8 @@ pub mod pallet {
 
 		/// Create a full handle from a base handle and a suffix
 		/// # Arguments
-		/// * `base_handle` - The base handle to create the full handle from
-		/// * `suffix` - The suffix to create the full handle from
+		/// * `base_handle_str` - The base handle (as a string slice) to create the full handle from
+		/// * `suffix_sequence_index` - The suffix to create the full handle from
 		/// # Returns
 		/// * `Handle` - The full handle
 		pub fn create_full_handle(
@@ -447,15 +449,12 @@ pub mod pallet {
 			// Convert base display handle into a canonical display handle
 			let handle_converter = HandleConverter::new();
 			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
-			log::debug!("canonical={}", canonical_handle_str);
 
 			// Generate suffix from index into the suffix sequence
-			log::debug!("suffix_sequence_index={}", suffix_sequence_index);
 			let suffix = Self::generate_suffix_for_canonical_handle(
 				&canonical_handle_str,
 				suffix_sequence_index as usize,
 			);
-			log::debug!("suffix={}", suffix);
 
 			// Compose the full display handle from the base handle, "." delimeter and suffix
 			let mut full_handle_vec: Vec<u8> = vec![];

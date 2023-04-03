@@ -7,7 +7,8 @@ use sp_core::{sr25519, Encode, Pair};
 #[test]
 fn test_full_handle_creation() {
 	new_test_ext().execute_with(|| {
-		for sequence_index in 0..100 {
+		// Min is 10, Max is 99 inclusive
+		for sequence_index in 0..89 {
 			let full_handle = Handles::create_full_handle("test", sequence_index);
 			let full_handle_str = core::str::from_utf8(&full_handle).ok().unwrap();
 			println!("full_handle_str={}", full_handle_str);
