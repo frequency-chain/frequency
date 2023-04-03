@@ -162,14 +162,15 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalPro
 }
 pub struct MockHandleValidator;
 impl HandleValidator for MockHandleValidator {
-	fn get_msa_for_handle(handle: &str) -> Option<HandleResponse> {
-		match handle {
-			"test" => Some(HandleResponse {
-				base_handle: "test".into(),
-				canonical_handle: "test".into(),
+	fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
+		if msa_id == 1 {
+			Some(HandleResponse {
+				base_handle: "test1".into(),
+				canonical_handle: "test1".into(),
 				suffix: 2u16,
-			}),
-			_ => None,
+			})
+		} else {
+			None
 		}
 	}
 }
