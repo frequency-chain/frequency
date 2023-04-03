@@ -1,48 +1,31 @@
-use crate::{homoglyphs::canonical::HandleConverter, tests::mock::*};
+use crate::{homoglyphs::canonical::HandleConverter, tests::mock::*, Error};
 use common_primitives::{handles::*, utils::wrap_binary_data};
-use frame_support::assert_ok;
+use frame_support::{assert_noop, assert_ok};
 use sp_core::{sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
+fn get_signed_claims_payload(
+	account: &sr25519::Pair,
+	handle: Vec<u8>,
+) -> (ClaimHandlePayload, MultiSignature) {
+	let base_handle = handle;
+	let payload = ClaimHandlePayload::new(base_handle.clone());
+	let encoded_payload = wrap_binary_data(payload.encode());
+	let proof: MultiSignature = account.sign(&encoded_payload).into();
+
+	(payload, proof)
+}
+
 #[test]
-fn claim_handle_happy_path() {
+fn claim_handle() {
 	new_test_ext().execute_with(|| {
-		// Provider
-		let provider_account = test_public(1);
-		println!("provider_account={}", provider_account);
-
-		// Delegator
-		let delegator_key_pair = sr25519::Pair::generate().0;
-		let delegator_account = delegator_key_pair.public();
-		println!("delegator_account={}", delegator_account);
-
-		// Payload
-		let base_handle = "test1".as_bytes().to_vec();
-		println!("base_handle={:?}", base_handle);
-
-		let payload = ClaimHandlePayload::new(base_handle.clone());
-		let encoded_payload = wrap_binary_data(payload.encode());
-		println!("encoded_payload={:?}", encoded_payload);
-
-		let proof: MultiSignature = delegator_key_pair.sign(&encoded_payload).into();
+		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let (payload, proof) = get_signed_claims_payload(&alice, "test1".as_bytes().to_vec());
 		assert_ok!(Handles::claim_handle(
-			RuntimeOrigin::signed(provider_account.into()),
-			delegator_account.into(),
+			RuntimeOrigin::signed(alice.public().into()),
+			alice.public().into(),
 			proof,
 			payload
 		));
-		let events_occured = System::events();
-
-		let base_handle_str = core::str::from_utf8(&base_handle).ok().unwrap();
-		println!("base_handle_str={}", base_handle_str);
-
-		let handle_converter = HandleConverter::new();
-		let canonical_handle_vec =
-			handle_converter.convert_to_canonical(base_handle_str).as_bytes().to_vec();
-		let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
-
-		Handles::get_current_suffix_index_for_canonical_handle(canonical_handle);
-		println!("#events = {}", events_occured.len());
-		// System::assert_last_event(Event::HandleCreated { msa_id: 1, handle: base_handle }.into());
 	});
 }
