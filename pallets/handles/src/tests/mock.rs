@@ -105,10 +105,10 @@ impl pallet_handles::Config for Test {
 	type MsaInfoProvider = MsaInfoHandler;
 
 	/// The minimum suffix value
-	type HandleSuffixMin = ConstU32<2>;
+	type HandleSuffixMin = ConstU32<10>;
 
 	/// The maximum suffix value
-	type HandleSuffixMax = ConstU32<30>;
+	type HandleSuffixMax = ConstU32<99>;
 
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
