@@ -1,21 +1,8 @@
 use crate::{tests::mock::*, Error};
 use codec::Decode;
-use common_primitives::{handles::*, msa::MessageSourceId, utils::wrap_binary_data};
+use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_noop, assert_ok};
 use sp_core::{sr25519, Encode, Pair};
-use sp_runtime::MultiSignature;
-
-fn get_signed_claims_payload(
-	account: &sr25519::Pair,
-	handle: Vec<u8>,
-) -> (ClaimHandlePayload, MultiSignature) {
-	let base_handle = handle;
-	let payload = ClaimHandlePayload::new(base_handle.clone());
-	let encoded_payload = wrap_binary_data(payload.encode());
-	let proof: MultiSignature = account.sign(&encoded_payload).into();
-
-	(payload, proof)
-}
 
 #[test]
 fn test_full_handle_creation() {
@@ -182,10 +169,8 @@ fn claim_handle_invalid_byte_length() {
 	// ℂн𝔸RℒℰᏕ𝔇𝔸𐒴𑣯1𝒩𝓐𑣯𝔸R𝔻Ꮥ is 19 characters but 61 bytes
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
-		let (payload, proof) = get_signed_claims_payload(
-			&alice,
-			"ℂн𝔸RℒℰᏕ𝔇𝔸𐒴𑣯1𝒩𝓐𑣯𝔸R𝔻Ꮥ".as_bytes().to_vec(),
-		);
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, "ℂн𝔸RℒℰᏕ𝔇𝔸𐒴𑣯1𝒩𝓐𑣯𝔸R𝔻Ꮥ".as_bytes().to_vec());
 		assert_noop!(
 			Handles::claim_handle(
 				RuntimeOrigin::signed(alice.public().into()),

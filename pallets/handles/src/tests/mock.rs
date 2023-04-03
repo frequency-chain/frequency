@@ -2,17 +2,20 @@ use crate as pallet_handles;
 use codec::Decode;
 
 use common_primitives::{
+	handles::*,
 	msa::{MessageSourceId, MsaLookup, MsaValidator},
 	node::AccountId,
+	utils::wrap_binary_data,
 };
 use frame_support::{
 	dispatch::DispatchError,
 	traits::{ConstU16, ConstU32, ConstU64},
 };
-use sp_core::{crypto::AccountId32, ByteArray, H256};
+use sp_core::{crypto::AccountId32, sr25519, ByteArray, Encode, Pair, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
+	MultiSignature,
 };
 
 pub const INVALID_MSA_ID: MessageSourceId = 100;
@@ -117,17 +120,20 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
 }
 
-// pub fn get_msa_from_account(account_id: u64) -> u64 {
-// 	account_id + 100
-// }
-
 // Create and return a simple test AccountId32 constructed with the desired integer.
 pub fn test_public(n: u8) -> AccountId32 {
 	AccountId32::new([n; 32])
 }
 
-// // Create and return a simple signed origin from a test_public constructed with the desired integer,
-// // for passing to an extrinsic call
-// pub fn test_origin_signed(n: u8) -> RuntimeOrigin {
-// 	RuntimeOrigin::signed(test_public(n))
-// }
+// Create a signed claims payload
+pub fn get_signed_claims_payload(
+	account: &sr25519::Pair,
+	handle: Vec<u8>,
+) -> (ClaimHandlePayload, MultiSignature) {
+	let base_handle = handle;
+	let payload = ClaimHandlePayload::new(base_handle.clone());
+	let encoded_payload = wrap_binary_data(payload.encode());
+	let proof: MultiSignature = account.sign(&encoded_payload).into();
+
+	(payload, proof)
+}

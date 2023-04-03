@@ -25,6 +25,5 @@ fn retire_handle_no_handle() {
 			),
 			Error::<Test>::MSAHandleDoesNotExist
 		);
-
 	});
 }
