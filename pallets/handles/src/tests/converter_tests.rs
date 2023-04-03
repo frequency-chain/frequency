@@ -71,10 +71,10 @@ fn test_strip_unicode_whitespace() {
 	let whitespace_string: String = whitespace_chars.into_iter().collect();
 	let string_with_whitespace =
 		format!("{}hello{}world!{}", whitespace_string, whitespace_string, whitespace_string);
-
+	println!("String with whitespace: {}", string_with_whitespace);
 	let handle_converter = HandleConverter::new();
 	let whitespace_stripped_string =
 		handle_converter.strip_unicode_whitespace(&string_with_whitespace);
-
+	println!("Whitespace stripped string: {}", whitespace_stripped_string);
 	assert_eq!(whitespace_stripped_string, "helloworld!");
 }

@@ -5536,7 +5536,6 @@ dependencies = [
  "parity-scale-codec",
  "pretty_assertions",
  "rand 0.8.5",
- "regex",
  "scale-info",
  "serde",
  "sp-core",
