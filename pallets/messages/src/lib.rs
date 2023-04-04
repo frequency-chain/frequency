@@ -408,12 +408,14 @@ impl<T: Config> Pallet<T> {
 	///
 	pub fn validate_cid(in_cid: &Vec<u8>) -> Result<Vec<u8>, DispatchError> {
 		// Decode SCALE encoded CID into string slice
-		let cstr: &str = sp_std::str::from_utf8(&in_cid[..]).map_err(|_| Error::<T>::InvalidCid)?;
-		ensure!(cstr.len() > 2, Error::<T>::InvalidCid);
-		ensure!(&cstr[0..2] != "Qm", Error::<T>::UnsupportedCidVersion);
+		let cid_str: &str =
+			sp_std::str::from_utf8(&in_cid[..]).map_err(|_| Error::<T>::InvalidCid)?;
+		ensure!(cid_str.len() > 2, Error::<T>::InvalidCid);
+		// starts_with handles Unicode multibyte characters safely
+		ensure!(!cid_str.starts_with("Qm"), Error::<T>::UnsupportedCidVersion);
 
 		// Assume it's a multibase-encoded string. Decode it to a byte array so we can parse the CID.
-		let cid_b = multibase::decode(cstr).map_err(|_| Error::<T>::InvalidCid)?.1;
+		let cid_b = multibase::decode(cid_str).map_err(|_| Error::<T>::InvalidCid)?.1;
 		ensure!(Cid::read_bytes(&cid_b[..]).is_ok(), Error::<T>::InvalidCid);
 
 		Ok(cid_b)
