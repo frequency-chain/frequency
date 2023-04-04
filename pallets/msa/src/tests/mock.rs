@@ -1,6 +1,6 @@
 use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
 use common_primitives::{
-	handles::{HandleResponse, HandleProvider},
+	handles::{HandleProvider, HandleResponse},
 	msa::MessageSourceId,
 	node::BlockNumber,
 	schema::SchemaId,
