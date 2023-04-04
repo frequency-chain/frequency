@@ -345,23 +345,7 @@ pub mod pallet {
 			// Validation: Verify the payload was signed
 			Self::verify_signed_payload(&proof, &delegator_key, payload.encode())?;
 
-			// Validation: The MSA must already have a handle associated with it
-			let display_name_handle = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
-				.map_err(|_| Error::<T>::MSAHandleDoesNotExist)?;
-			let display_name_str = core::str::from_utf8(&display_name_handle)
-				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
-
-			let handle_converter = HandleConverter::new();
-			let (base_handle_str, suffix_num) =
-				handle_converter.split_display_name(display_name_str);
-
-			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
-			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
-			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
-
-			// Remove handle from storage but not from CanonicalBaseHandleToSuffixIndex because retired handles can't be reused
-			MSAIdToDisplayName::<T>::remove(delegator_msa_id);
-			CanonicalBaseHandleAndSuffixToMSAId::<T>::remove(canonical_handle, suffix_num);
+			Self::do_retire_handle(delegator_msa_id)?;
 
 			let full_handle: Handle = payload.full_handle.try_into().ok().unwrap();
 
@@ -547,5 +531,31 @@ pub mod pallet {
 
 			Ok(full_handle)
 		}
+
+		pub fn do_retire_handle(
+			delegator_msa_id: MessageSourceId
+		) -> DispatchResult {
+
+			// Validation: The MSA must already have a handle associated with it
+			let display_name_handle = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
+				.map_err(|_| Error::<T>::MSAHandleDoesNotExist)?;
+			let display_name_str = core::str::from_utf8(&display_name_handle)
+				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
+
+			let handle_converter = HandleConverter::new();
+			let (base_handle_str, suffix_num) =
+				handle_converter.split_display_name(display_name_str);
+
+			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
+			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
+			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
+
+			// Remove handle from storage but not from CanonicalBaseHandleToSuffixIndex because retired handles can't be reused
+			MSAIdToDisplayName::<T>::remove(delegator_msa_id);
+			CanonicalBaseHandleAndSuffixToMSAId::<T>::remove(canonical_handle, suffix_num);
+
+			Ok(())
+		}
+
 	}
 }
