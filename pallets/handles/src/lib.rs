@@ -35,7 +35,7 @@
 mod benchmarking;
 /// Handle converter for canonical handles
 pub mod utils;
-use utils::converter::HandleConverter;
+use utils::{converter::HandleConverter, validator::HandleValidator};
 
 #[cfg(test)]
 mod tests;
@@ -136,6 +136,10 @@ pub mod pallet {
 		InvalidHandleByteLength,
 		/// Invalid handle character length
 		InvalidHandleCharacterLength,
+		/// The handle name is reserved for chain use only
+		HandleIsNotAllowed,
+		/// The handle contains characters that are not allowed
+		HandleContainsBlockedCharacters,
 		/// Suffixes exhausted
 		SuffixesExhausted,
 		/// Invalid MSA
@@ -315,6 +319,11 @@ pub mod pallet {
 				len >= HANDLE_BASE_CHARS_MIN && len <= HANDLE_BASE_CHARS_MAX,
 				Error::<T>::InvalidHandleCharacterLength
 			);
+
+			// Validation: The handle must not contain reserved words or blocked characters
+			let handle_validator = HandleValidator::new();
+			ensure!(!handle_validator.is_reserved_handle(base_handle_str), Error::<T>::HandleIsNotAllowed);
+			ensure!(!handle_validator.contains_blocked_characters(base_handle_str), Error::<T>::HandleContainsBlockedCharacters);
 
 			// Convert base display handle into a canonical display handle
 			let handle_converter = HandleConverter::new();
