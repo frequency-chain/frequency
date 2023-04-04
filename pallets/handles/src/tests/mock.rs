@@ -117,6 +117,18 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
+	use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStorePtr};
+	use sp_std::sync::Arc;
+
+	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let mut ext = sp_io::TestExternalities::new(t);
+	ext.register_extension(KeystoreExt(Arc::new(KeyStore::new()) as SyncCryptoStorePtr));
+
+	ext
+}
+
 // Create and return a simple test AccountId32 constructed with the desired integer.
 pub fn test_public(n: u8) -> AccountId32 {
 	AccountId32::new([n; 32])

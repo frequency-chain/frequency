@@ -207,14 +207,7 @@ pub mod pallet {
 		/// * `payload` - The payload to verify the signature against.
 		///
 		/// # Errors
-		///
-		/// Returns a `DispatchResult` if the signature is invalid, the signer is not
-		/// authorized, or some other error occurred while verifying the signature.
-		///
-		/// # Events
-		///
-		/// * [`Event::InvalidSignature`] - If the signature is invalid, the `InvalidSignature` event will be emitted.
-		///
+		/// * [`Error::InvalidSignature`]
 		pub fn verify_signed_payload(
 			signature: &MultiSignature,
 			signer: &T::AccountId,
@@ -250,8 +243,6 @@ pub mod pallet {
 			sequence[cursor] as u16
 		}
 	}
-
-	// EXTRINSICS
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
