@@ -1,6 +1,6 @@
 use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
 use common_primitives::{
-	handles::{HandleResponse, HandleValidator},
+	handles::{HandleResponse, HandleProvider},
 	msa::MessageSourceId,
 	node::BlockNumber,
 	schema::SchemaId,
@@ -160,8 +160,8 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalPro
 		Council::proposal_count()
 	}
 }
-pub struct MockHandleValidator;
-impl HandleValidator for MockHandleValidator {
+pub struct MockHandleProvider;
+impl HandleProvider for MockHandleProvider {
 	fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
 		if msa_id == 1 {
 			Some(HandleResponse {
@@ -183,7 +183,7 @@ impl pallet_msa::Config for Test {
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
-	type HandleValidator = MockHandleValidator;
+	type HandleProvider = MockHandleProvider;
 	type MortalityWindowSize = ConstU32<100>;
 	type MaxSignaturesStored = MaxSignaturesStored;
 	// The proposal type

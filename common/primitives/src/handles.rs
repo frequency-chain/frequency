@@ -70,8 +70,8 @@ pub struct HandleResponse {
 	pub suffix: HandleSuffix,
 }
 
-/// A behavior that allows for validating a `Handle` for a given `MessageSourceAccount`
-pub trait HandleValidator {
+/// A behavior that allows for retrieving a `Handle` for a given `MessageSourceAccount`
+pub trait HandleProvider {
 	/// Validate a handle for a given `MessageSourceAccount`
 	fn get_handle_for_msa(key: MessageSourceId) -> Option<HandleResponse>;
 }

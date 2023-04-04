@@ -84,7 +84,7 @@ use common_primitives::{
 };
 
 pub use common_primitives::{
-	handles::HandleValidator, msa::MessageSourceId, utils::wrap_binary_data,
+	handles::HandleProvider, msa::MessageSourceId, utils::wrap_binary_data,
 };
 pub use pallet::*;
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
@@ -133,7 +133,7 @@ pub mod pallet {
 		type SchemaValidator: SchemaValidator<SchemaId>;
 
 		/// A type that will supply `Handle` related information.
-		type HandleValidator: HandleValidator;
+		type HandleProvider: HandleProvider;
 
 		/// The number of blocks before a signature can be ejected from the PayloadSignatureRegistryList
 		#[pallet::constant]
@@ -1679,7 +1679,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			)
 		);
 
-		let msa_handle = T::HandleValidator::get_handle_for_msa(msa_id);
+		let msa_handle = T::HandleProvider::get_handle_for_msa(msa_id);
 		ensure!(
 			msa_handle.is_none(),
 			InvalidTransaction::Custom(ValidityError::HandleNotRetired as u8)
