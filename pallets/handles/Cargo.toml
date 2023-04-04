@@ -28,7 +28,6 @@ sp-core = { git = "https://github.com/paritytech/substrate", default-features = 
 sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
-sp-keystore = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
 
@@ -36,6 +35,7 @@ common-primitives = { default-features = false, path = "../../common/primitives"
 env_logger = "0.10.0"
 pretty_assertions = "1"
 serde = { version = "1.0", features = ["derive"] }
+sp-keystore = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 
 [features]
 default = ['std']
