@@ -21,10 +21,9 @@ mod app_sr25519 {
 type SignerId = app_sr25519::Public;
 
 fn create_signed_claims_payload<T: Config>(
+	delegator_account_public: SignerId,
 	byte_size: u32,
-) -> (ClaimHandlePayload, MultiSignature, T::AccountId, SignerId) {
-	let delegator_account_public = SignerId::generate_pair(None);
-
+) -> (ClaimHandlePayload, MultiSignature, T::AccountId) {
 	// create a generic handle example with expanding size
 	let base_handle = b"b".to_vec();
 	let max_chars = 20;
@@ -50,12 +49,7 @@ fn create_signed_claims_payload<T: Config>(
 	let acc = T::AccountId::decode(&mut &delegator_account_public.encode()[..]).unwrap();
 
 	let signature = delegator_account_public.sign(&encode_handle_claims_data).unwrap();
-	(
-		handle_claims_payload,
-		MultiSignature::Sr25519(signature.into()),
-		acc.into(),
-		delegator_account_public,
-	)
+	(handle_claims_payload, MultiSignature::Sr25519(signature.into()), acc.into())
 }
 
 benchmarks! {
@@ -64,7 +58,8 @@ benchmarks! {
 		let b in HANDLE_BASE_BYTES_MIN .. HANDLE_BASE_BYTES_MAX-2;
 		let caller: T::AccountId = whitelisted_caller();
 		let delegator_msa_id = 1u64;
-		let (payload, proof, key, _) = create_signed_claims_payload::<T>(b);
+		let delegator_account_public = SignerId::generate_pair(None);
+		let (payload, proof, key) = create_signed_claims_payload::<T>(delegator_account_public, b);
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), key.clone()));
 
@@ -79,7 +74,8 @@ benchmarks! {
 		let b in HANDLE_BASE_BYTES_MIN .. HANDLE_BASE_BYTES_MAX-1;
 		let caller: T::AccountId = whitelisted_caller();
 		let delegator_msa_id = 1u64;
-		let (payload, proof, key, delegator_acc) = create_signed_claims_payload::<T>(b);
+		let delegator_account_public = SignerId::generate_pair(None);
+		let (payload, proof, key) = create_signed_claims_payload::<T>(delegator_account_public.clone(), b);
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), key.clone()));
 		assert_ok!(Handles::<T>::claim_handle(RawOrigin::Signed(caller.clone()).into(), key.clone(), proof, payload));
@@ -94,7 +90,7 @@ benchmarks! {
 		let full_handle_with_delimiter = format!("{}{}", base_handle_str, ".");
 		let retirement_payload = RetireHandlePayload::new(full_handle_with_delimiter.as_bytes().to_vec());
 		let encode_handle_claims_data = wrap_binary_data(retirement_payload.encode());
-		let signature = delegator_acc.sign(&encode_handle_claims_data).unwrap();
+		let signature = delegator_account_public.sign(&encode_handle_claims_data).unwrap();
 		let retire_proof = MultiSignature::Sr25519(signature.into());
 	}: _(RawOrigin::Signed(caller.clone()), key.clone(), retire_proof, retirement_payload)
 	verify {

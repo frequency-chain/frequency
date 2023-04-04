@@ -1,4 +1,4 @@
-use crate::{tests::mock::*, Error};
+use crate::{tests::mock::*, Error, Event};
 use codec::Decode;
 use common_primitives::{handles::*, msa::MessageSourceId, utils::wrap_binary_data};
 use frame_support::{
@@ -48,6 +48,10 @@ fn claim_and_retire_handle_happy_path() {
 			proof.clone(),
 			payload.clone()
 		));
+
+		// Confirm that HandleRetired event was deposited
+		let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
+		System::assert_last_event(Event::HandleRetired { msa_id, handle: full_handle }.into());
 
 		// Try to retire again which should fail
 		assert_noop!(

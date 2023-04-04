@@ -31,6 +31,7 @@ describe("index", function () {
       "MessagesRuntimeApi",
       "SchemasRuntimeApi",
       "StatefulStorageRuntimeApi",
+      "HandlesRuntimeApi",
       "AdditionalRuntimeApi",
     ]);
   });

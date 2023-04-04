@@ -1,4 +1,4 @@
-use crate::{tests::mock::*, Error};
+use crate::{tests::mock::*, Error, Event};
 use codec::Decode;
 use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_noop, assert_ok};
@@ -27,6 +27,11 @@ fn claim_handle_happy_path() {
 			proof,
 			payload
 		));
+
+		// Confirm that HandleClaimed event was deposited
+		let msa_id = MessageSourceId::decode(&mut &alice.public().encode()[..]).unwrap();
+		let handle = Handles::create_full_handle("test1", 0);
+		System::assert_last_event(Event::HandleClaimed { msa_id, handle }.into());
 	});
 }
 

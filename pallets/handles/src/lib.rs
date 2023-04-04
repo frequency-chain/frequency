@@ -162,7 +162,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Deposited when a handle is created. [MSA id, full handle in UTF-8 bytes]
-		HandleCreated {
+		HandleClaimed {
 			/// MSA id of handle owner
 			msa_id: MessageSourceId,
 			/// UTF-8 string in bytes
@@ -178,15 +178,34 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		/// Get the next index into the shuffled suffix sequence for the specified canonical base handle
+		/// Gets the next suffix index for a canonical handle.
+		///
+		/// This function takes a canonical handle as input and returns the next available
+		/// suffix index for that handle. If no current suffix index is found for the handle,
+		/// it starts from 0. If a current suffix index is found, it increments it by 1 to
+		/// get the next suffix index. If the increment operation fails due to overflow, it
+		/// returns an error indicating that the suffixes are exhausted.
 		///
 		/// # Arguments
 		///
-		/// * `canonical_handle` - The canonical `Handle` to get suffixes for.
+		/// * `canonical_handle` - A canonical handle for which the next suffix index is needed.
 		///
-		/// # Errors
-		/// * [`Error::SuffixesExhausted`]
+		/// # Returns
 		///
+		/// * `Result<SequenceIndex, DispatchError>` - Result containing the next suffix index
+		/// or an error if suffixes are exhausted.
+		///
+		/// # Example
+		///
+		/// ```
+		/// use my_module::get_next_suffix_index_for_canonical_handle;
+		///
+		/// let canonical_handle = get_canonical_handle();
+		/// match get_next_suffix_index_for_canonical_handle(canonical_handle) {
+		///     Ok(next_suffix) => println!("Next suffix index: {}", next_suffix),
+		///     Err(err) => println!("Error: {:?}", err),
+		/// }
+		/// ```
 		pub fn get_next_suffix_index_for_canonical_handle(
 			canonical_handle: Handle,
 		) -> Result<SequenceIndex, DispatchError> {
@@ -252,24 +271,38 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Claims a new handle
+		/// Claims a handle for a delegator's MSA (Message Source Account) based on the provided payload.
+		/// This function performs several validations before claiming the handle, including checking
+		/// the size of the base_handle, ensuring the provider and delegator have valid MSA keys,
+		/// verifying the payload signature, and finally calling the internal `do_claim_handle` function
+		/// to claim the handle.
 		///
 		/// # Arguments
 		///
-		/// * `origin` - An `OriginFor<T>` that will provide the account that will be claiming the handle.
-		/// * `delegator_key` - The account id of the MSA id owner.
-		/// * `proof` - A `MultiSignature` that represents the signature of the payload by the `delegator_key`.
-		/// * `payload` - A `ClaimHandlePayload` that contains the payload data required to claim the handle.
-		///
-		/// # Events
-		/// * [`Event::HandleCreated`]
+		/// * `origin` - The origin of the transaction or call.
+		/// * `delegator_key` - The account ID of the delegator.
+		/// * `proof` - The multi-signature proof for the payload.
+		/// * `payload` - The payload containing the information needed to claim the handle.
 		///
 		/// # Errors
-		/// * [`Error::InvalidHandleByteLength`]
-		/// * [`Error::InvalidMessageSourceAccount`]
-		/// * [`Error::MSAHandleAlreadyExists`]
-		/// * [`Error::InvalidHandleEncoding`]
-		/// * [`Error::InvalidHandleCharacterLength`]
+		///
+		/// This function may return an error as part of `DispatchResult` if any of the following
+		/// validations fail:
+		///
+		/// * [`Error::InvalidHandleByteLength`] - The base_handle size exceeds the maximum allowed size.
+		/// * [`Error::InvalidMessageSourceAccount`] - The provider does not have a valid MSA key.
+		/// * [`Error::InvalidMessageSourceAccount`] - The delegator does not have a valid MSA key.
+		/// * [`Error::InvalidSignature`] - The payload signature verification fails.
+		///
+		/// # Events
+		///
+		/// If the handle is claimed successfully, a `HandleClaimed` event will be emitted with the
+		/// `msa_id` of the delegator's MSA and the `handle` that was claimed.
+		///
+		/// # Events
+		/// * [`Event::HandleClaimed`]
+		///
+
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::claim_handle(payload.base_handle.len() as u32))]
 		pub fn claim_handle(
@@ -297,6 +330,242 @@ pub mod pallet {
 			// Validation: Verify the payload was signed
 			Self::verify_signed_payload(&proof, &delegator_key, payload.encode())?;
 
+			let full_handle = Self::do_claim_handle(delegator_msa_id, payload)?;
+
+			Self::deposit_event(Event::HandleClaimed {
+				msa_id: delegator_msa_id,
+				handle: full_handle.clone(),
+			});
+			Ok(())
+		}
+
+		/// Retire a handle for a given delegator.
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the call.
+		/// * `delegator_key` - The account ID of the delegator.
+		/// * `proof` - The multisignature proof for the payload.
+		/// * `payload` - The payload containing the handle to retire.
+		///
+		/// # Errors
+		///
+		/// This function can return the following errors:
+		///
+		/// * `InvalidHandleByteLength` - If the length of the `payload.full_handle` exceeds the maximum allowed size.
+		/// * `InvalidMessageSourceAccount` - If the provider or the delegator does not have a valid MSA (Message Source Account) ID.
+		///
+		/// # Events
+		/// * [`Event::HandleRetired`]
+		///
+		#[pallet::call_index(1)]
+		#[pallet::weight((T::WeightInfo::retire_handle(payload.full_handle.len() as u32), DispatchClass::Normal, Pays::No))]
+		pub fn retire_handle(
+			origin: OriginFor<T>,
+			delegator_key: T::AccountId,
+			proof: MultiSignature,
+			payload: RetireHandlePayload,
+		) -> DispatchResult {
+			let provider_key = ensure_signed(origin)?;
+
+			// Validation: Check for base_handle size to address potential panic condition
+			ensure!(
+				payload.full_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
+				Error::<T>::InvalidHandleByteLength
+			);
+
+			// Validation: The provider must already have a MSA id
+			T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+
+			// Validation: The delegator must already have a MSA id
+			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+
+			// Validation: Verify the payload was signed
+			Self::verify_signed_payload(&proof, &delegator_key, payload.encode())?;
+
+			Self::do_retire_handle(delegator_msa_id)?;
+
+			let full_handle: Handle = payload.full_handle.try_into().ok().unwrap();
+
+			Self::deposit_event(Event::HandleRetired {
+				msa_id: delegator_msa_id,
+				handle: full_handle.clone(),
+			});
+			Ok(())
+		}
+	}
+
+	impl<T: Config> Pallet<T> {
+		/// Retrieves a handle for a given MSA (MessageSourceId).
+		///
+		/// # Arguments
+		///
+		/// * `msa_id` - The MSA id (MessageSourceId) for which to retrieve the handle.
+		///
+		/// # Returns
+		///
+		/// Returns an `Option<HandleResponse>` containing the handle information if the MSA id is valid,
+		/// otherwise returns `None`.
+		///
+		/// # Errors
+		///
+		/// Returns an `Err(Error)` if there is an error in encoding the handle or converting it to a
+		/// canonical form.
+		///
+		/// # Example
+		///
+		/// ```rust
+		/// use my_crate::{get_handle_for_msa, MessageSourceId, HandleResponse};
+		///
+		/// let msa_id = MessageSourceId::new(12345);
+		/// let handle = get_handle_for_msa(msa_id);
+		/// if let Some(handle_response) = handle {
+		///     println!("Base Handle: {:?}", handle_response.base_handle);
+		///     println!("Suffix: {:?}", handle_response.suffix);
+		///     println!("Canonical Handle: {:?}", handle_response.canonical_handle);
+		/// } else {
+		///     println!("No handle found for MSAId: {:?}", msa_id);
+		/// }
+		/// ```
+		pub fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
+			let full_handle = MSAIdToDisplayName::<T>::get(msa_id);
+			if full_handle.is_empty() {
+				return None
+			}
+
+			// convert to string
+			let full_handle_str = core::str::from_utf8(&full_handle)
+				.map_err(|_| Error::<T>::InvalidHandleEncoding)
+				.ok()?;
+
+			let handle_converter = HandleConverter::new();
+			let (base_handle_str, suffix) = handle_converter.split_display_name(full_handle_str);
+			let base_handle = base_handle_str.as_bytes().to_vec();
+			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
+			let canonical_handle = canonical_handle_str.as_bytes().to_vec();
+			Some(HandleResponse { base_handle, suffix, canonical_handle })
+		}
+
+		/// Get the next available suffixes for a given handle.
+		///
+		/// This function takes a `Vec<u8>` handle and generates the next available
+		/// suffixes for that handle. The number of suffixes to generate is determined
+		/// by the `count` parameter, which is of type `u16`.
+		///
+		/// # Arguments
+		///
+		/// * `handle`: A `Vec<u8>` representing the handle for which to generate suffixes.
+		/// * `count`: The number of suffixes to generate, of type `u16`.
+		///
+		/// # Returns
+		///
+		/// A `Vec<HandleSuffix>` containing the generated suffixes.
+		///
+		/// # Example
+		///
+		/// ```rust
+		/// use my_crate::get_next_suffixes;
+		///
+		/// let handle: Vec<u8> = vec![72, 101, 108, 108, 111]; // "Hello" in UTF-8
+		/// let count: u16 = 3;
+		///
+		/// let suffixes = get_next_suffixes(handle, count);
+		///
+		/// println!("Next 3 suffixes: {:?}", suffixes);
+		/// ```
+		pub fn get_next_suffixes(handle: Vec<u8>, count: u16) -> Vec<HandleSuffix> {
+			let mut suffixes: Vec<u16> = vec![];
+			let base_handle: Handle = handle.try_into().unwrap_or_default();
+			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or("");
+
+			let handle_converter = HandleConverter::new();
+			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
+			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
+			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
+			let suffix_index =
+				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
+					.unwrap_or_default();
+
+			// Generate suffixes from the next available suffix index
+			let mut suffix_generator = SuffixGenerator::new(
+				T::HandleSuffixMin::get() as usize,
+				T::HandleSuffixMax::get() as usize,
+				&canonical_handle_str,
+			);
+			let sequence = suffix_generator.suffix_iter().enumerate();
+
+			for (i, suffix) in sequence {
+				if i >= suffix_index as usize && i < (suffix_index as usize + count as usize) {
+					suffixes.push(suffix as u16);
+				}
+				if suffixes.len() == count as usize {
+					break
+				}
+			}
+
+			suffixes
+		}
+
+		/// Creates a full display handle by combining a base handle string with a suffix generated
+		/// from an index into the suffix sequence.
+		///
+		/// # Arguments
+		///
+		/// * `base_handle_str` - The base handle string to use as the prefix for the full handle.
+		/// * `suffix_sequence_index` - The index into the suffix sequence to generate the suffix from.
+		///
+		/// # Returns
+		///
+		/// A `Handle` representing the full display handle.
+		pub fn create_full_handle(
+			base_handle_str: &str,
+			suffix_sequence_index: HandleSuffix,
+		) -> Handle {
+			// Convert base display handle into a canonical display handle
+			let handle_converter = HandleConverter::new();
+			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
+
+			// Generate suffix from index into the suffix sequence
+			let suffix = Self::generate_suffix_for_canonical_handle(
+				&canonical_handle_str,
+				suffix_sequence_index as usize,
+			);
+
+			// Compose the full display handle from the base handle, "." delimeter and suffix
+			let mut full_handle_vec: Vec<u8> = vec![];
+			full_handle_vec.extend(base_handle_str.as_bytes());
+			full_handle_vec.extend(b"."); // The delimeter
+			let mut buff = [0u8; SUFFIX_MAX_DIGITS];
+			full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
+
+			let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
+			full_handle
+		}
+
+		/// Claims a handle for a given MSA (MessageSourceId) by validating and storing the base handle,
+		/// generating a canonical handle, generating a suffix, and composing the full display handle.
+		///
+		/// # Arguments
+		///
+		/// * `delegator_msa_id` - The MSA (MessageSourceId) for which the handle is being claimed.
+		/// * `payload` - The payload containing the base handle as bytes.
+		///
+		/// # Errors
+		///
+		/// Returns an error if any of the following conditions are not met:
+		///
+		/// * The MSA (MessageSourceId) must not already have a handle associated with it.
+		/// * The base handle must be a valid UTF-8 string.
+		/// * The length of the base handle must be within the allowed character length range.
+		/// * The base handle must not contain reserved words or blocked characters.
+		/// * The canonical handle and suffix must be successfully stored in the storage.
+		///
+		pub fn do_claim_handle(
+			delegator_msa_id: MessageSourceId,
+			payload: ClaimHandlePayload,
+		) -> Result<Handle, sp_runtime::DispatchError> {
 			// Validation: The MSA must not already have a handle associated with it
 			ensure!(
 				MSAIdToDisplayName::<T>::try_get(delegator_msa_id).is_err(),
@@ -367,58 +636,30 @@ pub mod pallet {
 			// Store the full display handle to MSA id
 			MSAIdToDisplayName::<T>::insert(delegator_msa_id, full_handle.clone());
 
-			Self::deposit_event(Event::HandleCreated {
-				msa_id: delegator_msa_id,
-				handle: full_handle.clone(),
-			});
-			Ok(())
+			Ok(full_handle)
 		}
 
-		/// Extrinsic to retire a handle
+		/// Retires a handle associated with a given MessageSourceId (MSA) in the dispatch module.
 		///
 		/// # Arguments
 		///
-		/// * `origin` - An `OriginFor<T>` that will provide the account that will be retiring the handle.
-		/// * `delegator_key` - The account id of the MSA id owner.
-		/// * `proof` - A `MultiSignature` that represents the signature of the payload by the `delegator_key`.
-		/// * `payload` - A `RetireHandlePayload` that contains the payload data required to retire the handle.
-		///
-		/// # Events
-		/// * [`Event::HandleRetired`]
+		/// * `delegator_msa_id` - The MessageSourceId (MSA) whose handle needs to be retired.
 		///
 		/// # Errors
-		/// * [`Error::InvalidHandleByteLength`]
-		/// * [`Error::InvalidMessageSourceAccount`]
-		/// * [`Error::MSAHandleAlreadyExists`]
-		/// * [`Error::InvalidHandleEncoding`]
-		/// * [`Error::InvalidHandleCharacterLength`]
-		#[pallet::call_index(1)]
-		#[pallet::weight((T::WeightInfo::retire_handle(payload.full_handle.len() as u32), DispatchClass::Normal, Pays::No))]
-		pub fn retire_handle(
-			origin: OriginFor<T>,
-			delegator_key: T::AccountId,
-			proof: MultiSignature,
-			payload: RetireHandlePayload,
-		) -> DispatchResult {
-			let provider_key = ensure_signed(origin)?;
-
-			// Validation: Check for base_handle size to address potential panic condition
-			ensure!(
-				payload.full_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
-				Error::<T>::InvalidHandleByteLength
-			);
-
-			// Validation: The provider must already have a MSA id
-			T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
-				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
-
-			// Validation: The delegator must already have a MSA id
-			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
-				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
-
-			// Validation: Verify the payload was signed
-			Self::verify_signed_payload(&proof, &delegator_key, payload.encode())?;
-
+		///
+		/// Returns an error if the handle does not exist or if the handle encoding is invalid.
+		///
+		/// # Remarks
+		///
+		/// This function performs the following steps:
+		///
+		/// 1. Validates that the MSA already has a handle associated with it.
+		/// 2. Extracts the display name handle from the MessageSourceId and converts it to a UTF-8 string.
+		/// 3. Splits the display name into the base handle and the suffix number using a handle converter.
+		/// 4. Converts the base handle to its canonical form.
+		/// 5. Removes the handle from storage but not from CanonicalBaseHandleToSuffixIndex, as retired handles cannot be reused.
+		///
+		pub fn do_retire_handle(delegator_msa_id: MessageSourceId) -> DispatchResult {
 			// Validation: The MSA must already have a handle associated with it
 			let display_name_handle = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
 				.map_err(|_| Error::<T>::MSAHandleDoesNotExist)?;
@@ -437,112 +678,7 @@ pub mod pallet {
 			MSAIdToDisplayName::<T>::remove(delegator_msa_id);
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::remove(canonical_handle, suffix_num);
 
-			let full_handle: Handle = payload.full_handle.try_into().ok().unwrap();
-
-			Self::deposit_event(Event::HandleRetired {
-				msa_id: delegator_msa_id,
-				handle: full_handle.clone(),
-			});
 			Ok(())
-		}
-	}
-
-	impl<T: Config> Pallet<T> {
-		/// Retrieve `HandleResponse` for the specified `MessageSourceAccount`
-		/// # Arguments
-		/// * `msa_id` - The `MessageSourceAccount` to retrieve the `HandleResponse` for
-		/// # Errors
-		/// * [`Error::InvalidHandleEncoding`]
-		/// # Returns
-		/// * `HandleResponse` - The `HandleResponse` for the specified `MessageSourceAccount`
-		/// * `None` - If the `MessageSourceAccount` does not have a handle
-		pub fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
-			let full_handle = MSAIdToDisplayName::<T>::get(msa_id);
-			if full_handle.is_empty() {
-				return None
-			}
-
-			// convert to string
-			let full_handle_str = core::str::from_utf8(&full_handle)
-				.map_err(|_| Error::<T>::InvalidHandleEncoding)
-				.ok()?;
-
-			let handle_converter = HandleConverter::new();
-			let (base_handle_str, suffix) = handle_converter.split_display_name(full_handle_str);
-			let base_handle = base_handle_str.as_bytes().to_vec();
-			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
-			let canonical_handle = canonical_handle_str.as_bytes().to_vec();
-			Some(HandleResponse { base_handle, suffix, canonical_handle })
-		}
-
-		/// Retrieve `count` of suffixes for specified base `handle`
-		/// # Arguments
-		/// * `handle` - The base handle to retrieve the suffixes for
-		/// * `count` - The number of suffixes to retrieve
-		/// # Returns
-		/// * `Vec<u16>` - The suffixes for the specified `handle`
-		pub fn get_next_suffixes(handle: Vec<u8>, count: u16) -> Vec<HandleSuffix> {
-			let mut suffixes: Vec<u16> = vec![];
-			let base_handle: Handle = handle.try_into().unwrap_or_default();
-			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or("");
-
-			let handle_converter = HandleConverter::new();
-			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
-			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
-			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
-			let suffix_index =
-				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
-					.unwrap_or_default();
-
-			// Generate suffixes from the next available suffix index
-			let mut suffix_generator = SuffixGenerator::new(
-				T::HandleSuffixMin::get() as usize,
-				T::HandleSuffixMax::get() as usize,
-				&canonical_handle_str,
-			);
-			let sequence = suffix_generator.suffix_iter().enumerate();
-
-			for (i, suffix) in sequence {
-				if i >= suffix_index as usize && i < (suffix_index as usize + count as usize) {
-					suffixes.push(suffix as u16);
-				}
-				if suffixes.len() == count as usize {
-					break
-				}
-			}
-
-			suffixes
-		}
-
-		/// Create a full handle from a base handle and an index into the suffix sequence
-		/// # Arguments
-		/// * `base_handle_str` - The base handle (as a string slice) to create the full handle from
-		/// * `suffix_sequence_index` - The suffix to create the full handle from
-		/// # Returns
-		/// * `Handle` - The full handle
-		pub fn create_full_handle(
-			base_handle_str: &str,
-			suffix_sequence_index: HandleSuffix,
-		) -> Handle {
-			// Convert base display handle into a canonical display handle
-			let handle_converter = HandleConverter::new();
-			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
-
-			// Generate suffix from index into the suffix sequence
-			let suffix = Self::generate_suffix_for_canonical_handle(
-				&canonical_handle_str,
-				suffix_sequence_index as usize,
-			);
-
-			// Compose the full display handle from the base handle, "." delimeter and suffix
-			let mut full_handle_vec: Vec<u8> = vec![];
-			full_handle_vec.extend(base_handle_str.as_bytes());
-			full_handle_vec.extend(b"."); // The delimeter
-			let mut buff = [0u8; SUFFIX_MAX_DIGITS];
-			full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
-
-			let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
-			full_handle
 		}
 	}
 }

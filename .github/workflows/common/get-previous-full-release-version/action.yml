@@ -1,0 +1,24 @@
+name: Get Previous Full Release Version
+description: Determines whether the version tag represents a full release
+inputs:
+  full-release-version-tag:
+    description: "Tag pointing to the latest full release"
+    required: true
+outputs:
+  version:
+    description: "Previous full release version"
+    value: ${{steps.get-version.outputs.previous_full_release_version}}
+runs:
+  using: "composite"
+  steps:
+    - name: Get Version
+      id: get-version
+      shell: bash
+      run: |
+        git show-ref --tags -d
+        latest_tag_commit=$(git show-ref --tags -d | \
+          grep ${{inputs.full-release-version-tag}}^{} | cut -d' ' -f1)
+        latest_full_release=$(git show-ref --tags -d | grep "^$latest_tag_commit" | \
+          grep refs/tags/v | sed -e 's,.* refs/tags/,,' -e 's/\^{}//')
+        echo "latest_full_release: $latest_full_release"
+        echo "previous_full_release_version=$latest_full_release" >> $GITHUB_OUTPUT
