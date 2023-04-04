@@ -633,3 +633,13 @@ fn validate_cid_valid_cid_succeeds() {
 		assert_ok!(MessagesPallet::validate_cid(&bad_cid));
 	})
 }
+
+#[test]
+fn validate_cid_not_utf8_aligned_errors() {
+	new_test_ext().execute_with(|| {
+		// This should not panic, but should return an error.
+		let bad_cid = vec![55, 197, 136, 0, 0, 0, 0, 0, 0, 0, 0];
+
+		assert_noop!(MessagesPallet::validate_cid(&bad_cid), Error::<Test>::InvalidCid);
+	})
+}
