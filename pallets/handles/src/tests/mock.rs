@@ -30,8 +30,6 @@ impl MsaLookup for MsaInfoHandler {
 	type AccountId = AccountId;
 
 	fn get_msa_id(key: &AccountId) -> Option<MessageSourceId> {
-		log::debug!("get_msa_id()");
-
 		if *key == test_public(INVALID_MSA_ID as u8) {
 			return None
 		}
@@ -44,8 +42,6 @@ impl MsaValidator for MsaInfoHandler {
 	type AccountId = AccountId;
 
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError> {
-		log::debug!("ensure_valid_msa_key()");
-
 		if *key == test_public(INVALID_MSA_ID as u8) {
 			return Err(DispatchError::Other("some error"))
 		}

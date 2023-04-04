@@ -322,8 +322,14 @@ pub mod pallet {
 
 			// Validation: The handle must not contain reserved words or blocked characters
 			let handle_validator = HandleValidator::new();
-			ensure!(!handle_validator.is_reserved_handle(base_handle_str), Error::<T>::HandleIsNotAllowed);
-			ensure!(!handle_validator.contains_blocked_characters(base_handle_str), Error::<T>::HandleContainsBlockedCharacters);
+			ensure!(
+				!handle_validator.is_reserved_handle(base_handle_str),
+				Error::<T>::HandleIsNotAllowed
+			);
+			ensure!(
+				!handle_validator.contains_blocked_characters(base_handle_str),
+				Error::<T>::HandleContainsBlockedCharacters
+			);
 
 			// Convert base display handle into a canonical display handle
 			let handle_converter = HandleConverter::new();
