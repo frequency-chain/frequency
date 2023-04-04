@@ -532,10 +532,7 @@ pub mod pallet {
 			Ok(full_handle)
 		}
 
-		pub fn do_retire_handle(
-			delegator_msa_id: MessageSourceId
-		) -> DispatchResult {
-
+		pub fn do_retire_handle(delegator_msa_id: MessageSourceId) -> DispatchResult {
 			// Validation: The MSA must already have a handle associated with it
 			let display_name_handle = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
 				.map_err(|_| Error::<T>::MSAHandleDoesNotExist)?;
@@ -556,6 +553,5 @@ pub mod pallet {
 
 			Ok(())
 		}
-
 	}
 }
