@@ -31,13 +31,7 @@ fn claim_handle_happy_path() {
 		// Confirm that HandleClaimed event was deposited
 		let msa_id = MessageSourceId::decode(&mut &alice.public().encode()[..]).unwrap();
 		let handle = Handles::create_full_handle("test1", 0);
-		System::assert_last_event(
-			Event::HandleClaimed {
-				msa_id,
-				handle,
-			}
-			.into(),
-		);
+		System::assert_last_event(Event::HandleClaimed { msa_id, handle }.into());
 	});
 }
 

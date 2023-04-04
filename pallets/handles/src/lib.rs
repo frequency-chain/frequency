@@ -291,75 +291,7 @@ pub mod pallet {
 			// Validation: Verify the payload was signed
 			Self::verify_signed_payload(&proof, &delegator_key, payload.encode())?;
 
-			// Validation: The MSA must not already have a handle associated with it
-			ensure!(
-				MSAIdToDisplayName::<T>::try_get(delegator_msa_id).is_err(),
-				Error::<T>::MSAHandleAlreadyExists
-			);
-
-			// Convert base handle to UTF-8 string slice while validating.
-			let base_handle_str = core::str::from_utf8(&payload.base_handle)
-				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
-
-			// Validation: The handle length must be valid.
-			// Note: the count() can panic but won't because the base_handle byte length is already checked
-			let len = base_handle_str.chars().count() as u32;
-
-			// Validation: Handle character length must be within range
-			ensure!(
-				len >= HANDLE_BASE_CHARS_MIN && len <= HANDLE_BASE_CHARS_MAX,
-				Error::<T>::InvalidHandleCharacterLength
-			);
-
-			// Validation: The handle must not contain reserved words or blocked characters
-			let handle_validator = HandleValidator::new();
-			ensure!(
-				!handle_validator.is_reserved_handle(base_handle_str),
-				Error::<T>::HandleIsNotAllowed
-			);
-			ensure!(
-				!handle_validator.contains_blocked_characters(base_handle_str),
-				Error::<T>::HandleContainsBlockedCharacters
-			);
-
-			// Convert base display handle into a canonical display handle
-			let handle_converter = HandleConverter::new();
-			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
-			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
-			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
-
-			// Generate suffix from the next available index into the suffix sequence
-			let suffix_sequence_index =
-				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
-					.unwrap_or_default();
-			let suffix = Self::generate_suffix_for_canonical_handle(
-				&canonical_handle_str,
-				suffix_sequence_index as usize,
-			);
-
-			// Store canonical handle and suffix to MSA id
-			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(
-				canonical_handle.clone(),
-				suffix,
-				delegator_msa_id,
-			);
-			// Store canonical handle to suffix sequence index
-			CanonicalBaseHandleToSuffixIndex::<T>::set(
-				canonical_handle.clone(),
-				Some(suffix_sequence_index),
-			);
-
-			// Compose the full display handle from the base handle, "." delimeter and suffix
-			let mut full_handle_vec: Vec<u8> = vec![];
-			full_handle_vec.extend(base_handle_str.as_bytes());
-			full_handle_vec.extend(b"."); // The delimeter
-			let mut buff = [0u8; SUFFIX_MAX_DIGITS];
-			full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
-
-			let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
-
-			// Store the full display handle to MSA id
-			MSAIdToDisplayName::<T>::insert(delegator_msa_id, full_handle.clone());
+			let full_handle = Self::do_claim_handle(delegator_msa_id, payload)?;
 
 			Self::deposit_event(Event::HandleClaimed {
 				msa_id: delegator_msa_id,
@@ -537,6 +469,83 @@ pub mod pallet {
 
 			let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
 			full_handle
+		}
+
+		pub fn do_claim_handle(
+			delegator_msa_id: MessageSourceId,
+			payload: ClaimHandlePayload,
+		) -> Result<Handle, sp_runtime::DispatchError> {
+			// Validation: The MSA must not already have a handle associated with it
+			ensure!(
+				MSAIdToDisplayName::<T>::try_get(delegator_msa_id).is_err(),
+				Error::<T>::MSAHandleAlreadyExists
+			);
+
+			// Convert base handle to UTF-8 string slice while validating.
+			let base_handle_str = core::str::from_utf8(&payload.base_handle)
+				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
+
+			// Validation: The handle length must be valid.
+			// Note: the count() can panic but won't because the base_handle byte length is already checked
+			let len = base_handle_str.chars().count() as u32;
+
+			// Validation: Handle character length must be within range
+			ensure!(
+				len >= HANDLE_BASE_CHARS_MIN && len <= HANDLE_BASE_CHARS_MAX,
+				Error::<T>::InvalidHandleCharacterLength
+			);
+
+			// Validation: The handle must not contain reserved words or blocked characters
+			let handle_validator = HandleValidator::new();
+			ensure!(
+				!handle_validator.is_reserved_handle(base_handle_str),
+				Error::<T>::HandleIsNotAllowed
+			);
+			ensure!(
+				!handle_validator.contains_blocked_characters(base_handle_str),
+				Error::<T>::HandleContainsBlockedCharacters
+			);
+
+			// Convert base display handle into a canonical display handle
+			let handle_converter = HandleConverter::new();
+			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
+			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
+			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
+
+			// Generate suffix from the next available index into the suffix sequence
+			let suffix_sequence_index =
+				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
+					.unwrap_or_default();
+			let suffix = Self::generate_suffix_for_canonical_handle(
+				&canonical_handle_str,
+				suffix_sequence_index as usize,
+			);
+
+			// Store canonical handle and suffix to MSA id
+			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(
+				canonical_handle.clone(),
+				suffix,
+				delegator_msa_id,
+			);
+			// Store canonical handle to suffix sequence index
+			CanonicalBaseHandleToSuffixIndex::<T>::set(
+				canonical_handle.clone(),
+				Some(suffix_sequence_index),
+			);
+
+			// Compose the full display handle from the base handle, "." delimeter and suffix
+			let mut full_handle_vec: Vec<u8> = vec![];
+			full_handle_vec.extend(base_handle_str.as_bytes());
+			full_handle_vec.extend(b"."); // The delimeter
+			let mut buff = [0u8; SUFFIX_MAX_DIGITS];
+			full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
+
+			let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
+
+			// Store the full display handle to MSA id
+			MSAIdToDisplayName::<T>::insert(delegator_msa_id, full_handle.clone());
+
+			Ok(full_handle)
 		}
 	}
 }

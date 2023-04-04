@@ -51,13 +51,7 @@ fn claim_and_retire_handle_happy_path() {
 
 		// Confirm that HandleRetired event was deposited
 		let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
-		System::assert_last_event(
-			Event::HandleRetired {
-				msa_id,
-				handle: full_handle,
-			}
-			.into(),
-		);
+		System::assert_last_event(Event::HandleRetired { msa_id, handle: full_handle }.into());
 
 		// Try to retire again which should fail
 		assert_noop!(
