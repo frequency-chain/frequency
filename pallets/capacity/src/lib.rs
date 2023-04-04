@@ -16,14 +16,14 @@
 //! The staked amount may be increased, targeting either the same or a different target to receive the newly generated Capacity.
 //! As a result, every time the network is staked to, the staked tokens are locked until unstaked.
 //!
-//! Unstaking schedules some amount of token to be unlocked. There is no limit on the amount of token that can be unstaked.
-//! However, there is a a limit on how many concurrently scheduled unstaking requests can exist.
+//! Unstaking schedules some amount of token to be unlocked. Any amount up to the total staked amount may
+//! be unstaked, however, there is a a limit on how many concurrently scheduled unstaking requests can exist.
 //! After scheduling tokens to be unlocked, they must undergo a thaw period before being withdrawn.
 //!
 //! After thawing, the tokens may be withdrawn using the withdraw_unstaked extrinsic.
 //! On success, the tokens are unlocked and free up space to submit more unstaking request.
 //!
-//! The MSA pallet provides functions for:
+//! The Capacity pallet provides functions for:
 //!
 //! - staking and, updating,
 //!
@@ -580,9 +580,13 @@ impl<T: Config> Pallet<T> {
 			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
 			CurrentEpochInfo::<T>::set(EpochInfo { epoch_start: current_block });
 			CurrentEpochUsedCapacity::<T>::set(0u32.into());
+			// add 1 read + 1 write for whitelisted storage CurrentEpoch
 			T::WeightInfo::on_initialize()
+				.saturating_add(RocksDbWeight::get().reads(1))
+				.saturating_add(RocksDbWeight::get().writes(1))
 		} else {
-			RocksDbWeight::get().reads(1u64)
+			// 1 for get_current_epoch_info, 1 for get_epoch_length
+			RocksDbWeight::get().reads(2u64)
 		}
 	}
 }
