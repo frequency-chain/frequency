@@ -22,6 +22,10 @@ fn convert_confuseables_to_unicode_escaped() {
 
 	let reader = BufReader::new(input_file.ok().unwrap());
 
+	output_file.write_all("// ******************************************************\n\n".as_bytes());
+	output_file.write_all("// ***** THIS FILE IS AUTO-GENERATED.  DO NOT EDIT! *****\n\n".as_bytes());
+	output_file.write_all("// ******************************************************\n\n".as_bytes());
+	output_file.write_all("\n\n".as_bytes());
 	output_file.write_all("use sp_std::collections::btree_map::BTreeMap;\n\n".as_bytes());
 	output_file.write_all("pub fn build_confusables_map() -> BTreeMap<char, char> {\n".as_bytes());
 	output_file.write_all("\tBTreeMap::from([\n".as_bytes());
