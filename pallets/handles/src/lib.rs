@@ -156,7 +156,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Deposited when a handle is created. [MSA id, full handle in UTF-8 bytes]
-		HandleCreated {
+		HandleClaimed {
 			/// MSA id of handle owner
 			msa_id: MessageSourceId,
 			/// UTF-8 string in bytes
@@ -256,7 +256,7 @@ pub mod pallet {
 		/// * `payload` - A `ClaimHandlePayload` that contains the payload data required to claim the handle.
 		///
 		/// # Events
-		/// * [`Event::HandleCreated`]
+		/// * [`Event::HandleClaimed`]
 		///
 		/// # Errors
 		/// * [`Error::InvalidHandleByteLength`]
@@ -361,7 +361,7 @@ pub mod pallet {
 			// Store the full display handle to MSA id
 			MSAIdToDisplayName::<T>::insert(delegator_msa_id, full_handle.clone());
 
-			Self::deposit_event(Event::HandleCreated {
+			Self::deposit_event(Event::HandleClaimed {
 				msa_id: delegator_msa_id,
 				handle: full_handle.clone(),
 			});
