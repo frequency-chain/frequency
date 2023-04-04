@@ -31,7 +31,7 @@ As a Registered Provider, you can receive Capacity by staking your tokens to the
 
 When staking tokens to the network, the network generates Capacity based on a Capacity-generating function that considers usage and other criteria. When you stake tokens, you will also provide a target Registered Provider to receive the Capacity generated. In exchange for staking Token to the network, you receive rewards.  Rewards are deferred to a supplemental [staking design doc](https://github.com/LibertyDSNP/frequency/issues/40). You may increase your stake to network many times and target different Service Providers each time you stake. Note every time you stake to network your tokens are locked until you decide to unstake.
 
-Unstaking tokens allow you to schedule a number of tokens to be unlocked from your balance. There is no limit on the amount that you can schedule to be unlocked but there is a limit on how many scheduled requests you can make. After scheduling tokens to be unlocked using **`unstake`**, you can withdraw those tokens after a thaw period has elapsed by using the **`withdraw_unstaked`** extrinsic. If the call is successful the tokens become unlocked and increase the ability to make more scheduled requests.
+Unstaking tokens allow you to schedule a number of tokens to be unlocked from your balance. There is no limit on the amount that you can schedule to be unlocked (up to the amount staked), but there is a limit on how many scheduled requests you can make. After scheduling tokens to be unlocked using **`unstake`**, you can withdraw those tokens after a thaw period has elapsed by using the **`withdraw_unstaked`** extrinsic. If the call is successful, all thawed tokens become unlocked and increase the ability to make more scheduled requests.
 
 Note that the thaw period is measured in Epoch Periods. An Epoch Period is composed of a set number of blocks. The number of blocks for an Epoch will be approximately 100 blocks and can be adjusted through governance.
 
@@ -206,28 +206,37 @@ Acceptance Criteria are listed below but can evolve.
 ```rust
 
 pub enum Error<T> {
-  /// Staker has insufficient balance to cover the amount wanting to stake.
-  InsufficientBalance,
   /// Staker attempted to stake to an invalid staking target.
   InvalidTarget,
-  /// Staking amount is below the minimum amount required.
+  /// Capacity is not available for the given MSA.
+  InsufficientBalance,
+  /// Staker is attempting to stake an amount below the minimum amount.
   InsufficientStakingAmount,
+  /// Staker is attempting to stake a zero amount.
+  ZeroAmountNotAllowed,
+  /// Origin has no Staking Account
+  NotAStakingAccount,
+  /// No staked value is available for withdrawal; either nothing is being unstaked,
+  /// or nothing has passed the thaw period.
+  NoUnstakedTokensAvailable,
   /// Unstaking amount should be greater than zero.
   UnstakedAmountIsZero,
+  /// Amount to unstake is greater than the amount staked.
+  AmountToUnstakeExceedsAmountStaked,
   /// Attempting to unstake from a target that has not been staked to.
   StakingAccountNotFound,
   /// Attempting to get a staker / target relationship that does not exist.
   StakerTargetRelationshipNotFound,
   /// Attempting to get the target's capacity that does not exist.
   TargetCapacityNotFound,
-  /// Amount to unstake is greater than the amount staked.
-  AmountToUnstakeExceedsAmountStaked,
   /// Staker reached the limit number for the allowed amount of unlocking chunks.
   MaxUnlockingChunksExceeded,
-  /// If there are no unstaking tokens available to withdraw.
-  NoUnstakedTokensAvailable,
+  /// Increase Capacity increase exceeds the total available Capacity for target.
+  IncreaseExceedsAvailable,
   /// Attempting to set the epoch length to a value greater than the max epoch length.
-	MaxEpochLengthExceeded,
+  MaxEpochLengthExceeded,
+  /// Staker is attempting to stake an amount that leaves a token balance below the minimum amount.
+  BalanceTooLowtoStake,
 }
 
 ```
@@ -248,7 +257,13 @@ pub enum Event<T: Config> {
     /// The Capacity amount issued to the target as a result of the stake.
     capacity: BalanceOf<T>,
   },
-
+  /// Unsstaked token that has thawed was unlocked for the given account
+  StakeWithdrawn {
+    /// the account that withdrew its stake
+    account: T::AccountId,
+    /// the total amount withdrawn, i.e. put back into free balance.
+    amount: BalanceOf<T>,
+  },
   /// A token account has unstaked the Frequency network.
   UnStaked {
     /// The token account that staked tokens to the network.
@@ -259,29 +274,19 @@ pub enum Event<T: Config> {
     amount: BalanceOf<T>,
     /// The Capacity amount that was reduced from a target.
     capacity: BalanceOf<T>,
-   },
-
-  /// The token amount that was previously unstaked and now withdrawn by unlocking.
-  Withdrawn {
-    /// The token account that staked tokens to the network.
-    account: T::AccountId,
-    /// An amount that was withdrawn.
-    amount: BalanceOf<T>
-  }
-
+  },
   /// The Capacity epoch length was changed.
   EpochLengthUpdated {
     /// The new length of an epoch in blocks.
     blocks: T::BlockNumber,
   },
-
   /// Capacity has been withdrawn from a MessageSourceId.
   CapacityWithdrawn {
     /// The MSA from which Capacity has been withdrawn.
     msa_id: MessageSourceId,
     /// The amount of Capacity withdrawn from MSA.
     amount: BalanceOf<T>,
-  }
+  },
 }
 
 ```
@@ -311,13 +316,25 @@ pub type StakingTargetLedger<T: Config> =
   StorageDoubleMap<_, Twox64Concat, T::AccountId, Twox64Concat, MessageSourceId, StakingTargetDetails<T::Balance>>;
 ```
 
+Storage for target Capacity usage.
+
+```rust
+/// Storage for target Capacity usage.
+/// - Keys: MSA Id
+/// - Value: [`CapacityDetails`](types::CapacityDetails)
+#[pallet::storage]
+#[pallet::getter(fn get_capacity_for)]
+pub type CapacityLedger<T: Config> =
+  StorageMap<_, Twox64Concat, MessageSourceId, CapacityDetails<BalanceOf<T>, T::EpochNumber>>;
+```
+
 Storage for epoch length
 
 ```rust
 /// Storage for the epoch length
 #[pallet::storage]
 #[pallet::getter(fn get_epoch_length)]
-	pub type EpochLength<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery, EpochLengthDefault<T>>;
+  pub type EpochLength<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery, EpochLengthDefault<T>>;
 ```
 
 The type used for storing information about the targeted MSA that received Capacity.
@@ -492,42 +509,22 @@ trait Replenishable {
   /// Checks if an account can be replenished.
   fn can_replenish(msa_id: MessageSourceId) -> bool;
 }
-
-```
-
-`EpochNumberProvider` provides an abstraction over an arbitrary way of providing the current epoch number.
-
-```rust
-
-pub trait EpochNumberProvider {
-  /// Type of `EpochNumber` to provide.
-  type EpochNumber: Codec + Clone + Ord + Eq + AtLeast32BitUnsigned;
-
-  /// Provides an abstraction over an arbitrary way of providing the
-  /// current epoch number.
-  fn current_epoch_number() -> Self::EpochNumber;
-
-  /// It allows for setting the block number that will later be fetched
-  /// This is useful in case the block number provider is different from than System
-  #[cfg(feature = "runtime-benchmarks")]
-  fn set_epoch_number(_block: Self::EpochNumber) {}
-}
-
 ```
 
 **Storage**
 
-`EpochNumber` help keep count of the number of Epoch-Periods:
+`CurrentEpoch` help keep count of the number of Epoch-Periods:
 
 ```rust
-
-/// Storage for keeping count of the number of Epochs.
+/// Storage for the current epoch number
 #[pallet::storage]
-pub type EpochNumber<T> = StorageValue<_, u32, ValueQuery>;
-
+#[pallet::whitelist_storage]
+#[pallet::getter(fn get_current_epoch)]
+pub type CurrentEpoch<T: Config> = StorageValue<_, T::EpochNumber, ValueQuery>;
 ```
 
 To facilitate keeping track of the Capacity consumed in a block.
+_(Not yet implemented)_
 
 ```rust
 
@@ -886,7 +883,7 @@ Acceptance Criteria are listed below but can evolve:
 2. At the start of an Epoch Period, `CurrentEpoch` storage is increased by 1.
 3. At the start of an Epoch Period, calculate the next epoch length.
 4. At the start of a new block, `CurrentBlockUsedCapacity` storage is reset.
-5. At the start of a new block, `CurrentEpochUsedCapacity` storage is incremented with the total Capacity used in the previous block.
+5. At the start of a new block, `CurrentEpochUsedCapacity` storage is incremented with the total Capacity used in the previous block. _(Not yet implemented)_
 
 **Create a new Epoch based on the moving average of used Capacity**
 

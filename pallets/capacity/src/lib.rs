@@ -185,11 +185,6 @@ pub mod pallet {
 	#[pallet::getter(fn get_current_epoch_info)]
 	pub type CurrentEpochInfo<T: Config> = StorageValue<_, EpochInfo<T::BlockNumber>, ValueQuery>;
 
-	/// Storage for the current epoch number
-	#[pallet::storage]
-	#[pallet::getter(fn get_current_epoch_used_capacity)]
-	pub type CurrentEpochUsedCapacity<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
-
 	#[pallet::type_value]
 	/// EpochLength defaults to 100 blocks when not set
 	pub fn EpochLengthDefault<T: Config>() -> T::BlockNumber {
@@ -579,8 +574,6 @@ impl<T: Config> Pallet<T> {
 			let current_epoch = Self::get_current_epoch();
 			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
 			CurrentEpochInfo::<T>::set(EpochInfo { epoch_start: current_block });
-			CurrentEpochUsedCapacity::<T>::set(0u32.into());
-			// add 1 read + 1 write for whitelisted storage CurrentEpoch
 			T::WeightInfo::on_initialize()
 				.saturating_add(RocksDbWeight::get().reads(1))
 				.saturating_add(RocksDbWeight::get().writes(1))
