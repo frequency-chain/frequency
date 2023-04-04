@@ -374,10 +374,9 @@ pub mod pallet {
 		/// Retrieve `HandleResponse` for the specified `MessageSourceAccount`
 		/// # Arguments
 		/// * `msa_id` - The `MessageSourceAccount` to retrieve the `HandleResponse` for
-		/// # Errors
-		/// * [`Error::HandleDoesNotExist`]
 		/// # Returns
 		/// * `HandleResponse` - The `HandleResponse` for the specified `MessageSourceAccount`
+		/// * `None` - If the `MessageSourceAccount` does not have a handle
 		pub fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
 			let full_handle = MSAIdToDisplayName::<T>::get(msa_id);
 			if full_handle.is_empty() {

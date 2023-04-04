@@ -89,7 +89,7 @@ benchmarks! {
 		// retire the handle
 		let stored_handle = stored_handle.unwrap();
 		let base_handle:Vec<u8> = stored_handle.base_handle.clone();
-		let suffix: u16 = stored_handle.suffix.clone();
+		let suffix: u16 = stored_handle.suffix;
 		let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or_default();
 		let full_handle_with_delimiter = format!("{}{}", base_handle_str, ".");
 		let retirement_payload = RetireHandlePayload::new(full_handle_with_delimiter.as_bytes().to_vec());
@@ -101,5 +101,5 @@ benchmarks! {
 		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id.into());
 		assert!(stored_handle.is_none());
 	}
-	impl_benchmark_test_suite!(Handles, crate::mock::new_tester(), crate::mock::Test,);
+	impl_benchmark_test_suite!(Handles, crate::tests::mock::new_tester(), crate::tests::mock::Test,);
 }
