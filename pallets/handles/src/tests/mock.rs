@@ -1,5 +1,6 @@
 use crate as pallet_handles;
 use codec::Decode;
+pub use pallet_handles::Call as HandlesCall;
 
 use common_primitives::{
 	handles::*,
@@ -29,8 +30,6 @@ impl MsaLookup for MsaInfoHandler {
 	type AccountId = AccountId;
 
 	fn get_msa_id(key: &AccountId) -> Option<MessageSourceId> {
-		log::debug!("get_msa_id()");
-
 		if *key == test_public(INVALID_MSA_ID as u8) {
 			return None
 		}
@@ -43,8 +42,6 @@ impl MsaValidator for MsaInfoHandler {
 	type AccountId = AccountId;
 
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError> {
-		log::debug!("ensure_valid_msa_key()");
-
 		if *key == test_public(INVALID_MSA_ID as u8) {
 			return Err(DispatchError::Other("some error"))
 		}
@@ -118,6 +115,18 @@ impl pallet_handles::Config for Test {
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
+	use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStorePtr};
+	use sp_std::sync::Arc;
+
+	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let mut ext = sp_io::TestExternalities::new(t);
+	ext.register_extension(KeystoreExt(Arc::new(KeyStore::new()) as SyncCryptoStorePtr));
+
+	ext
 }
 
 // Create and return a simple test AccountId32 constructed with the desired integer.

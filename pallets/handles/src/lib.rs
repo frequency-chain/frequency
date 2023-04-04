@@ -1,5 +1,7 @@
 //! # Handles Pallet
-//! The Handles pallet provides functionality for generating user handles.
+//! The Handles pallet provides functionality for claiming and retiring user handles.  Each MSA can have one user handle
+//! associated with it.  The handle consists of a canonical base, a "." delimiter and a unique numeric suffix.  It also has
+//! a display name.  e.g. user.734 with a display of "User"
 //!
 //! - [Configuration: `Config`](Config)
 //! - [Extrinsics: `Call`](Call)
@@ -33,7 +35,7 @@
 mod benchmarking;
 /// Handle converter for canonical handles
 pub mod utils;
-use utils::converter::HandleConverter;
+use utils::{converter::HandleConverter, validator::HandleValidator};
 
 #[cfg(test)]
 mod tests;
@@ -140,6 +142,10 @@ pub mod pallet {
 		InvalidHandleByteLength,
 		/// Invalid handle character length
 		InvalidHandleCharacterLength,
+		/// The handle name is reserved for chain use only
+		HandleIsNotAllowed,
+		/// The handle contains characters that are not allowed
+		HandleContainsBlockedCharacters,
 		/// Suffixes exhausted
 		SuffixesExhausted,
 		/// Invalid MSA
@@ -155,8 +161,15 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Emitted when a handle is created. [MSA id, full handle in UTF-8 bytes]
+		/// Deposited when a handle is created. [MSA id, full handle in UTF-8 bytes]
 		HandleCreated {
+			/// MSA id of handle owner
+			msa_id: MessageSourceId,
+			/// UTF-8 string in bytes
+			handle: Handle,
+		},
+		/// Deposited when a handle is retired. [MSA id, full handle in UTF-8 bytes]
+		HandleRetired {
 			/// MSA id of handle owner
 			msa_id: MessageSourceId,
 			/// UTF-8 string in bytes
@@ -166,6 +179,10 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 		/// Get the next index into the shuffled suffix sequence for the specified canonical base handle
+		///
+		/// # Arguments
+		///
+		/// * `canonical_handle` - The canonical `Handle` to get suffixes for.
 		///
 		/// # Errors
 		/// * [`Error::SuffixesExhausted`]
@@ -186,12 +203,17 @@ pub mod pallet {
 			Ok(next)
 		}
 
-		/// Verify the `signature` was signed by `signer` on `payload` by a wallet
-		/// Note the `wrap_binary_data` follows the Polkadot wallet pattern of wrapping with `<Byte>` tags.
+		/// Verifies the signature of a given payload, using the provided `signature`
+		/// and `signer` information.
+		///
+		/// # Arguments
+		///
+		/// * `signature` - The `MultiSignature` to verify against the payload.
+		/// * `signer` - The `T::AccountId` of the signer that signed the payload.
+		/// * `payload` - The payload to verify the signature against.
 		///
 		/// # Errors
 		/// * [`Error::InvalidSignature`]
-		///
 		pub fn verify_signed_payload(
 			signature: &MultiSignature,
 			signer: &T::AccountId,
@@ -205,7 +227,18 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Generate a numeric suffix for a canonical handle and the cursor/sequence index
+		/// Generates a suffix for a canonical handle, using the provided `canonical_handle`
+		/// and `cursor` information.
+		///
+		/// # Arguments
+		///
+		/// * `canonical_handle` - The canonical handle to generate a suffix for.
+		/// * `cursor` - The cursor position in the sequence of suffixes to use for generation.
+		///
+		/// # Returns
+		///
+		/// The generated suffix as a `u16`.
+		///
 		fn generate_suffix_for_canonical_handle(canonical_handle: &str, cursor: usize) -> u16 {
 			let mut suffix_generator = SuffixGenerator::new(
 				T::HandleSuffixMin::get() as usize,
@@ -217,11 +250,16 @@ pub mod pallet {
 		}
 	}
 
-	// EXTRINSICS
-
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Claims a new handle
+		///
+		/// # Arguments
+		///
+		/// * `origin` - An `OriginFor<T>` that will provide the account that will be claiming the handle.
+		/// * `delegator_key` - The account id of the MSA id owner.
+		/// * `proof` - A `MultiSignature` that represents the signature of the payload by the `delegator_key`.
+		/// * `payload` - A `ClaimHandlePayload` that contains the payload data required to claim the handle.
 		///
 		/// # Events
 		/// * [`Event::HandleCreated`]
@@ -279,6 +317,17 @@ pub mod pallet {
 				Error::<T>::InvalidHandleCharacterLength
 			);
 
+			// Validation: The handle must not contain reserved words or blocked characters
+			let handle_validator = HandleValidator::new();
+			ensure!(
+				!handle_validator.is_reserved_handle(base_handle_str),
+				Error::<T>::HandleIsNotAllowed
+			);
+			ensure!(
+				!handle_validator.contains_blocked_characters(base_handle_str),
+				Error::<T>::HandleContainsBlockedCharacters
+			);
+
 			// Convert base display handle into a canonical display handle
 			let handle_converter = HandleConverter::new();
 			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
@@ -326,8 +375,23 @@ pub mod pallet {
 		}
 
 		/// Extrinsic to retire a handle
+		///
 		/// # Arguments
-		/// * `handle` - The handle to retire
+		///
+		/// * `origin` - An `OriginFor<T>` that will provide the account that will be retiring the handle.
+		/// * `delegator_key` - The account id of the MSA id owner.
+		/// * `proof` - A `MultiSignature` that represents the signature of the payload by the `delegator_key`.
+		/// * `payload` - A `RetireHandlePayload` that contains the payload data required to retire the handle.
+		///
+		/// # Events
+		/// * [`Event::HandleRetired`]
+		///
+		/// # Errors
+		/// * [`Error::InvalidHandleByteLength`]
+		/// * [`Error::InvalidMessageSourceAccount`]
+		/// * [`Error::MSAHandleAlreadyExists`]
+		/// * [`Error::InvalidHandleEncoding`]
+		/// * [`Error::InvalidHandleCharacterLength`]
 		#[pallet::call_index(1)]
 		#[pallet::weight((T::WeightInfo::retire_handle(payload.full_handle.len() as u32), DispatchClass::Normal, Pays::No))]
 		pub fn retire_handle(
@@ -372,6 +436,13 @@ pub mod pallet {
 			// Remove handle from storage but not from CanonicalBaseHandleToSuffixIndex because retired handles can't be reused
 			MSAIdToDisplayName::<T>::remove(delegator_msa_id);
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::remove(canonical_handle, suffix_num);
+
+			let full_handle: Handle = payload.full_handle.try_into().ok().unwrap();
+
+			Self::deposit_event(Event::HandleRetired {
+				msa_id: delegator_msa_id,
+				handle: full_handle.clone(),
+			});
 			Ok(())
 		}
 	}
@@ -381,9 +452,10 @@ pub mod pallet {
 		/// # Arguments
 		/// * `msa_id` - The `MessageSourceAccount` to retrieve the `HandleResponse` for
 		/// # Errors
-		/// * [`Error::HandleDoesNotExist`]
+		/// * [`Error::InvalidHandleEncoding`]
 		/// # Returns
 		/// * `HandleResponse` - The `HandleResponse` for the specified `MessageSourceAccount`
+		/// * `None` - If the `MessageSourceAccount` does not have a handle
 		pub fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
 			let full_handle = MSAIdToDisplayName::<T>::get(msa_id);
 			if full_handle.is_empty() {
@@ -442,7 +514,7 @@ pub mod pallet {
 			suffixes
 		}
 
-		/// Create a full handle from a base handle and a suffix
+		/// Create a full handle from a base handle and an index into the suffix sequence
 		/// # Arguments
 		/// * `base_handle_str` - The base handle (as a string slice) to create the full handle from
 		/// * `suffix_sequence_index` - The suffix to create the full handle from
