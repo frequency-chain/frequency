@@ -19,6 +19,7 @@ env:
   NEW_RELEASE_TAG_FROM_UI: ${{github.event.inputs.release-version}}
   NEW_RELEASE_TAG: ${{github.event.inputs.release-version || github.ref_name}}
   RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
+  LATEST_FULL_RELEASE_TAG: _LATEST-FULL-RELEASE
   TEST_RUN: ${{startsWith(github.ref_name, 'v0.0.1')}}
   RUST_TOOLCHAIN: "nightly-2022-10-09" # TODO: Set this dynamically
 
@@ -130,7 +131,7 @@ jobs:
         id: commit-updated-version
         uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
         with:
-          commit_message: "Update version for release ${{env.NEW_RELEASE_TAG}}"
+          commit_message: "Update versions for release ${{env.NEW_RELEASE_TAG}}"
           commit_user_name: Frequency CI [bot]
           commit_user_email: do-not-reply@users.noreply.github.com
           commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
@@ -504,18 +505,15 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
-      - name: Get Previous Full Release Tag
-        run: |
-          git show-ref --tags -d
-          latest_tag_commit=$(git show-ref --tags -d | grep latest^{} | cut -d' ' -f1)
-          latest_release_tag=$(git show-ref --tags -d | grep "^$latest_tag_commit" | \
-            grep refs/tags/v | sed -e 's,.* refs/tags/,,' -e 's/\^{}//')
-          echo "latest_release_tag: $latest_release_tag"
-          echo "PREVIOUS_FULL_RELEASE_TAG=$latest_release_tag" >> $GITHUB_ENV
+      - name: Get Previous Full Release Version
+        id: get-previous-full-release-version
+        uses: ./.github/workflows/common/get-previous-full-release-version
+        with:
+          full-release-version-tag: ${{env.LATEST_FULL_RELEASE_TAG}}
       - name: Fetch Reference Binary
         uses: robinraju/release-downloader@768b85c8d69164800db5fc00337ab917daf3ce68
         with:
-          tag: ${{env.PREVIOUS_FULL_RELEASE_TAG}}
+          tag: ${{steps.get-previous-full-release-version.outputs.version}}
           fileName: ${{env.BIN_FILENAME}}
           out-file-path: ${{env.REF_DOWNLOAD_DIR}}
       - name: Download Test Binary
@@ -637,14 +635,14 @@ jobs:
         uses: ./.github/workflows/common/is-full-release
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
-      - name: Get Previous Full Release Tag
+      - name: Get Previous Full Release Version
+        id: get-previous-full-release-version
+        uses: ./.github/workflows/common/get-previous-full-release-version
+        with:
+          full-release-version-tag: ${{env.LATEST_FULL_RELEASE_TAG}}
+      - name: Set Env Vars
         run: |
-          git show-ref --tags -d
-          latest_tag_commit=$(git show-ref --tags -d | grep latest^{} | cut -d' ' -f1)
-          latest_release_tag=$(git show-ref --tags -d | grep "^$latest_tag_commit" | \
-            grep refs/tags/v | sed -e 's,.* refs/tags/,,' -e 's/\^{}//')
-          echo "latest_release_tag: $latest_release_tag"
-          echo "PREVIOUS_RELEASE_TAG=$latest_release_tag" >> $GITHUB_ENV
+          echo "PREVIOUS_RELEASE_TAG=${{steps.get-previous-full-release-version.outputs.version}}" >> $GITHUB_ENV
       - name: Install Tera CLI
         if: steps.cache-tera.outputs.cache-hit != 'true'
         run: |
@@ -739,16 +737,24 @@ jobs:
           files: |
             /tmp/frequency*.*
             /tmp/metadata-compare-*
-      - name: Update Git latest tag
+      - name: Get Latest Commit
+        id: get-latest-commit
+        run: |
+          set -x
+          latest_commit_sha=$(git rev-parse HEAD)
+          echo "sha=$latest_commit_sha" >> $GITHUB_OUTPUT
+      - name: Update Git Latest Tag
         if: |
           steps.is-full-release.outputs.is-full-release == 'true' &&
           env.TEST_RUN != 'true'
         uses: rickstaa/action-create-tag@84c90e6ba79b47b5147dcb11ff25d6a0e06238ba
         with:
-          tag: "latest"
+          commit_sha: ${{steps.get-latest-commit.outputs.sha}}
+          tag: ${{env.LATEST_FULL_RELEASE_TAG}}
           force_push_tag: true
-          message: "Latest full release"
+          message: Latest full release
       - name: Dispatch Auto-signer Workflow
+        if: env.TEST_RUN != 'true'
         uses: actions/github-script@v6
         with:
           github-token: ${{secrets.GHA_WORKFLOW_TRIGGER}}
