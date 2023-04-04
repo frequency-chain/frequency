@@ -243,6 +243,7 @@ impl Config for Test {
 	type Capacity = Capacity;
 	type WeightInfo = ();
 	type CapacityCalls = TestCapacityCalls;
+	type OnChargeCapacityTransaction = payment::CapacityAdapter<Balances, Msa>;
 }
 
 pub struct ExtBuilder {
@@ -326,7 +327,9 @@ impl ExtBuilder {
 	}
 }
 
-fn create_msa_account(account_id: <Test as frame_system::Config>::AccountId) -> MessageSourceId {
+pub fn create_msa_account(
+	account_id: <Test as frame_system::Config>::AccountId,
+) -> MessageSourceId {
 	pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 	let (msa_id, _) = Msa::create_account(account_id, EMPTY_FUNCTION).unwrap();
 

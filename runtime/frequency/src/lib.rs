@@ -899,6 +899,7 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type Capacity = Capacity;
 	type WeightInfo = pallet_frequency_tx_payment::weights::SubstrateWeight<Runtime>;
 	type CapacityCalls = CapacityEligibleCalls;
+	type OnChargeCapacityTransaction = pallet_frequency_tx_payment::CapacityAdapter<Balances, Msa>;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for

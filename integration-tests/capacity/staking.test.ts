@@ -12,9 +12,9 @@ import {
 import { firstValueFrom } from "rxjs";
 
 describe("Capacity Transaction Tests", function () {
-    let cents = 1000000n
-    let dollars = 100n * cents;
-    let accountBalance: bigint = 200n * dollars;
+    let CENTS = 1000000n;
+    let DOLLARS = 100n * CENTS;
+    let accountBalance: bigint = 200n * DOLLARS;
 
     before(async function () {
         await setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
@@ -29,28 +29,28 @@ describe("Capacity Transaction Tests", function () {
         });
 
         it("successfully stakes the minimum amount", async function () {
-            await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, 1n * cents));
+            await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, 1n * CENTS));
 
             // Confirm that the tokens were locked in the stakeKeys account using the query API
             const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
-            assert.equal(stakedAcctInfo.data.miscFrozen, 1n * cents, "should return an account with 1M miscFrozen balance");
-            assert.equal(stakedAcctInfo.data.feeFrozen, 1n * cents, "should return an account with 1M feeFrozen balance");
+            assert.equal(stakedAcctInfo.data.miscFrozen, 1n * CENTS, "should return an account with 1M miscFrozen balance");
+            assert.equal(stakedAcctInfo.data.feeFrozen, 1n * CENTS, "should return an account with 1M feeFrozen balance");
 
             // Confirm that the capacity was added to the stakeProviderId using the query API
             const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            assert.equal(capacityStaked.remainingCapacity, 1n * cents, "should return a capacityLedger with 1M remainingCapacity");
-            assert.equal(capacityStaked.totalTokensStaked, 1n * cents, "should return a capacityLedger with 1M total tokens staked");
-            assert.equal(capacityStaked.totalCapacityIssued, 1n * cents, "should return a capacityLedger with 1M issued capacity");
+            assert.equal(capacityStaked.remainingCapacity, 1n * CENTS, "should return a capacityLedger with 1M remainingCapacity");
+            assert.equal(capacityStaked.totalTokensStaked, 1n * CENTS, "should return a capacityLedger with 1M total tokens staked");
+            assert.equal(capacityStaked.totalCapacityIssued, 1n * CENTS, "should return a capacityLedger with 1M issued capacity");
         });
 
         it("successfully unstakes the minimum amount", async function () {
-            const stakeObj = ExtrinsicHelper.unstake(stakeKeys, stakeProviderId, 1n * cents);
+            const stakeObj = ExtrinsicHelper.unstake(stakeKeys, stakeProviderId, 1n * CENTS);
             const [unStakeEvent] = await stakeObj.fundAndSend();
             assert.notEqual(unStakeEvent, undefined, "should return an UnStaked event");
 
             if (unStakeEvent && ExtrinsicHelper.api.events.capacity.UnStaked.is(unStakeEvent)) {
                 let unstakedCapacity = unStakeEvent.data.capacity;
-                assert.equal(unstakedCapacity, 1n * cents, "should return an UnStaked event with 1M reduced capacity");
+                assert.equal(unstakedCapacity, 1n * CENTS, "should return an UnStaked event with 1M reduced capacity");
             }
             else {
                 assert.fail("should return an capacity.UnStaked.is(unStakeEvent) event");
@@ -73,7 +73,7 @@ describe("Capacity Transaction Tests", function () {
 
             if (withdrawEvent && ExtrinsicHelper.api.events.capacity.StakeWithdrawn.is(withdrawEvent)) {
                 let amount = withdrawEvent.data.amount;
-                assert.equal(amount, 1n * cents, "should return a StakeWithdrawn event with 1M amount");
+                assert.equal(amount, 1n * CENTS, "should return a StakeWithdrawn event with 1M amount");
             }
 
             // Confirm that the tokens were unstaked in the stakeKeys account using the query API
@@ -92,17 +92,17 @@ describe("Capacity Transaction Tests", function () {
             describe("and targeting same provider", async function () {
                 it("successfully increases the amount that was targeted to provider", async function () {
                     // Now starting from zero again with stakeProviderId, Stake 1M capacity
-                    await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, 1n * cents));
+                    await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, 1n * CENTS));
 
                     // Confirm that the tokens were staked in the stakeKeys account using the query API
                     const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
-                    assert.equal(stakedAcctInfo.data.miscFrozen, 1n * cents, "should return an account with 1M miscFrozen balance");
-                    assert.equal(stakedAcctInfo.data.feeFrozen, 1n * cents, "should return an account with 1M feeFrozen balance");
+                    assert.equal(stakedAcctInfo.data.miscFrozen, 1n * CENTS, "should return an account with 1M miscFrozen balance");
+                    assert.equal(stakedAcctInfo.data.feeFrozen, 1n * CENTS, "should return an account with 1M feeFrozen balance");
 
                     const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-                    assert.equal(capacityStaked.remainingCapacity, 1n * cents, "should return a capacityLedger with 1M remainingCapacity");
-                    assert.equal(capacityStaked.totalTokensStaked, 1n * cents, "should return a capacityLedger with 1M total staked");
-                    assert.equal(capacityStaked.totalCapacityIssued, 1n * cents, "should return a capacityLedger with 1M capacity issued");
+                    assert.equal(capacityStaked.remainingCapacity, 1n * CENTS, "should return a capacityLedger with 1M remainingCapacity");
+                    assert.equal(capacityStaked.totalTokensStaked, 1n * CENTS, "should return a capacityLedger with 1M total staked");
+                    assert.equal(capacityStaked.totalCapacityIssued, 1n * CENTS, "should return a capacityLedger with 1M capacity issued");
                 });
 
                 describe("and targeting different provider", async function () {
@@ -116,22 +116,22 @@ describe("Capacity Transaction Tests", function () {
 
                     it("does not change other targets amounts", async function () {
                         // Increase stake by 1 cent to a different target.
-                        await assert.doesNotReject(stakeToProvider(stakeKeys, otherProviderId, 1n * cents));
+                        await assert.doesNotReject(stakeToProvider(stakeKeys, otherProviderId, 1n * CENTS));
 
 
                         // Confirm that the staked capacity of the original stakeProviderId account is unchanged
                         // stakeProviderId should still have 1M from first test case in this describe.
                         // otherProvider should now have 1M
                         const origStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-                        assert.equal(origStaked.remainingCapacity, 1n * cents, "should return a capacityLedger with 1M remainingCapacity");
-                        assert.equal(origStaked.totalTokensStaked, 1n * cents, "should return a capacityLedger with 1M total tokens staked");
-                        assert.equal(origStaked.totalCapacityIssued, 1n * cents, "should return a capacityLedger with 1M capacity issued");
+                        assert.equal(origStaked.remainingCapacity, 1n * CENTS, "should return a capacityLedger with 1M remainingCapacity");
+                        assert.equal(origStaked.totalTokensStaked, 1n * CENTS, "should return a capacityLedger with 1M total tokens staked");
+                        assert.equal(origStaked.totalCapacityIssued, 1n * CENTS, "should return a capacityLedger with 1M capacity issued");
 
                         // Confirm that the staked capacity was added to the otherProviderId account using the query API
                         const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(otherProviderId))).unwrap();
-                        assert.equal(capacityStaked.remainingCapacity, 1n * cents, "should return a capacityLedger with 1M remainingCapacity");
-                        assert.equal(capacityStaked.totalTokensStaked, 1n * cents, "should return a capacityLedger with 1M total tokens staked");
-                        assert.equal(capacityStaked.totalCapacityIssued, 1n * cents, "should return a capacityLedger with 1M capacity issued");
+                        assert.equal(capacityStaked.remainingCapacity, 1n * CENTS, "should return a capacityLedger with 1M remainingCapacity");
+                        assert.equal(capacityStaked.totalTokensStaked, 1n * CENTS, "should return a capacityLedger with 1M total tokens staked");
+                        assert.equal(capacityStaked.totalCapacityIssued, 1n * CENTS, "should return a capacityLedger with 1M capacity issued");
                     });
                 });
             });
@@ -141,7 +141,7 @@ describe("Capacity Transaction Tests", function () {
     describe("when staking and targeting an InvalidTarget", async function () {
         it("fails to stake", async function () {
             let stakeKeys = createKeys("StakeKeys");
-            let stakeAmount = 100n * dollars;
+            let stakeAmount = 100n * DOLLARS;
             await fundKeypair(devAccounts[0].keys, stakeKeys, stakeAmount)
 
             const failStakeObj = ExtrinsicHelper.stake(stakeKeys, 99, stakeAmount);
@@ -153,7 +153,7 @@ describe("Capacity Transaction Tests", function () {
         it("should fail to stake for InsufficientStakingAmount", async function () {
             let stakingKeys = createKeys("stakingKeys");
             let providerId = await createMsaAndProvider(stakingKeys, "stakingKeys", accountBalance);
-            let stakeAmount = cents / 2n;
+            let stakeAmount = CENTS / 2n;
 
             const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakeAmount);
             await assert.rejects(failStakeObj.fundAndSend(), { name: "InsufficientStakingAmount" });
@@ -172,10 +172,10 @@ describe("Capacity Transaction Tests", function () {
 
     describe("when staking an amount and account balanace is too low", async function () {
         it("fails to stake and errors BalanceTooLowtoStake", async function () {
-            let accountBalance: bigint = 2n * cents;
+            let accountBalance: bigint = 2n * CENTS;
             let stakingKeys = createKeys("stakingKeys");
             let providerId = await createMsaAndProvider(stakingKeys, "stakingKeys", accountBalance);
-            let stakingAmount = 1n * dollars;
+            let stakingAmount = 1n * DOLLARS;
 
             const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakingAmount);
             await assert.rejects(failStakeObj.fundAndSend(), { name: "BalanceTooLowtoStake" });
@@ -186,10 +186,10 @@ describe("Capacity Transaction Tests", function () {
     describe("unstake()", function () {
         let unstakeKeys: KeyringPair;
         let providerId: u64;
-        let stakingAmount = 1n * dollars;
+        let stakingAmount = 1n * DOLLARS;
 
         before(async function () {
-            let accountBalance: bigint = 2n * cents;
+            let accountBalance: bigint = 2n * CENTS;
             unstakeKeys = createKeys("stakingKeys");
             providerId = await createMsaAndProvider(unstakeKeys, "stakingKeys", accountBalance);
         });
@@ -212,7 +212,7 @@ describe("Capacity Transaction Tests", function () {
     describe("#withdraw_unstaked", async function () {
         describe("when attempting to call #withdrawUnstake before first calling #unstake", async function () {
             it("errors with NoUnstakedTokensAvailable", async function () {
-                let stakingAmount = 1n * cents;
+                let stakingAmount = 1n * CENTS;
                 let stakingKeys: KeyringPair = createKeys("stakingKeys");
                 let providerId: u64 = await createMsaAndProvider(stakingKeys, "stakingKeys", accountBalance);
 

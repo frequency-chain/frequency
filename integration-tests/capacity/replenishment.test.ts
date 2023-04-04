@@ -1,8 +1,8 @@
 import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
-import {Null, u16, u64, u128} from "@polkadot/types"
+import { Null, u16, u64, u128 } from "@polkadot/types"
 import assert from "assert";
-import {EventMap, Extrinsic, ExtrinsicHelper} from "../scaffolding/extrinsicHelpers";
+import { EventMap, Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import {
   devAccounts,
   createKeys,
@@ -11,21 +11,23 @@ import {
   fundKeypair,
   getNextEpochBlock,
   TEST_EPOCH_LENGTH,
-  setEpochLength
+  setEpochLength,
+  createAndFundKeypair
 } from "../scaffolding/helpers";
-import { firstValueFrom} from "rxjs";
-import {AVRO_GRAPH_CHANGE} from "../schemas/fixtures/avroGraphChangeSchemaType";
-
+import { firstValueFrom } from "rxjs";
+import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 
 describe("Capacity Replenishment Testing: ", function () {
-  const STARTING_BALANCE=6n* 1000n * 1000n + 100n*1000n*1000n;
+  const CENTS = 1000000n
+  const DOLLARS = 100n * CENTS;
+  const STARTING_BALANCE = 6n * CENTS + DOLLARS;
 
   let schemaId: u16;
 
   async function createGraphChangeSchema() {
     const keys = createKeys('SchemaCreatorKeys');
     await fundKeypair(devAccounts[0].keys, keys, STARTING_BALANCE);
-    const [createSchemaEvent, eventMap]  = await ExtrinsicHelper
+    const [createSchemaEvent, eventMap] = await ExtrinsicHelper
       .createSchema(keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain")
       .fundAndSend();
     assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
@@ -53,16 +55,16 @@ describe("Capacity Replenishment Testing: ", function () {
     assert(events.hasOwnProperty(eventName));
   }
 
-  before(async function() {
+  before(async function () {
     await setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
     await createGraphChangeSchema();
   });
 
-  describe("Capacity is replenished", function(){
-    it("after new epoch", async function() {
-      const totalCapacity = 3n*1500n*1000n;
+  describe("Capacity is replenished", function () {
+    it("after new epoch", async function () {
+      const totalCapacity = 3n * 1500n * 1000n;
       const [stakeKeys, stakeProviderId] = await createAndStakeProvider("ReplFirst", totalCapacity);
-      const payload = JSON.stringify({ changeType: 1,  fromId: 1, objectId: 2 })
+      const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 })
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
       // confirm that we start with a full tank
@@ -91,13 +93,13 @@ describe("Capacity Replenishment Testing: ", function () {
 
   function assert_capacity_call_fails_with_balance_too_low(call: Extrinsic) {
     return assert.rejects(
-      call.payWithCapacity(-1), { name: "RpcError",  message: /1010.+account balance too low/ });
+      call.payWithCapacity(-1), { name: "RpcError", message: /1010.+account balance too low/ });
   }
 
-  describe("Capacity is not replenished", function() {
-    it("if out of capacity and last_replenished_at is <= current epoch", async function() {
-      let [stakeKeys, stakeProviderId] = await createAndStakeProvider("NoSend", 3n*1000n*1000n);
-      let payload = JSON.stringify({ changeType: 1,  fromId: 1, objectId: 2 })
+  describe("Capacity is not replenished", function () {
+    it("if out of capacity and last_replenished_at is <= current epoch", async function () {
+      let [stakeKeys, stakeProviderId] = await createAndStakeProvider("NoSend", 3n * CENTS);
+      let payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 })
       let call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
       // run until we can't afford to send another message.
@@ -115,21 +117,21 @@ describe("Capacity Replenishment Testing: ", function () {
     });
   });
 
-  describe("Regression test: when user attempts to stake tiny amounts before provider's first message of an epoch,", function() {
-    it("provider is still replenished and can send a message", async function(){
-      const providerStakeAmt = 2n*1000n*1000n;
-      const userStakeAmt = 1n*1000n*1000n;
+  describe("Regression test: when user attempts to stake tiny amounts before provider's first message of an epoch,", function () {
+    it("provider is still replenished and can send a message", async function () {
+      const providerStakeAmt = 2n * CENTS;
+      const userStakeAmt = 1n * CENTS;
       const userIncrementAmt = 1000n;
 
-      const [stakeKeys, stakeProviderId] = await createAndStakeProvider("TinyStake", 1n*1000n*1000n);
+      const [stakeKeys, stakeProviderId] = await createAndStakeProvider("TinyStake", 1n * CENTS);
       // new user/msa stakes to provider
       const userKeys = createKeys("userKeys");
-      await fundKeypair(devAccounts[0].keys, userKeys, 2n*1000n*1000n + 100n*1000n*1000n);
+      await fundKeypair(devAccounts[0].keys, userKeys, 2n * CENTS + DOLLARS);
       await ExtrinsicHelper.createMsa(userKeys).fundAndSend();
       let [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userStakeAmt).fundAndSend();
       assertEvent(events, 'system.ExtrinsicSuccess');
 
-      const payload = JSON.stringify({ changeType: 1,  fromId: 1, objectId: 2 })
+      const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 })
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
       const totalCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt()
