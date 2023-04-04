@@ -64,6 +64,12 @@ use suffix::SuffixGenerator;
 pub mod weights;
 pub use weights::*;
 
+impl<T: Config> HandleProvider for Pallet<T> {
+	fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
+		Self::get_handle_for_msa(msa_id)
+	}
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;

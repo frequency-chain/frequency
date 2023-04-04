@@ -1,3 +1,4 @@
+use crate::msa::MessageSourceId;
 #[cfg(feature = "std")]
 use crate::utils::*;
 use codec::{Decode, Encode};
@@ -67,4 +68,10 @@ pub struct HandleResponse {
 	pub canonical_handle: Vec<u8>,
 	/// Suffix
 	pub suffix: HandleSuffix,
+}
+
+/// A behavior that allows for retrieving a `Handle` for a given `MessageSourceAccount`
+pub trait HandleProvider {
+	/// Validate a handle for a given `MessageSourceAccount`
+	fn get_handle_for_msa(key: MessageSourceId) -> Option<HandleResponse>;
 }

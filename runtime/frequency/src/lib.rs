@@ -526,6 +526,8 @@ impl pallet_msa::Config for Runtime {
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
 	// The type that provides schema related info
 	type SchemaValidator = Schemas;
+	// The type that provides `Handle` related info for a given `MesssageSourceAccount`
+	type HandleProvider = Handles;
 	// The number of blocks per virtual bucket
 	type MortalityWindowSize = MSAMortalityWindowSize;
 	// The maximum number of signatures that can be stored in the payload signature registry

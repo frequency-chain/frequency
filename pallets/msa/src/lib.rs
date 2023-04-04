@@ -83,7 +83,9 @@ use common_primitives::{
 	schema::{SchemaId, SchemaValidator},
 };
 
-pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
+pub use common_primitives::{
+	handles::HandleProvider, msa::MessageSourceId, utils::wrap_binary_data,
+};
 pub use pallet::*;
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
 pub use weights::*;
@@ -129,6 +131,9 @@ pub mod pallet {
 
 		/// A type that will supply schema related information.
 		type SchemaValidator: SchemaValidator<SchemaId>;
+
+		/// A type that will supply `Handle` related information.
+		type HandleProvider: HandleProvider;
 
 		/// The number of blocks before a signature can be ejected from the PayloadSignatureRegistryList
 		#[pallet::constant]
@@ -1674,6 +1679,12 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			)
 		);
 
+		let msa_handle = T::HandleProvider::get_handle_for_msa(msa_id);
+		ensure!(
+			msa_handle.is_none(),
+			InvalidTransaction::Custom(ValidityError::HandleNotRetired as u8)
+		);
+
 		let key_count = Pallet::<T>::get_public_key_count_by_msa_id(msa_id);
 		ensure!(
 			key_count == 1,
@@ -1709,6 +1720,8 @@ pub enum ValidityError {
 	NotKeyOwner,
 	/// InvalidNonZeroProviderDelegations
 	InvalidNonZeroProviderDelegations,
+	/// HandleNotRetired
+	HandleNotRetired,
 }
 
 impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {

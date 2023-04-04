@@ -2,7 +2,7 @@ import { ApiPromise, ApiRx } from "@polkadot/api";
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { Compact, u128, u16, u32, u64, Vec } from "@polkadot/types";
-import { FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
+import { CommonPrimitivesHandlesClaimHandlePayload, CommonPrimitivesHandlesRetireHandlePayload, FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
 import { devAccounts, log, Sr25519Signature } from "./helpers";
@@ -296,5 +296,13 @@ export class ExtrinsicHelper {
 
     public static timeReleaseTransfer(keys: KeyringPair, who: KeyringPair, schedule: ReleaseSchedule): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.timeRelease.transfer(who.address, schedule), keys, ExtrinsicHelper.api.events.timeRelease.ReleaseScheduleAdded);
+    }
+
+    public static claimHandle(delegatorKeys: KeyringPair, proof: Sr25519Signature, payload: CommonPrimitivesHandlesClaimHandlePayload): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.handles.claimHandle(delegatorKeys.publicKey, proof, payload), delegatorKeys, ExtrinsicHelper.api.events.handles.HandleClaimed);
+    }
+
+    public static retireHandle(delegatorKeys: KeyringPair, proof: Sr25519Signature, payload: CommonPrimitivesHandlesRetireHandlePayload): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.handles.retireHandle(delegatorKeys.publicKey, proof, payload), delegatorKeys, ExtrinsicHelper.api.events.handles.HandleClaimed);
     }
 }
