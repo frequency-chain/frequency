@@ -22,7 +22,15 @@ impl<'string_lifetime> HandleValidator<'string_lifetime> {
 		Self { reserved_handles, blocked_characters }
 	}
 
-	/// Determines if the given string exists in reserved_handles.
+	/// Determines whether a given string is a reserved handle in the current context.
+	///
+	/// # Arguments
+	///
+	/// * `string` - A string slice representing the handle to check.
+	///
+	/// # Returns
+	///
+	/// A boolean value indicating whether the string is a reserved handle (`true`) or not (`false`).
 	pub fn is_reserved_handle(&self, string: &str) -> bool {
 		for handle in &self.reserved_handles {
 			if &string == handle {
@@ -32,7 +40,11 @@ impl<'string_lifetime> HandleValidator<'string_lifetime> {
 		false
 	}
 
-	/// Determines if the given string contains a character in blocked_characters.
+	/// Checks if the given string contains any blocked characters.
+	///
+	/// # Arguments
+	///
+	/// * `string` - A string slice to check for blocked characters.
 	pub fn contains_blocked_characters(&self, string: &str) -> bool {
 		for character in &self.blocked_characters {
 			if string.contains(|c| c == *character) {
