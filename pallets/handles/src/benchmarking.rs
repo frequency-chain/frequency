@@ -101,5 +101,5 @@ benchmarks! {
 		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id.into());
 		assert!(stored_handle.is_none());
 	}
-	impl_benchmark_test_suite!(Handles, crate::tests::mock::new_tester(), crate::tests::mock::Test,);
+	impl_benchmark_test_suite!(Handles, crate::tests::mock::new_test_ext(), crate::tests::mock::Test,);
 }
