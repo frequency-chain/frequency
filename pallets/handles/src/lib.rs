@@ -140,6 +140,8 @@ pub mod pallet {
 		HandleIsNotAllowed,
 		/// The handle contains characters that are not allowed
 		HandleContainsBlockedCharacters,
+		/// The handle does not contain characters in the supported ranges of unicode characters
+		HandleDoesNotConsistOfSupportedCharacterSets,
 		/// Suffixes exhausted
 		SuffixesExhausted,
 		/// Invalid MSA
@@ -311,8 +313,12 @@ pub mod pallet {
 				Error::<T>::InvalidHandleCharacterLength
 			);
 
-			// Validation: The handle must not contain reserved words or blocked characters
+			// Validation: The handle must consist of characters contained not contain reserved words oblocked characters
 			let handle_validator = HandleValidator::new();
+			ensure!(
+				handle_validator.consists_of_supported_unicode_character_sets(base_handle_str),
+				Error::<T>::HandleDoesNotConsistOfSupportedCharacterSets
+			);
 			ensure!(
 				!handle_validator.is_reserved_handle(base_handle_str),
 				Error::<T>::HandleIsNotAllowed
