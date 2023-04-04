@@ -1,7 +1,10 @@
 use crate::{tests::mock::*, Error};
 use codec::Decode;
 use common_primitives::{handles::*, msa::MessageSourceId, utils::wrap_binary_data};
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{
+	assert_noop, assert_ok,
+	dispatch::{GetDispatchInfo, Pays},
+};
 use numtoa::*;
 use sp_core::{sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
@@ -81,4 +84,24 @@ fn retire_handle_no_handle() {
 			Error::<Test>::MSAHandleDoesNotExist
 		);
 	});
+}
+
+#[test]
+fn check_free_extrinsic_use() {
+	let delegator_key_pair = sr25519::Pair::generate().0;
+	let delegator_account = delegator_key_pair.public();
+
+	// Payload
+	let full_handle = "test1.1".as_bytes().to_vec();
+	let payload = RetireHandlePayload::new(full_handle.clone());
+	let encoded_payload = wrap_binary_data(payload.encode());
+	let proof: MultiSignature = delegator_key_pair.sign(&encoded_payload).into();
+
+	let call = HandlesCall::<Test>::retire_handle {
+		delegator_key: delegator_account.into(),
+		proof,
+		payload,
+	};
+	let dispatch_info = call.get_dispatch_info();
+	assert_eq!(dispatch_info.pays_fee, Pays::No);
 }

@@ -1,5 +1,6 @@
 use crate as pallet_handles;
 use codec::Decode;
+pub use pallet_handles::Call as HandlesCall;
 
 use common_primitives::{
 	handles::*,

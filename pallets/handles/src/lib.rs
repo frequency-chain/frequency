@@ -363,14 +363,14 @@ pub mod pallet {
 		}
 
 		/// Extrinsic to retire a handle
-		/// 
+		///
 		/// # Arguments
 		///
 		/// * `origin` - An `OriginFor<T>` that will provide the account that will be retiring the handle.
 		/// * `delegator_key` - The account id of the MSA id owner.
 		/// * `proof` - A `MultiSignature` that represents the signature of the payload by the `delegator_key`.
 		/// * `payload` - A `RetireHandlePayload` that contains the payload data required to retire the handle.
-		/// 
+		///
 		/// # Events
 		/// * [`Event::HandleRetired`]
 		///
