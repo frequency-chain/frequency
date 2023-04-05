@@ -51,10 +51,11 @@ describe("Capacity Transactions", function () {
                 await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, 9n * cents));
 
                 let delegatorKeys = createKeys("userKeys");
-                let _userMsaId = await ExtrinsicHelper.createMsa(delegatorKeys);
+                await fundKeypair(devAccounts[0].keys, delegatorKeys, 100n * dollars);
 
-                // grantDelegation costs about 2.8M and is the capacity eligible
-                // transaction used for these tests.
+                let [MsaCreatedEvent] = await ExtrinsicHelper.createMsa(delegatorKeys).signAndSend();
+                assert.notEqual(MsaCreatedEvent, undefined, "should have returned MsaCreated event");
+
                 const payload = await generateDelegationPayload({
                     authorizedMsaId: stakeProviderId,
                     schemaIds: [schemaId],
@@ -113,26 +114,21 @@ describe("Capacity Transactions", function () {
 
             // A registered provider with Capacity but no tokens associated with the
             // key should still be able to use polkadot UI to submit a capacity transaction.
-            // *All accounts will have at least an EXISTENTIAL_DEPOSIT = 1M.
-            // This test may still be valid if the txn cost is greater than 1M.
             it("pays for a transaction with available capacity and no free tokens", async function () {
                 let delegatorKeys = createKeys("delegatorKeys");
-                let _delegatorMsaId = await ExtrinsicHelper.createMsa(delegatorKeys);
+                await fundKeypair(devAccounts[0].keys, delegatorKeys, 100n * dollars);
 
-                let providerKeys = createKeys("providerKeys");
-                let providerId = await createMsaAndProvider(providerKeys, "UnstakeProvider");
+                let [MsaCreatedEvent] = await ExtrinsicHelper.createMsa(delegatorKeys).signAndSend();
+                assert.notEqual(MsaCreatedEvent, undefined, "should have returned MsaCreated event");
 
-                // Stake enough to cover the 2.8M grantDelegation cost
-                await assert.doesNotReject(stakeToProvider(stakeKeys, providerId, 3n * cents));
+                await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, 3n * cents));
 
-                // grantDelegation costs about 2.8M and is the capacity eligible
-                // transaction used for these tests.
                 const payload = await generateDelegationPayload({
                     authorizedMsaId: stakeProviderId,
                     schemaIds: [schemaId],
                 });
                 const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-                const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, providerKeys,
+                const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, stakeKeys,
                     signPayloadSr25519(delegatorKeys, addProviderData), payload);
 
                 const [grantDelegationEvent, chainEvents] = await grantDelegationOp.payWithCapacity();

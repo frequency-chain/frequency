@@ -214,13 +214,35 @@ fn pay_with_capacity_happy_path() {
 		.base_weight(Weight::from_ref_time(5))
 		.build()
 		.execute_with(|| {
-			let signer = 1u64;
+			let key_without_msa = 20u64;
 			let create_msa_call = Box::new(RuntimeCall::Msa(MsaCall::<Test>::create {}));
 
 			assert_ok!(FrequencyTxPayment::pay_with_capacity(
-				RuntimeOrigin::signed(signer),
+				RuntimeOrigin::signed(key_without_msa),
 				create_msa_call
 			));
+		});
+}
+
+#[test]
+fn pay_with_capacity_errors_with_call_error() {
+	let balance_factor = 10;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			let existing_key_with_msa = 1u64;
+			let create_msa_call = Box::new(RuntimeCall::Msa(MsaCall::<Test>::create {}));
+
+			assert_noop!(
+				FrequencyTxPayment::pay_with_capacity(
+					RuntimeOrigin::signed(existing_key_with_msa),
+					create_msa_call
+				),
+				pallet_msa::Error::<Test>::KeyAlreadyRegistered
+			);
 		});
 }
 
