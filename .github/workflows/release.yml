@@ -1,5 +1,5 @@
 name: Release
-run-name: Cut Release ${{env.NEW_RELEASE_TAG}}
+run-name: Cut Release ${{github.event.inputs.release-version || github.ref_name}}
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
