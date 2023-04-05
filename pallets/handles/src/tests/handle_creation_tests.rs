@@ -190,3 +190,30 @@ fn claim_handle_invalid_byte_length() {
 		);
 	});
 }
+
+#[test]
+fn test_get_next_suffixes() {
+	new_test_ext().execute_with(|| {
+		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let (payload, proof) = get_signed_claims_payload(&alice, "test1".as_bytes().to_vec());
+		assert_ok!(Handles::claim_handle(
+			RuntimeOrigin::signed(alice.public().into()),
+			alice.public().into(),
+			proof,
+			payload
+		));
+		let msa_id = MessageSourceId::decode(&mut &alice.public().encode()[..]).unwrap();
+		let handle = Handles::get_handle_for_msa(msa_id);
+		assert!(handle.is_some());
+		let handle_result = handle.unwrap();
+		let base_handle = handle_result.base_handle;
+		assert_eq!(base_handle, "test1".as_bytes().to_vec());
+		let suffix = handle_result.suffix;
+		assert!(suffix > 0);
+		let next_suffixes = Handles::get_next_suffixes(base_handle.clone(), 5);
+		assert_eq!(next_suffixes.len(), 5);
+		for suffix in next_suffixes {
+			assert!(suffix > 0);
+		}
+	});
+}
