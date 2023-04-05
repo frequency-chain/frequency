@@ -20,7 +20,8 @@ env:
   NEW_RELEASE_TAG: ${{github.event.inputs.release-version || github.ref_name}}
   RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
   LATEST_FULL_RELEASE_TAG: _LATEST-FULL-RELEASE
-  TEST_RUN: ${{startsWith(github.ref_name, 'v0.0.1')}}
+  XXX: ${{github.event.inputs.release-version || github.ref_name}}
+  TEST_RUN: ${{startsWith(github.event.inputs.release-version || github.ref_name, 'v0.0.1')}}
   RUST_TOOLCHAIN: "nightly-2022-10-09" # TODO: Set this dynamically
 
 jobs:
@@ -136,7 +137,6 @@ jobs:
           commit_user_email: do-not-reply@users.noreply.github.com
           commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
       - name: Update Release Version Tag
-        if: steps.commit-updated-version.outputs.changes_detected == 'true'
         uses: rickstaa/action-create-tag@84c90e6ba79b47b5147dcb11ff25d6a0e06238ba
         with:
           tag: ${{env.NEW_RELEASE_TAG}}
@@ -734,6 +734,7 @@ jobs:
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
           body_path: tools/ci/release-notes/release-notes.md
+          tag_name: ${{env.NEW_RELEASE_TAG}}
           files: |
             /tmp/frequency*.*
             /tmp/metadata-compare-*
