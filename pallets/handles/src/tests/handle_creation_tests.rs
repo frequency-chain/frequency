@@ -3,6 +3,7 @@ use codec::Decode;
 use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_noop, assert_ok};
 use sp_core::{sr25519, Encode, Pair};
+use sp_std::collections::btree_set::BTreeSet;
 
 #[test]
 fn test_full_handle_creation() {
@@ -210,10 +211,13 @@ fn test_get_next_suffixes() {
 		assert_eq!(base_handle, "test1".as_bytes().to_vec());
 		let suffix = handle_result.suffix;
 		assert!(suffix > 0);
-		let next_suffixes = Handles::get_next_suffixes(base_handle.clone(), 5);
+		let next_suffixes: Vec<u16> = Handles::get_next_suffixes(base_handle.clone(), 5);
 		assert_eq!(next_suffixes.len(), 5);
+		let mut presumptive_suffixes = BTreeSet::new();
 		for suffix in next_suffixes {
-			assert!(suffix > 0);
+			assert!(suffix > 0 && suffix != handle_result.suffix);
+			presumptive_suffixes.insert(suffix);
 		}
+		assert_eq!(presumptive_suffixes.len(), 5);
 	});
 }
