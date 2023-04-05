@@ -87,16 +87,12 @@ impl<'string_lifetime> HandleValidator<'string_lifetime> {
 			let mut is_valid = false;
 
 			for &(start, end) in &self.allowed_unicode_character_ranges {
-				println!("start: {}  end: {}", start, end);
-				println!("character: {}", character as u32);
 				if character as u32 >= start && character as u32 <= end {
 					is_valid = true;
-					println!("Is valid");
 					break
 				}
 			}
 			if !is_valid {
-				println!("is NOT valid");
 				return false
 			}
 		}
