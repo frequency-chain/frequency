@@ -16,6 +16,7 @@ import { EXISTENTIAL_DEPOSIT } from "./rootHooks";
 import { MessageSourceId, PageHash } from "@frequency-chain/api-augment/interfaces";
 import assert from "assert";
 import { firstValueFrom } from "rxjs";
+import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 
 export interface DevAccount {
   uri: string,
@@ -27,6 +28,9 @@ export let devAccounts: DevAccount[] = [];
 export type Sr25519Signature = { Sr25519: `0x${string}` }
 
 export const TEST_EPOCH_LENGTH = 10;
+export const CENTS = 1000000n;
+export const DOLLARS = 100n * CENTS;
+export const STARTING_BALANCE = 6n * CENTS + DOLLARS;
 
 export function signPayloadSr25519(keys: KeyringPair, data: Codec): Sr25519Signature {
   return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) }
@@ -236,5 +240,17 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
   }
   else {
     assert.fail("should return an EpochLengthUpdated event");
+  }
+}
+
+export async function createGraphChangeSchema(): Promise<u16> {
+  const [createSchemaEvent, eventMap] = await ExtrinsicHelper
+    .createSchema(devAccounts[0].keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain")
+    .fundAndSend();
+  assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
+  if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
+    return createSchemaEvent.data.schemaId;
+  } else {
+    assert.fail("failed to create a schema")
   }
 }

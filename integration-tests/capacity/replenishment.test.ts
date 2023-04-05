@@ -12,31 +12,15 @@ import {
   getNextEpochBlock,
   TEST_EPOCH_LENGTH,
   setEpochLength,
-  createAndFundKeypair
+  createGraphChangeSchema,
+  CENTS,
+  DOLLARS,
+  STARTING_BALANCE
 } from "../scaffolding/helpers";
 import { firstValueFrom } from "rxjs";
-import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 
 describe("Capacity Replenishment Testing: ", function () {
-  const CENTS = 1000000n
-  const DOLLARS = 100n * CENTS;
-  const STARTING_BALANCE = 6n * CENTS + DOLLARS;
-
   let schemaId: u16;
-
-  async function createGraphChangeSchema() {
-    const keys = createKeys('SchemaCreatorKeys');
-    await fundKeypair(devAccounts[0].keys, keys, STARTING_BALANCE);
-    const [createSchemaEvent, eventMap] = await ExtrinsicHelper
-      .createSchema(keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain")
-      .fundAndSend();
-    assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
-    if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
-      schemaId = createSchemaEvent.data.schemaId;
-    } else {
-      assert.fail("failed to create a schema")
-    }
-  }
 
   async function getRemainingCapacity(providerId: u64): Promise<u128> {
     const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(providerId))).unwrap();
@@ -57,7 +41,7 @@ describe("Capacity Replenishment Testing: ", function () {
 
   before(async function () {
     await setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
-    await createGraphChangeSchema();
+    schemaId = await createGraphChangeSchema();
   });
 
   describe("Capacity is replenished", function () {
