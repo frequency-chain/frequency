@@ -55,6 +55,8 @@ fn test_consists_of_supported_unicode_character_sets_happy_path() {
 		"Αλέξανδρος",  // Greek and Coptic
 		"Ἀναξαγόρας", // Greek Extended
 		"กัญญา",       // Thai
+		"عمر",                // Arabic
+		"דָּנִיֵּאל",  // Hewbrew
 	]);
 
 	let handle_validator = HandleValidator::new();
