@@ -582,7 +582,7 @@ impl<T: Config> Pallet<T> {
 				.saturating_add(RocksDbWeight::get().writes(1))
 		} else {
 			// 1 for get_current_epoch_info, 1 for get_epoch_length
-			RocksDbWeight::get().reads(2u64)
+			RocksDbWeight::get().reads(2u64).saturating_add(RocksDbWeight::get().writes(1))
 		}
 	}
 }
