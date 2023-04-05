@@ -2,12 +2,13 @@ import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { u64, u16 } from "@polkadot/types";
 import assert from "assert";
-import { EventMap, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
+import { AddKeyData, EventMap, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import {
     devAccounts, createKeys, createAndFundKeypair, createMsaAndProvider,
     generateDelegationPayload, signPayloadSr25519, stakeToProvider, fundKeypair,
     TEST_EPOCH_LENGTH,
-    setEpochLength
+    setEpochLength,
+    generateAddKeyPayload
 } from "../scaffolding/helpers";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 
@@ -16,9 +17,9 @@ function assertEvent(events: EventMap, eventName: string) {
 }
 
 describe("Capacity Transactions", function () {
-    let cents = 1000000n;
-    let dollars = 100n * cents;
-    let stakeAmount: bigint = 200n * dollars;
+    let CENTS = 1000000n;
+    let DOLLARS = 100n * CENTS;
+    let stakeAmount: bigint = 200n * DOLLARS;
 
     before(async function () {
         await setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
@@ -48,10 +49,10 @@ describe("Capacity Transactions", function () {
             });
 
             it("successfully pays for with Capacity for eligible transaction - grantDelegation", async function () {
-                await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, 9n * cents));
+                await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, 9n * CENTS));
 
                 let delegatorKeys = createKeys("userKeys");
-                await fundKeypair(devAccounts[0].keys, delegatorKeys, 100n * dollars);
+                await fundKeypair(devAccounts[0].keys, delegatorKeys, 100n * DOLLARS);
 
                 let [MsaCreatedEvent] = await ExtrinsicHelper.createMsa(delegatorKeys).signAndSend();
                 assert.notEqual(MsaCreatedEvent, undefined, "should have returned MsaCreated event");
@@ -79,7 +80,7 @@ describe("Capacity Transactions", function () {
             it("fails to pay with Capacity for a non-capacity transaction", async function () {
                 let providerId: u64 = new u64(ExtrinsicHelper.api.registry, 0);
 
-                const increaseStakeObj = ExtrinsicHelper.stake(stakeKeys, providerId, 1n * cents);
+                const increaseStakeObj = ExtrinsicHelper.stake(stakeKeys, providerId, 1n * CENTS);
 
                 await assert.rejects(increaseStakeObj.payWithCapacity(), {
                     name: "RpcError", message:
@@ -112,33 +113,41 @@ describe("Capacity Transactions", function () {
                 });
             });
 
-            // A registered provider with Capacity but no tokens associated with the
-            // key should still be able to use polkadot UI to submit a capacity transaction.
-            it("pays for a transaction with available capacity and no free tokens", async function () {
+            // *All keys should have at least an EXISTENTIAL_DEPOSIT = 1M.
+            it("fails to pay for transaction when key does has not met the min deposit", async function () {
+                let newProviderKeys = createKeys("newKeys");
+
+                await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, 1n * DOLLARS));
+
+                // Add new key
+                let newKeyPayload: AddKeyData = await generateAddKeyPayload({ msaId: new u64(ExtrinsicHelper.api.registry, stakeProviderId), newPublicKey: newProviderKeys.publicKey });
+                let addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", newKeyPayload);
+
+                let ownerSig = signPayloadSr25519(stakeKeys, addKeyData);
+                let newSig = signPayloadSr25519(newProviderKeys, addKeyData);
+                const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(stakeKeys, ownerSig, newSig, newKeyPayload);
+
+                const [publicKeyEvents] = await addPublicKeyOp.fundAndSend();
+                assert.notEqual(publicKeyEvents, undefined, 'should have added public key');
+
                 let delegatorKeys = createKeys("delegatorKeys");
-                await fundKeypair(devAccounts[0].keys, delegatorKeys, 100n * dollars);
-
-                let [MsaCreatedEvent] = await ExtrinsicHelper.createMsa(delegatorKeys).signAndSend();
+                await fundKeypair(devAccounts[0].keys, delegatorKeys, 100n * DOLLARS);
+                const createMsaOp = ExtrinsicHelper.createMsa(delegatorKeys);
+                const [MsaCreatedEvent] = await createMsaOp.fundAndSend();
                 assert.notEqual(MsaCreatedEvent, undefined, "should have returned MsaCreated event");
-
-                await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, 3n * cents));
 
                 const payload = await generateDelegationPayload({
                     authorizedMsaId: stakeProviderId,
                     schemaIds: [schemaId],
                 });
                 const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-                const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, stakeKeys,
+                const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, newProviderKeys,
                     signPayloadSr25519(delegatorKeys, addProviderData), payload);
 
-                const [grantDelegationEvent, chainEvents] = await grantDelegationOp.payWithCapacity();
-
-                if (grantDelegationEvent &&
-                    !(ExtrinsicHelper.api.events.msa.DelegationGranted.is(grantDelegationEvent))) {
-                    assert.fail("should return a DelegationGranted event");
-                }
-
-                assertEvent(chainEvents, "capacity.CapacityWithdrawn");
+                await assert.rejects(grantDelegationOp.payWithCapacity(), {
+                    name: 'RpcError',
+                    message: /Custom error: 3/,
+                })
             });
         });
 
@@ -203,4 +212,3 @@ describe("Capacity Transactions", function () {
         });
     });
 });
-

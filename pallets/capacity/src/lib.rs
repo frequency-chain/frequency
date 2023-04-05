@@ -13,6 +13,9 @@
 //! The network generates Capacity based on a Capacity-generating function that considers usage and network congestion.
 //! When token is staked, the targeted provider MSA receives the Capacity generated.
 //!
+//! This Capacity can be used to pay for transactions given that the key used to pay for those transactions have a minimum balance
+//! of the existential deposit.
+//!
 //! The staked amount may be increased, targeting either the same or a different target to receive the newly generated Capacity.
 //! As a result, every time the network is staked to, the staked tokens are locked until unstaked.
 //!

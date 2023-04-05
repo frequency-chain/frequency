@@ -12,6 +12,8 @@
 //! Note that tipping for capacity transactions is not allowed and is set to zero. Users who
 //! use tokens to transact can continue to use a tip.
 //!
+//! The key that is used to pay with Capacity must have a minimum balance of the existential deposit.
+//!
 //! The Frequency-transaction pallet provides functions for:
 //!
 //! - pay_with_capacity
@@ -23,7 +25,7 @@ use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::{DispatchInfo, Dispatchable, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
-	traits::{IsSubType, IsType},
+	traits::{Currency, IsSubType, IsType},
 	weights::{Weight, WeightToFee},
 	DefaultNoBound,
 };
@@ -40,6 +42,9 @@ use sp_std::prelude::*;
 use common_primitives::capacity::{Nontransferable, Replenishable};
 pub use pallet::*;
 pub use weights::*;
+
+mod payment;
+pub use payment::*;
 
 pub use types::GetStableWeight;
 pub mod types;
@@ -62,6 +67,9 @@ pub(crate) type CapacityOf<T> = <T as Config>::Capacity;
 
 /// Capacity Balance alias
 pub(crate) type CapacityBalanceOf<T> = <CapacityOf<T> as Nontransferable>::Balance;
+
+pub(crate) type ChargeCapacityBalanceOf<T> =
+	<<T as Config>::OnChargeCapacityTransaction as OnChargeCapacityTransaction<T>>::Balance;
 
 /// Used to pass the initial payment info from pre- to post-dispatch.
 #[derive(Encode, Decode, DefaultNoBound, TypeInfo)]
@@ -137,9 +145,7 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
-	pub trait Config:
-		frame_system::Config + pallet_transaction_payment::Config + pallet_msa::Config
-	{
+	pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -159,6 +165,9 @@ pub mod pallet {
 
 		/// The type that checks what transactions are capacity with their stable weights.
 		type CapacityCalls: GetStableWeight<<Self as Config>::RuntimeCall, Weight>;
+
+		/// Charge Capacity for transaction payments.
+		type OnChargeCapacityTransaction: OnChargeCapacityTransaction<Self>;
 	}
 
 	#[pallet::event]
@@ -223,6 +232,8 @@ pub enum ChargeFrqTransactionPaymentError {
 	InvalidMsaKey,
 	/// The Capacity Target does not exist
 	TargetCapacityNotFound,
+	/// The minimum balance required for keys used to pay with Capacity
+	BelowMinDeposit,
 }
 
 /// Require the transactor pay for themselves and maybe include a tip to gain additional priority
@@ -247,7 +258,7 @@ impl ChargeFrqTransactionPaymentError {
 
 impl<T: Config> ChargeFrqTransactionPayment<T>
 where
-	BalanceOf<T>: Send + Sync + FixedPointOperand + IsType<CapacityBalanceOf<T>> + From<u64>,
+	BalanceOf<T>: Send + Sync + FixedPointOperand + IsType<ChargeCapacityBalanceOf<T>>,
 	<T as frame_system::Config>::RuntimeCall:
 		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + IsSubType<Call<T>>,
 {
@@ -273,54 +284,51 @@ where
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { call }) => {
-				let extrinsic_weight = T::CapacityCalls::get_stable_weight(call)
-					.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
-
-				let msa_id = pallet_msa::Pallet::<T>::ensure_valid_msa_key(who)
-					.map_err(|_| ChargeFrqTransactionPaymentError::InvalidMsaKey.into())?;
-
-				if T::Capacity::can_replenish(msa_id) {
-					ensure!(
-						T::Capacity::replenish_all_for(msa_id).is_ok(),
-						ChargeFrqTransactionPaymentError::TargetCapacityNotFound.into()
-					);
-				}
-
-				let fee = Pallet::<T>::compute_capacity_fee(
-					len as u32,
-					call.get_dispatch_info().class,
-					extrinsic_weight,
-				);
-
-				ensure!(
-					T::Capacity::deduct(msa_id, fee.into()).is_ok(),
-					TransactionValidityError::Invalid(InvalidTransaction::Payment)
-				);
-
-				Ok((fee, InitialPayment::Capacity))
-			},
-			_ => {
-				let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(
-					len as u32,
-					info,
-					self.tip(call),
-				);
-				if fee.is_zero() {
-					return Ok((fee, InitialPayment::Free))
-				}
-
-				<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
-					who,
-					call,
-					info,
-					fee,
-					self.tip(&call),
-				)
-				.map(|i| (fee, InitialPayment::Token(i)))
-				.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
-			},
+			Some(Call::pay_with_capacity { call }) => self.withdraw_capacity_fee(who, call, len),
+			_ => self.withdraw_token_fee(who, call, info, len, self.tip(call)),
 		}
+	}
+
+	/// Withdraws transaction fee paid Capacity using a key associated to an MSA.
+	fn withdraw_capacity_fee(
+		&self,
+		key: &T::AccountId,
+		call: &<T as Config>::RuntimeCall,
+		len: usize,
+	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
+		let extrinsic_weight = T::CapacityCalls::get_stable_weight(call)
+			.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
+
+		let fee = Pallet::<T>::compute_capacity_fee(
+			len as u32,
+			call.get_dispatch_info().class,
+			extrinsic_weight,
+		);
+
+		let fee = T::OnChargeCapacityTransaction::withdraw_fee(key, fee.into())?;
+
+		Ok((fee.into(), InitialPayment::Capacity))
+	}
+
+	/// Withdraws transaction fee paid with tokens from an.
+	fn withdraw_token_fee(
+		&self,
+		who: &T::AccountId,
+		call: &<T as frame_system::Config>::RuntimeCall,
+		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
+		len: usize,
+		tip: BalanceOf<T>,
+	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
+		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
+		if fee.is_zero() {
+			return Ok((fee, InitialPayment::Free))
+		}
+
+		<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
+			who, call, info, fee, tip,
+		)
+		.map(|i| (fee, InitialPayment::Token(i)))
+		.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
 	}
 }
 
@@ -339,7 +347,13 @@ impl<T: Config> SignedExtension for ChargeFrqTransactionPayment<T>
 where
 	<T as frame_system::Config>::RuntimeCall:
 		IsSubType<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
-	BalanceOf<T>: Send + Sync + FixedPointOperand + From<u64> + IsType<CapacityBalanceOf<T>>,
+
+	BalanceOf<T>: Send
+		+ Sync
+		+ FixedPointOperand
+		+ From<u64>
+		+ IsType<ChargeCapacityBalanceOf<T>>
+		+ IsType<CapacityBalanceOf<T>>,
 {
 	const IDENTIFIER: &'static str = "ChargeTransactionPayment";
 	type AccountId = T::AccountId;
@@ -386,7 +400,7 @@ where
 		info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
-		let (_fee, initial_payment) = self.withdraw_fee(who, &call, info, len)?;
+		let (_fee, initial_payment) = self.withdraw_fee(who, call, info, len)?;
 
 		Ok((self.tip(call), who.clone(), initial_payment))
 	}
