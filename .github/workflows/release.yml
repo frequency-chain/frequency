@@ -1,4 +1,5 @@
 name: Release
+run-name: Cut Release ${{env.NEW_RELEASE_TAG}}
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
@@ -20,7 +21,6 @@ env:
   NEW_RELEASE_TAG: ${{github.event.inputs.release-version || github.ref_name}}
   RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
   LATEST_FULL_RELEASE_TAG: _LATEST-FULL-RELEASE
-  XXX: ${{github.event.inputs.release-version || github.ref_name}}
   TEST_RUN: ${{startsWith(github.event.inputs.release-version || github.ref_name, 'v0.0.1')}}
   RUST_TOOLCHAIN: "nightly-2022-10-09" # TODO: Set this dynamically
 
