@@ -127,6 +127,8 @@ fn claim_handle_get_msa_handle() {
 		let handle_result = handle.unwrap();
 		let base_handle = handle_result.base_handle;
 		assert_eq!(base_handle, "test1".as_bytes().to_vec());
+		let suffix = handle_result.suffix;
+		assert!(suffix > 0);
 	});
 }
 
