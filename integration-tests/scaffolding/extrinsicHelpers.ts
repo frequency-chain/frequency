@@ -1,7 +1,7 @@
 import { ApiPromise, ApiRx } from "@polkadot/api";
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { Compact, u128, u16, u32, u64, Vec } from "@polkadot/types";
+import { Compact, u128, u8, u16, u32, u64, Vec } from "@polkadot/types";
 import { CommonPrimitivesHandlesClaimHandlePayload, CommonPrimitivesHandlesRetireHandlePayload, FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
@@ -20,6 +20,8 @@ export type ReleaseSchedule = {
 
 export type AddKeyData = { msaId?: u64; expiration?: any; newPublicKey?: any; }
 export type AddProviderPayload = { authorizedMsaId?: u64; schemaIds?: u16[], expiration?: any; }
+export type ClaimHandlePayload = { base_handle?: u8[]; }
+export type RetireHandlePayload = { full_handle?: u8[]; }
 export type ItemizedSignaturePayload = { msaId?: u64; schemaId?: u16, targetHash?: u32, expiration?: any; actions?: any; }
 export type PaginatedUpsertSignaturePayload = { msaId?: u64; schemaId?: u16, pageId?: u16, targetHash?: u32, expiration?: any; payload?: any; }
 export type PaginatedDeleteSignaturePayload = { msaId?: u64; schemaId?: u16, pageId?: u16, targetHash?: u32, expiration?: any; }
