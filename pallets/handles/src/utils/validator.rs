@@ -37,6 +37,9 @@ impl<'string_lifetime> HandleValidator<'string_lifetime> {
 			(0x0370, 0x03FF), // Greek and Coptic
 			(0x1F00, 0x1FFF), // Greek Extended
 			(0x0E00, 0x0E7F), // Thai
+			(0x0600, 0x06FF), // Arabic
+			(0xFB50, 0xFDFF), // Arabic Presentation Forms-A
+			(0x0590, 0x05FF), // Hebrew
 		]);
 		Self { reserved_handles, blocked_characters, allowed_unicode_character_ranges }
 	}
@@ -84,12 +87,16 @@ impl<'string_lifetime> HandleValidator<'string_lifetime> {
 			let mut is_valid = false;
 
 			for &(start, end) in &self.allowed_unicode_character_ranges {
+				println!("start: {}  end: {}", start, end);
+				println!("character: {}", character as u32);
 				if character as u32 >= start && character as u32 <= end {
 					is_valid = true;
+					println!("Is valid");
 					break
 				}
 			}
 			if !is_valid {
+				println!("is NOT valid");
 				return false
 			}
 		}
