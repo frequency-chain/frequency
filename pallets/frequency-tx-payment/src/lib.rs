@@ -177,11 +177,10 @@ pub mod pallet {
 		pub fn pay_with_capacity(
 			origin: OriginFor<T>,
 			call: Box<<T as Config>::RuntimeCall>,
-		) -> DispatchResult {
+		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin.clone())?;
 
-			let _result = call.dispatch(origin);
-			Ok(())
+			call.dispatch(origin)
 		}
 	}
 }
