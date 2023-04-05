@@ -1,6 +1,6 @@
 import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { u64, u16 } from "@polkadot/types";
+import { u64, u16, u128 } from "@polkadot/types";
 import assert from "assert";
 import { AddKeyData, EventMap, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import {
@@ -11,6 +11,7 @@ import {
     generateAddKeyPayload
 } from "../scaffolding/helpers";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
+import { firstValueFrom } from "rxjs";
 
 function assertEvent(events: EventMap, eventName: string) {
     assert(events.hasOwnProperty(eventName));
@@ -30,6 +31,7 @@ describe("Capacity Transactions", function () {
             let stakeKeys: KeyringPair;
             let stakeProviderId: u64;
             let schemaId: u16;
+            const amountStaked = 9n * CENTS;
 
             beforeEach(async function () {
                 stakeKeys = createKeys("StakeKeys");
@@ -48,8 +50,8 @@ describe("Capacity Transactions", function () {
                 assert.notEqual(schemaId, undefined, "setup should populate schemaId");
             });
 
-            it("successfully pays for with Capacity for eligible transaction - grantDelegation", async function () {
-                await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, 9n * CENTS));
+            it("successfully pays with Capacity for eligible transaction - grantDelegation", async function () {
+                await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, amountStaked));
 
                 let delegatorKeys = createKeys("userKeys");
                 await fundKeypair(devAccounts[0].keys, delegatorKeys, 100n * DOLLARS);
@@ -72,7 +74,25 @@ describe("Capacity Transactions", function () {
                     assert.fail("should return a DelegationGranted event");
                 }
 
-                assertEvent(chainEvents, "capacity.CapacityWithdrawn");
+                let fee: u128;
+                if (chainEvents["capacity.CapacityWithdrawn"] && 
+                    ExtrinsicHelper.api.events.capacity.CapacityWithdrawn.is(chainEvents["capacity.CapacityWithdrawn"])) 
+                {
+                    fee = chainEvents["capacity.CapacityWithdrawn"].data.amount;
+                }
+                else {
+                    assert.fail("should return a CapacityWithdrawn event");
+                }
+                const remainingCapacity = amountStaked - fee.toBigInt();
+
+                // Check for remaining capacity to be reduced by correct amount
+                const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
+                assert.equal(capacityStaked.remainingCapacity, remainingCapacity, 
+                    `should return a capacityLedger with ${remainingCapacity} remainingCapacity`);
+                assert.equal(capacityStaked.totalTokensStaked, amountStaked, 
+                    `should return a capacityLedger with ${amountStaked} total tokens staked`);
+                assert.equal(capacityStaked.totalCapacityIssued, amountStaked, 
+                    `should return a capacityLedger with ${amountStaked} total capacity issued`);
             });
 
             // When a user attempts to pay for a non-capacity transaction with Capacity,
