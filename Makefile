@@ -87,7 +87,7 @@ benchmarks-msa \
 benchmarks-overhead \
 benchmarks-schemas \
 benchmarks-stateful-storage \
-benchmakrs-handles\
+benchmarks-handles\
 benchmarks-time-release\
 benchmarks-pallet_balances \
 benchmarks-pallet_collator_selection \
@@ -106,7 +106,7 @@ benchmarks-msa-local \
 benchmarks-overhead-local \
 benchmarks-schemas-local \
 benchmarks-stateful-storage-local \
-benchmakrs-handles-local \
+benchmarks-handles-local \
 benchmarks-time-release-local \
 benchmarks-pallet_balances-local \
 benchmarks-pallet_collator_selection-local \
