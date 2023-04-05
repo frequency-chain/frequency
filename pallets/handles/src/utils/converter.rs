@@ -16,19 +16,6 @@ pub struct HandleConverter {
 	confusables_map: BTreeMap<char, char>,
 }
 /// Creates a new `HandleConverter` instance with the specified input string.
-///
-/// # Example
-///
-/// ```
-/// use pallet_handles::utils::converter::HandleConverter;
-///
-/// let word = "ℂн𝔸RℒℰᏕ";
-///
-/// let handle_converter = HandleConverter::new();
-/// let canonical_word = handle_converter.replace_confusables(word);
-/// println!("{}", canonical_word);
-///
-/// ```
 impl HandleConverter {
 	/// Creates a new `HandleConverter` instance with a built confusables map.
 	pub fn new() -> Self {
@@ -41,23 +28,13 @@ impl HandleConverter {
 	///
 	/// # Arguments
 	///
-	/// * `self` - The `Canonicalizer` struct instance.
-	/// * `string` - The input string to be converted.
+	/// * `self` - A reference to a `ConfusableDetector` instance.
+	/// * `String` - A reference to the input string to convert to canonical form.
 	///
 	/// # Returns
 	///
-	/// The canonicalized string.
+	/// A new string in canonical form.
 	///
-	/// # Examples
-	///
-	/// ```
-	/// use canonicalizer::Canonicalizer;
-	///
-	/// let c = Canonicalizer::new();
-	/// let input = "Héllo, Wörld!";
-	/// let canonicalized = c.convert_to_canonical(input);
-	/// assert_eq!(canonicalized, "hello, world!");
-	/// ```
 	pub fn convert_to_canonical(&self, string: &str) -> codec::alloc::string::String {
 		let white_space_stripped = self.strip_unicode_whitespace(string);
 		let confusables_removed = self.replace_confusables(&white_space_stripped);
@@ -70,25 +47,11 @@ impl HandleConverter {
 	/// # Arguments
 	///
 	/// * `self` - A reference to a `ConfusableDetector` instance.
-	/// * `string` - A reference to the input string to replace confusable characters.
+	/// * `String` - A reference to the input string to replace confusable characters.
 	///
 	/// # Returns
 	///
 	/// A new string where any confusable characters have been replaced with their corresponding non-confusable characters.
-	///
-	/// # Example
-	///
-	/// ```
-	/// use confusable_detector::ConfusableDetector;
-	///
-	/// let detector = ConfusableDetector::new();
-	///
-	/// let input = "𝕙𝕖𝕝𝕝𝕠 𝕨𝕠𝕣𝕝𝕕"; // Contains homoglyph characters
-	///
-	/// let output = detector.replace_confusables(&input);
-	///
-	/// assert_eq!(output, "hello world");
-	/// ```
 	pub fn replace_confusables(&self, string: &str) -> codec::alloc::string::String {
 		string
 			.chars()
@@ -99,17 +62,7 @@ impl HandleConverter {
 	/// This function removes diacritical marks from the input string and returns a new `String` without them.
 	///
 	/// # Arguments
-	/// * `string` - A string slice that contains the input string from which the diacritical marks need to be removed.
-	///
-	/// # Example
-	/// ```
-	/// use my_crate::strip_diacriticals;
-	///
-	/// let input_string = "pâté";
-	/// let expected_output = "pate";
-	/// let output_string = strip_diacriticals(input_string);
-	/// assert_eq!(expected_output, output_string);
-	/// ```
+	/// * `String` - A string slice that contains the input string from which the diacritical marks need to be removed.
 	///
 	/// # Notes
 	/// This function uses the NFKD normalization form and filtering of combining marks to strip the diacritical marks from the input string.
@@ -132,14 +85,6 @@ impl HandleConverter {
 	///
 	/// A tuple containing the base handle string and the handle suffix as a `HandleSuffix` enum.
 	///
-	/// # Examples
-	///
-	/// ```
-	/// use my_crate::HandleSuffix;
-	/// let (base_handle_str, suffix) = split_display_name("my_handle.123");
-	/// assert_eq!(base_handle_str, "my_handle");
-	/// assert_eq!(suffix, HandleSuffix::Number(123));
-	/// ```
 	pub fn split_display_name(&self, display_name_str: &str) -> (String, HandleSuffix) {
 		let parts: Vec<&str> = display_name_str.split(".").collect();
 		let base_handle_str = parts[0].to_string();
@@ -154,20 +99,9 @@ impl HandleConverter {
 	///
 	/// * `input_str` - A string slice that holds the input to be converted.
 	///
-	/// # Example
-	///
-	/// ```
-	/// use my_crate::convert_str_to_handle;
-	///
-	/// let input_str = "my_string";
-	/// let handle = convert_str_to_handle(input_str);
-	/// ```
-	///
 	/// # Returns
 	///
-	/// A handle that can be used to interact with other parts of the codebase that
-	/// require a handle.
-	///
+	/// A `Handle` instance.
 	pub fn convert_str_to_handle(input_str: &str) -> Handle {
 		let input_vec = input_str.as_bytes().to_vec();
 		let handle: Handle = input_vec.try_into().unwrap();
@@ -178,19 +112,7 @@ impl HandleConverter {
 	///
 	/// # Arguments
 	///
-	/// * `string` - A reference to a string slice that contains the input string to be stripped of Unicode whitespace.
-	///
-	/// # Examples
-	///
-	/// ```
-	/// use my_crate::string_utils;
-	///
-	/// let input = "Hello,  \t world!\n";
-	/// let expected_output = "Hello,world!";
-	///
-	/// assert_eq!(string_utils::strip_unicode_whitespace(input), expected_output);
-	/// ```
-
+	/// * `String` - A reference to a string slice that contains the input string to be stripped of Unicode whitespace.
 	pub fn strip_unicode_whitespace(&self, string: &str) -> String {
 		string
 			.chars()

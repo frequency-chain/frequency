@@ -45,7 +45,7 @@ impl<'string_lifetime> HandleValidator<'string_lifetime> {
 	///
 	/// # Arguments
 	///
-	/// * `string` - A string slice representing the handle to check.
+	/// * `String` - A string slice representing the handle to check.
 	///
 	/// # Returns
 	///
@@ -63,7 +63,7 @@ impl<'string_lifetime> HandleValidator<'string_lifetime> {
 	///
 	/// # Arguments
 	///
-	/// * `string` - A string slice to check for blocked characters.
+	/// * `String` - A string slice to check for blocked characters.
 	pub fn contains_blocked_characters(&self, string: &str) -> bool {
 		for character in &self.blocked_characters {
 			if string.contains(|c| c == *character) {
@@ -78,7 +78,7 @@ impl<'string_lifetime> HandleValidator<'string_lifetime> {
 	///
 	/// # Arguments
 	///
-	/// * `string` - A string slice to check for characters within the allowed unicode character sets..
+	/// * `String` - A string slice to check for characters within the allowed unicode character sets..
 	pub fn consists_of_supported_unicode_character_sets(&self, string: &str) -> bool {
 		for character in string.chars() {
 			let mut is_valid = false;
