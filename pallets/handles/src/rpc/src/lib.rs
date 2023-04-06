@@ -18,7 +18,6 @@ use jsonrpsee::{
 	proc_macros::rpc,
 };
 
-use frame_support::log;
 use pallet_handles_runtime_api::HandlesRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -84,14 +83,8 @@ where
 		handle_input: PresumtiveSuffixesRequest,
 	) -> RpcResult<PresumtiveSuffixesResponse> {
 		let api = self.client.runtime_api();
-		let handle_bytes = handle_input.base_handle.clone();
-		let count = handle_input.count;
 		let at = BlockId::hash(self.client.info().best_hash);
-		let suffixes_result = api.get_next_suffixes(&at, handle_bytes, count);
-		let suffixes = suffixes_result.map_err(|e| RpcError::Custom(format!("{:?}", e)))?;
-		log::error!("result: {:?}", suffixes);
-		let response =
-			PresumtiveSuffixesResponse { base_handle: handle_input.base_handle.into(), suffixes };
-		map_rpc_result(Ok(response))
+		let suffixes_result = api.get_next_suffixes(&at, handle_input);
+		map_rpc_result(suffixes_result)
 	}
 }

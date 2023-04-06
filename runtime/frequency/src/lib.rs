@@ -1287,8 +1287,8 @@ impl_runtime_apis! {
 			Handles::get_handle_for_msa(msa_id)
 		}
 
-		fn get_next_suffixes(handle: Vec<u8>, count: u16) -> Vec<HandleSuffix> {
-			Handles::get_next_suffixes(handle, count)
+		fn get_next_suffixes(suffix_request: PresumtiveSuffixesRequest) -> PresumtiveSuffixesResponse {
+			Handles::get_next_suffixes(suffix_request)
 		}
 	}
 

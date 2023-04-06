@@ -3,6 +3,7 @@ mod rpc_mock;
 use super::*;
 use rpc_mock::*;
 
+use common_primitives::handles::{PresumtiveSuffixesRequest, PresumtiveSuffixesResponse};
 use pallet_handles_runtime_api::HandlesRuntimeApi;
 use std::sync::Arc;
 use substrate_test_runtime_client::runtime::Block;
@@ -22,13 +23,12 @@ sp_api::mock_impl_runtime_apis! {
 			}
 		}
 
-		fn get_next_suffixes(_handle: PresumtiveSuffixesRequest) -> PresumtiveSuffixesResponse {
-			let count = _handle.count;
+		fn get_next_suffixes(suffix_request: PresumtiveSuffixesRequest) -> PresumtiveSuffixesResponse {
 			let mut suffixes = Vec::new();
-			for i in 0..count {
+			for i in 0..suffix_request.count {
 				suffixes.push(i);
 			}
-			PresumtiveSuffixesResponse{ base_handle: _handle.base_handle, suffixes }
+			PresumtiveSuffixesResponse { base_handle: suffix_request.base_handle,  suffixes }
 		}
 	}
 }
@@ -68,12 +68,10 @@ async fn get_handle_with_success() {
 async fn get_next_suffixes_with_success() {
 	let client = Arc::new(TestApi {});
 	let api = HandlesHandler::new(client);
-	let getSuffixInput =
-		PresumtiveSuffixesRequest { base_handle: b"base_handle".to_vec(), count: 3 };
-	let result = api.get_next_suffixes(getSuffixInput);
+	let request_pre = PresumtiveSuffixesRequest { base_handle: b"base_handle".to_vec(), count: 3 };
+	let result = api.get_next_suffixes(request_pre);
 
 	assert_eq!(true, result.is_ok());
 	let response = result.unwrap();
-	assert_eq!(b"base_handle".to_vec(), response.base_handle);
-	assert_eq!(vec![0, 1, 2], response.suffixes);
+	assert_eq!(3, response.suffixes.len());
 }

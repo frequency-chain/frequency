@@ -19,7 +19,10 @@
 //! ## Terminology
 //! - Handle
 //! - Suffix
-//! - PRNG
+//!
+//! ## Glossary
+//! - **Handle:** A handle is a unique identifier for a user.  It consists of a canonical base, a "." delimiter and a unique numeric suffix.
+//! - **Suffix:** A suffix is a unique numeric value appended to a handle's canonical base to make it unique.
 
 // Ensure we're `no_std` when compiling for WASM.
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -49,7 +52,7 @@ use common_primitives::{
 	msa::{MessageSourceId, MsaLookup, MsaValidator},
 	utils::wrap_binary_data,
 };
-use frame_support::{dispatch::DispatchResult, ensure, log, pallet_prelude::*, traits::Get};
+use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
 use frame_system::pallet_prelude::*;
 use numtoa::*;
 pub use pallet::*;
@@ -415,12 +418,6 @@ pub mod pallet {
 			let base_handle = base_handle_str.as_bytes().to_vec();
 			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
 			let canonical_handle = canonical_handle_str.as_bytes().to_vec();
-			log::error!(
-				"base_handle: {:?}, suffix: {:?}, canonical_handle: {:?}",
-				base_handle,
-				suffix,
-				canonical_handle
-			);
 			Some(HandleResponse { base_handle, suffix, canonical_handle })
 		}
 
@@ -439,7 +436,9 @@ pub mod pallet {
 		///
 		/// * `Vec<HandleSuffix>` - The next available suffixes for the given handle.
 		/// ```
-		pub fn get_next_suffixes(handle: Vec<u8>, count: u16) -> Vec<HandleSuffix> {
+		pub fn get_next_suffixes(input: PresumtiveSuffixesRequest) -> PresumtiveSuffixesResponse {
+			let handle = input.base_handle;
+			let count = input.count;
 			let mut suffixes: Vec<u16> = vec![];
 			let base_handle: Handle = handle.try_into().unwrap_or_default();
 			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or("");
@@ -468,7 +467,8 @@ pub mod pallet {
 					break
 				}
 			}
-			suffixes
+			let response = PresumtiveSuffixesResponse { base_handle: base_handle.into(), suffixes };
+			response
 		}
 
 		/// Creates a full display handle by combining a base handle string with a suffix generated
