@@ -63,7 +63,7 @@ use frame_support::{
 };
 
 #[cfg(feature = "runtime-benchmarks")]
-use common_primitives::benchmarks::MsaBenchmarkHelper;
+use common_primitives::benchmarks::{MsaBenchmarkHelper, RegisterProviderBenchmarkHelper};
 
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
@@ -75,6 +75,7 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 use common_primitives::{
+	capacity::TargetValidator,
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
 		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator, SignatureRegistryPointer,
@@ -920,6 +921,18 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Create Register Provider
+	pub fn create_registered_provider(
+		provider_id: ProviderId,
+		name: BoundedVec<u8, T::MaxProviderNameSize>,
+	) -> DispatchResult {
+		ProviderToRegistryEntry::<T>::try_mutate(provider_id, |maybe_metadata| -> DispatchResult {
+			ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderRegistryEntry);
+			*maybe_metadata = Some(ProviderRegistryEntry { provider_name: name });
+			Ok(())
+		})
+	}
+
 	/// Adds a list of schema permissions to a delegation relationship.
 	pub fn grant_permissions_for_schemas(
 		delegator_id: DelegatorId,
@@ -1439,6 +1452,17 @@ impl<T: Config> MsaBenchmarkHelper<T::AccountId> for Pallet<T> {
 	}
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+impl<T: Config> RegisterProviderBenchmarkHelper for Pallet<T> {
+	/// Create a registered provider for benchmarks
+	fn create(provider_id: MessageSourceId, name: Vec<u8>) -> DispatchResult {
+		let name = BoundedVec::<u8, T::MaxProviderNameSize>::try_from(name).expect("error");
+		Self::create_registered_provider(provider_id.into(), name)?;
+
+		Ok(())
+	}
+}
+
 impl<T: Config> MsaLookup for Pallet<T> {
 	type AccountId = T::AccountId;
 
@@ -1508,6 +1532,12 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
 
 		Ok(info)
+	}
+}
+
+impl<T: Config> TargetValidator for Pallet<T> {
+	fn validate(target: MessageSourceId) -> bool {
+		Self::is_registered_provider(target)
 	}
 }
 

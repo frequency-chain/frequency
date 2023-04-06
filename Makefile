@@ -84,6 +84,7 @@ upgrade-local:
 BENCH_TARGETS=\
 benchmarks-messages \
 benchmarks-msa \
+benchmarks-frequency-tx-payment \
 benchmarks-overhead \
 benchmarks-schemas \
 benchmarks-stateful-storage \
@@ -104,6 +105,7 @@ benchmarks-messages-local \
 benchmarks-msa-local \
 benchmarks-overhead-local \
 benchmarks-schemas-local \
+benchmarks-frequency-tx-payment-local \
 benchmarks-stateful-storage-local \
 benchmarks-time-release-local \
 benchmarks-pallet_balances-local \
@@ -150,6 +152,9 @@ benchmarks-multi:
 .PHONY: benchmarks-multi-local
 benchmarks-multi-local:
 	./scripts/run_benchmarks.sh -t bench-dev $(PALLETS)
+
+benchmarks-capacity:
+	./scripts/run_benchmark.sh -p capacity
 
 .PHONY: docs
 docs:
