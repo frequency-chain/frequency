@@ -32,9 +32,10 @@ sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "pol
 default = ["std"]
 std = [
 	'codec/std',
-	"sp-api/std",
-	"sp-runtime/std",
-	"pallet-handles-runtime-api/std",
+	'sp-std/std',
+	'sp-api/std',
+	'sp-runtime/std',
+	'pallet-handles-runtime-api/std',
 	'common-primitives/std',
-	"common-helpers/std",
+	'common-helpers/std',
 ]

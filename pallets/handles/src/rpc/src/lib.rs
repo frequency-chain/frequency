@@ -36,7 +36,7 @@ pub trait HandlesApi<BlockHash> {
 
 	/// retrieve next `n` suffixes for a given handle
 	#[method(name = "handles_getNextSuffixes")]
-	fn get_next_suffixes(&self, handle: Vec<u8>, count: u16) -> RpcResult<Vec<HandleSuffix>>;
+	fn get_next_suffixes(&self, handle: String, count: u16) -> RpcResult<Vec<HandleSuffix>>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -76,10 +76,11 @@ where
 		map_rpc_result(result)
 	}
 
-	fn get_next_suffixes(&self, handle: Vec<u8>, count: u16) -> RpcResult<Vec<HandleSuffix>> {
+	fn get_next_suffixes(&self, handle: String, count: u16) -> RpcResult<Vec<HandleSuffix>> {
 		let api = self.client.runtime_api();
+		let handle_bytes = handle.as_bytes().to_vec();
 		let at = BlockId::hash(self.client.info().best_hash);
-		let result = api.get_next_suffixes(&at, handle, count);
+		let result = api.get_next_suffixes(&at, handle_bytes, count);
 		map_rpc_result(result)
 	}
 }

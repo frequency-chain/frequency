@@ -58,6 +58,7 @@ use sp_runtime::{
 	traits::{Convert, Verify},
 	MultiSignature,
 };
+use sp_std::vec::Vec;
 
 pub mod suffix;
 use suffix::SuffixGenerator;
