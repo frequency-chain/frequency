@@ -1,6 +1,6 @@
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { u16, u32, u64 } from "@polkadot/types";
+import { u16, u32, u64, Option} from "@polkadot/types";
 import { Codec } from "@polkadot/types/types";
 import { u8aToHex, u8aWrapBytes } from "@polkadot/util";
 import { mnemonicGenerate } from '@polkadot/util-crypto';
@@ -13,7 +13,7 @@ import {
   PaginatedUpsertSignaturePayload
 } from "./extrinsicHelpers";
 import { EXISTENTIAL_DEPOSIT } from "./rootHooks";
-import {MessageSourceId, PageHash} from "@frequency-chain/api-augment/interfaces";
+import {HandleResponse, MessageSourceId, PageHash} from "@frequency-chain/api-augment/interfaces";
 
 export interface DevAccount {
     uri: string,
@@ -180,4 +180,9 @@ export async function getCurrentPaginatedHash(msa_id: MessageSourceId, schemaId:
   }
 
   return page_response[0].content_hash;
+}
+
+export async function getHandleForMsa(msa_id: MessageSourceId): Promise<Option<HandleResponse>> {
+  const result = await ExtrinsicHelper.getHandleForMSA(msa_id);
+  return result;
 }
