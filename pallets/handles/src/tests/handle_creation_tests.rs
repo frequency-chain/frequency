@@ -10,7 +10,7 @@ fn test_full_handle_creation() {
 	new_test_ext().execute_with(|| {
 		// Min is 10, Max is 99 inclusive
 		for sequence_index in 0..89 {
-			let full_handle = Handles::create_full_handle("test", sequence_index);
+			let full_handle = Handles::create_full_handle_for_index("test", sequence_index);
 			let full_handle_str = core::str::from_utf8(&full_handle).ok().unwrap();
 			println!("full_handle_str={}", full_handle_str);
 		}
@@ -31,7 +31,7 @@ fn claim_handle_happy_path() {
 
 		// Confirm that HandleClaimed event was deposited
 		let msa_id = MessageSourceId::decode(&mut &alice.public().encode()[..]).unwrap();
-		let handle = Handles::create_full_handle("test1", 0);
+		let handle = Handles::create_full_handle_for_index("test1", 0);
 		System::assert_last_event(Event::HandleClaimed { msa_id, handle }.into());
 	});
 }

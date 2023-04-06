@@ -486,7 +486,7 @@ pub mod pallet {
 		///
 		/// * `Handle` - The full display handle.
 		///
-		pub fn create_full_handle(
+		pub fn create_full_handle_for_index(
 			base_handle_str: &str,
 			suffix_sequence_index: SequenceIndex,
 		) -> Handle {
@@ -500,6 +500,25 @@ pub mod pallet {
 				suffix_sequence_index as usize,
 			);
 
+			let full_handle: Handle = Self::create_full_handle(base_handle_str, suffix);
+			full_handle
+		}
+
+		/// Creates a full display handle by combining a base handle string with supplied suffix
+		///
+		/// # Arguments
+		///
+		/// * `base_handle_str` - The base handle string.
+		/// * `suffix` - The numeric suffix .
+		///
+		/// # Returns
+		///
+		/// * `Handle` - The full display handle.
+		///
+		pub fn create_full_handle(
+			base_handle_str: &str,
+			suffix: HandleSuffix,
+		) -> Handle {
 			// Compose the full display handle from the base handle, "." delimeter and suffix
 			let mut full_handle_vec: Vec<u8> = vec![];
 			full_handle_vec.extend(base_handle_str.as_bytes());
@@ -590,13 +609,7 @@ pub mod pallet {
 			);
 
 			// Compose the full display handle from the base handle, "." delimeter and suffix
-			let mut full_handle_vec: Vec<u8> = vec![];
-			full_handle_vec.extend(base_handle_str.as_bytes());
-			full_handle_vec.extend(b"."); // The delimeter
-			let mut buff = [0u8; SUFFIX_MAX_DIGITS];
-			full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
-
-			let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
+			let full_handle: Handle = Self::create_full_handle(base_handle_str, suffix);
 
 			// Store the full display handle to MSA id
 			MSAIdToDisplayName::<T>::insert(delegator_msa_id, full_handle.clone());
