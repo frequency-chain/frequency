@@ -81,30 +81,30 @@ jobs:
         uses: ./.github/workflows/common/is-full-release
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
-      - name: Install Required Packages
-        if: steps.is-full-release.outputs.is-full-release == 'true'
-        run: |
-          sudo apt-get update
-          sudo apt install -y protobuf-compiler libclang-dev
-      - name: Install Rust Toolchain
-        if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          toolchain: stable
-      - name: Update Weights for All Pallets
-        if: steps.is-full-release.outputs.is-full-release == 'true'
-        run: |
-          make benchmarks
-          git status -s
-          git diff
-      - name: Commit Updated Weights
-        if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
-        with:
-          commit_message: "Update weights for release ${{env.NEW_RELEASE_TAG}}"
-          commit_user_name: Frequency CI [bot]
-          commit_user_email: do-not-reply@users.noreply.github.com
-          commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
+      # - name: Install Required Packages
+      #   if: steps.is-full-release.outputs.is-full-release == 'true'
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt install -y protobuf-compiler libclang-dev
+      # - name: Install Rust Toolchain
+      #   if: steps.is-full-release.outputs.is-full-release == 'true'
+      #   uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+      #   with:
+      #     toolchain: stable
+      # - name: Update Weights for All Pallets
+      #   if: steps.is-full-release.outputs.is-full-release == 'true'
+      #   run: |
+      #     make benchmarks
+      #     git status -s
+      #     git diff
+      # - name: Commit Updated Weights
+      #   if: steps.is-full-release.outputs.is-full-release == 'true'
+      #   uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
+      #   with:
+      #     commit_message: "Update weights for release ${{env.NEW_RELEASE_TAG}}"
+      #     commit_user_name: Frequency CI [bot]
+      #     commit_user_email: do-not-reply@users.noreply.github.com
+      #     commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
 
   version-code:
     needs: run-all-benchmarks
