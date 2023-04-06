@@ -84,7 +84,7 @@ benchmarks! {
 		// retire the handle
 		let stored_handle = stored_handle.unwrap();
 		let base_handle:Vec<u8> = stored_handle.base_handle.clone();
-		let suffix: u16 = stored_handle.suffix;
+		let suffix: HandleSuffix = stored_handle.suffix;
 		let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or_default();
 		let full_handle_with_delimiter = format!("{}{}", base_handle_str, ".");
 		let retirement_payload = RetireHandlePayload::new(full_handle_with_delimiter.as_bytes().to_vec());

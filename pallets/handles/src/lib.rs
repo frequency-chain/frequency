@@ -200,7 +200,7 @@ pub mod pallet {
 		pub fn get_next_suffix_index_for_canonical_handle(
 			canonical_handle: Handle,
 		) -> Result<SequenceIndex, DispatchError> {
-			let next;
+			let next: SequenceIndex;
 			match Self::get_current_suffix_index_for_canonical_handle(canonical_handle) {
 				None => {
 					next = 0;
@@ -247,16 +247,19 @@ pub mod pallet {
 		///
 		/// # Returns
 		///
-		/// The generated suffix as a `u16`.
+		/// The generated suffix as a `HandleSuffix`.
 		///
-		fn generate_suffix_for_canonical_handle(canonical_handle: &str, cursor: usize) -> u16 {
+		fn generate_suffix_for_canonical_handle(
+			canonical_handle: &str,
+			cursor: usize,
+		) -> HandleSuffix {
 			let mut suffix_generator = SuffixGenerator::new(
 				T::HandleSuffixMin::get() as usize,
 				T::HandleSuffixMax::get() as usize,
 				&canonical_handle,
 			);
 			let sequence: Vec<usize> = suffix_generator.suffix_iter().collect();
-			sequence[cursor] as u16
+			sequence[cursor] as HandleSuffix
 		}
 	}
 
@@ -440,7 +443,7 @@ pub mod pallet {
 		/// * `Vec<HandleSuffix>` - The next available suffixes for the given handle.
 		/// ```
 		pub fn get_next_suffixes(handle: Vec<u8>, count: u16) -> Vec<HandleSuffix> {
-			let mut suffixes: Vec<u16> = vec![];
+			let mut suffixes: Vec<HandleSuffix> = vec![];
 			let base_handle: Handle = handle.try_into().unwrap_or_default();
 			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or("");
 
@@ -485,7 +488,7 @@ pub mod pallet {
 		///
 		pub fn create_full_handle(
 			base_handle_str: &str,
-			suffix_sequence_index: HandleSuffix,
+			suffix_sequence_index: SequenceIndex,
 		) -> Handle {
 			// Convert base display handle into a canonical display handle
 			let handle_converter = HandleConverter::new();
