@@ -5571,9 +5571,9 @@ name = "pallet-handles-runtime-api"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
- "frame-support",
  "parity-scale-codec",
  "sp-api",
+ "sp-std",
 ]
 
 [[package]]

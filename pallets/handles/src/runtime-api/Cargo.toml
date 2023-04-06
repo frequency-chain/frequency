@@ -14,11 +14,16 @@ codec = { package = "parity-scale-codec", version = "3.1.5", default-features = 
 	"derive"
 ] }
 # Substrate
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../../../common/primitives" }
 
 [features]
 default = ["std"]
-std = ["codec/std", "sp-api/std", "frame-support/std", 'common-primitives/std']
+std = [
+	'codec/std',
+	'sp-std/std',
+	'sp-api/std',
+	'common-primitives/std',
+]
