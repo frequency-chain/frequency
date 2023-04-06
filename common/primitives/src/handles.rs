@@ -75,3 +75,25 @@ pub trait HandleProvider {
 	/// Validate a handle for a given `MessageSourceAccount`
 	fn get_handle_for_msa(key: MessageSourceId) -> Option<HandleResponse>;
 }
+
+/// Input request to retrieve the next suffixes for a given handle
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+pub struct PresumtiveSuffixesRequest {
+	/// The base handle
+	#[cfg_attr(feature = "std", serde(with = "as_string"))]
+	pub base_handle: Vec<u8>,
+	/// The number of suffixes to retrieve
+	pub count: u16,
+}
+
+/// Output response for retrieving the next suffixes for a given handle
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+pub struct PresumtiveSuffixesResponse {
+	/// The base handle
+	#[cfg_attr(feature = "std", serde(with = "as_string"))]
+	pub base_handle: Vec<u8>,
+	/// The suffixes
+	pub suffixes: Vec<HandleSuffix>,
+}

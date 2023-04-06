@@ -22,7 +22,7 @@ describe("🤝 Handles", () => {
         assert.notEqual(delegatorKeys, undefined, "setup should populate delegator_key");
         assert.notEqual(msa_id, undefined, "setup should populate msa_id");
     });
-
+    
     describe("@Claim Handle", () => {
         it("should be able to claim a handle", async function () {
             const handle = "test_handle";
@@ -66,4 +66,41 @@ describe("🤝 Handles", () => {
             }
         });
     });
+
+    describe("@Alt Path: Claim Handle with possible presumptive suffix/RPC test", () => {
+       /// Check chain to getNextSuffixesForHandle
+       
+         it("should be able to claim a handle and check suffix (=suffix_assumed if avaiable on chain)", async function () {
+            const handle = "test1";
+            let handle_bytes = new Bytes(ExtrinsicHelper.api.registry, handle);
+            const request_suffixes = {
+                base_handle: handle,
+                count: 10,
+            };
+            /// Get presumptive suffix from chain (rpc)
+            let suffix_input_type = ExtrinsicHelper.api.registry.createType("PresumtiveSuffixesRequest", request_suffixes);
+            let suffixes_response = await ExtrinsicHelper.getNextSuffixesForHandle(suffix_input_type);
+            let resp_base_handle = suffixes_response.base_handle.toString();
+            let suffix_assumed = suffixes_response.suffixes[0];
+            assert.notEqual(suffix_assumed, 0, "suffix_assumed should not be 0");         
+
+            /// Claim handle (extrinsic)
+            const payload_ext = {
+                baseHandle: handle_bytes,
+            };
+            const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", payload_ext);
+            const claimHandle = ExtrinsicHelper.claimHandle(delegatorKeys, claimHandlePayload);
+            const [event] = await claimHandle.fundAndSend();
+            assert.notEqual(event, undefined, "claimHandle should return an event");
+            if (event && claimHandle.api.events.handles.HandleClaimed.is(event)) {
+                let handle = event.data.handle.toString();
+                assert.notEqual(handle, "", "claimHandle should emit a handle");
+            }
+            // get handle using msa (rpc)
+            let handle_response = await ExtrinsicHelper.getHandleForMSA(msa_id);
+            if (!handle_response.isSome) {
+                throw new Error("handle_response should be Some");
+            }
+         });
+    }); 
 });

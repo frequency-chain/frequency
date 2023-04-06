@@ -1,7 +1,7 @@
 import { ApiPromise, ApiRx } from "@polkadot/api";
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { Compact, u128, u16, u32, u64, Vec, Option } from "@polkadot/types";
+import { Compact, u128, u16, u32, u64, Vec, Option, Bytes } from "@polkadot/types";
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
@@ -9,7 +9,7 @@ import { devAccounts, log, Sr25519Signature } from "./helpers";
 import { connect, connectPromise } from "./apiConnection";
 import { DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
-import { HandleResponse, ItemizedStoragePageResponse, MessageSourceId, PaginatedStorageResponse, SchemaId } from "@frequency-chain/api-augment/interfaces";
+import { HandleResponse, ItemizedStoragePageResponse, MessageSourceId, PaginatedStorageResponse, PresumtiveSuffixesResponse } from "@frequency-chain/api-augment/interfaces";
 import { u8aToHex } from "@polkadot/util/u8a/toHex";
 import { u8aWrapBytes } from "@polkadot/util";
 
@@ -309,8 +309,14 @@ export class ExtrinsicHelper {
         const proof = { Sr25519: u8aToHex(delegatorKeys.sign(u8aWrapBytes(payload.toU8a()))) }
         return new Extrinsic(() => ExtrinsicHelper.api.tx.handles.retireHandle(delegatorKeys.publicKey, proof, payload), delegatorKeys, ExtrinsicHelper.api.events.handles.HandleRetired);
     }
+
     public static getHandleForMSA(msa_id: MessageSourceId): Promise<Option<HandleResponse>> {
         let handle_response = ExtrinsicHelper.api.rpc.handles.getHandleForMsa(msa_id);
         return firstValueFrom(handle_response);
+    }
+
+    public static getNextSuffixesForHandle(input_request: any): Promise<PresumtiveSuffixesResponse> {
+        let suffixes = ExtrinsicHelper.api.rpc.handles.getNextSuffixes(input_request);
+        return firstValueFrom(suffixes);
     }
 }

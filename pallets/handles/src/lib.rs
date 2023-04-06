@@ -49,7 +49,7 @@ use common_primitives::{
 	msa::{MessageSourceId, MsaLookup, MsaValidator},
 	utils::wrap_binary_data,
 };
-use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
+use frame_support::{dispatch::DispatchResult, ensure, log, pallet_prelude::*, traits::Get};
 use frame_system::pallet_prelude::*;
 use numtoa::*;
 pub use pallet::*;
@@ -415,6 +415,12 @@ pub mod pallet {
 			let base_handle = base_handle_str.as_bytes().to_vec();
 			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
 			let canonical_handle = canonical_handle_str.as_bytes().to_vec();
+			log::error!(
+				"base_handle: {:?}, suffix: {:?}, canonical_handle: {:?}",
+				base_handle,
+				suffix,
+				canonical_handle
+			);
 			Some(HandleResponse { base_handle, suffix, canonical_handle })
 		}
 
@@ -462,7 +468,6 @@ pub mod pallet {
 					break
 				}
 			}
-
 			suffixes
 		}
 

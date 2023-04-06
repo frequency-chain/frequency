@@ -5553,6 +5553,7 @@ version = "0.0.0"
 dependencies = [
  "common-helpers",
  "common-primitives",
+ "frame-support",
  "jsonrpsee",
  "pallet-handles-runtime-api",
  "parity-scale-codec",
