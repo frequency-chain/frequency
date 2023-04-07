@@ -1,0 +1,60 @@
+[package]
+authors = ["Frequency"]
+description = "Pallet for paying fees"
+edition = "2021"
+homepage = "https://frequency.xyz"
+license = "Apache-2.0"
+name = "pallet-frequency-tx-payment"
+publish = false
+repository = "https://github.com/libertyDSNP/frequency/"
+version = "0.0.0"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = {package = "parity-scale-codec", version = "3.1.5", default-features = false, features = [
+  "derive",
+]}
+frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.36"}
+frame-support = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
+frame-system = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
+pallet-capacity = {default-features = false, path = "../capacity"}
+pallet-msa = {default-features = false, path = "../msa"}
+pallet-transaction-payment = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
+scale-info = {version = "2.2.0", default-features = false, features = [
+  "derive",
+]}
+sp-core = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
+sp-io = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
+sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
+sp-std = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
+
+# Frequency related dependencies
+common-primitives = {default-features = false, path = "../../common/primitives"}
+
+[dev-dependencies]
+pallet-balances = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
+
+# Frequency related dev dependencies
+pallet-msa = {path = '../msa'}
+
+
+[features]
+default = ["std"]
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "common-primitives/runtime-benchmarks",
+]
+std = [
+  "codec/std",
+  "scale-info/std",
+  "frame-support/std",
+  "frame-system/std",
+  "frame-benchmarking/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  "sp-core/std",
+  "common-primitives/std",
+]
+try-runtime = ["frame-support/try-runtime"]

@@ -11,8 +11,7 @@ use sp_std::vec::Vec;
 /// A converter for confusable characters.
 ///
 /// Given a string, detects easily confusable characters and returns the string in canonical form.
-pub struct HandleConverter {
-}
+pub struct HandleConverter {}
 /// Creates a new `HandleConverter` instance with the specified input string.
 impl HandleConverter {
 	/// Creates a new `HandleConverter` instance with a built confusables map.

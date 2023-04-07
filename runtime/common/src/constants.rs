@@ -11,6 +11,7 @@ use frame_support::{
 	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight},
 	PalletId,
 };
+use sp_core::{ConstU128, ConstU16};
 
 pub const FREQUENCY_ROCOCO_TOKEN: &str = "XRQCY";
 pub const FREQUENCY_LOCAL_TOKEN: &str = "UNIT";
@@ -361,3 +362,11 @@ impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
 		Ok(())
 	}
 }
+
+// --- Capacity Pallet ---
+pub type CapacityMinimumStakingAmount = ConstU128<{ currency::EXISTENTIAL_DEPOSIT }>;
+pub type CapacityMinimumTokenBalance = ConstU128<{ currency::DOLLARS }>;
+pub type CapacityMaxUnlockingChunks = ConstU32<4>;
+pub type CapacityMaxEpochLength = ConstU32<7_200>;
+pub type CapacityUnstakingThawPeriod = ConstU16<2>;
+// -end- Capacity Pallet ---

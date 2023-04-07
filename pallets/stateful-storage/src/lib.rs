@@ -256,12 +256,7 @@ pub mod pallet {
 		/// * [`Event::ItemizedPageDeleted`]
 		///
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::apply_item_actions(
-			actions.iter().fold(0, |acc, a| acc.saturating_add(match a {
-				ItemAction::Add { data } => data.len() as u32,
-				_ => 0,
-			}))
-		))]
+		#[pallet::weight(T::WeightInfo::apply_item_actions(Pallet::<T>::sum_add_actions_bytes(actions)))]
 		pub fn apply_item_actions(
 			origin: OriginFor<T>,
 			#[pallet::compact] state_owner_msa_id: MessageSourceId,
@@ -347,10 +342,7 @@ pub mod pallet {
 		///
 		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::apply_item_actions_with_signature(
-			payload.actions.iter().fold(0, |acc, a| acc.saturating_add(match a {
-				ItemAction::Add { data } => data.len() as u32,
-				_ => 0,
-			}))
+			Pallet::<T>::sum_add_actions_bytes(&payload.actions)
 		))]
 		pub fn apply_item_actions_with_signature(
 			origin: OriginFor<T>,
@@ -466,6 +458,21 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	/// Sums the total bytes of each item actions
+	pub fn sum_add_actions_bytes(
+		actions: &BoundedVec<
+			ItemAction<<T as Config>::MaxItemizedBlobSizeBytes>,
+			<T as Config>::MaxItemizedActionsCount,
+		>,
+	) -> u32 {
+		actions.iter().fold(0, |acc, a| {
+			acc.saturating_add(match a {
+				ItemAction::Add { data } => data.len() as u32,
+				_ => 0,
+			})
+		})
+	}
+
 	/// This function returns all the paginated storage associated with `msa_id` and `schema_id`
 	///
 	/// Warning: since this function iterates over all the potential keys it should never called

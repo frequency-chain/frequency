@@ -4,10 +4,10 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { Compact, u128, u16, u32, u64, Vec, Option, Bytes } from "@polkadot/types";
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
-import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
-import { devAccounts, log, Sr25519Signature } from "./helpers";
+import {firstValueFrom, filter, map, pipe, tap} from "rxjs";
+import {devAccounts, getBlockNumber, log, Sr25519Signature} from "./helpers";
 import { connect, connectPromise } from "./apiConnection";
-import { DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
+import { CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
 import { HandleResponse, ItemizedStoragePageResponse, MessageSourceId, PaginatedStorageResponse, PresumtiveSuffixesResponse } from "@frequency-chain/api-augment/interfaces";
 import { u8aToHex } from "@polkadot/util/u8a/toHex";
@@ -118,6 +118,13 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
         ))
     }
 
+    public payWithCapacity(nonce?: number): Promise<ParsedEventResult> {
+        return firstValueFrom(this.api.tx.frequencyTxPayment.payWithCapacity(this.extrinsic()).signAndSend(this.keys, {nonce: nonce}).pipe(
+            filter(({ status }) => status.isInBlock || status.isFinalized),
+            this.parseResult(this.event),
+        ))
+    }
+
     public getEstimatedTxFee(): Promise<bigint> {
         return firstValueFrom(this.extrinsic().paymentInfo(this.keys).pipe(
             map((info) => info.partialFee.toBigInt())
@@ -186,6 +193,11 @@ export class ExtrinsicHelper {
 
     public static getLastBlock(): Promise<SignedBlock> {
         return firstValueFrom(ExtrinsicHelper.api.rpc.chain.getBlock());
+    }
+
+    /** engine_createBlock **/
+    public static createBlock(): Promise<CreatedBlock> {
+        return firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
     }
 
     /** Query Extrinsics */
@@ -318,5 +330,38 @@ export class ExtrinsicHelper {
     public static getNextSuffixesForHandle(input_request: any): Promise<PresumtiveSuffixesResponse> {
         let suffixes = ExtrinsicHelper.api.rpc.handles.getNextSuffixes(input_request);
         return firstValueFrom(suffixes);
+    }
+    
+    public static addOnChainMessage(keys: KeyringPair, schemaId: any, payload: string): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addOnchainMessage(null, schemaId, payload), keys, ExtrinsicHelper.api.events.messages.MessagesStored);
+    }
+
+    /** Capacity Extrinsics **/
+    public static setEpochLength(keys: KeyringPair, epoch_length: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.setEpochLength(epoch_length), keys, ExtrinsicHelper.api.events.capacity.EpochLengthUpdated);
+    }
+    public static stake(keys: KeyringPair, target: any, amount: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.stake(target, amount), keys, ExtrinsicHelper.api.events.capacity.Staked);
+    }
+
+    public static unstake(keys: KeyringPair, target: any, amount: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.unstake(target, amount), keys, ExtrinsicHelper.api.events.capacity.UnStaked);
+    }
+
+    public static withdrawUnstaked(keys: KeyringPair): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.withdrawUnstaked(), keys, ExtrinsicHelper.api.events.capacity.StakeWithdrawn);
+    }
+
+    public static async mine() {
+      let res: CreatedBlock = await firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
+      ExtrinsicHelper.api.rpc.engine.finalizeBlock(res.blockHash);
+    }
+
+    public static async run_to_block(blockNumber: number) {
+      let currentBlock = await getBlockNumber();
+      while (currentBlock < blockNumber) {
+        ExtrinsicHelper.mine();
+        currentBlock = await getBlockNumber();
+      }
     }
 }

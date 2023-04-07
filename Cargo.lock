@@ -2750,6 +2750,7 @@ dependencies = [
  "hex-literal",
  "log",
  "pallet-balances",
+ "pallet-frequency-tx-payment",
  "pallet-msa",
  "pallet-transaction-payment",
  "parity-scale-codec",
@@ -2801,9 +2802,11 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-capacity",
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
+ "pallet-frequency-tx-payment",
  "pallet-handles",
  "pallet-handles-runtime-api",
  "pallet-messages",
@@ -5337,6 +5340,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-capacity"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "common-runtime",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-msa",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-child-bounties"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36#cb4f2491b00af7d7817f3a54209c26b20faa1f51"
@@ -5496,6 +5518,26 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-frequency-tx-payment"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-capacity",
+ "pallet-msa",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
  "sp-std",
 ]
 

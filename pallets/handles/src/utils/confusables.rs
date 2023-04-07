@@ -2,7 +2,6 @@
 // ***** THIS FILE IS AUTO-GENERATED.  DO NOT EDIT! *****
 // ******************************************************
 
-
 use phf::phf_map;
 pub static CONFUSABLES: phf::Map<char, char> = phf_map! {
 '\u{1c3}' => '\u{21}',
@@ -4321,4 +4320,3 @@ pub static CONFUSABLES: phf::Map<char, char> = phf_map! {
 '\u{2f88f}' => '\u{2a392}',
 '\u{2fa1d}' => '\u{2a600}',
 };
-

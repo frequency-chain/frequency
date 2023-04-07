@@ -32,6 +32,9 @@ pub mod stateful_storage;
 /// Structs and traits for the utility package.
 pub mod utils;
 
+/// Structs and traits for the Capacity pallet.
+pub mod capacity;
+
 #[cfg(feature = "runtime-benchmarks")]
 /// Benchmarking helper trait
 pub mod benchmarks;

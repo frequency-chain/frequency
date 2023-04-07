@@ -26,6 +26,8 @@ ALL_CUSTOM_PALLETS=( \
   stateful-storage \
   handles \
   time-release \
+  capacity \
+  frequency-tx-payment \
 )
 
 declare -a CUSTOM_PALLETS

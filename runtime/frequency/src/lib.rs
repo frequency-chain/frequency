@@ -66,6 +66,8 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
+pub use pallet_capacity;
+pub use pallet_frequency_tx_payment::{capacity_stable_weights, types::GetStableWeight};
 pub use pallet_msa;
 pub use pallet_schemas;
 pub use pallet_time_release;
@@ -148,7 +150,7 @@ pub type SignedExtra = (
 	frame_system::CheckEra<Runtime>,
 	common_runtime::extensions::check_nonce::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
-	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+	pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
 	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
 );
 /// A Block signed with a Justification
@@ -543,6 +545,21 @@ impl pallet_msa::Config for Runtime {
 	>;
 }
 
+impl pallet_capacity::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_capacity::weights::SubstrateWeight<Runtime>;
+	type Currency = Balances;
+	type MinimumStakingAmount = CapacityMinimumStakingAmount;
+	type MinimumTokenBalance = CapacityMinimumTokenBalance;
+	type TargetValidator = Msa;
+	type MaxUnlockingChunks = CapacityMaxUnlockingChunks;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = Msa;
+	type UnstakingThawPeriod = CapacityUnstakingThawPeriod;
+	type MaxEpochLength = CapacityMaxEpochLength;
+	type EpochNumber = u32;
+}
+
 impl pallet_schemas::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
@@ -852,6 +869,42 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OperationalFeeMultiplier = TransactionPaymentOperationalFeeMultiplier;
 }
 
+use pallet_messages::Call as MessagesCall;
+use pallet_msa::Call as MsaCall;
+use pallet_stateful_storage::Call as StatefulStorageCall;
+
+pub struct CapacityEligibleCalls;
+impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
+	fn get_stable_weight(call: &RuntimeCall) -> Option<Weight> {
+		use pallet_frequency_tx_payment::capacity_stable_weights::WeightInfo;
+		match call {
+			RuntimeCall::Msa(MsaCall::add_public_key_to_msa { .. }) => Some(
+				capacity_stable_weights::SubstrateWeight::<Runtime>::add_public_key_to_msa()
+			),
+			RuntimeCall::Msa(MsaCall::create_sponsored_account_with_delegation {  add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::create_sponsored_account_with_delegation(add_provider_payload.schema_ids.len() as u32)),
+			RuntimeCall::Msa(MsaCall::grant_delegation { add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::grant_delegation(add_provider_payload.schema_ids.len() as u32)),
+			RuntimeCall::Messages(MessagesCall::add_ipfs_message { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_ipfs_message()),
+			RuntimeCall::Messages(MessagesCall::add_onchain_message { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_onchain_message(payload.len() as u32)),
+			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions { actions, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes(actions))),
+			RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page(payload.len() as u32)),
+			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page()),
+			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes(&payload.actions))),
+			RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32 )),
+			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
+			_ => None,
+		}
+	}
+}
+
+impl pallet_frequency_tx_payment::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type Capacity = Capacity;
+	type WeightInfo = pallet_frequency_tx_payment::weights::SubstrateWeight<Runtime>;
+	type CapacityCalls = CapacityEligibleCalls;
+	type OnChargeCapacityTransaction = pallet_frequency_tx_payment::CapacityAdapter<Balances, Msa>;
+}
+
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
 // the descriptions of these configs.
 impl cumulus_pallet_parachain_system::Config for Runtime {
@@ -1084,7 +1137,9 @@ construct_runtime!(
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config} = 62,
 		StatefulStorage: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>} = 63,
-		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 64,
+		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>} = 64,
+		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 65,
+		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 66,
 	}
 );
 
@@ -1117,6 +1172,8 @@ mod benches {
 		[pallet_stateful_storage, StatefulStorage]
 		[pallet_handles, Handles]
 		[pallet_time_release, TimeRelease]
+		[pallet_capacity, Capacity]
+		[pallet_frequency_tx_payment, FrequencyTxPayment]
 	);
 }
 
