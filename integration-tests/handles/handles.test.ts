@@ -22,13 +22,14 @@ describe("🤝 Handles", () => {
         assert.notEqual(delegatorKeys, undefined, "setup should populate delegator_key");
         assert.notEqual(msa_id, undefined, "setup should populate msa_id");
     });
-    
+
     describe("@Claim Handle", () => {
         it("should be able to claim a handle", async function () {
             const handle = "test_handle";
             const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
             const payload = {
                 baseHandle: handle_vec,
+                expiration: 50,
             }
             const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", payload);
             const claimHandle = ExtrinsicHelper.claimHandle(delegatorKeys, claimHandlePayload);
@@ -63,7 +64,7 @@ describe("🤝 Handles", () => {
 
     describe("@Alt Path: Claim Handle with possible presumptive suffix/RPC test", () => {
        /// Check chain to getNextSuffixesForHandle
-       
+
          it("should be able to claim a handle and check suffix (=suffix_assumed if avaiable on chain)", async function () {
             const handle = "test1";
             let handle_bytes = new Bytes(ExtrinsicHelper.api.registry, handle);
@@ -77,11 +78,12 @@ describe("🤝 Handles", () => {
             let resp_base_handle = suffixes_response.base_handle.toString();
             assert.equal(resp_base_handle, handle, "resp_base_handle should be equal to handle");
             let suffix_assumed = suffixes_response.suffixes[0];
-            assert.notEqual(suffix_assumed, 0, "suffix_assumed should not be 0");         
+            assert.notEqual(suffix_assumed, 0, "suffix_assumed should not be 0");
 
             /// Claim handle (extrinsic)
             const payload_ext = {
                 baseHandle: handle_bytes,
+                expiration: 50,
             };
             const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", payload_ext);
             const claimHandle = ExtrinsicHelper.claimHandle(delegatorKeys, claimHandlePayload);
@@ -102,5 +104,5 @@ describe("🤝 Handles", () => {
             assert.notEqual(suffix, 0, "suffix should not be 0");
             assert.equal(suffix, suffix_assumed, "suffix should be equal to suffix_assumed");
          });
-    }); 
+    });
 });

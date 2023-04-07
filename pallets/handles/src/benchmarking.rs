@@ -42,7 +42,7 @@ fn create_signed_claims_payload<T: Config>(
 		.take(max_chars as usize)
 		.flat_map(|c| c.encode_utf8(&mut [0; 4]).as_bytes().to_vec())
 		.collect();
-	let handle_claims_payload = ClaimHandlePayload::new(truncated_handle);
+	let handle_claims_payload = ClaimHandlePayload::new(truncated_handle, 50u32);
 	let encode_handle_claims_data = wrap_binary_data(handle_claims_payload.encode());
 	let acc = T::AccountId::decode(&mut &delegator_account_public.encode()[..]).unwrap();
 	let msa_id = MessageSourceId::decode(&mut &delegator_account_public.encode()[..]).unwrap();

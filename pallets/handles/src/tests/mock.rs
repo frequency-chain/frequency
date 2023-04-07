@@ -143,7 +143,7 @@ pub fn get_signed_claims_payload(
 	handle: Vec<u8>,
 ) -> (ClaimHandlePayload, MultiSignature) {
 	let base_handle = handle;
-	let payload = ClaimHandlePayload::new(base_handle.clone());
+	let payload = ClaimHandlePayload::new(base_handle.clone(), 50u32);
 	let encoded_payload = wrap_binary_data(payload.encode());
 	let proof: MultiSignature = account.sign(&encoded_payload).into();
 
