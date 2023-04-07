@@ -2,9 +2,8 @@
 //!
 //! `handle_converter` provides a `HandleConverter` struct to detect confusable Unicode characters in a
 //! given input string and return its canonical form.
-use crate::utils::confusables::build_confusables_map;
+use crate::utils::confusables::CONFUSABLES;
 use common_primitives::handles::*;
-use sp_std::collections::btree_map::BTreeMap;
 use unicode_normalization::{char::is_combining_mark, UnicodeNormalization};
 extern crate alloc;
 use alloc::string::{String, ToString};
@@ -13,14 +12,12 @@ use sp_std::vec::Vec;
 ///
 /// Given a string, detects easily confusable characters and returns the string in canonical form.
 pub struct HandleConverter {
-	confusables_map: BTreeMap<char, char>,
 }
 /// Creates a new `HandleConverter` instance with the specified input string.
 impl HandleConverter {
 	/// Creates a new `HandleConverter` instance with a built confusables map.
 	pub fn new() -> Self {
-		let confusables_map = build_confusables_map();
-		Self { confusables_map }
+		Self {}
 	}
 	/// Converts a given string to its canonical form by stripping Unicode whitespace,
 	/// replacing confusable characters, and stripping diacritical marks.
@@ -55,7 +52,7 @@ impl HandleConverter {
 	pub fn replace_confusables(&self, string: &str) -> codec::alloc::string::String {
 		string
 			.chars()
-			.map(|character| self.confusables_map.get(&character).map_or(character, |&value| value))
+			.map(|character| CONFUSABLES.get(&character).map_or(character, |&value| value))
 			.collect::<codec::alloc::string::String>()
 	}
 

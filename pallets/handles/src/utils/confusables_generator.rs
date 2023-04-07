@@ -22,13 +22,12 @@ fn convert_confuseables_to_unicode_escaped() {
 
 	let reader = BufReader::new(input_file.ok().unwrap());
 
-	output_file.write_all("// ******************************************************\n\n".as_bytes());
-	output_file.write_all("// ***** THIS FILE IS AUTO-GENERATED.  DO NOT EDIT! *****\n\n".as_bytes());
-	output_file.write_all("// ******************************************************\n\n".as_bytes());
-	output_file.write_all("\n\n".as_bytes());
-	output_file.write_all("use sp_std::collections::btree_map::BTreeMap;\n\n".as_bytes());
-	output_file.write_all("pub fn build_confusables_map() -> BTreeMap<char, char> {\n".as_bytes());
-	output_file.write_all("\tBTreeMap::from([\n".as_bytes());
+	_ = output_file.write_all(b"// ******************************************************\n");
+	_ = output_file.write_all(b"// ***** THIS FILE IS AUTO-GENERATED.  DO NOT EDIT! *****\n");
+	_ = output_file.write_all(b"// ******************************************************\n");
+	_ = output_file.write_all(b"\n\n");
+	_ = output_file.write_all(b"use phf::phf_map;\n");
+	_ = output_file.write_all(b"pub static CONFUSABLES: phf::Map<char, char> = phf_map! {\n");
 
 	for line_result in reader.lines() {
 		let original_line = line_result.ok().unwrap();
@@ -38,16 +37,11 @@ fn convert_confuseables_to_unicode_escaped() {
 		let normalized_character = original_line_characters.next().unwrap();
 
 		while let Some(homoglyph) = original_line_characters.next() {
-			let key = format!("\t\t(\'\\u{{{:x}}}\',", homoglyph as u32);
-			output_file.write_all(key.as_bytes());
-
-			let value = format!(" \'\\u{{{:x}}}\'),\n", normalized_character as u32);
-			output_file.write_all(value.as_bytes());
+			let line = format!("\'\\u{{{:x}}}\' => \'\\u{{{:x}}}\',\n", homoglyph as u32, normalized_character as u32);
+			_ = output_file.write_all(line.as_bytes());
 		}
 	}
-
-	output_file.write_all("\t])\n".as_bytes());
-	output_file.write_all("}\n".as_bytes());
+	_ = output_file.write_all(b"};\n\n");
 
 	println!("data written to confusables.rs");
 }
