@@ -24,7 +24,7 @@
 //! - **Handle:** A handle is a unique identifier for a user. Handle on frequency is composed of a `base_handle`, its canonical version as, `canonical_handle` and a unique numeric `suffix`.
 //! - **Base Handle:** A base handle is a user's chosen handle name.  It is not guaranteed to be unique.
 //! - **Canonical Handle:** A canonical handle is a base handle that has been converted to a canonical form. Canonicals are unique representations of a base handle.
-//! - **Delimiter:** Period character (".") is reserved on Frequency as canonical delimiter for handles.
+//! - **Delimiter:** Period character (".") is reserved on Frequency to form full handle as `canonical_handle`.`suffix`.
 //! - **Suffix:** A suffix is a unique numeric value appended to a handle's canonical base to make it unique.
 
 // Ensure we're `no_std` when compiling for WASM.
