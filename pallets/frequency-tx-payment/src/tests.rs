@@ -264,6 +264,40 @@ fn pay_with_capacity_returns_weight_of_child_call() {
 }
 
 #[test]
+fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tupple_with_fee_and_enum(
+) {
+	let balance_factor = 10;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			let charge_tx_payment = ChargeFrqTransactionPayment::<Test>::from(0u64);
+			let who = 1u64;
+			let call: &<Test as Config>::RuntimeCall =
+				&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity_batch_all {
+					calls: vec![RuntimeCall::Balances(BalancesCall::transfer {
+						dest: 2,
+						value: 100,
+					})],
+				});
+
+			let info = DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
+			let len = 10;
+
+			// fee = base_weight(5)
+			//   + extrinsic_weight(11) * WeightToFee(1)
+			//   + TransactionByteFee(1)* len(10) = 20
+			assert_eq!(charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().0, 26u64);
+			assert_eq!(
+				charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().1.is_capacity(),
+				true
+			);
+		});
+}
+
+#[test]
 fn charge_frq_transaction_payment_withdraw_fee_for_capacity_tx_returns_tupple_with_fee_and_enum() {
 	let balance_factor = 10;
 
