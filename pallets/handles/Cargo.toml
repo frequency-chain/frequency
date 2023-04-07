@@ -20,6 +20,7 @@ unicode-normalization = { version = "0.1.22", default-features = false }
 numtoa = "0.2.4"
 rand = { version = "0.8.5", default-features = false, features = ["small_rng"] }
 twox-hash = { version = "1.6.3", default-features = false, features = ["digest_0_10"] }
+phf = { version = "0.11", default-features = false, features = ["macros"] }
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.36" }
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
