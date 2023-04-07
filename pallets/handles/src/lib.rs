@@ -544,7 +544,7 @@ pub mod pallet {
 				Error::<T>::InvalidHandleCharacterLength
 			);
 
-			// Validation: The handle must consist of characters contained not contain reserved words oblocked characters
+			// Validation: The handle must consist of characters not containing reserved words or blocked characters
 			let handle_validator = HandleValidator::new();
 			ensure!(
 				handle_validator.consists_of_supported_unicode_character_sets(base_handle_str),
