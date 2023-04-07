@@ -878,10 +878,10 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OperationalFeeMultiplier = TransactionPaymentOperationalFeeMultiplier;
 }
 
+use pallet_handles::Call as HandlesCall;
 use pallet_messages::Call as MessagesCall;
 use pallet_msa::Call as MsaCall;
 use pallet_stateful_storage::Call as StatefulStorageCall;
-use pallet_handles::Call as HandlesCall;
 
 pub struct CapacityEligibleCalls;
 impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
