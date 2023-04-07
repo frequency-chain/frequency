@@ -21,7 +21,10 @@
 //! - Suffix
 //!
 //! ## Glossary
-//! - **Handle:** A handle is a unique identifier for a user.  It consists of a canonical base, a "." delimiter and a unique numeric suffix.
+//! - **Handle:** A handle is a unique identifier for a user. Handle on frequency is composed of a `base_handle`, its canonical version as, `canonical_handle` and a unique numeric `suffix`.
+//! - **Base Handle:** A base handle is a user's chosen handle name.  It is not guaranteed to be unique.
+//! - **Canonical Handle:** A canonical handle is a base handle that has been converted to a canonical form. Canonicals are unique representations of a base handle.
+//! - **Delimiter:** Period character (".") is reserved on Frequency to form full handle as `canonical_handle`.`suffix`.
 //! - **Suffix:** A suffix is a unique numeric value appended to a handle's canonical base to make it unique.
 
 // Ensure we're `no_std` when compiling for WASM.
@@ -431,13 +434,11 @@ pub mod pallet {
 		/// by the `count` parameter, which is of type `u16`.
 		///
 		/// # Arguments
-		///
-		/// * `handle` - The handle to generate suffixes for.
-		/// * `count` - The number of suffixes to generate.
+		/// * `input` - The `PresumptiveSuffixesRequest` containing the handle and the number of suffixes to generate.
 		///
 		/// # Returns
 		///
-		/// * `Vec<HandleSuffix>` - The next available suffixes for the given handle.
+		/// * `PresumptiveSuffixesResponse` - The response containing the next available suffixes.
 		/// ```
 		pub fn get_next_suffixes(input: PresumptiveSuffixesRequest) -> PresumptiveSuffixesResponse {
 			let handle = input.base_handle;
@@ -628,6 +629,7 @@ pub mod pallet {
 		/// * `delegator_msa_id` - The MSA (MessageSourceId) to retire the handle for.
 		///
 		/// # Returns
+		///
 		/// * `DispatchResult` - Returns `Ok` if the handle was successfully retired.
 		pub fn do_retire_handle(delegator_msa_id: MessageSourceId) -> DispatchResult {
 			// Validation: The MSA must already have a handle associated with it

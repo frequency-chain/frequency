@@ -15,6 +15,11 @@ pub struct HandleConverter {}
 /// Creates a new `HandleConverter` instance with the specified input string.
 impl HandleConverter {
 	/// Creates a new `HandleConverter` instance with a built confusables map.
+	///
+	/// # Returns
+	///
+	/// A new `HandleConverter` instance.
+	///
 	pub fn new() -> Self {
 		Self {}
 	}
@@ -24,14 +29,14 @@ impl HandleConverter {
 	///
 	/// # Arguments
 	///
-	/// * `String` - A reference to the input string to convert to canonical form.
+	/// * `input_str` - The input string to convert to canonical form.
 	///
 	/// # Returns
 	///
 	/// A new string in canonical form.
 	///
-	pub fn convert_to_canonical(&self, string: &str) -> codec::alloc::string::String {
-		let white_space_stripped = self.strip_unicode_whitespace(string);
+	pub fn convert_to_canonical(&self, input_str: &str) -> codec::alloc::string::String {
+		let white_space_stripped = self.strip_unicode_whitespace(input_str);
 		let confusables_removed = self.replace_confusables(&white_space_stripped);
 		let diacriticals_stripped = self.strip_diacriticals(&confusables_removed);
 		diacriticals_stripped.to_ascii_lowercase()
@@ -41,13 +46,13 @@ impl HandleConverter {
 	///
 	/// # Arguments
 	///
-	/// * `String` - A reference to the input string to replace confusable characters.
+	/// * `input_str` - A reference to the input string to replace confusable characters.
 	///
 	/// # Returns
 	///
 	/// A new string where any confusable characters have been replaced with their corresponding non-confusable characters.
-	pub fn replace_confusables(&self, string: &str) -> codec::alloc::string::String {
-		string
+	pub fn replace_confusables(&self, input_str: &str) -> codec::alloc::string::String {
+		input_str
 			.chars()
 			.map(|character| CONFUSABLES.get(&character).map_or(character, |&value| value))
 			.collect::<codec::alloc::string::String>()
@@ -56,14 +61,14 @@ impl HandleConverter {
 	/// This function removes diacritical marks from the input string and returns a new `String` without them.
 	///
 	/// # Arguments
-	/// * `String` - A string slice that contains the input string from which the diacritical marks need to be removed.
+	/// * `input_str` - A string slice that contains the input string from which the diacritical marks need to be removed.
 	///
 	/// # Notes
 	/// This function uses the NFKD normalization form and filtering of combining marks to strip the diacritical marks from the input string.
 	/// Combining marks are Unicode characters that are intended to modify the appearance of another character.
 	///
-	pub fn strip_diacriticals(&self, string: &str) -> codec::alloc::string::String {
-		string
+	pub fn strip_diacriticals(&self, input_str: &str) -> codec::alloc::string::String {
+		input_str
 			.nfkd()
 			.filter(|character| !is_combining_mark(*character))
 			.collect::<codec::alloc::string::String>()
@@ -106,9 +111,13 @@ impl HandleConverter {
 	///
 	/// # Arguments
 	///
-	/// * `String` - A reference to a string slice that contains the input string to be stripped of Unicode whitespace.
-	pub fn strip_unicode_whitespace(&self, string: &str) -> String {
-		string
+	/// * `input_str` - A string slice that holds the input string from which the Unicode whitespace characters need to be stripped.
+	///
+	/// # Returns
+	///
+	/// A new string without any Unicode whitespace characters.
+	pub fn strip_unicode_whitespace(&self, input_str: &str) -> String {
+		input_str
 			.chars()
 			.filter(|character| !character.is_whitespace())
 			.collect::<codec::alloc::string::String>()
