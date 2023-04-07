@@ -3,7 +3,7 @@
 ## Context and Scope
 
 The Frequency blockchain aims to provide a mechanism to register and retrieve user handles on chain to make it easier to use MSA Ids.
-To achieve this, we propose the creation of a user handle ```registry``` system on Frequency chain, coupled with ```MessageSourceAccount```, that allows users to choose a handle for their MSA Ids.Handle system would then append an available numeric suffix to the chosen user handle, separated by a delimiter[.], to make it unique and store the mapping of the handle to the MSA Id in the registry.
+To achieve this, we propose the creation of a user handle ```registry``` system on Frequency chain, coupled with ```MessageSourceAccount```, that allows users to choose a handle for their MSA Ids.  The Handle system would then append an available numeric suffix to the chosen user handle, separated by a delimiter[.], to make it unique and store the mapping of the handle to the MSA Id in the registry.
 The user handle system will also enforce guidelines to ensure that handles are user-friendly and easy to remember, as well as prevent misuse and abuse.
 
 The goal of this proposal is to enable users to create unique handles on the Frequency blockchain using a registry, making it more accessible for users to engage with the network.
@@ -108,9 +108,9 @@ sequenceDiagram
 
 ## Storage
 
-* **HandleSuffixMin**: This storage value (```u32``) will keep track of the minimum suffix value allowed for a given handle.
-* **HandleSuffixMax**: This storage value (```u32``) will keep track of the maximum suffix value allowed for a given handle.
-* **HandleRetirementPeriod**: This storage value (```u32``) will keep track of the number of blocks a handle must be retired before it can be reused.
+* **HandleSuffixMin**: This storage value (```u32```) will keep track of the minimum suffix value allowed for a given handle.
+* **HandleSuffixMax**: This storage value (```u32```) will keep track of the maximum suffix value allowed for a given handle.
+* **HandleRetirementPeriod**: This storage value (```u32```) will keep track of the number of blocks a handle must be retired before it can be reused.
 * **MSAIdToUserHandle**: This storage will map MSAIds to their corresponding user handles.
 * **UserHandlesToMSAId**: This storage will map user handles to their corresponding MSAIds.
 * **RetiredHandles**: This storage will keep track of all retired handles and the block number at which they were retired. This probably is a spike to run few ideas on how to implement this. Alternatively we could just store the block number in the UserHandlesToMSAId data as "retired" with the block number it retired on. (That way it is merely waiting for current_block > (retire_block + HandleRetirementPeriod))
@@ -135,7 +135,6 @@ MsaHandlePayload {
 
 display_handle is the handle that the user wants to use. This is the handle that will be displayed to other users.
 
-``` rust
 ### Create user handle with chosen handle
 
  As a network, Frequency should allow users to choose their own handle, while chain will generate a random numeric suffix within the range of suffixes allowed. The full handle will be the handle with the suffix.

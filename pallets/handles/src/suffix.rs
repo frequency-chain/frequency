@@ -20,6 +20,16 @@ pub struct SuffixGenerator {
 
 impl SuffixGenerator {
 	/// Creates a new `SuffixGenerator` instance with the specified min, max range and seed.
+	///  
+	/// # Arguments
+	///
+	/// * `min` - The minimum value of the range.
+	/// * `max` - The maximum value of the range.
+	/// * `canonical_handle` - The canonical handle as a string slice.
+	///
+	/// # Returns
+	///
+	/// A new `SuffixGenerator` instance.
 	///
 	/// # Example
 	///

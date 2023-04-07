@@ -15,6 +15,10 @@ pub struct HandleValidator<'string_lifetime> {
 
 impl<'string_lifetime> HandleValidator<'string_lifetime> {
 	/// Create a new, intialized `HandleValidator` instance.
+	///
+	/// # Returns
+	///
+	/// A new `HandleValidator` instance.
 	pub fn new() -> Self {
 		// This intialization data *could* be passed into the constructor and set as a pallet constant
 		let reserved_handles: Vec<&str> = Vec::from(["admin", "everyone", "all"]);
@@ -48,14 +52,14 @@ impl<'string_lifetime> HandleValidator<'string_lifetime> {
 	///
 	/// # Arguments
 	///
-	/// * `String` - A string slice representing the handle to check.
+	/// * `input_str` - A string slice representing the handle to check.
 	///
 	/// # Returns
 	///
 	/// A boolean value indicating whether the string is a reserved handle (`true`) or not (`false`).
-	pub fn is_reserved_handle(&self, string: &str) -> bool {
+	pub fn is_reserved_handle(&self, input_str: &str) -> bool {
 		for handle in &self.reserved_handles {
-			if &string == handle {
+			if &input_str == handle {
 				return true
 			}
 		}
@@ -66,10 +70,14 @@ impl<'string_lifetime> HandleValidator<'string_lifetime> {
 	///
 	/// # Arguments
 	///
-	/// * `String` - A string slice to check for blocked characters.
-	pub fn contains_blocked_characters(&self, string: &str) -> bool {
+	/// * `input_str` - A string slice to check for blocked characters.\
+	///
+	/// # Returns
+	///
+	/// A boolean value indicating whether the string contains any blocked characters (`true`) or not (`false`).
+	pub fn contains_blocked_characters(&self, input_str: &str) -> bool {
 		for character in &self.blocked_characters {
-			if string.contains(|c| c == *character) {
+			if input_str.contains(|c| c == *character) {
 				return true
 			}
 		}
@@ -81,9 +89,13 @@ impl<'string_lifetime> HandleValidator<'string_lifetime> {
 	///
 	/// # Arguments
 	///
-	/// * `String` - A string slice to check for characters within the allowed unicode character sets..
-	pub fn consists_of_supported_unicode_character_sets(&self, string: &str) -> bool {
-		for character in string.chars() {
+	/// * `input_str` - A string slice to check for characters within the allowed unicode character sets..
+	///
+	/// # Returns
+	///
+	/// A boolean value indicating whether the string contains characters within the allowed unicode character sets (`true`) or not (`false`).
+	pub fn consists_of_supported_unicode_character_sets(&self, input_str: &str) -> bool {
+		for character in input_str.chars() {
 			let mut is_valid = false;
 
 			for &(start, end) in &self.allowed_unicode_character_ranges {

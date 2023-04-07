@@ -24,17 +24,17 @@ export default {
   types: {
     HandleSuffix: "u16",
     HandleResponse: {
-      base_handle: "Vec<u8>",
-      canonical_handle: "Vec<u8>",
+      base_handle: "String",
+      canonical_handle: "String",
       suffix: "u16",
     },
     PresumptiveSuffixesRequest: {
-      base_handle: "Vec<u8>",
+      base_handle: "String",
       count: "u16",
     },
     PresumptiveSuffixesResponse: {
       suffixes: "Vec<HandleSuffix>",
-      base_handle: "Vec<u8>",
+      base_handle: "String",
     },
   },
   runtime: {
