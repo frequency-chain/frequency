@@ -6,7 +6,7 @@
 	missing_docs
 )]
 
-//! Custom APIs for [Stateful-Storage](../pallet_stateful_storage/index.html)
+//! Custom APIs for [User-Handles](../pallet_handles/index.html)
 
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
