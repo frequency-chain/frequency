@@ -36,18 +36,16 @@ fn claim_and_retire_handle_happy_path() {
 		full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
 
 		// Retire the handle
-		assert_ok!(Handles::retire_handle(
-			RuntimeOrigin::signed(alice.public().into()),
-		));
+		assert_ok!(Handles::retire_handle(RuntimeOrigin::signed(alice.public().into()),));
 
 		// Confirm that HandleRetired event was deposited
-		System::assert_last_event(Event::HandleRetired { msa_id, handle: full_handle_vec.clone() }.into());
+		System::assert_last_event(
+			Event::HandleRetired { msa_id, handle: full_handle_vec.clone() }.into(),
+		);
 
 		// Try to retire again which should fail
 		assert_noop!(
-			Handles::retire_handle(
-				RuntimeOrigin::signed(alice.public().into()),
-			),
+			Handles::retire_handle(RuntimeOrigin::signed(alice.public().into()),),
 			Error::<Test>::MSAHandleDoesNotExist
 		);
 	});
@@ -69,7 +67,7 @@ fn retire_handle_no_handle() {
 
 #[test]
 fn check_free_extrinsic_use() {
-	let call = HandlesCall::<Test>::retire_handle { };
+	let call = HandlesCall::<Test>::retire_handle {};
 	let dispatch_info = call.get_dispatch_info();
 	assert_eq!(dispatch_info.pays_fee, Pays::No);
 }

@@ -2,11 +2,11 @@ use crate::msa::MessageSourceId;
 #[cfg(feature = "std")]
 use crate::utils::*;
 use codec::{Decode, Encode};
+use frame_support::BoundedVec;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::ConstU32;
 use sp_std::vec::Vec;
-use frame_support::BoundedVec;
 
 /// The minimum base handle (not including suffix or delimiter) length in characters
 pub const HANDLE_BASE_CHARS_MIN: u32 = 3;

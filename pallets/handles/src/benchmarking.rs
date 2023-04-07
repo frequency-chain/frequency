@@ -80,7 +80,7 @@ benchmarks! {
 		assert!(stored_handle.is_some());
 
 		// retire the handle
-	}: _(RawOrigin::Signed(caller.clone()))
+	}: _(RawOrigin::Signed(key.clone()))
 	verify {
 		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id.into());
 		assert!(stored_handle.is_none());
