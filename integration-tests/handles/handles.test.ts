@@ -81,6 +81,7 @@ describe("🤝 Handles", () => {
             let suffix_input_type = ExtrinsicHelper.api.registry.createType("PresumptiveSuffixesRequest", request_suffixes);
             let suffixes_response = await ExtrinsicHelper.getNextSuffixesForHandle(suffix_input_type);
             let resp_base_handle = suffixes_response.base_handle.toString();
+            assert.equal(resp_base_handle, handle, "resp_base_handle should be equal to handle");
             let suffix_assumed = suffixes_response.suffixes[0];
             assert.notEqual(suffix_assumed, 0, "suffix_assumed should not be 0");         
 
@@ -101,6 +102,11 @@ describe("🤝 Handles", () => {
             if (!handle_response.isSome) {
                 throw new Error("handle_response should be Some");
             }
+            let full_handle_state = handle_response.unwrap();
+            let suffix_from_state = full_handle_state.suffix;
+            let suffix = suffix_from_state.toNumber();
+            assert.notEqual(suffix, 0, "suffix should not be 0");
+            assert.equal(suffix, suffix_assumed, "suffix should be equal to suffix_assumed");
          });
     }); 
 });
