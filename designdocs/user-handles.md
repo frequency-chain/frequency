@@ -205,7 +205,7 @@ The extrinsic must be signed by the owner's private key. The signature must be v
 
 ### Change handle
 
-As a network, Frequency should allow users to change their handles. This extrinsic will allow users to change their handles. Retired handles will be available for reuse after a time pe>riod set by governance.
+As a network, Frequency should allow users to change their handles. This extrinsic will allow users to change their handles. Retired handles will be available for reuse after a time period set by governance.
 
 ``` rust
 Input
