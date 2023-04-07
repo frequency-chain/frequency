@@ -79,7 +79,7 @@ pub trait HandleProvider {
 /// Input request to retrieve the next suffixes for a given handle
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct PresumtiveSuffixesRequest {
+pub struct PresumptiveSuffixesRequest {
 	/// The base handle
 	#[cfg_attr(feature = "std", serde(with = "as_string"))]
 	pub base_handle: Vec<u8>,
@@ -90,7 +90,7 @@ pub struct PresumtiveSuffixesRequest {
 /// Output response for retrieving the next suffixes for a given handle
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct PresumtiveSuffixesResponse {
+pub struct PresumptiveSuffixesResponse {
 	/// The base handle
 	#[cfg_attr(feature = "std", serde(with = "as_string"))]
 	pub base_handle: Vec<u8>,

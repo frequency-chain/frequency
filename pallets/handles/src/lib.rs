@@ -436,7 +436,7 @@ pub mod pallet {
 		///
 		/// * `Vec<HandleSuffix>` - The next available suffixes for the given handle.
 		/// ```
-		pub fn get_next_suffixes(input: PresumtiveSuffixesRequest) -> PresumtiveSuffixesResponse {
+		pub fn get_next_suffixes(input: PresumptiveSuffixesRequest) -> PresumptiveSuffixesResponse {
 			let handle = input.base_handle;
 			let count = input.count;
 			let mut suffixes: Vec<u16> = vec![];
@@ -467,7 +467,8 @@ pub mod pallet {
 					break
 				}
 			}
-			let response = PresumtiveSuffixesResponse { base_handle: base_handle.into(), suffixes };
+			let response =
+				PresumptiveSuffixesResponse { base_handle: base_handle.into(), suffixes };
 			response
 		}
 

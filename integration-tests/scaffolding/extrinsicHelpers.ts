@@ -9,7 +9,7 @@ import {devAccounts, getBlockNumber, log, Sr25519Signature} from "./helpers";
 import { connect, connectPromise } from "./apiConnection";
 import { CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
-import { HandleResponse, ItemizedStoragePageResponse, MessageSourceId, PaginatedStorageResponse, PresumtiveSuffixesResponse } from "@frequency-chain/api-augment/interfaces";
+import { HandleResponse, ItemizedStoragePageResponse, MessageSourceId, PaginatedStorageResponse, PresumptiveSuffixesResponse } from "@frequency-chain/api-augment/interfaces";
 import { u8aToHex } from "@polkadot/util/u8a/toHex";
 import { u8aWrapBytes } from "@polkadot/util";
 
@@ -327,7 +327,7 @@ export class ExtrinsicHelper {
         return firstValueFrom(handle_response);
     }
 
-    public static getNextSuffixesForHandle(input_request: any): Promise<PresumtiveSuffixesResponse> {
+    public static getNextSuffixesForHandle(input_request: any): Promise<PresumptiveSuffixesResponse> {
         let suffixes = ExtrinsicHelper.api.rpc.handles.getNextSuffixes(input_request);
         return firstValueFrom(suffixes);
     }
