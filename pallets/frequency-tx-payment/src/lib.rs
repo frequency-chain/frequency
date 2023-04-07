@@ -39,7 +39,10 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-use common_primitives::capacity::{Nontransferable, Replenishable};
+use common_primitives::{
+	capacity::{Nontransferable, Replenishable},
+	node::UtilityProvider,
+};
 pub use pallet::*;
 pub use weights::*;
 
@@ -168,11 +171,23 @@ pub mod pallet {
 
 		/// Charge Capacity for transaction payments.
 		type OnChargeCapacityTransaction: OnChargeCapacityTransaction<Self>;
+
+		/// The maxmimum number of capacity calls that can be batched together.
+		#[pallet::constant]
+		type MaximumCapacityBatchLength: Get<u8>;
+
+		type BatchAllProvider: UtilityProvider<OriginFor<Self>, <Self as Config>::RuntimeCall>;
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {}
+
+	#[pallet::error]
+	pub enum Error<T> {
+		/// The maximum amount of requested batched calls was exceeded
+		BatchedCallAmountExceedMaximum,
+	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -204,6 +219,34 @@ pub mod pallet {
 			ensure_signed(origin.clone())?;
 
 			call.dispatch(origin)
+		}
+
+		#[pallet::call_index(1)]
+		#[pallet::weight({
+		use frame_support::weights::constants::RocksDbWeight;
+		let dispatch_infos = calls.iter().map(|call| call.get_dispatch_info()).collect::<Vec<_>>();
+		let dispatch_weight = dispatch_infos.iter()
+				.map(|di| di.weight)
+				.fold(Weight::zero(), |total: Weight, weight: Weight| total.saturating_add(weight));
+
+		let capacity_overhead = RocksDbWeight::get().reads(2)
+			.saturating_add(
+				RocksDbWeight::get().writes(1)
+			);
+		let total = capacity_overhead.saturating_add(dispatch_weight);
+		(< T as Config >::WeightInfo::pay_with_capacity().saturating_add(total), DispatchClass::Normal)
+		})]
+		pub fn pay_with_capacity_batch_all(
+			origin: OriginFor<T>,
+			calls: Vec<<T as Config>::RuntimeCall>,
+		) -> DispatchResultWithPostInfo {
+			ensure_signed(origin.clone())?;
+			ensure!(
+				calls.len() <= T::MaximumCapacityBatchLength::get().into(),
+				Error::<T>::BatchedCallAmountExceedMaximum
+			);
+
+			T::BatchAllProvider::batch_all(origin, calls)
 		}
 	}
 }
@@ -284,7 +327,8 @@ where
 	/// Return the tip as being chosen by the transaction sender.
 	pub fn tip(&self, call: &<T as frame_system::Config>::RuntimeCall) -> BalanceOf<T> {
 		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { .. }) => Zero::zero(),
+			Some(Call::pay_with_capacity { .. }) |
+			Some(Call::pay_with_capacity_batch_all { .. }) => Zero::zero(),
 			_ => self.0,
 		}
 	}
@@ -299,10 +343,11 @@ where
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		match call.is_sub_type() {
 			Some(Call::pay_with_capacity { call }) => self.withdraw_capacity_fee(who, call, len),
+			Some(Call::pay_with_capacity_batch_all { calls }) =>
+				self.withdraw_capacity_fee_batch(who, calls, len),
 			_ => self.withdraw_token_fee(who, call, info, len, self.tip(call)),
 		}
 	}
-
 	/// Withdraws transaction fee paid Capacity using a key associated to an MSA.
 	fn withdraw_capacity_fee(
 		&self,
@@ -318,6 +363,29 @@ where
 			call.get_dispatch_info().class,
 			extrinsic_weight,
 		);
+
+		let fee = T::OnChargeCapacityTransaction::withdraw_fee(key, fee.into())?;
+
+		Ok((fee.into(), InitialPayment::Capacity))
+	}
+
+	/// Withdraws transaction fee paid Capacity using a key associated to an MSA of a batch of calls.
+	fn withdraw_capacity_fee_batch(
+		&self,
+		key: &T::AccountId,
+		calls: &Vec<<T as Config>::RuntimeCall>,
+		len: usize,
+	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
+		let mut calls_weight_sum = Weight::zero();
+
+		for call in calls {
+			let call_weight = T::CapacityCalls::get_stable_weight(call)
+				.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
+			calls_weight_sum = calls_weight_sum.saturating_add(call_weight);
+		}
+
+		let fee =
+			Pallet::<T>::compute_capacity_fee(len as u32, DispatchClass::Normal, calls_weight_sum);
 
 		let fee = T::OnChargeCapacityTransaction::withdraw_fee(key, fee.into())?;
 

@@ -46,6 +46,7 @@ pub use common_runtime::{
 use frame_support::{
 	construct_runtime,
 	dispatch::{DispatchClass, DispatchError},
+	pallet_prelude::DispatchResultWithPostInfo,
 	parameter_types,
 	traits::{ConstU128, ConstU32, EitherOfDiverse, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
@@ -109,6 +110,14 @@ impl ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
 	#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
 	fn proposal_count() -> u32 {
 		Council::proposal_count()
+	}
+}
+
+pub struct CapacityBatchProvider;
+
+impl UtilityProvider<RuntimeOrigin, RuntimeCall> for CapacityBatchProvider {
+	fn batch_all(origin: RuntimeOrigin, calls: Vec<RuntimeCall>) -> DispatchResultWithPostInfo {
+		Utility::batch_all(origin, calls)
 	}
 }
 
@@ -900,6 +909,8 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type WeightInfo = pallet_frequency_tx_payment::weights::SubstrateWeight<Runtime>;
 	type CapacityCalls = CapacityEligibleCalls;
 	type OnChargeCapacityTransaction = pallet_frequency_tx_payment::CapacityAdapter<Balances, Msa>;
+	type BatchAllProvider = CapacityBatchProvider;
+	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
