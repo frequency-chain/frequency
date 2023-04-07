@@ -42,20 +42,6 @@ impl ClaimHandlePayload {
 	}
 }
 
-/// Retire handle payload
-#[derive(TypeInfo, Clone, Debug, Decode, Encode, PartialEq, Eq)]
-pub struct RetireHandlePayload {
-	/// The full handle (base handle + delimiter + suffix)
-	pub full_handle: Vec<u8>,
-}
-
-impl RetireHandlePayload {
-	/// Create a new payload for retiring a handle
-	pub fn new(full_handle: Vec<u8>) -> Self {
-		Self { full_handle }
-	}
-}
-
 /// RPC Response form for a Handle
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]

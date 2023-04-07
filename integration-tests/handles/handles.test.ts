@@ -51,13 +51,7 @@ describe("🤝 Handles", () => {
             let suffix_from_state = full_handle_state.suffix;
             let suffix = suffix_from_state.toNumber();
             assert.notEqual(suffix, 0, "suffix should not be 0");
-            let full_handle = "test_handle" + "." + suffix.toString();
-            const handle_vec = new Bytes(ExtrinsicHelper.api.registry, full_handle);
-            const payload = {
-                fullHandle: handle_vec,
-            }
-            const retireHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesRetireHandlePayload", payload);
-            const retireHandle = ExtrinsicHelper.retireHandle(delegatorKeys, retireHandlePayload);
+            const retireHandle = ExtrinsicHelper.retireHandle(delegatorKeys);
             const [event] = await retireHandle.fundAndSend();
             assert.notEqual(event, undefined, "retireHandle should return an event");
             if (event && retireHandle.api.events.handles.HandleRetired.is(event)) {

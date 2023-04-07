@@ -5,10 +5,8 @@ use crate::Pallet as Handles;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
-use scale_info::prelude::format;
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::RuntimeAppPublic;
-
 pub const TEST_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"test");
 
 mod app_sr25519 {
@@ -82,16 +80,7 @@ benchmarks! {
 		assert!(stored_handle.is_some());
 
 		// retire the handle
-		let stored_handle = stored_handle.unwrap();
-		let base_handle:Vec<u8> = stored_handle.base_handle.clone();
-		let suffix: u16 = stored_handle.suffix;
-		let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or_default();
-		let full_handle_with_delimiter = format!("{}{}", base_handle_str, ".");
-		let retirement_payload = RetireHandlePayload::new(full_handle_with_delimiter.as_bytes().to_vec());
-		let encode_handle_claims_data = wrap_binary_data(retirement_payload.encode());
-		let signature = delegator_account_public.sign(&encode_handle_claims_data).unwrap();
-		let retire_proof = MultiSignature::Sr25519(signature.into());
-	}: _(RawOrigin::Signed(caller.clone()), key.clone(), retire_proof, retirement_payload)
+	}: _(RawOrigin::Signed(key.clone()))
 	verify {
 		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id.into());
 		assert!(stored_handle.is_none());
