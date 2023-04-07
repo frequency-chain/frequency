@@ -419,10 +419,9 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)
 				.ok()?;
 
-			let handle_converter = HandleConverter::new();
-			let (base_handle_str, suffix) = handle_converter.split_display_name(full_handle_str);
+			let (base_handle_str, suffix) = HandleConverter::split_display_name(full_handle_str);
 			let base_handle = base_handle_str.as_bytes().to_vec();
-			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
+			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
 			let canonical_handle = canonical_handle_str.as_bytes().to_vec();
 			Some(HandleResponse { base_handle, suffix, canonical_handle })
 		}
@@ -447,8 +446,7 @@ pub mod pallet {
 			let base_handle: Handle = handle.try_into().unwrap_or_default();
 			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or("");
 
-			let handle_converter = HandleConverter::new();
-			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
+			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
 			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
 			let suffix_index =
@@ -493,8 +491,7 @@ pub mod pallet {
 			suffix_sequence_index: SequenceIndex,
 		) -> Handle {
 			// Convert base display handle into a canonical display handle
-			let handle_converter = HandleConverter::new();
-			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
+			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
 
 			// Generate suffix from index into the suffix sequence
 			let suffix = Self::generate_suffix_for_canonical_handle(
@@ -581,8 +578,7 @@ pub mod pallet {
 			);
 
 			// Convert base display handle into a canonical display handle
-			let handle_converter = HandleConverter::new();
-			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
+			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
 			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
 
@@ -638,11 +634,10 @@ pub mod pallet {
 			let display_name_str = core::str::from_utf8(&display_name_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 
-			let handle_converter = HandleConverter::new();
 			let (base_handle_str, suffix_num) =
-				handle_converter.split_display_name(display_name_str);
+				HandleConverter::split_display_name(display_name_str);
 
-			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
+			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
 			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
 
