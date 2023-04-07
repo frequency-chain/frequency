@@ -2,11 +2,11 @@ use crate::msa::MessageSourceId;
 #[cfg(feature = "std")]
 use crate::utils::*;
 use codec::{Decode, Encode};
-use frame_support::BoundedVec;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::ConstU32;
 use sp_std::vec::Vec;
+use frame_support::BoundedVec;
 
 /// The minimum base handle (not including suffix or delimiter) length in characters
 pub const HANDLE_BASE_CHARS_MIN: u32 = 3;
@@ -39,20 +39,6 @@ impl ClaimHandlePayload {
 	/// Create a new payload for claiming a handle
 	pub fn new(base_handle: Vec<u8>) -> Self {
 		Self { base_handle }
-	}
-}
-
-/// Retire handle payload
-#[derive(TypeInfo, Clone, Debug, Decode, Encode, PartialEq, Eq)]
-pub struct RetireHandlePayload {
-	/// The full handle (base handle + delimiter + suffix)
-	pub full_handle: Vec<u8>,
-}
-
-impl RetireHandlePayload {
-	/// Create a new payload for retiring a handle
-	pub fn new(full_handle: Vec<u8>) -> Self {
-		Self { full_handle }
 	}
 }
 

@@ -172,14 +172,14 @@ pub mod pallet {
 			/// MSA id of handle owner
 			msa_id: MessageSourceId,
 			/// UTF-8 string in bytes
-			handle: Handle,
+			handle: Vec<u8>,
 		},
 		/// Deposited when a handle is retired. [MSA id, full handle in UTF-8 bytes]
 		HandleRetired {
 			/// MSA id of handle owner
 			msa_id: MessageSourceId,
 			/// UTF-8 string in bytes
-			handle: Handle,
+			handle: Vec<u8>,
 		},
 	}
 
@@ -356,35 +356,21 @@ pub mod pallet {
 		/// * [`Event::HandleRetired`]
 		///
 		#[pallet::call_index(1)]
-		#[pallet::weight((T::WeightInfo::retire_handle(payload.full_handle.len() as u32), DispatchClass::Normal, Pays::No))]
-		pub fn retire_handle(
-			origin: OriginFor<T>,
-			delegator_key: T::AccountId,
-			proof: MultiSignature,
-			payload: RetireHandlePayload,
-		) -> DispatchResult {
-			let provider_key = ensure_signed(origin)?;
+		#[pallet::weight((T::WeightInfo::retire_handle(full_handle.len() as u32), DispatchClass::Normal, Pays::No))]
+		pub fn retire_handle(origin: OriginFor<T>, full_handle: Vec<u8>) -> DispatchResult {
+			let delegator_key = ensure_signed(origin)?;
 
-			// Validation: Check for base_handle size to address potential panic condition
+			// Validation: Check for full_handle size to address potential panic condition
 			ensure!(
-				payload.full_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
+				full_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
 				Error::<T>::InvalidHandleByteLength
 			);
-
-			// Validation: The provider must already have a MSA id
-			T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
-				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
 			// Validation: The delegator must already have a MSA id
 			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-			// Validation: Verify the payload was signed
-			Self::verify_signed_payload(&proof, &delegator_key, payload.encode())?;
-
 			Self::do_retire_handle(delegator_msa_id)?;
-
-			let full_handle: Handle = payload.full_handle.try_into().ok().unwrap();
 
 			Self::deposit_event(Event::HandleRetired {
 				msa_id: delegator_msa_id,
@@ -487,10 +473,11 @@ pub mod pallet {
 		///
 		/// * `Handle` - The full display handle.
 		///
+		#[cfg(test)]
 		pub fn create_full_handle_for_index(
 			base_handle_str: &str,
 			suffix_sequence_index: SequenceIndex,
-		) -> Handle {
+		) -> Vec<u8> {
 			// Convert base display handle into a canonical display handle
 			let handle_converter = HandleConverter::new();
 			let canonical_handle_str = handle_converter.convert_to_canonical(&base_handle_str);
@@ -501,7 +488,7 @@ pub mod pallet {
 				suffix_sequence_index as usize,
 			);
 
-			let full_handle: Handle = Self::create_full_handle(base_handle_str, suffix);
+			let full_handle = Self::create_full_handle(base_handle_str, suffix);
 			full_handle
 		}
 
@@ -516,16 +503,15 @@ pub mod pallet {
 		///
 		/// * `Handle` - The full display handle.
 		///
-		pub fn create_full_handle(base_handle_str: &str, suffix: HandleSuffix) -> Handle {
+		#[cfg(test)]
+		pub fn create_full_handle(base_handle_str: &str, suffix: HandleSuffix) -> Vec<u8> {
 			// Compose the full display handle from the base handle, "." delimeter and suffix
 			let mut full_handle_vec: Vec<u8> = vec![];
 			full_handle_vec.extend(base_handle_str.as_bytes());
 			full_handle_vec.extend(b"."); // The delimeter
 			let mut buff = [0u8; SUFFIX_MAX_DIGITS];
 			full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
-
-			let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
-			full_handle
+			full_handle_vec
 		}
 
 		/// Claims a handle for a given MSA (MessageSourceId) by validating and storing the base handle,
@@ -543,7 +529,7 @@ pub mod pallet {
 		pub fn do_claim_handle(
 			delegator_msa_id: MessageSourceId,
 			payload: ClaimHandlePayload,
-		) -> Result<Handle, DispatchError> {
+		) -> Result<Vec<u8>, DispatchError> {
 			// Validation: The MSA must not already have a handle associated with it
 			ensure!(
 				MSAIdToDisplayName::<T>::try_get(delegator_msa_id).is_err(),
@@ -613,12 +599,12 @@ pub mod pallet {
 			let mut buff = [0u8; SUFFIX_MAX_DIGITS];
 			full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
 
-			let full_handle: Handle = full_handle_vec.try_into().ok().unwrap();
+			let full_handle: Handle = full_handle_vec.clone().try_into().ok().unwrap();
 
 			// Store the full display handle to MSA id
 			MSAIdToDisplayName::<T>::insert(delegator_msa_id, full_handle.clone());
 
-			Ok(full_handle)
+			Ok(full_handle_vec)
 		}
 
 		/// Retires a handle associated with a given MessageSourceId (MSA) in the dispatch module.
