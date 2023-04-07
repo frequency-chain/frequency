@@ -203,7 +203,7 @@ pub mod pallet {
 		pub fn get_next_suffix_index_for_canonical_handle(
 			canonical_handle: Handle,
 		) -> Result<SequenceIndex, DispatchError> {
-			let next;
+			let next: SequenceIndex;
 			match Self::get_current_suffix_index_for_canonical_handle(canonical_handle) {
 				None => {
 					next = 0;
@@ -252,14 +252,17 @@ pub mod pallet {
 		///
 		/// The generated suffix as a `u16`.
 		///
-		fn generate_suffix_for_canonical_handle(canonical_handle: &str, cursor: usize) -> u16 {
+		fn generate_suffix_for_canonical_handle(
+			canonical_handle: &str,
+			cursor: usize,
+		) -> HandleSuffix {
 			let mut suffix_generator = SuffixGenerator::new(
 				T::HandleSuffixMin::get() as usize,
 				T::HandleSuffixMax::get() as usize,
 				&canonical_handle,
 			);
 			let sequence: Vec<usize> = suffix_generator.suffix_iter().collect();
-			sequence[cursor] as u16
+			sequence[cursor] as HandleSuffix
 		}
 	}
 
@@ -439,7 +442,7 @@ pub mod pallet {
 		pub fn get_next_suffixes(input: PresumptiveSuffixesRequest) -> PresumptiveSuffixesResponse {
 			let handle = input.base_handle;
 			let count = input.count;
-			let mut suffixes: Vec<u16> = vec![];
+			let mut suffixes: Vec<HandleSuffix> = vec![];
 			let base_handle: Handle = handle.try_into().unwrap_or_default();
 			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or("");
 
@@ -484,9 +487,9 @@ pub mod pallet {
 		///
 		/// * `Handle` - The full display handle.
 		///
-		pub fn create_full_handle(
+		pub fn create_full_handle_for_index(
 			base_handle_str: &str,
-			suffix_sequence_index: HandleSuffix,
+			suffix_sequence_index: SequenceIndex,
 		) -> Handle {
 			// Convert base display handle into a canonical display handle
 			let handle_converter = HandleConverter::new();
@@ -498,6 +501,22 @@ pub mod pallet {
 				suffix_sequence_index as usize,
 			);
 
+			let full_handle: Handle = Self::create_full_handle(base_handle_str, suffix);
+			full_handle
+		}
+
+		/// Creates a full display handle by combining a base handle string with supplied suffix
+		///
+		/// # Arguments
+		///
+		/// * `base_handle_str` - The base handle string.
+		/// * `suffix` - The numeric suffix .
+		///
+		/// # Returns
+		///
+		/// * `Handle` - The full display handle.
+		///
+		pub fn create_full_handle(base_handle_str: &str, suffix: HandleSuffix) -> Handle {
 			// Compose the full display handle from the base handle, "." delimeter and suffix
 			let mut full_handle_vec: Vec<u8> = vec![];
 			full_handle_vec.extend(base_handle_str.as_bytes());
