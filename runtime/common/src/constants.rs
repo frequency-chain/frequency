@@ -134,6 +134,7 @@ pub type MaxSchemaSettingsPerSchema = ConstU32<2>;
 // -end- Schemas Pallet ---
 
 // --- Handles Pallet ---
+// IMPORTANT: These values should only increase and never overlap with a previous set!
 /// The minimum suffix value
 pub type HandleSuffixMin = ConstU32<10>;
 /// The maximum suffix value
