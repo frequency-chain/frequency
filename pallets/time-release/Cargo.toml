@@ -7,7 +7,7 @@ homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 repository = "https://github.com/LibertyDSNP/frequency/"
 publish = false
-version = "0.0.0"
+version = "1.5.1+polkadot0.9.36"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["max-encoded-len"] }
