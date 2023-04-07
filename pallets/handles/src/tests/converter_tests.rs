@@ -11,7 +11,6 @@ fn test_replace_confusables() {
 	assert!(file.is_ok());
 
 	let reader = BufReader::new(file.ok().unwrap());
-	let handle_converter = HandleConverter::new();
 	for line_result in reader.lines() {
 		let original_line = line_result.ok().unwrap();
 
@@ -19,7 +18,7 @@ fn test_replace_confusables() {
 		// that each subsequent character may be confused with
 		let first_character = original_line.chars().next().unwrap();
 
-		let normalized_line = handle_converter.replace_confusables(&original_line);
+		let normalized_line = HandleConverter::replace_confusables(&original_line);
 		for normalized_character in normalized_line.chars() {
 			let normalized_character_codepoint =
 				format!("\'\\u{{{:x}}}\'", normalized_character as u32);
@@ -33,9 +32,8 @@ fn test_replace_confusables() {
 
 #[test]
 fn test_strip_diacriticals() {
-	let handle_converter = HandleConverter::new();
 	let diacritical_string = "ÄÅÖäåöĂăĔĚĕĞğģĬĭŎŏŬǓŭàáâñ";
-	let stripped_string = handle_converter.strip_diacriticals(diacritical_string);
+	let stripped_string = HandleConverter::strip_diacriticals(diacritical_string);
 	assert_eq!(stripped_string, "AAOaaoAaEEeGggIiOoUUuaaan");
 }
 
@@ -72,9 +70,8 @@ fn test_strip_unicode_whitespace() {
 	let string_with_whitespace =
 		format!("{}hello{}world!{}", whitespace_string, whitespace_string, whitespace_string);
 	println!("String with whitespace: {}", string_with_whitespace);
-	let handle_converter = HandleConverter::new();
 	let whitespace_stripped_string =
-		handle_converter.strip_unicode_whitespace(&string_with_whitespace);
+		HandleConverter::strip_unicode_whitespace(&string_with_whitespace);
 	println!("Whitespace stripped string: {}", whitespace_stripped_string);
 	assert_eq!(whitespace_stripped_string, "helloworld!");
 }
