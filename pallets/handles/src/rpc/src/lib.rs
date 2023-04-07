@@ -10,7 +10,7 @@
 
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
-	handles::{HandleResponse, PresumtiveSuffixesRequest, PresumtiveSuffixesResponse},
+	handles::{HandleResponse, PresumptiveSuffixesRequest, PresumptiveSuffixesResponse},
 	msa::MessageSourceId,
 };
 use jsonrpsee::{
@@ -37,8 +37,8 @@ pub trait HandlesApi<BlockHash> {
 	#[method(name = "handles_getNextSuffixes")]
 	fn get_next_suffixes(
 		&self,
-		handle_input: PresumtiveSuffixesRequest,
-	) -> RpcResult<PresumtiveSuffixesResponse>;
+		handle_input: PresumptiveSuffixesRequest,
+	) -> RpcResult<PresumptiveSuffixesResponse>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -80,8 +80,8 @@ where
 
 	fn get_next_suffixes(
 		&self,
-		handle_input: PresumtiveSuffixesRequest,
-	) -> RpcResult<PresumtiveSuffixesResponse> {
+		handle_input: PresumptiveSuffixesRequest,
+	) -> RpcResult<PresumptiveSuffixesResponse> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 		let suffixes_result = api.get_next_suffixes(&at, handle_input);

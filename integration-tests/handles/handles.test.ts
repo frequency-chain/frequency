@@ -78,7 +78,7 @@ describe("🤝 Handles", () => {
                 count: 10,
             };
             /// Get presumptive suffix from chain (rpc)
-            let suffix_input_type = ExtrinsicHelper.api.registry.createType("PresumtiveSuffixesRequest", request_suffixes);
+            let suffix_input_type = ExtrinsicHelper.api.registry.createType("PresumptiveSuffixesRequest", request_suffixes);
             let suffixes_response = await ExtrinsicHelper.getNextSuffixesForHandle(suffix_input_type);
             let resp_base_handle = suffixes_response.base_handle.toString();
             let suffix_assumed = suffixes_response.suffixes[0];

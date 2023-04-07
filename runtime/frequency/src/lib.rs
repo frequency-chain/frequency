@@ -1344,7 +1344,7 @@ impl_runtime_apis! {
 			Handles::get_handle_for_msa(msa_id)
 		}
 
-		fn get_next_suffixes(suffix_request: PresumtiveSuffixesRequest) -> PresumtiveSuffixesResponse {
+		fn get_next_suffixes(suffix_request: PresumptiveSuffixesRequest) -> PresumptiveSuffixesResponse {
 			Handles::get_next_suffixes(suffix_request)
 		}
 	}

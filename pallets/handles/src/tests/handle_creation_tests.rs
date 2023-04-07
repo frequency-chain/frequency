@@ -1,6 +1,6 @@
 use crate::{tests::mock::*, Error, Event};
 use codec::Decode;
-use common_primitives::{handles::PresumtiveSuffixesRequest, msa::MessageSourceId};
+use common_primitives::{handles::PresumptiveSuffixesRequest, msa::MessageSourceId};
 use frame_support::{assert_noop, assert_ok};
 use sp_core::{sr25519, Encode, Pair};
 use sp_std::collections::btree_set::BTreeSet;
@@ -10,7 +10,7 @@ fn test_full_handle_creation() {
 	new_test_ext().execute_with(|| {
 		// Min is 10, Max is 99 inclusive
 		for sequence_index in 0..89 {
-			let full_handle = Handles::create_full_handle("test", sequence_index);
+			let full_handle = Handles::create_full_handle_for_index("test", sequence_index);
 			let full_handle_str = core::str::from_utf8(&full_handle).ok().unwrap();
 			println!("full_handle_str={}", full_handle_str);
 		}
@@ -31,7 +31,7 @@ fn claim_handle_happy_path() {
 
 		// Confirm that HandleClaimed event was deposited
 		let msa_id = MessageSourceId::decode(&mut &alice.public().encode()[..]).unwrap();
-		let handle = Handles::create_full_handle("test1", 0);
+		let handle = Handles::create_full_handle_for_index("test1", 0);
 		System::assert_last_event(Event::HandleClaimed { msa_id, handle }.into());
 	});
 }
@@ -211,7 +211,7 @@ fn test_get_next_suffixes() {
 		assert_eq!(base_handle, "test1".as_bytes().to_vec());
 		let suffix = handle_result.suffix;
 		assert!(suffix > 0);
-		let pre_request = PresumtiveSuffixesRequest { base_handle: base_handle.clone(), count: 5 };
+		let pre_request = PresumptiveSuffixesRequest { base_handle: base_handle.clone(), count: 5 };
 		let next_suffixes = Handles::get_next_suffixes(pre_request);
 		assert_eq!(next_suffixes.suffixes.len(), 5);
 		let mut presumptive_suffixes = BTreeSet::new();

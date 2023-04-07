@@ -15,10 +15,10 @@ export default {
       params: [
         {
           name: "handle_input",
-          type: "PresumtiveSuffixesRequest",
+          type: "PresumptiveSuffixesRequest",
         },
       ],
-      type: "PresumtiveSuffixesResponse",
+      type: "PresumptiveSuffixesResponse",
     },
   },
   types: {
@@ -28,11 +28,11 @@ export default {
       canonical_handle: "Vec<u8>",
       suffix: "u16",
     },
-    PresumtiveSuffixesRequest: {
+    PresumptiveSuffixesRequest: {
       base_handle: "Vec<u8>",
       count: "u16",
     },
-    PresumtiveSuffixesResponse: {
+    PresumptiveSuffixesResponse: {
       suffixes: "Vec<HandleSuffix>",
       base_handle: "Vec<u8>",
     },
@@ -56,10 +56,10 @@ export default {
             params: [
               {
                 name: "handle_input",
-                type: "PresumtiveSuffixesRequest",
+                type: "PresumptiveSuffixesRequest",
               },
             ],
-            type: "PresumtiveSuffixesResponse",
+            type: "PresumptiveSuffixesResponse",
           },
         },
         version: 1,
