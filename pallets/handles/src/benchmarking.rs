@@ -2,11 +2,9 @@
 
 use super::*;
 use crate::Pallet as Handles;
-use common_primitives::handles::HandleSuffix;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
-use scale_info::prelude::format;
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::RuntimeAppPublic;
 pub const TEST_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"test");
@@ -82,12 +80,7 @@ benchmarks! {
 		assert!(stored_handle.is_some());
 
 		// retire the handle
-		let stored_handle = stored_handle.unwrap();
-		let base_handle:Vec<u8> = stored_handle.base_handle.clone();
-		let suffix: HandleSuffix = stored_handle.suffix;
-		let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or_default();
-		let full_handle_with_delimiter = format!("{}.{}", base_handle_str, suffix).as_bytes().to_vec();
-	}: _(RawOrigin::Signed(caller.clone()), full_handle_with_delimiter)
+	}: _(RawOrigin::Signed(caller.clone()))
 	verify {
 		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id.into());
 		assert!(stored_handle.is_none());

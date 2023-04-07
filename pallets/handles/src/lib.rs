@@ -308,17 +308,13 @@ pub mod pallet {
 			proof: MultiSignature,
 			payload: ClaimHandlePayload,
 		) -> DispatchResult {
-			let provider_key = ensure_signed(origin)?;
+			let _ = ensure_signed(origin)?;
 
 			// Validation: Check for base_handle size to address potential panic condition
 			ensure!(
 				payload.base_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
 				Error::<T>::InvalidHandleByteLength
 			);
-
-			// Validation: The provider must already have a MSA id
-			T::MsaInfoProvider::ensure_valid_msa_key(&provider_key)
-				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
 			// Validation: The delegator must already have a MSA id
 			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
@@ -356,25 +352,19 @@ pub mod pallet {
 		/// * [`Event::HandleRetired`]
 		///
 		#[pallet::call_index(1)]
-		#[pallet::weight((T::WeightInfo::retire_handle(full_handle.len() as u32), DispatchClass::Normal, Pays::No))]
-		pub fn retire_handle(origin: OriginFor<T>, full_handle: Vec<u8>) -> DispatchResult {
+		#[pallet::weight((T::WeightInfo::retire_handle(), DispatchClass::Normal, Pays::No))]
+		pub fn retire_handle(origin: OriginFor<T>) -> DispatchResult {
 			let delegator_key = ensure_signed(origin)?;
-
-			// Validation: Check for full_handle size to address potential panic condition
-			ensure!(
-				full_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
-				Error::<T>::InvalidHandleByteLength
-			);
 
 			// Validation: The delegator must already have a MSA id
 			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-			Self::do_retire_handle(delegator_msa_id)?;
+			let full_handle = Self::do_retire_handle(delegator_msa_id)?;
 
 			Self::deposit_event(Event::HandleRetired {
 				msa_id: delegator_msa_id,
-				handle: full_handle.clone(),
+				handle: full_handle,
 			});
 			Ok(())
 		}
@@ -615,7 +605,7 @@ pub mod pallet {
 		///
 		/// # Returns
 		/// * `DispatchResult` - Returns `Ok` if the handle was successfully retired.
-		pub fn do_retire_handle(delegator_msa_id: MessageSourceId) -> DispatchResult {
+		pub fn do_retire_handle(delegator_msa_id: MessageSourceId) -> Result<Vec<u8>, DispatchError> {
 			// Validation: The MSA must already have a handle associated with it
 			let display_name_handle = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
 				.map_err(|_| Error::<T>::MSAHandleDoesNotExist)?;
@@ -634,7 +624,7 @@ pub mod pallet {
 			MSAIdToDisplayName::<T>::remove(delegator_msa_id);
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::remove(canonical_handle, suffix_num);
 
-			Ok(())
+			Ok(display_name_str.as_bytes().to_vec())
 		}
 	}
 }

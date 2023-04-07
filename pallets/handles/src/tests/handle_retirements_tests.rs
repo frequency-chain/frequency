@@ -38,7 +38,6 @@ fn claim_and_retire_handle_happy_path() {
 		// Retire the handle
 		assert_ok!(Handles::retire_handle(
 			RuntimeOrigin::signed(alice.public().into()),
-			full_handle_vec.clone(),
 		));
 
 		// Confirm that HandleRetired event was deposited
@@ -48,7 +47,6 @@ fn claim_and_retire_handle_happy_path() {
 		assert_noop!(
 			Handles::retire_handle(
 				RuntimeOrigin::signed(alice.public().into()),
-				full_handle_vec,
 			),
 			Error::<Test>::MSAHandleDoesNotExist
 		);
@@ -62,9 +60,8 @@ fn retire_handle_no_handle() {
 		let delegator_account = delegator_key_pair.public();
 
 		// Payload
-		let full_handle = "test1.1".as_bytes().to_vec();
 		assert_noop!(
-			Handles::retire_handle(RuntimeOrigin::signed(delegator_account.into()), full_handle,),
+			Handles::retire_handle(RuntimeOrigin::signed(delegator_account.into()),),
 			Error::<Test>::MSAHandleDoesNotExist
 		);
 	});
@@ -72,10 +69,7 @@ fn retire_handle_no_handle() {
 
 #[test]
 fn check_free_extrinsic_use() {
-	// Payload
-	let full_handle = "test1.1".as_bytes().to_vec();
-
-	let call = HandlesCall::<Test>::retire_handle { full_handle };
+	let call = HandlesCall::<Test>::retire_handle { };
 	let dispatch_info = call.get_dispatch_info();
 	assert_eq!(dispatch_info.pays_fee, Pays::No);
 }
