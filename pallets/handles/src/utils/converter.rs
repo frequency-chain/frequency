@@ -24,7 +24,6 @@ impl HandleConverter {
 	///
 	/// # Arguments
 	///
-	/// * `self` - A reference to a `ConfusableDetector` instance.
 	/// * `String` - A reference to the input string to convert to canonical form.
 	///
 	/// # Returns
@@ -42,7 +41,6 @@ impl HandleConverter {
 	///
 	/// # Arguments
 	///
-	/// * `self` - A reference to a `ConfusableDetector` instance.
 	/// * `String` - A reference to the input string to replace confusable characters.
 	///
 	/// # Returns
