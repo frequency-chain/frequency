@@ -345,7 +345,6 @@ pub mod pallet {
 		pub fn retire_handle(origin: OriginFor<T>) -> DispatchResult {
 			let delegator_key = ensure_signed(origin)?;
 
-			// Validation: The delegator must already have a MSA id
 			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
