@@ -58,17 +58,19 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
+	// Storage: Handles PayloadSignatureRegistryList (r:1 w:0)
+	// Storage: Handles PayloadSignatureRegistryPointer (r:1 w:1)
 	// Storage: Handles MSAIdToDisplayName (r:1 w:1)
 	// Storage: Handles CanonicalBaseHandleToSuffixIndex (r:1 w:1)
 	fn claim_handle(_b: u32, ) -> Weight {
-		Weight::from_ref_time(292_564_127 as u64)
-			.saturating_add(T::DbWeight::get().reads(3 as u64))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
+		Weight::from_ref_time(426_000_290 as u64)
+			.saturating_add(T::DbWeight::get().reads(5 as u64))
+			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Handles MSAIdToDisplayName (r:1 w:1)
 	fn retire_handle() -> Weight {
-		Weight::from_ref_time(52_674_000 as u64)
+		Weight::from_ref_time(54_771_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -77,17 +79,19 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 // For backwards compatibility and tests
 impl WeightInfo for () {
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
+	// Storage: Handles PayloadSignatureRegistryList (r:1 w:0)
+	// Storage: Handles PayloadSignatureRegistryPointer (r:1 w:1)
 	// Storage: Handles MSAIdToDisplayName (r:1 w:1)
 	// Storage: Handles CanonicalBaseHandleToSuffixIndex (r:1 w:1)
 	fn claim_handle(_b: u32, ) -> Weight {
-		Weight::from_ref_time(292_564_127 as u64)
-			.saturating_add(RocksDbWeight::get().reads(3 as u64))
-			.saturating_add(RocksDbWeight::get().writes(2 as u64))
+		Weight::from_ref_time(426_000_290 as u64)
+			.saturating_add(RocksDbWeight::get().reads(5 as u64))
+			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Handles MSAIdToDisplayName (r:1 w:1)
 	fn retire_handle() -> Weight {
-		Weight::from_ref_time(52_674_000 as u64)
+		Weight::from_ref_time(54_771_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
