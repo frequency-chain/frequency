@@ -109,6 +109,10 @@ impl pallet_handles::Config for Test {
 
 	/// MaxSignaturesStored is the maximum number of signatures that can be stored in the
 	type MaxSignaturesStored = ConstU32<10>;
+
+	/// The mortality window for a handle claim
+	type MortalityWindowSize = ConstU32<100>;
+
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
 	type MsaBenchmarkHelper = ();

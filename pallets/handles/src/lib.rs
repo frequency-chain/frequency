@@ -48,11 +48,9 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::MsaBenchmarkHelper;
-use sp_std::prelude::*;
-
 use common_primitives::{
 	handles::*,
-	msa::{MessageSourceId, MsaLookup, MsaValidator},
+	msa::{MessageSourceId, MsaLookup, MsaValidator, SignatureRegistryPointer},
 	utils::wrap_binary_data,
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
@@ -64,7 +62,7 @@ use sp_runtime::{
 	traits::{Convert, Verify},
 	MultiSignature,
 };
-use sp_std::vec::Vec;
+use sp_std::{prelude::*, vec::Vec};
 
 pub mod suffix;
 use suffix::SuffixGenerator;
@@ -105,6 +103,10 @@ pub mod pallet {
 		/// The maximum number of signatures that can be stored in PayloadSignatureRegistryList.
 		#[pallet::constant]
 		type MaxSignaturesStored: Get<Option<u32>>;
+
+		/// The number of blocks before a signature can be ejected from the PayloadSignatureRegistryList
+		#[pallet::constant]
+		type MortalityWindowSize: Get<u32>;
 
 		#[cfg(feature = "runtime-benchmarks")]
 		/// A set of helper functions for benchmarking.
@@ -158,6 +160,14 @@ pub mod pallet {
 		T::MaxSignaturesStored,           // Maximum total signatures to store
 	>;
 
+	/// This is the pointer for the Payload Signature Registry
+	/// Contains the pointers to the data stored in the `PayloadSignatureRegistryList`
+	/// - Value: [`SignatureRegistryPointer`]
+	#[pallet::storage]
+	#[pallet::getter(fn get_payload_signature_pointer)]
+	pub(super) type PayloadSignatureRegistryPointer<T: Config> =
+		StorageValue<_, SignatureRegistryPointer<T::BlockNumber>>;
+
 	#[derive(PartialEq, Eq)] // for testing
 	#[pallet::error]
 	pub enum Error<T> {
@@ -183,6 +193,16 @@ pub mod pallet {
 		MSAHandleAlreadyExists,
 		/// The MSA does not have a handle needed to retire it.
 		MSAHandleDoesNotExist,
+		/// The submitted proof has expired; the current block is less the expiration block
+		ProofHasExpired,
+		/// The submitted proof expiration block is too far in the future
+		ProofNotYetValid,
+		/// Attempted to add a signature when the signature is already in the registry
+		SignatureAlreadySubmitted,
+		/// Attempted to add a new signature to a full signature registry
+		SignatureRegistryLimitExceeded,
+		/// Attempted to add a new signature to a corrupt signature registry
+		SignatureRegistryCorrupted,
 	}
 
 	#[pallet::event]
@@ -237,6 +257,41 @@ pub mod pallet {
 			Ok(next)
 		}
 
+		/// Adds a signature to the `PayloadSignatureRegistryList`
+		/// Check that mortality_block is within bounds. If so, proceed and add the new entry.
+		/// Raises `SignatureAlreadySubmitted` if the signature exists in the registry.
+		/// Raises `SignatureRegistryLimitExceeded` if the oldest signature of the list has not yet expired.
+		///
+		/// Example list:
+		/// - `1,2 (oldest)`
+		/// - `2,3`
+		/// - `3,4`
+		/// - 4 (newest in pointer storage)`
+		///
+		/// # Errors
+		/// * [`Error::ProofNotYetValid`]
+		/// * [`Error::ProofHasExpired`]
+		/// * [`Error::SignatureAlreadySubmitted`]
+		/// * [`Error::SignatureRegistryLimitExceeded`]
+		///
+		pub fn register_signature(
+			signature: &MultiSignature,
+			signature_expires_at: T::BlockNumber,
+		) -> DispatchResult {
+			let current_block = frame_system::Pallet::<T>::block_number();
+
+			let max_lifetime = Self::mortality_block_limit(current_block);
+			ensure!(max_lifetime > signature_expires_at, Error::<T>::ProofNotYetValid);
+			ensure!(current_block < signature_expires_at, Error::<T>::ProofHasExpired);
+
+			// Make sure it is not in the registry
+			ensure!(
+				!<PayloadSignatureRegistryList<T>>::contains_key(signature),
+				Error::<T>::SignatureAlreadySubmitted
+			);
+
+			Self::enqueue_signature(signature, signature_expires_at, current_block)
+		}
 		/// Verifies the signature of a given payload, using the provided `signature`
 		/// and `signer` information.
 		///
@@ -261,6 +316,79 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Verifies the signature of a given payload, using the provided `signature`
+		/// Do the actual enqueuing into the list storage and update the pointer
+		fn enqueue_signature(
+			signature: &MultiSignature,
+			signature_expires_at: T::BlockNumber,
+			current_block: T::BlockNumber,
+		) -> DispatchResult {
+			// Get the current pointer, or if this is the initialization, generate an empty pointer
+			let pointer =
+				PayloadSignatureRegistryPointer::<T>::get().unwrap_or(SignatureRegistryPointer {
+					newest: signature.clone(),
+					newest_expires_at: signature_expires_at,
+					oldest: signature.clone(),
+					count: 0,
+				});
+
+			// Make sure it is not sitting as the `newest` in the pointer
+			ensure!(
+				!(pointer.count != 0 && pointer.newest.eq(signature)),
+				Error::<T>::SignatureAlreadySubmitted
+			);
+
+			// Default to the current oldest signature in case we are still filling up
+			let mut oldest: MultiSignature = pointer.oldest.clone();
+
+			// We are now wanting to overwrite prior signatures
+			let is_registry_full: bool =
+				pointer.count == T::MaxSignaturesStored::get().unwrap_or(0);
+
+			// Maybe remove the oldest signature and update the oldest
+			if is_registry_full {
+				let (expire_block_number, next_oldest) =
+					Self::get_payload_signature_registry(pointer.oldest.clone())
+						.ok_or(Error::<T>::SignatureRegistryCorrupted)?;
+
+				ensure!(
+					current_block.gt(&expire_block_number),
+					Error::<T>::SignatureRegistryLimitExceeded
+				);
+
+				// Move the oldest in the list to the next oldest signature
+				oldest = next_oldest.clone();
+
+				<PayloadSignatureRegistryList<T>>::remove(pointer.oldest);
+			}
+
+			// Add the newest signature if we are not the first
+			if pointer.count != 0 {
+				<PayloadSignatureRegistryList<T>>::insert(
+					pointer.newest,
+					(pointer.newest_expires_at, signature.clone()),
+				);
+			}
+
+			// Update the pointer.newest to have the signature that just came in
+			PayloadSignatureRegistryPointer::<T>::put(SignatureRegistryPointer {
+				// The count doesn't change if list is full
+				count: if is_registry_full { pointer.count } else { pointer.count + 1 },
+				newest: signature.clone(),
+				newest_expires_at: signature_expires_at,
+				oldest,
+			});
+
+			Ok(())
+		}
+
+		/// The furthest in the future a mortality_block value is allowed
+		/// to be for current_block
+		/// This is calculated to be past the risk of a replay attack
+		fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
+			let mortality_size = T::MortalityWindowSize::get();
+			current_block + T::BlockNumber::from(mortality_size)
+		}
 		/// Generates a suffix for a canonical handle, using the provided `canonical_handle`
 		/// and `cursor` information.
 		///
@@ -331,17 +459,16 @@ pub mod pallet {
 		) -> DispatchResult {
 			let _ = ensure_signed(origin)?;
 
-			// Validation: Check for base_handle size to address potential panic condition
 			ensure!(
 				payload.base_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
 				Error::<T>::InvalidHandleByteLength
 			);
 
-			// Validation: The delegator must already have a MSA id
 			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-			// Validation: Verify the payload was signed
+			Self::register_signature(&proof, payload.expiration.into())?;
+
 			Self::verify_signed_payload(&proof, &delegator_key, payload.encode())?;
 
 			let full_handle = Self::do_claim_handle(delegator_msa_id, payload)?;

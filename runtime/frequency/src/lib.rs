@@ -1077,6 +1077,8 @@ impl pallet_handles::Config for Runtime {
 	type ConvertIntoAccountId32 = ConvertInto;
 	// The maximum number of signatures that can be stored in the payload signature registry
 	type MaxSignaturesStored = MSAMaxSignaturesStored;
+	// The number of blocks per virtual bucket
+	type MortalityWindowSize = MSAMortalityWindowSize;
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
 	type MsaBenchmarkHelper = Msa;
