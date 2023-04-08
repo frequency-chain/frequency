@@ -6,7 +6,6 @@ on:
   pull_request:
     branches:
       - main
-
 env:
   BIN_DIR: target/release
 jobs:
@@ -184,7 +183,9 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Code Format
     runs-on: ubuntu-20.04
-    container: ubuntu:20.04
+    container:
+      image: ubuntu:20.04
+      # options: --user runner
     steps:
       - name: Install Required Packages
         run: |

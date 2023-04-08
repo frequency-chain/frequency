@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - main
-      - 1240-test-new-build-runners-under-k8s
     paths:
       - "js/api-augment/**"
       - "**/*.rs"
@@ -58,11 +57,11 @@ jobs:
         working-directory: js/api-augment/dist
         shell: bash
         run: npm version --new-version "v0.0.0-${FULL_SHA:0:6}" --no-git-tag-version
-      # - name: Publish on NPM @next
-      #   run: npm publish --tag next --access public
-      #   working-directory: js/api-augment/dist
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+      - name: Publish on NPM @next
+        run: npm publish --tag next --access public
+        working-directory: js/api-augment/dist
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
 
   calc-code-coverage:
     name: Merge - Calculate Code Coverage
@@ -89,9 +88,9 @@ jobs:
           --ignore-filename-regex "^.*\/(mock\.rs|weights(\.rs)?|benchmarking\.rs).*$" \
           --exclude "frequency,frequency-cli,frequency-runtime,frequency-service" \
           --features all-frequency-features
-      # - name: Upload to codecov.io
-      #   uses: codecov/codecov-action@v3
-      #   with:
-      #     files: lcov.info
-      #     fail_ci_if_error: false # optional (default = false)
-      #     verbose: true # optional (default = false)
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v3
+        with:
+          files: lcov.info
+          fail_ci_if_error: false # optional (default = false)
+          verbose: true # optional (default = false)

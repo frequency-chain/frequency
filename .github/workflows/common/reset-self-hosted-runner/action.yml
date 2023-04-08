@@ -9,20 +9,20 @@ runs:
         whoami
         echo "***> BEFORE removal of /home/runner dir:"
         ls -la /home
-        echo "Cleaning /home/runner dir..."
-        sudo rm -fr /home/runner/*
-        echo "***> After cleaning of /home/runner dir:"
-        ls -la /home/runner
+        echo "Removing no longer used /home/runner dir..."
+        rm -fr /home/runner
+        echo "***> After removal of /home/runner dir:"
+        ls -la /home
     - name: Remove Cargo Generated Artifacts
       shell: bash
       run: |
         echo "Removing generated cargo artifacts..."
-        sudo rm -fr ./target
-        sudo rm -rf ./runtime/frequency/target
+        rm -fr ./target
+        rm -rf ./runtime/frequency/target
     - name: Remove NPM node Modules
       shell: bash
       run: |
-        sudo find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +
+        find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +
     - name: Prune Docker Resources
       shell: bash
       run: |

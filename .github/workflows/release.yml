@@ -150,7 +150,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        # os: [[self-hosted, Linux, X64, testing], [self-hosted, Linux, ARM64,  build]]
+        # os: [[self-hosted, Linux, X64, testing], [self-hosted, Linux, ARM64,  testing]]
         os: [[self-hosted, Linux, X64, testing]]
         network: [local, rococo, mainnet]
         include:
@@ -240,12 +240,17 @@ jobs:
             ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.asc
           if-no-files-found: error
 
+  # Could not port this job to container because this creates docker-in-docker
+  # situation and fails when srtool-ci container is trying to process files in
+  # the mapped volume which don't exist on the host
   build-runtimes:
     needs: version-code
     name: Build Runtime for ${{matrix.network}}
     outputs:
       runtime_filename_rococo: ${{steps.set-env-vars.outputs.runtime_filename_rococo}}
       runtime_filename_mainnet: ${{steps.set-env-vars.outputs.runtime_filename_mainnet}}
+    env:
+      HOME: /root
     strategy:
       fail-fast: true
       matrix:
@@ -268,10 +273,6 @@ jobs:
             features: frequency
             wasm-core-version: frequency
     runs-on: [self-hosted, Linux, X64, testing]
-    # Could not port this job to container because this creates docker-in-docker
-    # situation and fails when srtool-ci container is trying to process files in
-    # the mapped volume which don't exist on the host
-    # container: ubuntu:20.04
     steps:
       - name: Install Required Packages
         run: |
@@ -280,11 +281,6 @@ jobs:
           curl -fsSL https://get.docker.com -o get-docker.sh
           sh get-docker.sh
           docker run hello-world
-      - name: XXX Debug
-        run: |
-          whoami
-          echo "HOME: $HOME"
-          ls -la $HOME
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
@@ -334,10 +330,9 @@ jobs:
             --package=${{matrix.package}} \
             --root
       - name: Rename WASM file
-        working-directory: ${{env.WASM_DIR}}
         run: |
-          sudo chown runner: . ./*
-          cp -p ${{env.BUILT_WASM_FILENAME}} ${{env.RELEASE_WASM_FILENAME}}
+          cp -p ./${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} \
+            ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
       - name: Install subwasm
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
