@@ -51,7 +51,7 @@ use sp_std::marker::PhantomData;
 /// Weight functions needed for pallet_handles.
 pub trait WeightInfo {
 	fn claim_handle(b: u32, ) -> Weight;
-	fn retire_handle(b: u32, ) -> Weight;
+	fn retire_handle() -> Weight;
 }
 
 /// Weights for pallet_handles using the Substrate node and recommended hardware.
@@ -71,10 +71,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Handles MSAIdToDisplayName (r:1 w:1)
 	// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:1)
-	fn retire_handle(b: u32, ) -> Weight {
+	fn retire_handle() -> Weight {
 		Weight::from_ref_time(27_536_752 as u64)
 			// Standard Error: 12_521
-			.saturating_add(Weight::from_ref_time(63_405 as u64).saturating_mul(b as u64))
+			.saturating_add(Weight::from_ref_time(63_405 as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -96,10 +96,10 @@ impl WeightInfo for () {
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Handles MSAIdToDisplayName (r:1 w:1)
 	// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:1)
-	fn retire_handle(b: u32, ) -> Weight {
+	fn retire_handle() -> Weight {
 		Weight::from_ref_time(27_536_752 as u64)
 			// Standard Error: 12_521
-			.saturating_add(Weight::from_ref_time(63_405 as u64).saturating_mul(b as u64))
+			.saturating_add(Weight::from_ref_time(63_405 as u64))
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
