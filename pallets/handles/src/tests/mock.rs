@@ -107,6 +107,8 @@ impl pallet_handles::Config for Test {
 	/// The maximum suffix value
 	type HandleSuffixMax = ConstU32<99>;
 
+	/// MaxSignaturesStored is the maximum number of signatures that can be stored in the
+	type MaxSignaturesStored = ConstU32<10>;
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
 	type MsaBenchmarkHelper = ();

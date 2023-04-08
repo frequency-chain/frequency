@@ -1075,6 +1075,8 @@ impl pallet_handles::Config for Runtime {
 	type HandleSuffixMax = HandleSuffixMax;
 	/// The conversion to a 32 byte AccountId
 	type ConvertIntoAccountId32 = ConvertInto;
+	// The maximum number of signatures that can be stored in the payload signature registry
+	type MaxSignaturesStored = MSAMaxSignaturesStored;
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
 	type MsaBenchmarkHelper = Msa;

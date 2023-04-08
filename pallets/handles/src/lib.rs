@@ -102,6 +102,10 @@ pub mod pallet {
 		#[pallet::constant]
 		type HandleSuffixMax: Get<u32>;
 
+		/// The maximum number of signatures that can be stored in PayloadSignatureRegistryList.
+		#[pallet::constant]
+		type MaxSignaturesStored: Get<Option<u32>>;
+
 		#[cfg(feature = "runtime-benchmarks")]
 		/// A set of helper functions for benchmarking.
 		type MsaBenchmarkHelper: MsaBenchmarkHelper<Self::AccountId>;
@@ -125,6 +129,34 @@ pub mod pallet {
 	#[pallet::getter(fn get_current_suffix_index_for_canonical_handle)]
 	pub type CanonicalBaseHandleToSuffixIndex<T: Config> =
 		StorageMap<_, Blake2_128Concat, Handle, SequenceIndex, OptionQuery>;
+
+	/// PayloadSignatureRegistryList is used to prevent replay attacks for extrinsics
+	/// that take an externally-signed payload.
+	/// For this to work, the payload must include a mortality block number, which
+	/// is used in lieu of a monotonically increasing nonce.
+	///
+	/// The list is forwardly linked. (Example has a list size of 3)
+	/// - signature, forward pointer -> n = new signature
+	/// - 1,2 -> 2,3 (oldest)
+	/// - 2,3 -> 3,4
+	/// - 3,4 -> 4,5
+	/// -   5 -> n (newest in pointer data)
+	/// ### Storage
+	/// - Key: Signature
+	/// - Value: Tuple
+	///     - `BlockNumber` when the keyed signature can be ejected from the registry
+	///     - [`MultiSignature`] the forward linked list pointer. This pointer is the next "newest" value.
+	#[pallet::storage]
+	#[pallet::getter(fn get_payload_signature_registry)]
+	pub(super) type PayloadSignatureRegistryList<T: Config> = StorageMap<
+		_,                                // prefix
+		Twox64Concat,                     // hasher for key1
+		MultiSignature, // An externally-created Signature for an external payload, provided by an extrinsic
+		(T::BlockNumber, MultiSignature), // An actual flipping block number and the oldest signature at write time
+		OptionQuery,                      // The type for the query
+		GetDefault,                       // OnEmpty return type, defaults to None
+		T::MaxSignaturesStored,           // Maximum total signatures to store
+	>;
 
 	#[derive(PartialEq, Eq)] // for testing
 	#[pallet::error]
