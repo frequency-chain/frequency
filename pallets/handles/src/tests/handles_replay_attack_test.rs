@@ -248,3 +248,34 @@ fn test_handle_claim_and_retire_with_multiple_accounts() {
 		assert_ne!(prev_suffix, suffix);
 	});
 }
+
+#[test]
+fn test_handle_claim_for_other_msa_with_no_existing_handle() {
+	new_test_ext().execute_with(|| {
+		let base_handle_str = "test1";
+
+		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec());
+		assert_ok!(Handles::claim_handle(
+			RuntimeOrigin::signed(alice.public().into()),
+			alice.public().into(),
+			proof.clone(),
+			payload.clone()
+		));
+
+		// Try to claim the handle for another MSA with a different account which should fail
+		let bob = sr25519::Pair::from_seed(&[1; 32]);
+		let (payload2, proof2) =
+			get_signed_claims_payload(&bob, base_handle_str.as_bytes().to_vec());
+		assert_noop!(
+			Handles::claim_handle(
+				RuntimeOrigin::signed(bob.public().into()),
+				alice.public().into(),
+				proof2,
+				payload2
+			),
+			Error::<Test>::InvalidSignature
+		);
+	});
+}
