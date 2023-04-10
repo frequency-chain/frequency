@@ -17,7 +17,7 @@ pub const HANDLE_BASE_CHARS_MAX: u32 = 20;
 /// The maximum base handle (not including suffix or delimiter) length in bytes
 pub const HANDLE_BASE_BYTES_MAX: u32 = 32; // Hard limit of 32 bytes
 /// The maximum number of digits in a suffix
-pub const SUFFIX_MAX_DIGITS: usize = 10; // The max value of a u32 is 4294967295 which is 10 digits.
+pub const SUFFIX_MAX_DIGITS: usize = 5; // The max value of a HandleSuffix (u16) is 65535 which is 5 digits.
 
 /// A handle (base, canonical, or display)
 pub type Handle = BoundedVec<u8, ConstU32<HANDLE_BASE_BYTES_MAX>>;
@@ -48,7 +48,7 @@ impl<BlockNumber> ClaimHandlePayload<BlockNumber> {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct HandleResponse {
-	/// Base handle (without delimiter or suffix
+	/// Base handle (without delimiter or suffix)
 	#[cfg_attr(feature = "std", serde(with = "as_string"))]
 	pub base_handle: Vec<u8>,
 	/// Canonical handle (reduced/translated version of base)
