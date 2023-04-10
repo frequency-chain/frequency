@@ -3,7 +3,7 @@
 //! `handle_converter` provides a `HandleConverter` struct to detect confusable Unicode characters in a
 //! given input string and return its canonical form.
 use crate::confusables::CONFUSABLES;
-use common_primitives::handles::*;
+use crate::types::*;
 use unicode_normalization::{char::is_combining_mark, UnicodeNormalization};
 extern crate alloc;
 use alloc::string::{String, ToString};
