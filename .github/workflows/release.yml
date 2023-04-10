@@ -726,6 +726,7 @@ jobs:
           name: "[Release Candidate] ${{env.NEW_RELEASE_TAG}}"
           prerelease: true
           body_path: tools/ci/release-notes/release-notes.md
+          tag_name: ${{env.NEW_RELEASE_TAG}}
           files: |
             /tmp/frequency*.*
             /tmp/metadata-compare-*
