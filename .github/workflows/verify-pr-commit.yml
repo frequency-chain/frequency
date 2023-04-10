@@ -101,7 +101,7 @@ jobs:
           - network: mainnet
             spec: frequency
             branch_alias: pr
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64, testing, v2]
     container: ubuntu:20.04
     env:
       NETWORK: mainnet
@@ -206,7 +206,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64, testing, v2]
     container: ubuntu:20.04
     steps:
       - name: Install Required Packages
@@ -231,7 +231,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64, testing, v2]
     container: ubuntu:20.04
     steps:
       - name: Install Required Packages
@@ -252,7 +252,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64, testing, v2]
     container: ubuntu:20.04
     steps:
       - name: Install Required Packages
@@ -272,7 +272,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64, testing, v2]
     container: ubuntu:20.04
     steps:
       - name: Install Required Packages
@@ -293,7 +293,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64, testing, v2]
     container: ubuntu:20.04
     steps:
       - name: Install Required Packages
@@ -356,7 +356,7 @@ jobs:
             package: frequency-runtime
             runtime-dir: runtime/frequency
             features: frequency
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64, testing, v2]
     container: ubuntu:20.04
     steps:
       - name: Install Required Packages
