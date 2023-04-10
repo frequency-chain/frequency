@@ -729,7 +729,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
-          token: ${{secrets.GHA_GIT_COMMIT}}
+          token: ${{ secrets.GHA_GIT_COMMIT || github.token }}
           ref: ${{github.event.pull_request.head.sha}}
       - name: Run Benchmarks?
         id: run-benchmarks
