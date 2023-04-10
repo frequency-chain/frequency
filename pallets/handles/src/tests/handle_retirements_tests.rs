@@ -26,12 +26,12 @@ fn claim_and_retire_handle_happy_path() {
 		let handle = Handles::get_handle_for_msa(msa_id);
 		assert!(handle.is_some());
 
-		// Compose the full display handle from the base handle, "." delimeter and suffix
+		// Compose the full display handle from the base handle, "." delimiter and suffix
 		let handle_result = handle.unwrap();
 		let suffix = handle_result.suffix;
 		let mut full_handle_vec: Vec<u8> = vec![];
 		full_handle_vec.extend(base_handle_str.as_bytes());
-		full_handle_vec.extend(b"."); // The delimeter
+		full_handle_vec.extend(b"."); // The delimiter
 		let mut buff = [0u8; SUFFIX_MAX_DIGITS];
 		full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
 
