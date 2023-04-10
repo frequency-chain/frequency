@@ -1,6 +1,6 @@
+use crate::msa::MessageSourceId;
 #[cfg(feature = "std")]
 use crate::utils::*;
-use crate::{msa::MessageSourceId, node::BlockNumber};
 use codec::{Decode, Encode};
 use frame_support::BoundedVec;
 use scale_info::TypeInfo;
@@ -30,17 +30,17 @@ pub type SequenceIndex = u16;
 
 /// Claim handle payload
 #[derive(TypeInfo, Clone, Debug, Decode, Encode, PartialEq, Eq)]
-pub struct ClaimHandlePayload {
+pub struct ClaimHandlePayload<BlockNumber> {
 	/// The desired base handle
 	pub base_handle: Vec<u8>,
 	/// The block number at which the proof for grant_delegation expires.
 	pub expiration: BlockNumber,
 }
 
-impl ClaimHandlePayload {
-	/// Create a new payload for claiming a handle
+impl<BlockNumber> ClaimHandlePayload<BlockNumber> {
+	/// Create a new ClaimHandlePayload
 	pub fn new(base_handle: Vec<u8>, expiration: BlockNumber) -> Self {
-		Self { base_handle, expiration }
+		ClaimHandlePayload { base_handle, expiration }
 	}
 }
 

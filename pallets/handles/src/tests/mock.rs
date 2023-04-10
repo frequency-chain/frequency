@@ -5,7 +5,7 @@ pub use pallet_handles::Call as HandlesCall;
 use common_primitives::{
 	handles::*,
 	msa::{MessageSourceId, MsaLookup, MsaValidator},
-	node::{AccountId, BlockNumber},
+	node::AccountId,
 	utils::wrap_binary_data,
 };
 use frame_support::{
@@ -156,8 +156,8 @@ pub fn run_to_block(n: u64) {
 pub fn get_signed_claims_payload(
 	account: &sr25519::Pair,
 	handle: Vec<u8>,
-	signature_expiration: BlockNumber,
-) -> (ClaimHandlePayload, MultiSignature) {
+	signature_expiration: u64,
+) -> (ClaimHandlePayload<u64>, MultiSignature) {
 	let base_handle = handle;
 	let payload = ClaimHandlePayload::new(base_handle.clone(), signature_expiration);
 	let encoded_payload = wrap_binary_data(payload.encode());

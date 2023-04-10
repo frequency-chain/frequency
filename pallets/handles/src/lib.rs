@@ -119,7 +119,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_display_name_for_msa_id)]
 	pub type MSAIdToDisplayName<T: Config> =
-		StorageMap<_, Twox64Concat, MessageSourceId, Handle, ValueQuery>;
+		StorageMap<_, Twox64Concat, MessageSourceId, (Handle, T::BlockNumber), OptionQuery>;
 
 	/// - Keys: Canonical base handle (no delimeter, no suffix)
 	/// - Value: Cursor u16
@@ -232,6 +232,7 @@ pub mod pallet {
 			ensure!(current_block < signature_expires_at, Error::<T>::ProofHasExpired);
 			Ok(())
 		}
+
 		/// Verifies the signature of a given payload, using the provided `signature`
 		/// and `signer` information.
 		///
@@ -329,7 +330,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
 			proof: MultiSignature,
-			payload: ClaimHandlePayload,
+			payload: ClaimHandlePayload<T::BlockNumber>,
 		) -> DispatchResult {
 			let _ = ensure_signed(origin)?;
 
@@ -403,11 +404,12 @@ pub mod pallet {
 		/// * `Option<HandleResponse>` - The handle response if the MSA ID is valid.
 		///
 		pub fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
-			let full_handle = MSAIdToDisplayName::<T>::get(msa_id);
-			if full_handle.is_empty() {
+			let full_handle_option = MSAIdToDisplayName::<T>::get(msa_id);
+			if full_handle_option.is_none() {
 				return None
 			}
-
+			let full_handle_option = full_handle_option.unwrap();
+			let full_handle = full_handle_option.0;
 			// convert to string
 			let full_handle_str = core::str::from_utf8(&full_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)
@@ -534,7 +536,7 @@ pub mod pallet {
 		///
 		pub fn do_claim_handle(
 			delegator_msa_id: MessageSourceId,
-			payload: ClaimHandlePayload,
+			payload: ClaimHandlePayload<T::BlockNumber>,
 		) -> Result<Vec<u8>, DispatchError> {
 			// Validation: The MSA must not already have a handle associated with it
 			ensure!(
@@ -601,7 +603,10 @@ pub mod pallet {
 			let full_handle: Handle = full_handle_vec.clone().try_into().ok().unwrap();
 
 			// Store the full display handle to MSA id
-			MSAIdToDisplayName::<T>::insert(delegator_msa_id, full_handle.clone());
+			MSAIdToDisplayName::<T>::insert(
+				delegator_msa_id,
+				(full_handle.clone(), payload.expiration),
+			);
 
 			Ok(full_handle_vec)
 		}
@@ -619,8 +624,9 @@ pub mod pallet {
 			delegator_msa_id: MessageSourceId,
 		) -> Result<Vec<u8>, DispatchError> {
 			// Validation: The MSA must already have a handle associated with it
-			let display_name_handle = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
+			let handle_from_state = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
 				.map_err(|_| Error::<T>::MSAHandleDoesNotExist)?;
+			let display_name_handle = handle_from_state.0;
 			let display_name_str = core::str::from_utf8(&display_name_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 
