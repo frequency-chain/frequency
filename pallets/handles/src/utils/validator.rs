@@ -58,12 +58,7 @@ impl<'string_lifetime> HandleValidator<'string_lifetime> {
 	///
 	/// A boolean value indicating whether the string is a reserved handle (`true`) or not (`false`).
 	pub fn is_reserved_handle(&self, input_str: &str) -> bool {
-		for handle in &self.reserved_handles {
-			if &input_str == handle {
-				return true
-			}
-		}
-		false
+		self.reserved_handles.contains(&input_str)
 	}
 
 	/// Checks if the given string contains any blocked characters.
@@ -76,12 +71,7 @@ impl<'string_lifetime> HandleValidator<'string_lifetime> {
 	///
 	/// A boolean value indicating whether the string contains any blocked characters (`true`) or not (`false`).
 	pub fn contains_blocked_characters(&self, input_str: &str) -> bool {
-		for character in &self.blocked_characters {
-			if input_str.contains(|c| c == *character) {
-				return true
-			}
-		}
-		false
+		input_str.chars().any(|c| self.blocked_characters.contains(&c))
 	}
 
 	/// Checks that the given string contains characters within the ranges of supported
@@ -95,19 +85,10 @@ impl<'string_lifetime> HandleValidator<'string_lifetime> {
 	///
 	/// A boolean value indicating whether the string contains characters within the allowed unicode character sets (`true`) or not (`false`).
 	pub fn consists_of_supported_unicode_character_sets(&self, input_str: &str) -> bool {
-		for character in input_str.chars() {
-			let mut is_valid = false;
-
-			for &(start, end) in &self.allowed_unicode_character_ranges {
-				if character as u32 >= start && character as u32 <= end {
-					is_valid = true;
-					break
-				}
-			}
-			if !is_valid {
-				return false
-			}
-		}
-		true
+		input_str.chars().all(|c| {
+			self.allowed_unicode_character_ranges
+				.iter()
+				.any(|&(start, end)| (c as u32) >= start && (c as u32) <= end)
+		})
 	}
 }
