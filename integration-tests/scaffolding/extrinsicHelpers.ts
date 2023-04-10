@@ -359,8 +359,12 @@ export class ExtrinsicHelper {
     public static async run_to_block(blockNumber: number) {
       let currentBlock = await getBlockNumber();
       while (currentBlock < blockNumber) {
-        ExtrinsicHelper.mine();
+        await ExtrinsicHelper.mine();
         currentBlock = await getBlockNumber();
       }
+    }
+
+    public static async getBlockNumber() {
+        return getBlockNumber();
     }
 }

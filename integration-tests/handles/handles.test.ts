@@ -26,10 +26,11 @@ describe("🤝 Handles", () => {
     describe("@Claim Handle", () => {
         it("should be able to claim a handle", async function () {
             const handle = "test_handle";
+            let currentBlock = await ExtrinsicHelper.getBlockNumber();
             const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
             const payload = {
                 baseHandle: handle_vec,
-                expiration: 50,
+                expiration: currentBlock + 10,
             }
             const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", payload);
             const claimHandle = ExtrinsicHelper.claimHandle(delegatorKeys, claimHandlePayload);
@@ -52,6 +53,10 @@ describe("🤝 Handles", () => {
             let suffix_from_state = full_handle_state.suffix;
             let suffix = suffix_from_state.toNumber();
             assert.notEqual(suffix, 0, "suffix should not be 0");
+
+            let currentBlock = await ExtrinsicHelper.getBlockNumber();
+            await ExtrinsicHelper.run_to_block(currentBlock + 110);
+
             const retireHandle = ExtrinsicHelper.retireHandle(delegatorKeys);
             const [event] = await retireHandle.fundAndSend();
             assert.notEqual(event, undefined, "retireHandle should return an event");
@@ -80,10 +85,11 @@ describe("🤝 Handles", () => {
             let suffix_assumed = suffixes_response.suffixes[0];
             assert.notEqual(suffix_assumed, 0, "suffix_assumed should not be 0");
 
+            let currentBlock = await ExtrinsicHelper.getBlockNumber();
             /// Claim handle (extrinsic)
             const payload_ext = {
                 baseHandle: handle_bytes,
-                expiration: 50,
+                expiration: currentBlock + 100,
             };
             const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", payload_ext);
             const claimHandle = ExtrinsicHelper.claimHandle(delegatorKeys, claimHandlePayload);
