@@ -80,6 +80,7 @@ benchmarks! {
 		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id.into());
 		assert!(stored_handle.is_some());
 
+		frame_system::Pallet::<T>::set_block_number(500u32.into());
 		// retire the handle
 	}: _(RawOrigin::Signed(key.clone()))
 	verify {

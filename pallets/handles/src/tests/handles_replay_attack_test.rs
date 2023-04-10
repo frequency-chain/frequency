@@ -11,7 +11,7 @@ fn test_handle_claim_replay_attack() {
 		let base_handle_str = "test1";
 
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
-		let expiration = 100;
+		let expiration = 20;
 		let (payload, proof) =
 			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
@@ -33,6 +33,7 @@ fn test_handle_claim_replay_attack() {
 		let mut buff = [0u8; SUFFIX_MAX_DIGITS];
 		full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
 
+		run_to_block(200);
 		// Retire the handle
 		assert_ok!(Handles::retire_handle(RuntimeOrigin::signed(alice.public().into()),));
 
@@ -91,7 +92,7 @@ fn test_handle_retire_replay_attack() {
 		let base_handle_str = "test1";
 
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
-		let expiration = 100;
+		let expiration = 10;
 		let (payload, proof) =
 			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
@@ -113,7 +114,16 @@ fn test_handle_retire_replay_attack() {
 		let mut buff = [0u8; SUFFIX_MAX_DIGITS];
 		full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
 
-		// Retire the handle
+		run_to_block(101);
+
+		// Fail to retire due to mortality
+		assert_noop!(
+			Handles::retire_handle(RuntimeOrigin::signed(alice.public().into()),),
+			Error::<Test>::HandleWithinMortalityPeriod
+		);
+
+		// Retire the handle after the mortality period
+		run_to_block(200);
 		assert_ok!(Handles::retire_handle(RuntimeOrigin::signed(alice.public().into()),));
 
 		// Confirm that HandleRetired event was deposited

@@ -157,6 +157,8 @@ pub mod pallet {
 		ProofHasExpired,
 		/// The submitted proof expiration block is too far in the future
 		ProofNotYetValid,
+		/// The handle is still in mortaility window
+		HandleWithinMortalityPeriod,
 	}
 
 	#[pallet::event]
@@ -227,8 +229,8 @@ pub mod pallet {
 		pub fn verify_signature_mortality(signature_expires_at: T::BlockNumber) -> DispatchResult {
 			let current_block = frame_system::Pallet::<T>::block_number();
 
-			let max_lifetime = Self::mortality_block_limit(current_block);
-			ensure!(max_lifetime > signature_expires_at, Error::<T>::ProofNotYetValid);
+			let min_handle_lifetime = Self::mortality_block_limit(current_block);
+			ensure!(min_handle_lifetime > signature_expires_at, Error::<T>::ProofNotYetValid);
 			ensure!(current_block < signature_expires_at, Error::<T>::ProofHasExpired);
 			Ok(())
 		}
@@ -623,12 +625,18 @@ pub mod pallet {
 		pub fn do_retire_handle(
 			delegator_msa_id: MessageSourceId,
 		) -> Result<Vec<u8>, DispatchError> {
-			// Validation: The MSA must already have a handle associated with it
 			let handle_from_state = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
 				.map_err(|_| Error::<T>::MSAHandleDoesNotExist)?;
 			let display_name_handle = handle_from_state.0;
 			let display_name_str = core::str::from_utf8(&display_name_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
+			let expiration = handle_from_state.1;
+
+			let min_handle_lifetime = Self::mortality_block_limit(expiration);
+			let current_block = frame_system::Pallet::<T>::block_number();
+
+			let is_past_min_lifetime = current_block >= min_handle_lifetime;
+			ensure!(is_past_min_lifetime, Error::<T>::HandleWithinMortalityPeriod);
 
 			MSAIdToDisplayName::<T>::remove(delegator_msa_id);
 

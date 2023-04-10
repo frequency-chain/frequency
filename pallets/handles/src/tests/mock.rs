@@ -108,7 +108,7 @@ impl pallet_handles::Config for Test {
 	type HandleSuffixMax = ConstU32<99>;
 
 	/// The mortality window for a handle claim
-	type MortalityWindowSize = ConstU32<100>;
+	type MortalityWindowSize = ConstU32<150>;
 
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
