@@ -14,8 +14,9 @@ fn claim_and_retire_handle_happy_path() {
 		let base_handle_str = "test1";
 
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 100;
 		let (payload, proof) =
-			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec());
+			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),

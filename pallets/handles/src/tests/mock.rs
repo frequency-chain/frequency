@@ -5,12 +5,12 @@ pub use pallet_handles::Call as HandlesCall;
 use common_primitives::{
 	handles::*,
 	msa::{MessageSourceId, MsaLookup, MsaValidator},
-	node::AccountId,
+	node::{AccountId, BlockNumber},
 	utils::wrap_binary_data,
 };
 use frame_support::{
 	dispatch::DispatchError,
-	traits::{ConstU16, ConstU32, ConstU64},
+	traits::{ConstU16, ConstU32, ConstU64, OnFinalize, OnInitialize},
 };
 use sp_core::{crypto::AccountId32, sr25519, ByteArray, Encode, Pair, H256};
 use sp_runtime::{
@@ -107,9 +107,6 @@ impl pallet_handles::Config for Test {
 	/// The maximum suffix value
 	type HandleSuffixMax = ConstU32<99>;
 
-	/// MaxSignaturesStored is the maximum number of signatures that can be stored in the
-	type MaxSignaturesStored = ConstU32<10>;
-
 	/// The mortality window for a handle claim
 	type MortalityWindowSize = ConstU32<100>;
 
@@ -143,13 +140,26 @@ pub fn test_public(n: u8) -> AccountId32 {
 	AccountId32::new([n; 32])
 }
 
+// Run to the given block number
+pub fn run_to_block(n: u64) {
+	while System::block_number() < n {
+		if System::block_number() > 1 {
+			System::on_finalize(System::block_number());
+		}
+		System::set_block_number(System::block_number() + 1);
+		System::on_initialize(System::block_number());
+		Handles::on_initialize(System::block_number());
+	}
+}
+
 // Create a signed claims payload
 pub fn get_signed_claims_payload(
 	account: &sr25519::Pair,
 	handle: Vec<u8>,
+	signature_expiration: BlockNumber,
 ) -> (ClaimHandlePayload, MultiSignature) {
 	let base_handle = handle;
-	let payload = ClaimHandlePayload::new(base_handle.clone(), 50u32);
+	let payload = ClaimHandlePayload::new(base_handle.clone(), signature_expiration);
 	let encoded_payload = wrap_binary_data(payload.encode());
 	let proof: MultiSignature = account.sign(&encoded_payload).into();
 

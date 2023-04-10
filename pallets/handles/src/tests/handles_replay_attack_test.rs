@@ -11,8 +11,9 @@ fn test_handle_claim_replay_attack() {
 		let base_handle_str = "test1";
 
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 100;
 		let (payload, proof) =
-			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec());
+			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
@@ -39,17 +40,6 @@ fn test_handle_claim_replay_attack() {
 		System::assert_last_event(
 			Event::HandleRetired { msa_id, handle: full_handle_vec.clone() }.into(),
 		);
-
-		// Try to claim the same handle again with the same payload which should fail
-		assert_noop!(
-			Handles::claim_handle(
-				RuntimeOrigin::signed(alice.public().into()),
-				alice.public().into(),
-				proof,
-				payload
-			),
-			Error::<Test>::SignatureAlreadySubmitted
-		);
 	});
 }
 
@@ -59,8 +49,9 @@ fn test_handle_claim_replay_attack_with_different_account() {
 		let base_handle_str = "test1";
 
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 100;
 		let (payload, proof) =
-			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec());
+			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
@@ -89,7 +80,7 @@ fn test_handle_claim_replay_attack_with_different_account() {
 				proof,
 				payload
 			),
-			Error::<Test>::SignatureAlreadySubmitted
+			Error::<Test>::InvalidSignature
 		);
 	});
 }
@@ -100,8 +91,9 @@ fn test_handle_retire_replay_attack() {
 		let base_handle_str = "test1";
 
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 100;
 		let (payload, proof) =
-			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec());
+			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
@@ -143,8 +135,9 @@ fn test_handle_claim_replay_attack_with_different_payload() {
 		let base_handle_str = "test1";
 
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 100;
 		let (payload, proof) =
-			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec());
+			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
@@ -165,7 +158,8 @@ fn test_handle_claim_replay_attack_with_different_payload() {
 		full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
 
 		// Try to claim the same handle again with a different payload which should fail
-		let (payload2, proof2) = get_signed_claims_payload(&alice, b"another-handle".to_vec());
+		let (payload2, proof2) =
+			get_signed_claims_payload(&alice, b"another-handle".to_vec(), expiration);
 		assert_noop!(
 			Handles::claim_handle(
 				RuntimeOrigin::signed(alice.public().into()),
@@ -184,8 +178,9 @@ fn test_handle_retire_replay_attack_with_different_account() {
 		let base_handle_str = "test1";
 
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 100;
 		let (payload, proof) =
-			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec());
+			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
@@ -211,8 +206,9 @@ fn test_handle_claim_and_retire_with_multiple_accounts() {
 		let base_handle_str = "test1";
 
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 100;
 		let (payload, proof) =
-			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec());
+			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
@@ -230,7 +226,7 @@ fn test_handle_claim_and_retire_with_multiple_accounts() {
 		// Try to claim the handle with a different account which should not fail
 		let bob = sr25519::Pair::from_seed(&[1; 32]);
 		let (payload2, proof2) =
-			get_signed_claims_payload(&bob, base_handle_str.as_bytes().to_vec());
+			get_signed_claims_payload(&bob, base_handle_str.as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(bob.public().into()),
 			bob.public().into(),
@@ -255,8 +251,9 @@ fn test_handle_claim_for_other_msa_with_no_existing_handle() {
 		let base_handle_str = "test1";
 
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 100;
 		let (payload, proof) =
-			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec());
+			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
@@ -267,7 +264,7 @@ fn test_handle_claim_for_other_msa_with_no_existing_handle() {
 		// Try to claim the handle for another MSA with a different account which should fail
 		let bob = sr25519::Pair::from_seed(&[1; 32]);
 		let (payload2, proof2) =
-			get_signed_claims_payload(&bob, base_handle_str.as_bytes().to_vec());
+			get_signed_claims_payload(&bob, base_handle_str.as_bytes().to_vec(), expiration);
 		assert_noop!(
 			Handles::claim_handle(
 				RuntimeOrigin::signed(bob.public().into()),
@@ -276,6 +273,52 @@ fn test_handle_claim_for_other_msa_with_no_existing_handle() {
 				payload2
 			),
 			Error::<Test>::InvalidSignature
+		);
+	});
+}
+
+#[test]
+fn test_handle_claim_proof_expired() {
+	new_test_ext().execute_with(|| {
+		let base_handle_str = "test1";
+
+		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 10;
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec(), expiration);
+		// run to block 10
+		run_to_block(11);
+		assert_noop!(
+			Handles::claim_handle(
+				RuntimeOrigin::signed(alice.public().into()),
+				alice.public().into(),
+				proof,
+				payload
+			),
+			Error::<Test>::ProofHasExpired
+		);
+	});
+}
+
+#[test]
+fn test_handle_claim_proof_not_yet_valid() {
+	new_test_ext().execute_with(|| {
+		let base_handle_str = "test1";
+
+		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 200;
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec(), expiration);
+		// run to block 9
+		run_to_block(9);
+		assert_noop!(
+			Handles::claim_handle(
+				RuntimeOrigin::signed(alice.public().into()),
+				alice.public().into(),
+				proof,
+				payload
+			),
+			Error::<Test>::ProofNotYetValid
 		);
 	});
 }
