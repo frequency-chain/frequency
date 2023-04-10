@@ -133,7 +133,6 @@ pub mod pallet {
 	pub type MSAIdToDisplayName<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, Handle, ValueQuery>;
 
-	/// - Keys: Canonical base handle (no delimiter, no suffix)
 	/// - Value: Cursor u16
 	#[pallet::storage]
 	#[pallet::getter(fn get_current_suffix_index_for_canonical_handle)]
@@ -426,8 +425,7 @@ pub mod pallet {
 			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
 			let suffix_index =
-				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
-					.unwrap_or_default();
+				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone()).unwrap_or_default();
 
 			// Generate suffixes from the next available suffix index
 			let mut suffix_generator = SuffixGenerator::new(
