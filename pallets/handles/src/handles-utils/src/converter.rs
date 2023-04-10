@@ -2,12 +2,13 @@
 //!
 //! `handle_converter` provides a `HandleConverter` struct to detect confusable Unicode characters in a
 //! given input string and return its canonical form.
-use crate::utils::confusables::CONFUSABLES;
+use crate::confusables::CONFUSABLES;
 use common_primitives::handles::*;
 use unicode_normalization::{char::is_combining_mark, UnicodeNormalization};
 extern crate alloc;
 use alloc::string::{String, ToString};
-use sp_std::vec::Vec;
+use alloc::vec::Vec;
+
 /// A converter for confusable characters.
 ///
 /// Given a string, detects easily confusable characters and returns the string in canonical form.
@@ -27,7 +28,7 @@ impl HandleConverter {
 	///
 	/// A new string in canonical form.
 	///
-	pub fn convert_to_canonical(input_str: &str) -> codec::alloc::string::String {
+	pub fn convert_to_canonical(input_str: &str) -> alloc::string::String {
 		let white_space_stripped = Self::strip_unicode_whitespace(input_str);
 		let confusables_removed = Self::replace_confusables(&white_space_stripped);
 		let diacriticals_stripped = Self::strip_diacriticals(&confusables_removed);
@@ -43,11 +44,11 @@ impl HandleConverter {
 	/// # Returns
 	///
 	/// A new string where any confusable characters have been replaced with their corresponding non-confusable characters.
-	pub fn replace_confusables(input_str: &str) -> codec::alloc::string::String {
+	pub fn replace_confusables(input_str: &str) -> alloc::string::String {
 		input_str
 			.chars()
 			.map(|character| CONFUSABLES.get(&character).map_or(character, |&value| value))
-			.collect::<codec::alloc::string::String>()
+			.collect::<alloc::string::String>()
 	}
 
 	/// This function removes diacritical marks from the input string and returns a new `String` without them.
@@ -59,11 +60,11 @@ impl HandleConverter {
 	/// This function uses the NFKD normalization form and filtering of combining marks to strip the diacritical marks from the input string.
 	/// Combining marks are Unicode characters that are intended to modify the appearance of another character.
 	///
-	pub fn strip_diacriticals(input_str: &str) -> codec::alloc::string::String {
+	pub fn strip_diacriticals(input_str: &str) -> alloc::string::String {
 		input_str
 			.nfkd()
 			.filter(|character| !is_combining_mark(*character))
-			.collect::<codec::alloc::string::String>()
+			.collect::<alloc::string::String>()
 	}
 
 	/// Splits the given display name into its base handle and handle suffix.
@@ -112,6 +113,6 @@ impl HandleConverter {
 		input_str
 			.chars()
 			.filter(|character| !character.is_whitespace())
-			.collect::<codec::alloc::string::String>()
+			.collect::<alloc::string::String>()
 	}
 }

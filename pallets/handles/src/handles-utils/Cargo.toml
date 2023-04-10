@@ -1,3 +1,4 @@
+[package]
 authors = ["Frequency"]
 description = "Handles Utilities"
 edition = "2021"
@@ -8,7 +9,30 @@ version = "0.0.0"
 publish = false
 repository = "https://github.com/libertyDSNP/frequency/"
 
-[dependencies]
+[lib]
+name = "handles_utils"
+path = "src/lib.rs"
 
-[dependencies.confusables_generator]
-path = "src/confusables_generator"
+[[bin]]
+name = "confusables_generator"
+path = "src/main.rs"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+phf = { version = "0.11", default-features = false, features = ["macros"] }
+rand = { version = "0.8.5", default-features = false, features = ["small_rng"] }
+unicode-normalization = { version = "0.1.22", default-features = false }
+
+# Frequency related dependencies
+common-primitives = { default-features = false, path = "../../../../common/primitives" }
+
+[dev-dependencies]
+serde = { version = "1.0", features = ["derive"] }
+
+[features]
+default = ['std']
+std = [
+  'common-primitives/std',
+]
