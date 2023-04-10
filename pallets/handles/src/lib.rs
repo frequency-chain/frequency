@@ -622,12 +622,10 @@ pub mod pallet {
 
 			let full_handle: Handle = full_handle_vec.clone().try_into().ok().unwrap();
 
-			let min_handle_lifetime = Self::mortality_block_limit(payload.expiration);
-
 			// Store the full display handle to MSA id
 			MSAIdToDisplayName::<T>::insert(
 				delegator_msa_id,
-				(full_handle.clone(), min_handle_lifetime),
+				(full_handle.clone(), payload.expiration),
 			);
 
 			Ok(full_handle_vec)

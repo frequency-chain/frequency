@@ -55,7 +55,7 @@ describe("🤝 Handles", () => {
             assert.notEqual(suffix, 0, "suffix should not be 0");
 
             let currentBlock = await ExtrinsicHelper.getBlockNumber();
-            await ExtrinsicHelper.run_to_block(currentBlock + 110);
+            await ExtrinsicHelper.run_to_block(currentBlock + 20);
 
             const retireHandle = ExtrinsicHelper.retireHandle(delegatorKeys);
             const [event] = await retireHandle.fundAndSend();
