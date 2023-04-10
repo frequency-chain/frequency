@@ -317,9 +317,8 @@ export class ExtrinsicHelper {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.handles.claimHandle(delegatorKeys.publicKey, proof, payload), delegatorKeys, ExtrinsicHelper.api.events.handles.HandleClaimed);
     }
 
-    public static retireHandle(delegatorKeys: KeyringPair, payload: any): Extrinsic {
-        const proof = { Sr25519: u8aToHex(delegatorKeys.sign(u8aWrapBytes(payload.toU8a()))) }
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.handles.retireHandle(delegatorKeys.publicKey, proof, payload), delegatorKeys, ExtrinsicHelper.api.events.handles.HandleRetired);
+    public static retireHandle(delegatorKeys: KeyringPair): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.handles.retireHandle(), delegatorKeys, ExtrinsicHelper.api.events.handles.HandleRetired);
     }
 
     public static getHandleForMSA(msa_id: MessageSourceId): Promise<Option<HandleResponse>> {

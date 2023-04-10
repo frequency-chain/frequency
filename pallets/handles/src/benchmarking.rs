@@ -5,10 +5,8 @@ use crate::Pallet as Handles;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
-use scale_info::prelude::format;
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::RuntimeAppPublic;
-
 pub const TEST_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"test");
 
 mod app_sr25519 {
@@ -71,10 +69,9 @@ benchmarks! {
 
 	retire_handle {
 		// claim a handle
-		let b in HANDLE_BASE_BYTES_MIN .. HANDLE_BASE_BYTES_MAX-1;
 		let caller: T::AccountId = whitelisted_caller();
 		let delegator_account_public = SignerId::generate_pair(None);
-		let (payload, proof, key,delegator_msa_id) = create_signed_claims_payload::<T>(delegator_account_public.clone(), b);
+		let (payload, proof, key,delegator_msa_id) = create_signed_claims_payload::<T>(delegator_account_public.clone(), 32);
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), key.clone()));
 		assert_ok!(Handles::<T>::claim_handle(RawOrigin::Signed(caller.clone()).into(), key.clone(), proof, payload));
@@ -82,16 +79,7 @@ benchmarks! {
 		assert!(stored_handle.is_some());
 
 		// retire the handle
-		let stored_handle = stored_handle.unwrap();
-		let base_handle:Vec<u8> = stored_handle.base_handle.clone();
-		let suffix: u16 = stored_handle.suffix;
-		let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or_default();
-		let full_handle_with_delimiter = format!("{}{}", base_handle_str, ".");
-		let retirement_payload = RetireHandlePayload::new(full_handle_with_delimiter.as_bytes().to_vec());
-		let encode_handle_claims_data = wrap_binary_data(retirement_payload.encode());
-		let signature = delegator_account_public.sign(&encode_handle_claims_data).unwrap();
-		let retire_proof = MultiSignature::Sr25519(signature.into());
-	}: _(RawOrigin::Signed(caller.clone()), key.clone(), retire_proof, retirement_payload)
+	}: _(RawOrigin::Signed(key.clone()))
 	verify {
 		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id.into());
 		assert!(stored_handle.is_none());
