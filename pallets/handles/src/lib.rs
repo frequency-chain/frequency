@@ -229,8 +229,8 @@ pub mod pallet {
 		pub fn verify_signature_mortality(signature_expires_at: T::BlockNumber) -> DispatchResult {
 			let current_block = frame_system::Pallet::<T>::block_number();
 
-			let min_handle_lifetime = Self::mortality_block_limit(current_block);
-			ensure!(min_handle_lifetime > signature_expires_at, Error::<T>::ProofNotYetValid);
+			let mortality_period = Self::mortality_block_limit(current_block);
+			ensure!(mortality_period > signature_expires_at, Error::<T>::ProofNotYetValid);
 			ensure!(current_block < signature_expires_at, Error::<T>::ProofHasExpired);
 			Ok(())
 		}
@@ -604,10 +604,12 @@ pub mod pallet {
 
 			let full_handle: Handle = full_handle_vec.clone().try_into().ok().unwrap();
 
+			let min_handle_lifetime = Self::mortality_block_limit(payload.expiration);
+
 			// Store the full display handle to MSA id
 			MSAIdToDisplayName::<T>::insert(
 				delegator_msa_id,
-				(full_handle.clone(), payload.expiration),
+				(full_handle.clone(), min_handle_lifetime),
 			);
 
 			Ok(full_handle_vec)
@@ -632,10 +634,9 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 			let expiration = handle_from_state.1;
 
-			let min_handle_lifetime = Self::mortality_block_limit(expiration);
 			let current_block = frame_system::Pallet::<T>::block_number();
 
-			let is_past_min_lifetime = current_block >= min_handle_lifetime;
+			let is_past_min_lifetime = current_block >= expiration;
 			ensure!(is_past_min_lifetime, Error::<T>::HandleWithinMortalityPeriod);
 
 			MSAIdToDisplayName::<T>::remove(delegator_msa_id);
