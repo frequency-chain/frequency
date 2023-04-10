@@ -1,0 +1,10 @@
+[package]
+authors = ["Frequency"]
+description = "Confusables Generator"
+edition = "2021"
+homepage = "https://frequency.xyz"
+license = "Apache-2.0"
+name = "confusables_generator"
+version = "0.0.0"
+publish = false
+repository = "https://github.com/libertyDSNP/frequency/"

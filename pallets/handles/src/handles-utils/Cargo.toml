@@ -1,0 +1,14 @@
+authors = ["Frequency"]
+description = "Handles Utilities"
+edition = "2021"
+homepage = "https://frequency.xyz"
+license = "Apache-2.0"
+name = "handles-utils"
+version = "0.0.0"
+publish = false
+repository = "https://github.com/libertyDSNP/frequency/"
+
+[dependencies]
+
+[dependencies.confusables_generator]
+path = "src/confusables_generator"
