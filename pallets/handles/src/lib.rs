@@ -560,8 +560,7 @@ pub mod pallet {
 
 			// Generate suffix from the next available index into the suffix sequence
 			let suffix_sequence_index =
-				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
-					.unwrap_or_default();
+				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())?;
 			let suffix = Self::generate_suffix_for_canonical_handle(
 				&canonical_handle_str,
 				suffix_sequence_index as usize,
