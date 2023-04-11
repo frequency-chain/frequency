@@ -1349,6 +1349,10 @@ impl_runtime_apis! {
 		fn get_next_suffixes(suffix_request: PresumptiveSuffixesRequest) -> PresumptiveSuffixesResponse {
 			Handles::get_next_suffixes(suffix_request)
 		}
+
+		fn get_msa_for_handle(full_handle: Handle) -> Option<MessageSourceId> {
+			Handles::get_msa_id_for_handle(full_handle)
+		}
 	}
 
 	#[cfg(feature = "try-runtime")]

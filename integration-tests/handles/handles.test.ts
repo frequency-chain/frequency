@@ -101,6 +101,15 @@ describe("🤝 Handles", () => {
             let suffix = suffix_from_state.toNumber();
             assert.notEqual(suffix, 0, "suffix should not be 0");
             assert.equal(suffix, suffix_assumed, "suffix should be equal to suffix_assumed");
+
+            /// Get MSA from full display handle (rpc)
+            let full_handle = handle + "." + suffix;
+            let msa_option = await ExtrinsicHelper.getMsaForHandle(full_handle);
+            if (!msa_option.isSome) {
+                throw new Error("msa_option should be Some");
+            }
+            let msa_from_handle = msa_option.unwrap();
+            assert.equal(msa_from_handle.toString(), msa_id.toString(), "msa_from_handle should be equal to msa_id");
          });
     }); 
 });

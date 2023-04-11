@@ -3,7 +3,7 @@ mod rpc_mock;
 use super::*;
 use rpc_mock::*;
 
-use common_primitives::handles::{PresumptiveSuffixesRequest, PresumptiveSuffixesResponse};
+use common_primitives::handles::{Handle, PresumptiveSuffixesRequest, PresumptiveSuffixesResponse};
 use pallet_handles_runtime_api::HandlesRuntimeApi;
 use std::sync::Arc;
 use substrate_test_runtime_client::runtime::Block;
@@ -29,6 +29,10 @@ sp_api::mock_impl_runtime_apis! {
 				suffixes.push(i);
 			}
 			PresumptiveSuffixesResponse { base_handle: suffix_request.base_handle,  suffixes }
+		}
+
+		fn get_msa_for_handle(_display_handle: Handle) -> Option<MessageSourceId>{
+			Some(VALID_MSA_ID)
 		}
 	}
 }
@@ -74,4 +78,14 @@ async fn get_next_suffixes_with_success() {
 	assert_eq!(true, result.is_ok());
 	let response = result.unwrap();
 	assert_eq!(3, response.suffixes.len());
+}
+
+#[tokio::test]
+async fn get_msa_for_handle_with_success() {
+	let client = Arc::new(TestApi {});
+	let api = HandlesHandler::new(client);
+	let result = api.get_msa_for_handle("base_handle".to_string());
+
+	assert_eq!(true, result.is_ok());
+	assert_eq!(Some(VALID_MSA_ID), result.unwrap());
 }

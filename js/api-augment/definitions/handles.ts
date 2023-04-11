@@ -10,6 +10,16 @@ export default {
       ],
       type: "Option<HandleResponse>",
     },
+    getMsaForHandle: {
+      description: "Get msa_id for a given handle",
+      params: [
+        {
+          name: "display_handle",
+          type: "String",
+        },
+      ],
+      type: "Option<MessageSourceId>",
+    },
     getNextSuffixes: {
       description: "Get next suffixes for a given handle and count",
       params: [
@@ -50,6 +60,16 @@ export default {
               },
             ],
             type: "Option<HandleResponse>",
+          },
+          get_msa_for_handle: {
+            description: "Get msa_id for a given handle",
+            params: [
+              {
+                name: "display_handle",
+                type: "Vec<u8>",
+              },
+            ],
+            type: "Option<MessageSourceId>",
           },
           get_next_suffixes: {
             description: "Get next suffixes for a given handle and count",

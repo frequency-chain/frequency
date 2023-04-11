@@ -449,6 +449,26 @@ pub mod pallet {
 			response
 		}
 
+		/// Retrieve a `MessageSourceId` for a given handle.
+		///
+		/// # Arguments
+		///
+		/// * `display_handle` - The full display handle to retrieve the `MessageSourceId` for.
+		///
+		/// # Returns
+		///
+		/// * `Option<MessageSourceId>` - The `MessageSourceId` if the handle is valid.
+		///
+		pub fn get_msa_id_for_handle(display_handle: Handle) -> Option<MessageSourceId> {
+			let full_handle_str = core::str::from_utf8(&display_handle).unwrap_or("");
+			let (base_handle_str, suffix) = HandleConverter::split_display_name(full_handle_str);
+			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
+			let canonical_handle = canonical_handle_str.as_bytes().to_vec();
+			let canonical_handle: Handle = canonical_handle.try_into().unwrap();
+			let msa = Self::get_msa_id_for_canonical_and_suffix(canonical_handle, suffix);
+			msa
+		}
+
 		/// Creates a full display handle by combining a base handle string with a suffix generated
 		/// from an index into the suffix sequence.
 		///
