@@ -23,7 +23,6 @@ import { isTestnet } from '../scaffolding/env';
 const fundingSource = getFundingSource('capacity-replenishment');
 
 describe('Capacity Replenishment Testing: ', function () {
-  let schemaId: u16;
 
   async function createAndStakeProvider(name: string, stakingAmount: bigint): Promise<[KeyringPair, u64]> {
     const stakeKeys = createKeys(name);
@@ -37,11 +36,11 @@ describe('Capacity Replenishment Testing: ', function () {
     // Replenishment requires the epoch length to be shorter than testnet (set in globalHooks)
     if (isTestnet()) this.skip();
 
-    schemaId = await getOrCreateGraphChangeSchema(fundingSource);
   });
 
   describe('Capacity is replenished', function () {
     it('after new epoch', async function () {
+      const schemaId = await getOrCreateGraphChangeSchema(fundingSource);
       const totalStaked = 3n * DOLLARS;
       const expectedCapacity = totalStaked / getTokenPerCapacity();
       const [stakeKeys, stakeProviderId] = await createAndStakeProvider('ReplFirst', totalStaked);
@@ -84,6 +83,7 @@ describe('Capacity Replenishment Testing: ', function () {
 
   describe('Capacity is not replenished', function () {
     it('if out of capacity and last_replenished_at is <= current epoch', async function () {
+      const schemaId = await getOrCreateGraphChangeSchema(fundingSource);
       const [stakeKeys, stakeProviderId] = await createAndStakeProvider('NoSend', 150n * CENTS);
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 });
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
@@ -108,6 +108,7 @@ describe('Capacity Replenishment Testing: ', function () {
       const { eventMap } = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userStakeAmt).signAndSend();
       assertEvent(eventMap, 'system.ExtrinsicSuccess');
 
+      const schemaId = await getOrCreateGraphChangeSchema(fundingSource);
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 });
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
