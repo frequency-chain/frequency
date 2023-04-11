@@ -223,7 +223,7 @@ pub mod pallet {
 
 		let capacity_overhead = Pallet::<T>::get_capacity_overhead_weight();
 		let total = capacity_overhead.saturating_add(dispatch_weight);
-		(< T as Config >::WeightInfo::pay_with_capacity().saturating_add(total), DispatchClass::Normal)
+		(< T as Config >::WeightInfo::pay_with_capacity_batch_all().saturating_add(total), DispatchClass::Normal)
 		})]
 		pub fn pay_with_capacity_batch_all(
 			origin: OriginFor<T>,
