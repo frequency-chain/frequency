@@ -1,7 +1,7 @@
 //  Handles test suite
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import {createDelegator} from "../scaffolding/helpers";  // <--- This is the import that is failing
+import {createDelegator} from "../scaffolding/helpers";
 import {KeyringPair} from "@polkadot/keyring/types";
 import {MessageSourceId} from "@frequency-chain/api-augment/interfaces";
 import {ExtrinsicHelper} from "../scaffolding/extrinsicHelpers";
