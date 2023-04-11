@@ -398,6 +398,11 @@ parameter_types! {
 	// 1:50 Capacity:Token, must be declared this way instead of using `from_rational` because of
 	//  ```error[E0015]: cannot call non-const fn `Perbill::from_rational::<u32>` in constant functions```
 	pub const CapacityPerToken: Perbill = Perbill::from_percent(2);
+	pub const CapacityRewardCap: Permill = Permill::from_parts(3_800);  // 0.38% or 0.0038 per RewardEra
 }
+pub type CapacityRewardEraLength =
+	ConstU32<{ prod_or_testnet_or_local!(14 * DAYS, 1 * HOURS, 50) }>;
+
+pub type CapacityChangeStakingTargetThawEras = ConstU32<5>;
 
 // -end- Capacity Pallet ---
