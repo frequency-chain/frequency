@@ -1,5 +1,5 @@
 //! Substrate Signed Extension for validating requests to the handles pallet
-use crate::{Call, Config, Pallet};
+use crate::{Call, Config, Pallet, MSAIdToDisplayName};
 use codec::{Decode, Encode};
 use common_primitives::msa::MessageSourceId;
 use core::marker::PhantomData;
@@ -7,8 +7,8 @@ use frame_support::{
 	dispatch::{DispatchInfo, Dispatchable},
 	pallet_prelude::ValidTransaction,
 	traits::IsSubType,
-	BoundedVec,
 };
+use frame_system::ensure_signed;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, SignedExtension},
@@ -27,6 +27,18 @@ impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 	}
 }
 
+
+impl<T: Config + Send + Sync> sp_std::fmt::Debug for HandlesSignedExtension<T> {
+	#[cfg(feature = "std")]
+	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		write!(f, "HandlesSignedExtension<{:?}>", self.0)
+	}
+	#[cfg(not(feature = "std"))]
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
+}
+
 /// Validator trait to be used in validating Handles requests from a Signed Extension.
 pub trait HandlesValidate<C: Config> {
 	/// Validates calls to the retire_handle() extrinsic
@@ -34,18 +46,40 @@ pub trait HandlesValidate<C: Config> {
 }
 
 impl<T: Config> HandlesValidate<T> for Pallet<T> {
+	/// Validates the following criteria for the retire_handle() extrinsic:
+	///
+	/// * The delegator must already have a MSA id
+	/// * The MSA must already have a handle associated with it
+	///
+	/// Returns a `ValidTransaction` or wrapped [`pallet::Error`]
+	///
 	/// # Errors (as u8 wrapped by `InvalidTransaction::Custom`)
 	/// * [`Error::InvalidMessageSourceAccount`]
 	/// * [`Error::MSAHandleDoesNotExist`]
 	fn validate_retire_handle() -> TransactionValidity {
 		const TAG_PREFIX: &str = "HandlesRetireHandle";
+
+        let delegator_key = ensure_signed(origin)?;
 		// Validation: The delegator must already have a MSA id
 		let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
-			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
-
+			.map_err(|e| map_dispatch_error(e))?;
+		// Validation: The MSA must already have a handle associated with it
 		let display_name_handle = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
-			.map_err(|_| Error::<T>::MSAHandleDoesNotExist)?;
+			.map_err(|e| map_dispatch_error(e))?;
+		return ValidTransaction::with_tag_prefix(TAG_PREFIX).build()
 	}
+}
+
+/// Map a module DispatchError to an InvalidTransaction::Custom error
+pub fn map_dispatch_error(err: DispatchError) -> InvalidTransaction {
+	InvalidTransaction::Custom(match err {
+		DispatchError::Module(module_err) =>
+			<u32 as Decode>::decode(&mut module_err.error.as_slice())
+				.unwrap_or_default()
+				.try_into()
+				.unwrap_or_default(),
+		_ => 255u8,
+	})
 }
 
 impl<T: Config + Send + Sync> SignedExtension for HandlesSignedExtension<T>
@@ -90,7 +124,7 @@ where
 		_len: usize,
 	) -> TransactionValidity {
 		match call.is_sub_type() {
-			Some(Call::retire_handle) => Pallet::<T>::validate_retire_handle(),
+			Some(Call::retire_handle { }) => Pallet::<T>::validate_retire_handle(),
 			_ => Ok(Default::default()),
 		}
 	}
