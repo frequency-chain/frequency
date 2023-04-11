@@ -700,28 +700,65 @@ fn compute_capacity_fee_successful() {
 }
 
 #[test]
-fn pay_with_capacity_batch_all_errors_when_transaction_amount_exceeds_maximum() {
+fn pay_with_capacity_batch_all_happy_path() {
 	let balance_factor = 10;
-	let too_many_calls = vec![
-		RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
-		RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
-		RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
-	];
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
 		.base_weight(Weight::from_ref_time(5))
 		.build()
 		.execute_with(|| {
-			let who = 1u64;
+			let origin = 1u64;
 
+			let calls = vec![
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 10 }),
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 10 }),
+			];
+
+			let token_balance_before_call = Balances::free_balance(origin);
+
+			assert_ok!(
+				FrequencyTxPayment::pay_with_capacity_batch_all(
+					RuntimeOrigin::signed(origin),
+					calls
+				)
+			);
+
+			let token_balance_after_call = Balances::free_balance(origin);
+			assert_eq!(token_balance_before_call - 20u64, token_balance_after_call);
+		});
+
+}
+
+#[test]
+fn pay_with_capacity_batch_all_errors_when_transaction_amount_exceeds_maximum() {
+	let balance_factor = 10;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			let origin = 1u64;
+
+			let token_balance_before_call = Balances::free_balance(origin);
+
+			let too_many_calls = vec![
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+			];
 			assert_noop!(
 				FrequencyTxPayment::pay_with_capacity_batch_all(
-					RuntimeOrigin::signed(who),
+					RuntimeOrigin::signed(origin),
 					too_many_calls
 				),
 				Error::<Test>::BatchedCallAmountExceedsMaximum
 			);
+
+			let token_balance_after_call = Balances::free_balance(origin);
+
+			assert_eq!(token_balance_before_call, token_balance_after_call);
 		});
 }
 
