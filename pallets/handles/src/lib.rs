@@ -65,6 +65,8 @@ use sp_runtime::{
 };
 use sp_std::vec::Vec;
 
+pub mod handles_signed_extension;
+
 pub mod suffix;
 use suffix::SuffixGenerator;
 pub mod weights;
@@ -168,7 +170,7 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Deposited when a handle is created. [MSA id, full handle in UTF-8 bytes]
+		/// Deposited when a handle is claimed. [MSA id, full handle in UTF-8 bytes]
 		HandleClaimed {
 			/// MSA id of handle owner
 			msa_id: MessageSourceId,
