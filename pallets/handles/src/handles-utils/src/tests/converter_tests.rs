@@ -1,4 +1,9 @@
 use crate::converter::HandleConverter;
+extern crate alloc;
+use alloc::{
+	string::{String, ToString},
+	vec::Vec,
+};
 
 // use std::{
 // 	fs::File,
@@ -68,7 +73,8 @@ fn test_strip_unicode_whitespace() {
 	];
 	let whitespace_string: String = whitespace_chars.into_iter().collect();
 	let string_with_whitespace =
-		format!("{}hello{}world!{}", whitespace_string, whitespace_string, whitespace_string);
+		format_args!("{}hello{}world!{}", whitespace_string, whitespace_string, whitespace_string)
+			.to_string();
 	println!("String with whitespace: {}", string_with_whitespace);
 	let whitespace_stripped_string =
 		HandleConverter::strip_unicode_whitespace(&string_with_whitespace);

@@ -75,7 +75,7 @@ fn test_consists_of_supported_unicode_character_sets_rejects_emojis() {
 	let handle_validator = HandleValidator::new();
 
 	// Constructing a string that with the smiling face emoji
-	let string_containing_emojis = format!("John{}", '\u{1F600}');
+	let string_containing_emojis = format_args!("John{}", '\u{1F600}').to_string();
 
 	assert!(
 		!handle_validator.consists_of_supported_unicode_character_sets(&string_containing_emojis)
