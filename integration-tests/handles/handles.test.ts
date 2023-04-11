@@ -67,13 +67,8 @@ describe("🤝 Handles", () => {
          it("should be able to claim a handle and check suffix (=suffix_assumed if avaiable on chain)", async function () {
             const handle = "test1";
             let handle_bytes = new Bytes(ExtrinsicHelper.api.registry, handle);
-            const request_suffixes = {
-                base_handle: handle,
-                count: 10,
-            };
             /// Get presumptive suffix from chain (rpc)
-            let suffix_input_type = ExtrinsicHelper.api.registry.createType("PresumptiveSuffixesRequest", request_suffixes);
-            let suffixes_response = await ExtrinsicHelper.getNextSuffixesForHandle(suffix_input_type);
+            let suffixes_response = await ExtrinsicHelper.getNextSuffixesForHandle(handle, 10);
             let resp_base_handle = suffixes_response.base_handle.toString();
             assert.equal(resp_base_handle, handle, "resp_base_handle should be equal to handle");
             let suffix_assumed = suffixes_response.suffixes[0];

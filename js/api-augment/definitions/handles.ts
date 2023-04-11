@@ -24,8 +24,12 @@ export default {
       description: "Get next suffixes for a given handle and count",
       params: [
         {
-          name: "handle_input",
-          type: "PresumptiveSuffixesRequest",
+          name: "base_handle",
+          type: "String",
+        },
+        {
+          name: "count",
+          type: "u16",
         },
       ],
       type: "PresumptiveSuffixesResponse",
@@ -37,10 +41,6 @@ export default {
       base_handle: "String",
       canonical_handle: "String",
       suffix: "u16",
-    },
-    PresumptiveSuffixesRequest: {
-      base_handle: "String",
-      count: "u16",
     },
     PresumptiveSuffixesResponse: {
       suffixes: "Vec<HandleSuffix>",
@@ -75,8 +75,12 @@ export default {
             description: "Get next suffixes for a given handle and count",
             params: [
               {
-                name: "handle_input",
-                type: "PresumptiveSuffixesRequest",
+                name: "base_handle",
+                type: "Vec<u8>",
+              },
+              {
+                name: "count",
+                type: "u16",
               },
             ],
             type: "PresumptiveSuffixesResponse",

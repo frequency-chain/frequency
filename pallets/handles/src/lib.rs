@@ -408,15 +408,15 @@ pub mod pallet {
 		/// by the `count` parameter, which is of type `u16`.
 		///
 		/// # Arguments
-		/// * `input` - The `PresumptiveSuffixesRequest` containing the handle and the number of suffixes to generate.
+		///
+		/// * `handle` - The handle to generate the next available suffixes for.
+		/// * `count` - The number of suffixes to generate.
 		///
 		/// # Returns
 		///
 		/// * `PresumptiveSuffixesResponse` - The response containing the next available suffixes.
 		/// ```
-		pub fn get_next_suffixes(input: PresumptiveSuffixesRequest) -> PresumptiveSuffixesResponse {
-			let handle = input.base_handle;
-			let count = input.count;
+		pub fn get_next_suffixes(handle: Vec<u8>, count: u16) -> PresumptiveSuffixesResponse {
 			let mut suffixes: Vec<HandleSuffix> = vec![];
 			let base_handle: Handle = handle.try_into().unwrap_or_default();
 			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or("");

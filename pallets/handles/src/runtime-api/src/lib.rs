@@ -17,7 +17,7 @@
 //! - Runtime interfaces for end users beyond just State Queries
 
 use common_primitives::{
-	handles::{Handle, HandleResponse, PresumptiveSuffixesRequest, PresumptiveSuffixesResponse},
+	handles::{Handle, HandleResponse, PresumptiveSuffixesResponse},
 	msa::MessageSourceId,
 };
 
@@ -38,7 +38,7 @@ sp_api::decl_runtime_apis! {
 		fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse>;
 
 		/// Retrieve the next `n` suffixes for a given handle
-		fn get_next_suffixes(suffix_request: PresumptiveSuffixesRequest) -> PresumptiveSuffixesResponse;
+		fn get_next_suffixes(base_handle: Handle, count: u16) -> PresumptiveSuffixesResponse;
 
 		/// Retrieve msa for a particular handle
 		fn get_msa_for_handle(display_handle: Handle) -> Option<MessageSourceId>;

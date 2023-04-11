@@ -10,7 +10,7 @@
 
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
-	handles::{Handle, HandleResponse, PresumptiveSuffixesRequest, PresumptiveSuffixesResponse},
+	handles::{Handle, HandleResponse, PresumptiveSuffixesResponse, MAX_SUFFIXES_COUNT},
 	msa::MessageSourceId,
 };
 use jsonrpsee::{
@@ -37,7 +37,8 @@ pub trait HandlesApi<BlockHash> {
 	#[method(name = "handles_getNextSuffixes")]
 	fn get_next_suffixes(
 		&self,
-		handle_input: PresumptiveSuffixesRequest,
+		base_handle: String,
+		count: Option<u16>,
 	) -> RpcResult<PresumptiveSuffixesResponse>;
 
 	/// retrieve `MessageSourceId` for a given handle
@@ -84,11 +85,15 @@ where
 
 	fn get_next_suffixes(
 		&self,
-		handle_input: PresumptiveSuffixesRequest,
+		base_handle: String,
+		count: Option<u16>,
 	) -> RpcResult<PresumptiveSuffixesResponse> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		let suffixes_result = api.get_next_suffixes(&at, handle_input);
+		let handle_input: Handle = base_handle.into_bytes().try_into().unwrap();
+		let max_count = MAX_SUFFIXES_COUNT;
+		let count = count.unwrap_or(max_count).min(max_count);
+		let suffixes_result = api.get_next_suffixes(&at, handle_input, count);
 		map_rpc_result(suffixes_result)
 	}
 
