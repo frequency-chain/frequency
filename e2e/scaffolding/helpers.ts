@@ -50,7 +50,8 @@ export interface Sr25519Signature {
 export const TEST_EPOCH_LENGTH = 50;
 export const CENTS = 1000000n;
 export const DOLLARS = 100n * CENTS;
-export const STARTING_BALANCE = 6n * CENTS + DOLLARS;
+export const BoostAdjustment = 2n;  // divide by 2 or 50% of Maximum Capacity
+
 
 export function getTokenPerCapacity(): bigint {
   // Perbil
@@ -68,7 +69,7 @@ export function signPayloadSr25519(keys: KeyringPair, data: Codec): Sr25519Signa
 export async function generateDelegationPayload(
   payloadInputs: AddProviderPayload,
   expirationOffset: number = 100,
-  blockNumber?: number
+  blockNumber?: number,
 ): Promise<AddProviderPayload> {
   const { expiration, ...payload } = payloadInputs;
 
@@ -87,6 +88,7 @@ export async function getBlockNumber(): Promise<number> {
 }
 
 let cacheED: null | bigint = null;
+
 export async function getExistentialDeposit(): Promise<bigint> {
   if (cacheED !== null) return cacheED;
   return (cacheED = ExtrinsicHelper.api.consts.balances.existentialDeposit.toBigInt());
@@ -95,7 +97,7 @@ export async function getExistentialDeposit(): Promise<bigint> {
 export async function generateAddKeyPayload(
   payloadInputs: AddKeyData,
   expirationOffset: number = 100,
-  blockNumber?: number
+  blockNumber?: number,
 ): Promise<AddKeyData> {
   const { expiration, ...payload } = payloadInputs;
 
@@ -108,7 +110,7 @@ export async function generateAddKeyPayload(
 export async function generateItemizedSignaturePayload(
   payloadInputs: ItemizedSignaturePayload | ItemizedSignaturePayloadV2,
   expirationOffset: number = 100,
-  blockNumber?: number
+  blockNumber?: number,
 ): Promise<ItemizedSignaturePayload> {
   const { expiration, ...payload } = payloadInputs;
 
@@ -129,7 +131,7 @@ export function generateItemizedActions(items: { action: 'Add' | 'Update'; value
 export async function generateItemizedActionsPayloadAndSignature(
   payloadInput: ItemizedSignaturePayload | ItemizedSignaturePayloadV2,
   payloadType: 'PalletStatefulStorageItemizedSignaturePayload' | 'PalletStatefulStorageItemizedSignaturePayloadV2',
-  signingKeys: KeyringPair
+  signingKeys: KeyringPair,
 ) {
   const payloadData = await generateItemizedSignaturePayload(payloadInput);
   const payload = ExtrinsicHelper.api.registry.createType(payloadType, payloadData);
@@ -142,7 +144,7 @@ export async function generateItemizedActionsSignedPayload(
   actions: any[],
   schemaId: SchemaId,
   signingKeys: KeyringPair,
-  msaId: MessageSourceId
+  msaId: MessageSourceId,
 ) {
   const payloadInput: ItemizedSignaturePayload = {
     msaId,
@@ -154,7 +156,7 @@ export async function generateItemizedActionsSignedPayload(
   return generateItemizedActionsPayloadAndSignature(
     payloadInput,
     'PalletStatefulStorageItemizedSignaturePayload',
-    signingKeys
+    signingKeys,
   );
 }
 
@@ -162,7 +164,7 @@ export async function generateItemizedActionsSignedPayloadV2(
   actions: any[],
   schemaId: SchemaId,
   signingKeys: KeyringPair,
-  msaId: MessageSourceId
+  msaId: MessageSourceId,
 ) {
   const payloadInput: ItemizedSignaturePayloadV2 = {
     targetHash: await getCurrentItemizedHash(msaId, schemaId),
@@ -173,14 +175,14 @@ export async function generateItemizedActionsSignedPayloadV2(
   return generateItemizedActionsPayloadAndSignature(
     payloadInput,
     'PalletStatefulStorageItemizedSignaturePayloadV2',
-    signingKeys
+    signingKeys,
   );
 }
 
 export async function generatePaginatedUpsertSignaturePayload(
   payloadInputs: PaginatedUpsertSignaturePayload,
   expirationOffset: number = 100,
-  blockNumber?: number
+  blockNumber?: number,
 ): Promise<PaginatedUpsertSignaturePayload> {
   const { expiration, ...payload } = payloadInputs;
 
@@ -193,7 +195,7 @@ export async function generatePaginatedUpsertSignaturePayload(
 export async function generatePaginatedUpsertSignaturePayloadV2(
   payloadInputs: PaginatedUpsertSignaturePayloadV2,
   expirationOffset: number = 100,
-  blockNumber?: number
+  blockNumber?: number,
 ): Promise<PaginatedUpsertSignaturePayloadV2> {
   const { expiration, ...payload } = payloadInputs;
 
@@ -206,7 +208,7 @@ export async function generatePaginatedUpsertSignaturePayloadV2(
 export async function generatePaginatedDeleteSignaturePayload(
   payloadInputs: PaginatedDeleteSignaturePayload,
   expirationOffset: number = 100,
-  blockNumber?: number
+  blockNumber?: number,
 ): Promise<PaginatedDeleteSignaturePayload> {
   const { expiration, ...payload } = payloadInputs;
 
@@ -219,7 +221,7 @@ export async function generatePaginatedDeleteSignaturePayload(
 export async function generatePaginatedDeleteSignaturePayloadV2(
   payloadInputs: PaginatedDeleteSignaturePayloadV2,
   expirationOffset: number = 100,
-  blockNumber?: number
+  blockNumber?: number,
 ): Promise<PaginatedDeleteSignaturePayloadV2> {
   const { expiration, ...payload } = payloadInputs;
 
@@ -263,7 +265,7 @@ export async function drainKeys(keyPairs: KeyringPair[], dest: string) {
         const info = await ExtrinsicHelper.getAccountInfo(keypair.address);
         // Only drain keys that can be
         if (canDrainAccount(info)) await ExtrinsicHelper.emptyAccount(keypair, dest).signAndSend();
-      })
+      }),
     );
   } catch (e) {
     console.log('Error draining accounts: ', e);
@@ -274,7 +276,7 @@ export async function fundKeypair(
   source: KeyringPair,
   dest: KeyringPair,
   amount: bigint,
-  nonce?: number
+  nonce?: number,
 ): Promise<void> {
   await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
 }
@@ -283,7 +285,7 @@ export async function createAndFundKeypair(
   source: KeyringPair,
   amount?: bigint,
   keyName?: string,
-  nonce?: number
+  nonce?: number,
 ): Promise<KeyringPair> {
   const keypair = createKeys(keyName);
 
@@ -296,7 +298,7 @@ export async function createAndFundKeypair(
 export async function createAndFundKeypairs(
   source: KeyringPair,
   keyNames: string[],
-  amountOverExDep: bigint = 100_000_000n
+  amountOverExDep: bigint = 100_000_000n,
 ): Promise<KeyringPair[]> {
   const nonce = await getNonce(source);
   const existentialDeposit = await getExistentialDeposit();
@@ -337,7 +339,7 @@ export async function createDelegatorAndDelegation(
   source: KeyringPair,
   schemaId: u16 | u16[],
   providerId: u64,
-  providerKeys: KeyringPair
+  providerKeys: KeyringPair,
 ): Promise<[KeyringPair, u64]> {
   // Create a  delegator msa
   const [keys, delegatorMsaId] = await createDelegator(source);
@@ -353,7 +355,7 @@ export async function createDelegatorAndDelegation(
     keys,
     providerKeys,
     signPayloadSr25519(keys, addProviderData),
-    payload
+    payload,
   );
   await grantDelegationOp.fundAndSend(source);
 
@@ -397,7 +399,7 @@ export async function createMsaAndProvider(
   source: KeyringPair,
   keys: KeyringPair,
   providerName: string,
-  amount: bigint | undefined = undefined
+  amount: bigint | undefined = undefined,
 ): Promise<u64> {
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
   const createProviderOp = ExtrinsicHelper.createProvider(keys, providerName);
@@ -425,7 +427,7 @@ export async function stakeToProvider(
   source: KeyringPair,
   keys: KeyringPair,
   providerId: u64,
-  tokensToStake: bigint
+  tokensToStake: bigint,
 ): Promise<void> {
   const stakeOp = ExtrinsicHelper.stake(keys, providerId, tokensToStake);
   const { target: stakeEvent } = await stakeOp.fundAndSend(source);
@@ -439,13 +441,37 @@ export async function stakeToProvider(
     assert.equal(
       stakedCapacity,
       expectedCapacity,
-      `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`
+      `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`,
     );
   } else {
     return Promise.reject('stakeToProvider: stakeEvent should be capacity.Staked event');
   }
 }
 
+export async function boostProvider(
+  source: KeyringPair,
+  keys: KeyringPair,
+  providerId: u64,
+  tokensToStake: bigint,
+): Promise<void> {
+  const stakeOp = ExtrinsicHelper.providerBoost(keys, providerId, tokensToStake);
+  const { target: stakeEvent } = await stakeOp.fundAndSend(source);
+  assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
+
+  if (stakeEvent) {
+    const stakedCapacity = stakeEvent.data.capacity;
+
+    const expectedCapacity = tokensToStake / getTokenPerCapacity() / BoostAdjustment;
+
+    assert.equal(
+      stakedCapacity,
+      expectedCapacity,
+      `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`,
+    );
+  } else {
+    return Promise.reject('stakeToProvider: stakeEvent should be capacity.Staked event');
+  }
+}
 export async function getNextEpochBlock() {
   const epochInfo = await ExtrinsicHelper.apiPromise.query.capacity.currentEpochInfo();
   const actualEpochLength = await ExtrinsicHelper.apiPromise.query.capacity.epochLength();
@@ -462,11 +488,17 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
     assert.equal(
       actualEpochLength,
       TEST_EPOCH_LENGTH,
-      `should have set epoch length to TEST_EPOCH_LENGTH blocks, but it's ${actualEpochLength}`
+      `should have set epoch length to TEST_EPOCH_LENGTH blocks, but it's ${actualEpochLength}`,
     );
   } else {
     assert.fail('should return an EpochLengthUpdated event');
   }
+}
+
+export async function getNextRewardEraBlock(): Promise<number> {
+  const eraInfo = await ExtrinsicHelper.apiPromise.query.capacity.currentEraInfo();
+  const actualEraLength: number = 50;
+  return actualEraLength + eraInfo.startedAt.toNumber() + 1;
 }
 
 export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise<u16> {
@@ -474,14 +506,15 @@ export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise
   if (existingSchemaId) {
     return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
   } else {
-    const { target: createSchemaEvent, eventMap } = await ExtrinsicHelper.createSchemaV3(
+    const op = await ExtrinsicHelper.createSchemaV3(
       source,
       AVRO_GRAPH_CHANGE,
       'AvroBinary',
       'OnChain',
       [],
-      'test.graphChangeSchema'
-    ).fundAndSend(source);
+      'test.graphChangeSchema',
+    );
+    const { target: createSchemaEvent, eventMap } = await op.fundAndSend(source);
     assertExtrinsicSuccess(eventMap);
     if (createSchemaEvent) {
       return createSchemaEvent.data.schemaId;
@@ -502,7 +535,7 @@ export async function getOrCreateParquetBroadcastSchema(source: KeyringPair): Pr
       'Parquet',
       'IPFS',
       [],
-      'test.parquetBroadcast'
+      'test.parquetBroadcast',
     );
     const { target: event } = await createSchema.fundAndSend(source);
     if (event) {
@@ -524,7 +557,7 @@ export async function getOrCreateDummySchema(source: KeyringPair): Promise<u16> 
       'AvroBinary',
       'OnChain',
       [],
-      'test.dummySchema'
+      'test.dummySchema',
     );
     const { target: dummySchemaEvent } = await createDummySchema.fundAndSend(source);
     if (dummySchemaEvent) {
@@ -547,7 +580,7 @@ export async function getOrCreateAvroChatMessagePaginatedSchema(source: KeyringP
       'AvroBinary',
       'Paginated',
       [],
-      'test.AvroChatMessagePaginated'
+      'test.AvroChatMessagePaginated',
     );
     const { target: event } = await createSchema.fundAndSend(source);
     if (event) {
@@ -570,7 +603,7 @@ export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPa
       'AvroBinary',
       'Itemized',
       [],
-      'test.AvroChatMessageItemized'
+      'test.AvroChatMessageItemized',
     );
     const { target: event } = await createSchema.fundAndSend(source);
     if (event) {
@@ -580,6 +613,8 @@ export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPa
     }
   }
 }
+
+export const BoostAdjustment = 20n;  // divide by 20 or 5% of Maximum Capacity
 
 export async function getCapacity(providerId: u64): Promise<PalletCapacityCapacityDetails> {
   return (await ExtrinsicHelper.apiPromise.query.capacity.capacityLedger(providerId)).unwrap();
@@ -615,7 +650,7 @@ export function assertHasMessage(response: BlockPaginationResponseMessage, testF
 export async function assertAddNewKey(
   capacityKeys: KeyringPair,
   addKeyPayload: AddKeyData,
-  newControlKeypair: KeyringPair
+  newControlKeypair: KeyringPair,
 ) {
   const addKeyPayloadCodec: Codec = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', addKeyPayload);
   const ownerSig: Sr25519Signature = signPayloadSr25519(capacityKeys, addKeyPayloadCodec);
