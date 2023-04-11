@@ -261,12 +261,6 @@ parameter_types! {
 }
 // -end- Transaction Payment Pallet ---
 
-// --- Frequency Transaction Payment Pallet ---
-parameter_types! {
-	pub const MaximumCapacityBatchLength: u8 = 2;
-}
-// -end- Frequency Transaction Payment Pallet ---
-
 // --- Session Pallet ---
 pub type SessionPeriod = ConstU32<{ 6 * HOURS }>;
 pub type SessionOffset = ZERO;

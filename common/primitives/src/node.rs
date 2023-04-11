@@ -4,9 +4,9 @@ pub use sp_runtime::{
 	traits::{BlakeTwo256, IdentifyAccount, Verify},
 	MultiAddress, MultiSignature, OpaqueExtrinsic,
 };
-use sp_std::{boxed::Box, vec::Vec};
+use sp_std::boxed::Box;
 
-use frame_support::dispatch::{DispatchError, DispatchResultWithPostInfo};
+use frame_support::dispatch::DispatchError;
 
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
 /// to the public key of our transaction signing scheme.
@@ -58,10 +58,4 @@ pub trait ProposalProvider<AccountId, Proposal> {
 	/// Get the number of proposals
 	#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
 	fn proposal_count() -> u32;
-}
-
-/// The provider for interfacing into the Utility pallet.
-pub trait UtilityProvider<Origin, RuntimeCall> {
-	/// Passthrough into the Utility::batch_all call
-	fn batch_all(origin: Origin, calls: Vec<RuntimeCall>) -> DispatchResultWithPostInfo;
 }
