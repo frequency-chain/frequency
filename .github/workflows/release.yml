@@ -952,7 +952,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
-        if: env.TEST_RUN != 'true'
+        # if: env.TEST_RUN != 'true'
         id: deployment
         uses: actions/deploy-pages@v2
 
