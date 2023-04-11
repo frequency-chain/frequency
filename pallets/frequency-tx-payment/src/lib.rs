@@ -203,11 +203,10 @@ pub mod pallet {
 		//   Total (r: 4-1=3, w: 2-1=1)
 		#[pallet::call_index(0)]
 		#[pallet::weight({
-		use frame_support::weights::constants::RocksDbWeight;
 		let dispatch_info = call.get_dispatch_info();
-		let capacity_overhead = RocksDbWeight::get().reads(2)
+		let capacity_overhead = T::DbWeight::get().reads(2)
 			.saturating_add(
-				RocksDbWeight::get().writes(1)
+				T::DbWeight::get().writes(1)
 			);
 		let total = capacity_overhead.saturating_add(dispatch_info.weight);
 		(< T as Config >::WeightInfo::pay_with_capacity().saturating_add(total), dispatch_info.class)
@@ -223,15 +222,14 @@ pub mod pallet {
 
 		#[pallet::call_index(1)]
 		#[pallet::weight({
-		use frame_support::weights::constants::RocksDbWeight;
 		let dispatch_infos = calls.iter().map(|call| call.get_dispatch_info()).collect::<Vec<_>>();
 		let dispatch_weight = dispatch_infos.iter()
 				.map(|di| di.weight)
 				.fold(Weight::zero(), |total: Weight, weight: Weight| total.saturating_add(weight));
 
-		let capacity_overhead = RocksDbWeight::get().reads(2)
+		let capacity_overhead = T::DbWeight::get().reads(2)
 			.saturating_add(
-				RocksDbWeight::get().writes(1)
+				T::DbWeight::get().writes(1)
 			);
 		let total = capacity_overhead.saturating_add(dispatch_weight);
 		(< T as Config >::WeightInfo::pay_with_capacity().saturating_add(total), DispatchClass::Normal)
