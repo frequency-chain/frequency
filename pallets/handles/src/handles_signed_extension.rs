@@ -1,5 +1,5 @@
 //! Substrate Signed Extension for validating requests to the handles pallet
-use crate::{Call, Config, MSAIdToDisplayName, OriginFor, Pallet};
+use crate::{Call, Config, MSAIdToDisplayName, Pallet};
 use codec::{Decode, Encode};
 use common_primitives::msa::MsaValidator;
 use core::marker::PhantomData;
@@ -8,14 +8,15 @@ use frame_support::{
 	pallet_prelude::ValidTransaction,
 	traits::IsSubType,
 };
-use frame_system::ensure_signed;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, SignedExtension},
 	transaction_validity::{InvalidTransaction, TransactionValidity, TransactionValidityError},
 	DispatchError,
 };
-
+/// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate the request. The
+/// purpose of this is to ensure that the retire_handle extrinsic cannot be
+/// repeatedly called to flood the network.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct HandlesSignedExtension<T: Config + Send + Sync>(PhantomData<T>);
@@ -41,7 +42,7 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for HandlesSignedExtension<T> {
 /// Validator trait to be used in validating Handles requests from a Signed Extension.
 pub trait HandlesValidate<C: Config> {
 	/// Validates calls to the retire_handle() extrinsic
-	fn validate_retire_handle(origin: OriginFor<C>) -> TransactionValidity;
+	fn validate_retire_handle(delegator_key: &C::AccountId) -> TransactionValidity;
 }
 
 impl<T: Config> HandlesValidate<T> for Pallet<T> {
@@ -55,17 +56,15 @@ impl<T: Config> HandlesValidate<T> for Pallet<T> {
 	/// # Errors (as u8 wrapped by `InvalidTransaction::Custom`)
 	/// * [`Error::InvalidMessageSourceAccount`]
 	/// * [`Error::MSAHandleDoesNotExist`]
-	fn validate_retire_handle(origin: T::AccountId) -> TransactionValidity {
+	fn validate_retire_handle(delegator_key: &T::AccountId) -> TransactionValidity {
 		const TAG_PREFIX: &str = "HandlesRetireHandle";
 
-		let delegator_key =
-			ensure_signed(origin).map_err(|e| map_dispatch_error(DispatchError::BadOrigin))?;
 		// Validation: The delegator must already have a MSA id
 		let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 			.map_err(|e| map_dispatch_error(e))?;
 		// Validation: The MSA must already have a handle associated with it
-		let display_name_handle = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
-			.map_err(|e| map_dispatch_error(DispatchError::CannotLookup))?;
+		_ = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
+			.map_err(|_| map_dispatch_error(DispatchError::CannotLookup))?;
 		return ValidTransaction::with_tag_prefix(TAG_PREFIX).build()
 	}
 }
