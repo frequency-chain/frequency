@@ -99,7 +99,7 @@ impl pallet_balances::Config for Test {
 
 parameter_types! {
 	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
-	pub const MaximumCapacityBatchLength: u8 = 10;
+	pub const MaximumCapacityBatchLength: u8 = 2;
 }
 impl Clone for MaxSchemaGrantsPerDelegation {
 	fn clone(&self) -> Self {

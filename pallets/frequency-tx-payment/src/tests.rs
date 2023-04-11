@@ -1,6 +1,6 @@
 use super::*;
 use crate::{self as pallet_frequency_tx_payment, mock::*, ChargeFrqTransactionPayment};
-use frame_support::{assert_noop, assert_ok, weights::Weight};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchErrorWithPostInfo, weights::Weight};
 use frame_system::RawOrigin;
 use pallet_capacity::{CapacityDetails, CurrentEpoch, Nontransferable};
 
@@ -696,5 +696,81 @@ fn compute_capacity_fee_successful() {
 			);
 
 			assert_eq!(fee, 26);
+		});
+}
+
+#[test]
+fn pay_with_capacity_batch_all_errors_when_transaction_amount_exceeds_maximum() {
+	let balance_factor = 10;
+	let too_many_calls = vec![
+		RuntimeCall::Balances(BalancesCall::transfer {
+			dest: 2,
+			value: 100,
+		}),
+		RuntimeCall::Balances(BalancesCall::transfer {
+			dest: 2,
+			value: 100,
+		}),
+		RuntimeCall::Balances(BalancesCall::transfer {
+			dest: 2,
+			value: 100,
+		})];
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			let who = 1u64;
+
+			assert_noop!(
+				FrequencyTxPayment::pay_with_capacity_batch_all(
+					RuntimeOrigin::signed(who),
+					too_many_calls
+				),
+			Error::<Test>::BatchedCallAmountExceedMaximum
+			);
+		});
+}
+
+#[test]
+fn pay_with_capacity_batch_all_transactions_will_all_fail_if_one_fails() {
+	let balance_factor = 10;
+	let successful_balance_transfer_call =
+		RuntimeCall::Balances(BalancesCall::transfer {
+			dest: 2,
+			value: 100,
+		});
+
+	let balance_transfer_call_insufficient_funds =
+		RuntimeCall::Balances(BalancesCall::transfer {
+			dest: 2,
+			value: 100000000,
+		});
+
+	let calls_to_batch = vec![successful_balance_transfer_call, balance_transfer_call_insufficient_funds];
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			let who = 1u64;
+
+			let result = FrequencyTxPayment::pay_with_capacity_batch_all(
+					RuntimeOrigin::signed(who),
+					calls_to_batch
+				);
+
+			assert!(
+				match result {
+					Err(DispatchErrorWithPostInfo { .. }) => {
+						true
+					}
+					_ => {
+						false
+					}
+				}
+			);
 		});
 }
