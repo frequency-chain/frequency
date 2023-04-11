@@ -13,9 +13,10 @@ repository = "https://github.com/libertyDSNP/frequency/"
 name = "handles_utils"
 path = "src/lib.rs"
 
-[[bin]]
-name = "confusables_generator"
-path = "src/main.rs"
+#[[bin]]
+#name = "confusables_generator"
+#path = "src/main.rs"
+#required-features = ["std"]
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -25,9 +26,4 @@ phf = { version = "0.11", default-features = false, features = ["macros"] }
 rand = { version = "0.8.5", default-features = false, features = ["small_rng"] }
 unicode-normalization = { version = "0.1.22", default-features = false }
 
-[dev-dependencies]
 
-[features]
-default = ['std']
-std = [
-]

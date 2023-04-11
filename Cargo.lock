@@ -5586,7 +5586,6 @@ dependencies = [
  "log",
  "numtoa",
  "parity-scale-codec",
- "phf",
  "pretty_assertions",
  "rand 0.8.5",
  "scale-info",
@@ -5597,7 +5596,6 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "twox-hash",
- "unicode-normalization",
 ]
 
 [[package]]
