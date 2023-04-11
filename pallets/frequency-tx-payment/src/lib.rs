@@ -250,11 +250,7 @@ impl<T: Config> Pallet<T> {
 	//   Storage: System Account(r:1)
 	//   Total (r: 4-1=3, w: 2-1=1)
 	pub fn get_capacity_overhead_weight() -> Weight {
-		T::DbWeight::get()
-		.reads(2)
-		.saturating_add(
-			T::DbWeight::get().writes(1)
-		)
+		T::DbWeight::get().reads(2).saturating_add(T::DbWeight::get().writes(1))
 	}
 
 	pub fn compute_capacity_fee(
@@ -347,7 +343,8 @@ where
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { call }) => self.withdraw_capacity_fee(who, &vec![*call.clone()], len),
+			Some(Call::pay_with_capacity { call }) =>
+				self.withdraw_capacity_fee(who, &vec![*call.clone()], len),
 			Some(Call::pay_with_capacity_batch_all { calls }) =>
 				self.withdraw_capacity_fee(who, calls, len),
 			_ => self.withdraw_token_fee(who, call, info, len, self.tip(call)),

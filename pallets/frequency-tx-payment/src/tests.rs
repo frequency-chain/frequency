@@ -717,17 +717,14 @@ fn pay_with_capacity_batch_all_happy_path() {
 
 			let token_balance_before_call = Balances::free_balance(origin);
 
-			assert_ok!(
-				FrequencyTxPayment::pay_with_capacity_batch_all(
-					RuntimeOrigin::signed(origin),
-					calls
-				)
-			);
+			assert_ok!(FrequencyTxPayment::pay_with_capacity_batch_all(
+				RuntimeOrigin::signed(origin),
+				calls
+			));
 
 			let token_balance_after_call = Balances::free_balance(origin);
 			assert_eq!(token_balance_before_call - 20u64, token_balance_after_call);
 		});
-
 }
 
 #[test]
