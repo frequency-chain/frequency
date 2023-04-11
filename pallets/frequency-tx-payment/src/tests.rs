@@ -720,7 +720,7 @@ fn pay_with_capacity_batch_all_errors_when_transaction_amount_exceeds_maximum() 
 					RuntimeOrigin::signed(who),
 					too_many_calls
 				),
-				Error::<Test>::BatchedCallAmountExceedMaximum
+				Error::<Test>::BatchedCallAmountExceedsMaximum
 			);
 		});
 }

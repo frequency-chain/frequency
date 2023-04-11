@@ -186,7 +186,7 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T> {
 		/// The maximum amount of requested batched calls was exceeded
-		BatchedCallAmountExceedMaximum,
+		BatchedCallAmountExceedsMaximum,
 	}
 
 	#[pallet::call]
@@ -241,7 +241,7 @@ pub mod pallet {
 			ensure_signed(origin.clone())?;
 			ensure!(
 				calls.len() <= T::MaximumCapacityBatchLength::get().into(),
-				Error::<T>::BatchedCallAmountExceedMaximum
+				Error::<T>::BatchedCallAmountExceedsMaximum
 			);
 
 			T::BatchProvider::batch_all(origin, calls)
