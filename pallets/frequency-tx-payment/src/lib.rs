@@ -176,7 +176,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaximumCapacityBatchLength: Get<u8>;
 
-		type BatchAllProvider: UtilityProvider<OriginFor<Self>, <Self as Config>::RuntimeCall>;
+		type BatchProvider: UtilityProvider<OriginFor<Self>, <Self as Config>::RuntimeCall>;
 	}
 
 	#[pallet::event]
@@ -244,7 +244,7 @@ pub mod pallet {
 				Error::<T>::BatchedCallAmountExceedMaximum
 			);
 
-			T::BatchAllProvider::batch_all(origin, calls)
+			T::BatchProvider::batch_all(origin, calls)
 		}
 	}
 }

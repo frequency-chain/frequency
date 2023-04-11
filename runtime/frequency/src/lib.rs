@@ -909,7 +909,7 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type WeightInfo = pallet_frequency_tx_payment::weights::SubstrateWeight<Runtime>;
 	type CapacityCalls = CapacityEligibleCalls;
 	type OnChargeCapacityTransaction = pallet_frequency_tx_payment::CapacityAdapter<Balances, Msa>;
-	type BatchAllProvider = CapacityBatchProvider;
+	type BatchProvider = CapacityBatchProvider;
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
 }
 

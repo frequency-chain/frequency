@@ -262,7 +262,7 @@ impl Config for Test {
 	type CapacityCalls = TestCapacityCalls;
 	type OnChargeCapacityTransaction = payment::CapacityAdapter<Balances, Msa>;
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
-	type BatchAllProvider = CapacityBatchProvider;
+	type BatchProvider = CapacityBatchProvider;
 }
 
 pub struct ExtBuilder {
