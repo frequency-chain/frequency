@@ -288,7 +288,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tup
 
 			// fee = base_weight(5)
 			//   + extrinsic_weight(11) * WeightToFee(1)
-			//   + TransactionByteFee(1)* len(10) = 20
+			//   + TransactionByteFee(1)* len(10) = 26
 			assert_eq!(charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().0, 26u64);
 			assert_eq!(
 				charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().1.is_capacity(),
