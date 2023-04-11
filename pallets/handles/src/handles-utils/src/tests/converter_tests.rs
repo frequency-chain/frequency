@@ -1,4 +1,4 @@
-use crate::utils::converter::HandleConverter;
+use crate::converter::HandleConverter;
 
 use std::{
 	fs::File,
@@ -7,7 +7,7 @@ use std::{
 
 #[test]
 fn test_replace_confusables() {
-	let file = File::open("src/utils/confusable_characters.txt");
+	let file = File::open("src/data/confusable_characters.txt");
 	assert!(file.is_ok());
 
 	let reader = BufReader::new(file.ok().unwrap());
@@ -68,7 +68,8 @@ fn test_strip_unicode_whitespace() {
 	];
 	let whitespace_string: String = whitespace_chars.into_iter().collect();
 	let string_with_whitespace =
-		format!("{}hello{}world!{}", whitespace_string, whitespace_string, whitespace_string);
+		format_args!("{}hello{}world!{}", whitespace_string, whitespace_string, whitespace_string)
+			.to_string();
 	println!("String with whitespace: {}", string_with_whitespace);
 	let whitespace_stripped_string =
 		HandleConverter::strip_unicode_whitespace(&string_with_whitespace);

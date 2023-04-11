@@ -3246,6 +3246,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "handles-utils"
+version = "0.0.0"
+dependencies = [
+ "phf",
+ "rand 0.8.5",
+ "unicode-normalization",
+]
+
+[[package]]
 name = "hash-db"
 version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5573,10 +5582,10 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "handles-utils",
  "log",
  "numtoa",
  "parity-scale-codec",
- "phf",
  "pretty_assertions",
  "rand 0.8.5",
  "scale-info",
@@ -5587,7 +5596,6 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "twox-hash",
- "unicode-normalization",
 ]
 
 [[package]]

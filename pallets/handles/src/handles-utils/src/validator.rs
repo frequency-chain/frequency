@@ -2,7 +2,8 @@
 //!
 //! `handle_validator` provides a `HandleValidator` struct to determine the validity of a given
 //! user handle.
-use sp_std::prelude::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 /// A validator for user handles.
 ///
