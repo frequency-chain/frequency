@@ -234,11 +234,11 @@ pub mod pallet {
 		},
 		/// A token account has unstaked the Frequency network.
 		UnStaked {
-			/// The token account that staked tokens to the network.
+			/// The token account that unstaked tokens from the network.
 			account: T::AccountId,
-			/// The MSA that a token account targeted to receive Capacity to unstake from.
+			/// The MSA target that will now have Capacity reduced as a result of unstaking.
 			target: MessageSourceId,
-			/// An amount that was unstaked.
+			/// The amount that was unstaked.
 			amount: BalanceOf<T>,
 			/// The Capacity amount that was reduced from a target.
 			capacity: BalanceOf<T>,
@@ -488,7 +488,7 @@ impl<T: Config> Pallet<T> {
 
 	/// If the staking account total is zero we reap storage, otherwise set the acount to the new details.
 	fn update_or_delete_staking_account(
-		staker: &<T>::AccountId,
+		staker: &T::AccountId,
 		staking_account: &StakingAccountDetails<T>,
 	) {
 		if staking_account.total.is_zero() {
@@ -584,11 +584,11 @@ impl<T: Config> Pallet<T> {
 			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
 			CurrentEpochInfo::<T>::set(EpochInfo { epoch_start: current_block });
 			T::WeightInfo::on_initialize()
-				.saturating_add(RocksDbWeight::get().reads(1))
-				.saturating_add(RocksDbWeight::get().writes(1))
+				.saturating_add(T::DbWeight::get().reads(1))
+				.saturating_add(T::DbWeight::get().writes(2))
 		} else {
 			// 1 for get_current_epoch_info, 1 for get_epoch_length
-			RocksDbWeight::get().reads(2u64).saturating_add(RocksDbWeight::get().writes(1))
+			T::DbWeight::get().reads(2u64).saturating_add(RocksDbWeight::get().writes(1))
 		}
 	}
 }
