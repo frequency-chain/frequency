@@ -293,7 +293,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
-    runs-on: [self-hosted, Linux, X64, testing, v2]
+    runs-on: [self-hosted, Linux, X64, build]
     container: ubuntu:20.04
     steps:
       - name: Install Required Packages
