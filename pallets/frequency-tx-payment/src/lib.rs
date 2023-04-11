@@ -340,35 +340,15 @@ where
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { call }) => self.withdraw_capacity_fee(who, call, len),
+			Some(Call::pay_with_capacity { call }) => self.withdraw_capacity_fee(who, &vec![*call.clone()], len),
 			Some(Call::pay_with_capacity_batch_all { calls }) =>
-				self.withdraw_capacity_fee_batch(who, calls, len),
+				self.withdraw_capacity_fee(who, calls, len),
 			_ => self.withdraw_token_fee(who, call, info, len, self.tip(call)),
 		}
 	}
-	/// Withdraws transaction fee paid Capacity using a key associated to an MSA.
+
+	/// Withdraws the transaction fee paid in Capacity using a key associated to an MSA.
 	fn withdraw_capacity_fee(
-		&self,
-		key: &T::AccountId,
-		call: &<T as Config>::RuntimeCall,
-		len: usize,
-	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
-		let extrinsic_weight = T::CapacityCalls::get_stable_weight(call)
-			.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
-
-		let fee = Pallet::<T>::compute_capacity_fee(
-			len as u32,
-			call.get_dispatch_info().class,
-			extrinsic_weight,
-		);
-
-		let fee = T::OnChargeCapacityTransaction::withdraw_fee(key, fee.into())?;
-
-		Ok((fee.into(), InitialPayment::Capacity))
-	}
-
-	/// Withdraws transaction fee paid Capacity using a key associated to an MSA of a batch of calls.
-	fn withdraw_capacity_fee_batch(
 		&self,
 		key: &T::AccountId,
 		calls: &Vec<<T as Config>::RuntimeCall>,
