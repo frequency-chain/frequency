@@ -425,9 +425,7 @@ pub mod pallet {
 			}
 			let full_handle = match MSAIdToDisplayName::<T>::get(msa_id) {
 				Some((handle, _)) => handle,
-				_ => {
-					return None
-				},
+				_ => return None,
 			};
 			let full_handle = full_handle_option.0;
 			// convert to string
