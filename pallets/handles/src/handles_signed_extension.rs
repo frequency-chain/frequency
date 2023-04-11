@@ -1,7 +1,7 @@
 //! Substrate Signed Extension for validating requests to the handles pallet
-use crate::{Call, Config, Pallet, MSAIdToDisplayName};
+use crate::{Call, Config, MSAIdToDisplayName, OriginFor, Pallet};
 use codec::{Decode, Encode};
-use common_primitives::msa::MessageSourceId;
+use common_primitives::msa::MsaValidator;
 use core::marker::PhantomData;
 use frame_support::{
 	dispatch::{DispatchInfo, Dispatchable},
@@ -27,7 +27,6 @@ impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 	}
 }
 
-
 impl<T: Config + Send + Sync> sp_std::fmt::Debug for HandlesSignedExtension<T> {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
@@ -42,7 +41,7 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for HandlesSignedExtension<T> {
 /// Validator trait to be used in validating Handles requests from a Signed Extension.
 pub trait HandlesValidate<C: Config> {
 	/// Validates calls to the retire_handle() extrinsic
-	fn validate_retire_handle() -> TransactionValidity;
+	fn validate_retire_handle(origin: OriginFor<C>) -> TransactionValidity;
 }
 
 impl<T: Config> HandlesValidate<T> for Pallet<T> {
@@ -56,16 +55,17 @@ impl<T: Config> HandlesValidate<T> for Pallet<T> {
 	/// # Errors (as u8 wrapped by `InvalidTransaction::Custom`)
 	/// * [`Error::InvalidMessageSourceAccount`]
 	/// * [`Error::MSAHandleDoesNotExist`]
-	fn validate_retire_handle() -> TransactionValidity {
+	fn validate_retire_handle(origin: T::AccountId) -> TransactionValidity {
 		const TAG_PREFIX: &str = "HandlesRetireHandle";
 
-        let delegator_key = ensure_signed(origin)?;
+		let delegator_key =
+			ensure_signed(origin).map_err(|e| map_dispatch_error(DispatchError::BadOrigin))?;
 		// Validation: The delegator must already have a MSA id
 		let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 			.map_err(|e| map_dispatch_error(e))?;
 		// Validation: The MSA must already have a handle associated with it
 		let display_name_handle = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
-			.map_err(|e| map_dispatch_error(e))?;
+			.map_err(|e| map_dispatch_error(DispatchError::CannotLookup))?;
 		return ValidTransaction::with_tag_prefix(TAG_PREFIX).build()
 	}
 }
@@ -118,13 +118,13 @@ where
 	///
 	fn validate(
 		&self,
-		_who: &Self::AccountId,
+		who: &Self::AccountId,
 		call: &Self::Call,
 		_info: &DispatchInfoOf<Self::Call>,
 		_len: usize,
 	) -> TransactionValidity {
 		match call.is_sub_type() {
-			Some(Call::retire_handle { }) => Pallet::<T>::validate_retire_handle(),
+			Some(Call::retire_handle {}) => Pallet::<T>::validate_retire_handle(who),
 			_ => Ok(Default::default()),
 		}
 	}
