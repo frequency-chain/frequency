@@ -192,22 +192,14 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Dispatch the given call as a sub_type of pay_with_capacity. Calls dispatched in this
-		/// fashion, if allowed, will pay with Capacity
+		/// fashion, if allowed, will pay with Capacity.
 		// The weight calculation is a temporary adjustment because overhead benchmarks do not account
 		// for capacity calls.  We count reads and writes for a pay_with_capacity call,
 		// then subtract one of each for regular transactions since overhead benchmarks account for these.
-		//	 Storage: Msa PublicKeyToMsaId (r:1)
-		//   Storage: Capacity CapacityLedger(r:1, w:2)
-		//   Storage: Capacity CurrentEpoch(r:1) ? maybe cached in on_initialize
-		//   Storage: System Account(r:1)
-		//   Total (r: 4-1=3, w: 2-1=1)
 		#[pallet::call_index(0)]
 		#[pallet::weight({
 		let dispatch_info = call.get_dispatch_info();
-		let capacity_overhead = T::DbWeight::get().reads(2)
-			.saturating_add(
-				T::DbWeight::get().writes(1)
-			);
+		let capacity_overhead = Pallet::<T>::get_capacity_overhead_weight();
 		let total = capacity_overhead.saturating_add(dispatch_info.weight);
 		(< T as Config >::WeightInfo::pay_with_capacity().saturating_add(total), dispatch_info.class)
 		})]
@@ -220,6 +212,8 @@ pub mod pallet {
 			call.dispatch(origin)
 		}
 
+		/// Dispatch the given call as a sub_type of pay_with_capacity_batch_all. Calls dispatched in this
+		/// fashion, if allowed, will pay with Capacity.
 		#[pallet::call_index(1)]
 		#[pallet::weight({
 		let dispatch_infos = calls.iter().map(|call| call.get_dispatch_info()).collect::<Vec<_>>();
@@ -227,10 +221,7 @@ pub mod pallet {
 				.map(|di| di.weight)
 				.fold(Weight::zero(), |total: Weight, weight: Weight| total.saturating_add(weight));
 
-		let capacity_overhead = T::DbWeight::get().reads(2)
-			.saturating_add(
-				T::DbWeight::get().writes(1)
-			);
+		let capacity_overhead = Pallet::<T>::get_capacity_overhead_weight();
 		let total = capacity_overhead.saturating_add(dispatch_weight);
 		(< T as Config >::WeightInfo::pay_with_capacity().saturating_add(total), DispatchClass::Normal)
 		})]
@@ -250,6 +241,22 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	// The weight calculation is a temporary adjustment because overhead benchmarks do not account
+	// for capacity calls.  We count reads and writes for a pay_with_capacity call,
+	// then subtract one of each for regular transactions since overhead benchmarks account for these.
+	//   Storage: Msa PublicKeyToMsaId (r:1)
+	//   Storage: Capacity CapacityLedger(r:1, w:2)
+	//   Storage: Capacity CurrentEpoch(r:1) ? maybe cached in on_initialize
+	//   Storage: System Account(r:1)
+	//   Total (r: 4-1=3, w: 2-1=1)
+	pub fn get_capacity_overhead_weight() -> Weight {
+		T::DbWeight::get()
+		.reads(2)
+		.saturating_add(
+			T::DbWeight::get().writes(1)
+		)
+	}
+
 	pub fn compute_capacity_fee(
 		len: u32,
 		class: DispatchClass,
