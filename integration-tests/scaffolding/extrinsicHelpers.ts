@@ -363,8 +363,4 @@ export class ExtrinsicHelper {
         currentBlock = await getBlockNumber();
       }
     }
-
-    public static async getBlockNumber() {
-        return getBlockNumber();
-    }
 }

@@ -1,39 +1,34 @@
 //  Handles test suite
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import {signPayloadSr25519, createProviderKeysAndId, createDelegator} from "../scaffolding/helpers";  // <--- This is the import that is failing
+import {createDelegator} from "../scaffolding/helpers";  // <--- This is the import that is failing
 import {KeyringPair} from "@polkadot/keyring/types";
-import {Keyring} from "@polkadot/keyring";
-import {u8aToHex} from "@polkadot/util";
-import {CommonPrimitivesHandlesClaimHandlePayload} from "@polkadot/types/lookup";
 import {MessageSourceId} from "@frequency-chain/api-augment/interfaces";
 import {ExtrinsicHelper} from "../scaffolding/extrinsicHelpers";
-import {Bytes, u16, u32, u64} from "@polkadot/types";
+import {Bytes, u16} from "@polkadot/types";
+import {getBlockNumber} from "../scaffolding/helpers";
 
 describe("🤝 Handles", () => {
     let msa_id: MessageSourceId;
-    let providerId: MessageSourceId;
-    let providerKeys: KeyringPair;
-    let delegatorKeys: KeyringPair;
-    let saved_suffix: u16;
+    let msaOwnerKeys: KeyringPair;
     before(async function () {
         // Create a MSA for the delegator
-        [delegatorKeys, msa_id] = await createDelegator();
-        assert.notEqual(delegatorKeys, undefined, "setup should populate delegator_key");
+        [msaOwnerKeys, msa_id] = await createDelegator();
+        assert.notEqual(msaOwnerKeys, undefined, "setup should populate delegator_key");
         assert.notEqual(msa_id, undefined, "setup should populate msa_id");
     });
 
     describe("@Claim Handle", () => {
         it("should be able to claim a handle", async function () {
             const handle = "test_handle";
-            let currentBlock = await ExtrinsicHelper.getBlockNumber();
+            let currentBlock = await getBlockNumber();
             const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
             const payload = {
                 baseHandle: handle_vec,
                 expiration: currentBlock + 10,
             }
             const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", payload);
-            const claimHandle = ExtrinsicHelper.claimHandle(delegatorKeys, claimHandlePayload);
+            const claimHandle = ExtrinsicHelper.claimHandle(msaOwnerKeys, claimHandlePayload);
             const [event] = await claimHandle.fundAndSend();
             assert.notEqual(event, undefined, "claimHandle should return an event");
             if (event && claimHandle.api.events.handles.HandleClaimed.is(event)) {
@@ -54,10 +49,10 @@ describe("🤝 Handles", () => {
             let suffix = suffix_from_state.toNumber();
             assert.notEqual(suffix, 0, "suffix should not be 0");
 
-            let currentBlock = await ExtrinsicHelper.getBlockNumber();
+            let currentBlock = await getBlockNumber();
             await ExtrinsicHelper.run_to_block(currentBlock + 20);
 
-            const retireHandle = ExtrinsicHelper.retireHandle(delegatorKeys);
+            const retireHandle = ExtrinsicHelper.retireHandle(msaOwnerKeys);
             const [event] = await retireHandle.fundAndSend();
             assert.notEqual(event, undefined, "retireHandle should return an event");
             if (event && retireHandle.api.events.handles.HandleRetired.is(event)) {
@@ -85,14 +80,14 @@ describe("🤝 Handles", () => {
             let suffix_assumed = suffixes_response.suffixes[0];
             assert.notEqual(suffix_assumed, 0, "suffix_assumed should not be 0");
 
-            let currentBlock = await ExtrinsicHelper.getBlockNumber();
+            let currentBlock = await getBlockNumber();
             /// Claim handle (extrinsic)
             const payload_ext = {
                 baseHandle: handle_bytes,
                 expiration: currentBlock + 100,
             };
             const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", payload_ext);
-            const claimHandle = ExtrinsicHelper.claimHandle(delegatorKeys, claimHandlePayload);
+            const claimHandle = ExtrinsicHelper.claimHandle(msaOwnerKeys, claimHandlePayload);
             const [event] = await claimHandle.fundAndSend();
             assert.notEqual(event, undefined, "claimHandle should return an event");
             if (event && claimHandle.api.events.handles.HandleClaimed.is(event)) {
