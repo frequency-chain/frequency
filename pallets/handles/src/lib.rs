@@ -349,16 +349,20 @@ pub mod pallet {
 		) -> DispatchResult {
 			let _ = ensure_signed(origin)?;
 
+			// Validation: Check for base_handle size to address potential panic condition
 			ensure!(
 				payload.base_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
 				Error::<T>::InvalidHandleByteLength
 			);
 
+			// Validation: The delegator must already have a MSA id
 			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
+			// Validation: The signature is within the mortality window
 			Self::verify_signature_mortality(payload.expiration.into())?;
 
+			// Validation: Verify the payload was signed
 			Self::verify_signed_payload(&proof, &delegator_key, payload.encode())?;
 
 			let full_handle = Self::do_claim_handle(delegator_msa_id, payload)?;
@@ -394,6 +398,7 @@ pub mod pallet {
 		pub fn retire_handle(origin: OriginFor<T>) -> DispatchResult {
 			let delegator_key = ensure_signed(origin)?;
 
+			// Validation: The delegator must already have a MSA id
 			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
@@ -645,6 +650,7 @@ pub mod pallet {
 		pub fn do_retire_handle(
 			delegator_msa_id: MessageSourceId,
 		) -> Result<Vec<u8>, DispatchError> {
+			// Validation: The MSA must already have a handle associated with it
 			let handle_from_state = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
 				.map_err(|_| Error::<T>::MSAHandleDoesNotExist)?;
 			let display_name_handle = handle_from_state.0;
