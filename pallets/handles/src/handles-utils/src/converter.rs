@@ -2,12 +2,13 @@
 //!
 //! `handle_converter` provides a `HandleConverter` struct to detect confusable Unicode characters in a
 //! given input string and return its canonical form.
-use crate::confusables::CONFUSABLES;
-use crate::types::*;
+use crate::{confusables::CONFUSABLES, types::*};
 use unicode_normalization::{char::is_combining_mark, UnicodeNormalization};
 extern crate alloc;
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
+use alloc::{
+	string::{String, ToString},
+	vec::Vec,
+};
 
 /// A converter for confusable characters.
 ///

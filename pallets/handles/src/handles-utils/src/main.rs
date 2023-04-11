@@ -37,7 +37,10 @@ fn convert_confuseables_to_unicode_escaped() {
 		let normalized_character = original_line_characters.next().unwrap();
 
 		while let Some(homoglyph) = original_line_characters.next() {
-			let line = format!("\'\\u{{{:x}}}\' => \'\\u{{{:x}}}\',\n", homoglyph as u32, normalized_character as u32);
+			let line = format!(
+				"\'\\u{{{:x}}}\' => \'\\u{{{:x}}}\',\n",
+				homoglyph as u32, normalized_character as u32
+			);
 			_ = output_file.write_all(line.as_bytes());
 		}
 	}
