@@ -1,4 +1,9 @@
-use crate::utils::validator::HandleValidator;
+use crate::validator::HandleValidator;
+extern crate alloc;
+use alloc::{
+	string::{String, ToString},
+	vec::Vec,
+};
 
 #[test]
 fn test_is_reserved_handle_happy_path() {
