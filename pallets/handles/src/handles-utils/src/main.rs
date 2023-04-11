@@ -10,10 +10,10 @@ use std::{
 // subsequent character of the line (key) maps to.
 //
 // Usage:
-// `rustc utils.rs`
-// `./utils`
+//  confusables_generator
 //
-// outputs to confusables.rs
+// Note that the executable must be run in the same folder as the data file, confusable_characters.txt.
+// Running this tool generates a Rust source file called "confusables.rs"
 fn convert_confuseables_to_unicode_escaped() {
 	let input_file = File::open("confusable_characters.txt");
 	assert!(input_file.is_ok());
@@ -37,7 +37,10 @@ fn convert_confuseables_to_unicode_escaped() {
 		let normalized_character = original_line_characters.next().unwrap();
 
 		while let Some(homoglyph) = original_line_characters.next() {
-			let line = format!("\'\\u{{{:x}}}\' => \'\\u{{{:x}}}\',\n", homoglyph as u32, normalized_character as u32);
+			let line = format!(
+				"\'\\u{{{:x}}}\' => \'\\u{{{:x}}}\',\n",
+				homoglyph as u32, normalized_character as u32
+			);
 			_ = output_file.write_all(line.as_bytes());
 		}
 	}

@@ -39,9 +39,8 @@
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-/// Handle converter for canonical handles
-pub mod utils;
-use utils::{converter::HandleConverter, validator::HandleValidator};
+
+use handles_utils::{converter::HandleConverter, validator::HandleValidator};
 
 #[cfg(test)]
 mod tests;
