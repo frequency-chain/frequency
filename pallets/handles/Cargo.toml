@@ -29,7 +29,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", default-features
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
-handles-utils = { path = "src/handles-utils"}
+handles-utils = { default-features = false, path = "src/handles-utils"}
 [dev-dependencies]
 env_logger = "0.10.0"
 pretty_assertions = "1"

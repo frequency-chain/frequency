@@ -2,6 +2,8 @@
 //!
 //! `handle_validator` provides a `HandleValidator` struct to determine the validity of a given
 //! user handle.
+
+#![cfg_attr(not(feature = "std"), no_std)]
 extern crate alloc;
 use alloc::vec::Vec;
 

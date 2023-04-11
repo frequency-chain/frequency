@@ -2,6 +2,8 @@
 //!
 //! `handle_converter` provides a `HandleConverter` struct to detect confusable Unicode characters in a
 //! given input string and return its canonical form.
+
+#![cfg_attr(not(feature = "std"), no_std)]
 use crate::{confusables::CONFUSABLES, types::*};
 use unicode_normalization::{char::is_combining_mark, UnicodeNormalization};
 extern crate alloc;
