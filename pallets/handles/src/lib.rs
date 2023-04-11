@@ -427,7 +427,6 @@ pub mod pallet {
 				Some((handle, _)) => handle,
 				_ => return None,
 			};
-			let full_handle = full_handle_option.0;
 			// convert to string
 			let full_handle_str = core::str::from_utf8(&full_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)
