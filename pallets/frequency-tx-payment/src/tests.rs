@@ -703,18 +703,10 @@ fn compute_capacity_fee_successful() {
 fn pay_with_capacity_batch_all_errors_when_transaction_amount_exceeds_maximum() {
 	let balance_factor = 10;
 	let too_many_calls = vec![
-		RuntimeCall::Balances(BalancesCall::transfer {
-			dest: 2,
-			value: 100,
-		}),
-		RuntimeCall::Balances(BalancesCall::transfer {
-			dest: 2,
-			value: 100,
-		}),
-		RuntimeCall::Balances(BalancesCall::transfer {
-			dest: 2,
-			value: 100,
-		})];
+		RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+		RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+		RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+	];
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
@@ -728,7 +720,7 @@ fn pay_with_capacity_batch_all_errors_when_transaction_amount_exceeds_maximum() 
 					RuntimeOrigin::signed(who),
 					too_many_calls
 				),
-			Error::<Test>::BatchedCallAmountExceedMaximum
+				Error::<Test>::BatchedCallAmountExceedMaximum
 			);
 		});
 }
@@ -744,36 +736,29 @@ fn pay_with_capacity_batch_all_transactions_will_all_fail_if_one_fails() {
 		.execute_with(|| {
 			let origin = 1u64;
 			let successful_balance_transfer_call =
-				RuntimeCall::Balances(BalancesCall::transfer {
-					dest: 2,
-					value: 100,
-				});
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
 
 			let balance_transfer_call_insufficient_funds =
-				RuntimeCall::Balances(BalancesCall::transfer {
-					dest: 2,
-					value: 100000000,
-				});
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100000000 });
 
 			let token_balance_before_call = Balances::free_balance(origin);
 
-			let calls_to_batch = vec![successful_balance_transfer_call, balance_transfer_call_insufficient_funds];
+			let calls_to_batch =
+				vec![successful_balance_transfer_call, balance_transfer_call_insufficient_funds];
 
 			let result = FrequencyTxPayment::pay_with_capacity_batch_all(
-					RuntimeOrigin::signed(origin),
-					calls_to_batch
-				);
-
-			assert!(
-				match result {
-					Err(DispatchErrorWithPostInfo { .. }) => {
-						true
-					}
-					_ => {
-						false
-					}
-				}
+				RuntimeOrigin::signed(origin),
+				calls_to_batch,
 			);
+
+			assert!(match result {
+				Err(DispatchErrorWithPostInfo { .. }) => {
+					true
+				},
+				_ => {
+					false
+				},
+			});
 
 			let token_balance_after_call = Balances::free_balance(origin);
 
