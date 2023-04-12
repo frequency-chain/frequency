@@ -423,7 +423,6 @@ pub mod pallet {
 		/// * `Option<HandleResponse>` - The handle response if the MSA ID is valid.
 		///
 		pub fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
-			
 			let full_handle = match MSAIdToDisplayName::<T>::get(msa_id) {
 				Some((handle, _)) => handle,
 				_ => return None,
