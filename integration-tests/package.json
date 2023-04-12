@@ -16,15 +16,15 @@
     "license": "Apache-2.0",
     "dependencies": {
         "@frequency-chain/api-augment": "file:../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz",
-        "@polkadot/api": "9.14.2",
-        "@polkadot/types": "9.14.2",
+        "@polkadot/api": "10.3.2",
+        "@polkadot/types": "10.3.2",
         "@polkadot/util": "10.4.2",
-        "ipfs": "^0.65.0",
+        "ipfs": "^0.66.0",
         "multiformats": "^11.0.1",
         "rxjs": "^7.8.0"
     },
     "devDependencies": {
-        "@polkadot/typegen": "9.14.2",
+        "@polkadot/typegen": "10.3.2",
         "@types/mocha": "^10.0.0",
         "@typescript-eslint/eslint-plugin": "^5.48.1",
         "@typescript-eslint/parser": "^5.48.1",

@@ -1,6 +1,6 @@
 use super::*;
 use crate::{self as pallet_frequency_tx_payment, mock::*, ChargeFrqTransactionPayment};
-use frame_support::{assert_noop, assert_ok, weights::Weight};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchErrorWithPostInfo, weights::Weight};
 use frame_system::RawOrigin;
 use pallet_capacity::{CapacityDetails, CurrentEpoch, Nontransferable};
 
@@ -261,6 +261,40 @@ fn pay_with_capacity_returns_weight_of_child_call() {
 		.weight
 		.ref_time()
 		.gt(&create_msa_dispatch_info.weight.ref_time()));
+}
+
+#[test]
+fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tupple_with_fee_and_enum(
+) {
+	let balance_factor = 10;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			let charge_tx_payment = ChargeFrqTransactionPayment::<Test>::from(0u64);
+			let who = 1u64;
+			let call: &<Test as Config>::RuntimeCall =
+				&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity_batch_all {
+					calls: vec![RuntimeCall::Balances(BalancesCall::transfer {
+						dest: 2,
+						value: 100,
+					})],
+				});
+
+			let info = DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
+			let len = 10;
+
+			// fee = base_weight(5)
+			//   + extrinsic_weight(11) * WeightToFee(1)
+			//   + TransactionByteFee(1)* len(10) = 26
+			assert_eq!(charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().0, 26u64);
+			assert_eq!(
+				charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().1.is_capacity(),
+				true
+			);
+		});
 }
 
 #[test]
@@ -662,5 +696,106 @@ fn compute_capacity_fee_successful() {
 			);
 
 			assert_eq!(fee, 26);
+		});
+}
+
+#[test]
+fn pay_with_capacity_batch_all_happy_path() {
+	let balance_factor = 10;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			let origin = 1u64;
+
+			let calls = vec![
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 10 }),
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 10 }),
+			];
+
+			let token_balance_before_call = Balances::free_balance(origin);
+
+			assert_ok!(FrequencyTxPayment::pay_with_capacity_batch_all(
+				RuntimeOrigin::signed(origin),
+				calls
+			));
+
+			let token_balance_after_call = Balances::free_balance(origin);
+			assert_eq!(token_balance_before_call - 20u64, token_balance_after_call);
+		});
+}
+
+#[test]
+fn pay_with_capacity_batch_all_errors_when_transaction_amount_exceeds_maximum() {
+	let balance_factor = 10;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			let origin = 1u64;
+
+			let token_balance_before_call = Balances::free_balance(origin);
+
+			let too_many_calls = vec![
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+			];
+			assert_noop!(
+				FrequencyTxPayment::pay_with_capacity_batch_all(
+					RuntimeOrigin::signed(origin),
+					too_many_calls
+				),
+				Error::<Test>::BatchedCallAmountExceedsMaximum
+			);
+
+			let token_balance_after_call = Balances::free_balance(origin);
+
+			assert_eq!(token_balance_before_call, token_balance_after_call);
+		});
+}
+
+#[test]
+fn pay_with_capacity_batch_all_transactions_will_all_fail_if_one_fails() {
+	let balance_factor = 10;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_ref_time(5))
+		.build()
+		.execute_with(|| {
+			let origin = 1u64;
+			let successful_balance_transfer_call =
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+
+			let balance_transfer_call_insufficient_funds =
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100000000 });
+
+			let token_balance_before_call = Balances::free_balance(origin);
+
+			let calls_to_batch =
+				vec![successful_balance_transfer_call, balance_transfer_call_insufficient_funds];
+
+			let result = FrequencyTxPayment::pay_with_capacity_batch_all(
+				RuntimeOrigin::signed(origin),
+				calls_to_batch,
+			);
+
+			assert!(match result {
+				Err(DispatchErrorWithPostInfo { .. }) => {
+					true
+				},
+				_ => {
+					false
+				},
+			});
+
+			let token_balance_after_call = Balances::free_balance(origin);
+
+			assert_eq!(token_balance_before_call, token_balance_after_call);
 		});
 }

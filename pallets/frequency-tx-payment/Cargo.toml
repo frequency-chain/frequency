@@ -35,6 +35,7 @@ common-primitives = {default-features = false, path = "../../common/primitives"}
 
 [dev-dependencies]
 pallet-balances = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
+pallet-utility = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
 
 # Frequency related dev dependencies
 pallet-msa = {path = '../msa'}
