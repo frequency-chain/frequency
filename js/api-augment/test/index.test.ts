@@ -28,11 +28,11 @@ describe("index", function () {
     const topLevelRuntimeApis = Object.keys((api.registry.knownTypes as any).runtime || {});
     assert.deepEqual(topLevelRuntimeApis, [
       "AdditionalRuntimeApi",
+      "HandlesRuntimeApi",
       "MessagesRuntimeApi",
       "MsaRuntimeApi",
       "SchemasRuntimeApi",
       "StatefulStorageRuntimeApi",
-      "HandlesRuntimeApi",
     ]);
   });
 
