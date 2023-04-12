@@ -22,12 +22,15 @@ fn convert_confuseables_to_unicode_escaped() {
 
 	let reader = BufReader::new(input_file.ok().unwrap());
 
+	_ = output_file.write_all(b"//! This module provides utilities for handling confusable characters.\n\n");
 	_ = output_file.write_all(b"// ******************************************************\n");
 	_ = output_file.write_all(b"// ***** THIS FILE IS AUTO-GENERATED.  DO NOT EDIT! *****\n");
 	_ = output_file.write_all(b"// ******************************************************\n");
 	_ = output_file.write_all(b"\n\n");
 	_ = output_file.write_all(b"use phf::phf_map;\n");
+	_ = output_file.write_all(b"/// The mapping from homoglyph character to canonical Unicode character\n");
 	_ = output_file.write_all(b"pub static CONFUSABLES: phf::Map<char, char> = phf_map! {\n");
+
 
 	for line_result in reader.lines() {
 		let original_line = line_result.ok().unwrap();
