@@ -10,7 +10,10 @@
 
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
-	handles::{Handle, HandleResponse, PresumptiveSuffixesResponse, MAX_SUFFIXES_COUNT},
+	handles::{
+		Handle, HandleResponse, PresumptiveSuffixesResponse, DEFAULT_SUFFIX_COUNT,
+		MAX_SUFFIXES_COUNT,
+	},
 	msa::MessageSourceId,
 };
 use jsonrpsee::{
@@ -92,7 +95,7 @@ where
 		let at = BlockId::hash(self.client.info().best_hash);
 		let handle_input: Handle = base_handle.into_bytes().try_into().unwrap();
 		let max_count = MAX_SUFFIXES_COUNT;
-		let count = count.unwrap_or(max_count).min(max_count);
+		let count = count.unwrap_or(DEFAULT_SUFFIX_COUNT).min(max_count);
 		let suffixes_result = api.get_next_suffixes(&at, handle_input, count);
 		map_rpc_result(suffixes_result)
 	}

@@ -20,7 +20,8 @@ pub const HANDLE_BASE_BYTES_MAX: u32 = 32; // Hard limit of 32 bytes
 pub const SUFFIX_MAX_DIGITS: usize = 5; // The max value of a HandleSuffix (u16) is 65535 which is 5 digits.
 /// The maximum count of suffixes allowed to be requested at once
 pub const MAX_SUFFIXES_COUNT: u16 = 100;
-
+/// The default count of suffixes to request if none is provided
+pub const DEFAULT_SUFFIX_COUNT: u16 = 1;
 /// A handle (base, canonical, or display)
 pub type Handle = BoundedVec<u8, ConstU32<HANDLE_BASE_BYTES_MAX>>;
 
