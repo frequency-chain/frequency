@@ -425,7 +425,7 @@ pub mod pallet {
 		/// * `Option<HandleResponse>` - The handle response if the MSA ID is valid.
 		///
 		pub fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
-			let full_handle = match MSAIdToDisplayName::<T>::get(msa_id) {
+			let full_handle = match Self::get_display_name_for_msa_id(msa_id) {
 				Some((handle, _)) => handle,
 				_ => return None,
 			};
@@ -559,7 +559,7 @@ pub mod pallet {
 		) -> Result<Vec<u8>, DispatchError> {
 			// Validation: The MSA must not already have a handle associated with it
 			ensure!(
-				MSAIdToDisplayName::<T>::try_get(delegator_msa_id).is_err(),
+				Self::get_display_name_for_msa_id(delegator_msa_id).is_none(),
 				Error::<T>::MSAHandleAlreadyExists
 			);
 
