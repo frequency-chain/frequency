@@ -1,8 +1,12 @@
+//! This module provides utilities for handling confusable characters.
+
 // ******************************************************
 // ***** THIS FILE IS AUTO-GENERATED.  DO NOT EDIT! *****
 // ******************************************************
 
 use phf::phf_map;
+
+/// The mapping from homoglyph character to canonical Unicode character
 pub static CONFUSABLES: phf::Map<char, char> = phf_map! {
 '\u{1c3}' => '\u{21}',
 '\u{2d51}' => '\u{21}',
