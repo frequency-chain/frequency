@@ -423,11 +423,11 @@ pub mod pallet {
 		/// * `Option<HandleResponse>` - The handle response if the MSA ID is valid.
 		///
 		pub fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
-			let full_handle_option = MSAIdToDisplayName::<T>::get(msa_id);
-			if full_handle_option.is_none() {
-				return None
-			}
-			let full_handle = full_handle_option.unwrap().0;
+			
+			let full_handle = match MSAIdToDisplayName::<T>::get(msa_id) {
+				Some((handle, _)) => handle,
+				_ => return None,
+			};
 			// convert to string
 			let full_handle_str = core::str::from_utf8(&full_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)
