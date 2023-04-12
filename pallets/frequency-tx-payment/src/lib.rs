@@ -39,7 +39,10 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-use common_primitives::capacity::{Nontransferable, Replenishable};
+use common_primitives::{
+	capacity::{Nontransferable, Replenishable},
+	node::UtilityProvider,
+};
 pub use pallet::*;
 pub use weights::*;
 
@@ -168,32 +171,35 @@ pub mod pallet {
 
 		/// Charge Capacity for transaction payments.
 		type OnChargeCapacityTransaction: OnChargeCapacityTransaction<Self>;
+
+		/// The maxmimum number of capacity calls that can be batched together.
+		#[pallet::constant]
+		type MaximumCapacityBatchLength: Get<u8>;
+
+		type BatchProvider: UtilityProvider<OriginFor<Self>, <Self as Config>::RuntimeCall>;
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {}
 
+	#[pallet::error]
+	pub enum Error<T> {
+		/// The maximum amount of requested batched calls was exceeded
+		BatchedCallAmountExceedsMaximum,
+	}
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Dispatch the given call as a sub_type of pay_with_capacity. Calls dispatched in this
-		/// fashion, if allowed, will pay with Capacity
+		/// fashion, if allowed, will pay with Capacity.
 		// The weight calculation is a temporary adjustment because overhead benchmarks do not account
 		// for capacity calls.  We count reads and writes for a pay_with_capacity call,
 		// then subtract one of each for regular transactions since overhead benchmarks account for these.
-		//	 Storage: Msa PublicKeyToMsaId (r:1)
-		//   Storage: Capacity CapacityLedger(r:1, w:2)
-		//   Storage: Capacity CurrentEpoch(r:1) ? maybe cached in on_initialize
-		//   Storage: System Account(r:1)
-		//   Total (r: 4-1=3, w: 2-1=1)
 		#[pallet::call_index(0)]
 		#[pallet::weight({
-		use frame_support::weights::constants::RocksDbWeight;
 		let dispatch_info = call.get_dispatch_info();
-		let capacity_overhead = RocksDbWeight::get().reads(2)
-			.saturating_add(
-				RocksDbWeight::get().writes(1)
-			);
+		let capacity_overhead = Pallet::<T>::get_capacity_overhead_weight();
 		let total = capacity_overhead.saturating_add(dispatch_info.weight);
 		(< T as Config >::WeightInfo::pay_with_capacity().saturating_add(total), dispatch_info.class)
 		})]
@@ -205,10 +211,48 @@ pub mod pallet {
 
 			call.dispatch(origin)
 		}
+
+		/// Dispatch the given call as a sub_type of pay_with_capacity_batch_all. Calls dispatched in this
+		/// fashion, if allowed, will pay with Capacity.
+		#[pallet::call_index(1)]
+		#[pallet::weight({
+		let dispatch_infos = calls.iter().map(|call| call.get_dispatch_info()).collect::<Vec<_>>();
+		let dispatch_weight = dispatch_infos.iter()
+				.map(|di| di.weight)
+				.fold(Weight::zero(), |total: Weight, weight: Weight| total.saturating_add(weight));
+
+		let capacity_overhead = Pallet::<T>::get_capacity_overhead_weight();
+		let total = capacity_overhead.saturating_add(dispatch_weight);
+		(< T as Config >::WeightInfo::pay_with_capacity_batch_all(calls.len() as u32).saturating_add(total), DispatchClass::Normal)
+		})]
+		pub fn pay_with_capacity_batch_all(
+			origin: OriginFor<T>,
+			calls: Vec<<T as Config>::RuntimeCall>,
+		) -> DispatchResultWithPostInfo {
+			ensure_signed(origin.clone())?;
+			ensure!(
+				calls.len() <= T::MaximumCapacityBatchLength::get().into(),
+				Error::<T>::BatchedCallAmountExceedsMaximum
+			);
+
+			T::BatchProvider::batch_all(origin, calls)
+		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
+	// The weight calculation is a temporary adjustment because overhead benchmarks do not account
+	// for capacity calls.  We count reads and writes for a pay_with_capacity call,
+	// then subtract one of each for regular transactions since overhead benchmarks account for these.
+	//   Storage: Msa PublicKeyToMsaId (r:1)
+	//   Storage: Capacity CapacityLedger(r:1, w:2)
+	//   Storage: Capacity CurrentEpoch(r:1) ? maybe cached in on_initialize
+	//   Storage: System Account(r:1)
+	//   Total (r: 4-1=3, w: 2-1=1)
+	pub fn get_capacity_overhead_weight() -> Weight {
+		T::DbWeight::get().reads(2).saturating_add(T::DbWeight::get().writes(1))
+	}
+
 	pub fn compute_capacity_fee(
 		len: u32,
 		class: DispatchClass,
@@ -284,7 +328,8 @@ where
 	/// Return the tip as being chosen by the transaction sender.
 	pub fn tip(&self, call: &<T as frame_system::Config>::RuntimeCall) -> BalanceOf<T> {
 		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { .. }) => Zero::zero(),
+			Some(Call::pay_with_capacity { .. }) |
+			Some(Call::pay_with_capacity_batch_all { .. }) => Zero::zero(),
 			_ => self.0,
 		}
 	}
@@ -298,26 +343,31 @@ where
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { call }) => self.withdraw_capacity_fee(who, call, len),
+			Some(Call::pay_with_capacity { call }) =>
+				self.withdraw_capacity_fee(who, &vec![*call.clone()], len),
+			Some(Call::pay_with_capacity_batch_all { calls }) =>
+				self.withdraw_capacity_fee(who, calls, len),
 			_ => self.withdraw_token_fee(who, call, info, len, self.tip(call)),
 		}
 	}
 
-	/// Withdraws transaction fee paid Capacity using a key associated to an MSA.
+	/// Withdraws the transaction fee paid in Capacity using a key associated to an MSA.
 	fn withdraw_capacity_fee(
 		&self,
 		key: &T::AccountId,
-		call: &<T as Config>::RuntimeCall,
+		calls: &Vec<<T as Config>::RuntimeCall>,
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
-		let extrinsic_weight = T::CapacityCalls::get_stable_weight(call)
-			.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
+		let mut calls_weight_sum = Weight::zero();
 
-		let fee = Pallet::<T>::compute_capacity_fee(
-			len as u32,
-			call.get_dispatch_info().class,
-			extrinsic_weight,
-		);
+		for call in calls {
+			let call_weight = T::CapacityCalls::get_stable_weight(call)
+				.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
+			calls_weight_sum = calls_weight_sum.saturating_add(call_weight);
+		}
+
+		let fee =
+			Pallet::<T>::compute_capacity_fee(len as u32, DispatchClass::Normal, calls_weight_sum);
 
 		let fee = T::OnChargeCapacityTransaction::withdraw_fee(key, fee.into())?;
 
