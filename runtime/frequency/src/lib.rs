@@ -1076,6 +1076,8 @@ impl pallet_handles::Config for Runtime {
 	type HandleSuffixMax = HandleSuffixMax;
 	/// The conversion to a 32 byte AccountId
 	type ConvertIntoAccountId32 = ConvertInto;
+	// The number of blocks per virtual bucket
+	type MortalityWindowSize = MSAMortalityWindowSize;
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
 	type MsaBenchmarkHelper = Msa;

@@ -11,14 +11,17 @@ fn signed_extension_retire_handle_success() {
 
 		// Claim the handle
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 10;
 		let (payload, proof) =
-			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec());
+			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
 			proof,
 			payload
 		));
+
+		run_to_block(11);
 
 		// Retire the handle
 		let call_retire_handle: &<Test as frame_system::Config>::RuntimeCall =

@@ -8,7 +8,6 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
-#![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod confusables;
 pub mod converter;

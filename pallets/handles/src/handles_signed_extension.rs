@@ -1,10 +1,11 @@
 //! Substrate Signed Extension for validating requests to the handles pallet
-use crate::{Call, Config, MSAIdToDisplayName};
+use crate::{Call, Config, Error, MSAIdToDisplayName};
 use codec::{Decode, Encode};
 use common_primitives::msa::MsaValidator;
 use core::marker::PhantomData;
 use frame_support::{
 	dispatch::{DispatchInfo, Dispatchable},
+	ensure,
 	pallet_prelude::ValidTransaction,
 	traits::IsSubType,
 	unsigned::UnknownTransaction,
@@ -45,8 +46,18 @@ impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 		let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 			.map_err(|e| map_dispatch_error(e))?;
 		// Validation: The MSA must already have a handle associated with it
-		_ = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
+		let handle_from_state = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
 			.map_err(|_| UnknownTransaction::CannotLookup)?;
+		let expiration = handle_from_state.1;
+		let current_block = frame_system::Pallet::<T>::block_number();
+
+		let is_past_min_lifetime = current_block >= expiration;
+		ensure!(
+			is_past_min_lifetime,
+			map_dispatch_error(DispatchError::Other(
+				Error::<T>::HandleWithinMortalityPeriod.into()
+			))
+		);
 
 		return ValidTransaction::with_tag_prefix(TAG_PREFIX).build()
 	}
@@ -98,7 +109,7 @@ where
 	}
 
 	/// Frequently called by the transaction queue to validate all free Handles extrinsics:
-	/// Returns a `ValidTransaction` or wrapped [`ValidityError`]
+	/// Returns a `ValidTransaction` or wrapped [`TransactionValidityError`]
 	/// * retire_handle
 	/// Validate functions for the above MUST prevent errors in the extrinsic logic to prevent spam.
 	///
