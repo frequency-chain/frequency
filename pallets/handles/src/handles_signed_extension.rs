@@ -1,5 +1,5 @@
 //! Substrate Signed Extension for validating requests to the handles pallet
-use crate::{Call, Config, MSAIdToDisplayName, Pallet};
+use crate::{Call, Config, MSAIdToDisplayName};
 use codec::{Decode, Encode};
 use common_primitives::msa::MsaValidator;
 use core::marker::PhantomData;
@@ -7,6 +7,7 @@ use frame_support::{
 	dispatch::{DispatchInfo, Dispatchable},
 	pallet_prelude::ValidTransaction,
 	traits::IsSubType,
+	unsigned::UnknownTransaction,
 };
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -26,26 +27,7 @@ impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 	pub fn new() -> Self {
 		Self(sp_std::marker::PhantomData)
 	}
-}
 
-impl<T: Config + Send + Sync> sp_std::fmt::Debug for HandlesSignedExtension<T> {
-	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		write!(f, "HandlesSignedExtension<{:?}>", self.0)
-	}
-	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
-	}
-}
-
-/// Validator trait to be used in validating Handles requests from a Signed Extension.
-pub trait HandlesValidate<C: Config> {
-	/// Validates calls to the retire_handle() extrinsic
-	fn validate_retire_handle(delegator_key: &C::AccountId) -> TransactionValidity;
-}
-
-impl<T: Config> HandlesValidate<T> for Pallet<T> {
 	/// Validates the following criteria for the retire_handle() extrinsic:
 	///
 	/// * The delegator must already have a MSA id
@@ -64,8 +46,20 @@ impl<T: Config> HandlesValidate<T> for Pallet<T> {
 			.map_err(|e| map_dispatch_error(e))?;
 		// Validation: The MSA must already have a handle associated with it
 		_ = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
-			.map_err(|_| map_dispatch_error(DispatchError::CannotLookup))?;
+			.map_err(|_| UnknownTransaction::CannotLookup)?;
+
 		return ValidTransaction::with_tag_prefix(TAG_PREFIX).build()
+	}
+}
+
+impl<T: Config + Send + Sync> sp_std::fmt::Debug for HandlesSignedExtension<T> {
+	#[cfg(feature = "std")]
+	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		write!(f, "HandlesSignedExtension<{:?}>", self.0)
+	}
+	#[cfg(not(feature = "std"))]
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
 	}
 }
 
@@ -73,7 +67,7 @@ impl<T: Config> HandlesValidate<T> for Pallet<T> {
 pub fn map_dispatch_error(err: DispatchError) -> InvalidTransaction {
 	InvalidTransaction::Custom(match err {
 		DispatchError::Module(ModuleError { error, .. }) => error[0],
-		_ => 0,
+		_ => 255u8,
 	})
 }
 
@@ -87,10 +81,12 @@ where
 	type Pre = ();
 	const IDENTIFIER: &'static str = "HandlesSignedExtension";
 
+	/// Additional signed
 	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
 		Ok(())
 	}
 
+	/// Pre dispatch
 	fn pre_dispatch(
 		self,
 		who: &Self::AccountId,
@@ -119,7 +115,7 @@ where
 		_len: usize,
 	) -> TransactionValidity {
 		match call.is_sub_type() {
-			Some(Call::retire_handle {}) => Pallet::<T>::validate_retire_handle(who),
+			Some(Call::retire_handle {}) => Self::validate_retire_handle(who),
 			_ => Ok(Default::default()),
 		}
 	}
