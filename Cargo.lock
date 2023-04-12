@@ -5529,6 +5529,7 @@ dependencies = [
  "pallet-capacity",
  "pallet-msa",
  "pallet-transaction-payment",
+ "pallet-utility",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
