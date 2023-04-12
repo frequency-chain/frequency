@@ -109,7 +109,7 @@ where
 	}
 
 	/// Frequently called by the transaction queue to validate all free Handles extrinsics:
-	/// Returns a `ValidTransaction` or wrapped [`ValidityError`]
+	/// Returns a `ValidTransaction` or wrapped [`TransactionValidityError`]
 	/// * retire_handle
 	/// Validate functions for the above MUST prevent errors in the extrinsic logic to prevent spam.
 	///
