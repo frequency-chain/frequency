@@ -6,6 +6,7 @@
   },
   "description": "RPC configuration for Frequency for use with Polkadotjs API",
   "main": "index.js",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/LibertyDSNP/frequency.git",
@@ -14,17 +15,17 @@
   "scripts": {
     "clean": "rm -Rf dist interfaces",
     "clean:generated": "rm -Rf dist metadata.* interfaces",
-    "pregenerate": "npm run clean && node scripts/pre-gen.js",
+    "pregenerate": "npm run clean && node scripts/pre-gen.cjs",
     "generate": "npm run generate:defs && npm run generate:meta",
-    "package": "node scripts/package.js",
+    "package": "node scripts/package.cjs",
     "prepackage": "cp CONTRIBUTING.md README.md ../../LICENSE ./dist",
     "prebuild": "npm run generate",
     "build": "tsc -p ./tsconfig.types.json && tsc -p ./tsconfig.cjs.json && tsc -p ./tsconfig.esm.json",
     "postbuild": "npm run package",
     "fetch:local": "curl -H \"Content-Type: application/json\" -d '{\"id\":\"1\", \"jsonrpc\":\"2.0\", \"method\": \"state_getMetadata\", \"params\":[]}' http://localhost:9933 -o ./metadata.json",
-    "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package @frequency-chain/api-augment --input ./interfaces --endpoint ./metadata.json",
-    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package @frequency-chain/api-augment --endpoint ./metadata.json --output ./interfaces",
-    "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --require ts-node/register  ./test/**/*.test.ts",
+    "generate:defs": "node --loader ts-node/esm node_modules/.bin/polkadot-types-from-defs --package @frequency-chain/api-augment --input ./interfaces --endpoint ./metadata.json",
+    "generate:meta": "node --loader ts-node/esm node_modules/.bin/polkadot-types-from-chain --package @frequency-chain/api-augment --endpoint ./metadata.json --output ./interfaces",
+    "test": "mocha --require ts-node/register  ./test/**/*.test.ts",
     "test:only": "mocha --require ts-node/register",
     "format": "tsc --noEmit --pretty && eslint --fix \"**/*.ts\"",
     "lint": "tsc --noEmit --pretty && eslint \"**/*.ts\""
@@ -32,13 +33,13 @@
   "author": "LibertyDSNP",
   "license": "Apache-2.0",
   "dependencies": {
-    "@polkadot/api": "^9.14.2",
-    "@polkadot/rpc-provider": "^9.14.2",
-    "@polkadot/types": "^9.14.2"
+    "@polkadot/api": "^10.3.2",
+    "@polkadot/rpc-provider": "^10.3.2",
+    "@polkadot/types": "^10.3.2"
   },
   "devDependencies": {
-    "@polkadot/typegen": "^9.14.2",
-    "@types/mocha": "^10.0.0",
+    "@polkadot/typegen": "^10.3.2",
+    "@types/mocha": "^10.0.1",
     "@typescript-eslint/eslint-plugin": "^5.42.0",
     "@typescript-eslint/parser": "^5.42.0",
     "eslint": "^8.26.0",

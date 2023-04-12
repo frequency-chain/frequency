@@ -12,7 +12,7 @@ jobs:
   changes:
     name: Determine Changed Files
     runs-on: ubuntu-20.04
-    container: ubuntu:20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
     outputs:
       rust: ${{steps.filter.outputs.rust}}
       build-binary: ${{steps.filter.outputs.build-binary}}
@@ -54,7 +54,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.build-binary != 'true'
     runs-on: ubuntu-20.04
-    container: ubuntu:20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
     name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
     strategy:
       matrix:
@@ -101,8 +101,8 @@ jobs:
           - network: mainnet
             spec: frequency
             branch_alias: pr
-    runs-on: [self-hosted, Linux, X64, build]
-    container: ubuntu:20.04
+    runs-on: [self-hosted, Linux, X64, testing, v2]
+    container: public.ecr.aws/lts/ubuntu:20.04
     env:
       NETWORK: mainnet
     steps:
@@ -158,7 +158,7 @@ jobs:
     if: needs.changes.outputs.cargo-lock == 'true'
     name: Check for Vulnerable Crates
     runs-on: ubuntu-20.04
-    container: ubuntu:20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - name: Install Required Packages
         run: |
@@ -183,9 +183,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Code Format
     runs-on: ubuntu-20.04
-    container:
-      image: ubuntu:20.04
-      # options: --user runner
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - name: Install Required Packages
         run: |
@@ -206,8 +204,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
-    runs-on: [self-hosted, Linux, X64, build]
-    container: ubuntu:20.04
+    runs-on: [self-hosted, Linux, X64, testing, v2]
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - name: Install Required Packages
         run: |
@@ -231,8 +229,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
-    runs-on: [self-hosted, Linux, X64, build]
-    container: ubuntu:20.04
+    runs-on: [self-hosted, Linux, X64, testing, v2]
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - name: Install Required Packages
         run: |
@@ -252,8 +250,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
-    runs-on: [self-hosted, Linux, X64, build]
-    container: ubuntu:20.04
+    runs-on: [self-hosted, Linux, X64, testing, v2]
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - name: Install Required Packages
         run: |
@@ -272,8 +270,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
-    runs-on: [self-hosted, Linux, X64, build]
-    container: ubuntu:20.04
+    runs-on: [self-hosted, Linux, X64, testing, v2]
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - name: Install Required Packages
         run: |
@@ -294,7 +292,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
     runs-on: [self-hosted, Linux, X64, build]
-    container: ubuntu:20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - name: Install Required Packages
         run: |
@@ -333,7 +331,7 @@ jobs:
       matrix:
         network: [rococo, mainnet]
     runs-on: ubuntu-20.04
-    container: ubuntu:20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
@@ -356,8 +354,8 @@ jobs:
             package: frequency-runtime
             runtime-dir: runtime/frequency
             features: frequency
-    runs-on: [self-hosted, Linux, X64, build]
-    container: ubuntu:20.04
+    runs-on: [self-hosted, Linux, X64, testing, v2]
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - name: Install Required Packages
         run: |
@@ -365,7 +363,6 @@ jobs:
           apt-get install -y curl protobuf-compiler build-essential libclang-dev file
           curl -fsSL https://get.docker.com -o get-docker.sh
           sh get-docker.sh
-          docker run hello-world
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
@@ -410,7 +407,7 @@ jobs:
     needs: build-binaries
     name: Verify JS API Augment
     runs-on: ubuntu-20.04
-    container: ubuntu:20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -463,7 +460,7 @@ jobs:
     needs: build-binaries
     name: Verify Docker Images
     runs-on: ubuntu-20.04
-    container: ubuntu:20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - name: Install Required Packages
         run: |
@@ -471,7 +468,6 @@ jobs:
           apt-get install -y curl
           curl -fsSL https://get.docker.com -o get-docker.sh
           sh get-docker.sh
-          docker run hello-world
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Set Env Vars
@@ -517,7 +513,7 @@ jobs:
     needs: build-binaries
     name: Execute Binary Checks
     runs-on: ubuntu-20.04
-    container: ubuntu:20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - name: Install Required Packages
         run: |
@@ -551,7 +547,7 @@ jobs:
     needs: build-binaries
     name: Check Metadata and Spec Version
     runs-on: ubuntu-20.04
-    container: ubuntu:20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
     env:
       GITHUB_PR_LABEL: metadata-mismatch
     steps:
@@ -616,7 +612,7 @@ jobs:
     needs: [build-binaries, verify-js-api-augment]
     name: Run Integration Tests
     runs-on: ubuntu-20.04
-    container: ubuntu:20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -684,7 +680,7 @@ jobs:
     needs: build-binaries
     name: Verify Genesis State
     runs-on: ubuntu-20.04
-    container: ubuntu:20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - name: Set Env Vars
         run: |

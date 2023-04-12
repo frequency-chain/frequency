@@ -1,5 +1,9 @@
 UNAME := $(shell uname)
 
+.PHONY: clean
+clean:
+	cargo clean
+
 .PHONY: start
 start:
 	./scripts/init.sh start-frequency-instant

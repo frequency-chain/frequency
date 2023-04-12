@@ -40,6 +40,7 @@ frame_support::construct_runtime!(
 			Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>},
 			TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
 			FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>},
+			Utility: pallet_utility::{Pallet, Call, Storage, Event},
 		}
 );
 
@@ -99,6 +100,7 @@ impl pallet_balances::Config for Test {
 
 parameter_types! {
 	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
+	pub const MaximumCapacityBatchLength: u8 = 2;
 }
 impl Clone for MaxSchemaGrantsPerDelegation {
 	fn clone(&self) -> Self {
@@ -254,6 +256,21 @@ impl GetStableWeight<RuntimeCall, Weight> for TestCapacityCalls {
 	}
 }
 
+pub struct CapacityBatchProvider;
+
+impl UtilityProvider<RuntimeOrigin, RuntimeCall> for CapacityBatchProvider {
+	fn batch_all(origin: RuntimeOrigin, calls: Vec<RuntimeCall>) -> DispatchResultWithPostInfo {
+		Utility::batch_all(origin, calls)
+	}
+}
+
+impl pallet_utility::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type PalletsOrigin = OriginCaller;
+	type WeightInfo = ();
+}
+
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
@@ -261,6 +278,8 @@ impl Config for Test {
 	type WeightInfo = ();
 	type CapacityCalls = TestCapacityCalls;
 	type OnChargeCapacityTransaction = payment::CapacityAdapter<Balances, Msa>;
+	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
+	type BatchProvider = CapacityBatchProvider;
 }
 
 pub struct ExtBuilder {

@@ -5,6 +5,7 @@
         "allowSyntheticDefaultImports": true,
         "esModuleInterop": true,
         "moduleResolution": "node",
+        "module": "esnext",
         "noImplicitAny": true,
         "outDir": "dist",
         "resolveJsonModule": true,
@@ -24,6 +25,9 @@
             "@polkadot/types/augment": ["./interfaces/augment-types.ts"],
             "@polkadot/types/lookup": ["./interfaces/types-lookup.ts"]
         }
+    },
+    "ts-node": {
+        "experimentalSpecifierResolution": "node"
     },
     "exclude": ["node_modules/**", "./test/**", "./scripts/**", "**/*.test.ts", "./dist/**"],
 }
