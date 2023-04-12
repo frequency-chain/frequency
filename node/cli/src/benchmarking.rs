@@ -128,6 +128,7 @@ pub fn create_benchmark_extrinsic(
 		frame_system::CheckWeight::<runtime::Runtime>::new(),
 		pallet_frequency_tx_payment::ChargeFrqTransactionPayment::<runtime::Runtime>::from(0),
 		pallet_msa::CheckFreeExtrinsicUse::<runtime::Runtime>::new(),
+		pallet_handles::handles_signed_extension::HandlesSignedExtension::<runtime::Runtime>::new(),
 	);
 
 	let raw_payload = sp_runtime::generic::SignedPayload::from_raw(
@@ -139,6 +140,7 @@ pub fn create_benchmark_extrinsic(
 			runtime::VERSION.transaction_version,
 			genesis_hash,
 			best_hash,
+			(),
 			(),
 			(),
 			(),
