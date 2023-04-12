@@ -317,7 +317,7 @@ pub mod pallet {
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the caller.
-		/// * `msa_owner_key` - The MSA owner key of the caller.
+		/// * `msa_owner_key` - The public key of the MSA owner.
 		/// * `proof` - The multi-signature proof for the payload.
 		/// * `payload` - The payload containing the information needed to claim the handle.
 		///
