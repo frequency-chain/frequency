@@ -63,6 +63,8 @@ use sp_runtime::{
 };
 use sp_std::{prelude::*, vec::Vec};
 
+pub mod handles_signed_extension;
+
 pub mod suffix;
 use suffix::SuffixGenerator;
 pub mod weights;
@@ -176,7 +178,7 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Deposited when a handle is created. [MSA id, full handle in UTF-8 bytes]
+		/// Deposited when a handle is claimed. [MSA id, full handle in UTF-8 bytes]
 		HandleClaimed {
 			/// MSA id of handle owner
 			msa_id: MessageSourceId,
@@ -646,17 +648,11 @@ pub mod pallet {
 			delegator_msa_id: MessageSourceId,
 		) -> Result<Vec<u8>, DispatchError> {
 			// Validation: The MSA must already have a handle associated with it
-			let handle_from_state = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
-				.map_err(|_| Error::<T>::MSAHandleDoesNotExist)?;
+			let handle_from_state = Self::get_display_name_for_msa_id(delegator_msa_id)
+				.ok_or(Error::<T>::MSAHandleDoesNotExist)?;
 			let display_name_handle = handle_from_state.0;
 			let display_name_str = core::str::from_utf8(&display_name_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
-			let expiration = handle_from_state.1;
-
-			let current_block = frame_system::Pallet::<T>::block_number();
-
-			let is_past_min_lifetime = current_block >= expiration;
-			ensure!(is_past_min_lifetime, Error::<T>::HandleWithinMortalityPeriod);
 
 			let (base_handle_str, suffix_num) =
 				HandleConverter::split_display_name(display_name_str);

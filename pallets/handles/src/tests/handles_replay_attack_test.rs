@@ -1,9 +1,10 @@
-use crate::{tests::mock::*, Error, Event};
+use crate::{handles_signed_extension::HandlesSignedExtension, tests::mock::*, Error, Event};
 use codec::Decode;
 use common_primitives::{handles::*, msa::MessageSourceId};
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchInfo};
 use numtoa::*;
 use sp_core::{sr25519, Encode, Pair};
+use sp_runtime::traits::SignedExtension;
 
 #[test]
 fn test_handle_claim_replay_attack() {
@@ -115,10 +116,17 @@ fn test_handle_retire_replay_attack() {
 		full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
 
 		// Fail to retire due to mortality
-		assert_noop!(
-			Handles::retire_handle(RuntimeOrigin::signed(alice.public().into()),),
-			Error::<Test>::HandleWithinMortalityPeriod
+		let call_retire_handle: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Handles(HandlesCall::retire_handle {});
+		let info = DispatchInfo::default();
+		let len = 0_usize;
+		let early_retire_result = HandlesSignedExtension::<Test>::new().validate(
+			&alice.public().into(),
+			call_retire_handle,
+			&info,
+			len,
 		);
+		assert!(early_retire_result.is_err());
 
 		// Retire the handle after the mortality period
 		run_to_block(200);
