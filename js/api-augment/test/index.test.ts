@@ -3,7 +3,7 @@ import { options } from "../index";
 import { ApiPromise } from "@polkadot/api";
 import { MockProvider } from "@polkadot/rpc-provider/mock";
 import { TypeRegistry } from "@polkadot/types";
-import metadataRaw from "../metadata.json";
+import metadataRaw from "../metadata.json" assert { type: "json" };
 
 describe("index", function () {
   let mock: MockProvider;
@@ -27,12 +27,12 @@ describe("index", function () {
   it("should know about runtime apis", function () {
     const topLevelRuntimeApis = Object.keys((api.registry.knownTypes as any).runtime || {});
     assert.deepEqual(topLevelRuntimeApis, [
-      "MsaRuntimeApi",
+      "AdditionalRuntimeApi",
+      "HandlesRuntimeApi",
       "MessagesRuntimeApi",
+      "MsaRuntimeApi",
       "SchemasRuntimeApi",
       "StatefulStorageRuntimeApi",
-      "HandlesRuntimeApi",
-      "AdditionalRuntimeApi",
     ]);
   });
 

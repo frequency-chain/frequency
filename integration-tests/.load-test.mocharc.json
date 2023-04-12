@@ -1,0 +1,9 @@
+{
+    "exit": true,
+    "extension": ["ts"],
+    "parallel": false,
+    "require":  ["scaffolding/rootHooks.ts", "scaffolding/extrinsicHelpers.ts"],
+    "loader": "ts-node/esm",
+    "spec": ["./load-tests/**/*.test.ts"],
+    "timeout": 60000
+}

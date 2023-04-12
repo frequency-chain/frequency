@@ -3,7 +3,6 @@
     "compilerOptions": {
         "lib": ["ES2020"],
         "module": "CommonJS",
-        "target": "es2022",
         "outDir": "dist/cjs",
         "declaration": false
     },
