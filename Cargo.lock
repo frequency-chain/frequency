@@ -2751,6 +2751,7 @@ dependencies = [
  "log",
  "pallet-balances",
  "pallet-frequency-tx-payment",
+ "pallet-handles",
  "pallet-msa",
  "pallet-transaction-payment",
  "parity-scale-codec",
@@ -3243,6 +3244,15 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "handles-utils"
+version = "0.0.0"
+dependencies = [
+ "phf",
+ "rand 0.8.5",
+ "unicode-normalization",
 ]
 
 [[package]]
@@ -5533,6 +5543,7 @@ dependencies = [
  "pallet-capacity",
  "pallet-msa",
  "pallet-transaction-payment",
+ "pallet-utility",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
@@ -5573,10 +5584,10 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "handles-utils",
  "log",
  "numtoa",
  "parity-scale-codec",
- "phf",
  "pretty_assertions",
  "rand 0.8.5",
  "scale-info",
@@ -5587,7 +5598,6 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "twox-hash",
- "unicode-normalization",
 ]
 
 [[package]]

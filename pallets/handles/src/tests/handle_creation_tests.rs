@@ -21,7 +21,9 @@ fn test_full_handle_creation() {
 fn claim_handle_happy_path() {
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
-		let (payload, proof) = get_signed_claims_payload(&alice, "test1".as_bytes().to_vec());
+		let expiry = 100;
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, "test1".as_bytes().to_vec(), expiry);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
@@ -40,15 +42,17 @@ fn claim_handle_happy_path() {
 fn claim_handle_already_claimed() {
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
-		let (payload, proof) = get_signed_claims_payload(&alice, "test1".as_bytes().to_vec());
+		let expiration = 100;
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, "test1".as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
 			proof,
 			payload.clone()
 		));
-
-		let (payload, proof) = get_signed_claims_payload(&alice, "test1".as_bytes().to_vec());
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, "test1".as_bytes().to_vec(), expiration);
 		assert_noop!(
 			Handles::claim_handle(
 				RuntimeOrigin::signed(alice.public().into()),
@@ -65,7 +69,9 @@ fn claim_handle_already_claimed() {
 fn claim_handle_already_claimed_with_different_case() {
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
-		let (payload, proof) = get_signed_claims_payload(&alice, "test1".as_bytes().to_vec());
+		let expiration = 100;
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, "test1".as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
@@ -73,7 +79,8 @@ fn claim_handle_already_claimed_with_different_case() {
 			payload.clone()
 		));
 
-		let (payload, proof) = get_signed_claims_payload(&alice, "TEST1".as_bytes().to_vec());
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, "TEST1".as_bytes().to_vec(), expiration);
 		assert_noop!(
 			Handles::claim_handle(
 				RuntimeOrigin::signed(alice.public().into()),
@@ -90,7 +97,9 @@ fn claim_handle_already_claimed_with_different_case() {
 fn claim_handle_already_claimed_with_homoglyph() {
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
-		let (payload, proof) = get_signed_claims_payload(&alice, "test1".as_bytes().to_vec());
+		let expiration = 100;
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, "test1".as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
@@ -98,7 +107,8 @@ fn claim_handle_already_claimed_with_homoglyph() {
 			payload.clone()
 		));
 
-		let (payload, proof) = get_signed_claims_payload(&alice, "tést1".as_bytes().to_vec());
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, "tést1".as_bytes().to_vec(), expiration);
 		assert_noop!(
 			Handles::claim_handle(
 				RuntimeOrigin::signed(alice.public().into()),
@@ -115,7 +125,9 @@ fn claim_handle_already_claimed_with_homoglyph() {
 fn claim_handle_get_msa_handle() {
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
-		let (payload, proof) = get_signed_claims_payload(&alice, "test1".as_bytes().to_vec());
+		let expiration = 100;
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, "test1".as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
@@ -138,9 +150,11 @@ fn claim_handle_invalid_length_too_long() {
 	// Try to claim a 36 byte handle which is over the byte and character limit
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 100;
 		let (payload, proof) = get_signed_claims_payload(
 			&alice,
 			"abcdefghijklmnopqrstuvwxyz0123456789".as_bytes().to_vec(),
+			expiration,
 		);
 		assert_noop!(
 			Handles::claim_handle(
@@ -159,7 +173,9 @@ fn claim_handle_invalid_length_too_short() {
 	// Try to claim a 1 character handle which is under the character limit
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
-		let (payload, proof) = get_signed_claims_payload(&alice, "a".as_bytes().to_vec());
+		let expiration = 100;
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, "a".as_bytes().to_vec(), expiration);
 		assert_noop!(
 			Handles::claim_handle(
 				RuntimeOrigin::signed(alice.public().into()),
@@ -178,8 +194,12 @@ fn claim_handle_invalid_byte_length() {
 	// ℂн𝔸RℒℰᏕ𝔇𝔸𐒴𑣯1𝒩𝓐𑣯𝔸R𝔻Ꮥ is 19 characters but 61 bytes
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
-		let (payload, proof) =
-			get_signed_claims_payload(&alice, "ℂн𝔸RℒℰᏕ𝔇𝔸𐒴𑣯1𝒩𝓐𑣯𝔸R𝔻Ꮥ".as_bytes().to_vec());
+		let expiration = 100;
+		let (payload, proof) = get_signed_claims_payload(
+			&alice,
+			"ℂн𝔸RℒℰᏕ𝔇𝔸𐒴𑣯1𝒩𝓐𑣯𝔸R𝔻Ꮥ".as_bytes().to_vec(),
+			expiration,
+		);
 		assert_noop!(
 			Handles::claim_handle(
 				RuntimeOrigin::signed(alice.public().into()),
@@ -196,7 +216,9 @@ fn claim_handle_invalid_byte_length() {
 fn test_get_next_suffixes() {
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
-		let (payload, proof) = get_signed_claims_payload(&alice, "test1".as_bytes().to_vec());
+		let expiration = 100;
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, "test1".as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),

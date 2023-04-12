@@ -39,17 +39,14 @@
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-/// Handle converter for canonical handles
-pub mod utils;
-use utils::{converter::HandleConverter, validator::HandleValidator};
+
+use handles_utils::{converter::HandleConverter, validator::HandleValidator};
 
 #[cfg(test)]
 mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::MsaBenchmarkHelper;
-use sp_std::prelude::*;
-
 use common_primitives::{
 	handles::*,
 	msa::{MessageSourceId, MsaLookup, MsaValidator},
@@ -64,7 +61,9 @@ use sp_runtime::{
 	traits::{Convert, Verify},
 	MultiSignature,
 };
-use sp_std::vec::Vec;
+use sp_std::{prelude::*, vec::Vec};
+
+pub mod handles_signed_extension;
 
 pub mod suffix;
 use suffix::SuffixGenerator;
@@ -102,6 +101,10 @@ pub mod pallet {
 		#[pallet::constant]
 		type HandleSuffixMax: Get<u32>;
 
+		/// The number of blocks before a signature can be ejected from the PayloadSignatureRegistryList
+		#[pallet::constant]
+		type MortalityWindowSize: Get<u32>;
+
 		#[cfg(feature = "runtime-benchmarks")]
 		/// A set of helper functions for benchmarking.
 		type MsaBenchmarkHelper: MsaBenchmarkHelper<Self::AccountId>;
@@ -131,7 +134,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_display_name_for_msa_id)]
 	pub type MSAIdToDisplayName<T: Config> =
-		StorageMap<_, Twox64Concat, MessageSourceId, Handle, ValueQuery>;
+		StorageMap<_, Twox64Concat, MessageSourceId, (Handle, T::BlockNumber), OptionQuery>;
 
 	/// - Value: Cursor u16
 	#[pallet::storage]
@@ -164,12 +167,18 @@ pub mod pallet {
 		MSAHandleAlreadyExists,
 		/// The MSA does not have a handle needed to retire it.
 		MSAHandleDoesNotExist,
+		/// The submitted proof has expired; the current block is less the expiration block
+		ProofHasExpired,
+		/// The submitted proof expiration block is too far in the future
+		ProofNotYetValid,
+		/// The handle is still in mortaility window
+		HandleWithinMortalityPeriod,
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Deposited when a handle is created. [MSA id, full handle in UTF-8 bytes]
+		/// Deposited when a handle is claimed. [MSA id, full handle in UTF-8 bytes]
 		HandleClaimed {
 			/// MSA id of handle owner
 			msa_id: MessageSourceId,
@@ -218,6 +227,28 @@ pub mod pallet {
 			Ok(next)
 		}
 
+		/// Verifies that the signature is not expired.
+		///
+		/// This function takes a signature expiration block as input and verifies that
+		/// the signature is not expired. It returns an error if the signature is expired.
+		///
+		/// # Arguments
+		///
+		/// * `signature_expires_at` - The block number at which the signature expires.
+		///
+		/// # Returns
+		///
+		/// * `Ok(())` - The signature is not expired.
+		/// * `Err(DispatchError)` - The signature is expired.
+		pub fn verify_signature_mortality(signature_expires_at: T::BlockNumber) -> DispatchResult {
+			let current_block = frame_system::Pallet::<T>::block_number();
+
+			let mortality_period = Self::mortality_block_limit(current_block);
+			ensure!(mortality_period > signature_expires_at, Error::<T>::ProofNotYetValid);
+			ensure!(current_block < signature_expires_at, Error::<T>::ProofHasExpired);
+			Ok(())
+		}
+
 		/// Verifies the signature of a given payload, using the provided `signature`
 		/// and `signer` information.
 		///
@@ -242,6 +273,13 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// The furthest in the future a mortality_block value is allowed
+		/// to be for current_block
+		/// This is calculated to be past the risk of a replay attack
+		fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
+			let mortality_size = T::MortalityWindowSize::get();
+			current_block + T::BlockNumber::from(mortality_size)
+		}
 		/// Generates a suffix for a canonical handle, using the provided `canonical_handle`
 		/// and `cursor` information.
 		///
@@ -302,7 +340,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			msa_owner_key: T::AccountId,
 			proof: MultiSignature,
-			payload: ClaimHandlePayload,
+			payload: ClaimHandlePayload<T::BlockNumber>,
 		) -> DispatchResult {
 			let _ = ensure_signed(origin)?;
 
@@ -315,6 +353,9 @@ pub mod pallet {
 			// Validation: caller must already have a MSA id
 			let msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&msa_owner_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+
+			// Validation: The signature is within the mortality window
+			Self::verify_signature_mortality(payload.expiration.into())?;
 
 			// Validation: Verify the payload was signed
 			Self::verify_signed_payload(&proof, &msa_owner_key, payload.encode())?;
@@ -369,11 +410,10 @@ pub mod pallet {
 		/// * `Option<HandleResponse>` - The handle response if the MSA ID is valid.
 		///
 		pub fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
-			let full_handle = MSAIdToDisplayName::<T>::get(msa_id);
-			if full_handle.is_empty() {
-				return None
-			}
-
+			let full_handle = match Self::get_display_name_for_msa_id(msa_id) {
+				Some((handle, _)) => handle,
+				_ => return None,
+			};
 			// convert to string
 			let full_handle_str = core::str::from_utf8(&full_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)
@@ -520,11 +560,11 @@ pub mod pallet {
 		///
 		pub fn do_claim_handle(
 			msa_id: MessageSourceId,
-			payload: ClaimHandlePayload,
+			payload: ClaimHandlePayload<T::BlockNumber>,
 		) -> Result<Vec<u8>, DispatchError> {
 			// Validation: The MSA must not already have a handle associated with it
 			ensure!(
-				MSAIdToDisplayName::<T>::try_get(msa_id).is_err(),
+				Self::get_display_name_for_msa_id(msa_id).is_none(),
 				Error::<T>::MSAHandleAlreadyExists
 			);
 
@@ -592,7 +632,7 @@ pub mod pallet {
 			let full_handle: Handle = full_handle_vec.clone().try_into().ok().unwrap();
 
 			// Store the full display handle to MSA id
-			MSAIdToDisplayName::<T>::insert(msa_id, full_handle.clone());
+			MSAIdToDisplayName::<T>::insert(msa_id, (full_handle.clone(), payload.expiration));
 
 			Ok(full_handle_vec)
 		}
@@ -608,8 +648,9 @@ pub mod pallet {
 		/// * `DispatchResult` - Returns `Ok` if the handle was successfully retired.
 		pub fn do_retire_handle(msa_id: MessageSourceId) -> Result<Vec<u8>, DispatchError> {
 			// Validation: The MSA must already have a handle associated with it
-			let display_name_handle = MSAIdToDisplayName::<T>::try_get(msa_id)
-				.map_err(|_| Error::<T>::MSAHandleDoesNotExist)?;
+			let handle_from_state = Self::get_display_name_for_msa_id(msa_id)
+				.ok_or(Error::<T>::MSAHandleDoesNotExist)?;
+			let display_name_handle = handle_from_state.0;
 			let display_name_str = core::str::from_utf8(&display_name_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 

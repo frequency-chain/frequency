@@ -14,8 +14,9 @@ fn claim_and_retire_handle_happy_path() {
 		let base_handle_str = "test1";
 
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 10;
 		let (payload, proof) =
-			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec());
+			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec(), expiration);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
@@ -35,8 +36,9 @@ fn claim_and_retire_handle_happy_path() {
 		let mut buff = [0u8; SUFFIX_MAX_DIGITS];
 		full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
 
+		run_to_block(200);
 		// Retire the handle
-		assert_ok!(Handles::retire_handle(RuntimeOrigin::signed(alice.public().into()),));
+		assert_ok!(Handles::retire_handle(RuntimeOrigin::signed(alice.public().into())));
 
 		// Confirm that HandleRetired event was deposited
 		System::assert_last_event(

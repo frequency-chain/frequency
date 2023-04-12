@@ -1,6 +1,6 @@
 pub mod mock;
 
-mod converter_tests;
 mod handle_creation_tests;
 mod handle_retirements_tests;
-mod validator_tests;
+mod handles_replay_attack_test;
+mod signed_extension_tests;

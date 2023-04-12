@@ -47,6 +47,7 @@ pub use common_runtime::{
 use frame_support::{
 	construct_runtime,
 	dispatch::{DispatchClass, DispatchError},
+	pallet_prelude::DispatchResultWithPostInfo,
 	parameter_types,
 	traits::{ConstU128, ConstU32, EitherOfDiverse, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
@@ -113,6 +114,14 @@ impl ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
 	}
 }
 
+pub struct CapacityBatchProvider;
+
+impl UtilityProvider<RuntimeOrigin, RuntimeCall> for CapacityBatchProvider {
+	fn batch_all(origin: RuntimeOrigin, calls: Vec<RuntimeCall>) -> DispatchResultWithPostInfo {
+		Utility::batch_all(origin, calls)
+	}
+}
+
 /// Basefilter to only allow calls to specified transactions to be executed
 pub struct BaseCallFilter;
 
@@ -152,6 +161,7 @@ pub type SignedExtra = (
 	frame_system::CheckWeight<Runtime>,
 	pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
 	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
+	pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
 );
 /// A Block signed with a Justification
 pub type SignedBlock = generic::SignedBlock<Block>;
@@ -419,7 +429,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 29,
+	spec_version: 27,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -905,6 +915,8 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type WeightInfo = pallet_frequency_tx_payment::weights::SubstrateWeight<Runtime>;
 	type CapacityCalls = CapacityEligibleCalls;
 	type OnChargeCapacityTransaction = pallet_frequency_tx_payment::CapacityAdapter<Balances, Msa>;
+	type BatchProvider = CapacityBatchProvider;
+	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
@@ -1064,6 +1076,8 @@ impl pallet_handles::Config for Runtime {
 	type HandleSuffixMax = HandleSuffixMax;
 	/// The conversion to a 32 byte AccountId
 	type ConvertIntoAccountId32 = ConvertInto;
+	// The number of blocks per virtual bucket
+	type MortalityWindowSize = MSAMortalityWindowSize;
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
 	type MsaBenchmarkHelper = Msa;

@@ -27,11 +27,22 @@ rootPackage["exports"] = {
   ".": {
     "types": "./index.d.ts",
     "require": "./cjs/index.js",
+    "import": "./esm/index.js",
     "default": "./esm/index.js"
   },
 },
 
 // Write it out
 fs.writeFileSync(`${path.join(__dirname, "../dist", "package.json")}`, JSON.stringify(rootPackage, null, 2), (err) => {
+  if (err) throw new Error(err);
+});
+
+// Write out a simple type override for the esm side of things
+fs.writeFileSync(`${path.join(__dirname, "../dist/esm", "package.json")}`, JSON.stringify({ "type": "module" }, null, 2), (err) => {
+  if (err) throw new Error(err);
+});
+
+// Write out a simple type override for the cjs side of things
+fs.writeFileSync(`${path.join(__dirname, "../dist/cjs", "package.json")}`, JSON.stringify({ "type": "commonjs" }, null, 2), (err) => {
   if (err) throw new Error(err);
 });
