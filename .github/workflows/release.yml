@@ -577,7 +577,7 @@ jobs:
           echo "----------------------------------------------------------------------" >> ${{env.OUTPUT_FILENAME}}
       - name: Compare Metadata
         run: |
-          CMD="docker run --pull always --network host frequencychain/polkadot-js-tools:v0.52.29 metadata ws://localhost:9946 ws://localhost:9944"
+          CMD="docker run --pull always --network host jacogr/polkadot-js-tools:0.53.10 metadata ws://localhost:9946 ws://localhost:9944"
           echo -e "Running:\n$CMD"
           $CMD >> ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
           sed -z -i 's/\n\n/\n/g' ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
