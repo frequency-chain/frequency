@@ -9,18 +9,18 @@ fn signed_extension_retire_handle_success() {
 	new_test_ext().execute_with(|| {
 		let base_handle_str = "test1";
 
-        // Claim the handle
+		// Claim the handle
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
 		let (payload, proof) =
 			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec());
-            assert_ok!(Handles::claim_handle(
-                RuntimeOrigin::signed(alice.public().into()),
-                alice.public().into(),
-                proof,
-                payload
-            ));
+		assert_ok!(Handles::claim_handle(
+			RuntimeOrigin::signed(alice.public().into()),
+			alice.public().into(),
+			proof,
+			payload
+		));
 
-        // Retire the handle
+		// Retire the handle
 		let call_retire_handle: &<Test as frame_system::Config>::RuntimeCall =
 			&RuntimeCall::Handles(HandlesCall::retire_handle {});
 		let info = DispatchInfo::default();
