@@ -963,7 +963,7 @@ dependencies = [
 
 [[package]]
 name = "common-helpers"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "apache-avro",
  "common-primitives",
@@ -976,7 +976,7 @@ dependencies = [
 
 [[package]]
 name = "common-primitives"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "enumflags2",
  "frame-support",
@@ -995,7 +995,7 @@ dependencies = [
 
 [[package]]
 name = "common-runtime"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-primitives",
  "cumulus-primitives-core",
@@ -2722,7 +2722,7 @@ dependencies = [
 
 [[package]]
 name = "frequency"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "frequency-cli",
  "frequency-service",
@@ -2731,7 +2731,7 @@ dependencies = [
 
 [[package]]
 name = "frequency-cli"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "clap",
  "common-primitives",
@@ -2780,7 +2780,7 @@ dependencies = [
 
 [[package]]
 name = "frequency-runtime"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-primitives",
  "common-runtime",
@@ -2853,7 +2853,7 @@ dependencies = [
 
 [[package]]
 name = "frequency-service"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "clap",
  "common-helpers",
@@ -3247,7 +3247,7 @@ dependencies = [
 
 [[package]]
 name = "handles-utils"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "phf",
  "rand 0.8.5",
@@ -5350,7 +5350,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-capacity"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-primitives",
  "common-runtime",
@@ -5532,7 +5532,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-frequency-tx-payment"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-primitives",
  "frame-benchmarking",
@@ -5576,7 +5576,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-handles"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-primitives",
  "env_logger 0.10.0",
@@ -5601,7 +5601,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-handles-rpc"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-helpers",
  "common-primitives",
@@ -5621,7 +5621,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-handles-runtime-api"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-primitives",
  "parity-scale-codec",
@@ -5701,7 +5701,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-messages"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "cid 0.10.1",
  "common-primitives",
@@ -5725,7 +5725,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-messages-rpc"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-helpers",
  "common-primitives",
@@ -5743,7 +5743,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-messages-runtime-api"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-primitives",
  "frame-support",
@@ -5770,7 +5770,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-msa"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-primitives",
  "common-runtime",
@@ -5791,7 +5791,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-msa-rpc"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-helpers",
  "common-primitives",
@@ -5810,7 +5810,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-msa-runtime-api"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-primitives",
  "frame-support",
@@ -6041,7 +6041,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-schemas"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-primitives",
  "common-runtime",
@@ -6064,7 +6064,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-schemas-rpc"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-helpers",
  "common-primitives",
@@ -6085,7 +6085,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-schemas-runtime-api"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-primitives",
  "frame-support",
@@ -6208,7 +6208,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-stateful-storage"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-primitives",
  "env_logger 0.10.0",
@@ -6229,7 +6229,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-stateful-storage-rpc"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-helpers",
  "common-primitives",
@@ -6250,7 +6250,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-stateful-storage-runtime-api"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-primitives",
  "frame-support",
@@ -6274,7 +6274,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-time-release"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -11445,7 +11445,7 @@ dependencies = [
 
 [[package]]
 name = "system-runtime-api"
-version = "0.0.0"
+version = "1.6.0-rc2+polkadot0.9.36"
 dependencies = [
  "common-primitives",
  "frame-support",
